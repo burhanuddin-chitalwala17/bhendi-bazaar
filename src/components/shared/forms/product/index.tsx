@@ -138,7 +138,7 @@ export function ProductForm({
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.images.map((img, idx) => (
-                <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border">
+                <div key={idx} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
                   <img
                     src={img}
                     alt={`Product ${idx + 1}`}

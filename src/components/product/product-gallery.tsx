@@ -126,7 +126,7 @@ export function ProductGallery(product: Product) {
       <div className="relative group">
         <div
           ref={imageContainerRef}
-          className="relative aspect-[19/16] overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-emerald-950 via-emerald-900 to-black cursor-pointer touch-pan-x"
+          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-emerald-950 via-emerald-900 to-black cursor-pointer touch-pan-x"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -228,7 +228,7 @@ export function ProductGallery(product: Product) {
               key={index}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg border-2 transition-all overflow-hidden ${
+              className={`relative flex-shrink-0 w-16 aspect-[3/4] sm:w-20 rounded-lg border-2 transition-all overflow-hidden ${
                 activeIndex === index
                   ? "border-emerald-500 ring-2 ring-emerald-500/30 scale-105"
                   : "border-border/70 hover:border-emerald-500/50 opacity-70 hover:opacity-100"

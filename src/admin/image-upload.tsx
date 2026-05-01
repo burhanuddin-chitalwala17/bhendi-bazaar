@@ -97,7 +97,7 @@ export function ImageUpload({
         {value.map((url, index) => (
           <div
             key={index}
-            className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200"
+            className="relative group aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200"
           >
             <img
               src={url}
@@ -158,7 +158,7 @@ export function ImageUpload({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="aspect-square border-2 border-dashed border-gray-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors flex flex-col items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors flex flex-col items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUploading ? (
               <>

@@ -271,7 +271,7 @@ export default function AdminAbandonedCartsPage() {
                       <img
                         src={item.thumbnail}
                         alt={item.name}
-                        className="w-16 h-16 object-cover rounded"
+                        className="w-16 aspect-[3/4] object-cover rounded"
                       />
                       <div className="flex-1">
                         <p className="font-medium text-sm">{item.name}</p>

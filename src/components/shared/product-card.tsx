@@ -11,7 +11,7 @@ export function ProductCard(product: Product) {
     <Link href={`/product/${product.slug}`}>
       <Card className="group overflow-hidden transition-all hover:-translate-y-1 hover:shadow-md">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden bg-muted">
+        <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           <img
             src={product.thumbnail}
             alt={product.name}

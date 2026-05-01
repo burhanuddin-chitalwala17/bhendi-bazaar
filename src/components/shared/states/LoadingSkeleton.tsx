@@ -16,7 +16,7 @@ export function LoadingSkeleton({
   const variantClasses = {
     text: "h-4 w-full rounded",
     card: "h-48 w-full rounded-lg",
-    image: "aspect-square w-full rounded-lg",
+    image: "aspect-[3/4] w-full rounded-lg",
     button: "h-9 w-24 rounded-md",
   };
 
@@ -102,7 +102,7 @@ export function ProductCardSkeleton() {
   return (
     <Card className="overflow-hidden">
       {/* Image Skeleton */}
-      <div className="relative aspect-square overflow-hidden bg-muted">
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
         <Skeleton className="h-full w-full" />
       </div>
 
@@ -147,7 +147,7 @@ export function ProductPageSkeleton() {
         {/* Gallery Skeleton */}
         <div className="space-y-4">
           {/* Main Image */}
-          <Skeleton className="aspect-square w-full rounded-lg" />
+          <Skeleton className="aspect-[3/4] w-full rounded-lg" />
 
           {/* Thumbnail Strip */}
           <div className="flex gap-2">
@@ -225,7 +225,7 @@ export function ProductPageSkeleton() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="aspect-square w-full rounded-lg" />
+              <Skeleton className="aspect-[3/4] w-full rounded-lg" />
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-5 w-20" />
             </div>
