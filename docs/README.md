@@ -1,151 +1,57 @@
-# Bhendi Bazaar - Complete Documentation
+# Documentation
 
-Welcome to the Bhendi Bazaar documentation! This comprehensive guide covers all aspects of our e-commerce platform.
+- **Verified:** 2026-08-03
 
-## 🏪 About Bhendi Bazaar
+A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
 
-Bhendi Bazaar is a modern, production-ready e-commerce platform built with Next.js 16, featuring:
-- Full-featured shopping experience with cart and checkout
-- Secure payment processing via Razorpay
-- Comprehensive admin panel for store management
-- Real-time cart synchronization for authenticated users
-- Responsive design with modern UI components
+Project-wide rules live in [../CLAUDE.md](../CLAUDE.md), not here. That file is loaded into every agent session; this directory is read on demand.
 
-## 📚 Documentation Structure
+## The organising idea
 
-### Getting Started
-- **[Tech Stack](./TECH_STACK.md)** - Complete list of technologies and dependencies
-- **[Architecture Overview](./ARCHITECTURE.md)** - System architecture and design patterns
-- **[Environment Setup](./ENVIRONMENT_SETUP.md)** - Setup guide and environment variables
-- **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment instructions
+Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc-structure.md)). Each file below changes for exactly one reason, so "partly stale" is not a state it can be in.
 
-### Client-Side Documentation
-- **[Admin Panel](./client-side/admin-panel/)** - Admin interface documentation
-  - [Dashboard](./client-side/admin-panel/DASHBOARD.md)
-  - [Products Management](./client-side/admin-panel/PRODUCTS.md)
-  - [Orders Management](./client-side/admin-panel/ORDERS.md)
-  - [Categories Management](./client-side/admin-panel/CATEGORIES.md)
-  - [Users Management](./client-side/admin-panel/USERS.md)
-  - [Reviews Management](./client-side/admin-panel/REVIEWS.md)
-  - [Abandoned Carts](./client-side/admin-panel/ABANDONED_CARTS.md)
+| Document | Holds | Changes when |
+|---|---|---|
+| [../CLAUDE.md](../CLAUDE.md) | Rules, invariants, conventions index | A rule changes (rarely) |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | What exists **now**, at HLD level | Structure changes — updated *after*, never before |
+| [adr/](adr/) | Why each decision was made | Never. A new ADR supersedes an old one |
+| [CONTRACTS.md](CONTRACTS.md) | Shapes crossing the client/server boundary | A DTO changes → PR flagged `[CONTRACT]` |
+| [specs/](specs/) | Work not yet built | A feature is planned or delivered |
+| [BACKLOG.md](BACKLOG.md) | Where the project is, phase by phase | A phase starts, blocks, or completes |
+| [CHANGELOG.md](CHANGELOG.md) | What happened | Every merged PR. Append-only |
+| [DEPENDENCIES.md](DEPENDENCIES.md) | Why each package is here | A package is added, bumped, or removed |
+| [TESTING.md](TESTING.md) | Test strategy and coverage targets | The strategy changes |
+| [OPERATIONS.md](OPERATIONS.md) | Env vars, deploy, runbook | The deployment or an external service changes |
+| [INTEGRATIONS.md](INTEGRATIONS.md) | How Razorpay, Shiprocket, Resend, Vercel and Prisma actually behave | A spike or an incident teaches something durable |
 
-- **[User Interface](./client-side/user-interface/)** - Customer-facing pages
-  - [Home Page](./client-side/user-interface/HOME.md)
-  - [Product Pages](./client-side/user-interface/PRODUCT_PAGES.md)
-  - [Categories](./client-side/user-interface/CATEGORIES.md)
-  - [Shopping Cart](./client-side/user-interface/CART.md)
-  - [Checkout Process](./client-side/user-interface/CHECKOUT.md)
-  - [User Profile](./client-side/user-interface/PROFILE.md)
-  - [Authentication](./client-side/user-interface/AUTHENTICATION.md)
-  - [Orders & Tracking](./client-side/user-interface/ORDERS.md)
-  - [Search](./client-side/user-interface/SEARCH.md)
+**Domain-level docs co-locate with their code**, not here. They load lazily — only when a file in that directory is read — so they cost no context until relevant. The eight domains are listed in [../CLAUDE.md](../CLAUDE.md); those with docs so far:
 
-- **[Shared Components](./client-side/shared-components/)** - Reusable UI components
-  - [UI Components (Shadcn)](./client-side/shared-components/UI_COMPONENTS.md)
-  - [Custom Components](./client-side/shared-components/SHARED_COMPONENTS.md)
+| Domain doc | Covers |
+|---|---|
+| [server/shipping/CLAUDE.md](../server/shipping/CLAUDE.md) + [ARCHITECTURE.md](../server/shipping/ARCHITECTURE.md) + [adr/](../server/shipping/adr/) | Shipping — the one domain with a real provider abstraction, so the one with its own ADR sequence |
+| [server/services/CLAUDE.md](../server/services/CLAUDE.md) | Checkout and payments. One file for two domains because this tree is organised by layer, not domain; it splits when [ADR-0003](adr/0003-one-repository-per-aggregate.md) consolidation gives each a directory |
 
-### Server-Side Documentation
-- **[Architecture Pattern](./server-side/ARCHITECTURE_PATTERN.md)** - Repository-Service pattern explained
-- **[Repositories](./server-side/repositories/)** - Database access layer
-  - [Overview](./server-side/repositories/OVERVIEW.md)
-  - [Product Repository](./server-side/repositories/PRODUCT_REPOSITORY.md)
-  - [Order Repository](./server-side/repositories/ORDER_REPOSITORY.md)
-  - [Cart Repository](./server-side/repositories/CART_REPOSITORY.md)
-  - [Admin Repositories](./server-side/repositories/admin/ADMIN_REPOSITORIES.md)
+## Where to look
 
-- **[Services](./server-side/services/)** - Business logic layer
-  - [Overview](./server-side/services/OVERVIEW.md)
-  - [Product Service](./server-side/services/PRODUCT_SERVICE.md)
-  - [Order Service](./server-side/services/ORDER_SERVICE.md)
-  - [Payment Service](./server-side/services/PAYMENT_SERVICE.md)
+- **"What are the rules?"** → [../CLAUDE.md](../CLAUDE.md). Start with the seven Project Invariants; they are hard blocks.
+- **"How does this fit together?"** → [ARCHITECTURE.md](ARCHITECTURE.md)
+- **"Why is it done this way?"** → [adr/README.md](adr/README.md) index. If the reason is not there, it was not decided — it drifted.
+- **"Why can't I just change this shape?"** → [CONTRACTS.md](CONTRACTS.md)
+- **"What am I allowed to trust from the client?"** → [ADR-0002](adr/0002-server-holds-pricing-authority.md) and [Invariant 4](../CLAUDE.md). Short answer: nothing.
+- **"How do I run this?"** → [OPERATIONS.md](OPERATIONS.md)
+- **"What's next?"** → [BACKLOG.md](BACKLOG.md)
 
-- **[API Routes](./server-side/api-routes/)** - REST API documentation
-  - [API Structure](./server-side/api-routes/API_STRUCTURE.md)
-  - [Authentication API](./server-side/api-routes/AUTHENTICATION_API.md)
-  - [Products API](./server-side/api-routes/PRODUCTS_API.md)
-  - [Orders API](./server-side/api-routes/ORDERS_API.md)
-  - [Webhooks](./server-side/api-routes/WEBHOOKS.md)
+## Conventions
 
-### Database Documentation
-- **[Schema Overview](./database/SCHEMA_OVERVIEW.md)** - Complete database schema
-- **[Models](./database/MODELS.md)** - All Prisma models explained
-- **[Relationships](./database/RELATIONSHIPS.md)** - Model relationships
-- **[Migrations](./database/MIGRATIONS.md)** - Migration management
-- **[Seeding](./database/SEEDING.md)** - Database seeding process
+- **No pasted implementation code.** Reference `path/file.ts` plus a symbol name. Exceptions: shell commands, env-var names, wire-format JSON, diagrams ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
+- **Every doc carries `Verified: YYYY-MM-DD`** — the date its claims were last checked against the code. Stale is tolerable; silently stale is not.
+- **Specs are feature folders**, `kebab-case`, no numbering; `spec.md` (product) + `trd.md` (technical, no code); ≤100 readable lines each ([ADR-0010](adr/0010-spec-convention.md)).
+- **ADRs are immutable.** Supersede, never edit.
 
-### Integration Documentation
-- **[NextAuth Integration](./integrations/NEXTAUTH.md)** - Authentication setup
-- **[Razorpay Integration](./integrations/RAZORPAY.md)** - Payment gateway
-- **[Vercel Blob Storage](./integrations/VERCEL_BLOB.md)** - Image storage
-- **[Google OAuth](./integrations/GOOGLE_OAUTH.md)** - OAuth configuration
+## Workflows
 
-### Advanced Topics
-- **[State Management](./advanced/STATE_MANAGEMENT.md)** - Zustand cart store
-- **[Cart Synchronization](./advanced/CART_SYNC.md)** - Cart sync mechanism
-- **[Middleware](./advanced/MIDDLEWARE.md)** - Admin route protection
-- **[Error Handling](./advanced/ERROR_HANDLING.md)** - Error management patterns
-- **[Security](./advanced/SECURITY.md)** - Security best practices
+Invoke these rather than recalling the steps: `/bb-brainstorm <topic>` (research before a TRD), `/bb-sdlc spec-start|adr-new|pr-finish`, `/bb-review` (before any PR is done — checks the Invariants).
 
-### Developer Guides
-- **[Adding New Features](./developer-guides/ADDING_NEW_FEATURE.md)**
-- **[Adding Products](./developer-guides/ADDING_NEW_PRODUCT.md)**
-- **[Debugging Guide](./developer-guides/DEBUGGING_GUIDE.md)**
-- **[Testing Guide](./developer-guides/TESTING_GUIDE.md)**
+## [_archive/](_archive/) — ⚠️ do not trust
 
-## 🚀 Quick Start
-
-1. **Clone and Install**
-   ```bash
-   git clone <repository-url>
-   cd bhendi-bazaar
-   npm install
-   ```
-
-2. **Setup Environment**
-   - Copy `.env.example` to `.env`
-   - Configure database and API keys
-   - See [Environment Setup](./ENVIRONMENT_SETUP.md) for details
-
-3. **Database Setup**
-   ```bash
-   npx prisma generate
-   npx prisma migrate dev
-   npx prisma db seed
-   ```
-
-4. **Run Development Server**
-   ```bash
-   npm run dev
-   ```
-
-5. **Access the Application**
-   - User Interface: http://localhost:3000
-   - Admin Panel: http://localhost:3000/admin
-
-## 🏗️ Architecture Highlights
-
-- **Framework**: Next.js 16 with App Router
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js with JWT
-- **Payments**: Razorpay integration
-- **State**: Zustand for cart management
-- **Styling**: Tailwind CSS v4 with Shadcn/ui
-- **Pattern**: Repository-Service architecture
-
-## 📞 Support
-
-For questions or issues:
-1. Check the relevant documentation section
-2. Review the [Debugging Guide](./developer-guides/DEBUGGING_GUIDE.md)
-3. Consult the [Common Issues](#) section
-
-## 🤝 Contributing
-
-See [Contribution Guide](./developer-guides/CONTRIBUTION_GUIDE.md) for development guidelines.
-
----
-
-**Last Updated**: December 2025  
-**Version**: 1.0.0  
-**Status**: Production Ready
-
+The pre-2026-08 documentation, superseded and retained for salvage only. 49% of its lines were pasted code and 76% of its links were dead; it contains statements now known to be false. See [_archive/README.md](_archive/README.md) for what is worth mining and what is not.

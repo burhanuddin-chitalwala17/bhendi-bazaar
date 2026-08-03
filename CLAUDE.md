@@ -1,0 +1,153 @@
+# CLAUDE.md — Project-Wide Rules & SDLC
+
+## Purpose
+Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-commerce store.
+**Claude Code reads this at the start of every session.** Keep it under 200 lines.
+
+## How to use this file
+- Always-on **project-wide** rules live here.
+- Always-on **domain-specific** rules live in that domain's `CLAUDE.md` (e.g. `server/shipping/CLAUDE.md`). These load **lazily** — only when a file in that directory is read — so they cost nothing until relevant.
+- Operational workflows (start a spec, finish a PR, log a decision) live in `.claude/skills/`. Invoke them rather than asking Claude to remember the steps.
+- When a rule and a skill disagree, the skill wins for that workflow — then update this file to match.
+- The **canonical index of standing conventions** is the *Documentation & Process Conventions* section below. Each entry is a one-line pointer to its ADR; detail lives there so it cannot drift.
+
+## Repository shape
+Single git repo (monorepo). Docs are split by **volatility**, not by folder convenience:
+
+```
+CLAUDE.md              ← you are here: rules, invariants, conventions index
+docs/
+├── ARCHITECTURE.md    ← current state HLD (what exists now, never plans)
+├── CONTRACTS.md       ← client ↔ API DTO shapes; breaking-change protocol
+├── BACKLOG.md         ← phased status map
+├── CHANGELOG.md       ← append-only history, newest first
+├── DEPENDENCIES.md    ← why each package exists
+├── TESTING.md         ← strategy + per-layer coverage targets
+├── OPERATIONS.md      ← env vars, deploy, runbook
+├── INTEGRATIONS.md    ← how external services actually behave
+├── adr/               ← one immutable file per decision + README index
+└── specs/<feature>/   ← spec.md (product) + trd.md (technical)
+
+server/shipping/CLAUDE.md   ← shipping domain rules  + ARCHITECTURE.md + adr/
+server/services/CLAUDE.md   ← checkout & payments rules (service layer)
+```
+Domain files load **lazily** — only when a file in that directory is read — so they cost no context until relevant.
+
+## Domains
+Bounded contexts. A change that crosses two of these needs a `CONTRACTS.md` check.
+
+| Domain | Lives in | Owns |
+|---|---|---|
+| identity | `src/lib/auth*`, `server/services/passwordService.ts`, `profileService`, `address*` | Sign-in, sessions, profile, addresses |
+| catalog | `server/repositories/products*`, `categoryRepository`, `seller*` | Products, categories, sellers, search |
+| cart | `server/services/cartService.ts`, `src/store/cartStore.ts` | Cart state and sync |
+| checkout | `server/services/orderService.ts`, `orderRepository` | Orders and their lifecycle |
+| payments | `server/services/paymentService.ts`, `razorpayRepository` | Razorpay, payment state |
+| shipping | `server/shipping/**` | Providers, rates, shipments |
+| notifications | `server/services/email*` | Transactional email |
+| admin | `src/app/(admin)/**`, `server/admin/**` | Admin console (spans domains) |
+
+---
+
+## Project Invariants (non-negotiable)
+
+These are hard blocks, not tradeoffs. Each exists because it was violated and cost something real — see the linked ADR.
+
+### 1. The server is the sole authority on money
+Item prices, totals, and payment amounts are **always** recomputed server-side from `Product.price`. A price, total, or amount arriving in a request body is untrusted input to be discarded, never a value to persist or charge. ([ADR-0002](docs/adr/0002-server-holds-pricing-authority.md))
+
+### 2. Payment state changes only on a verified gateway signal
+`paymentStatus: "paid"` is written in exactly one place: the handler that has verified a gateway signature against the persisted order **and** matched its amount. It is never accepted from a request body, never set by the browser, and never settable at order-creation time. ([ADR-0005](docs/adr/0005-payment-state-server-only.md))
+
+### 3. Money is integer paise
+All monetary columns and all arithmetic are `Int` paise. Never `Float`, never `Number` division on currency. Epsilon comparison on a total (`Math.abs(a - b) < 0.01`) is a bug, not a tolerance. ([ADR-0004](docs/adr/0004-money-as-integer-paise.md))
+
+### 4. Every request body is parsed, never cast
+Route handlers validate with a Zod schema from `src/lib/validation/schemas/`. `as SomeType` on `await request.json()` is forbidden — it is a compile-time fiction with no runtime effect. No raw request object is ever spread into a Prisma `data` argument.
+
+Additionally: **write paths whitelist their fields, and create and update must be symmetric** — an update that whitelists nothing while its create whitelists everything is how mass assignment happens. **Server-owned fields are never accepted as input**, even optionally: `rating`, `reviewsCount`, `createdAt`, `updatedAt`, `paymentStatus`, computed totals. There is no admin exception: parsing is about the *payload* being untrusted, not the caller being unknown.
+
+### 5. One aggregate, one repository
+Each table is reached through exactly one repository module. Two repositories writing the same table is a hard block — it is how the same row comes to have two different shapes. ([ADR-0003](docs/adr/0003-one-repository-per-aggregate.md))
+
+### 6. Stock moves conditionally, inside the transaction
+Stock is changed with a guarded `updateMany({ where: { stock: { gte: qty } } })` in the same `$transaction` as the order, and `count === 0` means out-of-stock. Read-then-write is a race, not a check. ([ADR-0007](docs/adr/0007-conditional-stock-decrement.md))
+
+### 7. Seeds refuse to run against a non-local database
+`prisma/seed.ts` deletes every table, so it aborts unless `DATABASE_URL` points at a local host. The check is an **allowlist** (`localhost`, `127.0.0.1`), never a denylist of production hostnames — a denylist fails open on an unrecognised host, which is the wrong default for an irreversible operation. Deleting rows requires a second explicit gate (`SEED_ALLOW_DESTRUCTIVE=1`), so seeding and wiping are separate intents. No credential literal lives in a seed. The guard lives in the seed itself, so it holds when someone types the raw command.
+
+---
+
+## SDLC — Lite
+
+> Solo project. Rigor is calibrated for one developer keeping a real store safe, not a team coordinating PRs.
+
+### Cycle per feature
+```
+SPIKE / R&D          — /bb-brainstorm <topic>      (research only, no code)
+   ↓
+SPEC + TRD           — /bb-sdlc spec-start <feature-name>
+   - docs/specs/<feature>/spec.md  (requirements + product approach)
+   - docs/specs/<feature>/trd.md   (technical approach, NO code)
+   - ≤100 readable lines each; over that → split into subfeatures
+   ↓
+IMPLEMENTATION       — small PRs, each independently demoable, each with tests
+   ↓
+REVIEW               — /bb-review
+   ↓
+ARCHITECTURE.md      — only if structure changed (domain-local vs docs/, by scope)
+   ↓
+CHANGELOG.md entry   — always
+   ↓
+MERGE                — /bb-sdlc pr-finish walks the gate
+```
+
+### A TRD is required when a PR
+- changes a domain's architecture or data flow,
+- adds a third-party package,
+- starts a new feature, **or**
+- changes a DTO in `CONTRACTS.md` — flagged `[CONTRACT]` in the CHANGELOG.
+
+### Not required for
+typo/comment fixes, config tweaks with no behaviour change, single-function refactors with no public-API impact, doc-only changes. **Even these still need** a CHANGELOG entry and tests for any changed logic.
+
+### Golden Rules
+1. **Architecture docs describe what exists, not what is planned.** Update *after* the change, never before.
+2. **Changelogs are append-only.** Never edit an old entry; append a correction.
+3. **ADRs are immutable.** To reverse one, write a new ADR and set the old one's Status to `Superseded by ADR-NNNN`.
+4. **No pasted code in docs.** Reference `path/file.ts:42` instead. Pasted code is an uncompiled copy of a moving target — it is why the pre-2026-08 docs rotted. ([ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md))
+5. **Every doc carries `Verified:` YYYY-MM-DD.** Stale is acceptable; *silently* stale is not.
+6. **/bb-review runs before any PR is done.**
+
+---
+
+## Documentation & Process Conventions
+
+Canonical index of *how we work*. Each line points; detail lives in the ADR so it cannot drift. **When a new convention is set, add a line here** or it will not be followed.
+
+- **Docs split by volatility** — rules / current state / decisions / plans / history each have exactly one home. ([ADR-0001](docs/adr/0001-monorepo-doc-structure.md))
+- **Domain docs co-locate with code** — `<domain>/CLAUDE.md`, lazy-loaded when a file there is read. ([ADR-0001](docs/adr/0001-monorepo-doc-structure.md))
+- **ADRs** — one file per decision, `adr/NNNN-kebab-title.md`, plus a README index. Append-only; supersede, never edit. ([ADR-0001](docs/adr/0001-monorepo-doc-structure.md))
+- **Specs** — feature folders, kebab-case, no numbering; `spec.md` (product) + `trd.md` (technical, no code); ≤100 readable lines each. ([ADR-0010](docs/adr/0010-spec-convention.md))
+- **CHANGELOG** — append-only, newest on top, one entry per PR; `[CONTRACT]` flag when a DTO changes.
+- **Docs reference code by path, never copy it.** ([ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md))
+- **`server/` is organised by domain, not by layer or caller** — one directory per bounded context, owning its own layers; external systems behind an interface in `<domain>/providers/<name>/`; no `admin/` tree. ([ADR-0012](docs/adr/0012-modules-are-vertical-slices-by-domain.md))
+- **ADRs are for genuine decisions** — real alternatives, and the rejected option is often the conventional one. Not for small or well-established practice. ([docs/adr/README.md](docs/adr/README.md))
+
+---
+
+## Development Principles
+
+- **SOLID**, **DRY**, **YAGNI**, **KISS** — extensibility comes from good seams, not pre-built features.
+- **Separation of concerns** — components know nothing about Prisma; repositories know nothing about HTTP.
+- **No magic strings** — closed sets are enums or `as const` unions, declared **once** (see Invariant 5's reasoning; `ProductFlag` was declared three times and drifted silently).
+- **Dependency direction is inward** — `server/` must not import from `src/`. Shared types belong in a neutral module.
+- **`any` is a defect at a trust boundary.** Route handlers, auth, and payment code are typed or they are wrong.
+
+## Skills
+
+| Skill | When |
+|---|---|
+| `/bb-brainstorm <topic>` | Before a TRD. Research only, no code. |
+| `/bb-sdlc <sub>` | `spec-start <feature>`, `adr-new <title>`, `pr-finish`. |
+| `/bb-review` | Before any PR is considered done. Checks the Invariants above. |

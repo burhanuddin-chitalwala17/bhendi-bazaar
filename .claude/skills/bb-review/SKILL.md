@@ -1,0 +1,114 @@
+---
+name: bb-review
+description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
+---
+
+# /bb-review — pre-merge review
+
+Reviews the current diff against **this project's** rules, not general good practice. The built-in `/review` covers generic code quality; this covers the things that have actually gone wrong here.
+
+## Scope
+
+```bash
+git diff main...HEAD            # default: the branch
+git diff --stat main...HEAD     # orient first
+```
+If the user names a range or path, use that instead. If the branch *is* `main`, review uncommitted changes (`git diff HEAD`).
+
+Read the whole changed file, not just the hunk — several invariants below are about what a file *doesn't* do, which a hunk cannot show.
+
+---
+
+## Part 1 — The seven Invariants
+
+These are **hard blocks** ([CLAUDE.md](../../../CLAUDE.md)). A violation means the PR is not ready, regardless of anything else. Each has an ADR; cite it so the finding is arguable rather than an assertion.
+
+### I1 · Server holds pricing authority — [ADR-0002](../../../docs/adr/0002-server-holds-pricing-authority.md)
+Does any new or changed code persist, or charge, a monetary value that arrived in a request body?
+- A price, total, subtotal, discount, or gateway amount read from `request.json()` and then written or sent onward.
+- A schema newly *accepting* a price field.
+- A total "validated" by comparison against other client-supplied numbers — self-consistency is not verification.
+```bash
+git diff main...HEAD -- src/app/api src/lib/validation server | grep -nE '\b(price|salePrice|amount|total|subtotal|grandTotal|discount)\b'
+```
+Ask of each hit: *where did this number come from?* If the answer is the request, it is a violation.
+
+### I2 · Payment state only on a verified gateway signal — [ADR-0005](../../../docs/adr/0005-payment-state-server-only.md)
+- Any write of `paymentStatus` outside the single confirmation path.
+- `paymentStatus` appearing in a request schema.
+- A handler that verifies a signature and returns a boolean instead of performing the transition.
+- **A webhook or verification path that returns 2xx on an unrecognised or unmatched payload.** This is how a dead payment path stayed invisible; treat a silent success as a violation in its own right.
+- A signature compared with `===` rather than `crypto.timingSafeEqual`.
+
+### I3 · Money is integer paise — [ADR-0004](../../../docs/adr/0004-money-as-integer-paise.md)
+- A new `Float` monetary column, or float arithmetic on money.
+- **Any epsilon comparison on an amount** (`Math.abs(a - b) < ...`). This is a violation, not a tolerance.
+- A `* 100` or `/ 100` outside `src/lib/format.ts` — the conversion belongs in one place.
+- Note: until [money-as-paise](../../../docs/specs/money-as-paise/) lands the columns are still `Float`. Flag *new* violations; do not demand the migration in an unrelated PR.
+
+### I4 · Every body parsed, never cast — [CLAUDE.md](../../../CLAUDE.md) Invariant 4
+```bash
+git diff main...HEAD | grep -nE 'request\.json\(\)\s*\)?\s*as |as unknown as'
+```
+- `as SomeType` on `await request.json()` — a compile-time fiction with no runtime effect.
+- `data: input` into a Prisma call where `input` traces back to a request body (mass assignment).
+- A create that whitelists fields while its matching update does not.
+- Server-owned fields accepted as input: `rating`, `reviewsCount`, `createdAt`, `updatedAt`, `paymentStatus`, computed totals.
+- **`any` in a route handler, auth, or payment code** — a defect at a trust boundary, not a style issue.
+
+### I5 · One aggregate, one repository — [ADR-0003](../../../docs/adr/0003-one-repository-per-aggregate.md)
+- A `prisma.<model>` call outside that model's repository — including in a route handler.
+- A **new** repository module for a table that already has one.
+- A duplicated class or singleton export name.
+- A closed set (enum / `as const` union) declared a second time.
+```bash
+git diff main...HEAD -- src/app/api | grep -nE 'prisma\.[a-z]'
+```
+
+### I6 · Stock moves conditionally, in-transaction — [ADR-0007](../../../docs/adr/0007-conditional-stock-decrement.md)
+- A stock read followed by a stock write. Read-then-write is not a check, even inside `$transaction` — the default isolation permits concurrent callers to pass the same check.
+- Stock changed outside the transaction that creates the order.
+- More generally: **any invariant guarded by a read rather than by a conditional write.**
+
+### I7 · Seeds refuse non-local databases — [CLAUDE.md](../../../CLAUDE.md) Invariant 7
+- Any new destructive operation under `prisma/` without a host check.
+- A guard written as a denylist of production hosts rather than an allowlist of local ones — a denylist fails open on an unrecognised host.
+- A credential literal in a seed.
+
+---
+
+## Part 2 — Process
+
+- **CHANGELOG entry present?** Required for every PR, including trivial ones ([CLAUDE.md](../../../CLAUDE.md)). Newest at top, append-only.
+- **`[CONTRACT]` flag** if a DTO in [CONTRACTS.md](../../../docs/CONTRACTS.md) changed — and `CONTRACTS.md` updated in the same PR. Check especially for a field whose *unit or meaning* changed without its type changing; nothing fails to compile, so nothing else will catch it.
+- **`[MIGRATION]` flag** if `prisma/migrations/` gained a file.
+- **Tests for changed logic.** No exception. If the change touches an Invariant, the test is the deliverable — see [TESTING.md](../../../docs/TESTING.md) for the 100% targets.
+- **A TRD** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
+- **`ARCHITECTURE.md` updated** only if structure changed — and *after* the change, never as a plan.
+- **`DEPENDENCIES.md` row** if a package was added.
+
+## Part 3 — Documentation conventions
+
+- **No pasted implementation code in docs** ([ADR-0009](../../../docs/adr/0009-docs-reference-code-never-copy-it.md)). A new fenced block in a `.md` file outside the stated exceptions — shell commands, env-var names, wire-format JSON, diagrams — is a violation. Reference `path/file.ts` plus a symbol name instead.
+- **`Verified:` date updated** on any doc whose claims were re-checked. A doc edited without touching its `Verified:` date is suspect.
+- **Links resolve.** A doc must not link to a file that does not exist.
+```bash
+grep -ohE '\]\([^)]+\.md[^)]*\)' <changed docs> | sed -E 's/^\]\(//; s/\)$//'
+```
+- **No findings recorded as documentation.** A bug list, audit result, or "known broken" section does not belong in a doc — it goes stale the moment it is fixed. The requirement belongs in a spec; the defect belongs in a PR.
+- **Specs within ≤100 readable lines** ([ADR-0010](../../../docs/adr/0010-spec-convention.md)): prose only, excluding front-matter, headings, tables, fenced blocks, link-only lines, and blanks.
+
+## Part 4 — Report
+
+Order by severity: **Invariant violations first** (they block), then process gaps, then documentation.
+
+For each finding: the file and line, which rule and ADR, what specifically is wrong, and the fix in one line.
+
+Verify before reporting. Read the surrounding code — several of these look like violations in a hunk and are fine in context, and a false positive on a hard block costs more than a missed nitpick. If a rule genuinely does not fit the situation, say so and say why: the rule may need an ADR amendment, and that is a legitimate outcome of a review.
+
+If nothing is wrong, say so plainly. Do not invent findings to look thorough.
+
+## Notes
+
+- **Not a security audit.** This checks the rules the project has written down. A finding that falls outside all seven Invariants and is genuinely a problem should still be reported — and if it represents a rule worth having, propose an ADR via `/bb-sdlc adr-new`.
+- **Don't fix while reviewing** unless asked. Report, then let the author decide.
