@@ -7,11 +7,8 @@
 /**
  * Validate Indian pincode format
  */
-export function isValidPincode(pincode: string): boolean {
-  // Remove spaces and check for 6-digit format
-  const cleaned = pincode.replace(/\s/g, "");
-  return /^\d{6}$/.test(cleaned);
-}
+import { isValidPincode } from "@server/shared/pincode";
+export { isValidPincode };
 
 /**
  * Normalize pincode (remove spaces, ensure 6 digits)

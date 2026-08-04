@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { DataTable, Column } from "@/admin/data-table";
 import { Search, Filter, RefreshCw } from "lucide-react";
-import { adminOrderService } from "@/services/admin/orderService";
+import { adminOrderApiClient } from "@/services/admin/orderApiClient";
 import type { Order } from "@/domain/order";
 import type { OrderListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
@@ -30,14 +30,14 @@ export default function AdminOrdersPage() {
     loading: isLoading,
     error,
     refetch,
-  } = useAsyncData(() => adminOrderService.getOrders(filters), {
+  } = useAsyncData(() => adminOrderApiClient.getOrders(filters), {
     refetchDependencies: [filters],
   });
 
   // Use mutation for status updates
   const { mutate: updateStatus, isLoading: isUpdatingStatus } = useMutation(
     ({ orderId, status }: { orderId: string; status: string }) =>
-      adminOrderService.updateOrderStatus(orderId, { status }),
+      adminOrderApiClient.updateOrderStatus(orderId, { status }),
     {
       successMessage: "Order status updated!",
       onSuccess: () => refetch(),

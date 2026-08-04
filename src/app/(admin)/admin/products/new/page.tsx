@@ -3,13 +3,13 @@
  * Create a new product
  */
 
-import { categoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductAddContainer } from "@/admin/products/productAdd";
 import { sellersDAL } from "@/data-access-layer/admin/sellers.dal";
 import type { SellerWithStats } from "@/domain/seller";
 import type { AdminCategory } from "@/domain/admin";
 export default async function NewProductPage() {
-  const categories = (await categoriesDAL.getCategories()).categories.map((c: AdminCategory) => ({
+  const categories = (await adminCategoriesDAL.getCategories()).categories.map((c: AdminCategory) => ({
     id: c.id,
     name: c.name,
   }));

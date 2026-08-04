@@ -7,7 +7,7 @@
 
 import { use, useState } from "react";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { adminOrderService } from "@/services/admin/orderService";
+import { adminOrderApiClient } from "@/services/admin/orderApiClient";
 import { ShipmentTrackingForm } from "@/components/admin/ShipmentTrackingForm";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
@@ -42,7 +42,7 @@ export default function AdminOrderDetailsPage({
     error,
     refetch,
   } = useAsyncData(
-    () => adminOrderService.getOrderById(orderId),
+    () => adminOrderApiClient.getOrderById(orderId),
     {
       refetchDependencies: [orderId],
     }

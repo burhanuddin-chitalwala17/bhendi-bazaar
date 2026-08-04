@@ -40,5 +40,5 @@ class AdminCartService {
   }
 }
 
-export const adminCartService = new AdminCartService();
+export const adminCartApiClient = new AdminCartService();
 

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AddressFields } from "@/components/shared/forms/AddressFields";
 import { DeliveryAddress } from "@/domain/profile";
+import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 
 const addressSchema = z.object({
   id: z.string(),
@@ -17,7 +18,7 @@ const addressSchema = z.object({
   landmark: z.string().optional(),
   city: z.string().min(2, "City required"),
   state: z.string().min(2, "State required"),
-  pincode: z.string().regex(/^\d{6}$/, "6 digits required"),
+  pincode: postalCodeSchema,
   country: z.string().min(2, "Country required"),
   metadata: z.record(z.string(), z.any()).optional(),
 });

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminCategoryService } from "@/services/admin/categoryService";
+import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type {
   AdminCategory,
   CreateCategoryInput,
@@ -39,14 +39,14 @@ export function useCategoryForm({
     try {
       if (isEdit && category) {
         // Update existing category
-        await adminCategoryService.updateCategory(
+        await adminCategoryApiClient.updateCategory(
           category.id,
           data as UpdateCategoryInput
         );
         setSuccessMessage("Category updated successfully!");
       } else {
         // Create new category
-        await adminCategoryService.createCategory(data);
+        await adminCategoryApiClient.createCategory(data);
         setSuccessMessage("Category created successfully!");
         // Clear the saved draft after successful creation
         onClearDraft?.();

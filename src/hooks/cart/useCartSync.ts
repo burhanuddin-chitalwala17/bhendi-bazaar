@@ -2,7 +2,7 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
-import { cartService } from "@/services/cartService";
+import { cartApiClient } from "@/services/cartApiClient";
 import { useDebounce } from "@/hooks/core/useDebounce";
 
 const LAST_CLEANUP_KEY = "cart-last-cleanup";
@@ -26,7 +26,7 @@ export function useCartSync() {
     justSyncedRef.current = true; // 👈 Mark that sync is happening
     
     try {
-      const mergedItems = await cartService.syncCart(items);
+      const mergedItems = await cartApiClient.syncCart(items);
       setItems(mergedItems);
       
       // Cleanup old anonymous cart data after successful sync
@@ -55,7 +55,7 @@ export function useCartSync() {
     }
 
     try {
-      await cartService.updateCart(items);
+      await cartApiClient.updateCart(items);
     } catch (error) {
       console.error("[useCartSync] Background sync failed:", error);
     }

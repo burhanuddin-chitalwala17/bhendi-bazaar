@@ -17,7 +17,7 @@ import {
   Clock,
   RefreshCw,
 } from "lucide-react";
-import { adminDashboardService } from "@/services/admin/dashboardService";
+import { adminDashboardApiClient } from "@/services/admin/dashboardApiClient";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { formatCurrency } from "@/lib/format";
@@ -29,7 +29,7 @@ export default function AdminDashboardPage() {
     loading: isLoadingStats,
     error: errorStats,
     refetch: refetchStats,
-  } = useAsyncData(() => adminDashboardService.getDashboardStats(), {
+  } = useAsyncData(() => adminDashboardApiClient.getDashboardStats(), {
     refetchDependencies: [],
   });
   const {
@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
     loading: isLoadingActivities,
     error: errorActivities,
     refetch: refetchActivities,
-  } = useAsyncData(() => adminDashboardService.getRecentActivities(10), {
+  } = useAsyncData(() => adminDashboardApiClient.getRecentActivities(10), {
     refetchDependencies: [],
   });
 

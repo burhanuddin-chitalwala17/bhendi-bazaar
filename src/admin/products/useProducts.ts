@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ProductsService } from "./productsService";
+import { ProductsApiClient } from "./productsApiClient";
 import type { ProductFormInput } from "./types";
 
 interface UseProductsOptions {
@@ -15,7 +15,7 @@ export function useProducts(options?: UseProductsOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const productsService = new ProductsService();
+  const productsApiClient = new ProductsApiClient();
   const params = useParams();
 
   /**
@@ -42,7 +42,7 @@ export function useProducts(options?: UseProductsOptions) {
     setIsLoading(true);
 
     try {
-      const product = await productsService.createProduct(data);
+      const product = await productsApiClient.createProduct(data);
       
       const successMsg = "Product created successfully!";
       setSuccessMessage(successMsg);
@@ -72,7 +72,7 @@ export function useProducts(options?: UseProductsOptions) {
     setSuccessMessage(null);
     setIsLoading(true);
     try {
-      const product = await productsService.updateProduct(id as string, data);
+      const product = await productsApiClient.updateProduct(id as string, data);
       const successMsg = "Product updated successfully!";
       setSuccessMessage(successMsg);
       toast.success(successMsg);
@@ -103,7 +103,7 @@ export function useProducts(options?: UseProductsOptions) {
     
     setIsLoading(true);
     try {
-      await productsService.deleteProduct(id);
+      await productsApiClient.deleteProduct(id);
       toast.success("Product deleted successfully");
       
       // ⚡ Trigger server refresh

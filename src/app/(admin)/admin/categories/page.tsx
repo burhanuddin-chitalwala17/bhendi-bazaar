@@ -11,7 +11,7 @@ import { useState } from "react";
 import { DataTable, Column } from "@/admin/data-table";
 import { Search, Plus, Edit, Trash2, MoveUp, MoveDown } from "lucide-react";
 import Link from "next/link";
-import { adminCategoryService } from "@/services/admin/categoryService";
+import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -31,13 +31,13 @@ export default function AdminCategoriesPage() {
     loading: isLoading,
     error,
     refetch,
-  } = useAsyncData(() => adminCategoryService.getCategories(filters), {
+  } = useAsyncData(() => adminCategoryApiClient.getCategories(filters), {
     refetchDependencies: [filters],
   });
 
   // Mutations
   const { mutate: deleteCategory, isLoading: isDeleting } = useMutation(
-    adminCategoryService.deleteCategory,
+    adminCategoryApiClient.deleteCategory,
     {
       successMessage: "Category deleted successfully!",
       onSuccess: () => refetch(),
@@ -46,7 +46,7 @@ export default function AdminCategoriesPage() {
 
   const { mutate: updateCategory, isLoading: isUpdating } = useMutation(
     ({ id, order }: { id: string; order: number }) =>
-      adminCategoryService.updateCategory(id, { order }),
+      adminCategoryApiClient.updateCategory(id, { order }),
     {
       onSuccess: () => refetch(),
     }

@@ -104,6 +104,6 @@ class AdminCategoryService {
   }
 }
 
-export const adminCategoryService = new AdminCategoryService();
+export const adminCategoryApiClient = new AdminCategoryService();
 
 

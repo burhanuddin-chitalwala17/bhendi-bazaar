@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { DeliveryAddress } from "@/domain/profile";
-import { addressService } from "@/services/addressService";
+import { addressApiClient } from "@/services/addressApiClient";
 
 type UseAddressManagerOptions = {
     userId?: string;           // For authenticated users
@@ -49,7 +49,7 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         setIsLoading(true);
         setError(null);
         try {
-            const response = await addressService.getAddresses();
+            const response = await addressApiClient.getAddresses();
             setAddresses(response);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load addresses');
@@ -65,7 +65,7 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
 
         try {
             const newAddress = { ...input, id: crypto.randomUUID() };
-            const response = await addressService.addAddress(newAddress);
+            const response = await addressApiClient.addAddress(newAddress);
             if (!response) {
                 throw new Error('Failed to add address');
             }
@@ -90,7 +90,7 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         const originalAddresses = addresses;
 
         try {
-            const response = await addressService.updateAddress(id, input);
+            const response = await addressApiClient.updateAddress(id, input);
 
             if (!response) {
                 setAddresses(originalAddresses);
@@ -121,7 +121,7 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         setAddresses(prev => prev.filter(addr => addr.id !== id));
 
         try {
-            await addressService.deleteAddress(id);
+            await addressApiClient.deleteAddress(id);
 
             // ✅ If deleted address was default, refetch to get new default
             if (deletingDefault) {

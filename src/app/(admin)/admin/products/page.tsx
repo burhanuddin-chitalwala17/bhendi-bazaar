@@ -1,7 +1,7 @@
 // app/(admin)/admin/products/page.tsx
 
 import { Suspense } from "react";
-import { productsDAL } from "@/data-access-layer/admin/products.dal";
+import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
 import type { Metadata } from "next";
@@ -84,8 +84,8 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
 
   // ⚡ Parallel data fetching
   const [productsData, stats] = await Promise.all([
-    productsDAL.getProducts(filters),
-    productsDAL.getStats(),
+    adminProductsDAL.getProducts(filters),
+    adminProductsDAL.getStats(),
   ]);
 
   return (

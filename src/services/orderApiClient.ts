@@ -62,26 +62,6 @@ class OrderService {
     return response.json();
   }
 
-  /**
-   * Get a single order by ID
-   */
-  async getOrderById(orderId: string): Promise<Order> {
-    const response = await fetch(`/api/orders/${orderId}`, {
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("Order not found");
-      }
-      if (response.status === 403) {
-        throw new Error("You don't have permission to view this order");
-      }
-      throw new Error("Failed to fetch order");
-    }
-
-    return response.json();
-  }
 
   /**
    * Lookup order by code (for guest orders)
@@ -112,35 +92,6 @@ class OrderService {
     return response.json();
   }
 
-  /**
-   * Create a new order
-   */
-  async createOrder(input: CreateOrderInput): Promise<Order> {
-    const response = await fetch("/api/orders", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(input),
-    });
-
-    if (response.status === 429) {
-      const error = await response.json();
-      throw new Error(
-        error.error || "Too many requests. Please try again later."
-      );
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || "Failed to create order. Please try again."
-      );
-    }
-
-    return response.json();
-  }
 
   /**
    * Update an existing order
@@ -204,35 +155,8 @@ class OrderService {
     return response.json();
   }
 
-  /**
-   * Trigger automated order fulfillment (ADMIN USE ONLY)
-   * 
-   * ⚠️ NOT USED IN CURRENT CHECKOUT FLOW
-   * Current implementation uses manual fulfillment via Shiprocket website.
-   * 
-   * This method is kept for future automation or admin-triggered fulfillment.
-   * When called, it will:
-   * - Creates shipments with providers via API
-   * - Generates AWB numbers automatically
-   * - Schedules pickups automatically
-   * 
-   * @deprecated Use manual tracking updates via /api/admin/shipments/[id]/tracking
-   */
-  async fulfillOrder(orderId: string): Promise<void> {
-    const response = await fetch(`/api/orders/${orderId}/fulfill`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || "Failed to fulfill order"
-      );
-    }
-  }
 }
 
 // Export a singleton instance
-export const orderService = new OrderService();
+export const orderApiClient = new OrderService();
 

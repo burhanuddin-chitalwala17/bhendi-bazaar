@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { CategoryForm } from "@/admin/category-form";
-import { adminCategoryService } from "@/services/admin/categoryService";
+import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory } from "@/domain/admin";
 
 export default function EditCategoryPage() {
@@ -25,7 +25,7 @@ export default function EditCategoryPage() {
   const loadCategory = async () => {
     try {
       setIsLoading(true);
-      const data = await adminCategoryService.getCategoryById(categoryId);
+      const data = await adminCategoryApiClient.getCategoryById(categoryId);
       setCategory(data);
     } catch (err) {
       console.error("Failed to load category:", err);

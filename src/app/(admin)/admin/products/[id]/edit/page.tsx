@@ -2,18 +2,18 @@
  * Admin Edit Product Page
  * Edit an existing product
  */
-import { productsDAL } from "@/data-access-layer/admin/products.dal";
+import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { ProductEditContainer } from "@/admin/products/productEdit";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { Suspense } from "react";
 import { sellersDAL } from "@/data-access-layer/admin/sellers.dal";
-import { categoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import type { SellerWithStats } from "@/domain/seller";
 import type { AdminCategory } from "@/domain/admin";
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const product = await productsDAL.getProductById(id);
-  const categories = (await categoriesDAL.getCategories()).categories.map((c: AdminCategory) => ({
+  const product = await adminProductsDAL.getProductById(id);
+  const categories = (await adminCategoriesDAL.getCategories()).categories.map((c: AdminCategory) => ({
     id: c.id,
     name: c.name,
   }));

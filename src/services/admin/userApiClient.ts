@@ -31,19 +31,6 @@ class AdminUserService {
     return response.json();
   }
 
-  /**
-   * Get single user by ID
-   */
-  async getUserById(id: string): Promise<AdminUser> {
-    const response = await fetch(`/api/admin/users/${id}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch user");
-    }
-
-    return response.json();
-  }
 
   /**
    * Update user
@@ -85,6 +72,6 @@ class AdminUserService {
   }
 }
 
-export const adminUserService = new AdminUserService();
+export const adminUserApiClient = new AdminUserService();
 
 

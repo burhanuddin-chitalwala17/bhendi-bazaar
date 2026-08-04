@@ -11,7 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { DataTable, Column } from "@/admin/data-table";
 import { ShoppingCart, Mail, Eye, RefreshCw } from "lucide-react";
-import { adminCartService } from "@/services/admin/cartService";
+import { adminCartApiClient } from "@/services/admin/cartApiClient";
 import type { AbandonedCart, AbandonedCartFilters } from "@/domain/admin";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
@@ -31,12 +31,12 @@ export default function AdminAbandonedCartsPage() {
     loading: isLoading,
     error,
     refetch,
-  } = useAsyncData(() => adminCartService.getAbandonedCarts(filters), {
+  } = useAsyncData(() => adminCartApiClient.getAbandonedCarts(filters), {
     refetchDependencies: [filters],
   });
 
   const { mutate: sendReminder, isLoading: isSendingReminder } = useMutation(
-    adminCartService.sendReminder,
+    adminCartApiClient.sendReminder,
     {
       successMessage: "Reminder sent successfully!",
       onSuccess: () => refetch(),

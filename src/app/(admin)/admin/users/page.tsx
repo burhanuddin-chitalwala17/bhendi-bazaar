@@ -11,7 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { DataTable, Column } from "@/admin/data-table";
 import { Search, RefreshCw } from "lucide-react";
-import { adminUserService } from "@/services/admin/userService";
+import { adminUserApiClient } from "@/services/admin/userApiClient";
 import type { AdminUser, UserListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
 
@@ -27,14 +27,14 @@ export default function AdminUsersPage() {
     loading: isLoading,
     error,
     refetch,
-  } = useAsyncData(() => adminUserService.getUsers(filters), {
+  } = useAsyncData(() => adminUserApiClient.getUsers(filters), {
     refetchDependencies: [filters],
   });
   const { users = [], totalPages = 1 } = data || {};
 
   const { mutate: toggleBlock, isLoading: isTogglingBlock } = useMutation(
     ({ id, isBlocked }: { id: string; isBlocked: boolean }) =>
-      adminUserService.toggleBlockUser(id, isBlocked),
+      adminUserApiClient.toggleBlockUser(id, isBlocked),
     {
       successMessage: "User status updated successfully!",
       onSuccess: () => refetch(),
@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
     }: {
       id: string;
       data: { name?: string; role?: string; isBlocked?: boolean };
-    }) => adminUserService.updateUser(id, data),
+    }) => adminUserApiClient.updateUser(id, data),
     {
       successMessage: "User updated successfully!",
       onSuccess: () => refetch(),

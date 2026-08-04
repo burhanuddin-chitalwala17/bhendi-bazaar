@@ -59,10 +59,6 @@ export function formatDeliveryDate(date: Date): string {
 /**
  * Validate Indian pincode
  */
-export function isValidPincode(pincode: string): boolean {
-  return /^[1-9][0-9]{5}$/.test(pincode);
-}
-
 /**
  * Get shipping method display name
  */

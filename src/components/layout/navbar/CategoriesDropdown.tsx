@@ -6,7 +6,7 @@ import { useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { categoryService } from "@/services/categoryService";
+import { categoryApiClient } from "@/services/categoryApiClient";
 import { LoadingSpinner } from "@/components/shared/states/LoadingSpinner";
 import { usePathname } from "next/navigation";
 
@@ -16,7 +16,7 @@ export function CategoriesDropdown() {
   const pathname = usePathname();
 
   const { data: categories, loading } = useAsyncData(() =>
-    categoryService.getCategories()
+    categoryApiClient.getCategories()
   );
 
   useClickOutside(dropdownRef as React.RefObject<HTMLElement>, () =>

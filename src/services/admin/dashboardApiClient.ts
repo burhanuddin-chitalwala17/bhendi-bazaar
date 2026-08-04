@@ -39,21 +39,8 @@ class AdminDashboardService {
     return response.json();
   }
 
-  /**
-   * Get revenue chart data
-   */
-  async getRevenueChart(days: number = 30): Promise<RevenueChart[]> {
-    const response = await fetch(`/api/admin/dashboard/revenue?days=${days}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch revenue data");
-    }
-
-    return response.json();
-  }
 }
 
-export const adminDashboardService = new AdminDashboardService();
+export const adminDashboardApiClient = new AdminDashboardService();
 
 

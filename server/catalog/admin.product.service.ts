@@ -1,27 +1,27 @@
 // server/services/admin/productService.ts
 
-import { productsRepository } from "@server/catalog/admin.product.repository";
+import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import { ProductFilters, ProductFormInput } from "@server/catalog/admin.product.types";
 
 export class ProductsService {  
   async getProducts(filters: ProductFilters) {
-    return await productsRepository.getProducts(filters);
+    return await adminProductsRepository.getProducts(filters);
   }
   
   async getStats() {
-    return await productsRepository.getStats();
+    return await adminProductsRepository.getStats();
   }
 
   async deleteProduct(id: string) {
-    return await productsRepository.deleteProduct(id);
+    return await adminProductsRepository.deleteProduct(id);
   }
 
   async createProduct(data: ProductFormInput) {
-    return await productsRepository.createProduct(data);
+    return await adminProductsRepository.createProduct(data);
   }
 
   async getProductById({ id }: { id: string }) {
-    const product = await productsRepository.getProductById(id);
+    const product = await adminProductsRepository.getProductById(id);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -29,7 +29,7 @@ export class ProductsService {
   }
 
   async updateProduct(id: string, data: ProductFormInput) {
-    const product = await productsRepository.updateProduct(id, data);
+    const product = await adminProductsRepository.updateProduct(id, data);
     if (!product) {
       throw new Error("Product not found");
     }

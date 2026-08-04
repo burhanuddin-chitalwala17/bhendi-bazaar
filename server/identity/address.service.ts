@@ -7,6 +7,7 @@
 
 import { addressRepository } from "@server/identity/address.repository";
 import type { DeliveryAddress } from "@server/identity/profile.types";
+import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 
 export class AddressService {
   /**
@@ -167,9 +168,8 @@ export class AddressService {
   ): void {
 
     if (!isPartial || input.pincode) {
-      const pincodeRegex = /^\d{6}$/;
-      if (!pincodeRegex.test(input.pincode)) {
-        throw new Error("Pincode must be exactly 6 digits");
+      if (!isValidPincode(input.pincode)) {
+        throw new Error(PINCODE_MESSAGE);
       }
     }
 

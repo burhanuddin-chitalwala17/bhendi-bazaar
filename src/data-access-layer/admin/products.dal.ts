@@ -82,4 +82,4 @@ class ProductsDAL {
   });
 }
 
-export const productsDAL = new ProductsDAL();
+export const adminProductsDAL = new ProductsDAL();

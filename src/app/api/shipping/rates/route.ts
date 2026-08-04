@@ -12,11 +12,12 @@ import {
   shippingOrchestrator,
 } from "@server/shipping";
 import { z } from "zod";
+import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 
 // Validation schema
 const getRatesSchema = z.object({
-  fromPincode: z.string().regex(/^\d{6}$/, "Pincode must be 6 digits"),
-  toPincode: z.string().regex(/^\d{6}$/, "Pincode must be 6 digits"),
+  fromPincode: postalCodeSchema,
+  toPincode: postalCodeSchema,
   weight: z.number().min(0.1).max(500).optional(),
   cod: z.boolean().optional(),
 });

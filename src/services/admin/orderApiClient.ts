@@ -73,28 +73,8 @@ class AdminOrderService {
     return response.json();
   }
 
-  /**
-   * Bulk update order status
-   */
-  async bulkUpdateStatus(
-    orderIds: string[],
-    status: string
-  ): Promise<{ success: boolean; count: number }> {
-    const response = await fetch(`/api/admin/orders/bulk-update`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderIds, status }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to bulk update orders");
-    }
-
-    return response.json();
-  }
 }
 
-export const adminOrderService = new AdminOrderService();
+export const adminOrderApiClient = new AdminOrderService();
 
 

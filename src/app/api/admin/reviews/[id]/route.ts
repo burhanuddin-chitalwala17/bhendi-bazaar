@@ -10,33 +10,6 @@ import { verifyAdminSession } from "@/lib/admin-auth";
 import { adminReviewService } from "@server/catalog/review.service";
 import type { UpdateReviewInput } from "@server/catalog/review.types";
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
-  try {
-    const { id } = await params;
-    const review = await adminReviewService.getReviewById(id);
-
-    if (!review) {
-      return NextResponse.json({ error: "Review not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(review);
-  } catch (error) {
-    console.error("Failed to fetch review:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch review",
-      },
-      { status: 500 }
-    );
-  }
-}
 
 export async function PATCH(
   request: NextRequest,

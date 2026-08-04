@@ -3,7 +3,7 @@
 
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useState } from "react";
-import { orderService } from "@/services/orderService";
+import { orderApiClient } from "@/services/orderApiClient";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { OrderSummary } from "./order-summary";
@@ -18,7 +18,7 @@ export function OrderLookup() {
     loading: isLoading,
     error,
     refetch,
-  } = useAsyncData(() => orderService.lookupOrderByCode(code), {
+  } = useAsyncData(() => orderApiClient.lookupOrderByCode(code), {
     enabled: shouldFetch,
   });
 

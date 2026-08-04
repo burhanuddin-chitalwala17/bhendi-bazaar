@@ -47,7 +47,7 @@ const PRODUCT_DETAILS_SELECT = {
     shippingFromLocation: true,
 } satisfies Prisma.ProductSelect;
 
-export class ProductsRepository {
+export class AdminProductsRepository {
     /**
      * Get paginated list of products with filters
      */
@@ -253,4 +253,4 @@ export class ProductsRepository {
 
 }
 
-export const productsRepository = new ProductsRepository();
+export const adminProductsRepository = new AdminProductsRepository();

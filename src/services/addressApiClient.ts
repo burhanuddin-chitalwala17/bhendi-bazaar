@@ -27,21 +27,6 @@ class AddressService {
         return data.addresses;
     }
 
-    /**
-     * Get a single address by ID
-     */
-    async getAddressById(id: string): Promise<DeliveryAddress> {
-        const response = await fetch(`${this.baseUrl}/${id}`, {
-            credentials: "include",
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || "Failed to fetch address");
-        }
-
-        return response.json();
-    }
 
     /**
      * Add a new address
@@ -111,4 +96,4 @@ class AddressService {
 }
 
 // Export singleton instance
-export const addressService = new AddressService();
+export const addressApiClient = new AddressService();

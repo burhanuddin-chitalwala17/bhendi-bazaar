@@ -18,7 +18,7 @@ import {
   Star,
   RefreshCw,
 } from "lucide-react";
-import { adminReviewService } from "@/services/admin/reviewService";
+import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
 import type { AdminReview, ReviewListFilters } from "@/domain/admin";
 
 export default function AdminReviewsPage() {
@@ -33,7 +33,7 @@ export default function AdminReviewsPage() {
     loading: isLoading,
     error,
     refetch,
-  } = useAsyncData(() => adminReviewService.getReviews(filters), {
+  } = useAsyncData(() => adminReviewApiClient.getReviews(filters), {
     refetchDependencies: [filters],
   });
 
@@ -46,7 +46,7 @@ export default function AdminReviewsPage() {
     }: {
       id: string;
       data: { isApproved?: boolean; isVerified?: boolean };
-    }) => adminReviewService.updateReview(id, data),
+    }) => adminReviewApiClient.updateReview(id, data),
     {
       successMessage: "Review updated successfully!",
       onSuccess: () => refetch(),
@@ -54,7 +54,7 @@ export default function AdminReviewsPage() {
   );
 
   const { mutate: deleteReview, isLoading: isDeleting } = useMutation(
-    adminReviewService.deleteReview,
+    adminReviewApiClient.deleteReview,
     {
       successMessage: "Review deleted successfully!",
       onSuccess: () => refetch(),

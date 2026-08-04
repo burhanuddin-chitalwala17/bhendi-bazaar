@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { orderService } from "@/services/orderService";
+import { orderApiClient } from "@/services/orderApiClient";
 import { formatCurrency } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "../shared/states/LoadingSpinner";
@@ -19,7 +19,7 @@ export function OrdersClient() {
     loading: isLoading,
     error,
     refetch,
-  } = useAsyncData(() => orderService.getOrders(), {
+  } = useAsyncData(() => orderApiClient.getOrders(), {
     refetchDependencies: [],
   });
 

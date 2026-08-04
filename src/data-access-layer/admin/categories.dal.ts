@@ -19,4 +19,4 @@ class CategoriesDAL {
     });
 }
 
-export const categoriesDAL = new CategoriesDAL();
+export const adminCategoriesDAL = new CategoriesDAL();

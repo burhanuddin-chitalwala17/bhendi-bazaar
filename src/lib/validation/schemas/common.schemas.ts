@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PINCODE_PATTERN, PINCODE_MESSAGE } from "@server/shared/pincode";
 
 // Email validation
 export const emailSchema = z
@@ -65,7 +66,7 @@ export const urlSchema = z
 // Postal code validation (Indian format)
 export const postalCodeSchema = z
   .string()
-  .regex(/^\d{6}$/, 'Invalid postal code (must be 6 digits)');
+  .regex(PINCODE_PATTERN, PINCODE_MESSAGE);
 
 // Address validation
 export const addressSchema = z.object({

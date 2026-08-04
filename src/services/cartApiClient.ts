@@ -1,4 +1,4 @@
-// src/services/cartService.ts
+// src/services/cartApiClient.ts
 
 import type { CartItem } from "@/domain/cart";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
  * Only uses client-side types
  * Communicates with server via HTTP (no direct imports)
  */
-export class CartService {
+export class CartApiClient {
   private baseUrl = "/api/cart";
 
   async syncCart(localItems: CartItem[]): Promise<CartItem[]> {
@@ -29,7 +29,7 @@ export class CartService {
       const data = await response.json();
       return data.items as CartItem[];
     } catch (error) {
-      console.error("[CartService] syncCart failed:", error);
+      console.error("[CartApiClient] syncCart failed:", error);
       toast.error("Failed to sync your cart with the server", {
         description:
           "Your local cart is still safe. We'll retry when you're back online.",
@@ -56,7 +56,7 @@ export class CartService {
         );
       }
     } catch (error) {
-      console.error("[CartService] updateCart failed:", error);
+      console.error("[CartApiClient] updateCart failed:", error);
       const message =
         error instanceof Error ? error.message : "Failed to update cart";
 
@@ -89,7 +89,7 @@ export class CartService {
         throw new Error(`Failed to clear cart: ${response.statusText}`);
       }
     } catch (error) {
-      console.error("[CartService] clearCart failed:", error);
+      console.error("[CartApiClient] clearCart failed:", error);
       toast.error("Failed to clear cart on server", {
         description:
           "Your local cart is cleared. Server sync will happen next time.",
@@ -99,4 +99,4 @@ export class CartService {
   }
 }
 
-export const cartService = new CartService();
+export const cartApiClient = new CartApiClient();

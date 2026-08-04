@@ -1,7 +1,7 @@
 // src/app/api/search/suggestions/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { productService } from "@server/catalog/product.service";
-import { categoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const products = await productService.searchProducts(query, 5);
 
     // Get matching categories
-    const matchingCategories = (await categoriesDAL.getCategories()).categories
+    const matchingCategories = (await adminCategoriesDAL.getCategories()).categories
       .filter(
         (cat) =>
           cat.name.toLowerCase().includes(q) ||

@@ -5,7 +5,7 @@
 
 import { ProductFormInput, ProductDetails } from "./types";
 
-export class ProductsService {
+export class ProductsApiClient {
   private baseUrl = "/api/admin/products";
   /**
    * Create product

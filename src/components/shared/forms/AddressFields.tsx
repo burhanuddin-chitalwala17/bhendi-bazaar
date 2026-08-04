@@ -3,6 +3,7 @@
 import { FormInput, FormTextarea } from "./FormField";
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { DeliveryAddress } from "@/domain/profile";
+import { PINCODE_PATTERN, PINCODE_MESSAGE } from "@server/shared/pincode";
 
 interface AddressFieldsProps {
   register: UseFormRegister<DeliveryAddress>;
@@ -122,7 +123,10 @@ export function AddressFields({
         <FormInput
           label="PIN Code"
           required
-          {...register("pincode", { required: true })}
+          {...register("pincode", {
+            required: true,
+            pattern: { value: PINCODE_PATTERN, message: PINCODE_MESSAGE },
+          })}
           error={getError("pincode")}
         />
       </div>

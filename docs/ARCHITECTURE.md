@@ -13,7 +13,7 @@ Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (P
             ├── (main)  storefront   ~12 pages     ──▶ Upstash Redis   (rate limits)
             ├── (admin) console      ~14 pages     ──▶ Vercel Blob     (images)
             ├── (auth)  sign-in flow  ~4 pages     ──▶ Razorpay        (payments)
-            └── api/                 ~60 handlers  ──▶ Shiprocket      (shipping rates)
+            └── api/                  46 handlers  ──▶ Shiprocket      (shipping rates)
                                                    ──▶ Resend          (email)
 ```
 
@@ -35,7 +35,7 @@ Two entry paths into data, by rendering mode: server components read through `sr
 
 Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `notifications`, `analytics`, plus `shared` for what genuinely spans them. Each owns its aggregate's repository ([ADR-0003](adr/0003-one-repository-per-aggregate.md)). External systems sit behind an interface in `<domain>/providers/<name>/`. Admin-facing reads are `admin.*` files inside the owning domain — there is no separate admin tree.
 
-`server/` is imported through the `@server/*` alias; deep relative paths are not used. Four type-only imports still run inward from `server/` to `src/domain/` — the residue of DTOs declared on both sides, tracked in [CONTRACTS.md](CONTRACTS.md). Six route handlers use Prisma directly rather than going through a domain.
+`server/` is imported through the `@server/*` alias; deep relative paths are not used. Four type-only imports still run inward from `server/` to `src/domain/` — the residue of DTOs declared on both sides, tracked in [CONTRACTS.md](CONTRACTS.md). Five route handlers use Prisma directly rather than going through a domain.
 
 ## Cross-cutting
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { postalCodeSchema } from "./common.schemas";
 
 /**
  * Validation schema for adding a new address
@@ -32,9 +33,7 @@ export const addAddressSchema = z.object({
     .string()
     .min(2, "State must be at least 2 characters")
     .max(100, "State must be less than 100 characters"),
-  pincode: z
-    .string()
-    .regex(/^\d{6}$/, "Pincode must be exactly 6 digits"),
+  pincode: postalCodeSchema,
   country: z
     .string()
     .min(2, "Country must be at least 2 characters")

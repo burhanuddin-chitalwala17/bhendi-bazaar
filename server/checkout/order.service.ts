@@ -18,6 +18,7 @@ import type {
   ServerOrderWithShipments,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
+import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 
 export class OrderService {
   /**
@@ -458,9 +459,8 @@ export class OrderService {
     }
 
     // Validate postal code
-    const postalCodeRegex = /^\d{6}$/;
-    if (!postalCodeRegex.test(pincode)) {
-      throw new Error("Postal code must be 6 digits");
+    if (!isValidPincode(pincode)) {
+      throw new Error(PINCODE_MESSAGE);
     }
   }
 
@@ -518,9 +518,8 @@ export class OrderService {
     }
 
     // Validate postal code (basic validation)
-    const postalCodeRegex = /^\d{6}$/;
-    if (!postalCodeRegex.test(pincode)) {
-      throw new Error("Postal code must be 6 digits");
+    if (!isValidPincode(pincode)) {
+      throw new Error(PINCODE_MESSAGE);
     }
   }
 }

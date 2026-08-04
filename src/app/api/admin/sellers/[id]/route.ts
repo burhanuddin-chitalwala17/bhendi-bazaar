@@ -6,40 +6,6 @@ import { authOptions } from "@/lib/auth-config";
 import { adminSellerService } from "@server/catalog/seller.service";
 import { updateSellerSchema } from "@/lib/validation/schemas/seller.schema";
 
-/**
- * GET /api/admin/sellers/[id]
- */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // ⭐ params is Promise
-) {
-  try {
-    // ⭐ Await params first
-    const { id } = await params;
-    
-    // Auth check
-    const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get seller
-    const seller = await adminSellerService.getSeller(id);
-
-    return NextResponse.json(seller);
-  } catch (error: any) {
-    console.error("GET /api/admin/sellers/[id] error:", error);
-
-    if (error.message === "Seller not found") {
-      return NextResponse.json({ error: "Seller not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch seller" },
-      { status: 500 }
-    );
-  }
-}
 
 /**
  * PUT /api/admin/sellers/[id]

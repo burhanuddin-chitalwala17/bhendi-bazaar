@@ -15,38 +15,6 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { id } = await params;
-  const session = await getServerSession(authOptions);
-
-  // Get userId if authenticated
-  const userId = session?.user ? (session.user as any).id : undefined;
-
-  try {
-    const order = await orderService.getOrderById(id, userId);
-
-    if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(order);
-  } catch (error) {
-    console.error("Failed to fetch order:", error);
-
-    // Handle authorization errors
-    if (error instanceof Error && error.message.includes("Unauthorized")) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
-    }
-
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch order",
-      },
-      { status: 500 }
-    );
-  }
-}
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;

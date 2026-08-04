@@ -39,19 +39,6 @@ class AdminReviewService {
     return response.json();
   }
 
-  /**
-   * Get single review by ID
-   */
-  async getReviewById(id: string): Promise<AdminReview> {
-    const response = await fetch(`/api/admin/reviews/${id}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch review");
-    }
-
-    return response.json();
-  }
 
   /**
    * Update review (approve/unapprove)
@@ -89,5 +76,5 @@ class AdminReviewService {
   }
 }
 
-export const adminReviewService = new AdminReviewService();
+export const adminReviewApiClient = new AdminReviewService();
 

@@ -3,10 +3,10 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ProductsView } from "@/admin/products/ProductsView";
-import { productsDAL } from "@/data-access-layer/admin/products.dal";
+import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 
 async function getProduct(id: string) {
-  const product = await productsDAL.getProductById(id);
+  const product = await adminProductsDAL.getProductById(id);
 
   if (!product) {
     notFound();
