@@ -36,7 +36,7 @@ Harness configuration lives in `vitest.config.ts`. Note it aliases `@` → `./sr
 
 ## Layout
 
-Mirror the source path: `server/services/orderService.ts` → `tests/services/orderService.test.ts`.
+Mirror the source path: `server/checkout/order.service.ts` → `tests/services/orderService.test.ts`.
 
 ```
 tests/

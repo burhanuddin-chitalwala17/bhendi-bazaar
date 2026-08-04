@@ -118,7 +118,7 @@ export function NavbarSearch() {
                   onClick={handleSearchSubmit}
                   className="w-full px-3 py-2 text-sm text-primary hover:bg-muted rounded-lg text-left"
                 >
-                  See all results for "{search}"
+                  See all results for &quot;{search}&quot;
                 </button>
               </div>
             </>

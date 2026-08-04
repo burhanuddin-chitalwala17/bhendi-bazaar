@@ -50,9 +50,9 @@ Connected through the admin console at `/admin/shipping/providers`, encrypted wi
 
 ## Current state of quoting vs booking
 
-**Quoting is real; booking is not.** Rate quotes come from the Shiprocket provider through the orchestrator. Shipment booking is called from `server/checkout/order.service.ts` and routed to `server/services/shipping/mockShippingIntegration.ts`, which returns generated tracking data rather than contacting a carrier.
+**Quoting is real; booking is not.** Rate quotes come from the Shiprocket provider through the orchestrator. Shipment booking is called from `server/checkout/order.service.ts` and routed to `providers/_placeholder/mock.booking.ts`, which returns a generated AWB and a placeholder tracking URL rather than contacting a carrier.
 
-That file is **deliberately the one thing left outside every domain**. Moving it into `server/shipping/` would place a mock inside the tree whose rules forbid one; deleting it is a behaviour change belonging to the spec below. Its being conspicuously homeless is the point.
+It sits under `providers/` because that is where an implementation of the carrier boundary belongs, and it is prefixed `_placeholder` because it is not one. That naming is the safeguard: it cannot be mistaken for a real provider at a call site or in a directory listing. [shipping-fulfilment](../../docs/specs/shipping-fulfilment/) deletes it.
 
 Unifying them is [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), which is gated on a product decision and on [product-weight-and-rates](../../docs/specs/product-weight-and-rates/).
 

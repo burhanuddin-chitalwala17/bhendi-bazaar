@@ -8,7 +8,7 @@
 
   A sibling project reached the same conclusion independently and encoded it as a rule (`ums-soul` ADR-05: *"no code — at most a few references to existing code to justify a decision, never the code we intend to write"*). This ADR adopts it.
 - **Decision:**
-  1. **No pasted implementation code in docs.** Reference the code instead — a path plus a symbol name (`server/services/orderService.ts`, `createOrderWithShipments`), falling back to a line number only when no symbol locates the target. A reference is checkable and navigable, and degrades visibly rather than silently.
+  1. **No pasted implementation code in docs.** Reference the code instead — a path plus a symbol name (`server/checkout/order.service.ts`, `createOrderWithShipments`), falling back to a line number only when no symbol locates the target. A reference is checkable and navigable, and degrades visibly rather than silently.
   2. **Narrow exceptions**, where the text *is* the artifact and is not a copy of application source: shell commands in `OPERATIONS.md`, env-var names, wire-format JSON in `CONTRACTS.md`, and diagrams. A schema or DTO shape in `CONTRACTS.md` is the contract, not a copy of it.
   3. **Docs state what exists.** Planned work belongs in `BACKLOG.md` or a spec, never in `ARCHITECTURE.md` or a README. An index links only to files that exist.
   4. **Every doc carries `Verified: YYYY-MM-DD`** in its header — the date its claims were last checked against the code. Stale is tolerable; *silently* stale is what happened here.

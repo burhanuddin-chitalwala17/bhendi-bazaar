@@ -23,12 +23,12 @@ This file records the shapes that cross that boundary and is where a breaking ch
 ## Current shapes
 
 ### Cart
-Two `CartItem` declarations exist: `src/domain/cart.ts` (carrying `weight`, `shippingFromPincode`, and a nested `seller` block) and `server/domain/cart.ts` (without them). `CartTotals` likewise differs — `shipping` is present only on the client shape. The boundary is bridged by casts in `src/app/api/cart/route.ts` and `server/services/cartService.ts`, so the round trip is not type-checked in practice, and the seller and weight fields are constructed at the boundary rather than carried from `Product`.
+Two `CartItem` declarations exist: `src/domain/cart.ts` (carrying `weight`, `shippingFromPincode`, and a nested `seller` block) and `server/cart/cart.types.ts` (without them). `CartTotals` likewise differs — `shipping` is present only on the client shape. The boundary is bridged by casts in `src/app/api/cart/route.ts` and `server/cart/cart.service.ts`, so the round trip is not type-checked in practice, and the seller and weight fields are constructed at the boundary rather than carried from `Product`.
 
 Consolidating to one declaration is a precondition for [product-weight-and-rates](specs/product-weight-and-rates/), which needs `weight` to travel from the catalogue to the rate quote.
 
 ### Orders
-`Shipment` is declared in three places across `src/domain/order.ts` and `server/domain/order.ts`. Timestamp fields (`estimatedDelivery`, `createdAt`, `updatedAt`) are typed `Date` on the client side and `string` on the server side; JSON delivers strings, so Rule 3 is not currently met.
+`Shipment` is declared in three places across `src/domain/order.ts` and `server/checkout/order.types.ts`. Timestamp fields (`estimatedDelivery`, `createdAt`, `updatedAt`) are typed `Date` on the client side and `string` on the server side; JSON delivers strings, so Rule 3 is not currently met.
 
 `paymentStatus` is accepted inbound on both create and update. [payment-confirmation](specs/payment-confirmation/) removes it.
 

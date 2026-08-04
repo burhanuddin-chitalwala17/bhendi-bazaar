@@ -18,7 +18,7 @@ The sequencing matters: prices must be loaded in the same transaction that write
 - **D2** — Client-supplied `price`, `salePrice`, `subtotal`, and `total` are **removed from the request schemas** rather than accepted-and-ignored. A field that is present but ignored will eventually be read by someone; removing it makes the mistake unavailable. This is a contract change ([CONTRACTS.md](../../CONTRACTS.md)).
 - **D3** — The existing schema `.refine()` that checks internal total consistency is deleted, not tightened. Once the server computes the totals there is nothing for it to check, and leaving it implies client numbers still matter.
 - **D4** — The client still sends the total it displayed, in a distinctly named field (e.g. `displayedTotal`), used **only** for the R5 mismatch comparison and never persisted. This is what makes "prices changed" detectable rather than silent.
-- **D5** — `POST /api/payments/create-order` takes an order id and no amount. It loads the order and derives the gateway amount from it. `server/services/paymentService.ts` currently range-checks a client amount; that check is replaced, not supplemented.
+- **D5** — `POST /api/payments/create-order` takes an order id and no amount. It loads the order and derives the gateway amount from it. `server/payments/payment.service.ts` currently range-checks a client amount; that check is replaced, not supplemented.
 - **D6** — Sale-price selection (whether `salePrice` applies) is a server decision made during recomputation, so the rule lives in one place.
 
 ## Packages

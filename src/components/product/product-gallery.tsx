@@ -73,13 +73,23 @@ export function ProductGallery(product: Product) {
     setTouchEnd(0);
   };
 
+  // Changing image resets zoom. Done here, as part of the interaction that
+  // caused it, rather than in an effect reacting to activeIndex afterwards.
+  // Takes an updater so callers keep the functional form — the keyboard effect
+  // below has an empty dep array and would otherwise capture a stale index.
+  const goToIndex = (compute: (prev: number) => number) => {
+    setActiveIndex(compute);
+    setScale(1);
+    setIsZoomed(false);
+  };
+
   const handleNext = () => {
-    setActiveIndex((prev) => (prev + 1) % images.length);
+    goToIndex((prev) => (prev + 1) % images.length);
     setScale(1);
   };
 
   const handlePrevious = () => {
-    setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
+    goToIndex((prev) => (prev - 1 + images.length) % images.length);
     setScale(1);
   };
 
@@ -113,12 +123,6 @@ export function ProductGallery(product: Product) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
-
-  // Reset zoom when changing images
-  useEffect(() => {
-    setScale(1);
-    setIsZoomed(false);
-  }, [activeIndex]);
 
   return (
     <div className="space-y-3">
@@ -227,7 +231,7 @@ export function ProductGallery(product: Product) {
             <button
               key={index}
               type="button"
-              onClick={() => setActiveIndex(index)}
+              onClick={() => goToIndex(() => index)}
               className={`relative flex-shrink-0 w-16 aspect-[3/4] sm:w-20 rounded-lg border-2 transition-all overflow-hidden ${
                 activeIndex === index
                   ? "border-emerald-500 ring-2 ring-emerald-500/30 scale-105"

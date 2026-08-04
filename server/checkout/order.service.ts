@@ -10,7 +10,7 @@
 import { orderRepository } from "@server/checkout/order.repository";
 import { prisma } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
-import { createShipmentWithProvider } from "@server/services/shipping/mockShippingIntegration";
+import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
 import type {
   CreateOrderInput,
   UpdateOrderInput,

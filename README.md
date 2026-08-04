@@ -187,7 +187,7 @@ SHIPROCKET_EMAIL="your-shiprocket-email"
 SHIPROCKET_PASSWORD="your-shiprocket-password"
 ```
 
-> 💡 See [ENVIRONMENT_SETUP.md](./docs/ENVIRONMENT_SETUP.md) for detailed instructions on obtaining these credentials.
+> 💡 See [OPERATIONS.md](./docs/OPERATIONS.md) for detailed instructions on obtaining these credentials.
 
 4. **Set up the database**
 
@@ -378,7 +378,7 @@ The shopping cart is built with a robust state management system that works seam
 3. On login: Local cart merges with server cart
 4. On cart change: Debounced sync to server (1s delay)
 
-See [Cart Documentation](./docs/features/cart/README.md) for more details.
+See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) and [CONTRACTS.md](./docs/CONTRACTS.md) for more details.
 
 ### 💳 Secure Payment Processing
 
@@ -401,7 +401,7 @@ Integrated with Razorpay for secure payment processing with support for multiple
 6. Order status updated to `paid`
 7. Webhook confirmation (backup)
 
-See [Payment Documentation](./docs/features/payment/README.md) for more details.
+See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) and [INTEGRATIONS.md](./docs/INTEGRATIONS.md) for more details.
 
 ### 📦 Multi-Origin Shipping
 
@@ -425,7 +425,7 @@ Support for products from different warehouse locations with intelligent shippin
 6. Tracking numbers added via admin panel
 7. Webhook updates shipment status
 
-See [Shipping Documentation](./server/shipping/README.md) for more details.
+See [Shipping Documentation](./docs/_archive/server-shipping-README.md) for more details.
 
 ### 👨‍💼 Comprehensive Admin Panel
 

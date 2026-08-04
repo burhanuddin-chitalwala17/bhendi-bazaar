@@ -17,6 +17,12 @@ export function EmailVerificationBanner() {
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 
+  // Reads dismissal state from sessionStorage — an external system, which is
+  // what effects are for. The rule cannot distinguish that from deriving state
+  // from props, so it is suppressed here with cause rather than worked around.
+  // A lazy useState initialiser would read sessionStorage during SSR and
+  // hydrate mismatched.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     // Clear dismissal if verification status becomes false
     // (e.g., when user updates their email)
@@ -28,6 +34,7 @@ export function EmailVerificationBanner() {
     if (status === "authenticated" && !isEmailVerified) {
       const dismissed = sessionStorage.getItem("email-verification-banner-dismissed");
       if (!dismissed) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- reflects sessionStorage, an external system
         setIsVisible(true);
       }
     } else {
@@ -35,13 +42,16 @@ export function EmailVerificationBanner() {
     }
   }, [isEmailVerified, status]);
 
-  // Check for verification success/error in URL
+  // Reacts to the URL and rewrites it via history.replaceState — external
+  // system, side-effecting, and correctly an effect. Suppressed with cause.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const verification = params.get("verification");
     
     if (verification === "success") {
       refetch(); // Refresh profile to get updated verification status
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the URL, which we also rewrite below
       setIsVisible(false);
       sessionStorage.removeItem("email-verification-banner-dismissed");
       setResendMessage("Email verified successfully!");

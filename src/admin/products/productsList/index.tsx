@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProductsFilters } from "./components/ProductsFilters";
 import { ProductsTable } from "./components/ProductsTable";
@@ -29,11 +29,15 @@ export function ProductsContainer({
   const [data, setData] = useState(initialData);
   const [stats, setStats] = useState(initialStats);
   
-  // ✅ NEW: Sync state when server data changes
-  useEffect(() => {
+  // Adopt new server data when it arrives. Compared during render rather than
+  // in an effect: React discards this render and re-runs immediately without
+  // committing the stale value, so there is no cascading re-render.
+  const [syncedFrom, setSyncedFrom] = useState(initialData);
+  if (initialData !== syncedFrom) {
+    setSyncedFrom(initialData);
     setData(initialData);
     setStats(initialStats);
-  }, [initialData, initialStats]);
+  }
   
   // ✅ Hook for mutations
   const { deleteProduct } = useProducts({

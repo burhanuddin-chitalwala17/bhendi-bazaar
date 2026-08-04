@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,14 +33,18 @@ export function ConnectProviderModal({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Reset form when modal closes
-  useEffect(() => {
+  // Clear the form when the modal closes. Detected during render rather than in
+  // an effect, and driven by the `open` prop rather than by onClose, so it still
+  // happens if the parent closes the modal without calling the handler.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
     if (!open) {
       setEmail("");
       setPassword("");
       setError(null);
     }
-  }, [open]);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

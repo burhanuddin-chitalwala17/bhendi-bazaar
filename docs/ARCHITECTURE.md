@@ -54,7 +54,7 @@ PostgreSQL via Prisma 7 with the `pg` driver adapter. 17 migrations; **`prisma/s
 
 The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defines the provider contract, `server/shipping/providers/shiprocket/` implements it, and `server/shipping/services/orchestrator.service.ts` coordinates rate quoting. Provider credentials are stored encrypted and connected through the admin console.
 
-**Rate quoting and shipment booking use different implementations.** Quotes come from the Shiprocket provider; booking goes through `server/services/shipping/mockShippingIntegration.ts`, which returns a generated AWB and a placeholder tracking URL. That file is the one module left outside every domain — deliberately, since moving it into `shipping` would put a mock inside a tree whose rules forbid one, and deleting it is a behaviour change. Unifying them is [shipping-fulfilment](specs/shipping-fulfilment/).
+**Rate quoting and shipment booking use different implementations.** Quotes come from the Shiprocket provider; booking goes through `server/shipping/providers/_placeholder/mock.booking.ts`, which returns a generated AWB and a placeholder tracking URL. The `_placeholder` prefix is deliberate — it marks the module as not a carrier implementation, so it cannot be mistaken for one. Unifying them is [shipping-fulfilment](specs/shipping-fulfilment/).
 
 ## Testing
 
@@ -62,4 +62,4 @@ No suite exists — `tests/` is empty. Strategy and targets are in [TESTING.md](
 
 ## Intentionally absent
 
-No caching layer (no `unstable_cache`, no Redis response cache). No background job runner — retries are in-process via `server/utils/retry.ts`. No search index; product search is a `contains` match, which no btree index can serve. No structured logging or error tracking. No feature flags. No multi-currency, no i18n.
+No caching layer (no `unstable_cache`, no Redis response cache). No background job runner — retries are in-process via `server/shared/retry.ts`. No search index; product search is a `contains` match, which no btree index can serve. No structured logging or error tracking. No feature flags. No multi-currency, no i18n.

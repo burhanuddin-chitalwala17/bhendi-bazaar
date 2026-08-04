@@ -21,7 +21,7 @@ Two triggers rather than one because they fail differently. The browser return i
 - **D5** — An unmatched webhook logs at error level and returns a non-2xx status so the gateway retries and its dashboard records the failure (R5). Returning 200 on an unrecognised payload is forbidden — a silently-swallowed webhook is what made this class of problem invisible before.
 - **D6** — The `notes` round-trip between order creation and webhook handling is asserted by a test, since it is a string-keyed contract with an external service that the compiler cannot check. See [INTEGRATIONS.md](../../INTEGRATIONS.md).
 - **D7** — R6 is a scheduled reconciliation sweep over orders `pending` past a threshold, querying the gateway for their true state. Deliberately *not* the primary path (latency, rate limits) but the only real backstop for a missed webhook.
-- **D8** — Signature comparison uses `crypto.timingSafeEqual`. `server/repositories/razorpayRepository.ts` currently compares with `===`.
+- **D8** — Signature comparison uses `crypto.timingSafeEqual`. `server/payments/providers/razorpay/razorpay.repository.ts` currently compares with `===`.
 
 ## Packages
 None. R6's sweep can start as a Vercel Cron invocation of an existing route; no job runner is introduced.

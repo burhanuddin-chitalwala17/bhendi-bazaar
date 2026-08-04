@@ -90,7 +90,7 @@ export function ProductSellerShippingFields({
           {!watch("shippingFromPincode") && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
               <p className="text-sm text-amber-800">
-                <strong>Note:</strong> Only fill these fields if this product ships from a different location than the seller's default address.
+                <strong>Note:</strong> Only fill these fields if this product ships from a different location than the seller&apos;s default address.
               </p>
             </div>
           )}
