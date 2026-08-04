@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminReviewService } from "../../../../../server/services/admin/reviewService";
-import type { ReviewListFilters } from "../../../../../server/domain/admin/review";
+import { adminReviewService } from "@server/catalog/review.service";
+import type { ReviewListFilters } from "@server/catalog/review.types";
 
 export async function GET(request: NextRequest) {
   const session = await verifyAdminSession();

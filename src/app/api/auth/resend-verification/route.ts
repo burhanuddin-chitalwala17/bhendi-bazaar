@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { emailService } from "../../../../../server/services/emailService";
+import { emailService } from "@server/notifications/email.service";
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);

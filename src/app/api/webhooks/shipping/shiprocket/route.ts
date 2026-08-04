@@ -6,8 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { shippingOrchestrator } from "../../../../../../server/shipping";
-import { prisma } from "@/lib/prisma";
+import { shippingOrchestrator } from "@server/shipping";
+import { prisma } from "@server/shared/prisma";
 
 export async function POST(request: NextRequest) {
   try {

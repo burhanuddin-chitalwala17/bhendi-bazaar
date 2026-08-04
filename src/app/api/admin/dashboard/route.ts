@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminDashboardService } from "../../../../../server/services/admin/dashboardService";
+import { adminDashboardService } from "@server/analytics/dashboard.service";
 
 export async function GET() {
   const session = await verifyAdminSession();

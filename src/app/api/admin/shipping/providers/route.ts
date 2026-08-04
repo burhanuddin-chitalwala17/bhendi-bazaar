@@ -7,7 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminShippingService } from "../../../../../../server/services/admin/shipping/admin.shippingService";
+import { adminShippingService } from "@server/shipping/services/admin.shipping.service";
 
 export async function GET() {
   try {

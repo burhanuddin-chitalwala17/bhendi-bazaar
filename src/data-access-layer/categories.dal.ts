@@ -1,7 +1,7 @@
 // create a category dal to get categories and category by slug
 
 import { cache } from "react";
-import { categoryRepository } from "@server/repositories/categoryRepository";
+import { categoryRepository } from "@server/catalog/category.repository";
 import { Category } from "@/domain/category";
 
 class CategoriesDAL {

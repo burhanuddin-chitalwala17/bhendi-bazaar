@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { orderService } from "../../../../server/services/orderService";
+import { orderService } from "@server/checkout/order.service";
 import {
   orderRateLimit,
   getClientIp,

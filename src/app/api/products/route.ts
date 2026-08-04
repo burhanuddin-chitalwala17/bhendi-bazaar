@@ -5,8 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { productService } from "../../../../server/services/productService";
-import type { ProductFilter } from "../../../../server/domain/product";
+import { productService } from "@server/catalog/product.service";
+import type { ProductFilter } from "@server/catalog/product.types";
 
 export async function GET(request: NextRequest) {
   try {

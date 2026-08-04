@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-04
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
 
@@ -21,18 +21,21 @@ Deployed on Vercel; every route is server-rendered on demand. There is no static
 
 ## Layers
 
+`src/` is organised by **layer** — it is a Next.js app, and the framework dictates that shape. `server/` is organised by **domain**, one directory per bounded context owning its own service, repository, and types ([ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md)).
+
 | Layer | Lives in | Responsibility |
 |---|---|---|
 | Pages / components | `src/app/**`, `src/components/**`, `src/containers/**` | Rendering, user interaction |
 | Client services | `src/services/**` | `fetch()` wrappers over own API routes |
 | Server data access | `src/data-access-layer/**` | Server-component reads, called directly from pages |
 | Route handlers | `src/app/api/**` | HTTP boundary: parse, authorize, delegate |
-| Domain services | `server/services/**`, `server/shipping/**` | Business logic, transactions |
-| Repositories | `server/repositories/**` | Prisma access ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) |
+| **Domains** | `server/<domain>/` | Business logic, transactions, and Prisma access for their own aggregates |
 
 Two entry paths into data, by rendering mode: server components read through `src/data-access-layer/`, while client components call `src/services/`, which call route handlers. Both converge on the same domain services.
 
-Repository modules currently exist in three trees — `server/repositories/`, `server/repositories/admin/`, and `server/admin/repository/` — with some aggregates reachable through more than one. Consolidation to one module per aggregate is [ADR-0003](adr/0003-one-repository-per-aggregate.md). Six route handlers use Prisma directly rather than going through a service. `server/` takes its Prisma client and some domain types from `src/`, so the dependency direction runs both ways.
+Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `notifications`, `analytics`, plus `shared` for what genuinely spans them. Each owns its aggregate's repository ([ADR-0003](adr/0003-one-repository-per-aggregate.md)). External systems sit behind an interface in `<domain>/providers/<name>/`. Admin-facing reads are `admin.*` files inside the owning domain — there is no separate admin tree.
+
+`server/` is imported through the `@server/*` alias; deep relative paths are not used. Four type-only imports still run inward from `server/` to `src/domain/` — the residue of DTOs declared on both sides, tracked in [CONTRACTS.md](CONTRACTS.md). Six route handlers use Prisma directly rather than going through a domain.
 
 ## Cross-cutting
 
@@ -51,7 +54,7 @@ PostgreSQL via Prisma 7 with the `pg` driver adapter. 17 migrations; **`prisma/s
 
 The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defines the provider contract, `server/shipping/providers/shiprocket/` implements it, and `server/shipping/services/orchestrator.service.ts` coordinates rate quoting. Provider credentials are stored encrypted and connected through the admin console.
 
-**Rate quoting and shipment booking use different implementations.** Quotes come from the Shiprocket provider; booking goes through `server/services/shipping/mockShippingIntegration.ts`, which returns a generated AWB and a placeholder tracking URL. Unifying them is [shipping-fulfilment](specs/shipping-fulfilment/).
+**Rate quoting and shipment booking use different implementations.** Quotes come from the Shiprocket provider; booking goes through `server/services/shipping/mockShippingIntegration.ts`, which returns a generated AWB and a placeholder tracking URL. That file is the one module left outside every domain — deliberately, since moving it into `shipping` would put a mock inside a tree whose rules forbid one, and deleting it is a behaviour change. Unifying them is [shipping-fulfilment](specs/shipping-fulfilment/).
 
 ## Testing
 

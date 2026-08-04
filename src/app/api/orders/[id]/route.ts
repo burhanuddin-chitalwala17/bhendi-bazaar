@@ -8,8 +8,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { orderService } from "../../../../../server/services/orderService";
-import type { UpdateOrderInput } from "../../../../../server/domain/order";
+import { orderService } from "@server/checkout/order.service";
+import type { UpdateOrderInput } from "@server/checkout/order.types";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

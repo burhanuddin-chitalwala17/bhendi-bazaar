@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { productsService } from "@server/admin/services/products.service";
+import { productsService } from "@server/catalog/admin.product.service";
 import type {
   ProductFilters,
   ProductFormInput,

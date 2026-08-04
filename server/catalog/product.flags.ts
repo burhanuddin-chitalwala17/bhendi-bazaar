@@ -1,0 +1,7 @@
+export enum ProductFlag {
+  FEATURED = "FEATURED",
+  HERO = "HERO",
+  ON_OFFER = "ON_OFFER",
+  NEW_ARRIVAL = "NEW_ARRIVAL",
+  CLEARANCE_SALE = "CLEARANCE_SALE",
+}

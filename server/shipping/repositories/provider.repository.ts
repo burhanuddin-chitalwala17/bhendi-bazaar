@@ -5,7 +5,7 @@
  * Manages provider configuration, enablement, and queries.
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@server/shared/prisma";
 import type { ShippingProvider, Prisma } from "@prisma/client";
 import { encryptionService } from "../utils/encryption";
 export class ShippingProviderRepository {

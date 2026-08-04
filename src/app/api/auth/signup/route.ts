@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@server/shared/prisma";
 import { hash } from "bcryptjs";
 import {
   authRateLimit,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/rate-limit";
 import { validateRequest } from "@/lib/validation/utils";
 import { signupSchema } from "@/lib/validation/schemas/auth.schemas";
-import { emailService } from "../../../../../server/services/emailService";
+import { emailService } from "@server/notifications/email.service";
 
 export async function POST(request: NextRequest) {
   // Rate limit check

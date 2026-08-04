@@ -1,6 +1,6 @@
 // src/app/api/auth/verify-email/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { emailService } from "../../../../../server/services/emailService";
+import { emailService } from "@server/notifications/email.service";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;

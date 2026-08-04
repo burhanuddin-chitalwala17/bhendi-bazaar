@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { adminSellerService } from "../../../../../server/services/admin/seller.service";
+import { adminSellerService } from "@server/catalog/seller.service";
 import { createSellerSchema } from "@/lib/validation/schemas/seller.schema";
 export async function GET(request: NextRequest) {
   try {

@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@server/shared/prisma";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin-auth";
 const updateTrackingSchema = z.object({

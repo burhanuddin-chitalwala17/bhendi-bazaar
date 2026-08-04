@@ -1,6 +1,6 @@
 // src/app/api/search/suggestions/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { productService } from "../../../../../server/services/productService";
+import { productService } from "@server/catalog/product.service";
 import { categoriesDAL } from "@/data-access-layer/admin/categories.dal";
 
 export async function GET(request: NextRequest) {

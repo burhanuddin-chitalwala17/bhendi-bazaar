@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { orderService } from "../../../../../server/services/orderService";
+import { orderService } from "@server/checkout/order.service";
 import {
   apiRateLimit,
   getClientIp,

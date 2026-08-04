@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { addressService } from "@server/services/adress.service";
+import { addressService } from "@server/identity/address.service";
 import { validateRequest } from "@/lib/validation";
 import { addAddressSchema } from "@/lib/validation/schemas/address.schema";
 

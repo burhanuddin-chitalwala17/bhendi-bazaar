@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { paymentService } from "../../../../../server/services/paymentService";
-import { orderService } from "../../../../../server/services/orderService";
+import { paymentService } from "@server/payments/payment.service";
+import { orderService } from "@server/checkout/order.service";
 
 export async function POST(req: NextRequest) {
   try {

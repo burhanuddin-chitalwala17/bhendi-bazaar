@@ -5,8 +5,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminCartService } from "../../../../../server/services/admin/cartService";
-import type { AbandonedCartFilters } from "../../../../../server/domain/admin/cart";
+import { adminCartService } from "@server/cart/admin.cart.service";
+import type { AbandonedCartFilters } from "@server/cart/admin.cart.types";
 
 export async function GET(request: NextRequest) {
   const session = await verifyAdminSession();

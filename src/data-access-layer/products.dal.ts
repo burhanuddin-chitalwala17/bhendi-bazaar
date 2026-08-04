@@ -2,7 +2,7 @@
 
 // fetch product direct from the database using repository pattern
 
-import { productsRepository } from "@server/repositories/products.repository";
+import { productsRepository } from "@server/catalog/product.repository";
 import { Product, ProductFilter } from "@/domain/product";
 
 const mapProduct = (product: any): Product => {

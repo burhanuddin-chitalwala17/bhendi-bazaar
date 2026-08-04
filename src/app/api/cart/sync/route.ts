@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { cartService } from "../../../../../server/services/cartService";
+import { cartService } from "@server/cart/cart.service";
 import type { CartItem } from "@/domain/cart";
 import { updateCartSchema, validateRequest } from "@/lib/validation";
 import { withRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";

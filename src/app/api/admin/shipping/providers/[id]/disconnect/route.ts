@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminConnectionService } from "../../../../../../../../server/services/admin/shipping/connection/service";
+import { adminConnectionService } from "@server/shipping/services/connection.service";
 
 export async function POST(
   request: NextRequest,

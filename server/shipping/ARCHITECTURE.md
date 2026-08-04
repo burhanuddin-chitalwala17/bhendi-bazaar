@@ -34,6 +34,7 @@ Status updates arrive independently, by webhook, and are normalised before they 
 | `utils/statusNormalizer.ts` | Carrier status vocabulary → ours. |
 | `utils/weightCalculator.ts` | Shipment weight from its contents, with a fallback when a weight is absent. |
 | `init.ts` | Registers providers. Imported for side effects via `index.ts`. |
+| `services/admin.shipping.service.ts`, `connection.service.ts`, `provider-auth.ts` | Provider connection and admin-console reads. Moved into this domain from the old layer tree on 2026-08-04 ([ADR-0012](../../docs/adr/0012-modules-are-vertical-slices-by-domain.md)). |
 
 ## Selection strategies
 
@@ -49,7 +50,9 @@ Connected through the admin console at `/admin/shipping/providers`, encrypted wi
 
 ## Current state of quoting vs booking
 
-**Quoting is real; booking is not.** Rate quotes come from the Shiprocket provider through the orchestrator. Shipment booking is called from `server/services/orderService.ts` and routed to `server/services/shipping/mockShippingIntegration.ts` — outside this domain — which returns generated tracking data rather than contacting a carrier.
+**Quoting is real; booking is not.** Rate quotes come from the Shiprocket provider through the orchestrator. Shipment booking is called from `server/checkout/order.service.ts` and routed to `server/services/shipping/mockShippingIntegration.ts`, which returns generated tracking data rather than contacting a carrier.
+
+That file is **deliberately the one thing left outside every domain**. Moving it into `server/shipping/` would place a mock inside the tree whose rules forbid one; deleting it is a behaviour change belonging to the spec below. Its being conspicuously homeless is the point.
 
 Unifying them is [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), which is gated on a product decision and on [product-weight-and-rates](../../docs/specs/product-weight-and-rates/).
 

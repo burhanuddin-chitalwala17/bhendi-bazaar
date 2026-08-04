@@ -7,8 +7,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminUserService } from "../../../../../server/services/admin/userService";
-import type { UserListFilters } from "../../../../../server/domain/admin/user";
+import { adminUserService } from "@server/identity/admin.user.service";
+import type { UserListFilters } from "@server/identity/admin.user.types";
 
 export async function GET(request: NextRequest) {
   const session = await verifyAdminSession();

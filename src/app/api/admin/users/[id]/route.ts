@@ -6,8 +6,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminUserService } from "../../../../../../server/services/admin/userService";
-import type { UpdateUserInput } from "../../../../../../server/domain/admin/user";
+import { adminUserService } from "@server/identity/admin.user.service";
+import type { UpdateUserInput } from "@server/identity/admin.user.types";
 
 export async function GET(
   _request: NextRequest,

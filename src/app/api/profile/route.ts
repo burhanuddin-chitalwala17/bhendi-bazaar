@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth-config";
-import { profileService } from "../../../../server/services/profileService";
+import { profileService } from "@server/identity/profile.service";
 import { validateRequest } from "@/lib/validation";
 import { updateProfileSchema } from "@/lib/validation/schemas/profile.schemas";
 

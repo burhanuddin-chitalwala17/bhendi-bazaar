@@ -1,7 +1,7 @@
 // lib/data-access/products.dal.ts
 
 import { cache } from "react";
-import { productsService } from "@server/admin/services/products.service";
+import { productsService } from "@server/catalog/admin.product.service";
 import type { ProductDetails, ProductFilters, ProductForTable, ProductStats } from "@/admin/products/types";
 import type { Pagination } from "@/types/shared";
 import { ProductFlag } from "@/types/shared";

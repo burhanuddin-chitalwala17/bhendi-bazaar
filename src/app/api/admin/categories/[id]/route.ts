@@ -7,8 +7,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
-import { adminCategoryService } from "../../../../../../server/services/admin/categoryService";
-import type { UpdateCategoryInput } from "../../../../../../server/domain/admin/category";
+import { adminCategoryService } from "@server/catalog/admin.category.service";
+import type { UpdateCategoryInput } from "@server/catalog/admin.category.types";
 
 export async function GET(
   _request: NextRequest,

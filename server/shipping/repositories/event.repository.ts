@@ -5,7 +5,7 @@
  * Used for debugging, analytics, and audit trails.
  */
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@server/shared/prisma";
 import type { ShippingEvent, Prisma } from "@prisma/client";
 
 export class ShippingEventRepository {

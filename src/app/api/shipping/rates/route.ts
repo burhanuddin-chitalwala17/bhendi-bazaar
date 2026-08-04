@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   initializeShippingModule,
   shippingOrchestrator,
-} from "../../../../../server/shipping";
+} from "@server/shipping";
 import { z } from "zod";
 
 // Validation schema

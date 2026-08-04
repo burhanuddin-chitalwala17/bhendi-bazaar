@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@server/shared/prisma";
 import { validateRequest } from "@/lib/validation";
 import { stockCheckSchema } from "@/lib/validation/schemas/cart.schemas";
 

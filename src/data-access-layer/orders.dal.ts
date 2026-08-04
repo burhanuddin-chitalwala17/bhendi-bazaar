@@ -1,6 +1,6 @@
 // src/data-access-layer/orders.dal.ts
 
-import { orderService } from "@server/services/orderService";
+import { orderService } from "@server/checkout/order.service";
 import { Order, Shipment } from "@/domain/order";
 import { OrderAddress } from "@/domain/order";
 

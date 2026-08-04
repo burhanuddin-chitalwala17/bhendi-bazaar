@@ -8,18 +8,18 @@ export type {
   DashboardStats,
   RecentActivity,
   RevenueChart,
-} from "../../server/domain/admin/dashboard";
+} from "@server/analytics/dashboard.types";
 
 export type {
   AdminUser,
   UserListFilters,
   UserListResult,
-} from "../../server/domain/admin/user";
+} from "@server/identity/admin.user.types";
 
 export type {
   OrderListFilters,
   OrderListResult,
-} from "../../server/domain/admin/order";
+} from "@server/checkout/admin.order.types";
 
 export type {
   AdminCategory,
@@ -27,18 +27,18 @@ export type {
   CategoryListResult,
   CreateCategoryInput,
   UpdateCategoryInput,
-} from "../../server/domain/admin/category";
+} from "@server/catalog/admin.category.types";
 
 export type {
   AdminReview,
   ReviewListFilters,
   ReviewListResult,
-} from "../../server/domain/admin/review";
+} from "@server/catalog/review.types";
 
 export type {
   AbandonedCart,
   AbandonedCartFilters,
   AbandonedCartResult,
-} from "../../server/domain/admin/cart";
+} from "@server/cart/admin.cart.types";
 
 

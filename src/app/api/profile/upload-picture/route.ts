@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { put, del } from "@vercel/blob";
 import { authOptions } from "@/lib/auth-config";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@server/shared/prisma";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];

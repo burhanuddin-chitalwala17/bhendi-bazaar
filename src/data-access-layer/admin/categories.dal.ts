@@ -3,7 +3,7 @@
 import { cache } from "react";
 import type { AdminCategory, CategoryListResult } from "@/domain/admin";
 // SERVER-SIDE CATEGORIES SERVICE
-import { adminCategoryRepository } from "@server/repositories/admin/categoryRepository";
+import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
 class CategoriesDAL {
     getCategories = cache(async (): Promise<CategoryListResult> => {
         const { categories, total } = await adminCategoryRepository.getCategories({ limit: 100 });

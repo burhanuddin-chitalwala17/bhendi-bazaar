@@ -28,24 +28,32 @@ docs/
 ├── adr/               ← one immutable file per decision + README index
 └── specs/<feature>/   ← spec.md (product) + trd.md (technical)
 
-server/shipping/CLAUDE.md   ← shipping domain rules  + ARCHITECTURE.md + adr/
-server/services/CLAUDE.md   ← checkout & payments rules (service layer)
+server/<domain>/            ← one directory per bounded context, owning its own layers
+  CLAUDE.md                 ← that domain's rules (+ ARCHITECTURE.md, adr/ where warranted)
+  providers/<name>/          ← an external system, behind an interface
 ```
 Domain files load **lazily** — only when a file in that directory is read — so they cost no context until relevant.
 
 ## Domains
 Bounded contexts. A change that crosses two of these needs a `CONTRACTS.md` check.
 
-| Domain | Lives in | Owns |
+Each is a directory under `server/`, owning its own service, repository, and types ([ADR-0012](docs/adr/0012-modules-are-vertical-slices-by-domain.md)).
+
+| Domain | Directory | Owns |
 |---|---|---|
-| identity | `src/lib/auth*`, `server/services/passwordService.ts`, `profileService`, `address*` | Sign-in, sessions, profile, addresses |
-| catalog | `server/repositories/products*`, `categoryRepository`, `seller*` | Products, categories, sellers, search |
-| cart | `server/services/cartService.ts`, `src/store/cartStore.ts` | Cart state and sync |
-| checkout | `server/services/orderService.ts`, `orderRepository` | Orders and their lifecycle |
-| payments | `server/services/paymentService.ts`, `razorpayRepository` | Razorpay, payment state |
-| shipping | `server/shipping/**` | Providers, rates, shipments |
-| notifications | `server/services/email*` | Transactional email |
-| admin | `src/app/(admin)/**`, `server/admin/**` | Admin console (spans domains) |
+| catalog | `server/catalog/` | Products, categories, sellers, reviews, search |
+| cart | `server/cart/` | Cart persistence and the sign-in merge |
+| checkout | `server/checkout/` | Orders and their lifecycle |
+| payments | `server/payments/` | Gateway conversation and payment state |
+| shipping | `server/shipping/` | Carriers, rates, shipments |
+| identity | `server/identity/` | Profile, addresses, passwords, users |
+| notifications | `server/notifications/` | Transactional email |
+| analytics | `server/analytics/` | Aggregating read-model for the admin dashboard. **Read-only**, and the one documented exception to the no-cross-domain-reads rule |
+| *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry. Only what genuinely spans domains — not a dumping ground |
+
+**There is no `admin` domain.** Admin and storefront read the same tables, so an admin listing is a query on `catalog` or `checkout`, kept as `admin.*` files inside that domain. Admin *pages* are grouped by audience in `src/app/(admin)/`, which is a UI concern.
+
+A domain calls another domain's public surface, never its internals. Cross-domain shapes go in [CONTRACTS.md](docs/CONTRACTS.md).
 
 ---
 
