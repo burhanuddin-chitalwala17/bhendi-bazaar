@@ -10,13 +10,12 @@ import type {
 } from "@/domain/admin";
 
 class AdminDashboardService {
-  private baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   /**
    * Get dashboard statistics
    */
   async getDashboardStats(): Promise<DashboardStats> {
-    const response = await fetch(`${this.baseUrl}/api/admin/dashboard`);
+    const response = await fetch("/api/admin/dashboard");
 
     if (!response.ok) {
       const error = await response.json();
@@ -30,7 +29,7 @@ class AdminDashboardService {
    * Get recent activities
    */
   async getRecentActivities(limit: number = 10): Promise<RecentActivity[]> {
-    const response = await fetch(`${this.baseUrl}/api/admin/dashboard/activities?limit=${limit}`);
+    const response = await fetch(`/api/admin/dashboard/activities?limit=${limit}`);
 
     if (!response.ok) {
       const error = await response.json();
@@ -44,7 +43,7 @@ class AdminDashboardService {
    * Get revenue chart data
    */
   async getRevenueChart(days: number = 30): Promise<RevenueChart[]> {
-    const response = await fetch(`${this.baseUrl}/api/admin/dashboard/revenue?days=${days}`);
+    const response = await fetch(`/api/admin/dashboard/revenue?days=${days}`);
 
     if (!response.ok) {
       const error = await response.json();

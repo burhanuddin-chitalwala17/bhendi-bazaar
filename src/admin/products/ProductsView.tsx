@@ -41,7 +41,7 @@ export function ProductsView({ product, category, seller }: ProductViewProps) {
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          <Link href={`${process.env.NEXT_PUBLIC_APP_URL}/product/${product.slug}`} target="_blank">
+          <Link href={`/product/${product.slug}`} target="_blank">
             <Button variant="outline" className="gap-2">
               <ExternalLink className="w-4 h-4" />
               View Live

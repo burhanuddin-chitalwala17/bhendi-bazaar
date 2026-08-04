@@ -151,6 +151,7 @@ Canonical index of *how we work*. Each line points; detail lives in the ADR so i
 - **No magic strings** — closed sets are enums or `as const` unions, declared **once** (see Invariant 5's reasoning; `ProductFlag` was declared three times and drifted silently).
 - **Dependency direction is inward** — `server/` must not import from `src/`. Shared types belong in a neutral module.
 - **`any` is a defect at a trust boundary.** Route handlers, auth, and payment code are typed or they are wrong.
+- **Never hardcode our own origin.** In the browser use a relative path; where an absolute URL is genuinely needed there, use `window.location.origin`. On the server use `appUrl()` (`server/shared/app-url.ts`). `src/lib/config.ts` is for static brand facts only — an origin is environment-specific or runtime-known, so it is never a constant.
 - **Comments explain why, not what.** Write one only where the reason is not recoverable from the code: a non-obvious constraint, a rejected alternative, an external quirk. **One or two lines.** If it needs a paragraph it belongs in an ADR or a spec — link that from a short comment instead. No file-header essays, no restating the signature, no narrating the next line.
 
 ## Skills

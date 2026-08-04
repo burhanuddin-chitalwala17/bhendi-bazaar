@@ -1,7 +1,6 @@
 export const APP_NAME = "Bhendi Bazaar";
 export const APP_DESCRIPTION = "Bhendi Bazaar – a royal curation of Islamic clothing, boutique wear, and essentials.";
 export const APP_TAGLINE = "Shop from the Caravan.";
-export const APP_URL = "https://bhendibazaar.com";
 export const APP_SUPPORT_EMAIL = "support@bhendibazaar.com";
 export const LOGO = {
     FULL: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
