@@ -1,13 +1,14 @@
 import type { Order } from "@/domain/order";
 import { baseEmailStyles } from "./styles/baseEmailStyles";
 import { formatCurrency, formatDate } from "../formatters";
+import { appUrl } from "@server/shared/app-url";
 
 export function getPurchaseConfirmationEmailTemplate(order: Order): string {
   // Generate order items HTML
   const orderItemsHtml = order.itemsTotal
 
   // Tracking URL
-  const trackingUrl = `${process.env.NEXTAUTH_URL}/order/${order.id}`;
+  const trackingUrl = `${appUrl()}/order/${order.id}`;
 
   return `
     <!DOCTYPE html>

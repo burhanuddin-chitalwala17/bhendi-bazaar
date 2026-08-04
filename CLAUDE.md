@@ -151,6 +151,7 @@ Canonical index of *how we work*. Each line points; detail lives in the ADR so i
 - **No magic strings** — closed sets are enums or `as const` unions, declared **once** (see Invariant 5's reasoning; `ProductFlag` was declared three times and drifted silently).
 - **Dependency direction is inward** — `server/` must not import from `src/`. Shared types belong in a neutral module.
 - **`any` is a defect at a trust boundary.** Route handlers, auth, and payment code are typed or they are wrong.
+- **Comments explain why, not what.** Write one only where the reason is not recoverable from the code: a non-obvious constraint, a rejected alternative, an external quirk. **One or two lines.** If it needs a paragraph it belongs in an ADR or a spec — link that from a short comment instead. No file-header essays, no restating the signature, no narrating the next line.
 
 ## Skills
 

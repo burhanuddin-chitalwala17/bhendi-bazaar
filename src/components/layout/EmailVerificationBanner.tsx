@@ -17,12 +17,7 @@ export function EmailVerificationBanner() {
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 
-  // Reads dismissal state from sessionStorage — an external system, which is
-  // what effects are for. The rule cannot distinguish that from deriving state
-  // from props, so it is suppressed here with cause rather than worked around.
-  // A lazy useState initialiser would read sessionStorage during SSR and
-  // hydrate mismatched.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+  // Syncs with sessionStorage. A lazy useState initialiser would hydrate-mismatch.
   useEffect(() => {
     // Clear dismissal if verification status becomes false
     // (e.g., when user updates their email)
@@ -42,9 +37,7 @@ export function EmailVerificationBanner() {
     }
   }, [isEmailVerified, status]);
 
-  // Reacts to the URL and rewrites it via history.replaceState — external
-  // system, side-effecting, and correctly an effect. Suppressed with cause.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+  // Reacts to the URL and rewrites it via replaceState.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const verification = params.get("verification");

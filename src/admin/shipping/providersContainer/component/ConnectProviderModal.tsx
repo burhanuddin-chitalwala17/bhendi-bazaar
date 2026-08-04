@@ -33,9 +33,8 @@ export function ConnectProviderModal({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Clear the form when the modal closes. Detected during render rather than in
-  // an effect, and driven by the `open` prop rather than by onClose, so it still
-  // happens if the parent closes the modal without calling the handler.
+  // Clear on close, during render. Driven by `open` so it fires even if the
+  // parent closes without calling onClose.
   const [wasOpen, setWasOpen] = useState(open);
   if (wasOpen !== open) {
     setWasOpen(open);

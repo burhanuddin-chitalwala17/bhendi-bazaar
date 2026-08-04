@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import { appUrl } from "@server/shared/app-url";
 import crypto from "crypto";
 import { Resend } from "resend";
 import type { Order } from "@/domain/order";
@@ -75,7 +76,7 @@ class EmailService {
       },
     });
 
-    const verificationUrl = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`;
+    const verificationUrl = `${appUrl()}/api/auth/verify-email?token=${token}`;
 
     await this.sendEmail({
       to: email,
@@ -179,7 +180,7 @@ class EmailService {
     resetToken: string,
     userName: string
   ): Promise<void> {
-    const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${resetToken}`;
+    const resetUrl = `${appUrl()}/reset-password?token=${resetToken}`;
 
     await this.sendEmail({
       to: email,

@@ -29,9 +29,7 @@ export function ProductsContainer({
   const [data, setData] = useState(initialData);
   const [stats, setStats] = useState(initialStats);
   
-  // Adopt new server data when it arrives. Compared during render rather than
-  // in an effect: React discards this render and re-runs immediately without
-  // committing the stale value, so there is no cascading re-render.
+  // Adopt new server data during render, not in an effect — no cascading render.
   const [syncedFrom, setSyncedFrom] = useState(initialData);
   if (initialData !== syncedFrom) {
     setSyncedFrom(initialData);

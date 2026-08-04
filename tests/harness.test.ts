@@ -1,13 +1,5 @@
-/**
- * Harness smoke test.
- *
- * Asserts that the test runner resolves the same path aliases as tsconfig.json.
- * This exists because `@server` was missing from vitest.config.ts while ~167
- * imports depended on it — a mismatch that typechecks fine and fails only at
- * test time, which is the worst place to discover it.
- *
- * If this file fails, no other test can be trusted.
- */
+// Asserts the runner resolves the same aliases as tsconfig.json. If this fails,
+// no other test can be trusted.
 import { describe, expect, it } from "vitest";
 import { ProductFlag } from "@server/catalog/product.flags";
 import type { Pagination } from "@server/shared/pagination";

@@ -73,10 +73,8 @@ export function ProductGallery(product: Product) {
     setTouchEnd(0);
   };
 
-  // Changing image resets zoom. Done here, as part of the interaction that
-  // caused it, rather than in an effect reacting to activeIndex afterwards.
-  // Takes an updater so callers keep the functional form — the keyboard effect
-  // below has an empty dep array and would otherwise capture a stale index.
+  // Resets zoom as part of the interaction, not in an effect. Takes an updater
+  // so the keyboard effect (empty deps) can't capture a stale index.
   const goToIndex = (compute: (prev: number) => number) => {
     setActiveIndex(compute);
     setScale(1);

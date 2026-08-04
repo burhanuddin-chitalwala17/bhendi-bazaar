@@ -36,9 +36,7 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-      # Blocking gates. Do not add `continue-on-error` here — a gate that cannot
-      # fail is worse than no gate, because it manufactures confidence.
-      # See docs/TESTING.md ("CI gates") for the staged adoption path.
+      # Blocking gates — never add `continue-on-error` here (docs/TESTING.md).
       - name: Run type check
         run: npx tsc --noEmit
 

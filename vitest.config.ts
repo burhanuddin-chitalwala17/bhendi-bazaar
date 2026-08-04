@@ -11,7 +11,6 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],
-      // Coverage targets are per-layer, not a global threshold — see docs/TESTING.md.
       include: ['src/**/*.{ts,tsx}', 'server/**/*.ts'],
       exclude: [
         '**/*.test.{ts,tsx}',
@@ -23,10 +22,7 @@ export default defineConfig({
     },
   },
   resolve: {
-    // Must mirror the paths in tsconfig.json, or imports resolve at typecheck
-    // time and fail at test time. `@server` covers ~167 imports since the
-    // domain restructure (docs/adr/0012-...), so omitting it breaks every
-    // test that touches server code.
+    // Must mirror tsconfig.json paths, or imports typecheck but fail at runtime.
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@server': path.resolve(__dirname, './server'),

@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-04
 
 ## Prerequisites
 Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test mode for development).
@@ -32,12 +32,36 @@ npm run dev                 # http://localhost:3000
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
-| `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_ASSETS_URL` | ○ | Public URLs used in emails and asset paths |
+| `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
+| `NEXT_PUBLIC_ASSETS_URL` | ○ | Base URL for blob-hosted assets |
 
 `src/lib/env.ts` holds the required-variable list. Note it does not currently include `ENCRYPTION_KEY` or `RAZORPAY_WEBHOOK_SECRET`, so add those to any check you rely on.
 
 ### ⚠️ The Upstash naming trap
 The rate limiter reads **`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`, and using those names produces **two different failures from the same missing config**: `src/lib/rate-limit.ts` asserts non-null at module load, so `signup` and `forgot-password` throw at import (fail closed), while `src/middleware.ts` catches the absence and disables limiting with only a logged warning (fail open). Use the names in the table.
+
+### Two origin variables, two jobs
+`NEXTAUTH_URL` is **NextAuth's own** configuration — it builds OAuth callback URLs and nothing else should read it. `NEXT_PUBLIC_APP_URL` is the app's public origin, used for links that leave the server. They hold the same value locally and *must* diverge on Vercel previews, so keep the responsibilities separate.
+
+**The dev port is pinned:** `npm run dev` runs `next dev -p 3000`. This is deliberate. Google OAuth matches the registered redirect URI exactly (`http://localhost:3000/api/auth/callback/google`), so the port is a contract with an external service, not a preference. Unpinned, `next dev` silently falls back to 3001 when 3000 is busy — the app then serves from one port while both origin variables claim another, which breaks OAuth *and* puts the wrong host into every verification and reset email sent that session. Pinned, it fails loudly instead.
+
+**Vercel previews:** preview deployments get dynamic origins, so a fixed `NEXTAUTH_URL` cannot match and OAuth will fail there. NextAuth v4 does not infer it — derive it from `VERCEL_URL` when `VERCEL_ENV === "preview"`. (NextAuth v5 removes the variable entirely, inferring the origin from request headers.)
+
+### Local webhook testing (tunnel)
+Gateway and courier webhooks need a publicly reachable URL, so local testing needs a tunnel:
+
+```bash
+cloudflared tunnel --url http://localhost:3000     # or: ngrok http 3000
+```
+
+Then, for the duration of that session:
+
+1. Set **both** `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL` to the tunnel origin. Leaving them on `localhost:3000` means OAuth callbacks and emailed links resolve to a host the outside world cannot reach.
+2. Add `<tunnel>/api/auth/callback/google` to the Google Cloud Console redirect URIs, or Google sign-in fails with a mismatch error that does not name the expected value.
+3. Point the gateway webhook at `<tunnel>/api/webhooks/razorpay` and the courier webhook at `<tunnel>/api/webhooks/shipping/shiprocket`.
+4. Restart the dev server — `NEXT_PUBLIC_*` values are inlined at build time, so a change is not picked up by a running server.
+
+Tunnel URLs are ephemeral on free tiers; each restart means repeating steps 1–3. Revert `.env` afterwards, or the next non-tunnelled run mails links to a dead host.
 
 ### Env hygiene
 `.env*` is gitignored and has never been committed — keep it that way. Set `NODE_ENV` to a valid Node value (`development` / `production` / `test`); anything else silently changes behaviour in code that branches on it. Avoid keeping more than one live connection string in the file at a time — see [Seeding](#seeding) for why.
