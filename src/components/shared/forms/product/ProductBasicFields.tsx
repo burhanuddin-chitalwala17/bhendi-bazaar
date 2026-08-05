@@ -12,7 +12,6 @@ interface ProductBasicFieldsProps {
   setValue: UseFormSetValue<ProductFormInput>;
   categories?: { id: string; name: string }[];
   readOnly?: boolean;
-  onSlugManualEdit?: () => void;
 }
 
 export function ProductBasicFields({
@@ -20,7 +19,6 @@ export function ProductBasicFields({
   errors,
   categories,
   readOnly = false,
-  onSlugManualEdit,
 }: ProductBasicFieldsProps) {
   const router = useRouter();
   const handleAddCategory = () => {
@@ -40,19 +38,6 @@ export function ProductBasicFields({
           disabled={readOnly}
           {...register("name", { required: "Product name is required" })}
           error={errors.name?.message}
-        />
-
-        <FormInput
-          label="Slug (URL)"
-          required
-          disabled={readOnly}
-          placeholder="e.g., velvet-embroidered-kurta"
-          {...register("slug", { required: "Slug is required" })}
-          error={errors.slug?.message}
-          onChange={(e) => {
-            register("slug").onChange(e);
-            onSlugManualEdit?.();
-          }}
         />
 
         <div className="md:col-span-2">

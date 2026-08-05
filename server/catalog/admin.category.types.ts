@@ -32,7 +32,6 @@ export interface CategoryListResult {
 }
 
 export interface CreateCategoryInput {
-  slug: string;
   name: string;
   description: string;
   heroImage: string;
@@ -41,7 +40,6 @@ export interface CreateCategoryInput {
 }
 
 export interface UpdateCategoryInput {
-  slug?: string;
   name?: string;
   description?: string;
   heroImage?: string;

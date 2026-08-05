@@ -71,7 +71,6 @@ export interface ProductStats {
 }
 
 export interface ProductFormInput {
-  slug: string;
   name: string;
   description?: string;
   price: number;

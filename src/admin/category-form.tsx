@@ -24,13 +24,11 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   // Initialize react-hook-form
   const form = useForm<CreateCategoryInput>({
     defaultValues: {
       name: category?.name || "",
-      slug: category?.slug || "",
       description: category?.description || "",
       heroImage: category?.heroImage || "",
       accentColorClass: category?.accentColorClass || "bg-emerald-50",
@@ -58,20 +56,6 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
     isEdit,
     onClearDraft: clearSaved,
   });
-
-  // Watch name for auto-slug generation
-  const nameValue = watch("name");
-
-  // Auto-generate slug from name
-  useEffect(() => {
-    if (!isEdit && nameValue && !slugManuallyEdited) {
-      const slug = nameValue
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-      setValue("slug", slug);
-    }
-  }, [nameValue, isEdit, slugManuallyEdited, setValue]);
 
   const handleCancel = () => {
     router.push("/admin/categories");
@@ -120,7 +104,6 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       <CategoryBasicFields
         register={register}
         errors={errors}
-        onSlugManualEdit={() => setSlugManuallyEdited(true)}
       />
 
       <CategoryStylingFields register={register} watch={watch} />

@@ -16,7 +16,6 @@ export interface ProductFilters {
 }
 
 export interface ProductFormInput {
-  slug: string;
   name: string;
   description?: string;
   price: number;

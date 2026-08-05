@@ -7,13 +7,11 @@ import type { CreateCategoryInput } from "@/domain/admin";
 interface CategoryBasicFieldsProps {
   register: UseFormRegister<CreateCategoryInput>;
   errors: FieldErrors<CreateCategoryInput>;
-  onSlugManualEdit?: () => void;
 }
 
 export function CategoryBasicFields({
   register,
   errors,
-  onSlugManualEdit,
 }: CategoryBasicFieldsProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -27,18 +25,6 @@ export function CategoryBasicFields({
           placeholder="e.g., Kurtas"
           {...register("name", { required: "Category name is required" })}
           error={errors.name?.message}
-        />
-
-        <FormInput
-          label="Slug (URL)"
-          required
-          placeholder="e.g., kurtas"
-          {...register("slug", { required: "Slug is required" })}
-          error={errors.slug?.message}
-          onChange={(e) => {
-            register("slug").onChange(e);
-            onSlugManualEdit?.();
-          }}
         />
 
         <div className="md:col-span-2">

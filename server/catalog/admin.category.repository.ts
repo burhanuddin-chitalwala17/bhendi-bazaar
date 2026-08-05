@@ -10,6 +10,7 @@ import type {
   CreateCategoryInput,
   UpdateCategoryInput,
 } from "@server/catalog/admin.category.types";
+import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 
 class AdminCategoryRepository {
   /**
@@ -109,17 +110,33 @@ class AdminCategoryRepository {
       order = (maxOrder?.order || 0) + 1;
     }
 
-    const category = await prisma.category.create({
-      data: {
-        ...data,
-        order,
-      },
-      include: {
-        _count: {
-          select: { products: true },
-        },
-      },
-    });
+    // Slug derived from the name, settled by the unique constraint. Fields are
+    // enumerated rather than spread: `data` comes from a request body.
+    const candidates = slugCandidates(data.name);
+    let category;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        category = await prisma.category.create({
+          data: {
+            slug: candidates.next().value as string,
+            name: data.name,
+            description: data.description,
+            heroImage: data.heroImage,
+            accentColorClass: data.accentColorClass,
+            order,
+          },
+          include: {
+            _count: {
+              select: { products: true },
+            },
+          },
+        });
+        break;
+      } catch (error) {
+        if (isUniqueViolation(error, "slug") && attempt < 25) continue;
+        throw error;
+      }
+    }
 
     return {
       id: category.id,
@@ -142,9 +159,17 @@ class AdminCategoryRepository {
     id: string,
     data: UpdateCategoryInput
   ): Promise<AdminCategory | null> {
+    // `slug` is intentionally absent: generated once at creation, then frozen,
+    // because changing it would 404 every existing link to the category.
     const category = await prisma.category.update({
       where: { id },
-      data,
+      data: {
+        name: data.name,
+        description: data.description,
+        heroImage: data.heroImage,
+        accentColorClass: data.accentColorClass,
+        order: data.order,
+      },
       include: {
         _count: {
           select: { products: true },

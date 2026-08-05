@@ -5,6 +5,10 @@
 import { productsRepository } from "@server/catalog/product.repository";
 import { Product, ProductFilter } from "@/domain/product";
 
+// Thrown when the row genuinely does not exist, so callers can render a 404
+// rather than a 500. Distinct from a query or mapping failure.
+export class NotFoundError extends Error {}
+
 const mapProduct = (product: any): Product => {
   return {
     id: product.id,
@@ -48,7 +52,7 @@ export const productsDAL = {
       const products = await productsRepository.getProducts(filter);
       return products.filter(p => p !== null).map((product) => mapProduct(product));
     } catch (error) {
-      throw new Error("Failed to fetch products");
+      throw new Error("Failed to fetch products", { cause: error });
     }
   },
 
@@ -56,11 +60,12 @@ export const productsDAL = {
     try {
       const product = await productsRepository.getProductById(id);
       if (!product) {
-        throw new Error("Product not found");
+        throw new NotFoundError(`No product with id ${JSON.stringify(id)}`);
       }
       return mapProduct(product);
     } catch (error) {
-      throw new Error("Failed to fetch product");
+      if (error instanceof NotFoundError) throw error;
+      throw new Error("Failed to fetch product", { cause: error });
     }
   },
 
@@ -69,11 +74,12 @@ export const productsDAL = {
       const product = await productsRepository.getProductBySlug(slug);
       // console.log("Product: ", JSON.stringify(product, null, 2));
       if (!product) {
-        throw new Error("Product not found");
+        throw new NotFoundError(`No product with slug ${JSON.stringify(slug)}`);
       }
       return mapProduct(product);
     } catch (error) {
-      throw new Error("Failed to fetch product");
+      if (error instanceof NotFoundError) throw error;
+      throw new Error("Failed to fetch product", { cause: error });
     }
   },
 

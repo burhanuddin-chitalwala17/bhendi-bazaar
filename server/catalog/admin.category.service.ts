@@ -51,8 +51,8 @@ export class AdminCategoryService {
     adminId: string,
     data: CreateCategoryInput
   ): Promise<AdminCategory> {
-    if (!data.name || !data.slug) {
-      throw new Error("Name and slug are required");
+    if (!data.name) {
+      throw new Error("Name is required");
     }
 
     const category = await adminCategoryRepository.createCategory(data);

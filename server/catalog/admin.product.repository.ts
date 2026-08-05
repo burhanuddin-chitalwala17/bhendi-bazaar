@@ -10,6 +10,8 @@ import type {
 } from "@server/catalog/admin.product.types";
 import { ProductFlag } from "@server/catalog/product.flags";
 import { Prisma } from "@prisma/client";
+import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
+import { blankToNull } from "@server/shared/nullable";
 
 // ✅ Efficient select - only fetch needed fields
 const PRODUCT_LIST_SELECT = {
@@ -149,9 +151,25 @@ export class AdminProductsRepository {
      * Create new product
      */
     async createProduct(data: ProductFormInput) {
+        // The slug is derived from the name, never taken from input, and settled by
+        // the unique constraint rather than a prior availability query — checking
+        // first is a race the database already arbitrates.
+        const candidates = slugCandidates(data.name);
+        for (let attempt = 0; ; attempt++) {
+            const slug = candidates.next().value as string;
+            try {
+                return await this.insertProduct(slug, data);
+            } catch (error) {
+                if (isUniqueViolation(error, "slug") && attempt < 25) continue;
+                throw error;
+            }
+        }
+    }
+
+    private async insertProduct(slug: string, data: ProductFormInput) {
         const product = await prisma.product.create({
             data: {
-                slug: data.slug,
+                slug,
                 name: data.name,
                 description: data.description || "",
                 price: data.price,
@@ -166,7 +184,7 @@ export class AdminProductsRepository {
                 sizes: data.sizes || [],
                 colors: data.colors || [],
                 stock: data.stock,
-                sku: data.sku,
+                sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold || 10,
                 shippingFromPincode: data.shippingFromPincode,
                 shippingFromCity: data.shippingFromCity,
@@ -241,9 +259,33 @@ export class AdminProductsRepository {
     }
 
     async updateProduct(id: string, data: ProductFormInput) {
+        // Fields are enumerated, not spread: `data` originates from a request body,
+        // so spreading it would let any writable column through. `slug` is absent
+        // deliberately — it is generated once at creation and then frozen, because
+        // changing it would 404 every existing link to the product.
         const product = await prisma.product.update({
             where: { id },
-            data,
+            data: {
+                name: data.name,
+                description: data.description,
+                price: data.price,
+                salePrice: data.salePrice,
+                currency: data.currency,
+                sellerId: data.sellerId,
+                categoryId: data.categoryId,
+                tags: data.tags,
+                flags: data.flags,
+                images: data.images,
+                thumbnail: data.thumbnail,
+                sizes: data.sizes,
+                colors: data.colors,
+                stock: data.stock,
+                sku: blankToNull(data.sku),
+                lowStockThreshold: data.lowStockThreshold,
+                shippingFromPincode: data.shippingFromPincode,
+                shippingFromCity: data.shippingFromCity,
+                shippingFromLocation: data.shippingFromLocation,
+            },
         });
         if (!product) {
             throw new Error("Product not found");
