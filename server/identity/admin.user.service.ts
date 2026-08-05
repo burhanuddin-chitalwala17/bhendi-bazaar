@@ -12,6 +12,7 @@ import type {
   UserStats,
   AdminUser,
 } from "@server/identity/admin.user.types";
+import { DomainError } from "@server/shared/domain-error";
 
 export class AdminUserService {
   /**
@@ -50,7 +51,7 @@ export class AdminUserService {
   ): Promise<AdminUser | null> {
     // Validate role if provided
     if (data.role && !["USER", "ADMIN"].includes(data.role)) {
-      throw new Error("Invalid role. Must be USER or ADMIN");
+      throw new DomainError("Invalid role. Must be USER or ADMIN");
     }
 
     const user = await adminUserRepository.updateUser(id, data);

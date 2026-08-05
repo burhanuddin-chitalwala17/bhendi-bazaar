@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useServerForm } from "@/hooks/core/useServerForm";
 import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { useCategoryForm } from "@/hooks/admin/useCategoryForm";
+import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import {
   CategoryBasicFields,
@@ -26,7 +26,11 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
   const returnUrl = searchParams.get("returnUrl");
 
   // Initialize react-hook-form
-  const form = useForm<CreateCategoryInput>({
+  const form = useServerForm<CreateCategoryInput>({
+    schema: categoryFormSchema,
+    // Deferred: submitCategory is declared below, after useFormPersist, and is
+    // only needed when the form is submitted.
+    submit: (data) => submitCategory(data),
     defaultValues: {
       name: category?.name || "",
       description: category?.description || "",
@@ -38,9 +42,9 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
 
   const {
     register,
-    handleSubmit,
+    onSubmit: handleFormSubmit,
+    formError,
     watch,
-    setValue,
     control,
     formState: { errors, isSubmitting },
   } = form;
@@ -51,7 +55,7 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
   });
 
   // Use the category form hook for business logic
-  const { submitCategory, error, successMessage } = useCategoryForm({
+  const { submitCategory, successMessage } = useCategoryForm({
     category,
     isEdit,
     onClearDraft: clearSaved,
@@ -62,7 +66,7 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(submitCategory)} className="space-y-8">
+    <form onSubmit={handleFormSubmit} className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -86,10 +90,10 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       </div>
 
       {/* Error/Success Messages */}
-      {error && (
+      {formError && (
         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <p>{error}</p>
+          <p>{formError}</p>
         </div>
       )}
 

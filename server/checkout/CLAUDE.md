@@ -21,6 +21,7 @@ Checkout owns an order's existence and lifecycle — placement, state transition
 - **One creation path.** Two paths with different behaviour is how one of them silently becomes the weaker one.
 - **A check and a write that must be atomic are one statement.** Read-then-write is not a check, even inside `$transaction` ([ADR-0007](../../docs/adr/0007-conditional-stock-decrement.md)).
 - **Side effects belong to the transition that earns them.** A confirmation email fires from the state change, not from whichever route happened to trigger it.
+- **Throw `DomainError` for anything a user should see**, `NotFoundError` / `ConflictError` as appropriate. A bare `throw new Error(...)` is treated as an internal fault and reported generically — correct for a config or code failure, wrong for "insufficient stock" ([ADR-0013](../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
 - **No `any` in this tree** — it sits on the money path ([`/CLAUDE.md`](../../CLAUDE.md) Invariant 4).
 
 ## Structure

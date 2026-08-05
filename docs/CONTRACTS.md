@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-05
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -17,6 +17,40 @@ This file records the shapes that cross that boundary and is where a breaking ch
 5. **The server sends a projection, not a row.** Responses use an explicit `select`. A Prisma model is never returned wholesale — `User` carries `passwordHash` and reset tokens; `ShippingProvider` carries `authToken` and `accountInfo`.
 6. **Additive changes preferred.** Add optional fields; never silently change a field's meaning. Removal goes through a deprecation note in the CHANGELOG.
 7. **Server-owned fields are never accepted inbound**, even as optional: `paymentStatus`, computed totals, `rating`, `reviewsCount`, `createdAt`.
+
+---
+
+## The error envelope
+
+Every route handler returns this shape on failure, and every client reads it through
+`readApiError`. Defined in `src/lib/api-error.ts`; produced by `toErrorResponse`.
+
+```json
+{
+  "error": "This SKU is already in use",
+  "details": [{ "path": "sku", "message": "This SKU is already in use" }]
+}
+```
+
+`error` is always present and always safe to show. `details` appears when the failure
+can be blamed on specific input, and **one envelope carries both sources** — a Zod
+failure and a database constraint violation are indistinguishable to the client, which
+is the point: a form maps `details` onto its fields without knowing which produced it.
+
+`path` matches the form field name. `useServerForm` routes each detail to its field via
+`setError`, and surfaces anything it could not place rather than dropping it.
+
+Statuses: 400 invalid input · 403 forbidden · 404 missing · 409 conflict (duplicate,
+stale foreign key, exhausted stock) · 500 internal.
+
+**Only the 500 branch discards its message.** Domain code opts into being shown by
+throwing `DomainError` (or `NotFoundError` / `ConflictError` / `ForbiddenError`);
+anything else is treated as an internal fault and logged, because a raw Prisma message
+can name columns.
+
+Neither key is compiler-checked, which is why both sides go through the shared helpers
+rather than reaching into the body. A handler that hand-rolls `NextResponse.json({ ... })`
+on an error path is a defect.
 
 ---
 

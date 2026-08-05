@@ -28,27 +28,6 @@ export function* slugCandidates(text: string, fallback = "item"): Generator<stri
   for (let n = 2; ; n++) yield `${base}-${n}`;
 }
 
-/**
- * True when a Prisma error is a unique-constraint violation on `field`.
- *
- * Two shapes, because they differ by driver: without a driver adapter Prisma sets
- * `meta.target`, but with `@prisma/adapter-pg` that is undefined and the columns
- * appear under `meta.driverAdapterError.cause.constraint.fields`. Checking only
- * the first shape silently disables every caller's retry.
- */
-export function isUniqueViolation(error: unknown, field: string): boolean {
-  const e = error as {
-    code?: string;
-    meta?: {
-      target?: unknown;
-      driverAdapterError?: { cause?: { constraint?: { fields?: unknown } } };
-    };
-  };
-  if (e?.code !== "P2002") return false;
-
-  const target = e.meta?.target;
-  if (Array.isArray(target) ? target.includes(field) : target === field) return true;
-
-  const fields = e.meta?.driverAdapterError?.cause?.constraint?.fields;
-  return Array.isArray(fields) && fields.includes(field);
-}
+// Constraint inspection lives in ./constraint — re-exported so slug callers
+// keep a single import.
+export { isUniqueViolation, uniqueViolationFields } from "@server/shared/constraint";

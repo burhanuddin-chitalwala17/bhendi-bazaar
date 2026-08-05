@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { readApiError } from "@/lib/api-error";
+import { changePasswordSchema, type ChangePasswordInput } from "@/lib/validation/schemas/auth.schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,54 +18,36 @@ import { Key, Eye, EyeOff } from "lucide-react";
 
 export function ChangePasswordModal() {
   const [open, setOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
-    setIsSubmitting(true);
-
-    try {
+  const {
+    register,
+    onSubmit,
+    formError,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useServerForm<ChangePasswordInput>({
+    schema: changePasswordSchema,
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+    submit: async (data) => {
       const response = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-          confirmPassword,
-        }),
+        body: JSON.stringify(data),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Failed to change password");
-        return;
-      }
-
+      if (!response.ok) throw await readApiError(response);
+      return response.json();
+    },
+    onSuccess: () => {
       setSuccess(true);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      
-      // Close modal after 2 seconds
+      reset();
       setTimeout(() => {
         setOpen(false);
         setSuccess(false);
       }, 2000);
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+    },
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -83,7 +68,7 @@ export function ChangePasswordModal() {
             Enter your current password and choose a new one.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-[0.18em]">
               Current Password
@@ -91,10 +76,11 @@ export function ChangePasswordModal() {
             <div className="relative">
               <Input
                 type={showPasswords ? "text" : "password"}
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                required
+                {...register("currentPassword")}
               />
+            {errors.currentPassword && (
+              <p role="alert" className="text-xs text-red-600">{errors.currentPassword.message}</p>
+            )}
             </div>
           </div>
 
@@ -104,10 +90,11 @@ export function ChangePasswordModal() {
             </label>
             <Input
               type={showPasswords ? "text" : "password"}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
+              {...register("newPassword")}
             />
+            {errors.newPassword && (
+              <p role="alert" className="text-xs text-red-600">{errors.newPassword.message}</p>
+            )}
             <p className="text-[0.65rem] text-muted-foreground">
               At least 8 characters with uppercase, lowercase, and numbers
             </p>
@@ -119,10 +106,11 @@ export function ChangePasswordModal() {
             </label>
             <Input
               type={showPasswords ? "text" : "password"}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
+              {...register("confirmPassword")}
             />
+            {errors.confirmPassword && (
+              <p role="alert" className="text-xs text-red-600">{errors.confirmPassword.message}</p>
+            )}
           </div>
 
           <button
@@ -141,9 +129,9 @@ export function ChangePasswordModal() {
             )}
           </button>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
+          {formError && (
+            <p role="alert" className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              {formError}
             </p>
           )}
 

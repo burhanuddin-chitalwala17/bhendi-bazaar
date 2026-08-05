@@ -10,6 +10,72 @@
 
 ## Entries
 
+## [PR-21] 2026-08-05 — Error envelope adopted across routes and forms; rule recorded as ADR-0013
+
+Extends [PR-20](#) from the product path to the rest of the application, and records the decision so it is not missed again.
+
+**[ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)** — one envelope, `toErrorResponse` on the server, `readApiError` on the client, `useServerForm` in every form, `DomainError` as the opt-in for a shown message. Recorded as an ADR because the rejected alternative — per-form `try/catch` with a toast — is the *conventional* approach and the one the codebase already used, so without a written decision it would be reintroduced by anyone acting reasonably.
+
+Its **decision 7 is the answer to "how do we not miss this next time"**: touching a form or handler still on the old pattern means converting it in the same change. `/bb-review` now enforces that with a new section — flagging hand-rolled error bodies, `useForm(` where `useServerForm(` belongs, error handling *inside* a form, client wrappers reaching into a response body, and a modified file left on the old pattern.
+
+**14 routes** wired to `toErrorResponse`: categories (×2), sellers (×2), addresses (×2), the four auth routes, provider connect, and the three product handlers from PR-20.
+
+**Four new schemas**, each parsed by its route *and* used as its form's resolver: `categoryFormSchema` (with defaults, so the schema decides what "unset" means rather than the repository), and `forgotPasswordSchema` / `resetPasswordSchema` / `changePasswordSchema` — the last two attributing a mismatch to `confirmPassword`, the field a user would retype. The password rule itself is now declared once and shared by every flow that sets one.
+
+Removing the routes' hand-rolled checks was part of this: five validation blocks in the auth routes were **unreachable** once the schema parsed first, and leaving them would have let two definitions of "valid password" drift.
+
+**Five forms** now on `useServerForm`: product, category, seller, address, and change-password. The last was a `useState`-and-`fetch` form converted to react-hook-form, which proves the pattern covers that shape too.
+
+**Duplicate presentation removed** from `useProducts`, `useCategoryForm`, and `useSellers` create/update — each had been toasting the same error the form hook now owns, so a single failure produced two messages. Delete and load paths keep their toasts, correctly: those are button and mount actions, not form submissions.
+
+> **Caught during the conversion:** the change-password modal's inputs bound to `register` correctly but the file rendered `errors` **nowhere** — the hook would have set field errors that nothing displayed. Precisely the failure this work exists to remove, reintroduced by me while removing it. Per-field rendering added; worth noting that binding a field and *showing* its error are two separate steps and only the first is visible to the typechecker.
+
+Lint errors **167 → 148**: deleting the `catch (err: any)` blocks removed 19 `no-explicit-any` violations as a side effect.
+
+Verified: `tsc --noEmit` exit 0, 68 tests pass, `next build` compiles.
+
+**Remaining, tracked in [BACKLOG.md](BACKLOG.md):** the signin, signup, forgot-password and reset-password pages and `ConnectProviderModal` are still `useState`-based. They already display the server's message correctly — they read `data.error`, the right key — so what they lack is field attribution. Value is genuine for signup (which of email/mobile collided) and reset-password (which rule failed), and marginal for the single-field forms. These are live, deployed auth flows with no test coverage, so converting them is deliberately left as its own change rather than folded into this one.
+
+## [PR-20] 2026-08-05 — One error envelope, and forms that consume it without per-form code
+
+A duplicate SKU produced `"Failed to create product"` with no field highlighted. Three separate failures caused that, and fixing only the first would have left the field unhighlighted.
+
+**1. A key mismatch discarded the real message.** The route sent `{ error: "Unique constraint failed…" }`; `productsApiClient.createProduct` read `error.message` — undefined — and fell back to a generic string. `deleteProduct` and `updateProduct` in the same file read `error.error` correctly, so the file looked uniform. This is the third instance of a string-keyed cross-boundary contract failing silently in this codebase, after the Razorpay `notes` key and the encoded slug. None is visible to `tsc`.
+
+**2. The product form rendered no server error at all** — only react-hook-form's client validation. The category form does this correctly, so the pattern existed and was simply not followed.
+
+**3. Nothing mapped field errors onto fields.** `validateRequest` had emitted `details: [{ path, message }]` all along, and `sellerService` was its only consumer — which *concatenated* them into one string. No `setError` call anywhere in the codebase was react-hook-form's; every one was a `useState` setter for a general banner.
+
+## What was built
+
+**One envelope** (`src/lib/api-error.ts`, documented in [CONTRACTS.md](CONTRACTS.md)) carrying `error` plus optional field-attributed `details`. A Zod failure and a database constraint violation arrive identically, so a form maps details to fields without knowing which produced it.
+
+**`toErrorResponse`** with six branches, replacing hand-rolled bodies: Zod → 400 with per-field details; `DomainError` → its own status and message; unique violation → 409 attributed to the offending column; other constraint failures (stale foreign key, value too long, missing required) → 409 attributed to the column; Prisma not-found → 404; **unknown → logged and reported generically.** Only that last branch discards its message.
+
+**`DomainError` / `NotFoundError` / `ConflictError` / `ForbiddenError`** — how domain code opts into being shown. Anything that has not opted in is an internal fault, which is the safe default: a raw Prisma message can name columns.
+
+**`useServerForm`** — react-hook-form with `zodResolver` and the error contract already wired. A form calls it and gets client validation from the same schema the server enforces, field-attributed server errors landing on their fields, and a general error for anything unattributable. **Forms write no error-handling code.** There is no form *renderer* in this codebase — three hand-written per-entity forms sharing field primitives — so the reusable unit is the hook, which is the better fit anyway since the layouts differ and the error semantics do not.
+
+**`productFormSchema`** — one declaration used by the route (server authority, Invariant 4, replacing a cast) and by the form's resolver. It reuses `postalCodeSchema` for the origin pincode and the `ProductFlag` enum for flags, and adds a cross-field rule neither side could enforce alone: sale price below regular price, attributed to `salePrice`.
+
+## The 128 throw sites
+
+Converted **112** to typed errors by classifying their own message text — 68 `DomainError`, 34 `NotFoundError`, 9 `ConflictError`, 1 `ForbiddenError` — across 27 files, then read the diff.
+
+**16 deliberately stayed internal**, on a principle worth stating: *if the fix is in config or code, it is internal; if the fix is in what the user did or the state they control, it is a domain error.* So `"Razorpay webhook secret not configured"` and `"Shipping module initialization failed"` stay generic, while `"Cannot delete the only address"` now reaches the user.
+
+Seven of those internal ones were `"Failed to save cart to database"`-style wrappers sitting in catch blocks and **discarding the real cause** — the same anti-pattern that cost a session's debugging on the slug bug. They now pass `{ cause: error }`.
+
+Also removed: the duplicate presentation in `useProducts`, which double-toasted the same error and would have competed with the hook; and its hand-written checks for images and seller, now the schema's job.
+
+> **Self-correction:** creating `NotFoundError` in `server/shared/domain-error.ts` duplicated one I had added to `products.dal.ts` in PR-13 — precisely the [ADR-0003](adr/0003-one-repository-per-aggregate.md) violation. Consolidated to the shared one, which the DAL now re-exports.
+
+10 tests added (68 total, 5 files), covering the key the server actually sends, detail preservation, the legacy `message` fallback, a non-JSON body, and that unplaceable details are returned rather than dropped.
+
+Verified: `tsc --noEmit` exit 0, 68 tests pass, `next build` compiles.
+
+**Not done:** the other ~8 casting handlers and the category/seller forms still hand-roll. The pattern is now available for them; adopting it is per-form and incremental.
+
 ## [PR-19] 2026-08-05 — Infrastructure recorded in OPERATIONS.md
 
 The hosting and vendor split was known only in conversation. Recorded in [OPERATIONS.md](OPERATIONS.md) § Infrastructure, verified from `.vercel/project.json`, `.env`, and which variables the code actually reads rather than from what is provisioned.

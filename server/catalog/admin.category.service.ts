@@ -12,6 +12,7 @@ import type {
   UpdateCategoryInput,
   AdminCategory,
 } from "@server/catalog/admin.category.types";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
 export class AdminCategoryService {
   /**
@@ -52,7 +53,7 @@ export class AdminCategoryService {
     data: CreateCategoryInput
   ): Promise<AdminCategory> {
     if (!data.name) {
-      throw new Error("Name is required");
+      throw new DomainError("Name is required");
     }
 
     const category = await adminCategoryRepository.createCategory(data);
@@ -98,13 +99,11 @@ export class AdminCategoryService {
     const category = await adminCategoryRepository.getCategoryById(id);
 
     if (!category) {
-      throw new Error("Category not found");
+      throw new NotFoundError("Category not found");
     }
 
     if (category.productsCount && category.productsCount > 0) {
-      throw new Error(
-        `Cannot delete category with ${category.productsCount} products. Please reassign or delete products first.`
-      );
+      throw new DomainError(`Cannot delete category with ${category.productsCount} products. Please reassign or delete products first.`);
     }
 
     await adminCategoryRepository.deleteCategory(id);

@@ -19,6 +19,7 @@ Harness configuration lives in `vitest.config.ts`. Note it aliases `@` → `./sr
 | **Stock reservation under concurrency** | **100%** | [ADR-0007](adr/0007-conditional-stock-decrement.md). Must cover: N concurrent orders against one unit yield exactly one success |
 | **Ownership / authorization** | **100%** | Every route taking a resource id: owner passes, non-owner refused, anonymous refused, and the guest-order case asserted explicitly rather than left implicit |
 | Zod schemas | High | [Invariant 4](../CLAUDE.md). Rejection cases matter more than acceptance |
+| **Error envelope** | **High** | [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md). The key names are not compiler-checked, so tests are the only thing pinning them. Must cover: the key the server actually sends, detail preservation, a non-JSON body, and that an unplaceable detail is returned rather than dropped |
 | Money formatting and paise conversion | High | [ADR-0004](adr/0004-money-as-integer-paise.md). Boundary values and rounding |
 | Repositories | High on write paths | Conditional writes, and `select` projections that must exclude credential fields |
 | Cart sync and merge | High | Guest→signed-in merge, conflicting quantities, missing products, price refresh |
@@ -29,6 +30,7 @@ Harness configuration lives in `vitest.config.ts`. Note it aliases `@` → `./sr
 
 ## What not to test
 
+- **A form's own error handling.** There should not be any to test — `useServerForm` owns it. Test the hook once; test that a form uses it.
 - **External services.** Trust Razorpay, Resend, and Shiprocket to work; test *our* request construction and response parsing. Never call a live API from a test — record the quirks in [INTEGRATIONS.md](INTEGRATIONS.md) instead.
 - **Prisma internals.** Test our queries' behaviour, not the ORM's.
 - **Next.js routing.** Framework behaviour.

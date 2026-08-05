@@ -12,6 +12,7 @@ import type {
 } from "../domain/shipping.types";
 import type { IShippingProvider } from "../domain/provider.interface";
 import { shippingProviderRepository } from "../repositories/provider.repository";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
 export class ShippingOrchestratorService {
   private providers: Map<string, IShippingProvider> = new Map();
@@ -73,7 +74,7 @@ export class ShippingOrchestratorService {
     factory: (config: any) => IShippingProvider
   ): Promise<void> {
     if (!providerId) {
-      throw new Error("Provider ID is required");
+      throw new DomainError("Provider ID is required");
     }
 
     const providerInstance = factory(providerId);
@@ -203,7 +204,7 @@ export class ShippingOrchestratorService {
     const provider = this.providers.get(providerId);
 
     if (!provider) {
-      throw new Error(`Provider ${providerId} not found`);
+      throw new NotFoundError(`Provider ${providerId} not found`);
     }
 
     return await provider.handleWebhook(payload);

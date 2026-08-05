@@ -11,6 +11,7 @@ import type {
   UpdateOrderStatusInput,
   OrderStats,
 } from "@server/checkout/admin.order.types";
+import { DomainError } from "@server/shared/domain-error";
 
 const VALID_ORDER_STATUSES = ["processing", "packed", "shipped", "delivered"];
 
@@ -51,9 +52,7 @@ export class AdminOrderService {
   ) {
     // Validate status if provided
     if (data.status && !VALID_ORDER_STATUSES.includes(data.status)) {
-      throw new Error(
-        `Invalid status. Must be one of: ${VALID_ORDER_STATUSES.join(", ")}`
-      );
+      throw new DomainError(`Invalid status. Must be one of: ${VALID_ORDER_STATUSES.join(", ")}`);
     }
 
     const order = await adminOrderRepository.updateOrderStatus(id, data);
@@ -80,9 +79,7 @@ export class AdminOrderService {
     adminId: string
   ): Promise<number> {
     if (!VALID_ORDER_STATUSES.includes(status)) {
-      throw new Error(
-        `Invalid status. Must be one of: ${VALID_ORDER_STATUSES.join(", ")}`
-      );
+      throw new DomainError(`Invalid status. Must be one of: ${VALID_ORDER_STATUSES.join(", ")}`);
     }
 
     const count = await adminOrderRepository.bulkUpdateStatus(orderIds, status);

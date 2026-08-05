@@ -6,6 +6,7 @@
 
 import { productsRepository } from "@server/catalog/product.repository";
 import type { ProductFilter } from "@server/catalog/product.types";
+import { DomainError } from "@server/shared/domain-error";
 
 export class ProductService {
   /**
@@ -25,7 +26,7 @@ export class ProductService {
    */
   async getProductBySlug(slug: string) {
     if (!slug || typeof slug !== "string") {
-      throw new Error("Invalid product slug");
+      throw new DomainError("Invalid product slug");
     }
 
     return await productsRepository.getProductBySlug(slug);
@@ -39,11 +40,11 @@ export class ProductService {
     limit = 4
   ) {
     if (!slug || typeof slug !== "string") {
-      throw new Error("Invalid product slug");
+      throw new DomainError("Invalid product slug");
     }
 
     if (limit < 1 || limit > 20) {
-      throw new Error("Limit must be between 1 and 20");
+      throw new DomainError("Limit must be between 1 and 20");
     }
 
     return await productsRepository.getSimilarProducts(slug, limit);
@@ -54,7 +55,7 @@ export class ProductService {
    */
   async getHeroProducts(limit = 6) {
     if (limit < 1 || limit > 20) {
-      throw new Error("Limit must be between 1 and 20");
+      throw new DomainError("Limit must be between 1 and 20");
     }
 
     return await productsRepository.getHeroProducts(limit);
@@ -65,7 +66,7 @@ export class ProductService {
    */
   async getOfferProducts(limit: number) {
     if (limit !== undefined && (limit < 1 || limit > 50)) {
-      throw new Error("Limit must be between 1 and 50");
+      throw new DomainError("Limit must be between 1 and 50");
     }
 
     return await productsRepository.getOfferProducts(limit);
@@ -83,7 +84,7 @@ export class ProductService {
     }
 
     if (query.length < 2) {
-      throw new Error("Search query must be at least 2 characters");
+      throw new DomainError("Search query must be at least 2 characters");
     }
 
     return await productsRepository.getProducts({
@@ -97,11 +98,11 @@ export class ProductService {
    */
   private validateFilter(filter: ProductFilter): void {
     if (filter.minPrice !== undefined && filter.minPrice < 0) {
-      throw new Error("Minimum price cannot be negative");
+      throw new DomainError("Minimum price cannot be negative");
     }
 
     if (filter.maxPrice !== undefined && filter.maxPrice < 0) {
-      throw new Error("Maximum price cannot be negative");
+      throw new DomainError("Maximum price cannot be negative");
     }
 
     if (
@@ -109,15 +110,15 @@ export class ProductService {
       filter.maxPrice !== undefined &&
       filter.minPrice > filter.maxPrice
     ) {
-      throw new Error("Minimum price cannot be greater than maximum price");
+      throw new DomainError("Minimum price cannot be greater than maximum price");
     }
 
     if (filter.limit !== undefined && (filter.limit < 1 || filter.limit > 100)) {
-      throw new Error("Limit must be between 1 and 100");
+      throw new DomainError("Limit must be between 1 and 100");
     }
 
     if (filter.offset !== undefined && filter.offset < 0) {
-      throw new Error("Offset cannot be negative");
+      throw new DomainError("Offset cannot be negative");
     }
   }
 }

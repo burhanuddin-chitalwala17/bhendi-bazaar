@@ -11,6 +11,7 @@ import type {
   ServerProfileData,
   UpdateProfileInput,
 } from "@server/identity/profile.types";
+import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 export class ProfileService {
   /**
@@ -20,7 +21,7 @@ export class ProfileService {
     const profile = await profileRepository.getByUserId(userId);
 
     if (!profile) {
-      throw new Error("User not found");
+      throw new NotFoundError("User not found");
     }
 
     return profile;
@@ -60,7 +61,7 @@ export class ProfileService {
     if (input.email !== undefined && input.email !== null) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(input.email)) {
-        throw new Error("Invalid email format");
+        throw new DomainError("Invalid email format");
       }
 
       // Check if email is already taken by another user
@@ -70,7 +71,7 @@ export class ProfileService {
       });
 
       if (existingUser && existingUser.id !== userId) {
-        throw new Error("This email is already registered to another account");
+        throw new ConflictError("This email is already registered to another account");
       }
     }
 
@@ -78,7 +79,7 @@ export class ProfileService {
     if (input.mobile !== undefined && input.mobile !== null) {
       const mobileRegex = /^\d{10}$/;
       if (!mobileRegex.test(input.mobile)) {
-        throw new Error("Mobile number must be 10 digits");
+        throw new DomainError("Mobile number must be 10 digits");
       }
 
       // Check if mobile is already taken by another user
@@ -88,16 +89,14 @@ export class ProfileService {
       });
 
       if (existingMobile && existingMobile.id !== userId) {
-        throw new Error(
-          "This mobile number is already registered to another account"
-        );
+        throw new ConflictError("This mobile number is already registered to another account");
       }
     }
 
     // Validate addresses if provided
     if (input.addresses !== undefined && input.addresses !== null) {
       if (!Array.isArray(input.addresses)) {
-        throw new Error("Addresses must be an array");
+        throw new DomainError("Addresses must be an array");
       }
 
       for (const address of input.addresses) {
@@ -107,7 +106,7 @@ export class ProfileService {
           !address.country ||
           !address.pincode 
         ) {
-          throw new Error("Address is missing required fields");
+          throw new DomainError("Address is missing required fields");
         }
       }
     }
@@ -117,7 +116,7 @@ export class ProfileService {
       try {
         new URL(input.profilePic);
       } catch {
-        throw new Error("Profile picture must be a valid URL");
+        throw new DomainError("Profile picture must be a valid URL");
       }
     }
   }

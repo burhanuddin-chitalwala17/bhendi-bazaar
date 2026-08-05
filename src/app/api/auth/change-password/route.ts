@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { passwordService } from "@server/identity/password.service";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { changePasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -11,24 +13,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { currentPassword, newPassword, confirmPassword } = body;
+    const { currentPassword, newPassword, confirmPassword } = changePasswordSchema.parse(await request.json());
 
     // Validation
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return NextResponse.json(
-        { error: "All fields are required" },
-        { status: 400 }
-      );
-    }
-
-    if (newPassword !== confirmPassword) {
-      return NextResponse.json(
-        { error: "New passwords do not match" },
-        { status: 400 }
-      );
-    }
-
     // Validate password strength
     const validation = passwordService.validatePassword(newPassword);
     if (!validation.valid) {
@@ -50,10 +37,6 @@ export async function POST(request: NextRequest) {
       message: "Password changed successfully",
     });
   } catch (error) {
-    console.error("Change password error:", error);
-    return NextResponse.json(
-      { error: "Failed to change password" },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not change password");
   }
 }

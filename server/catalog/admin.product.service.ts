@@ -2,6 +2,7 @@
 
 import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import { ProductFilters, ProductFormInput } from "@server/catalog/admin.product.types";
+import { NotFoundError } from "@server/shared/domain-error";
 
 export class ProductsService {  
   async getProducts(filters: ProductFilters) {
@@ -23,7 +24,7 @@ export class ProductsService {
   async getProductById({ id }: { id: string }) {
     const product = await adminProductsRepository.getProductById(id);
     if (!product) {
-      throw new Error("Product not found");
+      throw new NotFoundError("Product not found");
     }
     return product;
   }
@@ -31,7 +32,7 @@ export class ProductsService {
   async updateProduct(id: string, data: ProductFormInput) {
     const product = await adminProductsRepository.updateProduct(id, data);
     if (!product) {
-      throw new Error("Product not found");
+      throw new NotFoundError("Product not found");
     }
     return product;
   }

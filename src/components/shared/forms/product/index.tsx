@@ -1,7 +1,7 @@
 // components/shared/forms/product/index.tsx
 
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormController } from "../FormField";
@@ -15,6 +15,7 @@ import { ProductSellerShippingFields } from "./ProductSellerShippingFields";
 import { FormActions } from "../../button-groups/FormActions";
 import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
+import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 interface ProductFormProps {
   product?: ProductDetails;
   categories?: { id: string; name: string }[];
@@ -38,7 +39,11 @@ export function ProductForm({
   const isEdit = !!product;
 
 
-  const form = useForm<ProductFormInput>({
+  // Client validation and server error routing both come from this one call:
+  // field-attributed server errors land on their fields with no code here.
+  const form = useServerForm<ProductFormInput>({
+    schema: productFormSchema,
+    submit: onSubmit,
     defaultValues: {
       name: product?.name || "",
       description: product?.description || "",
@@ -64,7 +69,8 @@ export function ProductForm({
   }); 
   const {
     register,
-    handleSubmit,
+    onSubmit: handleFormSubmit,
+    formError,
     watch,
     setValue,
     control,
@@ -86,7 +92,18 @@ export function ProductForm({
   }, [imagesValue, setValue, product?.thumbnail]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleFormSubmit} className="space-y-6">
+      {/* Server errors that could not be attributed to a field. Field-level ones
+          are already showing on their inputs. */}
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {formError}
+        </div>
+      )}
+
       {/* Basic Information */}
       <ProductBasicFields
         register={register}

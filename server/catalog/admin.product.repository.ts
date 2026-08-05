@@ -12,6 +12,7 @@ import { ProductFlag } from "@server/catalog/product.flags";
 import { Prisma } from "@prisma/client";
 import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
+import { NotFoundError } from "@server/shared/domain-error";
 
 // ✅ Efficient select - only fetch needed fields
 const PRODUCT_LIST_SELECT = {
@@ -288,7 +289,7 @@ export class AdminProductsRepository {
             },
         });
         if (!product) {
-            throw new Error("Product not found");
+            throw new NotFoundError("Product not found");
         }
         return product;
     }

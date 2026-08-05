@@ -2,6 +2,7 @@
 
 import { sellerRepository } from "@server/catalog/seller.repository";
 import type { CreateSellerInput } from "@/domain/seller";
+import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 export class AdminSellerService {
   /**
@@ -18,7 +19,7 @@ export class AdminSellerService {
     const seller = await sellerRepository.findById(id);
 
     if (!seller) {
-      throw new Error("Seller not found");
+      throw new NotFoundError("Seller not found");
     }
 
     return seller;
@@ -31,7 +32,7 @@ export class AdminSellerService {
     // Business validation: Check for duplicates
     const existingCode = await sellerRepository.findByCode(data.code);
     if (existingCode) {
-      throw new Error("Seller code already exists");
+      throw new ConflictError("Seller code already exists");
     }
 
     // Create seller
@@ -53,15 +54,13 @@ export class AdminSellerService {
     // Check if seller exists
     const seller = await sellerRepository.findById(id);
     if (!seller) {
-      throw new Error("Seller not found");
+      throw new NotFoundError("Seller not found");
     }
 
     // Business rule: Cannot delete seller with products
     const productCount = await sellerRepository.countProducts(id);
     if (productCount > 0) {
-      throw new Error(
-        `Cannot delete seller with products. This seller has ${productCount} product(s). Please reassign or delete them first.`
-      );
+      throw new DomainError(`Cannot delete seller with products. This seller has ${productCount} product(s). Please reassign or delete them first.`);
     }
 
     // Delete seller

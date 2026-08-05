@@ -4,6 +4,7 @@ import { cartRepository } from "@server/cart/cart.repository";
 import type { CartItem } from "@server/cart/cart.types";
 import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
+import { DomainError } from "@server/shared/domain-error";
 
 /**
  * Cart service - Business logic layer
@@ -121,24 +122,24 @@ export class CartService {
    */
   private validateCartItems(items: CartItem[]): void {
     if (!Array.isArray(items)) {
-      throw new Error("Cart items must be an array");
+      throw new DomainError("Cart items must be an array");
     }
 
     for (const item of items) {
       if (!item.productId) {
-        throw new Error("Each item must have a productId");
+        throw new DomainError("Each item must have a productId");
       }
       if (!item.productName) {
-        throw new Error("Each item must have a productName");
+        throw new DomainError("Each item must have a productName");
       }
       if (!item.productSlug) {
-        throw new Error("Each item must have a productSlug");
+        throw new DomainError("Each item must have a productSlug");
       }
       if (item.quantity <= 0) {
-        throw new Error("Item quantity must be positive");
+        throw new DomainError("Item quantity must be positive");
       }
       if (item.price < 0) {
-        throw new Error("Item price cannot be negative");
+        throw new DomainError("Item price cannot be negative");
       }
     }
   }

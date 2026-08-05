@@ -20,6 +20,7 @@ Payments owns the conversation with the gateway and the single fact that follows
 - **The transition is idempotent**, keyed on the gateway payment id, so a retry does not resend a confirmation email.
 - **Fail loudly.** A webhook whose payload cannot be matched to an order logs an error and returns non-2xx, so the gateway retries and the failure is visible. **A silent 2xx is how a dead payment path stayed hidden for months** — this rule exists because of that, and it is the one most easily undone by someone "cleaning up" error handling.
 - **Never accept `paymentStatus` from a request body**, at creation or update ([`/CLAUDE.md`](../../CLAUDE.md) Invariant 4).
+- **Throw `DomainError` for anything a user should see**, `NotFoundError` / `ConflictError` as appropriate. A bare `throw new Error(...)` is treated as an internal fault and reported generically — correct for a config or code failure, wrong for "insufficient stock" ([ADR-0013](../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
 - **No `any` in this tree.**
 
 ## The adapter boundary

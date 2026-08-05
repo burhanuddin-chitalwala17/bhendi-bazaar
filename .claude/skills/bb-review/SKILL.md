@@ -77,6 +77,35 @@ git diff main...HEAD -- src/app/api | grep -nE 'prisma\.[a-z]'
 
 ---
 
+## Part 1b — Error handling and forms ([ADR-0013](../../../docs/adr/0013-one-error-envelope-and-useserverform.md))
+
+Not an Invariant, but the same kind of failure: silent, and invisible to `tsc`.
+
+**Route handlers**
+- A `catch` block building its own body — `NextResponse.json({ error: ... })` — instead of returning `toErrorResponse(error, "...")`. Hand-rolled error bodies are how the envelope drifts.
+- A handler that casts its request body instead of parsing it with a schema (also Invariant 4).
+- `error instanceof Error ? error.message : "..."` returned to a client — that pattern leaks internal messages; `DomainError` is how a message opts in to being shown.
+
+**Domain code**
+- A `throw new Error(...)` whose message is clearly meant for a user. Use `DomainError` / `NotFoundError` / `ConflictError` / `ForbiddenError`. The test: *if the fix is in config or code it stays internal; if the fix is in what the user did or state they control, it is a domain error.*
+- A `catch` that rethrows a fixed string and drops the original — pass `{ cause: error }`.
+
+**Client wrappers**
+- Reaching into a response body by hand (`error.error`, `error.message`, `error.details`) instead of `throw await readApiError(response)`. **A key mismatch here typechecks and fails silently** — it has already happened three times in this codebase.
+
+**Forms**
+- `useForm(` instead of `useServerForm(` in a form that submits to the server.
+- Error handling *inside* a form — a `try/catch` around submit, a `toast.error` for a server failure, a local `error` state. If the form needs it, the hook is missing something and should grow instead.
+- A form validating with hand-written `register` rules where a schema exists, or with a schema that is not the one the route parses.
+
+```bash
+git diff main...HEAD | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(message|error|details)|throw new Error\('
+```
+
+**Migrate on contact.** ADR-0013 decision 7: if the diff touches a form or handler that still uses the old pattern, converting it is part of the change. Flag a modified file left on the old pattern — that is exactly how the product form ended up as the only form with no error display while its sibling had one.
+
+---
+
 ## Part 2 — Process
 
 - **CHANGELOG entry present?** Required for every PR, including trivial ones ([CLAUDE.md](../../../CLAUDE.md)). Newest at top, append-only.

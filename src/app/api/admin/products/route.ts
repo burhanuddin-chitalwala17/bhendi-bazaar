@@ -12,6 +12,8 @@ import type {
   ProductFormInput,
 } from "@/admin/products/types";
 import { ProductFlag } from "@/types/product";
+import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 
 export async function POST(request: NextRequest) {
@@ -19,19 +21,12 @@ export async function POST(request: NextRequest) {
   if (session instanceof NextResponse) return session;
 
   try {
-    const body = (await request.json()) as ProductFormInput;
+    const body = productFormSchema.parse(await request.json());
     const product = await productsService.createProduct(body);
 
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
-    console.error("Failed to create product:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to create product",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not create the product");
   }
 }
 

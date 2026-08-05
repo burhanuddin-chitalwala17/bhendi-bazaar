@@ -1,5 +1,4 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -33,12 +32,14 @@ export function SellerForm({
 
   const {
     register,
-    handleSubmit,
+    onSubmit: handleFormSubmit,
+    formError,
     watch,
     setValue,
     formState: { errors },
-  } = useForm<CreateSellerInput>({
-    resolver: zodResolver(createSellerSchema),
+  } = useServerForm<CreateSellerInput>({
+    schema: createSellerSchema,
+    submit: onSubmit,
     defaultValues: {
       code: seller?.code || "",
       name: seller?.name || "",
@@ -60,7 +61,16 @@ export function SellerForm({
   const isActive = watch("isActive");
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleFormSubmit} className="space-y-6">
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {formError}
+        </div>
+      )}
+
       {/* Basic Information */}
       <SellerBasicFields
         register={register}

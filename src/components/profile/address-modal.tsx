@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { FormActions } from "../shared/button-groups/FormActions";
 import { DefaultBadge } from "../shared/badges/StatusBadge";
 import { AddressFields } from "../shared/forms/AddressFields";
-import { useForm } from "react-hook-form";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { addAddressSchema } from "@/lib/validation/schemas/address.schema";
 
 interface AddressModalProps {
   mode: "view" | "edit" | "add";
@@ -180,17 +181,28 @@ function AddressForm({
 }: AddressFormProps) {
   const {
     register,
-    handleSubmit,
+    onSubmit: handleFormSubmit,
+    formError,
     formState: { errors },
-  } = useForm<DeliveryAddress>({
+  } = useServerForm<DeliveryAddress>({
+    schema: addAddressSchema as never,
+    submit: async (data) => onSubmit(data),
     defaultValues: address,
   });
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleFormSubmit}
       className="space-y-3 px-4 py-4 text-xs"
     >
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700"
+        >
+          {formError}
+        </div>
+      )}
       <AddressFields
         register={register}
         errors={errors}

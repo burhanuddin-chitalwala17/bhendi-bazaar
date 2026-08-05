@@ -15,6 +15,7 @@ import type {
   ConnectionRequestBody,
 } from "@server/shipping/domain/shipping.types";
 import type { AdminConnectionResult } from "@server/shipping/services/connection.types";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
 export class AdminConnectionService {
   /**
    * Connect a provider account (Admin operation)
@@ -27,7 +28,7 @@ export class AdminConnectionService {
     // 1. Validate provider exists
     const provider = await shippingProviderRepository.getById(providerId);
     if (!provider) {
-      throw new Error("Provider not found");
+      throw new NotFoundError("Provider not found");
     }
 
     // 2. Get provider factory and create instance
@@ -35,7 +36,7 @@ export class AdminConnectionService {
       PROVIDER_FACTORIES[provider.code as keyof typeof PROVIDER_FACTORIES];
 
     if (!factory) {
-      throw new Error(`Provider implementation not found: ${provider.code}`);
+      throw new NotFoundError(`Provider implementation not found: ${provider.code}`);
     }
     let connectionResult: ProviderConnectionResult;
 
@@ -65,7 +66,7 @@ export class AdminConnectionService {
           break;
         }
         default:
-          throw new Error(`Unsupported connection type: ${requestBody.type}`);
+          throw new DomainError(`Unsupported connection type: ${requestBody.type}`);
       }
       if (connectionResult.success) {
         // 6. Log admin action
@@ -117,11 +118,11 @@ export class AdminConnectionService {
   ): Promise<{ success: boolean; error?: string }> {
     const provider = await shippingProviderRepository.getById(providerId);
     if (!provider) {
-      throw new Error("Provider not found");
+      throw new NotFoundError("Provider not found");
     }
 
     if (!provider.isConnected) {
-      throw new Error("Provider is not connected");
+      throw new DomainError("Provider is not connected");
     }
 
     const result = await shippingProviderRepository.disconnectAccount(

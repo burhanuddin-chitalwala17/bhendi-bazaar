@@ -6,6 +6,7 @@
 
 import { categoryRepository } from "@server/catalog/category.repository";
 import type { ServerCategory } from "@server/catalog/category.types";
+import { DomainError } from "@server/shared/domain-error";
 
 export class CategoryService {
   /**
@@ -20,7 +21,7 @@ export class CategoryService {
    */
   async getCategoryBySlug(slug: string): Promise<ServerCategory | null> {
     if (!slug || typeof slug !== "string") {
-      throw new Error("Invalid category slug");
+      throw new DomainError("Invalid category slug");
     }
 
     return await categoryRepository.findBySlug(slug);

@@ -8,6 +8,7 @@
 import { addressRepository } from "@server/identity/address.repository";
 import type { DeliveryAddress } from "@server/identity/profile.types";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
 export class AddressService {
   /**
@@ -31,7 +32,7 @@ export class AddressService {
     const address = await addressRepository.getAddressById(userId, addressId);
 
     if (!address) {
-      throw new Error("Address not found");
+      throw new NotFoundError("Address not found");
     }
 
     return address as unknown as DeliveryAddress;
@@ -110,7 +111,7 @@ export class AddressService {
       await addressRepository.updateAddresses(userId, updatedAddresses);
 
       const updated = updatedAddresses.find((addr) => addr.id === addressId);
-      if (!updated) throw new Error("Address not found");
+      if (!updated) throw new NotFoundError("Address not found");
       return true;
     }
 
@@ -134,14 +135,14 @@ export class AddressService {
       // if only 1 address, then do not allow deletion
       const addresses = await addressRepository.getAddressesByUserId(userId) as unknown as DeliveryAddress[];
       if (addresses.length === 1) {
-        throw new Error("Cannot delete the only address");
+        throw new DomainError("Cannot delete the only address");
       }
 
     // Get the address to check if it's default
       const address = await addressRepository.getAddressById(userId, addressId) as unknown as DeliveryAddress;
 
     if (!address) {
-      throw new Error("Address not found");
+      throw new NotFoundError("Address not found");
     }
 
     // Delete the address
@@ -175,9 +176,7 @@ export class AddressService {
 
     if (!isPartial || input.addressLine1) {
       if (!input.addressLine1 || input.addressLine1.trim().length < 5) {
-        throw new Error(
-          "Address line 1 is required and must be at least 5 characters"
-        );
+        throw new DomainError("Address line 1 is required and must be at least 5 characters");
       }
     }
   }

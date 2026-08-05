@@ -13,6 +13,7 @@ import type {
   PaymentVerificationResult,
   WebhookVerificationResult,
 } from "@server/payments/payment.types";
+import { ConflictError, DomainError } from "@server/shared/domain-error";
 
 export class PaymentService {
   /**
@@ -66,20 +67,20 @@ export class PaymentService {
    */
   private validateCreateOrderInput(input: CreatePaymentOrderInput): void {
     if (!input.amount || input.amount <= 0) {
-      throw new Error("Amount must be greater than 0");
+      throw new DomainError("Amount must be greater than 0");
     }
 
     if (input.amount > 100000000) {
       // 1 crore paise = 10 lakh rupees
-      throw new Error("Amount exceeds maximum limit");
+      throw new ConflictError("Amount exceeds maximum limit");
     }
 
     if (!input.currency || input.currency !== "INR") {
-      throw new Error("Only INR currency is supported");
+      throw new DomainError("Only INR currency is supported");
     }
 
     if (!input.localOrderId) {
-      throw new Error("Local order ID is required");
+      throw new DomainError("Local order ID is required");
     }
   }
 }

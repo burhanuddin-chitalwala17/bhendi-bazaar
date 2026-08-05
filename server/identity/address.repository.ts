@@ -7,6 +7,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { DeliveryAddress } from "@server/identity/profile.types";
+import { NotFoundError } from "@server/shared/domain-error";
 
 export class AddressRepository {
   /**
@@ -99,14 +100,14 @@ export class AddressRepository {
     });
 
     if (!profile) {
-      throw new Error("Profile not found");
+      throw new NotFoundError("Profile not found");
     }
 
     const addresses = profile.addresses as unknown as DeliveryAddress[];
     const addressIndex = addresses.findIndex((addr) => addr.id === addressId);
 
     if (addressIndex === -1) {
-      throw new Error("Address not found");
+      throw new NotFoundError("Address not found");
     }
 
     // Update the address
@@ -131,14 +132,14 @@ export class AddressRepository {
     });
   
     if (!profile) {
-      throw new Error("Profile not found");
+      throw new NotFoundError("Profile not found");
     }
   
     const addresses = profile.addresses as unknown as DeliveryAddress[];
     const addressExists = addresses.some(addr => addr.id === addressId);
   
     if (!addressExists) {
-      throw new Error("Address not found");
+      throw new NotFoundError("Address not found");
     }
   
     // ✅ Immutable approach - cleaner

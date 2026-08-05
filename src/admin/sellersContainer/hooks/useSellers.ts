@@ -33,8 +33,8 @@ export function useSellers() {
       const newSeller = await sellerService.createSeller(data);
       toast.success("Seller created successfully");
       setSellers([...sellers, newSeller as SellerWithStats]);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create seller");
+    } catch (err) {
+      // Presentation belongs to useServerForm; rethrow so field details survive.
       throw err;
     }
   };
@@ -51,8 +51,8 @@ export function useSellers() {
           seller.id === id ? newSeller : seller
         )
       );
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update seller");
+    } catch (err) {
+      // Presentation belongs to useServerForm; rethrow so field details survive.
       throw err;
     }
   };

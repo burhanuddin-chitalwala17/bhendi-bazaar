@@ -22,21 +22,6 @@ export function useProducts(options?: UseProductsOptions) {
    * Create Product
    */
   const createProduct = async (data: ProductFormInput) => {
-    // Client-side validation
-    if (!data.images || data.images.length === 0) {
-      const errorMsg = "At least one image is required";
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
-    if (!data.sellerId) {
-      const errorMsg = "Seller is required";
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
     setError(null);
     setSuccessMessage(null);
     setIsLoading(true);
@@ -56,10 +41,9 @@ export function useProducts(options?: UseProductsOptions) {
 
       options?.onSuccess?.();
       return product;
-    } catch (err: any) {
-      const errorMsg = err.message || "Failed to create product";
-      setError(errorMsg);
-      toast.error(errorMsg);
+    } catch (err) {
+      // Presentation belongs to useServerForm, which maps field-level details
+      // onto inputs. Rethrow untouched so those details survive.
       throw err;
     } finally {
       setIsLoading(false);
@@ -86,10 +70,8 @@ export function useProducts(options?: UseProductsOptions) {
       options?.onSuccess?.();
       return product;
     }
-    catch (err: any) {
-      const errorMsg = err.message || "Failed to update product";
-      setError(errorMsg);
-      toast.error(errorMsg);
+    catch (err) {
+      // Presentation belongs to useServerForm; rethrow so field details survive.
       throw err;
     } finally {
       setIsLoading(false);

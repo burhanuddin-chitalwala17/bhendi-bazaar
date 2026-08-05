@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin-auth";
 import { adminCategoryService } from "@server/catalog/admin.category.service";
 import type { UpdateCategoryInput } from "@server/catalog/admin.category.types";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { updateCategorySchema } from "@/lib/validation/schemas/category.schema";
 
 export async function GET(
   _request: NextRequest,
@@ -30,14 +32,7 @@ export async function GET(
 
     return NextResponse.json(category);
   } catch (error) {
-    console.error("Failed to fetch category:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch category",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch category");
   }
 }
 
@@ -50,7 +45,7 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = (await request.json()) as UpdateCategoryInput;
+    const body = updateCategorySchema.parse(await request.json());
 
     const category = await adminCategoryService.updateCategory(
       id,
@@ -67,14 +62,7 @@ export async function PATCH(
 
     return NextResponse.json(category);
   } catch (error) {
-    console.error("Failed to update category:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to update category",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not update category");
   }
 }
 
@@ -91,14 +79,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete category:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to delete category",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not delete category");
   }
 }
 

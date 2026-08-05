@@ -5,6 +5,8 @@ import {
   getClientIp,
   formatTimeRemaining,
 } from "@/lib/rate-limit";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { forgotPasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 
 export async function POST(request: NextRequest) {
   // Rate limit
@@ -25,12 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
-    const { email } = body;
-
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
-    }
+    const { email } = forgotPasswordSchema.parse(await request.json());
 
     // Request password reset
     const result = await passwordService.requestPasswordReset(email);
@@ -45,10 +42,6 @@ export async function POST(request: NextRequest) {
         "If an account exists with this email, you will receive a password reset link shortly.",
     });
   } catch (error) {
-    console.error("Forgot password error:", error);
-    return NextResponse.json(
-      { error: "Failed to process request" },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not process request");
   }
 }

@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { adminSellerService } from "@server/catalog/seller.service";
 import { createSellerSchema } from "@/lib/validation/schemas/seller.schema";
+import { toErrorResponse } from "@/lib/api-error-response";
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,13 +19,8 @@ export async function GET(request: NextRequest) {
 
     // ⭐ Make sure this always returns JSON
     return NextResponse.json(sellers);
-  } catch (error: any) {
-    console.error("GET /api/admin/sellers error:", error);
-    // ⭐ Make sure error responses are also JSON
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch sellers" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return toErrorResponse(error, "Could not fetch sellers");
   }
 }
 
@@ -41,31 +37,7 @@ export async function POST(request: NextRequest) {
 
     // ⭐ Return JSON with 201 status
     return NextResponse.json(seller, { status: 201 });
-  } catch (error: any) {
-    console.error("POST /api/admin/sellers error:", error);
-
-    if (error.name === "ZodError") {
-      return NextResponse.json(
-        { 
-          error: "Validation failed", 
-          details: error.errors,
-          message: error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ')
-        },
-        { status: 400 }
-      );
-    }
-
-    if (error.message.includes("already exists")) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
-    }
-
-    // ⭐ Always return JSON, never throw unhandled
-    return NextResponse.json(
-      { error: error.message || "Failed to create seller" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return toErrorResponse(error, "Could not create seller");
   }
 }

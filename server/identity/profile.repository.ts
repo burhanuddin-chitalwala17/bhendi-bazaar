@@ -11,6 +11,7 @@ import type {
   UpdateProfileInput,
   DeliveryAddress
 } from "@server/identity/profile.types";
+import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 /**
  * Helper to normalize addresses from database JSON
  */
@@ -91,9 +92,7 @@ export class ProfileRepository {
         });
 
         if (existingUser && existingUser.id !== userId) {
-          throw new Error(
-            "This email is already registered to another account"
-          );
+          throw new ConflictError("This email is already registered to another account");
         }
       }
     }
@@ -113,9 +112,7 @@ export class ProfileRepository {
         });
 
         if (existingMobile && existingMobile.id !== userId) {
-          throw new Error(
-            "This mobile number is already registered to another account"
-          );
+          throw new ConflictError("This mobile number is already registered to another account");
         }
       }
     }
@@ -162,7 +159,7 @@ export class ProfileRepository {
     });
 
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError("User not found");
     }
 
     // Update or create profile

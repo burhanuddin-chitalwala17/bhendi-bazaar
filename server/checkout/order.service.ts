@@ -19,6 +19,7 @@ import type {
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
+import { DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
 export class OrderService {
   /**
@@ -39,12 +40,12 @@ export class OrderService {
     const order = await orderRepository.findById(orderId);
 
     if (!order) {
-      throw new Error("Order not found");
+      throw new NotFoundError("Order not found");
     }
 
     // If userId is provided, verify ownership
     if (userId && order.userId && order.userId !== userId) {
-      throw new Error("Unauthorized: Order does not belong to user");
+      throw new ForbiddenError("Unauthorized: Order does not belong to user");
     }
 
     return order;
@@ -86,7 +87,7 @@ export class OrderService {
     const existingOrder = await this.getOrderById(orderId, userId);
 
     if (!existingOrder) {
-      throw new Error("Order not found");
+      throw new NotFoundError("Order not found");
     }
 
     // Check if payment status is changing to "paid"
@@ -248,7 +249,7 @@ export class OrderService {
     });
 
     if (!order) {
-      throw new Error(`Order not found: ${orderId}`);
+      throw new NotFoundError(`Order not found: ${orderId}`);
     }
 
     // Verify payment is confirmed
@@ -388,53 +389,53 @@ export class OrderService {
   ): void {
     // Validate shipping groups
     if (!input.shippingGroups || input.shippingGroups.length === 0) {
-      throw new Error("Order must contain at least one shipping group");
+      throw new DomainError("Order must contain at least one shipping group");
     }
 
     for (const group of input.shippingGroups) {
       // Validate items in group
       if (!group.items || group.items.length === 0) {
-        throw new Error(`Shipping group ${group.groupId} has no items`);
+        throw new DomainError(`Shipping group ${group.groupId} has no items`);
       }
 
       for (const item of group.items) {
         if (!item.productId || !item.productName) {
-          throw new Error("Invalid item data: missing required fields");
+          throw new DomainError("Invalid item data: missing required fields");
         }
         if (item.quantity <= 0) {
-          throw new Error("Item quantity must be greater than 0");
+          throw new DomainError("Item quantity must be greater than 0");
         }
         if (item.price < 0) {
-          throw new Error("Item price cannot be negative");
+          throw new DomainError("Item price cannot be negative");
         }
       }
 
       // Validate shipping rate selection
       if (!group.selectedRate) {
-        throw new Error(`Shipping group ${group.groupId} has no selected rate`);
+        throw new DomainError(`Shipping group ${group.groupId} has no selected rate`);
       }
 
       if (!group.selectedRate.providerId || !group.selectedRate.courierName) {
-        throw new Error(`Invalid shipping rate for group ${group.groupId}`);
+        throw new DomainError(`Invalid shipping rate for group ${group.groupId}`);
       }
 
       if (group.selectedRate.rate < 0) {
-        throw new Error("Shipping rate cannot be negative");
+        throw new DomainError("Shipping rate cannot be negative");
       }
     }
 
     // Validate totals
     if (!input.totals) {
-      throw new Error("Order totals are required");
+      throw new DomainError("Order totals are required");
     }
 
     if (input.totals.grandTotal <= 0) {
-      throw new Error("Order total must be greater than 0");
+      throw new DomainError("Order total must be greater than 0");
     }
 
     // Validate address
     if (!input.address) {
-      throw new Error("Shipping address is required");
+      throw new DomainError("Shipping address is required");
     }
 
     const { fullName, mobile, addressLine1, city, state, pincode, country } =
@@ -449,13 +450,13 @@ export class OrderService {
       !pincode ||
       !country
     ) {
-      throw new Error("Address is missing required fields");
+      throw new DomainError("Address is missing required fields");
     }
 
     // Validate phone format
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(mobile)) {
-      throw new Error("Phone number must be 10 digits");
+      throw new DomainError("Phone number must be 10 digits");
     }
 
     // Validate postal code
@@ -470,32 +471,32 @@ export class OrderService {
   private validateCreateOrderInput(input: CreateOrderInput): void {
     // Validate items
     if (!input.items || input.items.length === 0) {
-      throw new Error("Order must contain at least one item");
+      throw new DomainError("Order must contain at least one item");
     }
 
     for (const item of input.items) {
       if (!item.productId || !item.productName || !item.thumbnail) {
-        throw new Error("Invalid item data: missing required fields");
+        throw new DomainError("Invalid item data: missing required fields");
       }
       if (item.quantity <= 0) {
-        throw new Error("Item quantity must be greater than 0");
+        throw new DomainError("Item quantity must be greater than 0");
       }
       if (item.price < 0) {
-        throw new Error("Item price cannot be negative");
+        throw new DomainError("Item price cannot be negative");
       }
     }
 
     // Validate totals
     if (!input.itemsTotal || !input.shippingTotal || !input.discount || !input.grandTotal) {
-      throw new Error("Order totals are required");
+      throw new DomainError("Order totals are required");
     }
     if (input.itemsTotal + input.shippingTotal - input.discount <= 0) {
-      throw new Error("Order total must be greater than 0");
+      throw new DomainError("Order total must be greater than 0");
     }
 
     // Validate address
     if (!input.address) {
-      throw new Error("Shipping address is required");
+      throw new DomainError("Shipping address is required");
     }
     const { fullName, mobile, addressLine1, city, state, pincode, country } =
       input.address;
@@ -508,13 +509,13 @@ export class OrderService {
       !pincode ||
       !country
     ) {
-      throw new Error("Address is missing required fields");
+      throw new DomainError("Address is missing required fields");
     }
 
     // Validate phone format (basic validation)
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(mobile)) {
-      throw new Error("Phone number must be 10 digits");
+      throw new DomainError("Phone number must be 10 digits");
     }
 
     // Validate postal code (basic validation)

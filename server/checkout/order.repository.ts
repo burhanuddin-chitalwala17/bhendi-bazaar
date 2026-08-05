@@ -11,6 +11,7 @@ import type {
   UpdateOrderInput,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
+import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 
 /**
  * Helper to generate order code
@@ -101,13 +102,11 @@ export class OrderRepository {
         });
 
         if (!product) {
-          throw new Error(`Product not found: ${item.productId}`);
+          throw new NotFoundError(`Product not found: ${item.productId}`);
         }
 
         if (product.stock < item.quantity) {
-          throw new Error(
-            `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`
-          );
+          throw new ConflictError(`Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`);
         }
       }
 
@@ -182,7 +181,7 @@ export class OrderRepository {
   //     });
 
   //     if (!existingOrder) {
-  //       throw new Error("Order not found");
+  //       throw new NotFoundError("Order not found");
   //     }
 
   //     // Only restore stock if order is in a cancellable state

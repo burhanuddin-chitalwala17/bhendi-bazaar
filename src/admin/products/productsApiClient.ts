@@ -4,6 +4,7 @@
  */
 
 import { ProductFormInput, ProductDetails } from "./types";
+import { readApiError } from "@/lib/api-error";
 
 export class ProductsApiClient {
   private baseUrl = "/api/admin/products";
@@ -17,10 +18,7 @@ export class ProductsApiClient {
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to create product");
-    }
+    if (!response.ok) throw await readApiError(response);
 
     return response.json() as Promise<ProductDetails | null>;
   }
@@ -32,10 +30,7 @@ export class ProductsApiClient {
       method: "DELETE",
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to delete product");
-    }
+    if (!response.ok) throw await readApiError(response);
   }
 
   async updateProduct(id: string, data: ProductFormInput): Promise<ProductDetails | null> {
@@ -45,10 +40,7 @@ export class ProductsApiClient {
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to update product");
-    }
+    if (!response.ok) throw await readApiError(response);
 
     return response.json() as Promise<ProductDetails | null>;
   }

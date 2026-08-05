@@ -5,9 +5,8 @@
 import { productsRepository } from "@server/catalog/product.repository";
 import { Product, ProductFilter } from "@/domain/product";
 
-// Thrown when the row genuinely does not exist, so callers can render a 404
-// rather than a 500. Distinct from a query or mapping failure.
-export class NotFoundError extends Error {}
+import { NotFoundError } from "@server/shared/domain-error";
+export { NotFoundError };
 
 const mapProduct = (product: any): Product => {
   return {

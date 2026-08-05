@@ -6,6 +6,7 @@
  */
 
 import type { IShippingProvider } from "@server/shipping/domain";
+import { DomainError } from "@server/shared/domain-error";
 
 export interface ProviderAuthResult {
   token: string;
@@ -57,9 +58,7 @@ async function authenticateShiprocket(
     const error = await response
       .json()
       .catch(() => ({ message: response.statusText }));
-    throw new Error(
-      `Authentication failed: ${error.message || response.statusText}`
-    );
+    throw new DomainError(`Authentication failed: ${error.message || response.statusText}`);
   }
 
   const data = await response.json();

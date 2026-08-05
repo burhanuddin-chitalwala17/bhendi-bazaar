@@ -6,6 +6,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import { ProductFilter } from "@server/catalog/product.types";
+import { NotFoundError } from "@server/shared/domain-error";
 
 const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
@@ -31,7 +32,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Products not found");
+      throw new NotFoundError("Products not found");
     }
   }
 
@@ -45,7 +46,7 @@ export class ProductsRepository {
       });
       return product;
     } catch (error) {
-      throw new Error("Product not found");
+      throw new NotFoundError("Product not found");
     }
   }
 
@@ -59,7 +60,7 @@ export class ProductsRepository {
       });
       return product;
     } catch (error) {
-      throw new Error("Product not found");
+      throw new NotFoundError("Product not found");
     }
   }
 
@@ -75,7 +76,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Similar products not found");
+      throw new NotFoundError("Similar products not found");
     }
   }
 
@@ -91,7 +92,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Hero products not found");
+      throw new NotFoundError("Hero products not found");
     }
   }
 
@@ -107,7 +108,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Offer products not found");
+      throw new NotFoundError("Offer products not found");
     }
   }
 
@@ -123,7 +124,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Search products not found");
+      throw new NotFoundError("Search products not found");
     }
   }
 }

@@ -9,6 +9,7 @@ import {
 import { validateRequest } from "@/lib/validation/utils";
 import { signupSchema } from "@/lib/validation/schemas/auth.schemas";
 import { emailService } from "@server/notifications/email.service";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(request: NextRequest) {
   // Rate limit check
@@ -98,10 +99,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Signup error", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Something went wrong");
   }
 }

@@ -1,26 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { passwordService } from "@server/identity/password.service";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { resetPasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { token, password, confirmPassword } = body;
+    const { token, password, confirmPassword } = resetPasswordSchema.parse(await request.json());
 
     // Validation
-    if (!token || !password || !confirmPassword) {
-      return NextResponse.json(
-        { error: "All fields are required" },
-        { status: 400 }
-      );
-    }
-
-    if (password !== confirmPassword) {
-      return NextResponse.json(
-        { error: "Passwords do not match" },
-        { status: 400 }
-      );
-    }
-
     // Validate password strength
     const validation = passwordService.validatePassword(password);
     if (!validation.valid) {
@@ -38,10 +25,6 @@ export async function POST(request: NextRequest) {
       message: "Password reset successfully. You can now sign in with your new password.",
     });
   } catch (error) {
-    console.error("Reset password error:", error);
-    return NextResponse.json(
-      { error: "Failed to reset password" },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not reset password");
   }
 }
