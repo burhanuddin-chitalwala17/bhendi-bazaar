@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-08-04
+- **Verified:** 2026-08-05
 
 ## Prerequisites
 Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test mode for development).
@@ -106,6 +106,29 @@ npx prisma migrate dev # create + apply a migration
 4. Only configured providers can be enabled; changes take effect immediately.
 
 This makes **rate quoting** live. Shipment booking currently uses a mock implementation — see [ARCHITECTURE.md](ARCHITECTURE.md) and [shipping-fulfilment](specs/shipping-fulfilment/).
+
+## Infrastructure
+
+Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and which variables the code actually reads.
+
+| Concern | Provider | Notes |
+|---|---|---|
+| Hosting | **Vercel** | Project `bhendi-bazaar`; deploys from `main` |
+| Domain | **GoDaddy** (registrar) | `bhendi-bazaar.com`; DNS points at Vercel |
+| Database | **Prisma Postgres** (`db.prisma.io`) | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story |
+| Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
+| Redis (rate limiting) | **Upstash** | Via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*` |
+| File storage | **Vercel Blob** | `BLOB_READ_WRITE_TOKEN`; hostname allow-listed in `next.config.ts` |
+| Payments | **Razorpay** | Test keys locally (`rzp_test_*`) |
+| Email | **Resend** | |
+| Shipping | **Shiprocket** | Rates live; booking see [ARCHITECTURE.md](ARCHITECTURE.md) |
+| OAuth | **Google Cloud** | Redirect URI per environment |
+
+### Accelerate is provisioned but bypassed
+`PRISMA_DATABASE_URL` holds a `prisma+postgres://accelerate.prisma-data.net/…` URL, but **nothing reads it** — `src/lib/prisma.ts`'s replacement, `server/shared/prisma.ts`, connects via `DATABASE_URL` directly. Accelerate exists to pool connections and cache queries, which is exactly the pressure a serverless deployment puts on a single Postgres instance. Worth revisiting: routing through it would address per-instance connection limits more thoroughly than tuning `max` on the local pool.
+
+### Unused environment variables
+The code reads only `DATABASE_URL` and `KV_REST_API_URL` from the connection-string set. `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, and `PRISMA_DATABASE_URL` are read by nothing — leftovers from provisioning. Keeping several live connection strings in one `.env` is the hazard behind the seed guard ([Invariant 7](../CLAUDE.md)); prune them.
 
 ## Deploy
 
