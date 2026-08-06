@@ -46,6 +46,7 @@ export function CategoryBasicFields({
           min="0"
           placeholder="0"
           {...register("order", { valueAsNumber: true })}
+          error={errors.order?.message}
           hint="Lower numbers appear first"
         />
       </div>

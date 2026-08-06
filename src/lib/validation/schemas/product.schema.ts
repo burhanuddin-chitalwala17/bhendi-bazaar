@@ -1,6 +1,20 @@
 import { z } from "zod";
-import { postalCodeSchema } from "./common.schemas";
+import { optionalNumber, optionalPostalCodeSchema } from "./common.schemas";
 import { ProductFlag } from "@server/catalog/product.flags";
+
+/**
+ * The three fields that override where a product ships from. A partial override is
+ * meaningless — a city without a pincode still rates from the seller's default — so
+ * the group is all-or-none.
+ */
+export const SHIPPING_OVERRIDE_FIELDS = [
+  "shippingFromPincode",
+  "shippingFromCity",
+  "shippingFromLocation",
+] as const;
+
+export const SHIPPING_OVERRIDE_MESSAGE =
+  "Fill all three override fields, or clear them all to ship from the seller's default address";
 
 /**
  * The accepted shape of an admin product payload.
@@ -12,10 +26,11 @@ import { ProductFlag } from "@server/catalog/product.flags";
 export const productFormSchema = z
   .object({
     name: z.string().trim().min(2, "Name must be at least 2 characters").max(255),
-    description: z.string().max(5000).optional(),
+    // Required to match the form, which has always enforced it.
+    description: z.string().trim().min(1, "Description is required").max(5000),
 
     price: z.number({ message: "Price is required" }).positive("Price must be greater than 0"),
-    salePrice: z.number().positive("Sale price must be greater than 0").optional(),
+    salePrice: optionalNumber(z.number().positive("Sale price must be greater than 0")),
     currency: z.string().length(3).optional(),
 
     sellerId: z.string().min(1, "Seller is required"),
@@ -34,17 +49,29 @@ export const productFormSchema = z
 
     stock: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative"),
     sku: z.string().trim().max(64).optional(),
-    lowStockThreshold: z.number().int().min(0).optional(),
+    lowStockThreshold: optionalNumber(z.number().int("Low stock threshold must be a whole number").min(0)),
 
-    shippingFromPincode: postalCodeSchema,
-    shippingFromCity: z.string().max(100).optional(),
-    shippingFromLocation: z.string().max(200).optional(),
+    // Optional overrides — blank means "use the seller's default", so blank must pass.
+    shippingFromPincode: optionalPostalCodeSchema,
+    shippingFromCity: z.string().trim().max(100).optional(),
+    shippingFromLocation: z.string().trim().max(200).optional(),
   })
   // A cross-field rule neither side could enforce alone, attributed to the field a
   // user would correct.
   .refine((d) => d.salePrice === undefined || d.salePrice < d.price, {
     message: "Sale price must be below the regular price",
     path: ["salePrice"],
+  })
+  // All-or-none: blame every field left blank, so each one shows why it is needed.
+  .superRefine((d, ctx) => {
+    const filled = SHIPPING_OVERRIDE_FIELDS.filter((f) => (d[f] ?? "").trim() !== "");
+    if (filled.length === 0 || filled.length === SHIPPING_OVERRIDE_FIELDS.length) return;
+
+    for (const field of SHIPPING_OVERRIDE_FIELDS) {
+      if ((d[field] ?? "").trim() === "") {
+        ctx.addIssue({ code: "custom", path: [field], message: SHIPPING_OVERRIDE_MESSAGE });
+      }
+    }
   });
 
 export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
@@ -54,5 +81,5 @@ export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",
   "sellerId", "categoryId", "tags", "flags", "images", "thumbnail",
   "weight", "sizes", "colors", "stock", "sku", "lowStockThreshold",
-  "shippingFromPincode", "shippingFromCity", "shippingFromLocation",
+  ...SHIPPING_OVERRIDE_FIELDS,
 ] as const;

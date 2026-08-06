@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalNumber } from "./common.schemas";
 
 /**
  * The accepted shape of an admin category payload.
@@ -14,7 +15,7 @@ export const categoryFormSchema = z.object({
   description: z.string().trim().max(1000).default(""),
   heroImage: z.string().trim().max(2048).default(""),
   accentColorClass: z.string().trim().max(100).default("bg-emerald-50"),
-  order: z.number().int("Order must be a whole number").min(0).optional(),
+  order: optionalNumber(z.number().int("Order must be a whole number").min(0)),
 });
 
 export type CategoryFormSchemaInput = z.infer<typeof categoryFormSchema>;

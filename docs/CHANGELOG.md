@@ -10,6 +10,26 @@
 
 ## Entries
 
+## [PR-22] 2026-08-05 — Optional fields stop failing; shipping override is all-or-none; product weight persists
+
+A product could not be created at all: the form reported "Enter a 6-digit PIN code" on a field its own section labels *Optional*. Three defects behind it, each a different way for the schema and the form to disagree.
+
+**Optional fields that rejected their own blank value.** `shippingFromPincode` used the required `postalCodeSchema` while the UI said "Leave empty to use seller's default", so the default `""` failed the regex. Now `optionalPostalCodeSchema` — blank passes, a present value is still checked.
+
+**Blank number inputs arriving as NaN.** `valueAsNumber` yields NaN for an untouched input, and `z.number().optional()` **rejects NaN** — verified against Zod 4 rather than assumed, because the last time an assumption about a library's output went untested it cost [PR-16](#pr-16-2026-08-05--fix-slug-retry-never-fired-under-the-pg-driver-adapter). So a blank `salePrice` blocked submission. Worse, it blocked it *silently*: `salePrice` rendered no error, so the form simply did nothing. Same for `lowStockThreshold` and the category form's `order`. A shared `optionalNumber` helper now treats every spelling of blank — `""`, `null`, `NaN` — as absent; JSON has no NaN, so the `null` case is what the server actually receives.
+
+**Fields bound but never displayed.** `sku` had no error output — the single field the whole error-envelope effort existed to highlight ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)), so a duplicate SKU still showed nothing on the field. Also `salePrice`, `lowStockThreshold`, `currency`, `order`. This is the third time this defect has shipped, so it is now a test rather than a review item: `tests/unit/form-error-display.test.ts` walks every `register()` in the source and fails on any field whose error is named nowhere in the file that binds it. Three fields are exempt, each with a stated reason.
+
+**Shipping override is all-or-none.** A city without a pincode still rates from the seller's default, so a partial override is meaningless. The group refine blames *every* blank field in the group rather than just the first, so each one says why it is needed. Blank overrides now store as `NULL` via `blankToNull` instead of `''`, giving absence one spelling.
+
+**Product weight now persists.** Both repository write sites enumerated their columns — correctly, to prevent mass assignment — and both omitted `weight`, so every product carried the schema default of 0.5 kg while `shipping.ts` rated on it. This was already recorded in [CONTRACTS.md](CONTRACTS.md) and specced as [product-weight-and-rates](specs/product-weight-and-rates/) R1; it was fixed here rather than deferred because this PR marks the field required in the UI, and demanding a value that goes nowhere is worse than not asking. **R1 and A1 only** — rate calculation, missing-weight visibility, and correcting the existing rows (R6) are still open, and every product created before this change still reads 0.5.
+
+Two divergences closed the other way, where the form was stricter than the schema: `description` and `weight` are now required in the schema too, matching what the form has always enforced. Neither adds friction — the form's own rules already blocked both on create and on edit.
+
+**Consequence to know about:** a product saved with a pincode override but no city (possible before this change, since only the pincode was required) will now fail the group rule when edited, and the admin must complete or clear all three.
+
+Typecheck clean, `next build` compiles, **87 tests pass** (up from 68 — 16 new schema cases, 3 guard cases).
+
 ## [PR-21] 2026-08-05 — Error envelope adopted across routes and forms; rule recorded as ADR-0013
 
 Extends [PR-20](#) from the product path to the rest of the application, and records the decision so it is not missed again.

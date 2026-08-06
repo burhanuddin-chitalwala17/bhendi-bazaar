@@ -1,6 +1,6 @@
 # Spec — product weight and rates
 
-- **Status:** Draft
+- **Status:** Draft — R1 and A1 landed early in [PR-22](../../CHANGELOG.md); R2–R7 outstanding
 - **Domain:** catalog, shipping
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-03

@@ -98,8 +98,15 @@ Not an Invariant, but the same kind of failure: silent, and invisible to `tsc`.
 - Error handling *inside* a form — a `try/catch` around submit, a `toast.error` for a server failure, a local `error` state. If the form needs it, the hook is missing something and should grow instead.
 - A form validating with hand-written `register` rules where a schema exists, or with a schema that is not the one the route parses.
 
+**A field and its error are two separate things** — bind one without the other and the form refuses to submit while saying nothing. `tests/unit/form-error-display.test.ts` fails the build on it, so the review job is only to judge new `EXEMPT` entries: a field is exempt when it has no reachable failure, not when showing the error is inconvenient.
+
+**Does the schema accept what the form actually sends?** The form sends its default values, so read the two together:
+- An optional field whose schema rejects its own default. A UI hint reading "leave empty" over a required rule is the tell.
+- A number input registered `valueAsNumber` whose schema field is not wrapped in `optionalNumber` — a blank input is NaN, and `z.number().optional()` rejects NaN.
+- A field the form marks `required` that the schema leaves optional, or the reverse. The stricter side is the one users meet; make the schema say it, since the schema is also what the route enforces.
+
 ```bash
-git diff main...HEAD | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(message|error|details)|throw new Error\('
+git diff main...HEAD | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(message|error|details)|throw new Error\(|valueAsNumber'
 ```
 
 **Migrate on contact.** ADR-0013 decision 7: if the diff touches a form or handler that still uses the old pattern, converting it is part of the change. Flag a modified file left on the old pattern — that is exactly how the product form ended up as the only form with no error display while its sibling had one.

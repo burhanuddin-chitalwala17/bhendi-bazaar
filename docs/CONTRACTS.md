@@ -75,7 +75,9 @@ Consolidating to one declaration is a precondition for [product-weight-and-rates
 `GET /api/admin/shipping/providers` returns `ShippingProvider` rows without a `select`, so credential and auth-error fields reach the browser. Rule 5 requires an explicit projection exposing only connection state.
 
 ### Products
-`ProductFormInput` is declared on both sides with different fields — `weight` is required by the client form type and absent from the server type the repository uses, so it is collected and not persisted. Reconciling the two is part of [product-weight-and-rates](specs/product-weight-and-rates/).
+`ProductFormInput` is still declared on both sides — `src/admin/products/types.ts` and `server/catalog/admin.product.types.ts` — so the two can drift again. `weight` is the field that already did: required by the client type, absent from the server type, therefore collected and never written. Both now carry it and the repository persists it ([PR-22](CHANGELOG.md)), but the duplicate declaration is the underlying defect and remains. Consolidating it is part of [product-weight-and-rates](specs/product-weight-and-rates/).
+
+The three shipping-origin fields — `shippingFromPincode`, `shippingFromCity`, `shippingFromLocation` — are an all-or-none group: either all three are present or all three are absent. Enforced in `productFormSchema`, so both the form and the route apply it. Absent is spelled `NULL`, never `''`; readers treat absence as "fall back to the seller's default address".
 
 ---
 

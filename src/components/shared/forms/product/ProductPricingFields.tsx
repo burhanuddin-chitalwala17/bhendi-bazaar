@@ -43,6 +43,7 @@ export function ProductPricingFields({
           min="0"
           placeholder="Optional"
           {...register("salePrice", { valueAsNumber: true })}
+          error={errors.salePrice?.message}
           hint="Leave empty if not on sale"
         />
 
@@ -51,6 +52,7 @@ export function ProductPricingFields({
           label="Currency"
           disabled={readOnly}
           {...register("currency")}
+          error={errors.currency?.message}
         >
           <option value="INR">INR (₹)</option>
           <option value="USD">USD ($)</option>

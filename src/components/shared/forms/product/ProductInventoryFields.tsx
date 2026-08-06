@@ -41,17 +41,20 @@ export function ProductInventoryFields({
           min="0"
           placeholder="10"
           {...register("lowStockThreshold", { valueAsNumber: true })}
+          error={errors.lowStockThreshold?.message}
           hint="Alert when stock falls below this number"
         />
 
         <FormInput
           label="Weight (kg)"
+          required
           disabled={readOnly}
           type="number"
           min="0"
           placeholder="0.5"
           {...register("weight", { valueAsNumber: true })}
           error={errors.weight?.message}
+          hint="Used to rate shipping"
         />
       </div>
     </div>

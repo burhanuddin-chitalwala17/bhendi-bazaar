@@ -87,13 +87,13 @@ export function ProductSellerShippingFields({
 
         {/* Override Shipping Location */}
         <div className="space-y-4">
-          {!watch("shippingFromPincode") && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <p className="text-sm text-amber-800">
-                <strong>Note:</strong> Only fill these fields if this product ships from a different location than the seller&apos;s default address.
-              </p>
-            </div>
-          )}
+            <p className="text-sm text-amber-800">
+              <strong>Note:</strong> Only fill these fields if this product ships from a
+              different location than the seller&apos;s default address. Fill all three,
+              or leave all three empty.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormInput
@@ -102,7 +102,6 @@ export function ProductSellerShippingFields({
               {...register("shippingFromPincode")}
               error={errors.shippingFromPincode?.message}
               disabled={readOnly}
-              hint="Leave empty to use seller's default"
             />
 
             <FormInput
@@ -111,7 +110,6 @@ export function ProductSellerShippingFields({
               {...register("shippingFromCity")}
               error={errors.shippingFromCity?.message}
               disabled={readOnly}
-              hint="Leave empty to use seller's default"
             />
           </div>
 
@@ -121,7 +119,6 @@ export function ProductSellerShippingFields({
             {...register("shippingFromLocation")}
             error={errors.shippingFromLocation?.message}
             disabled={readOnly}
-            hint="Optional: Specify warehouse or specific location name"
           />
         </div>
       </div>

@@ -68,6 +68,26 @@ export const postalCodeSchema = z
   .string()
   .regex(PINCODE_PATTERN, PINCODE_MESSAGE);
 
+/** A pincode field that may be left blank — for optional overrides. */
+export const optionalPostalCodeSchema = z
+  .string()
+  .trim()
+  .refine((v) => v === "" || PINCODE_PATTERN.test(v), PINCODE_MESSAGE)
+  .optional();
+
+/**
+ * A number the user may leave blank.
+ *
+ * `valueAsNumber` gives NaN for an empty input and `z.number().optional()` rejects
+ * NaN, so an untouched optional field fails validation — silently, if the field
+ * renders no error. Every spelling of blank becomes absent instead.
+ */
+export const optionalNumber = (inner: z.ZodNumber) =>
+  z.preprocess(
+    (v) => (v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? undefined : v),
+    inner.optional()
+  );
+
 // Address validation
 export const addressSchema = z.object({
   fullName: nameSchema.optional(),

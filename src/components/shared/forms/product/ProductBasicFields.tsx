@@ -84,7 +84,8 @@ export function ProductBasicFields({
           placeholder="e.g., VEK-001"
           disabled={readOnly}
           {...register("sku")}
-          hint="Optional"
+          error={errors.sku?.message}
+          hint="Optional — must be unique"
         />
       </div>
     </div>

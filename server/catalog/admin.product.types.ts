@@ -32,7 +32,8 @@ export interface ProductFormInput {
   stock: number;
   sku?: string;
   lowStockThreshold?: number;
-  shippingFromPincode: string;
+  weight: number;
+  shippingFromPincode?: string;
   shippingFromCity?: string;
   shippingFromLocation?: string;
 }

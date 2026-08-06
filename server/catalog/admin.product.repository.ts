@@ -187,9 +187,10 @@ export class AdminProductsRepository {
                 stock: data.stock,
                 sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold || 10,
-                shippingFromPincode: data.shippingFromPincode,
-                shippingFromCity: data.shippingFromCity,
-                shippingFromLocation: data.shippingFromLocation,
+                weight: data.weight,
+                shippingFromPincode: blankToNull(data.shippingFromPincode),
+                shippingFromCity: blankToNull(data.shippingFromCity),
+                shippingFromLocation: blankToNull(data.shippingFromLocation),
             },
             include: {
                 category: {
@@ -283,9 +284,10 @@ export class AdminProductsRepository {
                 stock: data.stock,
                 sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold,
-                shippingFromPincode: data.shippingFromPincode,
-                shippingFromCity: data.shippingFromCity,
-                shippingFromLocation: data.shippingFromLocation,
+                weight: data.weight,
+                shippingFromPincode: blankToNull(data.shippingFromPincode),
+                shippingFromCity: blankToNull(data.shippingFromCity),
+                shippingFromLocation: blankToNull(data.shippingFromLocation),
             },
         });
         if (!product) {
