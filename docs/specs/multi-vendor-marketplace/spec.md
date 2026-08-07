@@ -57,7 +57,7 @@ which is why they share a parent, and why neither can be reviewed sensibly as a 
 
 | Subfeature                                                        | Requirement                                                  | Depends on                                |
 | ----------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------- |
-| [organisations-and-membership](organisations-and-membership/)     | A vendor is an organisation with people in it                | —                                         |
+| [organisations-and-membership](organisations-and-membership/)     | A vendor is an organisation with people in it ✅ done         | —                                         |
 | [portal-separation](portal-separation/)                           | Three audiences, three portals, one authorization model      | organisations-and-membership              |
 | [org-onboarding](org-onboarding/)                                 | Someone with no organisation can create one                  | portal-separation                         |
 | [org-portal-chrome](org-portal-chrome/)                           | You can see and change which organisation you are acting for | portal-separation                         |

@@ -52,6 +52,14 @@ tests/
 
 `critical/` is deliberately separate: those tests are the executable form of [../CLAUDE.md](../CLAUDE.md)'s Invariants, and a failure there blocks regardless of anything else.
 
+### Database behaviour is currently untestable
+
+`integration/` exists in the layout and has no database behind it: `vitest.config.ts` runs `happy-dom` with no test datasource, and `tests/setup.ts` stubs `fetch` to throw. So anything whose behaviour lives in Postgres cannot be asserted here — a unique constraint rejecting a duplicate, a cascade removing a row, a guarded `updateMany` returning `count === 0` under contention.
+
+That matters more than it sounds, because **the project deliberately pushes rules into the database**: Invariant 6's conditional decrement, `@@unique([userId, orgId])` on a membership, `onDelete: Restrict` protecting order history. Those are the rules most worth testing and the ones currently verified by hand.
+
+Closing it means a disposable Postgres for tests — a container, or a schema-per-run against a local instance — plus `prisma migrate deploy` in the test setup. Until then, a PR whose behaviour is a constraint says so in its CHANGELOG entry and states the SQL that was run instead. **This is a gap, not a policy**: "the database enforces it" is only an argument if something checks that it does.
+
 ## Conventions
 
 1. **Name the behaviour, not the function.** `rejects_client_supplied_price` beats `createOrder_3`.

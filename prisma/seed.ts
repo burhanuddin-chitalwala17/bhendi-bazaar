@@ -50,7 +50,8 @@ async function main() {
   await prisma.shipment.deleteMany(); // ⭐ NEW - Clear shipments before orders
   await prisma.order.deleteMany();
   await prisma.product.deleteMany();
-  await prisma.org.deleteMany(); // Add this
+  await prisma.orgMember.deleteMany(); // before orgs; explicit rather than via cascade
+  await prisma.org.deleteMany();
   await prisma.category.deleteMany();
   await prisma.profile.deleteMany();
   await prisma.adminLog.deleteMany();
@@ -114,6 +115,9 @@ async function main() {
   // ====================
   // SEED ORGS (NEW - before products)
   // ====================
+  const ownerUserId = seedUsers.find((u) => u.role === "ADMIN")?.id;
+  if (!ownerUserId) throw new Error("Seed data has no ADMIN user to own the seeded orgs");
+
   console.log("🏪 Seeding orgs...");
   for (const orgData of seedOrgs) {
     const org = await prisma.org.create({
@@ -138,8 +142,15 @@ async function main() {
       },
     });
     console.log(`  ✓ ${org.name} (${org.code})`);
+
+    // Every seeded org gets an owner, so the org portal is reachable locally without
+    // going through onboarding. Orgs created before memberships existed have none:
+    // `contactPerson` is a free-text name, so there is no owner to infer.
+    await prisma.orgMember.create({
+      data: { userId: ownerUserId, orgId: org.id, role: "OWNER" },
+    });
   }
-  console.log(`✅ ${seedOrgs.length} orgs seeded\n`);
+  console.log(`✅ ${seedOrgs.length} orgs seeded, each with an owner\n`);
 
   // ====================
   // SEED PRODUCTS

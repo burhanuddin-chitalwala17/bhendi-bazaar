@@ -133,6 +133,7 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  orgMemberships OrgMember[]
 
   @@index([role])
   @@index([isBlocked])
@@ -183,7 +184,8 @@ model Org {
   
   // Relations
   products Product[]
-  shipments Shipment[] // ← ADD THIS
+  shipments Shipment[]
+  members  OrgMember[]
   
   @@index([email])
   @@index([isActive])
@@ -456,4 +458,34 @@ model AdminLog {
   @@index([createdAt])
   @@index([resource])
   @@index([action])
+}
+
+/// What a person may do inside one org. Declared here rather than as a TypeScript
+/// union so there is exactly one declaration and the database rejects anything else —
+/// unlike `ProductFlag`, which is a TS enum over a `String[]` because Postgres arrays
+/// of enums are awkward. A role is scalar, so it does not need that compromise.
+enum OrgRole {
+  OWNER
+  STAFF
+}
+
+/// A person's membership of an org. The relationship carries the role, because a role
+/// on `User` could not express "owner of A, staff at B".
+///
+/// Cascade on both sides is deliberate: a membership is meaningless without either end,
+/// and deleting one end must remove only the link — never the other party.
+model OrgMember {
+  id     String @id @default(cuid())
+  userId String
+  orgId  String
+  role   OrgRole
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Org  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, orgId])
+  @@index([orgId])
 }

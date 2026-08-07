@@ -1,6 +1,6 @@
 # Spec — organisations and membership
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-23 (rename) and PR-24 (membership)
 - **Domain:** catalog, identity
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-08

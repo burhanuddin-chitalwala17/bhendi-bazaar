@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-24] 2026-08-08 — `OrgMember`: a person's membership of an org [MIGRATION]
+
+Completes [organisations-and-membership](specs/multi-vendor-marketplace/organisations-and-membership/). Purely additive — one enum, one table, and nothing reads either. That is the point: the authorization change in [portal-separation](specs/multi-vendor-marketplace/portal-separation/) becomes additive rather than a schema change.
+
+**`OrgRole` is a Prisma enum, not a TypeScript union over a `String` column.** This diverges from `ProductFlag`, which is a TS enum over `String[]` — and the reason is that a role is scalar, so it does not need the compromise Postgres arrays of enums force. Declaring it in the schema means the generated type is the *only* declaration and the database rejects anything else, which matters for a value that will gate authorization.
+
+**Cascade on both sides of the membership**, which is the one place cascade is right in this schema: a membership is meaningless without either end, and deleting one end must remove only the link. Contrast `ORDER_ITEM.productId`, where cascade would destroy order history. `@@unique([userId, orgId])` puts "one membership per person per org" in the database rather than in a prior read.
+
+**No backfill, deliberately.** Existing orgs have no owner to infer — `contactPerson` is a free-text name, not a user reference — so guessing one would write a fiction into an authorization table. Orgs created before this have no members and get them from [org-onboarding](specs/multi-vendor-marketplace/org-onboarding/) and [org-team](specs/multi-vendor-marketplace/org-team/).
+
+The repository is deliberately three methods: `findMembership`, `listOrgsForUser`, `addMember`. Listing members, changing a role and removing someone wait for `org-team`, whose requirement that an org cannot be left unadministered is what decides what removal means — writing it now would either omit that rule or invent it.
+
+Each seeded org now gets an OWNER, so `addMember` has a real caller and the org portal will be reachable locally without going through onboarding. The seed's wipe lists `orgMember` explicitly rather than relying on the cascade, matching how every other table is handled there.
+
+**Its behaviour is not covered by a test, and cannot be.** The uniqueness constraint and the cascade are database behaviour, and there is no test database — `vitest.config.ts` runs `happy-dom` with no datasource. [TESTING.md](TESTING.md) now records that gap and what would close it, because "the database enforces it" is only an argument if something checks that it does. `tsc` exits 0, 89 tests pass, `next build` compiles with no Prisma error — though unlike [PR-23](#pr-23-2026-08-08--seller-becomes-org-contract-migration), a clean build here proves nothing about whether the migration was applied, since nothing reads the table.
+
 ## [PR-23] 2026-08-08 — `Seller` becomes `Org` [CONTRACT] [MIGRATION]
 
 A vendor is an organisation with people in it, not a record an admin types on someone's behalf. This is the rename only — `OrgMember` and anything that reads a membership are PR 2 of [organisations-and-membership](specs/multi-vendor-marketplace/organisations-and-membership/), deliberately separate because a rename is reviewed by confirming nothing changed and new behaviour by confirming something did.
