@@ -12,10 +12,10 @@ import { useRouter } from "next/navigation";
 interface ProductViewProps {
   product: ProductDetails;
   category: { id: string; name: string };
-  seller: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
+  org: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
 }
 
-export function ProductsView({ product, category, seller }: ProductViewProps) {
+export function ProductsView({ product, category, org }: ProductViewProps) {
   const router = useRouter();
   const onCancel = () => {
     router.push("/admin/products");
@@ -60,7 +60,7 @@ export function ProductsView({ product, category, seller }: ProductViewProps) {
       <ProductForm
         product={product}
         categories={[category]}
-        sellers={[seller]}
+        orgs={[org]}
         onSubmit={async () => {
           return product;
         }}

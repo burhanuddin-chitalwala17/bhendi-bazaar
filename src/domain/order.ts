@@ -44,7 +44,7 @@ export interface Shipment {
   id: string;
   code: string;
   items: CartItem[];
-  sellerId: string;
+  orgId: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;

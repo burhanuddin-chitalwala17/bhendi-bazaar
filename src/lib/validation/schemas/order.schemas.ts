@@ -132,8 +132,8 @@ const selectedRateSchema = z.object({
 // Shipping group schema
 const shippingGroupSchema = z.object({
   groupId: z.string().min(1),
-  sellerId: z.string().min(1),
-  sellerName: z.string().min(1),
+  orgId: z.string().min(1),
+  orgName: z.string().min(1),
   fromPincode: postalCodeSchema,
   fromCity: z.string().min(2).max(100),
   fromState: z.string().min(2).max(100),

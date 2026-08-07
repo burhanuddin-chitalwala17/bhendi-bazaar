@@ -5,15 +5,15 @@
 
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductAddContainer } from "@/admin/products/productAdd";
-import { sellersDAL } from "@/data-access-layer/admin/sellers.dal";
-import type { SellerWithStats } from "@/domain/seller";
+import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
+import type { OrgWithStats } from "@/domain/org";
 import type { AdminCategory } from "@/domain/admin";
 export default async function NewProductPage() {
   const categories = (await adminCategoriesDAL.getCategories()).categories.map((c: AdminCategory) => ({
     id: c.id,
     name: c.name,
   }));
-  const sellers = (await sellersDAL.getSellers()).map((s: SellerWithStats) => ({
+  const orgs = (await orgsDAL.getOrgs()).map((s: OrgWithStats) => ({
     id: s.id,
     name: s.name,
     code: s.code,
@@ -24,7 +24,7 @@ export default async function NewProductPage() {
   }));
   return (
     <div className="max-w-5xl mx-auto">
-      <ProductAddContainer categories={categories} sellers={sellers} />
+      <ProductAddContainer categories={categories} orgs={orgs} />
     </div>
   );
 }

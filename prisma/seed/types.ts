@@ -19,7 +19,7 @@ export interface SeedUser {
 
 // ... existing code ...
 
-export interface SeedSeller {
+export interface SeedOrg {
   id: string;
   code: string;
   name: string;
@@ -71,7 +71,7 @@ export interface SeedProduct {
   price: number;
   salePrice?: number;
   currency: "INR";
-  sellerId: string;
+  orgId: string;
   categoryId: string;
   tags: string[];
   flags: string[];
@@ -111,7 +111,7 @@ export interface SeedShipment {
   code: string; // "BB-1001-SH1"
   orderId: string;
   items: OrderItem[]; // Items in this specific shipment
-  sellerId: string;
+  orgId: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;

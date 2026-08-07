@@ -11,7 +11,7 @@ import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
 import { ProductAttributeFields } from "./ProductAttributeFields";
 import { ProductFlagsFields } from "./ProductFlagsFields";
-import { ProductSellerShippingFields } from "./ProductSellerShippingFields";
+import { ProductOrgShippingFields } from "./ProductOrgShippingFields";
 import { FormActions } from "../../button-groups/FormActions";
 import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
@@ -19,7 +19,7 @@ import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 interface ProductFormProps {
   product?: ProductDetails;
   categories?: { id: string; name: string }[];
-  sellers?: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+  orgs?: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
   onSubmit: (data: ProductFormInput) => Promise<ProductDetails | null | undefined>;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -29,7 +29,7 @@ interface ProductFormProps {
 export function ProductForm({
   product,
   categories,
-  sellers,
+  orgs,
   onSubmit,
   onCancel,
   isSubmitting,
@@ -51,7 +51,7 @@ export function ProductForm({
       salePrice: product?.salePrice || undefined,
       currency: product?.currency || "INR",
       categoryId: product?.category?.id || "",
-      sellerId: product?.seller?.id || "",
+      orgId: product?.org?.id || "",
       tags: product?.tags || [],
       flags: product?.flags || [],
       images: product?.images || [],
@@ -186,12 +186,12 @@ export function ProductForm({
         readOnly={readOnly}
       />
 
-      {/* Seller Shipping */}
-      <ProductSellerShippingFields
+      {/* Org Shipping */}
+      <ProductOrgShippingFields
         register={register}
         errors={errors}
         watch={watch}
-        sellers={sellers}
+        orgs={orgs}
         readOnly={readOnly}
       />
 
@@ -224,4 +224,4 @@ export { ProductPricingFields } from "./ProductPricingFields";
 export { ProductInventoryFields } from "./ProductInventoryFields";
 export { ProductAttributeFields } from "./ProductAttributeFields";
 export { ProductFlagsFields } from "./ProductFlagsFields";
-export { ProductSellerShippingFields } from "./ProductSellerShippingFields";
+export { ProductOrgShippingFields } from "./ProductOrgShippingFields";

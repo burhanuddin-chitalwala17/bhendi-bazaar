@@ -54,11 +54,11 @@ model Product {
   sku               String?  @unique // Stock Keeping Unit
   lowStockThreshold Int      @default(10) // Alert when stock falls below this
 
-  // ⭐ Seller Association (REQUIRED)
-  sellerId String
-  seller   Seller @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  // ⭐ Org Association (REQUIRED)
+  orgId String
+  org   Org @relation(fields: [orgId], references: [id], onDelete: Restrict)
   
-  // ⭐ Shipping Origin (OPTIONAL - overrides seller's default)
+  // ⭐ Shipping Origin (OPTIONAL - overrides the org's default)
   shippingFromPincode   String?
   shippingFromCity      String?
   shippingFromLocation  String? // "Warehouse 2", "Special Location"
@@ -74,7 +74,7 @@ model Product {
   @@index([categoryId])
   @@index([createdAt])
   @@index([stock])
-  @@index([sellerId])
+  @@index([orgId])
   @@index([shippingFromPincode])
 }
 
@@ -148,7 +148,7 @@ model Profile {
   profilePic String? // URL to avatar image
 }
 
-model Seller {
+model Org {
   id   String @id @default(cuid())
   code String @unique // "SEL-001", "SEL-002"
   name String // "ABC Traders", "XYZ Wholesale"
@@ -276,8 +276,8 @@ model Shipment {
   items   Json // ShipmentItem[] - only items from this origin
   
   // ✅ Origin details (where it ships from)
-  sellerId    String
-  seller      Seller @relation(fields: [sellerId], references: [id])
+  orgId    String
+  org      Org @relation(fields: [orgId], references: [id])
   fromPincode String
   fromCity    String
   fromState   String
@@ -312,7 +312,7 @@ model Shipment {
   shippingEvents ShippingEvent[]
   
   @@index([orderId])
-  @@index([sellerId])
+  @@index([orgId])
   @@index([status])
   @@index([trackingNumber])
 }

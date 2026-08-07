@@ -24,7 +24,7 @@ interface ProductsPageProps {
     page?: string;
     search?: string;
     category?: string;
-    seller?: string;
+    org?: string;
     status?: string;
     sort?: string;
     order?: "asc" | "desc";
@@ -69,7 +69,7 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
     limit: 10,
     search: params.search,
     categoryId: params.category,
-    sellerId: params.seller,
+    orgId: params.org,
     isActive:
       params.status === "active"
         ? true

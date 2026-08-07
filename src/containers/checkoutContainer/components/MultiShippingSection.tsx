@@ -97,7 +97,7 @@ function ShippingGroupCard({
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Seller: {group.sellerName}
+            Org: {group.orgName}
           </p>
         </div>
         

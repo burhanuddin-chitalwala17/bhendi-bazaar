@@ -4,12 +4,12 @@
  */
 
 import type { SeedProduct } from "./types";
-import { seedSellers } from "./sellers.seed";
+import { seedOrgs } from "./orgs.seed";
 
-// Helper function to randomly assign a seller
-const getRandomSeller = (): string => {
-  const randomIndex = Math.floor(Math.random() * seedSellers.length);
-  return seedSellers[randomIndex].id;
+// Helper function to randomly assign a org
+const getRandomOrg = (): string => {
+  const randomIndex = Math.floor(Math.random() * seedOrgs.length);
+  return seedOrgs[randomIndex].id;
 };
 
 export const seedProducts: SeedProduct[] = [
@@ -23,7 +23,7 @@ export const seedProducts: SeedProduct[] = [
     price: 4200,
     salePrice: 3690,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-abayas",
     tags: ["abaya", "evening", "satin", "emerald", "special-occasion"],
     flags: ["FEATURED", "HERO", "ON_OFFER"],
@@ -50,7 +50,7 @@ export const seedProducts: SeedProduct[] = [
     price: 3200,
     salePrice: 2880,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-abayas",
     tags: ["jilbab", "everyday", "black", "classic", "breathable"],
     flags: ["ON_OFFER"],
@@ -73,7 +73,7 @@ export const seedProducts: SeedProduct[] = [
       "Stunning maroon abaya with intricate gold thread embroidery on the sleeves and hem. A statement piece that combines tradition with contemporary style. Perfect for weddings and festive occasions.",
     price: 5800,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-abayas",
     tags: ["abaya", "embroidered", "maroon", "wedding", "festive"],
     flags: ["FEATURED"],
@@ -102,7 +102,7 @@ export const seedProducts: SeedProduct[] = [
     price: 2400,
     salePrice: 1920,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-attars",
     tags: ["attar", "oud", "woody", "premium", "long-lasting"],
     flags: ["FEATURED", "HERO", "ON_OFFER"],
@@ -125,7 +125,7 @@ export const seedProducts: SeedProduct[] = [
       "Delicate blend of Bulgarian rose and white musk. Floral yet sophisticated fragrance perfect for daily wear. Gentle on skin and suitable for all occasions.",
     price: 1200,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-attars",
     tags: ["attar", "rose", "musk", "floral", "everyday"],
     flags: [],
@@ -149,7 +149,7 @@ export const seedProducts: SeedProduct[] = [
     price: 1800,
     salePrice: 1530,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-attars",
     tags: ["attar", "sandalwood", "amber", "warm", "evening"],
     flags: ["ON_OFFER"],
@@ -177,7 +177,7 @@ export const seedProducts: SeedProduct[] = [
       "Exquisite gold-toned filigree earrings featuring intricate traditional patterns. Lightweight despite their elaborate design. Perfect for weddings and festive celebrations.\n\nMaterial: Gold-plated brass with anti-tarnish coating",
     price: 1500,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-jewellery",
     tags: ["earrings", "gold", "filigree", "traditional", "wedding"],
     flags: ["FEATURED"],
@@ -204,7 +204,7 @@ export const seedProducts: SeedProduct[] = [
     price: 3200,
     salePrice: 2560,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-jewellery",
     tags: ["necklace", "emerald", "statement", "contemporary", "stones"],
     flags: ["FEATURED", "ON_OFFER"],
@@ -230,7 +230,7 @@ export const seedProducts: SeedProduct[] = [
       "Classic jhumka earrings with pearl drops. Traditional design that never goes out of style. Comes with matching tikka. Perfect for traditional attire.",
     price: 2200,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-jewellery",
     tags: ["jhumka", "pearls", "traditional", "set", "classic"],
     flags: [],
@@ -256,7 +256,7 @@ export const seedProducts: SeedProduct[] = [
     price: 1800,
     salePrice: 1440,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-prayer",
     tags: ["prayer-mat", "velvet", "travel", "cushioned", "kaaba"],
     flags: ["FEATURED", "ON_OFFER"],
@@ -282,7 +282,7 @@ export const seedProducts: SeedProduct[] = [
       "Handcrafted tasbih made from premium sandalwood. 99 beads with divider markers. Smooth finish and pleasant natural fragrance. Comes in decorative box.",
     price: 450,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-prayer",
     tags: ["tasbih", "wooden", "sandalwood", "99-beads", "handcrafted"],
     flags: [],
@@ -305,7 +305,7 @@ export const seedProducts: SeedProduct[] = [
       "Protective Quran cover with beautiful gold embroidery. Soft padded interior to protect your holy book. Zipper closure for secure storage.\n\nFits standard Quran sizes (25cm x 18cm)",
     price: 650,
     currency: "INR",
-    sellerId: getRandomSeller(),
+    orgId: getRandomOrg(),
     categoryId: "cat-prayer",
     tags: ["quran-cover", "embroidered", "protective", "zipper"],
     flags: [],

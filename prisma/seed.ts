@@ -19,7 +19,7 @@ import { hash } from "bcryptjs";
 import {
   seedUsers,
   seedCategories,
-  seedSellers,
+  seedOrgs,
   seedProducts,
   seedOrders,
   seedShipments,
@@ -50,7 +50,7 @@ async function main() {
   await prisma.shipment.deleteMany(); // ⭐ NEW - Clear shipments before orders
   await prisma.order.deleteMany();
   await prisma.product.deleteMany();
-  await prisma.seller.deleteMany(); // Add this
+  await prisma.org.deleteMany(); // Add this
   await prisma.category.deleteMany();
   await prisma.profile.deleteMany();
   await prisma.adminLog.deleteMany();
@@ -112,34 +112,34 @@ async function main() {
   console.log(`✅ ${seedCategories.length} categories seeded\n`);
 
   // ====================
-  // SEED SELLERS (NEW - before products)
+  // SEED ORGS (NEW - before products)
   // ====================
-  console.log("🏪 Seeding sellers...");
-  for (const sellerData of seedSellers) {
-    const seller = await prisma.seller.create({
+  console.log("🏪 Seeding orgs...");
+  for (const orgData of seedOrgs) {
+    const org = await prisma.org.create({
       data: {
-        id: sellerData.id,
-        code: sellerData.code,
-        name: sellerData.name,
-        email: sellerData.email,
-        phone: sellerData.phone,
-        contactPerson: sellerData.contactPerson,
-        defaultPincode: sellerData.defaultPincode,
-        defaultCity: sellerData.defaultCity,
-        defaultState: sellerData.defaultState,
-        defaultAddress: sellerData.defaultAddress,
-        businessName: sellerData.businessName,
-        gstNumber: sellerData.gstNumber,
-        panNumber: sellerData.panNumber,
-        isActive: sellerData.isActive,
-        isVerified: sellerData.isVerified,
-        description: sellerData.description,
-        logoUrl: sellerData.logoUrl,
+        id: orgData.id,
+        code: orgData.code,
+        name: orgData.name,
+        email: orgData.email,
+        phone: orgData.phone,
+        contactPerson: orgData.contactPerson,
+        defaultPincode: orgData.defaultPincode,
+        defaultCity: orgData.defaultCity,
+        defaultState: orgData.defaultState,
+        defaultAddress: orgData.defaultAddress,
+        businessName: orgData.businessName,
+        gstNumber: orgData.gstNumber,
+        panNumber: orgData.panNumber,
+        isActive: orgData.isActive,
+        isVerified: orgData.isVerified,
+        description: orgData.description,
+        logoUrl: orgData.logoUrl,
       },
     });
-    console.log(`  ✓ ${seller.name} (${seller.code})`);
+    console.log(`  ✓ ${org.name} (${org.code})`);
   }
-  console.log(`✅ ${seedSellers.length} sellers seeded\n`);
+  console.log(`✅ ${seedOrgs.length} orgs seeded\n`);
 
   // ====================
   // SEED PRODUCTS
@@ -154,7 +154,7 @@ async function main() {
         description: productData.description,
         price: productData.price,
         salePrice: productData.salePrice || null,
-        sellerId: productData.sellerId,
+        orgId: productData.orgId,
         currency: productData.currency,
         categoryId: productData.categoryId,
         tags: productData.tags,
@@ -217,7 +217,7 @@ async function main() {
         code: shipmentData.code,
         orderId: shipmentData.orderId,
         items: shipmentData.items as any,
-        sellerId: shipmentData.sellerId,
+        orgId: shipmentData.orgId,
         fromPincode: shipmentData.fromPincode,
         fromCity: shipmentData.fromCity,
         fromState: shipmentData.fromState,
@@ -336,7 +336,7 @@ async function main() {
     } regular users)`
   );
   console.log(`   • ${seedCategories.length} categories`);
-  console.log(`   • ${seedSellers.length} sellers`);
+  console.log(`   • ${seedOrgs.length} orgs`);
   console.log(`   • ${seedProducts.length} products`);
   console.log(
     `   • ${seedOrders.length} orders (${

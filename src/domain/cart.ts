@@ -29,13 +29,13 @@ export interface CartItem {
   size?: string;                 // Selected size
   color?: string;                // Selected color
 
-  // Shipping (for multi-seller/warehouse support)
+  // Shipping (for multi-org/warehouse support)
   shippingFromPincode: string;   // Origin pincode
-  seller: {                      // Minimal seller info
+  org: {                      // Minimal org info
     id: string;
     name: string;
     code: string;
-    // Include full seller info (needed for shipping)
+    // Include full org info (needed for shipping)
     defaultPincode: string;
     defaultCity: string;
     defaultState: string;

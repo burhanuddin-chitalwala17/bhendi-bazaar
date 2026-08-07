@@ -127,12 +127,12 @@ export function formatEstimatedDelivery(days: number): string {
  */
 export interface ShippingGroup {
   // Unique identifier for this group
-  groupId: string; // e.g., "SEL-001-400001" (sellerId-pincode)
+  groupId: string; // e.g., "SEL-001-400001" (orgId-pincode)
 
   // Origin details
-  sellerId: string;
-  sellerName: string;
-  sellerCode: string;
+  orgId: string;
+  orgName: string;
+  orgCode: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;

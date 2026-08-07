@@ -32,7 +32,7 @@ const PRODUCT_LIST_SELECT = {
     category: {
         select: { id: true, name: true },
     },
-    seller: {
+    org: {
         select: { id: true, name: true, code: true, defaultPincode: true, defaultCity: true, defaultState: true, defaultAddress: true },
     },
 } satisfies Prisma.ProductSelect;
@@ -62,7 +62,7 @@ export class AdminProductsRepository {
             limit = 20,
             search,
             categoryId,
-            sellerId,
+            orgId,
             flags,
             lowStock,      // ✅ ADD THIS
             outOfStock,    // ✅ ADD THIS
@@ -79,7 +79,7 @@ export class AdminProductsRepository {
                 ],
             }),
             ...(categoryId && { categoryId }),
-            ...(sellerId && { sellerId }),
+            ...(orgId && { orgId }),
             // ✅ OUT OF STOCK FILTER
             ...(outOfStock && { stock: 0 }),
             // ✅ LOW STOCK: exclude zero stock if lowStock filter is active
@@ -176,7 +176,7 @@ export class AdminProductsRepository {
                 price: data.price,
                 salePrice: data.salePrice,
                 currency: data.currency || "INR",
-                sellerId: data.sellerId,
+                orgId: data.orgId,
                 categoryId: data.categoryId,
                 tags: data.tags || [],
                 flags: data.flags || [],
@@ -273,7 +273,7 @@ export class AdminProductsRepository {
                 price: data.price,
                 salePrice: data.salePrice,
                 currency: data.currency,
-                sellerId: data.sellerId,
+                orgId: data.orgId,
                 categoryId: data.categoryId,
                 tags: data.tags,
                 flags: data.flags,

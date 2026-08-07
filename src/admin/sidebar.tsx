@@ -46,8 +46,8 @@ const navItems = [
     icon: Users,
   },
   {
-    title: "Sellers",
-    href: "/admin/sellers",
+    title: "Organisations",
+    href: "/admin/orgs",
     icon: Store,
   },
   {

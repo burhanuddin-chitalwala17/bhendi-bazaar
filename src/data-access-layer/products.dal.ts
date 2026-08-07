@@ -31,15 +31,15 @@ const mapProduct = (product: any): Product => {
       sizes: product.sizes,
       colors: product.colors,
     },
-    shippingFromPincode: product.shippingFromPincode || product.seller.defaultPincode || "",
-    seller: {
-      id: product.seller.id,
-      name: product.seller.name,
-      code: product.seller.code,
-      defaultPincode: product.seller.defaultPincode,
-      defaultCity: product.seller.defaultCity,
-      defaultState: product.seller.defaultState,
-      defaultAddress: product.seller.defaultAddress ?? "",
+    shippingFromPincode: product.shippingFromPincode || product.org.defaultPincode || "",
+    org: {
+      id: product.org.id,
+      name: product.org.name,
+      code: product.org.code,
+      defaultPincode: product.org.defaultPincode,
+      defaultCity: product.org.defaultCity,
+      defaultState: product.org.defaultState,
+      defaultAddress: product.org.defaultAddress ?? "",
     },
   };
 };

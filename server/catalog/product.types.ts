@@ -28,7 +28,7 @@ export interface ServerProduct {
   weight: number;
   createdAt: Date;
   updatedAt: Date;
-  seller: {
+  org: {
     id: string;
     name: string;
     code: string;

@@ -1,0 +1,138 @@
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  createOrgSchema,
+  type CreateOrgInput,
+} from "@/lib/validation/schemas/org.schema";
+import type { Org } from "@/domain/org";
+import { OrgBasicFields } from "./OrgBasicFields";
+import { OrgLocationFields } from "./OrgLocationFields";
+import { OrgBusinessFields } from "./OrgBusinessFields";
+import { FormActions } from "../../button-groups/FormActions";
+
+interface OrgFormProps {
+  org?: Org;
+  onSubmit: (data: CreateOrgInput) => Promise<void>;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+  readOnly?: boolean;
+}
+
+export function OrgForm({
+  org,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+  readOnly = false,
+}: OrgFormProps) {
+  const isEdit = !!org;
+
+  const {
+    register,
+    onSubmit: handleFormSubmit,
+    formError,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useServerForm<CreateOrgInput>({
+    schema: createOrgSchema,
+    submit: onSubmit,
+    defaultValues: {
+      code: org?.code || "",
+      name: org?.name || "",
+      email: org?.email || "",
+      phone: org?.phone || "",
+      contactPerson: org?.contactPerson || "",
+      defaultPincode: org?.defaultPincode || "",
+      defaultCity: org?.defaultCity || "",
+      defaultState: org?.defaultState || "",
+      defaultAddress: org?.defaultAddress || "",
+      businessName: org?.businessName || "",
+      gstNumber: org?.gstNumber || "",
+      panNumber: org?.panNumber || "",
+      isActive: org?.isActive ?? true,
+      description: org?.description || "",
+    },
+  });
+
+  const isActive = watch("isActive");
+
+  return (
+    <form onSubmit={handleFormSubmit} className="space-y-6">
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {formError}
+        </div>
+      )}
+
+      {/* Basic Information */}
+      <OrgBasicFields
+        register={register}
+        errors={errors}
+        isEdit={isEdit}
+        readOnly={readOnly}
+      />
+
+      {/* Shipping Location */}
+      <OrgLocationFields
+        register={register}
+        errors={errors}
+        readOnly={readOnly}
+      />
+
+      {/* Business Details */}
+      <OrgBusinessFields
+        register={register}
+        errors={errors}
+        readOnly={readOnly}
+      />
+
+      {/* Status */}
+      {!readOnly && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="isActive">Active Status</Label>
+                <p className="text-sm text-muted-foreground">
+                  Inactive orgs cannot list new products
+                </p>
+              </div>
+              <Switch
+                id="isActive"
+                checked={isActive}
+                onCheckedChange={(checked) => setValue("isActive", checked)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Actions */}
+      {readOnly ? (
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Close
+          </Button>
+        </div>
+      ) : (
+        <FormActions
+          onCancel={onCancel}
+          submitLabel={isEdit ? "Update Organisation" : "Create Organisation"}
+          isSubmitting={isSubmitting}
+        />
+      )}
+    </form>
+  );
+}

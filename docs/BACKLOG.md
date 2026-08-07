@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-04
+- **Verified:** 2026-08-08
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -14,7 +14,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 |---|---|---|---|
 | **1** — Storefront & admin | Browse, cart, checkout UI, admin console for products/orders/users/reviews/sellers | catalog, cart, admin, identity | ✅ **Done** |
 | **2** — Transaction integrity | The server is authoritative over price, payment state, and stock; money is exact | checkout, payments | 🚧 **In progress** — 4 specs drafted |
-| **3** — Fulfilment | A confirmed order becomes a real booked shipment, priced on real weight | shipping | ⏳ Not started — 2 specs drafted |
+| **3** — Fulfilment & marketplace | A confirmed order becomes a real booked shipment from a real location, and the store serves multiple vendors | shipping, catalog, identity | ⏳ Not started — 2 specs + a 9-subfeature programme drafted |
 | **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started |
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
 
@@ -38,9 +38,14 @@ Also in this phase, no spec required (they are corrections with an ADR already s
 | Spec | Requirement | Status |
 |---|---|---|
 | [product-weight-and-rates](specs/product-weight-and-rates/) | A product's weight is persisted and drives its shipping quote | 📝 Spec drafted |
+| [multi-vendor-marketplace](specs/multi-vendor-marketplace/) | Three audiences, three portals, and the data model a marketplace needs | 📝 Programme overview + 9 subfeatures drafted |
 | [shipping-fulfilment](specs/shipping-fulfilment/) | A confirmed order results in a real booked shipment with real tracking | 📝 Spec drafted — **open product question** |
 
 `shipping-fulfilment` carries a decision only the product owner can make; see its `spec.md`. It depends on `product-weight-and-rates`, since booking real parcels at fictional weights is worse than not booking them.
+
+`multi-vendor-marketplace` sits between them and is the largest thing in the backlog. It began as one feature about where a product ships from and became nine subfeatures: answering it properly needed an owner for a pickup location, which needed an organisation, which needed people to belong to one — at which point the panel called "admin" was doing two jobs for two audiences. See its [spec.md](specs/multi-vendor-marketplace/spec.md) for the programme and [portal-split.md](specs/multi-vendor-marketplace/portal-split.md) for where each of today's 15 admin pages and 22 handlers lands.
+
+It reaches back into Phase 2: [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) moves the stock guard from `Product.stock` onto a per-location row, so [inventory-reservation](specs/inventory-reservation/) must land first, and [order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) wants [money-as-paise](specs/money-as-paise/) first so its price columns are not migrated twice.
 
 ## Phase 4 — Enforcement
 
@@ -74,7 +79,6 @@ Not a phase, but tracked:
 - **Route the database through Prisma Accelerate** — it is already provisioned (`PRISMA_DATABASE_URL`) and read by nothing. Pooling and caching at the proxy addresses serverless connection pressure more thoroughly than tuning `max` on the local pool. See [OPERATIONS.md](OPERATIONS.md) § Infrastructure.
 - **Prune unused connection strings from `.env`** — `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, `PRISMA_DATABASE_URL` are read by nothing. Several live connection strings in one file is the hazard behind [Invariant 7](../CLAUDE.md).
 - **Slug redirects** — slugs are now generated and frozen (PR-15), but there is no redirect for a slug that changed before that rule existed. One product's URL moved (`product test 001` → `product-test-001`); the old URL 404s. If slugs ever need to change again, a slug-history table or redirect is required.
-- **A product's shipping origin is not an entity** — `shippingFromPincode`, `shippingFromCity` and `shippingFromLocation` are three nullable strings on `Product` with no foreign key and no `Warehouse` model; `shippingFromLocation` is a free-text label ("Warehouse 2"), so the same warehouse can be spelled three ways and nothing notices. Only the pincode is ever read — city and location are written and then only redisplayed in the admin form. Made all-or-none in PR-22 to stop half-filled overrides, but that is a guard, not the fix. Booking a courier pickup needs a full address (street line, state) that these columns cannot hold, so this blocks [shipping-fulfilment](specs/shipping-fulfilment/).
 - **Existing products all weigh 0.5 kg** — weight was collected and never persisted until PR-22, so every row created before it carries the schema default. [product-weight-and-rates](specs/product-weight-and-rates/) R6; rates are wrong in both directions until the catalogue is corrected.
 - **`Product.categoryId` cascades on delete** — deleting a category would delete its products. Unreachable today because `adminCategoryService.deleteCategory` refuses when `productsCount > 0`, but that is an application-level read-then-write check, not a database guarantee. `onDelete: Restrict`, as `sellerId` already uses, moves the guarantee to where it cannot be bypassed. Needs a migration.
 - **Documentation system** — see [CHANGELOG.md](CHANGELOG.md) PR-01. Remaining: mine and delete [_archive/](_archive/); delete `src/lib/csrf.ts` (still dead).

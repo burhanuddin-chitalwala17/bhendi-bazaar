@@ -4,7 +4,7 @@ import { ProductFlag } from "@server/catalog/product.flags";
 
 /**
  * The three fields that override where a product ships from. A partial override is
- * meaningless — a city without a pincode still rates from the seller's default — so
+ * meaningless — a city without a pincode still rates from the org's default — so
  * the group is all-or-none.
  */
 export const SHIPPING_OVERRIDE_FIELDS = [
@@ -14,7 +14,7 @@ export const SHIPPING_OVERRIDE_FIELDS = [
 ] as const;
 
 export const SHIPPING_OVERRIDE_MESSAGE =
-  "Fill all three override fields, or clear them all to ship from the seller's default address";
+  "Fill all three override fields, or clear them all to ship from the org's default address";
 
 /**
  * The accepted shape of an admin product payload.
@@ -33,7 +33,7 @@ export const productFormSchema = z
     salePrice: optionalNumber(z.number().positive("Sale price must be greater than 0")),
     currency: z.string().length(3).optional(),
 
-    sellerId: z.string().min(1, "Seller is required"),
+    orgId: z.string().min(1, "Organisation is required"),
     categoryId: z.string().min(1, "Category is required"),
 
     tags: z.array(z.string()).optional(),
@@ -51,7 +51,7 @@ export const productFormSchema = z
     sku: z.string().trim().max(64).optional(),
     lowStockThreshold: optionalNumber(z.number().int("Low stock threshold must be a whole number").min(0)),
 
-    // Optional overrides — blank means "use the seller's default", so blank must pass.
+    // Optional overrides — blank means "use the org's default", so blank must pass.
     shippingFromPincode: optionalPostalCodeSchema,
     shippingFromCity: z.string().trim().max(100).optional(),
     shippingFromLocation: z.string().trim().max(200).optional(),
@@ -79,7 +79,7 @@ export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
 /** Field names the product form owns, so server details can be routed to them. */
 export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",
-  "sellerId", "categoryId", "tags", "flags", "images", "thumbnail",
+  "orgId", "categoryId", "tags", "flags", "images", "thumbnail",
   "weight", "sizes", "colors", "stock", "sku", "lowStockThreshold",
   ...SHIPPING_OVERRIDE_FIELDS,
 ] as const;

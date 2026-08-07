@@ -25,7 +25,7 @@ class ProductsDAL {
         thumbnail: product.thumbnail,
         createdAt: product.createdAt,
         category: product.category,
-        seller: product.seller,
+        org: product.org,
       })), pagination
     };
   });
@@ -65,14 +65,14 @@ class ProductsDAL {
       thumbnail: product.thumbnail,
       sizes: product.sizes,
       colors: product.colors,
-      seller: {
-        id: product.seller.id,
-        name: product.seller.name,
-        code: product.seller.code,
-        defaultPincode: product.seller.defaultPincode,
-        defaultCity: product.seller.defaultCity,
-        defaultState: product.seller.defaultState,
-        defaultAddress: product.seller.defaultAddress ?? "",
+      org: {
+        id: product.org.id,
+        name: product.org.name,
+        code: product.org.code,
+        defaultPincode: product.org.defaultPincode,
+        defaultCity: product.org.defaultCity,
+        defaultState: product.org.defaultState,
+        defaultAddress: product.org.defaultAddress ?? "",
       },
       shippingFromPincode: product.shippingFromPincode ?? "",
       shippingFromCity: product.shippingFromCity ?? "",

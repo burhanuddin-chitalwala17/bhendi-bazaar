@@ -18,7 +18,7 @@ const filledForm = (overrides: Record<string, unknown> = {}) => ({
   salePrice: NaN, // an untouched number input, via valueAsNumber
   currency: "INR",
   categoryId: "cat_1",
-  sellerId: "sel_1",
+  orgId: "sel_1",
   tags: [],
   flags: [],
   images: ["https://cdn.example.com/1.jpg"],
@@ -58,7 +58,7 @@ describe("optional fields accept being left alone", () => {
     expect(parsed.lowStockThreshold).toBeUndefined();
   });
 
-  it("accepts a blank shipping pincode, which means 'use the seller default'", () => {
+  it("accepts a blank shipping pincode, which means 'use the org default'", () => {
     expect(issuesFor(filledForm({ shippingFromPincode: "" }))).toEqual([]);
   });
 

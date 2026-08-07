@@ -24,7 +24,7 @@ export default async function ProductViewPage({
   const product = await getProduct(id);
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ProductsView product={product} category={product.category} seller={product.seller}/>
+      <ProductsView product={product} category={product.category} org={product.org}/>
     </Suspense>
   );
 }

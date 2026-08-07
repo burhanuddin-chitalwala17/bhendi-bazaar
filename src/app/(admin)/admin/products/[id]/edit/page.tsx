@@ -6,9 +6,9 @@ import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { ProductEditContainer } from "@/admin/products/productEdit";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { Suspense } from "react";
-import { sellersDAL } from "@/data-access-layer/admin/sellers.dal";
+import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
-import type { SellerWithStats } from "@/domain/seller";
+import type { OrgWithStats } from "@/domain/org";
 import type { AdminCategory } from "@/domain/admin";
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,7 +17,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     id: c.id,
     name: c.name,
   }));
-  const sellers = (await sellersDAL.getSellers()).map((s: SellerWithStats) => ({
+  const orgs = (await orgsDAL.getOrgs()).map((s: OrgWithStats) => ({
     id: s.id,
     name: s.name,
     code: s.code,
@@ -30,7 +30,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   return (
     <div className="max-w-5xl mx-auto">
       <Suspense fallback={<LoadingSkeleton />}>
-        <ProductEditContainer product={product} categories={categories} sellers={sellers} />
+        <ProductEditContainer product={product} categories={categories} orgs={orgs} />
       </Suspense>
     </div>
   );

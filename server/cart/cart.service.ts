@@ -47,7 +47,7 @@ export class CartService {
         const products = await tx.product.findMany({
           where: { slug: { in: slugs } },
           include: {
-            seller: {
+            org: {
               select: {
                 id: true,
                 name: true,
@@ -62,7 +62,7 @@ export class CartService {
         });
         const productMap = new Map(products.map((p) => [p.slug, p]));
 
-        // Filter deleted products and refresh prices + seller data
+        // Filter deleted products and refresh prices + org data
         merged = merged
           .filter((i) => productMap.has(i.productSlug))
           .map((i) => {
@@ -72,16 +72,16 @@ export class CartService {
               price: product.price,
               salePrice: product.salePrice ?? undefined,
               thumbnail: product.thumbnail,
-              // ✨ Add seller and shipping info
-              shippingFromPincode: product.shippingFromPincode || product.seller.defaultPincode,
-              seller: {
-                id: product.seller.id,
-                name: product.seller.name,
-                code: product.seller.code,
-                defaultPincode: product.seller.defaultPincode,
-                defaultCity: product.seller.defaultCity,
-                defaultState: product.seller.defaultState,
-                defaultAddress: product.seller.defaultAddress,
+              // ✨ Add org and shipping info
+              shippingFromPincode: product.shippingFromPincode || product.org.defaultPincode,
+              org: {
+                id: product.org.id,
+                name: product.org.name,
+                code: product.org.code,
+                defaultPincode: product.org.defaultPincode,
+                defaultCity: product.org.defaultCity,
+                defaultState: product.org.defaultState,
+                defaultAddress: product.org.defaultAddress,
               },
             };
           });

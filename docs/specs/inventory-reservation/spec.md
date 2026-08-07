@@ -37,4 +37,4 @@ The reverse failure matters too. Stock held by checkouts that were never complet
 - Holding stock while a customer browses, before checkout. Reservation begins at placement; a browse-time hold is a larger feature with its own expiry mechanics.
 - Refunding a payment for an order that fails after payment — [payment-confirmation](../payment-confirmation/) R7 owns the state; the refund flow is Phase 5.
 - Backorders, pre-orders, or "notify me when available".
-- Warehouse or multi-location stock.
+- Warehouse or multi-location stock — [stock-locations-and-allocation](../multi-vendor-marketplace/stock-locations-and-allocation/) owns it, and depends on this feature landing first.

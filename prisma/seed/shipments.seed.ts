@@ -1,10 +1,10 @@
 /**
  * Seed data for Shipments
- * Each order can have multiple shipments from different sellers/warehouses
+ * Each order can have multiple shipments from different orgs/warehouses
  */
 
 import type { SeedShipment } from "./types";
-import { seedSellers } from "./sellers.seed";
+import { seedOrgs } from "./orgs.seed";
 
 // Helper to create dates in the past
 const daysAgo = (days: number): Date => {
@@ -20,7 +20,7 @@ const addDays = (date: Date, days: number): Date => {
 };
 
 export const seedShipments: SeedShipment[] = [
-  // Shipments for order BB-1001 (2 items, 1 shipment - same seller)
+  // Shipments for order BB-1001 (2 items, 1 shipment - same org)
   {
     id: "shipment-1",
     code: "BB-1001-SH1",
@@ -43,10 +43,10 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/eab308/ffffff?text=Gold+Earrings",
       },
     ],
-    sellerId: seedSellers[0].id, // First seller
-    fromPincode: seedSellers[0].defaultPincode,
-    fromCity: seedSellers[0].defaultCity,
-    fromState: seedSellers[0].defaultState,
+    orgId: seedOrgs[0].id, // First org
+    fromPincode: seedOrgs[0].defaultPincode,
+    fromCity: seedOrgs[0].defaultCity,
+    fromState: seedOrgs[0].defaultState,
     shippingCost: 75,
     trackingNumber: "BD1234567890123",
     courierName: "Blue Dart Surface",
@@ -72,10 +72,10 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/f59e0b/ffffff?text=Oud+Attar",
       },
     ],
-    sellerId: seedSellers[1].id, // Second seller
-    fromPincode: seedSellers[1].defaultPincode,
-    fromCity: seedSellers[1].defaultCity,
-    fromState: seedSellers[1].defaultState,
+    orgId: seedOrgs[1].id, // Second org
+    fromPincode: seedOrgs[1].defaultPincode,
+    fromCity: seedOrgs[1].defaultCity,
+    fromState: seedOrgs[1].defaultState,
     shippingCost: 60,
     trackingNumber: "DL9876543210987",
     courierName: "Delhivery Surface",
@@ -86,7 +86,7 @@ export const seedShipments: SeedShipment[] = [
     createdAt: daysAgo(48),
   },
 
-  // Shipments for order BB-1003 (3 items from same seller)
+  // Shipments for order BB-1003 (3 items from same org)
   {
     id: "shipment-3",
     code: "BB-1003-SH1",
@@ -117,10 +117,10 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff?text=Quran+Cover",
       },
     ],
-    sellerId: seedSellers[0].id,
-    fromPincode: seedSellers[0].defaultPincode,
-    fromCity: seedSellers[0].defaultCity,
-    fromState: seedSellers[0].defaultState,
+    orgId: seedOrgs[0].id,
+    fromPincode: seedOrgs[0].defaultPincode,
+    fromCity: seedOrgs[0].defaultCity,
+    fromState: seedOrgs[0].defaultState,
     shippingCost: 90,
     trackingNumber: "BD2345678901234",
     courierName: "Blue Dart Surface",
@@ -146,10 +146,10 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/eab308/ffffff?text=Emerald+Necklace",
       },
     ],
-    sellerId: seedSellers[1].id,
-    fromPincode: seedSellers[1].defaultPincode,
-    fromCity: seedSellers[1].defaultCity,
-    fromState: seedSellers[1].defaultState,
+    orgId: seedOrgs[1].id,
+    fromPincode: seedOrgs[1].defaultPincode,
+    fromCity: seedOrgs[1].defaultCity,
+    fromState: seedOrgs[1].defaultState,
     shippingCost: 60,
     status: "pending", // ⭐ Awaiting manual tracking update
     packageWeight: 0.08,
@@ -180,10 +180,10 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/eab308/ffffff?text=Pearl+Jhumka",
       },
     ],
-    sellerId: seedSellers[0].id,
-    fromPincode: seedSellers[0].defaultPincode,
-    fromCity: seedSellers[0].defaultCity,
-    fromState: seedSellers[0].defaultState,
+    orgId: seedOrgs[0].id,
+    fromPincode: seedOrgs[0].defaultPincode,
+    fromCity: seedOrgs[0].defaultCity,
+    fromState: seedOrgs[0].defaultState,
     shippingCost: 70,
     status: "pending", // ⭐ Awaiting manual tracking update
     packageWeight: 0.08, // 0.05 + 0.03

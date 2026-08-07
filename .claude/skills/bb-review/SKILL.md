@@ -100,6 +100,12 @@ Not an Invariant, but the same kind of failure: silent, and invisible to `tsc`.
 
 **A field and its error are two separate things** — bind one without the other and the form refuses to submit while saying nothing. `tests/unit/form-error-display.test.ts` fails the build on it, so the review job is only to judge new `EXEMPT` entries: a field is exempt when it has no reachable failure, not when showing the error is inconvenient.
 
+**Rendering mode** ([CLAUDE.md](../../../CLAUDE.md) — render on the server by default)
+- A new `"use client"` on a component that only reads and displays. Ask what interactivity earned it; if the answer is "it needed data", it wanted props.
+- A client-side `fetch("/api/…")` for a read a server component could have done. The route handler and the client wrapper are both then dead weight, and the user gets a spinner over data the server already had.
+- A new route handler with no browser caller — a read reachable from a server component does not need one.
+- `"use client"` at the top of a page whose interactive part is one button. Push the boundary down to the leaf.
+
 **Does the schema accept what the form actually sends?** The form sends its default values, so read the two together:
 - An optional field whose schema rejects its own default. A UI hint reading "leave empty" over a required rule is the tell.
 - A number input registered `valueAsNumber` whose schema field is not wrapped in `optionalNumber` — a blank input is NaN, and `z.number().optional()` rejects NaN.

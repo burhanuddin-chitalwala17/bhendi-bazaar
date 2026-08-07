@@ -12,10 +12,10 @@ import type { ProductDetails } from "../types";
 interface ProductEditContainerProps {
     product: ProductDetails;
     categories: { id: string; name: string }[];
-    sellers: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+    orgs: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
 }
 
-export function ProductEditContainer({ product, categories, sellers }: ProductEditContainerProps) {
+export function ProductEditContainer({ product, categories, orgs }: ProductEditContainerProps) {
     const router = useRouter();
     const { updateProduct, isLoading, error, successMessage } = useProducts();
 
@@ -59,7 +59,7 @@ export function ProductEditContainer({ product, categories, sellers }: ProductEd
             <ProductForm
                 product={product}
                 categories={categories}
-                sellers={sellers}
+                orgs={orgs}
                 onSubmit={updateProduct}
                 onCancel={handleCancel}
                 isSubmitting={isLoading}

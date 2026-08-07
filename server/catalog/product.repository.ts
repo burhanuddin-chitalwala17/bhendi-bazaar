@@ -10,7 +10,7 @@ import { NotFoundError } from "@server/shared/domain-error";
 
 const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
-  seller: { select: { id: true, name: true, code: true, defaultPincode: true, defaultCity: true, defaultState: true, defaultAddress: true } },
+  org: { select: { id: true, name: true, code: true, defaultPincode: true, defaultCity: true, defaultState: true, defaultAddress: true } },
 };
 
 export class ProductsRepository {

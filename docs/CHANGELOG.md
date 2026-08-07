@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-23] 2026-08-08 — `Seller` becomes `Org` [CONTRACT] [MIGRATION]
+
+A vendor is an organisation with people in it, not a record an admin types on someone's behalf. This is the rename only — `OrgMember` and anything that reads a membership are PR 2 of [organisations-and-membership](specs/multi-vendor-marketplace/organisations-and-membership/), deliberately separate because a rename is reviewed by confirming nothing changed and new behaviour by confirming something did.
+
+**751 substitutions across 56 files**, 19 files and directories moved with `git mv` so history follows. `Seller` → `Org`, `Product.sellerId` → `orgId`, `Shipment.sellerId` → `orgId`, `/admin/sellers` → `/admin/orgs`, `/api/admin/sellers` → `/api/admin/orgs`. Identifiers read `Org`; anything a person reads says "Organisation".
+
+**The migration is hand-written, and that is the point.** Prisma generates a renamed model as `DROP TABLE` + `CREATE TABLE`, which would have destroyed every vendor row along with the products and shipments referencing them. Every statement in `20260808104500_rename_seller_to_org` is a rename and no data moves. Postgres does not rename a table's indexes or constraints when the table is renamed, so all eleven — the primary key, the `code` unique index, four `Seller_*` indexes, and both foreign keys with their indexes on `Product` and `Shipment` — are renamed explicitly, with the real names read out of the existing migration files rather than assumed.
+
+**`tests/unit/vocabulary.test.ts`** fails the build if "seller" reappears in `src/`, `server/` or `prisma/` (migrations exempt — they are applied history and must never be edited). A 57-file rename stays done only if something checks; `ProductFlag` was declared three times because nothing did.
+
+Not renamed, deliberately: the org `code` keeps its `SEL-` prefix, because regenerating vendor codes would invalidate anything already printed or exported for no gain. `Shipment.orgId` is also still the wrong question — a shipment's origin becomes `orgAddressId` — but that belongs to [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) and is left alone here.
+
+**The migration is not applied.** `tsc` exits 0, 89 tests pass, `next build` compiles — and the build's static generation reports `The table public.Org does not exist in the current database`, which is the code and the schema agreeing while the database has not caught up. Run `npx prisma migrate deploy` before this is served, and take a backup first: the rename is reversible only by another rename.
+
 ## [PR-22] 2026-08-05 — Optional fields stop failing; shipping override is all-or-none; product weight persists
 
 A product could not be created at all: the form reported "Enter a 6-digit PIN code" on a field its own section labels *Optional*. Three defects behind it, each a different way for the schema and the form to disagree.

@@ -30,7 +30,7 @@ export interface Product {
     colors?: string[];
   };
   shippingFromPincode: string;
-  seller: {
+  org: {
     id: string;
     name: string;
     code: string;

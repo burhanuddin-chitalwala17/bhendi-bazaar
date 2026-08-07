@@ -40,7 +40,7 @@ interface Shipment {
   code: string;
   orderId: string;
   items: OrderItem[];
-  sellerId: string;
+  orgId: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;
@@ -79,8 +79,8 @@ export interface ShippingGroupInput {
   groupId: string;
 
   // Origin details
-  sellerId: string;
-  sellerName: string;
+  orgId: string;
+  orgName: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;
@@ -123,7 +123,7 @@ export interface ServerShipment {
   code: string;
   orderId: string;
   items: ShipmentItem[];
-  sellerId: string;
+  orgId: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;

@@ -33,7 +33,7 @@ export interface ProductForTable {
   thumbnail: string;
   createdAt: Date;
   category: { id: string; name: string };
-  seller: { id: string; name: string; code: string };
+  org: { id: string; name: string; code: string };
 }
 
 export interface ProductDetails {
@@ -55,7 +55,7 @@ export interface ProductDetails {
   thumbnail: string;
   sizes: string[];
   colors: string[];
-  seller: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
+  org: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
   shippingFromPincode: string;
   shippingFromCity: string;
   shippingFromLocation: string;
@@ -76,7 +76,7 @@ export interface ProductFormInput {
   price: number;
   salePrice?: number;
   currency?: string;
-  sellerId: string;
+  orgId: string;
   categoryId: string;
   tags?: string[];
   flags?: ProductFlag[];

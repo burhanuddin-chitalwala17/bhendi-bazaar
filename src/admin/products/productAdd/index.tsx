@@ -11,10 +11,10 @@ import { useProducts } from "../useProducts";
 
 interface ProductAddContainerProps {
     categories: { id: string; name: string }[];
-    sellers: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+    orgs: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
 }
 
-export function ProductAddContainer({ categories, sellers }: ProductAddContainerProps) {
+export function ProductAddContainer({ categories, orgs }: ProductAddContainerProps) {
     const router = useRouter();
 
     const { createProduct, isLoading, error, successMessage } = useProducts();
@@ -61,7 +61,7 @@ export function ProductAddContainer({ categories, sellers }: ProductAddContainer
 
             <ProductForm
                 categories={categories}
-                sellers={sellers}
+                orgs={orgs}
                 onSubmit={createProduct}
                 onCancel={handleCancel}
                 isSubmitting={isLoading}
