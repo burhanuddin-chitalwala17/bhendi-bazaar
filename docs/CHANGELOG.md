@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-30] 2026-08-09 — Portal separation closes: admin stops mutating products, and the boundary is a test
+
+PR 4, the last of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). The subfeature is **Implemented**.
+
+**The platform's product surface is now read-only.** `/admin/products/new` and `[id]/edit` are deleted along with both `/api/admin/products` route files — the admin list reads server-side through the DAL, and the client only ever called those routes to mutate, which is the org portal's job now. The list and detail pages stay as the cross-vendor support view [portal-split.md](specs/multi-vendor-marketplace/portal-split.md) promised, with edit and delete affordances gated off (`readOnly` through `ProductsContainer`/`ProductsTable`, `canEdit` on `ProductsView`).
+
+**The boundary is enforced by `tests/unit/portal-boundary.test.ts`, not by review**: every `/api/admin` handler requires a platform admin; every `/api/org` handler is defined through `withOrg`; `POST /api/orgs` is pinned as the one org write outside it (no org exists to be a member of yet) and still requires a session; no `(admin)` page imports org authority or org-scoped reads; no `(org)` page imports `requirePlatformAdmin`; and the deleted mutation surfaces stay deleted. A 37-surface property holds only if something checks it.
+
+One first-run test failure was the test's own: it asserted the creation route doesn't contain "withOrg" — which the route's *comment* mentions by name to explain itself. The assertion now checks for a call, not the word.
+
+Also fixed on contact: `sortBy: params.sort as any` in the admin products page became the narrowed union the org page already used.
+
+`tsc` exits 0, **119 tests pass** (6 new), `next build` compiles, 0 lint errors in the touched files.
+
 ## [PR-29] 2026-08-09 — Org portal: orders and reviews, scoped without leaking
 
 PR 3b of [portal-separation](specs/multi-vendor-marketplace/portal-separation/): `/org/[orgId]/orders`, `orders/[orderId]` and `reviews`. The dashboard deliberately stays a placeholder — its shape belongs to [dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/).

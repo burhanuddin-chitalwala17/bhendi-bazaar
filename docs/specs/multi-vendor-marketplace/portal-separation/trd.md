@@ -1,6 +1,6 @@
 # TRD — portal separation
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-25, PR-26, PR-27, PR-29, PR-30
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-08
@@ -65,7 +65,7 @@ nothing — every test here is an attempt to get at something.
 | 2 ✅ | The org authorization helper, with no pages using it yet — landed as PR-26 (`src/lib/org-auth.ts`)          | none                            |
 | 3a ✅ | `(org)` group, layout, and the product screens — **added alongside** `/admin/products`, not moved: no org has a member yet, so a hard move would take product management away from everyone. Landed as PR-27 | **yes — the portal appears** |
 | 3b ✅ | Orders and reviews, scoped through `Shipment.orgId` and `Product.orgId`, org's-part-only projection unit-tested — landed as PR-29. The dashboard stays a placeholder for [dashboard-widgets](../dashboard-widgets/) | **yes**                         |
-| 4   | Admin duplicates removed once memberships exist, platform-only pages confirmed, group-boundary assertion added | yes — `/admin/products` goes    |
+| 4 ✅ | Admin product mutation removed (list/detail stay as the read-only support view), boundary assertion added — landed as PR-30 | yes — admin stops editing products |
 
 
 ## Questions closed (2026-08-08)

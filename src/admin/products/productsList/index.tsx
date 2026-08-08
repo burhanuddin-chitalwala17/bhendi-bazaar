@@ -12,6 +12,7 @@ import type { ProductStats, ProductFilters, ProductListResult } from "../types";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 
 interface ProductsContainerProps {
+  readOnly?: boolean;
   initialData: ProductListResult;
   initialStats: ProductStats;
   initialFilters: ProductFilters;
@@ -20,7 +21,8 @@ interface ProductsContainerProps {
 export function ProductsContainer({ 
   initialData, 
   initialStats, 
-  initialFilters 
+  initialFilters,
+  readOnly = false,
 }: ProductsContainerProps) {
   const productsBasePath = useProductsBasePath();
   const router = useRouter();
@@ -107,6 +109,7 @@ export function ProductsContainer({
         onPageChange={(page) => updateFilters({ page })}
         onSort={(sortBy: string, sortOrder: "asc" | "desc") => updateFilters({ sortBy: sortBy as "name"|"createdAt"|"price"|"stock", sortOrder })}
         onDelete={handleDelete}
+        readOnly={readOnly}
         onEdit={(id: string) => router.push(`${productsBasePath}/${id}`)}
         onView={(id: string) => router.push(`${productsBasePath}/${id}`)}
         isPending={isPending}

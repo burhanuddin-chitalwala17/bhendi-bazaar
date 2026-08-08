@@ -1,6 +1,6 @@
 # Spec — portal separation
 
-- **Status:** Not drafted — scope agreed, requirements provisional, no TRD yet
+- **Status:** ✅ Implemented — see trd.md; requirements below were held to
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-08

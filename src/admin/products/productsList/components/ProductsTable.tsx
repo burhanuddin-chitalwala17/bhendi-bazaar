@@ -20,6 +20,8 @@ interface ProductsTableProps {
   onView: (id: string) => void;
   onSort: (sortBy: string, sortOrder: "asc" | "desc") => void;
   isPending: boolean;
+  /** The platform's cross-vendor list is for looking, not touching — products belong to orgs. */
+  readOnly?: boolean;
 }
 
 export function ProductsTable({
@@ -31,6 +33,7 @@ export function ProductsTable({
   onView,
   onSort,
   isPending,
+  readOnly = false,
 }: ProductsTableProps) {
   const productsBasePath = useProductsBasePath();
   const columns: Column<ProductForTable>[] = [
@@ -130,21 +133,25 @@ export function ProductsTable({
           >
             <Eye className="w-4 h-4" />
           </Link>
+          {!readOnly && (
           <Link
-            href={`${productsBasePath}/${product.id}/edit`}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Edit product"
-          >
-            <Edit className="w-4 h-4" />
-          </Link>
-          <button
-            onClick={() => onDelete(product.id, product.name)}
-            disabled={isPending}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-            title="Delete product"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+              href={`${productsBasePath}/${product.id}/edit`}
+              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Edit product"
+            >
+              <Edit className="w-4 h-4" />
+            </Link>
+          )}
+          {!readOnly && (
+            <button
+              onClick={() => onDelete(product.id, product.name)}
+              disabled={isPending}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              title="Delete product"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
     },

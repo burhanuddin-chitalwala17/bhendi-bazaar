@@ -12,11 +12,13 @@ import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 
 interface ProductViewProps {
   product: ProductDetails;
+  /** False on the platform's support view — editing happens in the owning org's portal. */
+  canEdit?: boolean;
   category: { id: string; name: string };
   org: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
 }
 
-export function ProductsView({ product, category, org }: ProductViewProps) {
+export function ProductsView({ product, category, org, canEdit = true }: ProductViewProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
   const onCancel = () => {
@@ -49,12 +51,14 @@ export function ProductsView({ product, category, org }: ProductViewProps) {
               View Live
             </Button>
           </Link>
-          <Link href={`${productsBasePath}/${product.id}/edit`}>
-            <Button className="gap-2">
-              <Edit className="w-4 h-4" />
-              Edit Product
-            </Button>
-          </Link>
+          {canEdit && (
+            <Link href={`${productsBasePath}/${product.id}/edit`}>
+              <Button className="gap-2">
+                <Edit className="w-4 h-4" />
+                Edit Product
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
