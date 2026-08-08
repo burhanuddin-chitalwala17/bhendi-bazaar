@@ -15,6 +15,7 @@ import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 
 export default function AdminCategoriesPage() {
   const [filters, setFilters] = useState<CategoryListFilters>({
@@ -128,7 +129,7 @@ export default function AdminCategoriesPage() {
       render: (category) => (
         <div className="flex items-center gap-3">
           <div
-            className={`w-12 h-12 rounded-lg ${category.accentColorClass} border border-border flex items-center justify-center`}
+            className={`w-12 h-12 rounded-lg ${CATEGORY_ACCENTS[category.accent].swatch} border border-border flex items-center justify-center`}
           >
             <span className="text-xs font-medium text-foreground/80">
               {category.name.substring(0, 2).toUpperCase()}

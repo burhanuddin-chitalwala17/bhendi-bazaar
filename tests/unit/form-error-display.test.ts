@@ -16,7 +16,7 @@ import { join } from "node:path";
 const ROOTS = ["src/components", "src/admin", "src/app"];
 
 const EXEMPT = new Map([
-  ["accentColorClass", "fixed-option select with a schema default; no reachable failure"],
+  ["accent", "fixed-option select over the CategoryAccent enum, schema-defaulted; no reachable failure"],
   ["metadata.notes", "free text with no rule — the schema types metadata as z.any()"],
   ["metadata.isDefault", "checkbox with no validation rule"],
 ]);

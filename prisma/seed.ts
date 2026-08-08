@@ -104,7 +104,7 @@ async function main() {
         name: categoryData.name,
         description: categoryData.description,
         heroImage: categoryData.heroImage,
-        accentColorClass: categoryData.accentColorClass,
+        accent: categoryData.accent,
         order: categoryData.order,
       },
     });

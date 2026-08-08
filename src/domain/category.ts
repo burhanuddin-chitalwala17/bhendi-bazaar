@@ -1,3 +1,4 @@
+import type { CategoryAccent } from "@prisma/client";
 /**
  * Client-side domain types for Category
  *
@@ -9,7 +10,7 @@ export interface Category {
   name: string;
   description: string;
   heroImage: string;
-  accentColorClass: string;
+  accent: CategoryAccent;
   order: number;
 }
 

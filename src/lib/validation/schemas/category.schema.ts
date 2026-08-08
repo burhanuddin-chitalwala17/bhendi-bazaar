@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CategoryAccent } from "@prisma/client";
 import { optionalNumber } from "./common.schemas";
 
 /**
@@ -14,7 +15,7 @@ export const categoryFormSchema = z.object({
   // is the one place that should decide what "unset" means.
   description: z.string().trim().max(1000).default(""),
   heroImage: z.string().trim().max(2048).default(""),
-  accentColorClass: z.string().trim().max(100).default("bg-emerald-50"),
+  accent: z.enum(CategoryAccent).default("EMERALD"),
   order: optionalNumber(z.number().int("Order must be a whole number").min(0)),
 });
 

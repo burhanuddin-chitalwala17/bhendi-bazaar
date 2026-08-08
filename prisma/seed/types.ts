@@ -53,13 +53,15 @@ export interface SeedAddress {
   isDefault: boolean;
 }
 
+export type SeedCategoryAccent = "EMERALD" | "BLUE" | "PURPLE" | "PINK" | "ORANGE" | "YELLOW" | "RED" | "GRAY";
+
 export interface SeedCategory {
   id: string;
   slug: string;
   name: string;
   description: string;
   heroImage: string;
-  accentColorClass: string;
+  accent: SeedCategoryAccent;
   order: number;
 }
 

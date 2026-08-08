@@ -18,7 +18,7 @@ model Category {
   name             String
   description      String    @db.Text
   heroImage        String // URL to hero image
-  accentColorClass String // Tailwind color class
+  accent           CategoryAccent @default(EMERALD)
   order            Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -497,4 +497,18 @@ model OrgMember {
 enum PlatformRole {
   USER
   ADMIN
+}
+
+/// A category's accent, stored as a semantic key and mapped to classes at render
+/// (`src/lib/category-accent.ts`). Rows used to hold raw Tailwind class strings —
+/// presentation frozen into the database, which broke the moment the classes moved.
+enum CategoryAccent {
+  EMERALD
+  BLUE
+  PURPLE
+  PINK
+  ORANGE
+  YELLOW
+  RED
+  GRAY
 }

@@ -1,3 +1,4 @@
+import type { CategoryAccent } from "@prisma/client";
 /**
  * Admin Category Management Domain Types
  */
@@ -8,7 +9,7 @@ export interface AdminCategory {
   name: string;
   description: string;
   heroImage: string;
-  accentColorClass: string;
+  accent: CategoryAccent;
   order: number;
   createdAt: Date;
   updatedAt: Date;
@@ -35,7 +36,7 @@ export interface CreateCategoryInput {
   name: string;
   description: string;
   heroImage: string;
-  accentColorClass: string;
+  accent: CategoryAccent;
   order?: number;
 }
 
@@ -43,7 +44,7 @@ export interface UpdateCategoryInput {
   name?: string;
   description?: string;
   heroImage?: string;
-  accentColorClass?: string;
+  accent?: CategoryAccent;
   order?: number;
 }
 

@@ -35,7 +35,7 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       name: category?.name || "",
       description: category?.description || "",
       heroImage: category?.heroImage || "",
-      accentColorClass: category?.accentColorClass || "bg-primary/10",
+      accent: category?.accent ?? "EMERALD",
       order: category?.order || 0,
     },
   });

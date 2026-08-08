@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Category } from "@/domain/category";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 export async function CategorySections({ categories }: { categories: Category[] }) {
 
   return (
@@ -12,7 +13,7 @@ export async function CategorySections({ categories }: { categories: Category[] 
           <Link key={category.slug} href={`/category/${category.slug}`}>
             <Card className="relative overflow-hidden border-border/70 bg-card/80 p-5 transition hover:-translate-y-1 hover:border-primary/70 hover:shadow-md">
               <div
-                className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${category.accentColorClass}`}
+                className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${CATEGORY_ACCENTS[category.accent].heroGradient}`}
               />
               <div className="relative space-y-1 text-hero-foreground">
                 <p className="text-[0.65rem] font-semibold uppercase tracking-[0.32em] text-hero-foreground/70">

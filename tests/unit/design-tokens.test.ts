@@ -19,8 +19,8 @@ const RAW_PALETTE = new RegExp(
 
 const ALLOWLIST = new Map([
   [
-    "src/components/shared/forms/category/CategoryStylingFields.tsx",
-    "ACCENT_COLORS values are stored in Category.accentColorClass rows — rewriting the options orphans the data. The real fix (a semantic key instead of a stored class) belongs to category-tree.",
+    "src/lib/category-accent.ts",
+    "The accent palette is a closed decorative set keyed by CategoryAccent rows; the classes live only here so the database never holds them and Tailwind can scan them statically.",
   ],
 ]);
 
@@ -29,7 +29,7 @@ function tsxFiles(dir: string): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) out = out.concat(tsxFiles(path));
-    else if (entry.endsWith(".tsx")) out.push(path);
+    else if (/\.tsx?$/.test(entry)) out.push(path);
   }
   return out;
 }
