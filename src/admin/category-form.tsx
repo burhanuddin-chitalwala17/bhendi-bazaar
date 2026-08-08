@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
@@ -13,6 +14,7 @@ import {
   CategoryStylingFields,
   CategoryImageField,
 } from "@/components/shared/forms/category";
+import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CreateCategoryInput } from "@/domain/admin";
 
 interface CategoryFormProps {
@@ -24,6 +26,36 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
+
+  const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
+  useEffect(() => {
+    adminCategoryApiClient
+      .getCategories({ limit: 100 })
+      .then((result) => setAllCategories(result.categories))
+      .catch(() => setAllCategories([])); // options are a convenience; the server re-checks
+  }, []);
+
+  // A category cannot be its own parent, nor sit under its own subtree — offering
+  // those options would invite the exact write the server refuses (TRD D2).
+  const parentOptions = useMemo(() => {
+    if (!category) return allCategories;
+    const excluded = new Set<string>([category.id]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const candidate of allCategories) {
+        if (
+          candidate.parentId &&
+          excluded.has(candidate.parentId) &&
+          !excluded.has(candidate.id)
+        ) {
+          excluded.add(candidate.id);
+          grew = true;
+        }
+      }
+    }
+    return allCategories.filter((candidate) => !excluded.has(candidate.id));
+  }, [allCategories, category]);
 
   // Initialize react-hook-form
   const form = useServerForm<CreateCategoryInput>({
@@ -37,6 +69,7 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       heroImage: category?.heroImage || "",
       accent: category?.accent ?? "EMERALD",
       order: category?.order || 0,
+      parentId: category?.parentId ?? null,
     },
   });
 
@@ -108,6 +141,7 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       <CategoryBasicFields
         register={register}
         errors={errors}
+        parentOptions={parentOptions}
       />
 
       <CategoryStylingFields register={register} watch={watch} />

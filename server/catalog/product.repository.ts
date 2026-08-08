@@ -16,10 +16,14 @@ const PRODUCT_INCLUDE = {
 export class ProductsRepository {
 
   async getProducts(filter: ProductFilter) {
-    const { categorySlug, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
+    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
     try {
       const products = await prisma.product.findMany({
-        where: { category: { slug: categorySlug },
+        // categoryIds (a resolved subtree) wins over a bare slug, which matches
+        // only the category's own products.
+        where: { ...(categoryIds
+            ? { categoryId: { in: categoryIds } }
+            : { category: { slug: categorySlug } }),
           ...(search && { name: { contains: search, mode: "insensitive" } }),
           ...(minPrice && { price: { gte: minPrice } }),
           ...(maxPrice && { price: { lte: maxPrice } }),

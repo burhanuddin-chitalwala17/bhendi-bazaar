@@ -42,6 +42,8 @@ export interface ServerProduct {
 
 export interface ProductFilter {
   categorySlug?: string;
+  /** Resolved server-side from categorySlug's subtree — never client input. */
+  categoryIds?: string[];
   search?: string;
   minPrice?: number;
   maxPrice?: number;

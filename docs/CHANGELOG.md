@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-42] 2026-08-10 — Categories nest [MIGRATION]
+
+[category-tree](specs/multi-vendor-marketplace/category-tree/) lands. `Category` gains a self-referencing `parentId` — depth without a schema change per level, replacing the two-level subcategory idea that was product flags in disguise. Every existing category becomes a root; no data moves.
+
+The two rules Postgres cannot express declaratively live in one pure module (`server/catalog/category.tree.ts`), so every branch is a unit test: **subtree collection** — a category page now lists its whole subtree, resolved in app code over the tens-of-rows table (D1), with an unknown slug matching nothing rather than everything — and the **cycle guard** — a category can never become its own ancestor, refused on the write path as a `DomainError` on the `parentId` field so it lands inline on the form, whose parent selector already excludes self and descendants.
+
+**What the database now refuses on its own:** `parentId` is `RESTRICT`, and `Product.categoryId` moves **`Cascade` → `RESTRICT`** — the cascade flagged in the data-model review, where deleting a category would have deleted its products with only an application-level count in the way. The service keeps friendlier messages; the constraints are the guarantee, and tests pin both `ON DELETE RESTRICT` clauses in the migration.
+
+Fixed on contact: **`updateCategorySchema` was `categoryFormSchema.partial()`, and `.partial()` does not strip `.default()`s (zod v4)** — every PATCH silently rewrote unmentioned fields (`description: ""`, `accent: "EMERALD"`; the full-form edit page masked it), and would now have detached `parentId: null`. Create and update now share one set of rules; only create applies defaults. The storefront list path also goes through `productService` instead of reaching the repository directly, since the service is where subtree expansion lives.
+
+**195 tests pass** (18 new), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** — additive column plus the two constraint swaps.
+
 ## [PR-41] 2026-08-10 — An address is a record, not a blob [CONTRACT] [MIGRATION]
 
 [addresses-as-entities](specs/multi-vendor-marketplace/addresses-as-entities/) lands — the first data-model subfeature of the marketplace programme (org-team deferred by decision), and the table `stock-locations` will hang org pickup locations off. `Profile.addresses` — one Json column holding each user's whole address book — becomes **`Address`** (a postal fact, identity-agnostic) plus **`UserAddress`** (a person's relationship to one: their label, the recipient, the phone). The `Address` writer lives in `server/shared/` because two domains' relationships will point at it (Invariant 5 applied forward).

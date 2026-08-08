@@ -1,17 +1,20 @@
 // components/shared/forms/category/CategoryBasicFields.tsx
 
 import { UseFormRegister, FieldErrors } from "react-hook-form";
-import { FormInput, FormTextarea } from "../FormField";
+import { FormInput, FormSelect, FormTextarea } from "../FormField";
 import type { CreateCategoryInput } from "@/domain/admin";
 
 interface CategoryBasicFieldsProps {
   register: UseFormRegister<CreateCategoryInput>;
   errors: FieldErrors<CreateCategoryInput>;
+  /** Valid parents — the form excludes self and descendants; the server re-checks. */
+  parentOptions: Array<{ id: string; name: string }>;
 }
 
 export function CategoryBasicFields({
   register,
   errors,
+  parentOptions,
 }: CategoryBasicFieldsProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
@@ -39,6 +42,20 @@ export function CategoryBasicFields({
             error={errors.description?.message}
           />
         </div>
+
+        <FormSelect
+          label="Parent Category"
+          {...register("parentId")}
+          error={errors.parentId?.message}
+          hint="Leave empty for a top-level category"
+        >
+          <option value="">None — top level</option>
+          {parentOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
+            </option>
+          ))}
+        </FormSelect>
 
         <FormInput
           label="Display Order"

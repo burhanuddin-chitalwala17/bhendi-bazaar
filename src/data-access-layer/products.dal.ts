@@ -3,6 +3,7 @@
 // fetch product direct from the database using repository pattern
 
 import { productsRepository } from "@server/catalog/product.repository";
+import { productService } from "@server/catalog/product.service";
 import { Product, ProductFilter } from "@/domain/product";
 
 import { NotFoundError } from "@server/shared/domain-error";
@@ -48,7 +49,8 @@ export const productsDAL = {
 
   getProducts: async (filter: ProductFilter): Promise<Product[]> => {
     try {
-      const products = await productsRepository.getProducts(filter);
+      // Through the service, which expands a category slug to its subtree.
+      const products = await productService.getProducts(filter);
       return products.filter(p => p !== null).map((product) => mapProduct(product));
     } catch (error) {
       throw new Error("Failed to fetch products", { cause: error });

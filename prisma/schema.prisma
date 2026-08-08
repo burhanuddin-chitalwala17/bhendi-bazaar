@@ -16,6 +16,11 @@ model Category {
   id               String    @id @default(cuid())
   slug             String    @unique
   name             String
+  /// Self-referencing tree (category-tree D1/D2): null = root. Restrict, so a parent
+  /// with children cannot be deleted; cycles are refused on the write path.
+  parentId         String?
+  parent           Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children         Category[] @relation("CategoryTree")
   description      String    @db.Text
   heroImage        String // URL to hero image
   accent           CategoryAccent @default(EMERALD)
@@ -26,6 +31,7 @@ model Category {
 
   @@index([slug])
   @@index([order])
+  @@index([parentId])
 }
 
 model Product {
@@ -38,7 +44,9 @@ model Product {
   currency    String   @default("INR")
 
   categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleting a category must never delete its products
+  // (category-tree D3 — the cascade only ever had an application-level count in its way).
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
   tags        String[] // Array of tags
   flags String[] @default([])
