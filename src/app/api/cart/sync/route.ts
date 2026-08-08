@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { cartService } from "@server/cart/cart.service";
-import type { CartItem } from "@/domain/cart";
 import { updateCartSchema, validateRequest } from "@/lib/validation";
 import { withRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
 
@@ -33,18 +32,11 @@ export async function POST(request: NextRequest) {
       return validation.error;
     }
 
-    const transformedItems = validation.data.items.map((item) => ({
-      ...item,
-      salePrice: item.salePrice ?? undefined,
-    })) as CartItem[];
+    // Only the buyer's choice is read from each line (CartLineInput); the rest of
+    // the payload is display baggage the server re-derives from the product.
+    const merged = await cartService.syncCart(session.user.id, validation.data.items);
 
-    // Call server service
-    const mergedItems = await cartService.syncCart(
-      session.user.id,
-      transformedItems
-    );
-
-    return NextResponse.json({ items: mergedItems }, { status: 200 });
+    return NextResponse.json(merged, { status: 200 });
   } catch (error) {
     console.error("[API] POST /api/cart/sync failed:", error);
     return NextResponse.json({ error: "Failed to sync cart" }, { status: 500 });

@@ -19,9 +19,9 @@ export default function ShippingProvidersPage() {
       />
 
       {/* Info Card */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-semibold text-blue-900 mb-2">💡 How it works</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
+      <div className="bg-info/10 border border-info/30 rounded-lg p-4">
+        <h3 className="font-semibold text-info mb-2">💡 How it works</h3>
+        <ul className="text-sm text-info space-y-1">
           <li>• Connect your shipping provider accounts to enable them</li>
           <li>• Disconnect providers to temporarily stop using them</li>
           <li>

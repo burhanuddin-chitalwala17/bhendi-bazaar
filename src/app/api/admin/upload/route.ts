@@ -11,7 +11,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 // Valid upload types and their folder paths
 const UPLOAD_TYPES = {
@@ -33,10 +34,8 @@ const ALLOWED_TYPES = [
 // Max file size: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 export async function POST(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const { searchParams } = new URL(request.url);
     const uploadType = (searchParams.get("type") || "products") as UploadType;
 
@@ -120,13 +119,6 @@ export async function POST(request: NextRequest) {
       folder,
     });
   } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to upload images",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not upload images");
   }
 }

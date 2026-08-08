@@ -1,3 +1,4 @@
+import type { OrgSummary } from "@/domain/org";
 /**
  * Client-side domain types for Product
  *
@@ -29,16 +30,9 @@ export interface Product {
     sizes?: string[];
     colors?: string[];
   };
+  /** Indicative origin (largest active holding); allocation decides the real one. */
   shippingFromPincode: string;
-  seller: {
-    id: string;
-    name: string;
-    code: string;
-    defaultPincode: string;
-    defaultCity: string;
-    defaultState: string;
-    defaultAddress: string;
-  };
+  org: OrgSummary;
 }
 
 export interface ProductFilter {

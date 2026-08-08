@@ -46,10 +46,10 @@ export function ProviderCard({
               <div
                 className={cn(
                   "h-2 w-2 rounded-full",
-                  provider.isConnected ? "bg-green-500" : "bg-red-500"
+                  provider.isConnected ? "bg-success" : "bg-destructive"
                 )}
               />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-muted-foreground">
                 {provider.isConnected ? "Connected" : "Not Connected"}
               </span>
             </div>
@@ -57,7 +57,7 @@ export function ProviderCard({
 
           {/* Description */}
           {provider.description && (
-            <p className="text-sm text-gray-600 mt-2">{provider.description}</p>
+            <p className="text-sm text-muted-foreground mt-2">{provider.description}</p>
           )}
 
           {/* Connection Status */}
@@ -65,7 +65,7 @@ export function ProviderCard({
             {provider.isConnected ? (
               <div className="space-y-2">
                 {provider.accountInfo && "email" in provider.accountInfo ? (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {provider.accountInfo.email as string}
                   </p>
                 ) : null}
@@ -91,7 +91,7 @@ export function ProviderCard({
               href={provider.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-2"
+              className="text-sm text-info hover:underline flex items-center gap-1 mt-2"
             >
               Visit Website
               <ExternalLink className="w-3 h-3" />

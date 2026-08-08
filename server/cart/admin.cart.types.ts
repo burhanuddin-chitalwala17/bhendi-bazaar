@@ -2,12 +2,24 @@
  * Admin Cart Management Domain Types
  */
 
+export interface AbandonedCartItem {
+  productId: string;
+  productName: string;
+  productSlug: string;
+  thumbnail: string;
+  price: number; // paise, current catalogue price
+  salePrice?: number;
+  quantity: number;
+  size?: string;
+  color?: string;
+}
+
 export interface AbandonedCart {
   id: string;
   userId: string;
   userName: string | null;
   userEmail: string | null;
-  items: any; // CartItem[]
+  items: AbandonedCartItem[];
   itemsCount: number;
   totalValue: number;
   createdAt: Date;

@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/format";
 /**
  * Client-side Shipping Domain Types
  * 
@@ -107,9 +108,9 @@ export interface GetShippingRatesResponse {
 /**
  * Format shipping cost for display
  */
-export function formatShippingCost(cost: number): string {
-  if (cost === 0) return "FREE";
-  return `₹${cost.toFixed(2)}`;
+export function formatShippingCost(costPaise: number): string {
+  if (costPaise === 0) return "FREE";
+  return formatCurrency(costPaise);
 }
 
 /**
@@ -127,12 +128,14 @@ export function formatEstimatedDelivery(days: number): string {
  */
 export interface ShippingGroup {
   // Unique identifier for this group
-  groupId: string; // e.g., "SEL-001-400001" (sellerId-pincode)
+  groupId: string; // the pickup location id (orgAddressId) since stock-locations
 
   // Origin details
-  sellerId: string;
-  sellerName: string;
-  sellerCode: string;
+  orgId: string;
+  orgName: string;
+  orgCode: string;
+  /** The pickup location's nickname — parcels are numbered in the UI (TRD D12). */
+  locationName?: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;
@@ -141,7 +144,9 @@ export interface ShippingGroup {
   items: any[]; // CartItem[] - using any to avoid circular dependency
 
   // Calculated shipping info
-  totalWeight: number; // in kg
+  totalWeight: number; // in kg — the real sum of the parcel's contents
+  /** What the rate is quoted on: totalWeight rounded up to whole kg, floor 1 kg. */
+  billableWeightKg?: number;
   itemsTotal: number;  // sum of item prices
 
   // Available rates

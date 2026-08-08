@@ -81,8 +81,8 @@ export function ProvidersContainer() {
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/4 mb-2" />
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-6 bg-muted rounded w-1/4 mb-2" />
+              <div className="h-4 bg-muted rounded w-3/4" />
             </Card>
           ))}
         </div>
@@ -93,11 +93,11 @@ export function ProvidersContainer() {
   // Error state
   if (error && providers.length === 0) {
     return (
-      <Card className="p-8 text-center border-red-200 bg-red-50">
-        <p className="text-red-600 font-semibold mb-2">
+      <Card className="p-8 text-center border-destructive/30 bg-destructive/10">
+        <p className="text-destructive font-semibold mb-2">
           Failed to load providers
         </p>
-        <p className="text-sm text-red-500 mb-4">{error}</p>
+        <p className="text-sm text-destructive mb-4">{error}</p>
         <Button onClick={refreshProviders} variant="outline">
           Try Again
         </Button>
@@ -110,10 +110,10 @@ export function ProvidersContainer() {
     return (
       <div className="space-y-4">
         <Card className="p-8 text-center">
-          <p className="text-gray-600 mb-2">
+          <p className="text-muted-foreground mb-2">
             No shipping providers configured yet.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Contact your developer to set up shipping providers.
           </p>
         </Card>
@@ -127,8 +127,8 @@ export function ProvidersContainer() {
       <div className="space-y-4">
         {/* Error banner (if any, but providers exist) */}
         {error && (
-          <Card className="p-4 border-yellow-200 bg-yellow-50">
-            <p className="text-sm text-yellow-800">{error}</p>
+          <Card className="p-4 border-warning/30 bg-warning/10">
+            <p className="text-sm text-warning">{error}</p>
           </Card>
         )}
 

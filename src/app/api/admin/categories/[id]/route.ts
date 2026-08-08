@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCategoryService } from "@server/catalog/admin.category.service";
 import type { UpdateCategoryInput } from "@server/catalog/admin.category.types";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -16,10 +16,8 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
     const category = await adminCategoryService.getCategoryById(id);
 
@@ -40,10 +38,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
     const body = updateCategorySchema.parse(await request.json());
 
@@ -70,10 +66,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
     await adminCategoryService.deleteCategory(id, session.user.id);
 

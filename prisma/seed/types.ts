@@ -8,7 +8,7 @@ export interface SeedUser {
   name: string;
   passwordHash: string; // Will be hashed in seed script
   passwordPlain: string; // For reference only
-  role: "USER" | "ADMIN";
+  platformRole: "USER" | "ADMIN";
   mobile: string;
   isEmailVerified: boolean;
   profile: {
@@ -19,17 +19,15 @@ export interface SeedUser {
 
 // ... existing code ...
 
-export interface SeedSeller {
+export interface SeedOrg {
   id: string;
   code: string;
   name: string;
   email: string;
   phone?: string;
   contactPerson?: string;
-  defaultPincode: string;
-  defaultCity: string;
-  defaultState: string;
-  defaultAddress?: string;
+  /** Seeded as the org's one pickup location (Address + OrgAddress rows). */
+  pickup: { address: string; city: string; state: string; pincode: string };
   businessName?: string;
   gstNumber?: string;
   panNumber?: string;
@@ -53,13 +51,15 @@ export interface SeedAddress {
   isDefault: boolean;
 }
 
+export type SeedCategoryAccent = "EMERALD" | "BLUE" | "PURPLE" | "PINK" | "ORANGE" | "YELLOW" | "RED" | "GRAY";
+
 export interface SeedCategory {
   id: string;
   slug: string;
   name: string;
   description: string;
   heroImage: string;
-  accentColorClass: string;
+  accent: SeedCategoryAccent;
   order: number;
 }
 
@@ -71,7 +71,7 @@ export interface SeedProduct {
   price: number;
   salePrice?: number;
   currency: "INR";
-  sellerId: string;
+  orgId: string;
   categoryId: string;
   tags: string[];
   flags: string[];
@@ -81,7 +81,7 @@ export interface SeedProduct {
   thumbnail: string;
   sizes: string[];
   colors: string[];
-  stock: number;
+  stock: number; // seeded as a ProductStock row at the org's pickup location
   sku?: string;
   lowStockThreshold: number;
   weight?: number; // ⭐ Weight in kg
@@ -111,7 +111,7 @@ export interface SeedShipment {
   code: string; // "BB-1001-SH1"
   orderId: string;
   items: OrderItem[]; // Items in this specific shipment
-  sellerId: string;
+  orgId: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;
@@ -131,7 +131,8 @@ export interface OrderItem {
   productName: string;
   productSlug: string;
   quantity: number;
-  price: number;
+  price: number; // paise
+  salePrice?: number; // paise
   thumbnail: string;
 }
 

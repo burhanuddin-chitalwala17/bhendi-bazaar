@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCategoryService } from "@server/catalog/admin.category.service";
 import type {
   CategoryListFilters,
@@ -15,10 +15,8 @@ import { toErrorResponse } from "@/lib/api-error-response";
 import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
 
 export async function GET(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { searchParams } = new URL(request.url);
 
     const filters: CategoryListFilters = {
@@ -37,10 +35,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const body = categoryFormSchema.parse(await request.json());
     const category = await adminCategoryService.createCategory(
       session.user.id,

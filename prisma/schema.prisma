@@ -16,9 +16,14 @@ model Category {
   id               String    @id @default(cuid())
   slug             String    @unique
   name             String
+  /// Self-referencing tree (category-tree D1/D2): null = root. Restrict, so a parent
+  /// with children cannot be deleted; cycles are refused on the write path.
+  parentId         String?
+  parent           Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children         Category[] @relation("CategoryTree")
   description      String    @db.Text
   heroImage        String // URL to hero image
-  accentColorClass String // Tailwind color class
+  accent           CategoryAccent @default(EMERALD)
   order            Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -26,6 +31,7 @@ model Category {
 
   @@index([slug])
   @@index([order])
+  @@index([parentId])
 }
 
 model Product {
@@ -33,12 +39,14 @@ model Product {
   slug        String   @unique
   name        String
   description String   @db.Text
-  price       Float
-  salePrice   Float?
+  price       Int // paise (Invariant 3)
+  salePrice   Int? // paise
   currency    String   @default("INR")
 
   categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleting a category must never delete its products
+  // (category-tree D3 — the cascade only ever had an application-level count in its way).
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
   tags        String[] // Array of tags
   flags String[] @default([])
@@ -50,18 +58,17 @@ model Product {
   sizes             String[] // Available sizes
   colors            String[] // Available colors
 
-  stock             Int      @default(0)
   sku               String?  @unique // Stock Keeping Unit
   lowStockThreshold Int      @default(10) // Alert when stock falls below this
 
-  // ⭐ Seller Association (REQUIRED)
-  sellerId String
-  seller   Seller @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+  stockLocations ProductStock[]
+
+  // ⭐ Org Association (REQUIRED)
+  orgId String
+  org   Org @relation(fields: [orgId], references: [id], onDelete: Restrict)
   
-  // ⭐ Shipping Origin (OPTIONAL - overrides seller's default)
-  shippingFromPincode   String?
-  shippingFromCity      String?
-  shippingFromLocation  String? // "Warehouse 2", "Special Location"
   
   // ⭐ ADD THIS:
   weight                Float?  @default(0.5) // Weight in kg
@@ -73,9 +80,7 @@ model Product {
   @@index([slug])
   @@index([categoryId])
   @@index([createdAt])
-  @@index([stock])
-  @@index([sellerId])
-  @@index([shippingFromPincode])
+  @@index([orgId])
 }
 
 model Review {
@@ -104,12 +109,33 @@ model Cart {
   id        String   @id @default(cuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     Json // CartItem[]
+  // The pre-PR-44 blob, kept one release as the audit copy of the lift. Read by
+  // nothing; lines live in CartItem rows (order-and-cart-lines trd.md).
+  legacyItems Json?  @map("items")
+  items     CartItem[]
   version   Int      @default(1) // For optimistic locking
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model CartItem {
+  id     String @id @default(cuid())
+  cartId String
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  // Cascade, unlike OrderItem: a cart line is a wish, not history — deleting the
+  // product just removes it from carts.
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  quantity Int
+  size     String?
+  color    String?
+
+  @@index([cartId])
+  @@index([productId])
 }
 
 model User {
@@ -120,7 +146,7 @@ model User {
   isEmailVerified Boolean    @default(false) // Our custom field
   mobile          String?    @unique
   passwordHash    String?
-  role            String     @default("USER")
+  platformRole    PlatformRole @default(USER)
   isBlocked       Boolean    @default(false)
   lastActiveAt    DateTime   @default(now())
   profile         Profile?
@@ -133,8 +159,10 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  orgMemberships OrgMember[]
+  addresses      UserAddress[]
 
-  @@index([role])
+  @@index([platformRole])
   @@index([isBlocked])
   @@index([lastActiveAt])
   @@index([isEmailVerified])
@@ -144,11 +172,11 @@ model Profile {
   id         String  @id @default(cuid())
   user       User    @relation(fields: [userId], references: [id])
   userId     String  @unique
-  addresses  Json? // address[] as JSON block
+  legacyAddresses Json? @map("addresses") // pre-PR-41 blob, kept one release as backup; read by nothing
   profilePic String? // URL to avatar image
 }
 
-model Seller {
+model Org {
   id   String @id @default(cuid())
   code String @unique // "SEL-001", "SEL-002"
   name String // "ABC Traders", "XYZ Wholesale"
@@ -158,13 +186,9 @@ model Seller {
   phone        String?
   contactPerson String? // "John Doe"
   
-  // Default Shipping Location
-  defaultPincode String
-  defaultCity    String
-  defaultState   String
-  defaultAddress String? @db.Text
-  
   // Business Details
+  orgAddresses OrgAddress[]
+
   businessName   String?
   gstNumber      String?
   panNumber      String?
@@ -183,12 +207,12 @@ model Seller {
   
   // Relations
   products Product[]
-  shipments Shipment[] // ← ADD THIS
+  shipments Shipment[]
+  members  OrgMember[]
   
   @@index([email])
   @@index([isActive])
   @@index([code])
-  @@index([defaultPincode])
 }
 
 model Account {
@@ -238,15 +262,16 @@ model Order {
   notes   String? @db.Text
   
   // ✅ NEW: Order-level totals
-  itemsTotal    Float @default(0) // Sum of all item prices
-  shippingTotal Float @default(0) // Sum of all shipping costs
-  discount      Float @default(0)
-  grandTotal    Float @default(0) // itemsTotal + shippingTotal - discount
+  itemsTotal    Int @default(0) // paise
+  shippingTotal Int @default(0) // paise
+  discount      Int @default(0) // paise
+  grandTotal    Int @default(0) // paise: itemsTotal + shippingTotal - discount
   
   // Payment (single for entire order)
   paymentMethod String? // "razorpay"
   paymentStatus String? @default("pending") // pending, paid, failed
-  paymentId     String? // Razorpay payment ID
+  paymentId     String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
+  gatewayOrderId String? // the gateway order this order was charged through; created with amount = grandTotal
   
   // Overall order status (derived from shipments)
   status String @default("processing") // processing, partially_shipped, completed
@@ -255,6 +280,7 @@ model Order {
   updatedAt DateTime @updatedAt
   
   // ✅ NEW: Relations to shipments
+  items     OrderItem[]
   shipments Shipment[]
   shippingEvents ShippingEvent[] // ← ADD THIS
   
@@ -262,6 +288,47 @@ model Order {
   @@index([code])
   @@index([status])
   @@index([paymentStatus])
+  @@index([paymentStatus, createdAt]) // the reconciliation sweep asks "pending and old"
+  @@index([gatewayOrderId])
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Restrict: a sold product cannot be deleted out from under its order history
+  // (order-and-cart-lines R2).
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity  Int
+  unitPrice Int // paise — the price as it stood at purchase, from birth (ADR-0004)
+
+  // The chosen variant. Nullable: products without options have neither.
+  size  String?
+  color String?
+
+  shipmentItems ShipmentItem[]
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model ShipmentItem {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  // Cascade with the order line: the link is meaningless without it, and an
+  // OrderItem only ever dies with its whole order.
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  quantity Int
+
+  @@index([shipmentId])
+  @@index([orderItemId])
 }
 
 model Shipment {
@@ -272,18 +339,26 @@ model Shipment {
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
-  // ✅ Items in THIS specific shipment
-  items   Json // ShipmentItem[] - only items from this origin
+  // The pre-PR-43 blob, kept one release as the audit copy of the lift. Read by
+  // nothing; lines live in ShipmentItem rows (order-and-cart-lines trd.md).
+  legacyItems Json? @map("items")
+  items       ShipmentItem[]
   
   // ✅ Origin details (where it ships from)
-  sellerId    String
-  seller      Seller @relation(fields: [sellerId], references: [id])
+  orgId    String
+  org      Org @relation(fields: [orgId], references: [id])
+  /// The pickup location this parcel was allocated from (stock-locations D5/D6).
+  /// Nullable: pre-existing shipments keep NULL rather than a guessed attribution.
+  /// The from* columns below stay as the historical snapshot — editing a location's
+  /// address must never rewrite where a delivered parcel came from (A5).
+  orgAddressId String?
+  orgAddress   OrgAddress? @relation(fields: [orgAddressId], references: [id], onDelete: Restrict)
   fromPincode String
   fromCity    String
   fromState   String
   
   // ✅ Shipping details (specific to this shipment)
-  shippingCost       Float
+  shippingCost       Int // paise
   shippingProviderId String?
   shippingProvider   ShippingProvider? @relation(fields: [shippingProviderId], references: [id])
   
@@ -312,7 +387,7 @@ model Shipment {
   shippingEvents ShippingEvent[]
   
   @@index([orderId])
-  @@index([sellerId])
+  @@index([orgId])
   @@index([status])
   @@index([trackingNumber])
 }
@@ -383,7 +458,7 @@ model ShippingRateCache {
   mode        String // 'prepaid', 'cod'
 
   // Cached rate information
-  rate          Float // Shipping cost in INR
+  rate          Int // paise
   courierName   String // Courier service name
   estimatedDays Int // Estimated delivery days
 
@@ -445,7 +520,10 @@ model ShippingEvent {
 model AdminLog {
   id         String   @id @default(cuid())
   adminId    String
-  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleting an admin must never erase the audit trail of
+  // what they did — that is the record you want most when removing one. Block or
+  // deactivate the account instead (User.isBlocked).
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Restrict)
   action     String // e.g., "USER_BLOCKED", "PRODUCT_UPDATED"
   resource   String // e.g., "User", "Product", "Order"
   resourceId String // ID of the affected resource
@@ -456,4 +534,146 @@ model AdminLog {
   @@index([createdAt])
   @@index([resource])
   @@index([action])
+}
+
+/// What a person may do inside one org. Declared here rather than as a TypeScript
+/// union so there is exactly one declaration and the database rejects anything else —
+/// unlike `ProductFlag`, which is a TS enum over a `String[]` because Postgres arrays
+/// of enums are awkward. A role is scalar, so it does not need that compromise.
+enum OrgRole {
+  OWNER
+  STAFF
+}
+
+/// A person's membership of an org. The relationship carries the role, because a role
+/// on `User` could not express "owner of A, staff at B".
+///
+/// Cascade on both sides is deliberate: a membership is meaningless without either end,
+/// and deleting one end must remove only the link — never the other party.
+/// A selling organisation's pickup location (stock-locations D1/D10): the org's
+/// relationship to a postal Address — courier nickname, who answers the door at
+/// pickup, and the aggregator registration designed for but not built (D11).
+/// Restrict both ways: an org with locations, or a location an Address underpins,
+/// cannot be deleted out from under the other.
+model OrgAddress {
+  id        String  @id @default(cuid())
+  orgId     String
+  org       Org     @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  addressId String
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  name         String // courier pickup nickname — "Bhendi Bazaar shop", "Bhiwandi godown"
+  contactName  String // '' until a human completes it; required if fulfilment books real pickups
+  contactPhone String
+  isActive     Boolean @default(true)
+  /// Aggregator pickup-location reference (D11): carried, read by nothing yet.
+  providerRef  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productStock ProductStock[]
+  shipments    Shipment[]
+
+  @@index([orgId])
+}
+
+/// Where a product's units physically sit (stock-locations D2): the quantity lives
+/// on the join row, because a location without a quantity is a place the store
+/// cannot honour a quote from. Restrict on the location side is R8 in the database.
+model ProductStock {
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orgAddressId String
+  orgAddress   OrgAddress @relation(fields: [orgAddressId], references: [id], onDelete: Restrict)
+  quantity     Int
+
+  @@id([productId, orgAddressId])
+  @@index([orgAddressId])
+}
+
+model OrgMember {
+  id     String @id @default(cuid())
+  userId String
+  orgId  String
+  role   OrgRole
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Org  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+/// Whether a person runs the platform. Distinct in kind from `OrgRole`: there is exactly
+/// one platform, so this is a property of the person, whereas a role inside an org is a
+/// property of a relationship. Kept an enum rather than a boolean because a read-only
+/// support role is a plausible third value.
+enum PlatformRole {
+  USER
+  ADMIN
+}
+
+/// A category's accent, stored as a semantic key and mapped to classes at render
+/// (`src/lib/category-accent.ts`). Rows used to hold raw Tailwind class strings —
+/// presentation frozen into the database, which broke the moment the classes moved.
+enum CategoryAccent {
+  EMERALD
+  BLUE
+  PURPLE
+  PINK
+  ORANGE
+  YELLOW
+  RED
+  GRAY
+}
+
+/// A postal fact, identity-agnostic (addresses-as-entities D1/D2): who receives there
+/// lives on the owning relationship (`UserAddress` now, `OrgAddress` when
+/// stock-locations lands). No uniqueness on purpose — free text does not normalise,
+/// and a shared row would force copy-on-write on every edit.
+model Address {
+  id           String  @id @default(cuid())
+  addressLine1 String
+  addressLine2 String?
+  landmark     String?
+  city         String
+  state        String
+  pincode      String
+  country      String  @default("India")
+  /// Provenance, not ownership — nullable so seeds and system rows are honest.
+  createdBy    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userAddresses UserAddress[]
+  orgAddresses  OrgAddress[]
+
+  @@index([pincode])
+}
+
+/// A person's relationship to an address: their label for it, and who receives there
+/// (not necessarily the account holder). No `isDefault` by decision — the buyer picks
+/// at checkout.
+model UserAddress {
+  id        String  @id @default(cuid())
+  userId    String
+  addressId String
+  label     String?
+  fullName  String
+  phone     String
+  email     String?
+  notes     String?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

@@ -16,7 +16,10 @@ export interface DeliveryAddress {
   state: string;
   pincode: string;
   country: string;
-  metadata?: Record<string, any>;
+  /** The person's own name for this address ("Home", "Office"). */
+  label?: string;
+  /** Delivery instructions. Top-level since PR-41 — the old `metadata` bag is gone. */
+  notes?: string;
 }
 
 export interface ServerUserProfile {

@@ -40,7 +40,7 @@ export function ProfileMenu() {
       >
         {user?.name?.charAt(0)?.toUpperCase() ?? "B"}
         {!isEmailVerified && (
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-amber-500 rounded-full border-2 border-background" />
+          <span className="absolute -top-1 -right-1 h-3 w-3 bg-warning rounded-full border-2 border-background" />
         )}
       </button>
       {open && (
@@ -59,7 +59,7 @@ export function ProfileMenu() {
               </p>
             )}
             {!isEmailVerified && (
-              <div className="mt-2 flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+              <div className="mt-2 flex items-center gap-1.5 text-warning dark:text-warning">
                 <ShieldAlert className="h-3 w-3" />
                 <span className="text-[0.65rem] font-medium">
                   Email not verified
@@ -75,6 +75,15 @@ export function ProfileMenu() {
             className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Orders
+          </Link>
+          <Link
+            href="/org"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Org Portal
           </Link>
           <button
             type="button"

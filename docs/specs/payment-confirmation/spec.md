@@ -1,6 +1,6 @@
 # Spec — payment confirmation
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-39 (R7's refund flow remains Phase 5, as scoped)
 - **Domain:** payments, checkout
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-08-03

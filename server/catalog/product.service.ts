@@ -5,6 +5,8 @@
  */
 
 import { productsRepository } from "@server/catalog/product.repository";
+import { categoryRepository } from "@server/catalog/category.repository";
+import { collectSubtreeIds } from "@server/catalog/category.tree";
 import type { ProductFilter } from "@server/catalog/product.types";
 import { DomainError } from "@server/shared/domain-error";
 
@@ -16,6 +18,17 @@ export class ProductService {
     // Validate filter
     if (filter) {
       this.validateFilter(filter);
+    }
+
+    if (filter?.categorySlug) {
+      // A category page lists its whole subtree (category-tree R2). Unknown
+      // slug resolves to an empty list, never to "all products".
+      const tree = await categoryRepository.listTree();
+      const root = tree.find((c) => c.slug === filter.categorySlug);
+      return await productsRepository.getProducts({
+        ...filter,
+        categoryIds: root ? collectSubtreeIds(tree, root.id) : [],
+      });
     }
 
     return await productsRepository.getProducts(filter);

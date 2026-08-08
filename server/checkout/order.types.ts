@@ -19,28 +19,14 @@ export interface OrderItem {
   selectedVariant?: string;
 }
 
-export interface CreateOrderInput {
-  userId?: string; // Optional for guest orders
-  items: OrderItem[];
-  itemsTotal: number;
-  shippingTotal: number;
-  discount: number;
-  grandTotal: number;
-  address: DeliveryAddress;
-  notes?: string;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  paymentId?: string;
-  status?: string;
-  shipments: Shipment[];
-}
+
 
 interface Shipment {
   id: string;
   code: string;
   orderId: string;
   items: OrderItem[];
-  sellerId: string;
+  orgId: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;
@@ -53,12 +39,9 @@ interface Shipment {
   estimatedDelivery?: string;
 }
 
-export interface UpdateOrderInput {
-  status?: string;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  paymentId?: string;
-}
+// UpdateOrderInput is deliberately gone: the paid/failed transitions in
+// order.repository are the only writers of payment state (ADR-0005).
+
 
 // ============================================
 // NEW: Multi-Shipment Order Types
@@ -69,9 +52,12 @@ export interface ShipmentItem {
   productName: string;
   productSlug: string;
   thumbnail: string;
+  /** On reads since order-and-cart-lines: the unit price actually paid (TRD D2). */
   price: number;
   salePrice?: number;
   quantity: number;
+  size?: string;
+  color?: string;
 }
 
 export interface ShippingGroupInput {
@@ -79,18 +65,16 @@ export interface ShippingGroupInput {
   groupId: string;
 
   // Origin details
-  sellerId: string;
-  sellerName: string;
+  orgId: string;
+  orgName: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;
 
-  // Items in this group
-  items: ShipmentItem[];
+  /** Unpriced on purpose: the server prices every line from the catalogue (Invariant 1). */
+  items: Array<{ productId: string; quantity: number; size?: string; color?: string }>;
 
-  // Shipping details
-  totalWeight: number;
-  itemsTotal: number;
+  // Selected shipping rate
   selectedRate: {
     providerId: string;
     providerName: string;
@@ -98,7 +82,7 @@ export interface ShippingGroupInput {
     courierCode?: string;
     rate: number;
     estimatedDays: number;
-    mode: string;
+    mode?: string;
     etd?: string;
   };
 }
@@ -107,15 +91,14 @@ export interface CreateOrderWithShipmentsInput {
   userId?: string;
   address: DeliveryAddress;
   shippingGroups: ShippingGroupInput[];
-  totals: {
-    itemsTotal: number;
-    shippingTotal: number;
-    discount: number;
-    grandTotal: number;
-  };
+  /**
+   * The grand total the customer was shown, in paise. Compared against the total the
+   * server computes and never persisted — a mismatch means prices changed mid-session
+   * and the order is refused rather than silently repriced (trd.md D4, R5).
+   */
+  displayedGrandTotal: number;
   notes?: string;
   paymentMethod?: string;
-  paymentStatus?: string;
 }
 
 export interface ServerShipment {
@@ -123,7 +106,7 @@ export interface ServerShipment {
   code: string;
   orderId: string;
   items: ShipmentItem[];
-  sellerId: string;
+  orgId: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;

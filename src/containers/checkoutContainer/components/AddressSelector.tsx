@@ -53,15 +53,10 @@ export function AddressSelector({
         className="flex w-full items-start justify-between gap-4 p-5 text-left transition-colors hover:bg-muted/30"
       >
         <div className="flex gap-3">
-          <MapPin className="mt-0.5 h-5 w-5 text-teal-600" />
+          <MapPin className="mt-0.5 h-5 w-5 text-info" />
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="font-semibold">{selectedAddress.fullName}</span>
-              {selectedAddress.metadata?.isDefault && (
-                <Badge variant="secondary" className="text-[0.65rem]">
-                  Default
-                </Badge>
-              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {[
@@ -103,12 +98,7 @@ export function AddressSelector({
                   <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                   <div className="flex-1 space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{address.metadata?.label}</span>
-                      {address.metadata?.isDefault && (
-                        <Badge variant="secondary" className="text-[0.6rem]">
-                          Default
-                        </Badge>
-                      )}
+                      <span className="font-medium">{address.label}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {[address.addressLine1, address.city, address.pincode]

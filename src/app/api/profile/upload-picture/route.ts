@@ -74,7 +74,6 @@ export async function POST(request: Request) {
       create: {
         userId,
         profilePic: blob.url,
-        addresses: [],
       },
       update: {
         profilePic: blob.url,

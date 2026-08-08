@@ -6,21 +6,20 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminReviewService } from "@server/catalog/review.service";
-import type { UpdateReviewInput } from "@server/catalog/review.types";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { updateReviewSchema } from "@/lib/validation/schemas/admin.schemas";
 
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
-    const body = (await request.json()) as UpdateReviewInput;
+    const body = updateReviewSchema.parse(await request.json());
 
     const review = await adminReviewService.updateReview(
       id,
@@ -34,14 +33,7 @@ export async function PATCH(
 
     return NextResponse.json(review);
   } catch (error) {
-    console.error("Failed to update review:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to update review",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not update review:");
   }
 }
 
@@ -49,23 +41,14 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
     await adminReviewService.deleteReview(id, session.user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete review:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to delete review",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not delete review:");
   }
 }
 

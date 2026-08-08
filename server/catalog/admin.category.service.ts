@@ -4,6 +4,8 @@
  */
 
 import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
+import { categoryRepository } from "@server/catalog/category.repository";
+import { wouldCreateCycle } from "@server/catalog/category.tree";
 import { adminLogRepository } from "@server/shared/audit/audit.repository";
 import type {
   CategoryListFilters,
@@ -56,6 +58,14 @@ export class AdminCategoryService {
       throw new DomainError("Name is required");
     }
 
+    if (data.parentId) {
+      // Friendlier than the FK violation the database would raise.
+      const tree = await categoryRepository.listTree();
+      if (!tree.some((node) => node.id === data.parentId)) {
+        throw new DomainError("Parent category not found", { field: "parentId" });
+      }
+    }
+
     const category = await adminCategoryRepository.createCategory(data);
 
     await adminLogRepository.createLog({
@@ -77,6 +87,21 @@ export class AdminCategoryService {
     adminId: string,
     data: UpdateCategoryInput
   ): Promise<AdminCategory | null> {
+    if (data.parentId) {
+      // The rule the database cannot express: a category must never become its
+      // own ancestor (category-tree TRD D2). Self-parenting is the same walk.
+      const tree = await categoryRepository.listTree();
+      if (!tree.some((node) => node.id === data.parentId)) {
+        throw new DomainError("Parent category not found", { field: "parentId" });
+      }
+      if (wouldCreateCycle(tree, id, data.parentId)) {
+        throw new DomainError(
+          "A category cannot be nested under itself or one of its subcategories",
+          { field: "parentId" }
+        );
+      }
+    }
+
     const category = await adminCategoryRepository.updateCategory(id, data);
 
     if (category) {
@@ -104,6 +129,17 @@ export class AdminCategoryService {
 
     if (category.productsCount && category.productsCount > 0) {
       throw new DomainError(`Cannot delete category with ${category.productsCount} products. Please reassign or delete products first.`);
+    }
+
+    // Friendlier than the RESTRICT violation the database would raise — and the
+    // database raising it is the guarantee, not this message.
+    const childCount = (await categoryRepository.listTree()).filter(
+      (node) => node.parentId === id
+    ).length;
+    if (childCount > 0) {
+      throw new DomainError(
+        `Cannot delete a category with ${childCount} subcategor${childCount === 1 ? "y" : "ies"}. Move or delete them first.`
+      );
     }
 
     await adminCategoryRepository.deleteCategory(id);

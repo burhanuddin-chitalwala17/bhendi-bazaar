@@ -79,7 +79,7 @@ export function ChangePasswordModal() {
                 {...register("currentPassword")}
               />
             {errors.currentPassword && (
-              <p role="alert" className="text-xs text-red-600">{errors.currentPassword.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.currentPassword.message}</p>
             )}
             </div>
           </div>
@@ -93,7 +93,7 @@ export function ChangePasswordModal() {
               {...register("newPassword")}
             />
             {errors.newPassword && (
-              <p role="alert" className="text-xs text-red-600">{errors.newPassword.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.newPassword.message}</p>
             )}
             <p className="text-[0.65rem] text-muted-foreground">
               At least 8 characters with uppercase, lowercase, and numbers
@@ -109,7 +109,7 @@ export function ChangePasswordModal() {
               {...register("confirmPassword")}
             />
             {errors.confirmPassword && (
-              <p role="alert" className="text-xs text-red-600">{errors.confirmPassword.message}</p>
+              <p role="alert" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
             )}
           </div>
 
@@ -130,13 +130,13 @@ export function ChangePasswordModal() {
           </button>
 
           {formError && (
-            <p role="alert" className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+            <p role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
               {formError}
             </p>
           )}
 
           {success && (
-            <p className="text-sm text-green-600 bg-green-50 p-3 rounded-md">
+            <p className="text-sm text-success bg-success/10 p-3 rounded-md">
               Password changed successfully!
             </p>
           )}

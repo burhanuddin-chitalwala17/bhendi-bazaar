@@ -1,3 +1,4 @@
+import type { CategoryAccent } from "@prisma/client";
 /**
  * Admin Category Management Domain Types
  */
@@ -6,9 +7,10 @@ export interface AdminCategory {
   id: string;
   slug: string;
   name: string;
+  parentId: string | null;
   description: string;
   heroImage: string;
-  accentColorClass: string;
+  accent: CategoryAccent;
   order: number;
   createdAt: Date;
   updatedAt: Date;
@@ -33,17 +35,21 @@ export interface CategoryListResult {
 
 export interface CreateCategoryInput {
   name: string;
+  /** null/absent = root. Existence and acyclicity are checked in the service. */
+  parentId?: string | null;
   description: string;
   heroImage: string;
-  accentColorClass: string;
+  accent: CategoryAccent;
   order?: number;
 }
 
 export interface UpdateCategoryInput {
   name?: string;
+  /** undefined = unchanged, null = detach to root. */
+  parentId?: string | null;
   description?: string;
   heroImage?: string;
-  accentColorClass?: string;
+  accent?: CategoryAccent;
   order?: number;
 }
 

@@ -13,7 +13,7 @@ export const seedCategories: SeedCategory[] = [
     description:
       "Flowing silhouettes in deep emeralds, maroons, and midnight blacks. Elegant modest wear crafted from premium fabrics for everyday grace and special occasions.",
     heroImage: "https://placehold.co/1200x600/10b981/ffffff?text=Abayas+%26+Jilbabs", // Placeholder
-    accentColorClass: "from-emerald-900/80 via-emerald-800/60 to-black/80",
+    accent: "EMERALD",
     order: 1,
   },
   {
@@ -23,7 +23,7 @@ export const seedCategories: SeedCategory[] = [
     description:
       "Oil-based fragrances inspired by the lanes of Bhendi Bazaar. Traditional attar perfumes blended with oud, musk, rose, and sandalwood for a lasting impression.",
     heroImage: "https://placehold.co/1200x600/f59e0b/ffffff?text=Attars+%26+Scents", // Placeholder
-    accentColorClass: "from-amber-900/80 via-amber-800/60 to-black/80",
+    accent: "ORANGE",
     order: 2,
   },
   {
@@ -33,7 +33,7 @@ export const seedCategories: SeedCategory[] = [
     description:
       "Filigree, stones, and gold-toned details for elevated evenings. Handcrafted traditional and contemporary jewelry pieces that celebrate timeless elegance.",
     heroImage: "https://placehold.co/1200x600/eab308/ffffff?text=Jewellery", // Placeholder
-    accentColorClass: "from-yellow-900/80 via-yellow-800/60 to-black/80",
+    accent: "YELLOW",
     order: 3,
   },
   {
@@ -43,7 +43,7 @@ export const seedCategories: SeedCategory[] = [
     description:
       "Prayer mats, tasbihs, and accessories for sacred routines. Quality prayer essentials to enhance your spiritual practice and daily devotion.",
     heroImage: "https://placehold.co/1200x600/0ea5e9/ffffff?text=Prayer+Essentials", // Placeholder
-    accentColorClass: "from-sky-900/80 via-sky-800/60 to-black/80",
+    accent: "BLUE",
     order: 4,
   },
 ];

@@ -7,7 +7,7 @@ import { cartService } from "@server/cart/cart.service";
 import { validateRequest } from "@/lib/validation";
 import { updateCartSchema } from "@/lib/validation/schemas/cart.schemas";
 import { withRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
-import type { CartItem } from "@/domain/cart";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 /**
  * API Routes act as the bridge between client and server
@@ -41,23 +41,15 @@ export async function PUT(request: NextRequest) {
       return validation.error;
     }
 
-    // Transform items: convert null to undefined for salePrice
-    const items = validation.data.items.map((item) => ({
-      ...item,
-      salePrice: item.salePrice ?? undefined,
-    })) as CartItem[];
+    const { version } = await cartService.updateCart(
+      session.user.id,
+      validation.data.items,
+      validation.data.version
+    );
 
-    // Call server service (types converted at runtime)
-    await cartService.updateCart(session.user.id, items);
-
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true, version }, { status: 200 });
   } catch (error) {
-    console.error("[API] PUT /api/cart failed:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Failed to update cart";
-
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return toErrorResponse(error, "Could not update the cart");
   }
 }
 

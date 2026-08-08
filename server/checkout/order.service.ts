@@ -8,18 +8,19 @@
  */
 
 import { orderRepository } from "@server/checkout/order.repository";
-import { prisma } from "@server/shared/prisma";
+import { prisma, toJsonColumn } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
 import type {
-  CreateOrderInput,
-  UpdateOrderInput,
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
-import { DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
+import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
+import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
+import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
 export class OrderService {
   /**
@@ -59,61 +60,47 @@ export class OrderService {
     return await orderRepository.findByCode(code);
   }
 
-  /**
-   * Create a new order with validation
-   */
-  async createOrder(input: CreateOrderInput): Promise<boolean> {
-    // Validate input
-    this.validateCreateOrderInput(input);
 
-    try {
-      await orderRepository.create(input);
-      return true;
-    } catch (error) {
-      console.error("Failed to create order:", error);
-      return false;
-    }
-  }
 
   /**
-   * Update an existing order
+   * Side effects of an order becoming paid — reached exactly once per order, because
+   * the caller is the conditional transition (payment-confirmation D3). The
+   * confirmation email moves here from updateOrder, where it fired on whoever
+   * happened to write the status. Fulfilment is deliberately NOT triggered here:
+   * booking is a placeholder until shipping-fulfilment, and a failed booking must
+   * never look like a failed payment.
    */
-  async updateOrder(
-    orderId: string,
-    input: UpdateOrderInput,
-    userId?: string
-  ): Promise<boolean> {
-    // First, get the order to verify ownership
-    const existingOrder = await this.getOrderById(orderId, userId);
+  async onPaymentConfirmed(orderId: string): Promise<void> {
+    const order = await orderRepository.findById(orderId);
+    if (!order) return;
 
-    if (!existingOrder) {
-      throw new NotFoundError("Order not found");
-    }
-
-    // Check if payment status is changing to "paid"
-    const isPaymentCompleted =
-      input.paymentStatus === "paid" && existingOrder.paymentStatus !== "paid";
-
-    // Update the order
-    const updated = await orderRepository.update(orderId, input);
-
-    if (!updated) {
-      throw new Error("Failed to update order");
-    }
-
-    // Send purchase confirmation email when payment is completed
-    if (isPaymentCompleted && existingOrder.address && (existingOrder.address as any).email) {
+    const deliveryAddress = order.address as OrderEmailView["address"] | null;
+    if (deliveryAddress?.email) {
       const { emailService } = await import("@server/notifications/email.service");
-
       emailService
-        .sendPurchaseConfirmationEmail(existingOrder, (existingOrder.address as any).email)
+        .sendPurchaseConfirmationEmail(
+          {
+            id: order.id,
+            code: order.code,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            createdAt: order.createdAt,
+            notes: order.notes,
+            itemsTotal: order.itemsTotal,
+            discount: order.discount,
+            grandTotal: order.grandTotal,
+            address: deliveryAddress,
+            shipments: order.shipments.map((s) => ({
+              estimatedDelivery: s.estimatedDelivery?.toISOString(),
+            })),
+          },
+          deliveryAddress.email
+        )
         .catch((error) => {
           console.error("Failed to send purchase confirmation email:", error);
-          // Don't throw - email failure shouldn't block order update
+          // Email failure must not unwind a confirmed payment.
         });
     }
-
-    return updated;
   }
 
   /**
@@ -146,68 +133,253 @@ export class OrderService {
         // Generate unique order code
         const orderCode = await this.generateOrderCode();
 
+        // Price everything from the catalogue, inside this transaction, so the price
+        // used for the total is the price checked against the catalogue (Invariant 1,
+        // trd.md). The request contributed product ids and quantities; nothing more.
+        const productIds = [
+          ...new Set(input.shippingGroups.flatMap((g) => g.items.map((i) => i.productId))),
+        ];
+        const productRows = await tx.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true, name: true, slug: true, thumbnail: true,
+            price: true, salePrice: true, weight: true, orgId: true,
+            sizes: true, colors: true,
+          },
+        });
+        const products = new Map(productRows.map((row) => [row.id, row]));
+
+        // Merge duplicate variant lines across the client's parcel groups: pricing
+        // and OrderItems are per line; the allocation below decides parcels afresh.
+        const mergedLines = new Map<string, { productId: string; quantity: number; size?: string; color?: string }>();
+        for (const group of input.shippingGroups) {
+          for (const item of group.items) {
+            const key = `${item.productId}::${item.size ?? ""}::${item.color ?? ""}`;
+            const existing = mergedLines.get(key);
+            if (existing) existing.quantity += item.quantity;
+            else mergedLines.set(key, { ...item });
+          }
+        }
+        const requestedLines = [...mergedLines.values()];
+        const { lines: pricedLines, itemsTotal } = priceLines(requestedLines, products);
+
+        // Where the stock actually is (active locations only): the same pure
+        // allocation the checkout preview ran, now against the rows this transaction
+        // will decrement — the decision is made here and persisted, never recomputed
+        // later (stock-locations D6).
+        const stockRows = await tx.productStock.findMany({
+          where: {
+            productId: { in: productIds },
+            quantity: { gt: 0 },
+            orgAddress: { isActive: true },
+          },
+          select: {
+            productId: true,
+            orgAddressId: true,
+            quantity: true,
+            orgAddress: {
+              select: {
+                orgId: true,
+                address: { select: { pincode: true, city: true, state: true } },
+              },
+            },
+          },
+        });
+        const locationInfo = new Map(stockRows.map((row) => [row.orgAddressId, row.orgAddress]));
+        const locationPincodes = new Map(
+          [...locationInfo.entries()].map(([id, info]) => [id, info.address.pincode])
+        );
+        const productNames = new Map(productRows.map((row) => [row.id, row.name]));
+
+        // Allocate per org — a parcel's org is its location's org by construction,
+        // which is what used to be the priceGroupItems ownership check. Same function
+        // as the checkout preview, now against rows this transaction decrements.
+        const productOrgs = new Map(productRows.map((row) => [row.id, row.orgId]));
+        const parcels = allocateAcrossOrgs(
+          requestedLines,
+          productOrgs,
+          stockRows,
+          locationPincodes,
+          input.address.pincode,
+          productNames
+        );
+
+        // Match the customer's chosen rate to each allocated parcel by location
+        // (groupId = orgAddressId since the allocate preview). A parcel without a
+        // quoted group means availability moved since the preview — refuse rather
+        // than ship a parcel nobody priced.
+        const groupsByLocation = new Map(input.shippingGroups.map((g) => [g.groupId, g]));
+        const pricedByKey = new Map(
+          pricedLines.map((line) => [`${line.productId}::${line.size ?? ""}::${line.color ?? ""}`, line])
+        );
+        const plans = parcels.map((parcel) => {
+          const group = groupsByLocation.get(parcel.orgAddressId);
+          if (!group) {
+            throw new ConflictError(
+              "Availability changed while you were checking out. Please review your order and try again."
+            );
+          }
+          const lines = parcel.lines.map((line) => ({
+            ...(pricedByKey.get(`${line.productId}::${line.size ?? ""}::${line.color ?? ""}`) as PricedLine),
+            quantity: line.quantity,
+          }));
+          const weight = lines.reduce(
+            (sum, line) => sum + ((products.get(line.productId)?.weight ?? 0) * line.quantity),
+            0
+          );
+          const parcelItemsTotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+          return {
+            orgAddressId: parcel.orgAddressId,
+            location: locationInfo.get(parcel.orgAddressId) as NonNullable<ReturnType<typeof locationInfo.get>>,
+            rate: group.selectedRate,
+            parcel,
+            lines,
+            weight,
+            parcelItemsTotal,
+          };
+        });
+
+        const totals = assembleOrderTotals(
+          plans.map((plan) => ({ itemsTotal: plan.parcelItemsTotal, shippingRate: plan.rate.rate }))
+        );
+
+        // R5: the customer confirms the number they saw. A mismatch means prices
+        // changed mid-session — refuse rather than silently charge something else.
+        if (totals.grandTotal !== input.displayedGrandTotal) {
+          throw new ConflictError(
+            "Prices changed while you were checking out. Please review your order and try again."
+          );
+        }
+
+        // Reserve stock where it actually sits: the availability check IS the where
+        // clause of the write (Invariant 6, ADR-0007), re-pointed from Product.stock
+        // to the allocated (product, location) row (stock-locations TRD D7). Rows are
+        // merged and sorted by reservationPlan so concurrent orders lock in the same
+        // sequence; count === 0 rolls the whole order back.
+        for (const { productId, orgAddressId, quantity } of reservationPlan(parcels)) {
+          const reserved = await tx.productStock.updateMany({
+            where: { productId, orgAddressId, quantity: { gte: quantity } },
+            data: { quantity: { decrement: quantity } },
+          });
+          if (reserved.count === 0) {
+            const name = productNames.get(productId) ?? "An item in your order";
+            throw new ConflictError(
+              `"${name}" just sold at its location while you were checking out. Please try again.`
+            );
+          }
+        }
+
+        // R6: the bought items leave the cart in the same transaction, so a closed
+        // tab cannot leave a cart that has already been purchased.
+        if (input.userId) {
+          await tx.cart.deleteMany({ where: { userId: input.userId } });
+        }
 
         // 1. Create the main order (pending payment)
         const order = await tx.order.create({
           data: {
             code: orderCode,
             userId: input.userId || null,
-            address: input.address as any,
+            address: toJsonColumn(input.address),
             notes: input.notes,
-            itemsTotal: input.totals.itemsTotal,
-            shippingTotal: input.totals.shippingTotal,
-            discount: input.totals.discount,
-            grandTotal: input.totals.grandTotal,
+            itemsTotal: totals.itemsTotal,
+            shippingTotal: totals.shippingTotal,
+            discount: totals.discount,
+            grandTotal: totals.grandTotal,
             paymentMethod: input.paymentMethod,
-            paymentStatus: input.paymentStatus || "pending",
+            // Never from the request: payment state has exactly one writer (Invariant 2).
+            paymentStatus: "pending",
             status: "pending_payment", // Order is pending until payment
           },
         });
 
-        // 2. Create shipments for each group (NO provider calls yet)
-        const createdShipments = await Promise.all(
-          input.shippingGroups.map(async (group, index) => {
-            const shipmentCode = `${order.code}-SH${index + 1}`;
+        // 2. One shipment per allocated parcel (NO provider calls yet). The location
+        // is persisted on the row (D6) and its address is snapshotted (D5): editing
+        // the location later must not rewrite where this parcel came from. Pincode,
+        // city and state all come from ONE location row — the mismatch where a
+        // parcel carried one location's pincode beside another's city is no longer
+        // expressible.
+        const createdShipments = [] as Array<{ shipment: Awaited<ReturnType<typeof tx.shipment.create>>; lines: typeof plans[number]["lines"] }>;
+        for (const [index, plan] of plans.entries()) {
+          const shipment = await tx.shipment.create({
+            data: {
+              code: `${order.code}-SH${index + 1}`,
+              orderId: order.id,
+              orgId: plan.location.orgId,
+              orgAddressId: plan.orgAddressId,
+              fromPincode: plan.location.address.pincode,
+              fromCity: plan.location.address.city,
+              fromState: plan.location.address.state,
+              shippingCost: plan.rate.rate,
+              shippingProviderId: plan.rate.providerId,
+              courierName: plan.rate.courierName,
+              packageWeight: plan.weight,
+              status: "pending", // Pending until fulfillment
+              shippingMeta: {
+                courierCode: plan.rate.courierCode,
+                providerName: plan.rate.providerName,
+                mode: plan.rate.mode,
+                etd: plan.rate.etd,
+                estimatedDays: plan.rate.estimatedDays,
+              },
+            },
+          });
+          createdShipments.push({ shipment, lines: plan.lines });
+        }
 
-            console.log(`📦 Creating Shipment ${index + 1}/${input.shippingGroups.length}: ${shipmentCode}`);
-
-            // Create the shipment record (pending state)
-            const shipment = await tx.shipment.create({
+        // One OrderItem per priced line; each parcel's ShipmentItem points at it, so
+        // a line split across two locations stays linked to the one thing the
+        // customer ordered (order-and-cart-lines R5 — exercised for the first time).
+        const orderItemIdByKey = new Map<string, string>();
+        for (const line of pricedLines) {
+          const created = await tx.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId: line.productId,
+              quantity: line.quantity,
+              unitPrice: line.unitPrice,
+              size: line.size ?? null,
+              color: line.color ?? null,
+            },
+          });
+          orderItemIdByKey.set(
+            `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`,
+            created.id
+          );
+        }
+        for (const { shipment, lines } of createdShipments) {
+          for (const line of lines) {
+            await tx.shipmentItem.create({
               data: {
-                code: shipmentCode,
-                orderId: order.id,
-                items: group.items as any,
-                sellerId: group.sellerId,
-                fromPincode: group.fromPincode,
-                fromCity: group.fromCity,
-                fromState: group.fromState,
-                shippingCost: group.selectedRate.rate,
-                shippingProviderId: group.selectedRate.providerId,
-                courierName: group.selectedRate.courierName,
-                packageWeight: group.totalWeight,
-                status: "pending", // Pending until fulfillment
-                shippingMeta: {
-                  courierCode: group.selectedRate.courierCode,
-                  providerName: group.selectedRate.providerName,
-                  mode: group.selectedRate.mode,
-                  etd: group.selectedRate.etd,
-                  estimatedDays: group.selectedRate.estimatedDays,
-                },
+                shipmentId: shipment.id,
+                orderItemId: orderItemIdByKey.get(
+                  `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`
+                ) as string,
+                quantity: line.quantity,
               },
             });
-            return shipment;
-          })
-        );
+          }
+        }
 
-        // Return order with shipments in the expected format
+        // Return order with shipments in the expected format. Line shape matches
+        // what reads rebuild from rows: price = the unit price actually paid (D2).
         return {
           ...order,
-          shipments: createdShipments.map(s => ({
+          shipments: createdShipments.map(({ shipment: s, lines }) => ({
             id: s.id,
             code: s.code,
             orderId: s.orderId,
-            items: s.items as any,
-            sellerId: s.sellerId,
+            items: lines.map((line) => ({
+              productId: line.productId,
+              productName: line.productName,
+              productSlug: line.productSlug,
+              thumbnail: line.thumbnail,
+              price: line.unitPrice,
+              quantity: line.quantity,
+              size: line.size,
+              color: line.color,
+            })),
+            orgId: s.orgId,
             fromPincode: s.fromPincode,
             fromCity: s.fromCity,
             fromState: s.fromState,
@@ -274,10 +446,10 @@ export class OrderService {
               shipment.id,
               shipment.shippingProviderId!,
               {
-                courierCode: (shipment.shippingMeta as any)?.courierCode,
+                courierCode: (shipment.shippingMeta as { courierCode?: string } | null)?.courierCode,
                 weight: shipment.packageWeight!,
                 fromPincode: shipment.fromPincode,
-                toPincode: (order.address as any).pincode,
+                toPincode: (order.address as { pincode: string }).pincode,
               }
             );
           },
@@ -318,12 +490,12 @@ export class OrderService {
           where: { id: shipment.id },
           data: {
             status: "failed",
-            shippingMeta: {
-              ...(shipment.shippingMeta as any),
+            shippingMeta: toJsonColumn({
+              ...(shipment.shippingMeta as Record<string, unknown> | null),
               fulfillmentError: errorMessage,
               requiresManualIntervention: true,
               failedAt: new Date().toISOString(),
-            } as any,
+            }),
             updatedAt: new Date(),
           },
         });
@@ -399,15 +571,13 @@ export class OrderService {
       }
 
       for (const item of group.items) {
-        if (!item.productId || !item.productName) {
-          throw new DomainError("Invalid item data: missing required fields");
+        if (!item.productId) {
+          throw new DomainError("Invalid item data: missing product");
         }
         if (item.quantity <= 0) {
           throw new DomainError("Item quantity must be greater than 0");
         }
-        if (item.price < 0) {
-          throw new DomainError("Item price cannot be negative");
-        }
+        // No price check: items arrive unpriced and are priced from the catalogue.
       }
 
       // Validate shipping rate selection
@@ -422,15 +592,6 @@ export class OrderService {
       if (group.selectedRate.rate < 0) {
         throw new DomainError("Shipping rate cannot be negative");
       }
-    }
-
-    // Validate totals
-    if (!input.totals) {
-      throw new DomainError("Order totals are required");
-    }
-
-    if (input.totals.grandTotal <= 0) {
-      throw new DomainError("Order total must be greater than 0");
     }
 
     // Validate address
@@ -465,64 +626,6 @@ export class OrderService {
     }
   }
 
-  /**
-   * Validate order creation input
-   */
-  private validateCreateOrderInput(input: CreateOrderInput): void {
-    // Validate items
-    if (!input.items || input.items.length === 0) {
-      throw new DomainError("Order must contain at least one item");
-    }
-
-    for (const item of input.items) {
-      if (!item.productId || !item.productName || !item.thumbnail) {
-        throw new DomainError("Invalid item data: missing required fields");
-      }
-      if (item.quantity <= 0) {
-        throw new DomainError("Item quantity must be greater than 0");
-      }
-      if (item.price < 0) {
-        throw new DomainError("Item price cannot be negative");
-      }
-    }
-
-    // Validate totals
-    if (!input.itemsTotal || !input.shippingTotal || !input.discount || !input.grandTotal) {
-      throw new DomainError("Order totals are required");
-    }
-    if (input.itemsTotal + input.shippingTotal - input.discount <= 0) {
-      throw new DomainError("Order total must be greater than 0");
-    }
-
-    // Validate address
-    if (!input.address) {
-      throw new DomainError("Shipping address is required");
-    }
-    const { fullName, mobile, addressLine1, city, state, pincode, country } =
-      input.address;
-    if (
-      !fullName ||
-      !mobile ||
-      !addressLine1 ||
-      !city ||
-      !state ||
-      !pincode ||
-      !country
-    ) {
-      throw new DomainError("Address is missing required fields");
-    }
-
-    // Validate phone format (basic validation)
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(mobile)) {
-      throw new DomainError("Phone number must be 10 digits");
-    }
-
-    // Validate postal code (basic validation)
-    if (!isValidPincode(pincode)) {
-      throw new Error(PINCODE_MESSAGE);
-    }
-  }
 }
 
 export const orderService = new OrderService();

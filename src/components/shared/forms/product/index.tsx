@@ -11,15 +11,19 @@ import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
 import { ProductAttributeFields } from "./ProductAttributeFields";
 import { ProductFlagsFields } from "./ProductFlagsFields";
-import { ProductSellerShippingFields } from "./ProductSellerShippingFields";
+import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
 import { FormActions } from "../../button-groups/FormActions";
 import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { paiseToRupees } from "@/lib/format";
+import type { OrgSummary } from "@/domain/org";
 interface ProductFormProps {
   product?: ProductDetails;
   categories?: { id: string; name: string }[];
-  sellers?: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+  orgs?: OrgSummary[];
+  /** The org's pickup locations; the form shows a stock input per active one. */
+  locations?: LocationOption[];
   onSubmit: (data: ProductFormInput) => Promise<ProductDetails | null | undefined>;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -29,7 +33,8 @@ interface ProductFormProps {
 export function ProductForm({
   product,
   categories,
-  sellers,
+  orgs,
+  locations = [],
   onSubmit,
   onCancel,
   isSubmitting,
@@ -37,6 +42,16 @@ export function ProductForm({
 }: ProductFormProps) {
 
   const isEdit = !!product;
+
+  // One row per offered location, prefilled from the product's existing rows. A
+  // location the product never stocked shows 0; zero rows are dropped on write.
+  const stockByLocation = new Map(
+    (product?.stockLocations ?? []).map((row) => [row.orgAddressId, row.quantity])
+  );
+  const defaultStockRows = locations.map((location) => ({
+    orgAddressId: location.id,
+    quantity: stockByLocation.get(location.id) ?? 0,
+  }));
 
 
   // Client validation and server error routing both come from this one call:
@@ -47,11 +62,12 @@ export function ProductForm({
     defaultValues: {
       name: product?.name || "",
       description: product?.description || "",
-      price: product?.price || 0,
-      salePrice: product?.salePrice || undefined,
+      // Stored paise → rupee inputs; the service converts back on submit.
+      price: product ? paiseToRupees(product.price) : 0,
+      salePrice: product?.salePrice != null ? paiseToRupees(product.salePrice) : undefined,
       currency: product?.currency || "INR",
       categoryId: product?.category?.id || "",
-      sellerId: product?.seller?.id || "",
+      orgId: product?.org?.id || "",
       tags: product?.tags || [],
       flags: product?.flags || [],
       images: product?.images || [],
@@ -59,12 +75,9 @@ export function ProductForm({
       weight: product?.weight || 0,
       sizes: product?.sizes || [],
       colors: product?.colors || [],
-      stock: product?.stock || 0,
+      stockLocations: defaultStockRows,
       sku: product?.sku || "",
       lowStockThreshold: product?.lowStockThreshold || 10,
-      shippingFromPincode: product?.shippingFromPincode || "",
-      shippingFromCity: product?.shippingFromCity || "",
-      shippingFromLocation: product?.shippingFromLocation || "",
     },
   }); 
   const {
@@ -98,7 +111,7 @@ export function ProductForm({
       {formError && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           {formError}
         </div>
@@ -124,7 +137,7 @@ export function ProductForm({
       {!readOnly && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
             <FormController
               name="images"
               control={control}
@@ -141,7 +154,7 @@ export function ProductForm({
               )}
             />
             {errors.images && (
-              <p className="text-red-500 text-sm mt-1">{errors.images.message}</p>
+              <p className="text-destructive text-sm mt-1">{errors.images.message}</p>
             )}
           </CardContent>
         </Card>
@@ -151,7 +164,7 @@ export function ProductForm({
       {readOnly && product?.images && product.images.length > 0 && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.images.map((img, idx) => (
                 <div key={idx} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
@@ -186,12 +199,13 @@ export function ProductForm({
         readOnly={readOnly}
       />
 
-      {/* Seller Shipping */}
-      <ProductSellerShippingFields
+      {/* Org Shipping */}
+      <ProductOrgShippingFields
         register={register}
         errors={errors}
         watch={watch}
-        sellers={sellers}
+        orgs={orgs}
+        locations={locations}
         readOnly={readOnly}
       />
 
@@ -224,4 +238,4 @@ export { ProductPricingFields } from "./ProductPricingFields";
 export { ProductInventoryFields } from "./ProductInventoryFields";
 export { ProductAttributeFields } from "./ProductAttributeFields";
 export { ProductFlagsFields } from "./ProductFlagsFields";
-export { ProductSellerShippingFields } from "./ProductSellerShippingFields";
+export { ProductOrgShippingFields } from "./ProductOrgShippingFields";

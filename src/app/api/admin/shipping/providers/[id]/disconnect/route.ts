@@ -1,8 +1,9 @@
 // src/app/api/admin/shipping/providers/[id]/disconnect/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminConnectionService } from "@server/shipping/services/connection.service";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(
   request: NextRequest,
@@ -10,10 +11,7 @@ export async function POST(
 ) {
   try {
     // Verify admin access
-    const session = await verifyAdminSession();
-    if (session instanceof NextResponse) {
-      return session;
-    }
+    const session = await requirePlatformAdmin();
 
     const { id } = await params;
 
@@ -25,34 +23,6 @@ export async function POST(
       message: `disconnected successfully`,
     });
   } catch (error) {
-    console.error("Disconnect provider error:", error);
-
-    if (error instanceof Error && error.message === "Provider not found") {
-      return NextResponse.json(
-        { success: false, error: "Provider not found" },
-        { status: 404 }
-      );
-    }
-
-    if (
-      error instanceof Error &&
-      error.message === "Provider is not connected"
-    ) {
-      return NextResponse.json(
-        { success: false, error: "Provider is not connected" },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to disconnect provider",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not disconnect provider");
   }
 }

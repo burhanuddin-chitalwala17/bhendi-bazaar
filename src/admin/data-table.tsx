@@ -48,9 +48,9 @@ export function DataTable<T extends Record<string, any>>({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8">
+      <div className="bg-card rounded-lg border border-border p-8">
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -58,27 +58,27 @@ export function DataTable<T extends Record<string, any>>({
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8">
-        <p className="text-center text-gray-500">No data found</p>
+      <div className="bg-card rounded-lg border border-border p-8">
+        <p className="text-center text-muted-foreground">No data found</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-background border-b border-border">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
                 >
                   {column.sortable ? (
                     <button
                       onClick={() => handleSort(column.key)}
-                      className="flex items-center gap-1 hover:text-gray-700"
+                      className="flex items-center gap-1 hover:text-foreground"
                     >
                       {column.label}
                       {sortKey === column.key &&
@@ -95,9 +95,9 @@ export function DataTable<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {data.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50">
+              <tr key={index} className="hover:bg-muted/60">
                 {columns.map((column) => (
                   <td key={column.key} className="px-6 py-4 whitespace-nowrap">
                     {column.render ? column.render(item) : item[column.key]}
@@ -110,25 +110,25 @@ export function DataTable<T extends Record<string, any>>({
       </div>
 
       {/* Pagination */}
-      <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
-        <div className="text-sm text-gray-700">
+      <div className="bg-background px-6 py-3 flex items-center justify-between border-t border-border">
+        <div className="text-sm text-foreground/80">
           Page {currentPage} of {totalPages}
         </div>
-        <div className="text-sm text-gray-700">
+        <div className="text-sm text-foreground/80">
           Showing {data.length} of {totalItems} product(s)
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+            className="px-3 py-1 border border-input rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+            className="px-3 py-1 border border-input rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

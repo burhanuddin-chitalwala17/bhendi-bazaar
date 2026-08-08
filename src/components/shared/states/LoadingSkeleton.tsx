@@ -49,10 +49,10 @@ export function LoadingSkeleton({
 
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="space-y-3">
         {[...Array(rows)].map((_, i) => (
-          <div key={i} className="h-16 bg-gray-200 animate-pulse rounded-lg" />
+          <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
         ))}
       </div>
     </div>
@@ -61,10 +61,10 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function FiltersSkeleton() {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
+    <div className="bg-card rounded-lg border border-border p-4">
       <div className="flex gap-4">
-        <div className="flex-1 h-10 bg-gray-200 animate-pulse rounded-lg" />
-        <div className="w-40 h-10 bg-gray-200 animate-pulse rounded-lg" />
+        <div className="flex-1 h-10 bg-muted animate-pulse rounded-lg" />
+        <div className="w-40 h-10 bg-muted animate-pulse rounded-lg" />
       </div>
     </div>
   );
@@ -73,12 +73,12 @@ export function FiltersSkeleton() {
 export function PaginationSkeleton() {
   return (
     <div className="flex justify-between items-center">
-      <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
+      <div className="h-8 w-32 bg-muted animate-pulse rounded" />
       <div className="flex gap-2">
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="w-10 h-10 bg-gray-200 animate-pulse rounded"
+            className="w-10 h-10 bg-muted animate-pulse rounded"
           />
         ))}
       </div>
@@ -88,10 +88,10 @@ export function PaginationSkeleton() {
 
 export function StatsSkeleton({ count = 5 }: { count?: number }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
+    <div className="bg-card rounded-lg border border-border p-4">
       <div className="flex gap-4">
         {[...Array(count)].map((_, i) => (
-          <div key={i} className="flex-1 h-24 bg-gray-200 animate-pulse rounded-lg" />
+          <div key={i} className="flex-1 h-24 bg-muted animate-pulse rounded-lg" />
         ))}
       </div>
     </div>

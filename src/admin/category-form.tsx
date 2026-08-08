@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
@@ -13,6 +14,7 @@ import {
   CategoryStylingFields,
   CategoryImageField,
 } from "@/components/shared/forms/category";
+import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CreateCategoryInput } from "@/domain/admin";
 
 interface CategoryFormProps {
@@ -25,6 +27,36 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
 
+  const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
+  useEffect(() => {
+    adminCategoryApiClient
+      .getCategories({ limit: 100 })
+      .then((result) => setAllCategories(result.categories))
+      .catch(() => setAllCategories([])); // options are a convenience; the server re-checks
+  }, []);
+
+  // A category cannot be its own parent, nor sit under its own subtree — offering
+  // those options would invite the exact write the server refuses (TRD D2).
+  const parentOptions = useMemo(() => {
+    if (!category) return allCategories;
+    const excluded = new Set<string>([category.id]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const candidate of allCategories) {
+        if (
+          candidate.parentId &&
+          excluded.has(candidate.parentId) &&
+          !excluded.has(candidate.id)
+        ) {
+          excluded.add(candidate.id);
+          grew = true;
+        }
+      }
+    }
+    return allCategories.filter((candidate) => !excluded.has(candidate.id));
+  }, [allCategories, category]);
+
   // Initialize react-hook-form
   const form = useServerForm<CreateCategoryInput>({
     schema: categoryFormSchema,
@@ -35,8 +67,9 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       name: category?.name || "",
       description: category?.description || "",
       heroImage: category?.heroImage || "",
-      accentColorClass: category?.accentColorClass || "bg-emerald-50",
+      accent: category?.accent ?? "EMERALD",
       order: category?.order || 0,
+      parentId: category?.parentId ?? null,
     },
   });
 
@@ -72,15 +105,15 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
         <div className="flex items-center gap-4">
           <Link
             href={returnUrl || "/admin/categories"}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-muted rounded-lg"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-heading font-bold text-gray-900">
+            <h1 className="text-3xl font-heading font-bold text-foreground">
               {isEdit ? "Edit Category" : "Create New Category"}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-muted-foreground mt-1">
               {isEdit
                 ? "Update category details"
                 : "Add a new category to organize products"}
@@ -91,14 +124,14 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
 
       {/* Error/Success Messages */}
       {formError && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3">
+        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <p>{formError}</p>
         </div>
       )}
 
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start gap-3">
+        <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
           <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <p>{successMessage}</p>
         </div>
@@ -108,6 +141,7 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       <CategoryBasicFields
         register={register}
         errors={errors}
+        parentOptions={parentOptions}
       />
 
       <CategoryStylingFields register={register} watch={watch} />

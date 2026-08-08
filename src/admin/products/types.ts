@@ -1,8 +1,14 @@
 import { ProductFlag, Pagination } from "@/types/shared";
+import type { OrgSummary } from "@/domain/org";
+
+// The one ProductFormInput: declared server-side, re-exported here so the two sides
+// cannot drift again (CONTRACTS.md — weight was collected and never written).
+export type { ProductFormInput } from "@server/catalog/admin.product.types";
 
 export interface ProductFilters {
   search?: string; // Search by name, SKU, tags
   categoryId?: string;
+  orgId?: string;
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0
@@ -33,7 +39,7 @@ export interface ProductForTable {
   thumbnail: string;
   createdAt: Date;
   category: { id: string; name: string };
-  seller: { id: string; name: string; code: string };
+  org: { id: string; name: string; code: string };
 }
 
 export interface ProductDetails {
@@ -55,10 +61,9 @@ export interface ProductDetails {
   thumbnail: string;
   sizes: string[];
   colors: string[];
-  seller: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
-  shippingFromPincode: string;
-  shippingFromCity: string;
-  shippingFromLocation: string;
+  org: OrgSummary;
+  /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
+  stockLocations: Array<{ orgAddressId: string; locationName: string; quantity: number }>;
   createdAt: Date;
 }
 
@@ -70,25 +75,3 @@ export interface ProductStats {
   totalInventoryValue: number;
 }
 
-export interface ProductFormInput {
-  name: string;
-  description?: string;
-  price: number;
-  salePrice?: number;
-  currency?: string;
-  sellerId: string;
-  categoryId: string;
-  tags?: string[];
-  flags?: ProductFlag[];
-  images: string[];
-  thumbnail: string;
-  weight: number;
-  sizes?: string[];
-  colors?: string[];
-  stock: number;
-  sku?: string;
-  lowStockThreshold?: number;
-  shippingFromPincode?: string;
-  shippingFromCity?: string;
-  shippingFromLocation?: string;
-}

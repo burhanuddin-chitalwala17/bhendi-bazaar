@@ -16,24 +16,10 @@ export function ProductInventoryFields({
   readOnly = false,
 }: ProductInventoryFieldsProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Inventory</h2>
+    <div className="bg-card rounded-lg border border-border p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-4">Inventory</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormInput
-          label="Stock Quantity"
-          required
-          disabled={readOnly}
-          type="number"
-          min="0"
-          placeholder="0"
-          {...register("stock", {
-            required: "Stock quantity is required",
-            valueAsNumber: true,
-            min: { value: 0, message: "Stock cannot be negative" },
-          })}
-          error={errors.stock?.message}
-        />
-
+        {/* Stock itself is entered per pickup location (stock-locations R2/R3). */}
         <FormInput
           label="Low Stock Threshold"
           disabled={readOnly}
@@ -51,10 +37,11 @@ export function ProductInventoryFields({
           disabled={readOnly}
           type="number"
           min="0"
-          placeholder="0.5"
+          step="0.001"
+          placeholder="0.6"
           {...register("weight", { valueAsNumber: true })}
           error={errors.weight?.message}
-          hint="Used to rate shipping"
+          hint="Kilograms, decimals allowed — 0.6 means 600 g. Parcels are billed at the summed weight rounded up to whole kg."
         />
       </div>
     </div>

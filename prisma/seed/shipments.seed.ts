@@ -1,10 +1,10 @@
 /**
  * Seed data for Shipments
- * Each order can have multiple shipments from different sellers/warehouses
+ * Each order can have multiple shipments from different orgs/warehouses
  */
 
 import type { SeedShipment } from "./types";
-import { seedSellers } from "./sellers.seed";
+import { seedOrgs } from "./orgs.seed";
 
 // Helper to create dates in the past
 const daysAgo = (days: number): Date => {
@@ -20,7 +20,7 @@ const addDays = (date: Date, days: number): Date => {
 };
 
 export const seedShipments: SeedShipment[] = [
-  // Shipments for order BB-1001 (2 items, 1 shipment - same seller)
+  // Shipments for order BB-1001 (2 items, 1 shipment - same org)
   {
     id: "shipment-1",
     code: "BB-1001-SH1",
@@ -31,7 +31,7 @@ export const seedShipments: SeedShipment[] = [
         productName: "Emerald Satin Abaya",
         productSlug: "emerald-satin-abaya",
         quantity: 1,
-        price: 3690,
+        price: 369000,
         thumbnail: "https://placehold.co/800x800/10b981/ffffff?text=Emerald+Abaya",
       },
       {
@@ -39,15 +39,15 @@ export const seedShipments: SeedShipment[] = [
         productName: "Gold Filigree Earrings",
         productSlug: "gold-filigree-earrings",
         quantity: 1,
-        price: 1500,
+        price: 150000,
         thumbnail: "https://placehold.co/800x800/eab308/ffffff?text=Gold+Earrings",
       },
     ],
-    sellerId: seedSellers[0].id, // First seller
-    fromPincode: seedSellers[0].defaultPincode,
-    fromCity: seedSellers[0].defaultCity,
-    fromState: seedSellers[0].defaultState,
-    shippingCost: 75,
+    orgId: seedOrgs[0].id, // First org
+    fromPincode: seedOrgs[0].pickup.pincode,
+    fromCity: seedOrgs[0].pickup.city,
+    fromState: seedOrgs[0].pickup.state,
+    shippingCost: 7500,
     trackingNumber: "BD1234567890123",
     courierName: "Blue Dart Surface",
     trackingUrl: "https://www.bluedart.com/tracking/BD1234567890123",
@@ -68,15 +68,15 @@ export const seedShipments: SeedShipment[] = [
         productName: "Royal Oud Attar",
         productSlug: "royal-oud-attar",
         quantity: 2,
-        price: 1920,
+        price: 192000,
         thumbnail: "https://placehold.co/800x800/f59e0b/ffffff?text=Oud+Attar",
       },
     ],
-    sellerId: seedSellers[1].id, // Second seller
-    fromPincode: seedSellers[1].defaultPincode,
-    fromCity: seedSellers[1].defaultCity,
-    fromState: seedSellers[1].defaultState,
-    shippingCost: 60,
+    orgId: seedOrgs[1].id, // Second org
+    fromPincode: seedOrgs[1].pickup.pincode,
+    fromCity: seedOrgs[1].pickup.city,
+    fromState: seedOrgs[1].pickup.state,
+    shippingCost: 6000,
     trackingNumber: "DL9876543210987",
     courierName: "Delhivery Surface",
     trackingUrl: "https://www.delhivery.com/track/package/DL9876543210987",
@@ -86,7 +86,7 @@ export const seedShipments: SeedShipment[] = [
     createdAt: daysAgo(48),
   },
 
-  // Shipments for order BB-1003 (3 items from same seller)
+  // Shipments for order BB-1003 (3 items from same org)
   {
     id: "shipment-3",
     code: "BB-1003-SH1",
@@ -97,7 +97,7 @@ export const seedShipments: SeedShipment[] = [
         productName: "Velvet Prayer Mat",
         productSlug: "velvet-prayer-mat",
         quantity: 1,
-        price: 1440,
+        price: 144000,
         thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff?text=Prayer+Mat",
       },
       {
@@ -105,7 +105,7 @@ export const seedShipments: SeedShipment[] = [
         productName: "Wooden Tasbih (99 Beads)",
         productSlug: "wooden-tasbih-99-beads",
         quantity: 2,
-        price: 450,
+        price: 45000,
         thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff?text=Tasbih",
       },
       {
@@ -113,15 +113,15 @@ export const seedShipments: SeedShipment[] = [
         productName: "Embroidered Quran Cover",
         productSlug: "quran-cover-embroidered",
         quantity: 1,
-        price: 650,
+        price: 65000,
         thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff?text=Quran+Cover",
       },
     ],
-    sellerId: seedSellers[0].id,
-    fromPincode: seedSellers[0].defaultPincode,
-    fromCity: seedSellers[0].defaultCity,
-    fromState: seedSellers[0].defaultState,
-    shippingCost: 90,
+    orgId: seedOrgs[0].id,
+    fromPincode: seedOrgs[0].pickup.pincode,
+    fromCity: seedOrgs[0].pickup.city,
+    fromState: seedOrgs[0].pickup.state,
+    shippingCost: 9000,
     trackingNumber: "BD2345678901234",
     courierName: "Blue Dart Surface",
     trackingUrl: "https://www.bluedart.com/tracking/BD2345678901234",
@@ -142,15 +142,15 @@ export const seedShipments: SeedShipment[] = [
         productName: "Emerald Stone Necklace",
         productSlug: "emerald-stone-necklace",
         quantity: 1,
-        price: 2560,
+        price: 256000,
         thumbnail: "https://placehold.co/800x800/eab308/ffffff?text=Emerald+Necklace",
       },
     ],
-    sellerId: seedSellers[1].id,
-    fromPincode: seedSellers[1].defaultPincode,
-    fromCity: seedSellers[1].defaultCity,
-    fromState: seedSellers[1].defaultState,
-    shippingCost: 60,
+    orgId: seedOrgs[1].id,
+    fromPincode: seedOrgs[1].pickup.pincode,
+    fromCity: seedOrgs[1].pickup.city,
+    fromState: seedOrgs[1].pickup.state,
+    shippingCost: 6000,
     status: "pending", // ⭐ Awaiting manual tracking update
     packageWeight: 0.08,
     estimatedDelivery: addDays(new Date(), 7),
@@ -168,7 +168,7 @@ export const seedShipments: SeedShipment[] = [
         productName: "Sandalwood Amber Attar",
         productSlug: "sandalwood-amber-attar",
         quantity: 1,
-        price: 1530,
+        price: 153000,
         thumbnail: "https://placehold.co/800x800/f59e0b/ffffff?text=Sandalwood+Amber",
       },
       {
@@ -176,15 +176,15 @@ export const seedShipments: SeedShipment[] = [
         productName: "Pearl Jhumka Set",
         productSlug: "pearl-jhumka-set",
         quantity: 1,
-        price: 2200,
+        price: 220000,
         thumbnail: "https://placehold.co/800x800/eab308/ffffff?text=Pearl+Jhumka",
       },
     ],
-    sellerId: seedSellers[0].id,
-    fromPincode: seedSellers[0].defaultPincode,
-    fromCity: seedSellers[0].defaultCity,
-    fromState: seedSellers[0].defaultState,
-    shippingCost: 70,
+    orgId: seedOrgs[0].id,
+    fromPincode: seedOrgs[0].pickup.pincode,
+    fromCity: seedOrgs[0].pickup.city,
+    fromState: seedOrgs[0].pickup.state,
+    shippingCost: 7000,
     status: "pending", // ⭐ Awaiting manual tracking update
     packageWeight: 0.08, // 0.05 + 0.03
     estimatedDelivery: addDays(new Date(), 7),

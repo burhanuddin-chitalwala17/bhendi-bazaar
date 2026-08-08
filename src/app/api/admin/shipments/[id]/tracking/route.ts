@@ -10,7 +10,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@server/shared/prisma";
 import { z } from "zod";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { toErrorResponse } from "@/lib/api-error-response";
 const updateTrackingSchema = z.object({
   trackingNumber: z.string().min(5, "AWB/Tracking number is required"),
   courierName: z.string().min(2, "Courier name is required"),
@@ -23,8 +24,7 @@ export async function PATCH(
 ) {
   try {
     // Verify admin access
-    const session = await verifyAdminSession();
-    if (session instanceof NextResponse) return session;    
+    const session = await requirePlatformAdmin();
 
 
     const { id: shipmentId } = await params;
@@ -97,15 +97,6 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error("Failed to update shipment tracking:", error);
-    
-    return NextResponse.json(
-      {
-        error: error instanceof Error 
-          ? error.message 
-          : "Failed to update tracking",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not update shipment tracking:");
   }
 }

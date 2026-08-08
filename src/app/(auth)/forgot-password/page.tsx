@@ -5,41 +5,34 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Mail } from "lucide-react";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { readApiError } from "@/lib/api-error";
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordInput,
+} from "@/lib/validation/schemas/auth.schemas";
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSuccess(false);
-    setIsSubmitting(true);
-
-    try {
+  const {
+    register,
+    onSubmit: handleFormSubmit,
+    formError,
+    formState: { errors, isSubmitting },
+  } = useServerForm<ForgotPasswordInput>({
+    schema: forgotPasswordSchema,
+    submit: async (data) => {
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify(data),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Failed to send reset email");
-        return;
-      }
-
+      if (!response.ok) throw await readApiError(response);
       setSuccess(true);
-      setEmail("");
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+    },
+    defaultValues: { email: "" },
+  });
 
   return (
     <div className="space-y-6">
@@ -64,11 +57,11 @@ export default function ForgotPasswordPage() {
       </header>
 
       {success ? (
-        <div className="space-y-4 rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-          <Mail className="mx-auto h-12 w-12 text-green-600" />
+        <div className="space-y-4 rounded-lg border border-success/30 bg-success/10 p-6 text-center">
+          <Mail className="mx-auto h-12 w-12 text-success" />
           <div className="space-y-2">
-            <h3 className="font-semibold text-green-900">Check Your Email</h3>
-            <p className="text-sm text-green-700">
+            <h3 className="font-semibold text-success">Check Your Email</h3>
+            <p className="text-sm text-success">
               If an account exists with this email, you&apos;ll receive a password
               reset link shortly.
             </p>
@@ -80,7 +73,7 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-[0.18em]">
               Email Address
@@ -88,16 +81,17 @@ export default function ForgotPasswordPage() {
             <Input
               type="email"
               autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
-              required
+              {...register("email")}
             />
+            {errors.email && (
+              <p className="text-[0.7rem] text-destructive">{errors.email.message}</p>
+            )}
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
+          {formError && (
+            <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+              {formError}
             </p>
           )}
 

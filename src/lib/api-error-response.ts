@@ -23,7 +23,7 @@ const FIELD_LABELS: Record<string, string> = {
   code: "code",
   gstNumber: "GST number",
   categoryId: "category",
-  sellerId: "seller",
+  orgId: "org",
 };
 
 const label = (field: string) => FIELD_LABELS[field] ?? field;

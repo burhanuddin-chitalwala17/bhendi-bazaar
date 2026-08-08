@@ -4,12 +4,17 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import {
+  SHIPMENT_LINES_INCLUDE,
+  toWireShipmentItems,
+  withWireItems,
+} from "@server/checkout/order.repository";
+import { Prisma } from "@prisma/client";
 import type {
   OrderListFilters,
   UpdateOrderStatusInput,
   OrderStats,
 } from "@server/checkout/admin.order.types";
-import { boolean } from "zod";
 
 export class AdminOrderRepository {
   /**
@@ -32,8 +37,7 @@ export class AdminOrderRepository {
 
     const skip = (page - 1) * limit;
 
-    // Build where clause
-    const where: any = {};
+    const where: Prisma.OrderWhereInput = {};
 
     if (search) {
       where.OR = [
@@ -75,6 +79,7 @@ export class AdminOrderRepository {
           },
           shipments: {
             orderBy: { createdAt: 'asc' },
+            include: SHIPMENT_LINES_INCLUDE,
           },
         },
       }),
@@ -92,7 +97,7 @@ export class AdminOrderRepository {
       });
     }
 
-    return { orders, total };
+    return { orders: orders.map(withWireItems), total };
   }
 
   /**
@@ -110,13 +115,14 @@ export class AdminOrderRepository {
         },
         shipments: {
           orderBy: { createdAt: 'asc' },
+          include: SHIPMENT_LINES_INCLUDE,
         },
       },
     });
 
     if (!order) return null;
 
-    return order;
+    return withWireItems(order);
   }
 
   /**
@@ -126,14 +132,14 @@ export class AdminOrderRepository {
     id: string,
     data: UpdateOrderStatusInput
   ) {
-    const updateData: any = {};
+    const updateData: Prisma.OrderUpdateInput = {};
 
     if (data.status) updateData.status = data.status;
     if (data.notes !== undefined) updateData.notes = data.notes;
-    if (data.estimatedDelivery)
-      updateData.estimatedDelivery = new Date(data.estimatedDelivery);
+    // estimatedDelivery is a Shipment column, not an Order one — the write that used to
+    // sit here threw at runtime whenever a date was supplied, hidden by `any`.
 
-    const order = await prisma.order.update({
+    await prisma.order.update({
       where: { id },
       data: updateData,
       include: {
@@ -225,6 +231,87 @@ export class AdminOrderRepository {
     });
 
     return result.count;
+  }
+
+  /**
+   * Orders visible to one org: those with a shipment from it, carrying only that org's
+   * shipments. The `include` filter is the scope — a cross-vendor basket's other parcels
+   * never leave the database. Read-only; an org mutates its shipments, never the order.
+   */
+  async getOrdersForOrg(orgId: string, page = 1, limit = 20) {
+    const where = { shipments: { some: { orgId } } };
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          code: true,
+          status: true,
+          paymentStatus: true,
+          createdAt: true,
+          address: true,
+          shipments: {
+            where: { orgId },
+            select: {
+              id: true,
+              code: true,
+              status: true,
+              shippingCost: true,
+              items: SHIPMENT_LINES_INCLUDE.items,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+    return {
+      orders: orders.map((order) => ({
+        ...order,
+        shipments: order.shipments.map((s) => ({ ...s, items: toWireShipmentItems(s.items) })),
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  /** One order, only if this org has a shipment in it — otherwise null (not-found, never forbidden). */
+  async getOrderForOrg(orderId: string, orgId: string) {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, shipments: { some: { orgId } } },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        paymentStatus: true,
+        createdAt: true,
+        address: true,
+        notes: true,
+        shipments: {
+          where: { orgId },
+          select: {
+            id: true,
+            code: true,
+            status: true,
+            shippingCost: true,
+            courierName: true,
+            trackingNumber: true,
+            trackingUrl: true,
+            fromPincode: true,
+            fromCity: true,
+            items: SHIPMENT_LINES_INCLUDE.items,
+          },
+        },
+      },
+    });
+    if (!order) return null;
+    return {
+      ...order,
+      shipments: order.shipments.map((s) => ({ ...s, items: toWireShipmentItems(s.items) })),
+    };
   }
 }
 

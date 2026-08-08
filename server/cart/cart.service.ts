@@ -1,194 +1,79 @@
-// src/server/services/cartService.ts
-
 import { cartRepository } from "@server/cart/cart.repository";
-import type { CartItem } from "@server/cart/cart.types";
-import { prisma } from "@server/shared/prisma";
-import type { Prisma } from "@prisma/client";
+import { mergeCartLines } from "@server/cart/cart.merge";
+import type { CartItem, CartLineInput } from "@server/cart/cart.types";
 import { DomainError } from "@server/shared/domain-error";
 
 /**
- * Cart service - Business logic layer
- * Only uses server-side types and dependencies
+ * Cart service — business logic. Storage is rows since order-and-cart-lines: a
+ * write persists only the buyer's choice (product, quantity, size, colour); prices
+ * and display fields on the way out are the product's, derived at read time.
  */
 export class CartService {
-  /**
-   * Update user's cart
-   */
-  async updateCart(userId: string, items: CartItem[]): Promise<void> {
-    // Validate items
-    this.validateCartItems(items);
+  async getCart(userId: string) {
+    return await cartRepository.findByUserId(userId);
+  }
 
-    // Save to database
-    await cartRepository.upsert(userId, items);
+  /** Replace the cart. Returns the saved version for the client's next write. */
+  async updateCart(
+    userId: string,
+    lines: CartLineInput[],
+    expectedVersion?: number
+  ): Promise<{ version: number }> {
+    this.validateCartLines(lines);
+    const cart = await cartRepository.upsert(userId, lines, expectedVersion);
+    return { version: cart.version };
   }
 
   /**
-   * Sync local cart with server cart on login
-   * Uses Prisma transaction for atomicity
+   * Sign-in merge: union of the device cart and the server cart, the device's
+   * quantity winning where a line exists on both sides (cart.merge.ts). The saved
+   * read derives fresh prices and org data from the products, and lines whose
+   * product has vanished drop out — the blob-era "refresh prices" pass is now just
+   * what reading a cart means.
    */
-  async syncCart(userId: string, localItems: CartItem[]): Promise<CartItem[]> {
+  async syncCart<L extends CartLineInput>(
+    userId: string,
+    localLines: L[]
+  ): Promise<{ items: CartItem[] | L[]; version: number }> {
     try {
-      // Use Prisma transaction for atomicity
-      const mergedItems = await prisma.$transaction(async (tx) => {
-        // Fetch remote cart within transaction
-        const remoteCart = await tx.cart.findUnique({
-          where: { userId },
-        });
-        const remoteItems = remoteCart?.items
-          ? Array.isArray(remoteCart.items)
-            ? (remoteCart.items as unknown as CartItem[])
-            : []
-          : [];
-
-        // Merge carts
-        let merged = this.mergeCartItems(localItems, remoteItems);
-        // Fetch all products in one query (within transaction)
-        const slugs = merged.map((i) => i.productSlug);
-        const products = await tx.product.findMany({
-          where: { slug: { in: slugs } },
-          include: {
-            seller: {
-              select: {
-                id: true,
-                name: true,
-                code: true,
-                defaultPincode: true,
-                defaultCity: true,
-                defaultState: true,
-                defaultAddress: true,
-              },
-            },
-          },
-        });
-        const productMap = new Map(products.map((p) => [p.slug, p]));
-
-        // Filter deleted products and refresh prices + seller data
-        merged = merged
-          .filter((i) => productMap.has(i.productSlug))
-          .map((i) => {
-            const product = productMap.get(i.productSlug)!;
-            return {
-              ...i,
-              price: product.price,
-              salePrice: product.salePrice ?? undefined,
-              thumbnail: product.thumbnail,
-              // ✨ Add seller and shipping info
-              shippingFromPincode: product.shippingFromPincode || product.seller.defaultPincode,
-              seller: {
-                id: product.seller.id,
-                name: product.seller.name,
-                code: product.seller.code,
-                defaultPincode: product.seller.defaultPincode,
-                defaultCity: product.seller.defaultCity,
-                defaultState: product.seller.defaultState,
-                defaultAddress: product.seller.defaultAddress,
-              },
-            };
-          });
-        // Save merged cart within transaction
-        await tx.cart.upsert({
-          where: { userId },
-          update: {
-            items: merged as unknown as Prisma.InputJsonValue,
-            version: { increment: 1 },
-            updatedAt: new Date(),
-          },
-          create: {
-            userId,
-            items: merged as unknown as Prisma.InputJsonValue,
-            version: 1,
-          },
-        });
-
-        return merged;
-      });
-
-      return mergedItems;
+      this.validateCartLines(localLines);
+      const remote = await cartRepository.findByUserId(userId);
+      const merged = mergeCartLines<CartLineInput>(
+        localLines,
+        (remote?.items ?? []).map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color,
+        }))
+      );
+      // Unconditional write: signing in is the tiebreak, not a stale-tab race.
+      const saved = await cartRepository.upsert(userId, merged);
+      return { items: saved.items, version: saved.version };
     } catch (error) {
       console.error("[CartService] syncCart failed:", error);
-      return localItems;
+      // The device cart survives — the client sets whatever comes back, so failure
+      // must echo it. Version 0 says the next write has no basis to assert one.
+      return { items: localLines, version: 0 };
     }
   }
 
-  /**
-   * Clear user's cart
-   */
   async clearCart(userId: string): Promise<void> {
     await cartRepository.clear(userId);
   }
 
-  /**
-   * Validate cart items
-   */
-  private validateCartItems(items: CartItem[]): void {
-    if (!Array.isArray(items)) {
+  private validateCartLines(lines: CartLineInput[]): void {
+    if (!Array.isArray(lines)) {
       throw new DomainError("Cart items must be an array");
     }
-
-    for (const item of items) {
-      if (!item.productId) {
+    for (const line of lines) {
+      if (!line.productId) {
         throw new DomainError("Each item must have a productId");
       }
-      if (!item.productName) {
-        throw new DomainError("Each item must have a productName");
-      }
-      if (!item.productSlug) {
-        throw new DomainError("Each item must have a productSlug");
-      }
-      if (item.quantity <= 0) {
-        throw new DomainError("Item quantity must be positive");
-      }
-      if (item.price < 0) {
-        throw new DomainError("Item price cannot be negative");
+      if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
+        throw new DomainError("Item quantity must be a positive whole number");
       }
     }
-  }
-
-  /**
-   * Merge cart items
-   */
-  private mergeCartItems(
-    localItems: CartItem[],
-    remoteItems: CartItem[]
-  ): CartItem[] {
-    const mergedMap = new Map<string, Omit<CartItem, "id">>();
-
-    // Add remote items (without ID)
-    for (const item of remoteItems) {
-      const key = this.getItemKey(item);
-      mergedMap.set(key, item);
-    }
-
-    // Merge local items
-    for (const item of localItems) {
-      const key = this.getItemKey(item);
-      const existing = mergedMap.get(key);
-
-      if (existing) {
-        mergedMap.set(key, {
-          ...existing,
-          quantity: item.quantity,
-        });
-      } else {
-        mergedMap.set(key, item);
-      }
-    }
-
-    // Generate fresh IDs for all merged items
-    const result = Array.from(mergedMap.values()).map((item) => ({
-      ...item,
-      id: crypto.randomUUID(),
-    }));
-
-    return result;
-  }
-
-  /**
-   * Generate unique key for cart item
-   */
-  private getItemKey(item: CartItem): string {
-    return `${item.productId}-${item.size || "default"}-${item.color || "default"
-      }`;
   }
 }
 

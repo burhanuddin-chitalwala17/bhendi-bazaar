@@ -6,10 +6,20 @@
  */
 
 import type { PaymentGatewayOrder } from "@/domain/payment";
+import { readApiError } from "@/lib/api-error";
+
+// The SDK attaches itself to window; declaring it once beats casting at every use.
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => {
+      open(): void;
+      on(event: string, handler: (error: unknown) => void): void;
+    };
+  }
+}
 
 export interface CreatePaymentOrderInput {
-  amount: number;
-  currency: string;
+  /** The server derives the amount from this order's persisted grandTotal (ADR-0002). */
   localOrderId: string;
   customer?: {
     name?: string;
@@ -26,7 +36,7 @@ export interface RazorpayPaymentResponse {
 
 export interface PaymentGatewayOptions {
   onSuccess: (response: RazorpayPaymentResponse) => void;
-  onFailure: (error: any) => void;
+  onFailure: (error: unknown) => void;
   onDismiss?: () => void;
 }
 
@@ -122,7 +132,7 @@ class PaymentGatewayService {
     // Ensure SDK is loaded
     await this.loadSDK();
 
-    if (typeof window === "undefined" || !(window as any).Razorpay) {
+    if (typeof window === "undefined" || !window.Razorpay) {
       throw new Error("Razorpay SDK not loaded");
     }
 
@@ -142,7 +152,7 @@ class PaymentGatewayService {
       },
     };
 
-    const razorpay = new (window as any).Razorpay(razorpayOptions);
+    const razorpay = new window.Razorpay(razorpayOptions);
 
     // Handle payment failures
     razorpay.on("payment.failed", options.onFailure);
@@ -152,33 +162,36 @@ class PaymentGatewayService {
   }
 
   /**
-   * Verify payment signature (optional client-side verification)
+   * Confirm the payment with the server — the server verifies the signature against
+   * the persisted order and performs the paid transition. This is not optional and
+   * not a boolean check: it is how an order becomes paid (ADR-0005).
    */
-  async verifyPayment(input: {
-    gatewayOrderId: string;
-    paymentId: string;
-    signature: string;
-  }): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.baseUrl}/verify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(input),
-      });
+  async confirmPayment(input: {
+    localOrderId: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }): Promise<{ orderId: string; paymentStatus: "paid" }> {
+    const response = await fetch(`${this.baseUrl}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(input),
+    });
+    if (!response.ok) throw await readApiError(response);
+    return response.json();
+  }
 
-      if (!response.ok) {
-        return false;
-      }
-
-      const data = await response.json();
-      return data.verified === true;
-    } catch (error) {
-      console.error("[PaymentGatewayService] verifyPayment failed:", error);
-      return false;
-    }
+  /** Zero-total orders: the server checks the persisted total is really zero. */
+  async confirmFreeOrder(localOrderId: string): Promise<{ orderId: string }> {
+    const response = await fetch(`${this.baseUrl}/confirm-free`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ localOrderId }),
+    });
+    if (!response.ok) throw await readApiError(response);
+    return response.json();
   }
 }
 

@@ -1,6 +1,6 @@
 # Spec — server-side pricing authority
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-38
 - **Domain:** checkout, payments
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-08-03

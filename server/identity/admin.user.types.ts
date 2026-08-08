@@ -1,3 +1,5 @@
+import type { PlatformRole } from "@prisma/client";
+
 /**
  * Admin User Management Domain Types
  */
@@ -7,7 +9,7 @@ export interface AdminUser {
   name: string | null;
   email: string | null;
   mobile: string | null;
-  role: string;
+  platformRole: PlatformRole;
   isBlocked: boolean;
   lastActiveAt: Date;
   createdAt: Date;
@@ -18,7 +20,7 @@ export interface AdminUser {
 
 export interface UserListFilters {
   search?: string; // Search by name, email, or mobile
-  role?: string; // Filter by role
+  platformRole?: PlatformRole; // Filter by platform role
   isBlocked?: boolean; // Filter by blocked status
   page?: number;
   limit?: number;
@@ -36,7 +38,7 @@ export interface UserListResult {
 
 export interface UpdateUserInput {
   name?: string;
-  role?: string;
+  platformRole?: PlatformRole;
   isBlocked?: boolean;
 }
 

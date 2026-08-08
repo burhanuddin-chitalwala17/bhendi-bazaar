@@ -79,16 +79,16 @@ export function EmailVerificationBanner() {
   }
 
   return (
-    <div className="bg-amber-50 border-b border-amber-200 dark:bg-amber-950 dark:border-amber-900">
+    <div className="bg-warning/10 border-b border-warning/30">
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3 flex-1">
-            <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <Mail className="h-5 w-5 text-warning dark:text-warning flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              <p className="text-sm font-medium text-warning">
                 Please verify your email address
               </p>
-              <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+              <p className="text-xs text-warning/80 mt-0.5">
                 Check your inbox for a verification link or{" "}
                 <button
                   onClick={handleResendEmail}
@@ -102,7 +102,7 @@ export function EmailVerificationBanner() {
           </div>
           <button
             onClick={handleClose}
-            className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+            className="text-warning hover:text-warning/80"
             aria-label="Dismiss"
           >
             <X className="h-5 w-5" />
@@ -113,13 +113,13 @@ export function EmailVerificationBanner() {
           <div className="mt-2 flex items-center gap-2 text-sm">
             {resendMessage.includes("success") || resendMessage.includes("sent") ? (
               <>
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-green-700 dark:text-green-400">{resendMessage}</span>
+                <CheckCircle className="h-4 w-4 text-success" />
+                <span className="text-success">{resendMessage}</span>
               </>
             ) : (
               <>
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-red-700 dark:text-red-400">{resendMessage}</span>
+                <AlertCircle className="h-4 w-4 text-destructive" />
+                <span className="text-destructive">{resendMessage}</span>
               </>
             )}
           </div>

@@ -13,6 +13,7 @@ import {
 } from "@server/shipping";
 import { z } from "zod";
 import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
+import { billableWeightKg } from "@server/shipping/billable-weight";
 
 // Validation schema
 const getRatesSchema = z.object({
@@ -46,12 +47,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = getRatesSchema.parse(body);
 
-    // Build rate request
+    // Build rate request. The billable rule applies here too, whatever the caller
+    // sent: every quote is on whole kilograms, rounded up, floor 1 kg
+    // (product-weight-and-rates, decided 2026-08-10).
     const rateRequest = {
       fromPincode: validated.fromPincode,
       toPincode: validated.toPincode,
       cod: validated.cod,
-      weight: validated.weight,
+      weight: billableWeightKg(validated.weight ?? 0), // absent → the 1 kg floor
     };
 
     // Get best rates using two-step filtering

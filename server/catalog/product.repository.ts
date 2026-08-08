@@ -10,16 +10,29 @@ import { NotFoundError } from "@server/shared/domain-error";
 
 const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
-  seller: { select: { id: true, name: true, code: true, defaultPincode: true, defaultCity: true, defaultState: true, defaultAddress: true } },
+  org: { select: { id: true, name: true, code: true } },
+  // Sellable stock lives on the join rows (stock-locations D3): active locations
+  // only — an inactive location's units are held, not offered.
+  stockLocations: {
+    where: { orgAddress: { isActive: true } },
+    select: {
+      quantity: true,
+      orgAddress: { select: { address: { select: { pincode: true } } } },
+    },
+  },
 };
 
 export class ProductsRepository {
 
   async getProducts(filter: ProductFilter) {
-    const { categorySlug, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
+    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
     try {
       const products = await prisma.product.findMany({
-        where: { category: { slug: categorySlug },
+        // categoryIds (a resolved subtree) wins over a bare slug, which matches
+        // only the category's own products.
+        where: { ...(categoryIds
+            ? { categoryId: { in: categoryIds } }
+            : { category: { slug: categorySlug } }),
           ...(search && { name: { contains: search, mode: "insensitive" } }),
           ...(minPrice && { price: { gte: minPrice } }),
           ...(maxPrice && { price: { lte: maxPrice } }),

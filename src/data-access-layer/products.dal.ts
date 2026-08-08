@@ -3,12 +3,20 @@
 // fetch product direct from the database using repository pattern
 
 import { productsRepository } from "@server/catalog/product.repository";
+import { productService } from "@server/catalog/product.service";
 import { Product, ProductFilter } from "@/domain/product";
 
 import { NotFoundError } from "@server/shared/domain-error";
 export { NotFoundError };
 
 const mapProduct = (product: any): Product => {
+  // The customer sees one availability figure: the total across active locations
+  // (stock-locations R4/R11). The indicative origin for serviceability is the
+  // largest holding's pincode — allocation decides the real origin at checkout.
+  const stockRows: Array<{ quantity: number; orgAddress: { address: { pincode: string } } }> =
+    product.stockLocations ?? [];
+  const totalStock = stockRows.reduce((sum: number, row) => sum + row.quantity, 0);
+  const mainRow = [...stockRows].sort((a, b) => b.quantity - a.quantity)[0];
   return {
     id: product.id,
     slug: product.slug,
@@ -25,21 +33,17 @@ const mapProduct = (product: any): Product => {
     images: product.images,
     thumbnail: product.thumbnail,
     weight: product.weight ?? 0,
-    stock: product.stock,
+    stock: totalStock,
     lowStockThreshold: product.lowStockThreshold,
     options: {
       sizes: product.sizes,
       colors: product.colors,
     },
-    shippingFromPincode: product.shippingFromPincode || product.seller.defaultPincode || "",
-    seller: {
-      id: product.seller.id,
-      name: product.seller.name,
-      code: product.seller.code,
-      defaultPincode: product.seller.defaultPincode,
-      defaultCity: product.seller.defaultCity,
-      defaultState: product.seller.defaultState,
-      defaultAddress: product.seller.defaultAddress ?? "",
+    shippingFromPincode: mainRow?.orgAddress.address.pincode || "",
+    org: {
+      id: product.org.id,
+      name: product.org.name,
+      code: product.org.code,
     },
   };
 };
@@ -48,7 +52,8 @@ export const productsDAL = {
 
   getProducts: async (filter: ProductFilter): Promise<Product[]> => {
     try {
-      const products = await productsRepository.getProducts(filter);
+      // Through the service, which expands a category slug to its subtree.
+      const products = await productService.getProducts(filter);
       return products.filter(p => p !== null).map((product) => mapProduct(product));
     } catch (error) {
       throw new Error("Failed to fetch products", { cause: error });

@@ -4,16 +4,28 @@
  */
 
 import { AdminSidebar } from "@/admin/sidebar";
+import { PortalHeader } from "@/components/layout/PortalHeader";
+import { requireSession } from "@/lib/admin-auth";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Middleware already gates /admin to platform admins; this fetch is for display.
+  const session = await requireSession();
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="portal flex min-h-screen bg-background">
       <AdminSidebar />
-      <main className="flex-1 p-8 min-w-0">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <PortalHeader
+          name={session.user.name}
+          email={session.user.email}
+          label="Platform Admin"
+        />
+        <main className="min-w-0 flex-1 p-8">{children}</main>
+      </div>
     </div>
   );
 }

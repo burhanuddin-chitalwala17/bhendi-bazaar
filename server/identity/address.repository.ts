@@ -1,172 +1,168 @@
+import { prisma } from "@server/shared/prisma";
+import { addressRepository } from "@server/shared/address.repository";
+import { NotFoundError } from "@server/shared/domain-error";
+import type { DeliveryAddress } from "@server/identity/profile.types";
+
 /**
- * Server-side Address Repository
+ * A person's address book: `UserAddress` rows (this table's one writer, Invariant 5)
+ * joined to the shared `Address` postal facts.
  *
- * This repository handles all database operations for addresses.
- * Addresses are stored as JSON in the Profile table.
+ * The wire shape stays the flat `DeliveryAddress` the client always used (trd.md D4):
+ * `id` is the UserAddress id, `mobile` maps to the `phone` column, and label/notes are
+ * top-level — the old blob's `metadata` bag is gone.
  */
 
-import { prisma } from "@server/shared/prisma";
-import type { DeliveryAddress } from "@server/identity/profile.types";
-import { NotFoundError } from "@server/shared/domain-error";
+type UserAddressRow = {
+  id: string;
+  label: string | null;
+  fullName: string;
+  phone: string;
+  email: string | null;
+  notes: string | null;
+  address: {
+    id: string;
+    addressLine1: string;
+    addressLine2: string | null;
+    landmark: string | null;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
+};
 
-export class AddressRepository {
-  /**
-   * Get all addresses for a user
-   */
-  async getAddressesByUserId(userId: string) {
-    const profile = await prisma.profile.findUnique({
+const ROW_SELECT = {
+  id: true,
+  label: true,
+  fullName: true,
+  phone: true,
+  email: true,
+  notes: true,
+  address: {
+    select: {
+      id: true,
+      addressLine1: true,
+      addressLine2: true,
+      landmark: true,
+      city: true,
+      state: true,
+      pincode: true,
+      country: true,
+    },
+  },
+} as const;
+
+export function toDeliveryAddress(row: UserAddressRow): DeliveryAddress {
+  return {
+    id: row.id,
+    fullName: row.fullName,
+    mobile: row.phone,
+    email: row.email ?? undefined,
+    addressLine1: row.address.addressLine1,
+    addressLine2: row.address.addressLine2 ?? undefined,
+    landmark: row.address.landmark ?? undefined,
+    city: row.address.city,
+    state: row.address.state,
+    pincode: row.address.pincode,
+    country: row.address.country,
+    label: row.label ?? undefined,
+    notes: row.notes ?? undefined,
+  };
+}
+
+export class UserAddressRepository {
+  async listByUserId(userId: string): Promise<DeliveryAddress[]> {
+    const rows = await prisma.userAddress.findMany({
       where: { userId },
-      select: { addresses: true },
+      select: ROW_SELECT,
+      orderBy: { updatedAt: "desc" },
     });
-
-    if (!profile) {
-      // Create profile if it doesn't exist
-      const newProfile = await prisma.profile.create({
-        data: {
-          userId,
-          addresses: [],
-        },
-      });
-      return [];
-    }
-
-    return profile.addresses;
+    return rows.map(toDeliveryAddress);
   }
 
-  /**
-   * Get a single address by ID (with ownership check)
-   */
-  async getAddressById(
+  /** Ownership is the query: another user's id is simply not found. */
+  async findOwned(userId: string, userAddressId: string): Promise<DeliveryAddress | null> {
+    const row = await prisma.userAddress.findFirst({
+      where: { id: userAddressId, userId },
+      select: ROW_SELECT,
+    });
+    return row ? toDeliveryAddress(row) : null;
+  }
+
+  async add(userId: string, input: Omit<DeliveryAddress, "id">): Promise<DeliveryAddress> {
+    const address = await addressRepository.create(
+      {
+        addressLine1: input.addressLine1,
+        addressLine2: input.addressLine2,
+        landmark: input.landmark,
+        city: input.city,
+        state: input.state,
+        pincode: input.pincode,
+        country: input.country,
+      },
+      userId
+    );
+
+    const row = await prisma.userAddress.create({
+      data: {
+        userId,
+        addressId: address.id,
+        label: input.label ?? null,
+        fullName: input.fullName,
+        phone: input.mobile,
+        email: input.email ?? null,
+        notes: input.notes ?? null,
+      },
+      select: ROW_SELECT,
+    });
+    return toDeliveryAddress(row);
+  }
+
+  async update(
     userId: string,
-    addressId: string
-  ) {
-    const addresses = await this.getAddressesByUserId(userId);
-    if (!Array.isArray(addresses) || addresses.length === 0) {
-      return null;
-    }
+    userAddressId: string,
+    input: Partial<Omit<DeliveryAddress, "id">>
+  ): Promise<DeliveryAddress> {
+    const owned = await prisma.userAddress.findFirst({
+      where: { id: userAddressId, userId },
+      select: { id: true, addressId: true },
+    });
+    if (!owned) throw new NotFoundError("Address not found");
 
-    return addresses.find((addr: any) => addr.id === addressId) || null;
+    await addressRepository.update(owned.addressId, {
+      addressLine1: input.addressLine1,
+      addressLine2: input.addressLine2,
+      landmark: input.landmark,
+      city: input.city,
+      state: input.state,
+      pincode: input.pincode,
+      country: input.country,
+    });
+
+    const row = await prisma.userAddress.update({
+      where: { id: owned.id },
+      data: {
+        ...(input.label !== undefined && { label: input.label }),
+        ...(input.fullName !== undefined && { fullName: input.fullName }),
+        ...(input.mobile !== undefined && { phone: input.mobile }),
+        ...(input.email !== undefined && { email: input.email }),
+        ...(input.notes !== undefined && { notes: input.notes }),
+      },
+      select: ROW_SELECT,
+    });
+    return toDeliveryAddress(row);
   }
 
   /**
-   * Add a new address
+   * Removes the relationship; the postal row stays. Orders hold snapshots (D8) and a
+   * future org may share the row, so deleting the fact is never the user's action.
    */
-  async addAddress(
-    userId: string,
-    address: DeliveryAddress
-  ) {
-    const profile = await prisma.profile.findUnique({
-      where: { userId },
-      select: { addresses: true },
+  async remove(userId: string, userAddressId: string): Promise<boolean> {
+    const deleted = await prisma.userAddress.deleteMany({
+      where: { id: userAddressId, userId },
     });
-
-    try {
-      if (!profile || !profile.addresses) {
-        // Create profile with the new address
-        await prisma.profile.create({
-          data: {
-            userId,
-            addresses: [address] as any,
-          },
-        });
-        return true;
-      }
-
-      const addresses = profile.addresses as unknown as DeliveryAddress[];
-      const updatedAddresses = [...addresses, address];
-
-      await prisma.profile.update({
-        where: { userId },
-        data: { addresses: updatedAddresses as any },
-      });
-
-      return true;
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : "Failed to add address");
-    }
-  }
-
-  /**
-   * Update an existing address
-   */
-  async updateAddress(
-    userId: string,
-    addressId: string,
-    updates: Partial<DeliveryAddress>
-  ) {
-    const profile = await prisma.profile.findUnique({
-      where: { userId },
-      select: { addresses: true },
-    });
-
-    if (!profile) {
-      throw new NotFoundError("Profile not found");
-    }
-
-    const addresses = profile.addresses as unknown as DeliveryAddress[];
-    const addressIndex = addresses.findIndex((addr) => addr.id === addressId);
-
-    if (addressIndex === -1) {
-      throw new NotFoundError("Address not found");
-    }
-
-    // Update the address
-    const updatedAddress = { ...addresses[addressIndex], ...updates };
-    addresses[addressIndex] = updatedAddress;
-
-    await prisma.profile.update({
-      where: { userId },
-      data: { addresses: addresses as any },
-    });
-
-    return updatedAddress;
-  }
-
-  /**
-   * Delete an address
-   */
-  async deleteAddress(userId: string, addressId: string) {
-    const profile = await prisma.profile.findUnique({
-      where: { userId },
-      select: { addresses: true },
-    });
-  
-    if (!profile) {
-      throw new NotFoundError("Profile not found");
-    }
-  
-    const addresses = profile.addresses as unknown as DeliveryAddress[];
-    const addressExists = addresses.some(addr => addr.id === addressId);
-  
-    if (!addressExists) {
-      throw new NotFoundError("Address not found");
-    }
-  
-    // ✅ Immutable approach - cleaner
-    const updatedAddresses = addresses.filter(addr => addr.id !== addressId);
-  
-    await prisma.profile.update({
-      where: { userId },
-      data: { addresses: updatedAddresses as any },
-    });
-  }
-
-  /**
-   * Update multiple addresses at once
-   * Used for bulk operations like reordering or batch updates
-   */
-  async updateAddresses(
-    userId: string,
-    addresses: DeliveryAddress[]
-  ) {
-    await prisma.profile.update({
-      where: { userId },
-      data: { addresses: addresses as any },
-    });
-
-    return addresses;
+    return deleted.count === 1;
   }
 }
 
-// Export singleton instance
-export const addressRepository = new AddressRepository();
+export const userAddressRepository = new UserAddressRepository();

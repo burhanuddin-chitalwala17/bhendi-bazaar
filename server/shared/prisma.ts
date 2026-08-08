@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
@@ -30,4 +30,14 @@ export const prisma =
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.pool = pool;
   globalForPrisma.prisma = prisma;
+}
+
+/**
+ * A typed value bound for a Prisma `Json` column. The JSON round-trip is what Prisma
+ * does to the value anyway, and it strips `undefined` members exactly as
+ * serialisation will — so the type says `InputJsonValue` because the value now
+ * genuinely is one, rather than a cast asserting it.
+ */
+export function toJsonColumn<T>(value: T): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value));
 }

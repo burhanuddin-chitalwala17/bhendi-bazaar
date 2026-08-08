@@ -40,6 +40,14 @@ export class ConflictError extends DomainError {
   }
 }
 
+/** Nobody is signed in. 401 — distinct from 403, which means signed in but not allowed. */
+export class UnauthorizedError extends DomainError {
+  constructor(message = "You need to be signed in to do that") {
+    super(message, { status: 401 });
+    this.name = "UnauthorizedError";
+  }
+}
+
 /** The caller may not do this. 403. */
 export class ForbiddenError extends DomainError {
   constructor(message = "You do not have permission to do that") {

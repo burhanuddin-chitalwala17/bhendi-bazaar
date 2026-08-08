@@ -7,7 +7,16 @@ import { ProductFormInput, ProductDetails } from "./types";
 import { readApiError } from "@/lib/api-error";
 
 export class ProductsApiClient {
-  private baseUrl = "/api/admin/products";
+  /**
+   * Which tree this client talks to. An org id means the org portal, whose handlers
+   * scope every query to that org; without one it is the platform-admin route. Both
+   * exist while the portals are being separated.
+   */
+  constructor(private readonly orgId?: string) {}
+
+  private get baseUrl() {
+    return this.orgId ? `/api/org/${this.orgId}/products` : "/api/admin/products";
+  }
   /**
    * Create product
    */
