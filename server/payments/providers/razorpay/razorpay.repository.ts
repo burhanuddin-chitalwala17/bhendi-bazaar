@@ -8,7 +8,7 @@
 import crypto from "crypto";
 import type {
   ServerPaymentOrder,
-  CreatePaymentOrderInput,
+  GatewayOrderRequest,
   VerifyPaymentInput,
   PaymentVerificationResult,
   WebhookVerificationResult,
@@ -29,7 +29,7 @@ export class RazorpayRepository {
    * Create a Razorpay order
    */
   async createOrder(
-    input: CreatePaymentOrderInput
+    input: GatewayOrderRequest
   ): Promise<ServerPaymentOrder> {
     if (!this.keyId || !this.keySecret) {
       throw new Error(

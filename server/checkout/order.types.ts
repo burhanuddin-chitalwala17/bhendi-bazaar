@@ -85,12 +85,10 @@ export interface ShippingGroupInput {
   fromCity: string;
   fromState: string;
 
-  // Items in this group
-  items: ShipmentItem[];
+  /** Unpriced on purpose: the server prices every line from the catalogue (Invariant 1). */
+  items: Array<{ productId: string; quantity: number }>;
 
-  // Shipping details
-  totalWeight: number;
-  itemsTotal: number;
+  // Selected shipping rate
   selectedRate: {
     providerId: string;
     providerName: string;
@@ -98,7 +96,7 @@ export interface ShippingGroupInput {
     courierCode?: string;
     rate: number;
     estimatedDays: number;
-    mode: string;
+    mode?: string;
     etd?: string;
   };
 }
@@ -107,15 +105,14 @@ export interface CreateOrderWithShipmentsInput {
   userId?: string;
   address: DeliveryAddress;
   shippingGroups: ShippingGroupInput[];
-  totals: {
-    itemsTotal: number;
-    shippingTotal: number;
-    discount: number;
-    grandTotal: number;
-  };
+  /**
+   * The grand total the customer was shown, in paise. Compared against the total the
+   * server computes and never persisted — a mismatch means prices changed mid-session
+   * and the order is refused rather than silently repriced (trd.md D4, R5).
+   */
+  displayedGrandTotal: number;
   notes?: string;
   paymentMethod?: string;
-  paymentStatus?: string;
 }
 
 export interface ServerShipment {

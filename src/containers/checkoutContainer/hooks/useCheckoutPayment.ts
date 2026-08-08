@@ -92,16 +92,34 @@ export function useCheckoutPayment() {
       // Step 1: Create order with shipments (pending payment & fulfillment)
       console.log('📦 Creating order with shipments...');
       const order = await orderApiClient.createOrderWithShipments({
-        shippingGroups: orderData.shippingGroups,
-        totals: orderData.totals,
+        // Lines carry product + quantity only; the server prices them from the
+        // catalogue and refuses if its total differs from the one displayed below.
+        shippingGroups: orderData.shippingGroups.map((group) => {
+          if (!group.selectedRate) {
+            throw new Error("Select a shipping option for every parcel before paying.");
+          }
+          return {
+            groupId: group.groupId,
+            orgId: group.orgId,
+            orgName: group.orgName,
+            fromPincode: group.fromPincode,
+            fromCity: group.fromCity,
+            fromState: group.fromState,
+            items: group.items.map((item: { productId: string; quantity: number }) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+            selectedRate: group.selectedRate,
+          };
+        }),
+        displayedGrandTotal: orderData.totals.grandTotal,
         address: orderData.address,
         notes: orderData.notes,
         paymentMethod: orderData.paymentMethod,
-        paymentStatus: orderData.paymentStatus,
       });
 
-      // grandTotal is already integer paise — Razorpay's minor unit, no conversion.
-      const amountInMinorUnit = orderData.totals.grandTotal;
+      // The server's own total — computed from the catalogue, already in paise.
+      const amountInMinorUnit = order.grandTotal;
 
       // Free order case
       if (amountInMinorUnit <= 0) {
@@ -114,8 +132,6 @@ export function useCheckoutPayment() {
       // Step 2: Create payment gateway order
       console.log('💳 Creating Razorpay payment order...');
       const paymentOrder = await paymentGatewayService.createPaymentOrder({
-        amount: amountInMinorUnit,
-        currency: "INR",
         localOrderId: order.id,
         customer: {
           name: orderData.address.fullName,
@@ -167,9 +183,9 @@ export function useCheckoutPayment() {
             paymentStatus: "failed",
             status: "failed",
           });
-          setError(
-            error?.error?.description || "Payment failed. Please try again."
-          );
+          const description = (error as { error?: { description?: string } } | null)
+            ?.error?.description;
+          setError(description || "Payment failed. Please try again.");
           setIsProcessing(false);
         },
         onDismiss: () => {

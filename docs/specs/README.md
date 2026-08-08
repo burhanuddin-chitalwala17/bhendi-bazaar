@@ -23,7 +23,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 
 | Feature | Requirement | Phase | Domain | Status |
 |---|---|---|---|---|
-| [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | 📝 Draft |
+| [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
 | [payment-confirmation](payment-confirmation/) | An order is paid when the gateway says so, for the right amount | 2 | payments, checkout | 📝 Draft |
 | [inventory-reservation](inventory-reservation/) | Stock counts mean something; the last unit sells once | 2 | checkout, catalog | 📝 Draft |
 | [money-as-paise](money-as-paise/) | Every amount displayed, stored, charged, and reported is exact | 2 | cross-domain | ✅ Implemented — PR-37 |

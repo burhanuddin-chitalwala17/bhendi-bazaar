@@ -64,10 +64,10 @@ Consolidating to one declaration is a precondition for [product-weight-and-rates
 ### Orders
 `Shipment` is declared in three places across `src/domain/order.ts` and `server/checkout/order.types.ts`. Timestamp fields (`estimatedDelivery`, `createdAt`, `updatedAt`) are typed `Date` on the client side and `string` on the server side; JSON delivers strings, so Rule 3 is not currently met.
 
-`paymentStatus` is accepted inbound on both create and update. [payment-confirmation](specs/payment-confirmation/) removes it.
+Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ productId, quantity }` — plus a `displayedGrandTotal` used only for the changed-mid-session comparison and never persisted (PR-38). `paymentStatus` is gone from create; it survives on **update**, which [payment-confirmation](specs/payment-confirmation/) removes.
 
 ### Payments
-- `POST /api/payments/create-order` accepts an `amount` from the client. [server-side-pricing-authority](specs/server-side-pricing-authority/) changes it to accept an order id and derive the amount server-side. **This is a contract change** and will carry `[CONTRACT]`.
+- `POST /api/payments/create-order` takes `{ localOrderId, customer? }` and **derives the amount from the persisted order's `grandTotal`** (PR-38) — which was itself computed from the catalogue inside the creation transaction. An `amount` in the body is not read; the field no longer exists in the schema.
 - `POST /api/payments/verify` returns `{ verified: boolean }` and performs no write. [payment-confirmation](specs/payment-confirmation/) makes it a writer returning the resulting order state.
 - Gateway webhook payloads are Razorpay's contract, not ours. See [INTEGRATIONS.md](INTEGRATIONS.md) for the `notes` round-trip.
 

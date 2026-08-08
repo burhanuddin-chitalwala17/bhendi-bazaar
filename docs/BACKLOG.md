@@ -13,7 +13,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | Phase | Goal | Domains | Status |
 |---|---|---|---|
 | **1** — Storefront & admin | Browse, cart, checkout UI, admin console for products/orders/users/reviews/sellers | catalog, cart, admin, identity | ✅ **Done** |
-| **2** — Transaction integrity | The server is authoritative over price, payment state, and stock; money is exact | checkout, payments | 🚧 **In progress** — 1 of 4 done (money-as-paise) |
+| **2** — Transaction integrity | The server is authoritative over price, payment state, and stock; money is exact | checkout, payments | 🚧 **In progress** — 2 of 4 done (money-as-paise, pricing authority) |
 | **3** — Fulfilment & marketplace | A confirmed order becomes a real booked shipment from a real location, and the store serves multiple vendors | shipping, catalog, identity | ⏳ Not started — 2 specs + a 9-subfeature programme drafted |
 | **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started |
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
@@ -26,7 +26,7 @@ The four specs below implement the Invariants in [../CLAUDE.md](../CLAUDE.md). T
 
 | Spec | Requirement | ADR | Status |
 |---|---|---|---|
-| [server-side-pricing-authority](specs/server-side-pricing-authority/) | Prices, totals, and gateway amounts are computed by the server from persisted data | [0002](adr/0002-server-holds-pricing-authority.md) | 📝 Spec drafted |
+| [server-side-pricing-authority](specs/server-side-pricing-authority/) | Prices, totals, and gateway amounts are computed by the server from persisted data | [0002](adr/0002-server-holds-pricing-authority.md) | ✅ Implemented — PR-38 |
 | [payment-confirmation](specs/payment-confirmation/) | An order's paid state derives only from a verified gateway signal | [0005](adr/0005-payment-state-server-only.md) | 📝 Spec drafted |
 | [inventory-reservation](specs/inventory-reservation/) | Stock is reserved atomically at placement and released on failure | [0007](adr/0007-conditional-stock-decrement.md) | 📝 Spec drafted |
 | [money-as-paise](specs/money-as-paise/) | Monetary values are exact from catalogue to gateway to report | [0004](adr/0004-money-as-integer-paise.md) | ✅ Implemented — PR-37 |

@@ -107,14 +107,12 @@ export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
 // NEW: Multi-Shipment Order Schemas
 // ============================================
 
-// Shipment item schema (simpler than cart item - no cart-specific fields)
+// What a checkout line is allowed to say about itself: which product, how many.
+// Names, thumbnails and every rupee figure are priced server-side from the catalogue
+// (Invariant 1) — the fields were removed rather than accepted-and-ignored, because a
+// field that is present but ignored is eventually read by someone (trd.md D2).
 const shipmentItemSchema = z.object({
   productId: z.string().min(1),
-  productName: z.string().min(1).max(255),
-  productSlug: z.string().min(1).max(255),
-  thumbnail: z.string().url().max(2048),
-  price: paiseAmount,
-  salePrice: paiseAmount.optional(),
   quantity: quantitySchema,
 });
 
@@ -139,58 +137,23 @@ const shippingGroupSchema = z.object({
   fromCity: z.string().min(2).max(100),
   fromState: z.string().min(2).max(100),
   items: z.array(shipmentItemSchema).min(1, "Group must have at least one item"),
-  totalWeight: z.number().min(0),
-  itemsTotal: z.number().int().min(0), // paise
   selectedRate: selectedRateSchema,
 });
 
-// Order totals schema for multi-shipment orders
-const orderWithShipmentsTotalsSchema = z.object({
-  itemsTotal: paiseAmount,
-  shippingTotal: z.number().int().min(0), // paise
-  discount: z.number().int().min(0), // paise
-  grandTotal: paiseAmount,
+// Create order with shipments schema. No totals object and no consistency refine:
+// once the server computes the totals there is nothing for the client's numbers to
+// check (trd.md D3). `paymentStatus` is gone too — it is server-owned (Invariant 2).
+export const createOrderWithShipmentsSchema = z.object({
+  shippingGroups: z
+    .array(shippingGroupSchema)
+    .min(1, "Order must contain at least one shipping group")
+    .max(10, "Order cannot have more than 10 shipments"),
+  /** The grand total the customer saw, compared against the server's own — never persisted. */
+  displayedGrandTotal: paiseAmount,
+  address: orderAddressSchema,
+  notes: z.string().max(1000, "Notes too long").optional(),
+  paymentMethod: z.enum(["razorpay"]).optional(),
+  userId: uuidSchema.optional(),
 });
-
-// Create order with shipments schema
-export const createOrderWithShipmentsSchema = z
-  .object({
-    shippingGroups: z
-      .array(shippingGroupSchema)
-      .min(1, "Order must contain at least one shipping group")
-      .max(10, "Order cannot have more than 10 shipments"),
-    totals: orderWithShipmentsTotalsSchema,
-    address: orderAddressSchema,
-    notes: z.string().max(1000, "Notes too long").optional(),
-    paymentMethod: z.enum(["razorpay"]).optional(),
-    paymentStatus: z.enum(["pending", "paid", "failed"]).optional(),
-    userId: uuidSchema.optional(),
-  })
-  .refine(
-    (data) => {
-      // Validate that totals match shipping groups
-      const calculatedItemsTotal = data.shippingGroups.reduce(
-        (sum, group) => sum + group.itemsTotal,
-        0
-      );
-      const calculatedShippingTotal = data.shippingGroups.reduce(
-        (sum, group) => sum + group.selectedRate.rate,
-        0
-      );
-      const expectedGrandTotal =
-        calculatedItemsTotal + calculatedShippingTotal - data.totals.discount;
-
-      // Paise are integers: totals either match or they do not (Invariant 3).
-      return (
-        calculatedItemsTotal === data.totals.itemsTotal &&
-        calculatedShippingTotal === data.totals.shippingTotal &&
-        expectedGrandTotal === data.totals.grandTotal
-      );
-    },
-    {
-      message: "Order totals do not match shipping groups",
-      path: ["totals"],
-    }
-  );
 
 export type CreateOrderWithShipmentsInput = z.infer<typeof createOrderWithShipmentsSchema>;

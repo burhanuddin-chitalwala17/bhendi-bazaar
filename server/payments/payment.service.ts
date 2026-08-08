@@ -14,6 +14,7 @@ import type {
   WebhookVerificationResult,
 } from "@server/payments/payment.types";
 import { ConflictError, DomainError } from "@server/shared/domain-error";
+import { orderService } from "@server/checkout/order.service";
 
 export class PaymentService {
   /**
@@ -22,11 +23,23 @@ export class PaymentService {
   async createPaymentOrder(
     input: CreatePaymentOrderInput
   ): Promise<ServerPaymentOrder> {
-    // Validate input
-    this.validateCreateOrderInput(input);
+    // The amount is read from the persisted order, never from the request — the
+    // order's grandTotal was itself computed from the catalogue inside the creation
+    // transaction (ADR-0002). checkout is called through its public surface.
+    const order = await orderService.getOrderById(input.localOrderId); // throws NotFound itself
+    if (order.paymentStatus === "paid") {
+      throw new ConflictError("This order is already paid");
+    }
 
-    // Create order using Razorpay
-    return await razorpayRepository.createOrder(input);
+    const amount = order.grandTotal;
+    this.validateDerivedAmount(amount);
+
+    return await razorpayRepository.createOrder({
+      amount,
+      currency: "INR",
+      localOrderId: input.localOrderId,
+      customer: input.customer,
+    });
   }
 
   /**
@@ -65,22 +78,15 @@ export class PaymentService {
   /**
    * Validate payment order creation input
    */
-  private validateCreateOrderInput(input: CreatePaymentOrderInput): void {
-    if (!input.amount || input.amount <= 0) {
-      throw new DomainError("Amount must be greater than 0");
+  /** Sanity bounds on the amount we ourselves derived — a guard against our own bugs, not against callers. */
+  private validateDerivedAmount(amount: number): void {
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new DomainError("Order total must be a positive amount");
     }
 
-    if (input.amount > 100000000) {
+    if (amount > 100000000) {
       // 1 crore paise = 10 lakh rupees
       throw new ConflictError("Amount exceeds maximum limit");
-    }
-
-    if (!input.currency || input.currency !== "INR") {
-      throw new DomainError("Only INR currency is supported");
-    }
-
-    if (!input.localOrderId) {
-      throw new DomainError("Local order ID is required");
     }
   }
 }

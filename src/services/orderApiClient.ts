@@ -19,18 +19,34 @@ export interface CreateOrderInput {
   paymentStatus?: string;
 }
 
-export interface CreateOrderWithShipmentsInput {
-  shippingGroups: ShippingGroup[];
-  totals: {
-    itemsTotal: number;
-    shippingTotal: number;
-    discount: number;
-    grandTotal: number;
+/** One shipping group as the create-order wire accepts it: lines are product + quantity, priced server-side. */
+export interface ShippingGroupPayload {
+  groupId: string;
+  orgId: string;
+  orgName: string;
+  fromPincode: string;
+  fromCity: string;
+  fromState: string;
+  items: Array<{ productId: string; quantity: number }>;
+  selectedRate: {
+    providerId: string;
+    providerName: string;
+    courierName: string;
+    courierCode?: string;
+    rate: number; // paise
+    estimatedDays: number;
+    mode?: string;
+    etd?: string;
   };
+}
+
+export interface CreateOrderWithShipmentsInput {
+  shippingGroups: ShippingGroupPayload[];
+  /** The total the customer saw — compared server-side, never persisted (R5). */
+  displayedGrandTotal: number;
   address: DeliveryAddress;
   notes?: string;
   paymentMethod?: string;
-  paymentStatus?: string;
 }
 
 export interface UpdateOrderInput {

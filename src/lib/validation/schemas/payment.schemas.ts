@@ -2,22 +2,16 @@ import { z } from 'zod';
 import { priceSchema, emailSchema } from './common.schemas';
 
 // Create payment order schema
+// The caller names the order; the server derives the amount from it (ADR-0002,
+// server-side-pricing-authority D5). An `amount` field here was the ₹1-for-anything
+// hole: whatever the client sent was what the gateway charged.
 export const createPaymentOrderSchema = z.object({
-  amount: z
-    .number()
-    .int("Amount must be in paise (smallest currency unit)")
-    .positive("Amount must be positive")
-    .max(100000000, "Amount exceeds maximum (10 lakh rupees)"),
-  currency: z.enum(["INR"], { message: "Only INR currency is supported" }),
   localOrderId: z.string().min(1),
   customer: z
     .object({
-      name: z.string().min(1).max(255).optional(),
-      email: emailSchema.optional(),
-      contact: z
-        .string()
-        .regex(/^\d{10}$/)
-        .optional(),
+      name: z.string().max(255).optional(),
+      email: z.string().email().optional(),
+      contact: z.string().max(20).optional(),
     })
     .optional(),
 });

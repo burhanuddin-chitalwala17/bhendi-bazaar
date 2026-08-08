@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-38] 2026-08-09 — The server decides what an order costs [CONTRACT]
+
+[server-side-pricing-authority](specs/server-side-pricing-authority/) lands — Invariant 1 becomes true on the live checkout path. Until now `create-with-shipments` **persisted whatever totals the client sent** and the payment route **charged whatever amount the client stated**: the ₹1-for-anything hole, in production.
+
+**Order creation reprices everything inside its own transaction.** Lines arrive as `{ productId, quantity }` and nothing more — price, sale price, name, slug and thumbnail all come from the catalogue row (`server/checkout/pricing.ts`, pure and 100%-branch tested), loaded with one `findMany` in the same transaction that writes the order, so the price used for the total is the price checked. The price fields were **removed from the schema, not accepted-and-ignored** (trd.md D2), the totals object and its consistency refine are gone (D3 — once the server computes, client numbers have nothing to check), and `discount` is a constant 0 until a coupon system computes one — any client-sent discount was an attack, not an input. A line whose product doesn't belong to the group's org fails the order: the parcel would be attributed, and its revenue owed, to the wrong org.
+
+**The customer still confirms the number they saw**: `displayedGrandTotal` travels with the order, is compared against the server's total, and is never persisted. A mismatch — in either direction, Q2 — gets a 409 "Prices changed while you were checking out", not a silent repricing.
+
+**The gateway amount is read back from the persisted order** (D5): `POST /api/payments/create-order` takes `{ localOrderId }`, loads the order through checkout's public surface, refuses if already paid, and charges `grandTotal`. The request type physically cannot carry an amount any more.
+
+Also in passing, per migrate-on-contact: `order.service.ts` (the money path whose own domain rules say *no `any` in this tree*) had nine — Json-column casts now go through a typed `toJsonColumn` helper whose JSON round-trip is what Prisma does anyway; the Razorpay `window as any` pair became a declared global; `paymentStatus` is no longer accepted at order creation (Invariant 2).
+
+**Recorded limitation:** the shipping *rate* is still the client's selection — re-deriving it means calling the courier inside the transaction. Bounds-checked; real verification belongs to [shipping-fulfilment](specs/shipping-fulfilment/). And the client's post-payment `paymentStatus: "paid"` write is untouched here — that is [payment-confirmation](specs/payment-confirmation/)'s whole subject, next in the sequence. The legacy `POST /api/orders` path (no client callers found) is left for the same PR to delete.
+
+**155 tests pass** (12 new, every pricing branch), `tsc` exits 0, `next build` compiles, 0 lint errors in the touched files. No migration — this changes who computes, not what is stored.
+
 ## [PR-37] 2026-08-09 — Money is integer paise, end to end [CONTRACT] [MIGRATION]
 
 [money-as-paise](specs/money-as-paise/) lands — the first of the Phase 2 transaction-integrity specs, and per its TRD D2 deliberately **one large PR**: a half-migrated state displays amounts 100× wrong, so there was no incremental path.

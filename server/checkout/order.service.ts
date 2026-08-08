@@ -8,7 +8,7 @@
  */
 
 import { orderRepository } from "@server/checkout/order.repository";
-import { prisma } from "@server/shared/prisma";
+import { prisma, toJsonColumn } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
 import type {
@@ -16,10 +16,12 @@ import type {
   UpdateOrderInput,
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
+  ShipmentItem,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
-import { DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+import { priceGroupItems, assembleOrderTotals } from "@server/checkout/pricing";
+import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
 export class OrderService {
   /**
@@ -102,11 +104,12 @@ export class OrderService {
     }
 
     // Send purchase confirmation email when payment is completed
-    if (isPaymentCompleted && existingOrder.address && (existingOrder.address as any).email) {
+    const deliveryAddress = existingOrder.address as { email?: string } | null;
+    if (isPaymentCompleted && deliveryAddress?.email) {
       const { emailService } = await import("@server/notifications/email.service");
 
       emailService
-        .sendPurchaseConfirmationEmail(existingOrder, (existingOrder.address as any).email)
+        .sendPurchaseConfirmationEmail(existingOrder, deliveryAddress.email)
         .catch((error) => {
           console.error("Failed to send purchase confirmation email:", error);
           // Don't throw - email failure shouldn't block order update
@@ -146,37 +149,72 @@ export class OrderService {
         // Generate unique order code
         const orderCode = await this.generateOrderCode();
 
+        // Price everything from the catalogue, inside this transaction, so the price
+        // used for the total is the price checked against the catalogue (Invariant 1,
+        // trd.md). The request contributed product ids and quantities; nothing more.
+        const productIds = [
+          ...new Set(input.shippingGroups.flatMap((g) => g.items.map((i) => i.productId))),
+        ];
+        const productRows = await tx.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true, name: true, slug: true, thumbnail: true,
+            price: true, salePrice: true, weight: true, orgId: true,
+          },
+        });
+        const products = new Map(productRows.map((row) => [row.id, row]));
+
+        const pricedGroups = input.shippingGroups.map((group) => ({
+          group,
+          pricing: priceGroupItems(group.items, products, group.orgId),
+        }));
+
+        const totals = assembleOrderTotals(
+          pricedGroups.map(({ group, pricing }) => ({
+            itemsTotal: pricing.itemsTotal,
+            shippingRate: group.selectedRate.rate,
+          }))
+        );
+
+        // R5: the customer confirms the number they saw. A mismatch means prices
+        // changed mid-session — refuse rather than silently charge something else.
+        if (totals.grandTotal !== input.displayedGrandTotal) {
+          throw new ConflictError(
+            "Prices changed while you were checking out. Please review your order and try again."
+          );
+        }
 
         // 1. Create the main order (pending payment)
         const order = await tx.order.create({
           data: {
             code: orderCode,
             userId: input.userId || null,
-            address: input.address as any,
+            address: toJsonColumn(input.address),
             notes: input.notes,
-            itemsTotal: input.totals.itemsTotal,
-            shippingTotal: input.totals.shippingTotal,
-            discount: input.totals.discount,
-            grandTotal: input.totals.grandTotal,
+            itemsTotal: totals.itemsTotal,
+            shippingTotal: totals.shippingTotal,
+            discount: totals.discount,
+            grandTotal: totals.grandTotal,
             paymentMethod: input.paymentMethod,
-            paymentStatus: input.paymentStatus || "pending",
+            // Never from the request: payment state has exactly one writer (Invariant 2).
+            paymentStatus: "pending",
             status: "pending_payment", // Order is pending until payment
           },
         });
 
         // 2. Create shipments for each group (NO provider calls yet)
         const createdShipments = await Promise.all(
-          input.shippingGroups.map(async (group, index) => {
+          pricedGroups.map(async ({ group, pricing }, index) => {
             const shipmentCode = `${order.code}-SH${index + 1}`;
-
-            console.log(`📦 Creating Shipment ${index + 1}/${input.shippingGroups.length}: ${shipmentCode}`);
 
             // Create the shipment record (pending state)
             const shipment = await tx.shipment.create({
               data: {
                 code: shipmentCode,
                 orderId: order.id,
-                items: group.items as any,
+                // Server-priced lines: names, thumbnails and every rupee figure came
+                // from the catalogue row, not the request.
+                items: toJsonColumn(pricing.items),
                 orgId: group.orgId,
                 fromPincode: group.fromPincode,
                 fromCity: group.fromCity,
@@ -184,7 +222,7 @@ export class OrderService {
                 shippingCost: group.selectedRate.rate,
                 shippingProviderId: group.selectedRate.providerId,
                 courierName: group.selectedRate.courierName,
-                packageWeight: group.totalWeight,
+                packageWeight: pricing.totalWeight,
                 status: "pending", // Pending until fulfillment
                 shippingMeta: {
                   courierCode: group.selectedRate.courierCode,
@@ -206,7 +244,7 @@ export class OrderService {
             id: s.id,
             code: s.code,
             orderId: s.orderId,
-            items: s.items as any,
+            items: s.items as unknown[] as ShipmentItem[],
             orgId: s.orgId,
             fromPincode: s.fromPincode,
             fromCity: s.fromCity,
@@ -274,10 +312,10 @@ export class OrderService {
               shipment.id,
               shipment.shippingProviderId!,
               {
-                courierCode: (shipment.shippingMeta as any)?.courierCode,
+                courierCode: (shipment.shippingMeta as { courierCode?: string } | null)?.courierCode,
                 weight: shipment.packageWeight!,
                 fromPincode: shipment.fromPincode,
-                toPincode: (order.address as any).pincode,
+                toPincode: (order.address as { pincode: string }).pincode,
               }
             );
           },
@@ -318,12 +356,12 @@ export class OrderService {
           where: { id: shipment.id },
           data: {
             status: "failed",
-            shippingMeta: {
-              ...(shipment.shippingMeta as any),
+            shippingMeta: toJsonColumn({
+              ...(shipment.shippingMeta as Record<string, unknown> | null),
               fulfillmentError: errorMessage,
               requiresManualIntervention: true,
               failedAt: new Date().toISOString(),
-            } as any,
+            }),
             updatedAt: new Date(),
           },
         });
@@ -399,15 +437,13 @@ export class OrderService {
       }
 
       for (const item of group.items) {
-        if (!item.productId || !item.productName) {
-          throw new DomainError("Invalid item data: missing required fields");
+        if (!item.productId) {
+          throw new DomainError("Invalid item data: missing product");
         }
         if (item.quantity <= 0) {
           throw new DomainError("Item quantity must be greater than 0");
         }
-        if (item.price < 0) {
-          throw new DomainError("Item price cannot be negative");
-        }
+        // No price check: items arrive unpriced and are priced from the catalogue.
       }
 
       // Validate shipping rate selection
@@ -422,15 +458,6 @@ export class OrderService {
       if (group.selectedRate.rate < 0) {
         throw new DomainError("Shipping rate cannot be negative");
       }
-    }
-
-    // Validate totals
-    if (!input.totals) {
-      throw new DomainError("Order totals are required");
-    }
-
-    if (input.totals.grandTotal <= 0) {
-      throw new DomainError("Order total must be greater than 0");
     }
 
     // Validate address

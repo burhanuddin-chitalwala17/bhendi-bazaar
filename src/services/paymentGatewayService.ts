@@ -7,9 +7,18 @@
 
 import type { PaymentGatewayOrder } from "@/domain/payment";
 
+// The SDK attaches itself to window; declaring it once beats casting at every use.
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => {
+      open(): void;
+      on(event: string, handler: (error: unknown) => void): void;
+    };
+  }
+}
+
 export interface CreatePaymentOrderInput {
-  amount: number;
-  currency: string;
+  /** The server derives the amount from this order's persisted grandTotal (ADR-0002). */
   localOrderId: string;
   customer?: {
     name?: string;
@@ -26,7 +35,7 @@ export interface RazorpayPaymentResponse {
 
 export interface PaymentGatewayOptions {
   onSuccess: (response: RazorpayPaymentResponse) => void;
-  onFailure: (error: any) => void;
+  onFailure: (error: unknown) => void;
   onDismiss?: () => void;
 }
 
@@ -122,7 +131,7 @@ class PaymentGatewayService {
     // Ensure SDK is loaded
     await this.loadSDK();
 
-    if (typeof window === "undefined" || !(window as any).Razorpay) {
+    if (typeof window === "undefined" || !window.Razorpay) {
       throw new Error("Razorpay SDK not loaded");
     }
 
@@ -142,7 +151,7 @@ class PaymentGatewayService {
       },
     };
 
-    const razorpay = new (window as any).Razorpay(razorpayOptions);
+    const razorpay = new window.Razorpay(razorpayOptions);
 
     // Handle payment failures
     razorpay.on("payment.failed", options.onFailure);
