@@ -4,15 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminReviewService } from "@server/catalog/review.service";
 import type { ReviewListFilters } from "@server/catalog/review.types";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const { searchParams } = new URL(request.url);
 
     const filters: ReviewListFilters = {
@@ -45,14 +44,7 @@ export async function GET(request: NextRequest) {
     const result = await adminReviewService.getReviews(filters);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to fetch reviews:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch reviews",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch reviews:");
   }
 }
 

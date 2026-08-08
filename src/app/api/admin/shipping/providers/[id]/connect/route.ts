@@ -1,7 +1,7 @@
 // src/app/api/admin/shipping/providers/[id]/connect/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminConnectionService } from "@server/shipping/services/connection.service";
 import { z } from "zod";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -18,11 +18,7 @@ export async function POST(
 ) {
   try {
     // Verify admin access
-    const session = await verifyAdminSession();
-
-    if (session instanceof NextResponse) {
-      return session;
-    }
+    const session = await requirePlatformAdmin();
 
     const { id } = await params;
     const body = await request.json();

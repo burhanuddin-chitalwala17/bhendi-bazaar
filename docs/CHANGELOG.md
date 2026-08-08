@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-25] 2026-08-08 — `platformRole`, and an auth boundary that throws [CONTRACT] [MIGRATION]
+
+PR 1 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). `User.role` becomes `User.platformRole` — a rename in place, so the column, its values and every row survive and nobody's access changes. Once `OrgMember.role` exists, an unqualified `role` means two things, which is how `ProductFlag` came to be declared three times.
+
+It also gains a type. `PlatformRole` is a Prisma enum, so the database rejects a third value; the migration's cast **fails loudly** if any row holds something other than `USER` or `ADMIN`, which is correct — a silent default would invent a permission level. Check with `SELECT DISTINCT "role" FROM "User";` before applying.
+
+**`(session.user as any).role` is gone from all eight sites.** The cause was a session augmentation in `src/types/next-auth.d.ts` that declared `id` and not the role, so every reader reached past the type. Declaring it once removed the need for the cast rather than the cast being deleted and re-added later. `any` at an authorization boundary is a defect ([CLAUDE.md](../CLAUDE.md)) and this was eight of them.
+
+**`verifyAdminSession()` now throws instead of returning `Session | NextResponse`.** That union forced all 21 call sites to discriminate with `instanceof NextResponse` and shipped a hand-rolled error body. It is now `requireSession` / `requirePlatformAdmin` throwing `UnauthorizedError` (401, new) or `ForbiddenError` (403), which `toErrorResponse` renders in the standard envelope.
+
+**That conversion could not be done alone.** 14 of the 19 handlers had no `toErrorResponse`, so a thrown `ForbiddenError` would have surfaced as an unhandled 500 rather than a 403 — turning an authorization refusal into a server error. Wiring them was a precondition, not scope creep, and is what [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) decision 7 exists to force. The four handlers under `/api/admin/orgs` that inlined their own check now use the helper too.
+
+**Three Invariant 4 violations fixed in passing**, all in files this PR already had open: `users/[id]`, `orders/[id]` and `reviews/[id]` each cast `await request.json()` to an interface. `src/lib/validation/schemas/admin.schemas.ts` gives them real schemas that whitelist their fields — `platformRole` is writable there and nowhere else, since that is the one screen that grants it.
+
+`tsc` exits 0, 89 tests pass, `next build` compiles, **lint errors 148 → 130**. As with [PR-24](#pr-24-2026-08-08--orgmember-a-persons-membership-of-an-org-migration), a clean build proves nothing about whether the migration was applied — the platform role is read at sign-in, not at build. Run `npx prisma migrate deploy`, then sign out and back in: an existing session's token still carries the old claim.
+
 ## [PR-24] 2026-08-08 — `OrgMember`: a person's membership of an org [MIGRATION]
 
 Completes [organisations-and-membership](specs/multi-vendor-marketplace/organisations-and-membership/). Purely additive — one enum, one table, and nothing reads either. That is the point: the authorization change in [portal-separation](specs/multi-vendor-marketplace/portal-separation/) becomes additive rather than a schema change.

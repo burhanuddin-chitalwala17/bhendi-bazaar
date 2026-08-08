@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PlatformRole } from "@prisma/client";
 import { PINCODE_PATTERN, PINCODE_MESSAGE } from "@server/shared/pincode";
 
 // Email validation
@@ -108,3 +109,9 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 });
 
+
+/**
+ * Whether someone runs the platform. Narrows a string from a query param or a select
+ * to the enum the database enforces — Invariant 4: parse at the boundary, never cast.
+ */
+export const platformRoleSchema = z.enum(PlatformRole);

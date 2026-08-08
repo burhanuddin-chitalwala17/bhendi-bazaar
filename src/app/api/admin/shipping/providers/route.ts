@@ -6,33 +6,21 @@
  */
 
 import { NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminShippingService } from "@server/shipping/services/admin.shipping.service";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET() {
   try {
     // Verify admin access
-    const session = await verifyAdminSession();
-    if (session instanceof NextResponse) {
-      return session;
-    }
+    await requirePlatformAdmin();
 
     // Get providers and stats
     const response = await adminShippingService.getAllProviders();
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("Get providers error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        providers: [],
-        error:
-          error instanceof Error ? error.message : "Failed to fetch providers",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch providers");
   }
 }
 

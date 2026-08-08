@@ -1,67 +1,33 @@
-/**
- * Admin Authentication Utilities
- * Helper functions for admin route protection
- */
-
 import { getServerSession } from "next-auth";
+import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { NextResponse } from "next/server";
-
-export interface AdminSession {
-  user: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    role: string;
-  };
-}
+import { UnauthorizedError, ForbiddenError } from "@server/shared/domain-error";
 
 /**
- * Verify if the current session has admin privileges
- * Returns admin session or throws error response
+ * The signed-in session, or a thrown failure.
+ *
+ * Throws rather than returning a `Session | NextResponse` union, which forced every
+ * caller to discriminate with `instanceof NextResponse` and to accept a hand-rolled
+ * error body. `toErrorResponse` turns these into the standard envelope
+ * (ADR-0013), so the shape a client reads is the same everywhere.
  */
-export async function verifyAdminSession(): Promise<
-  AdminSession | NextResponse
-> {
+export async function requireSession(): Promise<Session> {
   const session = await getServerSession(authOptions);
-
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Check if user is admin (this requires fetching from database)
-  // For now, we'll assume the session includes role
-  const userRole = (session.user as any).role || "USER";
-
-  if (userRole !== "ADMIN") {
-    return NextResponse.json(
-      { error: "Forbidden: Admin access required" },
-      { status: 403 }
-    );
-  }
-
-  return {
-    user: {
-      id: (session.user as any).id,
-      name: session.user.name,
-      email: session.user.email,
-      role: userRole,
-    },
-  };
+  if (!session?.user?.id) throw new UnauthorizedError();
+  return session;
 }
 
-/**
- * Get admin ID from session
- * Returns admin ID or null
- */
-export async function getAdminId(): Promise<string | null> {
-  const result = await verifyAdminSession();
-
-  if (result instanceof NextResponse) {
-    return null;
+/** The session, having established that this person runs the platform. */
+export async function requirePlatformAdmin(): Promise<Session> {
+  const session = await requireSession();
+  if (session.user.platformRole !== "ADMIN") {
+    throw new ForbiddenError("This area is restricted to platform administrators");
   }
-
-  return result.user.id;
+  return session;
 }
 
-
+/** The signed-in user's id, having established they run the platform. */
+export async function requirePlatformAdminId(): Promise<string> {
+  const session = await requirePlatformAdmin();
+  return session.user.id;
+}

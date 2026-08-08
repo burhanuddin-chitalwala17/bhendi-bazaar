@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { productsService } from "@server/catalog/admin.product.service";
 import { ProductFormInput } from "@/admin/products/types";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
@@ -16,10 +16,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const { id } = await params;
     await productsService.deleteProduct(id);
 
@@ -33,10 +31,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const { id } = await params;
     const body = productFormSchema.parse(await request.json());
     const product = await productsService.updateProduct(id, body);

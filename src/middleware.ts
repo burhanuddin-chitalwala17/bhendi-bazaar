@@ -111,7 +111,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(signInUrl);
       }
 
-      const userRole = (token as any).role || "USER";
+      const userRole = token.platformRole ?? "USER";
       if (userRole !== "ADMIN") {
         return NextResponse.redirect(new URL("/", request.url));
       }

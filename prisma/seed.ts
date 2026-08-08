@@ -76,7 +76,7 @@ async function main() {
         email: userData.email,
         name: userData.name,
         passwordHash: hashedPassword,
-        role: userData.role,
+        platformRole: userData.platformRole,
         mobile: userData.mobile,
         isEmailVerified: userData.isEmailVerified,
         profile: {
@@ -88,7 +88,7 @@ async function main() {
       },
     });
 
-    console.log(`  ✓ ${user.name} (${user.role}) - ${user.email}`);
+    console.log(`  ✓ ${user.name} (${user.platformRole}) - ${user.email}`);
   }
   console.log(`✅ ${seedUsers.length} users seeded\n`);
 
@@ -115,7 +115,7 @@ async function main() {
   // ====================
   // SEED ORGS (NEW - before products)
   // ====================
-  const ownerUserId = seedUsers.find((u) => u.role === "ADMIN")?.id;
+  const ownerUserId = seedUsers.find((u) => u.platformRole === "ADMIN")?.id;
   if (!ownerUserId) throw new Error("Seed data has no ADMIN user to own the seeded orgs");
 
   console.log("🏪 Seeding orgs...");
@@ -341,9 +341,9 @@ async function main() {
   console.log("📊 Summary:");
   console.log(
     `   • ${seedUsers.length} users (${
-      seedUsers.filter((u) => u.role === "ADMIN").length
+      seedUsers.filter((u) => u.platformRole === "ADMIN").length
     } admins, ${
-      seedUsers.filter((u) => u.role === "USER").length
+      seedUsers.filter((u) => u.platformRole === "USER").length
     } regular users)`
   );
   console.log(`   • ${seedCategories.length} categories`);

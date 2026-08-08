@@ -14,6 +14,7 @@ import { Search, RefreshCw } from "lucide-react";
 import { adminUserApiClient } from "@/services/admin/userApiClient";
 import type { AdminUser, UserListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
+import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
 
 export default function AdminUsersPage() {
   const [filters, setFilters] = useState<UserListFilters>({
@@ -46,7 +47,7 @@ export default function AdminUsersPage() {
       data,
     }: {
       id: string;
-      data: { name?: string; role?: string; isBlocked?: boolean };
+      data: { name?: string; platformRole?: string; isBlocked?: boolean };
     }) => adminUserApiClient.updateUser(id, data),
     {
       successMessage: "User updated successfully!",
@@ -92,17 +93,17 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      key: "role",
+      key: "platformRole",
       label: "Role",
       render: (user) => (
         <span
           className={`px-3 py-1 rounded-full text-xs font-medium ${
-            user.role === "ADMIN"
+            user.platformRole === "ADMIN"
               ? "bg-purple-100 text-purple-800"
               : "bg-gray-100 text-gray-800"
           }`}
         >
-          {user.role}
+          {user.platformRole}
         </span>
       ),
     },
@@ -189,11 +190,11 @@ export default function AdminUsersPage() {
           </div>
 
           <select
-            value={filters.role || ""}
+            value={filters.platformRole || ""}
             onChange={(e) =>
               setFilters({
                 ...filters,
-                role: e.target.value || undefined,
+                platformRole: platformRoleSchema.safeParse(e.target.value).data,
                 page: 1,
               })
             }

@@ -91,19 +91,22 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // Fetch role from database
+        // Read once at sign-in. Acceptable because a platform role changes rarely and
+        // its blast radius is the platform portal — unlike an org membership, which a
+        // team page can revoke mid-session and so is read per request
+        // (portal-separation trd.md D3).
         const dbUser = await prisma.user.findUnique({
           where: { id: user.id },
-          select: { role: true },
+          select: { platformRole: true },
         });
-        token.role = dbUser?.role || "USER";
+        token.platformRole = dbUser?.platformRole ?? "USER";
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
-        (session.user as any).id = token.sub;
-        (session.user as any).role = token.role || "USER";
+        session.user.id = token.sub;
+        session.user.platformRole = token.platformRole ?? "USER";
       }
       return session;
     },

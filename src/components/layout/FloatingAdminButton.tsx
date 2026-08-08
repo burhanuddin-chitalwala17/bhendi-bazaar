@@ -13,7 +13,7 @@ export function FloatingAdminButton() {
 
   // Don't show while loading, if not admin, or already on admin pages
   if (status === 'loading') return null;
-  if (!session?.user || (session.user as any).role !== 'ADMIN') return null;
+  if (!session?.user || session.user.platformRole !== 'ADMIN') return null;
   if (pathname?.startsWith('/admin')) return null;
 
   if (isMinimized) {

@@ -8,7 +8,7 @@ export interface SeedUser {
   name: string;
   passwordHash: string; // Will be hashed in seed script
   passwordPlain: string; // For reference only
-  role: "USER" | "ADMIN";
+  platformRole: "USER" | "ADMIN";
   mobile: string;
   isEmailVerified: boolean;
   profile: {

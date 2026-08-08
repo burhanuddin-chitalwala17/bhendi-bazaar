@@ -2,24 +2,25 @@
  * Admin Users API Routes
  * GET /api/admin/users - List users with filters
  * 
- * Query params: search, role, isBlocked, page, limit, sortBy, sortOrder
+ * Query params: search, platformRole, isBlocked, page, limit, sortBy, sortOrder
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminUserService } from "@server/identity/admin.user.service";
 import type { UserListFilters } from "@server/identity/admin.user.types";
+import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const { searchParams } = new URL(request.url);
+    const platformRoleParam = searchParams.get("platformRole");
 
     const filters: UserListFilters = {
       search: searchParams.get("search") || undefined,
-      role: searchParams.get("role") || undefined,
+      platformRole: platformRoleParam ? platformRoleSchema.parse(platformRoleParam) : undefined,
       isBlocked:
         searchParams.get("isBlocked") === "true"
           ? true
@@ -35,14 +36,7 @@ export async function GET(request: NextRequest) {
     const result = await adminUserService.getUsers(filters);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to fetch users:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch users",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch users:");
   }
 }
 

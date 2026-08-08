@@ -6,15 +6,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminOrderService } from "@server/checkout/admin.order.service";
 import type { OrderListFilters } from "@server/checkout/admin.order.types";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const { searchParams } = new URL(request.url);
 
     const filters: OrderListFilters = {
@@ -38,14 +37,7 @@ export async function GET(request: NextRequest) {
     const result = await adminOrderService.getOrders(filters);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to fetch orders:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch orders",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch orders:");
   }
 }
 

@@ -5,21 +5,20 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminUserService } from "@server/identity/admin.user.service";
-import type { UpdateUserInput } from "@server/identity/admin.user.types";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { updateUserSchema } from "@/lib/validation/schemas/admin.schemas";
 
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
-    const body = (await request.json()) as UpdateUserInput;
+    const body = updateUserSchema.parse(await request.json());
 
     const user = await adminUserService.updateUser(id, session.user.id, body);
 
@@ -29,13 +28,7 @@ export async function PATCH(
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error("Failed to update user:", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Failed to update user",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not update user:");
   }
 }
 

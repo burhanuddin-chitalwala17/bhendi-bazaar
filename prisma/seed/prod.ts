@@ -21,7 +21,7 @@ async function main() {
       email: 'admin@bhendibazaar.com',
       name: 'Admin',
       passwordHash: await hash('STRONG_RANDOM_PASSWORD', 10),
-      role: 'ADMIN',
+      platformRole: 'ADMIN',
       isEmailVerified: true,
       profile: { create: {} }
     }

@@ -10,7 +10,7 @@ export function AdminAccessButton() {
 
   // Don't show while loading or if not admin
   if (status === 'loading') return null;
-  if (!session?.user || (session.user as any).role !== 'ADMIN') return null;
+  if (!session?.user || session.user.platformRole !== 'ADMIN') return null;
 
   return (
     <Button

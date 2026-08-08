@@ -4,15 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCartService } from "@server/cart/admin.cart.service";
 import type { AbandonedCartFilters } from "@server/cart/admin.cart.types";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const { searchParams } = new URL(request.url);
 
     const filters: AbandonedCartFilters = {
@@ -31,16 +30,7 @@ export async function GET(request: NextRequest) {
     const result = await adminCartService.getAbandonedCarts(filters);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to fetch abandoned carts:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch abandoned carts",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch abandoned carts:");
   }
 }
 

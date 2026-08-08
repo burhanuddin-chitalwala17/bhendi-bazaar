@@ -1,8 +1,7 @@
 // src/app/api/admin/orgs/[id]/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminOrgService } from "@server/catalog/org.service";
 import { updateOrgSchema } from "@/lib/validation/schemas/org.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -20,10 +19,7 @@ export async function PUT(
     const { id } = await params;
     
     // Auth check
-    const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await requirePlatformAdmin();
 
     // Parse and validate body
     const body = await request.json();
@@ -56,10 +52,7 @@ export async function DELETE(
     const { id } = await params;
     
     // Auth check
-    const session = await getServerSession(authOptions);
-    if (!session || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    await requirePlatformAdmin();
 
     // Delete org via service
     await adminOrgService.deleteOrg(id);

@@ -120,7 +120,7 @@ model User {
   isEmailVerified Boolean    @default(false) // Our custom field
   mobile          String?    @unique
   passwordHash    String?
-  role            String     @default("USER")
+  platformRole    PlatformRole @default(USER)
   isBlocked       Boolean    @default(false)
   lastActiveAt    DateTime   @default(now())
   profile         Profile?
@@ -135,7 +135,7 @@ model User {
   sessions Session[]
   orgMemberships OrgMember[]
 
-  @@index([role])
+  @@index([platformRole])
   @@index([isBlocked])
   @@index([lastActiveAt])
   @@index([isEmailVerified])
@@ -488,4 +488,13 @@ model OrgMember {
 
   @@unique([userId, orgId])
   @@index([orgId])
+}
+
+/// Whether a person runs the platform. Distinct in kind from `OrgRole`: there is exactly
+/// one platform, so this is a property of the person, whereas a role inside an org is a
+/// property of a relationship. Kept an enum rather than a boolean because a read-only
+/// support role is a plausible third value.
+enum PlatformRole {
+  USER
+  ADMIN
 }

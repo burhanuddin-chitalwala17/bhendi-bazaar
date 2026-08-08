@@ -18,7 +18,7 @@ export class AdminUserRepository {
   async getUsers(filters: UserListFilters) {
     const {
       search,
-      role,
+      platformRole,
       isBlocked,
       page = 1,
       limit = 20,
@@ -39,8 +39,8 @@ export class AdminUserRepository {
       ];
     }
 
-    if (role) {
-      where.role = role;
+    if (platformRole) {
+      where.platformRole = platformRole;
     }
 
     if (typeof isBlocked === "boolean") {
@@ -74,7 +74,7 @@ export class AdminUserRepository {
       name: user.name,
       email: user.email,
       mobile: user.mobile,
-      role: user.role,
+      platformRole: user.platformRole,
       isBlocked: user.isBlocked,
       lastActiveAt: user.lastActiveAt,
       createdAt: user.createdAt,
@@ -114,7 +114,7 @@ export class AdminUserRepository {
       name: user.name,
       email: user.email,
       mobile: user.mobile,
-      role: user.role,
+      platformRole: user.platformRole,
       isBlocked: user.isBlocked,
       lastActiveAt: user.lastActiveAt,
       createdAt: user.createdAt,
@@ -154,7 +154,7 @@ export class AdminUserRepository {
       name: updated.name,
       email: updated.email,
       mobile: updated.mobile,
-      role: updated.role,
+      platformRole: updated.platformRole,
       isBlocked: updated.isBlocked,
       lastActiveAt: updated.lastActiveAt,
       createdAt: updated.createdAt,

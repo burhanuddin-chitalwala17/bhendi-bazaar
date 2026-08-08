@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { productsService } from "@server/catalog/admin.product.service";
 import type {
   ProductFilters,
@@ -17,10 +17,8 @@ import { toErrorResponse } from "@/lib/api-error-response";
 
 
 export async function POST(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const body = productFormSchema.parse(await request.json());
     const product = await productsService.createProduct(body);
 
