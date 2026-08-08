@@ -76,6 +76,11 @@ export function useServerForm<T extends FieldValues>({
       }
       throw error;
     }
+  }, (validationErrors) => {
+    // A failed submit must never be silent: a field that cannot render its error
+    // (a hidden input, an unmounted section) otherwise makes the button "do nothing".
+    console.warn("[useServerForm] validation blocked submit:", validationErrors);
+    setFormError("Please fix the highlighted fields and try again.");
   });
 
   const clearFormError = useCallback(() => setFormError(null), []);

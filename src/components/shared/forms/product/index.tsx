@@ -1,6 +1,6 @@
 // components/shared/forms/product/index.tsx
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,14 +86,39 @@ export function ProductForm({
     formError,
     watch,
     setValue,
+    getValues,
     control,
     formState: { errors },
   } = form;
 
   // form persist
+  // Location rows are never draft-persisted: a draft saved while the org had no
+  // locations restores an empty array over the fresh rows, and the hidden
+  // orgAddressId can then fail validation invisibly (the submit "does nothing").
   const { clearSaved } = useFormPersist("product-creation-form-draft", form, {
+    excludeFields: ["stockLocations"],
     enabled: !isEdit,
   });
+
+  // Belt to the exclusion above: whatever restored or reset the form, the rows
+  // always mirror the offered locations — typed quantities kept, ids re-asserted.
+  const locationIds = locations.map((location) => location.id).join(",");
+  useEffect(() => {
+    const current = getValues("stockLocations") ?? [];
+    const typed = new Map(
+      current
+        .filter((row) => row && row.orgAddressId)
+        .map((row) => [row.orgAddressId, row.quantity])
+    );
+    setValue(
+      "stockLocations",
+      locations.map((location) => ({
+        orgAddressId: location.id,
+        quantity: Number(typed.get(location.id) ?? stockByLocation.get(location.id) ?? 0) || 0,
+      }))
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationIds]);
 
   const imagesValue = watch("images");
 

@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-56] 2026-08-10 — A blocked submit says so
+
+The product form's create button could "do nothing": a draft saved while the org had no pickup locations restored `stockLocations: []` over the fresh rows, the hidden `orgAddressId` inputs then failed validation — and a hidden field can neither render its error nor take focus. Three layers fixed: location rows are excluded from draft persistence (the poison's source, and old poisoned drafts are ignored on load); a sync effect re-asserts the rows from the offered locations whatever restored or reset the form, keeping typed quantities; and `useServerForm` gains an invalid-submit handler — any validation failure now shows "Please fix the highlighted fields" plus a console warning naming the fields, so no form in the app can fail silently again.
+
 ## [PR-55] 2026-08-10 — A backstop must not become the outage
 
 Signup 500'd before it could even validate: the Upstash rate limiter is the first thing every auth route calls, its keys (`KV_REST_API_URL`/`KV_REST_API_TOKEN`) weren't present locally, and the throw happened *outside* the error envelope — a raw HTML 500 the client could only report as "Request failed". The limiter now **fails open, loudly**: keys absent → requests allowed with a one-time warning; Upstash unreachable at runtime → request allowed, error logged. When configured, behaviour is unchanged. Rate limiting protects the service; it must never be the reason the service is down.
