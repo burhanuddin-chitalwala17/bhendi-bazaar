@@ -87,9 +87,9 @@ export function ImageUpload({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
+      <label className="block text-sm font-medium text-foreground/80 mb-2">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
 
       {/* Image Grid */}
@@ -97,7 +97,7 @@ export function ImageUpload({
         {value.map((url, index) => (
           <div
             key={index}
-            className="relative group aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200"
+            className="relative group aspect-[3/4] bg-muted rounded-lg overflow-hidden border-2 border-border"
           >
             <img
               src={url}
@@ -119,7 +119,7 @@ export function ImageUpload({
               <button
                 type="button"
                 onClick={() => handleRemove(index)}
-                className="opacity-0 group-hover:opacity-100 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-opacity"
+                className="opacity-0 group-hover:opacity-100 p-2 bg-destructive text-primary-foreground rounded-lg hover:bg-destructive transition-opacity"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -127,7 +127,7 @@ export function ImageUpload({
                 <button
                   type="button"
                   onClick={() => handleReorder(index, index - 1)}
-                  className="opacity-0 group-hover:opacity-100 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-2 bg-info text-primary-foreground rounded-lg hover:bg-info transition-opacity"
                 >
                   ←
                 </button>
@@ -136,7 +136,7 @@ export function ImageUpload({
                 <button
                   type="button"
                   onClick={() => handleReorder(index, index + 1)}
-                  className="opacity-0 group-hover:opacity-100 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-2 bg-info text-primary-foreground rounded-lg hover:bg-info transition-opacity"
                 >
                   →
                 </button>
@@ -145,7 +145,7 @@ export function ImageUpload({
 
             {/* Thumbnail badge */}
             {index === 0 && (
-              <div className="absolute top-2 left-2 px-2 py-1 bg-emerald-500 text-white text-xs rounded">
+              <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs rounded">
                 Thumbnail
               </div>
             )}
@@ -158,17 +158,17 @@ export function ImageUpload({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="aspect-[3/4] border-2 border-dashed border-gray-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors flex flex-col items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="aspect-[3/4] border-2 border-dashed border-input rounded-lg hover:border-primary hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUploading ? (
               <>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-                <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
               </>
             ) : (
               <>
-                <Upload className="w-8 h-8 text-gray-400" />
-                <span className="text-sm text-gray-600">Upload Image</span>
+                <Upload className="w-8 h-8 text-muted-foreground/70" />
+                <span className="text-sm text-muted-foreground">Upload Image</span>
               </>
             )}
           </button>
@@ -184,7 +184,7 @@ export function ImageUpload({
         className="hidden"
       />
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-muted-foreground">
         Upload up to {maxImages} images. First image will be used as thumbnail.
         Max 5MB per image.
       </p>

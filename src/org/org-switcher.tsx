@@ -27,47 +27,47 @@ export function OrgSwitcher({ orgs, currentOrgId }: { orgs: SwitcherOrg[]; curre
   const suffix = SECTIONS.includes(section) ? `/${section}` : "";
 
   return (
-    <div ref={ref} className="relative border-b border-gray-200 px-3 py-4">
+    <div ref={ref} className="relative border-b border-border px-3 py-4">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left hover:bg-gray-50"
+        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left hover:bg-muted/60"
         aria-expanded={open}
       >
         <span className="min-w-0">
-          <span className="block text-[0.7rem] uppercase tracking-[0.18em] text-gray-500">
+          <span className="block text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
             Organisation
           </span>
-          <span className="block truncate text-lg font-semibold text-gray-900" title={current?.name}>
+          <span className="block truncate text-lg font-semibold text-foreground" title={current?.name}>
             {current?.name ?? "Organisation"}
           </span>
         </span>
-        <ChevronsUpDown className="h-4 w-4 shrink-0 text-gray-400" />
+        <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground/70" />
       </button>
 
       {open && (
-        <div className="absolute left-3 right-3 z-20 mt-1 rounded-lg border border-gray-200 bg-white p-1 shadow-lg">
+        <div className="absolute left-3 right-3 z-20 mt-1 rounded-lg border border-border bg-card p-1 shadow-lg">
           {orgs.map((org) => (
             <Link
               key={org.id}
               href={`/org/${org.id}${suffix}`}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted/60"
             >
-              <Building2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <Building2 className="h-4 w-4 shrink-0 text-primary" />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{org.name}</span>
                 <span className="text-xs text-muted-foreground">
                   {org.code} · {org.role.toLowerCase()}
                 </span>
               </span>
-              {org.id === currentOrgId && <Check className="h-4 w-4 shrink-0 text-emerald-600" />}
+              {org.id === currentOrgId && <Check className="h-4 w-4 shrink-0 text-primary" />}
             </Link>
           ))}
           <Link
             href="/org/new"
             onClick={() => setOpen(false)}
-            className="mt-1 flex items-center gap-2 rounded-md border-t border-gray-100 px-3 py-2 text-sm text-emerald-700 hover:bg-gray-50"
+            className="mt-1 flex items-center gap-2 rounded-md border-t border-border/60 px-3 py-2 text-sm text-primary hover:bg-muted/60"
           >
             <Plus className="h-4 w-4" />
             Create another organisation

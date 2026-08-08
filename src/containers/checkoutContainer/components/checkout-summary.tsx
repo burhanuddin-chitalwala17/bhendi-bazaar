@@ -54,7 +54,7 @@ export function CheckoutSummary({
                   <span className="text-muted-foreground/60">
                     Original: ₹{(item.price * item.quantity).toFixed(2)}
                   </span>
-                  <span className="text-green-600">
+                  <span className="text-success">
                     Save ₹{itemSavings.toFixed(2)}
                   </span>
                 </div>
@@ -74,7 +74,7 @@ export function CheckoutSummary({
 
         {/* Discount */}
         {discount > 0 && (
-          <div className="flex items-center justify-between text-green-600">
+          <div className="flex items-center justify-between text-success">
             <span>Savings</span>
             <span className="font-medium">- ₹{discount.toFixed(2)}</span>
           </div>

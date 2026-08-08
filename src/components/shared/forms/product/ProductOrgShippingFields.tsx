@@ -24,12 +24,12 @@ export function ProductOrgShippingFields({
   const selectedOrg = orgs?.find((s) => s.id === selectedOrgId);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-foreground">
           Org & Shipping Location
         </h2>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Select the org and optionally override the shipping location
         </p>
       </div>
@@ -54,14 +54,14 @@ export function ProductOrgShippingFields({
 
           {/* Where this ships from unless the product overrides it */}
           {selectedOrg && !watch("shippingFromPincode") && (
-            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mt-3 p-3 bg-info/10 border border-info/30 rounded-lg">
               <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <Info className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
-                  <p className="font-medium text-blue-900">
+                  <p className="font-medium text-info">
                     Ships from:
                   </p>
-                  <p className="text-blue-700 mt-1">
+                  <p className="text-info mt-1">
                     {selectedOrg.defaultAddress && (
                       <>{selectedOrg.defaultAddress}, </>
                     )}
@@ -76,10 +76,10 @@ export function ProductOrgShippingFields({
         {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
+            <div className="w-full border-t border-input"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">
+            <span className="px-2 bg-card text-muted-foreground">
               Override Shipping Location (Optional)
             </span>
           </div>
@@ -87,8 +87,8 @@ export function ProductOrgShippingFields({
 
         {/* Override Shipping Location */}
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-sm text-amber-800">
+          <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+            <p className="text-sm text-warning">
               <strong>Note:</strong> Only fill these fields if this product ships from a
               different location than the org&apos;s default address. Fill all three,
               or leave all three empty.

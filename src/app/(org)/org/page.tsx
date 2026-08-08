@@ -22,7 +22,7 @@ export default async function OrgIndexPage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16">
       {orgs.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-8">
+        <div className="rounded-lg border border-border bg-card p-8">
           <h1 className="text-2xl font-bold">You are not part of an organisation</h1>
           <p className="mt-2 text-muted-foreground">
             Selling on Bhendi Bazaar happens through an organisation. Ask an owner to add
@@ -31,13 +31,13 @@ export default async function OrgIndexPage() {
           <div className="mt-8 flex gap-3">
             <Link
               href="/org/new"
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Create an organisation
             </Link>
             <Link
               href="/"
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+              className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted/60"
             >
               Back to Store
             </Link>
@@ -55,9 +55,9 @@ export default async function OrgIndexPage() {
               <li key={org.id}>
                 <Link
                   href={`/org/${org.id}`}
-                  className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:border-emerald-300"
+                  className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40"
                 >
-                  <Building2 className="h-6 w-6 shrink-0 text-emerald-600" />
+                  <Building2 className="h-6 w-6 shrink-0 text-primary" />
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{org.name}</span>
                     <span className="text-sm text-muted-foreground">
@@ -71,7 +71,7 @@ export default async function OrgIndexPage() {
 
           <Link
             href="/org/new"
-            className="mt-6 inline-block text-sm text-emerald-700 hover:underline"
+            className="mt-6 inline-block text-sm text-primary hover:underline"
           >
             + Create another organisation
           </Link>

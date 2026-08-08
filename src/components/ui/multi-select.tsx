@@ -39,21 +39,21 @@ export function MultiSelect({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-foreground/80 mb-1">
         {label}
       </label>
-      <div className="border border-gray-300 rounded-lg p-2 focus-within:ring-2 focus-within:ring-emerald-500">
+      <div className="border border-input rounded-lg p-2 focus-within:ring-2 focus-within:ring-ring">
         <div className="flex flex-wrap gap-2 mb-2">
           {value.map((item) => (
             <span
               key={item}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-800 text-sm rounded"
+              className="inline-flex items-center gap-1 px-2 py-1 bg-primary/15 text-primary text-sm rounded"
             >
               {item}
               <button
                 type="button"
                 onClick={() => handleRemove(item)}
-                className="hover:text-emerald-900"
+                className="hover:text-primary"
               >
                 <X className="w-3 h-3" />
               </button>

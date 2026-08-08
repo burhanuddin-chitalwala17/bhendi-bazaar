@@ -37,7 +37,7 @@ export default async function OrgLayout({
   const orgs = await orgMemberRepository.listOrgsForUser(session.user.id);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <OrgSidebar orgId={orgId} orgs={orgs} />
       <div className="flex min-w-0 flex-1 flex-col">
         <PortalHeader

@@ -98,7 +98,7 @@ export function ProductForm({
       {formError && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
         >
           {formError}
         </div>
@@ -124,7 +124,7 @@ export function ProductForm({
       {!readOnly && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
             <FormController
               name="images"
               control={control}
@@ -141,7 +141,7 @@ export function ProductForm({
               )}
             />
             {errors.images && (
-              <p className="text-red-500 text-sm mt-1">{errors.images.message}</p>
+              <p className="text-destructive text-sm mt-1">{errors.images.message}</p>
             )}
           </CardContent>
         </Card>
@@ -151,7 +151,7 @@ export function ProductForm({
       {readOnly && product?.images && product.images.length > 0 && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.images.map((img, idx) => (
                 <div key={idx} className="relative aspect-[3/4] rounded-lg overflow-hidden border">

@@ -34,14 +34,14 @@ export function MultiShippingSection({
     <div className="space-y-4">
       {/* Multi-shipment notice */}
       {hasMultipleShipments && (
-        <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm">
+        <div className="rounded-lg bg-info/10 border border-info/30 p-3 text-sm">
           <div className="flex items-start gap-2">
-            <Package className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <Package className="h-4 w-4 text-info mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-blue-900">
+              <p className="font-medium text-info">
                 Multiple Shipments
               </p>
-              <p className="text-blue-700 mt-1">
+              <p className="text-info mt-1">
                 Your order will arrive in <span className="font-semibold">{groups.length} separate packages</span> as items ship from different locations.
               </p>
             </div>
@@ -126,11 +126,11 @@ function ShippingGroupCard({
           <p className="text-sm text-muted-foreground">Loading shipping options...</p>
         </div>
       ) : group.error ? (
-        <div className="py-2 text-sm text-red-600">
+        <div className="py-2 text-sm text-destructive">
           {group.error}
         </div>
       ) : !group.serviceable ? (
-        <div className="py-2 text-sm text-amber-600">
+        <div className="py-2 text-sm text-warning">
           Shipping not available to this location
         </div>
       ) : (

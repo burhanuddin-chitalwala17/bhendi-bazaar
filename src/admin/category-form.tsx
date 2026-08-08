@@ -35,7 +35,7 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       name: category?.name || "",
       description: category?.description || "",
       heroImage: category?.heroImage || "",
-      accentColorClass: category?.accentColorClass || "bg-emerald-50",
+      accentColorClass: category?.accentColorClass || "bg-primary/10",
       order: category?.order || 0,
     },
   });
@@ -72,15 +72,15 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
         <div className="flex items-center gap-4">
           <Link
             href={returnUrl || "/admin/categories"}
-            className="p-2 hover:bg-gray-100 rounded-lg"
+            className="p-2 hover:bg-muted rounded-lg"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-heading font-bold text-gray-900">
+            <h1 className="text-3xl font-heading font-bold text-foreground">
               {isEdit ? "Edit Category" : "Create New Category"}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-muted-foreground mt-1">
               {isEdit
                 ? "Update category details"
                 : "Add a new category to organize products"}
@@ -91,14 +91,14 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
 
       {/* Error/Success Messages */}
       {formError && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3">
+        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <p>{formError}</p>
         </div>
       )}
 
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start gap-3">
+        <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
           <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <p>{successMessage}</p>
         </div>

@@ -140,10 +140,10 @@ export function OrgsContainer() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-gray-900">
+          <h1 className="text-3xl font-heading font-bold text-foreground">
             Orgs Management
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage orgs and vendors on your platform (
             {filteredOrgs.length}{" "}
             {filteredOrgs.length === 1 ? "org" : "orgs"})
@@ -153,7 +153,7 @@ export function OrgsContainer() {
           <button
             onClick={() => refetch()}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-muted text-foreground/80 rounded-lg hover:bg-muted disabled:opacity-50 transition-all"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             {loading ? "Refreshing..." : "Refresh"}
@@ -164,7 +164,7 @@ export function OrgsContainer() {
               setEditingOrg(null);
               setShowModal(true);
             }}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Org
@@ -173,7 +173,7 @@ export function OrgsContainer() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex flex-wrap gap-4">
           {/* Search */}
           <div className="flex-1 min-w-64">
@@ -184,11 +184,11 @@ export function OrgsContainer() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by name, code, email, city..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button
                 onClick={handleSearch}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
@@ -200,7 +200,7 @@ export function OrgsContainer() {
           <select
             value={statusFilter}
             onChange={(e) => handleStatusFilterChange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Status</option>
             <option value="active">Active Only</option>
@@ -211,15 +211,15 @@ export function OrgsContainer() {
 
       {/* Error State */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+        <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive">
           {error}
         </div>
       )}
 
       {/* Empty State */}
       {!loading && filteredOrgs.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-          <p className="text-gray-500">
+        <div className="text-center py-12 bg-card rounded-lg border border-border">
+          <p className="text-muted-foreground">
             {searchTerm || statusFilter !== "all"
               ? "No organisations found matching your filters"
               : "No organisations yet. Add your first one to get started."}

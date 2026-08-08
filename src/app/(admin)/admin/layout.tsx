@@ -16,7 +16,7 @@ export default async function AdminLayout({
   const session = await requireSession();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <AdminSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <PortalHeader

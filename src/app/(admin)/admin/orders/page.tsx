@@ -77,7 +77,7 @@ export default function AdminOrdersPage() {
       render: (order) => (
         <a
           href={`/admin/orders/${order.id}`}
-          className="font-mono font-semibold text-emerald-600 hover:text-emerald-700 hover:underline"
+          className="font-mono font-semibold text-primary hover:text-primary hover:underline"
         >
           {order.code}
         </a>
@@ -89,7 +89,7 @@ export default function AdminOrdersPage() {
       render: (order) => (
         <div>
           <p className="font-medium">{order.address?.fullName || "Guest"}</p>
-          <p className="text-sm text-gray-500">{order.address?.email}</p>
+          <p className="text-sm text-muted-foreground">{order.address?.email}</p>
         </div>
       ),
     },
@@ -112,10 +112,10 @@ export default function AdminOrdersPage() {
           disabled={isUpdatingStatus}
           className={cn(
             "px-3 py-1 rounded-full text-sm font-medium",
-            order.status === "processing" && "bg-orange-100 text-orange-800",
-            order.status === "packed" && "bg-blue-100 text-blue-800",
-            order.status === "shipped" && "bg-purple-100 text-purple-800",
-            order.status === "delivered" && "bg-green-100 text-green-800"
+            order.status === "processing" && "bg-warning/15 text-warning",
+            order.status === "packed" && "bg-info/15 text-info",
+            order.status === "shipped" && "bg-accent/40 text-accent-foreground",
+            order.status === "delivered" && "bg-success/15 text-success"
           )}
         >
           <option value="processing">Processing</option>
@@ -132,10 +132,10 @@ export default function AdminOrdersPage() {
         <span
           className={`px-3 py-1 rounded-full text-xs font-medium ${
             order.paymentStatus === "paid"
-              ? "bg-green-100 text-green-800"
+              ? "bg-success/15 text-success"
               : order.paymentStatus === "failed"
-              ? "bg-red-100 text-red-800"
-              : "bg-yellow-100 text-yellow-800"
+              ? "bg-destructive/15 text-destructive"
+              : "bg-warning/15 text-warning"
           }`}
         >
           {order.paymentStatus || "pending"}
@@ -159,7 +159,7 @@ export default function AdminOrdersPage() {
         <button
           onClick={handleRefresh}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           {isLoading ? "Refreshing..." : "Refresh"}
@@ -167,7 +167,7 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="flex gap-2">
@@ -177,11 +177,11 @@ export default function AdminOrdersPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by order code, customer..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button
                 onClick={handleSearch}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
@@ -198,7 +198,7 @@ export default function AdminOrdersPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Statuses</option>
             <option value="pending_payment">Pending Payment</option>
@@ -220,7 +220,7 @@ export default function AdminOrdersPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Payments</option>
             <option value="pending">Pending</option>

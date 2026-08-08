@@ -16,8 +16,8 @@ export function ProductInventoryFields({
   readOnly = false,
 }: ProductInventoryFieldsProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Inventory</h2>
+    <div className="bg-card rounded-lg border border-border p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-4">Inventory</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormInput
           label="Stock Quantity"

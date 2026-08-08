@@ -15,7 +15,7 @@ export function AdminAccessButton() {
   return (
     <Button
       asChild
-      className="rounded-full bg-purple-600 px-6 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-purple-500"
+      className="rounded-full bg-info px-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:bg-info/90"
     >
       <Link href="/admin" className="flex items-center gap-2">
         <Shield className="h-4 w-4" />

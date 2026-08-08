@@ -26,8 +26,8 @@ export function ProductBasicFields({
     router.push("/admin/categories/new?returnUrl=/admin/products/new");
   };
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-card rounded-lg border border-border p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-4">
         Basic Information
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -73,7 +73,7 @@ export function ProductBasicFields({
             disabled={readOnly}
             type="button"
             onClick={handleAddCategory}
-            className="mt-2 w-full px-3 py-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed border-dashed border-emerald-500 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2"
+            className="mt-2 w-full px-3 py-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed border-dashed border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add New Category

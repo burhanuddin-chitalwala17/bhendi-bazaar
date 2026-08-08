@@ -10,6 +10,23 @@
 
 ## Entries
 
+## [PR-33] 2026-08-09 — UI reuse pass, and colour goes through tokens
+
+Two directives from review of the portal work, applied repo-wide.
+
+**Reuse.** The org orders/reviews pages had hand-rolled tables, badges and cards while `DataTable`, `StatusBadge` and `Card` existed — rebuilt on the shared components (`OrgOrdersTable` is the same `DataTable` the admin lists use, pointed at the org projection). The two sidebars became configurations of one `PortalSidebar` shell — header slot, nav, and Back to Store pinned to the bottom, which also fixes it floating mid-sidebar in the org portal. `StatusBadge` gained nothing; it was already the right component, just unused.
+
+**Tokens.** The theme system (`globals.css`, oklch, light+dark) was real and bypassed: **759 raw palette classes across 81 files** hardcoded shades it already named. Now 8 remain, all one allowlisted file. What made the pass more than find-and-replace:
+
+- **Three token *concepts* were missing**, which is why people hardcoded: `success`/`warning`/`info` for statuses (StatusBadge's variants are now token washes — `bg-success/15 text-success`), `scrim` for overlays that must stay dark in both themes, and `hero` for the storefront's deep-emerald brand scenes. `success` is deliberately not `primary`: "it worked" should survive a rebrand of the store's green.
+- **The first mapping of overlays was wrong and got corrected mid-pass**: `bg-black/50 → bg-foreground/50` inverts in dark mode, where foreground is near-white. Overlays are `scrim`.
+- **`EmailVerificationBanner`'s hand-managed `dark:` overrides were deleted, not converted** — tokens flip with the theme, which is the point of having them.
+- **`Category.accentColorClass` turned out to be Tailwind classes stored as database rows.** The codemod rewrote the option list, orphaning stored values (and collapsed Orange and Yellow into one). Reverted, loudly commented, allowlisted, and the real fix (a semantic key) recorded in BACKLOG for [category-tree](specs/multi-vendor-marketplace/category-tree/).
+
+`tests/unit/design-tokens.test.ts` enforces the rule from now on — raw palette classes fail the build outside the one data-literal allowlist — and [CLAUDE.md](../CLAUDE.md) carries it as a principle. Two codemod artifacts (`/30/60` double opacities) were caught by a sweep and fixed.
+
+`tsc` exits 0, **122 tests pass** (3 new), `next build` compiles. Colour changes of this scale can only truly be judged by eye — worth a click around both portals and the storefront in both themes.
+
 ## [PR-32] 2026-08-09 — Correction: the org switcher renders for single-org users too
 
 PR-31's D3 rendered a plain heading when someone had exactly one organisation — on the principle that a one-option dropdown lies about the state space. Wrong in effect: “Create another organisation” lives *inside* that dropdown, so for single-org users — most users — a second organisation was unreachable, and the switcher the feature was named for was invisible. The control now always opens; with one org it offers the org and the create action. Spec R3/A3 and TRD D3 carry the correction rather than pretending they always said this.

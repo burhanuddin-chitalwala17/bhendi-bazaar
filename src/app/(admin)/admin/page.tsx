@@ -137,27 +137,27 @@ export default function AdminDashboardPage() {
       <div>
         <SectionHeader overline="Order Status" title="Order Status" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm font-medium text-gray-600">Processing</p>
-            <p className="text-2xl font-bold text-orange-600 mt-2">
+          <div className="bg-card rounded-lg border border-border p-6">
+            <p className="text-sm font-medium text-muted-foreground">Processing</p>
+            <p className="text-2xl font-bold text-warning mt-2">
               {stats?.orders.processing || 0}
             </p>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm font-medium text-gray-600">Packed</p>
-            <p className="text-2xl font-bold text-blue-600 mt-2">
+          <div className="bg-card rounded-lg border border-border p-6">
+            <p className="text-sm font-medium text-muted-foreground">Packed</p>
+            <p className="text-2xl font-bold text-info mt-2">
               {stats?.orders.packed || 0}
             </p>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm font-medium text-gray-600">Shipped</p>
-            <p className="text-2xl font-bold text-purple-600 mt-2">
+          <div className="bg-card rounded-lg border border-border p-6">
+            <p className="text-sm font-medium text-muted-foreground">Shipped</p>
+            <p className="text-2xl font-bold text-accent-foreground mt-2">
               {stats?.orders.shipped || 0}
             </p>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <p className="text-sm font-medium text-gray-600">Delivered</p>
-            <p className="text-2xl font-bold text-green-600 mt-2">
+          <div className="bg-card rounded-lg border border-border p-6">
+            <p className="text-sm font-medium text-muted-foreground">Delivered</p>
+            <p className="text-2xl font-bold text-success mt-2">
               {stats?.orders.delivered || 0}
             </p>
           </div>
@@ -167,16 +167,16 @@ export default function AdminDashboardPage() {
       {/* Recent Activity */}
       <div>
         <SectionHeader overline="Recent Activity" title="Recent Activity" />
-        <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-200">
+        <div className="bg-card rounded-lg border border-border divide-y divide-border">
           {activities?.map((activity) => (
             <div key={activity.id} className="p-4 flex items-start gap-4">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Clock className="w-5 h-5 text-gray-600" />
+              <div className="p-2 bg-muted rounded-lg">
+                <Clock className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <p className="font-medium text-gray-900">{activity.title}</p>
-                <p className="text-sm text-gray-600">{activity.description}</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="font-medium text-foreground">{activity.title}</p>
+                <p className="text-sm text-muted-foreground">{activity.description}</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   {new Date(activity.timestamp).toLocaleString()}
                 </p>
               </div>

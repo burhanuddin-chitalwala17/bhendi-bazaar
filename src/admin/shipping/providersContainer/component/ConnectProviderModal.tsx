@@ -101,7 +101,7 @@ export function ConnectProviderModal({
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-sm text-destructive">
               {error}
             </div>
           )}

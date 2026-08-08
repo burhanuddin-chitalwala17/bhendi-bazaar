@@ -2,8 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
 import { formatCurrency } from "@/lib/format";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 
 export const metadata = { robots: { index: false, follow: false } };
+
+const PAYMENT_BADGE = { paid: "paid", pending: "pending", failed: "failed" } as const;
 
 export default async function OrgOrderDetailPage({
   params,
@@ -20,63 +24,72 @@ export default async function OrgOrderDetailPage({
   return (
     <div className="max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold">{order.code}</h1>
-          <p className="text-muted-foreground">
-            Placed {new Date(order.createdAt).toLocaleString("en-IN")} · payment{" "}
+          <StatusBadge
+            status={PAYMENT_BADGE[order.paymentStatus as keyof typeof PAYMENT_BADGE] ?? "default"}
+          >
             {order.paymentStatus}
-          </p>
+          </StatusBadge>
         </div>
-        <Link href={`/org/${orgId}/orders`} className="text-sm text-emerald-700 hover:underline">
+        <Link href={`/org/${orgId}/orders`} className="text-sm text-primary hover:underline">
           ← All orders
         </Link>
       </div>
+      <p className="text-muted-foreground">
+        Placed {new Date(order.createdAt).toLocaleString("en-IN")}
+      </p>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-5">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Deliver to
-        </h2>
-        <p className="font-medium">{order.address.fullName}</p>
-        <p className="text-sm text-muted-foreground">
-          {order.address.addressLine1}
-          {order.address.addressLine2 ? `, ${order.address.addressLine2}` : ""}
-          <br />
-          {order.address.city}, {order.address.state} — {order.address.pincode}
-          <br />
-          {order.address.mobile}
-        </p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Deliver to
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="font-medium">{order.address.fullName}</p>
+          <p className="text-sm text-muted-foreground">
+            {order.address.addressLine1}
+            {order.address.addressLine2 ? `, ${order.address.addressLine2}` : ""}
+            <br />
+            {order.address.city}, {order.address.state} — {order.address.pincode}
+            <br />
+            {order.address.mobile}
+          </p>
+        </CardContent>
+      </Card>
 
       {order.shipments.map((shipment, index) => (
-        <div key={shipment.id} className="rounded-lg border border-gray-200 bg-white p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold">
+        <Card key={shipment.id}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">
               {order.shipments.length > 1 ? `Parcel ${index + 1} — ` : ""}
               {shipment.code}
-            </h2>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">{shipment.status}</span>
-          </div>
-
-          <ul className="divide-y">
-            {shipment.items.map((item) => (
-              <li key={item.productId} className="flex items-center justify-between py-2 text-sm">
-                <span>
-                  {item.productName} <span className="text-muted-foreground">× {item.quantity}</span>
-                </span>
-                <span>{formatCurrency((item.salePrice ?? item.price) * item.quantity)}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-3 flex justify-between border-t pt-3 text-sm text-muted-foreground">
-            <span>
-              {shipment.courierName
-                ? `${shipment.courierName}${shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ""}`
-                : "Not yet booked with a courier"}
-            </span>
-            <span>Shipping {formatCurrency(shipment.shippingCost)}</span>
-          </div>
-        </div>
+            </CardTitle>
+            <StatusBadge status="default">{shipment.status}</StatusBadge>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y">
+              {shipment.items.map((item) => (
+                <li key={item.productId} className="flex items-center justify-between py-2 text-sm">
+                  <span>
+                    {item.productName}{" "}
+                    <span className="text-muted-foreground">× {item.quantity}</span>
+                  </span>
+                  <span>{formatCurrency((item.salePrice ?? item.price) * item.quantity)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex justify-between border-t pt-3 text-sm text-muted-foreground">
+              <span>
+                {shipment.courierName
+                  ? `${shipment.courierName}${shipment.trackingNumber ? ` · ${shipment.trackingNumber}` : ""}`
+                  : "Not yet booked with a courier"}
+              </span>
+              <span>Shipping {formatCurrency(shipment.shippingCost)}</span>
+            </div>
+          </CardContent>
+        </Card>
       ))}
 
       <p className="text-xs text-muted-foreground">

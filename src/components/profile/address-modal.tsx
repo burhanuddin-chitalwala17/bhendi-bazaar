@@ -36,7 +36,7 @@ export function AddressModal({
     void onSave({ ...address, ...data });
   }
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-scrim/40 px-4">
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background shadow-xl">
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <div className="space-y-0.5">
@@ -198,7 +198,7 @@ function AddressForm({
       {formError && (
         <div
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
         >
           {formError}
         </div>

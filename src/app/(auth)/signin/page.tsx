@@ -107,7 +107,7 @@ export default function SignInPage() {
             Forgot password?
           </Link>
         </div>
-        {error && <p className="text-[0.7rem] text-red-600">{error}</p>}
+        {error && <p className="text-[0.7rem] text-destructive">{error}</p>}
         <Button
           type="submit"
           disabled={isLoading}

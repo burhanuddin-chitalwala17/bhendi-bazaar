@@ -20,7 +20,7 @@ export function FloatingAdminButton() {
     return (
       <button
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-500 transition-all hover:scale-110"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-info text-primary-foreground shadow-lg hover:bg-info/90 transition-all hover:scale-110"
         aria-label="Show admin access"
       >
         <Shield className="h-6 w-6" />
@@ -29,7 +29,7 @@ export function FloatingAdminButton() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-full bg-purple-600 px-6 py-3 text-white shadow-lg transition-all hover:shadow-xl">
+    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-full bg-info px-6 py-3 text-primary-foreground shadow-lg transition-all hover:shadow-xl">
       <Shield className="h-5 w-5" />
       <Link
         href="/admin"
@@ -39,7 +39,7 @@ export function FloatingAdminButton() {
       </Link>
       <button
         onClick={() => setIsMinimized(true)}
-        className="ml-2 rounded-full p-1 hover:bg-purple-700 transition-colors"
+        className="ml-2 rounded-full p-1 hover:bg-info/90 transition-colors"
         aria-label="Minimize"
       >
         <X className="h-4 w-4" />

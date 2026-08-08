@@ -59,13 +59,13 @@ export default function AdminOrderDetailsPage({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "shipped":
-        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
+        return <CheckCircle2 className="w-5 h-5 text-success" />;
       case "pending":
-        return <Clock className="w-5 h-5 text-yellow-600" />;
+        return <Clock className="w-5 h-5 text-warning" />;
       case "failed":
-        return <XCircle className="w-5 h-5 text-red-600" />;
+        return <XCircle className="w-5 h-5 text-destructive" />;
       default:
-        return <Package className="w-5 h-5 text-gray-600" />;
+        return <Package className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -92,10 +92,10 @@ export default function AdminOrderDetailsPage({
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium",
               order.paymentStatus === "paid"
-                ? "bg-green-100 text-green-800"
+                ? "bg-success/15 text-success"
                 : order.paymentStatus === "failed"
-                ? "bg-red-100 text-red-800"
-                : "bg-yellow-100 text-yellow-800"
+                ? "bg-destructive/15 text-destructive"
+                : "bg-warning/15 text-warning"
             )}
           >
             {order.paymentStatus}
@@ -104,10 +104,10 @@ export default function AdminOrderDetailsPage({
             className={cn(
               "px-4 py-2 rounded-full text-sm font-medium",
               order.status === "confirmed"
-                ? "bg-blue-100 text-blue-800"
+                ? "bg-info/15 text-info"
                 : order.status === "processing"
-                ? "bg-orange-100 text-orange-800"
-                : "bg-gray-100 text-gray-800"
+                ? "bg-warning/15 text-warning"
+                : "bg-muted text-foreground"
             )}
           >
             {order.status}
@@ -119,14 +119,14 @@ export default function AdminOrderDetailsPage({
         {/* Left Column - Customer & Order Info */}
         <div className="lg:col-span-1 space-y-6">
           {/* Customer Info */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <User className="w-5 h-5" />
               Customer
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-start gap-2">
-                <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                <User className="w-4 h-4 text-muted-foreground/70 mt-0.5" />
                 <div>
                   <p className="font-medium">{address?.fullName || "Guest"}</p>
                  
@@ -134,13 +134,13 @@ export default function AdminOrderDetailsPage({
               </div>
               {address?.mobile && (
                 <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
+                  <Phone className="w-4 h-4 text-muted-foreground/70" />
                   <p>{address.mobile}</p>
                 </div>
               )}
               {address?.email && (
                 <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
+                  <Mail className="w-4 h-4 text-muted-foreground/70" />
                   <p>{address.email}</p>
                 </div>
               )}
@@ -148,12 +148,12 @@ export default function AdminOrderDetailsPage({
           </div>
 
           {/* Delivery Address */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <MapPin className="w-5 h-5" />
               Delivery Address
             </h3>
-            <div className="text-sm text-gray-700 space-y-1">
+            <div className="text-sm text-foreground/80 space-y-1">
               <p>{address?.addressLine1}</p>
               {address?.addressLine2 && <p>{address.addressLine2}</p>}
               <p>
@@ -164,26 +164,26 @@ export default function AdminOrderDetailsPage({
           </div>
 
           {/* Order Summary */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
               Order Summary
             </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Items Total</span>
+                <span className="text-muted-foreground">Items Total</span>
                 <span className="font-medium">
                   {formatCurrency((order as any).itemsTotal || 0)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
+                <span className="text-muted-foreground">Shipping</span>
                 <span className="font-medium">
                   {formatCurrency((order as any).shippingTotal || 0)}
                 </span>
               </div>
               {(order as any).discount > 0 && (
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between text-success">
                   <span>Discount</span>
                   <span>
                     -{formatCurrency((order as any).discount)}
@@ -198,20 +198,20 @@ export default function AdminOrderDetailsPage({
           </div>
 
           {/* Order Info */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-3 text-sm">
+          <div className="bg-card rounded-lg border border-border p-6 space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">Order Date</span>
+              <span className="text-muted-foreground">Order Date</span>
               <span className="font-medium">
                 {new Date(order.createdAt).toLocaleDateString()}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Payment Method</span>
+              <span className="text-muted-foreground">Payment Method</span>
               <span className="font-medium">{order.paymentMethod || "N/A"}</span>
             </div>
             {order.paymentId && (
               <div className="flex justify-between text-xs">
-                <span className="text-gray-600">Payment ID</span>
+                <span className="text-muted-foreground">Payment ID</span>
                 <span className="font-mono">{order.paymentId}</span>
               </div>
             )}
@@ -228,7 +228,7 @@ export default function AdminOrderDetailsPage({
           {(order as any).shipments?.map((shipment: any) => (
             <div
               key={shipment.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 space-y-4"
+              className="bg-card rounded-lg border border-border p-6 space-y-4"
             >
               {/* Shipment Header */}
               <div className="flex items-start justify-between">
@@ -237,7 +237,7 @@ export default function AdminOrderDetailsPage({
                     {getStatusIcon(shipment.status)}
                     <h4 className="text-lg font-semibold">{shipment.code}</h4>
                   </div>
-                  <div className="text-sm text-gray-600 space-y-1">
+                  <div className="text-sm text-muted-foreground space-y-1">
                     <p className="flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       From: {shipment.fromCity}, {shipment.fromState}
@@ -256,10 +256,10 @@ export default function AdminOrderDetailsPage({
                   className={cn(
                     "px-3 py-1 rounded-full text-xs font-medium",
                     shipment.status === "shipped"
-                      ? "bg-green-100 text-green-800"
+                      ? "bg-success/15 text-success"
                       : shipment.status === "pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-gray-100 text-gray-800"
+                      ? "bg-warning/15 text-warning"
+                      : "bg-muted text-foreground"
                   )}
                 >
                   {shipment.status}
@@ -272,7 +272,7 @@ export default function AdminOrderDetailsPage({
                 <div className="space-y-2">
                   {shipment.items?.map((item: any, idx: number) => (
                     <div key={idx} className="flex justify-between text-sm">
-                      <span className="text-gray-700">
+                      <span className="text-foreground/80">
                         {item.productName} × {item.quantity}
                       </span>
                       <span className="font-medium">
@@ -287,14 +287,14 @@ export default function AdminOrderDetailsPage({
 
               {/* Tracking Info or Form */}
               {shipment.trackingNumber && editingShipmentId !== shipment.id ? (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-2">
+                <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 space-y-2">
                   <div className="flex items-center justify-between mb-2">
-                    <h5 className="font-medium text-sm text-emerald-900">
+                    <h5 className="font-medium text-sm text-primary">
                       Tracking Information
                     </h5>
                     <button
                       onClick={() => setEditingShipmentId(shipment.id)}
-                      className="text-xs text-emerald-700 hover:text-emerald-800 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-emerald-100 transition-colors"
+                      className="text-xs text-primary hover:text-primary font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-primary/15 transition-colors"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -304,13 +304,13 @@ export default function AdminOrderDetailsPage({
                   </div>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">AWB Number</span>
+                      <span className="text-muted-foreground">AWB Number</span>
                       <span className="font-mono font-medium">
                         {shipment.trackingNumber}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Courier</span>
+                      <span className="text-muted-foreground">Courier</span>
                       <span className="font-medium">
                         {shipment.courierName}
                       </span>
@@ -321,7 +321,7 @@ export default function AdminOrderDetailsPage({
                           href={shipment.trackingUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-emerald-600 hover:text-emerald-700 underline text-sm"
+                          className="text-primary hover:text-primary underline text-sm"
                         >
                           Track Shipment →
                         </a>
@@ -332,14 +332,14 @@ export default function AdminOrderDetailsPage({
               ) : (
                 <div className="border-t pt-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h5 className="font-medium text-sm text-orange-700 flex items-center gap-2">
+                    <h5 className="font-medium text-sm text-warning flex items-center gap-2">
                       <Clock className="w-4 h-4" />
                       {shipment.trackingNumber ? 'Update Tracking' : 'Tracking Required - Update After Creating on Shiprocket'}
                     </h5>
                     {shipment.trackingNumber && (
                       <button
                         onClick={() => setEditingShipmentId(null)}
-                        className="text-xs text-gray-600 hover:text-gray-800 font-medium"
+                        className="text-xs text-muted-foreground hover:text-foreground font-medium"
                       >
                         Cancel
                       </button>

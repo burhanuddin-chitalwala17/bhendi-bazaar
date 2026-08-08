@@ -92,7 +92,7 @@ export function Navbar() {
               <ShoppingBag className="mr-1 h-4 w-4" />
               Cart
               {cartCount > 0 && (
-                <span className="ml-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-600 px-1 text-[0.65rem] font-semibold leading-none text-white">
+                <span className="ml-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[0.65rem] font-semibold leading-none text-primary-foreground">
                   {cartCount}
                 </span>
               )}

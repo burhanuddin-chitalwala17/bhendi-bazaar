@@ -1,5 +1,6 @@
 import { orgReviewsDAL } from "@/data-access-layer/org/reviews.dal";
 import { Star } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = { title: "Reviews", robots: { index: false, follow: false } };
 
@@ -24,17 +25,18 @@ export default async function OrgReviewsPage({
       </div>
 
       {reviews.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-10 text-center text-muted-foreground">
+        <div className="rounded-lg border border-border bg-card p-10 text-center text-muted-foreground">
           No reviews yet.
         </div>
       ) : (
         <ul className="space-y-3">
           {reviews.map((review) => (
-            <li key={review.id} className="rounded-lg border border-gray-200 bg-white p-4">
+            <li key={review.id}>
+              <Card><CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <span className="font-medium">{review.product.name}</span>
                 <span className="flex items-center gap-1 text-sm">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star className="h-4 w-4 fill-warning text-warning" />
                   {review.rating}
                 </span>
               </div>
@@ -45,6 +47,7 @@ export default async function OrgReviewsPage({
                 {review.reviewerName} · {new Date(review.createdAt).toLocaleDateString("en-IN")}
                 {!review.isApproved && " · awaiting moderation"}
               </p>
+              </CardContent></Card>
             </li>
           ))}
         </ul>

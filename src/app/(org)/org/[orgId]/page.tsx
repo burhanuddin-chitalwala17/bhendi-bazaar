@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Package } from "lucide-react";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -23,15 +24,16 @@ export default async function OrgDashboard({
         <p className="text-muted-foreground">An overview of your organisation</p>
       </div>
 
-      <Link
-        href={`/org/${orgId}/products`}
-        className="flex w-full max-w-xs items-center gap-4 rounded-lg border border-gray-200 bg-white p-5 transition-colors hover:border-emerald-300"
-      >
-        <Package className="h-8 w-8 text-emerald-600" />
-        <span>
-          <span className="block text-2xl font-semibold">{pagination.total}</span>
-          <span className="text-sm text-muted-foreground">Products</span>
-        </span>
+      <Link href={`/org/${orgId}/products`} className="block w-full max-w-xs">
+        <Card className="transition-colors hover:border-primary/40">
+          <CardContent className="flex items-center gap-4 pt-5">
+            <Package className="h-8 w-8 text-primary" />
+            <span>
+              <span className="block text-2xl font-semibold">{pagination.total}</span>
+              <span className="text-sm text-muted-foreground">Products</span>
+            </span>
+          </CardContent>
+        </Card>
       </Link>
     </div>
   );

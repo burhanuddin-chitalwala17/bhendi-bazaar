@@ -75,17 +75,17 @@ export function ShipmentTrackingForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-background p-4 rounded-lg border border-border">
       {/* Header */}
-      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
         <Package className="w-4 h-4" />
         <span>Update Tracking: {shipmentCode}</span>
       </div>
 
       {/* AWB Number */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          AWB / Tracking Number <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-foreground/80 mb-1">
+          AWB / Tracking Number <span className="text-destructive">*</span>
         </label>
         <div className="relative">
           <input
@@ -93,18 +93,18 @@ export function ShipmentTrackingForm({
             value={awb}
             onChange={(e) => setAwb(e.target.value)}
             placeholder="Enter AWB from Shiprocket"
-            className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 pl-9 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             required
             disabled={isUpdating}
           />
-          <Package className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Package className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground/70" />
         </div>
       </div>
 
       {/* Courier Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Courier Name <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-foreground/80 mb-1">
+          Courier Name <span className="text-destructive">*</span>
         </label>
         <div className="relative">
           <input
@@ -112,18 +112,18 @@ export function ShipmentTrackingForm({
             value={courierName}
             onChange={(e) => setCourierName(e.target.value)}
             placeholder="e.g., Blue Dart, Delhivery"
-            className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 pl-9 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             required
             disabled={isUpdating}
           />
-          <Truck className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <Truck className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground/70" />
         </div>
       </div>
 
       {/* Tracking URL (Optional) */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Tracking URL <span className="text-gray-400 text-xs">(optional)</span>
+        <label className="block text-sm font-medium text-foreground/80 mb-1">
+          Tracking URL <span className="text-muted-foreground/70 text-xs">(optional)</span>
         </label>
         <div className="relative">
           <input
@@ -131,10 +131,10 @@ export function ShipmentTrackingForm({
             value={trackingUrl}
             onChange={(e) => setTrackingUrl(e.target.value)}
             placeholder="Auto-generated if left empty"
-            className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 pl-9 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             disabled={isUpdating}
           />
-          <LinkIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          <LinkIcon className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground/70" />
         </div>
       </div>
 
@@ -142,7 +142,7 @@ export function ShipmentTrackingForm({
       <button
         type="submit"
         disabled={isUpdating}
-        className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+        className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
       >
         {isUpdating ? 'Updating...' : existingTracking ? 'Update Tracking' : 'Add Tracking'}
       </button>

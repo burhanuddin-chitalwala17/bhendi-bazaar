@@ -77,11 +77,11 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="space-y-4 rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-        <CheckCircle className="mx-auto h-12 w-12 text-green-600" />
+      <div className="space-y-4 rounded-lg border border-success/30 bg-success/10 p-6 text-center">
+        <CheckCircle className="mx-auto h-12 w-12 text-success" />
         <div className="space-y-2">
-          <h3 className="font-semibold text-green-900">Password Reset Successfully!</h3>
-          <p className="text-sm text-green-700">
+          <h3 className="font-semibold text-success">Password Reset Successfully!</h3>
+          <p className="text-sm text-success">
             Your password has been changed. Redirecting to sign in...
           </p>
         </div>
@@ -148,7 +148,7 @@ export default function ResetPasswordPage() {
         </button>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+          <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
             {error}
           </p>
         )}

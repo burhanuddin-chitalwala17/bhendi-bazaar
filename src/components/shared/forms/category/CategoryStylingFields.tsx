@@ -9,6 +9,11 @@ interface CategoryStylingFieldsProps {
   watch: UseFormWatch<CreateCategoryInput>;
 }
 
+// These literals are DATA, not styling: `Category.accentColorClass` rows in the
+// database hold these exact strings, so the options must keep matching them — a
+// tokenisation pass must NOT rewrite this list (it broke rows once). The defect is
+// storing Tailwind classes in the DB at all; category-tree owns replacing them with
+// a semantic key. Tracked in BACKLOG.
 const ACCENT_COLORS = [
   { value: "bg-emerald-50", label: "Emerald" },
   { value: "bg-blue-50", label: "Blue" },
@@ -27,8 +32,8 @@ export function CategoryStylingFields({
   const selectedColor = watch("accentColorClass");
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Styling</h2>
+    <div className="bg-card rounded-lg border border-border p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-4">Styling</h2>
       <div className="space-y-4">
         <FormSelect
           label="Accent Color"
@@ -45,9 +50,9 @@ export function CategoryStylingFields({
         {/* Color Preview */}
         <div className="flex items-center gap-2">
           <div
-            className={`w-12 h-12 rounded-lg border-2 border-gray-200 ${selectedColor}`}
+            className={`w-12 h-12 rounded-lg border-2 border-border ${selectedColor}`}
           />
-          <span className="text-sm text-gray-600">Preview</span>
+          <span className="text-sm text-muted-foreground">Preview</span>
         </div>
       </div>
     </div>

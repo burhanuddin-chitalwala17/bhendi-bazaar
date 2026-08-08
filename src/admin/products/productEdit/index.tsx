@@ -32,12 +32,12 @@ export function ProductEditContainer({ product, categories, orgs }: ProductEditC
                 <div className="flex items-center gap-4">
                     <Link
                         href={productsBasePath}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-muted rounded-lg transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-heading font-bold text-gray-900">
+                        <h1 className="text-3xl font-heading font-bold text-foreground">
                             Edit Product: {product.name}
                         </h1>
                     </div>
@@ -46,13 +46,13 @@ export function ProductEditContainer({ product, categories, orgs }: ProductEditC
 
             {/* Messages */}
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3">
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     <p>{error}</p>
                 </div>
             )}
             {successMessage && (
-                <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start gap-3">
+                <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     <p>{successMessage}</p>
                 </div>

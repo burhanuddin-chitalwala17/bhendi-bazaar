@@ -123,7 +123,7 @@ export function ShareDialog({
       name: "X (Twitter)",
       icon: Twitter,
       color: "text-[#000000]",
-      hoverColor: "hover:bg-gray-100",
+      hoverColor: "hover:bg-muted",
       action: handleTwitter,
     },
     {
@@ -146,8 +146,8 @@ export function ShareDialog({
       id: "email",
       name: "Email",
       icon: Mail,
-      color: "text-gray-600",
-      hoverColor: "hover:bg-gray-100",
+      color: "text-muted-foreground",
+      hoverColor: "hover:bg-muted",
       action: handleEmail,
     },
     {
@@ -201,7 +201,7 @@ export function ShareDialog({
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {copySuccess ? (
-                  <Check className="h-5 w-5 shrink-0 text-green-600" />
+                  <Check className="h-5 w-5 shrink-0 text-success" />
                 ) : (
                   <Copy className="h-5 w-5 shrink-0 text-muted-foreground" />
                 )}

@@ -31,15 +31,15 @@ export function ProductsView({ product, category, org, canEdit = true }: Product
         <div className="flex items-center gap-4">
           <Link
             href={productsBasePath}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-heading font-bold text-gray-900">
+            <h1 className="text-3xl font-heading font-bold text-foreground">
               {product.name}
             </h1>
-            <p className="text-gray-600 mt-1">Product Details</p>
+            <p className="text-muted-foreground mt-1">Product Details</p>
           </div>
         </div>
 
