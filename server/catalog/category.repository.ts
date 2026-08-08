@@ -6,6 +6,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { ServerCategory } from "@server/catalog/category.types";
+import type { CategoryTreeNode } from "@server/catalog/category.tree";
 
 export class CategoryRepository {
   /**
@@ -23,6 +24,16 @@ export class CategoryRepository {
       ],
     });
     return categories;
+  }
+
+  /**
+   * The whole tree as (id, parentId, slug) rows — what the pure helpers in
+   * category.tree.ts walk. Tens of rows; loaded whole on purpose (TRD D1).
+   */
+  async listTree(): Promise<Array<CategoryTreeNode & { slug: string }>> {
+    return prisma.category.findMany({
+      select: { id: true, parentId: true, slug: true },
+    });
   }
 
   /**

@@ -2,6 +2,7 @@ import type { Order } from "@/domain/order";
 import { SectionHeader } from "../shared/SectionHeader";
 import { PriceDisplay } from "../shared/PriceDisplay";
 import { ShareButton } from "../shared/ShareButton";
+import { DownloadBillButton } from "./download-bill-button";
 
 interface OrderSummaryProps {
   order: Order;
@@ -24,7 +25,7 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
   const allItems = order.shipments.flatMap((shipment) => shipment.items);
 
   return (
-    <section className="space-y-3 rounded-xl border border-border/70 bg-card/80 p-4 text-sm">
+    <section className="bill-print space-y-3 rounded-xl border border-border/70 bg-card/80 p-4 text-sm">
       <header className="flex items-baseline justify-between gap-2">
         <div className="flex-1">
           <SectionHeader
@@ -34,22 +35,23 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
         </div>
         <div className="flex items-center gap-2">
           {paymentLabel && (
-            <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-emerald-700">
+            <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-primary">
               {paymentLabel}
             </p>
           )}
           {showShare && (
-            <ShareButton
-              url={`${
-                typeof window !== "undefined" ? window.location.origin : ""
-              }/order/${order.id}`}
-              title={`Order ${order.code} - Bhendi Bazaar`}
-              text={`Check out my order from Bhendi Bazaar`}
-              variant="ghost"
-              size="icon"
-              showLabel={false}
-              className="h-7 w-7"
-            />
+            <>
+              <DownloadBillButton className="h-7 w-7 print:hidden" />
+              <ShareButton
+                url={`/order/${order.id}`}
+                title={`Order ${order.code} - Bhendi Bazaar`}
+                text={`Check out my order from Bhendi Bazaar`}
+                variant="ghost"
+                size="icon"
+                showLabel={false}
+                className="h-7 w-7 print:hidden"
+              />
+            </>
           )}
         </div>
       </header>

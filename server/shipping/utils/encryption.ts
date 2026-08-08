@@ -6,6 +6,7 @@
  */
 
 import crypto from "crypto";
+import { DomainError } from "@server/shared/domain-error";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
@@ -44,7 +45,7 @@ class EncryptionService {
     const parts = ciphertext.split(":");
     
     if (parts.length !== 3) {
-      throw new Error("Invalid ciphertext format");
+      throw new DomainError("Invalid ciphertext format");
     }
     
     const [ivHex, tagHex, encryptedHex] = parts;

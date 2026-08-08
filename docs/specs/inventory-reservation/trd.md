@@ -1,9 +1,9 @@
 # TRD — inventory reservation
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-40
 - **Domain:** checkout, catalog
 - **Phase:** 2 — Transaction integrity
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-09
 - **References:** [spec.md](spec.md), [ADR-0007](../../adr/0007-conditional-stock-decrement.md), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -48,7 +48,10 @@ Per [TESTING.md](../../TESTING.md), stock reservation under concurrency is a 100
 4. Remove the redundant order-creation path.
 5. Enforce `Cart.version`, or drop the column.
 
-## Open questions
-- **Q1** — How long before an unconfirmed order is considered abandoned and its stock released? Should match [payment-confirmation](../payment-confirmation/) Q1 so an order is not released while still confirmable.
-- **Q2** — If stock runs out *after* payment succeeded (possible only if D2 is ever relaxed), is the resolution an automatic refund or a manual operational task? Under D2 this should be unreachable; worth stating so the assumption is explicit.
-- **Q3** — Should the out-of-stock failure adjust the cart automatically to the available quantity, or leave it for the customer? Affects A2's flow only.
+## Questions closed (2026-08-09)
+- **Q1** — 60 minutes: double payment-confirmation's 30-minute sweep threshold, and the release only fires after the gateway has been *asked* and reported nothing captured — so an order the gateway could still confirm is never released first. Failed payments keep their hold until expiry, which also answers payment-confirmation's carried Q3: the customer can retry the same order within the hold; after expiry a new order is needed.
+- **Q2** — Unreachable under D2, and now stated in code: `confirmPaid` refuses an expired order (its stock is already back on the shelf), so a capture landing after expiry is refused and refunded manually — the store never confirms an order it may not be able to fulfil.
+- **Q3** — The failure names the item and the available quantity ("Only 2 left of X — you asked for 3") and leaves the cart for the customer. Auto-adjusting a cart behind someone's back is the same class of silent mutation R7 forbids.
+
+## Test-plan caveat
+The concurrency test — N real overlapping transactions against a one-unit item — **cannot run here yet**: there is no test database ([TESTING.md](../../TESTING.md) § Database behaviour is currently untestable). The guard's correctness rests on its *shape* (the check is the `where` clause of the write, pinned by test) and on Postgres semantics, not on our code winning a race. That test is the first thing the future test-database work should add.

@@ -25,13 +25,14 @@ class ProductsDAL {
         thumbnail: product.thumbnail,
         createdAt: product.createdAt,
         category: product.category,
-        seller: product.seller,
+        org: product.org,
       })), pagination
     };
   });
 
-  getStats = cache(async (): Promise<ProductStats> => {
-    const stats = await productsService.getStats();
+  /** `null` means every org — only a platform page may ask for that. */
+  getStats = cache(async (orgId: string | null): Promise<ProductStats> => {
+    const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
       lowStockProducts: stats.lowStockProducts,
@@ -58,25 +59,29 @@ class ProductsDAL {
       tags: product.tags,
       flags: product.flags as ProductFlag[],
       sku: product.sku ?? undefined,
-      stock: product.stock,
+      // The total across every location, active or not — admin truth (R9/D3).
+      stock: product.stockLocations.reduce(
+        (sum: number, row: { quantity: number }) => sum + row.quantity,
+        0
+      ),
       lowStockThreshold: product.lowStockThreshold,
       weight: product.weight ?? 0,
       images: product.images,
       thumbnail: product.thumbnail,
       sizes: product.sizes,
       colors: product.colors,
-      seller: {
-        id: product.seller.id,
-        name: product.seller.name,
-        code: product.seller.code,
-        defaultPincode: product.seller.defaultPincode,
-        defaultCity: product.seller.defaultCity,
-        defaultState: product.seller.defaultState,
-        defaultAddress: product.seller.defaultAddress ?? "",
+      org: {
+        id: product.org.id,
+        name: product.org.name,
+        code: product.org.code,
       },
-      shippingFromPincode: product.shippingFromPincode ?? "",
-      shippingFromCity: product.shippingFromCity ?? "",
-      shippingFromLocation: product.shippingFromLocation ?? "",
+      stockLocations: (product.stockLocations ?? []).map(
+        (row: { orgAddressId: string; quantity: number; orgAddress: { name: string } }) => ({
+          orgAddressId: row.orgAddressId,
+          locationName: row.orgAddress.name,
+          quantity: row.quantity,
+        })
+      ),
       createdAt: product.createdAt,
     };
   });

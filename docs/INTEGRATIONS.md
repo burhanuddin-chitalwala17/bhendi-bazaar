@@ -13,6 +13,13 @@ What the services we depend on actually do — the behaviour that is not derivab
 
 ## Razorpay (payments)
 
+**The `notes` round-trip is a string contract the compiler cannot check.** Our order id
+travels to Razorpay in `notes` at gateway-order creation and comes back in every
+payment webhook. The key is `RAZORPAY_NOTES_ORDER_KEY` (`server/payments/notes.ts`),
+used by both sides and pinned by a test — because creation once wrote `orderId` while
+the webhook read `localOrderId`, and every webhook silently no-op'd while returning
+200. Razorpay also caps `notes` at 15 keys / 256 chars per value.
+
 - **Amounts are integer paise.** `₹499.50` is `49950`. This is a large part of why we store money the same way ([ADR-0004](adr/0004-money-as-integer-paise.md)) — the boundary already wants integers, so converting late was losing precision for nothing.
 - **`notes` is a free-form key-value bag** attached at order creation and echoed back on webhook payloads. It is the mechanism for correlating a gateway payment to our order — and it is a **string-keyed contract that no compiler checks**. The key written at creation and the key read at webhook time must match exactly; there is no error if they do not, because a missing key is simply `undefined`. Assert the round trip in a test ([payment-confirmation](specs/payment-confirmation/) D6).
 - **Two different signatures, computed differently:**

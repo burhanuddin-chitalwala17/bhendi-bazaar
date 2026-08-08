@@ -8,17 +8,19 @@ const statusBadgeVariants = cva(
   "text-[0.65rem] font-semibold uppercase tracking-[0.18em]",
   {
     variants: {
+      // Washes are the status colour at low opacity, so a status reads the same
+      // everywhere and a palette change is one token edit, not a hunt.
       status: {
         default: "bg-secondary text-secondary-foreground",
-        offer: "bg-emerald-100 text-emerald-900",
-        featured: "bg-purple-100 text-purple-800",
-        hero: "bg-blue-100 text-blue-800",
-        lowStock: "bg-orange-100 text-orange-800",
-        outOfStock: "bg-red-100 text-red-800",
-        inStock: "bg-green-100 text-green-800",
-        pending: "bg-yellow-100 text-yellow-800",
-        paid: "bg-green-100 text-green-800",
-        failed: "bg-red-100 text-red-800",
+        offer: "bg-success/15 text-success",
+        featured: "bg-accent/40 text-accent-foreground",
+        hero: "bg-info/15 text-info",
+        lowStock: "bg-warning/15 text-warning",
+        outOfStock: "bg-destructive/15 text-destructive",
+        inStock: "bg-success/15 text-success",
+        pending: "bg-warning/15 text-warning",
+        paid: "bg-success/15 text-success",
+        failed: "bg-destructive/15 text-destructive",
       },
     },
     defaultVariants: {

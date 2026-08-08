@@ -27,7 +27,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
 
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
 
-  const { groups: shippingGroups, totalShippingCost, isLoading: isShippingLoading, fetchAllRates, selectRateForGroup } = useMultiShippingRates();
+  const { groups: shippingGroups, totalShippingCost, isLoading: isShippingLoading, allocationError, fetchAllRates, selectRateForGroup } = useMultiShippingRates();
 
   const { selectedAddress, addresses, addAddress, updateAddress, selectAddress } = useAddressManager({ autoFetch: true });
 
@@ -169,11 +169,21 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
 
         {/* Multi-Shipping Section */}
         {selectedAddress && (
-          <MultiShippingSection
-            groups={shippingGroups}
-            onRateSelect={selectRateForGroup}
-            isLoading={isShippingLoading}
-          />
+          <>
+            {allocationError && (
+              <div
+                role="alert"
+                className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+              >
+                {allocationError}
+              </div>
+            )}
+            <MultiShippingSection
+              groups={shippingGroups}
+              onRateSelect={selectRateForGroup}
+              isLoading={isShippingLoading}
+            />
+          </>
         )}
 
         {/* Checkout Actions */}

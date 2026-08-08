@@ -12,6 +12,7 @@ import type {
   ReviewStats,
   AdminReview,
 } from "@server/catalog/review.types";
+import { NotFoundError } from "@server/shared/domain-error";
 
 export class AdminReviewService {
   /**
@@ -81,7 +82,7 @@ export class AdminReviewService {
     const review = await adminReviewRepository.getReviewById(id);
 
     if (!review) {
-      throw new Error("Review not found");
+      throw new NotFoundError("Review not found");
     }
 
     await adminReviewRepository.deleteReview(id);

@@ -1,3 +1,4 @@
+import type { OrgSummary } from "@server/catalog/org.types";
 /**
  * Server-side domain types for Product
  *
@@ -28,20 +29,14 @@ export interface ServerProduct {
   weight: number;
   createdAt: Date;
   updatedAt: Date;
-  seller: {
-    id: string;
-    name: string;
-    code: string;
-    defaultPincode: string;
-    defaultCity: string;
-    defaultState: string;
-    defaultAddress: string;
-  };
+  org: OrgSummary;
   shippingFromPincode: string;
 }
 
 export interface ProductFilter {
   categorySlug?: string;
+  /** Resolved server-side from categorySlug's subtree — never client input. */
+  categoryIds?: string[];
   search?: string;
   minPrice?: number;
   maxPrice?: number;

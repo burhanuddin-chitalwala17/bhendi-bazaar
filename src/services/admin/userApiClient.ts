@@ -13,7 +13,7 @@ class AdminUserService {
     const params = new URLSearchParams();
 
     if (filters.search) params.append("search", filters.search);
-    if (filters.role) params.append("role", filters.role);
+    if (filters.platformRole) params.append("platformRole", filters.platformRole);
     if (filters.isBlocked !== undefined)
       params.append("isBlocked", String(filters.isBlocked));
     if (filters.page) params.append("page", String(filters.page));
@@ -37,7 +37,7 @@ class AdminUserService {
    */
   async updateUser(
     id: string,
-    data: { name?: string; role?: string; isBlocked?: boolean }
+    data: { name?: string; platformRole?: string; isBlocked?: boolean }
   ): Promise<AdminUser> {
     const response = await fetch(`/api/admin/users/${id}`, {
       method: "PATCH",

@@ -65,13 +65,13 @@ export class AdminDashboardRepository {
       Promise.all([
         prisma.product.count(),
         prisma.product.findMany({
-          where: { stock: { gt: 0 } },
+          where: { stockLocations: { some: { quantity: { gt: 0 } } } },
           select: {
-            stock: true,
+            stockLocations: { select: { quantity: true } },
             lowStockThreshold: true,
           },
         }),
-        prisma.product.count({ where: { stock: 0 } }),
+        prisma.product.count({ where: { stockLocations: { none: { quantity: { gt: 0 } } } } }),
       ]),
       Promise.all([
         prisma.user.count(),
@@ -119,7 +119,10 @@ export class AdminDashboardRepository {
       },
       products: {
         total: productStats[0],
-        lowStock: productStats[1].filter((p) => p.stock <= p.lowStockThreshold)
+        lowStock: productStats[1].filter(
+          (p) =>
+            p.stockLocations.reduce((sum, row) => sum + row.quantity, 0) <= p.lowStockThreshold
+        )
           .length,
         outOfStock: productStats[2],
       },

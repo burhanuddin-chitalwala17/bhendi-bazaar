@@ -5,7 +5,7 @@
 
 export * from "./types";
 export * from "./users.seed";
-export * from "./sellers.seed";
+export * from "./orgs.seed";
 export * from "./categories.seed";
 export * from "./products.seed";
 export * from "./orders.seed";

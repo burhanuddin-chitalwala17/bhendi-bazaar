@@ -2,6 +2,7 @@
 
 import type { CartItem } from "@/domain/cart";
 import { toast } from "sonner";
+import { readApiError } from "@/lib/api-error";
 
 /**
  * Client-side cart service
@@ -11,7 +12,9 @@ import { toast } from "sonner";
 export class CartApiClient {
   private baseUrl = "/api/cart";
 
-  async syncCart(localItems: CartItem[]): Promise<CartItem[]> {
+  async syncCart(
+    localItems: CartItem[]
+  ): Promise<{ items: CartItem[]; version: number }> {
     try {
       const response = await fetch(`${this.baseUrl}/sync`, {
         method: "POST",
@@ -27,56 +30,33 @@ export class CartApiClient {
       }
 
       const data = await response.json();
-      return data.items as CartItem[];
+      return { items: data.items as CartItem[], version: (data.version as number) ?? 0 };
     } catch (error) {
       console.error("[CartApiClient] syncCart failed:", error);
       toast.error("Failed to sync your cart with the server", {
         description:
           "Your local cart is still safe. We'll retry when you're back online.",
       });
-      return localItems;
+      return { items: localItems, version: 0 };
     }
   }
 
-  async updateCart(items: CartItem[]): Promise<void> {
-    try {
-      const response = await fetch(this.baseUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ items }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `Failed to update cart: ${response.statusText}`
-        );
-      }
-    } catch (error) {
-      console.error("[CartApiClient] updateCart failed:", error);
-      const message =
-        error instanceof Error ? error.message : "Failed to update cart";
-
-      // Show user-friendly error
-      if (message.includes("offline") || message.includes("network")) {
-        toast.error("You're offline", {
-          description:
-            "Your cart changes are saved locally and will sync when you're back online.",
-        });
-      } else {
-        toast.error("Failed to save cart", {
-          description:
-            "Your changes are saved locally. We'll try to sync again shortly.",
-        });
-      }
-
-      // Re-throw for retry logic
-      throw error;
-    }
+  /**
+   * Persist the cart. Sends the version this write is based on; a 409 means another
+   * tab or device wrote first — the caller re-syncs and merges rather than
+   * overwriting (inventory-reservation R7).
+   */
+  async updateCart(items: CartItem[], version?: number): Promise<{ version: number }> {
+    const response = await fetch(this.baseUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ items, version }),
+    });
+    if (!response.ok) throw await readApiError(response);
+    return response.json();
   }
+
 
   async clearCart(): Promise<void> {
     try {

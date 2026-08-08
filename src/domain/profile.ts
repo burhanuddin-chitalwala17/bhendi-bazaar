@@ -18,7 +18,8 @@ export interface DeliveryAddress {
   state: string;
   pincode: string;
   country: string;
-  metadata?: Record<string, any>;
+  label?: string;
+  notes?: string;
 }
 
 export interface UserProfile {

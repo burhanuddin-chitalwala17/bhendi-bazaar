@@ -4,9 +4,9 @@ import type { DeliveryAddress } from "@/domain/profile";
 import { X, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormActions } from "../shared/button-groups/FormActions";
-import { DefaultBadge } from "../shared/badges/StatusBadge";
 import { AddressFields } from "../shared/forms/AddressFields";
-import { useForm } from "react-hook-form";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { addAddressSchema } from "@/lib/validation/schemas/address.schema";
 
 interface AddressModalProps {
   mode: "view" | "edit" | "add";
@@ -15,7 +15,6 @@ interface AddressModalProps {
   onClose: () => void;
   onSave: (address: DeliveryAddress) => void | Promise<void>;
   onStartEdit: () => void;
-  onSetDefault?: () => void;
   onDelete?: () => void;
 }
 
@@ -26,7 +25,6 @@ export function AddressModal({
   onClose,
   onSave,
   onStartEdit,
-  onSetDefault,
   onDelete,
 }: AddressModalProps) {
   const isEditing = mode === "edit" || mode === "add";
@@ -35,7 +33,7 @@ export function AddressModal({
     void onSave({ ...address, ...data });
   }
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-scrim/40 px-4">
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background shadow-xl">
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <div className="space-y-0.5">
@@ -66,7 +64,6 @@ export function AddressModal({
             address={address}
             saving={saving}
             onStartEdit={onStartEdit}
-            onSetDefault={onSetDefault}
             onDelete={onDelete}
           />
         )}
@@ -88,7 +85,6 @@ interface AddressViewModeProps {
   address: DeliveryAddress;
   saving: boolean;
   onStartEdit: () => void;
-  onSetDefault?: () => void;
   onDelete?: () => void;
 }
 
@@ -96,15 +92,13 @@ function AddressViewMode({
   address,
   saving,
   onStartEdit,
-  onSetDefault,
   onDelete,
 }: AddressViewModeProps) {
   return (
     <div className="space-y-4 px-4 py-4 text-sm">
       <div className="space-y-1">
         <div className="flex items-center gap-2">
-          <p className="font-semibold">{address.metadata?.label}</p>
-          {address.metadata?.isDefault && <DefaultBadge />}
+          <p className="font-semibold">{address.label}</p>
         </div>
       </div>
       <p className="font-semibold">{address.fullName}</p>
@@ -124,18 +118,6 @@ function AddressViewMode({
 
       <div className="flex items-center justify-between gap-2 pt-2">
         <div className="flex items-center gap-2">
-          {onSetDefault && !address.metadata?.isDefault && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={saving}
-              onClick={onSetDefault}
-              className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
-            >
-              Make default
-            </Button>
-          )}
           {/* ✅ Add delete button */}
           {onDelete && (
             <Button
@@ -180,17 +162,28 @@ function AddressForm({
 }: AddressFormProps) {
   const {
     register,
-    handleSubmit,
+    onSubmit: handleFormSubmit,
+    formError,
     formState: { errors },
-  } = useForm<DeliveryAddress>({
+  } = useServerForm<DeliveryAddress>({
+    schema: addAddressSchema as never,
+    submit: async (data) => onSubmit(data),
     defaultValues: address,
   });
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleFormSubmit}
       className="space-y-3 px-4 py-4 text-xs"
     >
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+        >
+          {formError}
+        </div>
+      )}
       <AddressFields
         register={register}
         errors={errors}
@@ -199,15 +192,7 @@ function AddressForm({
         includeLabel={true}
       />
 
-      <div className="flex items-center justify-between gap-2 pt-2">
-        <label className="flex items-center gap-2 text-[0.7rem] text-muted-foreground">
-          <input
-            type="checkbox"
-            {...register("metadata.isDefault")}
-            className="h-3.5 w-3.5 rounded border border-border bg-background"
-          />
-          Set as default address
-        </label>
+      <div className="flex items-center justify-end gap-2 pt-2">
         <FormActions
           onCancel={onCancel}
           isSubmitting={saving}

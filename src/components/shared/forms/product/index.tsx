@@ -1,7 +1,7 @@
 // components/shared/forms/product/index.tsx
 
-import React from "react";
-import { useForm } from "react-hook-form";
+import React, { useEffect } from "react";
+import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormController } from "../FormField";
@@ -11,14 +11,19 @@ import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
 import { ProductAttributeFields } from "./ProductAttributeFields";
 import { ProductFlagsFields } from "./ProductFlagsFields";
-import { ProductSellerShippingFields } from "./ProductSellerShippingFields";
+import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
 import { FormActions } from "../../button-groups/FormActions";
 import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
+import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { paiseToRupees } from "@/lib/format";
+import type { OrgSummary } from "@/domain/org";
 interface ProductFormProps {
   product?: ProductDetails;
   categories?: { id: string; name: string }[];
-  sellers?: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+  orgs?: OrgSummary[];
+  /** The org's pickup locations; the form shows a stock input per active one. */
+  locations?: LocationOption[];
   onSubmit: (data: ProductFormInput) => Promise<ProductDetails | null | undefined>;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -28,7 +33,8 @@ interface ProductFormProps {
 export function ProductForm({
   product,
   categories,
-  sellers,
+  orgs,
+  locations = [],
   onSubmit,
   onCancel,
   isSubmitting,
@@ -37,16 +43,31 @@ export function ProductForm({
 
   const isEdit = !!product;
 
+  // One row per offered location, prefilled from the product's existing rows. A
+  // location the product never stocked shows 0; zero rows are dropped on write.
+  const stockByLocation = new Map(
+    (product?.stockLocations ?? []).map((row) => [row.orgAddressId, row.quantity])
+  );
+  const defaultStockRows = locations.map((location) => ({
+    orgAddressId: location.id,
+    quantity: stockByLocation.get(location.id) ?? 0,
+  }));
 
-  const form = useForm<ProductFormInput>({
+
+  // Client validation and server error routing both come from this one call:
+  // field-attributed server errors land on their fields with no code here.
+  const form = useServerForm<ProductFormInput>({
+    schema: productFormSchema,
+    submit: onSubmit,
     defaultValues: {
       name: product?.name || "",
       description: product?.description || "",
-      price: product?.price || 0,
-      salePrice: product?.salePrice || undefined,
+      // Stored paise → rupee inputs; the service converts back on submit.
+      price: product ? paiseToRupees(product.price) : 0,
+      salePrice: product?.salePrice != null ? paiseToRupees(product.salePrice) : undefined,
       currency: product?.currency || "INR",
       categoryId: product?.category?.id || "",
-      sellerId: product?.seller?.id || "",
+      orgId: product?.org?.id || "",
       tags: product?.tags || [],
       flags: product?.flags || [],
       images: product?.images || [],
@@ -54,27 +75,50 @@ export function ProductForm({
       weight: product?.weight || 0,
       sizes: product?.sizes || [],
       colors: product?.colors || [],
-      stock: product?.stock || 0,
+      stockLocations: defaultStockRows,
       sku: product?.sku || "",
       lowStockThreshold: product?.lowStockThreshold || 10,
-      shippingFromPincode: product?.shippingFromPincode || "",
-      shippingFromCity: product?.shippingFromCity || "",
-      shippingFromLocation: product?.shippingFromLocation || "",
     },
   }); 
   const {
     register,
-    handleSubmit,
+    onSubmit: handleFormSubmit,
+    formError,
     watch,
     setValue,
+    getValues,
     control,
     formState: { errors },
   } = form;
 
   // form persist
+  // Location rows are never draft-persisted: a draft saved while the org had no
+  // locations restores an empty array over the fresh rows, and the hidden
+  // orgAddressId can then fail validation invisibly (the submit "does nothing").
   const { clearSaved } = useFormPersist("product-creation-form-draft", form, {
+    excludeFields: ["stockLocations"],
     enabled: !isEdit,
   });
+
+  // Belt to the exclusion above: whatever restored or reset the form, the rows
+  // always mirror the offered locations — typed quantities kept, ids re-asserted.
+  const locationIds = locations.map((location) => location.id).join(",");
+  useEffect(() => {
+    const current = getValues("stockLocations") ?? [];
+    const typed = new Map(
+      current
+        .filter((row) => row && row.orgAddressId)
+        .map((row) => [row.orgAddressId, row.quantity])
+    );
+    setValue(
+      "stockLocations",
+      locations.map((location) => ({
+        orgAddressId: location.id,
+        quantity: Number(typed.get(location.id) ?? stockByLocation.get(location.id) ?? 0) || 0,
+      }))
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationIds]);
 
   const imagesValue = watch("images");
 
@@ -86,7 +130,18 @@ export function ProductForm({
   }, [imagesValue, setValue, product?.thumbnail]);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleFormSubmit} className="space-y-6">
+      {/* Server errors that could not be attributed to a field. Field-level ones
+          are already showing on their inputs. */}
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          {formError}
+        </div>
+      )}
+
       {/* Basic Information */}
       <ProductBasicFields
         register={register}
@@ -107,7 +162,7 @@ export function ProductForm({
       {!readOnly && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
             <FormController
               name="images"
               control={control}
@@ -124,7 +179,7 @@ export function ProductForm({
               )}
             />
             {errors.images && (
-              <p className="text-red-500 text-sm mt-1">{errors.images.message}</p>
+              <p className="text-destructive text-sm mt-1">{errors.images.message}</p>
             )}
           </CardContent>
         </Card>
@@ -134,7 +189,7 @@ export function ProductForm({
       {readOnly && product?.images && product.images.length > 0 && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.images.map((img, idx) => (
                 <div key={idx} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
@@ -169,12 +224,13 @@ export function ProductForm({
         readOnly={readOnly}
       />
 
-      {/* Seller Shipping */}
-      <ProductSellerShippingFields
+      {/* Org Shipping */}
+      <ProductOrgShippingFields
         register={register}
         errors={errors}
         watch={watch}
-        sellers={sellers}
+        orgs={orgs}
+        locations={locations}
         readOnly={readOnly}
       />
 
@@ -207,4 +263,4 @@ export { ProductPricingFields } from "./ProductPricingFields";
 export { ProductInventoryFields } from "./ProductInventoryFields";
 export { ProductAttributeFields } from "./ProductAttributeFields";
 export { ProductFlagsFields } from "./ProductFlagsFields";
-export { ProductSellerShippingFields } from "./ProductSellerShippingFields";
+export { ProductOrgShippingFields } from "./ProductOrgShippingFields";

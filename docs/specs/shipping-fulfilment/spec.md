@@ -1,9 +1,9 @@
 # Spec — shipping fulfilment
 
-- **Status:** Draft — **blocked on a product decision (see Open decision)**
+- **Status:** Draft — deferred by decision (2026-08-10, see Open decision)
 - **Domain:** shipping
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-10
 - **References:** [trd.md](trd.md), [product-weight-and-rates](../product-weight-and-rates/), [INTEGRATIONS.md](../../INTEGRATIONS.md)
 
 > Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
@@ -21,6 +21,14 @@ So the customer pays a real shipping fee, receives a tracking reference that lea
 **This spec cannot be finalised until one question is answered, because it determines whether the feature exists at all:**
 
 > Should the store book real shipments, or stop quoting live rates until it can?
+
+**Decided 2026-08-10 (product owner): keep the current flow.** Live rates stay quoted
+and charged; booking stays the placeholder; parcels are fulfilled manually outside the
+system. Real booking remains this spec's future scope, unblocked whenever it is picked
+up — every parcel now carries a pickup location with a courier-collectable address
+(stock-locations), so nothing further blocks it but the decision to build. Accepted
+with the decision: the tracking reference shown to customers remains a placeholder
+until then.
 
 - **Book for real** — the store keeps its current customer-facing behaviour and makes it true. Larger scope: booking, cancellation, label handling, and courier failure modes.
 - **Stop quoting live** — quote a flat or table-based shipping fee and fulfil manually outside the system. Much smaller, and honest. Real booking becomes a later feature.

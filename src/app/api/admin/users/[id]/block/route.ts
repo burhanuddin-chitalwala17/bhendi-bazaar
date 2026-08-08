@@ -4,17 +4,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminUserService } from "@server/identity/admin.user.service";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
     const body = await request.json();
     const isBlocked = body.isBlocked === true;
@@ -31,16 +30,7 @@ export async function POST(
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error("Failed to update user status:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update user status",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not update user status:");
   }
 }
 

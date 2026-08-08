@@ -37,7 +37,7 @@ export function ProductsFilters({
     : "";
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
+    <div className="bg-card rounded-lg border border-border p-4">
       <div className="flex flex-wrap gap-4">
         {/* Search */}
         <div className="flex-1 min-w-64">
@@ -49,12 +49,12 @@ export function ProductsFilters({
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search by name, SKU..."
               disabled={isPending}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+              className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
             />
             <button
               onClick={handleSearch}
               disabled={isPending}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50"
             >
               <Search className="w-4 h-4" />
               Search
@@ -67,7 +67,7 @@ export function ProductsFilters({
           value={currentStockFilter}
           onChange={(e) => handleStockFilter(e.target.value)}
           disabled={isPending}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+          className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
         >
           <option value="">All Stock</option>
           <option value="low">Low Stock</option>

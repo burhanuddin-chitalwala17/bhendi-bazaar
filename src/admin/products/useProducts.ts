@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ProductsApiClient } from "./productsApiClient";
 import type { ProductFormInput } from "./types";
+import { useProductsBasePath } from "./useProductsBasePath";
 
 interface UseProductsOptions {
   onSuccess?: () => void;
@@ -15,28 +16,17 @@ export function useProducts(options?: UseProductsOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const productsApiClient = new ProductsApiClient();
   const params = useParams();
+  // Present under /org/[orgId]/..., absent under /admin/... — which is what selects the
+  // API tree and where a successful write returns to.
+  const orgId = typeof params.orgId === "string" ? params.orgId : undefined;
+  const productsApiClient = new ProductsApiClient(orgId);
+  const productsBasePath = useProductsBasePath();
 
   /**
    * Create Product
    */
   const createProduct = async (data: ProductFormInput) => {
-    // Client-side validation
-    if (!data.images || data.images.length === 0) {
-      const errorMsg = "At least one image is required";
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
-    if (!data.sellerId) {
-      const errorMsg = "Seller is required";
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
     setError(null);
     setSuccessMessage(null);
     setIsLoading(true);
@@ -50,16 +40,15 @@ export function useProducts(options?: UseProductsOptions) {
 
       // Navigate back after a short delay
       setTimeout(() => {
-        router.push("/admin/products");
+        router.push(productsBasePath);
         router.refresh(); // Refresh server cache
       }, 1000);
 
       options?.onSuccess?.();
       return product;
-    } catch (err: any) {
-      const errorMsg = err.message || "Failed to create product";
-      setError(errorMsg);
-      toast.error(errorMsg);
+    } catch (err) {
+      // Presentation belongs to useServerForm, which maps field-level details
+      // onto inputs. Rethrow untouched so those details survive.
       throw err;
     } finally {
       setIsLoading(false);
@@ -79,17 +68,15 @@ export function useProducts(options?: UseProductsOptions) {
 
       // Navigate back after a short delay
       setTimeout(() => {
-        router.push("/admin/products");
+        router.push(productsBasePath);
         router.refresh(); // Refresh server cache
       }, 1000);
 
       options?.onSuccess?.();
       return product;
     }
-    catch (err: any) {
-      const errorMsg = err.message || "Failed to update product";
-      setError(errorMsg);
-      toast.error(errorMsg);
+    catch (err) {
+      // Presentation belongs to useServerForm; rethrow so field details survive.
       throw err;
     } finally {
       setIsLoading(false);
@@ -109,8 +96,9 @@ export function useProducts(options?: UseProductsOptions) {
       // ⚡ Trigger server refresh
       router.refresh();
       options?.onSuccess?.();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete product");
+    } catch (error) {
+      // ApiError extends Error, so this is the server's own message when there is one.
+      toast.error(error instanceof Error ? error.message : "Could not delete the product");
       throw error;
     } finally {
       setIsLoading(false);

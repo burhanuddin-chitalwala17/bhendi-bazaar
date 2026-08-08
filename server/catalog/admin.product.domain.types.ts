@@ -13,7 +13,7 @@ export interface ProductFilters {
   outOfStock?: boolean; // Stock = 0
   minPrice?: number;
   maxPrice?: number;
-  sellerId?: string;
+  orgId?: string;
   page?: number;
   limit?: number;
   sortBy?: "name" | "createdAt" | "price" | "stock";
@@ -28,7 +28,7 @@ export interface AdminProduct {
   price: number;
   salePrice: number | null;
   currency: string;
-  sellerId: string;
+  orgId: string;
   categoryId: string;
   categoryName?: string;
   tags: string[];

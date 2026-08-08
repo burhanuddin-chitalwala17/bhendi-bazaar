@@ -19,7 +19,7 @@ import { hash } from "bcryptjs";
 import {
   seedUsers,
   seedCategories,
-  seedSellers,
+  seedOrgs,
   seedProducts,
   seedOrders,
   seedShipments,
@@ -50,7 +50,10 @@ async function main() {
   await prisma.shipment.deleteMany(); // ⭐ NEW - Clear shipments before orders
   await prisma.order.deleteMany();
   await prisma.product.deleteMany();
-  await prisma.seller.deleteMany(); // Add this
+  await prisma.userAddress.deleteMany(); // before users and addresses
+  await prisma.address.deleteMany();
+  await prisma.orgMember.deleteMany(); // before orgs; explicit rather than via cascade
+  await prisma.org.deleteMany();
   await prisma.category.deleteMany();
   await prisma.profile.deleteMany();
   await prisma.adminLog.deleteMany();
@@ -75,19 +78,43 @@ async function main() {
         email: userData.email,
         name: userData.name,
         passwordHash: hashedPassword,
-        role: userData.role,
+        platformRole: userData.platformRole,
         mobile: userData.mobile,
         isEmailVerified: userData.isEmailVerified,
         profile: {
           create: {
-            addresses: userData.profile.addresses as any,
             profilePic: userData.profile.profilePic,
           },
         },
       },
     });
 
-    console.log(`  ✓ ${user.name} (${user.role}) - ${user.email}`);
+    // PR-41: the address book is rows, not a blob. isDefault from old seed
+    // shapes is dropped by decision — nothing is preselected.
+    for (const a of userData.profile.addresses ?? []) {
+      const postal = await prisma.address.create({
+        data: {
+          addressLine1: a.addressLine1,
+          addressLine2: a.addressLine2 ?? null,
+          landmark: a.landmark ?? null,
+          city: a.city,
+          state: a.state,
+          pincode: a.pincode,
+          country: "India",
+          createdBy: user.id,
+        },
+      });
+      await prisma.userAddress.create({
+        data: {
+          userId: user.id,
+          addressId: postal.id,
+          label: a.label ?? null,
+          fullName: a.fullName,
+          phone: a.mobile,
+        },
+      });
+    }
+    console.log(`  ✓ ${user.name} (${user.platformRole}) - ${user.email}`);
   }
   console.log(`✅ ${seedUsers.length} users seeded\n`);
 
@@ -103,7 +130,7 @@ async function main() {
         name: categoryData.name,
         description: categoryData.description,
         heroImage: categoryData.heroImage,
-        accentColorClass: categoryData.accentColorClass,
+        accent: categoryData.accent,
         order: categoryData.order,
       },
     });
@@ -112,34 +139,59 @@ async function main() {
   console.log(`✅ ${seedCategories.length} categories seeded\n`);
 
   // ====================
-  // SEED SELLERS (NEW - before products)
+  // SEED ORGS (NEW - before products)
   // ====================
-  console.log("🏪 Seeding sellers...");
-  for (const sellerData of seedSellers) {
-    const seller = await prisma.seller.create({
+  const ownerUserId = seedUsers.find((u) => u.platformRole === "ADMIN")?.id;
+  if (!ownerUserId) throw new Error("Seed data has no ADMIN user to own the seeded orgs");
+
+  console.log("🏪 Seeding orgs...");
+  for (const orgData of seedOrgs) {
+    const org = await prisma.org.create({
       data: {
-        id: sellerData.id,
-        code: sellerData.code,
-        name: sellerData.name,
-        email: sellerData.email,
-        phone: sellerData.phone,
-        contactPerson: sellerData.contactPerson,
-        defaultPincode: sellerData.defaultPincode,
-        defaultCity: sellerData.defaultCity,
-        defaultState: sellerData.defaultState,
-        defaultAddress: sellerData.defaultAddress,
-        businessName: sellerData.businessName,
-        gstNumber: sellerData.gstNumber,
-        panNumber: sellerData.panNumber,
-        isActive: sellerData.isActive,
-        isVerified: sellerData.isVerified,
-        description: sellerData.description,
-        logoUrl: sellerData.logoUrl,
+        id: orgData.id,
+        code: orgData.code,
+        name: orgData.name,
+        email: orgData.email,
+        phone: orgData.phone,
+        contactPerson: orgData.contactPerson,
+        businessName: orgData.businessName,
+        gstNumber: orgData.gstNumber,
+        panNumber: orgData.panNumber,
+        isActive: orgData.isActive,
+        isVerified: orgData.isVerified,
+        description: orgData.description,
+        logoUrl: orgData.logoUrl,
       },
     });
-    console.log(`  ✓ ${seller.name} (${seller.code})`);
+    console.log(`  ✓ ${org.name} (${org.code})`);
+
+    // Every seeded org gets an owner, so the org portal is reachable locally without
+    // going through onboarding. Orgs created before memberships existed have none:
+    // `contactPerson` is a free-text name, so there is no owner to infer.
+    await prisma.orgMember.create({
+      data: { userId: ownerUserId, orgId: org.id, role: "OWNER" },
+    });
+
+    // One pickup location per org — where its seeded stock sits (stock-locations).
+    await prisma.orgAddress.create({
+      data: {
+        id: `${org.id}-pickup`,
+        org: { connect: { id: org.id } },
+        name: "Primary pickup",
+        contactName: orgData.contactPerson ?? "",
+        contactPhone: orgData.phone ?? "",
+        address: {
+          create: {
+            addressLine1: orgData.pickup.address,
+            city: orgData.pickup.city,
+            state: orgData.pickup.state,
+            pincode: orgData.pickup.pincode,
+          },
+        },
+      },
+    });
   }
-  console.log(`✅ ${seedSellers.length} sellers seeded\n`);
+  console.log(`✅ ${seedOrgs.length} orgs seeded, each with an owner and a pickup location\n`);
 
   // ====================
   // SEED PRODUCTS
@@ -154,7 +206,7 @@ async function main() {
         description: productData.description,
         price: productData.price,
         salePrice: productData.salePrice || null,
-        sellerId: productData.sellerId,
+        orgId: productData.orgId,
         currency: productData.currency,
         categoryId: productData.categoryId,
         tags: productData.tags,
@@ -165,13 +217,16 @@ async function main() {
         thumbnail: productData.thumbnail,
         sizes: productData.sizes,
         colors: productData.colors,
-        stock: productData.stock,
+        // Quantity lives on the join row, at the org's seeded pickup location.
+        stockLocations: {
+          create: [{ orgAddressId: `${productData.orgId}-pickup`, quantity: productData.stock }],
+        },
         sku: productData.sku,
         lowStockThreshold: productData.lowStockThreshold,
         weight: productData.weight || 0.5, // ⭐ Default to 0.5kg if not specified
       },
     });
-    console.log(`  ✓ ${product.name} (Stock: ${product.stock})`);
+    console.log(`  ✓ ${product.name} (Stock: ${productData.stock})`);
   }
   console.log(`✅ ${seedProducts.length} products seeded\n`);
 
@@ -216,8 +271,26 @@ async function main() {
         id: shipmentData.id,
         code: shipmentData.code,
         orderId: shipmentData.orderId,
-        items: shipmentData.items as any,
-        sellerId: shipmentData.sellerId,
+        orgAddressId: `${shipmentData.orgId}-pickup`,
+        // Lines are rows since order-and-cart-lines: one OrderItem per line, its
+        // ShipmentItem 1:1. unitPrice applies the same rule checkout charges.
+        items: {
+          create: shipmentData.items.map((item) => ({
+            quantity: item.quantity,
+            orderItem: {
+              create: {
+                orderId: shipmentData.orderId,
+                productId: item.productId,
+                quantity: item.quantity,
+                unitPrice:
+                  item.salePrice && item.salePrice > 0 && item.salePrice < item.price
+                    ? item.salePrice
+                    : item.price,
+              },
+            },
+          })),
+        },
+        orgId: shipmentData.orgId,
         fromPincode: shipmentData.fromPincode,
         fromCity: shipmentData.fromCity,
         fromState: shipmentData.fromState,
@@ -297,7 +370,13 @@ async function main() {
       data: {
         id: cartData.id,
         userId: cartData.userId,
-        items: cartData.items as any,
+        // Only the choice is stored; price and display fields derive from the product.
+        items: {
+          create: cartData.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        },
         updatedAt: cartData.updatedAt,
       },
     });
@@ -330,13 +409,13 @@ async function main() {
   console.log("📊 Summary:");
   console.log(
     `   • ${seedUsers.length} users (${
-      seedUsers.filter((u) => u.role === "ADMIN").length
+      seedUsers.filter((u) => u.platformRole === "ADMIN").length
     } admins, ${
-      seedUsers.filter((u) => u.role === "USER").length
+      seedUsers.filter((u) => u.platformRole === "USER").length
     } regular users)`
   );
   console.log(`   • ${seedCategories.length} categories`);
-  console.log(`   • ${seedSellers.length} sellers`);
+  console.log(`   • ${seedOrgs.length} orgs`);
   console.log(`   • ${seedProducts.length} products`);
   console.log(
     `   • ${seedOrders.length} orders (${

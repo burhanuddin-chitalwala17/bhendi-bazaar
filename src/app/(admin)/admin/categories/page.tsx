@@ -15,6 +15,7 @@ import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 
 export default function AdminCategoriesPage() {
   const [filters, setFilters] = useState<CategoryListFilters>({
@@ -91,7 +92,7 @@ export default function AdminCategoriesPage() {
       sortable: true,
       render: (category) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono text-sm text-gray-600">
+          <span className="font-mono text-sm text-muted-foreground">
             {category.order}
           </span>
           <div className="flex flex-col gap-1">
@@ -99,7 +100,7 @@ export default function AdminCategoriesPage() {
               onClick={() => handleReorder(category.id, category.order, "up")}
               disabled={category.order === 0 || isUpdating}
               className={cn(
-                "p-0.5 text-gray-400 hover:text-gray-600",
+                "p-0.5 text-muted-foreground/70 hover:text-foreground",
                 isUpdating && "opacity-50 cursor-not-allowed"
               )}
               title="Move up"
@@ -110,7 +111,7 @@ export default function AdminCategoriesPage() {
               onClick={() => handleReorder(category.id, category.order, "down")}
               disabled={isUpdating}
               className={cn(
-                "p-0.5 text-gray-400 hover:text-gray-600",
+                "p-0.5 text-muted-foreground/70 hover:text-foreground",
                 isUpdating && "opacity-50 cursor-not-allowed"
               )}
               title="Move down"
@@ -128,15 +129,15 @@ export default function AdminCategoriesPage() {
       render: (category) => (
         <div className="flex items-center gap-3">
           <div
-            className={`w-12 h-12 rounded-lg ${category.accentColorClass} border border-gray-200 flex items-center justify-center`}
+            className={`w-12 h-12 rounded-lg ${CATEGORY_ACCENTS[category.accent].swatch} border border-border flex items-center justify-center`}
           >
-            <span className="text-xs font-medium text-gray-700">
+            <span className="text-xs font-medium text-foreground/80">
               {category.name.substring(0, 2).toUpperCase()}
             </span>
           </div>
           <div>
             <p className="font-medium">{category.name}</p>
-            <p className="text-sm text-gray-500">/{category.slug}</p>
+            <p className="text-sm text-muted-foreground">/{category.slug}</p>
           </div>
         </div>
       ),
@@ -145,7 +146,7 @@ export default function AdminCategoriesPage() {
       key: "description",
       label: "Description",
       render: (category) => (
-        <p className="text-sm text-gray-600 max-w-md truncate">
+        <p className="text-sm text-muted-foreground max-w-md truncate">
           {category.description}
         </p>
       ),
@@ -154,7 +155,7 @@ export default function AdminCategoriesPage() {
       key: "productsCount",
       label: "Products",
       render: (category) => (
-        <span className="font-semibold text-gray-900">
+        <span className="font-semibold text-foreground">
           {category.productsCount || 0}
         </span>
       ),
@@ -183,7 +184,7 @@ export default function AdminCategoriesPage() {
         <div className="flex items-center gap-2">
           <Link
             href={`/admin/categories/${category.id}/edit`}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
             title="Edit category"
           >
             <Edit className="w-4 h-4" />
@@ -192,7 +193,7 @@ export default function AdminCategoriesPage() {
             onClick={() => handleDelete(category.id, category.name)}
             disabled={isDeleting}
             className={cn(
-              "p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors",
+              "p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors",
               isDeleting && "opacity-50 cursor-not-allowed"
             )}
             title="Delete category"
@@ -208,16 +209,16 @@ export default function AdminCategoriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-gray-900">
+          <h1 className="text-3xl font-heading font-bold text-foreground">
             Categories
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Manage product categories and organization
           </p>
         </div>
         <Link
           href="/admin/categories/new"
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           Add Category
@@ -225,7 +226,7 @@ export default function AdminCategoriesPage() {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex gap-4">
           <div className="flex-1">
             <div className="flex gap-2">
@@ -235,11 +236,11 @@ export default function AdminCategoriesPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search categories..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button
                 onClick={handleSearch}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search

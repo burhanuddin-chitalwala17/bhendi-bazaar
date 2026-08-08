@@ -5,9 +5,11 @@
  */
 
 import type { ShippingRate } from "../../domain";
+import type { ShiprocketCourierRate } from "./shiprocket.types";
+import { rupeesToPaise } from "@server/shared/money";
 
 export function mapShiprocketRateToShippingRate(
-  courier: any,
+  courier: ShiprocketCourierRate,
   providerId: string
 ): ShippingRate {
   const estimatedDays = Number(courier.estimated_delivery_days) || 3;
@@ -23,7 +25,8 @@ export function mapShiprocketRateToShippingRate(
     courierCode: courier.id.toString(),
 
     // Pricing
-    rate: courier.rate,
+    // Shiprocket quotes rupees; everything past this mapper is paise (Invariant 3).
+    rate: rupeesToPaise(Number(courier.rate)),
 
     // Delivery info
     estimatedDays,
@@ -56,11 +59,12 @@ export function mapShiprocketRateToShippingRate(
     },
 
     // Additional charges
+    // Also rupees from Shiprocket — every amount leaves this mapper as paise.
     charges: {
-      freight: courier.freight_charge,
-      cod: courier.cod_charges,
-      coverage: courier.coverage_charges,
-      rto: courier.rto_charges,
+      freight: rupeesToPaise(Number(courier.freight_charge) || 0),
+      cod: rupeesToPaise(Number(courier.cod_charges) || 0),
+      coverage: rupeesToPaise(Number(courier.coverage_charges) || 0),
+      rto: rupeesToPaise(Number(courier.rto_charges) || 0),
     },
 
     // Metadata

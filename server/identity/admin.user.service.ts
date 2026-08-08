@@ -12,6 +12,8 @@ import type {
   UserStats,
   AdminUser,
 } from "@server/identity/admin.user.types";
+import { PlatformRole } from "@prisma/client";
+import { DomainError } from "@server/shared/domain-error";
 
 export class AdminUserService {
   /**
@@ -48,9 +50,10 @@ export class AdminUserService {
     adminId: string,
     data: UpdateUserInput
   ): Promise<AdminUser | null> {
-    // Validate role if provided
-    if (data.role && !["USER", "ADMIN"].includes(data.role)) {
-      throw new Error("Invalid role. Must be USER or ADMIN");
+    // The database rejects anything outside the enum; this turns that into a message
+    // a user can act on rather than a constraint error.
+    if (data.platformRole && !Object.values(PlatformRole).includes(data.platformRole as PlatformRole)) {
+      throw new DomainError(`Invalid role. Must be one of: ${Object.values(PlatformRole).join(", ")}`, { field: "platformRole" });
     }
 
     const user = await adminUserRepository.updateUser(id, data);

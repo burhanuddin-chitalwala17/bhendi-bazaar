@@ -9,6 +9,7 @@ import { StockBadge } from "@/components/shared/badges/StatusBadge";
 import { ProductFlag } from "@/types/product";
 import { ProductForTable } from "../../types";
 import { Pagination } from "@/types/shared";
+import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 
 interface ProductsTableProps {
   products: ProductForTable[];
@@ -19,6 +20,8 @@ interface ProductsTableProps {
   onView: (id: string) => void;
   onSort: (sortBy: string, sortOrder: "asc" | "desc") => void;
   isPending: boolean;
+  /** The platform's cross-vendor list is for looking, not touching — products belong to orgs. */
+  readOnly?: boolean;
 }
 
 export function ProductsTable({
@@ -30,7 +33,9 @@ export function ProductsTable({
   onView,
   onSort,
   isPending,
+  readOnly = false,
 }: ProductsTableProps) {
+  const productsBasePath = useProductsBasePath();
   const columns: Column<ProductForTable>[] = [
     {
       key: "name",
@@ -44,7 +49,7 @@ export function ProductsTable({
           />
           <div>
             <p className="font-medium">{product.name}</p>
-            <p className="text-sm text-gray-500">{product.category.name}</p>
+            <p className="text-sm text-muted-foreground">{product.category.name}</p>
           </div>
         </div>
       ),
@@ -89,27 +94,27 @@ export function ProductsTable({
       render: (product) => (
         <div className="flex flex-wrap gap-1">
           {product.flags?.includes(ProductFlag.FEATURED) && (
-            <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+            <span className="px-2 py-1 bg-accent/40 text-accent-foreground text-xs rounded">
               Featured
             </span>
           )}
           {product.flags?.includes(ProductFlag.ON_OFFER) && (
-            <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+            <span className="px-2 py-1 bg-destructive/15 text-destructive text-xs rounded">
               Offer
             </span>
           )}
           {product.flags.includes(ProductFlag.HERO) && (
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+            <span className="px-2 py-1 bg-info/15 text-info text-xs rounded">
               Hero
             </span>
           )}
           {product.flags.includes(ProductFlag.NEW_ARRIVAL) && (
-            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+            <span className="px-2 py-1 bg-success/15 text-success text-xs rounded">
               New
             </span>
           )}
           {product.flags.includes(ProductFlag.CLEARANCE_SALE) && (
-            <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
+            <span className="px-2 py-1 bg-warning/15 text-warning text-xs rounded">
               Clearance
             </span>
           )}
@@ -122,27 +127,31 @@ export function ProductsTable({
       render: (product) => (
         <div className="flex items-center gap-2">
           <Link
-            href={`/admin/products/${product.id}`}
-            className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+            href={`${productsBasePath}/${product.id}`}
+            className="p-2 text-muted-foreground hover:bg-muted/60 rounded-lg transition-colors"
             title="View product"
           >
             <Eye className="w-4 h-4" />
           </Link>
+          {!readOnly && (
           <Link
-            href={`/admin/products/${product.id}/edit`}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Edit product"
-          >
-            <Edit className="w-4 h-4" />
-          </Link>
-          <button
-            onClick={() => onDelete(product.id, product.name)}
-            disabled={isPending}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-            title="Delete product"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+              href={`${productsBasePath}/${product.id}/edit`}
+              className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
+              title="Edit product"
+            >
+              <Edit className="w-4 h-4" />
+            </Link>
+          )}
+          {!readOnly && (
+            <button
+              onClick={() => onDelete(product.id, product.name)}
+              disabled={isPending}
+              className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors disabled:opacity-50"
+              title="Delete product"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
     },

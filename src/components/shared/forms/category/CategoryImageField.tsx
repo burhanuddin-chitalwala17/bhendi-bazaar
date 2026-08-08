@@ -13,8 +13,8 @@ export function CategoryImageField({
   errors,
 }: CategoryImageFieldProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Hero Image</h2>
+    <div className="bg-card rounded-lg border border-border p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-4">Hero Image</h2>
       <FormController
         name="heroImage"
         control={control}
@@ -32,7 +32,7 @@ export function CategoryImageField({
           />
         )}
       />
-      <p className="text-sm text-gray-500 mt-2">
+      <p className="text-sm text-muted-foreground mt-2">
         This image will be displayed on the category page header. Recommended
         size: 1920x600px
       </p>

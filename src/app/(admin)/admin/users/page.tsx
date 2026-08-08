@@ -14,6 +14,7 @@ import { Search, RefreshCw } from "lucide-react";
 import { adminUserApiClient } from "@/services/admin/userApiClient";
 import type { AdminUser, UserListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
+import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
 
 export default function AdminUsersPage() {
   const [filters, setFilters] = useState<UserListFilters>({
@@ -46,7 +47,7 @@ export default function AdminUsersPage() {
       data,
     }: {
       id: string;
-      data: { name?: string; role?: string; isBlocked?: boolean };
+      data: { name?: string; platformRole?: string; isBlocked?: boolean };
     }) => adminUserApiClient.updateUser(id, data),
     {
       successMessage: "User updated successfully!",
@@ -84,25 +85,25 @@ export default function AdminUsersPage() {
       render: (user) => (
         <div>
           <p className="font-medium">{user.name || "N/A"}</p>
-          <p className="text-sm text-gray-500">{user.email}</p>
+          <p className="text-sm text-muted-foreground">{user.email}</p>
           {user.mobile && (
-            <p className="text-sm text-gray-500">{user.mobile}</p>
+            <p className="text-sm text-muted-foreground">{user.mobile}</p>
           )}
         </div>
       ),
     },
     {
-      key: "role",
+      key: "platformRole",
       label: "Role",
       render: (user) => (
         <span
           className={`px-3 py-1 rounded-full text-xs font-medium ${
-            user.role === "ADMIN"
-              ? "bg-purple-100 text-purple-800"
-              : "bg-gray-100 text-gray-800"
+            user.platformRole === "ADMIN"
+              ? "bg-accent/40 text-accent-foreground"
+              : "bg-muted text-foreground"
           }`}
         >
-          {user.role}
+          {user.platformRole}
         </span>
       ),
     },
@@ -132,8 +133,8 @@ export default function AdminUsersPage() {
           className={cn(
             "px-3 py-1 rounded-full text-xs font-medium",
             user.isBlocked
-              ? "bg-red-100 text-red-800 hover:bg-red-200"
-              : "bg-green-100 text-green-800 hover:bg-green-200",
+              ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
+              : "bg-success/15 text-success hover:bg-success/25",
             isTogglingBlock && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -147,16 +148,16 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-gray-900">
+          <h1 className="text-3xl font-heading font-bold text-foreground">
             Users
           </h1>
-          <p className="text-gray-600 mt-1">Manage platform users</p>
+          <p className="text-muted-foreground mt-1">Manage platform users</p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={isLoading}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all",
+            "flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all",
             isLoading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -166,7 +167,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="flex gap-2">
@@ -176,11 +177,11 @@ export default function AdminUsersPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by name, email, mobile..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button
                 onClick={handleSearch}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
@@ -189,15 +190,15 @@ export default function AdminUsersPage() {
           </div>
 
           <select
-            value={filters.role || ""}
+            value={filters.platformRole || ""}
             onChange={(e) =>
               setFilters({
                 ...filters,
-                role: e.target.value || undefined,
+                platformRole: platformRoleSchema.safeParse(e.target.value).data,
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Roles</option>
             <option value="USER">User</option>
@@ -222,7 +223,7 @@ export default function AdminUsersPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>

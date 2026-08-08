@@ -4,6 +4,7 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import { Prisma } from "@prisma/client";
 import type {
   AdminReview,
   ReviewListFilters,
@@ -31,7 +32,7 @@ export class AdminReviewRepository {
 
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.ReviewWhereInput = {};
 
     if (search) {
       where.OR = [
@@ -97,6 +98,31 @@ export class AdminReviewRepository {
   /**
    * Get single review by ID
    */
+  /** Reviews on one org's products. Read-only: moderation and deletion stay platform. */
+  async getReviewsForOrg(orgId: string, page = 1, limit = 20) {
+    const where = { product: { orgId } };
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          isApproved: true,
+          isVerified: true,
+          createdAt: true,
+          product: { select: { id: true, name: true, slug: true, thumbnail: true } },
+          user: { select: { name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.review.count({ where }),
+    ]);
+    return { reviews, total, page, limit };
+  }
+
   async getReviewById(id: string): Promise<AdminReview | null> {
     const review = await prisma.review.findUnique({
       where: { id },

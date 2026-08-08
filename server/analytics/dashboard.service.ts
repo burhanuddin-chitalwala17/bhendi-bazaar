@@ -10,6 +10,7 @@ import type {
   TopProduct,
   RevenueChart,
 } from "@server/analytics/dashboard.types";
+import { DomainError } from "@server/shared/domain-error";
 
 export class AdminDashboardService {
   /**
@@ -38,7 +39,7 @@ export class AdminDashboardService {
    */
   async getRevenueChart(days: number = 30): Promise<RevenueChart[]> {
     if (days < 1 || days > 365) {
-      throw new Error("Days must be between 1 and 365");
+      throw new DomainError("Days must be between 1 and 365");
     }
 
     return await adminDashboardRepository.getRevenueChart(days);

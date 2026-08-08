@@ -22,16 +22,16 @@ export function StockStatus({
   const remaining = stock - cartQuantity;
 
   const status = isOutOfStock
-    ? { color: "bg-red-500", textColor: "text-red-600", label: "Out of Stock" }
+    ? { color: "bg-destructive", textColor: "text-destructive", label: "Out of Stock" }
     : isLowStock
     ? {
-        color: "bg-orange-500",
-        textColor: "text-orange-600",
+        color: "bg-warning",
+        textColor: "text-warning",
         label: `Only ${stock} left in stock!`,
       }
     : {
-        color: "bg-green-500",
-        textColor: "text-green-600",
+        color: "bg-success",
+        textColor: "text-success",
         label: "In Stock",
       };
 

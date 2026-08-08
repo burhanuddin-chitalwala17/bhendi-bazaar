@@ -57,10 +57,8 @@ export function useCategoryForm({
         router.push(returnUrl || "/admin/categories");
       }, 500);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to save category";
-      setError(errorMessage);
-      throw err; // Re-throw so form knows it failed
+      // Presentation belongs to useServerForm; rethrow so field details survive.
+      throw err;
     }
   };
 

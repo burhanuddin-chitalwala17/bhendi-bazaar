@@ -4,27 +4,17 @@
  */
 
 import { NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminDashboardService } from "@server/analytics/dashboard.service";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET() {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    await requirePlatformAdmin();
     const stats = await adminDashboardService.getDashboardStats();
     return NextResponse.json(stats);
   } catch (error) {
-    console.error("Failed to fetch dashboard stats:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch dashboard stats",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch dashboard stats:");
   }
 }
 

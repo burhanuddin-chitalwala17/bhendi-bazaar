@@ -40,7 +40,7 @@ export default function EditCategoryPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -49,10 +49,10 @@ export default function EditCategoryPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             Category Not Found
           </h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {error || "The category could not be found"}
           </p>
         </div>

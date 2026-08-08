@@ -2,7 +2,6 @@
  * Orders API Routes
  *
  * GET /api/orders - List all orders for authenticated user
- * POST /api/orders - Create a new order
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -15,7 +14,6 @@ import {
   formatTimeRemaining,
 } from "@/lib/rate-limit";
 import { validateRequest } from "@/lib/validation";
-import { createOrderSchema } from "@/lib/validation/schemas/order.schemas";
 
 export async function GET() {
   const session = await getServerSession(authOptions);

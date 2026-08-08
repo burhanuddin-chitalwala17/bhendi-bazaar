@@ -5,18 +5,18 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCategoryService } from "@server/catalog/admin.category.service";
 import type {
   CategoryListFilters,
   CreateCategoryInput,
 } from "@server/catalog/admin.category.types";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
 
 export async function GET(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { searchParams } = new URL(request.url);
 
     const filters: CategoryListFilters = {
@@ -30,25 +30,14 @@ export async function GET(request: NextRequest) {
     const result = await adminCategoryService.getCategories(filters);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to fetch categories:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch categories",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch categories");
   }
 }
 
 export async function POST(request: NextRequest) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
-    const body = (await request.json()) as CreateCategoryInput;
+    const session = await requirePlatformAdmin();
+    const body = categoryFormSchema.parse(await request.json());
     const category = await adminCategoryService.createCategory(
       session.user.id,
       body
@@ -56,14 +45,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
-    console.error("Failed to create category:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to create category",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not create category");
   }
 }
 

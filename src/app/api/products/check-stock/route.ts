@@ -20,32 +20,38 @@ export async function POST(request: NextRequest) {
     const { items } = validation.data;
 
     // Check stock for each item
-    const stockStatus = await Promise.all(
-      items.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-          select: { id: true, name: true, stock: true },
-        });
-
-        if (!product) {
-          return {
-            productId: item.productId,
-            available: false,
-            stock: 0,
-            requested: item.quantity,
-            error: "Product not found",
-          };
-        }
-
-        return {
-          productId: item.productId,
-          name: product.name,
-          available: product.stock >= item.quantity,
-          stock: product.stock,
-          requested: item.quantity,
-        };
-      })
-    );
+    // One availability figure per product: the sum across ACTIVE locations
+    // (stock-locations R4/R11). The response never carries a per-location figure —
+    // what reaches the browser has been disclosed whether or not it is displayed (A9).
+    const ids = validation.data.items.map((item) => item.productId);
+    const [products, stockRows] = await Promise.all([
+      prisma.product.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, name: true },
+      }),
+      prisma.productStock.findMany({
+        where: { productId: { in: ids }, orgAddress: { isActive: true } },
+        select: { productId: true, quantity: true },
+      }),
+    ]);
+    const totals = new Map<string, number>();
+    for (const row of stockRows) {
+      totals.set(row.productId, (totals.get(row.productId) ?? 0) + row.quantity);
+    }
+    const productsById = new Map(products.map((product) => [product.id, product]));
+    const stockStatus = validation.data.items.map((item) => {
+      const product = productsById.get(item.productId);
+      const stock = totals.get(item.productId) ?? 0;
+      if (!product) {
+        return { productId: item.productId, name: "Unknown product", available: false, stock: 0 };
+      }
+      return {
+        productId: item.productId,
+        name: product.name,
+        available: stock >= item.quantity,
+        stock,
+      };
+    });
 
     const allAvailable = stockStatus.every((s) => s.available);
 

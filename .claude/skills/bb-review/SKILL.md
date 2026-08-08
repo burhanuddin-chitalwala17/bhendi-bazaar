@@ -77,6 +77,57 @@ git diff main...HEAD -- src/app/api | grep -nE 'prisma\.[a-z]'
 
 ---
 
+## Part 1b — Error handling and forms ([ADR-0013](../../../docs/adr/0013-one-error-envelope-and-useserverform.md))
+
+Not an Invariant, but the same kind of failure: silent, and invisible to `tsc`.
+
+**Route handlers**
+- A `catch` block building its own body — `NextResponse.json({ error: ... })` — instead of returning `toErrorResponse(error, "...")`. Hand-rolled error bodies are how the envelope drifts.
+- A handler that casts its request body instead of parsing it with a schema (also Invariant 4).
+- `error instanceof Error ? error.message : "..."` returned to a client — that pattern leaks internal messages; `DomainError` is how a message opts in to being shown.
+
+**Domain code**
+- A `throw new Error(...)` whose message is clearly meant for a user. Use `DomainError` / `NotFoundError` / `ConflictError` / `ForbiddenError`. The test: *if the fix is in config or code it stays internal; if the fix is in what the user did or state they control, it is a domain error.*
+- A `catch` that rethrows a fixed string and drops the original — pass `{ cause: error }`.
+
+**Client wrappers**
+- Reaching into a response body by hand (`error.error`, `error.message`, `error.details`) instead of `throw await readApiError(response)`. **A key mismatch here typechecks and fails silently** — it has already happened three times in this codebase.
+
+**Forms**
+- `useForm(` instead of `useServerForm(` in a form that submits to the server.
+- Error handling *inside* a form — a `try/catch` around submit, a `toast.error` for a server failure, a local `error` state. If the form needs it, the hook is missing something and should grow instead.
+- A form validating with hand-written `register` rules where a schema exists, or with a schema that is not the one the route parses.
+
+**A field and its error are two separate things** — bind one without the other and the form refuses to submit while saying nothing. `tests/unit/form-error-display.test.ts` fails the build on it, so the review job is only to judge new `EXEMPT` entries: a field is exempt when it has no reachable failure, not when showing the error is inconvenient.
+
+**Rendering mode** ([CLAUDE.md](../../../CLAUDE.md) — render on the server by default)
+- A new `"use client"` on a component that only reads and displays. Ask what interactivity earned it; if the answer is "it needed data", it wanted props.
+- A client-side `fetch("/api/…")` for a read a server component could have done. The route handler and the client wrapper are both then dead weight, and the user gets a spinner over data the server already had.
+- A new route handler with no browser caller — a read reachable from a server component does not need one.
+- `"use client"` at the top of a page whose interactive part is one button. Push the boundary down to the leaf.
+
+**Design tokens** ([CLAUDE.md](../../../CLAUDE.md) — colour goes through tokens)
+- A raw palette class (`bg-emerald-50`, `text-gray-500`, `border-red-200`) in a className. Colour reaches the UI only through the semantic tokens in `src/app/globals.css` — `primary`, `muted`, `destructive`, `success`/`warning`/`info`, `scrim`, `hero`. `tests/unit/design-tokens.test.ts` fails the build on these; the review job is the cases the test cannot judge:
+  - a **new allowlist entry** — legitimate only for literals that are *data* (values stored in the database), never for styling convenience;
+  - a `dark:` override next to a token — usually a sign the wrong token was chosen, since tokens flip themes by themselves;
+  - an overlay or fixed brand surface mapped to a theme token (`bg-foreground/50` as a dim layer inverts in dark mode — that is `scrim`);
+  - a new one-off token added for a single component — the vocabulary is small on purpose; ask whether an existing token names the same job.
+- Arbitrary bracket values (`w-[123px]`, `text-[#0a0a0a]`) without a stated reason — Tailwind's scale is the size/spacing token system.
+- A new UI element hand-rolled where a shared component exists (`DataTable`, `StatusBadge`, `Card`, `FormInput`, `PortalSidebar`, `PortalHeader`) — the org orders page shipped with a hand-rolled table while `DataTable` sat unused, which is how two of everything happens.
+
+**Does the schema accept what the form actually sends?** The form sends its default values, so read the two together:
+- An optional field whose schema rejects its own default. A UI hint reading "leave empty" over a required rule is the tell.
+- A number input registered `valueAsNumber` whose schema field is not wrapped in `optionalNumber` — a blank input is NaN, and `z.number().optional()` rejects NaN.
+- A field the form marks `required` that the schema leaves optional, or the reverse. The stricter side is the one users meet; make the schema say it, since the schema is also what the route enforces.
+
+```bash
+git diff main...HEAD | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(message|error|details)|throw new Error\(|valueAsNumber'
+```
+
+**Migrate on contact.** ADR-0013 decision 7: if the diff touches a form or handler that still uses the old pattern, converting it is part of the change. Flag a modified file left on the old pattern — that is exactly how the product form ended up as the only form with no error display while its sibling had one.
+
+---
+
 ## Part 2 — Process
 
 - **CHANGELOG entry present?** Required for every PR, including trivial ones ([CLAUDE.md](../../../CLAUDE.md)). Newest at top, append-only.

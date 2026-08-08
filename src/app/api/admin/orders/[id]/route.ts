@@ -5,18 +5,17 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminOrderService } from "@server/checkout/admin.order.service";
-import type { UpdateOrderStatusInput } from "@server/checkout/admin.order.types";
+import { toErrorResponse } from "@/lib/api-error-response";
+import { updateOrderStatusSchema } from "@/lib/validation/schemas/admin.schemas";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
     const order = await adminOrderService.getOrderById(id);
 
@@ -26,14 +25,7 @@ export async function GET(
 
     return NextResponse.json(order);
   } catch (error) {
-    console.error("Failed to fetch order:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch order",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch order:");
   }
 }
 
@@ -41,12 +33,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await verifyAdminSession();
-  if (session instanceof NextResponse) return session;
-
   try {
+    const session = await requirePlatformAdmin();
     const { id } = await params;
-    const body = (await request.json()) as UpdateOrderStatusInput;
+    const body = updateOrderStatusSchema.parse(await request.json());
 
     const order = await adminOrderService.updateOrderStatus(
       id,
@@ -60,14 +50,7 @@ export async function PATCH(
 
     return NextResponse.json(order);
   } catch (error) {
-    console.error("Failed to update order:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to update order",
-      },
-      { status: 400 }
-    );
+    return toErrorResponse(error, "Could not update order:");
   }
 }
 

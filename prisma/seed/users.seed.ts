@@ -13,7 +13,7 @@ export const seedUsers: SeedUser[] = [
     name: "Burhanuddin Chitalwala",
     passwordPlain: "Admin@123",
     passwordHash: "", // Will be hashed in seed script
-    role: "ADMIN",
+    platformRole: "ADMIN",
     mobile: "+918452959340",
     isEmailVerified: true,
     profile: {
@@ -41,7 +41,7 @@ export const seedUsers: SeedUser[] = [
     name: "Farida Chitalwala",
     passwordPlain: "Admin@123",
     passwordHash: "",
-    role: "ADMIN",
+    platformRole: "ADMIN",
     mobile: "+919876543211",
     isEmailVerified: true,
     profile: {
@@ -71,7 +71,7 @@ export const seedUsers: SeedUser[] = [
     name: "Abbas Chitalwala",
     passwordPlain: "Test@123",
     passwordHash: "",
-    role: "USER",
+    platformRole: "USER",
     mobile: "+919123456789",
     isEmailVerified: true,
     profile: {
@@ -111,7 +111,7 @@ export const seedUsers: SeedUser[] = [
     name: "Mariya Dhar",
     passwordPlain: "Test@123",
     passwordHash: "",
-    role: "USER",
+    platformRole: "USER",
     mobile: "+919234567890",
     isEmailVerified: true,
     profile: {
@@ -139,7 +139,7 @@ export const seedUsers: SeedUser[] = [
     name: "Tasneem Chitalwala",
     passwordPlain: "Test@123",
     passwordHash: "",
-    role: "USER",
+    platformRole: "USER",
     mobile: "+919345678901",
     isEmailVerified: false, // Testing unverified email flow
     profile: {

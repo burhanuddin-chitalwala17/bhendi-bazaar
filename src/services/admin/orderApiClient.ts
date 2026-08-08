@@ -57,7 +57,7 @@ class AdminOrderService {
    */
   async updateOrderStatus(
     id: string,
-    data: { status?: string; notes?: string; estimatedDelivery?: string }
+    data: { status?: string; notes?: string }
   ): Promise<Order> {
     const response = await fetch(`/api/admin/orders/${id}`, {
       method: "PATCH",

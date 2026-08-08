@@ -6,19 +6,33 @@
 
 import { prisma } from "@server/shared/prisma";
 import { ProductFilter } from "@server/catalog/product.types";
+import { NotFoundError } from "@server/shared/domain-error";
 
 const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
-  seller: { select: { id: true, name: true, code: true, defaultPincode: true, defaultCity: true, defaultState: true, defaultAddress: true } },
+  org: { select: { id: true, name: true, code: true } },
+  // Sellable stock lives on the join rows (stock-locations D3): active locations
+  // only — an inactive location's units are held, not offered.
+  stockLocations: {
+    where: { orgAddress: { isActive: true } },
+    select: {
+      quantity: true,
+      orgAddress: { select: { address: { select: { pincode: true } } } },
+    },
+  },
 };
 
 export class ProductsRepository {
 
   async getProducts(filter: ProductFilter) {
-    const { categorySlug, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
+    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
     try {
       const products = await prisma.product.findMany({
-        where: { category: { slug: categorySlug },
+        // categoryIds (a resolved subtree) wins over a bare slug, which matches
+        // only the category's own products.
+        where: { ...(categoryIds
+            ? { categoryId: { in: categoryIds } }
+            : { category: { slug: categorySlug } }),
           ...(search && { name: { contains: search, mode: "insensitive" } }),
           ...(minPrice && { price: { gte: minPrice } }),
           ...(maxPrice && { price: { lte: maxPrice } }),
@@ -31,7 +45,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Products not found");
+      throw new NotFoundError("Products not found");
     }
   }
 
@@ -45,7 +59,7 @@ export class ProductsRepository {
       });
       return product;
     } catch (error) {
-      throw new Error("Product not found");
+      throw new NotFoundError("Product not found");
     }
   }
 
@@ -59,7 +73,7 @@ export class ProductsRepository {
       });
       return product;
     } catch (error) {
-      throw new Error("Product not found");
+      throw new NotFoundError("Product not found");
     }
   }
 
@@ -75,7 +89,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Similar products not found");
+      throw new NotFoundError("Similar products not found");
     }
   }
 
@@ -91,7 +105,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Hero products not found");
+      throw new NotFoundError("Hero products not found");
     }
   }
 
@@ -107,7 +121,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Offer products not found");
+      throw new NotFoundError("Offer products not found");
     }
   }
 
@@ -123,7 +137,7 @@ export class ProductsRepository {
       });
       return products;
     } catch (error) {
-      throw new Error("Search products not found");
+      throw new NotFoundError("Search products not found");
     }
   }
 }

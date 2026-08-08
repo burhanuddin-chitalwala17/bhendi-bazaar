@@ -4,6 +4,8 @@ import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import { cartApiClient } from "@/services/cartApiClient";
 import { useDebounce } from "@/hooks/core/useDebounce";
+import { ApiError } from "@/lib/api-error";
+import { toast } from "sonner";
 
 const LAST_CLEANUP_KEY = "cart-last-cleanup";
 const CLEANUP_INTERVAL = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -18,6 +20,9 @@ export function useCartSync() {
   // Track if we just completed a login sync
   const justSyncedRef = useRef(false);
   const prevStatusRef = useRef(status);
+  // The server-cart version our next write is based on. 0 = no basis yet, so the
+  // first write after a failed sync is last-write-wins once rather than failing.
+  const versionRef = useRef(0);
 
   const syncCart = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -26,8 +31,9 @@ export function useCartSync() {
     justSyncedRef.current = true; // 👈 Mark that sync is happening
     
     try {
-      const mergedItems = await cartApiClient.syncCart(items);
-      setItems(mergedItems);
+      const merged = await cartApiClient.syncCart(items);
+      setItems(merged.items);
+      versionRef.current = merged.version;
       
       // Cleanup old anonymous cart data after successful sync
       cleanupOldCartData();
@@ -55,11 +61,22 @@ export function useCartSync() {
     }
 
     try {
-      await cartApiClient.updateCart(items);
+      const { version } = await cartApiClient.updateCart(
+        items,
+        versionRef.current || undefined
+      );
+      versionRef.current = version;
     } catch (error) {
+      // 409: another tab or device wrote first. Re-sync merges both carts instead
+      // of either overwriting the other (inventory-reservation R7).
+      if (error instanceof ApiError && error.status === 409) {
+        toast.info("Your cart was updated in another tab — merging.");
+        await syncCart();
+        return;
+      }
       console.error("[useCartSync] Background sync failed:", error);
     }
-  }, [session?.user?.id, items]);
+  }, [session?.user?.id, items, syncCart]);
 
   // Sync on login
   useEffect(() => {

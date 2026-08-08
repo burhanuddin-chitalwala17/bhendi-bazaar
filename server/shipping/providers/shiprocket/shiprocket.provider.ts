@@ -21,6 +21,7 @@ import type {
   ProviderConnectionResult,
 } from "../../domain/shipping.types";
 import { mapShiprocketRateToShippingRate } from "./shiprocket.mapper";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
 export class ShiprocketProvider extends BaseShippingProvider {
   private authToken?: string;
@@ -99,17 +100,13 @@ export class ShiprocketProvider extends BaseShippingProvider {
     const provider = await shippingProviderRepository.getById(this.providerId);
 
     if (!provider?.isConnected) {
-      throw new Error(
-        "Provider account is not connected. Please connect your account in admin panel."
-      );
+      throw new DomainError("Provider account is not connected. Please connect your account in admin panel.");
     }
 
     const accountInfo = provider.accountInfo as any;
 
     if (!accountInfo?.email || !accountInfo?.password) {
-      throw new Error(
-        "Provider credentials not found. Please reconnect your account."
-      );
+      throw new NotFoundError("Provider credentials not found. Please reconnect your account.");
     }
 
     const email = accountInfo.email;
@@ -134,9 +131,7 @@ export class ShiprocketProvider extends BaseShippingProvider {
         authError: error.message || response.statusText,
       });
 
-      throw new Error(
-        `Authentication failed: ${error.message || response.statusText}`
-      );
+      throw new DomainError(`Authentication failed: ${error.message || response.statusText}`);
     }
 
     const data: ShiprocketAuthResponse = await response.json();
@@ -290,9 +285,7 @@ export class ShiprocketProvider extends BaseShippingProvider {
       !requestBody.email ||
       !requestBody.password
     ) {
-      throw new Error(
-        `Shiprocket requires email_password credentials, got ${requestBody.type}`
-      );
+      throw new DomainError(`Shiprocket requires email_password credentials, got ${requestBody.type}`);
     }
 
     const { email, password } = requestBody;
@@ -311,11 +304,9 @@ export class ShiprocketProvider extends BaseShippingProvider {
       const error = await response
         .json()
         .catch(() => ({ message: response.statusText }));
-      throw new Error(
-        `Shiprocket authentication failed: ${
+      throw new DomainError(`Shiprocket authentication failed: ${
           error.message || response.statusText
-        }`
-      );
+        }`);
     }
 
     const data: ShiprocketAuthResponse = await response.json();

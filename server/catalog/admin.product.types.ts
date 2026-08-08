@@ -3,7 +3,7 @@ import { ProductFlag } from "@server/catalog/product.flags";
 export interface ProductFilters {
   search?: string; // Search by name, SKU, tags
   categoryId?: string;
-  sellerId?: string;
+  orgId?: string;
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0
@@ -21,7 +21,7 @@ export interface ProductFormInput {
   price: number;
   salePrice?: number;
   currency?: string;
-  sellerId: string;
+  orgId: string;
   categoryId: string;
   tags?: string[];
   flags?: ProductFlag[];
@@ -29,10 +29,9 @@ export interface ProductFormInput {
   thumbnail: string;
   sizes?: string[];
   colors?: string[];
-  stock: number;
+  /** Stock per pickup location (stock-locations R2/R3). Zero rows are dropped. */
+  stockLocations: Array<{ orgAddressId: string; quantity: number }>;
   sku?: string;
   lowStockThreshold?: number;
-  shippingFromPincode: string;
-  shippingFromCity?: string;
-  shippingFromLocation?: string;
+  weight: number;
 }

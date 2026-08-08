@@ -5,9 +5,6 @@ import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Plus } from "lucide-react";
 
 // ⚡ ISR - Revalidate every 5 minutes
 export const revalidate = 300;
@@ -24,7 +21,7 @@ interface ProductsPageProps {
     page?: string;
     search?: string;
     category?: string;
-    seller?: string;
+    org?: string;
     status?: string;
     sort?: string;
     order?: "asc" | "desc";
@@ -41,14 +38,11 @@ export default async function ProductsPage({
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">Manage your product catalog</p>
+          <p className="text-muted-foreground">
+            Every organisation&apos;s catalogue, for support — products are managed in
+            each org&apos;s own portal
+          </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/products/new">
-            <Plus className="w-4 h-4" />
-            New Product
-          </Link>
-        </Button>
       </div>
 
       {/* ⚡ Suspense for streaming */}
@@ -69,14 +63,14 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
     limit: 10,
     search: params.search,
     categoryId: params.category,
-    sellerId: params.seller,
+    orgId: params.org,
     isActive:
       params.status === "active"
         ? true
         : params.status === "inactive"
         ? false
         : undefined,
-    sortBy: params.sort as any,
+    sortBy: params.sort as "name" | "createdAt" | "price" | "stock" | undefined,
     sortOrder: params.order,
     lowStock: params.lowStock === "true" ? true : undefined,
     outOfStock: params.outOfStock === "true" ? true : undefined,
@@ -85,7 +79,8 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
   // ⚡ Parallel data fetching
   const [productsData, stats] = await Promise.all([
     adminProductsDAL.getProducts(filters),
-    adminProductsDAL.getStats(),
+    // null: this is the platform's cross-vendor view, so every org counts.
+    adminProductsDAL.getStats(null),
   ]);
 
   return (
@@ -93,6 +88,7 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
       initialData={productsData}
       initialStats={stats}
       initialFilters={filters}
+      readOnly
     />
   );
 }

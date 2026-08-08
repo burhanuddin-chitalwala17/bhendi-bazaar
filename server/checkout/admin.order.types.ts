@@ -29,7 +29,6 @@ export interface OrderListResult {
 export interface UpdateOrderStatusInput {
   status?: string;
   notes?: string;
-  estimatedDelivery?: string;
 }
 
 export interface OrderStats {

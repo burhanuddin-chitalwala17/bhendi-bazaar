@@ -69,9 +69,6 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
             if (!response) {
                 throw new Error('Failed to add address');
             }
-            if (newAddress.metadata?.isDefault) {
-                await fetchAddresses();
-            }
             else {
                 setAddresses(prev => [...prev, newAddress]);
             }
@@ -96,9 +93,6 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
                 setAddresses(originalAddresses);
                 setError('Failed to update address');
             }
-            if (input.metadata?.isDefault) {
-                await fetchAddresses();
-            }
             else {
                 setAddresses(prev => prev.map(addr => addr.id === id ? { ...addr, ...input } : addr));
             }
@@ -117,16 +111,10 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         setIsDeleting(true);
         setError(null);
         const originalAddresses = addresses;
-        const deletingDefault = addresses.find(addr => addr.id === id)?.metadata?.isDefault;
         setAddresses(prev => prev.filter(addr => addr.id !== id));
 
         try {
             await addressApiClient.deleteAddress(id);
-
-            // ✅ If deleted address was default, refetch to get new default
-            if (deletingDefault) {
-                await fetchAddresses();
-            }
         } catch (error) {
             setAddresses(originalAddresses);
             setError(error instanceof Error ? error.message : 'Failed to delete address');
@@ -142,11 +130,9 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         options?.onAddressSelect?.(address);
     }, [options]);
 
-    // Computed values
-    const defaultAddress = useMemo(
-        () => addresses.find(addr => addr.metadata?.isDefault) ?? addresses[0] ?? null,
-        [addresses]
-    );
+    // No default address by decision (addresses-as-entities D3) — selection is
+    // always explicit. Kept as null so consumers must handle "nothing chosen".
+    const defaultAddress = null;
 
     // Helper
     const getAddressById = useCallback((id: string) => {

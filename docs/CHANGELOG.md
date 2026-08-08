@@ -10,6 +10,525 @@
 
 ## Entries
 
+## [PR-57] 2026-08-09 — Deploys run their own migrations [MIGRATION]
+
+`vercel.json` gains `"buildCommand": "npx prisma migrate deploy && next build"` — every Vercel build now applies pending Prisma migrations to that environment's `DATABASE_URL` before compiling, so code and schema can no longer go live out of step. Consequence, accepted: a merge to main *is* a prod schema change, and preview builds migrate whatever database the Preview environment points at. `migrate deploy` only applies pending migrations in order — it never resets or drops.
+
+## [PR-56] 2026-08-10 — A blocked submit says so
+
+The product form's create button could "do nothing": a draft saved while the org had no pickup locations restored `stockLocations: []` over the fresh rows, the hidden `orgAddressId` inputs then failed validation — and a hidden field can neither render its error nor take focus. Three layers fixed: location rows are excluded from draft persistence (the poison's source, and old poisoned drafts are ignored on load); a sync effect re-asserts the rows from the offered locations whatever restored or reset the form, keeping typed quantities; and `useServerForm` gains an invalid-submit handler — any validation failure now shows "Please fix the highlighted fields" plus a console warning naming the fields, so no form in the app can fail silently again.
+
+## [PR-55] 2026-08-10 — A backstop must not become the outage
+
+Signup 500'd before it could even validate: the Upstash rate limiter is the first thing every auth route calls, its keys (`KV_REST_API_URL`/`KV_REST_API_TOKEN`) weren't present locally, and the throw happened *outside* the error envelope — a raw HTML 500 the client could only report as "Request failed". The limiter now **fails open, loudly**: keys absent → requests allowed with a one-time warning; Upstash unreachable at runtime → request allowed, error logged. When configured, behaviour is unchanged. Rate limiting protects the service; it must never be the reason the service is down.
+
+## [PR-54] 2026-08-10 — The reconciliation sweep runs daily
+
+Vercel's Hobby plan rejects any deployment whose cron runs more than once a day — the `*/15` reconciliation schedule was blocking every deploy of the new code. The sweep is a backstop, not a hot path (browser-return confirms payments on its own), so it now runs daily at 03:30. Consequence, accepted: a paid order missed by both browser-return and webhook waits up to a day for rescue, and abandoned stock holds release daily rather than hourly. Restore a tighter schedule on a Pro plan, or when `CRON_SECRET` is set and the store is live enough to care.
+
+## [PR-53] 2026-08-10 — Parcels bill at whole kilograms
+
+[product-weight-and-rates](specs/product-weight-and-rates/) closes. Most of it had already fallen out of other work — weight persisted since PR-22, and since the allocation cutover (PR-48) every parcel sums its items' **real** weights server-side. What remained was the billing rule, decided today: weights are entered in kilograms with gram precision (0.6 = 600 g), and each parcel is quoted on its summed weight **rounded up to the next whole kilogram, floor 1 kg** — ceiling because couriers bill the ceiling, so a quote never undercharges shipping.
+
+The rule is one pure function (`server/shipping/billable-weight.ts`), gram-settled so float dust from adding decimals cannot cross a slab boundary (2.9999999996 and 3.0000000004 both bill as 3). Applied in the allocate preview (response carries the real sum *and* `billableWeightKg`) and again at the rates route, so every quote is whole-kilogram whatever the caller sends. The parcel card shows "billed as N kg"; the shipment record keeps the real sum. The weight input states its unit and takes gram-precision decimals (`step 0.001` — the browser's native step no longer rejects 0.6).
+
+Swept out with it: `calculateCartWeight` — the helper that hardcoded every item at 0.5 kg, the bug this spec was opened for — and the callerless `useShippingRates`, both dead since the cutover. Also recorded in BACKLOG: shipping is still charged at the client-selected quoted rate without a server-side re-quote at order time — a known watch item, not changed here.
+
+**236 tests pass** (billable-weight boundaries pinned), `tsc` exits 0, `next build` compiles. No migration.
+
+## [PR-52] 2026-08-10 — The last forms on the old pattern
+
+The four auth pages — sign-in, sign-up, forgot-password, reset-password — move onto `useServerForm` + the shared error envelope, closing the ADR-0013 conversion that every other form finished long ago. The password rules a user sees inline are now literally the rules the route enforces (same `auth.schemas` on both sides, Invariant 4); a server detail like a taken email lands on its field instead of a generic banner; the reset flow's token rides the schema so an expired link surfaces like any other refusal, and its mismatch refine lands on the confirm field. Sign-in keeps next-auth's single-failure shape as the form-level error. Visuals unchanged; the hand-rolled `useState`-per-field plumbing (~150 lines) is gone.
+
+**231 tests pass**, `tsc` exits 0, `next build` compiles, 0 lint findings in the four pages. No wire change — the routes already spoke the envelope.
+
+## [PR-51] 2026-08-10 — The audit trail survives its admin [MIGRATION]
+
+`AdminLog.adminId` moves **`Cascade` → `RESTRICT`** — deleting an admin user erased every audit record of what they did, which is the record wanted most when removing one. Flagged in the data-model review's referential-actions table; no application path deletes users, so the change forbids only a manual delete from doing silent damage. Block or deactivate accounts instead (`User.isBlocked`). Test pins both the schema relation and the migration clause.
+
+Also records a product decision: **[shipping-fulfilment](specs/shipping-fulfilment/) stays as-is by choice (2026-08-10)** — live rates quoted and charged, booking remains the placeholder, parcels fulfilled manually. Real booking is future scope, now unblocked by data (every parcel carries a courier-collectable pickup location) and waiting only on the decision to build.
+
+**231 tests pass**, `tsc` exits 0. **Run `npx prisma migrate deploy`.**
+
+## [PR-50] 2026-08-10 — One dashboard, assembled from declarations
+
+[dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/) lands — and with it **the marketplace programme's build is complete: 9 of 10 subfeatures, org-team deferred by decision.** A widget is one entry in `server/analytics/widgets.ts`: key, audience (`platform` / `org` / `both`), a stated org scoping when it serves both (R2), and the audience-gated query. Both dashboards render `widgetsFor(audience)` — adding a widget edits no page (R4).
+
+**The gate is structural** (R3, the 2026-08-08 decision): widgets fetch server-side in an RSC, there is no widget endpoint for a browser to call, and `fetchWidget` throws if an org context ever reaches a platform-only widget — a figure an org may not see has no route to the browser, the same posture as per-location stock on customer responses. A failed widget renders an error card and the rest of the grid survives (R5).
+
+**Org money widgets exist because order lines do**: an org's revenue is its parcels' item value on paid orders (`ShipmentItem × OrderItem.unitPrice`) — shipping deliberately excluded until [shipping-fulfilment](specs/shipping-fulfilment/) settles courier invoicing. The admin dashboard's key-metrics row moved onto the registry (server-rendered, one client round trip fewer; a `customers` widget added so nothing was lost); its period-revenue, status overview and activity feed stay a client island because refresh is interactivity.
+
+**230 tests pass** (registry invariants + the structural gate), `tsc` exits 0, `next build` compiles. No migration.
+
+## [PR-49] 2026-08-10 — Origin has one home [MIGRATION]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 6 (destructive) — **the feature closes** (8 of 10 marketplace subfeatures). Dropped: `Product.stock`, `Product.shippingFrom{Pincode,City,Location}`, `Org.default{Pincode,City,State,Address}`, and their indexes — every one unread since the cutover. A separate migration from the cutover on purpose: PR-48 was reversible by redeploying the dual-write build; this is the point of no return.
+
+`OrgSummary` slims to `{ id, name, code }` — one edit, because PR-45 collapsed its ten copies first. The org form loses its address section (a new org adds pickup locations in the portal, which the product form already requires before a product can be saved); the orgs admin table shows contact and email where a single city/pincode used to pretend to be "the" location. Seeds rewritten: each org seeds one pickup location (Address + OrgAddress), products seed `ProductStock` rows there, seeded shipments carry `orgAddressId`. The wire keeps `Product.shippingFromPincode` as the *indicative* origin (largest active holding) — display-only; allocation decides the real one.
+
+**226 tests pass**, `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** — destructive; the additive backfill (PR-46) must already be applied, which the migration chain guarantees.
+
+## [PR-48] 2026-08-10 — Orders ship from where the stock is [CONTRACT]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 5 — **the cutover**, the one PR in the ladder that changes what a customer sees.
+
+**Allocation** (`server/checkout/allocation.ts`, pure): fewest parcels, then the nearest origin — "nearest" is shared-pincode-prefix length, honest without a geocoder because Indian pincodes are geographically hierarchical. One location covering the basket is one parcel; 3 at the shop + 10 at the godown fulfils an order for 13 as two parcels (A2/A3); a location holding zero is never chosen; a short total refuses with the product's name and what is left. The same function runs in the checkout preview (**`POST /api/checkout/allocate`** — new, [CONTRACT]) and inside the order transaction, so what the customer saw is what gets decremented (D6). Client-side origin grouping (`groupItemsByOrigin`) is deleted — with it dies the bug where a parcel carried one location's pincode beside another org-level city (the TRD's founding example): a shipment's pincode, city and state now all come from one location row, snapshotted (D5), with `orgAddressId` persisted.
+
+**The stock guard is re-pointed** (D7): the availability check is still the where clause of the write (ADR-0007), now against the allocated `ProductStock` row — the last unit *at one location* sells once. `reservationPlan` carries the merge+sort deadlock discipline onto the join row; `expireAndRestock` returns units to the exact location each parcel drew from (legacy no-location shipments fall back to the product's largest row, loudly). A line split across two locations becomes two `ShipmentItem`s pointing at one `OrderItem` — order-and-cart-lines R5, exercised for the first time.
+
+**Every read is the aggregate** (D3): storefront and cart totals sum **active** locations (an inactive location's units are held, not offered — R11's one figure, A9's no-leak on `check-stock` and the allocate response); admin truth sums **all** rows (R9), with stock-dependent filters and sort-by-stock computed in memory — D3's open question measured and closed at this catalogue size. Org rollups and the analytics dashboard flipped the same way. `Product.stock` the column is now **read by nothing** — PR 6 drops it.
+
+**Checkout says what will arrive** (D12/R10/A8): parcels are numbered and led by the location's own name (two warehouses can share a city), and a split order shows "everything arrives by" — the latest of the chosen rates' estimates — before payment.
+
+**226 tests pass** (allocation cases from the spec's own list, reservation-plan merge+sort; the Product.stock-era reservation tests retired with their module), `tsc` exits 0, `next build` compiles. No migration in this PR.
+
+## [PR-47] 2026-08-10 — Stock is entered where it sits [CONTRACT]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 4 (dual-write): the product form's single stock number and the three-field origin override are **gone**, replaced by one quantity input per pickup location — nothing preselected, a product cannot be saved without naming a location that holds it (R2/A1), and an inactive location is only offered if it still holds the product's stock. The all-or-none override refine from PR-22 is deleted with the fields that made it necessary: origin no longer has two homes.
+
+`ProductFormInput.stockLocations` replaces `stock` + `shippingFrom*` **[CONTRACT]**, and the service refuses a row naming a location the product's own org does not own — otherwise one org could park stock at (and attribute parcels to) another org's address. Writes are dual: join rows are created/replaced in a transaction while `Product.stock` keeps the sum, so **every reader stays correct** — storefront, checkout, admin filters all still read the column until the cutover PR flips them.
+
+**225 tests pass** (override-group tests retired with the feature; location rules and the ownership check added), `tsc` exits 0, `next build` compiles. No migration.
+
+## [PR-46] 2026-08-10 — Pickup locations exist [MIGRATION]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 3 (additive): **`OrgAddress`** — an org's pickup location, hanging off the shared `Address` table exactly like the customer address book, with a courier nickname, a pickup contact, and the aggregator reference D11 designed for — and **`ProductStock`**, the composite-keyed join row where a product's quantity-per-location will live. `Shipment` gains a nullable `orgAddressId` (D5: old parcels keep `NULL`, never a guessed attribution). **Nothing reads the new tables yet**; `Product.stock` and `Org.default*` stay authoritative until the cutover PR.
+
+R8 is in the database: `RESTRICT` on the org link, the address link, the stock join's location side, and the shipment link — a location holding stock or named by a parcel cannot be deleted, whatever the application forgets. The service pre-checks the same counts to say *why* ("still holds stock for 3 products"), and deleting a location clears only its zero-quantity join rows first.
+
+The backfill runs inside the migration: one location per org from `Org.default*` ("Primary pickup"), one per distinct product origin override (empty street line marking rows a human must complete), and one `ProductStock` row per product at its resolved location carrying today's `Product.stock` — deterministic ids, `RAISE NOTICE` counts.
+
+The org portal gains **Locations** (`/org/[orgId]/locations`, `withOrg` like everything else): card list with active badges and the stocked/shipped counts that explain a disabled delete, add/edit in a dialog reusing `useServerForm` + the shared form fields. New locations require a pickup contact; the TRD's placement question is closed with a dated note (the org portal postdates the TRD).
+
+**227 tests pass** (10 new), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** — additive, with the backfill inside.
+
+## [PR-45] 2026-08-10 — One declaration per shape
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 1 (its rename and reservation prerequisites landed long ago as PR-24..28 and PR-40): pure consolidation, zero behaviour. The org summary block — id, name, code, and the four `default*` origin fields — was spelled out **ten times** (`server/catalog/product.types.ts`, `server/cart/cart.types.ts`, `src/domain/product.ts`, `src/domain/cart.ts`, and six inline prop types across the product form tree). It is now declared once as `OrgSummary` (`server/catalog/org.types.ts`) and imported everywhere, so the destructive migration that eventually drops `default*` edits one file, not a hunt. `ProductFormInput` and `CartItem` lose their client-side twins — each is declared server-side and re-exported (`src/admin/products/types.ts`, `src/domain/cart.ts`), closing the two drift sites CONTRACTS.md has carried since PR-22.
+
+**217 tests pass**, `tsc` exits 0, `next build` compiles. No wire change, no migration.
+
+## [PR-44] 2026-08-10 — A cart stores the choice, not the price [MIGRATION]
+
+[order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) PR 2 of 2 — **the subfeature closes** (7 of 10). `Cart.items` blobs become `CartItem` rows holding exactly what the buyer chose: product, quantity, size, colour. **Nothing else is stored** — prices, names, thumbnails, `weight`, `shippingFromPincode` and the `org` block are derived from the product join at read time, so a cart can never hold a stale price or a spoofed one, and the blob-era "refresh prices on sync" pass is now just what reading a cart means. `CartItem.productId` is `Cascade`, deliberately opposite to `OrderItem`'s `Restrict`: a cart line is a wish, not history, and deleting a product simply removes it from carts.
+
+The sign-in merge is pure set logic (`server/cart/cart.merge.ts`): union by (product, size, colour), the device's quantity winning where both sides hold a line — same rule as before, now unit-tested. `syncCart` goes through the repository like everything else (its direct `prisma.cart` access is gone, Invariant 5 on contact), the boundary casts in `/api/cart` and `/api/cart/sync` are deleted (`as CartItem[]` twice), and the abandoned-carts admin view values carts at today's catalogue prices. A caught regression from the rewrite itself: sync's failure path must echo the device's items back — returning `[]` would have wiped the local cart the client faithfully `setItems`s.
+
+The optimistic `version` guard is unchanged and still the where clause of the write. The lift keys rows by line position (two sizes of one product are two blob lines), lifts no price, skips deleted-product lines with a `RAISE NOTICE`, and leaves the blob one release as nullable `legacyItems`.
+
+**217 tests pass** (guard suites scale with source files; 10 new here: merge, wire mapper, migration pins), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** (applies PR-43's lift too if pending).
+
+## [PR-43] 2026-08-10 — What was bought is a relation [CONTRACT] [MIGRATION]
+
+[order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) PR 1 of 2: `Shipment.items` — a JSON blob per parcel — becomes **`OrderItem`** (the missing order→product relation, `unitPrice` integer paise from birth per ADR-0004) and **`ShipmentItem`** (what one parcel packs, pointing at the order line, so a future split stays linked to the one thing the customer ordered). `OrderItem.productId` is `RESTRICT`: a sold product cannot be deleted out from under its order history. Per-product revenue is now a SQL question.
+
+**The lift reads the blobs as they actually are.** money-as-paise multiplied the total columns ×100 but left the blobs alone, so old blobs are rupee floats and new ones paise — indistinguishable by wall clock, distinguishable by arithmetic: an order whose lines sum ×100 to its already-paise `itemsTotal` is a rupee blob (D3). Rows are keyed by line *position* (`WITH ORDINALITY`) because the same product can appear twice in one shipment (old carts split sizes into separate lines). Lines whose product was deleted cannot get a row under `RESTRICT` — skipped with a `RAISE NOTICE` count, never silently (D4). The blob stays one release as nullable `legacyItems` (`@map("items")`), read by nothing.
+
+**Fixed on contact: checkout dropped the chosen variant.** The cart records size and colour; the wire sent `{ productId, quantity }` — so no order said which size to pack. Items now carry optional `size`/`color` **[CONTRACT]**, validated in `priceGroupItems` against the product's declared options ("not available in size XXL" is refused, not recorded), persisted on the order line, shown in the org portal's parcel view.
+
+Every read rebuilds the wire items array from rows through one mapper (`toWireShipmentItems`): display fields from the product join, `price` = the unit price actually paid — order history shows what was charged, and no fabricated strike-through. Org and admin views, `expireAndRestock`, and the seed all moved off the blob; org scoping still filters shipments in the query and re-asserts in `toOrgOrderView`, unchanged.
+
+**198 tests pass** (12 new: variant pricing branches, wire mapper, migration pins), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`.** PR 2 (`CartItem`) follows; the spec closes there.
+
+## [PR-42] 2026-08-10 — Categories nest [MIGRATION]
+
+[category-tree](specs/multi-vendor-marketplace/category-tree/) lands. `Category` gains a self-referencing `parentId` — depth without a schema change per level, replacing the two-level subcategory idea that was product flags in disguise. Every existing category becomes a root; no data moves.
+
+The two rules Postgres cannot express declaratively live in one pure module (`server/catalog/category.tree.ts`), so every branch is a unit test: **subtree collection** — a category page now lists its whole subtree, resolved in app code over the tens-of-rows table (D1), with an unknown slug matching nothing rather than everything — and the **cycle guard** — a category can never become its own ancestor, refused on the write path as a `DomainError` on the `parentId` field so it lands inline on the form, whose parent selector already excludes self and descendants.
+
+**What the database now refuses on its own:** `parentId` is `RESTRICT`, and `Product.categoryId` moves **`Cascade` → `RESTRICT`** — the cascade flagged in the data-model review, where deleting a category would have deleted its products with only an application-level count in the way. The service keeps friendlier messages; the constraints are the guarantee, and tests pin both `ON DELETE RESTRICT` clauses in the migration.
+
+Fixed on contact: **`updateCategorySchema` was `categoryFormSchema.partial()`, and `.partial()` does not strip `.default()`s (zod v4)** — every PATCH silently rewrote unmentioned fields (`description: ""`, `accent: "EMERALD"`; the full-form edit page masked it), and would now have detached `parentId: null`. Create and update now share one set of rules; only create applies defaults. The storefront list path also goes through `productService` instead of reaching the repository directly, since the service is where subtree expansion lives.
+
+**195 tests pass** (18 new), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** — additive column plus the two constraint swaps.
+
+## [PR-41] 2026-08-10 — An address is a record, not a blob [CONTRACT] [MIGRATION]
+
+[addresses-as-entities](specs/multi-vendor-marketplace/addresses-as-entities/) lands — the first data-model subfeature of the marketplace programme (org-team deferred by decision), and the table `stock-locations` will hang org pickup locations off. `Profile.addresses` — one Json column holding each user's whole address book — becomes **`Address`** (a postal fact, identity-agnostic) plus **`UserAddress`** (a person's relationship to one: their label, the recipient, the phone). The `Address` writer lives in `server/shared/` because two domains' relationships will point at it (Invariant 5 applied forward).
+
+**The migration lifts what production actually holds, not what the type claimed.** A survey first: four blob shape variants, `label`/`isDefault` living top-level in some rows and under `metadata` in others, a `landmark` field the design drafts had missed, and two rows with no recipient or phone. The lift coalesces across all of it in SQL (`fullName|name`, `mobile|phone`, `label|metadata.label`), migrates the two incomplete rows with `''` rather than dropping a user's address (the now-required schema forces completion on next edit), and **deliberately does not migrate `isDefault`** — tests read the migration and pin every coalescing rule. The blob survives one release as `legacyAddresses` (`@map`), read by nothing.
+
+**No default address, anywhere** — the 2026-08-08 decision, now enforced by absence: the auto-select-on-mount, make-default button, default badge, only-one-default refine, and reassign-default-on-delete all *deleted* rather than ported (~80 lines of juggling). The buyer picks an address at checkout, every time, and the Continue button waits until they do.
+
+Wire shape: flat as ever, but `id` is now server-generated (blob-era clients minted their own), `metadata` is gone (label/notes are first-class, with real rules — the form-error guard immediately caught `notes` gaining a rule without an error output), and recipient/phone/state are required. `Order.address` stays a snapshot (D8). The repository maps `phone` (column) ↔ `mobile` (wire) so checkout is untouched.
+
+**177 tests pass** (6 new), `tsc` exits 0, `next build` compiles, 0 lint errors in touched files. **Run `npx prisma migrate deploy`** — it creates both tables and lifts the blobs in one step; verify with `SELECT count(*) FROM "UserAddress"` matching the old blob total.
+
+## [PR-40] 2026-08-09 — The last unit sells once
+
+[inventory-reservation](specs/inventory-reservation/) lands, and **Phase 2 — transaction integrity — is complete**. The live checkout path had *no stock movement at all*: the client's pre-flight `check-stock` was the only guard, so any two buyers who both passed it both got the last unit. The legacy path that did move stock did it read-then-check-then-decrement — the race [ADR-0007](adr/0007-conditional-stock-decrement.md) was written against.
+
+**The availability check is now the `where` clause of the write** (`stock: { gte: quantity }` → `decrement`), inside the order transaction: no interval exists in which two checkouts can both believe the last unit is theirs, `count === 0` rolls the whole order back, and the failure names the item and what's left ("Only 2 left of X — you asked for 3"). The reservation *plan* is pure and tested (`server/checkout/reservation.ts`): quantities merge across shipping groups (two decrements of one row would double-check a changed number) and sort by product id (unordered row-locking between concurrent orders is a deadlock). **The cart empties in the same transaction** (R6) — a closed tab can no longer leave a cart that was already bought — and the client's after-the-fact clear is gone.
+
+**Release without breaking the guarantee** (R4): the reconciliation sweep now expires orders still unpaid 60 minutes on — but only *after* asking the gateway and hearing nothing was captured, so a confirmable order is never released first. Expiry restocks conditionally-on-still-pending, and `confirmPaid` now refuses expired orders — both writes conditional, so the expiry-vs-confirmation race has exactly one winner at the database. A capture landing after expiry is refused and refunded manually rather than confirming an order the store may not be able to fulfil. Failed payments keep their hold until expiry, so the same order is retriable — closing the question payment-confirmation carried.
+
+**`Cart.version` is enforced or it lied** (D6): the column existed, was incremented, and was checked nowhere — worse, the one check that existed in the repository was itself read-then-compare. It is now a conditional write; a stale cart write gets a 409, and the client responds by **re-syncing and merging** — the same merge login uses — with a toast, instead of one tab silently overwriting the other (R7).
+
+**The weaker create path is deleted, not patched** (D5): `orderService.createOrder`, `orderRepository.create`, `CreateOrderInput` and the single-shipment schema are gone — a second creation path with different stock behaviour defeats the guarantee, and a test now asserts it stays gone.
+
+**171 tests pass** (6 new), `tsc` exits 0, `next build` compiles. The honest caveat, recorded in the TRD: the *real* concurrency test — N overlapping transactions for one unit — needs the test database this project doesn't have yet; the guard's correctness rests on its shape (pinned by test) and Postgres semantics. No migration.
+
+## [PR-39] 2026-08-09 — An order is paid when the gateway says so [CONTRACT] [MIGRATION]
+
+[payment-confirmation](specs/payment-confirmation/) lands. Until now the **browser** told the server an order was paid — `PATCH /api/orders/[id]` accepted `paymentStatus` from anyone — and the webhook that should have been authoritative had **silently no-op'd since it was written**: gateway-order creation stored our id under `notes.orderId` while the webhook read `notes.localOrderId`, found nothing, did nothing, and returned 200. Both Invariant 2 violations, live.
+
+**One confirmation routine, two triggers** (trd.md D1): the browser's post-payment return and the gateway webhook both run the same three checks — signature (now `crypto.timingSafeEqual`, D8; `===` leaks match-length through timing), the persisted gateway-order linkage (`Order.gatewayOrderId`, written at payment-order creation — a signal for some other gateway order proves nothing about this one), and the captured **amount against `grandTotal`** on the webhook path, rejected in either direction. The decision is a pure function (`server/payments/confirmation.ts`), so every branch is a unit test; the transition is a **conditional write** (`updateMany where NOT paid` — ADR-0007's shape on payment state), so webhook-and-browser racing resolves at the database with exactly one winner. Idempotency keys on the payment id (D2): the same payment again is success with no side effects, a *different* payment against a paid order is an incident. The confirmation email moved from `updateOrder` onto the transition (D3), so it fires exactly once.
+
+**The browser now reports; it does not decide.** The client's three `paymentStatus` writes are gone — success calls `/api/payments/verify` (a writer returning order state), zero-total orders call `/api/payments/confirm-free` (the server checks the total really is zero), and failure writes nothing (the failure webhook records it, and a failure signal can never overwrite a captured payment). With those gone, `PATCH /api/orders/[id]`, `orderApiClient.updateOrder`, `orderService.updateOrder`, `orderRepository.update` and `UpdateOrderInput` had **no callers left and are deleted** — the single-writer rule made structural: there is no generic order-write path for `paymentStatus` to sneak back into.
+
+**An unmatched webhook is now loud** (D5): missing note, unknown order, amount mismatch — non-2xx, so Razorpay retries and its dashboard records the failure. Only genuinely irrelevant event types are acknowledged. The notes key is one shared constant (`RAZORPAY_NOTES_ORDER_KEY`) used by both sides and **pinned by a test** (D6), recorded in [INTEGRATIONS.md](INTEGRATIONS.md).
+
+**The backstop for a missed webhook** (D7, R6): `/api/cron/reconcile-payments` — Vercel Cron every 15 minutes (`vercel.json`, new), guarded by `CRON_SECRET` ([OPERATIONS.md](OPERATIONS.md)) — asks the gateway about orders pending past 30 minutes and confirms captured ones through the same routine. Worst case, a missed webhook confirms in ~45 minutes.
+
+Migration: `Order.gatewayOrderId` + two indexes, purely additive. The email template now declares the `OrderEmailView` it renders instead of importing the client-side `Order` type (a `server→src` inversion, retired). **165 tests pass** (10 new — the TRD says these are the deliverable), `tsc` exits 0, `next build` compiles, 0 lint errors in touched files.
+
+**Deploy notes:** run `npx prisma migrate deploy`; set `CRON_SECRET` in Vercel; and the fix only takes effect for orders whose payment order is created *after* deploy (older pending orders have no `gatewayOrderId` — the sweep reports them `still-unpaid` and they resolve by re-payment).
+
+## [PR-38] 2026-08-09 — The server decides what an order costs [CONTRACT]
+
+[server-side-pricing-authority](specs/server-side-pricing-authority/) lands — Invariant 1 becomes true on the live checkout path. Until now `create-with-shipments` **persisted whatever totals the client sent** and the payment route **charged whatever amount the client stated**: the ₹1-for-anything hole, in production.
+
+**Order creation reprices everything inside its own transaction.** Lines arrive as `{ productId, quantity }` and nothing more — price, sale price, name, slug and thumbnail all come from the catalogue row (`server/checkout/pricing.ts`, pure and 100%-branch tested), loaded with one `findMany` in the same transaction that writes the order, so the price used for the total is the price checked. The price fields were **removed from the schema, not accepted-and-ignored** (trd.md D2), the totals object and its consistency refine are gone (D3 — once the server computes, client numbers have nothing to check), and `discount` is a constant 0 until a coupon system computes one — any client-sent discount was an attack, not an input. A line whose product doesn't belong to the group's org fails the order: the parcel would be attributed, and its revenue owed, to the wrong org.
+
+**The customer still confirms the number they saw**: `displayedGrandTotal` travels with the order, is compared against the server's total, and is never persisted. A mismatch — in either direction, Q2 — gets a 409 "Prices changed while you were checking out", not a silent repricing.
+
+**The gateway amount is read back from the persisted order** (D5): `POST /api/payments/create-order` takes `{ localOrderId }`, loads the order through checkout's public surface, refuses if already paid, and charges `grandTotal`. The request type physically cannot carry an amount any more.
+
+Also in passing, per migrate-on-contact: `order.service.ts` (the money path whose own domain rules say *no `any` in this tree*) had nine — Json-column casts now go through a typed `toJsonColumn` helper whose JSON round-trip is what Prisma does anyway; the Razorpay `window as any` pair became a declared global; `paymentStatus` is no longer accepted at order creation (Invariant 2).
+
+**Recorded limitation:** the shipping *rate* is still the client's selection — re-deriving it means calling the courier inside the transaction. Bounds-checked; real verification belongs to [shipping-fulfilment](specs/shipping-fulfilment/). And the client's post-payment `paymentStatus: "paid"` write is untouched here — that is [payment-confirmation](specs/payment-confirmation/)'s whole subject, next in the sequence. The legacy `POST /api/orders` path (no client callers found) is left for the same PR to delete.
+
+**155 tests pass** (12 new, every pricing branch), `tsc` exits 0, `next build` compiles, 0 lint errors in the touched files. No migration — this changes who computes, not what is stored.
+
+## [PR-37] 2026-08-09 — Money is integer paise, end to end [CONTRACT] [MIGRATION]
+
+[money-as-paise](specs/money-as-paise/) lands — the first of the Phase 2 transaction-integrity specs, and per its TRD D2 deliberately **one large PR**: a half-migrated state displays amounts 100× wrong, so there was no incremental path.
+
+**Eight columns convert** (`Product.price`/`salePrice`, `Order`'s four totals, `Shipment.shippingCost`, `ShippingRateCache.rate`) via a hand-written migration that multiplies and rounds explicitly — a bare type change would have truncated ₹1,200.50 to ₹1,200. The Q1 survey found **zero rows** with sub-paisa drift, so ROUND is a guard, not a correction. The rate cache is emptied rather than converted: entries are transient, and a cache whose unit depends on write date cannot be mistrusted correctly.
+
+**Exactly two modules know about the factor of 100.** `server/shared/money.ts` (`rupeesToPaise` guards against IEEE754 dust — `0.29 * 100` is `28.999999999999996`) and `src/lib/format.ts` (`formatCurrency` takes paise; whole rupees drop decimals). The admin form still collects rupees; conversion happens once at the catalog service (`moneyToPaise`) — **not** in a Zod transform, because the same schema validates on client and server (ADR-0013) and a transform would run twice and square the factor. TRD D4 carries that revision, dated.
+
+**The four epsilon comparisons in `order.schemas.ts` are gone** — `Math.abs(a − b) < 0.01` was Invariant 3's named bug, and integer totals now compare with `===`. Wire money validates as `paiseAmount` (integer) and human input as `rupeeAmount` (≤2 decimals), so a field misused in the wrong unit fails validation instead of relying on a name being read (Q2, closed without renaming DTO fields). The client's `grandTotal * 100` at the Razorpay call is deleted — the total already **is** the minor unit — and Shiprocket's rupee quotes convert at the provider mapper, so a courier rate is paise from the moment it enters.
+
+Two display notes: `formatCurrency` previously used `maximumFractionDigits: 0`, so amounts like the live `₹40,490.54` grand total were silently **rounded on screen**; paise now show when present. And five hand-rolled `₹{x.toFixed(2)}` renders in checkout moved onto the formatter.
+
+Seeds convert (67 literals), 12 new tests pin the round-trip, the drift case, Indian-grouping formatting and the 2-decimal rule. **143 tests pass**, `tsc` exits 0, `next build` compiles.
+
+**Run `npx prisma migrate deploy` before using the app** — the client now types these columns `Int` against a database that still holds `Float` until then. Verify after (TRD D7): `SELECT SUM("price") FROM "Product"` must read **2989900** (was 29899.00) and `SELECT SUM("grandTotal") FROM "Order"` must read **4049054** (was 40490.54). Take a backup first; the conversion is reversible only by dividing back.
+
+## [PR-36] 2026-08-09 — Portals get their plain surfaces back, by token scope
+
+PR-33's mapping had the admin panel and org portal inherit the storefront's warm parchment (`bg-gray-50` → `bg-background`), which read as tinted where the panels used to be plain. Rather than reverting to raw classes, a `.portal` scope in `globals.css` overrides the six surface tokens (`background`, `card`, `popover`, `muted`, `border`, `input`) to neutral values, light and dark — every component under the portals re-skins with **zero component edits**, brand and status colours stay shared with the storefront. This is the demonstration of what routing colour through tokens buys: "make this whole area look different" is six variable lines, not a sweep. A new `(org)` group layout applies the surface to `/org` and `/org/new`, which sit outside the `[orgId]` membership layout.
+
+## [PR-35] 2026-08-09 — Category accents become semantic keys [CONTRACT] [MIGRATION]
+
+Pulls forward the defect PR-33 could only allowlist: `Category.accentColorClass` stored raw Tailwind class strings as rows. The database check that motivated doing it now found it was worse than fragile — the column held **two incompatible shapes** (gradient triplets from seeds, flat washes from the form), and the storefront renders the value inside `bg-gradient-to-br`, so **a category created through the admin form has been shipping with no hero gradient at all**. PR-33's codemod had also left the form default as a third shape (`bg-primary/10`).
+
+The column is now `accent`, a `CategoryAccent` enum (the `OrgRole` pattern), and `src/lib/category-accent.ts` is the one place a key becomes CSS — each key mapping to both surfaces (`swatch` for the admin table, `heroGradient` for the storefront), which fixes the two-shapes defect by construction. A palette change is an edit to that table, not a data migration. The migration is hand-written: the CASE maps every observed value shape and leaves anything unrecognised to **fail the enum cast loudly** rather than silently inventing a colour.
+
+The design-tokens allowlist swaps from the form (data it must not break) to the mapper (the one module where classes are deliberately data-adjacent), and the scan widens from `.tsx` to all of `src`'s TypeScript. `tests/unit/category-accent.test.ts` pins completeness — every enum key renders both surfaces, since a missing entry is exactly the invisible-gradient defect again. The form-error-display exemption followed the rename after the guard caught it orphaned.
+
+`tsc` exits 0, **131 tests pass**, `next build` compiles. **Run `npx prisma migrate deploy`** — five rows update; check first with `SELECT DISTINCT "accentColorClass" FROM "Category";`.
+
+## [PR-34] 2026-08-09 — Fix: pre-rename sessions lost every admin affordance
+
+"The floating admin panel is not visible anymore" — because it now checks `session.user.platformRole` (PR-25), and a JWT minted before the rename carries no such claim, so every admin affordance quietly hid for existing sessions until their next sign-in. That includes production. The `jwt` callback now stamps the claim once from the database for tokens that lack it — a migration shim, marked removable once pre-2026-08 sessions have expired. Signing out and back in also fixes any one session immediately.
+
+## [PR-33] 2026-08-09 — UI reuse pass, and colour goes through tokens
+
+Two directives from review of the portal work, applied repo-wide.
+
+**Reuse.** The org orders/reviews pages had hand-rolled tables, badges and cards while `DataTable`, `StatusBadge` and `Card` existed — rebuilt on the shared components (`OrgOrdersTable` is the same `DataTable` the admin lists use, pointed at the org projection). The two sidebars became configurations of one `PortalSidebar` shell — header slot, nav, and Back to Store pinned to the bottom, which also fixes it floating mid-sidebar in the org portal. `StatusBadge` gained nothing; it was already the right component, just unused.
+
+**Tokens.** The theme system (`globals.css`, oklch, light+dark) was real and bypassed: **759 raw palette classes across 81 files** hardcoded shades it already named. Now 8 remain, all one allowlisted file. What made the pass more than find-and-replace:
+
+- **Three token *concepts* were missing**, which is why people hardcoded: `success`/`warning`/`info` for statuses (StatusBadge's variants are now token washes — `bg-success/15 text-success`), `scrim` for overlays that must stay dark in both themes, and `hero` for the storefront's deep-emerald brand scenes. `success` is deliberately not `primary`: "it worked" should survive a rebrand of the store's green.
+- **The first mapping of overlays was wrong and got corrected mid-pass**: `bg-black/50 → bg-foreground/50` inverts in dark mode, where foreground is near-white. Overlays are `scrim`.
+- **`EmailVerificationBanner`'s hand-managed `dark:` overrides were deleted, not converted** — tokens flip with the theme, which is the point of having them.
+- **`Category.accentColorClass` turned out to be Tailwind classes stored as database rows.** The codemod rewrote the option list, orphaning stored values (and collapsed Orange and Yellow into one). Reverted, loudly commented, allowlisted, and the real fix (a semantic key) recorded in BACKLOG for [category-tree](specs/multi-vendor-marketplace/category-tree/).
+
+`tests/unit/design-tokens.test.ts` enforces the rule from now on — raw palette classes fail the build outside the one data-literal allowlist — and [CLAUDE.md](../CLAUDE.md) carries it as a principle. Two codemod artifacts (`/30/60` double opacities) were caught by a sweep and fixed.
+
+`tsc` exits 0, **122 tests pass** (3 new), `next build` compiles. Colour changes of this scale can only truly be judged by eye — worth a click around both portals and the storefront in both themes.
+
+## [PR-32] 2026-08-09 — Correction: the org switcher renders for single-org users too
+
+PR-31's D3 rendered a plain heading when someone had exactly one organisation — on the principle that a one-option dropdown lies about the state space. Wrong in effect: “Create another organisation” lives *inside* that dropdown, so for single-org users — most users — a second organisation was unreachable, and the switcher the feature was named for was invisible. The control now always opens; with one org it offers the org and the create action. Spec R3/A3 and TRD D3 carry the correction rather than pretending they always said this.
+
+## [PR-31] 2026-08-09 — Portal chrome: the switcher, and one header for both panels
+
+[org-portal-chrome](specs/multi-vendor-marketplace/org-portal-chrome/), implemented whole. The sidebar's static organisation name becomes a switcher, and both portals gain an identity header.
+
+**Switching is navigation, nothing else.** An org in the switcher is a link to `/org/[id]` plus the section you are on — from one org's products you land on the other's products. No cookie, no session write, no context: the active org lives in the URL by programme decision, which is what makes "two tabs on two orgs" true by construction rather than by care. A deeper path (a product id) is deliberately not carried across — the record belongs to the org you are leaving. One membership renders a heading, not a dropdown with one option; the switcher also offers creating another organisation.
+
+**One `PortalHeader` serves both panels** — signed-in name and email, sign out, back to storefront — with only the label differing (`Org Portal` / `Platform Admin`). A second header is how two panels drift. It is a server component with `"use client"` pushed down to the one interactive leaf (`SignOutButton`), and the org layout now fetches the membership list once, server-side, feeding both the authorization check and the switcher.
+
+No new routes, no schema or contract changes, no new tests — the chrome is links and text over data already covered (memberships PR-24, boundary PR-30); its TRD records that if switching ever becomes stateful, that change must bring its own tests.
+
+`tsc` exits 0, 119 tests pass, `next build` compiles, 0 lint errors in the touched files.
+
+## [PR-30] 2026-08-09 — Portal separation closes: admin stops mutating products, and the boundary is a test
+
+PR 4, the last of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). The subfeature is **Implemented**.
+
+**The platform's product surface is now read-only.** `/admin/products/new` and `[id]/edit` are deleted along with both `/api/admin/products` route files — the admin list reads server-side through the DAL, and the client only ever called those routes to mutate, which is the org portal's job now. The list and detail pages stay as the cross-vendor support view [portal-split.md](specs/multi-vendor-marketplace/portal-split.md) promised, with edit and delete affordances gated off (`readOnly` through `ProductsContainer`/`ProductsTable`, `canEdit` on `ProductsView`).
+
+**The boundary is enforced by `tests/unit/portal-boundary.test.ts`, not by review**: every `/api/admin` handler requires a platform admin; every `/api/org` handler is defined through `withOrg`; `POST /api/orgs` is pinned as the one org write outside it (no org exists to be a member of yet) and still requires a session; no `(admin)` page imports org authority or org-scoped reads; no `(org)` page imports `requirePlatformAdmin`; and the deleted mutation surfaces stay deleted. A 37-surface property holds only if something checks it.
+
+One first-run test failure was the test's own: it asserted the creation route doesn't contain "withOrg" — which the route's *comment* mentions by name to explain itself. The assertion now checks for a call, not the word.
+
+Also fixed on contact: `sortBy: params.sort as any` in the admin products page became the narrowed union the org page already used.
+
+`tsc` exits 0, **119 tests pass** (6 new), `next build` compiles, 0 lint errors in the touched files.
+
+## [PR-29] 2026-08-09 — Org portal: orders and reviews, scoped without leaking
+
+PR 3b of [portal-separation](specs/multi-vendor-marketplace/portal-separation/): `/org/[orgId]/orders`, `orders/[orderId]` and `reviews`. The dashboard deliberately stays a placeholder — its shape belongs to [dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/).
+
+**An org's orders are the ones with a parcel from it, and it sees only its part.** The scope is by shipment origin (`shipments: { some: { orgId } }`), never "orders containing my products" — and the Prisma `include` is itself filtered to the org's shipments, so a cross-vendor basket's other parcels never leave the database. The projection (`toOrgOrderView`) enforces the same rule a second time and is a pure exported function, so programme acceptance A6 is a **unit test** (`tests/unit/org-order-view.test.ts`): a row carrying a foreign shipment loses it, and the view has no `grandTotal`/`itemsTotal` whatever the row contains — the basket's money is the buyer's business, not the vendor's. What the org does get: the delivery address (they ship the parcel), `paymentStatus` (nothing unpaid gets fulfilled), and a `parcelValue` summed over their items alone.
+
+**Reviews are scoped through `Product.orgId` and read-only** — moderation and deletion stay platform, per [portal-split.md](specs/multi-vendor-marketplace/portal-split.md).
+
+**No new `/api` routes and no new `"use client"`.** Everything here is a read a server component can do through the DAL, so there is nothing for a browser to call — the server-first rule ([CLAUDE.md](../CLAUDE.md)) applied rather than recited. Orders are read-only for an org: order status is the buyer's order; what an org will eventually mutate is its *shipments*, which arrives with fulfilment.
+
+**Typing two pre-existing `any`s found a broken feature.** `updateOrderStatus` built its update as `const updateData: any` and wrote `estimatedDelivery` — which is a **Shipment** column, not an Order one. Prisma validates field names at runtime, so any admin order-update that included a date has thrown since the day it was written; the `any` kept the compiler quiet about it. The impossible write is removed along with the field's appearances in the schema, types and client. Third time this session that removing an `any` exposed a real defect rather than a style problem.
+
+`tsc` exits 0, **113 tests pass** (6 new), `next build` compiles the three routes, 0 lint errors in the touched files.
+
+## [PR-28] 2026-08-09 — Org onboarding complete: self-serve creation, generated codes [CONTRACT]
+
+Completes [org-onboarding](specs/multi-vendor-marketplace/org-onboarding/) — and a process admission first: its initial pieces (`/org`, `/org/new`, `POST /api/orgs`) were built reactively when testing found the portal unreachable, before any spec existed. The spec and TRD were written afterwards to match what should exist, and the implementation corrected to them. Backwards under our own SDLC; recorded rather than hidden.
+
+**Org codes are server-generated and frozen — nobody is asked for one, admin included.** A shop owner asked to invent `TEST-001` produces collisions and an identifier that can never change once printed, which is the slug lesson (PR-15/18) again. `ORG-` + 5 characters from an alphabet with no `0/O` or `1/I/L`, settled by the unique constraint with retry (`server/catalog/org.code.ts`). The old `findByCode`-then-insert existence check is gone — read-then-write, [ADR-0007](adr/0007-conditional-stock-decrement.md)'s reasoning applied to inserts. Existing `SEL-*` codes untouched.
+
+**`isActive` is server-owned at creation** (Invariant 4): a new org is active by definition, deactivation is a platform act on an existing org. `createOrgSchema` loses both fields; a client that sends them is stripped, and there are tests asserting exactly that. One form still serves self-serve create, admin create, and admin edit — it renders by mode (`orgFormSchema` superset; each route parses its stricter schema), because a second form is how forms drift.
+
+**The portal is now reachable**: an "Org Portal" entry in the storefront account menu → `/org`, which resolves state server-side — no orgs → create prompt, exactly one → straight in, several → chooser, which now also offers "create another". Creation lands you in the new portal as its OWNER, org + first membership in one transaction.
+
+**Also in this PR, found by using the portal** (each fixed on contact, ADR-0013 decision 7):
+- `getStats()` had no org scope, so a vendor's dashboard cards showed the **platform's** product count and inventory value. The scope is now a **required** argument — `getStats(orgId | null)`, the admin page passing an explicit `null` — because an optional parameter defaulting to platform-wide is exactly how this leaked.
+- `defaultAddress` was registered **twice** in the org form (a textarea and an input sharing one value). Removed, and `tests/unit/form-error-display.test.ts` now fails any field bound twice in a file.
+- The code/GST/PAN inputs are styled `className="uppercase"` — CSS, which changes how a value looks and never what it is — while validation ran on the raw value, so `test-001` displayed as `TEST-001` and failed. Normalisation now runs **before** the pattern. The same probe found `phone: ""` failing outright — `optionalPhoneSchema` joins `optionalPostalCodeSchema` (PR-22's defect, in a schema written before that fix existed).
+- "Default Shipping Location" copy → "Pickup Location": there is no default location by decision (stock-locations trd.md D4), and the screen was contradicting it.
+
+`tsc` exits 0, **107 tests pass** (was 96), `next build` compiles, 0 lint errors in the touched surfaces. Six `emailSchema.optional()` / `phoneSchema.optional()` declarations elsewhere have the same blank-rejection shape and are deliberately left for their own pass — two sit on live auth paths.
+
+## [PR-27] 2026-08-08 — The org portal exists: `(org)` and products [CONTRACT]
+
+PR 3 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/), narrowed to products. `/org/[orgId]` is real: a layout that establishes membership once, a dashboard, and the four product screens with API routes behind `withOrg`.
+
+**It runs alongside `/admin/products` rather than replacing it, which is a deliberate deviation from the TRD's "moved out of `(admin)`".** [PR-24](#pr-24-2026-08-08--orgmember-a-persons-membership-of-an-org-migration) added no backfill, so **no org in production has a member** — a hard move would have made product management unreachable for everybody the moment it deployed. Both trees work; removing the admin pages becomes its own step once memberships exist. The product containers are shared, and `useProductsBasePath` decides from the path which portal they are rendering in, so there is one set of components rather than two that drift.
+
+**Two cross-org holes the split would otherwise have opened:**
+
+`orgId` arrived in the **request body** — `productFormSchema` requires it and the form sent it. Under an org route that is a write hole: a member of one org could create or move a product into another by editing the payload. The scope's org is now injected *before* parsing, so whatever the client sent is overwritten rather than trusted. Server-owned, in exactly the sense [Invariant 4](../CLAUDE.md) means.
+
+A **product id in the path is the caller's to choose**, and `getProductById` does not filter by org. Both the pages and the `[id]` handlers check ownership before reading or writing, and report a mismatch as **not-found rather than forbidden** — whether another org owns that id is not this caller's business, and 403 would confirm it exists.
+
+Middleware now covers `/org` for signed-in only. Membership is deliberately not checked there: it runs on the edge and cannot reach Postgres, and it can be revoked mid-session ([trd.md](specs/multi-vendor-marketplace/portal-separation/trd.md) D3).
+
+Also fixed on contact: `catch (error: any)` in `useProducts`, and eight hardcoded `/admin/products` links in components the org pages reuse — Cancel would have thrown an org member into the platform tree.
+
+**Not done in this PR:** orders, reviews and the dashboard, which [portal-split.md](specs/multi-vendor-marketplace/portal-split.md) marks as serving both audiences and which need scoping through `Shipment.orgId` and `Product.orgId` respectively. The org dashboard shows one real number and is a placeholder until [dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/).
+
+`tsc` exits 0, 96 tests pass, `next build` compiles all 7 new routes, 0 lint errors in the new surfaces.
+
+**The portal is unreachable until someone has a membership.** Grant one:
+
+```sql
+INSERT INTO "OrgMember" ("id","userId","orgId","role","updatedAt")
+SELECT gen_random_uuid()::text, u.id, o.id, 'OWNER', now()
+FROM "User" u, "Org" o
+WHERE u.email = '<your-email>' AND o.code = 'SEL-001';
+```
+
+## [PR-26] 2026-08-08 — The org authorization boundary
+
+PR 2 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). No behaviour change: nothing uses it yet, which is what makes the split in PR 3 a move rather than a rewrite.
+
+**The check returns the scope, not a boolean.** `withOrg` hands the handler `{ orgId, role, userId }`, and that `orgId` is what every subsequent query filters on. A boolean would leave the filter as a separate step someone can omit, and an omitted filter is another org's data on the page. Being authorised and being scoped are now one act.
+
+**The handler is wrapped, not instrumented.** `withOrg(handler)` is the only thing that produces a scope, so a handler that skips it has no `orgId` to query with — as opposed to a helper each route remembers to call. The `orgId` handed over is taken from the **membership row**, not re-read from the path, so the two can never disagree.
+
+**No platform-admin bypass**, and there is a test that a platform admin without a membership is refused. A bypass would be an exception inside a filter that must never fail.
+
+Memoisation is split deliberately: `requireOrgMember` is wrapped in React `cache()` for server components, where several components on one page share one lookup, and `withOrg` calls the unmemoised path — a handler does one check, so there is nothing to share, and `cache()` outside a React render has no request scope to key on. Neither caches across requests, because a membership revoked by the team page has to take effect on the next request rather than at the next sign-in.
+
+**Seven tests, all attempts to get at something**: a member of another org, a platform admin with no membership, a signed-out request, and a check that the scope's `orgId` comes from the database rather than the URL. Two defects in the tests themselves were caught and fixed before they could give false assurance — one threw a look-alike error object, so `toErrorResponse` fell through to its generic branch and the test passed on a 500 while asserting only `>= 400`; the other typed its handler double with no parameters, which `vitest` accepted and `tsc` did not.
+
+`tsc` exits 0, **96 tests pass** (up from 89), `next build` compiles, no new lint errors.
+
+## [PR-25] 2026-08-08 — `platformRole`, and an auth boundary that throws [CONTRACT] [MIGRATION]
+
+PR 1 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). `User.role` becomes `User.platformRole` — a rename in place, so the column, its values and every row survive and nobody's access changes. Once `OrgMember.role` exists, an unqualified `role` means two things, which is how `ProductFlag` came to be declared three times.
+
+It also gains a type. `PlatformRole` is a Prisma enum, so the database rejects a third value; the migration's cast **fails loudly** if any row holds something other than `USER` or `ADMIN`, which is correct — a silent default would invent a permission level. Check with `SELECT DISTINCT "role" FROM "User";` before applying.
+
+**`(session.user as any).role` is gone from all eight sites.** The cause was a session augmentation in `src/types/next-auth.d.ts` that declared `id` and not the role, so every reader reached past the type. Declaring it once removed the need for the cast rather than the cast being deleted and re-added later. `any` at an authorization boundary is a defect ([CLAUDE.md](../CLAUDE.md)) and this was eight of them.
+
+**`verifyAdminSession()` now throws instead of returning `Session | NextResponse`.** That union forced all 21 call sites to discriminate with `instanceof NextResponse` and shipped a hand-rolled error body. It is now `requireSession` / `requirePlatformAdmin` throwing `UnauthorizedError` (401, new) or `ForbiddenError` (403), which `toErrorResponse` renders in the standard envelope.
+
+**That conversion could not be done alone.** 14 of the 19 handlers had no `toErrorResponse`, so a thrown `ForbiddenError` would have surfaced as an unhandled 500 rather than a 403 — turning an authorization refusal into a server error. Wiring them was a precondition, not scope creep, and is what [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) decision 7 exists to force. The four handlers under `/api/admin/orgs` that inlined their own check now use the helper too.
+
+**Three Invariant 4 violations fixed in passing**, all in files this PR already had open: `users/[id]`, `orders/[id]` and `reviews/[id]` each cast `await request.json()` to an interface. `src/lib/validation/schemas/admin.schemas.ts` gives them real schemas that whitelist their fields — `platformRole` is writable there and nowhere else, since that is the one screen that grants it.
+
+`tsc` exits 0, 89 tests pass, `next build` compiles, **lint errors 148 → 130**. As with [PR-24](#pr-24-2026-08-08--orgmember-a-persons-membership-of-an-org-migration), a clean build proves nothing about whether the migration was applied — the platform role is read at sign-in, not at build. Run `npx prisma migrate deploy`, then sign out and back in: an existing session's token still carries the old claim.
+
+## [PR-24] 2026-08-08 — `OrgMember`: a person's membership of an org [MIGRATION]
+
+Completes [organisations-and-membership](specs/multi-vendor-marketplace/organisations-and-membership/). Purely additive — one enum, one table, and nothing reads either. That is the point: the authorization change in [portal-separation](specs/multi-vendor-marketplace/portal-separation/) becomes additive rather than a schema change.
+
+**`OrgRole` is a Prisma enum, not a TypeScript union over a `String` column.** This diverges from `ProductFlag`, which is a TS enum over `String[]` — and the reason is that a role is scalar, so it does not need the compromise Postgres arrays of enums force. Declaring it in the schema means the generated type is the *only* declaration and the database rejects anything else, which matters for a value that will gate authorization.
+
+**Cascade on both sides of the membership**, which is the one place cascade is right in this schema: a membership is meaningless without either end, and deleting one end must remove only the link. Contrast `ORDER_ITEM.productId`, where cascade would destroy order history. `@@unique([userId, orgId])` puts "one membership per person per org" in the database rather than in a prior read.
+
+**No backfill, deliberately.** Existing orgs have no owner to infer — `contactPerson` is a free-text name, not a user reference — so guessing one would write a fiction into an authorization table. Orgs created before this have no members and get them from [org-onboarding](specs/multi-vendor-marketplace/org-onboarding/) and [org-team](specs/multi-vendor-marketplace/org-team/).
+
+The repository is deliberately three methods: `findMembership`, `listOrgsForUser`, `addMember`. Listing members, changing a role and removing someone wait for `org-team`, whose requirement that an org cannot be left unadministered is what decides what removal means — writing it now would either omit that rule or invent it.
+
+Each seeded org now gets an OWNER, so `addMember` has a real caller and the org portal will be reachable locally without going through onboarding. The seed's wipe lists `orgMember` explicitly rather than relying on the cascade, matching how every other table is handled there.
+
+**Its behaviour is not covered by a test, and cannot be.** The uniqueness constraint and the cascade are database behaviour, and there is no test database — `vitest.config.ts` runs `happy-dom` with no datasource. [TESTING.md](TESTING.md) now records that gap and what would close it, because "the database enforces it" is only an argument if something checks that it does. `tsc` exits 0, 89 tests pass, `next build` compiles with no Prisma error — though unlike [PR-23](#pr-23-2026-08-08--seller-becomes-org-contract-migration), a clean build here proves nothing about whether the migration was applied, since nothing reads the table.
+
+## [PR-23] 2026-08-08 — `Seller` becomes `Org` [CONTRACT] [MIGRATION]
+
+A vendor is an organisation with people in it, not a record an admin types on someone's behalf. This is the rename only — `OrgMember` and anything that reads a membership are PR 2 of [organisations-and-membership](specs/multi-vendor-marketplace/organisations-and-membership/), deliberately separate because a rename is reviewed by confirming nothing changed and new behaviour by confirming something did.
+
+**751 substitutions across 56 files**, 19 files and directories moved with `git mv` so history follows. `Seller` → `Org`, `Product.sellerId` → `orgId`, `Shipment.sellerId` → `orgId`, `/admin/sellers` → `/admin/orgs`, `/api/admin/sellers` → `/api/admin/orgs`. Identifiers read `Org`; anything a person reads says "Organisation".
+
+**The migration is hand-written, and that is the point.** Prisma generates a renamed model as `DROP TABLE` + `CREATE TABLE`, which would have destroyed every vendor row along with the products and shipments referencing them. Every statement in `20260808104500_rename_seller_to_org` is a rename and no data moves. Postgres does not rename a table's indexes or constraints when the table is renamed, so all eleven — the primary key, the `code` unique index, four `Seller_*` indexes, and both foreign keys with their indexes on `Product` and `Shipment` — are renamed explicitly, with the real names read out of the existing migration files rather than assumed.
+
+**`tests/unit/vocabulary.test.ts`** fails the build if "seller" reappears in `src/`, `server/` or `prisma/` (migrations exempt — they are applied history and must never be edited). A 57-file rename stays done only if something checks; `ProductFlag` was declared three times because nothing did.
+
+Not renamed, deliberately: the org `code` keeps its `SEL-` prefix, because regenerating vendor codes would invalidate anything already printed or exported for no gain. `Shipment.orgId` is also still the wrong question — a shipment's origin becomes `orgAddressId` — but that belongs to [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) and is left alone here.
+
+**The migration is not applied.** `tsc` exits 0, 89 tests pass, `next build` compiles — and the build's static generation reports `The table public.Org does not exist in the current database`, which is the code and the schema agreeing while the database has not caught up. Run `npx prisma migrate deploy` before this is served, and take a backup first: the rename is reversible only by another rename.
+
+## [PR-22] 2026-08-05 — Optional fields stop failing; shipping override is all-or-none; product weight persists
+
+A product could not be created at all: the form reported "Enter a 6-digit PIN code" on a field its own section labels *Optional*. Three defects behind it, each a different way for the schema and the form to disagree.
+
+**Optional fields that rejected their own blank value.** `shippingFromPincode` used the required `postalCodeSchema` while the UI said "Leave empty to use seller's default", so the default `""` failed the regex. Now `optionalPostalCodeSchema` — blank passes, a present value is still checked.
+
+**Blank number inputs arriving as NaN.** `valueAsNumber` yields NaN for an untouched input, and `z.number().optional()` **rejects NaN** — verified against Zod 4 rather than assumed, because the last time an assumption about a library's output went untested it cost [PR-16](#pr-16-2026-08-05--fix-slug-retry-never-fired-under-the-pg-driver-adapter). So a blank `salePrice` blocked submission. Worse, it blocked it *silently*: `salePrice` rendered no error, so the form simply did nothing. Same for `lowStockThreshold` and the category form's `order`. A shared `optionalNumber` helper now treats every spelling of blank — `""`, `null`, `NaN` — as absent; JSON has no NaN, so the `null` case is what the server actually receives.
+
+**Fields bound but never displayed.** `sku` had no error output — the single field the whole error-envelope effort existed to highlight ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)), so a duplicate SKU still showed nothing on the field. Also `salePrice`, `lowStockThreshold`, `currency`, `order`. This is the third time this defect has shipped, so it is now a test rather than a review item: `tests/unit/form-error-display.test.ts` walks every `register()` in the source and fails on any field whose error is named nowhere in the file that binds it. Three fields are exempt, each with a stated reason.
+
+**Shipping override is all-or-none.** A city without a pincode still rates from the seller's default, so a partial override is meaningless. The group refine blames *every* blank field in the group rather than just the first, so each one says why it is needed. Blank overrides now store as `NULL` via `blankToNull` instead of `''`, giving absence one spelling.
+
+**Product weight now persists.** Both repository write sites enumerated their columns — correctly, to prevent mass assignment — and both omitted `weight`, so every product carried the schema default of 0.5 kg while `shipping.ts` rated on it. This was already recorded in [CONTRACTS.md](CONTRACTS.md) and specced as [product-weight-and-rates](specs/product-weight-and-rates/) R1; it was fixed here rather than deferred because this PR marks the field required in the UI, and demanding a value that goes nowhere is worse than not asking. **R1 and A1 only** — rate calculation, missing-weight visibility, and correcting the existing rows (R6) are still open, and every product created before this change still reads 0.5.
+
+Two divergences closed the other way, where the form was stricter than the schema: `description` and `weight` are now required in the schema too, matching what the form has always enforced. Neither adds friction — the form's own rules already blocked both on create and on edit.
+
+**Consequence to know about:** a product saved with a pincode override but no city (possible before this change, since only the pincode was required) will now fail the group rule when edited, and the admin must complete or clear all three.
+
+Typecheck clean, `next build` compiles, **87 tests pass** (up from 68 — 16 new schema cases, 3 guard cases).
+
+## [PR-21] 2026-08-05 — Error envelope adopted across routes and forms; rule recorded as ADR-0013
+
+Extends [PR-20](#) from the product path to the rest of the application, and records the decision so it is not missed again.
+
+**[ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)** — one envelope, `toErrorResponse` on the server, `readApiError` on the client, `useServerForm` in every form, `DomainError` as the opt-in for a shown message. Recorded as an ADR because the rejected alternative — per-form `try/catch` with a toast — is the *conventional* approach and the one the codebase already used, so without a written decision it would be reintroduced by anyone acting reasonably.
+
+Its **decision 7 is the answer to "how do we not miss this next time"**: touching a form or handler still on the old pattern means converting it in the same change. `/bb-review` now enforces that with a new section — flagging hand-rolled error bodies, `useForm(` where `useServerForm(` belongs, error handling *inside* a form, client wrappers reaching into a response body, and a modified file left on the old pattern.
+
+**14 routes** wired to `toErrorResponse`: categories (×2), sellers (×2), addresses (×2), the four auth routes, provider connect, and the three product handlers from PR-20.
+
+**Four new schemas**, each parsed by its route *and* used as its form's resolver: `categoryFormSchema` (with defaults, so the schema decides what "unset" means rather than the repository), and `forgotPasswordSchema` / `resetPasswordSchema` / `changePasswordSchema` — the last two attributing a mismatch to `confirmPassword`, the field a user would retype. The password rule itself is now declared once and shared by every flow that sets one.
+
+Removing the routes' hand-rolled checks was part of this: five validation blocks in the auth routes were **unreachable** once the schema parsed first, and leaving them would have let two definitions of "valid password" drift.
+
+**Five forms** now on `useServerForm`: product, category, seller, address, and change-password. The last was a `useState`-and-`fetch` form converted to react-hook-form, which proves the pattern covers that shape too.
+
+**Duplicate presentation removed** from `useProducts`, `useCategoryForm`, and `useSellers` create/update — each had been toasting the same error the form hook now owns, so a single failure produced two messages. Delete and load paths keep their toasts, correctly: those are button and mount actions, not form submissions.
+
+> **Caught during the conversion:** the change-password modal's inputs bound to `register` correctly but the file rendered `errors` **nowhere** — the hook would have set field errors that nothing displayed. Precisely the failure this work exists to remove, reintroduced by me while removing it. Per-field rendering added; worth noting that binding a field and *showing* its error are two separate steps and only the first is visible to the typechecker.
+
+Lint errors **167 → 148**: deleting the `catch (err: any)` blocks removed 19 `no-explicit-any` violations as a side effect.
+
+Verified: `tsc --noEmit` exit 0, 68 tests pass, `next build` compiles.
+
+**Remaining, tracked in [BACKLOG.md](BACKLOG.md):** the signin, signup, forgot-password and reset-password pages and `ConnectProviderModal` are still `useState`-based. They already display the server's message correctly — they read `data.error`, the right key — so what they lack is field attribution. Value is genuine for signup (which of email/mobile collided) and reset-password (which rule failed), and marginal for the single-field forms. These are live, deployed auth flows with no test coverage, so converting them is deliberately left as its own change rather than folded into this one.
+
+## [PR-20] 2026-08-05 — One error envelope, and forms that consume it without per-form code
+
+A duplicate SKU produced `"Failed to create product"` with no field highlighted. Three separate failures caused that, and fixing only the first would have left the field unhighlighted.
+
+**1. A key mismatch discarded the real message.** The route sent `{ error: "Unique constraint failed…" }`; `productsApiClient.createProduct` read `error.message` — undefined — and fell back to a generic string. `deleteProduct` and `updateProduct` in the same file read `error.error` correctly, so the file looked uniform. This is the third instance of a string-keyed cross-boundary contract failing silently in this codebase, after the Razorpay `notes` key and the encoded slug. None is visible to `tsc`.
+
+**2. The product form rendered no server error at all** — only react-hook-form's client validation. The category form does this correctly, so the pattern existed and was simply not followed.
+
+**3. Nothing mapped field errors onto fields.** `validateRequest` had emitted `details: [{ path, message }]` all along, and `sellerService` was its only consumer — which *concatenated* them into one string. No `setError` call anywhere in the codebase was react-hook-form's; every one was a `useState` setter for a general banner.
+
+## What was built
+
+**One envelope** (`src/lib/api-error.ts`, documented in [CONTRACTS.md](CONTRACTS.md)) carrying `error` plus optional field-attributed `details`. A Zod failure and a database constraint violation arrive identically, so a form maps details to fields without knowing which produced it.
+
+**`toErrorResponse`** with six branches, replacing hand-rolled bodies: Zod → 400 with per-field details; `DomainError` → its own status and message; unique violation → 409 attributed to the offending column; other constraint failures (stale foreign key, value too long, missing required) → 409 attributed to the column; Prisma not-found → 404; **unknown → logged and reported generically.** Only that last branch discards its message.
+
+**`DomainError` / `NotFoundError` / `ConflictError` / `ForbiddenError`** — how domain code opts into being shown. Anything that has not opted in is an internal fault, which is the safe default: a raw Prisma message can name columns.
+
+**`useServerForm`** — react-hook-form with `zodResolver` and the error contract already wired. A form calls it and gets client validation from the same schema the server enforces, field-attributed server errors landing on their fields, and a general error for anything unattributable. **Forms write no error-handling code.** There is no form *renderer* in this codebase — three hand-written per-entity forms sharing field primitives — so the reusable unit is the hook, which is the better fit anyway since the layouts differ and the error semantics do not.
+
+**`productFormSchema`** — one declaration used by the route (server authority, Invariant 4, replacing a cast) and by the form's resolver. It reuses `postalCodeSchema` for the origin pincode and the `ProductFlag` enum for flags, and adds a cross-field rule neither side could enforce alone: sale price below regular price, attributed to `salePrice`.
+
+## The 128 throw sites
+
+Converted **112** to typed errors by classifying their own message text — 68 `DomainError`, 34 `NotFoundError`, 9 `ConflictError`, 1 `ForbiddenError` — across 27 files, then read the diff.
+
+**16 deliberately stayed internal**, on a principle worth stating: *if the fix is in config or code, it is internal; if the fix is in what the user did or the state they control, it is a domain error.* So `"Razorpay webhook secret not configured"` and `"Shipping module initialization failed"` stay generic, while `"Cannot delete the only address"` now reaches the user.
+
+Seven of those internal ones were `"Failed to save cart to database"`-style wrappers sitting in catch blocks and **discarding the real cause** — the same anti-pattern that cost a session's debugging on the slug bug. They now pass `{ cause: error }`.
+
+Also removed: the duplicate presentation in `useProducts`, which double-toasted the same error and would have competed with the hook; and its hand-written checks for images and seller, now the schema's job.
+
+> **Self-correction:** creating `NotFoundError` in `server/shared/domain-error.ts` duplicated one I had added to `products.dal.ts` in PR-13 — precisely the [ADR-0003](adr/0003-one-repository-per-aggregate.md) violation. Consolidated to the shared one, which the DAL now re-exports.
+
+10 tests added (68 total, 5 files), covering the key the server actually sends, detail preservation, the legacy `message` fallback, a non-JSON body, and that unplaceable details are returned rather than dropped.
+
+Verified: `tsc --noEmit` exit 0, 68 tests pass, `next build` compiles.
+
+**Not done:** the other ~8 casting handlers and the category/seller forms still hand-roll. The pattern is now available for them; adopting it is per-form and incremental.
+
+## [PR-19] 2026-08-05 — Infrastructure recorded in OPERATIONS.md
+
+The hosting and vendor split was known only in conversation. Recorded in [OPERATIONS.md](OPERATIONS.md) § Infrastructure, verified from `.vercel/project.json`, `.env`, and which variables the code actually reads rather than from what is provisioned.
+
+Vercel hosting (project `bhendi-bazaar`, deploys from `main`), domain at GoDaddy with DNS pointed at Vercel, Upstash Redis and Vercel Blob via Vercel integrations, plus Razorpay, Resend, Shiprocket and Google OAuth.
+
+**Two corrections to the assumed picture, both worth knowing operationally:**
+
+- **The database is Prisma Postgres (`db.prisma.io`), not Vercel Postgres/Neon** — provisioned through the Vercel marketplace, which is why it reads as "connected via Vercel". Different dashboard, different connection limits, its own backup story.
+- **Prisma Accelerate is provisioned but bypassed.** `PRISMA_DATABASE_URL` holds an Accelerate URL that **nothing reads**; the app connects directly through `DATABASE_URL`. Accelerate pools connections and caches queries — precisely the pressure a serverless deployment puts on one Postgres instance, and a better answer to it than the `max` tuning in [PR-13](#). Added to [BACKLOG.md](BACKLOG.md).
+
+Also recorded: of the connection-string variables, only `DATABASE_URL` and `KV_REST_API_URL` are read. `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL` and `PRISMA_DATABASE_URL` are provisioning leftovers — pruning them is now a backlog item, since multiple live connection strings in one `.env` is the hazard [Invariant 7](../CLAUDE.md) guards against.
+
+The PR-18 follow-up "deploy PR-15 to production" is closed — the code was merged to `main` and deployed, so the live admin form now generates slugs server-side.
+
+## [PR-18] 2026-08-05 — Production slug repair (data change, no code)
+
+Two of the three products on production had slugs containing spaces and capitals, so their pages served an error instead of the product. Repaired directly against the production database.
+
+| id | name | slug before | slug after |
+|---|---|---|---|
+| `cms8ttmrv000004lgiezties3` | Cream Embroidered Rida | `"Cream Rida"` | `cream-rida` |
+| `cms8uf949000204lg9dd6t053` | BLUE RIDA | `"Blue Rida"` | `blue-rida` |
+
+**Derived from the existing slug, not the product name** — a deliberate choice. The name would have produced `cream-embroidered-rida`; slugifying the existing slug changes only the characters that break URL encoding and leaves the intended wording alone. For a repair that is the conservative option; for *new* products the name-derived rule from [PR-15](#) applies.
+
+**Altering the value was strongly preferable to re-uploading**, on two pieces of schema evidence: nothing references a product by slug (every relation uses `id`, slug is only `@unique` + `@@index`), and `Review.productId` carries `onDelete: Cascade` — so delete-and-recreate would have silently destroyed every review on those products.
+
+**There was no working URL to preserve.** Verified before and after: `/product/Cream%20Rida` served a 20 KB error page containing `404` and no product content, while `/product/cream-rida` now serves 53 KB including the product name and add-to-cart. The change repaired a broken URL rather than moving a working one.
+
+Procedure: read-only survey first, showing the proposed mapping; then single-row updates with an explicit timeout, printing before/after per row; then re-verification that all production slugs satisfy `SLUG_PATTERN`. Categories were already clean (4, all valid) and there were no empty-string SKUs.
+
+**Follow-ups this exposed:**
+- Production runs the deployed build, which predates [PR-15](#). Until it is deployed, the admin form there still accepts a typed slug and can reintroduce the problem.
+- The old URL returns **HTTP 200** with an error page — a soft 404. `notFound()` on `NotFoundError` would return a real 404, which matters for how search engines treat it. Recorded in [BACKLOG.md](BACKLOG.md).
+- No redirect exists from the old paths. They never worked, so nothing is lost, but a canonical-redirect fallback would rescue any link shared before today.
+
+> Credentials were pasted into a chat transcript to perform this repair and must be rotated — the Postgres connection string and the Accelerate API key both grant full data access. Reading `.env` is sufficient for local work; production credentials should be supplied by running the script yourself rather than by sharing them.
+
 ## [PR-17] 2026-08-05 — Blank optional-unique values stored as NULL, not empty string
 
 A second, independent constraint violation, exposed once the slug retry in [PR-16](#) started working: creating a product with a blank SKU failed with `Unique constraint failed on the fields: (sku)`.

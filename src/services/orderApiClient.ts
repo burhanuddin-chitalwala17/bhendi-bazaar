@@ -9,6 +9,7 @@ import type { Order } from "@/domain/order";
 import type { CartItem, CartTotals } from "@/domain/cart";
 import type { ShippingGroup } from "@/domain/shipping";
 import type { DeliveryAddress } from "@/domain/profile";
+import { readApiError } from "@/lib/api-error";
 
 export interface CreateOrderInput {
   items: CartItem[];
@@ -19,29 +20,39 @@ export interface CreateOrderInput {
   paymentStatus?: string;
 }
 
-export interface CreateOrderWithShipmentsInput {
-  shippingGroups: ShippingGroup[];
-  totals: {
-    itemsTotal: number;
-    shippingTotal: number;
-    discount: number;
-    grandTotal: number;
+/** One shipping group as the create-order wire accepts it: lines are product + quantity, priced server-side. */
+export interface ShippingGroupPayload {
+  groupId: string;
+  orgId: string;
+  orgName: string;
+  fromPincode: string;
+  fromCity: string;
+  fromState: string;
+  items: Array<{ productId: string; quantity: number }>;
+  selectedRate: {
+    providerId: string;
+    providerName: string;
+    courierName: string;
+    courierCode?: string;
+    rate: number; // paise
+    estimatedDays: number;
+    mode?: string;
+    etd?: string;
   };
+}
+
+export interface CreateOrderWithShipmentsInput {
+  shippingGroups: ShippingGroupPayload[];
+  /** The total the customer saw — compared server-side, never persisted (R5). */
+  displayedGrandTotal: number;
   address: DeliveryAddress;
   notes?: string;
   paymentMethod?: string;
-  paymentStatus?: string;
 }
 
-export interface UpdateOrderInput {
-  status?: string;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  paymentId?: string;
-  razorpayOrderId?: string;
-  razorpayPaymentId?: string;
-  razorpaySignature?: string;
-}
+// UpdateOrderInput and updateOrder are gone with their route: payment state has
+// exactly one writer (ADR-0005), and nothing else ever updated an order from the browser.
+
 
 class OrderService {
   /**
@@ -93,36 +104,7 @@ class OrderService {
   }
 
 
-  /**
-   * Update an existing order
-   */
-  async updateOrder(
-    orderId: string,
-    input: UpdateOrderInput
-  ): Promise<Order> {
-    const response = await fetch(`/api/orders/${orderId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(input),
-    });
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error("You don't have permission to update this order");
-      }
-      if (response.status === 404) {
-        throw new Error("Order not found");
-      }
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to update order");
-    }
-
-    return response.json();
-  }
-
+  
   /**
    * Create a new order with multiple shipments (NEW)
    */
@@ -146,10 +128,9 @@ class OrderService {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || "Failed to create order. Please try again."
-      );
+      // The envelope's field details survive: a validation failure names its
+      // field instead of collapsing to "Validation failed" (ADR-0013).
+      throw await readApiError(response);
     }
 
     return response.json();

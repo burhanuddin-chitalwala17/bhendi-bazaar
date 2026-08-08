@@ -8,62 +8,48 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { readApiError } from "@/lib/api-error";
+import { signupSchema, type SignupInput } from "@/lib/validation/schemas/auth.schemas";
+
 export default function SignUpPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
+  // The same schema the route parses (Invariant 4): password rules show inline as
+  // the user types them, and a server detail — a taken email — lands on its field.
+  const {
+    register,
+    onSubmit: handleFormSubmit,
+    formError,
+    formState: { errors, isSubmitting },
+  } = useServerForm<SignupInput>({
+    schema: signupSchema,
+    submit: async (data) => {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data?.error ?? "Failed to create account.");
-        setIsLoading(false);
-        return;
-      }
+      if (!res.ok) throw await readApiError(res);
 
       // Auto sign-in after successful signup
       const result = await signIn("credentials", {
         redirect: false,
-        email,
-        password,
+        email: data.email,
+        password: data.password,
       });
-
-      setIsLoading(false);
-
       if (result?.error) {
         // Account was created, but auto sign-in failed; direct user to sign-in page.
         router.push("/signin");
         return;
       }
-
       router.push("/");
-    } catch (err) {
-      console.error("Signup failed", err);
-      setError("Something went wrong. Please try again.");
-      setIsLoading(false);
-    }
-  }
+    },
+    defaultValues: { name: "", email: "", password: "" },
+  });
 
   async function handleGoogleSignUp() {
-    setError(null);
     await signIn("google", { callbackUrl: "/" });
   }
 
@@ -82,28 +68,24 @@ export default function SignUpPage() {
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-3 text-sm">
+      <form onSubmit={handleFormSubmit} className="space-y-3 text-sm">
         <div className="space-y-1">
           <label className="text-xs font-medium uppercase tracking-[0.18em]">
             Name
           </label>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="name"
-          />
+          <Input autoComplete="name" {...register("name")} />
+          {errors.name && (
+            <p className="text-[0.7rem] text-destructive">{errors.name.message}</p>
+          )}
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium uppercase tracking-[0.18em]">
             Email
           </label>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            required
-          />
+          <Input type="email" autoComplete="email" {...register("email")} />
+          {errors.email && (
+            <p className="text-[0.7rem] text-destructive">{errors.email.message}</p>
+          )}
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium uppercase tracking-[0.18em]">
@@ -112,11 +94,9 @@ export default function SignUpPage() {
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
-              required
               className="pr-10" // Add padding for the icon
+              {...register("password")}
             />
             <button
               type="button"
@@ -131,16 +111,19 @@ export default function SignUpPage() {
               )}
             </button>
           </div>
+          {errors.password && (
+            <p className="text-[0.7rem] text-destructive">{errors.password.message}</p>
+          )}
         </div>
 
-        {error && <p className="text-[0.7rem] text-red-600">{error}</p>}
+        {formError && <p className="text-[0.7rem] text-destructive">{formError}</p>}
 
         <Button
           type="submit"
-          disabled={isLoading}
+          disabled={isSubmitting}
           className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
         >
-          {isLoading ? "Creating account..." : "Create account"}
+          {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
 
         <div className="flex items-center gap-2 pt-2">

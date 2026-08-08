@@ -11,6 +11,7 @@ import { useCartStore } from "@/store/cartStore";
 import type { CartItem, CartTotals } from "@/domain/cart";
 import type { ShippingGroup } from "@/domain/shipping";
 import { DeliveryAddress } from "@/domain/profile";
+import { ApiError } from "@/lib/api-error";
 
 interface ProcessPaymentInput {
   items: CartItem[];
@@ -83,7 +84,7 @@ export function useCheckoutPayment() {
       }).then((r) => r.json());
 
       if (!stockCheck.available) {
-        const outOfStock = stockCheck.items.filter((i: any) => !i.available);
+        const outOfStock = stockCheck.items.filter((i: { available: boolean; name: string }) => !i.available);
         throw new Error(
           `Sorry, ${outOfStock[0].name} is out of stock. Please update your cart.`
         );
@@ -92,20 +93,45 @@ export function useCheckoutPayment() {
       // Step 1: Create order with shipments (pending payment & fulfillment)
       console.log('📦 Creating order with shipments...');
       const order = await orderApiClient.createOrderWithShipments({
-        shippingGroups: orderData.shippingGroups,
-        totals: orderData.totals,
+        // Lines carry product + quantity only; the server prices them from the
+        // catalogue and refuses if its total differs from the one displayed below.
+        shippingGroups: orderData.shippingGroups.map((group) => {
+          if (!group.selectedRate) {
+            throw new Error("Select a shipping option for every parcel before paying.");
+          }
+          return {
+            groupId: group.groupId,
+            orgId: group.orgId,
+            orgName: group.orgName,
+            fromPincode: group.fromPincode,
+            fromCity: group.fromCity,
+            fromState: group.fromState,
+            // The chosen size/colour ride along — without them the order cannot
+            // say which variant to pack (order-and-cart-lines D5).
+            items: group.items.map(
+              (item: { productId: string; quantity: number; size?: string; color?: string }) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                size: item.size || undefined,
+                color: item.color || undefined,
+              })
+            ),
+            selectedRate: group.selectedRate,
+          };
+        }),
+        displayedGrandTotal: orderData.totals.grandTotal,
         address: orderData.address,
         notes: orderData.notes,
         paymentMethod: orderData.paymentMethod,
-        paymentStatus: orderData.paymentStatus,
       });
 
-      const amountInMinorUnit = Math.round(orderData.totals.grandTotal * 100);
+      // The server's own total — computed from the catalogue, already in paise.
+      const amountInMinorUnit = order.grandTotal;
 
-      // Free order case
+      // Free order case — the server checks the persisted total is zero and
+      // performs the transition itself; the browser asserts nothing.
       if (amountInMinorUnit <= 0) {
-        await orderApiClient.updateOrder(order.id, { paymentStatus: "paid", status: "confirmed" });
-        console.log('✅ Free order confirmed! Manual fulfillment required.');
+        await paymentGatewayService.confirmFreeOrder(order.id);
         router.push(`/order/${order.id}`);
         return order;
       }
@@ -113,8 +139,6 @@ export function useCheckoutPayment() {
       // Step 2: Create payment gateway order
       console.log('💳 Creating Razorpay payment order...');
       const paymentOrder = await paymentGatewayService.createPaymentOrder({
-        amount: amountInMinorUnit,
-        currency: "INR",
         localOrderId: order.id,
         customer: {
           name: orderData.address.fullName,
@@ -128,24 +152,18 @@ export function useCheckoutPayment() {
       await paymentGatewayService.openCheckout(paymentOrder, {
         onSuccess: async (response) => {
           try {
-            console.log('✅ Payment successful! Updating order...');
-
-            // Step 4: Update order with payment info
-            await orderApiClient.updateOrder(order.id, {
-              paymentStatus: "paid",
-              paymentMethod: "razorpay",
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
+            // The server verifies the signature against the persisted order and
+            // writes the paid state — the browser reports, it does not decide
+            // (ADR-0005). The webhook is the second, independent trigger.
+            await paymentGatewayService.confirmPayment({
+              localOrderId: order.id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             });
-
-            console.log('✅ Order confirmed! Awaiting manual fulfillment.');
-            // Step 6: Clear cart
+            // The server cleared the persisted cart inside the order transaction
+            // (inventory-reservation R6); only the local store remains to clear.
             if (!orderData.isBuyNow) {
-              console.log('🧹 Clearing cart...');
-              if (session?.user) {
-                await cartApiClient.clearCart();
-              }
               useCartStore.getState().clear();
             }
 
@@ -162,13 +180,11 @@ export function useCheckoutPayment() {
         },
         onFailure: async (error) => {
           console.error("❌ Payment failed:", error);
-          await orderApiClient.updateOrder(order.id, {
-            paymentStatus: "failed",
-            status: "failed",
-          });
-          setError(
-            error?.error?.description || "Payment failed. Please try again."
-          );
+          // No state write from here: the gateway's own failure webhook records it,
+          // and a failure signal must never be able to overwrite a captured payment.
+          const description = (error as { error?: { description?: string } } | null)
+            ?.error?.description;
+          setError(description || "Payment failed. Please try again.");
           setIsProcessing(false);
         },
         onDismiss: () => {
@@ -181,6 +197,17 @@ export function useCheckoutPayment() {
 
     } catch (error) {
       console.error("Checkout error:", error);
+
+      // A refused payload names its fields — show them, or the buyer sees only
+      // "Validation failed" with nothing to act on.
+      if (error instanceof ApiError && error.details.length > 0) {
+        setError(
+          error.details
+            .map((d) => (d.path ? `${d.path}: ${d.message}` : d.message))
+            .join(" · ")
+        );
+        return;
+      }
 
       // Check if it's a rate limit error
       if (error instanceof Error && error.message.includes("Too many")) {

@@ -44,6 +44,35 @@ export interface GetShippingRatesRequestShiprocket
 // WEBHOOK
 // ============================================================================
 
+/** One courier entry in the serviceability (rate) response — the fields we read. */
+export interface ShiprocketCourierRate {
+  id: number;
+  courier_company_id: number;
+  courier_name: string;
+  rate: number | string; // rupees; converted to paise at the mapper
+  estimated_delivery_days: number | string;
+  etd: string;
+  blocked: number;
+  cod: number;
+  is_surface: boolean;
+  is_hyperlocal: boolean;
+  is_custom_rate: number;
+  realtime_tracking: string;
+  rating: number;
+  delivery_performance: number;
+  pickup_performance: number;
+  min_weight: number;
+  charge_weight: number;
+  surface_max_weight?: string;
+  freight_charge: number;
+  cod_charges: number;
+  coverage_charges: number;
+  rto_charges: number;
+  zone: string;
+  cutoff_time: string;
+  pod_available: string;
+}
+
 export interface ShiprocketWebhookPayload {
   awb: string;
   courier_company_id: number;

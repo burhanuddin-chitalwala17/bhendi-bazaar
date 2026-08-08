@@ -1,9 +1,9 @@
 # TRD — product weight and rates
 
-- **Status:** Draft
+- **Status:** ✅ Implemented (PR-22, PR-48, PR-53)
 - **Domain:** catalog, shipping
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-10
 - **References:** [spec.md](spec.md), [Invariant 4](../../../CLAUDE.md), [CONTRACTS.md](../../CONTRACTS.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -14,6 +14,8 @@ Weight is already a column on `Product` with a default, and already a field on t
 Then weight has to travel: `Product` → cart item → shipment → rate request. It currently drops out at the cart boundary, where the client and server `CartItem` shapes disagree about whether weight exists.
 
 ## Technical decisions
+
+- **D0 (2026-08-10) — Billable weight is a pure rule in one place**: `server/shipping/billable-weight.ts` — sum settled to grams (float dust from adding decimals cannot cross a slab boundary), then `ceil`, floor 1 kg. Applied where the parcel is planned (`/api/checkout/allocate` returns both the real sum and `billableWeightKg`) *and* at the rates route, so every quote is whole-kilogram whatever the caller sent. The shipment row stores the real sum — the record; billing is a presentation of it. Ceiling over nearest was decided by the product owner: couriers bill the ceiling, so nearest would eat the gap on every x.1–x.4 parcel.
 - **D1** — Reconcile the product input type to one declaration used by form, route, and repository. Fixing only the repository would leave the same class of silent drop available to the next field added.
 - **D2** — Whitelist explicitly in create *and* update, symmetrically ([Invariant 4](../../../CLAUDE.md)). This bug is precisely a whitelist that omitted a field, so the countermeasure is the same rule.
 - **D3** — Weight becomes **required** in the product schema rather than optional-with-default. A default that silently substitutes for a missing value is what made this invisible; requiring it makes the omission a validation error at entry.

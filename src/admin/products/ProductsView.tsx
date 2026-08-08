@@ -8,17 +8,22 @@ import { Button } from "@/components/ui/button";
 import { ProductForm } from "@/components/shared/forms/product";
 import type { ProductDetails } from "./types";
 import { useRouter } from "next/navigation";
+import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
+import type { OrgSummary } from "@/domain/org";
 
 interface ProductViewProps {
   product: ProductDetails;
+  /** False on the platform's support view — editing happens in the owning org's portal. */
+  canEdit?: boolean;
   category: { id: string; name: string };
-  seller: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
+  org: OrgSummary;
 }
 
-export function ProductsView({ product, category, seller }: ProductViewProps) {
+export function ProductsView({ product, category, org, canEdit = true }: ProductViewProps) {
   const router = useRouter();
+  const productsBasePath = useProductsBasePath();
   const onCancel = () => {
-    router.push("/admin/products");
+    router.push(productsBasePath);
   };
   return (
     <div className="space-y-8">
@@ -26,16 +31,16 @@ export function ProductsView({ product, category, seller }: ProductViewProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/admin/products"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            href={productsBasePath}
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-3xl font-heading font-bold text-gray-900">
+            <h1 className="text-3xl font-heading font-bold text-foreground">
               {product.name}
             </h1>
-            <p className="text-gray-600 mt-1">Product Details</p>
+            <p className="text-muted-foreground mt-1">Product Details</p>
           </div>
         </div>
 
@@ -47,12 +52,14 @@ export function ProductsView({ product, category, seller }: ProductViewProps) {
               View Live
             </Button>
           </Link>
-          <Link href={`/admin/products/${product.id}/edit`}>
-            <Button className="gap-2">
-              <Edit className="w-4 h-4" />
-              Edit Product
-            </Button>
-          </Link>
+          {canEdit && (
+            <Link href={`${productsBasePath}/${product.id}/edit`}>
+              <Button className="gap-2">
+                <Edit className="w-4 h-4" />
+                Edit Product
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -60,7 +67,7 @@ export function ProductsView({ product, category, seller }: ProductViewProps) {
       <ProductForm
         product={product}
         categories={[category]}
-        sellers={[seller]}
+        orgs={[org]}
         onSubmit={async () => {
           return product;
         }}

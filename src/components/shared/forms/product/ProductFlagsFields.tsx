@@ -13,8 +13,8 @@ interface ProductFlagsFieldsProps {
 
 export function ProductFlagsFields({ control, readOnly = false }: ProductFlagsFieldsProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-card rounded-lg border border-border p-6">
+      <h2 className="text-lg font-semibold text-foreground mb-4">
         Product Flags
       </h2>
       <div className="space-y-3">

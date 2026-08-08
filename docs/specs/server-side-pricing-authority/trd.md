@@ -1,9 +1,9 @@
 # TRD — server-side pricing authority
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-38
 - **Domain:** checkout, payments
 - **Phase:** 2 — Transaction integrity
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-09
 - **References:** [spec.md](spec.md), [ADR-0002](../../adr/0002-server-holds-pricing-authority.md), [Invariant 4](../../../CLAUDE.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -44,6 +44,9 @@ Per [TESTING.md](../../TESTING.md), pricing computation is a 100%-branch target.
 2. Remove the price fields from the schemas and add `displayedTotal`; update the checkout client. `[CONTRACT]`.
 3. Derive the gateway amount from the persisted order.
 
-## Open questions
-- **Q1** — On an R5 mismatch, does the cart update to the new prices automatically, or does the customer re-confirm each changed line? Affects the checkout UI only; must be closed before Draft → Accepted.
-- **Q2** — Is a price *decrease* also a mismatch, or should it proceed silently in the customer's favour? Recommendation: treat it as a mismatch too, so the displayed total always matches the charge.
+## Questions closed (2026-08-09)
+- **Q1** — Neither silent repricing nor per-line confirmation: the order is refused with a 409 ("Prices changed while you were checking out…") and the customer reviews and retries. The cart is not mutated behind their back; re-quoting happens by the page reloading its data. Per-line re-confirmation can be layered on later without contract changes.
+- **Q2** — A decrease is a mismatch too, as recommended: the displayed total always equals the charge, in both directions.
+
+## Recorded limitation
+The **shipping rate** is still the client's selection, bounds-checked but not re-derived — the server cannot recompute a courier quote without calling the courier, and an external call inside the order transaction is worse than the exposure. Structural validation (provider id, non-negative integer paise) applies; verifying the rate against a fresh quote belongs to [shipping-fulfilment](../shipping-fulfilment/), which owns the courier conversation. The items side — the overwhelming share of any total — is fully server-priced.

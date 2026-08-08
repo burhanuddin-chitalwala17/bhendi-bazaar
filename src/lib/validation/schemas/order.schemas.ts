@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { uuidSchema, priceSchema, quantitySchema, nameSchema, emailSchema, phoneSchema, postalCodeSchema } from './common.schemas';
+import { uuidSchema, paiseAmount, quantitySchema, nameSchema, emailSchema, phoneSchema, postalCodeSchema } from './common.schemas';
 
 // Order-specific address schema (requires fullName and state)
 const orderAddressSchema = z.object({
@@ -25,8 +25,8 @@ const cartItemSchema = z.object({
   productName: z.string().min(1).max(255),
   productSlug: z.string().min(1).max(255),
   thumbnail: z.string().url().max(2048),
-  price: priceSchema,
-  salePrice: priceSchema.optional(),
+  price: paiseAmount,
+  salePrice: paiseAmount.optional(),
   quantity: quantitySchema,
   size: z.string().max(50).optional(),
   color: z.string().max(50).optional(),
@@ -36,7 +36,7 @@ const cartItemSchema = z.object({
 const shippingMethodSchema = z.object({
   providerId: z.string(),
   courierName: z.string(),
-  shippingCost: z.number().min(0),
+  shippingCost: z.number().int().min(0), // paise
   estimatedDays: z.number().int().min(0),
   mode: z.string(),
   packageWeight: z.number().min(0).optional(),
@@ -44,43 +44,15 @@ const shippingMethodSchema = z.object({
 
 // Order totals schema
 const orderTotalsSchema = z.object({
-  subtotal: priceSchema,
-  discount: z.number().min(0).max(1000000),
-  shipping: z.number().min(0).optional(),
-  total: priceSchema,
+  subtotal: paiseAmount,
+  discount: z.number().int().min(0), // paise
+  shipping: z.number().int().min(0).optional(), // paise
+  total: paiseAmount,
 });
 
-// Create order schema
-export const createOrderSchema = z
-  .object({
-    items: z
-      .array(cartItemSchema)
-      .min(1, "Order must contain at least one item")
-      .max(100, "Order cannot contain more than 100 items"),
-    totals: orderTotalsSchema,
-    address: orderAddressSchema,
-    shipping: shippingMethodSchema,
-    notes: z.string().max(1000, "Notes too long").optional(),
-    paymentMethod: z.enum(["razorpay"]).optional(),
-    paymentStatus: z.enum(["pending", "paid", "failed"]).optional(),
-    userId: uuidSchema.optional(),
-  })
-  .refine(
-    (data) => {
-      // Validate totals match items + shipping
-      const calculatedSubtotal = data.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      );
-      const shippingCost = data.totals.shipping || 0;
-      const expectedTotal =
-        calculatedSubtotal - data.totals.discount + shippingCost;
-      return Math.abs(expectedTotal - data.totals.total) < 0.01;
-    },
-    { message: "Order totals do not match items", path: ["totals"] }
-  );
+// The single-shipment create schema is gone with its path (inventory-reservation D5):
+// one order-creation path, so the stock guarantee has no weaker sibling.
 
-export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
 // Order lookup schema
 export const orderLookupSchema = z.object({
@@ -106,15 +78,17 @@ export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
 // NEW: Multi-Shipment Order Schemas
 // ============================================
 
-// Shipment item schema (simpler than cart item - no cart-specific fields)
+// What a checkout line is allowed to say about itself: which product, how many.
+// Names, thumbnails and every rupee figure are priced server-side from the catalogue
+// (Invariant 1) — the fields were removed rather than accepted-and-ignored, because a
+// field that is present but ignored is eventually read by someone (trd.md D2).
 const shipmentItemSchema = z.object({
   productId: z.string().min(1),
-  productName: z.string().min(1).max(255),
-  productSlug: z.string().min(1).max(255),
-  thumbnail: z.string().url().max(2048),
-  price: priceSchema,
-  salePrice: priceSchema.optional(),
   quantity: quantitySchema,
+  // The chosen variant (order-and-cart-lines D5). Optional — validated against the
+  // product's declared options server-side, where the catalogue row is in hand.
+  size: z.string().trim().min(1).max(50).optional(),
+  color: z.string().trim().min(1).max(50).optional(),
 });
 
 // Selected shipping rate schema
@@ -123,7 +97,7 @@ const selectedRateSchema = z.object({
   providerName: z.string().min(1, "Provider name required"),
   courierName: z.string().min(1, "Courier name required"),
   courierCode: z.string().optional(),
-  rate: z.number().min(0, "Shipping rate cannot be negative"),
+  rate: z.number().int().min(0, "Shipping rate cannot be negative"), // paise
   estimatedDays: z.number().int().min(0),
   mode: z.string().min(1),
   etd: z.string().optional(),
@@ -132,63 +106,29 @@ const selectedRateSchema = z.object({
 // Shipping group schema
 const shippingGroupSchema = z.object({
   groupId: z.string().min(1),
-  sellerId: z.string().min(1),
-  sellerName: z.string().min(1),
+  orgId: z.string().min(1),
+  orgName: z.string().min(1),
   fromPincode: postalCodeSchema,
   fromCity: z.string().min(2).max(100),
   fromState: z.string().min(2).max(100),
   items: z.array(shipmentItemSchema).min(1, "Group must have at least one item"),
-  totalWeight: z.number().min(0),
-  itemsTotal: z.number().min(0),
   selectedRate: selectedRateSchema,
 });
 
-// Order totals schema for multi-shipment orders
-const orderWithShipmentsTotalsSchema = z.object({
-  itemsTotal: priceSchema,
-  shippingTotal: z.number().min(0),
-  discount: z.number().min(0).max(1000000),
-  grandTotal: priceSchema,
+// Create order with shipments schema. No totals object and no consistency refine:
+// once the server computes the totals there is nothing for the client's numbers to
+// check (trd.md D3). `paymentStatus` is gone too — it is server-owned (Invariant 2).
+export const createOrderWithShipmentsSchema = z.object({
+  shippingGroups: z
+    .array(shippingGroupSchema)
+    .min(1, "Order must contain at least one shipping group")
+    .max(10, "Order cannot have more than 10 shipments"),
+  /** The grand total the customer saw, compared against the server's own — never persisted. */
+  displayedGrandTotal: paiseAmount,
+  address: orderAddressSchema,
+  notes: z.string().max(1000, "Notes too long").optional(),
+  paymentMethod: z.enum(["razorpay"]).optional(),
+  userId: uuidSchema.optional(),
 });
-
-// Create order with shipments schema
-export const createOrderWithShipmentsSchema = z
-  .object({
-    shippingGroups: z
-      .array(shippingGroupSchema)
-      .min(1, "Order must contain at least one shipping group")
-      .max(10, "Order cannot have more than 10 shipments"),
-    totals: orderWithShipmentsTotalsSchema,
-    address: orderAddressSchema,
-    notes: z.string().max(1000, "Notes too long").optional(),
-    paymentMethod: z.enum(["razorpay"]).optional(),
-    paymentStatus: z.enum(["pending", "paid", "failed"]).optional(),
-    userId: uuidSchema.optional(),
-  })
-  .refine(
-    (data) => {
-      // Validate that totals match shipping groups
-      const calculatedItemsTotal = data.shippingGroups.reduce(
-        (sum, group) => sum + group.itemsTotal,
-        0
-      );
-      const calculatedShippingTotal = data.shippingGroups.reduce(
-        (sum, group) => sum + group.selectedRate.rate,
-        0
-      );
-      const expectedGrandTotal =
-        calculatedItemsTotal + calculatedShippingTotal - data.totals.discount;
-
-      return (
-        Math.abs(calculatedItemsTotal - data.totals.itemsTotal) < 0.01 &&
-        Math.abs(calculatedShippingTotal - data.totals.shippingTotal) < 0.01 &&
-        Math.abs(expectedGrandTotal - data.totals.grandTotal) < 0.01
-      );
-    },
-    {
-      message: "Order totals do not match shipping groups",
-      path: ["totals"],
-    }
-  );
 
 export type CreateOrderWithShipmentsInput = z.infer<typeof createOrderWithShipmentsSchema>;

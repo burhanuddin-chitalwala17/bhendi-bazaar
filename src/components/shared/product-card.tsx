@@ -18,8 +18,8 @@ export function ProductCard(product: Product) {
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
           />
           {product.stock === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-              <span className="text-sm font-semibold text-white">
+            <div className="absolute inset-0 flex items-center justify-center bg-scrim/50">
+              <span className="text-sm font-semibold text-primary-foreground">
                 Out of Stock
               </span>
             </div>

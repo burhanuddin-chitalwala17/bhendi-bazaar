@@ -11,7 +11,6 @@ import { LoadingSpinner } from "../shared/states/LoadingSpinner";
 import { EmptyState } from "../shared/states/EmptyState";
 import { LoadingSkeleton } from "../shared/states/LoadingSkeleton";
 import { SectionHeader } from "../shared/SectionHeader";
-import { DefaultBadge } from "../shared/badges/StatusBadge";
 
 interface AddressesSectionProps {
   addresses: DeliveryAddress[];
@@ -19,7 +18,6 @@ interface AddressesSectionProps {
   saving?: boolean;
   onSaveAddress: (address: DeliveryAddress) => Promise<void>;
   onDeleteAddress: (addressId: string) => Promise<void>;
-  onSetDefault: (addressId: string) => Promise<void>;
 }
 
 export function AddressesSection({
@@ -28,7 +26,6 @@ export function AddressesSection({
   saving,
   onSaveAddress,
   onDeleteAddress,
-  onSetDefault,
 }: AddressesSectionProps) {
   const [activeAddress, setActiveAddress] = useState<DeliveryAddress | null>(
     null
@@ -116,8 +113,7 @@ export function AddressesSection({
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{address.metadata?.label}</span>
-                      {address.metadata?.isDefault && <DefaultBadge />}
+                      <span className="font-semibold">{address.label}</span>
                     </div>
                     <p className="line-clamp-1 text-muted-foreground">
                       {[
@@ -145,11 +141,6 @@ export function AddressesSection({
           onClose={handleCloseModal}
           onSave={handleSave}
           onStartEdit={() => setModalMode("edit")}
-          onSetDefault={
-            activeAddress.metadata?.isDefault
-              ? undefined
-              : () => onSetDefault(activeAddress.id)
-          }
           onDelete={() => handleDelete(activeAddress.id)}
         />
       )}

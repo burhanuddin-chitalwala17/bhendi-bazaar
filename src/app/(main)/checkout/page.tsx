@@ -28,7 +28,7 @@ export default async function CheckoutPage({
       salePrice: buyNowProduct.salePrice,
       quantity: 1,
       shippingFromPincode: buyNowProduct.shippingFromPincode,
-      seller: buyNowProduct.seller,
+      org: buyNowProduct.org,
     };
   }
 

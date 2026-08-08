@@ -14,8 +14,19 @@ export interface ServerPaymentOrder {
   key?: string; // API key for client-side SDK
 }
 
+/** What a caller may ask for: the order. The amount is derived, never accepted (ADR-0002). */
 export interface CreatePaymentOrderInput {
-  amount: number;
+  localOrderId: string;
+  customer?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+}
+
+/** What the gateway is told — amount included, because by now the server computed it. */
+export interface GatewayOrderRequest {
+  amount: number; // paise
   currency: string;
   localOrderId: string;
   customer?: {

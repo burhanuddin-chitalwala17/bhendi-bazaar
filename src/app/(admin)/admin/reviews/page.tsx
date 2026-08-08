@@ -97,8 +97,8 @@ export default function AdminReviewsPage() {
             key={star}
             className={`w-4 h-4 ${
               star <= rating
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-300"
+                ? "fill-warning text-warning"
+                : "text-muted-foreground/50"
             }`}
           />
         ))}
@@ -123,7 +123,7 @@ export default function AdminReviewsPage() {
         <div>
           <p className="font-medium">{review.userName}</p>
           {review.isVerified && (
-            <span className="text-xs text-green-600">✓ Verified Purchase</span>
+            <span className="text-xs text-success">✓ Verified Purchase</span>
           )}
         </div>
       ),
@@ -148,7 +148,7 @@ export default function AdminReviewsPage() {
             <p className="font-medium text-sm mb-1">{review.title}</p>
           )}
           {review.comment && (
-            <p className="text-sm text-gray-600 line-clamp-2">
+            <p className="text-sm text-muted-foreground line-clamp-2">
               {review.comment}
             </p>
           )}
@@ -163,8 +163,8 @@ export default function AdminReviewsPage() {
           onClick={() => handleToggleApprove(review.id, review.isApproved)}
           className={`px-3 py-1 rounded-full text-xs font-medium ${
             review.isApproved
-              ? "bg-green-100 text-green-800 hover:bg-green-200"
-              : "bg-red-100 text-red-800 hover:bg-red-200"
+              ? "bg-success/15 text-success hover:bg-success/25"
+              : "bg-destructive/15 text-destructive hover:bg-destructive/25"
           }`}
         >
           {review.isApproved ? "Approved" : "Pending"}
@@ -186,8 +186,8 @@ export default function AdminReviewsPage() {
             onClick={() => handleToggleApprove(review.id, review.isApproved)}
             className={`p-2 rounded-lg transition-colors ${
               review.isApproved
-                ? "text-orange-600 hover:bg-orange-50"
-                : "text-green-600 hover:bg-green-50"
+                ? "text-warning hover:bg-warning/10"
+                : "text-success hover:bg-success/10"
             }`}
             title={review.isApproved ? "Unapprove" : "Approve"}
           >
@@ -199,7 +199,7 @@ export default function AdminReviewsPage() {
           </button>
           <button
             onClick={() => handleDelete(review.id, review.userName)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
             title="Delete review"
           >
             <Trash2 className="w-4 h-4" />
@@ -213,17 +213,17 @@ export default function AdminReviewsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-gray-900">
+          <h1 className="text-3xl font-heading font-bold text-foreground">
             Reviews
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             Moderate and manage customer reviews
           </p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           {isLoading ? "Refreshing..." : "Refresh"}
@@ -231,7 +231,7 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-64">
             <div className="flex gap-2">
@@ -241,11 +241,11 @@ export default function AdminReviewsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by product, customer, or review..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button
                 onClick={handleSearch}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
@@ -271,7 +271,7 @@ export default function AdminReviewsPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Reviews</option>
             <option value="approved">Approved</option>
@@ -296,7 +296,7 @@ export default function AdminReviewsPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Types</option>
             <option value="verified">Verified Purchase</option>
@@ -315,7 +315,7 @@ export default function AdminReviewsPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Ratings</option>
             <option value="5">5 Stars</option>

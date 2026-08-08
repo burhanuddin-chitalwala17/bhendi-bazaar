@@ -11,6 +11,7 @@ import { authOptions } from "@/lib/auth-config";
 import { addressService } from "@server/identity/address.service";
 import { validateRequest } from "@/lib/validation";
 import { addAddressSchema } from "@/lib/validation/schemas/address.schema";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 /**
  * GET /api/addresses
@@ -29,14 +30,7 @@ export async function GET() {
     const addresses = await addressService.getAddressesByUserId(userId);
     return NextResponse.json({ addresses });
   } catch (error) {
-    console.error("Failed to fetch addresses:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch addresses",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Could not fetch addresses");
   }
 }
 
@@ -67,6 +61,6 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ success: true, message: "Address added" }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to add address" }, { status: 400 });
+    return toErrorResponse(error, "Could not add address");
   }
 }

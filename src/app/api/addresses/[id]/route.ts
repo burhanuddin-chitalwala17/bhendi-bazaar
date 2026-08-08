@@ -12,6 +12,7 @@ import { authOptions } from "@/lib/auth-config";
 import { addressService } from "@server/identity/address.service";
 import { validateRequest } from "@/lib/validation";
 import { updateAddressSchema } from "@/lib/validation/schemas/address.schema";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 // Next passes (request, context); `params` is a Promise in Next 15+.
 type RouteParams = { params: Promise<{ id: string }> };
@@ -50,7 +51,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
     return NextResponse.json({ success: true, message: "Address updated" });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to update address" }, { status: 400 });
+    return toErrorResponse(error, "Could not update address");
   }
 }
 
@@ -75,6 +76,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     }
     return NextResponse.json({ success: true, message: "Address deleted" });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Failed to delete address" }, { status: 400 });
+    return toErrorResponse(error, "Could not delete address");
   }
 }

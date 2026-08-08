@@ -1,9 +1,33 @@
-import type { Order } from "@/domain/order";
 import { baseEmailStyles } from "./styles/baseEmailStyles";
 import { formatCurrency, formatDate } from "../formatters";
 import { appUrl } from "@server/shared/app-url";
 
-export function getPurchaseConfirmationEmailTemplate(order: Order): string {
+/** What this template renders — the caller maps its row onto this, whatever its source. */
+export interface OrderEmailView {
+  id: string;
+  code: string;
+  status: string;
+  paymentStatus: string | null;
+  createdAt: Date;
+  notes?: string | null;
+  itemsTotal: number; // paise
+  discount: number; // paise
+  grandTotal: number; // paise
+  address: {
+    fullName: string;
+    email?: string;
+    mobile: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  };
+  shipments: Array<{ estimatedDelivery?: string | null }>;
+}
+
+export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
   // Generate order items HTML
   const orderItemsHtml = order.itemsTotal
 

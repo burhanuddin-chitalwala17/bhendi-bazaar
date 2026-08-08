@@ -41,7 +41,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 
 | Domain | Directory | Owns |
 |---|---|---|
-| catalog | `server/catalog/` | Products, categories, sellers, reviews, search |
+| catalog | `server/catalog/` | Products, categories, orgs (selling organisations), reviews, search |
 | cart | `server/cart/` | Cart persistence and the sign-in merge |
 | checkout | `server/checkout/` | Orders and their lifecycle |
 | payments | `server/payments/` | Gateway conversation and payment state |
@@ -72,6 +72,8 @@ All monetary columns and all arithmetic are `Int` paise. Never `Float`, never `N
 
 ### 4. Every request body is parsed, never cast
 Route handlers validate with a Zod schema from `src/lib/validation/schemas/`. `as SomeType` on `await request.json()` is forbidden — it is a compile-time fiction with no runtime effect. No raw request object is ever spread into a Prisma `data` argument.
+
+A form gets its client validation from that same schema via `useServerForm`, so what a user sees inline cannot drift from what the server enforces ([ADR-0013](docs/adr/0013-one-error-envelope-and-useserverform.md)).
 
 Additionally: **write paths whitelist their fields, and create and update must be symmetric** — an update that whitelists nothing while its create whitelists everything is how mass assignment happens. **Server-owned fields are never accepted as input**, even optionally: `rating`, `reviewsCount`, `createdAt`, `updatedAt`, `paymentStatus`, computed totals, and **`slug`** (generated from the name at creation, then frozen — a slug needing percent-encoding does not survive a route param, and changing one 404s every existing link). There is no admin exception: parsing is about the *payload* being untrusted, not the caller being unknown.
 
@@ -139,6 +141,7 @@ Canonical index of *how we work*. Each line points; detail lives in the ADR so i
 - **Specs** — feature folders, kebab-case, no numbering; `spec.md` (product) + `trd.md` (technical, no code); ≤100 readable lines each. ([ADR-0010](docs/adr/0010-spec-convention.md))
 - **CHANGELOG** — append-only, newest on top, one entry per PR; `[CONTRACT]` flag when a DTO changes.
 - **Docs reference code by path, never copy it.** ([ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md))
+- **One error envelope, and forms consume it via `useServerForm`.** Handlers return failures through `toErrorResponse`; clients read them through `readApiError`; domain code opts into a shown message by throwing `DomainError`. **Touching a form or handler that still uses the old pattern means converting it.** ([ADR-0013](docs/adr/0013-one-error-envelope-and-useserverform.md), [CONTRACTS.md](docs/CONTRACTS.md))
 - **`server/` is organised by domain, not by layer or caller** — one directory per bounded context, owning its own layers; external systems behind an interface in `<domain>/providers/<name>/`; no `admin/` tree. ([ADR-0012](docs/adr/0012-modules-are-vertical-slices-by-domain.md))
 - **ADRs are for genuine decisions** — real alternatives, and the rejected option is often the conventional one. Not for small or well-established practice. ([docs/adr/README.md](docs/adr/README.md))
 
@@ -148,6 +151,9 @@ Canonical index of *how we work*. Each line points; detail lives in the ADR so i
 
 - **SOLID**, **DRY**, **YAGNI**, **KISS** — extensibility comes from good seams, not pre-built features.
 - **Separation of concerns** — components know nothing about Prisma; repositories know nothing about HTTP.
+- **Render on the server by default.** `"use client"` is earned by interactivity — state, effects, event handlers, browser APIs — not by being a component. A server component reads through `src/data-access-layer/`; a client component that only displays data receives it as props. **A route handler exists for something a browser must call**: a mutation, or a fetch triggered by interaction. Reading data a server component could have read is a round trip bought for nothing, and it is how a page ends up with a loading spinner over data the server already had. Push `"use client"` down to the smallest leaf that needs it rather than marking a whole page.
+- **A hook does one thing.** Data fetching, form state, and presentation are three hooks, not one; a hook that returns more than one concern is the seam in the wrong place.
+- **Colour goes through tokens.** Semantic tokens in `src/app/globals.css` (`primary`, `muted`, `destructive`, `success`/`warning`/`info`, `scrim`, `hero`) are the only way colour reaches a className — raw palette classes (`bg-emerald-50`, `text-gray-500`) pin one shade in one theme and turn a rebrand into a hunt. `tests/unit/design-tokens.test.ts` enforces it. Spacing/size uses Tailwind's scale (`p-4`, `text-sm`), never arbitrary bracket values without a reason.
 - **No magic strings** — closed sets are enums or `as const` unions, declared **once** (see Invariant 5's reasoning; `ProductFlag` was declared three times and drifted silently).
 - **Dependency direction is inward** — `server/` must not import from `src/`. Shared types belong in a neutral module.
 - **`any` is a defect at a trust boundary.** Route handlers, auth, and payment code are typed or they are wrong.

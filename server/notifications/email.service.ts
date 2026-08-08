@@ -12,11 +12,12 @@ import { prisma } from "@server/shared/prisma";
 import { appUrl } from "@server/shared/app-url";
 import crypto from "crypto";
 import { Resend } from "resend";
-import type { Order } from "@/domain/order";
+import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import type { SendEmailOptions } from "./types";
 import { getVerificationEmailTemplate } from "./templates/verificationEmail";
 import { getPasswordResetEmailTemplate } from "./templates/passwordResetEmail";
 import { getPurchaseConfirmationEmailTemplate } from "./templates/purchaseConfirmationEmail";
+import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 class EmailService {
   private resend: Resend | null = null;
@@ -136,15 +137,15 @@ class EmailService {
     });
 
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError("User not found");
     }
 
     if (user.isEmailVerified) {
-      throw new Error("Email already verified");
+      throw new ConflictError("Email already verified");
     }
 
     if (!user.email) {
-      throw new Error("No email associated with this account");
+      throw new DomainError("No email associated with this account");
     }
 
     await prisma.verificationToken.deleteMany({
@@ -193,7 +194,7 @@ class EmailService {
    * Send purchase confirmation email
    */
   async sendPurchaseConfirmationEmail(
-    order: Order,
+    order: OrderEmailView,
     customerEmail: string
   ): Promise<void> {
     await this.sendEmail({

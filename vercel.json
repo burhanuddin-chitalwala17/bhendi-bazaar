@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npx prisma migrate deploy && next build",
+  "crons": [
+    {
+      "path": "/api/cron/reconcile-payments",
+      "schedule": "30 3 * * *"
+    }
+  ]
+}
