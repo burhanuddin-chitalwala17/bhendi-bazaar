@@ -22,7 +22,7 @@ export function OrgLocationFields({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          Default Shipping Location
+          Pickup Location
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -64,14 +64,6 @@ export function OrgLocationFields({
             {...register("defaultPincode")}
           />
         </div>
-
-        <FormInput
-          label="Address"
-          error={errors.defaultAddress?.message}
-          disabled={readOnly}
-          placeholder="Street address, building name"
-          {...register("defaultAddress")}
-        />
       </CardContent>
     </Card>
   );

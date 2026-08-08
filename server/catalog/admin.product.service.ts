@@ -9,8 +9,8 @@ export class ProductsService {
     return await adminProductsRepository.getProducts(filters);
   }
   
-  async getStats() {
-    return await adminProductsRepository.getStats();
+  async getStats(orgId: string | null) {
+    return await adminProductsRepository.getStats(orgId);
   }
 
   async deleteProduct(id: string) {

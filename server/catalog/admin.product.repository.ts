@@ -223,12 +223,22 @@ export class AdminProductsRepository {
     /**
      * Get product statistics
      */
-    async getStats() {
+    /**
+     * Catalogue statistics, for one org or for the whole platform.
+     *
+     * The scope is a required argument, and `null` means the whole platform. Making it
+     * optional would default to platform-wide, which is the wrong default for a
+     * vendor-facing page — and is exactly how an org came to see the platform's product
+     * count and inventory value.
+     */
+    async getStats(orgId: string | null) {
+        const scope = orgId ? { orgId } : {};
+
         const [totalProducts, outOfStockProducts, allProducts] = await Promise.all([
-            prisma.product.count(),
-            prisma.product.count({ where: { stock: 0 } }),
+            prisma.product.count({ where: scope }),
+            prisma.product.count({ where: { ...scope, stock: 0 } }),
             prisma.product.findMany({
-                where: { stock: { gt: 0 } },
+                where: { ...scope, stock: { gt: 0 } },
                 select: {
                     price: true,
                     stock: true,

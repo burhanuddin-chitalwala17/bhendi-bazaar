@@ -3,6 +3,7 @@ import { ProductFlag, Pagination } from "@/types/shared";
 export interface ProductFilters {
   search?: string; // Search by name, SKU, tags
   categoryId?: string;
+  orgId?: string;
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0

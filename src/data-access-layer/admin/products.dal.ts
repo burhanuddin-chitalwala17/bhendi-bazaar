@@ -30,8 +30,9 @@ class ProductsDAL {
     };
   });
 
-  getStats = cache(async (): Promise<ProductStats> => {
-    const stats = await productsService.getStats();
+  /** `null` means every org — only a platform page may ask for that. */
+  getStats = cache(async (orgId: string | null): Promise<ProductStats> => {
+    const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
       lowStockProducts: stats.lowStockProducts,

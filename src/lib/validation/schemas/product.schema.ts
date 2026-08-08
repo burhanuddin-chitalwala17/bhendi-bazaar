@@ -4,7 +4,7 @@ import { ProductFlag } from "@server/catalog/product.flags";
 
 /**
  * The three fields that override where a product ships from. A partial override is
- * meaningless — a city without a pincode still rates from the org's default — so
+ * meaningless — a city without a pincode still rates from the org's own address — so
  * the group is all-or-none.
  */
 export const SHIPPING_OVERRIDE_FIELDS = [
@@ -14,7 +14,7 @@ export const SHIPPING_OVERRIDE_FIELDS = [
 ] as const;
 
 export const SHIPPING_OVERRIDE_MESSAGE =
-  "Fill all three override fields, or clear them all to ship from the org's default address";
+  "Fill all three override fields, or clear them all to ship from the organisation's own address";
 
 /**
  * The accepted shape of an admin product payload.
@@ -51,7 +51,7 @@ export const productFormSchema = z
     sku: z.string().trim().max(64).optional(),
     lowStockThreshold: optionalNumber(z.number().int("Low stock threshold must be a whole number").min(0)),
 
-    // Optional overrides — blank means "use the org's default", so blank must pass.
+    // Optional overrides — blank means "ship from the organisation's own address".
     shippingFromPincode: optionalPostalCodeSchema,
     shippingFromCity: z.string().trim().max(100).optional(),
     shippingFromLocation: z.string().trim().max(200).optional(),

@@ -121,6 +121,32 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Protect the org portal — signed in only. Membership is *not* checked here: this runs
+  // on the edge and cannot reach Postgres, and a membership can be revoked mid-session,
+  // so it is verified where the data is read (portal-separation trd.md D3).
+  if (pathname.startsWith("/org")) {
+    if (!process.env.NEXTAUTH_SECRET) {
+      console.error("⚠️ NEXTAUTH_SECRET not configured");
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    try {
+      const token = await getToken({
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET,
+      });
+
+      if (!token) {
+        const signInUrl = new URL("/signin", request.url);
+        signInUrl.searchParams.set("callbackUrl", pathname);
+        return NextResponse.redirect(signInUrl);
+      }
+    } catch (error) {
+      console.error("Error protecting org route:", error);
+      return NextResponse.redirect(new URL("/signin", request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

@@ -63,8 +63,9 @@ nothing — every test here is an attempt to get at something.
 | --- | ----------------------------------------------------------------------------------------------------------- | ------------------------------- |
 | 1 ✅ | `role` → `platformRole`, declared union, `as any` removed, `admin-auth` converted to throw `ForbiddenError` — landed as PR-25, and carried the 14 handlers that had no `toErrorResponse`, since a throwing helper turns an uncaught 403 into a 500 | none — same access, stated once |
 | 2 ✅ | The org authorization helper, with no pages using it yet — landed as PR-26 (`src/lib/org-auth.ts`)          | none                            |
-| 3   | `(org)` group and the org-scoped pages and handlers moved out of `(admin)`                                  | **yes — the split**             |
-| 4   | Platform-only pages confirmed and the group-boundary assertion added                                        | none                            |
+| 3a ✅ | `(org)` group, layout, and the product screens — **added alongside** `/admin/products`, not moved: no org has a member yet, so a hard move would take product management away from everyone. Landed as PR-27 | **yes — the portal appears** |
+| 3b  | Orders, reviews and the dashboard — the surfaces [portal-split.md](../portal-split.md) marks as serving both audiences, scoped through `Shipment.orgId` and `Product.orgId`                                  | **yes**                         |
+| 4   | Admin duplicates removed once memberships exist, platform-only pages confirmed, group-boundary assertion added | yes — `/admin/products` goes    |
 
 
 ## Questions closed (2026-08-08)

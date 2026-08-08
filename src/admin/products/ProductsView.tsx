@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ProductForm } from "@/components/shared/forms/product";
 import type { ProductDetails } from "./types";
 import { useRouter } from "next/navigation";
+import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 
 interface ProductViewProps {
   product: ProductDetails;
@@ -17,8 +18,9 @@ interface ProductViewProps {
 
 export function ProductsView({ product, category, org }: ProductViewProps) {
   const router = useRouter();
+  const productsBasePath = useProductsBasePath();
   const onCancel = () => {
-    router.push("/admin/products");
+    router.push(productsBasePath);
   };
   return (
     <div className="space-y-8">
@@ -26,7 +28,7 @@ export function ProductsView({ product, category, org }: ProductViewProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/admin/products"
+            href={productsBasePath}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -47,7 +49,7 @@ export function ProductsView({ product, category, org }: ProductViewProps) {
               View Live
             </Button>
           </Link>
-          <Link href={`/admin/products/${product.id}/edit`}>
+          <Link href={`${productsBasePath}/${product.id}/edit`}>
             <Button className="gap-2">
               <Edit className="w-4 h-4" />
               Edit Product

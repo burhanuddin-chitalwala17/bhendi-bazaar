@@ -10,6 +10,35 @@
 
 ## Entries
 
+## [PR-27] 2026-08-08 — The org portal exists: `(org)` and products [CONTRACT]
+
+PR 3 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/), narrowed to products. `/org/[orgId]` is real: a layout that establishes membership once, a dashboard, and the four product screens with API routes behind `withOrg`.
+
+**It runs alongside `/admin/products` rather than replacing it, which is a deliberate deviation from the TRD's "moved out of `(admin)`".** [PR-24](#pr-24-2026-08-08--orgmember-a-persons-membership-of-an-org-migration) added no backfill, so **no org in production has a member** — a hard move would have made product management unreachable for everybody the moment it deployed. Both trees work; removing the admin pages becomes its own step once memberships exist. The product containers are shared, and `useProductsBasePath` decides from the path which portal they are rendering in, so there is one set of components rather than two that drift.
+
+**Two cross-org holes the split would otherwise have opened:**
+
+`orgId` arrived in the **request body** — `productFormSchema` requires it and the form sent it. Under an org route that is a write hole: a member of one org could create or move a product into another by editing the payload. The scope's org is now injected *before* parsing, so whatever the client sent is overwritten rather than trusted. Server-owned, in exactly the sense [Invariant 4](../CLAUDE.md) means.
+
+A **product id in the path is the caller's to choose**, and `getProductById` does not filter by org. Both the pages and the `[id]` handlers check ownership before reading or writing, and report a mismatch as **not-found rather than forbidden** — whether another org owns that id is not this caller's business, and 403 would confirm it exists.
+
+Middleware now covers `/org` for signed-in only. Membership is deliberately not checked there: it runs on the edge and cannot reach Postgres, and it can be revoked mid-session ([trd.md](specs/multi-vendor-marketplace/portal-separation/trd.md) D3).
+
+Also fixed on contact: `catch (error: any)` in `useProducts`, and eight hardcoded `/admin/products` links in components the org pages reuse — Cancel would have thrown an org member into the platform tree.
+
+**Not done in this PR:** orders, reviews and the dashboard, which [portal-split.md](specs/multi-vendor-marketplace/portal-split.md) marks as serving both audiences and which need scoping through `Shipment.orgId` and `Product.orgId` respectively. The org dashboard shows one real number and is a placeholder until [dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/).
+
+`tsc` exits 0, 96 tests pass, `next build` compiles all 7 new routes, 0 lint errors in the new surfaces.
+
+**The portal is unreachable until someone has a membership.** Grant one:
+
+```sql
+INSERT INTO "OrgMember" ("id","userId","orgId","role","updatedAt")
+SELECT gen_random_uuid()::text, u.id, o.id, 'OWNER', now()
+FROM "User" u, "Org" o
+WHERE u.email = '<your-email>' AND o.code = 'SEL-001';
+```
+
 ## [PR-26] 2026-08-08 — The org authorization boundary
 
 PR 2 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). No behaviour change: nothing uses it yet, which is what makes the split in PR 3 a move rather than a rewrite.

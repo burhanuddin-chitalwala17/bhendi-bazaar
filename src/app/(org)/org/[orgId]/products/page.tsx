@@ -1,31 +1,23 @@
-// app/(admin)/admin/products/page.tsx
-
 import { Suspense } from "react";
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import type { Metadata } from "next";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
-import type { Metadata } from "next";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Plus } from "lucide-react";
 
-// ⚡ ISR - Revalidate every 5 minutes
-export const revalidate = 300;
-
-// ⚡ Generate metadata for SEO
 export const metadata: Metadata = {
-  title: "Products Management | Admin",
-  description: "Manage your product catalog",
-  robots: { index: false, follow: false }, // Don't index admin pages
+  title: "Products",
+  robots: { index: false, follow: false },
 };
 
-interface ProductsPageProps {
+interface PageProps {
+  params: Promise<{ orgId: string }>;
   searchParams: Promise<{
     page?: string;
     search?: string;
     category?: string;
-    org?: string;
-    status?: string;
     sort?: string;
     order?: "asc" | "desc";
     lowStock?: string;
@@ -33,60 +25,57 @@ interface ProductsPageProps {
   }>;
 }
 
-export default async function ProductsPage({
-  searchParams,
-}: ProductsPageProps) {
+export default async function OrgProductsPage({ params, searchParams }: PageProps) {
+  const { orgId } = await params;
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">Manage your product catalog</p>
+          <p className="text-muted-foreground">Your organisation&apos;s catalogue</p>
         </div>
         <Button asChild>
-          <Link href="/admin/products/new">
-            <Plus className="w-4 h-4" />
+          <Link href={`/org/${orgId}/products/new`}>
+            <Plus className="h-4 w-4" />
             New Product
           </Link>
         </Button>
       </div>
 
-      {/* ⚡ Suspense for streaming */}
       <Suspense fallback={<ProductsTableSkeleton />}>
-        <ProductsData searchParams={searchParams} />
+        <OrgProductsData orgId={orgId} searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-// ✅ Separate async component for data fetching
-async function ProductsData({ searchParams }: ProductsPageProps) {
+async function OrgProductsData({
+  orgId,
+  searchParams,
+}: {
+  orgId: string;
+  searchParams: PageProps["searchParams"];
+}) {
   const params = await searchParams;
 
-  // Parse filters from URL
+  // `orgId` comes from the path, never the query string — a filter the caller controls
+  // could otherwise widen this to another org's catalogue.
   const filters = {
+    orgId,
     page: Number(params.page) || 1,
     limit: 10,
     search: params.search,
     categoryId: params.category,
-    orgId: params.org,
-    isActive:
-      params.status === "active"
-        ? true
-        : params.status === "inactive"
-        ? false
-        : undefined,
-    sortBy: params.sort as any,
+    sortBy: params.sort as "name" | "createdAt" | "price" | "stock" | undefined,
     sortOrder: params.order,
     lowStock: params.lowStock === "true" ? true : undefined,
     outOfStock: params.outOfStock === "true" ? true : undefined,
   };
 
-  // ⚡ Parallel data fetching
   const [productsData, stats] = await Promise.all([
     adminProductsDAL.getProducts(filters),
-    // null: this is the platform's cross-vendor view, so every org counts.
-    adminProductsDAL.getStats(null),
+    adminProductsDAL.getStats(orgId),
   ]);
 
   return (

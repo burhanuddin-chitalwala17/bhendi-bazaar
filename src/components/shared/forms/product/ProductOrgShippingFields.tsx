@@ -52,14 +52,14 @@ export function ProductOrgShippingFields({
             ))}
           </FormSelect>
 
-          {/* Show org's default location */}
+          {/* Where this ships from unless the product overrides it */}
           {selectedOrg && !watch("shippingFromPincode") && (
             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
                   <p className="font-medium text-blue-900">
-                    Default Shipping Location:
+                    Ships from:
                   </p>
                   <p className="text-blue-700 mt-1">
                     {selectedOrg.defaultAddress && (

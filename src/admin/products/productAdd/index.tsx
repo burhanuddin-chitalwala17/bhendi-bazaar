@@ -7,6 +7,7 @@ import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
+import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 
 
 interface ProductAddContainerProps {
@@ -16,11 +17,12 @@ interface ProductAddContainerProps {
 
 export function ProductAddContainer({ categories, orgs }: ProductAddContainerProps) {
     const router = useRouter();
+    const productsBasePath = useProductsBasePath();
 
     const { createProduct, isLoading, error, successMessage } = useProducts();
 
     const handleCancel = () => {
-        router.push("/admin/products");
+        router.push(productsBasePath);
     };
 
     return (
@@ -29,7 +31,7 @@ export function ProductAddContainer({ categories, orgs }: ProductAddContainerPro
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link
-                        href="/admin/products"
+                        href={productsBasePath}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />

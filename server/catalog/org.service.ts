@@ -9,7 +9,9 @@ export class AdminOrgService {
    * Get all orgs with optional stats
    */
   async getAllOrgs(includeStats = false) {
-    return await orgRepository.findAll(includeStats);
+    return includeStats
+      ? await orgRepository.findAllWithStats()
+      : await orgRepository.findAll();
   }
 
   /**
@@ -37,6 +39,19 @@ export class AdminOrgService {
 
     // Create org
     return await orgRepository.create(data);
+  }
+
+  /**
+   * Create an org with the caller as its owner. Self-serve, so unlike `createOrg` this
+   * is reachable by anyone signed in.
+   */
+  async createOrgWithOwner(data: CreateOrgInput, userId: string) {
+    const existingCode = await orgRepository.findByCode(data.code);
+    if (existingCode) {
+      throw new ConflictError("That organisation code is already taken", { field: "code" });
+    }
+
+    return await orgRepository.createWithOwner(data, userId);
   }
 
   /**

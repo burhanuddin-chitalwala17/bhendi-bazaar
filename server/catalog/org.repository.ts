@@ -2,41 +2,43 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { Org } from "@prisma/client";
+import { OrgRole } from "@prisma/client";
 import type { CreateOrgInput } from "@/domain/org";
 
 export class OrgRepository {
   /**
    * Get all orgs with optional stats
    */
-  async findAll(includeStats = false) {
-    if (includeStats) {
-      const orgs = await prisma.org.findMany({
-        include: {
-          _count: {
-            select: { products: true },
-          },
-          products: {
-            select: { stock: true },
-          },
-        },
-        orderBy: [{ isActive: "desc" }, { name: "asc" }],
-      });
-
-      // Calculate stats
-      return orgs.map((org: any) => ({
-        ...org,
-        productCount: org._count?.products || 0,
-        totalStock:
-          org.products?.reduce((sum: number, p: any) => sum + p.stock, 0) ||
-          0,
-        products: undefined, // Remove to avoid sending all products
-        _count: undefined, // Remove internal field
-      }));
-    }
-
+  /** Orgs as stored. */
+  async findAll() {
     return await prisma.org.findMany({
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
     });
+  }
+
+  /**
+   * Orgs with their product count and total stock.
+   *
+   * A separate method rather than a `includeStats` flag: a boolean that changes the
+   * return type cannot be narrowed by callers, which is why the mapping below used to be
+   * annotated `any` — and that `any` was hiding a real mismatch with `OrgWithStats`.
+   */
+  async findAllWithStats() {
+    const orgs = await prisma.org.findMany({
+      include: {
+        _count: { select: { products: true } },
+        products: { select: { stock: true } },
+      },
+      orderBy: [{ isActive: "desc" }, { name: "asc" }],
+    });
+
+    return orgs.map((org) => ({
+      ...org,
+      productCount: org._count?.products || 0,
+      totalStock: org.products?.reduce((sum, p) => sum + p.stock, 0) || 0,
+      products: undefined,
+      _count: undefined,
+    }));
   }
 
   /**
@@ -60,7 +62,7 @@ export class OrgRepository {
       ...org,
       productCount: org._count?.products || 0,
       totalStock:
-        org.products?.reduce((sum: number, p: any) => sum + p.stock, 0) || 0,
+        org.products?.reduce((sum, p) => sum + p.stock, 0) || 0,
       products: undefined, // Remove to avoid sending all products
       _count: undefined, // Remove internal field
     };
@@ -109,6 +111,37 @@ export class OrgRepository {
         panNumber: data.panNumber || null,
         description: data.description || null,
       },
+    });
+  }
+
+  /**
+   * Create an org and its first owner as one operation.
+   *
+   * Both or neither: an org with nobody able to administer it is unreachable, and a
+   * membership pointing at an org that failed to create is nonsense. The membership is
+   * written here rather than through its own repository because the first owner is part
+   * of creating the org — the transaction is the aggregate boundary.
+   */
+  async createWithOwner(data: CreateOrgInput, userId: string): Promise<Org> {
+    return await prisma.$transaction(async (tx) => {
+      const org = await tx.org.create({
+        data: {
+          ...data,
+          phone: data.phone || null,
+          contactPerson: data.contactPerson || null,
+          defaultAddress: data.defaultAddress || null,
+          businessName: data.businessName || null,
+          gstNumber: data.gstNumber || null,
+          panNumber: data.panNumber || null,
+          description: data.description || null,
+        },
+      });
+
+      await tx.orgMember.create({
+        data: { userId, orgId: org.id, role: OrgRole.OWNER },
+      });
+
+      return org;
     });
   }
 

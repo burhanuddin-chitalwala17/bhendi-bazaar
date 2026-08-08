@@ -12,10 +12,24 @@ export const emailSchema = z
   .max(255, 'Email too long');
 
 // Phone validation (Indian format)
+export const PHONE_PATTERN = /^[6-9]\d{9}$/;
+export const PHONE_MESSAGE = 'Enter a 10-digit Indian mobile number';
+
 export const phoneSchema = z
   .string()
-  .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number')
+  .regex(PHONE_PATTERN, PHONE_MESSAGE)
   .length(10, 'Phone must be exactly 10 digits');
+
+/**
+ * A phone field the user may leave blank. `.optional()` alone is not enough: a form
+ * sends `""` for an untouched input, which is a string and fails the pattern — the same
+ * defect PR-22 fixed for the product form's pincode.
+ */
+export const optionalPhoneSchema = z
+  .string()
+  .trim()
+  .refine((v) => v === "" || PHONE_PATTERN.test(v), PHONE_MESSAGE)
+  .optional();
 
 // UUID validation
 export const uuidSchema = z

@@ -9,6 +9,7 @@ import { ProductsTable } from "./components/ProductsTable";
 import { ProductsStats } from "./components/ProductsStats";
 import { useProducts } from "../useProducts";
 import type { ProductStats, ProductFilters, ProductListResult } from "../types";
+import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 
 interface ProductsContainerProps {
   initialData: ProductListResult;
@@ -21,6 +22,7 @@ export function ProductsContainer({
   initialStats, 
   initialFilters 
 }: ProductsContainerProps) {
+  const productsBasePath = useProductsBasePath();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -63,7 +65,7 @@ export function ProductsContainer({
     
     // ⚡ Trigger server re-render with transition
     startTransition(() => {
-      router.push(`/admin/products?${params.toString()}`);
+      router.push(`${productsBasePath}?${params.toString()}`);
     });
   };
   
@@ -105,8 +107,8 @@ export function ProductsContainer({
         onPageChange={(page) => updateFilters({ page })}
         onSort={(sortBy: string, sortOrder: "asc" | "desc") => updateFilters({ sortBy: sortBy as "name"|"createdAt"|"price"|"stock", sortOrder })}
         onDelete={handleDelete}
-        onEdit={(id: string) => router.push(`/admin/products/${id}`)}
-        onView={(id: string) => router.push(`/admin/products/${id}`)}
+        onEdit={(id: string) => router.push(`${productsBasePath}/${id}`)}
+        onView={(id: string) => router.push(`${productsBasePath}/${id}`)}
         isPending={isPending}
       />
     </div>

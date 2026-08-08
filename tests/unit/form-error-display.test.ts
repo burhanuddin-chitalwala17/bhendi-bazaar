@@ -41,6 +41,29 @@ function displaysError(source: string, field: string): boolean {
   );
 }
 
+describe("no field is bound twice", () => {
+  // Two inputs registered to one name share a value, so typing in either fills both and
+  // the form looks broken without erroring. `defaultAddress` was rendered as a textarea
+  // and again as an input in the org form; nothing caught it until someone looked.
+  it("registers each field at most once per file", () => {
+    const offenders: string[] = [];
+
+    for (const root of ROOTS) {
+      for (const file of tsxFiles(root)) {
+        const counts = new Map<string, number>();
+        for (const [, field] of readFileSync(file, "utf8").matchAll(/register\("([\w.]+)"/g)) {
+          counts.set(field, (counts.get(field) ?? 0) + 1);
+        }
+        for (const [field, n] of counts) {
+          if (n > 1) offenders.push(`${file} — ${field} bound ${n}×`);
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe("every registered field can show its own error", () => {
   it("has no field bound without an error output", () => {
     const offenders: string[] = [];
