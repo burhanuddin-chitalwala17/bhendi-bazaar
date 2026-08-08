@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-39] 2026-08-09 — An order is paid when the gateway says so [CONTRACT] [MIGRATION]
+
+[payment-confirmation](specs/payment-confirmation/) lands. Until now the **browser** told the server an order was paid — `PATCH /api/orders/[id]` accepted `paymentStatus` from anyone — and the webhook that should have been authoritative had **silently no-op'd since it was written**: gateway-order creation stored our id under `notes.orderId` while the webhook read `notes.localOrderId`, found nothing, did nothing, and returned 200. Both Invariant 2 violations, live.
+
+**One confirmation routine, two triggers** (trd.md D1): the browser's post-payment return and the gateway webhook both run the same three checks — signature (now `crypto.timingSafeEqual`, D8; `===` leaks match-length through timing), the persisted gateway-order linkage (`Order.gatewayOrderId`, written at payment-order creation — a signal for some other gateway order proves nothing about this one), and the captured **amount against `grandTotal`** on the webhook path, rejected in either direction. The decision is a pure function (`server/payments/confirmation.ts`), so every branch is a unit test; the transition is a **conditional write** (`updateMany where NOT paid` — ADR-0007's shape on payment state), so webhook-and-browser racing resolves at the database with exactly one winner. Idempotency keys on the payment id (D2): the same payment again is success with no side effects, a *different* payment against a paid order is an incident. The confirmation email moved from `updateOrder` onto the transition (D3), so it fires exactly once.
+
+**The browser now reports; it does not decide.** The client's three `paymentStatus` writes are gone — success calls `/api/payments/verify` (a writer returning order state), zero-total orders call `/api/payments/confirm-free` (the server checks the total really is zero), and failure writes nothing (the failure webhook records it, and a failure signal can never overwrite a captured payment). With those gone, `PATCH /api/orders/[id]`, `orderApiClient.updateOrder`, `orderService.updateOrder`, `orderRepository.update` and `UpdateOrderInput` had **no callers left and are deleted** — the single-writer rule made structural: there is no generic order-write path for `paymentStatus` to sneak back into.
+
+**An unmatched webhook is now loud** (D5): missing note, unknown order, amount mismatch — non-2xx, so Razorpay retries and its dashboard records the failure. Only genuinely irrelevant event types are acknowledged. The notes key is one shared constant (`RAZORPAY_NOTES_ORDER_KEY`) used by both sides and **pinned by a test** (D6), recorded in [INTEGRATIONS.md](INTEGRATIONS.md).
+
+**The backstop for a missed webhook** (D7, R6): `/api/cron/reconcile-payments` — Vercel Cron every 15 minutes (`vercel.json`, new), guarded by `CRON_SECRET` ([OPERATIONS.md](OPERATIONS.md)) — asks the gateway about orders pending past 30 minutes and confirms captured ones through the same routine. Worst case, a missed webhook confirms in ~45 minutes.
+
+Migration: `Order.gatewayOrderId` + two indexes, purely additive. The email template now declares the `OrderEmailView` it renders instead of importing the client-side `Order` type (a `server→src` inversion, retired). **165 tests pass** (10 new — the TRD says these are the deliverable), `tsc` exits 0, `next build` compiles, 0 lint errors in touched files.
+
+**Deploy notes:** run `npx prisma migrate deploy`; set `CRON_SECRET` in Vercel; and the fix only takes effect for orders whose payment order is created *after* deploy (older pending orders have no `gatewayOrderId` — the sweep reports them `still-unpaid` and they resolve by re-payment).
+
 ## [PR-38] 2026-08-09 — The server decides what an order costs [CONTRACT]
 
 [server-side-pricing-authority](specs/server-side-pricing-authority/) lands — Invariant 1 becomes true on the live checkout path. Until now `create-with-shipments` **persisted whatever totals the client sent** and the payment route **charged whatever amount the client stated**: the ₹1-for-anything hole, in production.

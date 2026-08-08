@@ -1,9 +1,9 @@
 # TRD — payment confirmation
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-39
 - **Domain:** payments, checkout
 - **Phase:** 2 — Transaction integrity
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-09
 - **References:** [spec.md](spec.md), [ADR-0005](../../adr/0005-payment-state-server-only.md), [ADR-0002](../../adr/0002-server-holds-pricing-authority.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -53,7 +53,7 @@ Per [TESTING.md](../../TESTING.md), payment state transitions are a 100% target 
 
 PR 2 is the one that changes behaviour in production; 1 is inert, and 3–5 depend on 2 being correct.
 
-## Open questions
-- **Q1** — What is the R6 threshold before an order is considered stuck? Suggest 30 minutes, well past gateway retry windows.
-- **Q2** — Where do stuck and failed orders surface — an admin view, or an alert? An admin list is cheaper and sufficient at current volume.
-- **Q3** — Does R7's "released" state allow the customer to retry the same order, or require a new one? Retry is better for conversion but needs the reservation to still exist; resolve jointly with [inventory-reservation](../inventory-reservation/).
+## Questions closed (2026-08-09)
+- **Q1** — 30 minutes, as suggested; the sweep runs every 15 (`vercel.json`), so a missed webhook confirms within ~45 minutes worst case.
+- **Q2** — The existing admin orders list already filters by payment status, which is the stuck-and-failed view at current volume; the sweep also logs every recovery. An alert earns its keep when volume does.
+- **Q3** — Still open, deliberately: it belongs to [inventory-reservation](../inventory-reservation/), which owns whether a released reservation survives a retry. Carried there.

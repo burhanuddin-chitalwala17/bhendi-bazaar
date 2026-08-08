@@ -6,6 +6,7 @@
  */
 
 import type { PaymentGatewayOrder } from "@/domain/payment";
+import { readApiError } from "@/lib/api-error";
 
 // The SDK attaches itself to window; declaring it once beats casting at every use.
 declare global {
@@ -161,33 +162,36 @@ class PaymentGatewayService {
   }
 
   /**
-   * Verify payment signature (optional client-side verification)
+   * Confirm the payment with the server — the server verifies the signature against
+   * the persisted order and performs the paid transition. This is not optional and
+   * not a boolean check: it is how an order becomes paid (ADR-0005).
    */
-  async verifyPayment(input: {
-    gatewayOrderId: string;
-    paymentId: string;
-    signature: string;
-  }): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.baseUrl}/verify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(input),
-      });
+  async confirmPayment(input: {
+    localOrderId: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }): Promise<{ orderId: string; paymentStatus: "paid" }> {
+    const response = await fetch(`${this.baseUrl}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(input),
+    });
+    if (!response.ok) throw await readApiError(response);
+    return response.json();
+  }
 
-      if (!response.ok) {
-        return false;
-      }
-
-      const data = await response.json();
-      return data.verified === true;
-    } catch (error) {
-      console.error("[PaymentGatewayService] verifyPayment failed:", error);
-      return false;
-    }
+  /** Zero-total orders: the server checks the persisted total is really zero. */
+  async confirmFreeOrder(localOrderId: string): Promise<{ orderId: string }> {
+    const response = await fetch(`${this.baseUrl}/confirm-free`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ localOrderId }),
+    });
+    if (!response.ok) throw await readApiError(response);
+    return response.json();
   }
 }
 

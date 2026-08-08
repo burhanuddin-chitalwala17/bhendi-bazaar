@@ -64,11 +64,11 @@ Consolidating to one declaration is a precondition for [product-weight-and-rates
 ### Orders
 `Shipment` is declared in three places across `src/domain/order.ts` and `server/checkout/order.types.ts`. Timestamp fields (`estimatedDelivery`, `createdAt`, `updatedAt`) are typed `Date` on the client side and `string` on the server side; JSON delivers strings, so Rule 3 is not currently met.
 
-Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ productId, quantity }` — plus a `displayedGrandTotal` used only for the changed-mid-session comparison and never persisted (PR-38). `paymentStatus` is gone from create; it survives on **update**, which [payment-confirmation](specs/payment-confirmation/) removes.
+Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ productId, quantity }` — plus a `displayedGrandTotal` used only for the changed-mid-session comparison and never persisted (PR-38). `paymentStatus` crosses the wire in **no direction** since PR-39: the update route is deleted, and the paid/failed transitions in `order.repository.ts` are the only writers (ADR-0005).
 
 ### Payments
 - `POST /api/payments/create-order` takes `{ localOrderId, customer? }` and **derives the amount from the persisted order's `grandTotal`** (PR-38) — which was itself computed from the catalogue inside the creation transaction. An `amount` in the body is not read; the field no longer exists in the schema.
-- `POST /api/payments/verify` returns `{ verified: boolean }` and performs no write. [payment-confirmation](specs/payment-confirmation/) makes it a writer returning the resulting order state.
+- `POST /api/payments/verify` **is the browser-return confirmation trigger** (PR-39): it takes `{ localOrderId, razorpay_* }`, verifies the signature against the persisted order, performs the paid transition, and returns `{ orderId, paymentStatus }`. `POST /api/payments/confirm-free` does the same for zero-total orders. `PATCH /api/orders/[id]` is **deleted** — nothing updates an order from the browser any more.
 - Gateway webhook payloads are Razorpay's contract, not ours. See [INTEGRATIONS.md](INTEGRATIONS.md) for the `notes` round-trip.
 
 ### Admin

@@ -53,12 +53,9 @@ interface Shipment {
   estimatedDelivery?: string;
 }
 
-export interface UpdateOrderInput {
-  status?: string;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  paymentId?: string;
-}
+// UpdateOrderInput is deliberately gone: the paid/failed transitions in
+// order.repository are the only writers of payment state (ADR-0005).
+
 
 // ============================================
 // NEW: Multi-Shipment Order Types

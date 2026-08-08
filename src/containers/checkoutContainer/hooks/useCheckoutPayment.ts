@@ -121,10 +121,10 @@ export function useCheckoutPayment() {
       // The server's own total — computed from the catalogue, already in paise.
       const amountInMinorUnit = order.grandTotal;
 
-      // Free order case
+      // Free order case — the server checks the persisted total is zero and
+      // performs the transition itself; the browser asserts nothing.
       if (amountInMinorUnit <= 0) {
-        await orderApiClient.updateOrder(order.id, { paymentStatus: "paid", status: "confirmed" });
-        console.log('✅ Free order confirmed! Manual fulfillment required.');
+        await paymentGatewayService.confirmFreeOrder(order.id);
         router.push(`/order/${order.id}`);
         return order;
       }
@@ -145,18 +145,15 @@ export function useCheckoutPayment() {
       await paymentGatewayService.openCheckout(paymentOrder, {
         onSuccess: async (response) => {
           try {
-            console.log('✅ Payment successful! Updating order...');
-
-            // Step 4: Update order with payment info
-            await orderApiClient.updateOrder(order.id, {
-              paymentStatus: "paid",
-              paymentMethod: "razorpay",
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
+            // The server verifies the signature against the persisted order and
+            // writes the paid state — the browser reports, it does not decide
+            // (ADR-0005). The webhook is the second, independent trigger.
+            await paymentGatewayService.confirmPayment({
+              localOrderId: order.id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             });
-
-            console.log('✅ Order confirmed! Awaiting manual fulfillment.');
             // Step 6: Clear cart
             if (!orderData.isBuyNow) {
               console.log('🧹 Clearing cart...');
@@ -179,10 +176,8 @@ export function useCheckoutPayment() {
         },
         onFailure: async (error) => {
           console.error("❌ Payment failed:", error);
-          await orderApiClient.updateOrder(order.id, {
-            paymentStatus: "failed",
-            status: "failed",
-          });
+          // No state write from here: the gateway's own failure webhook records it,
+          // and a failure signal must never be able to overwrite a captured payment.
           const description = (error as { error?: { description?: string } } | null)
             ?.error?.description;
           setError(description || "Payment failed. Please try again.");

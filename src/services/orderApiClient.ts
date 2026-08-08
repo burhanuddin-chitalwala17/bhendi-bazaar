@@ -49,15 +49,9 @@ export interface CreateOrderWithShipmentsInput {
   paymentMethod?: string;
 }
 
-export interface UpdateOrderInput {
-  status?: string;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  paymentId?: string;
-  razorpayOrderId?: string;
-  razorpayPaymentId?: string;
-  razorpaySignature?: string;
-}
+// UpdateOrderInput and updateOrder are gone with their route: payment state has
+// exactly one writer (ADR-0005), and nothing else ever updated an order from the browser.
+
 
 class OrderService {
   /**
@@ -109,36 +103,7 @@ class OrderService {
   }
 
 
-  /**
-   * Update an existing order
-   */
-  async updateOrder(
-    orderId: string,
-    input: UpdateOrderInput
-  ): Promise<Order> {
-    const response = await fetch(`/api/orders/${orderId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(input),
-    });
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error("You don't have permission to update this order");
-      }
-      if (response.status === 404) {
-        throw new Error("Order not found");
-      }
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to update order");
-    }
-
-    return response.json();
-  }
-
+  
   /**
    * Create a new order with multiple shipments (NEW)
    */

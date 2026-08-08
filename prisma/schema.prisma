@@ -248,7 +248,8 @@ model Order {
   // Payment (single for entire order)
   paymentMethod String? // "razorpay"
   paymentStatus String? @default("pending") // pending, paid, failed
-  paymentId     String? // Razorpay payment ID
+  paymentId     String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
+  gatewayOrderId String? // the gateway order this order was charged through; created with amount = grandTotal
   
   // Overall order status (derived from shipments)
   status String @default("processing") // processing, partially_shipped, completed
@@ -264,6 +265,8 @@ model Order {
   @@index([code])
   @@index([status])
   @@index([paymentStatus])
+  @@index([paymentStatus, createdAt]) // the reconciliation sweep asks "pending and old"
+  @@index([gatewayOrderId])
 }
 
 model Shipment {

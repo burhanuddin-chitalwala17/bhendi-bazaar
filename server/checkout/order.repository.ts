@@ -5,10 +5,9 @@
  * It uses Prisma to interact with the PostgreSQL database.
  */
 
-import { prisma } from "@server/shared/prisma";
+import { prisma, toJsonColumn } from "@server/shared/prisma";
 import type {
   CreateOrderInput,
-  UpdateOrderInput,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
@@ -62,17 +61,13 @@ export class OrderRepository {
       return null;
     }
 
-    // Map Prisma null to undefined for userId
-    return {
-      ...order,
-      userId: order.userId || undefined,
-    } as any;
+    return order;
   }
 
   /**
    * Find order by code (for guest lookup)
    */
-  async findByCode(code: string): Promise<Order | null> {
+  async findByCode(code: string) {
     const order = await prisma.order.findUnique({
       where: { code },
     });
@@ -81,11 +76,7 @@ export class OrderRepository {
       return null;
     }
 
-    // Map Prisma null to undefined for userId
-    return {
-      ...order,
-      userId: order.userId || undefined,
-    } as any;
+    return order;
   }
 
   /**
@@ -123,7 +114,7 @@ export class OrderRepository {
           discount: input.discount,
           grandTotal: input.grandTotal,
           status: "processing",
-          address: input.address as any,
+          address: toJsonColumn(input.address),
           notes: input.notes ?? null,
           paymentMethod: input.paymentMethod ?? null,
           paymentStatus: input.paymentStatus ?? "pending",
@@ -153,22 +144,56 @@ export class OrderRepository {
   /**
    * Update an existing order
    */
-  async update(
-    orderId: string,
-    input: UpdateOrderInput
-  ): Promise<boolean> {
-    const order = await prisma.order.update({
-      where: { id: orderId },
+  /**
+   * The single write path to `paymentStatus: "paid"` (ADR-0005). A conditional
+   * update, not read-then-write: two confirmations racing (webhook and browser
+   * return) resolve at the database — exactly one wins, the other sees count 0 and
+   * re-reads to find out why.
+   */
+  async confirmPaid(orderId: string, paymentId: string): Promise<boolean> {
+    const result = await prisma.order.updateMany({
+      where: { id: orderId, NOT: { paymentStatus: "paid" } },
       data: {
-        ...(input.status && { status: input.status }),
-        ...(input.paymentMethod && { paymentMethod: input.paymentMethod }),
-        ...(input.paymentStatus && { paymentStatus: input.paymentStatus }),
-        ...(input.paymentId && { paymentId: input.paymentId }),
+        paymentStatus: "paid",
+        status: "confirmed",
+        paymentId,
       },
     });
-
-    return true;
+    return result.count === 1;
   }
+
+  /**
+   * Orders stuck pending past the threshold, with a gateway order to ask about —
+   * the reconciliation sweep's worklist (payment-confirmation D7). Capped: the sweep
+   * runs often, so a long tail drains over several runs rather than one slow one.
+   */
+  async findStuckPendingOrders(olderThan: Date, limit = 20) {
+    return prisma.order.findMany({
+      where: {
+        paymentStatus: "pending",
+        gatewayOrderId: { not: null },
+        createdAt: { lt: olderThan },
+      },
+      select: { id: true, gatewayOrderId: true, grandTotal: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+  }
+
+  /** Links the order to the gateway order created to charge it (payment-confirmation). */
+  async attachGatewayOrder(orderId: string, gatewayOrderId: string): Promise<void> {
+    await prisma.order.update({ where: { id: orderId }, data: { gatewayOrderId } });
+  }
+
+  /** Failure never overwrites success: a captured payment beats a late failure signal. */
+  async markPaymentFailed(orderId: string): Promise<boolean> {
+    const result = await prisma.order.updateMany({
+      where: { id: orderId, NOT: { paymentStatus: "paid" } },
+      data: { paymentStatus: "failed", status: "failed" },
+    });
+    return result.count === 1;
+  }
+
 
   /**
    * Cancel an order and restore stock

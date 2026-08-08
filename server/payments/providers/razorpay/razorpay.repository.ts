@@ -6,6 +6,7 @@
  */
 
 import crypto from "crypto";
+import { RAZORPAY_NOTES_ORDER_KEY } from "@server/payments/notes";
 import type {
   ServerPaymentOrder,
   GatewayOrderRequest,
@@ -18,6 +19,15 @@ import type {
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || "";
+
+
+/** Constant-time signature equality (trd.md D8) — `===` short-circuits on the first differing byte. */
+function signaturesMatch(expected: string, provided: string): boolean {
+  const a = Buffer.from(expected, "utf8");
+  const b = Buffer.from(provided, "utf8");
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
 
 export class RazorpayRepository {
   private apiUrl = "https://api.razorpay.com/v1";
@@ -53,7 +63,7 @@ export class RazorpayRepository {
           currency: input.currency,
           receipt: input.localOrderId,
           notes: {
-            orderId: input.localOrderId,
+            [RAZORPAY_NOTES_ORDER_KEY]: input.localOrderId,
             customerName: input.customer?.name || "",
             customerEmail: input.customer?.email || "",
           },
@@ -100,7 +110,7 @@ export class RazorpayRepository {
         .update(text)
         .digest("hex");
 
-      const isValid = expectedSignature === input.signature;
+      const isValid = signaturesMatch(expectedSignature, input.signature);
 
       return {
         isValid,
@@ -135,7 +145,7 @@ export class RazorpayRepository {
         .update(rawBody)
         .digest("hex");
 
-      const isValid = expectedSignature === signature;
+      const isValid = signaturesMatch(expectedSignature, signature);
 
       if (!isValid) {
         return {
@@ -164,6 +174,30 @@ export class RazorpayRepository {
           error instanceof Error ? error.message : "Failed to verify webhook",
       };
     }
+  }
+
+  /**
+   * The captured payment against a gateway order, if any — the reconciliation
+   * sweep's question for orders stuck pending (trd.md D7). Returns null when nothing
+   * was captured, which is a normal answer, not an error.
+   */
+  async fetchCapturedPayment(
+    gatewayOrderId: string
+  ): Promise<{ paymentId: string; amount: number } | null> {
+    const auth = Buffer.from(`${this.keyId}:${this.keySecret}`).toString("base64");
+
+    const response = await fetch(`${this.apiUrl}/orders/${gatewayOrderId}/payments`, {
+      headers: { Authorization: `Basic ${auth}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Razorpay payments lookup failed with ${response.status}`);
+    }
+
+    const body = (await response.json()) as {
+      items?: Array<{ id: string; status: string; amount: number }>;
+    };
+    const captured = body.items?.find((p) => p.status === "captured");
+    return captured ? { paymentId: captured.id, amount: captured.amount } : null;
   }
 }
 

@@ -20,9 +20,15 @@ export type CreatePaymentOrderInput = z.infer<typeof createPaymentOrderSchema>;
 
 // Verify payment schema
 export const verifyPaymentSchema = z.object({
+  localOrderId: z.string().min(1, 'Order reference required'),
   razorpay_order_id: z.string().min(1, 'Order ID required'),
   razorpay_payment_id: z.string().min(1, 'Payment ID required'),
   razorpay_signature: z.string().min(1, 'Signature required'),
+});
+
+/** A zero-total order has nothing for a gateway to verify; the server checks the total itself. */
+export const confirmFreeOrderSchema = z.object({
+  localOrderId: z.string().min(1),
 });
 
 export type VerifyPaymentInput = z.infer<typeof verifyPaymentSchema>;

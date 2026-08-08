@@ -13,7 +13,6 @@ import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
 import type {
   CreateOrderInput,
-  UpdateOrderInput,
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
   ShipmentItem,
@@ -21,6 +20,7 @@ import type {
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { priceGroupItems, assembleOrderTotals } from "@server/checkout/pricing";
+import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
 export class OrderService {
@@ -77,46 +77,46 @@ export class OrderService {
     }
   }
 
+
   /**
-   * Update an existing order
+   * Side effects of an order becoming paid — reached exactly once per order, because
+   * the caller is the conditional transition (payment-confirmation D3). The
+   * confirmation email moves here from updateOrder, where it fired on whoever
+   * happened to write the status. Fulfilment is deliberately NOT triggered here:
+   * booking is a placeholder until shipping-fulfilment, and a failed booking must
+   * never look like a failed payment.
    */
-  async updateOrder(
-    orderId: string,
-    input: UpdateOrderInput,
-    userId?: string
-  ): Promise<boolean> {
-    // First, get the order to verify ownership
-    const existingOrder = await this.getOrderById(orderId, userId);
+  async onPaymentConfirmed(orderId: string): Promise<void> {
+    const order = await orderRepository.findById(orderId);
+    if (!order) return;
 
-    if (!existingOrder) {
-      throw new NotFoundError("Order not found");
-    }
-
-    // Check if payment status is changing to "paid"
-    const isPaymentCompleted =
-      input.paymentStatus === "paid" && existingOrder.paymentStatus !== "paid";
-
-    // Update the order
-    const updated = await orderRepository.update(orderId, input);
-
-    if (!updated) {
-      throw new Error("Failed to update order");
-    }
-
-    // Send purchase confirmation email when payment is completed
-    const deliveryAddress = existingOrder.address as { email?: string } | null;
-    if (isPaymentCompleted && deliveryAddress?.email) {
+    const deliveryAddress = order.address as OrderEmailView["address"] | null;
+    if (deliveryAddress?.email) {
       const { emailService } = await import("@server/notifications/email.service");
-
       emailService
-        .sendPurchaseConfirmationEmail(existingOrder, deliveryAddress.email)
+        .sendPurchaseConfirmationEmail(
+          {
+            id: order.id,
+            code: order.code,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            createdAt: order.createdAt,
+            notes: order.notes,
+            itemsTotal: order.itemsTotal,
+            discount: order.discount,
+            grandTotal: order.grandTotal,
+            address: deliveryAddress,
+            shipments: order.shipments.map((s) => ({
+              estimatedDelivery: s.estimatedDelivery?.toISOString(),
+            })),
+          },
+          deliveryAddress.email
+        )
         .catch((error) => {
           console.error("Failed to send purchase confirmation email:", error);
-          // Don't throw - email failure shouldn't block order update
+          // Email failure must not unwind a confirmed payment.
         });
     }
-
-    return updated;
   }
 
   /**
