@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-34] 2026-08-09 — Fix: pre-rename sessions lost every admin affordance
+
+"The floating admin panel is not visible anymore" — because it now checks `session.user.platformRole` (PR-25), and a JWT minted before the rename carries no such claim, so every admin affordance quietly hid for existing sessions until their next sign-in. That includes production. The `jwt` callback now stamps the claim once from the database for tokens that lack it — a migration shim, marked removable once pre-2026-08 sessions have expired. Signing out and back in also fixes any one session immediately.
+
 ## [PR-33] 2026-08-09 — UI reuse pass, and colour goes through tokens
 
 Two directives from review of the portal work, applied repo-wide.

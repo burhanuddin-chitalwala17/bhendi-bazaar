@@ -100,6 +100,16 @@ export const authOptions: NextAuthOptions = {
           select: { platformRole: true },
         });
         token.platformRole = dbUser?.platformRole ?? "USER";
+      } else if (!token.platformRole && token.sub) {
+        // Migration shim: sessions minted before `role` became `platformRole` (PR-25)
+        // carry no claim, which silently hid every admin affordance until the next
+        // sign-in. Stamp the token once from the database; removable when pre-2026-08
+        // sessions have all expired.
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub },
+          select: { platformRole: true },
+        });
+        token.platformRole = dbUser?.platformRole ?? "USER";
       }
       return token;
     },
