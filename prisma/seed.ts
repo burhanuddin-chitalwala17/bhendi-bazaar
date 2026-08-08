@@ -154,10 +154,6 @@ async function main() {
         email: orgData.email,
         phone: orgData.phone,
         contactPerson: orgData.contactPerson,
-        defaultPincode: orgData.defaultPincode,
-        defaultCity: orgData.defaultCity,
-        defaultState: orgData.defaultState,
-        defaultAddress: orgData.defaultAddress,
         businessName: orgData.businessName,
         gstNumber: orgData.gstNumber,
         panNumber: orgData.panNumber,
@@ -175,8 +171,27 @@ async function main() {
     await prisma.orgMember.create({
       data: { userId: ownerUserId, orgId: org.id, role: "OWNER" },
     });
+
+    // One pickup location per org — where its seeded stock sits (stock-locations).
+    await prisma.orgAddress.create({
+      data: {
+        id: `${org.id}-pickup`,
+        org: { connect: { id: org.id } },
+        name: "Primary pickup",
+        contactName: orgData.contactPerson ?? "",
+        contactPhone: orgData.phone ?? "",
+        address: {
+          create: {
+            addressLine1: orgData.pickup.address,
+            city: orgData.pickup.city,
+            state: orgData.pickup.state,
+            pincode: orgData.pickup.pincode,
+          },
+        },
+      },
+    });
   }
-  console.log(`✅ ${seedOrgs.length} orgs seeded, each with an owner\n`);
+  console.log(`✅ ${seedOrgs.length} orgs seeded, each with an owner and a pickup location\n`);
 
   // ====================
   // SEED PRODUCTS
@@ -202,13 +217,16 @@ async function main() {
         thumbnail: productData.thumbnail,
         sizes: productData.sizes,
         colors: productData.colors,
-        stock: productData.stock,
+        // Quantity lives on the join row, at the org's seeded pickup location.
+        stockLocations: {
+          create: [{ orgAddressId: `${productData.orgId}-pickup`, quantity: productData.stock }],
+        },
         sku: productData.sku,
         lowStockThreshold: productData.lowStockThreshold,
         weight: productData.weight || 0.5, // ⭐ Default to 0.5kg if not specified
       },
     });
-    console.log(`  ✓ ${product.name} (Stock: ${product.stock})`);
+    console.log(`  ✓ ${product.name} (Stock: ${productData.stock})`);
   }
   console.log(`✅ ${seedProducts.length} products seeded\n`);
 
@@ -253,6 +271,7 @@ async function main() {
         id: shipmentData.id,
         code: shipmentData.code,
         orderId: shipmentData.orderId,
+        orgAddressId: `${shipmentData.orgId}-pickup`,
         // Lines are rows since order-and-cart-lines: one OrderItem per line, its
         // ShipmentItem 1:1. unitPrice applies the same rule checkout charges.
         items: {

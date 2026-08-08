@@ -111,7 +111,6 @@ export class OrgRepository {
         // Convert empty strings to null for optional fields
         phone: data.phone || null,
         contactPerson: data.contactPerson || null,
-        defaultAddress: data.defaultAddress || null,
         businessName: data.businessName || null,
         gstNumber: data.gstNumber || null,
         panNumber: data.panNumber || null,
@@ -135,7 +134,6 @@ export class OrgRepository {
           ...data,
           phone: data.phone || null,
           contactPerson: data.contactPerson || null,
-          defaultAddress: data.defaultAddress || null,
           businessName: data.businessName || null,
           gstNumber: data.gstNumber || null,
           panNumber: data.panNumber || null,
@@ -163,7 +161,6 @@ export class OrgRepository {
         // Convert empty strings to null for optional fields
         phone: data.phone || null,
         contactPerson: data.contactPerson || null,
-        defaultAddress: data.defaultAddress || null,
         businessName: data.businessName || null,
         gstNumber: data.gstNumber || null,
         panNumber: data.panNumber || null,

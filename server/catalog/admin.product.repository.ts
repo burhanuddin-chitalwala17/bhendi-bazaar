@@ -34,7 +34,7 @@ const PRODUCT_LIST_SELECT = {
         select: { id: true, name: true },
     },
     org: {
-        select: { id: true, name: true, code: true, defaultPincode: true, defaultCity: true, defaultState: true, defaultAddress: true },
+        select: { id: true, name: true, code: true },
     },
 } satisfies Prisma.ProductSelect;
 
@@ -46,9 +46,6 @@ const PRODUCT_DETAILS_SELECT = {
     images: true,
     sizes: true,
     colors: true,
-    shippingFromPincode: true,
-    shippingFromCity: true,
-    shippingFromLocation: true,
     stockLocations: {
         select: {
             orgAddressId: true,
@@ -186,11 +183,9 @@ export class AdminProductsRepository {
     }
 
     private async insertProduct(slug: string, data: ProductFormInput) {
-        // Dual-write (stock-locations PR 4): the join rows are the future authority,
-        // Product.stock keeps the sum so every reader stays correct until the cutover.
-        // shippingFrom* is not written — origin now comes from the chosen locations.
+        // Quantities live only on the join rows since the destructive PR; zero rows
+        // are dropped ("not stocked here"), and origin comes from the locations.
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
-        const totalStock = data.stockLocations.reduce((sum, row) => sum + row.quantity, 0);
         const product = await prisma.product.create({
             data: {
                 slug,
@@ -207,7 +202,6 @@ export class AdminProductsRepository {
                 thumbnail: data.thumbnail,
                 sizes: data.sizes || [],
                 colors: data.colors || [],
-                stock: totalStock,
                 sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold || 10,
                 weight: data.weight,
@@ -303,11 +297,9 @@ export class AdminProductsRepository {
         // so spreading it would let any writable column through. `slug` is absent
         // deliberately — it is generated once at creation and then frozen, because
         // changing it would 404 every existing link to the product.
-        // Dual-write (stock-locations PR 4): replace the join rows, keep the column
-        // as the sum. An admin edit is a full replace, so delete-then-create is the
-        // honest semantics — corrections included (R9).
+        // An admin edit is a full replace, so delete-then-create is the honest
+        // semantics — corrections included (R9).
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
-        const totalStock = data.stockLocations.reduce((sum, row) => sum + row.quantity, 0);
         const product = await prisma.$transaction(async (tx) => {
             await tx.productStock.deleteMany({ where: { productId: id } });
             return tx.product.update({
@@ -326,7 +318,6 @@ export class AdminProductsRepository {
                     thumbnail: data.thumbnail,
                     sizes: data.sizes,
                     colors: data.colors,
-                    stock: totalStock,
                     sku: blankToNull(data.sku),
                     lowStockThreshold: data.lowStockThreshold,
                     weight: data.weight,

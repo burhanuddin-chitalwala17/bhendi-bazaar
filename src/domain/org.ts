@@ -10,10 +10,6 @@ export interface Org {
   phone?: string;
   contactPerson?: string;
 
-  defaultPincode: string;
-  defaultCity: string;
-  defaultState: string;
-  defaultAddress?: string;
 
   businessName?: string;
   gstNumber?: string;
@@ -37,10 +33,6 @@ export interface CreateOrgInput {
   phone?: string;
   contactPerson?: string;
 
-  defaultPincode: string;
-  defaultCity: string;
-  defaultState: string;
-  defaultAddress?: string;
 
   businessName?: string;
   gstNumber?: string;

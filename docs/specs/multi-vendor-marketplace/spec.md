@@ -66,7 +66,7 @@ which is why they share a parent, and why neither can be reviewed sensibly as a 
 | [addresses-as-entities](addresses-as-entities/)                   | An address is a record, not a JSON blob ✅ done               | —                                         |
 | [category-tree](category-tree/)                                   | Categories nest to any depth ✅ done                          | —                                         |
 | [order-and-cart-lines](order-and-cart-lines/)                     | What was bought is a relation, not a blob ✅ done             | money-as-paise                            |
-| [stock-locations-and-allocation](stock-locations-and-allocation/) | Stock has a location; an order ships from where its stock is | the four above, and inventory-reservation |
+| [stock-locations-and-allocation](stock-locations-and-allocation/) | Stock has a location; an order ships from where its stock is ✅ done | the four above, and inventory-reservation |
 
 
 ## Out of scope (this programme)

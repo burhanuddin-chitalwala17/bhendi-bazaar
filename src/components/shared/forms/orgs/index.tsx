@@ -9,7 +9,6 @@ import {
 } from "@/lib/validation/schemas/org.schema";
 import type { Org } from "@/domain/org";
 import { OrgBasicFields } from "./OrgBasicFields";
-import { OrgLocationFields } from "./OrgLocationFields";
 import { OrgBusinessFields } from "./OrgBusinessFields";
 import { FormActions } from "../../button-groups/FormActions";
 
@@ -45,10 +44,6 @@ export function OrgForm({
       email: org?.email || "",
       phone: org?.phone || "",
       contactPerson: org?.contactPerson || "",
-      defaultPincode: org?.defaultPincode || "",
-      defaultCity: org?.defaultCity || "",
-      defaultState: org?.defaultState || "",
-      defaultAddress: org?.defaultAddress || "",
       businessName: org?.businessName || "",
       gstNumber: org?.gstNumber || "",
       panNumber: org?.panNumber || "",
@@ -75,13 +70,6 @@ export function OrgForm({
         register={register}
         errors={errors}
         code={org?.code}
-        readOnly={readOnly}
-      />
-
-      {/* Shipping Location */}
-      <OrgLocationFields
-        register={register}
-        errors={errors}
         readOnly={readOnly}
       />
 

@@ -21,7 +21,7 @@ export default async function OrgEditProductPage({
   );
 
   // The product's own org, so the form cannot reassign ownership.
-  const orgs = [{ ...product.org, defaultAddress: product.org.defaultAddress ?? "" }];
+  const orgs = [product.org];
 
   // Active locations, plus any inactive one that still holds this product's stock —
   // hiding it would silently zero the row on the next save.

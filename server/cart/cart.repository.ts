@@ -20,17 +20,7 @@ const CART_INCLUDE = {
               orgAddress: { select: { address: { select: { pincode: true } } } },
             },
           },
-          org: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
-              defaultPincode: true,
-              defaultCity: true,
-              defaultState: true,
-              defaultAddress: true,
-            },
-          },
+          org: { select: { id: true, name: true, code: true } },
         },
       },
     },
@@ -50,9 +40,8 @@ interface CartLineRow {
     price: number;
     salePrice: number | null;
     weight: number | null;
-    shippingFromPincode: string | null;
     stockLocations: Array<{ quantity: number; orgAddress: { address: { pincode: string } } }>;
-    org: Omit<CartItem["org"], "defaultAddress"> & { defaultAddress: string | null };
+    org: CartItem["org"];
   };
 }
 
@@ -73,10 +62,8 @@ export function toWireCartItem(row: CartLineRow): CartItem {
     // Indicative origin only — allocation picks the real one at checkout.
     shippingFromPincode:
       [...row.product.stockLocations].sort((a, b) => b.quantity - a.quantity)[0]?.orgAddress
-        .address.pincode ||
-      row.product.shippingFromPincode ||
-      row.product.org.defaultPincode,
-    org: { ...row.product.org, defaultAddress: row.product.org.defaultAddress ?? "" },
+        .address.pincode || "",
+    org: row.product.org,
   };
 }
 

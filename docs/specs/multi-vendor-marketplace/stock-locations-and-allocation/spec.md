@@ -1,9 +1,9 @@
 # Spec — warehouses and stock allocation
 
-- **Status:** Draft
+- **Status:** ✅ Implemented (PR-45..49; rename PR-24..28 and reservation PR-40 as prerequisites)
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-08
+- **Verified:** 2026-08-10
 - **References:** [trd.md](trd.md), [data-model.md](../data-model.md), [consumer-inventory.md](../consumer-inventory.md), [inventory-reservation](../../inventory-reservation/), [shipping-fulfilment](../../shipping-fulfilment/), [product-weight-and-rates](../../product-weight-and-rates/)
 
 > Requirements and product approach only. Technical approach lives in [trd.md](trd.md).

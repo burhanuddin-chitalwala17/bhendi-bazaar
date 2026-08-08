@@ -1,6 +1,6 @@
 # TRD — warehouses and stock allocation
 
-- **Status:** Accepted — in delivery (PRs 0–3 landed; cutover pending)
+- **Status:** ✅ Implemented (PR-45..49)
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10
@@ -69,9 +69,9 @@ Per [TESTING.md](../../../TESTING.md); allocation is pure logic and should be te
 | 1 | Consolidate the duplicate DTO and prop-type declarations | none ✅ PR-45 |
 | 2 | [inventory-reservation](../../inventory-reservation/) guard on `Product.stock` | yes — closes the oversell race (separate spec, prerequisite) ✅ PR-40 |
 | 3 | Additive migration, location repository and **org-portal** CRUD, backfill in the migration | none — nothing reads the new tables ✅ PR-46 |
-| 4 | Product form: location selector and per-location stock; writes join rows while `Product.stock` is still authoritative | none — dual write |
-| 5 | Reads flip to the aggregate; allocation, split shipments, guard re-pointed to the join | **yes — the cutover** |
-| 6 | Destructive migration | none |
+| 4 | Product form: location selector and per-location stock; writes join rows while `Product.stock` is still authoritative | none — dual write ✅ PR-47 |
+| 5 | Reads flip to the aggregate; allocation, split shipments, guard re-pointed to the join | **yes — the cutover** ✅ PR-48 |
+| 6 | Destructive migration | none ✅ PR-49 |
 
 PR 5 is the only one that changes what a customer sees, and it is reversible only by redeploying PR 4 — which is why the columns it stops reading are dropped a PR later rather than in the same one.
 
@@ -79,7 +79,7 @@ PR 5 is the only one that changes what a customer sees, and it is reversible onl
 Must be closed before Draft → Accepted.
 
 - ~~Does location management live on an org detail page, or as its own admin section?~~ **Closed 2026-08-10:** neither — this TRD predates the org portal. Locations are the org's operational data, so CRUD lives at `/org/[orgId]/locations` behind `withOrg`, like products and orders. The platform admin keeps read visibility through the existing org pages; what replaces the sellers-table city/pincode columns is decided in the destructive PR.
-- Is admin sort-by-stock acceptable on an aggregate, or does it force the cached total D3 rejects? Measure on real row counts before deciding — at the cutover PR, not before.
+- ~~Is admin sort-by-stock acceptable on an aggregate?~~ **Closed 2026-08-10 (PR-48):** yes at this catalogue size — stock-dependent filters and sorts fetch the (tens-of-rows) matching set and compute in memory; the cached total stays rejected until a measured problem exists.
 - Does [shipping-fulfilment](../../shipping-fulfilment/) answer "book for real"? If yes, the pickup contact fields become required and D11 turns into work. *(Still the user's decision; the form already requires contact fields for new locations — only backfilled rows carry `''`.)*
 
 Closed: multi-parcel visibility and per-parcel estimates (D12) and customer-facing availability (D13), both decided 2026-08-07.

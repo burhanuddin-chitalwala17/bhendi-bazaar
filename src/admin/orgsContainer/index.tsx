@@ -51,7 +51,6 @@ export function OrgsContainer() {
           org.name.toLowerCase().includes(term) ||
           org.code.toLowerCase().includes(term) ||
           org.email.toLowerCase().includes(term) ||
-          org.defaultCity.toLowerCase().includes(term) ||
           org.businessName?.toLowerCase().includes(term) ||
           org.gstNumber?.toLowerCase().includes(term)
       );

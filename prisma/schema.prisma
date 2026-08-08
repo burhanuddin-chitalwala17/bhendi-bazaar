@@ -58,7 +58,6 @@ model Product {
   sizes             String[] // Available sizes
   colors            String[] // Available colors
 
-  stock             Int      @default(0)
   sku               String?  @unique // Stock Keeping Unit
   lowStockThreshold Int      @default(10) // Alert when stock falls below this
 
@@ -70,10 +69,6 @@ model Product {
   orgId String
   org   Org @relation(fields: [orgId], references: [id], onDelete: Restrict)
   
-  // ⭐ Shipping Origin (OPTIONAL - overrides the org's default)
-  shippingFromPincode   String?
-  shippingFromCity      String?
-  shippingFromLocation  String? // "Warehouse 2", "Special Location"
   
   // ⭐ ADD THIS:
   weight                Float?  @default(0.5) // Weight in kg
@@ -85,9 +80,7 @@ model Product {
   @@index([slug])
   @@index([categoryId])
   @@index([createdAt])
-  @@index([stock])
   @@index([orgId])
-  @@index([shippingFromPincode])
 }
 
 model Review {
@@ -193,12 +186,6 @@ model Org {
   phone        String?
   contactPerson String? // "John Doe"
   
-  // Default Shipping Location
-  defaultPincode String
-  defaultCity    String
-  defaultState   String
-  defaultAddress String? @db.Text
-  
   // Business Details
   orgAddresses OrgAddress[]
 
@@ -226,7 +213,6 @@ model Org {
   @@index([email])
   @@index([isActive])
   @@index([code])
-  @@index([defaultPincode])
 }
 
 model Account {

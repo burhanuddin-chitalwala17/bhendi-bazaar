@@ -62,9 +62,9 @@ export function OrgsTable({
           <MapPin className="w-4 h-4 text-muted-foreground/70 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-foreground">
-              {org.defaultCity}, {org.defaultState}
+              {org.contactPerson || "—"}
             </p>
-            <p className="text-muted-foreground">Pincode: {org.defaultPincode}</p>
+            <p className="text-muted-foreground">{org.email}</p>
           </div>
         </div>
       ),

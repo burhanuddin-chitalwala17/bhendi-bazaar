@@ -45,7 +45,7 @@ export function useProductActions(product: Product) {
               salePrice: product.salePrice,
               quantity: 1,
               weight: product.weight ?? 0.5,
-              shippingFromPincode: product.shippingFromPincode ?? product.org.defaultPincode,
+              shippingFromPincode: product.shippingFromPincode,
               org: product.org,
             });
             toast.success("Added to cart");

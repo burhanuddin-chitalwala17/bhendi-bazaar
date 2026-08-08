@@ -17,20 +17,6 @@ export const createOrgSchema = z.object({
 
   contactPerson: z.string().max(100).optional(),
 
-  // Shipping defaults (required)
-  defaultPincode: postalCodeSchema,
-
-  defaultCity: z
-    .string()
-    .min(2, "City name too short")
-    .max(100, "City name too long"),
-
-  defaultState: z
-    .string()
-    .min(2, "State name too short")
-    .max(100, "State name too long"),
-
-  defaultAddress: z.string().max(500).optional(),
 
   // Business details (all optional now)
   businessName: z.string().max(200).optional(),

@@ -26,10 +26,8 @@ export interface SeedOrg {
   email: string;
   phone?: string;
   contactPerson?: string;
-  defaultPincode: string;
-  defaultCity: string;
-  defaultState: string;
-  defaultAddress?: string;
+  /** Seeded as the org's one pickup location (Address + OrgAddress rows). */
+  pickup: { address: string; city: string; state: string; pincode: string };
   businessName?: string;
   gstNumber?: string;
   panNumber?: string;
@@ -83,7 +81,7 @@ export interface SeedProduct {
   thumbnail: string;
   sizes: string[];
   colors: string[];
-  stock: number;
+  stock: number; // seeded as a ProductStock row at the org's pickup location
   sku?: string;
   lowStockThreshold: number;
   weight?: number; // ⭐ Weight in kg

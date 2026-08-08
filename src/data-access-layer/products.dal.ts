@@ -39,15 +39,11 @@ const mapProduct = (product: any): Product => {
       sizes: product.sizes,
       colors: product.colors,
     },
-    shippingFromPincode: mainRow?.orgAddress.address.pincode || product.org.defaultPincode || "",
+    shippingFromPincode: mainRow?.orgAddress.address.pincode || "",
     org: {
       id: product.org.id,
       name: product.org.name,
       code: product.org.code,
-      defaultPincode: product.org.defaultPincode,
-      defaultCity: product.org.defaultCity,
-      defaultState: product.org.defaultState,
-      defaultAddress: product.org.defaultAddress ?? "",
     },
   };
 };

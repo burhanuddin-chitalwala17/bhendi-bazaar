@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-49] 2026-08-10 — Origin has one home [MIGRATION]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 6 (destructive) — **the feature closes** (8 of 10 marketplace subfeatures). Dropped: `Product.stock`, `Product.shippingFrom{Pincode,City,Location}`, `Org.default{Pincode,City,State,Address}`, and their indexes — every one unread since the cutover. A separate migration from the cutover on purpose: PR-48 was reversible by redeploying the dual-write build; this is the point of no return.
+
+`OrgSummary` slims to `{ id, name, code }` — one edit, because PR-45 collapsed its ten copies first. The org form loses its address section (a new org adds pickup locations in the portal, which the product form already requires before a product can be saved); the orgs admin table shows contact and email where a single city/pincode used to pretend to be "the" location. Seeds rewritten: each org seeds one pickup location (Address + OrgAddress), products seed `ProductStock` rows there, seeded shipments carry `orgAddressId`. The wire keeps `Product.shippingFromPincode` as the *indicative* origin (largest active holding) — display-only; allocation decides the real one.
+
+**226 tests pass**, `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** — destructive; the additive backfill (PR-46) must already be applied, which the migration chain guarantees.
+
 ## [PR-48] 2026-08-10 — Orders ship from where the stock is [CONTRACT]
 
 [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 5 — **the cutover**, the one PR in the ladder that changes what a customer sees.

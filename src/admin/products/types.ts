@@ -62,9 +62,6 @@ export interface ProductDetails {
   sizes: string[];
   colors: string[];
   org: OrgSummary;
-  shippingFromPincode: string;
-  shippingFromCity: string;
-  shippingFromLocation: string;
   /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
   stockLocations: Array<{ orgAddressId: string; locationName: string; quantity: number }>;
   createdAt: Date;

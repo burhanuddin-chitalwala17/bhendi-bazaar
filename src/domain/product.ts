@@ -30,6 +30,7 @@ export interface Product {
     sizes?: string[];
     colors?: string[];
   };
+  /** Indicative origin (largest active holding); allocation decides the real one. */
   shippingFromPincode: string;
   org: OrgSummary;
 }

@@ -21,17 +21,7 @@ export default async function OrgNewProductPage({
   const org = (await orgsDAL.getOrgs()).find((o) => o.id === orgId);
   if (!org) notFound();
 
-  const orgs = [
-    {
-      id: org.id,
-      name: org.name,
-      code: org.code,
-      defaultPincode: org.defaultPincode,
-      defaultCity: org.defaultCity,
-      defaultState: org.defaultState,
-      defaultAddress: org.defaultAddress ?? "",
-    },
-  ];
+  const orgs = [{ id: org.id, name: org.name, code: org.code }];
 
   // Only active locations are offered for new stock; inactive ones keep their rows
   // but take no more (stock-locations, isActive).

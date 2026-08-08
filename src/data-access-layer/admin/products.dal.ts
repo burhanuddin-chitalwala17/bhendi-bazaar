@@ -74,14 +74,7 @@ class ProductsDAL {
         id: product.org.id,
         name: product.org.name,
         code: product.org.code,
-        defaultPincode: product.org.defaultPincode,
-        defaultCity: product.org.defaultCity,
-        defaultState: product.org.defaultState,
-        defaultAddress: product.org.defaultAddress ?? "",
       },
-      shippingFromPincode: product.shippingFromPincode ?? "",
-      shippingFromCity: product.shippingFromCity ?? "",
-      shippingFromLocation: product.shippingFromLocation ?? "",
       stockLocations: (product.stockLocations ?? []).map(
         (row: { orgAddressId: string; quantity: number; orgAddress: { name: string } }) => ({
           orgAddressId: row.orgAddressId,

@@ -47,7 +47,6 @@ describe("toWireCartItem", () => {
       price: 120000,
       salePrice: null as number | null,
       weight: 0.5 as number | null,
-      shippingFromPincode: null as string | null,
       stockLocations: [] as Array<{ quantity: number; orgAddress: { address: { pincode: string } } }>,
       org: {
         id: "org-1",
@@ -74,8 +73,8 @@ describe("toWireCartItem", () => {
     });
   });
 
-  it("takes the indicative origin from the largest active holding, then falls back", () => {
-    expect(toWireCartItem(row).shippingFromPincode).toBe("400003"); // org fallback
+  it("takes the indicative origin from the largest active holding — no holdings, no origin", () => {
+    expect(toWireCartItem(row).shippingFromPincode).toBe(""); // origin has one home now
     expect(
       toWireCartItem({
         ...row,
