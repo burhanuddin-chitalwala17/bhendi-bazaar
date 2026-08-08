@@ -1,9 +1,9 @@
 # Spec — product weight and rates
 
-- **Status:** Draft — R1 and A1 landed early in [PR-22](../../CHANGELOG.md); R2–R7 outstanding
+- **Status:** ✅ Implemented — R1/A1 in PR-22; R2/R3 fell out of the allocation cutover (PR-48); the billing rule, R7, and the remainder closed in PR-53
 - **Domain:** catalog, shipping
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-10
 - **References:** [trd.md](trd.md), [shipping-fulfilment](../shipping-fulfilment/), [CONTRACTS.md](../../CONTRACTS.md)
 
 > Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
@@ -23,10 +23,17 @@ This has to be right before shipments are actually booked. A wrong quote on an u
 - **R1** — A product's weight is stored when it is created and when it is edited, and persists.
 - **R2** — Rate quotes are calculated from the actual weights of the items being shipped.
 - **R3** — A shipment's weight is the combined weight of its contents, accounting for quantity.
-- **R4** — A product with no recorded weight is identifiable, so the catalogue can be corrected rather than silently quoted on a guess.
-- **R5** — Where a weight is genuinely unavailable, the fallback used is visible in the quote rather than silent.
-- **R6** — Existing products, which all currently carry the same default weight, can be reviewed and corrected.
+- **R4** — A product with no recorded weight is identifiable, so the catalogue can be corrected rather than silently quoted on a guess. *(Largely dissolved: the form has required a positive weight since PR-22, so no new product can lack one.)*
+- **R5** — Where a weight is genuinely unavailable, the fallback used is visible in the quote rather than silent. *(Met by the billing rule: a weightless parcel bills at the 1 kg floor, and every parcel card shows "billed as N kg".)*
+- **R6** — Existing products, which all currently carry the same default weight, can be reviewed and corrected. *(The org product form shows weight on every edit; a dedicated review surface was not built.)*
 - **R7** — Weight is entered in a stated unit, consistently, with no ambiguity between grams and kilograms.
+
+## The billing rule (decided 2026-08-10)
+Weights are entered in **kilograms with gram precision** (0.6 = 600 g). At checkout,
+each parcel — the items allocated to one pickup location — sums its real weights, and
+the rate is quoted on that sum **rounded up to the next whole kilogram, floor 1 kg**
+(how couriers themselves bill, so a quote never undercharges shipping). The customer
+sees the billable figure on the parcel card; the shipment record keeps the real sum.
 
 ## Product acceptance
 

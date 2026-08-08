@@ -37,10 +37,11 @@ export function ProductInventoryFields({
           disabled={readOnly}
           type="number"
           min="0"
-          placeholder="0.5"
+          step="0.001"
+          placeholder="0.6"
           {...register("weight", { valueAsNumber: true })}
           error={errors.weight?.message}
-          hint="Used to rate shipping"
+          hint="Kilograms, decimals allowed — 0.6 means 600 g. Parcels are billed at the summed weight rounded up to whole kg."
         />
       </div>
     </div>

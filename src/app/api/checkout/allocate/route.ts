@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@server/shared/prisma";
 import { allocateAcrossOrgs } from "@server/checkout/allocation";
+import { billableWeightKg } from "@server/shipping/billable-weight";
 import { quantitySchema } from "@/lib/validation/schemas/common.schemas";
 import { PINCODE_PATTERN, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -73,6 +74,10 @@ export async function POST(request: NextRequest) {
       groups: parcels.map((parcel) => {
         const location = locationInfo.get(parcel.orgAddressId);
         const anyProduct = productsById.get(parcel.lines[0]?.productId ?? "");
+        const totalWeight = parcel.lines.reduce(
+          (sum, line) => sum + (productsById.get(line.productId)?.weight ?? 0) * line.quantity,
+          0
+        );
         return {
           groupId: parcel.orgAddressId,
           orgId: location?.orgId ?? "",
@@ -83,10 +88,10 @@ export async function POST(request: NextRequest) {
           fromCity: location?.address.city ?? "",
           fromState: location?.address.state ?? "",
           items: parcel.lines,
-          totalWeight: parcel.lines.reduce(
-            (sum, line) => sum + (productsById.get(line.productId)?.weight ?? 0) * line.quantity,
-            0
-          ),
+          totalWeight,
+          // What the rate is quoted on: the sum rounded up to whole kilograms,
+          // floor 1 kg (product-weight-and-rates, decided 2026-08-10).
+          billableWeightKg: billableWeightKg(totalWeight),
         };
       }),
     });

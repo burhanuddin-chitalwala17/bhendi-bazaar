@@ -6,26 +6,6 @@
 
 import type { CartItem } from "@/domain/cart";
 import { ShippingGroup } from "@/domain/shipping";
-/**
- * Calculate total weight from cart items
- * @param items - Cart items
- * @param defaultWeightPerItem - Default weight in kg if product weight not specified
- * @returns Total weight in kg
- */
-export function calculateCartWeight(
-  items: CartItem[],
-  defaultWeightPerItem: number = 0.5
-): number {
-  const totalWeight = items.reduce((total, item) => {
-    // Use product weight if available, otherwise use default
-    // const itemWeight = item.weight || defaultWeightPerItem;
-    const itemWeight = 0.5; // defaultWeightPerItem;
-    return total + itemWeight * item.quantity;
-  }, 0);
-
-  // Round to 2 decimal places
-  return Math.round(totalWeight * 100) / 100;
-}
 
 /**
  * Format delivery estimate

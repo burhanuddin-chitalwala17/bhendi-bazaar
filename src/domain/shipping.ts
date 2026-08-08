@@ -144,7 +144,9 @@ export interface ShippingGroup {
   items: any[]; // CartItem[] - using any to avoid circular dependency
 
   // Calculated shipping info
-  totalWeight: number; // in kg
+  totalWeight: number; // in kg — the real sum of the parcel's contents
+  /** What the rate is quoted on: totalWeight rounded up to whole kg, floor 1 kg. */
+  billableWeightKg?: number;
   itemsTotal: number;  // sum of item prices
 
   // Available rates

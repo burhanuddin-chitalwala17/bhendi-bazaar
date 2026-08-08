@@ -37,13 +37,15 @@ Also in this phase, no spec required (they are corrections with an ADR already s
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [product-weight-and-rates](specs/product-weight-and-rates/) | A product's weight is persisted and drives its shipping quote | 📝 Spec drafted |
+| [product-weight-and-rates](specs/product-weight-and-rates/) | A product's weight is persisted and drives its shipping quote | ✅ Done — PR-22/48/53; parcels bill at summed weight rounded up to whole kg |
 | [multi-vendor-marketplace](specs/multi-vendor-marketplace/) | Three audiences, three portals, and the data model a marketplace needs | ✅ 9 of 10 subfeatures done (dashboard-widgets PR-50 closes the build); org-team deferred by decision — the one remaining |
 | [shipping-fulfilment](specs/shipping-fulfilment/) | A confirmed order results in a real booked shipment with real tracking | ⏸️ Deferred by decision (2026-08-10): keep live quotes + manual fulfilment; build later |
 
 `shipping-fulfilment`'s open question was decided 2026-08-10 — keep the current flow (live quotes, manual fulfilment); see its `spec.md`. It depends on `product-weight-and-rates`, since booking real parcels at fictional weights is worse than not booking them.
 
 `multi-vendor-marketplace` sits between them and is the largest thing in the backlog. It began as one feature about where a product ships from and became nine subfeatures: answering it properly needed an owner for a pickup location, which needed an organisation, which needed people to belong to one — at which point the panel called "admin" was doing two jobs for two audiences. See its [spec.md](specs/multi-vendor-marketplace/spec.md) for the programme and [portal-split.md](specs/multi-vendor-marketplace/portal-split.md) for where each of today's 15 admin pages and 22 handlers lands.
+
+One recorded gap remains on the money path: shipping is charged at the rate the client says it selected — the server matches it to a quoted parcel but does not re-derive the price. A server-side re-quote at order time would close it; watch item.
 
 It reaches back into Phase 2: [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) moves the stock guard from `Product.stock` onto a per-location row, so [inventory-reservation](specs/inventory-reservation/) must land first, and [order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) wants [money-as-paise](specs/money-as-paise/) first so its price columns are not migrated twice.
 

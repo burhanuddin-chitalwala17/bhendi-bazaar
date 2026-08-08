@@ -125,6 +125,11 @@ function ShippingGroupCard({
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Items</p>
           <p className="text-sm font-semibold">{group.items.length}</p>
+          {group.billableWeightKg !== undefined && (
+            <p className="text-xs text-muted-foreground">
+              billed as {group.billableWeightKg} kg
+            </p>
+          )}
         </div>
       </div>
       

@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-53] 2026-08-10 — Parcels bill at whole kilograms
+
+[product-weight-and-rates](specs/product-weight-and-rates/) closes. Most of it had already fallen out of other work — weight persisted since PR-22, and since the allocation cutover (PR-48) every parcel sums its items' **real** weights server-side. What remained was the billing rule, decided today: weights are entered in kilograms with gram precision (0.6 = 600 g), and each parcel is quoted on its summed weight **rounded up to the next whole kilogram, floor 1 kg** — ceiling because couriers bill the ceiling, so a quote never undercharges shipping.
+
+The rule is one pure function (`server/shipping/billable-weight.ts`), gram-settled so float dust from adding decimals cannot cross a slab boundary (2.9999999996 and 3.0000000004 both bill as 3). Applied in the allocate preview (response carries the real sum *and* `billableWeightKg`) and again at the rates route, so every quote is whole-kilogram whatever the caller sends. The parcel card shows "billed as N kg"; the shipment record keeps the real sum. The weight input states its unit and takes gram-precision decimals (`step 0.001` — the browser's native step no longer rejects 0.6).
+
+Swept out with it: `calculateCartWeight` — the helper that hardcoded every item at 0.5 kg, the bug this spec was opened for — and the callerless `useShippingRates`, both dead since the cutover. Also recorded in BACKLOG: shipping is still charged at the client-selected quoted rate without a server-side re-quote at order time — a known watch item, not changed here.
+
+**236 tests pass** (billable-weight boundaries pinned), `tsc` exits 0, `next build` compiles. No migration.
+
 ## [PR-52] 2026-08-10 — The last forms on the old pattern
 
 The four auth pages — sign-in, sign-up, forgot-password, reset-password — move onto `useServerForm` + the shared error envelope, closing the ADR-0013 conversion that every other form finished long ago. The password rules a user sees inline are now literally the rules the route enforces (same `auth.schemas` on both sides, Invariant 4); a server detail like a taken email lands on its field instead of a generic banner; the reset flow's token rides the schema so an expired link surfaces like any other refusal, and its mismatch refine lands on the confirm field. Sign-in keeps next-auth's single-failure shape as the form-level error. Visuals unchanged; the hand-rolled `useState`-per-field plumbing (~150 lines) is gone.

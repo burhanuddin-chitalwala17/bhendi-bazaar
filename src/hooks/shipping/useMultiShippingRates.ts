@@ -62,6 +62,7 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
           fromState: string;
           items: Array<{ productId: string; quantity: number; size?: string; color?: string }>;
           totalWeight: number;
+          billableWeightKg: number;
         }>;
       } = await response.json();
 
@@ -91,6 +92,7 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
           fromState: group.fromState,
           items: groupItems,
           totalWeight: group.totalWeight,
+          billableWeightKg: group.billableWeightKg,
           itemsTotal: groupItems.reduce(
             (sum, item) => sum + (item.salePrice ?? item.price) * item.quantity,
             0
@@ -140,7 +142,9 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
               const request: GetShippingRatesRequest = {
                 fromPincode: group.fromPincode,
                 toPincode,
-                weight: group.totalWeight,
+                // Quoted on the billable weight — whole kilograms, rounded up —
+                // never on the raw sum (product-weight-and-rates).
+                weight: group.billableWeightKg ?? Math.max(1, Math.ceil(group.totalWeight)),
                 cod: false,
               };
               
