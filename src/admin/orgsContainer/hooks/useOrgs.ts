@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { orgService } from "@/services/admin/orgService";
-import type { OrgWithStats, CreateOrgInput } from "@/domain/org";
+import type { OrgWithStats } from "@/domain/org";
+import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { toast } from "sonner";
 
 export function useOrgs() {
@@ -28,7 +29,7 @@ export function useOrgs() {
     loadOrgs();
   }, [loadOrgs]);
 
-  const createOrg = async (data: CreateOrgInput) => {
+  const createOrg = async (data: OrgFormInput) => {
     try {
       const newOrg = await orgService.createOrg(data);
       toast.success("Organisation created successfully");
@@ -39,7 +40,7 @@ export function useOrgs() {
     }
   };
 
-  const updateOrg = async (id: string, data: Partial<CreateOrgInput>) => {
+  const updateOrg = async (id: string, data: Partial<OrgFormInput>) => {
     try {
       const newOrg = (await orgService.updateOrg(
         id,

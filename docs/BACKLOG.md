@@ -38,7 +38,7 @@ Also in this phase, no spec required (they are corrections with an ADR already s
 | Spec | Requirement | Status |
 |---|---|---|
 | [product-weight-and-rates](specs/product-weight-and-rates/) | A product's weight is persisted and drives its shipping quote | 📝 Spec drafted |
-| [multi-vendor-marketplace](specs/multi-vendor-marketplace/) | Three audiences, three portals, and the data model a marketplace needs | 🚧 In progress — 1 of 10 subfeatures done (organisations-and-membership, PR-23/24) |
+| [multi-vendor-marketplace](specs/multi-vendor-marketplace/) | Three audiences, three portals, and the data model a marketplace needs | 🚧 In progress — 2 of 10 subfeatures done (organisations-and-membership PR-23/24; org-onboarding PR-28), portal-separation 3 of 5 PRs in |
 | [shipping-fulfilment](specs/shipping-fulfilment/) | A confirmed order results in a real booked shipment with real tracking | 📝 Spec drafted — **open product question** |
 
 `shipping-fulfilment` carries a decision only the product owner can make; see its `spec.md`. It depends on `product-weight-and-rates`, since booking real parcels at fictional weights is worse than not booking them.

@@ -68,6 +68,13 @@ export default async function OrgIndexPage() {
               </li>
             ))}
           </ul>
+
+          <Link
+            href="/org/new"
+            className="mt-6 inline-block text-sm text-emerald-700 hover:underline"
+          >
+            + Create another organisation
+          </Link>
         </div>
       )}
     </div>

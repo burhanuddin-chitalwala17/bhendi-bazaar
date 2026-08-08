@@ -3,20 +3,12 @@
 import { z } from "zod";
 import { postalCodeSchema, optionalPhoneSchema } from "./common.schemas";
 
+// `code` is absent deliberately: it is server-generated at creation and then frozen,
+// like a slug — an identifier a user invents collides and can never change once
+// printed. `isActive` is absent too: a new org is active by definition, and
+// deactivation is a platform action, so neither is accepted from a request body
+// (Invariant 4, server-owned fields).
 export const createOrgSchema = z.object({
-  // `.trim().toUpperCase()` come first so they apply *before* the pattern is checked.
-  // These inputs are styled `className="uppercase"`, which is CSS: it changes how the
-  // value looks and not what it is, so typing lowercase used to show TEST-001 on screen
-  // and fail as "test-001". Normalising afterwards, as a trailing `.transform`, never
-  // ran — the regex had already rejected it.
-  code: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .min(3, "Code too short")
-    .max(20, "Code too long")
-    .regex(/^[A-Z0-9-]+$/, "Use letters, numbers and hyphens only"),
-
   name: z.string().min(3, "Name too short").max(100, "Name too long"),
 
   email: z.string().email("Invalid email"),
@@ -62,14 +54,25 @@ export const createOrgSchema = z.object({
     .optional()
     .or(z.literal("")),
 
-  isActive: z.boolean(),
 
   description: z.string().max(1000).optional(),
 });
 
 export const updateOrgSchema = createOrgSchema.partial().extend({
   id: z.string().min(1),
+  // Editable only here: deactivation is an admin act on an existing org.
+  isActive: z.boolean().optional(),
 });
+
+/**
+ * What the shared form renders. The superset of create and update minus server-owned
+ * fields: `isActive` is optional because the switch only renders in edit mode, and the
+ * create route parses `createOrgSchema`, which strips it.
+ */
+export const orgFormSchema = createOrgSchema.extend({
+  isActive: z.boolean().optional(),
+});
+export type OrgFormInput = z.infer<typeof orgFormSchema>;
 
 export type CreateOrgInput = z.infer<typeof createOrgSchema>;
 export type UpdateOrgInput = z.infer<typeof updateOrgSchema>;

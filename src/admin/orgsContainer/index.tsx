@@ -7,7 +7,8 @@ import { Plus, RefreshCw, Search } from "lucide-react";
 import { OrgsTable } from "./components/OrgsTable";
 import { AddOrgModal } from "./components/AddOrgModal";
 import { useOrgs } from "./hooks/useOrgs";
-import type { OrgWithStats, CreateOrgInput } from "@/domain/org";
+import type { OrgWithStats } from "@/domain/org";
+import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -91,7 +92,7 @@ export function OrgsContainer() {
     setCurrentPage(1);
   };
 
-  const handleCreate = async (data: CreateOrgInput) => {
+  const handleCreate = async (data: OrgFormInput) => {
     setModalMode("create");
     setIsSubmitting(true);
     try {
@@ -108,7 +109,7 @@ export function OrgsContainer() {
     setShowModal(true);
   };
 
-  const handleUpdate = async (data: CreateOrgInput) => {
+  const handleUpdate = async (data: OrgFormInput) => {
     if (!editingOrg) return;
 
     setIsSubmitting(true);

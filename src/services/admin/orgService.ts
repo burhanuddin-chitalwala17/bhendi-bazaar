@@ -1,7 +1,7 @@
 // src/services/admin/orgService.ts
 
 import type { OrgWithStats, Org } from "@/domain/org";
-import type { CreateOrgInput } from "@/lib/validation/schemas/org.schema";
+import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 
 export class OrgService {
   private baseUrl = "/api/admin/orgs";
@@ -25,7 +25,7 @@ export class OrgService {
     return response.json();
   }
 
-  async createOrg(data: CreateOrgInput): Promise<Org> {
+  async createOrg(data: OrgFormInput): Promise<Org> {
     const response = await fetch(this.baseUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,7 +56,7 @@ export class OrgService {
     return response.json();
   }
 
-  async updateOrg(id: string, data: Partial<CreateOrgInput>): Promise<Org> {
+  async updateOrg(id: string, data: Partial<OrgFormInput>): Promise<Org> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

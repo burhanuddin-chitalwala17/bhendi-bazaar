@@ -2,7 +2,10 @@
 
 import { orgRepository } from "@server/catalog/org.repository";
 import type { CreateOrgInput } from "@/domain/org";
-import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
+import type { CreateOrgInput as CreateOrgSchemaInput } from "@/lib/validation/schemas/org.schema";
+import { DomainError, NotFoundError } from "@server/shared/domain-error";
+import { orgCodeCandidates } from "@server/catalog/org.code";
+import { isUniqueViolation } from "@server/shared/constraint";
 
 export class AdminOrgService {
   /**
@@ -30,28 +33,41 @@ export class AdminOrgService {
   /**
    * Create new org with validation
    */
-  async createOrg(data: CreateOrgInput) {
-    // Business validation: Check for duplicates
-    const existingCode = await orgRepository.findByCode(data.code);
-    if (existingCode) {
-      throw new ConflictError("Org code already exists");
-    }
-
-    // Create org
-    return await orgRepository.create(data);
+  async createOrg(data: CreateOrgSchemaInput) {
+    return await this.insertWithGeneratedCode((row) => orgRepository.create(row), data);
   }
 
   /**
    * Create an org with the caller as its owner. Self-serve, so unlike `createOrg` this
    * is reachable by anyone signed in.
    */
-  async createOrgWithOwner(data: CreateOrgInput, userId: string) {
-    const existingCode = await orgRepository.findByCode(data.code);
-    if (existingCode) {
-      throw new ConflictError("That organisation code is already taken", { field: "code" });
-    }
+  async createOrgWithOwner(data: CreateOrgSchemaInput, userId: string) {
+    return await this.insertWithGeneratedCode(
+      (row) => orgRepository.createWithOwner(row, userId),
+      data
+    );
+  }
 
-    return await orgRepository.createWithOwner(data, userId);
+  /**
+   * Insert with a server-generated code, retrying on collision. The unique constraint
+   * decides — a prior `findByCode` was a read-then-write race, and with generated codes
+   * a collision is an internal retry, never a user error.
+   */
+  private async insertWithGeneratedCode<T>(
+    insert: (row: CreateOrgInput) => Promise<T>,
+    data: CreateOrgSchemaInput
+  ): Promise<T> {
+    const candidates = orgCodeCandidates();
+    for (let attempt = 0; ; attempt++) {
+      const code = candidates.next().value as string;
+      try {
+        // A new org is active by definition; deactivation is an admin act later.
+        return await insert({ ...data, code, isActive: true });
+      } catch (error) {
+        if (isUniqueViolation(error, "code") && attempt < 25) continue;
+        throw error;
+      }
+    }
   }
 
   /**

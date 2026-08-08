@@ -1,40 +1,68 @@
-// The org code, GST and PAN inputs are styled `className="uppercase"`. That is CSS: it
-// changes how a value looks, never what it is. So a lowercase entry displayed as
-// TEST-001 and failed as "test-001", and the schema's trailing `.transform(toUpperCase)`
-// could not help because the regex had already rejected it. Case is normalised first now.
+// Two things this file pins. Server-owned fields: `code` is generated at creation and
+// frozen (like a slug), and a new org is active by definition — so neither is accepted
+// from a request body, even if a client sends them. And normalisation-before-validation:
+// GST and PAN inputs are styled `className="uppercase"`, which is CSS — it changes how a
+// value looks, never what it is — so case is normalised before the pattern runs.
 import { describe, expect, it } from "vitest";
-import { createOrgSchema } from "@/lib/validation/schemas/org.schema";
+import { createOrgSchema, orgFormSchema } from "@/lib/validation/schemas/org.schema";
+import { orgCodeCandidates, ORG_CODE_PATTERN } from "@server/catalog/org.code";
 
 const org = (overrides: Record<string, unknown> = {}) => ({
-  code: "TEST-001",
   name: "Test Organisation",
   email: "owner@example.com",
   defaultPincode: "560083",
   defaultCity: "Bengaluru",
   defaultState: "Karnataka",
-  isActive: true,
   ...overrides,
 });
 
 const parse = (input: unknown) => createOrgSchema.safeParse(input);
 
-describe("what the user typed is what gets validated", () => {
-  it("accepts a lowercase code and stores it uppercased", () => {
-    const result = parse(org({ code: "test-001" }));
+describe("server-owned fields never arrive through the body", () => {
+  it("strips a client-sent code rather than trusting it", () => {
+    const result = parse(org({ code: "EVIL-001" }));
     expect(result.success).toBe(true);
-    expect(result.data?.code).toBe("TEST-001");
+    expect(result.data).not.toHaveProperty("code");
   });
 
-  it("accepts a code with stray whitespace", () => {
-    expect(parse(org({ code: "  test-001  " })).data?.code).toBe("TEST-001");
+  it("strips a client-sent isActive", () => {
+    const result = parse(org({ isActive: false }));
+    expect(result.success).toBe(true);
+    expect(result.data).not.toHaveProperty("isActive");
   });
 
-  it("still rejects characters that are not letters, numbers or hyphens", () => {
-    const result = parse(org({ code: "test 001" }));
-    expect(result.success).toBe(false);
-    expect(result.error?.issues[0].message).toBe("Use letters, numbers and hyphens only");
+  it("the form schema carries isActive for edit mode, but create parsing still strips it", () => {
+    const formResult = orgFormSchema.safeParse(org({ isActive: false }));
+    expect(formResult.data?.isActive).toBe(false);
+    expect(parse(org({ isActive: false })).data).not.toHaveProperty("isActive");
+  });
+});
+
+describe("generated org codes", () => {
+  it("match the declared pattern", () => {
+    const gen = orgCodeCandidates();
+    for (let i = 0; i < 50; i++) {
+      expect(gen.next().value).toMatch(ORG_CODE_PATTERN);
+    }
   });
 
+  it("avoid the characters people misread in the random part — no 0/O or 1/I/L", () => {
+    const gen = orgCodeCandidates();
+    for (let i = 0; i < 200; i++) {
+      const suffix = (gen.next().value as string).replace(/^ORG-/, "");
+      expect(suffix).not.toMatch(/[0O1IL]/);
+    }
+  });
+
+  it("do not repeat in a small sample, so the retry loop is a rarity not a routine", () => {
+    const gen = orgCodeCandidates();
+    const sample = new Set<string>();
+    for (let i = 0; i < 500; i++) sample.add(gen.next().value as string);
+    expect(sample.size).toBe(500);
+  });
+});
+
+describe("what the user typed is what gets validated", () => {
   it("normalises a lowercase PAN", () => {
     expect(parse(org({ panNumber: "abcde1234f" })).data?.panNumber).toBe("ABCDE1234F");
   });

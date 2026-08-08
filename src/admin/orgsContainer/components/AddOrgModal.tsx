@@ -5,12 +5,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { OrgForm } from "@/components/shared/forms/orgs";
-import type { Org, CreateOrgInput } from "@/domain/org";
+import type { Org } from "@/domain/org";
+import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 
 interface AddOrgModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateOrgInput) => Promise<void>;
+  onSubmit: (data: OrgFormInput) => Promise<void>;
   org?: Org; // For edit mode
   isSubmitting?: boolean;
   mode?: "create" | "edit" | "view";

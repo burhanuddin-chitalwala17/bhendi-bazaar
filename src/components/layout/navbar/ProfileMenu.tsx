@@ -76,6 +76,15 @@ export function ProfileMenu() {
           >
             Orders
           </Link>
+          <Link
+            href="/org"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Org Portal
+          </Link>
           <button
             type="button"
             className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-muted-foreground hover:bg-muted hover:text-foreground"

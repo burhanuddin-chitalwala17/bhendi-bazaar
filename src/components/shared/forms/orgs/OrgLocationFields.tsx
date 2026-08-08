@@ -1,14 +1,14 @@
 // src/components/shared/forms/org/OrgLocationFields.tsx
 
 import { UseFormRegister, FieldErrors } from "react-hook-form";
-import { CreateOrgInput } from "@/domain/org";
+import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormInput, FormTextarea } from "@/components/shared/forms/FormField";
 import { MapPin } from "lucide-react";
 
 interface OrgLocationFieldsProps {
-  register: UseFormRegister<CreateOrgInput>;
-  errors: FieldErrors<CreateOrgInput>;
+  register: UseFormRegister<OrgFormInput>;
+  errors: FieldErrors<OrgFormInput>;
   readOnly?: boolean;
 }
 

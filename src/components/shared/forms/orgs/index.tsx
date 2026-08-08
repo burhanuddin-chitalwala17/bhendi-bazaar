@@ -4,8 +4,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  createOrgSchema,
-  type CreateOrgInput,
+  orgFormSchema,
+  type OrgFormInput,
 } from "@/lib/validation/schemas/org.schema";
 import type { Org } from "@/domain/org";
 import { OrgBasicFields } from "./OrgBasicFields";
@@ -15,7 +15,7 @@ import { FormActions } from "../../button-groups/FormActions";
 
 interface OrgFormProps {
   org?: Org;
-  onSubmit: (data: CreateOrgInput) => Promise<void>;
+  onSubmit: (data: OrgFormInput) => Promise<void>;
   onCancel: () => void;
   isSubmitting?: boolean;
   readOnly?: boolean;
@@ -37,11 +37,10 @@ export function OrgForm({
     watch,
     setValue,
     formState: { errors },
-  } = useServerForm<CreateOrgInput>({
-    schema: createOrgSchema,
+  } = useServerForm<OrgFormInput>({
+    schema: orgFormSchema,
     submit: onSubmit,
     defaultValues: {
-      code: org?.code || "",
       name: org?.name || "",
       email: org?.email || "",
       phone: org?.phone || "",
@@ -53,7 +52,7 @@ export function OrgForm({
       businessName: org?.businessName || "",
       gstNumber: org?.gstNumber || "",
       panNumber: org?.panNumber || "",
-      isActive: org?.isActive ?? true,
+      isActive: org?.isActive,
       description: org?.description || "",
     },
   });
@@ -75,7 +74,7 @@ export function OrgForm({
       <OrgBasicFields
         register={register}
         errors={errors}
-        isEdit={isEdit}
+        code={org?.code}
         readOnly={readOnly}
       />
 
@@ -93,8 +92,8 @@ export function OrgForm({
         readOnly={readOnly}
       />
 
-      {/* Status */}
-      {!readOnly && (
+      {/* Status — deactivation is an act on an existing org, so create has no switch */}
+      {isEdit && !readOnly && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">

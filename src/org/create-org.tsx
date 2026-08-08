@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { OrgForm } from "@/components/shared/forms/orgs";
 import { readApiError } from "@/lib/api-error";
-import type { CreateOrgInput } from "@/lib/validation/schemas/org.schema";
+import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 
 /**
  * The same form the platform admin uses, given a different destination. Field errors
@@ -14,7 +14,7 @@ import type { CreateOrgInput } from "@/lib/validation/schemas/org.schema";
 export function CreateOrg() {
   const router = useRouter();
 
-  const submit = async (data: CreateOrgInput) => {
+  const submit = async (data: OrgFormInput) => {
     const response = await fetch("/api/orgs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

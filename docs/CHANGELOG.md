@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-28] 2026-08-09 — Org onboarding complete: self-serve creation, generated codes [CONTRACT]
+
+Completes [org-onboarding](specs/multi-vendor-marketplace/org-onboarding/) — and a process admission first: its initial pieces (`/org`, `/org/new`, `POST /api/orgs`) were built reactively when testing found the portal unreachable, before any spec existed. The spec and TRD were written afterwards to match what should exist, and the implementation corrected to them. Backwards under our own SDLC; recorded rather than hidden.
+
+**Org codes are server-generated and frozen — nobody is asked for one, admin included.** A shop owner asked to invent `TEST-001` produces collisions and an identifier that can never change once printed, which is the slug lesson (PR-15/18) again. `ORG-` + 5 characters from an alphabet with no `0/O` or `1/I/L`, settled by the unique constraint with retry (`server/catalog/org.code.ts`). The old `findByCode`-then-insert existence check is gone — read-then-write, [ADR-0007](adr/0007-conditional-stock-decrement.md)'s reasoning applied to inserts. Existing `SEL-*` codes untouched.
+
+**`isActive` is server-owned at creation** (Invariant 4): a new org is active by definition, deactivation is a platform act on an existing org. `createOrgSchema` loses both fields; a client that sends them is stripped, and there are tests asserting exactly that. One form still serves self-serve create, admin create, and admin edit — it renders by mode (`orgFormSchema` superset; each route parses its stricter schema), because a second form is how forms drift.
+
+**The portal is now reachable**: an "Org Portal" entry in the storefront account menu → `/org`, which resolves state server-side — no orgs → create prompt, exactly one → straight in, several → chooser, which now also offers "create another". Creation lands you in the new portal as its OWNER, org + first membership in one transaction.
+
+**Also in this PR, found by using the portal** (each fixed on contact, ADR-0013 decision 7):
+- `getStats()` had no org scope, so a vendor's dashboard cards showed the **platform's** product count and inventory value. The scope is now a **required** argument — `getStats(orgId | null)`, the admin page passing an explicit `null` — because an optional parameter defaulting to platform-wide is exactly how this leaked.
+- `defaultAddress` was registered **twice** in the org form (a textarea and an input sharing one value). Removed, and `tests/unit/form-error-display.test.ts` now fails any field bound twice in a file.
+- The code/GST/PAN inputs are styled `className="uppercase"` — CSS, which changes how a value looks and never what it is — while validation ran on the raw value, so `test-001` displayed as `TEST-001` and failed. Normalisation now runs **before** the pattern. The same probe found `phone: ""` failing outright — `optionalPhoneSchema` joins `optionalPostalCodeSchema` (PR-22's defect, in a schema written before that fix existed).
+- "Default Shipping Location" copy → "Pickup Location": there is no default location by decision (stock-locations trd.md D4), and the screen was contradicting it.
+
+`tsc` exits 0, **107 tests pass** (was 96), `next build` compiles, 0 lint errors in the touched surfaces. Six `emailSchema.optional()` / `phoneSchema.optional()` declarations elsewhere have the same blank-rejection shape and are deliberately left for their own pass — two sit on live auth paths.
+
 ## [PR-27] 2026-08-08 — The org portal exists: `(org)` and products [CONTRACT]
 
 PR 3 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/), narrowed to products. `/org/[orgId]` is real: a layout that establishes membership once, a dashboard, and the four product screens with API routes behind `withOrg`.

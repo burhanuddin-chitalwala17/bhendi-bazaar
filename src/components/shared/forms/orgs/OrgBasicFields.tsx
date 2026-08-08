@@ -1,22 +1,23 @@
 // src/components/shared/forms/org/OrgBasicFields.tsx
 
 import { UseFormRegister, FieldErrors } from "react-hook-form";
-import { CreateOrgInput } from "@/domain/org";
+import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormInput } from "@/components/shared/forms/FormField";
 import { Store } from "lucide-react";
 
 interface OrgBasicFieldsProps {
-  register: UseFormRegister<CreateOrgInput>;
-  errors: FieldErrors<CreateOrgInput>;
-  isEdit?: boolean;
+  register: UseFormRegister<OrgFormInput>;
+  errors: FieldErrors<OrgFormInput>;
+  /** Shown read-only on an existing org. Absent on create: codes are server-generated. */
+  code?: string;
   readOnly?: boolean;
 }
 
 export function OrgBasicFields({
   register,
   errors,
-  isEdit = false,
+  code,
   readOnly = false,
 }: OrgBasicFieldsProps) {
   return (
@@ -29,15 +30,15 @@ export function OrgBasicFields({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormInput
-            label="Organisation Code"
-            required
-            error={errors.code?.message}
-            disabled={isEdit || readOnly}
-            placeholder="SEL-001"
-            className="uppercase"
-            {...register("code")}
-          />
+{code && (
+            <FormInput
+              label="Organisation Code"
+              value={code}
+              disabled
+              readOnly
+              hint="Assigned automatically — codes never change"
+            />
+          )}
 
           <FormInput
             label="Organisation Name"
