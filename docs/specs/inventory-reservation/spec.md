@@ -1,6 +1,6 @@
 # Spec — inventory reservation
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-40
 - **Domain:** checkout, catalog
 - **Phase:** 2 — Transaction integrity
 - **Verified:** 2026-08-03

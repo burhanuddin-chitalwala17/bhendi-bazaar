@@ -8,6 +8,7 @@ import { validateRequest } from "@/lib/validation";
 import { updateCartSchema } from "@/lib/validation/schemas/cart.schemas";
 import { withRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
 import type { CartItem } from "@/domain/cart";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 /**
  * API Routes act as the bridge between client and server
@@ -47,17 +48,15 @@ export async function PUT(request: NextRequest) {
       salePrice: item.salePrice ?? undefined,
     })) as CartItem[];
 
-    // Call server service (types converted at runtime)
-    await cartService.updateCart(session.user.id, items);
+    const { version } = await cartService.updateCart(
+      session.user.id,
+      items,
+      validation.data.version
+    );
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true, version }, { status: 200 });
   } catch (error) {
-    console.error("[API] PUT /api/cart failed:", error);
-
-    const errorMessage =
-      error instanceof Error ? error.message : "Failed to update cart";
-
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return toErrorResponse(error, "Could not update the cart");
   }
 }
 

@@ -56,4 +56,4 @@ PR 2 is the one that changes behaviour in production; 1 is inert, and 3–5 depe
 ## Questions closed (2026-08-09)
 - **Q1** — 30 minutes, as suggested; the sweep runs every 15 (`vercel.json`), so a missed webhook confirms within ~45 minutes worst case.
 - **Q2** — The existing admin orders list already filters by payment status, which is the stuck-and-failed view at current volume; the sweep also logs every recovery. An alert earns its keep when volume does.
-- **Q3** — Still open, deliberately: it belongs to [inventory-reservation](../inventory-reservation/), which owns whether a released reservation survives a retry. Carried there.
+- **Q3** — Closed by [inventory-reservation](../inventory-reservation/) Q1: a failed payment keeps its reservation until the 60-minute hold expires, so the same order is retriable within the hold; after expiry a new order is needed.

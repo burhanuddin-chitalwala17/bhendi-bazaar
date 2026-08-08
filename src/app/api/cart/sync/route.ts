@@ -38,13 +38,9 @@ export async function POST(request: NextRequest) {
       salePrice: item.salePrice ?? undefined,
     })) as CartItem[];
 
-    // Call server service
-    const mergedItems = await cartService.syncCart(
-      session.user.id,
-      transformedItems
-    );
+    const merged = await cartService.syncCart(session.user.id, transformedItems);
 
-    return NextResponse.json({ items: mergedItems }, { status: 200 });
+    return NextResponse.json(merged, { status: 200 });
   } catch (error) {
     console.error("[API] POST /api/cart/sync failed:", error);
     return NextResponse.json({ error: "Failed to sync cart" }, { status: 500 });

@@ -20,6 +20,8 @@ export const updateCartSchema = z.object({
   items: z
     .array(cartItemSchema)
     .max(100, "Cart cannot contain more than 100 items"),
+  /** The version this write is based on. Stale → 409, never a silent overwrite (R7). */
+  version: z.number().int().positive().optional(),
 });
 
 export type UpdateCartInput = z.infer<typeof updateCartSchema>;

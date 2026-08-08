@@ -195,7 +195,16 @@ export class PaymentService {
       try {
         const captured = await razorpayRepository.fetchCapturedPayment(order.gatewayOrderId!);
         if (!captured) {
-          results.push({ orderId: order.id, outcome: "still-unpaid" });
+          // Nothing captured and past the hold window: the reservation is released
+          // (inventory-reservation R4). 60 minutes — double the sweep threshold, so
+          // an order the gateway could still tell us about is never released first.
+          const holdExpired = order.createdAt < new Date(Date.now() - 60 * 60_000);
+          if (holdExpired) {
+            const expired = await orderRepository.expireAndRestock(order.id);
+            results.push({ orderId: order.id, outcome: expired ? "expired-released" : "still-unpaid" });
+          } else {
+            results.push({ orderId: order.id, outcome: "still-unpaid" });
+          }
           continue;
         }
         const confirmation = await this.confirmPayment({

@@ -154,12 +154,9 @@ export function useCheckoutPayment() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-            // Step 6: Clear cart
+            // The server cleared the persisted cart inside the order transaction
+            // (inventory-reservation R6); only the local store remains to clear.
             if (!orderData.isBuyNow) {
-              console.log('🧹 Clearing cart...');
-              if (session?.user) {
-                await cartApiClient.clearCart();
-              }
               useCartStore.getState().clear();
             }
 

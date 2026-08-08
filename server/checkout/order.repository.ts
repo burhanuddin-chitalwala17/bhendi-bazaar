@@ -7,7 +7,6 @@
 
 import { prisma, toJsonColumn } from "@server/shared/prisma";
 import type {
-  CreateOrderInput,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
@@ -80,71 +79,6 @@ export class OrderRepository {
   }
 
   /**
-   * Create a new order with automatic stock deduction
-   */
-  async create(input: CreateOrderInput): Promise<boolean> {
-    // Use Prisma transaction to ensure atomicity
-    const result = await prisma.$transaction(async (tx) => {
-      // Step 1: Validate and check stock availability for all items
-      for (const item of input.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true, name: true },
-        });
-
-        if (!product) {
-          throw new NotFoundError(`Product not found: ${item.productId}`);
-        }
-
-        if (product.stock < item.quantity) {
-          throw new ConflictError(`Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`);
-        }
-      }
-
-      // Step 2: Generate code
-      const code = generateOrderCode();
-
-      // Step 4: Create the order
-      const order = await tx.order.create({
-        data: {
-          code,
-          userId: input.userId ?? null,
-          itemsTotal: input.itemsTotal,
-          shippingTotal: input.shippingTotal,
-          discount: input.discount,
-          grandTotal: input.grandTotal,
-          status: "processing",
-          address: toJsonColumn(input.address),
-          notes: input.notes ?? null,
-          paymentMethod: input.paymentMethod ?? null,
-          paymentStatus: input.paymentStatus ?? "pending",
-          paymentId: input.paymentId ?? null,
-        },
-      });
-
-      // Step 5: Decrement stock for each item
-      for (const item of input.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      }
-
-      return order;
-    });
-
-    // Return normalized order
-    return true;
-  }
-
-  /**
-   * Update an existing order
-   */
-  /**
    * The single write path to `paymentStatus: "paid"` (ADR-0005). A conditional
    * update, not read-then-write: two confirmations racing (webhook and browser
    * return) resolve at the database — exactly one wins, the other sees count 0 and
@@ -152,7 +86,10 @@ export class OrderRepository {
    */
   async confirmPaid(orderId: string, paymentId: string): Promise<boolean> {
     const result = await prisma.order.updateMany({
-      where: { id: orderId, NOT: { paymentStatus: "paid" } },
+      // Not paid, and not expired: an expired order's stock is already released, so
+      // a late capture is refused here and refunded manually rather than confirming
+      // an order the store may no longer be able to fulfil.
+      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: "expired" }] },
       data: {
         paymentStatus: "paid",
         status: "confirmed",
@@ -177,6 +114,39 @@ export class OrderRepository {
       select: { id: true, gatewayOrderId: true, grandTotal: true, createdAt: true },
       orderBy: { createdAt: "asc" },
       take: limit,
+    });
+  }
+
+  /**
+   * Abandon a stale pending order and put its stock back (inventory-reservation R4).
+   *
+   * The expiry is conditional on the order still being pending, so it cannot race a
+   * confirmation into releasing stock for a paid order — one of the two conditional
+   * writes wins at the database, never both. Restock is a plain increment: the guard
+   * exists to stop stock going below zero, and additions cannot.
+   */
+  async expireAndRestock(orderId: string): Promise<boolean> {
+    return await prisma.$transaction(async (tx) => {
+      const expired = await tx.order.updateMany({
+        where: { id: orderId, status: "pending_payment", NOT: { paymentStatus: "paid" } },
+        data: { status: "expired" },
+      });
+      if (expired.count === 0) return false;
+
+      const shipments = await tx.shipment.findMany({
+        where: { orderId },
+        select: { items: true },
+      });
+      const lines = shipments.flatMap(
+        (s) => (Array.isArray(s.items) ? s.items : []) as Array<{ productId: string; quantity: number }>
+      );
+      for (const line of lines) {
+        await tx.product.update({
+          where: { id: line.productId },
+          data: { stock: { increment: line.quantity } },
+        });
+      }
+      return true;
     });
   }
 

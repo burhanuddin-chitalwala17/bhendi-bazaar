@@ -12,7 +12,6 @@ import { prisma, toJsonColumn } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
 import type {
-  CreateOrderInput,
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
   ShipmentItem,
@@ -20,6 +19,7 @@ import type {
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { priceGroupItems, assembleOrderTotals } from "@server/checkout/pricing";
+import { aggregateReservation } from "@server/checkout/reservation";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
@@ -61,21 +61,6 @@ export class OrderService {
     return await orderRepository.findByCode(code);
   }
 
-  /**
-   * Create a new order with validation
-   */
-  async createOrder(input: CreateOrderInput): Promise<boolean> {
-    // Validate input
-    this.validateCreateOrderInput(input);
-
-    try {
-      await orderRepository.create(input);
-      return true;
-    } catch (error) {
-      console.error("Failed to create order:", error);
-      return false;
-    }
-  }
 
 
   /**
@@ -182,6 +167,37 @@ export class OrderService {
           throw new ConflictError(
             "Prices changed while you were checking out. Please review your order and try again."
           );
+        }
+
+        // Reserve stock: the availability check IS the where clause of the write
+        // (Invariant 6, ADR-0007) — there is no interval in which two checkouts can
+        // both believe the last unit is theirs. count === 0 means unavailable, and
+        // the throw rolls back the whole transaction: no order without its stock
+        // movement, no stock movement without its order (R2).
+        for (const { productId, quantity } of aggregateReservation(input.shippingGroups)) {
+          const reserved = await tx.product.updateMany({
+            where: { id: productId, stock: { gte: quantity } },
+            data: { stock: { decrement: quantity } },
+          });
+          if (reserved.count === 0) {
+            // Post-failure read is for the message only — the guard already decided.
+            const row = await tx.product.findUnique({
+              where: { id: productId },
+              select: { name: true, stock: true },
+            });
+            const name = row?.name ?? "An item in your order";
+            throw new ConflictError(
+              row && row.stock > 0
+                ? `Only ${row.stock} left of "${name}" — you asked for ${quantity}. Please adjust your cart.`
+                : `"${name}" is out of stock. Please remove it from your cart.`
+            );
+          }
+        }
+
+        // R6: the bought items leave the cart in the same transaction, so a closed
+        // tab cannot leave a cart that has already been purchased.
+        if (input.userId) {
+          await tx.cart.deleteMany({ where: { userId: input.userId } });
         }
 
         // 1. Create the main order (pending payment)
@@ -492,64 +508,6 @@ export class OrderService {
     }
   }
 
-  /**
-   * Validate order creation input
-   */
-  private validateCreateOrderInput(input: CreateOrderInput): void {
-    // Validate items
-    if (!input.items || input.items.length === 0) {
-      throw new DomainError("Order must contain at least one item");
-    }
-
-    for (const item of input.items) {
-      if (!item.productId || !item.productName || !item.thumbnail) {
-        throw new DomainError("Invalid item data: missing required fields");
-      }
-      if (item.quantity <= 0) {
-        throw new DomainError("Item quantity must be greater than 0");
-      }
-      if (item.price < 0) {
-        throw new DomainError("Item price cannot be negative");
-      }
-    }
-
-    // Validate totals
-    if (!input.itemsTotal || !input.shippingTotal || !input.discount || !input.grandTotal) {
-      throw new DomainError("Order totals are required");
-    }
-    if (input.itemsTotal + input.shippingTotal - input.discount <= 0) {
-      throw new DomainError("Order total must be greater than 0");
-    }
-
-    // Validate address
-    if (!input.address) {
-      throw new DomainError("Shipping address is required");
-    }
-    const { fullName, mobile, addressLine1, city, state, pincode, country } =
-      input.address;
-    if (
-      !fullName ||
-      !mobile ||
-      !addressLine1 ||
-      !city ||
-      !state ||
-      !pincode ||
-      !country
-    ) {
-      throw new DomainError("Address is missing required fields");
-    }
-
-    // Validate phone format (basic validation)
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(mobile)) {
-      throw new DomainError("Phone number must be 10 digits");
-    }
-
-    // Validate postal code (basic validation)
-    if (!isValidPincode(pincode)) {
-      throw new Error(PINCODE_MESSAGE);
-    }
-  }
 }
 
 export const orderService = new OrderService();

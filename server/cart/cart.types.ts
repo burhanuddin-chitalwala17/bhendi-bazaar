@@ -29,5 +29,7 @@ export interface ServerCart {
   id: string;
   userId: string;
   items: CartItem[];
+  /** Optimistic-lock version — a stale write is refused, not silently merged over. */
+  version: number;
   updatedAt: Date;
 }

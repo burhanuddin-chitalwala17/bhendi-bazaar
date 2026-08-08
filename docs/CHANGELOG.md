@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-40] 2026-08-09 — The last unit sells once
+
+[inventory-reservation](specs/inventory-reservation/) lands, and **Phase 2 — transaction integrity — is complete**. The live checkout path had *no stock movement at all*: the client's pre-flight `check-stock` was the only guard, so any two buyers who both passed it both got the last unit. The legacy path that did move stock did it read-then-check-then-decrement — the race [ADR-0007](adr/0007-conditional-stock-decrement.md) was written against.
+
+**The availability check is now the `where` clause of the write** (`stock: { gte: quantity }` → `decrement`), inside the order transaction: no interval exists in which two checkouts can both believe the last unit is theirs, `count === 0` rolls the whole order back, and the failure names the item and what's left ("Only 2 left of X — you asked for 3"). The reservation *plan* is pure and tested (`server/checkout/reservation.ts`): quantities merge across shipping groups (two decrements of one row would double-check a changed number) and sort by product id (unordered row-locking between concurrent orders is a deadlock). **The cart empties in the same transaction** (R6) — a closed tab can no longer leave a cart that was already bought — and the client's after-the-fact clear is gone.
+
+**Release without breaking the guarantee** (R4): the reconciliation sweep now expires orders still unpaid 60 minutes on — but only *after* asking the gateway and hearing nothing was captured, so a confirmable order is never released first. Expiry restocks conditionally-on-still-pending, and `confirmPaid` now refuses expired orders — both writes conditional, so the expiry-vs-confirmation race has exactly one winner at the database. A capture landing after expiry is refused and refunded manually rather than confirming an order the store may not be able to fulfil. Failed payments keep their hold until expiry, so the same order is retriable — closing the question payment-confirmation carried.
+
+**`Cart.version` is enforced or it lied** (D6): the column existed, was incremented, and was checked nowhere — worse, the one check that existed in the repository was itself read-then-compare. It is now a conditional write; a stale cart write gets a 409, and the client responds by **re-syncing and merging** — the same merge login uses — with a toast, instead of one tab silently overwriting the other (R7).
+
+**The weaker create path is deleted, not patched** (D5): `orderService.createOrder`, `orderRepository.create`, `CreateOrderInput` and the single-shipment schema are gone — a second creation path with different stock behaviour defeats the guarantee, and a test now asserts it stays gone.
+
+**171 tests pass** (6 new), `tsc` exits 0, `next build` compiles. The honest caveat, recorded in the TRD: the *real* concurrency test — N overlapping transactions for one unit — needs the test database this project doesn't have yet; the guard's correctness rests on its shape (pinned by test) and Postgres semantics. No migration.
+
 ## [PR-39] 2026-08-09 — An order is paid when the gateway says so [CONTRACT] [MIGRATION]
 
 [payment-confirmation](specs/payment-confirmation/) lands. Until now the **browser** told the server an order was paid — `PATCH /api/orders/[id]` accepted `paymentStatus` from anyone — and the webhook that should have been authoritative had **silently no-op'd since it was written**: gateway-order creation stored our id under `notes.orderId` while the webhook read `notes.localOrderId`, found nothing, did nothing, and returned 200. Both Invariant 2 violations, live.

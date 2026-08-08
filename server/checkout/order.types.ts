@@ -19,21 +19,7 @@ export interface OrderItem {
   selectedVariant?: string;
 }
 
-export interface CreateOrderInput {
-  userId?: string; // Optional for guest orders
-  items: OrderItem[];
-  itemsTotal: number;
-  shippingTotal: number;
-  discount: number;
-  grandTotal: number;
-  address: DeliveryAddress;
-  notes?: string;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  paymentId?: string;
-  status?: string;
-  shipments: Shipment[];
-}
+
 
 interface Shipment {
   id: string;

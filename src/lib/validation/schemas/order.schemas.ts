@@ -50,38 +50,9 @@ const orderTotalsSchema = z.object({
   total: paiseAmount,
 });
 
-// Create order schema
-export const createOrderSchema = z
-  .object({
-    items: z
-      .array(cartItemSchema)
-      .min(1, "Order must contain at least one item")
-      .max(100, "Order cannot contain more than 100 items"),
-    totals: orderTotalsSchema,
-    address: orderAddressSchema,
-    shipping: shippingMethodSchema,
-    notes: z.string().max(1000, "Notes too long").optional(),
-    paymentMethod: z.enum(["razorpay"]).optional(),
-    paymentStatus: z.enum(["pending", "paid", "failed"]).optional(),
-    userId: uuidSchema.optional(),
-  })
-  .refine(
-    (data) => {
-      // Validate totals match items + shipping
-      const calculatedSubtotal = data.items.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-      );
-      const shippingCost = data.totals.shipping || 0;
-      const expectedTotal =
-        calculatedSubtotal - data.totals.discount + shippingCost;
-      // Paise are integers: totals either match or they do not (Invariant 3).
-      return expectedTotal === data.totals.total;
-    },
-    { message: "Order totals do not match items", path: ["totals"] }
-  );
+// The single-shipment create schema is gone with its path (inventory-reservation D5):
+// one order-creation path, so the stock guarantee has no weaker sibling.
 
-export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
 // Order lookup schema
 export const orderLookupSchema = z.object({

@@ -2,7 +2,7 @@
 
 import { cartRepository } from "@server/cart/cart.repository";
 import type { CartItem } from "@server/cart/cart.types";
-import { prisma } from "@server/shared/prisma";
+import { prisma, toJsonColumn } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
 import { DomainError } from "@server/shared/domain-error";
 
@@ -14,19 +14,25 @@ export class CartService {
   /**
    * Update user's cart
    */
-  async updateCart(userId: string, items: CartItem[]): Promise<void> {
-    // Validate items
+  async updateCart(
+    userId: string,
+    items: CartItem[],
+    expectedVersion?: number
+  ): Promise<{ version: number }> {
     this.validateCartItems(items);
 
-    // Save to database
-    await cartRepository.upsert(userId, items);
+    const cart = await cartRepository.upsert(userId, items, expectedVersion);
+    return { version: cart.version };
   }
 
   /**
    * Sync local cart with server cart on login
    * Uses Prisma transaction for atomicity
    */
-  async syncCart(userId: string, localItems: CartItem[]): Promise<CartItem[]> {
+  async syncCart(
+    userId: string,
+    localItems: CartItem[]
+  ): Promise<{ items: CartItem[]; version: number }> {
     try {
       // Use Prisma transaction for atomicity
       const mergedItems = await prisma.$transaction(async (tx) => {
@@ -86,27 +92,29 @@ export class CartService {
             };
           });
         // Save merged cart within transaction
-        await tx.cart.upsert({
+        const saved = await tx.cart.upsert({
           where: { userId },
           update: {
-            items: merged as unknown as Prisma.InputJsonValue,
+            items: toJsonColumn(merged),
             version: { increment: 1 },
             updatedAt: new Date(),
           },
           create: {
             userId,
-            items: merged as unknown as Prisma.InputJsonValue,
+            items: toJsonColumn(merged),
             version: 1,
           },
         });
 
-        return merged;
+        return { items: merged, version: saved.version };
       });
 
       return mergedItems;
     } catch (error) {
       console.error("[CartService] syncCart failed:", error);
-      return localItems;
+      // The local cart survives; version 0 tells the client it has no basis to
+      // assert one on its next write.
+      return { items: localItems, version: 0 };
     }
   }
 
