@@ -33,8 +33,8 @@ model Product {
   slug        String   @unique
   name        String
   description String   @db.Text
-  price       Float
-  salePrice   Float?
+  price       Int // paise (Invariant 3)
+  salePrice   Int? // paise
   currency    String   @default("INR")
 
   categoryId  String
@@ -240,10 +240,10 @@ model Order {
   notes   String? @db.Text
   
   // ✅ NEW: Order-level totals
-  itemsTotal    Float @default(0) // Sum of all item prices
-  shippingTotal Float @default(0) // Sum of all shipping costs
-  discount      Float @default(0)
-  grandTotal    Float @default(0) // itemsTotal + shippingTotal - discount
+  itemsTotal    Int @default(0) // paise
+  shippingTotal Int @default(0) // paise
+  discount      Int @default(0) // paise
+  grandTotal    Int @default(0) // paise: itemsTotal + shippingTotal - discount
   
   // Payment (single for entire order)
   paymentMethod String? // "razorpay"
@@ -285,7 +285,7 @@ model Shipment {
   fromState   String
   
   // ✅ Shipping details (specific to this shipment)
-  shippingCost       Float
+  shippingCost       Int // paise
   shippingProviderId String?
   shippingProvider   ShippingProvider? @relation(fields: [shippingProviderId], references: [id])
   
@@ -385,7 +385,7 @@ model ShippingRateCache {
   mode        String // 'prepaid', 'cod'
 
   // Cached rate information
-  rate          Float // Shipping cost in INR
+  rate          Int // paise
   courierName   String // Courier service name
   estimatedDays Int // Estimated delivery days
 

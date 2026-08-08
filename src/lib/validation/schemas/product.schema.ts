@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalNumber, optionalPostalCodeSchema } from "./common.schemas";
+import { optionalNumber, optionalPostalCodeSchema, rupeeAmount } from "./common.schemas";
 import { ProductFlag } from "@server/catalog/product.flags";
 
 /**
@@ -29,8 +29,9 @@ export const productFormSchema = z
     // Required to match the form, which has always enforced it.
     description: z.string().trim().min(1, "Description is required").max(5000),
 
-    price: z.number({ message: "Price is required" }).positive("Price must be greater than 0"),
-    salePrice: optionalNumber(z.number().positive("Sale price must be greater than 0")),
+    // Rupees as typed; the service converts to paise at its boundary (server/shared/money).
+    price: rupeeAmount("Price"),
+    salePrice: optionalNumber(rupeeAmount("Sale price")),
     currency: z.string().length(3).optional(),
 
     orgId: z.string().min(1, "Organisation is required"),

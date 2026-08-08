@@ -44,12 +44,22 @@ export const nameSchema = z
   .trim()
   .refine((val) => !/[<>]/.test(val), 'Name contains invalid characters');
 
-// Currency/Price validation
-export const priceSchema = z
-  .number()
-  .positive('Price must be positive')
-  .max(10000000, 'Price exceeds maximum')
-  .finite('Price must be a valid number');
+// Currency/Price validation — a rupee amount as a human types it. Stored amounts are
+// integer paise (Invariant 3); the server converts via rupeesToPaise at its boundary.
+export const rupeeAmount = (message = 'Amount') =>
+  z
+    .number({ message: `${message} is required` })
+    .positive(`${message} must be greater than 0`)
+    .max(10000000, `${message} exceeds the maximum`)
+    .finite()
+    .refine((v) => Math.abs(v * 100 - Math.round(v * 100)) < 1e-6, {
+      message: `${message} can have at most two decimal places`,
+    });
+
+export const priceSchema = rupeeAmount('Price');
+
+/** An amount already in paise — every stored or wire amount (CONTRACTS.md rule 4). */
+export const paiseAmount = z.number().int('Amounts cross the wire as integer paise').min(0);
 
 // Quantity validation
 export const quantitySchema = z
@@ -97,7 +107,7 @@ export const optionalPostalCodeSchema = z
  * NaN, so an untouched optional field fails validation — silently, if the field
  * renders no error. Every spelling of blank becomes absent instead.
  */
-export const optionalNumber = (inner: z.ZodNumber) =>
+export const optionalNumber = (inner: z.ZodType<number>) =>
   z.preprocess(
     (v) => (v === "" || v === null || (typeof v === "number" && Number.isNaN(v)) ? undefined : v),
     inner.optional()

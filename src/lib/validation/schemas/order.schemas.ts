@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { uuidSchema, priceSchema, quantitySchema, nameSchema, emailSchema, phoneSchema, postalCodeSchema } from './common.schemas';
+import { uuidSchema, paiseAmount, quantitySchema, nameSchema, emailSchema, phoneSchema, postalCodeSchema } from './common.schemas';
 
 // Order-specific address schema (requires fullName and state)
 const orderAddressSchema = z.object({
@@ -25,8 +25,8 @@ const cartItemSchema = z.object({
   productName: z.string().min(1).max(255),
   productSlug: z.string().min(1).max(255),
   thumbnail: z.string().url().max(2048),
-  price: priceSchema,
-  salePrice: priceSchema.optional(),
+  price: paiseAmount,
+  salePrice: paiseAmount.optional(),
   quantity: quantitySchema,
   size: z.string().max(50).optional(),
   color: z.string().max(50).optional(),
@@ -36,7 +36,7 @@ const cartItemSchema = z.object({
 const shippingMethodSchema = z.object({
   providerId: z.string(),
   courierName: z.string(),
-  shippingCost: z.number().min(0),
+  shippingCost: z.number().int().min(0), // paise
   estimatedDays: z.number().int().min(0),
   mode: z.string(),
   packageWeight: z.number().min(0).optional(),
@@ -44,10 +44,10 @@ const shippingMethodSchema = z.object({
 
 // Order totals schema
 const orderTotalsSchema = z.object({
-  subtotal: priceSchema,
-  discount: z.number().min(0).max(1000000),
-  shipping: z.number().min(0).optional(),
-  total: priceSchema,
+  subtotal: paiseAmount,
+  discount: z.number().int().min(0), // paise
+  shipping: z.number().int().min(0).optional(), // paise
+  total: paiseAmount,
 });
 
 // Create order schema
@@ -75,7 +75,8 @@ export const createOrderSchema = z
       const shippingCost = data.totals.shipping || 0;
       const expectedTotal =
         calculatedSubtotal - data.totals.discount + shippingCost;
-      return Math.abs(expectedTotal - data.totals.total) < 0.01;
+      // Paise are integers: totals either match or they do not (Invariant 3).
+      return expectedTotal === data.totals.total;
     },
     { message: "Order totals do not match items", path: ["totals"] }
   );
@@ -112,8 +113,8 @@ const shipmentItemSchema = z.object({
   productName: z.string().min(1).max(255),
   productSlug: z.string().min(1).max(255),
   thumbnail: z.string().url().max(2048),
-  price: priceSchema,
-  salePrice: priceSchema.optional(),
+  price: paiseAmount,
+  salePrice: paiseAmount.optional(),
   quantity: quantitySchema,
 });
 
@@ -123,7 +124,7 @@ const selectedRateSchema = z.object({
   providerName: z.string().min(1, "Provider name required"),
   courierName: z.string().min(1, "Courier name required"),
   courierCode: z.string().optional(),
-  rate: z.number().min(0, "Shipping rate cannot be negative"),
+  rate: z.number().int().min(0, "Shipping rate cannot be negative"), // paise
   estimatedDays: z.number().int().min(0),
   mode: z.string().min(1),
   etd: z.string().optional(),
@@ -139,16 +140,16 @@ const shippingGroupSchema = z.object({
   fromState: z.string().min(2).max(100),
   items: z.array(shipmentItemSchema).min(1, "Group must have at least one item"),
   totalWeight: z.number().min(0),
-  itemsTotal: z.number().min(0),
+  itemsTotal: z.number().int().min(0), // paise
   selectedRate: selectedRateSchema,
 });
 
 // Order totals schema for multi-shipment orders
 const orderWithShipmentsTotalsSchema = z.object({
-  itemsTotal: priceSchema,
-  shippingTotal: z.number().min(0),
-  discount: z.number().min(0).max(1000000),
-  grandTotal: priceSchema,
+  itemsTotal: paiseAmount,
+  shippingTotal: z.number().int().min(0), // paise
+  discount: z.number().int().min(0), // paise
+  grandTotal: paiseAmount,
 });
 
 // Create order with shipments schema
@@ -179,10 +180,11 @@ export const createOrderWithShipmentsSchema = z
       const expectedGrandTotal =
         calculatedItemsTotal + calculatedShippingTotal - data.totals.discount;
 
+      // Paise are integers: totals either match or they do not (Invariant 3).
       return (
-        Math.abs(calculatedItemsTotal - data.totals.itemsTotal) < 0.01 &&
-        Math.abs(calculatedShippingTotal - data.totals.shippingTotal) < 0.01 &&
-        Math.abs(expectedGrandTotal - data.totals.grandTotal) < 0.01
+        calculatedItemsTotal === data.totals.itemsTotal &&
+        calculatedShippingTotal === data.totals.shippingTotal &&
+        expectedGrandTotal === data.totals.grandTotal
       );
     },
     {

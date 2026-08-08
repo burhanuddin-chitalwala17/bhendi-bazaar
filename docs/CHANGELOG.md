@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-37] 2026-08-09 — Money is integer paise, end to end [CONTRACT] [MIGRATION]
+
+[money-as-paise](specs/money-as-paise/) lands — the first of the Phase 2 transaction-integrity specs, and per its TRD D2 deliberately **one large PR**: a half-migrated state displays amounts 100× wrong, so there was no incremental path.
+
+**Eight columns convert** (`Product.price`/`salePrice`, `Order`'s four totals, `Shipment.shippingCost`, `ShippingRateCache.rate`) via a hand-written migration that multiplies and rounds explicitly — a bare type change would have truncated ₹1,200.50 to ₹1,200. The Q1 survey found **zero rows** with sub-paisa drift, so ROUND is a guard, not a correction. The rate cache is emptied rather than converted: entries are transient, and a cache whose unit depends on write date cannot be mistrusted correctly.
+
+**Exactly two modules know about the factor of 100.** `server/shared/money.ts` (`rupeesToPaise` guards against IEEE754 dust — `0.29 * 100` is `28.999999999999996`) and `src/lib/format.ts` (`formatCurrency` takes paise; whole rupees drop decimals). The admin form still collects rupees; conversion happens once at the catalog service (`moneyToPaise`) — **not** in a Zod transform, because the same schema validates on client and server (ADR-0013) and a transform would run twice and square the factor. TRD D4 carries that revision, dated.
+
+**The four epsilon comparisons in `order.schemas.ts` are gone** — `Math.abs(a − b) < 0.01` was Invariant 3's named bug, and integer totals now compare with `===`. Wire money validates as `paiseAmount` (integer) and human input as `rupeeAmount` (≤2 decimals), so a field misused in the wrong unit fails validation instead of relying on a name being read (Q2, closed without renaming DTO fields). The client's `grandTotal * 100` at the Razorpay call is deleted — the total already **is** the minor unit — and Shiprocket's rupee quotes convert at the provider mapper, so a courier rate is paise from the moment it enters.
+
+Two display notes: `formatCurrency` previously used `maximumFractionDigits: 0`, so amounts like the live `₹40,490.54` grand total were silently **rounded on screen**; paise now show when present. And five hand-rolled `₹{x.toFixed(2)}` renders in checkout moved onto the formatter.
+
+Seeds convert (67 literals), 12 new tests pin the round-trip, the drift case, Indian-grouping formatting and the 2-decimal rule. **143 tests pass**, `tsc` exits 0, `next build` compiles.
+
+**Run `npx prisma migrate deploy` before using the app** — the client now types these columns `Int` against a database that still holds `Float` until then. Verify after (TRD D7): `SELECT SUM("price") FROM "Product"` must read **2989900** (was 29899.00) and `SELECT SUM("grandTotal") FROM "Order"` must read **4049054** (was 40490.54). Take a backup first; the conversion is reversible only by dividing back.
+
 ## [PR-36] 2026-08-09 — Portals get their plain surfaces back, by token scope
 
 PR-33's mapping had the admin panel and org portal inherit the storefront's warm parchment (`bg-gray-50` → `bg-background`), which read as tinted where the panels used to be plain. Rather than reverting to raw classes, a `.portal` scope in `globals.css` overrides the six surface tokens (`background`, `card`, `popover`, `muted`, `border`, `input`) to neutral values, light and dark — every component under the portals re-skins with **zero component edits**, brand and status colours stay shared with the storefront. This is the demonstration of what routing colour through tokens buys: "make this whole area look different" is six variable lines, not a sweep. A new `(org)` group layout applies the surface to `/org` and `/org/new`, which sit outside the `[orgId]` membership layout.

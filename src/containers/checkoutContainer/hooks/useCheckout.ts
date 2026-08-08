@@ -125,7 +125,7 @@ export function useCheckout({ items, isBuyNow }: UseCheckoutProps): UseCheckoutR
       
       if (!stockCheck.available) {
         const messages = stockCheck.issues
-          ?.map((i: any) => i.message)
+          ?.map((i: { message: string }) => i.message)
           .join(", ");
         throw new Error(
           messages || "Some items are out of stock"

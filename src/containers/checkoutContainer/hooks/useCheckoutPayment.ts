@@ -83,7 +83,7 @@ export function useCheckoutPayment() {
       }).then((r) => r.json());
 
       if (!stockCheck.available) {
-        const outOfStock = stockCheck.items.filter((i: any) => !i.available);
+        const outOfStock = stockCheck.items.filter((i: { available: boolean; name: string }) => !i.available);
         throw new Error(
           `Sorry, ${outOfStock[0].name} is out of stock. Please update your cart.`
         );
@@ -100,7 +100,8 @@ export function useCheckoutPayment() {
         paymentStatus: orderData.paymentStatus,
       });
 
-      const amountInMinorUnit = Math.round(orderData.totals.grandTotal * 100);
+      // grandTotal is already integer paise — Razorpay's minor unit, no conversion.
+      const amountInMinorUnit = orderData.totals.grandTotal;
 
       // Free order case
       if (amountInMinorUnit <= 0) {

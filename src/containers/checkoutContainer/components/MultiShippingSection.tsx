@@ -109,7 +109,7 @@ function ShippingGroupCard({
       
       {/* Items preview */}
       <div className="text-xs text-muted-foreground">
-        {group.items.slice(0, 2).map((item: any, idx: number) => (
+        {group.items.slice(0, 2).map((item: { id: string; productName: string }, idx: number) => (
           <span key={item.id}>
             {item.productName}
             {idx < Math.min(group.items.length, 2) - 1 ? ", " : ""}

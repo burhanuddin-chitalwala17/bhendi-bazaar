@@ -16,6 +16,7 @@ import { FormActions } from "../../button-groups/FormActions";
 import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { paiseToRupees } from "@/lib/format";
 interface ProductFormProps {
   product?: ProductDetails;
   categories?: { id: string; name: string }[];
@@ -47,8 +48,9 @@ export function ProductForm({
     defaultValues: {
       name: product?.name || "",
       description: product?.description || "",
-      price: product?.price || 0,
-      salePrice: product?.salePrice || undefined,
+      // Stored paise → rupee inputs; the service converts back on submit.
+      price: product ? paiseToRupees(product.price) : 0,
+      salePrice: product?.salePrice != null ? paiseToRupees(product.salePrice) : undefined,
       currency: product?.currency || "INR",
       categoryId: product?.category?.id || "",
       orgId: product?.org?.id || "",

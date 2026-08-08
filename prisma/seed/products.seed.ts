@@ -20,8 +20,8 @@ export const seedProducts: SeedProduct[] = [
     name: "Emerald Satin Abaya",
     description:
       "Luxurious satin cotton abaya in rich emerald green. Features elegant draping and a comfortable fit perfect for both everyday wear and special occasions. Comes with authentic Kutchhi belt detailing.\n\nCare: First wash dry cleaning recommended. No machine wash.",
-    price: 4200,
-    salePrice: 3690,
+    price: 420000,
+    salePrice: 369000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-abayas",
@@ -47,8 +47,8 @@ export const seedProducts: SeedProduct[] = [
     name: "Classic Black Jilbab",
     description:
       "Timeless black jilbab with fluid drape and minimalist design. Perfect for everyday comfort in the old city. Made from breathable fabric that keeps you cool in Mumbai's climate.",
-    price: 3200,
-    salePrice: 2880,
+    price: 320000,
+    salePrice: 288000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-abayas",
@@ -71,7 +71,7 @@ export const seedProducts: SeedProduct[] = [
     name: "Embroidered Maroon Abaya",
     description:
       "Stunning maroon abaya with intricate gold thread embroidery on the sleeves and hem. A statement piece that combines tradition with contemporary style. Perfect for weddings and festive occasions.",
-    price: 5800,
+    price: 580000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-abayas",
@@ -99,8 +99,8 @@ export const seedProducts: SeedProduct[] = [
     name: "Royal Oud Attar",
     description:
       "Premium oud attar from the finest agarwood. Deep, woody fragrance with hints of musk and amber. Long-lasting scent that evolves throughout the day. Alcohol-free and skin-safe.\n\nSize: 12ml concentrated oil",
-    price: 2400,
-    salePrice: 1920,
+    price: 240000,
+    salePrice: 192000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-attars",
@@ -123,7 +123,7 @@ export const seedProducts: SeedProduct[] = [
     name: "Rose & Musk Blend",
     description:
       "Delicate blend of Bulgarian rose and white musk. Floral yet sophisticated fragrance perfect for daily wear. Gentle on skin and suitable for all occasions.",
-    price: 1200,
+    price: 120000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-attars",
@@ -146,8 +146,8 @@ export const seedProducts: SeedProduct[] = [
     name: "Sandalwood Amber Attar",
     description:
       "Warm and inviting blend of sandalwood and amber. Traditional fragrance with modern refinement. Perfect for evening wear and special occasions.",
-    price: 1800,
-    salePrice: 1530,
+    price: 180000,
+    salePrice: 153000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-attars",
@@ -175,7 +175,7 @@ export const seedProducts: SeedProduct[] = [
     name: "Gold Filigree Earrings",
     description:
       "Exquisite gold-toned filigree earrings featuring intricate traditional patterns. Lightweight despite their elaborate design. Perfect for weddings and festive celebrations.\n\nMaterial: Gold-plated brass with anti-tarnish coating",
-    price: 1500,
+    price: 150000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-jewellery",
@@ -201,8 +201,8 @@ export const seedProducts: SeedProduct[] = [
     name: "Emerald Stone Necklace",
     description:
       "Statement necklace adorned with emerald-green stones and gold detailing. Contemporary design inspired by Mughal jewelry. Adjustable chain length.",
-    price: 3200,
-    salePrice: 2560,
+    price: 320000,
+    salePrice: 256000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-jewellery",
@@ -228,7 +228,7 @@ export const seedProducts: SeedProduct[] = [
     name: "Pearl Jhumka Set",
     description:
       "Classic jhumka earrings with pearl drops. Traditional design that never goes out of style. Comes with matching tikka. Perfect for traditional attire.",
-    price: 2200,
+    price: 220000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-jewellery",
@@ -253,8 +253,8 @@ export const seedProducts: SeedProduct[] = [
     name: "Velvet Prayer Mat",
     description:
       "Premium velvet prayer mat with cushioned base for comfort during long prayers. Features beautiful Kaaba design. Includes matching carry bag for travel.\n\nSize: 110cm x 70cm",
-    price: 1800,
-    salePrice: 1440,
+    price: 180000,
+    salePrice: 144000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-prayer",
@@ -280,7 +280,7 @@ export const seedProducts: SeedProduct[] = [
     name: "Wooden Tasbih (99 Beads)",
     description:
       "Handcrafted tasbih made from premium sandalwood. 99 beads with divider markers. Smooth finish and pleasant natural fragrance. Comes in decorative box.",
-    price: 450,
+    price: 45000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-prayer",
@@ -303,7 +303,7 @@ export const seedProducts: SeedProduct[] = [
     name: "Embroidered Quran Cover",
     description:
       "Protective Quran cover with beautiful gold embroidery. Soft padded interior to protect your holy book. Zipper closure for secure storage.\n\nFits standard Quran sizes (25cm x 18cm)",
-    price: 650,
+    price: 65000,
     currency: "INR",
     orgId: getRandomOrg(),
     categoryId: "cat-prayer",

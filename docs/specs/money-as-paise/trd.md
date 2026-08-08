@@ -1,9 +1,9 @@
 # TRD — money as paise
 
-- **Status:** Draft
+- **Status:** ✅ Implemented — PR-37
 - **Domain:** cross-domain
 - **Phase:** 2 — Transaction integrity
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-09
 - **References:** [spec.md](spec.md), [ADR-0004](../../adr/0004-money-as-integer-paise.md), [CONTRACTS.md](../../CONTRACTS.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -17,7 +17,7 @@ The risk here is not the concept but the cutover: a partial migration displays a
 - **D1** — A data migration, not a type change. Converting the column type alone would reinterpret existing values and lose the paise; the migration must multiply and round explicitly in SQL. `[MIGRATION]`
 - **D2** — Schema change and every read site change in **one PR**. A half-migrated state is unshippable, so there is no incremental path here — this is the one place in the backlog where a large single PR is correct.
 - **D3** — Formatting is centralised in `src/lib/format.ts`. Paise never reach a component pre-divided, so there is exactly one place a factor-of-100 error can live.
-- **D4** — Admin price inputs accept rupees and convert on submit, with the boundary conversion in the form layer. Asking an admin to type paise would be a usability regression for no gain.
+- **D4 (revised 2026-08-09)** — Admin price inputs accept rupees; the conversion lives at the **server service boundary** (`server/catalog/admin.product.service.ts` → `moneyToPaise`), not the form layer as first drafted. [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md) post-dates this TRD: the same Zod schema now validates on both client and server, so a rupees→paise transform inside it would run twice and multiply by 100 twice. The schema validates rupees (`rupeeAmount`, two decimals at most); the service converts once. Asking an admin to type paise would be a usability regression for no gain.
 - **D5** — Wire DTOs carry paise, documented in [CONTRACTS.md](../../CONTRACTS.md). A DTO field named `price` carrying paise is a real footgun; naming or documentation must make the unit unambiguous at every boundary.
 - **D6** — Admin aggregation moves to database-side `SUM` where it currently sums in application code. With integers this is exact, which is what makes R5 achievable.
 - **D7** — A verification query runs before and after the migration comparing totals, so R4 and A2 are checked rather than assumed.
@@ -46,6 +46,6 @@ Per [TESTING.md](../../TESTING.md), conversion and formatting are high-coverage 
 2. The migration plus every read and write site, in one PR (D2). Large by necessity; PR 1 having landed keeps the formatting logic out of it.
 3. Database-side aggregation for admin revenue (D6).
 
-## Open questions
-- **Q1** — Do any existing prices carry sub-paisa fractional values from float drift, and if so does the migration round or truncate? A survey query before writing the migration answers this; must be closed before Draft → Accepted.
-- **Q2** — Should the DTO field names change (`priceInPaise`) to make the unit explicit, at the cost of a wider client diff? Recommendation: yes for order totals, where the risk of misreading is highest.
+## Questions closed (2026-08-09)
+- **Q1** — Surveyed before writing the migration: **zero rows** across all eight columns carried sub-paisa drift, so `ROUND` in the migration changes no value — it is a guard, not a correction. Baselines for D7: `SUM(price) = 29899.00 → 2989900`, `SUM(grandTotal) = 40490.54 → 4049054`.
+- **Q2** — Field names stay. The unit is carried by the schema vocabulary instead: wire money validates as `paiseAmount` (integer), human input as `rupeeAmount` (two decimals) — so a misused field fails validation rather than relying on a name being read. [CONTRACTS.md](../../CONTRACTS.md) documents the one asymmetry: admin product prices arrive as rupees and convert at the service; everything else on the wire is paise.

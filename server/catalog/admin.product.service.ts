@@ -3,6 +3,7 @@
 import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import { ProductFilters, ProductFormInput } from "@server/catalog/admin.product.types";
 import { NotFoundError } from "@server/shared/domain-error";
+import { rupeesToPaise } from "@server/shared/money";
 
 export class ProductsService {  
   async getProducts(filters: ProductFilters) {
@@ -18,7 +19,7 @@ export class ProductsService {
   }
 
   async createProduct(data: ProductFormInput) {
-    return await adminProductsRepository.createProduct(data);
+    return await adminProductsRepository.createProduct(this.moneyToPaise(data));
   }
 
   async getProductById({ id }: { id: string }) {
@@ -30,11 +31,25 @@ export class ProductsService {
   }
 
   async updateProduct(id: string, data: ProductFormInput) {
-    const product = await adminProductsRepository.updateProduct(id, data);
+    const product = await adminProductsRepository.updateProduct(id, this.moneyToPaise(data));
     if (!product) {
       throw new NotFoundError("Product not found");
     }
     return product;
+  }
+
+  /**
+   * The rupees→paise seam (Invariant 3). The form collects rupees because humans type
+   * rupees; everything past this line is integer paise. Conversion happens here rather
+   * than in a Zod transform because the same schema validates on both client and
+   * server (ADR-0013) — a transform would run twice and multiply by 100 twice.
+   */
+  private moneyToPaise(data: ProductFormInput): ProductFormInput {
+    return {
+      ...data,
+      price: rupeesToPaise(data.price),
+      salePrice: data.salePrice === undefined ? undefined : rupeesToPaise(data.salePrice),
+    };
   }
 }
 

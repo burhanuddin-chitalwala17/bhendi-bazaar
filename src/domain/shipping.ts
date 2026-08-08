@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/format";
 /**
  * Client-side Shipping Domain Types
  * 
@@ -107,9 +108,9 @@ export interface GetShippingRatesResponse {
 /**
  * Format shipping cost for display
  */
-export function formatShippingCost(cost: number): string {
-  if (cost === 0) return "FREE";
-  return `₹${cost.toFixed(2)}`;
+export function formatShippingCost(costPaise: number): string {
+  if (costPaise === 0) return "FREE";
+  return formatCurrency(costPaise);
 }
 
 /**

@@ -26,7 +26,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | 📝 Draft |
 | [payment-confirmation](payment-confirmation/) | An order is paid when the gateway says so, for the right amount | 2 | payments, checkout | 📝 Draft |
 | [inventory-reservation](inventory-reservation/) | Stock counts mean something; the last unit sells once | 2 | checkout, catalog | 📝 Draft |
-| [money-as-paise](money-as-paise/) | Every amount displayed, stored, charged, and reported is exact | 2 | cross-domain | 📝 Draft |
+| [money-as-paise](money-as-paise/) | Every amount displayed, stored, charged, and reported is exact | 2 | cross-domain | ✅ Implemented — PR-37 |
 | [product-weight-and-rates](product-weight-and-rates/) | A product's weight is recorded and prices its shipping | 3 | catalog, shipping | 📝 Draft |
 | [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | 📝 Draft — **parent of 9 subfeatures** |
 | [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |

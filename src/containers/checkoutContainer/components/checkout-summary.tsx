@@ -4,6 +4,7 @@ import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { CartItem } from "@/domain/cart";
 import { Truck } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 
 interface CheckoutSummaryProps {
   items: CartItem[];
@@ -52,10 +53,10 @@ export function CheckoutSummary({
               {itemSavings > 0 && (
                 <div className="flex items-baseline justify-between gap-2 text-[0.65rem]">
                   <span className="text-muted-foreground/60">
-                    Original: ₹{(item.price * item.quantity).toFixed(2)}
+                    Original: {formatCurrency(item.price * item.quantity)}
                   </span>
                   <span className="text-success">
-                    Save ₹{itemSavings.toFixed(2)}
+                    Save {formatCurrency(itemSavings)}
                   </span>
                 </div>
               )}
@@ -76,7 +77,7 @@ export function CheckoutSummary({
         {discount > 0 && (
           <div className="flex items-center justify-between text-success">
             <span>Savings</span>
-            <span className="font-medium">- ₹{discount.toFixed(2)}</span>
+            <span className="font-medium">- {formatCurrency(discount)}</span>
           </div>
         )}
 
@@ -86,7 +87,7 @@ export function CheckoutSummary({
             <span>Shipping</span>
           </div>
           {shipping > 0 ? (
-            <span className="font-medium">₹{shipping.toFixed(2)}</span>
+            <span className="font-medium">{formatCurrency(shipping)}</span>
           ) : (
             <span className="text-xs text-muted-foreground">Select method</span>
           )}

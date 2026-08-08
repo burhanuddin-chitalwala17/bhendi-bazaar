@@ -4,6 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 
 interface CheckoutActionsProps {
   canCheckout: boolean;
@@ -61,7 +62,7 @@ export function CheckoutActions({
         ) : (
           <>
             <CreditCard className="mr-2 h-4 w-4" />
-            Place Order • ₹{total.toFixed(2)}
+            Place Order • {formatCurrency(total)}
           </>
         )}
       </Button>
