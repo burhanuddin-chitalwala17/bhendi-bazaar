@@ -62,7 +62,7 @@ nothing — every test here is an attempt to get at something.
 | PR  | Scope                                                                                                       | Behaviour                       |
 | --- | ----------------------------------------------------------------------------------------------------------- | ------------------------------- |
 | 1 ✅ | `role` → `platformRole`, declared union, `as any` removed, `admin-auth` converted to throw `ForbiddenError` — landed as PR-25, and carried the 14 handlers that had no `toErrorResponse`, since a throwing helper turns an uncaught 403 into a 500 | none — same access, stated once |
-| 2   | The org authorization helper, with no pages using it yet                                                    | none                            |
+| 2 ✅ | The org authorization helper, with no pages using it yet — landed as PR-26 (`src/lib/org-auth.ts`)          | none                            |
 | 3   | `(org)` group and the org-scoped pages and handlers moved out of `(admin)`                                  | **yes — the split**             |
 | 4   | Platform-only pages confirmed and the group-boundary assertion added                                        | none                            |
 

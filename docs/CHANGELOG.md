@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-26] 2026-08-08 — The org authorization boundary
+
+PR 2 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). No behaviour change: nothing uses it yet, which is what makes the split in PR 3 a move rather than a rewrite.
+
+**The check returns the scope, not a boolean.** `withOrg` hands the handler `{ orgId, role, userId }`, and that `orgId` is what every subsequent query filters on. A boolean would leave the filter as a separate step someone can omit, and an omitted filter is another org's data on the page. Being authorised and being scoped are now one act.
+
+**The handler is wrapped, not instrumented.** `withOrg(handler)` is the only thing that produces a scope, so a handler that skips it has no `orgId` to query with — as opposed to a helper each route remembers to call. The `orgId` handed over is taken from the **membership row**, not re-read from the path, so the two can never disagree.
+
+**No platform-admin bypass**, and there is a test that a platform admin without a membership is refused. A bypass would be an exception inside a filter that must never fail.
+
+Memoisation is split deliberately: `requireOrgMember` is wrapped in React `cache()` for server components, where several components on one page share one lookup, and `withOrg` calls the unmemoised path — a handler does one check, so there is nothing to share, and `cache()` outside a React render has no request scope to key on. Neither caches across requests, because a membership revoked by the team page has to take effect on the next request rather than at the next sign-in.
+
+**Seven tests, all attempts to get at something**: a member of another org, a platform admin with no membership, a signed-out request, and a check that the scope's `orgId` comes from the database rather than the URL. Two defects in the tests themselves were caught and fixed before they could give false assurance — one threw a look-alike error object, so `toErrorResponse` fell through to its generic branch and the test passed on a 500 while asserting only `>= 400`; the other typed its handler double with no parameters, which `vitest` accepted and `tsc` did not.
+
+`tsc` exits 0, **96 tests pass** (up from 89), `next build` compiles, no new lint errors.
+
 ## [PR-25] 2026-08-08 — `platformRole`, and an auth boundary that throws [CONTRACT] [MIGRATION]
 
 PR 1 of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). `User.role` becomes `User.platformRole` — a rename in place, so the column, its values and every row survive and nobody's access changes. Once `OrgMember.role` exists, an unqualified `role` means two things, which is how `ProductFlag` came to be declared three times.
