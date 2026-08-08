@@ -78,6 +78,13 @@ class ProductsDAL {
       shippingFromPincode: product.shippingFromPincode ?? "",
       shippingFromCity: product.shippingFromCity ?? "",
       shippingFromLocation: product.shippingFromLocation ?? "",
+      stockLocations: (product.stockLocations ?? []).map(
+        (row: { orgAddressId: string; quantity: number; orgAddress: { name: string } }) => ({
+          orgAddressId: row.orgAddressId,
+          locationName: row.orgAddress.name,
+          quantity: row.quantity,
+        })
+      ),
       createdAt: product.createdAt,
     };
   });

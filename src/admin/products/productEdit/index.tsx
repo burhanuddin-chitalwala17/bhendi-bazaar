@@ -10,14 +10,16 @@ import { useProducts } from "../useProducts";
 import type { ProductDetails } from "../types";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 import type { OrgSummary } from "@/domain/org";
+import type { LocationOption } from "@/components/shared/forms/product/ProductOrgShippingFields";
 
 interface ProductEditContainerProps {
     product: ProductDetails;
     categories: { id: string; name: string }[];
     orgs: OrgSummary[];
+    locations: LocationOption[];
 }
 
-export function ProductEditContainer({ product, categories, orgs }: ProductEditContainerProps) {
+export function ProductEditContainer({ product, categories, orgs, locations }: ProductEditContainerProps) {
     const router = useRouter();
     const productsBasePath = useProductsBasePath();
     const { updateProduct, isLoading, error, successMessage } = useProducts();
@@ -63,6 +65,7 @@ export function ProductEditContainer({ product, categories, orgs }: ProductEditC
                 product={product}
                 categories={categories}
                 orgs={orgs}
+                locations={locations}
                 onSubmit={updateProduct}
                 onCancel={handleCancel}
                 isSubmitting={isLoading}

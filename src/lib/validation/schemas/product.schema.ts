@@ -1,20 +1,6 @@
 import { z } from "zod";
-import { optionalNumber, optionalPostalCodeSchema, rupeeAmount } from "./common.schemas";
+import { optionalNumber, rupeeAmount } from "./common.schemas";
 import { ProductFlag } from "@server/catalog/product.flags";
-
-/**
- * The three fields that override where a product ships from. A partial override is
- * meaningless — a city without a pincode still rates from the org's own address — so
- * the group is all-or-none.
- */
-export const SHIPPING_OVERRIDE_FIELDS = [
-  "shippingFromPincode",
-  "shippingFromCity",
-  "shippingFromLocation",
-] as const;
-
-export const SHIPPING_OVERRIDE_MESSAGE =
-  "Fill all three override fields, or clear them all to ship from the organisation's own address";
 
 /**
  * The accepted shape of an admin product payload.
@@ -48,31 +34,32 @@ export const productFormSchema = z
     sizes: z.array(z.string()).optional(),
     colors: z.array(z.string()).optional(),
 
-    stock: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative"),
+    // Stock is per pickup location (stock-locations R2/R3): whoever adds a product
+    // names where it sits and how many are there. An unchosen location is an error,
+    // not a default.
+    stockLocations: z
+      .array(
+        z.object({
+          orgAddressId: z.string().min(1),
+          quantity: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative"),
+        })
+      )
+      .min(1, "Choose at least one pickup location")
+      .refine((rows) => rows.some((row) => row.quantity > 0), {
+        message: "Enter stock at at least one location",
+      })
+      .refine(
+        (rows) => new Set(rows.map((row) => row.orgAddressId)).size === rows.length,
+        { message: "Each location may appear only once" }
+      ),
     sku: z.string().trim().max(64).optional(),
     lowStockThreshold: optionalNumber(z.number().int("Low stock threshold must be a whole number").min(0)),
-
-    // Optional overrides — blank means "ship from the organisation's own address".
-    shippingFromPincode: optionalPostalCodeSchema,
-    shippingFromCity: z.string().trim().max(100).optional(),
-    shippingFromLocation: z.string().trim().max(200).optional(),
   })
   // A cross-field rule neither side could enforce alone, attributed to the field a
   // user would correct.
   .refine((d) => d.salePrice === undefined || d.salePrice < d.price, {
     message: "Sale price must be below the regular price",
     path: ["salePrice"],
-  })
-  // All-or-none: blame every field left blank, so each one shows why it is needed.
-  .superRefine((d, ctx) => {
-    const filled = SHIPPING_OVERRIDE_FIELDS.filter((f) => (d[f] ?? "").trim() !== "");
-    if (filled.length === 0 || filled.length === SHIPPING_OVERRIDE_FIELDS.length) return;
-
-    for (const field of SHIPPING_OVERRIDE_FIELDS) {
-      if ((d[field] ?? "").trim() === "") {
-        ctx.addIssue({ code: "custom", path: [field], message: SHIPPING_OVERRIDE_MESSAGE });
-      }
-    }
   });
 
 export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
@@ -81,6 +68,5 @@ export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
 export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",
   "orgId", "categoryId", "tags", "flags", "images", "thumbnail",
-  "weight", "sizes", "colors", "stock", "sku", "lowStockThreshold",
-  ...SHIPPING_OVERRIDE_FIELDS,
+  "weight", "sizes", "colors", "stockLocations", "sku", "lowStockThreshold",
 ] as const;

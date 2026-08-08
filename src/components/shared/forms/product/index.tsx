@@ -11,7 +11,7 @@ import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
 import { ProductAttributeFields } from "./ProductAttributeFields";
 import { ProductFlagsFields } from "./ProductFlagsFields";
-import { ProductOrgShippingFields } from "./ProductOrgShippingFields";
+import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
 import { FormActions } from "../../button-groups/FormActions";
 import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
@@ -22,6 +22,8 @@ interface ProductFormProps {
   product?: ProductDetails;
   categories?: { id: string; name: string }[];
   orgs?: OrgSummary[];
+  /** The org's pickup locations; the form shows a stock input per active one. */
+  locations?: LocationOption[];
   onSubmit: (data: ProductFormInput) => Promise<ProductDetails | null | undefined>;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -32,6 +34,7 @@ export function ProductForm({
   product,
   categories,
   orgs,
+  locations = [],
   onSubmit,
   onCancel,
   isSubmitting,
@@ -39,6 +42,16 @@ export function ProductForm({
 }: ProductFormProps) {
 
   const isEdit = !!product;
+
+  // One row per offered location, prefilled from the product's existing rows. A
+  // location the product never stocked shows 0; zero rows are dropped on write.
+  const stockByLocation = new Map(
+    (product?.stockLocations ?? []).map((row) => [row.orgAddressId, row.quantity])
+  );
+  const defaultStockRows = locations.map((location) => ({
+    orgAddressId: location.id,
+    quantity: stockByLocation.get(location.id) ?? 0,
+  }));
 
 
   // Client validation and server error routing both come from this one call:
@@ -62,12 +75,9 @@ export function ProductForm({
       weight: product?.weight || 0,
       sizes: product?.sizes || [],
       colors: product?.colors || [],
-      stock: product?.stock || 0,
+      stockLocations: defaultStockRows,
       sku: product?.sku || "",
       lowStockThreshold: product?.lowStockThreshold || 10,
-      shippingFromPincode: product?.shippingFromPincode || "",
-      shippingFromCity: product?.shippingFromCity || "",
-      shippingFromLocation: product?.shippingFromLocation || "",
     },
   }); 
   const {
@@ -195,6 +205,7 @@ export function ProductForm({
         errors={errors}
         watch={watch}
         orgs={orgs}
+        locations={locations}
         readOnly={readOnly}
       />
 

@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-47] 2026-08-10 — Stock is entered where it sits [CONTRACT]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 4 (dual-write): the product form's single stock number and the three-field origin override are **gone**, replaced by one quantity input per pickup location — nothing preselected, a product cannot be saved without naming a location that holds it (R2/A1), and an inactive location is only offered if it still holds the product's stock. The all-or-none override refine from PR-22 is deleted with the fields that made it necessary: origin no longer has two homes.
+
+`ProductFormInput.stockLocations` replaces `stock` + `shippingFrom*` **[CONTRACT]**, and the service refuses a row naming a location the product's own org does not own — otherwise one org could park stock at (and attribute parcels to) another org's address. Writes are dual: join rows are created/replaced in a transaction while `Product.stock` keeps the sum, so **every reader stays correct** — storefront, checkout, admin filters all still read the column until the cutover PR flips them.
+
+**225 tests pass** (override-group tests retired with the feature; location rules and the ownership check added), `tsc` exits 0, `next build` compiles. No migration.
+
 ## [PR-46] 2026-08-10 — Pickup locations exist [MIGRATION]
 
 [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 3 (additive): **`OrgAddress`** — an org's pickup location, hanging off the shared `Address` table exactly like the customer address book, with a courier nickname, a pickup contact, and the aggregator reference D11 designed for — and **`ProductStock`**, the composite-keyed join row where a product's quantity-per-location will live. `Shipment` gains a nullable `orgAddressId` (D5: old parcels keep `NULL`, never a guessed attribution). **Nothing reads the new tables yet**; `Product.stock` and `Org.default*` stay authoritative until the cutover PR.

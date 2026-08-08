@@ -3,12 +3,8 @@
 // optional field that rejected its own blank value, and a NaN from `valueAsNumber`
 // that `.optional()` does not rescue. See CHANGELOG PR-22.
 import { describe, expect, it } from "vitest";
-import {
-  productFormSchema,
-  SHIPPING_OVERRIDE_MESSAGE,
-} from "@/lib/validation/schemas/product.schema";
+import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
-import { PINCODE_MESSAGE } from "@server/shared/pincode";
 
 /** What the form sends when a user fills only the fields marked required. */
 const filledForm = (overrides: Record<string, unknown> = {}) => ({
@@ -26,12 +22,9 @@ const filledForm = (overrides: Record<string, unknown> = {}) => ({
   weight: 0.5,
   sizes: [],
   colors: [],
-  stock: 5,
+  stockLocations: [{ orgAddressId: "loc_1", quantity: 5 }],
   sku: "",
   lowStockThreshold: 10,
-  shippingFromPincode: "",
-  shippingFromCity: "",
-  shippingFromLocation: "",
   ...overrides,
 });
 
@@ -58,10 +51,6 @@ describe("optional fields accept being left alone", () => {
     expect(parsed.lowStockThreshold).toBeUndefined();
   });
 
-  it("accepts a blank shipping pincode, which means 'use the org default'", () => {
-    expect(issuesFor(filledForm({ shippingFromPincode: "" }))).toEqual([]);
-  });
-
   it("still enforces the rule when an optional number is filled in", () => {
     expect(issuesFor(filledForm({ salePrice: -5 }))).toEqual([
       { path: "salePrice", message: "Sale price must be greater than 0" },
@@ -69,51 +58,44 @@ describe("optional fields accept being left alone", () => {
   });
 });
 
-describe("the shipping override group is all-or-none", () => {
-  it("passes when all three are blank", () => {
-    expect(issuesFor(filledForm())).toEqual([]);
+describe("stock is per pickup location (stock-locations R2/A1)", () => {
+  it("refuses a product with no location at all — an unchosen location is an error, not a default", () => {
+    expect(issuesFor(filledForm({ stockLocations: [] }))).toContainEqual({
+      path: "stockLocations",
+      message: "Choose at least one pickup location",
+    });
   });
 
-  it("passes when all three are filled", () => {
+  it("refuses all-zero quantities — a location must actually hold something", () => {
+    expect(
+      issuesFor(filledForm({ stockLocations: [{ orgAddressId: "loc_1", quantity: 0 }] }))
+    ).toEqual([{ path: "stockLocations", message: "Enter stock at at least one location" }]);
+  });
+
+  it("refuses the same location twice", () => {
     expect(
       issuesFor(
         filledForm({
-          shippingFromPincode: "400003",
-          shippingFromCity: "Mumbai",
-          shippingFromLocation: "Warehouse 2",
+          stockLocations: [
+            { orgAddressId: "loc_1", quantity: 2 },
+            { orgAddressId: "loc_1", quantity: 3 },
+          ],
+        })
+      )
+    ).toEqual([{ path: "stockLocations", message: "Each location may appear only once" }]);
+  });
+
+  it("accepts a zero row beside a stocked one — the zero row is dropped on write", () => {
+    expect(
+      issuesFor(
+        filledForm({
+          stockLocations: [
+            { orgAddressId: "loc_1", quantity: 0 },
+            { orgAddressId: "loc_2", quantity: 13 },
+          ],
         })
       )
     ).toEqual([]);
-  });
-
-  it("blames each blank field when only the pincode is given", () => {
-    expect(issuesFor(filledForm({ shippingFromPincode: "400003" }))).toEqual([
-      { path: "shippingFromCity", message: SHIPPING_OVERRIDE_MESSAGE },
-      { path: "shippingFromLocation", message: SHIPPING_OVERRIDE_MESSAGE },
-    ]);
-  });
-
-  it("blames each blank field when only the city is given", () => {
-    expect(issuesFor(filledForm({ shippingFromCity: "Mumbai" }))).toEqual([
-      { path: "shippingFromPincode", message: SHIPPING_OVERRIDE_MESSAGE },
-      { path: "shippingFromLocation", message: SHIPPING_OVERRIDE_MESSAGE },
-    ]);
-  });
-
-  it("treats whitespace as blank rather than as a filled field", () => {
-    expect(issuesFor(filledForm({ shippingFromCity: "   " }))).toEqual([]);
-  });
-
-  it("reports the pincode format, not the group rule, when the group is complete", () => {
-    expect(
-      issuesFor(
-        filledForm({
-          shippingFromPincode: "12",
-          shippingFromCity: "Mumbai",
-          shippingFromLocation: "Warehouse 2",
-        })
-      )
-    ).toEqual([{ path: "shippingFromPincode", message: PINCODE_MESSAGE }]);
   });
 });
 

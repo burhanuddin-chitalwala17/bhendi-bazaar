@@ -19,21 +19,7 @@ export function ProductInventoryFields({
     <div className="bg-card rounded-lg border border-border p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">Inventory</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormInput
-          label="Stock Quantity"
-          required
-          disabled={readOnly}
-          type="number"
-          min="0"
-          placeholder="0"
-          {...register("stock", {
-            required: "Stock quantity is required",
-            valueAsNumber: true,
-            min: { value: 0, message: "Stock cannot be negative" },
-          })}
-          error={errors.stock?.message}
-        />
-
+        {/* Stock itself is entered per pickup location (stock-locations R2/R3). */}
         <FormInput
           label="Low Stock Threshold"
           disabled={readOnly}

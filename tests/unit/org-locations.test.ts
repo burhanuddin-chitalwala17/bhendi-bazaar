@@ -100,3 +100,15 @@ describe("the additive migration", () => {
     expect(sql).toContain("RAISE NOTICE");
   });
 });
+
+describe("assertLocationsBelongToOrg (dual-write PR 4)", () => {
+  it("refuses a stock row naming another org's location", async () => {
+    const { assertLocationsBelongToOrg } = await import("@server/catalog/admin.product.service");
+    expect(() =>
+      assertLocationsBelongToOrg([{ orgAddressId: "theirs" }], ["mine-1", "mine-2"])
+    ).toThrow(/does not belong/);
+    expect(() =>
+      assertLocationsBelongToOrg([{ orgAddressId: "mine-2" }], ["mine-1", "mine-2"])
+    ).not.toThrow();
+  });
+});

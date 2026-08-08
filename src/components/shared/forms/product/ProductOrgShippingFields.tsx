@@ -1,16 +1,27 @@
 // components/shared/forms/product/ProductOrgShippingFields.tsx
 
 import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
-import { FormInput, FormSelect } from "../FormField";
-import { Info } from "lucide-react";
+import Link from "next/link";
+import { FormSelect, FormInput } from "../FormField";
+import { MapPin } from "lucide-react";
 import type { ProductFormInput } from "@/admin/products/types";
 import type { OrgSummary } from "@/domain/org";
+
+export interface LocationOption {
+  id: string;
+  name: string;
+  city: string;
+  pincode: string;
+  isActive: boolean;
+}
 
 interface ProductOrgShippingFieldsProps {
   register: UseFormRegister<ProductFormInput>;
   errors: FieldErrors<ProductFormInput>;
   watch: UseFormWatch<ProductFormInput>;
   orgs?: OrgSummary[];
+  /** The selected org's pickup locations — one stock input per active location (R2/R3). */
+  locations: LocationOption[];
   readOnly?: boolean;
 }
 
@@ -19,108 +30,107 @@ export function ProductOrgShippingFields({
   errors,
   watch,
   orgs,
+  locations,
   readOnly = false,
 }: ProductOrgShippingFieldsProps) {
   const selectedOrgId = watch("orgId");
-  const selectedOrg = orgs?.find((s) => s.id === selectedOrgId);
+  const stockRows = watch("stockLocations") ?? [];
+  const totalStock = stockRows.reduce(
+    (sum, row) => sum + (Number.isFinite(row?.quantity) ? Number(row.quantity) : 0),
+    0
+  );
+  // Root-level rules (min one location, some stock somewhere, no duplicates) land here.
+  const stockLocationsError = (
+    errors.stockLocations as { message?: string; root?: { message?: string } } | undefined
+  );
+  const rootMessage = stockLocationsError?.message ?? stockLocationsError?.root?.message;
 
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          Org & Shipping Location
-        </h2>
+        <h2 className="text-lg font-semibold text-foreground">Org & Stock Locations</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Select the org and optionally override the shipping location
+          Choose the organisation, then say where this product physically sits — nothing
+          is preselected, and the customer only ever sees the total.
         </p>
       </div>
 
       <div className="space-y-6">
-        {/* Org Selection */}
-        <div>
-          <FormSelect
-            label="Organisation"
-            required
-            {...register("orgId", { required: "Organisation is required" })}
-            error={errors.orgId?.message}
-            disabled={readOnly}
-          >
-            <option value="">Select an organisation</option>
-            {orgs?.map((org) => (
-              <option key={org.id} value={org.id}>
-                {org.name} ({org.code})
-              </option>
-            ))}
-          </FormSelect>
+        <FormSelect
+          label="Organisation"
+          required
+          {...register("orgId", { required: "Organisation is required" })}
+          error={errors.orgId?.message}
+          disabled={readOnly}
+        >
+          <option value="">Select an organisation</option>
+          {orgs?.map((org) => (
+            <option key={org.id} value={org.id}>
+              {org.name} ({org.code})
+            </option>
+          ))}
+        </FormSelect>
 
-          {/* Where this ships from unless the product overrides it */}
-          {selectedOrg && !watch("shippingFromPincode") && (
-            <div className="mt-3 p-3 bg-info/10 border border-info/30 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-info mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-info">
-                    Ships from:
-                  </p>
-                  <p className="text-info mt-1">
-                    {selectedOrg.defaultAddress && (
-                      <>{selectedOrg.defaultAddress}, </>
-                    )}
-                    {selectedOrg.defaultCity}, {selectedOrg.defaultState} - {selectedOrg.defaultPincode}
-                  </p>
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-foreground">
+              Stock per pickup location <span className="text-destructive">*</span>
+            </span>
+            <span className="text-sm text-muted-foreground">Total: {totalStock}</span>
+          </div>
+
+          {rootMessage && (
+            <p role="alert" className="mb-2 text-sm text-destructive">
+              {rootMessage}
+            </p>
+          )}
+
+          {locations.length === 0 ? (
+            <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
+              This organisation has no pickup locations yet.{" "}
+              {selectedOrgId && (
+                <Link href={`/org/${selectedOrgId}/locations`} className="underline">
+                  Add one first
+                </Link>
+              )}{" "}
+              — a product cannot be saved without a location and a quantity.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {locations.map((location, index) => (
+                <div
+                  key={location.id}
+                  className="flex items-center gap-3 rounded-lg border border-border p-3"
+                >
+                  <input
+                    type="hidden"
+                    value={location.id}
+                    {...register(`stockLocations.${index}.orgAddressId`)}
+                  />
+                  <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {location.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {location.city} — {location.pincode}
+                    </p>
+                  </div>
+                  <FormInput
+                    label=""
+                    aria-label={`Stock at ${location.name}`}
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    className="w-28"
+                    disabled={readOnly}
+                    {...register(`stockLocations.${index}.quantity`, { valueAsNumber: true })}
+                    error={errors.stockLocations?.[index]?.quantity?.message}
+                  />
                 </div>
-              </div>
+              ))}
             </div>
           )}
-        </div>
-
-        {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-input"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-card text-muted-foreground">
-              Override Shipping Location (Optional)
-            </span>
-          </div>
-        </div>
-
-        {/* Override Shipping Location */}
-        <div className="space-y-4">
-          <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
-            <p className="text-sm text-warning">
-              <strong>Note:</strong> Only fill these fields if this product ships from a
-              different location than the org&apos;s default address. Fill all three,
-              or leave all three empty.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormInput
-              label="Shipping Pincode"
-              placeholder="e.g., 400001"
-              {...register("shippingFromPincode")}
-              error={errors.shippingFromPincode?.message}
-              disabled={readOnly}
-            />
-
-            <FormInput
-              label="Shipping City"
-              placeholder="e.g., Mumbai"
-              {...register("shippingFromCity")}
-              error={errors.shippingFromCity?.message}
-              disabled={readOnly}
-            />
-          </div>
-
-          <FormInput
-            label="Shipping Location/Warehouse"
-            placeholder="e.g., Warehouse 2, Mumbai Central"
-            {...register("shippingFromLocation")}
-            error={errors.shippingFromLocation?.message}
-            disabled={readOnly}
-          />
         </div>
       </div>
     </div>

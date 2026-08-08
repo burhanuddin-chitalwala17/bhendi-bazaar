@@ -48,6 +48,13 @@ const PRODUCT_DETAILS_SELECT = {
     shippingFromPincode: true,
     shippingFromCity: true,
     shippingFromLocation: true,
+    stockLocations: {
+        select: {
+            orgAddressId: true,
+            quantity: true,
+            orgAddress: { select: { name: true } },
+        },
+    },
 } satisfies Prisma.ProductSelect;
 
 export class AdminProductsRepository {
@@ -168,6 +175,11 @@ export class AdminProductsRepository {
     }
 
     private async insertProduct(slug: string, data: ProductFormInput) {
+        // Dual-write (stock-locations PR 4): the join rows are the future authority,
+        // Product.stock keeps the sum so every reader stays correct until the cutover.
+        // shippingFrom* is not written — origin now comes from the chosen locations.
+        const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
+        const totalStock = data.stockLocations.reduce((sum, row) => sum + row.quantity, 0);
         const product = await prisma.product.create({
             data: {
                 slug,
@@ -184,13 +196,16 @@ export class AdminProductsRepository {
                 thumbnail: data.thumbnail,
                 sizes: data.sizes || [],
                 colors: data.colors || [],
-                stock: data.stock,
+                stock: totalStock,
                 sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold || 10,
                 weight: data.weight,
-                shippingFromPincode: blankToNull(data.shippingFromPincode),
-                shippingFromCity: blankToNull(data.shippingFromCity),
-                shippingFromLocation: blankToNull(data.shippingFromLocation),
+                stockLocations: {
+                    create: stockRows.map((row) => ({
+                        orgAddressId: row.orgAddressId,
+                        quantity: row.quantity,
+                    })),
+                },
             },
             include: {
                 category: {
@@ -275,30 +290,41 @@ export class AdminProductsRepository {
         // so spreading it would let any writable column through. `slug` is absent
         // deliberately — it is generated once at creation and then frozen, because
         // changing it would 404 every existing link to the product.
-        const product = await prisma.product.update({
-            where: { id },
-            data: {
-                name: data.name,
-                description: data.description,
-                price: data.price,
-                salePrice: data.salePrice,
-                currency: data.currency,
-                orgId: data.orgId,
-                categoryId: data.categoryId,
-                tags: data.tags,
-                flags: data.flags,
-                images: data.images,
-                thumbnail: data.thumbnail,
-                sizes: data.sizes,
-                colors: data.colors,
-                stock: data.stock,
-                sku: blankToNull(data.sku),
-                lowStockThreshold: data.lowStockThreshold,
-                weight: data.weight,
-                shippingFromPincode: blankToNull(data.shippingFromPincode),
-                shippingFromCity: blankToNull(data.shippingFromCity),
-                shippingFromLocation: blankToNull(data.shippingFromLocation),
-            },
+        // Dual-write (stock-locations PR 4): replace the join rows, keep the column
+        // as the sum. An admin edit is a full replace, so delete-then-create is the
+        // honest semantics — corrections included (R9).
+        const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
+        const totalStock = data.stockLocations.reduce((sum, row) => sum + row.quantity, 0);
+        const product = await prisma.$transaction(async (tx) => {
+            await tx.productStock.deleteMany({ where: { productId: id } });
+            return tx.product.update({
+                where: { id },
+                data: {
+                    name: data.name,
+                    description: data.description,
+                    price: data.price,
+                    salePrice: data.salePrice,
+                    currency: data.currency,
+                    orgId: data.orgId,
+                    categoryId: data.categoryId,
+                    tags: data.tags,
+                    flags: data.flags,
+                    images: data.images,
+                    thumbnail: data.thumbnail,
+                    sizes: data.sizes,
+                    colors: data.colors,
+                    stock: totalStock,
+                    sku: blankToNull(data.sku),
+                    lowStockThreshold: data.lowStockThreshold,
+                    weight: data.weight,
+                    stockLocations: {
+                        create: stockRows.map((row) => ({
+                            orgAddressId: row.orgAddressId,
+                            quantity: row.quantity,
+                        })),
+                    },
+                },
+            });
         });
         if (!product) {
             throw new NotFoundError("Product not found");

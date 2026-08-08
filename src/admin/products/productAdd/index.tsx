@@ -9,14 +9,16 @@ import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 import type { OrgSummary } from "@/domain/org";
+import type { LocationOption } from "@/components/shared/forms/product/ProductOrgShippingFields";
 
 
 interface ProductAddContainerProps {
     categories: { id: string; name: string }[];
     orgs: OrgSummary[];
+    locations: LocationOption[];
 }
 
-export function ProductAddContainer({ categories, orgs }: ProductAddContainerProps) {
+export function ProductAddContainer({ categories, orgs, locations }: ProductAddContainerProps) {
     const router = useRouter();
     const productsBasePath = useProductsBasePath();
 
@@ -65,6 +67,7 @@ export function ProductAddContainer({ categories, orgs }: ProductAddContainerPro
             <ProductForm
                 categories={categories}
                 orgs={orgs}
+                locations={locations}
                 onSubmit={createProduct}
                 onCancel={handleCancel}
                 isSubmitting={isLoading}

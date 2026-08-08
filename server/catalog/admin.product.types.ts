@@ -29,11 +29,9 @@ export interface ProductFormInput {
   thumbnail: string;
   sizes?: string[];
   colors?: string[];
-  stock: number;
+  /** Stock per pickup location (stock-locations R2/R3). Zero rows are dropped. */
+  stockLocations: Array<{ orgAddressId: string; quantity: number }>;
   sku?: string;
   lowStockThreshold?: number;
   weight: number;
-  shippingFromPincode?: string;
-  shippingFromCity?: string;
-  shippingFromLocation?: string;
 }
