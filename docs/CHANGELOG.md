@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-51] 2026-08-10 — The audit trail survives its admin [MIGRATION]
+
+`AdminLog.adminId` moves **`Cascade` → `RESTRICT`** — deleting an admin user erased every audit record of what they did, which is the record wanted most when removing one. Flagged in the data-model review's referential-actions table; no application path deletes users, so the change forbids only a manual delete from doing silent damage. Block or deactivate accounts instead (`User.isBlocked`). Test pins both the schema relation and the migration clause.
+
+Also records a product decision: **[shipping-fulfilment](specs/shipping-fulfilment/) stays as-is by choice (2026-08-10)** — live rates quoted and charged, booking remains the placeholder, parcels fulfilled manually. Real booking is future scope, now unblocked by data (every parcel carries a courier-collectable pickup location) and waiting only on the decision to build.
+
+**231 tests pass**, `tsc` exits 0. **Run `npx prisma migrate deploy`.**
+
 ## [PR-50] 2026-08-10 — One dashboard, assembled from declarations
 
 [dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/) lands — and with it **the marketplace programme's build is complete: 9 of 10 subfeatures, org-team deferred by decision.** A widget is one entry in `server/analytics/widgets.ts`: key, audience (`platform` / `org` / `both`), a stated org scoping when it serves both (R2), and the audience-gated query. Both dashboards render `widgetsFor(audience)` — adding a widget edits no page (R4).

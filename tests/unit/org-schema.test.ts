@@ -93,3 +93,15 @@ describe("the form's own shape parses", () => {
     expect(result.error?.issues ?? []).toEqual([]);
   });
 });
+
+describe("the audit trail survives its admin", () => {
+  it("AdminLog.adminId is RESTRICT — deleting an admin cannot erase what they did", async () => {
+    const { readFileSync } = await import("node:fs");
+    expect(readFileSync("prisma/schema.prisma", "utf8")).toMatch(
+      /admin\s+User\s+@relation\(fields: \[adminId\], references: \[id\], onDelete: Restrict\)/
+    );
+    expect(
+      readFileSync("prisma/migrations/20260810230000_audit_log_survives_its_admin/migration.sql", "utf8")
+    ).toMatch(/AdminLog_adminId_fkey"?\s+FOREIGN KEY \("adminId"\) REFERENCES "User"\("id"\) ON DELETE RESTRICT/);
+  });
+});

@@ -520,7 +520,10 @@ model ShippingEvent {
 model AdminLog {
   id         String   @id @default(cuid())
   adminId    String
-  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleting an admin must never erase the audit trail of
+  // what they did — that is the record you want most when removing one. Block or
+  // deactivate the account instead (User.isBlocked).
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Restrict)
   action     String // e.g., "USER_BLOCKED", "PRODUCT_UPDATED"
   resource   String // e.g., "User", "Product", "Order"
   resourceId String // ID of the affected resource
