@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-36] 2026-08-09 — Portals get their plain surfaces back, by token scope
+
+PR-33's mapping had the admin panel and org portal inherit the storefront's warm parchment (`bg-gray-50` → `bg-background`), which read as tinted where the panels used to be plain. Rather than reverting to raw classes, a `.portal` scope in `globals.css` overrides the six surface tokens (`background`, `card`, `popover`, `muted`, `border`, `input`) to neutral values, light and dark — every component under the portals re-skins with **zero component edits**, brand and status colours stay shared with the storefront. This is the demonstration of what routing colour through tokens buys: "make this whole area look different" is six variable lines, not a sweep. A new `(org)` group layout applies the surface to `/org` and `/org/new`, which sit outside the `[orgId]` membership layout.
+
 ## [PR-35] 2026-08-09 — Category accents become semantic keys [CONTRACT] [MIGRATION]
 
 Pulls forward the defect PR-33 could only allowlist: `Category.accentColorClass` stored raw Tailwind class strings as rows. The database check that motivated doing it now found it was worse than fragile — the column held **two incompatible shapes** (gradient triplets from seeds, flat washes from the form), and the storefront renders the value inside `bg-gradient-to-br`, so **a category created through the admin form has been shipping with no hero gradient at all**. PR-33's codemod had also left the form default as a third shape (`bg-primary/10`).
