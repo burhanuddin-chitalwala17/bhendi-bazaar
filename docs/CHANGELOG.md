@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-50] 2026-08-10 — One dashboard, assembled from declarations
+
+[dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/) lands — and with it **the marketplace programme's build is complete: 9 of 10 subfeatures, org-team deferred by decision.** A widget is one entry in `server/analytics/widgets.ts`: key, audience (`platform` / `org` / `both`), a stated org scoping when it serves both (R2), and the audience-gated query. Both dashboards render `widgetsFor(audience)` — adding a widget edits no page (R4).
+
+**The gate is structural** (R3, the 2026-08-08 decision): widgets fetch server-side in an RSC, there is no widget endpoint for a browser to call, and `fetchWidget` throws if an org context ever reaches a platform-only widget — a figure an org may not see has no route to the browser, the same posture as per-location stock on customer responses. A failed widget renders an error card and the rest of the grid survives (R5).
+
+**Org money widgets exist because order lines do**: an org's revenue is its parcels' item value on paid orders (`ShipmentItem × OrderItem.unitPrice`) — shipping deliberately excluded until [shipping-fulfilment](specs/shipping-fulfilment/) settles courier invoicing. The admin dashboard's key-metrics row moved onto the registry (server-rendered, one client round trip fewer; a `customers` widget added so nothing was lost); its period-revenue, status overview and activity feed stay a client island because refresh is interactivity.
+
+**230 tests pass** (registry invariants + the structural gate), `tsc` exits 0, `next build` compiles. No migration.
+
 ## [PR-49] 2026-08-10 — Origin has one home [MIGRATION]
 
 [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 6 (destructive) — **the feature closes** (8 of 10 marketplace subfeatures). Dropped: `Product.stock`, `Product.shippingFrom{Pincode,City,Location}`, `Org.default{Pincode,City,State,Address}`, and their indexes — every one unread since the cutover. A separate migration from the cutover on purpose: PR-48 was reversible by redeploying the dual-write build; this is the point of no return.

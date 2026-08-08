@@ -62,7 +62,7 @@ which is why they share a parent, and why neither can be reviewed sensibly as a 
 | [org-onboarding](org-onboarding/)                                 | Someone with no organisation can create one ✅ done           | portal-separation                         |
 | [org-portal-chrome](org-portal-chrome/)                           | You can see and change which organisation you are acting for ✅ done | portal-separation                         |
 | [org-team](org-team/)                                             | An organisation's people can be managed                      | portal-separation                         |
-| [dashboard-widgets](dashboard-widgets/)                           | One dashboard, assembled from widgets that declare their audience | portal-separation                         |
+| [dashboard-widgets](dashboard-widgets/) | One dashboard, assembled from widgets that declare their audience ✅ done | portal-separation                         |
 | [addresses-as-entities](addresses-as-entities/)                   | An address is a record, not a JSON blob ✅ done               | —                                         |
 | [category-tree](category-tree/)                                   | Categories nest to any depth ✅ done                          | —                                         |
 | [order-and-cart-lines](order-and-cart-lines/)                     | What was bought is a relation, not a blob ✅ done             | money-as-paise                            |

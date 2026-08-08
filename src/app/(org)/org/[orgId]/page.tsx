@@ -1,13 +1,12 @@
-import Link from "next/link";
-import { Package } from "lucide-react";
-import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
-import { Card, CardContent } from "@/components/ui/card";
+import { requireOrgMember } from "@/lib/org-auth";
+import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
 
 export const metadata = { robots: { index: false, follow: false } };
 
 /**
- * A placeholder until dashboard-widgets lands, which is what decides what an org sees
- * here. One real number rather than an empty page.
+ * The org dashboard: the widget registry rendered with an org scope. Which figures
+ * appear here — and how each is narrowed to this org — is declared per widget in
+ * server/analytics/widgets.ts, not decided by this page (dashboard-widgets R1–R4).
  */
 export default async function OrgDashboard({
   params,
@@ -15,7 +14,7 @@ export default async function OrgDashboard({
   params: Promise<{ orgId: string }>;
 }) {
   const { orgId } = await params;
-  const { pagination } = await adminProductsDAL.getProducts({ orgId, page: 1, limit: 1 });
+  const scope = await requireOrgMember(orgId);
 
   return (
     <div className="space-y-6">
@@ -24,17 +23,10 @@ export default async function OrgDashboard({
         <p className="text-muted-foreground">An overview of your organisation</p>
       </div>
 
-      <Link href={`/org/${orgId}/products`} className="block w-full max-w-xs">
-        <Card className="transition-colors hover:border-primary/40">
-          <CardContent className="flex items-center gap-4 pt-5">
-            <Package className="h-8 w-8 text-primary" />
-            <span>
-              <span className="block text-2xl font-semibold">{pagination.total}</span>
-              <span className="text-sm text-muted-foreground">Products</span>
-            </span>
-          </CardContent>
-        </Card>
-      </Link>
+      <DashboardWidgets
+        ctx={{ audience: "org", orgId: scope.orgId }}
+        basePath={`/org/${scope.orgId}`}
+      />
     </div>
   );
 }
