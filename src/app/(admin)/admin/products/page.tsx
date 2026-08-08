@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
+import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
 import type { Metadata } from "next";
@@ -77,10 +78,11 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
   };
 
   // ⚡ Parallel data fetching
-  const [productsData, stats] = await Promise.all([
+  const [productsData, stats, categoryList] = await Promise.all([
     adminProductsDAL.getProducts(filters),
     // null: this is the platform's cross-vendor view, so every org counts.
     adminProductsDAL.getStats(null),
+    adminCategoriesDAL.getCategories(),
   ]);
 
   return (
@@ -88,6 +90,7 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
       initialData={productsData}
       initialStats={stats}
       initialFilters={filters}
+      categories={categoryList.categories}
       readOnly
     />
   );

@@ -7,12 +7,14 @@ import type { ProductFilters } from "../../types";
 
 interface ProductsFiltersProps {
   filters: ProductFilters;
+  categories: Array<{ id: string; name: string }>;
   onFilterChange: (filters: Partial<ProductFilters>) => void;
   isPending: boolean;
 }
 
 export function ProductsFilters({
   filters,
+  categories,
   onFilterChange,
   isPending,
 }: ProductsFiltersProps) {
@@ -61,6 +63,23 @@ export function ProductsFilters({
             </button>
           </div>
         </div>
+
+        {/* Category Filter */}
+        <select
+          value={filters.categoryId || ""}
+          onChange={(e) =>
+            onFilterChange({ categoryId: e.target.value || undefined, page: 1 })
+          }
+          disabled={isPending}
+          className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+        >
+          <option value="">All Categories</option>
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
 
         {/* Stock Filter */}
         <select

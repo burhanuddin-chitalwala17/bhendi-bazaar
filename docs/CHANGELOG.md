@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-58] 2026-08-09 — Category filter on the product tables
+
+Both product listings (admin and org portal) gain a category dropdown beside the stock filter. The plumbing already existed end-to-end — the pages parsed `?category=` into `categoryId` and the repository applied it — only the control was missing. Fixing the wiring surfaced a latent bug: `updateFilters` wrote filter-field names (`sortBy`, `sortOrder`, `categoryId`) as URL params while the pages read the short names (`sort`, `order`, `category`), so header sorting had never round-tripped through the URL; a key map in the container now covers all three. Categories come from `adminCategoriesDAL` in the same parallel fetch as the products. No wire change, no migration.
+
 ## [PR-57] 2026-08-09 — Deploys run their own migrations [MIGRATION]
 
 `vercel.json` gains `"buildCommand": "npx prisma migrate deploy && next build"` — every Vercel build now applies pending Prisma migrations to that environment's `DATABASE_URL` before compiling, so code and schema can no longer go live out of step. Consequence, accepted: a merge to main *is* a prod schema change, and preview builds migrate whatever database the Preview environment points at. `migrate deploy` only applies pending migrations in order — it never resets or drops.
