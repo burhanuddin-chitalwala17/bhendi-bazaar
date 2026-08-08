@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-08-08
+- **Verified:** 2026-08-10
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -64,7 +64,7 @@ Consolidating to one declaration is a precondition for [product-weight-and-rates
 ### Orders
 `Shipment` is declared in three places across `src/domain/order.ts` and `server/checkout/order.types.ts`. Timestamp fields (`estimatedDelivery`, `createdAt`, `updatedAt`) are typed `Date` on the client side and `string` on the server side; JSON delivers strings, so Rule 3 is not currently met.
 
-Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ productId, quantity }` — plus a `displayedGrandTotal` used only for the changed-mid-session comparison and never persisted (PR-38). `paymentStatus` crosses the wire in **no direction** since PR-39: the update route is deleted, and the paid/failed transitions in `order.repository.ts` are the only writers (ADR-0005).
+Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ productId, quantity, size?, color? }` — plus a `displayedGrandTotal` used only for the changed-mid-session comparison and never persisted (PR-38). The optional variant (PR-43) is validated against the product's declared options server-side; on every outbound items array, `price` is the unit price actually paid and lines are rebuilt from `OrderItem`/`ShipmentItem` rows — the JSON blob is legacy. `paymentStatus` crosses the wire in **no direction** since PR-39: the update route is deleted, and the paid/failed transitions in `order.repository.ts` are the only writers (ADR-0005).
 
 ### Payments
 - `POST /api/payments/create-order` takes `{ localOrderId, customer? }` and **derives the amount from the persisted order's `grandTotal`** (PR-38) — which was itself computed from the catalogue inside the creation transaction. An `amount` in the body is not read; the field no longer exists in the schema.

@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-43] 2026-08-10 — What was bought is a relation [CONTRACT] [MIGRATION]
+
+[order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) PR 1 of 2: `Shipment.items` — a JSON blob per parcel — becomes **`OrderItem`** (the missing order→product relation, `unitPrice` integer paise from birth per ADR-0004) and **`ShipmentItem`** (what one parcel packs, pointing at the order line, so a future split stays linked to the one thing the customer ordered). `OrderItem.productId` is `RESTRICT`: a sold product cannot be deleted out from under its order history. Per-product revenue is now a SQL question.
+
+**The lift reads the blobs as they actually are.** money-as-paise multiplied the total columns ×100 but left the blobs alone, so old blobs are rupee floats and new ones paise — indistinguishable by wall clock, distinguishable by arithmetic: an order whose lines sum ×100 to its already-paise `itemsTotal` is a rupee blob (D3). Rows are keyed by line *position* (`WITH ORDINALITY`) because the same product can appear twice in one shipment (old carts split sizes into separate lines). Lines whose product was deleted cannot get a row under `RESTRICT` — skipped with a `RAISE NOTICE` count, never silently (D4). The blob stays one release as nullable `legacyItems` (`@map("items")`), read by nothing.
+
+**Fixed on contact: checkout dropped the chosen variant.** The cart records size and colour; the wire sent `{ productId, quantity }` — so no order said which size to pack. Items now carry optional `size`/`color` **[CONTRACT]**, validated in `priceGroupItems` against the product's declared options ("not available in size XXL" is refused, not recorded), persisted on the order line, shown in the org portal's parcel view.
+
+Every read rebuilds the wire items array from rows through one mapper (`toWireShipmentItems`): display fields from the product join, `price` = the unit price actually paid — order history shows what was charged, and no fabricated strike-through. Org and admin views, `expireAndRestock`, and the seed all moved off the blob; org scoping still filters shipments in the query and re-asserts in `toOrgOrderView`, unchanged.
+
+**198 tests pass** (12 new: variant pricing branches, wire mapper, migration pins), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`.** PR 2 (`CartItem`) follows; the spec closes there.
+
 ## [PR-42] 2026-08-10 — Categories nest [MIGRATION]
 
 [category-tree](specs/multi-vendor-marketplace/category-tree/) lands. `Category` gains a self-referencing `parentId` — depth without a schema change per level, replacing the two-level subcategory idea that was product flags in disguise. Every existing category becomes a root; no data moves.

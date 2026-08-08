@@ -105,10 +105,16 @@ export function useCheckoutPayment() {
             fromPincode: group.fromPincode,
             fromCity: group.fromCity,
             fromState: group.fromState,
-            items: group.items.map((item: { productId: string; quantity: number }) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-            })),
+            // The chosen size/colour ride along — without them the order cannot
+            // say which variant to pack (order-and-cart-lines D5).
+            items: group.items.map(
+              (item: { productId: string; quantity: number; size?: string; color?: string }) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                size: item.size || undefined,
+                color: item.color || undefined,
+              })
+            ),
             selectedRate: group.selectedRate,
           };
         }),

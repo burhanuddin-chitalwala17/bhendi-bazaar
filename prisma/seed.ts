@@ -253,7 +253,24 @@ async function main() {
         id: shipmentData.id,
         code: shipmentData.code,
         orderId: shipmentData.orderId,
-        items: shipmentData.items as any,
+        // Lines are rows since order-and-cart-lines: one OrderItem per line, its
+        // ShipmentItem 1:1. unitPrice applies the same rule checkout charges.
+        items: {
+          create: shipmentData.items.map((item) => ({
+            quantity: item.quantity,
+            orderItem: {
+              create: {
+                orderId: shipmentData.orderId,
+                productId: item.productId,
+                quantity: item.quantity,
+                unitPrice:
+                  item.salePrice && item.salePrice > 0 && item.salePrice < item.price
+                    ? item.salePrice
+                    : item.price,
+              },
+            },
+          })),
+        },
         orgId: shipmentData.orgId,
         fromPincode: shipmentData.fromPincode,
         fromCity: shipmentData.fromCity,

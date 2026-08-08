@@ -6,10 +6,65 @@
  */
 
 import { prisma, toJsonColumn } from "@server/shared/prisma";
-import type {
-} from "@server/checkout/order.types";
+import type { ShipmentItem } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+
+/**
+ * Order lines live in OrderItem/ShipmentItem rows (order-and-cart-lines), but the
+ * wire keeps its flat items array. This include + mapper pair is how every read in
+ * this domain rebuilds it: display fields from the product join (Restrict guarantees
+ * the row), `price` = the unit price actually paid (TRD D2).
+ */
+export const SHIPMENT_LINES_INCLUDE = {
+  items: {
+    include: {
+      orderItem: {
+        include: {
+          product: { select: { name: true, slug: true, thumbnail: true } },
+        },
+      },
+    },
+  },
+} as const;
+
+interface ShipmentLineRow {
+  quantity: number;
+  orderItem: {
+    productId: string;
+    unitPrice: number;
+    size: string | null;
+    color: string | null;
+    product: { name: string; slug: string; thumbnail: string };
+  };
+}
+
+export function toWireShipmentItems(rows: ShipmentLineRow[]): ShipmentItem[] {
+  return rows.map((row) => ({
+    productId: row.orderItem.productId,
+    productName: row.orderItem.product.name,
+    productSlug: row.orderItem.product.slug,
+    thumbnail: row.orderItem.product.thumbnail,
+    price: row.orderItem.unitPrice,
+    quantity: row.quantity,
+    size: row.orderItem.size ?? undefined,
+    color: row.orderItem.color ?? undefined,
+  }));
+}
+
+/** Swap row relations for the wire array, and keep the legacy blob off the wire. */
+export function withWireItems<
+  S extends { legacyItems?: unknown; items: ShipmentLineRow[] },
+  O extends { shipments: S[] }
+>(order: O) {
+  return {
+    ...order,
+    shipments: order.shipments.map(({ legacyItems: _legacy, items, ...shipment }) => ({
+      ...shipment,
+      items: toWireShipmentItems(items),
+    })),
+  };
+}
 
 /**
  * Helper to generate order code
@@ -33,16 +88,16 @@ export class OrderRepository {
   /**
    * List all orders for a user
    */
-  async listByUserId(userId: string): Promise<Order[]> {
+  async listByUserId(userId: string) {
     const orders = await prisma.order.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       include: {
-        shipments: true,
+        shipments: { include: SHIPMENT_LINES_INCLUDE },
       },
     });
 
-    return orders;
+    return orders.map(withWireItems);
   }
 
   /**
@@ -52,7 +107,7 @@ export class OrderRepository {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        shipments: true,
+        shipments: { include: SHIPMENT_LINES_INCLUDE },
       },
     });
 
@@ -60,7 +115,7 @@ export class OrderRepository {
       return null;
     }
 
-    return order;
+    return withWireItems(order);
   }
 
   /**
@@ -133,13 +188,10 @@ export class OrderRepository {
       });
       if (expired.count === 0) return false;
 
-      const shipments = await tx.shipment.findMany({
+      const lines = await tx.orderItem.findMany({
         where: { orderId },
-        select: { items: true },
+        select: { productId: true, quantity: true },
       });
-      const lines = shipments.flatMap(
-        (s) => (Array.isArray(s.items) ? s.items : []) as Array<{ productId: string; quantity: number }>
-      );
       for (const line of lines) {
         await tx.product.update({
           where: { id: line.productId },

@@ -21,15 +21,23 @@ export interface PricingProduct {
   salePrice: number | null; // paise
   weight: number | null; // kg
   orgId: string;
+  sizes: string[];
+  colors: string[];
 }
 
 export interface UnpricedItem {
   productId: string;
   quantity: number;
+  /** The chosen variant — checked against the product's declared options. */
+  size?: string;
+  color?: string;
 }
 
+/** A wire line plus the figure the order line persists (order-and-cart-lines D2). */
+export type PricedLine = ShipmentItem & { unitPrice: number };
+
 export interface PricedGroup {
-  items: ShipmentItem[];
+  items: PricedLine[];
   itemsTotal: number; // paise
   totalWeight: number; // kg
 }
@@ -49,11 +57,11 @@ export function priceGroupItems(
   products: Map<string, PricingProduct>,
   groupOrgId: string
 ): PricedGroup {
-  const priced: ShipmentItem[] = [];
+  const priced: PricedLine[] = [];
   let itemsTotal = 0;
   let totalWeight = 0;
 
-  for (const { productId, quantity } of items) {
+  for (const { productId, quantity, size, color } of items) {
     const product = products.get(productId);
     if (!product) {
       // Fails the whole transaction: an order must never persist a line the
@@ -63,6 +71,14 @@ export function priceGroupItems(
     if (product.orgId !== groupOrgId) {
       // The parcel would be attributed (and its revenue owed) to the wrong org.
       throw new DomainError("An item in this order does not belong to the shipping organisation");
+    }
+    // The order line records which size to pack (order-and-cart-lines D5); a variant
+    // the product never offered would be an unfulfillable instruction.
+    if (size && !product.sizes.includes(size)) {
+      throw new DomainError(`"${product.name}" is not available in size ${size}`);
+    }
+    if (color && !product.colors.includes(color)) {
+      throw new DomainError(`"${product.name}" is not available in ${color}`);
     }
 
     const unit = effectiveUnitPrice(product);
@@ -79,6 +95,9 @@ export function priceGroupItems(
       price: product.price,
       salePrice: product.salePrice ?? undefined,
       quantity,
+      size,
+      color,
+      unitPrice: unit,
     });
   }
 

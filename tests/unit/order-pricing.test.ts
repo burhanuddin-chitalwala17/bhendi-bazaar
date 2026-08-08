@@ -19,10 +19,37 @@ const product = (overrides: Partial<PricingProduct> = {}): PricingProduct => ({
   salePrice: null,
   weight: 0.5,
   orgId: "org-a",
+  sizes: ["S", "M", "L"],
+  colors: ["Cream", "Gold"],
   ...overrides,
 });
 
 const catalogue = (...rows: PricingProduct[]) => new Map(rows.map((r) => [r.id, r]));
+
+describe("priceGroupItems — variants (order-and-cart-lines D5)", () => {
+  it("carries the chosen size and colour onto the priced line, with the unit price paid", () => {
+    const [line] = priceGroupItems(
+      [{ productId: "p1", quantity: 2, size: "M", color: "Gold" }],
+      catalogue(product({ salePrice: 100000 })),
+      "org-a"
+    ).items;
+    expect(line).toMatchObject({ size: "M", color: "Gold", unitPrice: 100000 });
+  });
+
+  it("refuses a size the product never offered — an unfulfillable instruction", () => {
+    expect(() =>
+      priceGroupItems([{ productId: "p1", quantity: 1, size: "XXL" }], catalogue(product()), "org-a")
+    ).toThrow(/not available in size XXL/);
+  });
+
+  it("refuses an unoffered colour, and accepts a line with no variant at all", () => {
+    expect(() =>
+      priceGroupItems([{ productId: "p1", quantity: 1, color: "Neon" }], catalogue(product()), "org-a")
+    ).toThrow(/not available in Neon/);
+    const { items } = priceGroupItems([{ productId: "p1", quantity: 1 }], catalogue(product()), "org-a");
+    expect(items[0].size).toBeUndefined();
+  });
+});
 
 describe("effectiveUnitPrice — the one place the sale-price rule lives (D6)", () => {
   it("uses the regular price when there is no sale", () => {

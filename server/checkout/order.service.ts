@@ -14,7 +14,6 @@ import { createShipmentWithProvider } from "@server/shipping/providers/_placehol
 import type {
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
-  ShipmentItem,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
@@ -145,6 +144,7 @@ export class OrderService {
           select: {
             id: true, name: true, slug: true, thumbnail: true,
             price: true, salePrice: true, weight: true, orgId: true,
+            sizes: true, colors: true,
           },
         });
         const products = new Map(productRows.map((row) => [row.id, row]));
@@ -228,9 +228,6 @@ export class OrderService {
               data: {
                 code: shipmentCode,
                 orderId: order.id,
-                // Server-priced lines: names, thumbnails and every rupee figure came
-                // from the catalogue row, not the request.
-                items: toJsonColumn(pricing.items),
                 orgId: group.orgId,
                 fromPincode: group.fromPincode,
                 fromCity: group.fromCity,
@@ -249,18 +246,47 @@ export class OrderService {
                 },
               },
             });
-            return shipment;
+            // One OrderItem per server-priced line, its ShipmentItem 1:1 (TRD D1) —
+            // a split into more parcels is expressible later without a new shape.
+            // Names and prices came from the catalogue row, not the request.
+            for (const line of pricing.items) {
+              await tx.orderItem.create({
+                data: {
+                  orderId: order.id,
+                  productId: line.productId,
+                  quantity: line.quantity,
+                  unitPrice: line.unitPrice,
+                  size: line.size ?? null,
+                  color: line.color ?? null,
+                  shipmentItems: {
+                    create: [{ shipmentId: shipment.id, quantity: line.quantity }],
+                  },
+                },
+              });
+            }
+
+            return { shipment, lines: pricing.items };
           })
         );
 
-        // Return order with shipments in the expected format
+        // Return order with shipments in the expected format. Line shape matches
+        // what reads rebuild from rows: price = the unit price actually paid (D2).
         return {
           ...order,
-          shipments: createdShipments.map(s => ({
+          shipments: createdShipments.map(({ shipment: s, lines }) => ({
             id: s.id,
             code: s.code,
             orderId: s.orderId,
-            items: s.items as unknown[] as ShipmentItem[],
+            items: lines.map((line) => ({
+              productId: line.productId,
+              productName: line.productName,
+              productSlug: line.productSlug,
+              thumbnail: line.thumbnail,
+              price: line.unitPrice,
+              quantity: line.quantity,
+              size: line.size,
+              color: line.color,
+            })),
             orgId: s.orgId,
             fromPincode: s.fromPincode,
             fromCity: s.fromCity,

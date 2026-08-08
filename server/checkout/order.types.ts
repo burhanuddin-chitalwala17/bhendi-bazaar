@@ -52,9 +52,12 @@ export interface ShipmentItem {
   productName: string;
   productSlug: string;
   thumbnail: string;
+  /** On reads since order-and-cart-lines: the unit price actually paid (TRD D2). */
   price: number;
   salePrice?: number;
   quantity: number;
+  size?: string;
+  color?: string;
 }
 
 export interface ShippingGroupInput {
@@ -69,7 +72,7 @@ export interface ShippingGroupInput {
   fromState: string;
 
   /** Unpriced on purpose: the server prices every line from the catalogue (Invariant 1). */
-  items: Array<{ productId: string; quantity: number }>;
+  items: Array<{ productId: string; quantity: number; size?: string; color?: string }>;
 
   // Selected shipping rate
   selectedRate: {

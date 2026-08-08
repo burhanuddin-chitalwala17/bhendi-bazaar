@@ -133,7 +133,8 @@ export interface OrderItem {
   productName: string;
   productSlug: string;
   quantity: number;
-  price: number;
+  price: number; // paise
+  salePrice?: number; // paise
   thumbnail: string;
 }
 

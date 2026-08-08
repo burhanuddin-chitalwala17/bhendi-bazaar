@@ -4,6 +4,11 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import {
+  SHIPMENT_LINES_INCLUDE,
+  toWireShipmentItems,
+  withWireItems,
+} from "@server/checkout/order.repository";
 import { Prisma } from "@prisma/client";
 import type {
   OrderListFilters,
@@ -74,6 +79,7 @@ export class AdminOrderRepository {
           },
           shipments: {
             orderBy: { createdAt: 'asc' },
+            include: SHIPMENT_LINES_INCLUDE,
           },
         },
       }),
@@ -91,7 +97,7 @@ export class AdminOrderRepository {
       });
     }
 
-    return { orders, total };
+    return { orders: orders.map(withWireItems), total };
   }
 
   /**
@@ -109,13 +115,14 @@ export class AdminOrderRepository {
         },
         shipments: {
           orderBy: { createdAt: 'asc' },
+          include: SHIPMENT_LINES_INCLUDE,
         },
       },
     });
 
     if (!order) return null;
 
-    return order;
+    return withWireItems(order);
   }
 
   /**
@@ -245,7 +252,13 @@ export class AdminOrderRepository {
           address: true,
           shipments: {
             where: { orgId },
-            select: { id: true, code: true, status: true, items: true, shippingCost: true },
+            select: {
+              id: true,
+              code: true,
+              status: true,
+              shippingCost: true,
+              items: SHIPMENT_LINES_INCLUDE.items,
+            },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -254,12 +267,20 @@ export class AdminOrderRepository {
       }),
       prisma.order.count({ where }),
     ]);
-    return { orders, total, page, limit };
+    return {
+      orders: orders.map((order) => ({
+        ...order,
+        shipments: order.shipments.map((s) => ({ ...s, items: toWireShipmentItems(s.items) })),
+      })),
+      total,
+      page,
+      limit,
+    };
   }
 
   /** One order, only if this org has a shipment in it — otherwise null (not-found, never forbidden). */
   async getOrderForOrg(orderId: string, orgId: string) {
-    return prisma.order.findFirst({
+    const order = await prisma.order.findFirst({
       where: { id: orderId, shipments: { some: { orgId } } },
       select: {
         id: true,
@@ -275,17 +296,22 @@ export class AdminOrderRepository {
             id: true,
             code: true,
             status: true,
-            items: true,
             shippingCost: true,
             courierName: true,
             trackingNumber: true,
             trackingUrl: true,
             fromPincode: true,
             fromCity: true,
+            items: SHIPMENT_LINES_INCLUDE.items,
           },
         },
       },
     });
+    if (!order) return null;
+    return {
+      ...order,
+      shipments: order.shipments.map((s) => ({ ...s, items: toWireShipmentItems(s.items) })),
+    };
   }
 }
 

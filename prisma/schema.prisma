@@ -62,6 +62,8 @@ model Product {
   sku               String?  @unique // Stock Keeping Unit
   lowStockThreshold Int      @default(10) // Alert when stock falls below this
 
+  orderItems OrderItem[]
+
   // ⭐ Org Association (REQUIRED)
   orgId String
   org   Org @relation(fields: [orgId], references: [id], onDelete: Restrict)
@@ -267,6 +269,7 @@ model Order {
   updatedAt DateTime @updatedAt
   
   // ✅ NEW: Relations to shipments
+  items     OrderItem[]
   shipments Shipment[]
   shippingEvents ShippingEvent[] // ← ADD THIS
   
@@ -278,6 +281,45 @@ model Order {
   @@index([gatewayOrderId])
 }
 
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Restrict: a sold product cannot be deleted out from under its order history
+  // (order-and-cart-lines R2).
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  quantity  Int
+  unitPrice Int // paise — the price as it stood at purchase, from birth (ADR-0004)
+
+  // The chosen variant. Nullable: products without options have neither.
+  size  String?
+  color String?
+
+  shipmentItems ShipmentItem[]
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model ShipmentItem {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  // Cascade with the order line: the link is meaningless without it, and an
+  // OrderItem only ever dies with its whole order.
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  quantity Int
+
+  @@index([shipmentId])
+  @@index([orderItemId])
+}
+
 model Shipment {
   id      String @id @default(cuid())
   code    String @unique // "BB-1001-SH1", "BB-1001-SH2"
@@ -286,8 +328,10 @@ model Shipment {
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
-  // ✅ Items in THIS specific shipment
-  items   Json // ShipmentItem[] - only items from this origin
+  // The pre-PR-43 blob, kept one release as the audit copy of the lift. Read by
+  // nothing; lines live in ShipmentItem rows (order-and-cart-lines trd.md).
+  legacyItems Json? @map("items")
+  items       ShipmentItem[]
   
   // ✅ Origin details (where it ships from)
   orgId    String

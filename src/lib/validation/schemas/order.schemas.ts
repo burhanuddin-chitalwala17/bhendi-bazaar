@@ -85,6 +85,10 @@ export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
 const shipmentItemSchema = z.object({
   productId: z.string().min(1),
   quantity: quantitySchema,
+  // The chosen variant (order-and-cart-lines D5). Optional — validated against the
+  // product's declared options server-side, where the catalogue row is in hand.
+  size: z.string().trim().min(1).max(50).optional(),
+  color: z.string().trim().min(1).max(50).optional(),
 });
 
 // Selected shipping rate schema

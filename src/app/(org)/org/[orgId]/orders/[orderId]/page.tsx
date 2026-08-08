@@ -71,9 +71,17 @@ export default async function OrgOrderDetailPage({
           <CardContent>
             <ul className="divide-y">
               {shipment.items.map((item) => (
-                <li key={item.productId} className="flex items-center justify-between py-2 text-sm">
+                <li
+                  key={`${item.productId}-${item.size ?? ""}-${item.color ?? ""}`}
+                  className="flex items-center justify-between py-2 text-sm"
+                >
                   <span>
                     {item.productName}{" "}
+                    {(item.size || item.color) && (
+                      <span className="text-muted-foreground">
+                        ({[item.size, item.color].filter(Boolean).join(", ")}){" "}
+                      </span>
+                    )}
                     <span className="text-muted-foreground">× {item.quantity}</span>
                   </span>
                   <span>{formatCurrency((item.salePrice ?? item.price) * item.quantity)}</span>
