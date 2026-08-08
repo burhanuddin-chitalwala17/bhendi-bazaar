@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-31] 2026-08-09 — Portal chrome: the switcher, and one header for both panels
+
+[org-portal-chrome](specs/multi-vendor-marketplace/org-portal-chrome/), implemented whole. The sidebar's static organisation name becomes a switcher, and both portals gain an identity header.
+
+**Switching is navigation, nothing else.** An org in the switcher is a link to `/org/[id]` plus the section you are on — from one org's products you land on the other's products. No cookie, no session write, no context: the active org lives in the URL by programme decision, which is what makes "two tabs on two orgs" true by construction rather than by care. A deeper path (a product id) is deliberately not carried across — the record belongs to the org you are leaving. One membership renders a heading, not a dropdown with one option; the switcher also offers creating another organisation.
+
+**One `PortalHeader` serves both panels** — signed-in name and email, sign out, back to storefront — with only the label differing (`Org Portal` / `Platform Admin`). A second header is how two panels drift. It is a server component with `"use client"` pushed down to the one interactive leaf (`SignOutButton`), and the org layout now fetches the membership list once, server-side, feeding both the authorization check and the switcher.
+
+No new routes, no schema or contract changes, no new tests — the chrome is links and text over data already covered (memberships PR-24, boundary PR-30); its TRD records that if switching ever becomes stateful, that change must bring its own tests.
+
+`tsc` exits 0, 119 tests pass, `next build` compiles, 0 lint errors in the touched files.
+
 ## [PR-30] 2026-08-09 — Portal separation closes: admin stops mutating products, and the boundary is a test
 
 PR 4, the last of [portal-separation](specs/multi-vendor-marketplace/portal-separation/). The subfeature is **Implemented**.

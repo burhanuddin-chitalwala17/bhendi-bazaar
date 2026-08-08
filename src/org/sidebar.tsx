@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Package, LayoutDashboard, ArrowLeft, ShoppingCart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OrgSwitcher, type SwitcherOrg } from "@/org/org-switcher";
 
 // Minimal on purpose. The org switcher and the signed-in-user header belong to
 // org-portal-chrome; this exists so the portal is navigable before that lands.
@@ -14,20 +15,13 @@ const NAV = [
   { title: "Reviews", href: "/reviews", icon: Star },
 ];
 
-export function OrgSidebar({ orgId, orgName }: { orgId: string; orgName: string }) {
+export function OrgSidebar({ orgId, orgs }: { orgId: string; orgs: SwitcherOrg[] }) {
   const pathname = usePathname();
   const base = `/org/${orgId}`;
 
   return (
     <aside className="w-64 shrink-0 border-r border-gray-200 bg-white">
-      <div className="border-b border-gray-200 px-6 py-5">
-        <p className="text-[0.7rem] uppercase tracking-[0.18em] text-gray-500">
-          Organisation
-        </p>
-        <h2 className="mt-1 truncate text-lg font-semibold text-gray-900" title={orgName}>
-          {orgName}
-        </h2>
-      </div>
+      <OrgSwitcher orgs={orgs} currentOrgId={orgId} />
 
       <nav className="flex flex-col gap-1 p-3">
         {NAV.map(({ title, href, icon: Icon }) => {

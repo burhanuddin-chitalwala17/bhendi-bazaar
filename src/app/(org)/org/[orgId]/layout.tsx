@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 import { requireOrgMember } from "@/lib/org-auth";
 import { OrgSidebar } from "@/org/sidebar";
 import { isDomainError } from "@server/shared/domain-error";
-import { orgRepository } from "@server/catalog/org.repository";
+import { orgMemberRepository } from "@server/catalog/org.member.repository";
+import { requireSession } from "@/lib/admin-auth";
+import { PortalHeader } from "@/components/layout/PortalHeader";
 
 /**
  * Everything beneath this path belongs to one org, so membership is established once
@@ -29,12 +31,22 @@ export default async function OrgLayout({
     redirect("/");
   }
 
-  const org = await orgRepository.findById(orgId);
+  // The switcher needs every org this person can act for, and the header needs who
+  // they are — both fetched here once, server-side, for everything beneath.
+  const session = await requireSession();
+  const orgs = await orgMemberRepository.listOrgsForUser(session.user.id);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <OrgSidebar orgId={orgId} orgName={org?.name ?? "Organisation"} />
-      <main className="flex-1 p-8 min-w-0">{children}</main>
+      <OrgSidebar orgId={orgId} orgs={orgs} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <PortalHeader
+          name={session.user.name}
+          email={session.user.email}
+          label="Org Portal"
+        />
+        <main className="min-w-0 flex-1 p-8">{children}</main>
+      </div>
     </div>
   );
 }
