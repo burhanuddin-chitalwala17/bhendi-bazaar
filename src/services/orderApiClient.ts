@@ -9,6 +9,7 @@ import type { Order } from "@/domain/order";
 import type { CartItem, CartTotals } from "@/domain/cart";
 import type { ShippingGroup } from "@/domain/shipping";
 import type { DeliveryAddress } from "@/domain/profile";
+import { readApiError } from "@/lib/api-error";
 
 export interface CreateOrderInput {
   items: CartItem[];
@@ -127,10 +128,9 @@ class OrderService {
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || "Failed to create order. Please try again."
-      );
+      // The envelope's field details survive: a validation failure names its
+      // field instead of collapsing to "Validation failed" (ADR-0013).
+      throw await readApiError(response);
     }
 
     return response.json();

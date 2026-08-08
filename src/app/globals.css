@@ -164,3 +164,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Download bill = print to PDF: the bill card is the whole printed page. Visibility
+   (not display) so the card keeps its layout box; fixed so it starts at the sheet's
+   top-left regardless of where it sat on screen. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .bill-print,
+  .bill-print * {
+    visibility: visible;
+  }
+  .bill-print {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    border: none;
+    background: white;
+  }
+}

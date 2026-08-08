@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-57] 2026-08-09 — Deploys run their own migrations [MIGRATION]
+
+`vercel.json` gains `"buildCommand": "npx prisma migrate deploy && next build"` — every Vercel build now applies pending Prisma migrations to that environment's `DATABASE_URL` before compiling, so code and schema can no longer go live out of step. Consequence, accepted: a merge to main *is* a prod schema change, and preview builds migrate whatever database the Preview environment points at. `migrate deploy` only applies pending migrations in order — it never resets or drops.
+
 ## [PR-56] 2026-08-10 — A blocked submit says so
 
 The product form's create button could "do nothing": a draft saved while the org had no pickup locations restored `stockLocations: []` over the fresh rows, the hidden `orgAddressId` inputs then failed validation — and a hidden field can neither render its error nor take focus. Three layers fixed: location rows are excluded from draft persistence (the poison's source, and old poisoned drafts are ignored on load); a sync effect re-asserts the rows from the offered locations whatever restored or reset the form, keeping typed quantities; and `useServerForm` gains an invalid-submit handler — any validation failure now shows "Please fix the highlighted fields" plus a console warning naming the fields, so no form in the app can fail silently again.

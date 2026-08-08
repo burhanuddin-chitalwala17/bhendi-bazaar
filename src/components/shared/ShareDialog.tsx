@@ -49,8 +49,15 @@ export function ShareDialog({
   const [open, setOpen] = useState(false);
   const { copyToClipboard, copySuccess } = useShare();
 
+  // A relative path becomes shareable only with an origin on it. Resolved here,
+  // at interaction time in the browser — never hardcoded (CLAUDE.md: origins are
+  // runtime-known). SSR renders the trigger only, so `window` is safe by the
+  // time any share action runs.
+  const shareUrl =
+    typeof window === "undefined" ? url : new URL(url, window.location.origin).toString();
+
   const handleCopyLink = async () => {
-    const success = await copyToClipboard(url);
+    const success = await copyToClipboard(shareUrl);
     if (success) {
       // Keep dialog open to show the success message
       setTimeout(() => {
@@ -60,21 +67,21 @@ export function ShareDialog({
   };
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent(`${text || title}\n${url}`);
+    const message = encodeURIComponent(`${text || title}\n${shareUrl}`);
     window.open(`https://wa.me/?text=${message}`, "_blank");
     setOpen(false);
   };
 
   const handleEmail = () => {
     const subject = encodeURIComponent(title);
-    const body = encodeURIComponent(`${text}\n\n${url}`);
+    const body = encodeURIComponent(`${text}\n\n${shareUrl}`);
     window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
     setOpen(false);
   };
 
   const handleFacebook = () => {
     window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
       "_blank",
       "width=600,height=400"
     );
@@ -84,7 +91,7 @@ export function ShareDialog({
   const handleTwitter = () => {
     const tweetText = encodeURIComponent(text || title);
     window.open(
-      `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(url)}`,
+      `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`,
       "_blank",
       "width=600,height=400"
     );
@@ -93,7 +100,7 @@ export function ShareDialog({
 
   const handleLinkedIn = () => {
     window.open(
-      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
       "_blank",
       "width=600,height=400"
     );

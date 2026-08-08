@@ -7,7 +7,8 @@ import { formatCurrency } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "../shared/states/LoadingSpinner";
 import { ErrorState } from "../shared/states/ErrorState";
-import { Package } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Package } from "lucide-react";
 import { EmptyState } from "../shared/states/EmptyState";
 import { SectionHeader } from "../shared/SectionHeader";
 import { PriceDisplay } from "../shared/PriceDisplay";
@@ -76,9 +77,10 @@ export function OrdersClient() {
               );
 
               return (
-                <div
+                <Link
                   key={order.id}
-                  className="flex flex-col justify-between gap-2 rounded-xl border border-border/70 bg-card/80 p-4 text-xs sm:flex-row sm:items-center"
+                  href={`/order/${order.id}`}
+                  className="flex flex-col justify-between gap-2 rounded-xl border border-border/70 bg-card/80 p-4 text-xs transition-colors hover:border-primary/40 hover:bg-card sm:flex-row sm:items-center"
                 >
                   <div className="space-y-1">
                     <p className="font-semibold">
@@ -96,8 +98,9 @@ export function OrdersClient() {
                   <span className="font-semibold">
                     <PriceDisplay price={order.grandTotal} size="sm" />
                   </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

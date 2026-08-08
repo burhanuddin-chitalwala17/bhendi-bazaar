@@ -11,6 +11,7 @@ import { useCartStore } from "@/store/cartStore";
 import type { CartItem, CartTotals } from "@/domain/cart";
 import type { ShippingGroup } from "@/domain/shipping";
 import { DeliveryAddress } from "@/domain/profile";
+import { ApiError } from "@/lib/api-error";
 
 interface ProcessPaymentInput {
   items: CartItem[];
@@ -196,6 +197,17 @@ export function useCheckoutPayment() {
 
     } catch (error) {
       console.error("Checkout error:", error);
+
+      // A refused payload names its fields — show them, or the buyer sees only
+      // "Validation failed" with nothing to act on.
+      if (error instanceof ApiError && error.details.length > 0) {
+        setError(
+          error.details
+            .map((d) => (d.path ? `${d.path}: ${d.message}` : d.message))
+            .join(" · ")
+        );
+        return;
+      }
 
       // Check if it's a rate limit error
       if (error instanceof Error && error.message.includes("Too many")) {
