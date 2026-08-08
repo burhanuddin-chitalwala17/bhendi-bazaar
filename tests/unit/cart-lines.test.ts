@@ -48,6 +48,7 @@ describe("toWireCartItem", () => {
       salePrice: null as number | null,
       weight: 0.5 as number | null,
       shippingFromPincode: null as string | null,
+      stockLocations: [] as Array<{ quantity: number; orgAddress: { address: { pincode: string } } }>,
       org: {
         id: "org-1",
         name: "Rida House",
@@ -73,14 +74,20 @@ describe("toWireCartItem", () => {
     });
   });
 
-  it("falls back to the org's pincode when the product has no override", () => {
-    expect(toWireCartItem(row).shippingFromPincode).toBe("400003");
+  it("takes the indicative origin from the largest active holding, then falls back", () => {
+    expect(toWireCartItem(row).shippingFromPincode).toBe("400003"); // org fallback
     expect(
       toWireCartItem({
         ...row,
-        product: { ...row.product, shippingFromPincode: "110001" },
+        product: {
+          ...row.product,
+          stockLocations: [
+            { quantity: 2, orgAddress: { address: { pincode: "110001" } } },
+            { quantity: 9, orgAddress: { address: { pincode: "421302" } } },
+          ],
+        },
       }).shippingFromPincode
-    ).toBe("110001");
+    ).toBe("421302");
   });
 });
 

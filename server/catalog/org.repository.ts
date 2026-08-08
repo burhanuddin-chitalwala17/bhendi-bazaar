@@ -27,7 +27,7 @@ export class OrgRepository {
     const orgs = await prisma.org.findMany({
       include: {
         _count: { select: { products: true } },
-        products: { select: { stock: true } },
+        products: { select: { stockLocations: { select: { quantity: true } } } },
       },
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
     });
@@ -35,7 +35,10 @@ export class OrgRepository {
     return orgs.map((org) => ({
       ...org,
       productCount: org._count?.products || 0,
-      totalStock: org.products?.reduce((sum, p) => sum + p.stock, 0) || 0,
+      totalStock: org.products?.reduce(
+        (sum, p) => sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
+        0
+      ) || 0,
       products: undefined,
       _count: undefined,
     }));
@@ -52,7 +55,7 @@ export class OrgRepository {
           select: { products: true },
         },
         products: {
-          select: { stock: true },
+          select: { stockLocations: { select: { quantity: true } } },
         },
       },
     });
@@ -62,7 +65,10 @@ export class OrgRepository {
       ...org,
       productCount: org._count?.products || 0,
       totalStock:
-        org.products?.reduce((sum, p) => sum + p.stock, 0) || 0,
+        org.products?.reduce(
+        (sum, p) => sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
+        0
+      ) || 0,
       products: undefined, // Remove to avoid sending all products
       _count: undefined, // Remove internal field
     };

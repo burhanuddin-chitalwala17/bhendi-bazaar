@@ -11,6 +11,15 @@ import { NotFoundError } from "@server/shared/domain-error";
 const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
   org: { select: { id: true, name: true, code: true, defaultPincode: true, defaultCity: true, defaultState: true, defaultAddress: true } },
+  // Sellable stock lives on the join rows (stock-locations D3): active locations
+  // only — an inactive location's units are held, not offered.
+  stockLocations: {
+    where: { orgAddress: { isActive: true } },
+    select: {
+      quantity: true,
+      orgAddress: { select: { address: { select: { pincode: true } } } },
+    },
+  },
 };
 
 export class ProductsRepository {

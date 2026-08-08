@@ -188,15 +188,41 @@ export class OrderRepository {
       });
       if (expired.count === 0) return false;
 
-      const lines = await tx.orderItem.findMany({
+      // Stock goes back where it came from: each parcel's rows, at the location the
+      // allocation persisted on it (stock-locations D6). Legacy shipments predating
+      // the cutover carry no location — their lines fall back to the product's
+      // largest current row, loudly, rather than vanishing.
+      const shipments = await tx.shipment.findMany({
         where: { orderId },
-        select: { productId: true, quantity: true },
+        select: {
+          orgAddressId: true,
+          items: { select: { quantity: true, orderItem: { select: { productId: true } } } },
+        },
       });
-      for (const line of lines) {
-        await tx.product.update({
-          where: { id: line.productId },
-          data: { stock: { increment: line.quantity } },
-        });
+      for (const shipment of shipments) {
+        for (const item of shipment.items) {
+          const productId = item.orderItem.productId;
+          let target = shipment.orgAddressId;
+          if (!target) {
+            const fallback = await tx.productStock.findFirst({
+              where: { productId },
+              orderBy: { quantity: "desc" },
+              select: { orgAddressId: true },
+            });
+            if (!fallback) {
+              console.warn(
+                `[expireAndRestock] no stock row to restore ${item.quantity} of ${productId} (legacy shipment, no location) — correct manually`
+              );
+              continue;
+            }
+            target = fallback.orgAddressId;
+          }
+          await tx.productStock.upsert({
+            where: { productId_orgAddressId: { productId, orgAddressId: target } },
+            update: { quantity: { increment: item.quantity } },
+            create: { productId, orgAddressId: target, quantity: item.quantity },
+          });
+        }
       }
       return true;
     });

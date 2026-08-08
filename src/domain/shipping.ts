@@ -128,12 +128,14 @@ export function formatEstimatedDelivery(days: number): string {
  */
 export interface ShippingGroup {
   // Unique identifier for this group
-  groupId: string; // e.g., "SEL-001-400001" (orgId-pincode)
+  groupId: string; // the pickup location id (orgAddressId) since stock-locations
 
   // Origin details
   orgId: string;
   orgName: string;
   orgCode: string;
+  /** The pickup location's nickname — parcels are numbered in the UI (TRD D12). */
+  locationName?: string;
   fromPincode: string;
   fromCity: string;
   fromState: string;

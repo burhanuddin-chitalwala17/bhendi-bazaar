@@ -10,6 +10,13 @@ import { NotFoundError } from "@server/shared/domain-error";
 export { NotFoundError };
 
 const mapProduct = (product: any): Product => {
+  // The customer sees one availability figure: the total across active locations
+  // (stock-locations R4/R11). The indicative origin for serviceability is the
+  // largest holding's pincode — allocation decides the real origin at checkout.
+  const stockRows: Array<{ quantity: number; orgAddress: { address: { pincode: string } } }> =
+    product.stockLocations ?? [];
+  const totalStock = stockRows.reduce((sum: number, row) => sum + row.quantity, 0);
+  const mainRow = [...stockRows].sort((a, b) => b.quantity - a.quantity)[0];
   return {
     id: product.id,
     slug: product.slug,
@@ -26,13 +33,13 @@ const mapProduct = (product: any): Product => {
     images: product.images,
     thumbnail: product.thumbnail,
     weight: product.weight ?? 0,
-    stock: product.stock,
+    stock: totalStock,
     lowStockThreshold: product.lowStockThreshold,
     options: {
       sizes: product.sizes,
       colors: product.colors,
     },
-    shippingFromPincode: product.shippingFromPincode || product.org.defaultPincode || "",
+    shippingFromPincode: mainRow?.orgAddress.address.pincode || product.org.defaultPincode || "",
     org: {
       id: product.org.id,
       name: product.org.name,

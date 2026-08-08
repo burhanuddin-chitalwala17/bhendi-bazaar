@@ -23,7 +23,8 @@ const PRODUCT_LIST_SELECT = {
     salePrice: true,
     currency: true,
     rating: true,
-    stock: true,
+    // Admin truth: every row, active or not (R9) — summed into `stock` on the way out.
+    stockLocations: { select: { quantity: true } },
     lowStockThreshold: true,
     flags: true,
     thumbnail: true,
@@ -57,6 +58,12 @@ const PRODUCT_DETAILS_SELECT = {
     },
 } satisfies Prisma.ProductSelect;
 
+/** Sum the join rows into the `stock` total every consumer already reads (D3). */
+function withStockTotal<P extends { stockLocations: Array<{ quantity: number }> }>(product: P) {
+    const { stockLocations, ...rest } = product;
+    return { ...rest, stock: stockLocations.reduce((sum, row) => sum + row.quantity, 0) };
+}
+
 export class AdminProductsRepository {
     /**
      * Get paginated list of products with filters
@@ -71,13 +78,15 @@ export class AdminProductsRepository {
             categoryId,
             orgId,
             flags,
-            lowStock,      // ✅ ADD THIS
-            outOfStock,    // ✅ ADD THIS
+            lowStock,
+            outOfStock,
             sortBy,
             sortOrder,
         } = filters;
 
-        // Build where clause
+        // Build where clause. Stock is an aggregate since stock-locations (D3), so
+        // stock-dependent filters and sorts happen in memory below — measured fine at
+        // this catalogue size (tens of rows), which was D3's open question.
         const where: Prisma.ProductWhereInput = {
             ...(search && {
                 OR: [
@@ -87,35 +96,37 @@ export class AdminProductsRepository {
             }),
             ...(categoryId && { categoryId }),
             ...(orgId && { orgId }),
-            // ✅ OUT OF STOCK FILTER
-            ...(outOfStock && { stock: 0 }),
-            // ✅ LOW STOCK: exclude zero stock if lowStock filter is active
-            ...(lowStock && { stock: { gt: 0 } }),
             ...(flags && { flags: { hasSome: flags } }),
         };
 
-        // Build orderBy
         const orderBy: Prisma.ProductOrderByWithRelationInput =
             sortBy === "name"
                 ? { name: sortOrder || "asc" }
                 : sortBy === "price"
                     ? { price: sortOrder || "desc" }
-                    : sortBy === "stock"
-                        ? { stock: sortOrder || "desc" }
-                        : { createdAt: "desc" };
+                    : { createdAt: "desc" };
 
-        // ✅ If low stock filter, we need to fetch more and filter in-memory
-        if (lowStock) {
-            const allProducts = await prisma.product.findMany({
+        // Any stock-dependent shape: fetch the (small) matching set, aggregate, then
+        // filter/sort/slice in memory.
+        if (lowStock || outOfStock || sortBy === "stock") {
+            const allProducts = (await prisma.product.findMany({
                 where,
                 orderBy,
                 select: PRODUCT_LIST_SELECT,
-            });
+            })).map(withStockTotal);
 
-            // Filter products where stock <= lowStockThreshold
-            const filteredProducts = allProducts.filter(
-                p => p.stock <= p.lowStockThreshold && p.stock > 0
-            );
+            let filteredProducts = allProducts;
+            if (outOfStock) filteredProducts = filteredProducts.filter((p) => p.stock === 0);
+            if (lowStock) {
+                filteredProducts = filteredProducts.filter(
+                    (p) => p.stock <= p.lowStockThreshold && p.stock > 0
+                );
+            }
+            if (sortBy === "stock") {
+                filteredProducts = [...filteredProducts].sort((a, b) =>
+                    (sortOrder || "desc") === "desc" ? b.stock - a.stock : a.stock - b.stock
+                );
+            }
 
             const total = filteredProducts.length;
             const startIndex = (page - 1) * limit;
@@ -145,7 +156,7 @@ export class AdminProductsRepository {
         ]);
 
         return {
-            products,
+            products: products.map(withStockTotal),
             pagination: {
                 page,
                 limit,
@@ -249,30 +260,32 @@ export class AdminProductsRepository {
     async getStats(orgId: string | null) {
         const scope = orgId ? { orgId } : {};
 
-        const [totalProducts, outOfStockProducts, allProducts] = await Promise.all([
+        // Stock is an aggregate (D3): load the scope's products with their rows and
+        // sum in memory — measured fine at this catalogue size.
+        const [totalProducts, scopedProducts] = await Promise.all([
             prisma.product.count({ where: scope }),
-            prisma.product.count({ where: { ...scope, stock: 0 } }),
             prisma.product.findMany({
-                where: { ...scope, stock: { gt: 0 } },
+                where: scope,
                 select: {
                     price: true,
-                    stock: true,
+                    stockLocations: { select: { quantity: true } },
                     lowStockThreshold: true,
                     flags: true,
                 },
             }),
         ]);
 
-        // Filter low stock products and featured products in-memory
-        const lowStockProducts = allProducts.filter(
-            (p) => p.stock <= p.lowStockThreshold
+        const withTotals = scopedProducts.map(withStockTotal);
+        const outOfStockProducts = withTotals.filter((p) => p.stock === 0).length;
+        const lowStockProducts = withTotals.filter(
+            (p) => p.stock > 0 && p.stock <= p.lowStockThreshold
         ).length;
 
-        const featuredProducts = allProducts.filter((p) =>
+        const featuredProducts = withTotals.filter((p) =>
             p.flags.includes(ProductFlag.FEATURED)
         ).length;
 
-        const totalInventoryValue = allProducts.reduce((sum, product) => {
+        const totalInventoryValue = withTotals.reduce((sum, product) => {
             return sum + product.price * product.stock;
         }, 0);
 

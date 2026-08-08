@@ -4,7 +4,7 @@ import { Package, Truck, MapPin, Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
-import { formatDeliveryEstimate } from "@/utils/shipping";
+import { formatDeliveryEstimate, getEstimatedDeliveryDate, formatDeliveryDate } from "@/utils/shipping";
 import { formatShippingCost } from "@/domain/shipping";
 import type { ShippingGroup, ShippingRate } from "@/domain/shipping";
 
@@ -29,6 +29,13 @@ export function MultiShippingSection({
   
   // Show multi-shipment notice if more than one group
   const hasMultipleShipments = groups.length > 1;
+
+  // The figure a customer actually wants for a split order (stock-locations R10/A8):
+  // when every parcel has a chosen rate, the order completes with the slowest one.
+  const selectedDays = groups.map((group) => group.selectedRate?.estimatedDays);
+  const completionDays = selectedDays.every((days) => typeof days === "number")
+    ? Math.max(...(selectedDays as number[]))
+    : null;
   
   return (
     <div className="space-y-4">
@@ -42,7 +49,16 @@ export function MultiShippingSection({
                 Multiple Shipments
               </p>
               <p className="text-info mt-1">
-                Your order will arrive in <span className="font-semibold">{groups.length} separate packages</span> as items ship from different locations.
+                Your order will arrive in <span className="font-semibold">{groups.length} separate parcels</span> as items ship from different locations.
+                {completionDays !== null && (
+                  <>
+                    {" "}Everything arrives by{" "}
+                    <span className="font-semibold">
+                      {formatDeliveryDate(getEstimatedDeliveryDate(completionDays))}
+                    </span>
+                    .
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -87,13 +103,18 @@ function ShippingGroupCard({
         <div className="space-y-1">
           {showGroupNumber && (
             <p className="text-xs font-medium text-muted-foreground">
-              Shipment {groupNumber} of {totalGroups}
+              Parcel {groupNumber} of {totalGroups}
             </p>
           )}
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
+            {/* Two warehouses can share a city, so the location's own name leads
+                and the city is secondary detail (stock-locations D12). */}
             <p className="text-sm font-medium">
-              Ships from {group.fromCity}, {group.fromState}
+              Ships from{" "}
+              {group.locationName
+                ? `${group.locationName} (${group.fromCity})`
+                : `${group.fromCity}, ${group.fromState}`}
             </p>
           </div>
           <p className="text-xs text-muted-foreground">

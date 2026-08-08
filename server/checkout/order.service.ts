@@ -17,8 +17,8 @@ import type {
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
-import { priceGroupItems, assembleOrderTotals } from "@server/checkout/pricing";
-import { aggregateReservation } from "@server/checkout/reservation";
+import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
+import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
@@ -149,16 +149,98 @@ export class OrderService {
         });
         const products = new Map(productRows.map((row) => [row.id, row]));
 
-        const pricedGroups = input.shippingGroups.map((group) => ({
-          group,
-          pricing: priceGroupItems(group.items, products, group.orgId),
-        }));
+        // Merge duplicate variant lines across the client's parcel groups: pricing
+        // and OrderItems are per line; the allocation below decides parcels afresh.
+        const mergedLines = new Map<string, { productId: string; quantity: number; size?: string; color?: string }>();
+        for (const group of input.shippingGroups) {
+          for (const item of group.items) {
+            const key = `${item.productId}::${item.size ?? ""}::${item.color ?? ""}`;
+            const existing = mergedLines.get(key);
+            if (existing) existing.quantity += item.quantity;
+            else mergedLines.set(key, { ...item });
+          }
+        }
+        const requestedLines = [...mergedLines.values()];
+        const { lines: pricedLines, itemsTotal } = priceLines(requestedLines, products);
+
+        // Where the stock actually is (active locations only): the same pure
+        // allocation the checkout preview ran, now against the rows this transaction
+        // will decrement — the decision is made here and persisted, never recomputed
+        // later (stock-locations D6).
+        const stockRows = await tx.productStock.findMany({
+          where: {
+            productId: { in: productIds },
+            quantity: { gt: 0 },
+            orgAddress: { isActive: true },
+          },
+          select: {
+            productId: true,
+            orgAddressId: true,
+            quantity: true,
+            orgAddress: {
+              select: {
+                orgId: true,
+                address: { select: { pincode: true, city: true, state: true } },
+              },
+            },
+          },
+        });
+        const locationInfo = new Map(stockRows.map((row) => [row.orgAddressId, row.orgAddress]));
+        const locationPincodes = new Map(
+          [...locationInfo.entries()].map(([id, info]) => [id, info.address.pincode])
+        );
+        const productNames = new Map(productRows.map((row) => [row.id, row.name]));
+
+        // Allocate per org — a parcel's org is its location's org by construction,
+        // which is what used to be the priceGroupItems ownership check. Same function
+        // as the checkout preview, now against rows this transaction decrements.
+        const productOrgs = new Map(productRows.map((row) => [row.id, row.orgId]));
+        const parcels = allocateAcrossOrgs(
+          requestedLines,
+          productOrgs,
+          stockRows,
+          locationPincodes,
+          input.address.pincode,
+          productNames
+        );
+
+        // Match the customer's chosen rate to each allocated parcel by location
+        // (groupId = orgAddressId since the allocate preview). A parcel without a
+        // quoted group means availability moved since the preview — refuse rather
+        // than ship a parcel nobody priced.
+        const groupsByLocation = new Map(input.shippingGroups.map((g) => [g.groupId, g]));
+        const pricedByKey = new Map(
+          pricedLines.map((line) => [`${line.productId}::${line.size ?? ""}::${line.color ?? ""}`, line])
+        );
+        const plans = parcels.map((parcel) => {
+          const group = groupsByLocation.get(parcel.orgAddressId);
+          if (!group) {
+            throw new ConflictError(
+              "Availability changed while you were checking out. Please review your order and try again."
+            );
+          }
+          const lines = parcel.lines.map((line) => ({
+            ...(pricedByKey.get(`${line.productId}::${line.size ?? ""}::${line.color ?? ""}`) as PricedLine),
+            quantity: line.quantity,
+          }));
+          const weight = lines.reduce(
+            (sum, line) => sum + ((products.get(line.productId)?.weight ?? 0) * line.quantity),
+            0
+          );
+          const parcelItemsTotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+          return {
+            orgAddressId: parcel.orgAddressId,
+            location: locationInfo.get(parcel.orgAddressId) as NonNullable<ReturnType<typeof locationInfo.get>>,
+            rate: group.selectedRate,
+            parcel,
+            lines,
+            weight,
+            parcelItemsTotal,
+          };
+        });
 
         const totals = assembleOrderTotals(
-          pricedGroups.map(({ group, pricing }) => ({
-            itemsTotal: pricing.itemsTotal,
-            shippingRate: group.selectedRate.rate,
-          }))
+          plans.map((plan) => ({ itemsTotal: plan.parcelItemsTotal, shippingRate: plan.rate.rate }))
         );
 
         // R5: the customer confirms the number they saw. A mismatch means prices
@@ -169,27 +251,20 @@ export class OrderService {
           );
         }
 
-        // Reserve stock: the availability check IS the where clause of the write
-        // (Invariant 6, ADR-0007) — there is no interval in which two checkouts can
-        // both believe the last unit is theirs. count === 0 means unavailable, and
-        // the throw rolls back the whole transaction: no order without its stock
-        // movement, no stock movement without its order (R2).
-        for (const { productId, quantity } of aggregateReservation(input.shippingGroups)) {
-          const reserved = await tx.product.updateMany({
-            where: { id: productId, stock: { gte: quantity } },
-            data: { stock: { decrement: quantity } },
+        // Reserve stock where it actually sits: the availability check IS the where
+        // clause of the write (Invariant 6, ADR-0007), re-pointed from Product.stock
+        // to the allocated (product, location) row (stock-locations TRD D7). Rows are
+        // merged and sorted by reservationPlan so concurrent orders lock in the same
+        // sequence; count === 0 rolls the whole order back.
+        for (const { productId, orgAddressId, quantity } of reservationPlan(parcels)) {
+          const reserved = await tx.productStock.updateMany({
+            where: { productId, orgAddressId, quantity: { gte: quantity } },
+            data: { quantity: { decrement: quantity } },
           });
           if (reserved.count === 0) {
-            // Post-failure read is for the message only — the guard already decided.
-            const row = await tx.product.findUnique({
-              where: { id: productId },
-              select: { name: true, stock: true },
-            });
-            const name = row?.name ?? "An item in your order";
+            const name = productNames.get(productId) ?? "An item in your order";
             throw new ConflictError(
-              row && row.stock > 0
-                ? `Only ${row.stock} left of "${name}" — you asked for ${quantity}. Please adjust your cart.`
-                : `"${name}" is out of stock. Please remove it from your cart.`
+              `"${name}" just sold at its location while you were checking out. Please try again.`
             );
           }
         }
@@ -218,56 +293,73 @@ export class OrderService {
           },
         });
 
-        // 2. Create shipments for each group (NO provider calls yet)
-        const createdShipments = await Promise.all(
-          pricedGroups.map(async ({ group, pricing }, index) => {
-            const shipmentCode = `${order.code}-SH${index + 1}`;
+        // 2. One shipment per allocated parcel (NO provider calls yet). The location
+        // is persisted on the row (D6) and its address is snapshotted (D5): editing
+        // the location later must not rewrite where this parcel came from. Pincode,
+        // city and state all come from ONE location row — the mismatch where a
+        // parcel carried one location's pincode beside another's city is no longer
+        // expressible.
+        const createdShipments = [] as Array<{ shipment: Awaited<ReturnType<typeof tx.shipment.create>>; lines: typeof plans[number]["lines"] }>;
+        for (const [index, plan] of plans.entries()) {
+          const shipment = await tx.shipment.create({
+            data: {
+              code: `${order.code}-SH${index + 1}`,
+              orderId: order.id,
+              orgId: plan.location.orgId,
+              orgAddressId: plan.orgAddressId,
+              fromPincode: plan.location.address.pincode,
+              fromCity: plan.location.address.city,
+              fromState: plan.location.address.state,
+              shippingCost: plan.rate.rate,
+              shippingProviderId: plan.rate.providerId,
+              courierName: plan.rate.courierName,
+              packageWeight: plan.weight,
+              status: "pending", // Pending until fulfillment
+              shippingMeta: {
+                courierCode: plan.rate.courierCode,
+                providerName: plan.rate.providerName,
+                mode: plan.rate.mode,
+                etd: plan.rate.etd,
+                estimatedDays: plan.rate.estimatedDays,
+              },
+            },
+          });
+          createdShipments.push({ shipment, lines: plan.lines });
+        }
 
-            // Create the shipment record (pending state)
-            const shipment = await tx.shipment.create({
+        // One OrderItem per priced line; each parcel's ShipmentItem points at it, so
+        // a line split across two locations stays linked to the one thing the
+        // customer ordered (order-and-cart-lines R5 — exercised for the first time).
+        const orderItemIdByKey = new Map<string, string>();
+        for (const line of pricedLines) {
+          const created = await tx.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId: line.productId,
+              quantity: line.quantity,
+              unitPrice: line.unitPrice,
+              size: line.size ?? null,
+              color: line.color ?? null,
+            },
+          });
+          orderItemIdByKey.set(
+            `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`,
+            created.id
+          );
+        }
+        for (const { shipment, lines } of createdShipments) {
+          for (const line of lines) {
+            await tx.shipmentItem.create({
               data: {
-                code: shipmentCode,
-                orderId: order.id,
-                orgId: group.orgId,
-                fromPincode: group.fromPincode,
-                fromCity: group.fromCity,
-                fromState: group.fromState,
-                shippingCost: group.selectedRate.rate,
-                shippingProviderId: group.selectedRate.providerId,
-                courierName: group.selectedRate.courierName,
-                packageWeight: pricing.totalWeight,
-                status: "pending", // Pending until fulfillment
-                shippingMeta: {
-                  courierCode: group.selectedRate.courierCode,
-                  providerName: group.selectedRate.providerName,
-                  mode: group.selectedRate.mode,
-                  etd: group.selectedRate.etd,
-                  estimatedDays: group.selectedRate.estimatedDays,
-                },
+                shipmentId: shipment.id,
+                orderItemId: orderItemIdByKey.get(
+                  `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`
+                ) as string,
+                quantity: line.quantity,
               },
             });
-            // One OrderItem per server-priced line, its ShipmentItem 1:1 (TRD D1) —
-            // a split into more parcels is expressible later without a new shape.
-            // Names and prices came from the catalogue row, not the request.
-            for (const line of pricing.items) {
-              await tx.orderItem.create({
-                data: {
-                  orderId: order.id,
-                  productId: line.productId,
-                  quantity: line.quantity,
-                  unitPrice: line.unitPrice,
-                  size: line.size ?? null,
-                  color: line.color ?? null,
-                  shipmentItems: {
-                    create: [{ shipmentId: shipment.id, quantity: line.quantity }],
-                  },
-                },
-              });
-            }
-
-            return { shipment, lines: pricing.items };
-          })
-        );
+          }
+        }
 
         // Return order with shipments in the expected format. Line shape matches
         // what reads rebuild from rows: price = the unit price actually paid (D2).

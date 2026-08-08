@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-48] 2026-08-10 — Orders ship from where the stock is [CONTRACT]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 5 — **the cutover**, the one PR in the ladder that changes what a customer sees.
+
+**Allocation** (`server/checkout/allocation.ts`, pure): fewest parcels, then the nearest origin — "nearest" is shared-pincode-prefix length, honest without a geocoder because Indian pincodes are geographically hierarchical. One location covering the basket is one parcel; 3 at the shop + 10 at the godown fulfils an order for 13 as two parcels (A2/A3); a location holding zero is never chosen; a short total refuses with the product's name and what is left. The same function runs in the checkout preview (**`POST /api/checkout/allocate`** — new, [CONTRACT]) and inside the order transaction, so what the customer saw is what gets decremented (D6). Client-side origin grouping (`groupItemsByOrigin`) is deleted — with it dies the bug where a parcel carried one location's pincode beside another org-level city (the TRD's founding example): a shipment's pincode, city and state now all come from one location row, snapshotted (D5), with `orgAddressId` persisted.
+
+**The stock guard is re-pointed** (D7): the availability check is still the where clause of the write (ADR-0007), now against the allocated `ProductStock` row — the last unit *at one location* sells once. `reservationPlan` carries the merge+sort deadlock discipline onto the join row; `expireAndRestock` returns units to the exact location each parcel drew from (legacy no-location shipments fall back to the product's largest row, loudly). A line split across two locations becomes two `ShipmentItem`s pointing at one `OrderItem` — order-and-cart-lines R5, exercised for the first time.
+
+**Every read is the aggregate** (D3): storefront and cart totals sum **active** locations (an inactive location's units are held, not offered — R11's one figure, A9's no-leak on `check-stock` and the allocate response); admin truth sums **all** rows (R9), with stock-dependent filters and sort-by-stock computed in memory — D3's open question measured and closed at this catalogue size. Org rollups and the analytics dashboard flipped the same way. `Product.stock` the column is now **read by nothing** — PR 6 drops it.
+
+**Checkout says what will arrive** (D12/R10/A8): parcels are numbered and led by the location's own name (two warehouses can share a city), and a split order shows "everything arrives by" — the latest of the chosen rates' estimates — before payment.
+
+**226 tests pass** (allocation cases from the spec's own list, reservation-plan merge+sort; the Product.stock-era reservation tests retired with their module), `tsc` exits 0, `next build` compiles. No migration in this PR.
+
 ## [PR-47] 2026-08-10 — Stock is entered where it sits [CONTRACT]
 
 [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 4 (dual-write): the product form's single stock number and the three-field origin override are **gone**, replaced by one quantity input per pickup location — nothing preselected, a product cannot be saved without naming a location that holds it (R2/A1), and an inactive location is only offered if it still holds the product's stock. The all-or-none override refine from PR-22 is deleted with the fields that made it necessary: origin no longer has two homes.

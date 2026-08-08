@@ -73,53 +73,6 @@ export function getShippingMethodName(mode: string): string {
 }
 
 
-/**
- * Group cart items by shipping origin (org + pincode)
- * Items from the same org + pincode = one shipment
- */
-export function groupItemsByOrigin(items: CartItem[]): ShippingGroup[] {
-  const groupMap = new Map<string, ShippingGroup>();
-
-  items.forEach(item => {
-    // Create unique key: orgId + pincode
-    const groupId = `${item.org.id}-${item.shippingFromPincode}`;
-
-    if (!groupMap.has(groupId)) {
-      // Create new group
-      groupMap.set(groupId, {
-        groupId,
-        orgId: item.org.id,
-        orgName: item.org.name,
-        orgCode: item.org.code,
-        fromPincode: item.shippingFromPincode,
-        fromCity: item.org.defaultCity,
-        fromState: item.org.defaultState,
-        items: [],
-        totalWeight: 0,
-        itemsTotal: 0,
-        rates: [],
-        selectedRate: null,
-        isLoading: false,
-        error: null,
-        serviceable: false,
-      });
-    }
-
-    // Add item to group
-    const group = groupMap.get(groupId);
-    if (!group) {
-      throw new Error(`Group not found for ID: ${groupId}`);
-    }
-    group.items.push(item);
-
-    // Update totals
-    const itemPrice = item.salePrice ?? item.price;
-    group.itemsTotal += itemPrice * item.quantity;
-    group.totalWeight += item.weight * item.quantity;
-  });
-
-  return Array.from(groupMap.values());
-}
 
 /**
  * Get total shipping cost across all groups

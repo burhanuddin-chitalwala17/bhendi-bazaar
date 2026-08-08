@@ -104,6 +104,50 @@ export function priceGroupItems(
   return { items: priced, itemsTotal, totalWeight };
 }
 
+/**
+ * Price order lines from the catalogue, with no grouping: since stock-locations,
+ * which parcel a line ships in is the allocation's decision, not the request's —
+ * so org attribution is checked there (a parcel's org is its location's org by
+ * construction), and pricing is purely per line.
+ */
+export function priceLines(
+  items: UnpricedItem[],
+  products: Map<string, PricingProduct>
+): { lines: PricedLine[]; itemsTotal: number } {
+  const lines: PricedLine[] = [];
+  let itemsTotal = 0;
+
+  for (const { productId, quantity, size, color } of items) {
+    const product = products.get(productId);
+    if (!product) {
+      throw new NotFoundError("One of the items in your order is no longer available");
+    }
+    if (size && !product.sizes.includes(size)) {
+      throw new DomainError(`"${product.name}" is not available in size ${size}`);
+    }
+    if (color && !product.colors.includes(color)) {
+      throw new DomainError(`"${product.name}" is not available in ${color}`);
+    }
+
+    const unit = effectiveUnitPrice(product);
+    itemsTotal += unit * quantity;
+    lines.push({
+      productId: product.id,
+      productName: product.name,
+      productSlug: product.slug,
+      thumbnail: product.thumbnail,
+      price: product.price,
+      salePrice: product.salePrice ?? undefined,
+      quantity,
+      size,
+      color,
+      unitPrice: unit,
+    });
+  }
+
+  return { lines, itemsTotal };
+}
+
 export interface OrderTotals {
   itemsTotal: number;
   shippingTotal: number;

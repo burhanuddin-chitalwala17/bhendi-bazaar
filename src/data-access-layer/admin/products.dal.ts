@@ -59,7 +59,11 @@ class ProductsDAL {
       tags: product.tags,
       flags: product.flags as ProductFlag[],
       sku: product.sku ?? undefined,
-      stock: product.stock,
+      // The total across every location, active or not — admin truth (R9/D3).
+      stock: product.stockLocations.reduce(
+        (sum: number, row: { quantity: number }) => sum + row.quantity,
+        0
+      ),
       lowStockThreshold: product.lowStockThreshold,
       weight: product.weight ?? 0,
       images: product.images,
