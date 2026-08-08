@@ -45,17 +45,41 @@ export class AdminCartRepository {
             email: true,
           },
         },
+        items: {
+          include: {
+            product: {
+              select: { name: true, slug: true, thumbnail: true, price: true, salePrice: true },
+            },
+          },
+        },
       },
     });
 
-    // Transform and filter
+    // Lines are rows since order-and-cart-lines; value is the product's price
+    // today — what recovering the cart would actually be worth.
     const abandonedCarts: AbandonedCart[] = carts
       .map((cart) => {
-        const items = cart.items as any[];
+        const items = cart.items.map((line) => ({
+          productId: line.productId,
+          productName: line.product.name,
+          productSlug: line.product.slug,
+          thumbnail: line.product.thumbnail,
+          price: line.product.price,
+          salePrice: line.product.salePrice ?? undefined,
+          quantity: line.quantity,
+          size: line.size ?? undefined,
+          color: line.color ?? undefined,
+        }));
         const itemsCount = items.length;
-        const totalValue = items.reduce((sum, item) => {
-          return sum + (item.price || 0) * (item.quantity || 0);
-        }, 0);
+        const totalValue = items.reduce(
+          (sum, item) =>
+            sum +
+            (item.salePrice && item.salePrice > 0 && item.salePrice < item.price
+              ? item.salePrice
+              : item.price) *
+              item.quantity,
+          0
+        );
 
         const daysSinceUpdate = Math.floor(
           (Date.now() - cart.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
@@ -66,7 +90,7 @@ export class AdminCartRepository {
           userId: cart.userId,
           userName: cart.user.name,
           userEmail: cart.user.email,
-          items: cart.items,
+          items,
           itemsCount,
           totalValue,
           createdAt: cart.createdAt,

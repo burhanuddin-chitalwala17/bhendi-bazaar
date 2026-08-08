@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-44] 2026-08-10 — A cart stores the choice, not the price [MIGRATION]
+
+[order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) PR 2 of 2 — **the subfeature closes** (7 of 10). `Cart.items` blobs become `CartItem` rows holding exactly what the buyer chose: product, quantity, size, colour. **Nothing else is stored** — prices, names, thumbnails, `weight`, `shippingFromPincode` and the `org` block are derived from the product join at read time, so a cart can never hold a stale price or a spoofed one, and the blob-era "refresh prices on sync" pass is now just what reading a cart means. `CartItem.productId` is `Cascade`, deliberately opposite to `OrderItem`'s `Restrict`: a cart line is a wish, not history, and deleting a product simply removes it from carts.
+
+The sign-in merge is pure set logic (`server/cart/cart.merge.ts`): union by (product, size, colour), the device's quantity winning where both sides hold a line — same rule as before, now unit-tested. `syncCart` goes through the repository like everything else (its direct `prisma.cart` access is gone, Invariant 5 on contact), the boundary casts in `/api/cart` and `/api/cart/sync` are deleted (`as CartItem[]` twice), and the abandoned-carts admin view values carts at today's catalogue prices. A caught regression from the rewrite itself: sync's failure path must echo the device's items back — returning `[]` would have wiped the local cart the client faithfully `setItems`s.
+
+The optimistic `version` guard is unchanged and still the where clause of the write. The lift keys rows by line position (two sizes of one product are two blob lines), lifts no price, skips deleted-product lines with a `RAISE NOTICE`, and leaves the blob one release as nullable `legacyItems`.
+
+**217 tests pass** (guard suites scale with source files; 10 new here: merge, wire mapper, migration pins), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** (applies PR-43's lift too if pending).
+
 ## [PR-43] 2026-08-10 — What was bought is a relation [CONTRACT] [MIGRATION]
 
 [order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) PR 1 of 2: `Shipment.items` — a JSON blob per parcel — becomes **`OrderItem`** (the missing order→product relation, `unitPrice` integer paise from birth per ADR-0004) and **`ShipmentItem`** (what one parcel packs, pointing at the order line, so a future split stays linked to the one thing the customer ordered). `OrderItem.productId` is `RESTRICT`: a sold product cannot be deleted out from under its order history. Per-product revenue is now a SQL question.

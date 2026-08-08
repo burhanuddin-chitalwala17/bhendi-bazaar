@@ -63,6 +63,7 @@ model Product {
   lowStockThreshold Int      @default(10) // Alert when stock falls below this
 
   orderItems OrderItem[]
+  cartItems  CartItem[]
 
   // ⭐ Org Association (REQUIRED)
   orgId String
@@ -114,12 +115,33 @@ model Cart {
   id        String   @id @default(cuid())
   userId    String   @unique
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     Json // CartItem[]
+  // The pre-PR-44 blob, kept one release as the audit copy of the lift. Read by
+  // nothing; lines live in CartItem rows (order-and-cart-lines trd.md).
+  legacyItems Json?  @map("items")
+  items     CartItem[]
   version   Int      @default(1) // For optimistic locking
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model CartItem {
+  id     String @id @default(cuid())
+  cartId String
+  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  // Cascade, unlike OrderItem: a cart line is a wish, not history — deleting the
+  // product just removes it from carts.
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  quantity Int
+  size     String?
+  color    String?
+
+  @@index([cartId])
+  @@index([productId])
 }
 
 model User {

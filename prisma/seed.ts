@@ -351,7 +351,13 @@ async function main() {
       data: {
         id: cartData.id,
         userId: cartData.userId,
-        items: cartData.items as any,
+        // Only the choice is stored; price and display fields derive from the product.
+        items: {
+          create: cartData.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        },
         updatedAt: cartData.updatedAt,
       },
     });

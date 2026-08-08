@@ -1,6 +1,6 @@
 # TRD — order and cart lines
 
-- **Status:** Draft
+- **Status:** ✅ Implemented (PR-43, PR-44)
 - **Domain:** checkout, cart, catalog
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-10

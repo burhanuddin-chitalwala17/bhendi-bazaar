@@ -7,7 +7,6 @@ import { cartService } from "@server/cart/cart.service";
 import { validateRequest } from "@/lib/validation";
 import { updateCartSchema } from "@/lib/validation/schemas/cart.schemas";
 import { withRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
-import type { CartItem } from "@/domain/cart";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 /**
@@ -42,15 +41,9 @@ export async function PUT(request: NextRequest) {
       return validation.error;
     }
 
-    // Transform items: convert null to undefined for salePrice
-    const items = validation.data.items.map((item) => ({
-      ...item,
-      salePrice: item.salePrice ?? undefined,
-    })) as CartItem[];
-
     const { version } = await cartService.updateCart(
       session.user.id,
-      items,
+      validation.data.items,
       validation.data.version
     );
 
