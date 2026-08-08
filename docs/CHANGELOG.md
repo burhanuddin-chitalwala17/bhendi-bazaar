@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-55] 2026-08-10 — A backstop must not become the outage
+
+Signup 500'd before it could even validate: the Upstash rate limiter is the first thing every auth route calls, its keys (`KV_REST_API_URL`/`KV_REST_API_TOKEN`) weren't present locally, and the throw happened *outside* the error envelope — a raw HTML 500 the client could only report as "Request failed". The limiter now **fails open, loudly**: keys absent → requests allowed with a one-time warning; Upstash unreachable at runtime → request allowed, error logged. When configured, behaviour is unchanged. Rate limiting protects the service; it must never be the reason the service is down.
+
 ## [PR-54] 2026-08-10 — The reconciliation sweep runs daily
 
 Vercel's Hobby plan rejects any deployment whose cron runs more than once a day — the `*/15` reconciliation schedule was blocking every deploy of the new code. The sweep is a backstop, not a hot path (browser-return confirms payments on its own), so it now runs daily at 03:30. Consequence, accepted: a paid order missed by both browser-return and webhook waits up to a day for rescue, and abandoned stock holds release daily rather than hourly. Restore a tighter schedule on a Pro plan, or when `CRON_SECRET` is set and the store is live enough to care.
