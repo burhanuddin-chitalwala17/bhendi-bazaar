@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-29] 2026-08-09 — Org portal: orders and reviews, scoped without leaking
+
+PR 3b of [portal-separation](specs/multi-vendor-marketplace/portal-separation/): `/org/[orgId]/orders`, `orders/[orderId]` and `reviews`. The dashboard deliberately stays a placeholder — its shape belongs to [dashboard-widgets](specs/multi-vendor-marketplace/dashboard-widgets/).
+
+**An org's orders are the ones with a parcel from it, and it sees only its part.** The scope is by shipment origin (`shipments: { some: { orgId } }`), never "orders containing my products" — and the Prisma `include` is itself filtered to the org's shipments, so a cross-vendor basket's other parcels never leave the database. The projection (`toOrgOrderView`) enforces the same rule a second time and is a pure exported function, so programme acceptance A6 is a **unit test** (`tests/unit/org-order-view.test.ts`): a row carrying a foreign shipment loses it, and the view has no `grandTotal`/`itemsTotal` whatever the row contains — the basket's money is the buyer's business, not the vendor's. What the org does get: the delivery address (they ship the parcel), `paymentStatus` (nothing unpaid gets fulfilled), and a `parcelValue` summed over their items alone.
+
+**Reviews are scoped through `Product.orgId` and read-only** — moderation and deletion stay platform, per [portal-split.md](specs/multi-vendor-marketplace/portal-split.md).
+
+**No new `/api` routes and no new `"use client"`.** Everything here is a read a server component can do through the DAL, so there is nothing for a browser to call — the server-first rule ([CLAUDE.md](../CLAUDE.md)) applied rather than recited. Orders are read-only for an org: order status is the buyer's order; what an org will eventually mutate is its *shipments*, which arrives with fulfilment.
+
+**Typing two pre-existing `any`s found a broken feature.** `updateOrderStatus` built its update as `const updateData: any` and wrote `estimatedDelivery` — which is a **Shipment** column, not an Order one. Prisma validates field names at runtime, so any admin order-update that included a date has thrown since the day it was written; the `any` kept the compiler quiet about it. The impossible write is removed along with the field's appearances in the schema, types and client. Third time this session that removing an `any` exposed a real defect rather than a style problem.
+
+`tsc` exits 0, **113 tests pass** (6 new), `next build` compiles the three routes, 0 lint errors in the touched files.
+
 ## [PR-28] 2026-08-09 — Org onboarding complete: self-serve creation, generated codes [CONTRACT]
 
 Completes [org-onboarding](specs/multi-vendor-marketplace/org-onboarding/) — and a process admission first: its initial pieces (`/org`, `/org/new`, `POST /api/orgs`) were built reactively when testing found the portal unreachable, before any spec existed. The spec and TRD were written afterwards to match what should exist, and the implementation corrected to them. Backwards under our own SDLC; recorded rather than hidden.

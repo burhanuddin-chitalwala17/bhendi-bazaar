@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, LayoutDashboard, ArrowLeft } from "lucide-react";
+import { Package, LayoutDashboard, ArrowLeft, ShoppingCart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Minimal on purpose. The org switcher and the signed-in-user header belong to
@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { title: "Dashboard", href: "", icon: LayoutDashboard },
   { title: "Products", href: "/products", icon: Package },
+  { title: "Orders", href: "/orders", icon: ShoppingCart },
+  { title: "Reviews", href: "/reviews", icon: Star },
 ];
 
 export function OrgSidebar({ orgId, orgName }: { orgId: string; orgName: string }) {

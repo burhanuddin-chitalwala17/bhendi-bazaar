@@ -19,8 +19,6 @@ export const updateUserSchema = z.object({
 export const updateOrderStatusSchema = z.object({
   status: z.string().trim().min(1).max(50).optional(),
   notes: z.string().trim().max(2000).optional(),
-  // ISO-8601, since JSON has no date type (CONTRACTS.md rule 3).
-  estimatedDelivery: z.iso.datetime({ message: "Must be an ISO-8601 date-time" }).optional(),
 });
 
 export const updateReviewSchema = z.object({
