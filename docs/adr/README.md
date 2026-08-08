@@ -50,3 +50,4 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0010](0010-spec-convention.md) | Spec layout — feature folders, spec/TRD split, ≤100 readable lines | Accepted | 2026-08-03 |
 | [0012](0012-modules-are-vertical-slices-by-domain.md) | `server/` modules are vertical slices by domain | Accepted | 2026-08-03 |
 | [0013](0013-one-error-envelope-and-useserverform.md) | Errors travel in one envelope; forms consume it through `useServerForm` | Accepted | 2026-08-05 |
+| [0014](0014-deploys-run-their-own-migrations.md) | Deploys run their own migrations — `migrate deploy` in the Vercel build | Accepted | 2026-08-09 |

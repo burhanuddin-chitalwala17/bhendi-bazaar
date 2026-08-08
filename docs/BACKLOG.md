@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-08
+- **Verified:** 2026-08-09
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -15,7 +15,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **1** — Storefront & admin | Browse, cart, checkout UI, admin console for products/orders/users/reviews/sellers | catalog, cart, admin, identity | ✅ **Done** |
 | **2** — Transaction integrity | The server is authoritative over price, payment state, and stock; money is exact | checkout, payments | ✅ **Done** — PR-37..40 |
 | **3** — Fulfilment & marketplace | A confirmed order becomes a real booked shipment from a real location, and the store serves multiple vendors | shipping, catalog, identity | ⏳ Not started — 2 specs + a 9-subfeature programme drafted |
-| **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started |
+| **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started — 1 spec drafted (rate-limiting) |
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
 
 ---
@@ -51,11 +51,15 @@ It reaches back into Phase 2: [stock-locations-and-allocation](specs/multi-vendo
 
 ## Phase 4 — Enforcement
 
-Making Phase 2 and 3 stick rather than landing once. No specs — these are process, governed by [TESTING.md](TESTING.md).
+Making Phase 2 and 3 stick rather than landing once. Mostly process, governed by [TESTING.md](TESTING.md); one spec so far:
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [rate-limiting](specs/rate-limiting/) | Sensitive endpoints are rate limited in production; an environment that can't enforce says so at deploy time, not silently at request time | 📝 Draft — closes PR-55's fail-open stopgap |
 
 - Restore the test suite, prioritised by the Invariants ([TESTING.md](TESTING.md) sets the targets)
 - Quality gates block the pipeline
-- `prisma migrate deploy` in the pipeline
+- ~~`prisma migrate deploy` in the pipeline~~ ✅ Done — PR-57 put it in the Vercel build ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md))
 - `validateEnv()` called at boot, covering `ENCRYPTION_KEY` and the webhook secret
 - `/bb-review` in use before every PR
 
@@ -79,6 +83,7 @@ Not a phase, but tracked:
 - **Error swallowing in the data layer** — PR-13 fixed `products.dal.ts`; the same catch-and-relabel pattern remains in the other DAL modules and in `server/catalog/product.repository.ts`, where a query failure is reported as `"Product not found"`. Preserve `cause`; keep absence distinguishable from failure.
 - **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling.
 - **Route the database through Prisma Accelerate** — it is already provisioned (`PRISMA_DATABASE_URL`) and read by nothing. Pooling and caching at the proxy addresses serverless connection pressure more thoroughly than tuning `max` on the local pool. See [OPERATIONS.md](OPERATIONS.md) § Infrastructure.
+- **Rate limiting is currently a no-op wherever Upstash isn't configured** — PR-55's fail-open was an unblock, not a posture. Now a spec: [rate-limiting](specs/rate-limiting/), Phase 4.
 - **Prune unused connection strings from `.env`** — `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, `PRISMA_DATABASE_URL` are read by nothing. Several live connection strings in one file is the hazard behind [Invariant 7](../CLAUDE.md).
 - **Slug redirects** — slugs are now generated and frozen (PR-15), but there is no redirect for a slug that changed before that rule existed. One product's URL moved (`product test 001` → `product-test-001`); the old URL 404s. If slugs ever need to change again, a slug-history table or redirect is required.
 - **Existing products all weigh 0.5 kg** — weight was collected and never persisted until PR-22, so every row created before it carries the schema default. [product-weight-and-rates](specs/product-weight-and-rates/) R6; rates are wrong in both directions until the catalogue is corrected.
