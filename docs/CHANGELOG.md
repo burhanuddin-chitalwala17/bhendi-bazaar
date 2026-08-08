@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-54] 2026-08-10 — The reconciliation sweep runs daily
+
+Vercel's Hobby plan rejects any deployment whose cron runs more than once a day — the `*/15` reconciliation schedule was blocking every deploy of the new code. The sweep is a backstop, not a hot path (browser-return confirms payments on its own), so it now runs daily at 03:30. Consequence, accepted: a paid order missed by both browser-return and webhook waits up to a day for rescue, and abandoned stock holds release daily rather than hourly. Restore a tighter schedule on a Pro plan, or when `CRON_SECRET` is set and the store is live enough to care.
+
 ## [PR-53] 2026-08-10 — Parcels bill at whole kilograms
 
 [product-weight-and-rates](specs/product-weight-and-rates/) closes. Most of it had already fallen out of other work — weight persisted since PR-22, and since the allocation cutover (PR-48) every parcel sums its items' **real** weights server-side. What remained was the billing rule, decided today: weights are entered in kilograms with gram precision (0.6 = 600 g), and each parcel is quoted on its summed weight **rounded up to the next whole kilogram, floor 1 kg** — ceiling because couriers bill the ceiling, so a quote never undercharges shipping.
