@@ -50,6 +50,8 @@ async function main() {
   await prisma.shipment.deleteMany(); // ⭐ NEW - Clear shipments before orders
   await prisma.order.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.userAddress.deleteMany(); // before users and addresses
+  await prisma.address.deleteMany();
   await prisma.orgMember.deleteMany(); // before orgs; explicit rather than via cascade
   await prisma.org.deleteMany();
   await prisma.category.deleteMany();
@@ -81,13 +83,37 @@ async function main() {
         isEmailVerified: userData.isEmailVerified,
         profile: {
           create: {
-            addresses: userData.profile.addresses as any,
             profilePic: userData.profile.profilePic,
           },
         },
       },
     });
 
+    // PR-41: the address book is rows, not a blob. isDefault from old seed
+    // shapes is dropped by decision — nothing is preselected.
+    for (const a of userData.profile.addresses ?? []) {
+      const postal = await prisma.address.create({
+        data: {
+          addressLine1: a.addressLine1,
+          addressLine2: a.addressLine2 ?? null,
+          landmark: a.landmark ?? null,
+          city: a.city,
+          state: a.state,
+          pincode: a.pincode,
+          country: "India",
+          createdBy: user.id,
+        },
+      });
+      await prisma.userAddress.create({
+        data: {
+          userId: user.id,
+          addressId: postal.id,
+          label: a.label ?? null,
+          fullName: a.fullName,
+          phone: a.mobile,
+        },
+      });
+    }
     console.log(`  ✓ ${user.name} (${user.platformRole}) - ${user.email}`);
   }
   console.log(`✅ ${seedUsers.length} users seeded\n`);

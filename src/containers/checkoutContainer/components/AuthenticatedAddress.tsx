@@ -23,33 +23,16 @@ export function AuthenticatedAddress({
   const [showAddressSelector, setShowAddressSelector] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
 
-  // ✅ Auto-select default address on mount
-  useEffect(() => {
-    if (addresses.length > 0 && !selectedAddress) {
-      const defaultAddress = addresses.find((a) => a.metadata?.isDefault) || addresses[0];
-      onAddressChange(defaultAddress);
-    }
-  }, [addresses, selectedAddress, onAddressChange]);
+  // No default address by decision (addresses-as-entities D3): the buyer picks,
+  // every time. Nothing is auto-selected — the Continue button stays disabled until
+  // they do, which is the honest version of "which address did you mean?".
 
   const handleSaveNewAddress = async (address: DeliveryAddress) => {
-    // If first address make it default
-    if (addresses.length === 0) {
-      address.metadata = { ...address.metadata, isDefault: true };
-    }
-    // ensure only one default address
-    if (address.metadata?.isDefault) {
-      addresses.forEach((a) => {
-        a.metadata = { ...a.metadata, isDefault: false };
-      });
-    }
-
     onAddressAdded(address);
     onAddressChange(address);
     setShowAddressModal(false);
   };
 
-  // Get default user info for modal prefill
-  const defaultAddress = addresses.find((a) => a.metadata?.isDefault);
 
   const hasAddresses = !!addresses?.length;
 
@@ -92,7 +75,6 @@ export function AuthenticatedAddress({
             state: "",
             country: "India",
             pincode: "",
-            metadata: {},
           }}
           saving={false}
           onClose={() => setShowAddressModal(false)}

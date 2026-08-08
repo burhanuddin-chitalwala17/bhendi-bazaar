@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-41] 2026-08-10 — An address is a record, not a blob [CONTRACT] [MIGRATION]
+
+[addresses-as-entities](specs/multi-vendor-marketplace/addresses-as-entities/) lands — the first data-model subfeature of the marketplace programme (org-team deferred by decision), and the table `stock-locations` will hang org pickup locations off. `Profile.addresses` — one Json column holding each user's whole address book — becomes **`Address`** (a postal fact, identity-agnostic) plus **`UserAddress`** (a person's relationship to one: their label, the recipient, the phone). The `Address` writer lives in `server/shared/` because two domains' relationships will point at it (Invariant 5 applied forward).
+
+**The migration lifts what production actually holds, not what the type claimed.** A survey first: four blob shape variants, `label`/`isDefault` living top-level in some rows and under `metadata` in others, a `landmark` field the design drafts had missed, and two rows with no recipient or phone. The lift coalesces across all of it in SQL (`fullName|name`, `mobile|phone`, `label|metadata.label`), migrates the two incomplete rows with `''` rather than dropping a user's address (the now-required schema forces completion on next edit), and **deliberately does not migrate `isDefault`** — tests read the migration and pin every coalescing rule. The blob survives one release as `legacyAddresses` (`@map`), read by nothing.
+
+**No default address, anywhere** — the 2026-08-08 decision, now enforced by absence: the auto-select-on-mount, make-default button, default badge, only-one-default refine, and reassign-default-on-delete all *deleted* rather than ported (~80 lines of juggling). The buyer picks an address at checkout, every time, and the Continue button waits until they do.
+
+Wire shape: flat as ever, but `id` is now server-generated (blob-era clients minted their own), `metadata` is gone (label/notes are first-class, with real rules — the form-error guard immediately caught `notes` gaining a rule without an error output), and recipient/phone/state are required. `Order.address` stays a snapshot (D8). The repository maps `phone` (column) ↔ `mobile` (wire) so checkout is untouched.
+
+**177 tests pass** (6 new), `tsc` exits 0, `next build` compiles, 0 lint errors in touched files. **Run `npx prisma migrate deploy`** — it creates both tables and lifts the blobs in one step; verify with `SELECT count(*) FROM "UserAddress"` matching the old blob total.
+
 ## [PR-40] 2026-08-09 — The last unit sells once
 
 [inventory-reservation](specs/inventory-reservation/) lands, and **Phase 2 — transaction integrity — is complete**. The live checkout path had *no stock movement at all*: the client's pre-flight `check-stock` was the only guard, so any two buyers who both passed it both got the last unit. The legacy path that did move stock did it read-then-check-then-decrement — the race [ADR-0007](adr/0007-conditional-stock-decrement.md) was written against.

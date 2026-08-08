@@ -110,7 +110,6 @@ export default function ProfilePage() {
           saving={saving}
           onSaveAddress={addAddress}
           onDeleteAddress={deleteAddress}
-          onSetDefault={(addressId) => updateAddress(addressId, { metadata: { isDefault: true } })}
         /> 
       </section>
 

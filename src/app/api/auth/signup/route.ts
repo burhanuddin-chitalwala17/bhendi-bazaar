@@ -71,7 +71,6 @@ export async function POST(request: NextRequest) {
         isEmailVerified: false, // Explicitly set to false
         profile: {
           create: {
-            addresses: [],
           },
         },
       },

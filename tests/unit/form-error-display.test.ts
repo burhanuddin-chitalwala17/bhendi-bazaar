@@ -17,8 +17,6 @@ const ROOTS = ["src/components", "src/admin", "src/app"];
 
 const EXEMPT = new Map([
   ["accent", "fixed-option select over the CategoryAccent enum, schema-defaulted; no reachable failure"],
-  ["metadata.notes", "free text with no rule — the schema types metadata as z.any()"],
-  ["metadata.isDefault", "checkbox with no validation rule"],
 ]);
 
 function tsxFiles(dir: string): string[] {

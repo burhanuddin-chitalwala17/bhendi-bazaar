@@ -74,6 +74,9 @@ Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ produ
 ### Admin
 `GET /api/admin/shipping/providers` returns `ShippingProvider` rows without a `select`, so credential and auth-error fields reach the browser. Rule 5 requires an explicit projection exposing only connection state.
 
+### Addresses
+The address-book wire shape (`DeliveryAddress`) is flat and stable, but since PR-41 its `id` is the **UserAddress** relationship id (server-generated — clients no longer mint ids), `metadata` is gone (label and notes are top-level), and `fullName`, `mobile`, `state` are required. Storage is two tables: `Address` (postal fact, written only by `server/shared/address.repository.ts`) and `UserAddress` (the person's relationship). `Order.address` remains an embedded snapshot, deliberately.
+
 ### Products
 `ProductFormInput` is still declared on both sides — `src/admin/products/types.ts` and `server/catalog/admin.product.types.ts` — so the two can drift again. `weight` is the field that already did: required by the client type, absent from the server type, therefore collected and never written. Both now carry it and the repository persists it ([PR-22](CHANGELOG.md)), but the duplicate declaration is the underlying defect and remains. Consolidating it is PR 1 of [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/), which cannot proceed cleanly until it is done — see that feature's [consumer-inventory.md](specs/multi-vendor-marketplace/consumer-inventory.md) for every affected site, including six files that repeat the same inline org prop type.
 

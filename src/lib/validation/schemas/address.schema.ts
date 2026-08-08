@@ -5,7 +5,8 @@ import { postalCodeSchema } from "./common.schemas";
  * Validation schema for adding a new address
  */
 export const addAddressSchema = z.object({
-  id: z.string(),
+  // No id: the server generates it (the blob era had clients minting their own).
+  label: z.string().trim().max(50).optional(),
   fullName: z
     .string()
     .min(2, "Full name must be at least 2 characters")
@@ -39,7 +40,7 @@ export const addAddressSchema = z.object({
     .min(2, "Country must be at least 2 characters")
     .max(100, "Country must be less than 100 characters")
     .default("India"),
-  metadata: z.record(z.string(), z.any()).optional(),
+  notes: z.string().trim().max(500, "Notes must be less than 500 characters").optional(),
 });
 
 /**

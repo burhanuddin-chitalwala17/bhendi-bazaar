@@ -53,7 +53,7 @@ export function AddressFields({
         <FormInput
           label="Label"
           placeholder="Home, Office, Other."
-          {...register("metadata.label")}
+          {...register("label")}
           error={getError("label")}
         />
       )}
@@ -145,7 +145,8 @@ export function AddressFields({
           label="Notes for the Bazaar"
           rows={3}
           placeholder="Any special instructions..."
-          {...register("metadata.notes")}
+          {...register("notes")}
+          error={getError("notes")}
           hint="Optional"
         />
       )}

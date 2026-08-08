@@ -6,22 +6,13 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import { userAddressRepository } from "@server/identity/address.repository";
 import type {
   ServerProfileData,
   UpdateProfileInput,
   DeliveryAddress
 } from "@server/identity/profile.types";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
-/**
- * Helper to normalize addresses from database JSON
- */
-function normalizeAddresses(addresses: unknown): DeliveryAddress[] {
-  if (!addresses) return [];
-  if (Array.isArray(addresses)) {
-    return addresses as DeliveryAddress[];
-  }
-  return [];
-}
 
 export class ProfileRepository {
   /**
@@ -42,10 +33,7 @@ export class ProfileRepository {
     const profile =
       user.profile ??
       (await prisma.profile.create({
-        data: {
-          userId: user.id,
-          addresses: [],
-        },
+        data: { userId: user.id },
       }));
 
     return {
@@ -61,7 +49,8 @@ export class ProfileRepository {
         id: profile.id,
         userId: profile.userId,
         profilePic: profile.profilePic,
-        addresses: normalizeAddresses(profile.addresses),
+        // The blob is legacy (PR-41); the address book lives in UserAddress rows.
+        addresses: await userAddressRepository.listByUserId(user.id),
       },
     };
   }
@@ -168,11 +157,9 @@ export class ProfileRepository {
       create: {
         userId: user.id,
         profilePic: profilePic ?? null,
-        addresses: (addresses ?? []) as any,
       },
       update: {
         ...(profilePic !== undefined && { profilePic }),
-        ...(addresses !== undefined && { addresses: addresses as any }),
       },
     });
 
@@ -189,7 +176,7 @@ export class ProfileRepository {
         id: nextProfile.id,
         userId: nextProfile.userId,
         profilePic: nextProfile.profilePic,
-        addresses: normalizeAddresses(nextProfile.addresses),
+        addresses: await userAddressRepository.listByUserId(user.id),
       },
     };
   }

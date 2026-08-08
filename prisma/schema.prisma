@@ -134,6 +134,7 @@ model User {
   accounts Account[]
   sessions Session[]
   orgMemberships OrgMember[]
+  addresses      UserAddress[]
 
   @@index([platformRole])
   @@index([isBlocked])
@@ -145,7 +146,7 @@ model Profile {
   id         String  @id @default(cuid())
   user       User    @relation(fields: [userId], references: [id])
   userId     String  @unique
-  addresses  Json? // address[] as JSON block
+  legacyAddresses Json? @map("addresses") // pre-PR-41 blob, kept one release as backup; read by nothing
   profilePic String? // URL to avatar image
 }
 
@@ -514,4 +515,50 @@ enum CategoryAccent {
   YELLOW
   RED
   GRAY
+}
+
+/// A postal fact, identity-agnostic (addresses-as-entities D1/D2): who receives there
+/// lives on the owning relationship (`UserAddress` now, `OrgAddress` when
+/// stock-locations lands). No uniqueness on purpose — free text does not normalise,
+/// and a shared row would force copy-on-write on every edit.
+model Address {
+  id           String  @id @default(cuid())
+  addressLine1 String
+  addressLine2 String?
+  landmark     String?
+  city         String
+  state        String
+  pincode      String
+  country      String  @default("India")
+  /// Provenance, not ownership — nullable so seeds and system rows are honest.
+  createdBy    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userAddresses UserAddress[]
+
+  @@index([pincode])
+}
+
+/// A person's relationship to an address: their label for it, and who receives there
+/// (not necessarily the account holder). No `isDefault` by decision — the buyer picks
+/// at checkout.
+model UserAddress {
+  id        String  @id @default(cuid())
+  userId    String
+  addressId String
+  label     String?
+  fullName  String
+  phone     String
+  email     String?
+  notes     String?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
