@@ -1,6 +1,6 @@
 # Spec — org portal chrome
 
-- **Status:** ✅ Implemented — PR-31
+- **Status:** ✅ Implemented — PR-31, corrected in PR-32
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-09
@@ -22,14 +22,14 @@ does.
 ## Requirements
 - **R1** — The current organisation's name is always visible where the store's own name used to sit.
 - **R2** — Someone acting for several organisations can switch from that same spot, staying on the section they were in; switching in one browser tab changes nothing in another.
-- **R3** — Someone with exactly one organisation sees its name, not a switcher pretending there is a choice.
+- **R3** — The control opens regardless of how many organisations someone has: it is also where creating another one lives, so a single organisation must not make a second one unreachable. *(Corrected 2026-08-09 — as first shipped, one org rendered a plain heading and hid the create action with it.)*
 - **R4** — The portal shows who is signed in, and offers sign-out and a way back to the storefront.
 - **R5** — The platform admin panel shows the same identity header, so the two panels cannot drift on something this basic.
 
 ## Product acceptance
 - **A1** — With two organisations, switching from the products page of one lands on the products page of the other.
 - **A2** — Two tabs on two organisations stay on two organisations.
-- **A3** — With one organisation, no switcher control is rendered.
+- **A3** — With one organisation, opening the switcher still offers “Create another organisation”.
 - **A4** — Sign out from either portal lands on the storefront, signed out.
 - **A5** — The switcher also offers creating another organisation.
 

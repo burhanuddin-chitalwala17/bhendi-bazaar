@@ -10,6 +10,10 @@
 
 ## Entries
 
+## [PR-32] 2026-08-09 — Correction: the org switcher renders for single-org users too
+
+PR-31's D3 rendered a plain heading when someone had exactly one organisation — on the principle that a one-option dropdown lies about the state space. Wrong in effect: “Create another organisation” lives *inside* that dropdown, so for single-org users — most users — a second organisation was unreachable, and the switcher the feature was named for was invisible. The control now always opens; with one org it offers the org and the create action. Spec R3/A3 and TRD D3 carry the correction rather than pretending they always said this.
+
 ## [PR-31] 2026-08-09 — Portal chrome: the switcher, and one header for both panels
 
 [org-portal-chrome](specs/multi-vendor-marketplace/org-portal-chrome/), implemented whole. The sidebar's static organisation name becomes a switcher, and both portals gain an identity header.

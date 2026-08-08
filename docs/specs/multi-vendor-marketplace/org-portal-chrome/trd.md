@@ -1,6 +1,6 @@
 # TRD — org portal chrome
 
-- **Status:** ✅ Implemented — PR-31
+- **Status:** ✅ Implemented — PR-31, corrected in PR-32
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment
 - **Verified:** 2026-08-09
@@ -16,7 +16,7 @@ shapes — the layout already had to know the membership; now it also shows it.
 ## Technical decisions
 - **D1 — Switching is navigation, nothing else.** An org link is `/org/[id]` plus the current section, because the active org lives in the URL (programme decision, 2026-08-08). No cookie, no session write, no context provider — which is what makes A2 (two tabs, two orgs) true by construction rather than by care.
 - **D2 — Switching preserves the section, not the record.** From one org's products you land on the other's products; a deeper path (a product id) is not carried across, because the record belongs to the org you are leaving.
-- **D3 — One membership renders a heading, not a control** (R3). A dropdown with one option is a lie about the state space.
+- **D3 — The switcher always renders, revised** (R3). As shipped, one membership rendered a plain heading on the “no one-option dropdowns” principle — which quietly hid the *create another organisation* action that lives inside the dropdown, for exactly the users who most need it. The control is not only a chooser; it is the org-level menu. Corrected in PR-32 on user feedback.
 - **D4 — The header is a server component with one client leaf.** Identity comes from the session the layout already resolves; the only interactivity is sign-out, so `"use client"` is pushed down to `SignOutButton` ([CLAUDE.md](../../../../CLAUDE.md) — render on the server by default). The org layout fetches the membership list once, server-side, for both the check and the switcher.
 - **D5 — The same `PortalHeader` serves `/admin`** (R5), with only the label differing. A second header is how the two panels drift.
 

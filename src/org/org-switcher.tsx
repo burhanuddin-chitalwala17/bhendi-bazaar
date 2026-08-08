@@ -26,19 +26,6 @@ export function OrgSwitcher({ orgs, currentOrgId }: { orgs: SwitcherOrg[]; curre
   const section = pathname.split("/")[3];
   const suffix = SECTIONS.includes(section) ? `/${section}` : "";
 
-  // One org: nothing to switch between, so no control pretending otherwise —
-  // the name is a heading, with creation still reachable below.
-  if (orgs.length <= 1) {
-    return (
-      <div className="border-b border-gray-200 px-6 py-5">
-        <p className="text-[0.7rem] uppercase tracking-[0.18em] text-gray-500">Organisation</p>
-        <h2 className="mt-1 truncate text-lg font-semibold text-gray-900" title={current?.name}>
-          {current?.name ?? "Organisation"}
-        </h2>
-      </div>
-    );
-  }
-
   return (
     <div ref={ref} className="relative border-b border-gray-200 px-3 py-4">
       <button
