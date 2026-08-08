@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
+import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
 import { Button } from "@/components/ui/button";
@@ -73,9 +74,10 @@ async function OrgProductsData({
     outOfStock: params.outOfStock === "true" ? true : undefined,
   };
 
-  const [productsData, stats] = await Promise.all([
+  const [productsData, stats, categoryList] = await Promise.all([
     adminProductsDAL.getProducts(filters),
     adminProductsDAL.getStats(orgId),
+    adminCategoriesDAL.getCategories(),
   ]);
 
   return (
@@ -83,6 +85,7 @@ async function OrgProductsData({
       initialData={productsData}
       initialStats={stats}
       initialFilters={filters}
+      categories={categoryList.categories}
     />
   );
 }

@@ -16,12 +16,21 @@ interface ProductsContainerProps {
   initialData: ProductListResult;
   initialStats: ProductStats;
   initialFilters: ProductFilters;
+  categories: Array<{ id: string; name: string }>;
 }
 
-export function ProductsContainer({ 
-  initialData, 
-  initialStats, 
+// Filter fields whose URL param is named differently — the pages read the short names.
+const URL_PARAM_FOR: Partial<Record<keyof ProductFilters, string>> = {
+  categoryId: "category",
+  sortBy: "sort",
+  sortOrder: "order",
+};
+
+export function ProductsContainer({
+  initialData,
+  initialStats,
   initialFilters,
+  categories,
   readOnly = false,
 }: ProductsContainerProps) {
   const productsBasePath = useProductsBasePath();
@@ -53,10 +62,11 @@ export function ProductsContainer({
     const params = new URLSearchParams(searchParams.toString());
     
     Object.entries(newFilters).forEach(([key, value]) => {
+      const param = URL_PARAM_FOR[key as keyof ProductFilters] ?? key;
       if (value) {
-        params.set(key, String(value));
+        params.set(param, String(value));
       } else {
-        params.delete(key);
+        params.delete(param);
       }
     });
     
@@ -96,8 +106,9 @@ export function ProductsContainer({
       <ProductsStats stats={stats} />
       
       {/* Filters */}
-      <ProductsFilters 
+      <ProductsFilters
         filters={initialFilters}
+        categories={categories}
         onFilterChange={updateFilters}
         isPending={isPending}
       />

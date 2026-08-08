@@ -137,7 +137,7 @@ Vercel, project `bhendi-bazaar`, from `main`. All routes are server-rendered on 
 
 - **Set every variable above in Vercel per environment.** `NEXTAUTH_URL` must be the deployed origin.
 - `vercel env pull` before running migrations locally against a deployed database.
-- **Migrations are applied manually** — there is no `prisma migrate deploy` in the pipeline yet ([TESTING.md](TESTING.md)). Run it before deploying code that expects a new column.
+- **Migrations run in the build** ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)): `vercel.json`'s `buildCommand` is `npx prisma migrate deploy && next build`, so every Vercel build applies pending migrations to that environment's `DATABASE_URL` before compiling. A merge to `main` **is** a prod schema change; preview builds migrate whatever database the Preview environment points at. `migrate deploy` only applies pending migrations in order — never resets or drops. Manual `migrate deploy` remains only for local runs against a deployed database (`vercel env pull` first).
 - Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/shiprocket`. Local webhook testing needs a tunnel.
 - Use a pooled connection string (pgbouncer / Neon) in production: `src/lib/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
 
@@ -149,7 +149,6 @@ Vercel, project `bhendi-bazaar`, from `main`. All routes are server-rendered on 
 | `@prisma/client did not initialize yet` | `npx prisma generate` |
 | `PrismaClientOptions` error in a script | Prisma 7 needs the `pg` adapter — construct the client the way `src/lib/prisma.ts` does, not bare |
 | Port 3000 in use | `lsof -ti:3000 \| xargs kill` or `npm run dev -- -p 3001` |
-| Rate limiting not applying | `KV_REST_API_*` missing or misnamed — see the naming trap above |
-| Auth routes throwing at startup | Same cause, opposite symptom — the module-load assertion in `src/lib/rate-limit.ts` |
+| Rate limiting not applying | `KV_REST_API_*` missing or misnamed — see the naming trap above. Since PR-55 the limiter fails open with a one-time console warning rather than throwing; check the logs for `[rate-limit]`. The [rate-limiting](specs/rate-limiting/) spec closes this properly |
 | Stale types or unexplained build errors | `rm -rf .next && npx prisma generate` |
 | Webhook not arriving locally | No tunnel, or the secret is unset. Check the gateway dashboard's delivery log first — it records attempts and responses |
