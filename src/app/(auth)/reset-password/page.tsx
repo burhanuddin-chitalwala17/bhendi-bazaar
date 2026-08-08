@@ -1,65 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, CheckCircle } from "lucide-react";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { readApiError } from "@/lib/api-error";
+import {
+  resetPasswordSchema,
+  type ResetPasswordInput,
+} from "@/lib/validation/schemas/auth.schemas";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (!token) {
-      setError("Invalid reset link");
-    }
-  }, [token]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
+  // The token rides in the schema, so an expired link's server error surfaces the
+  // same way a weak password does; the mismatch refine lands on confirmPassword.
+  const {
+    register,
+    onSubmit: handleFormSubmit,
+    formError,
+    formState: { errors, isSubmitting },
+  } = useServerForm<ResetPasswordInput>({
+    schema: resetPasswordSchema,
+    submit: async (data) => {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          password,
-          confirmPassword,
-        }),
+        body: JSON.stringify(data),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Failed to reset password");
-        return;
-      }
-
+      if (!response.ok) throw await readApiError(response);
       setSuccess(true);
-      
       // Redirect to signin after 3 seconds
       setTimeout(() => {
         router.push("/signin");
       }, 3000);
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+    },
+    defaultValues: { token: token ?? "", password: "", confirmPassword: "" },
+  });
 
   if (!token) {
     return (
@@ -103,20 +88,24 @@ export default function ResetPasswordPage() {
         </p>
       </header>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleFormSubmit} className="space-y-4">
+        <input type="hidden" {...register("token")} />
         <div className="space-y-2">
           <label className="text-xs font-medium uppercase tracking-[0.18em]">
             New Password
           </label>
           <Input
             type={showPasswords ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            autoComplete="new-password"
+            {...register("password")}
           />
-          <p className="text-[0.65rem] text-muted-foreground">
-            At least 8 characters with uppercase, lowercase, and numbers
-          </p>
+          {errors.password ? (
+            <p className="text-[0.7rem] text-destructive">{errors.password.message}</p>
+          ) : (
+            <p className="text-[0.65rem] text-muted-foreground">
+              At least 8 characters with uppercase, lowercase, a number and a symbol
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -125,10 +114,14 @@ export default function ResetPasswordPage() {
           </label>
           <Input
             type={showPasswords ? "text" : "password"}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
+            autoComplete="new-password"
+            {...register("confirmPassword")}
           />
+          {errors.confirmPassword && (
+            <p className="text-[0.7rem] text-destructive">
+              {errors.confirmPassword.message}
+            </p>
+          )}
         </div>
 
         <button
@@ -147,9 +140,9 @@ export default function ResetPasswordPage() {
           )}
         </button>
 
-        {error && (
+        {(formError || errors.token) && (
           <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-            {error}
+            {formError ?? errors.token?.message}
           </p>
         )}
 

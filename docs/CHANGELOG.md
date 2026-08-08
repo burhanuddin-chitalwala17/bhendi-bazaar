@@ -10,6 +10,12 @@
 
 ## Entries
 
+## [PR-52] 2026-08-10 — The last forms on the old pattern
+
+The four auth pages — sign-in, sign-up, forgot-password, reset-password — move onto `useServerForm` + the shared error envelope, closing the ADR-0013 conversion that every other form finished long ago. The password rules a user sees inline are now literally the rules the route enforces (same `auth.schemas` on both sides, Invariant 4); a server detail like a taken email lands on its field instead of a generic banner; the reset flow's token rides the schema so an expired link surfaces like any other refusal, and its mismatch refine lands on the confirm field. Sign-in keeps next-auth's single-failure shape as the form-level error. Visuals unchanged; the hand-rolled `useState`-per-field plumbing (~150 lines) is gone.
+
+**231 tests pass**, `tsc` exits 0, `next build` compiles, 0 lint findings in the four pages. No wire change — the routes already spoke the envelope.
+
 ## [PR-51] 2026-08-10 — The audit trail survives its admin [MIGRATION]
 
 `AdminLog.adminId` moves **`Cascade` → `RESTRICT`** — deleting an admin user erased every audit record of what they did, which is the record wanted most when removing one. Flagged in the data-model review's referential-actions table; no application path deletes users, so the change forbids only a manual delete from doing silent damage. Block or deactivate accounts instead (`User.isBlocked`). Test pins both the schema relation and the migration clause.
