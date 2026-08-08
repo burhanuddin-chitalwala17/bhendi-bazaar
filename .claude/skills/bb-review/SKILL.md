@@ -106,6 +106,15 @@ Not an Invariant, but the same kind of failure: silent, and invisible to `tsc`.
 - A new route handler with no browser caller — a read reachable from a server component does not need one.
 - `"use client"` at the top of a page whose interactive part is one button. Push the boundary down to the leaf.
 
+**Design tokens** ([CLAUDE.md](../../../CLAUDE.md) — colour goes through tokens)
+- A raw palette class (`bg-emerald-50`, `text-gray-500`, `border-red-200`) in a className. Colour reaches the UI only through the semantic tokens in `src/app/globals.css` — `primary`, `muted`, `destructive`, `success`/`warning`/`info`, `scrim`, `hero`. `tests/unit/design-tokens.test.ts` fails the build on these; the review job is the cases the test cannot judge:
+  - a **new allowlist entry** — legitimate only for literals that are *data* (values stored in the database), never for styling convenience;
+  - a `dark:` override next to a token — usually a sign the wrong token was chosen, since tokens flip themes by themselves;
+  - an overlay or fixed brand surface mapped to a theme token (`bg-foreground/50` as a dim layer inverts in dark mode — that is `scrim`);
+  - a new one-off token added for a single component — the vocabulary is small on purpose; ask whether an existing token names the same job.
+- Arbitrary bracket values (`w-[123px]`, `text-[#0a0a0a]`) without a stated reason — Tailwind's scale is the size/spacing token system.
+- A new UI element hand-rolled where a shared component exists (`DataTable`, `StatusBadge`, `Card`, `FormInput`, `PortalSidebar`, `PortalHeader`) — the org orders page shipped with a hand-rolled table while `DataTable` sat unused, which is how two of everything happens.
+
 **Does the schema accept what the form actually sends?** The form sends its default values, so read the two together:
 - An optional field whose schema rejects its own default. A UI hint reading "leave empty" over a required rule is the tell.
 - A number input registered `valueAsNumber` whose schema field is not wrapped in `optionalNumber` — a blank input is NaN, and `z.number().optional()` rejects NaN.
