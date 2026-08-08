@@ -1,5 +1,7 @@
 // src/domain/org.ts
 
+export type { OrgSummary } from "@server/catalog/org.types";
+
 export interface Org {
   id: string;
   code: string;

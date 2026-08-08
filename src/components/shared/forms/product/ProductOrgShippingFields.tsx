@@ -4,12 +4,13 @@ import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
 import { FormInput, FormSelect } from "../FormField";
 import { Info } from "lucide-react";
 import type { ProductFormInput } from "@/admin/products/types";
+import type { OrgSummary } from "@/domain/org";
 
 interface ProductOrgShippingFieldsProps {
   register: UseFormRegister<ProductFormInput>;
   errors: FieldErrors<ProductFormInput>;
   watch: UseFormWatch<ProductFormInput>;
-  orgs?: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+  orgs?: OrgSummary[];
   readOnly?: boolean;
 }
 

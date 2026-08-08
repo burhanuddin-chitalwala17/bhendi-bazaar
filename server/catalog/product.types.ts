@@ -1,3 +1,4 @@
+import type { OrgSummary } from "@server/catalog/org.types";
 /**
  * Server-side domain types for Product
  *
@@ -28,15 +29,7 @@ export interface ServerProduct {
   weight: number;
   createdAt: Date;
   updatedAt: Date;
-  org: {
-    id: string;
-    name: string;
-    code: string;
-    defaultPincode: string;
-    defaultCity: string;
-    defaultState: string;
-    defaultAddress: string;
-  };
+  org: OrgSummary;
   shippingFromPincode: string;
 }
 

@@ -9,11 +9,12 @@ import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import type { ProductDetails } from "../types";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
+import type { OrgSummary } from "@/domain/org";
 
 interface ProductEditContainerProps {
     product: ProductDetails;
     categories: { id: string; name: string }[];
-    orgs: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+    orgs: OrgSummary[];
 }
 
 export function ProductEditContainer({ product, categories, orgs }: ProductEditContainerProps) {

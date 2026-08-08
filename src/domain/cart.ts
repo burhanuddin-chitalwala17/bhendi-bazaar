@@ -1,5 +1,11 @@
 // src/domain/cart.ts
 
+// The one CartItem, declared in server/cart/cart.types.ts and re-exported here —
+// the two sides drifted for months (weight and the org block existed only on this
+// side, bridged by casts) until PR-44 made them agree and PR-45 merged them.
+import type { CartItem } from "@server/cart/cart.types";
+export type { CartItem, OrgSummary } from "@server/cart/cart.types";
+
 export interface Cart {
   id?: string;
   userId?: string;
@@ -7,40 +13,6 @@ export interface Cart {
   totals: CartTotals;
   updatedAt: Date;
   version?: number;
-}
-
-export interface CartItem {
-  weight: number;
-  // Identity
-  id: string;                    // Unique cart item ID (not product ID)
-  productId: string;             // Reference to product
-  productSlug: string;           // For navigation
-
-  // Display
-  productName: string;           // Name at time of add
-  thumbnail: string;             // Primary image
-
-  // Pricing (frozen at add-to-cart time)
-  price: number;                 // Original price
-  salePrice?: number;            // Sale price if applicable
-
-  // Selection
-  quantity: number;              // How many
-  size?: string;                 // Selected size
-  color?: string;                // Selected color
-
-  // Shipping (for multi-org/warehouse support)
-  shippingFromPincode: string;   // Origin pincode
-  org: {                      // Minimal org info
-    id: string;
-    name: string;
-    code: string;
-    // Include full org info (needed for shipping)
-    defaultPincode: string;
-    defaultCity: string;
-    defaultState: string;
-    defaultAddress: string;
-  };
 }
 
 export interface CartTotals {

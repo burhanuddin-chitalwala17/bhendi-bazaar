@@ -9,13 +9,14 @@ import { ProductForm } from "@/components/shared/forms/product";
 import type { ProductDetails } from "./types";
 import { useRouter } from "next/navigation";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
+import type { OrgSummary } from "@/domain/org";
 
 interface ProductViewProps {
   product: ProductDetails;
   /** False on the platform's support view — editing happens in the owning org's portal. */
   canEdit?: boolean;
   category: { id: string; name: string };
-  org: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
+  org: OrgSummary;
 }
 
 export function ProductsView({ product, category, org, canEdit = true }: ProductViewProps) {

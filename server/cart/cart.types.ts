@@ -6,6 +6,8 @@
  * product at read time, so a cart can never hold a stale price or a spoofed one.
  */
 
+import type { OrgSummary } from "@server/catalog/org.types";
+
 /** What a write may say about a line. Anything else in the payload is ignored. */
 export interface CartLineInput {
   productId: string;
@@ -14,16 +16,8 @@ export interface CartLineInput {
   color?: string | null;
 }
 
-/** The org block checkout groups parcels by. */
-export interface CartItemOrg {
-  id: string;
-  name: string;
-  code: string;
-  defaultPincode: string;
-  defaultCity: string;
-  defaultState: string;
-  defaultAddress: string;
-}
+/** The org block checkout groups parcels by — the one shared declaration. */
+export type { OrgSummary } from "@server/catalog/org.types";
 
 /** A read line: the stored choice plus everything derived from the product row. */
 export interface CartItem {
@@ -39,7 +33,7 @@ export interface CartItem {
   color?: string;
   weight: number; // kg
   shippingFromPincode: string;
-  org: CartItemOrg;
+  org: OrgSummary;
 }
 
 export interface CartTotals {

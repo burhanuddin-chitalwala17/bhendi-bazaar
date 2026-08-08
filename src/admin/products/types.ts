@@ -1,4 +1,9 @@
 import { ProductFlag, Pagination } from "@/types/shared";
+import type { OrgSummary } from "@/domain/org";
+
+// The one ProductFormInput: declared server-side, re-exported here so the two sides
+// cannot drift again (CONTRACTS.md — weight was collected and never written).
+export type { ProductFormInput } from "@server/catalog/admin.product.types";
 
 export interface ProductFilters {
   search?: string; // Search by name, SKU, tags
@@ -56,7 +61,7 @@ export interface ProductDetails {
   thumbnail: string;
   sizes: string[];
   colors: string[];
-  org: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string };
+  org: OrgSummary;
   shippingFromPincode: string;
   shippingFromCity: string;
   shippingFromLocation: string;
@@ -71,25 +76,3 @@ export interface ProductStats {
   totalInventoryValue: number;
 }
 
-export interface ProductFormInput {
-  name: string;
-  description?: string;
-  price: number;
-  salePrice?: number;
-  currency?: string;
-  orgId: string;
-  categoryId: string;
-  tags?: string[];
-  flags?: ProductFlag[];
-  images: string[];
-  thumbnail: string;
-  weight: number;
-  sizes?: string[];
-  colors?: string[];
-  stock: number;
-  sku?: string;
-  lowStockThreshold?: number;
-  shippingFromPincode?: string;
-  shippingFromCity?: string;
-  shippingFromLocation?: string;
-}

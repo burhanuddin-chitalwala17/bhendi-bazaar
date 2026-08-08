@@ -8,11 +8,12 @@ import Link from "next/link";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
+import type { OrgSummary } from "@/domain/org";
 
 
 interface ProductAddContainerProps {
     categories: { id: string; name: string }[];
-    orgs: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+    orgs: OrgSummary[];
 }
 
 export function ProductAddContainer({ categories, orgs }: ProductAddContainerProps) {

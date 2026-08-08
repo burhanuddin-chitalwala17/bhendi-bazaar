@@ -10,6 +10,12 @@
 
 ## Entries
 
+## [PR-45] 2026-08-10 — One declaration per shape
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 1 (its rename and reservation prerequisites landed long ago as PR-24..28 and PR-40): pure consolidation, zero behaviour. The org summary block — id, name, code, and the four `default*` origin fields — was spelled out **ten times** (`server/catalog/product.types.ts`, `server/cart/cart.types.ts`, `src/domain/product.ts`, `src/domain/cart.ts`, and six inline prop types across the product form tree). It is now declared once as `OrgSummary` (`server/catalog/org.types.ts`) and imported everywhere, so the destructive migration that eventually drops `default*` edits one file, not a hunt. `ProductFormInput` and `CartItem` lose their client-side twins — each is declared server-side and re-exported (`src/admin/products/types.ts`, `src/domain/cart.ts`), closing the two drift sites CONTRACTS.md has carried since PR-22.
+
+**217 tests pass**, `tsc` exits 0, `next build` compiles. No wire change, no migration.
+
 ## [PR-44] 2026-08-10 — A cart stores the choice, not the price [MIGRATION]
 
 [order-and-cart-lines](specs/multi-vendor-marketplace/order-and-cart-lines/) PR 2 of 2 — **the subfeature closes** (7 of 10). `Cart.items` blobs become `CartItem` rows holding exactly what the buyer chose: product, quantity, size, colour. **Nothing else is stored** — prices, names, thumbnails, `weight`, `shippingFromPincode` and the `org` block are derived from the product join at read time, so a cart can never hold a stale price or a spoofed one, and the blob-era "refresh prices on sync" pass is now just what reading a cart means. `CartItem.productId` is `Cascade`, deliberately opposite to `OrderItem`'s `Restrict`: a cart line is a wish, not history, and deleting a product simply removes it from carts.

@@ -17,10 +17,11 @@ import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import { paiseToRupees } from "@/lib/format";
+import type { OrgSummary } from "@/domain/org";
 interface ProductFormProps {
   product?: ProductDetails;
   categories?: { id: string; name: string }[];
-  orgs?: { id: string; name: string; code: string; defaultPincode: string; defaultCity: string; defaultState: string; defaultAddress: string }[];
+  orgs?: OrgSummary[];
   onSubmit: (data: ProductFormInput) => Promise<ProductDetails | null | undefined>;
   onCancel: () => void;
   isSubmitting?: boolean;
