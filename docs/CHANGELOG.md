@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-46] 2026-08-10 — Pickup locations exist [MIGRATION]
+
+[stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 3 (additive): **`OrgAddress`** — an org's pickup location, hanging off the shared `Address` table exactly like the customer address book, with a courier nickname, a pickup contact, and the aggregator reference D11 designed for — and **`ProductStock`**, the composite-keyed join row where a product's quantity-per-location will live. `Shipment` gains a nullable `orgAddressId` (D5: old parcels keep `NULL`, never a guessed attribution). **Nothing reads the new tables yet**; `Product.stock` and `Org.default*` stay authoritative until the cutover PR.
+
+R8 is in the database: `RESTRICT` on the org link, the address link, the stock join's location side, and the shipment link — a location holding stock or named by a parcel cannot be deleted, whatever the application forgets. The service pre-checks the same counts to say *why* ("still holds stock for 3 products"), and deleting a location clears only its zero-quantity join rows first.
+
+The backfill runs inside the migration: one location per org from `Org.default*` ("Primary pickup"), one per distinct product origin override (empty street line marking rows a human must complete), and one `ProductStock` row per product at its resolved location carrying today's `Product.stock` — deterministic ids, `RAISE NOTICE` counts.
+
+The org portal gains **Locations** (`/org/[orgId]/locations`, `withOrg` like everything else): card list with active badges and the stocked/shipped counts that explain a disabled delete, add/edit in a dialog reusing `useServerForm` + the shared form fields. New locations require a pickup contact; the TRD's placement question is closed with a dated note (the org portal postdates the TRD).
+
+**227 tests pass** (10 new), `tsc` exits 0, `next build` compiles. **Run `npx prisma migrate deploy`** — additive, with the backfill inside.
+
 ## [PR-45] 2026-08-10 — One declaration per shape
 
 [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) PR 1 (its rename and reservation prerequisites landed long ago as PR-24..28 and PR-40): pure consolidation, zero behaviour. The org summary block — id, name, code, and the four `default*` origin fields — was spelled out **ten times** (`server/catalog/product.types.ts`, `server/cart/cart.types.ts`, `src/domain/product.ts`, `src/domain/cart.ts`, and six inline prop types across the product form tree). It is now declared once as `OrgSummary` (`server/catalog/org.types.ts`) and imported everywhere, so the destructive migration that eventually drops `default*` edits one file, not a hunt. `ProductFormInput` and `CartItem` lose their client-side twins — each is declared server-side and re-exported (`src/admin/products/types.ts`, `src/domain/cart.ts`), closing the two drift sites CONTRACTS.md has carried since PR-22.

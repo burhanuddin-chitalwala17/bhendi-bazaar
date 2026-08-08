@@ -1,9 +1,9 @@
 # TRD — warehouses and stock allocation
 
-- **Status:** Draft
+- **Status:** Accepted — in delivery (PRs 0–3 landed; cutover pending)
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-08
+- **Verified:** 2026-08-10
 - **References:** [spec.md](spec.md), [data-model.md](../data-model.md), [consumer-inventory.md](../consumer-inventory.md), [ADR-0002](../../../adr/0002-server-holds-pricing-authority.md), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [CONTRACTS.md](../../../CONTRACTS.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -65,10 +65,10 @@ Per [TESTING.md](../../../TESTING.md); allocation is pure logic and should be te
 ## Delivery (PRs)
 | PR | Scope | Behaviour |
 |---|---|---|
-| 0 | `Seller` → `Org` rename plus `ORG_MEMBER` (566 references, 57 files) | none — mechanical |
-| 1 | Consolidate the duplicate DTO and prop-type declarations | none |
-| 2 | [inventory-reservation](../../inventory-reservation/) guard on `Product.stock` | yes — closes the oversell race (separate spec, prerequisite) |
-| 3 | Additive migration, location repository and admin CRUD, backfill script | none — nothing reads the new tables |
+| 0 | `Seller` → `Org` rename plus `ORG_MEMBER` (566 references, 57 files) | none — mechanical ✅ PR-24..28 |
+| 1 | Consolidate the duplicate DTO and prop-type declarations | none ✅ PR-45 |
+| 2 | [inventory-reservation](../../inventory-reservation/) guard on `Product.stock` | yes — closes the oversell race (separate spec, prerequisite) ✅ PR-40 |
+| 3 | Additive migration, location repository and **org-portal** CRUD, backfill in the migration | none — nothing reads the new tables ✅ PR-46 |
 | 4 | Product form: location selector and per-location stock; writes join rows while `Product.stock` is still authoritative | none — dual write |
 | 5 | Reads flip to the aggregate; allocation, split shipments, guard re-pointed to the join | **yes — the cutover** |
 | 6 | Destructive migration | none |
@@ -78,8 +78,8 @@ PR 5 is the only one that changes what a customer sees, and it is reversible onl
 ## Open questions
 Must be closed before Draft → Accepted.
 
-- Does location management live on an org detail page, or as its own admin section? The sellers table currently shows a city and pincode per seller (`SellersTable.tsx:65-67`) and needs something in their place.
-- Is admin sort-by-stock acceptable on an aggregate, or does it force the cached total D3 rejects? Measure on real row counts before deciding.
-- Does [shipping-fulfilment](../../shipping-fulfilment/) answer "book for real"? If yes, the pickup contact fields become required and D11 turns into work.
+- ~~Does location management live on an org detail page, or as its own admin section?~~ **Closed 2026-08-10:** neither — this TRD predates the org portal. Locations are the org's operational data, so CRUD lives at `/org/[orgId]/locations` behind `withOrg`, like products and orders. The platform admin keeps read visibility through the existing org pages; what replaces the sellers-table city/pincode columns is decided in the destructive PR.
+- Is admin sort-by-stock acceptable on an aggregate, or does it force the cached total D3 rejects? Measure on real row counts before deciding — at the cutover PR, not before.
+- Does [shipping-fulfilment](../../shipping-fulfilment/) answer "book for real"? If yes, the pickup contact fields become required and D11 turns into work. *(Still the user's decision; the form already requires contact fields for new locations — only backfilled rows carry `''`.)*
 
 Closed: multi-parcel visibility and per-parcel estimates (D12) and customer-facing availability (D13), both decided 2026-08-07.

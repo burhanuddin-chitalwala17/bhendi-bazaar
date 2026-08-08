@@ -64,6 +64,7 @@ model Product {
 
   orderItems OrderItem[]
   cartItems  CartItem[]
+  stockLocations ProductStock[]
 
   // ⭐ Org Association (REQUIRED)
   orgId String
@@ -199,6 +200,8 @@ model Org {
   defaultAddress String? @db.Text
   
   // Business Details
+  orgAddresses OrgAddress[]
+
   businessName   String?
   gstNumber      String?
   panNumber      String?
@@ -358,6 +361,12 @@ model Shipment {
   // ✅ Origin details (where it ships from)
   orgId    String
   org      Org @relation(fields: [orgId], references: [id])
+  /// The pickup location this parcel was allocated from (stock-locations D5/D6).
+  /// Nullable: pre-existing shipments keep NULL rather than a guessed attribution.
+  /// The from* columns below stay as the historical snapshot — editing a location's
+  /// address must never rewrite where a delivered parcel came from (A5).
+  orgAddressId String?
+  orgAddress   OrgAddress? @relation(fields: [orgAddressId], references: [id], onDelete: Restrict)
   fromPincode String
   fromCity    String
   fromState   String
@@ -552,6 +561,48 @@ enum OrgRole {
 ///
 /// Cascade on both sides is deliberate: a membership is meaningless without either end,
 /// and deleting one end must remove only the link — never the other party.
+/// A selling organisation's pickup location (stock-locations D1/D10): the org's
+/// relationship to a postal Address — courier nickname, who answers the door at
+/// pickup, and the aggregator registration designed for but not built (D11).
+/// Restrict both ways: an org with locations, or a location an Address underpins,
+/// cannot be deleted out from under the other.
+model OrgAddress {
+  id        String  @id @default(cuid())
+  orgId     String
+  org       Org     @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  addressId String
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  name         String // courier pickup nickname — "Bhendi Bazaar shop", "Bhiwandi godown"
+  contactName  String // '' until a human completes it; required if fulfilment books real pickups
+  contactPhone String
+  isActive     Boolean @default(true)
+  /// Aggregator pickup-location reference (D11): carried, read by nothing yet.
+  providerRef  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productStock ProductStock[]
+  shipments    Shipment[]
+
+  @@index([orgId])
+}
+
+/// Where a product's units physically sit (stock-locations D2): the quantity lives
+/// on the join row, because a location without a quantity is a place the store
+/// cannot honour a quote from. Restrict on the location side is R8 in the database.
+model ProductStock {
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orgAddressId String
+  orgAddress   OrgAddress @relation(fields: [orgAddressId], references: [id], onDelete: Restrict)
+  quantity     Int
+
+  @@id([productId, orgAddressId])
+  @@index([orgAddressId])
+}
+
 model OrgMember {
   id     String @id @default(cuid())
   userId String
@@ -611,6 +662,7 @@ model Address {
   updatedAt DateTime @updatedAt
 
   userAddresses UserAddress[]
+  orgAddresses  OrgAddress[]
 
   @@index([pincode])
 }

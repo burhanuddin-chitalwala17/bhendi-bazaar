@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ShoppingCart, Star } from "lucide-react";
+import { LayoutDashboard, MapPin, Package, ShoppingCart, Star } from "lucide-react";
 import { PortalSidebar } from "@/components/layout/PortalSidebar";
 import { OrgSwitcher, type SwitcherOrg } from "@/org/org-switcher";
 
@@ -14,6 +14,7 @@ export function OrgSidebar({ orgId, orgs }: { orgId: string; orgs: SwitcherOrg[]
         { title: "Dashboard", href: base, icon: LayoutDashboard, exact: true },
         { title: "Products", href: `${base}/products`, icon: Package },
         { title: "Orders", href: `${base}/orders`, icon: ShoppingCart },
+        { title: "Locations", href: `${base}/locations`, icon: MapPin },
         { title: "Reviews", href: `${base}/reviews`, icon: Star },
       ]}
     />
