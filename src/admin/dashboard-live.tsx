@@ -58,7 +58,7 @@ export function AdminDashboardLive() {
           title="Revenue"
           action={{ label: "Refresh", onClick: handleRefresh }}
         />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <StatsCard title="Today" value={formatCurrency(stats?.revenue.today || 0)} icon={DollarSign} />
           <StatsCard title="This Week" value={formatCurrency(stats?.revenue.week || 0)} icon={TrendingUp} />
           <StatsCard title="This Month" value={formatCurrency(stats?.revenue.month || 0)} icon={DollarSign} />
@@ -68,7 +68,7 @@ export function AdminDashboardLive() {
 
       <div>
         <SectionHeader overline="Order Status" title="Order Status" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <div className="bg-card rounded-lg border border-border p-6">
             <p className="text-sm font-medium text-muted-foreground">Processing</p>
             <p className="text-2xl font-bold text-warning mt-2">{stats?.orders.processing || 0}</p>

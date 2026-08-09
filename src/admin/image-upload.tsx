@@ -15,6 +15,8 @@ interface ImageUploadProps {
   maxImages?: number;
   required?: boolean;
   uploadType?: "products" | "categories" | "reviews";
+  /** Upload route — the caller knows whose guard applies (admin vs org member). */
+  endpoint?: string;
 }
 
 export function ImageUpload({
@@ -24,6 +26,7 @@ export function ImageUpload({
   maxImages = 10,
   required = false,
   uploadType = "products",
+  endpoint = "/api/admin/upload",
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -46,7 +49,7 @@ export function ImageUpload({
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
 
-      const response = await fetch(`/api/admin/upload?type=${uploadType}`, {
+      const response = await fetch(`${endpoint}?type=${uploadType}`, {
         method: "POST",
         body: formData,
       });

@@ -26,8 +26,8 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
 
   return (
     <section className="bill-print space-y-3 rounded-xl border border-border/70 bg-card/80 p-4 text-sm">
-      <header className="flex items-baseline justify-between gap-2">
-        <div className="flex-1">
+      <header className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <SectionHeader
             overline="Bill summary"
             title={`Order ${order.code}`}
@@ -41,7 +41,7 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
           )}
           {showShare && (
             <>
-              <DownloadBillButton className="h-7 w-7 print:hidden" />
+              <DownloadBillButton className="print:hidden" />
               <ShareButton
                 url={`/order/${order.id}`}
                 title={`Order ${order.code} - Bhendi Bazaar`}
@@ -49,7 +49,7 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
                 variant="ghost"
                 size="icon"
                 showLabel={false}
-                className="h-7 w-7 print:hidden"
+                className="print:hidden"
               />
             </>
           )}

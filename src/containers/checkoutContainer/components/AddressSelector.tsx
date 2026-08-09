@@ -60,8 +60,8 @@ export function AddressSelector({
           onClick={onToggle}
           className="flex w-full items-start justify-between gap-4 p-5 text-left transition-colors hover:bg-muted/30"
         >
-          <div className="flex gap-3">
-            <MapPin className="mt-0.5 h-5 w-5 text-info" />
+          <div className="flex min-w-0 gap-3">
+            <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-info" />
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">{selectedAddress.fullName}</span>
@@ -81,7 +81,7 @@ export function AddressSelector({
           </div>
           <ChevronRight
             className={cn(
-              "h-5 w-5 text-muted-foreground transition-transform",
+              "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
               listOpen && "rotate-90"
             )}
           />

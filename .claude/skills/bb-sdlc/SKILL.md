@@ -48,7 +48,8 @@ The product or user reason it exists. Not "X is broken" — what should be true 
 - R1 — …
 
 ## Product acceptance
-- A1 — how we know it works, from the outside.
+- A1 — how we know it works, from the outside. If the feature has UI, acceptance
+  is judged on a phone first (~360px) — most buyers are mobile ([ADR-0015](../../adr/0015-mobile-first-design.md)).
 
 ## Out of scope (this feature)
 What belongs to other features or phases, with links.
@@ -75,6 +76,12 @@ The chosen approach, and what makes it the right shape.
 
 ## Packages
 New dependencies, cross-referenced to DEPENDENCIES.md. "None" if none.
+
+## UI approach
+Only if the feature has UI, else "None". Mobile-first per [ADR-0015](../../adr/0015-mobile-first-design.md):
+describe the ~360px single-column layout first — content order, primary actions,
+touch affordances — then what desktop breakpoints add. A TRD that only describes
+the desktop layout is not done: the phone is the primary device, not the variant.
 
 ## Data model
 Schema changes. Flag [MIGRATION]. "None" if none.

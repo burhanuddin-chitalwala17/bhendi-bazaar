@@ -85,7 +85,7 @@ function WidgetCard({
   const body = (
     <Card className={widget.href ? "transition-colors hover:border-primary/40" : undefined}>
       <CardContent className="flex items-center gap-4 pt-5">
-        <Icon className="h-8 w-8 flex-shrink-0 text-primary" />
+        <Icon className="h-8 w-8 shrink-0 text-primary" />
         <span className="min-w-0">
           <span className="block truncate text-2xl font-semibold">{display}</span>
           <span className="text-sm text-muted-foreground">

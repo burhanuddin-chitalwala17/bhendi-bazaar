@@ -186,7 +186,22 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
           </>
         )}
 
-        {/* Checkout Actions */}
+      </div>
+
+      {/* On mobile the summary must precede the CTA — a buyer sees the bill before the
+          button that commits to it. On md the summary is the right rail spanning both rows. */}
+      <div className="md:col-start-2 md:row-start-1 md:row-span-2">
+        <CheckoutSummary
+          items={checkoutItems}
+          subtotal={totals.itemsTotal}
+          discount={totals.discount}
+          shipping={totalShippingCost}
+          total={totals.grandTotal}
+        />
+      </div>
+
+      {/* Sticky on mobile: multi-shipment pages run long and the CTA must stay reachable */}
+      <div className="sticky bottom-0 z-20 -mx-4 bg-background/95 px-4 py-3 backdrop-blur md:static md:z-auto md:m-0 md:col-start-1 md:row-start-2 md:bg-transparent md:p-0 md:backdrop-blur-none">
         <CheckoutActions
           canCheckout={canCheckout}
           isProcessing={isProcessing}
@@ -196,13 +211,6 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
           error={paymentError}
         />
       </div>
-      <CheckoutSummary
-        items={checkoutItems}
-        subtotal={totals.itemsTotal}
-        discount={totals.discount}
-        shipping={totalShippingCost}
-        total={totals.grandTotal}
-      />
     </div>
   );
 }

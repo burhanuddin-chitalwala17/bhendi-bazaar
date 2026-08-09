@@ -128,7 +128,7 @@ export function ProductGallery(product: Product) {
       <div className="relative group">
         <div
           ref={imageContainerRef}
-          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-hero via-hero/90 to-scrim cursor-pointer touch-pan-x"
+          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-hero via-hero/90 to-scrim cursor-pointer touch-pan-x touch-pan-y"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -149,7 +149,7 @@ export function ProductGallery(product: Product) {
             {images.map((image, index) => (
               <div
                 key={index}
-                className="relative flex-shrink-0 w-full h-full flex items-center justify-center"
+                className="relative shrink-0 w-full h-full flex items-center justify-center"
               >
                 <div
                   className="relative w-full h-full transition-transform duration-200 ease-out"
@@ -177,13 +177,13 @@ export function ProductGallery(product: Product) {
             ))}
           </div>
 
-          {/* Navigation arrows - only show on hover for desktop, always visible on mobile when multiple images */}
+          {/* Navigation arrows - always visible on touch (hover never fires), hover-revealed on desktop */}
           {images.length > 1 && (
             <>
               <button
                 type="button"
                 onClick={handlePrevious}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 md:opacity-100 backdrop-blur-sm"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full p-2.5 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="w-5 h-5 text-hero-foreground" />
@@ -191,7 +191,7 @@ export function ProductGallery(product: Product) {
               <button
                 type="button"
                 onClick={handleNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full p-2 transition-all opacity-0 group-hover:opacity-100 md:opacity-100 backdrop-blur-sm"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full p-2.5 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
                 aria-label="Next image"
               >
                 <ChevronRight className="w-5 h-5 text-hero-foreground" />
@@ -230,7 +230,7 @@ export function ProductGallery(product: Product) {
               key={index}
               type="button"
               onClick={() => goToIndex(() => index)}
-              className={`relative flex-shrink-0 w-16 aspect-[3/4] sm:w-20 rounded-lg border-2 transition-all overflow-hidden ${
+              className={`relative shrink-0 w-16 aspect-[3/4] sm:w-20 rounded-lg border-2 transition-all overflow-hidden ${
                 activeIndex === index
                   ? "border-primary ring-2 ring-ring/30 scale-105"
                   : "border-border/70 hover:border-primary/50 opacity-70 hover:opacity-100"

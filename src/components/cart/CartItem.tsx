@@ -67,7 +67,7 @@ export function CartItem(item: CartItemType) {
 
   return (
     <div className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-card/80 p-3 text-sm">
-      <div className="flex-1 space-y-1">
+      <div className="min-w-0 flex-1 space-y-1">
         <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground/80">
           {item.productName}
         </p>
@@ -93,10 +93,11 @@ export function CartItem(item: CartItemType) {
         )}
       </div>
       <div className="flex flex-col items-end gap-2">
-        <div className="flex items-center rounded-full border border-border/70 bg-background px-2 py-1 text-xs">
+        <div className="flex items-center rounded-full border border-border/70 bg-background text-sm">
           <button
             type="button"
-            className="px-2 text-muted-foreground hover:text-foreground"
+            aria-label="Decrease quantity"
+            className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted"
             onClick={handleDecrease}
           >
             −
@@ -106,7 +107,8 @@ export function CartItem(item: CartItemType) {
           </span>
           <button
             type="button"
-            className="px-2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+            aria-label="Increase quantity"
+            className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted disabled:opacity-50"
             onClick={handleIncrease}
             disabled={isAtMaxStock || stock === 0}
           >
@@ -116,7 +118,8 @@ export function CartItem(item: CartItemType) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-xs text-muted-foreground hover:text-destructive"
+          aria-label="Remove item"
+          className="text-muted-foreground hover:text-destructive"
           onClick={() => removeItem(item.id)}
         >
           ×

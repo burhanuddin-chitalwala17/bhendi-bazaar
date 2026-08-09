@@ -81,11 +81,11 @@ export function AddressesSection({
             </div>
             <Button
               type="button"
-              size="icon-sm"
+              size="icon-lg"
               variant="outline"
               onClick={handleAddClick}
               disabled={loading || saving}
-              className="rounded-full"
+              className="shrink-0 rounded-full"
             >
               <Plus className="h-4 w-4" />
             </Button>

@@ -48,7 +48,7 @@ export function NavbarSearch() {
             setShowSuggestions(true);
           }}
           onFocus={() => setShowSuggestions(true)}
-          className="h-7 border-0 bg-transparent p-0 text-xs focus-visible:ring-0"
+          className="h-8 border-0 bg-transparent p-0 focus-visible:ring-0"
         />
       </form>
 

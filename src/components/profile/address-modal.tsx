@@ -33,8 +33,8 @@ export function AddressModal({
     void onSave({ ...address, ...data });
   }
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-scrim/40 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 px-4">
+      <div className="max-h-overlay w-full max-w-md overflow-y-auto rounded-2xl border border-border/60 bg-background shadow-xl">
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <div className="space-y-0.5">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground/80">
@@ -53,9 +53,9 @@ export function AddressModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 text-xs hover:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60 text-xs hover:bg-muted"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 

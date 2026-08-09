@@ -35,5 +35,12 @@ export default async function OrgNewProductPage({
       isActive: location.isActive,
     }));
 
-  return <ProductAddContainer categories={categories} orgs={orgs} locations={locations} />;
+  return (
+    <ProductAddContainer
+      categories={categories}
+      orgs={orgs}
+      locations={locations}
+      uploadEndpoint={`/api/org/${orgId}/upload`}
+    />
+  );
 }

@@ -54,7 +54,7 @@ export function OrdersClient() {
             placeholder="Search by code or name"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-9 text-xs"
+            className="h-10"
           />
         </div>
       </div>

@@ -83,7 +83,7 @@ export function EmailVerificationBanner() {
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3 flex-1">
-            <Mail className="h-5 w-5 text-warning dark:text-warning flex-shrink-0" />
+            <Mail className="h-5 w-5 text-warning dark:text-warning shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium text-warning">
                 Please verify your email address
@@ -102,7 +102,7 @@ export function EmailVerificationBanner() {
           </div>
           <button
             onClick={handleClose}
-            className="text-warning hover:text-warning/80"
+            className="-m-2 flex h-10 w-10 items-center justify-center text-warning hover:text-warning/80"
             aria-label="Dismiss"
           >
             <X className="h-5 w-5" />
