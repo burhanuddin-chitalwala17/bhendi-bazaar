@@ -49,7 +49,9 @@ export function OrderLookup() {
             placeholder="e.g. BB-1001"
             value={code}
             onChange={(e) => setCode(e.target.value.trim())}
-            className="h-9 text-xs"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            className="h-10"
           />
         </div>
         <Button

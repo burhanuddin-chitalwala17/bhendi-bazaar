@@ -222,11 +222,11 @@ export default function AdminAbandonedCartsPage() {
       {/* Cart Details Modal */}
       {selectedCart && (
         <div
-          className="fixed inset-0 bg-foreground bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-scrim/50 flex items-center justify-center z-50 px-4"
           onClick={() => setSelectedCart(null)}
         >
           <div
-            className="bg-card rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto"
+            className="bg-card rounded-lg p-6 max-w-2xl w-full max-h-overlay overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">

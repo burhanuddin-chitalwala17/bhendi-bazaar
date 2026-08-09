@@ -64,6 +64,7 @@ export function AddressFields({
           label="Full Name"
           required
           placeholder="Your full name"
+          autoComplete="name"
           {...register("fullName", { required: true })}
           error={getError("fullName")}
         />
@@ -72,6 +73,7 @@ export function AddressFields({
           required
           type="tel"
           placeholder="10-digit Mobile Number"
+          autoComplete="tel"
           {...register("mobile", { required: true })}
           error={getError("mobile")}
         />
@@ -83,6 +85,7 @@ export function AddressFields({
           label="Email"
           type="email"
           placeholder="your@email.com"
+          autoComplete="email"
           {...register("email")}
           hint="Optional - for order updates"
           error={getError("email")}
@@ -94,6 +97,7 @@ export function AddressFields({
         label="Address Line 1"
         required
         placeholder="Flat, house no., building"
+        autoComplete="address-line1"
         {...register("addressLine1", { required: true })}
         error={getError("addressLine1")}
       />
@@ -102,6 +106,7 @@ export function AddressFields({
       <FormInput
         label="Address Line 2"
         placeholder="Area, street (optional)"
+        autoComplete="address-line2"
         {...register("addressLine2")}
         error={getError("addressLine2")}
       />
@@ -111,18 +116,22 @@ export function AddressFields({
         <FormInput
           label="City"
           required
+          autoComplete="address-level2"
           {...register("city", { required: true })}
           error={getError("city")}
         />
         <FormInput
           label="State"
           required
+          autoComplete="address-level1"
           {...register("state", { required: true })}
           error={getError("state")}
         />
         <FormInput
           label="PIN Code"
           required
+          inputMode="numeric"
+          autoComplete="postal-code"
           {...register("pincode", {
             required: true,
             pattern: { value: PINCODE_PATTERN, message: PINCODE_MESSAGE },
@@ -135,6 +144,7 @@ export function AddressFields({
       <FormInput
         label="Country"
         required
+        autoComplete="country-name"
         {...register("country", { required: true })}
         error={getError("country")}
       />

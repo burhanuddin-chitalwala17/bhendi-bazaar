@@ -28,6 +28,8 @@ interface ProductFormProps {
   onCancel: () => void;
   isSubmitting?: boolean;
   readOnly?: boolean;
+  /** Where image uploads go — the org portal passes its member-guarded route. */
+  uploadEndpoint?: string;
 }
 
 export function ProductForm({
@@ -39,6 +41,7 @@ export function ProductForm({
   onCancel,
   isSubmitting,
   readOnly = false,
+  uploadEndpoint,
 }: ProductFormProps) {
 
   const isEdit = !!product;
@@ -175,6 +178,7 @@ export function ProductForm({
                   onChange={field.onChange}
                   maxImages={10}
                   required
+                  endpoint={uploadEndpoint}
                 />
               )}
             />

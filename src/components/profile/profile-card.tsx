@@ -99,7 +99,7 @@ export function ProfileCard({
   return (
     <Card>
       <CardHeader className="border-b border-border/60 pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <SectionHeader overline="Account" title="Your account information" />
           {!isEditing && !isEditingPic && (
             <Button
@@ -136,10 +136,10 @@ export function ProfileCard({
                 <button
                   type="button"
                   onClick={handleEditPic}
-                  className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
                   title="Change profile picture"
                 >
-                  <Camera className="h-3 w-3" />
+                  <Camera className="h-4 w-4" />
                 </button>
               )}
             </div>

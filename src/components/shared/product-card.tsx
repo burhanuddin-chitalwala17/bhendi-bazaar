@@ -9,7 +9,9 @@ import { StockStatus } from "./StockStatus";
 export function ProductCard(product: Product) {
   return (
     <Link href={`/product/${product.slug}`}>
-      <Card className="group overflow-hidden transition-all hover:-translate-y-1 hover:shadow-md">
+      {/* py-0/gap-0 override Card's defaults so the image bleeds to the card edge —
+          in the single-column mobile grid the default padding cost ~72px per card */}
+      <Card className="group gap-0 overflow-hidden py-0 transition-all hover:-translate-y-1 hover:shadow-md">
         {/* Image */}
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           <img

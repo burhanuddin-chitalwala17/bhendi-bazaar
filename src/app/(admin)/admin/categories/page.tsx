@@ -207,7 +207,7 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-heading font-bold text-foreground">
             Categories
@@ -227,8 +227,8 @@ export default function AdminCategoriesPage() {
 
       {/* Search */}
       <div className="bg-card rounded-lg border border-border p-4">
-        <div className="flex gap-4">
-          <div className="flex-1">
+        <div className="flex flex-wrap gap-4">
+          <div className="w-full min-w-0 grow sm:w-auto">
             <div className="flex gap-2">
               <input
                 type="text"

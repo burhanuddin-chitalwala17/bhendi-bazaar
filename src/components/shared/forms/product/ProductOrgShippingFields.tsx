@@ -107,7 +107,7 @@ export function ProductOrgShippingFields({
                     value={location.id}
                     {...register(`stockLocations.${index}.orgAddressId`)}
                   />
-                  <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
                       {location.name}

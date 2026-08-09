@@ -16,9 +16,11 @@ interface ProductAddContainerProps {
     categories: { id: string; name: string }[];
     orgs: OrgSummary[];
     locations: LocationOption[];
+    /** Where image uploads go; the org portal passes its member-guarded route. */
+    uploadEndpoint?: string;
 }
 
-export function ProductAddContainer({ categories, orgs, locations }: ProductAddContainerProps) {
+export function ProductAddContainer({ categories, orgs, locations, uploadEndpoint }: ProductAddContainerProps) {
     const router = useRouter();
     const productsBasePath = useProductsBasePath();
 
@@ -31,7 +33,7 @@ export function ProductAddContainer({ categories, orgs, locations }: ProductAddC
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-4">
                     <Link
                         href={productsBasePath}
@@ -53,13 +55,13 @@ export function ProductAddContainer({ categories, orgs, locations }: ProductAddC
             {/* Messages */}
             {error && (
                 <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                     <p>{error}</p>
                 </div>
             )}
             {successMessage && (
                 <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
                     <p>{successMessage}</p>
                 </div>
             )}
@@ -72,6 +74,7 @@ export function ProductAddContainer({ categories, orgs, locations }: ProductAddC
                 onCancel={handleCancel}
                 isSubmitting={isLoading}
                 readOnly={false}
+                uploadEndpoint={uploadEndpoint}
             />
 
         </div>

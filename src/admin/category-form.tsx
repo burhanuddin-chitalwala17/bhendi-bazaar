@@ -125,14 +125,14 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
       {/* Error/Success Messages */}
       {formError && (
         <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <p>{formError}</p>
         </div>
       )}
 
       {successMessage && (
         <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <p>{successMessage}</p>
         </div>
       )}

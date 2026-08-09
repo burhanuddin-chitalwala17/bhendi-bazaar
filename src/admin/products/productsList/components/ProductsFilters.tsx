@@ -42,7 +42,7 @@ export function ProductsFilters({
     <div className="bg-card rounded-lg border border-border p-4">
       <div className="flex flex-wrap gap-4">
         {/* Search */}
-        <div className="flex-1 min-w-64">
+        <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
           <div className="flex gap-2">
             <input
               type="text"

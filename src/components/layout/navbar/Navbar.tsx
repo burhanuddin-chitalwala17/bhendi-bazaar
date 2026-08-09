@@ -25,8 +25,8 @@ export function Navbar() {
   const { data: session } = useSession();
   const user = session?.user;
   return (
-    <header className="border-b border-border/60 bg-background/80 backdrop-blur z-10">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:h-20 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:h-20 sm:gap-4 sm:px-6 lg:px-8">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-2">
           <Image
@@ -35,7 +35,7 @@ export function Navbar() {
             width={160}
             height={160}
             priority
-            className="h-16 w-auto"
+            className="h-10 w-auto sm:h-16"
           />
         </Link>
 
@@ -53,7 +53,7 @@ export function Navbar() {
             <Button
               asChild
               variant="outline"
-              className="hidden rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] sm:inline-flex"
+              className="rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] sm:px-4"
             >
               <Link href="/signin">Login</Link>
             </Button>
@@ -64,7 +64,7 @@ export function Navbar() {
             <Link
               href="/orders"
               className={cn(
-                "hidden text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors sm:inline-block",
+                "px-1 py-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors",
                 pathname === "/orders" && "text-primary"
               )}
             >
@@ -99,6 +99,12 @@ export function Navbar() {
             </Link>
           </Button>
         </div>
+      </div>
+
+      {/* Mobile: categories + search get their own row; hiding them left phones with no discovery path */}
+      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pb-3 md:hidden">
+        <CategoriesDropdown />
+        <NavbarSearch />
       </div>
     </header>
   );

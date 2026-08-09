@@ -109,26 +109,29 @@ export function DataTable<T extends Record<string, any>>({
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="bg-background px-6 py-3 flex items-center justify-between border-t border-border">
+      {/* Pagination — wraps below sm; the parent is overflow-hidden, so anything that
+          cannot wrap gets clipped, taking the prev/next buttons with it */}
+      <div className="bg-background px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-2 border-t border-border">
         <div className="text-sm text-foreground/80">
           Page {currentPage} of {totalPages}
         </div>
-        <div className="text-sm text-foreground/80">
-          Showing {data.length} of {totalItems} product(s)
+        <div className="hidden text-sm text-foreground/80 sm:block">
+          Showing {data.length} of {totalItems} row(s)
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-3 py-1 border border-input rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+            aria-label="Previous page"
+            className="px-3 py-2 border border-input rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-3 py-1 border border-input rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+            aria-label="Next page"
+            className="px-3 py-2 border border-input rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

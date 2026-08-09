@@ -137,7 +137,7 @@ export function OrgsContainer() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-heading font-bold text-foreground">
             Orgs Management
@@ -175,7 +175,7 @@ export function OrgsContainer() {
       <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex flex-wrap gap-4">
           {/* Search */}
-          <div className="flex-1 min-w-64">
+          <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
             <div className="flex gap-2">
               <input
                 type="text"

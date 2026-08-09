@@ -1,6 +1,6 @@
 ---
 name: bb-review
-description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
+description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus mobile-first UI (ADR-0015) and the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
 ---
 
 # /bb-review — pre-merge review
@@ -114,6 +114,20 @@ Not an Invariant, but the same kind of failure: silent, and invisible to `tsc`.
   - a new one-off token added for a single component — the vocabulary is small on purpose; ask whether an existing token names the same job.
 - Arbitrary bracket values (`w-[123px]`, `text-[#0a0a0a]`) without a stated reason — Tailwind's scale is the size/spacing token system.
 - A new UI element hand-rolled where a shared component exists (`DataTable`, `StatusBadge`, `Card`, `FormInput`, `PortalSidebar`, `PortalHeader`) — the org orders page shipped with a hand-rolled table while `DataTable` sat unused, which is how two of everything happens.
+
+**Mobile-first** ([ADR-0015](../../../docs/adr/0015-mobile-first-design.md) — base styles target a ~360px phone; breakpoints add, never restore)
+- A **multi-column base**: `grid-cols-2/3/4` or a side-by-side flex row with no breakpoint prefix and no single-column base. The base layout is one column; `sm:`/`md:` add columns.
+- A **desktop-first breakpoint**: base styles sized for a wide screen with small screens patched afterwards — the tell is a bare `hidden` paired with `md:flex`/`md:block` on something a buyer needs. Hiding a *primary action* (search, sign-in, nav, submit) below a breakpoint requires an equivalent mobile affordance **in the same diff**; hiding decoration is fine.
+- A **hover-only affordance**: `opacity-0 group-hover:opacity-100` (or `hover:` revealing a control) with no visible-by-default state below `md`. Touch has no hover; the control simply doesn't exist on a phone.
+- An **undersized touch target**: an interactive element below `size-9` (36px) — `h-7 w-7` icon buttons, bare-glyph `<button>`s with only `px-*`. Primary controls (submit, stepper, close) want ≥40px. A destructive control within one `gap-2` of a frequent-use control is the mis-tap setup.
+- An **unscrollable overlay**: anything `fixed` + centred without `max-h-overlay` (the cap token in `globals.css`) and `overflow-y-auto` — the content clips and the bottom button becomes unreachable. A raw `max-h-[NNdvh]`/`[NNvh]` is the token's job; `DialogContent` already carries both, so a hand-rolled modal must too (or better, become a `Dialog`).
+- An **input override that reintroduces iOS zoom**: `text-xs`/`text-sm` at base on an `Input` — the primitive's `text-base md:text-sm` is a deliberate guard. Also: a numeric field (PIN, OTP, quantity) without `inputMode`, an address/identity field without its `autoComplete` token.
+- A **fixed width that can't fit 360px**: `w-[NNNpx]`/`min-w-*` ≥ ~16rem without an `sm:` gate, or `flex-1`/`justify-between` rows of no-wrap content missing `min-w-0`/`flex-wrap` — the classic horizontal-overflow pair.
+- **DOM order vs mobile reading order**: stacked grids render in source order. If a buyer must see something before acting on it (the bill before Place Order), it must precede the action in the DOM; grid placement handles desktop.
+```bash
+git diff main...HEAD -- 'src/**/*.tsx' | grep -nE 'grid-cols-[2-9](?!.*(sm|md|lg):)|hidden (sm|md|lg):(flex|block|inline)|opacity-0 group-hover|h-[4-7] w-[4-7]"|size-[4-8]"|text-xs.*<Input|min-w-(64|72|80|96)\b'
+```
+The grep is a prompt, not the check — most of these are judged by reading the component at 360px in your head. Dense admin tables satisfy the single-column rule by scrolling inside `overflow-x-auto` instead of reflowing.
 
 **Does the schema accept what the form actually sends?** The form sends its default values, so read the two together:
 - An optional field whose schema rejects its own default. A UI hint reading "leave empty" over a required rule is the tell.

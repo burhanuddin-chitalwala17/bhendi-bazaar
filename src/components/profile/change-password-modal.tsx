@@ -116,15 +116,15 @@ export function ChangePasswordModal() {
           <button
             type="button"
             onClick={() => setShowPasswords(!showPasswords)}
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+            className="-mx-2 flex min-h-10 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             {showPasswords ? (
               <>
-                <EyeOff className="h-3 w-3" /> Hide passwords
+                <EyeOff className="h-4 w-4" /> Hide passwords
               </>
             ) : (
               <>
-                <Eye className="h-3 w-3" /> Show passwords
+                <Eye className="h-4 w-4" /> Show passwords
               </>
             )}
           </button>

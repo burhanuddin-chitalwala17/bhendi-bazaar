@@ -44,6 +44,7 @@ export default async function OrgEditProductPage({
           categories={categories}
           orgs={orgs}
           locations={locations}
+          uploadEndpoint={`/api/org/${orgId}/upload`}
         />
       </Suspense>
     </div>

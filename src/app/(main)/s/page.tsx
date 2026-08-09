@@ -13,7 +13,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const products = await productsDAL.getProducts({ search: q });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    // The (main) layout already provides the max-width container and padding.
+    <div className="space-y-6">
       <SectionHeader
         overline="Search Results"
         title={`Search Results for "${q}"`}

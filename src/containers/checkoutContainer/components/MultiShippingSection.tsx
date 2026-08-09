@@ -20,7 +20,8 @@ export function MultiShippingSection({
   isLoading,
 }: MultiShippingSectionProps) {
   if (isLoading) {
-    return <LoadingSkeleton />;
+    // A card-shaped skeleton: the default text bar caused a large layout shift when rates landed.
+    return <LoadingSkeleton variant="card" count={2} />;
   }
   
   if (groups.length === 0) {
@@ -43,7 +44,7 @@ export function MultiShippingSection({
       {hasMultipleShipments && (
         <div className="rounded-lg bg-info/10 border border-info/30 p-3 text-sm">
           <div className="flex items-start gap-2">
-            <Package className="h-4 w-4 text-info mt-0.5 flex-shrink-0" />
+            <Package className="h-4 w-4 text-info mt-0.5 shrink-0" />
             <div>
               <p className="font-medium text-info">
                 Multiple Shipments
@@ -99,15 +100,15 @@ function ShippingGroupCard({
   return (
     <Card className="p-4 space-y-3">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           {showGroupNumber && (
             <p className="text-xs font-medium text-muted-foreground">
               Parcel {groupNumber} of {totalGroups}
             </p>
           )}
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
             {/* Two warehouses can share a city, so the location's own name leads
                 and the city is secondary detail (stock-locations D12). */}
             <p className="text-sm font-medium">
@@ -122,7 +123,7 @@ function ShippingGroupCard({
           </p>
         </div>
         
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <p className="text-xs text-muted-foreground">Items</p>
           <p className="text-sm font-semibold">{group.items.length}</p>
           {group.billableWeightKg !== undefined && (
