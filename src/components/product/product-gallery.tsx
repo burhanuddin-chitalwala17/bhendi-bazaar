@@ -3,7 +3,14 @@
 import { useState, useRef, useEffect } from "react";
 import type { Product } from "@/domain/product";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function ProductGallery(product: Product) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -13,11 +20,15 @@ export function ProductGallery(product: Product) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [isPinching, setIsPinching] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  // A swipe or pinch also fires a click on touch devices; this keeps it from opening the lightbox.
+  const gestureRef = useRef(false);
   const images = product.images.length ? product.images : [product.thumbnail];
 
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
+    gestureRef.current = false;
     if (e.touches.length === 2) {
       setIsPinching(true);
       const touch1 = e.touches[0];
@@ -55,22 +66,35 @@ export function ProductGallery(product: Product) {
 
   const handleTouchEnd = () => {
     if (isPinching) {
+      gestureRef.current = true;
       setIsPinching(false);
       return;
     }
 
     if (touchStart - touchEnd > 75) {
       // Swipe left - next image
+      gestureRef.current = true;
       handleNext();
     }
 
     if (touchStart - touchEnd < -75) {
       // Swipe right - previous image
+      gestureRef.current = true;
       handlePrevious();
     }
 
     setTouchStart(0);
     setTouchEnd(0);
+  };
+
+  const openLightbox = () => {
+    if (gestureRef.current) {
+      gestureRef.current = false;
+      return;
+    }
+    setScale(1);
+    setIsZoomed(false);
+    setIsLightboxOpen(true);
   };
 
   // Resets zoom as part of the interaction, not in an effect. Takes an updater
@@ -128,13 +152,14 @@ export function ProductGallery(product: Product) {
       <div className="relative group">
         <div
           ref={imageContainerRef}
-          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-hero via-hero/90 to-scrim cursor-pointer touch-pan-x touch-pan-y"
+          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-hero via-hero/90 to-scrim cursor-zoom-in touch-pan-x touch-pan-y"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          onClick={openLightbox}
         >
           {/* Decorative gradient overlay */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(250,250,249,0.12),transparent_55%)] pointer-events-none z-10" />
@@ -180,22 +205,32 @@ export function ProductGallery(product: Product) {
           {/* Navigation arrows - always visible on touch (hover never fires), hover-revealed on desktop */}
           {images.length > 1 && (
             <>
-              <button
+              <Button
                 type="button"
-                onClick={handlePrevious}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full p-2.5 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
+                variant="ghost"
+                size="icon-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrevious();
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
                 aria-label="Previous image"
               >
-                <ChevronLeft className="w-5 h-5 text-hero-foreground" />
-              </button>
-              <button
+                <ChevronLeft className="size-5 text-hero-foreground" />
+              </Button>
+              <Button
                 type="button"
-                onClick={handleNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full p-2.5 transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
+                variant="ghost"
+                size="icon-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm"
                 aria-label="Next image"
               >
-                <ChevronRight className="w-5 h-5 text-hero-foreground" />
-              </button>
+                <ChevronRight className="size-5 text-hero-foreground" />
+              </Button>
             </>
           )}
 
@@ -226,11 +261,12 @@ export function ProductGallery(product: Product) {
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-emerald-500/30 scrollbar-track-transparent">
           {images.map((image, index) => (
-            <button
+            <Button
               key={index}
               type="button"
+              variant="ghost"
               onClick={() => goToIndex(() => index)}
-              className={`relative shrink-0 w-16 aspect-[3/4] sm:w-20 rounded-lg border-2 transition-all overflow-hidden ${
+              className={`relative shrink-0 w-16 h-auto p-0 aspect-[3/4] sm:w-20 rounded-lg border-2 overflow-hidden ${
                 activeIndex === index
                   ? "border-primary ring-2 ring-ring/30 scale-105"
                   : "border-border/70 hover:border-primary/50 opacity-70 hover:opacity-100"
@@ -248,7 +284,7 @@ export function ProductGallery(product: Product) {
               {activeIndex === index && (
                 <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
               )}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -259,6 +295,117 @@ export function ProductGallery(product: Product) {
           Swipe to navigate • Pinch to zoom
         </p>
       </div>
+
+      {/* Full-screen lightbox. Kept inline while ProductGallery is the only
+          consumer; a second consumer means extracting src/components/shared/image-lightbox.tsx */}
+      <Dialog
+        open={isLightboxOpen}
+        onOpenChange={(open) => {
+          setIsLightboxOpen(open);
+          if (!open) setScale(1);
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          aria-describedby={undefined}
+          className="h-dvh max-h-none w-screen max-w-[calc(100%-1.5rem)] rounded-2xl border-0 bg-scrim/50 p-0 gap-0 flex flex-col overflow-hidden sm:max-w-[calc(100%-4rem)]"
+        >
+          <DialogTitle className="sr-only">
+            {product.name} — image gallery
+          </DialogTitle>
+
+          <DialogClose asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-lg"
+              className="absolute top-3 right-3 z-30 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
+              aria-label="Close full view"
+            >
+              <X className="size-5 text-hero-foreground" />
+            </Button>
+          </DialogClose>
+
+          {/* Main image area */}
+          <div
+            className="relative flex-1 min-h-0"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div
+              className="relative h-full w-full transition-transform duration-200 ease-out"
+              style={{ transform: `scale(${scale})` }}
+            >
+              <Image
+                src={images[activeIndex]}
+                alt={`${product.name} - Image ${activeIndex + 1}`}
+                fill
+                className="object-contain select-none"
+                sizes="100vw"
+                unoptimized
+                draggable={false}
+              />
+            </div>
+
+            {images.length > 1 && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  onClick={handlePrevious}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="size-5 text-hero-foreground" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-lg"
+                  onClick={handleNext}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="size-5 text-hero-foreground" />
+                </Button>
+                <div className="absolute bottom-3 right-3 z-20 bg-scrim/80 backdrop-blur-sm border border-primary/30 rounded-lg px-3 py-1.5 text-xs font-medium text-hero-foreground">
+                  {activeIndex + 1} / {images.length}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Thumbnail strip */}
+          {images.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto p-3 justify-start sm:justify-center">
+              {images.map((image, index) => (
+                <Button
+                  key={index}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => goToIndex(() => index)}
+                  className={`relative shrink-0 w-16 h-auto p-0 aspect-[3/4] sm:w-20 rounded-lg border-2 overflow-hidden ${activeIndex === index
+                    ? "border-primary ring-2 ring-ring/30"
+                    : "border-border/70 hover:border-primary/50 opacity-70 hover:opacity-100"
+                    }`}
+                  aria-label={`View image ${index + 1}`}
+                >
+                  <Image
+                    src={image}
+                    alt={`Thumbnail ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                    unoptimized
+                  />
+                </Button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
