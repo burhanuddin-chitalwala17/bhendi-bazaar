@@ -3,14 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import type { Product } from "@/domain/product";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ImageLightbox } from "@/components/shared/image-lightbox";
 
 export function ProductGallery(product: Product) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -135,8 +130,11 @@ export function ProductGallery(product: Product) {
     setIsZoomed(false);
   };
 
-  // Keyboard navigation
+  // Keyboard navigation. Suspended while the lightbox is open — it owns the
+  // arrow keys then, and two listeners would advance the index twice.
   useEffect(() => {
+    if (isLightboxOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") handlePrevious();
       if (e.key === "ArrowRight") handleNext();
@@ -144,7 +142,7 @@ export function ProductGallery(product: Product) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [isLightboxOpen]);
 
   return (
     <div className="space-y-3">
@@ -296,116 +294,14 @@ export function ProductGallery(product: Product) {
         </p>
       </div>
 
-      {/* Full-screen lightbox. Kept inline while ProductGallery is the only
-          consumer; a second consumer means extracting src/components/shared/image-lightbox.tsx */}
-      <Dialog
+      <ImageLightbox
+        images={images}
+        alt={product.name}
         open={isLightboxOpen}
-        onOpenChange={(open) => {
-          setIsLightboxOpen(open);
-          if (!open) setScale(1);
-        }}
-      >
-        <DialogContent
-          showCloseButton={false}
-          aria-describedby={undefined}
-          className="h-dvh max-h-none w-screen max-w-[calc(100%-1.5rem)] rounded-2xl border-0 bg-scrim/50 p-0 gap-0 flex flex-col overflow-hidden sm:max-w-[calc(100%-4rem)]"
-        >
-          <DialogTitle className="sr-only">
-            {product.name} — image gallery
-          </DialogTitle>
-
-          <DialogClose asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-lg"
-              className="absolute top-3 right-3 z-30 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
-              aria-label="Close full view"
-            >
-              <X className="size-5 text-hero-foreground" />
-            </Button>
-          </DialogClose>
-
-          {/* Main image area */}
-          <div
-            className="relative flex-1 min-h-0"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div
-              className="relative h-full w-full transition-transform duration-200 ease-out"
-              style={{ transform: `scale(${scale})` }}
-            >
-              <Image
-                src={images[activeIndex]}
-                alt={`${product.name} - Image ${activeIndex + 1}`}
-                fill
-                className="object-contain select-none"
-                sizes="100vw"
-                unoptimized
-                draggable={false}
-              />
-            </div>
-
-            {images.length > 1 && (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-lg"
-                  onClick={handlePrevious}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft className="size-5 text-hero-foreground" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-lg"
-                  onClick={handleNext}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
-                  aria-label="Next image"
-                >
-                  <ChevronRight className="size-5 text-hero-foreground" />
-                </Button>
-                <div className="absolute bottom-3 right-3 z-20 bg-scrim/80 backdrop-blur-sm border border-primary/30 rounded-lg px-3 py-1.5 text-xs font-medium text-hero-foreground">
-                  {activeIndex + 1} / {images.length}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Thumbnail strip */}
-          {images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto p-3 justify-start sm:justify-center">
-              {images.map((image, index) => (
-                <Button
-                  key={index}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => goToIndex(() => index)}
-                  className={`relative shrink-0 w-16 h-auto p-0 aspect-[3/4] sm:w-20 rounded-lg border-2 overflow-hidden ${activeIndex === index
-                    ? "border-primary ring-2 ring-ring/30"
-                    : "border-border/70 hover:border-primary/50 opacity-70 hover:opacity-100"
-                    }`}
-                  aria-label={`View image ${index + 1}`}
-                >
-                  <Image
-                    src={image}
-                    alt={`Thumbnail ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="80px"
-                    unoptimized
-                  />
-                </Button>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setIsLightboxOpen}
+        activeIndex={activeIndex}
+        onIndexChange={(index) => goToIndex(() => index)}
+      />
     </div>
   );
 }
