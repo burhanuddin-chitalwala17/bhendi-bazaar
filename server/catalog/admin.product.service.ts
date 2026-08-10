@@ -24,7 +24,17 @@ export function assertLocationsBelongToOrg(
   }
 }
 
-export class ProductsService {  
+/**
+ * Pure, exported for tests: the thumbnail is always the first gallery image. The
+ * upload control badges `images[0]` as "Thumbnail" and its reorder arrows are the
+ * only way to choose one, so deriving it here is what the admin was already promised
+ * — and it is why an edited gallery used to leave a stale card image on every listing.
+ */
+export function deriveThumbnail(data: ProductFormInput): ProductFormInput {
+  return data.thumbnail === data.images[0] ? data : { ...data, thumbnail: data.images[0] };
+}
+
+export class ProductsService {
   async getProducts(filters: ProductFilters) {
     return await adminProductsRepository.getProducts(filters);
   }
@@ -39,7 +49,7 @@ export class ProductsService {
 
   async createProduct(data: ProductFormInput) {
     await this.checkLocations(data);
-    return await adminProductsRepository.createProduct(this.moneyToPaise(data));
+    return await adminProductsRepository.createProduct(this.moneyToPaise(deriveThumbnail(data)));
   }
 
   async getProductById({ id }: { id: string }) {
@@ -52,7 +62,7 @@ export class ProductsService {
 
   async updateProduct(id: string, data: ProductFormInput) {
     await this.checkLocations(data);
-    const product = await adminProductsRepository.updateProduct(id, this.moneyToPaise(data));
+    const product = await adminProductsRepository.updateProduct(id, this.moneyToPaise(deriveThumbnail(data)));
     if (!product) {
       throw new NotFoundError("Product not found");
     }

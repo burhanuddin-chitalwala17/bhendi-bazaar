@@ -124,13 +124,17 @@ export function ProductForm({
   }, [locationIds]);
 
   const imagesValue = watch("images");
+  const thumbnailValue = watch("thumbnail");
 
-  // Auto-set thumbnail as first image
+  // Mirror of the server's deriveThumbnail: the first gallery image is the thumbnail,
+  // which is what the upload control's "Thumbnail" badge and reorder arrows promise.
+  // Re-asserted on every gallery change, not just when blank — an edit that reordered
+  // or replaced the images used to keep the old card image on every listing.
   React.useEffect(() => {
-    if (imagesValue && imagesValue.length > 0 && !product?.thumbnail) {
+    if (imagesValue && imagesValue.length > 0 && thumbnailValue !== imagesValue[0]) {
       setValue("thumbnail", imagesValue[0]);
     }
-  }, [imagesValue, setValue, product?.thumbnail]);
+  }, [imagesValue, thumbnailValue, setValue]);
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-6">
