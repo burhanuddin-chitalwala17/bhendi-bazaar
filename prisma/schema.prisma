@@ -50,11 +50,15 @@ model Product {
 
   tags        String[] // Array of tags
   flags String[] @default([])
+  // `images String[]` was here until product-video; a gallery is `media` now.
 
   rating            Float    @default(0)
   reviewsCount      Int      @default(0)
-  images            String[] // Array of image URLs
-  thumbnail         String // Main product image URL
+  /// Cache of the cover row's `ref` (product-video D4a/D4b), so every listing, search
+  /// result, cart line and order line reads one table. Written only by the resolver,
+  /// never from input; NOT NULL is the one database-level guarantee that a product has
+  /// a picture at all.
+  thumbnail         String
   sizes             String[] // Available sizes
   colors            String[] // Available colors
 
@@ -64,6 +68,7 @@ model Product {
   orderItems OrderItem[]
   cartItems  CartItem[]
   stockLocations ProductStock[]
+  media      ProductMedia[]
 
   // ⭐ Org Association (REQUIRED)
   orgId String
@@ -81,6 +86,43 @@ model Product {
   @@index([categoryId])
   @@index([createdAt])
   @@index([orgId])
+}
+
+/// One item in a product's gallery — a photograph or an embedded video, in an order
+/// the seller composes ([ADR-0017](../docs/adr/0017-video-is-embedded-not-hosted.md),
+/// docs/specs/product-video/).
+///
+/// `position` orders the gallery and means nothing outside it (R16). The cover is the
+/// row flagged `isThumbnail`, never the row at position 0, which is what lets a video
+/// lead the gallery. Two constraints the schema language cannot express are added as
+/// raw SQL in the migration: a partial unique index making at most one cover per
+/// product a database fact, and a check that a cover is always an IMAGE.
+model ProductMedia {
+  id        String    @id @default(cuid())
+  productId String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  kind      MediaKind
+  /// A blob URL for IMAGE, a bare video id for YOUTUBE — never a provider URL, so the
+  /// host stays swappable by backfill rather than by migration (ADR-0017 decision 2).
+  ref       String
+
+  position  Int
+  /// Per-item alt text. Nullable because the backfill has none to give: pre-existing
+  /// galleries only ever had positional alt text generated at render.
+  description String?
+
+  isThumbnail Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([productId, position])
+  @@index([productId])
+}
+
+enum MediaKind {
+  IMAGE
+  YOUTUBE
 }
 
 model Review {
@@ -304,6 +346,13 @@ model OrderItem {
 
   quantity  Int
   unitPrice Int // paise — the price as it stood at purchase, from birth (ADR-0004)
+  /// The picture as it stood at purchase (product-video R17/D19). Same kind of fact as
+  /// `unitPrice`: written server-side at order creation, never updated, never accepted
+  /// from a request body. Stores the URL rather than a media id, because the media row
+  /// is exactly what gets deleted in the case this exists for. Nullable only for rows
+  /// that predate the column — the backfill fills what it can, which is today's cover,
+  /// not what those buyers saw.
+  thumbnail String?
 
   // The chosen variant. Nullable: products without options have neither.
   size  String?

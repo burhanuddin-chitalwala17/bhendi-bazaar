@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-09
+- **Verified:** 2026-08-13
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -17,6 +17,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **3** — Fulfilment & marketplace | A confirmed order becomes a real booked shipment from a real location, and the store serves multiple vendors | shipping, catalog, identity | ⏳ Not started — 2 specs + a 9-subfeature programme drafted |
 | **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started — 1 spec drafted (rate-limiting) |
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
+| **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 
 ---
 
@@ -68,6 +69,16 @@ Making Phase 2 and 3 stick rather than landing once. Mostly process, governed by
 Not started, deliberately not detailed. Nothing here begins before Phase 2 closes.
 
 Product search an index can serve (`pg_trgm` or `tsvector`) · pagination on storefront queries · database-side aggregation for admin dashboards · index review on `Order` · order cancellation and refunds · structured logging and error tracking · response caching.
+
+## Phase 6 — Catalogue richness
+
+A new phase, added 2026-08-13. Phase 1 built the storefront and closed; this is where capability *added to a product page* now lands, rather than reopening a done phase or filing it under Phase 5, which is about making what exists fast and observable.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [product-video](specs/product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 📝 Draft — all questions closed 2026-08-13 |
+
+Ordering does not bind this phase to the ones before it, with one exception: `product-video` replaces `Product.images` with a `ProductMedia` relation, so it is a `[CONTRACT]` change on the product DTO and wants the [CONTRACTS.md](CONTRACTS.md) consolidation on the watch list below not to be mid-flight when it lands.
 
 ---
 

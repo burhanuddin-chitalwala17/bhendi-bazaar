@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-13
 
 ## Purpose
 What the services we depend on actually do — the behaviour that is not derivable from our code and not obvious from their documentation. Payment, courier, and platform quirks belong to no single domain and outlive any one call site, so they live here rather than in a comment.
@@ -59,6 +59,18 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **`addRandomSuffix` controls whether an upload can overwrite an existing path.** With it disabled, a caller who controls the filename controls the stored path, and a predictable path can be overwritten.
 - **Allowed hostnames must be listed in `next.config.ts`** under `images.remotePatterns`, or `next/image` refuses to render them.
 - The store's blob hostname is configured there.
+
+## YouTube (product video)
+
+Embedding only — nothing is uploaded and no video file is ever served by us ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md)).
+
+- **No OAuth and no API key are needed to embed.** An embed is an iframe against a video id. Credentials would only be required to upload on someone's behalf or read private metadata, and we do neither.
+- **The uploader can disable embedding, and there is no way to detect that before rendering.** The link stays valid, the poster still loads, and the iframe shows YouTube's own error. This is why the unavailable state is a rendering concern rather than a validation rule.
+- **A video we do not own can be deleted, made private, or age-restricted at any moment.** A failed poster is the only signal available cheaply, so it is what drives the unavailable state.
+- **A monetised third-party video runs its owner's advertising inside our page.** Accepted knowingly; see the ADR's consequences.
+- **`maxresdefault.jpg` 404s for any video never published above 720p.** `hqdefault.jpg` always exists, so that is the poster size used. Both live on `i.ytimg.com`, which must be listed in `next.config.ts` under `images.remotePatterns` or `next/image` refuses to render them.
+- **oEmbed (`https://www.youtube.com/oembed?url=...&format=json`) needs no key** and 404s for a video that does not exist or is private. Available for save-time validation; not currently called — the boundary only parses the link shape.
+- **Embeds use `youtube-nocookie.com`**, and the player is mounted on a tap rather than on load.
 
 ## Google OAuth
 

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
 
 interface LoadingSkeletonProps {
   count?: number;
@@ -98,30 +99,27 @@ export function StatsSkeleton({ count = 5 }: { count?: number }) {
   );
 }
 
+// Mirrors ProductCard's dense phone tile — a skeleton on a different grid is a layout
+// jump at the exact moment the shopper starts reading.
 export function ProductCardSkeleton() {
   return (
-    <Card className="overflow-hidden">
-      {/* Image Skeleton */}
+    <Card className="gap-0 overflow-hidden rounded-lg py-0 sm:rounded-xl">
       <div className="relative aspect-[3/4] overflow-hidden bg-muted">
         <Skeleton className="h-full w-full" />
       </div>
 
-      {/* Content Skeleton */}
-      <div className="space-y-2 p-4">
-        {/* Category */}
-        <Skeleton className="h-3 w-20" />
+      <div className="space-y-1 p-2 sm:space-y-2 sm:p-4">
+        {/* Category — hidden below sm on the real card */}
+        <Skeleton className="hidden h-3 w-20 sm:block" />
 
         {/* Title - 2 lines */}
         <div className="space-y-1">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-full sm:h-4" />
+          <Skeleton className="h-3 w-3/4 sm:h-4" />
         </div>
 
         {/* Price */}
-        <Skeleton className="h-5 w-24" />
-
-        {/* Stock Status */}
-        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-4 w-16 sm:h-5 sm:w-24" />
       </div>
     </Card>
   );
@@ -130,7 +128,7 @@ export function ProductCardSkeleton() {
 // Grid skeleton for multiple cards
 export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className={PRODUCT_GRID_CLASSES}>
       {Array.from({ length: count }).map((_, i) => (
         <ProductCardSkeleton key={i} />
       ))}
@@ -141,13 +139,13 @@ export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
 
 export function ProductPageSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Gallery and Details Section */}
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-8 lg:grid-cols-2">
         {/* Gallery Skeleton */}
-        <div className="space-y-4">
+        <div className="space-y-2 sm:space-y-4">
           {/* Main Image */}
-          <Skeleton className="aspect-[3/4] w-full rounded-lg" />
+          <Skeleton className="-mx-3 aspect-[3/4] w-auto sm:mx-0 sm:w-full sm:rounded-lg" />
 
           {/* Thumbnail Strip */}
           <div className="flex gap-2">
@@ -222,15 +220,7 @@ export function ProductPageSkeleton() {
       {/* Similar Products */}
       <div className="space-y-4">
         <Skeleton className="h-7 w-48" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-2">
-              <Skeleton className="aspect-[3/4] w-full rounded-lg" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-5 w-20" />
-            </div>
-          ))}
-        </div>
+        <ProductGridSkeleton count={3} />
       </div>
     </div>
   );

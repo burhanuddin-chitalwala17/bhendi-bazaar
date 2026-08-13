@@ -24,15 +24,12 @@ export function assertLocationsBelongToOrg(
   }
 }
 
-/**
- * Pure, exported for tests: the thumbnail is always the first gallery image. The
- * upload control badges `images[0]` as "Thumbnail" and its reorder arrows are the
- * only way to choose one, so deriving it here is what the admin was already promised
- * — and it is why an edited gallery used to leave a stale card image on every listing.
- */
-export function deriveThumbnail(data: ProductFormInput): ProductFormInput {
-  return data.thumbnail === data.images[0] ? data : { ...data, thumbnail: data.images[0] };
-}
+// `deriveThumbnail` was here until product-video. It made the thumbnail the first
+// gallery image, which stopped an edited gallery leaving a stale card image — but it
+// also meant the org could not choose. The cover is now an explicit flag on a media
+// row and gallery order means nothing outside the gallery (R16), so the derivation has
+// no job left: the repository reads the cache off the flagged row inside the same
+// transaction (D4a/D4b).
 
 export class ProductsService {
   async getProducts(filters: ProductFilters) {
@@ -49,7 +46,7 @@ export class ProductsService {
 
   async createProduct(data: ProductFormInput) {
     await this.checkLocations(data);
-    return await adminProductsRepository.createProduct(this.moneyToPaise(deriveThumbnail(data)));
+    return await adminProductsRepository.createProduct(this.moneyToPaise(data));
   }
 
   async getProductById({ id }: { id: string }) {
@@ -62,7 +59,7 @@ export class ProductsService {
 
   async updateProduct(id: string, data: ProductFormInput) {
     await this.checkLocations(data);
-    const product = await adminProductsRepository.updateProduct(id, this.moneyToPaise(deriveThumbnail(data)));
+    const product = await adminProductsRepository.updateProduct(id, this.moneyToPaise(data));
     if (!product) {
       throw new NotFoundError("Product not found");
     }

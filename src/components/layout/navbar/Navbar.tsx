@@ -1,5 +1,3 @@
-// SIMPLIFIED: components/layout/navbar.tsx
-
 "use client";
 
 import Link from "next/link";
@@ -7,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
-import { useProfileContext } from "@/context/ProfileContext";
 import { Button } from "@/components/ui/button";
 import { NavbarSearch } from "./NavbarSearch";
 import { CategoriesDropdown } from "./CategoriesDropdown";
@@ -24,47 +21,49 @@ export function Navbar() {
 
   const { data: session } = useSession();
   const user = session?.user;
+
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:h-20 sm:gap-4 sm:px-6 lg:px-8">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2">
+      {/* One compact row on a phone — logo, search, account. Categories, cart, and
+          orders moved down to MobileTabBar rather than disappearing, so nothing the
+          old second row carried was lost (ADR-0015 rule 2, ADR-0016). */}
+      <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
             src={LOGO.FULL}
             alt={APP_NAME}
             width={160}
             height={160}
             priority
-            className="h-10 w-auto sm:h-16"
+            className="h-8 w-auto sm:h-16"
           />
         </Link>
 
-        {/* Middle: categories dropdown + search */}
-        <div className="hidden flex-1 items-center gap-4 md:flex">
+        {/* Categories dropdown is desktop-only; the tab bar's sheet replaces it. */}
+        <div className="hidden shrink-0 md:block">
           <CategoriesDropdown />
-          <NavbarSearch />
         </div>
 
-        {/* Right side: auth + cart */}
-        <div className="flex items-center gap-3">
+        <NavbarSearch />
+
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {user ? (
             <ProfileMenu />
           ) : (
             <Button
               asChild
               variant="outline"
-              className="rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] sm:px-4"
+              className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] md:inline-flex lg:px-4"
             >
               <Link href="/signin">Login</Link>
             </Button>
           )}
 
-          {/* Orders link for guests */}
           {!user && (
             <Link
               href="/orders"
               className={cn(
-                "px-1 py-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors",
+                "hidden px-1 py-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors md:block",
                 pathname === "/orders" && "text-primary"
               )}
             >
@@ -72,13 +71,12 @@ export function Navbar() {
             </Link>
           )}
 
-          {/* Cart button */}
           <Button
             asChild={true}
             variant={hasCartItems ? "default" : "outline"}
             disabled={!hasCartItems}
             className={cn(
-              "relative flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em]",
+              "relative hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] md:inline-flex",
               !hasCartItems &&
                 "cursor-not-allowed border-border/80 bg-muted text-muted-foreground"
             )}
@@ -99,12 +97,6 @@ export function Navbar() {
             </Link>
           </Button>
         </div>
-      </div>
-
-      {/* Mobile: categories + search get their own row; hiding them left phones with no discovery path */}
-      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 pb-3 md:hidden">
-        <CategoriesDropdown />
-        <NavbarSearch />
       </div>
     </header>
   );

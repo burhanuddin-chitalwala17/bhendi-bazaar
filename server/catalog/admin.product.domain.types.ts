@@ -3,6 +3,7 @@
  */
 
 import { ProductFlag } from "@server/catalog/product.flags";
+import type { ProductMediaDto } from "@server/catalog/media";
 
 
 export interface ProductFilters {
@@ -35,7 +36,7 @@ export interface AdminProduct {
   flags: ProductFlag[];
   rating: number;
   reviewsCount: number;
-  images: string[];
+  media: ProductMediaDto[];
   thumbnail: string;
   sizes: string[];
   colors: string[];

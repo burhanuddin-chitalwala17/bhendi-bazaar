@@ -13,6 +13,29 @@ import { Prisma } from "@prisma/client";
 import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
 import { NotFoundError } from "@server/shared/domain-error";
+import { coverOf, type ProductMediaInput } from "@server/catalog/media";
+
+/**
+ * Pure, exported for tests: media rows for a Prisma nested create, in submitted order, plus the `thumbnail` the
+ * cover resolves to.
+ *
+ * The two are built together and written together because they must never disagree
+ * (D4b): `thumbnail` is a cache of the cover's `ref`, not an input. `coverOf` throws if
+ * no item is flagged rather than falling back to the first image — a fallback here is
+ * how an unset cover becomes survivable instead of loud (D4a).
+ */
+export function mediaWrite(media: ProductMediaInput[]) {
+  return {
+    thumbnail: coverOf(media).ref,
+    rows: media.map((item, index) => ({
+      kind: item.kind,
+      ref: item.ref,
+      description: blankToNull(item.description),
+      isThumbnail: item.isThumbnail,
+      position: index,
+    })),
+  };
+}
 
 // ✅ Efficient select - only fetch needed fields
 const PRODUCT_LIST_SELECT = {
@@ -38,12 +61,18 @@ const PRODUCT_LIST_SELECT = {
     },
 } satisfies Prisma.ProductSelect;
 
+/** Gallery order is the only order media is ever read in (R16). */
+const MEDIA_SELECT = {
+    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true },
+    orderBy: { position: "asc" },
+} satisfies Prisma.Product$mediaArgs;
+
 const PRODUCT_DETAILS_SELECT = {
     ...PRODUCT_LIST_SELECT,
     slug: true,
     description: true,
     tags: true,
-    images: true,
+    media: MEDIA_SELECT,
     sizes: true,
     colors: true,
     stockLocations: {
@@ -186,6 +215,7 @@ export class AdminProductsRepository {
         // Quantities live only on the join rows since the destructive PR; zero rows
         // are dropped ("not stocked here"), and origin comes from the locations.
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
+        const media = mediaWrite(data.media);
         const product = await prisma.product.create({
             data: {
                 slug,
@@ -198,8 +228,8 @@ export class AdminProductsRepository {
                 categoryId: data.categoryId,
                 tags: data.tags || [],
                 flags: data.flags || [],
-                images: data.images,
-                thumbnail: data.thumbnail,
+                thumbnail: media.thumbnail,
+                media: { create: media.rows },
                 sizes: data.sizes || [],
                 colors: data.colors || [],
                 sku: blankToNull(data.sku),
@@ -300,8 +330,15 @@ export class AdminProductsRepository {
         // An admin edit is a full replace, so delete-then-create is the honest
         // semantics — corrections included (R9).
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
+        // The gallery is replaced wholesale in the same transaction as `thumbnail`, so
+        // no ordering, insertion, or removal can commit having left the cache pointing
+        // at a row that is gone (D4b). Removing the cover without designating another
+        // never reaches here — the payload fails validation first, which is what A12's
+        // refusal is (D4c).
+        const media = mediaWrite(data.media);
         const product = await prisma.$transaction(async (tx) => {
             await tx.productStock.deleteMany({ where: { productId: id } });
+            await tx.productMedia.deleteMany({ where: { productId: id } });
             return tx.product.update({
                 where: { id },
                 data: {
@@ -314,8 +351,8 @@ export class AdminProductsRepository {
                     categoryId: data.categoryId,
                     tags: data.tags,
                     flags: data.flags,
-                    images: data.images,
-                    thumbnail: data.thumbnail,
+                    thumbnail: media.thumbnail,
+                    media: { create: media.rows },
                     sizes: data.sizes,
                     colors: data.colors,
                     sku: blankToNull(data.sku),

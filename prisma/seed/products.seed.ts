@@ -34,6 +34,9 @@ export const seedProducts: SeedProduct[] = [
       "https://placehold.co/800x800/10b981/ffffff?text=Emerald+Abaya+2",
     ],
     thumbnail: "https://placehold.co/800x800/10b981/ffffff?text=Emerald+Abaya",
+    // One seeded product carries video so the gallery's mixed case is reachable in dev
+    // without anyone having to paste a link first.
+    video: "aqz-KE-bpKQ",
     sizes: ["S", "M", "L", "XL"],
     colors: ["Emerald Green", "Deep Teal"],
     stock: 45,

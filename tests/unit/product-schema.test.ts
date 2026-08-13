@@ -17,8 +17,11 @@ const filledForm = (overrides: Record<string, unknown> = {}) => ({
   orgId: "sel_1",
   tags: [],
   flags: [],
-  images: ["https://cdn.example.com/1.jpg"],
-  thumbnail: "https://cdn.example.com/1.jpg",
+  // A gallery is rows now, and the cover is a flag rather than images[0]; the gallery
+  // rules themselves are pinned in product-media.test.ts.
+  media: [
+    { kind: "IMAGE", ref: "https://cdn.example.com/1.jpg", isThumbnail: true },
+  ],
   weight: 0.5,
   sizes: [],
   colors: [],

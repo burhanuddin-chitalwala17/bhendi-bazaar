@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-08-09
+- **Verified:** 2026-08-13
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -31,6 +31,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | 📝 Draft — **parent of 9 subfeatures** |
 | [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |
 | [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in production, and an environment that can't enforce says so at deploy time | 4 | cross-domain | 📝 Draft |
+| [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
 
 ### Subfeatures
 

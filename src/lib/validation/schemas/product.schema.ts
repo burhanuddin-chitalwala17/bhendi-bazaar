@@ -1,6 +1,41 @@
 import { z } from "zod";
 import { optionalNumber, rupeeAmount } from "./common.schemas";
 import { ProductFlag } from "@server/catalog/product.flags";
+import { MEDIA_KINDS, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
+
+/**
+ * One gallery item. `ref` is already an id for YOUTUBE by the time it gets here — the
+ * form parses the pasted link so the org member sees "that is not a YouTube link" inline
+ * rather than after a round trip (ADR-0013).
+ */
+const productMediaSchema = z.object({
+  kind: z.enum(MEDIA_KINDS),
+  ref: z.string().trim().min(1, "Every gallery item needs a source").max(2048),
+  description: z.string().trim().max(500).optional(),
+  isThumbnail: z.boolean(),
+});
+
+/**
+ * The gallery rules, all four of them, in the one place both sides read.
+ *
+ * Three are counts across items, so none is expressible as a database constraint and
+ * all three live here (TRD D13, D13a, D16). The fourth — a cover is never a video — is
+ * also a database check; it is repeated here so the org member gets a message instead of a
+ * constraint violation.
+ */
+const productMediaListSchema = z
+  .array(productMediaSchema)
+  .min(1, "Add at least one photograph")
+  .max(MAX_MEDIA_PER_PRODUCT, `A product can have at most ${MAX_MEDIA_PER_PRODUCT} gallery items`)
+  .refine((media) => media.some((item) => item.kind === "IMAGE"), {
+    message: "At least one photograph is required — video alone is not enough",
+  })
+  .refine((media) => media.filter((item) => item.isThumbnail).length === 1, {
+    message: "Choose exactly one photograph as the cover",
+  })
+  .refine((media) => media.every((item) => !item.isThumbnail || item.kind === "IMAGE"), {
+    message: "The cover must be a photograph, not a video",
+  });
 
 /**
  * The accepted shape of an admin product payload.
@@ -26,8 +61,9 @@ export const productFormSchema = z
     tags: z.array(z.string()).optional(),
     flags: z.array(z.enum(ProductFlag)).optional(),
 
-    images: z.array(z.string()).min(1, "At least one image is required"),
-    thumbnail: z.string().min(1, "A thumbnail is required"),
+    // `thumbnail` is absent deliberately, like `slug`: it is derived from the cover and
+    // owned by the server, so accepting it would be accepting a value we overwrite.
+    media: productMediaListSchema,
 
     weight: z.number({ message: "Weight is required" }).positive("Weight must be greater than 0"),
 
@@ -67,6 +103,6 @@ export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
 /** Field names the product form owns, so server details can be routed to them. */
 export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",
-  "orgId", "categoryId", "tags", "flags", "images", "thumbnail",
+  "orgId", "categoryId", "tags", "flags", "media",
   "weight", "sizes", "colors", "stockLocations", "sku", "lowStockThreshold",
 ] as const;

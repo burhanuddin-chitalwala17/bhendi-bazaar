@@ -1,5 +1,5 @@
 import { CategoryHero } from "@/components/category/category-hero";
-import { CategoryProductGrid } from "@/components/category/product-grid";
+import { ProductGrid } from "@/components/shared/product-grid";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Package } from "lucide-react";
 import { productsDAL } from "@/data-access-layer/products.dal";
@@ -23,7 +23,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       {category && products ? (
         <>
           <CategoryHero category={category} />
-          <CategoryProductGrid products={products} />
+          <ProductGrid products={products} />
         </>
         ) : ( 
         <EmptyState

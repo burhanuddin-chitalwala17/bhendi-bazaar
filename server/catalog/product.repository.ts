@@ -11,6 +11,13 @@ import { NotFoundError } from "@server/shared/domain-error";
 const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
   org: { select: { id: true, name: true, code: true } },
+  // The gallery, in gallery order — the only order it is ever read in (product-video
+  // R16). Selected explicitly rather than left to `include`'s defaults so the ordering
+  // travels with the query instead of being re-established by each caller.
+  media: {
+    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true },
+    orderBy: { position: "asc" as const },
+  },
   // Sellable stock lives on the join rows (stock-locations D3): active locations
   // only — an inactive location's units are held, not offered.
   stockLocations: {

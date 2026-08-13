@@ -20,13 +20,13 @@ export function ProductDetails(product: Product) {
   // console.log("ProductDetails: ", JSON.stringify(product, null, 2));
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-3 sm:space-y-4">
       {/* Header */}
-      <div className="space-y-2">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground/80">
+      <div className="space-y-1.5 sm:space-y-2">
+        <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground/80 sm:text-[0.7rem] sm:tracking-[0.32em]">
           Bhendi Bazaar · {product.categorySlug.replace("-", " ")}
         </p>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
+        <h1 className="font-heading text-lg font-semibold leading-tight tracking-tight sm:text-3xl">
           {product.name}
         </h1>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -51,19 +51,21 @@ export function ProductDetails(product: Product) {
       />
 
       {/* Description */}
-      <p className="text-sm text-muted-foreground">{product.description}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+        {product.description}
+      </p>
 
       {/* Sizes (if available) */}
       {product.options?.sizes && (
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <p className="text-[0.625rem] font-medium uppercase tracking-[0.2em] text-muted-foreground sm:text-xs">
             Sizes
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
             {product.options.sizes.map((size) => (
               <span
                 key={size}
-                className="rounded-full border border-border/80 px-3 py-1 uppercase tracking-[0.18em]"
+                className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-border/80 px-3 uppercase tracking-[0.18em]"
               >
                 {size}
               </span>
@@ -72,14 +74,18 @@ export function ProductDetails(product: Product) {
         </div>
       )}
 
-      {/* Actions - Using ProductActions component */}
-      <ProductActions
-        onAddToCart={handleAddToCart}
-        onBuyNow={handleBuyNow}
-        isOutOfStock={isOutOfStock}
-        isAddingToCart={isAddingToCart}
-        isBuyingNow={isBuyingNow}
-      />
+      {/* One set of buttons, two positions: docked above the tab bar while the shopper
+          scrolls the description and reviews, back in the flow from md. Two copies
+          would mean two "Add to cart" targets for a screen reader. */}
+      <div className="fixed inset-x-0 bottom-tabbar z-30 border-t border-border/60 bg-background/95 px-3 py-2 backdrop-blur md:static md:inset-auto md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+        <ProductActions
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+          isOutOfStock={isOutOfStock}
+          isAddingToCart={isAddingToCart}
+          isBuyingNow={isBuyingNow}
+        />
+      </div>
     </section>
   );
 }

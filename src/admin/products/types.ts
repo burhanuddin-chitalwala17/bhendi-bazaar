@@ -4,6 +4,7 @@ import type { OrgSummary } from "@/domain/org";
 // The one ProductFormInput: declared server-side, re-exported here so the two sides
 // cannot drift again (CONTRACTS.md — weight was collected and never written).
 export type { ProductFormInput } from "@server/catalog/admin.product.types";
+import type { ProductMediaDto } from "@server/catalog/media";
 
 export interface ProductFilters {
   search?: string; // Search by name, SKU, tags
@@ -57,7 +58,7 @@ export interface ProductDetails {
   stock: number;
   lowStockThreshold: number;
   weight: number;
-  images: string[];
+  media: ProductMediaDto[];
   thumbnail: string;
   sizes: string[];
   colors: string[];

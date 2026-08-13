@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-08-04
+- **Verified:** 2026-08-13
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
 
@@ -11,10 +11,11 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 ```
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
             ├── (main)  storefront   ~12 pages     ──▶ Upstash Redis   (rate limits)
-            ├── (admin) console      ~14 pages     ──▶ Vercel Blob     (images)
+            ├── (admin) console      ~14 pages     ──▶ Vercel Blob     (images only — ADR-0017)
             ├── (auth)  sign-in flow  ~4 pages     ──▶ Razorpay        (payments)
             └── api/                  46 handlers  ──▶ Shiprocket      (shipping rates)
                                                    ──▶ Resend          (email)
+                                                   ──▶ YouTube         (product video, embedded)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
@@ -48,7 +49,9 @@ Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 17 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 16 models. Money is stored as `Float`; [ADR-0004](adr/0004-money-as-integer-paise.md) sets integer paise as the target. The Prisma client is a dev-mode global singleton in `src/lib/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 34 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 25 models, 4 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the remaining `Float` columns are weights and ratings, which are not money. The Prisma client is a dev-mode global singleton in `src/lib/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+
+**Two constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express either: a partial unique index and a row-level `CHECK` on `ProductMedia`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
 
 ## Shipping
 
@@ -58,7 +61,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-No suite exists — `tests/` is empty. Strategy and targets are in [TESTING.md](TESTING.md); restoring the suite and making CI gates block is [TESTING.md](TESTING.md).
+27 Vitest unit files, 278 tests, run with `npm run test:run`. Strategy and per-layer targets are in [TESTING.md](TESTING.md); making CI gates block is still outstanding ([BACKLOG.md](BACKLOG.md) Phase 4).
 
 ## Intentionally absent
 

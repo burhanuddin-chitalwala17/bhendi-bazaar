@@ -7,6 +7,9 @@ import type { OrgSummary } from "@/domain/org";
  */
 
 import { ProductFlag } from "@/types/product";
+import type { ProductMediaDto } from "@server/catalog/media";
+
+export type { ProductMediaDto };
 
 export interface Product {
   id: string;
@@ -21,7 +24,9 @@ export interface Product {
   flags?: ProductFlag[];
   rating: number;
   reviewsCount: number;
-  images: string[];
+  /** The gallery in the org's order; exactly one item is the cover (product-video R15). */
+  media: ProductMediaDto[];
+  /** The cover's `ref`, for anywhere one picture stands in for the product (R3/R12). */
   thumbnail: string;
   weight: number;
   stock: number;

@@ -18,9 +18,10 @@ export function ProductActions({
   isBuyingNow = false,
 }: ProductActionsProps) {
   return (
-    <div className="mt-4 flex gap-2">
+    <div className="flex gap-2 md:mt-4">
       <Button
-        className="flex-1 rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+        size="lg"
+        className="flex-1 rounded-full text-[0.6875rem] font-semibold uppercase tracking-[0.15em] sm:text-xs sm:tracking-[0.2em]"
         variant="outline"
         disabled={isAddingToCart || isOutOfStock}
         onClick={onAddToCart}
@@ -32,7 +33,8 @@ export function ProductActions({
           : "Add to cart"}
       </Button>
       <Button
-        className="flex-1 rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+        size="lg"
+        className="flex-1 rounded-full text-[0.6875rem] font-semibold uppercase tracking-[0.15em] sm:text-xs sm:tracking-[0.2em]"
         disabled={isBuyingNow || isOutOfStock}
         onClick={onBuyNow}
       >

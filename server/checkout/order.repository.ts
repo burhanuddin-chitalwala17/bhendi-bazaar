@@ -14,7 +14,8 @@ import { ConflictError, NotFoundError } from "@server/shared/domain-error";
  * Order lines live in OrderItem/ShipmentItem rows (order-and-cart-lines), but the
  * wire keeps its flat items array. This include + mapper pair is how every read in
  * this domain rebuilds it: display fields from the product join (Restrict guarantees
- * the row), `price` = the unit price actually paid (TRD D2).
+ * the row), `price` = the unit price actually paid (TRD D2), and `thumbnail` = the
+ * picture as it stood at purchase (product-video R17).
  */
 export const SHIPMENT_LINES_INCLUDE = {
   items: {
@@ -33,6 +34,7 @@ interface ShipmentLineRow {
   orderItem: {
     productId: string;
     unitPrice: number;
+    thumbnail: string | null;
     size: string | null;
     color: string | null;
     product: { name: string; slug: string; thumbnail: string };
@@ -44,7 +46,10 @@ export function toWireShipmentItems(rows: ShipmentLineRow[]): ShipmentItem[] {
     productId: row.orderItem.productId,
     productName: row.orderItem.product.name,
     productSlug: row.orderItem.product.slug,
-    thumbnail: row.orderItem.product.thumbnail,
+    // The snapshot wins. Falling back to the live product covers only rows written
+    // before the column existed — the backfill filled those, so this is for orders
+    // created in the window between migrating and deploying (product-video D19).
+    thumbnail: row.orderItem.thumbnail ?? row.orderItem.product.thumbnail,
     price: row.orderItem.unitPrice,
     quantity: row.quantity,
     size: row.orderItem.size ?? undefined,

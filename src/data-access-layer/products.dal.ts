@@ -30,7 +30,7 @@ const mapProduct = (product: any): Product => {
     flags: product.flags,
     rating: product.rating,
     reviewsCount: product.reviewsCount,
-    images: product.images,
+    media: product.media ?? [],
     thumbnail: product.thumbnail,
     weight: product.weight ?? 0,
     stock: totalStock,

@@ -52,3 +52,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0013](0013-one-error-envelope-and-useserverform.md) | Errors travel in one envelope; forms consume it through `useServerForm` | Accepted | 2026-08-05 |
 | [0014](0014-deploys-run-their-own-migrations.md) | Deploys run their own migrations — `migrate deploy` in the Vercel build | Accepted | 2026-08-09 |
 | [0015](0015-mobile-first-design.md) | The UI is designed mobile-first; desktop is the enhancement | Accepted | 2026-08-09 |
+| [0016](0016-mobile-app-shell.md) | The phone storefront is an app shell — bottom tab bar, dense grids, docked chrome | Accepted | 2026-08-11 |
+| [0017](0017-video-is-embedded-not-hosted.md) | Video is embedded from a third-party host, never stored in our own object storage | Accepted | 2026-08-13 |

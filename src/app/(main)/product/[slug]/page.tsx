@@ -17,9 +17,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = await productsDAL.getProductBySlug(slug);
   const similar = await productsDAL.getSimilarProducts(slug, 4);
   return (
-    <div className="space-y-8">
+    // pb-16 clears the docked Add-to-cart bar, which is fixed and so out of flow.
+    <div className="space-y-6 pb-16 sm:space-y-8 md:pb-0">
       <Suspense fallback={<ProductPageSkeleton />}>
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-8 lg:grid-cols-2">
           <ProductGallery {...product} />
           <ProductDetails {...product} />
         </div>
