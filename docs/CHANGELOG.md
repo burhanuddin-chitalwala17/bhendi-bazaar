@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-65] 2026-08-13 — A shared link carries a picture, and a product can be shared from its page
+
+`src/app/(main)/product/[slug]/page.tsx` gains `generateMetadata`: title, description, canonical URL, and `og:image` set to the product's cover. Until now the route exported no metadata at all, so a link pasted into WhatsApp fell back to the root layout's site-wide card — the shop name and tagline, and no picture.
+
+The missing picture had a second cause: `OG_IMAGE` was the brand SVG, and no scraper renders one, so the site-wide card had never had an image either. `OG_IMAGE` now points at a 1200×630 PNG (`logos/og-image.png`, 45 KB — comfortably under the size at which WhatsApp gives up on a large preview), composed from the existing logo lockup on its own ground with the `--primary` / `--accent` greens as a footer rule, converted from the oklch in `globals.css` rather than picked by eye. `OG_IMAGE_SIZE` sits beside it because a scraper renders the card before it has fetched the image, and the root layout also gains `twitter: summary_large_image`.
+
+A product page still prefers its own cover; the site-wide PNG is what everything else falls back to.
+
+No pixel dimensions are declared for a product cover — nothing stores its size (`prisma/schema.prisma`, `ProductMedia`), and a guessed ratio is what makes a scraper crop the card wrong. The product read is wrapped in React `cache()` so `generateMetadata` and the page share one query rather than hitting Prisma twice.
+
+The product page also gains the `ShareButton` the order summary already uses (`src/components/product/product-details.tsx`), beside the title rather than with the cart buttons — those dock to the bottom bar on a phone, where a third target crowds the primary action.
+
+## [PR-64] 2026-08-13 — A product with no stock anywhere can be saved
+
+`productFormSchema` no longer requires a positive quantity at some location (`src/lib/validation/schemas/product.schema.ts`). Sold out is a state a product spends real time in, and the rule made the one edit an org member most wants to make — everything except the stock — impossible until they invented a number. Choosing at least one pickup location is still required, so origin is never guessed.
+
+Nothing downstream changed: the write path has always dropped zero rows as "not stocked here" (`server/catalog/admin.product.repository.ts:217`, `:332`), so an all-zero save simply stores no join rows and the product reads as out of stock. `tests/unit/product-schema.test.ts` now asserts the acceptance rather than the rejection.
+
 ## [PR-63] 2026-08-13 — Product video, and the gallery becomes rows [CONTRACT] [MIGRATION]
 
 A product page can show video, and the picture that represents a product is now a choice rather than a side effect of gallery order.

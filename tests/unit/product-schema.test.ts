@@ -69,10 +69,10 @@ describe("stock is per pickup location (stock-locations R2/A1)", () => {
     });
   });
 
-  it("refuses all-zero quantities — a location must actually hold something", () => {
+  it("accepts all-zero quantities — sold out is a state a product has to be savable in", () => {
     expect(
       issuesFor(filledForm({ stockLocations: [{ orgAddressId: "loc_1", quantity: 0 }] }))
-    ).toEqual([{ path: "stockLocations", message: "Enter stock at at least one location" }]);
+    ).toEqual([]);
   });
 
   it("refuses the same location twice", () => {

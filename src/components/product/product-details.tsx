@@ -6,6 +6,7 @@ import type { Product } from "@/domain/product";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
 import { ProductActions } from "@/components/shared/button-groups/ProductActions";
+import { ShareButton } from "@/components/shared/ShareButton";
 import { useProductActions } from "@/hooks/product/useProductActions";
 
 export function ProductDetails(product: Product) {
@@ -26,9 +27,22 @@ export function ProductDetails(product: Product) {
         <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground/80 sm:text-[0.7rem] sm:tracking-[0.32em]">
           Bhendi Bazaar · {product.categorySlug.replace("-", " ")}
         </p>
-        <h1 className="font-heading text-lg font-semibold leading-tight tracking-tight sm:text-3xl">
-          {product.name}
-        </h1>
+        {/* Share sits beside the title rather than with the cart buttons: those dock to
+            the bottom bar on a phone, where a third target crowds the primary action. */}
+        <div className="flex items-start gap-2">
+          <h1 className="min-w-0 flex-1 font-heading text-lg font-semibold leading-tight tracking-tight sm:text-3xl">
+            {product.name}
+          </h1>
+          <ShareButton
+            url={`/product/${product.slug}`}
+            title={`${product.name} — Bhendi Bazaar`}
+            text={`Look at this on Bhendi Bazaar: ${product.name}`}
+            variant="ghost"
+            size="icon"
+            showLabel={false}
+            className="shrink-0"
+          />
+        </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span>
             {product.rating.toFixed(1)} · {product.reviewsCount} reviews

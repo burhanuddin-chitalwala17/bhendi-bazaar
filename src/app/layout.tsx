@@ -11,6 +11,7 @@ import {
   FAVICON,
   LOGO,
   OG_IMAGE,
+  OG_IMAGE_SIZE,
 } from "@/lib/config";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
@@ -38,9 +39,17 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
+    type: "website",
+    siteName: APP_NAME,
     title: APP_NAME,
     description: APP_DESCRIPTION,
-    images: [{ url: OG_IMAGE }],
+    images: [{ ...OG_IMAGE_SIZE, url: OG_IMAGE, alt: APP_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: APP_NAME,
+    description: APP_DESCRIPTION,
+    images: [OG_IMAGE],
   },
 };
 
