@@ -22,6 +22,12 @@ No pixel dimensions are declared for a product cover — nothing stores its size
 
 The product page also gains the `ShareButton` the order summary already uses (`src/components/product/product-details.tsx`), beside the title rather than with the cart buttons — those dock to the bottom bar on a phone, where a third target crowds the primary action.
 
+## [PR-66] 2026-08-13 — A cleared stock box reads as zero
+
+Emptying a stock input showed `Invalid input: expected number, received NaN` — [PR-64](#pr-64-2026-08-13--a-product-with-no-stock-anywhere-can-be-saved) allowed a zero-stock product but left the field unable to express zero by being blank. `register`'s `valueAsNumber` is what produces the NaN, so the fix is a `setValueAs` in the one input that has the problem (`src/components/shared/forms/product/ProductOrgShippingFields.tsx`), not a looser rule in `productFormSchema` — the schema is also the server's authority, and every caller would inherit it.
+
+Two near-misses worth recording. `.nullable()` does not apply: `valueAsNumber` yields NaN, not null, and NaN fails `z.number()`'s type check before any refinement runs. Relaxing the floor to `.min(-1)` does not either — it never sees NaN, and it makes `-1` a valid stock level on the server. `.min(0)` stands, with a test pinning it.
+
 ## [PR-64] 2026-08-13 — A product with no stock anywhere can be saved
 
 `productFormSchema` no longer requires a positive quantity at some location (`src/lib/validation/schemas/product.schema.ts`). Sold out is a state a product spends real time in, and the rule made the one edit an org member most wants to make — everything except the stock — impossible until they invented a number. Choosing at least one pickup location is still required, so origin is never guessed.

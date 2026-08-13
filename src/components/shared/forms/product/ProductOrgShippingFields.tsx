@@ -116,6 +116,8 @@ export function ProductOrgShippingFields({
                       {location.city} — {location.pincode}
                     </p>
                   </div>
+                  {/* setValueAs, not valueAsNumber: the latter makes a cleared box NaN
+                      (CHANGELOG PR-66). */}
                   <FormInput
                     label=""
                     aria-label={`Stock at ${location.name}`}
@@ -124,7 +126,9 @@ export function ProductOrgShippingFields({
                     placeholder="0"
                     className="w-28"
                     disabled={readOnly}
-                    {...register(`stockLocations.${index}.quantity`, { valueAsNumber: true })}
+                    {...register(`stockLocations.${index}.quantity`, {
+                      setValueAs: (v) => (v === "" || v === null ? 0 : Number(v)),
+                    })}
                     error={errors.stockLocations?.[index]?.quantity?.message}
                   />
                 </div>

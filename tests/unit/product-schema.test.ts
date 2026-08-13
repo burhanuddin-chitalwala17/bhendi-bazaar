@@ -75,6 +75,12 @@ describe("stock is per pickup location (stock-locations R2/A1)", () => {
     ).toEqual([]);
   });
 
+  it("still refuses a negative quantity — a cleared box is zeroed by the input, not excused here", () => {
+    expect(
+      issuesFor(filledForm({ stockLocations: [{ orgAddressId: "loc_1", quantity: -1 }] }))
+    ).toEqual([{ path: "stockLocations.0.quantity", message: "Stock cannot be negative" }]);
+  });
+
   it("refuses the same location twice", () => {
     expect(
       issuesFor(
