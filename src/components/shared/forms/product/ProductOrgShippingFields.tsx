@@ -93,7 +93,7 @@ export function ProductOrgShippingFields({
                   Add one first
                 </Link>
               )}{" "}
-              — a product cannot be saved without a location and a quantity.
+              — a product cannot be saved without a location.
             </div>
           ) : (
             <div className="space-y-2">

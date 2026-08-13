@@ -72,7 +72,8 @@ export const productFormSchema = z
 
     // Stock is per pickup location (stock-locations R2/R3): whoever adds a product
     // names where it sits and how many are there. An unchosen location is an error,
-    // not a default.
+    // not a default — but zero everywhere is legitimate: a sold-out product still
+    // has to be editable, and a listing is often created before the stock arrives.
     stockLocations: z
       .array(
         z.object({
@@ -81,9 +82,6 @@ export const productFormSchema = z
         })
       )
       .min(1, "Choose at least one pickup location")
-      .refine((rows) => rows.some((row) => row.quantity > 0), {
-        message: "Enter stock at at least one location",
-      })
       .refine(
         (rows) => new Set(rows.map((row) => row.orgAddressId)).size === rows.length,
         { message: "Each location may appear only once" }

@@ -10,6 +10,12 @@
 
 ## Entries
 
+## [PR-64] 2026-08-13 — A product with no stock anywhere can be saved
+
+`productFormSchema` no longer requires a positive quantity at some location (`src/lib/validation/schemas/product.schema.ts`). Sold out is a state a product spends real time in, and the rule made the one edit an org member most wants to make — everything except the stock — impossible until they invented a number. Choosing at least one pickup location is still required, so origin is never guessed.
+
+Nothing downstream changed: the write path has always dropped zero rows as "not stocked here" (`server/catalog/admin.product.repository.ts:217`, `:332`), so an all-zero save simply stores no join rows and the product reads as out of stock. `tests/unit/product-schema.test.ts` now asserts the acceptance rather than the rejection.
+
 ## [PR-63] 2026-08-13 — Product video, and the gallery becomes rows [CONTRACT] [MIGRATION]
 
 A product page can show video, and the picture that represents a product is now a choice rather than a side effect of gallery order.
