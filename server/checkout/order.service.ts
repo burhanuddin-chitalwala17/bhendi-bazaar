@@ -330,6 +330,12 @@ export class OrderService {
         // One OrderItem per priced line; each parcel's ShipmentItem points at it, so
         // a line split across two locations stays linked to the one thing the
         // customer ordered (order-and-cart-lines R5 — exercised for the first time).
+        //
+        // `thumbnail` is frozen here beside `unitPrice`, from the same catalogue read
+        // (product-video R17/D19): an org that later changes the product's cover
+        // must not change what a completed order looks like. `pricedLines` already
+        // carries it from the catalogue precisely so a client-sent one cannot become
+        // history — this persists that value instead of re-deriving it on every read.
         const orderItemIdByKey = new Map<string, string>();
         for (const line of pricedLines) {
           const created = await tx.orderItem.create({
@@ -338,6 +344,7 @@ export class OrderService {
               productId: line.productId,
               quantity: line.quantity,
               unitPrice: line.unitPrice,
+              thumbnail: line.thumbnail,
               size: line.size ?? null,
               color: line.color ?? null,
             },

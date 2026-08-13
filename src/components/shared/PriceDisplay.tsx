@@ -8,7 +8,7 @@ interface PriceDisplayProps {
   price: number;
   salePrice?: number | null;
   currency?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   showBadge?: boolean;
   className?: string;
 }
@@ -24,15 +24,28 @@ export function PriceDisplay({
   const hasOffer = salePrice != null && salePrice > 0 && salePrice < price;
   const displayPrice = hasOffer ? salePrice : price;
 
+  // xs is the dense grid tile: at 3-up on a 360px phone it gets ~105px of width, which
+  // has no room for a gap-3 row — so it wraps tightly and grows back at `sm`, where
+  // the same tile is twice as wide.
   const sizeClasses = {
-    sm: { price: "text-sm", original: "text-xs" },
-    md: { price: "text-xl", original: "text-sm" },
-    lg: { price: "text-2xl", original: "text-base" },
+    xs: {
+      price: "text-[0.8125rem] sm:text-sm",
+      original: "text-[0.6875rem] sm:text-xs",
+      row: "flex-wrap gap-x-1.5 gap-y-0",
+    },
+    sm: { price: "text-sm", original: "text-xs", row: "flex-wrap gap-x-2 gap-y-0.5" },
+    md: { price: "text-xl", original: "text-sm", row: "gap-3" },
+    lg: { price: "text-xl sm:text-2xl", original: "text-sm sm:text-base", row: "gap-3" },
   };
 
   return (
-    <div className={cn("flex items-baseline gap-3", className)}>
-      <span className={cn("font-semibold text-primary", sizeClasses[size].price)}>
+    <div className={cn("flex items-baseline", sizeClasses[size].row, className)}>
+      <span
+        className={cn(
+          "font-semibold text-primary tabular-nums",
+          sizeClasses[size].price
+        )}
+      >
         {formatCurrency(displayPrice)}
       </span>
       {hasOffer && (

@@ -1,5 +1,5 @@
 
-import { CategoryProductGrid } from "@/components/category/product-grid";
+import { ProductGrid } from "@/components/shared/product-grid";
 import { Package } from "lucide-react";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
@@ -21,7 +21,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       />
       <Suspense fallback={<ProductGridSkeleton />}>
       {products && products.length > 0 ? (
-        <CategoryProductGrid products={products} />
+        <ProductGrid products={products} />
       ) : (
         <EmptyState
           icon={Package}

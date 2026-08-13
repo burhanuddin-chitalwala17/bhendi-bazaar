@@ -11,6 +11,7 @@ const lineRow = (overrides: Record<string, unknown> = {}) => ({
   orderItem: {
     productId: "prod-1",
     unitPrice: 100000,
+    thumbnail: "t.jpg" as string | null,
     size: "M" as string | null,
     color: null as string | null,
     product: { name: "Cream Rida", slug: "cream-rida", thumbnail: "t.jpg" },

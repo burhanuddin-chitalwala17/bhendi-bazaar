@@ -66,7 +66,7 @@ class ProductsDAL {
       ),
       lowStockThreshold: product.lowStockThreshold,
       weight: product.weight ?? 0,
-      images: product.images,
+      media: product.media ?? [],
       thumbnail: product.thumbnail,
       sizes: product.sizes,
       colors: product.colors,

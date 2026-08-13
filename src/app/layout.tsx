@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -42,6 +42,17 @@ export const metadata: Metadata = {
     description: APP_DESCRIPTION,
     images: [{ url: OG_IMAGE }],
   },
+};
+
+// viewportFit: "cover" is what makes env(safe-area-inset-*) resolve to anything other
+// than 0 — the bottom tab bar and the sticky product CTA both sit on the home
+// indicator without it. No maximumScale/userScalable cap: pinch-zoom is an
+// accessibility affordance, and the app feel comes from the layout, not from
+// disabling the browser.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({

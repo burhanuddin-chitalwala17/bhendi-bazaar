@@ -1,4 +1,5 @@
 import { ProductFlag } from "@server/catalog/product.flags";
+import type { ProductMediaInput } from "@server/catalog/media";
 
 export interface ProductFilters {
   search?: string; // Search by name, SKU, tags
@@ -25,8 +26,12 @@ export interface ProductFormInput {
   categoryId: string;
   tags?: string[];
   flags?: ProductFlag[];
-  images: string[];
-  thumbnail: string;
+  /**
+   * The gallery, in gallery order. Exactly one item carries `isThumbnail` (R15).
+   * `thumbnail` is absent deliberately: it is derived from that item and is server-owned,
+   * so accepting it would be accepting a value we then overwrite (Invariant 4).
+   */
+  media: ProductMediaInput[];
   sizes?: string[];
   colors?: string[];
   /** Stock per pickup location (stock-locations R2/R3). Zero rows are dropped. */

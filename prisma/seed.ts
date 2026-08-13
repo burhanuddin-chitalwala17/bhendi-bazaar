@@ -27,6 +27,7 @@ import {
   seedCarts,
   seedShippingProviders,
 } from "./seed/index";
+import type { SeedProduct } from "./seed/types";
 
 // Use the same adapter configuration as the main app
 const pool = new Pool({
@@ -38,6 +39,34 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({
   adapter,
 });
+
+/**
+ * The fixture keeps a readable `images` array; the gallery is rows. The item matching
+ * `thumbnail` is the cover, so a seeded product satisfies R15 the same way the
+ * migration's backfill makes an existing one satisfy it — and where no image matches
+ * (several fixtures have a thumbnail that is not in their gallery) the first wins, which
+ * is the same rule the backfill uses.
+ */
+function seedMediaRows(product: SeedProduct) {
+  const images = product.images.length ? product.images : [product.thumbnail];
+  const coverIndex = Math.max(0, images.indexOf(product.thumbnail));
+  const rows: Array<{
+    kind: "IMAGE" | "YOUTUBE";
+    ref: string;
+    position: number;
+    isThumbnail: boolean;
+  }> = images.map((ref, index) => ({
+    kind: "IMAGE",
+    ref,
+    position: index,
+    isThumbnail: index === coverIndex,
+  }));
+
+  if (product.video) {
+    rows.push({ kind: "YOUTUBE", ref: product.video, position: rows.length, isThumbnail: false });
+  }
+  return rows;
+}
 
 async function main() {
   console.log("🌱 Starting database seed...\n");
@@ -213,8 +242,8 @@ async function main() {
         flags: productData.flags,
         rating: productData.rating,
         reviewsCount: productData.reviewsCount,
-        images: productData.images,
         thumbnail: productData.thumbnail,
+        media: { create: seedMediaRows(productData) },
         sizes: productData.sizes,
         colors: productData.colors,
         // Quantity lives on the join row, at the org's seeded pickup location.

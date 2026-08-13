@@ -5,7 +5,7 @@ import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormController } from "../FormField";
-import { ImageUpload } from "@/admin/image-upload";
+import { ProductMediaManager } from "@/admin/product-media-manager";
 import { ProductBasicFields } from "./ProductBasicFields";
 import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
@@ -17,6 +17,7 @@ import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import { paiseToRupees } from "@/lib/format";
+import { youtubePosterUrl, type ProductMediaInput } from "@server/catalog/media";
 import type { OrgSummary } from "@/domain/org";
 interface ProductFormProps {
   product?: ProductDetails;
@@ -73,8 +74,15 @@ export function ProductForm({
       orgId: product?.org?.id || "",
       tags: product?.tags || [],
       flags: product?.flags || [],
-      images: product?.images || [],
-      thumbnail: product?.thumbnail || "",
+      // No cover is pre-selected on create (D17a). On edit the saved flag comes back
+      // with the rows, so an existing product keeps the cover its org chose.
+      media:
+        product?.media?.map((item) => ({
+          kind: item.kind,
+          ref: item.ref,
+          description: item.description ?? undefined,
+          isThumbnail: item.isThumbnail,
+        })) || [],
       weight: product?.weight || 0,
       sizes: product?.sizes || [],
       colors: product?.colors || [],
@@ -123,18 +131,10 @@ export function ProductForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationIds]);
 
-  const imagesValue = watch("images");
-  const thumbnailValue = watch("thumbnail");
-
-  // Mirror of the server's deriveThumbnail: the first gallery image is the thumbnail,
-  // which is what the upload control's "Thumbnail" badge and reorder arrows promise.
-  // Re-asserted on every gallery change, not just when blank — an edit that reordered
-  // or replaced the images used to keep the old card image on every listing.
-  React.useEffect(() => {
-    if (imagesValue && imagesValue.length > 0 && thumbnailValue !== imagesValue[0]) {
-      setValue("thumbnail", imagesValue[0]);
-    }
-  }, [imagesValue, thumbnailValue, setValue]);
+  // The effect that mirrored the server's deriveThumbnail lived here until
+  // product-video (D18). It re-asserted `thumbnail = images[0]` on every gallery change,
+  // which is now the opposite of the rule: the cover is a flag the org sets, and
+  // reordering the gallery must leave it alone (R16). The form assigns no cover.
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -165,47 +165,51 @@ export function ProductForm({
         readOnly={readOnly}
       />
 
-      {/* Images */}
+      {/* Gallery — photographs and video, in the org's order, one photo as cover */}
       {!readOnly && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Gallery</h2>
             <FormController
-              name="images"
+              name="media"
               control={control}
-              label="Product Images"
-              rules={{ required: "At least one image is required" }}
+              label="Photos and video"
               render={({ field }) => (
-                <ImageUpload
-                  label="Product Images"
-                  value={field.value as string[]}
+                <ProductMediaManager
+                  value={field.value as ProductMediaInput[]}
                   onChange={field.onChange}
-                  maxImages={10}
-                  required
                   endpoint={uploadEndpoint}
                 />
               )}
             />
-            {errors.images && (
-              <p className="text-destructive text-sm mt-1">{errors.images.message}</p>
+            {errors.media && (
+              <p className="text-destructive text-sm mt-1">
+                {errors.media.message ?? errors.media.root?.message}
+              </p>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* View-only Images */}
-      {readOnly && product?.images && product.images.length > 0 && (
+      {/* View-only gallery */}
+      {readOnly && product?.media && product.media.length > 0 && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Images</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Gallery</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {product.images.map((img, idx) => (
-                <div key={idx} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
+              {product.media.map((item) => (
+                <div key={item.id} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={img}
-                    alt={`Product ${idx + 1}`}
+                    src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
+                    alt={item.description ?? ""}
                     className="w-full h-full object-cover"
                   />
+                  {(item.kind === "YOUTUBE" || item.isThumbnail) && (
+                    <span className="absolute left-2 top-2 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">
+                      {item.isThumbnail ? "Cover" : "Video"}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

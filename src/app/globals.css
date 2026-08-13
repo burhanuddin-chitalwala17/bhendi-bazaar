@@ -56,6 +56,7 @@
 
 :root {
   --radius: 0.75rem;
+  --tab-bar-h: 3.5rem;
   /* Daytime courtyard: warm parchment background, deep charcoal text */
   --background: oklch(0.98 0.01 95);
   --foreground: oklch(0.22 0.03 40);
@@ -162,12 +163,50 @@
   max-height: 85dvh;
 }
 
+/* Mobile app shell. The storefront is opened from a phone home screen as often as a
+   browser tab, and a future WebView wrapper renders these same pages — so the chrome
+   has to respect the notch and the home indicator. One height token, so the tab bar
+   and everything that has to clear it cannot drift apart. (ADR-0016) */
+@utility h-tabbar {
+  height: var(--tab-bar-h);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Clears the fixed bottom tab bar plus the home indicator under it. */
+@utility pb-tabbar {
+  padding-bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom) + 0.5rem);
+}
+
+/* Sits a fixed element directly on top of the tab bar (sticky product CTA, toasts). */
+@utility bottom-tabbar {
+  bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom));
+}
+
+/* Horizontal rails read as app carousels, not as scrollbars. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* iOS silently inflates text in landscape otherwise, which breaks a 3-up grid. */
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    /* Grey flash on every tap is the clearest browser tell in a WebView. */
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
   }
 }
 
