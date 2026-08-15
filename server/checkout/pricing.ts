@@ -17,8 +17,7 @@ export interface PricingProduct {
   name: string;
   slug: string;
   thumbnail: string;
-  price: number; // paise
-  salePrice: number | null; // paise
+  price: number; // paise — the list price; reductions are offers (ADR-0018)
   weight: number | null; // kg
   orgId: string;
   sizes: string[];
@@ -43,12 +42,16 @@ export interface PricedGroup {
 }
 
 /**
- * The one place the sale-price rule lives (trd.md D6): a sale price applies when it
- * is set, positive, and actually below the regular price.
+ * The catalogue price a line is priced from, before any offer.
+ *
+ * This used to resolve `Product.salePrice`. Markdowns are offers now (ADR-0018
+ * decision 4), so there is one reduction mechanism rather than two, and the reduction
+ * is applied by the offer engine against **this** base. Pricing from a
+ * partly-discounted base is what made markdowns compound with campaigns instead of
+ * competing with them (ADR-0019 decision 1).
  */
-export function effectiveUnitPrice(product: Pick<PricingProduct, "price" | "salePrice">): number {
-  const { price, salePrice } = product;
-  return salePrice !== null && salePrice > 0 && salePrice < price ? salePrice : price;
+export function catalogueUnitPrice(product: Pick<PricingProduct, "price">): number {
+  return product.price;
 }
 
 /** Price one shipment group's items from the catalogue. */
@@ -81,7 +84,7 @@ export function priceGroupItems(
       throw new DomainError(`"${product.name}" is not available in ${color}`);
     }
 
-    const unit = effectiveUnitPrice(product);
+    const unit = catalogueUnitPrice(product);
     itemsTotal += unit * quantity;
     totalWeight += (product.weight ?? 0) * quantity;
 
@@ -93,7 +96,6 @@ export function priceGroupItems(
       productSlug: product.slug,
       thumbnail: product.thumbnail,
       price: product.price,
-      salePrice: product.salePrice ?? undefined,
       quantity,
       size,
       color,
@@ -129,7 +131,7 @@ export function priceLines(
       throw new DomainError(`"${product.name}" is not available in ${color}`);
     }
 
-    const unit = effectiveUnitPrice(product);
+    const unit = catalogueUnitPrice(product);
     itemsTotal += unit * quantity;
     lines.push({
       productId: product.id,
@@ -137,7 +139,6 @@ export function priceLines(
       productSlug: product.slug,
       thumbnail: product.thumbnail,
       price: product.price,
-      salePrice: product.salePrice ?? undefined,
       quantity,
       size,
       color,
@@ -158,15 +159,21 @@ export interface OrderTotals {
 /**
  * Assemble order totals from server-priced groups.
  *
- * `discount` is a constant 0: no discount mechanism exists, so any client-sent
- * discount is an attack, not an input. When coupons arrive, the amount is computed
- * here from the coupon — never accepted from the request.
+ * `discountPaise` comes from the offer engine, computed inside the same transaction
+ * from persisted offers (ADR-0019). It is never accepted from a request: the browser
+ * may contribute a coupon *code*, and a discount amount arriving in a body is an
+ * attack rather than an input (Invariant 1).
+ *
+ * Shipping is outside the discount: offers reduce goods, and a parcel's rate is
+ * quoted per origin, so discounting it would be discounting a courier's bill.
  */
 export function assembleOrderTotals(
-  groups: Array<{ itemsTotal: number; shippingRate: number }>
+  groups: Array<{ itemsTotal: number; shippingRate: number }>,
+  discountPaise = 0
 ): OrderTotals {
   const itemsTotal = groups.reduce((sum, g) => sum + g.itemsTotal, 0);
   const shippingTotal = groups.reduce((sum, g) => sum + g.shippingRate, 0);
-  const discount = 0;
+  // Clamped so a mispriced offer can never make an order pay the customer.
+  const discount = Math.max(0, Math.min(discountPaise, itemsTotal));
   return { itemsTotal, shippingTotal, discount, grandTotal: itemsTotal + shippingTotal - discount };
 }

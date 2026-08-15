@@ -13,21 +13,24 @@ datasource db {
 }
 
 model Category {
-  id               String    @id @default(cuid())
-  slug             String    @unique
-  name             String
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  name        String
   /// Self-referencing tree (category-tree D1/D2): null = root. Restrict, so a parent
   /// with children cannot be deleted; cycles are refused on the write path.
-  parentId         String?
-  parent           Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children         Category[] @relation("CategoryTree")
-  description      String    @db.Text
-  heroImage        String // URL to hero image
-  accent           CategoryAccent @default(EMERALD)
-  order            Int       @default(0)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  products         Product[]
+  parentId    String?
+  parent      Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children    Category[]     @relation("CategoryTree")
+  description String         @db.Text
+  heroImage   String // URL to hero image
+  accent      CategoryAccent @default(EMERALD)
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  products    Product[]
+
+  promotionTargets PromotionTarget[]
+  commissionRules  OrgCommissionRule[]
 
   @@index([slug])
   @@index([order])
@@ -35,52 +38,53 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String @id @default(cuid())
+  slug        String @unique
   name        String
-  description String   @db.Text
-  price       Int // paise (Invariant 3)
-  salePrice   Int? // paise
-  currency    String   @default("INR")
+  description String @db.Text
+  price       Int // paise (Invariant 3). A reduction is an offer, never a column
+  // on the product — see Promotion (ADR-0018 decision 4, promotions D9).
+  currency    String @default("INR")
 
-  categoryId  String
+  categoryId String
   // Restrict, not Cascade: deleting a category must never delete its products
   // (category-tree D3 — the cascade only ever had an application-level count in its way).
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  // Now the general rule rather than a local judgement (ADR-0020).
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
 
-  tags        String[] // Array of tags
+  tags  String[] // Array of tags
   flags String[] @default([])
   // `images String[]` was here until product-video; a gallery is `media` now.
 
-  rating            Float    @default(0)
-  reviewsCount      Int      @default(0)
+  rating       Float    @default(0)
+  reviewsCount Int      @default(0)
   /// Cache of the cover row's `ref` (product-video D4a/D4b), so every listing, search
   /// result, cart line and order line reads one table. Written only by the resolver,
   /// never from input; NOT NULL is the one database-level guarantee that a product has
   /// a picture at all.
-  thumbnail         String
-  sizes             String[] // Available sizes
-  colors            String[] // Available colors
+  thumbnail    String
+  sizes        String[] // Available sizes
+  colors       String[] // Available colors
 
-  sku               String?  @unique // Stock Keeping Unit
-  lowStockThreshold Int      @default(10) // Alert when stock falls below this
+  sku               String? @unique // Stock Keeping Unit
+  lowStockThreshold Int     @default(10) // Alert when stock falls below this
 
-  orderItems OrderItem[]
-  cartItems  CartItem[]
-  stockLocations ProductStock[]
-  media      ProductMedia[]
+  orderItems       OrderItem[]
+  cartItems        CartItem[]
+  stockLocations   ProductStock[]
+  media            ProductMedia[]
+  promotionTargets PromotionTarget[]
 
   // ⭐ Org Association (REQUIRED)
   orgId String
-  org   Org @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  
-  
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
   // ⭐ ADD THIS:
-  weight                Float?  @default(0.5) // Weight in kg
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  reviews           Review[]
+  weight Float? @default(0.5) // Weight in kg
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reviews   Review[]
 
   @@index([slug])
   @@index([categoryId])
@@ -98,16 +102,16 @@ model Product {
 /// raw SQL in the migration: a partial unique index making at most one cover per
 /// product a database fact, and a check that a cover is always an IMAGE.
 model ProductMedia {
-  id        String    @id @default(cuid())
+  id        String  @id @default(cuid())
   productId String
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  kind      MediaKind
+  kind MediaKind
   /// A blob URL for IMAGE, a bare video id for YOUTUBE — never a provider URL, so the
   /// host stays swappable by backfill rather than by migration (ADR-0017 decision 2).
-  ref       String
+  ref  String
 
-  position  Int
+  position    Int
   /// Per-item alt text. Nullable because the backfill has none to give: pre-existing
   /// galleries only ever had positional alt text generated at render.
   description String?
@@ -148,16 +152,16 @@ model Review {
 }
 
 model Cart {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   // The pre-PR-44 blob, kept one release as the audit copy of the lift. Read by
   // nothing; lines live in CartItem rows (order-and-cart-lines trd.md).
-  legacyItems Json?  @map("items")
-  items     CartItem[]
-  version   Int      @default(1) // For optimistic locking
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  legacyItems Json?      @map("items")
+  items       CartItem[]
+  version     Int        @default(1) // For optimistic locking
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   @@index([userId])
 }
@@ -181,28 +185,31 @@ model CartItem {
 }
 
 model User {
-  id              String     @id @default(cuid())
+  id              String       @id @default(cuid())
   name            String?
-  email           String?    @unique
+  email           String?      @unique
   emailVerified   DateTime? // Keep this for NextAuth compatibility
-  isEmailVerified Boolean    @default(false) // Our custom field
-  mobile          String?    @unique
+  isEmailVerified Boolean      @default(false) // Our custom field
+  mobile          String?      @unique
   passwordHash    String?
   platformRole    PlatformRole @default(USER)
-  isBlocked       Boolean    @default(false)
-  lastActiveAt    DateTime   @default(now())
+  isBlocked       Boolean      @default(false)
+  lastActiveAt    DateTime     @default(now())
   profile         Profile?
   cart            Cart?
   orders          Order[]
   reviews         Review[]
   adminLogs       AdminLog[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts       Account[]
+  sessions       Session[]
   orgMemberships OrgMember[]
   addresses      UserAddress[]
+
+  settlementsCreated Settlement[] @relation("SettlementCreatedBy")
+  settlementsUpdated Settlement[] @relation("SettlementUpdatedBy")
 
   @@index([platformRole])
   @@index([isBlocked])
@@ -211,47 +218,64 @@ model User {
 }
 
 model Profile {
-  id         String  @id @default(cuid())
-  user       User    @relation(fields: [userId], references: [id])
-  userId     String  @unique
-  legacyAddresses Json? @map("addresses") // pre-PR-41 blob, kept one release as backup; read by nothing
-  profilePic String? // URL to avatar image
+  id              String  @id @default(cuid())
+  user            User    @relation(fields: [userId], references: [id])
+  userId          String  @unique
+  legacyAddresses Json?   @map("addresses") // pre-PR-41 blob, kept one release as backup; read by nothing
+  profilePic      String? // URL to avatar image
 }
 
 model Org {
   id   String @id @default(cuid())
   code String @unique // "SEL-001", "SEL-002"
   name String // "ABC Traders", "XYZ Wholesale"
-  
+
   // Contact Information
-  email        String
-  phone        String?
+  email         String
+  phone         String?
   contactPerson String? // "John Doe"
-  
+
   // Business Details
   orgAddresses OrgAddress[]
 
-  businessName   String?
-  gstNumber      String?
-  panNumber      String?
-  
+  businessName String?
+  gstNumber    String?
+  panNumber    String?
+
   // Status
-  isActive       Boolean  @default(true)
-  isVerified     Boolean  @default(false) // KYC verification
-  
+  isActive   Boolean @default(true)
+  isVerified Boolean @default(false) // KYC verification
+
   // Metadata
   description String? @db.Text
   logoUrl     String?
-  
+
+  /// The platform's cut, in basis points — 1500 = 15%. Set per org by design; rates
+  /// differ between orgs (org-payouts spec R12). Category overrides live in
+  /// `OrgCommissionRule`, and the resolved rate is snapshotted onto every ledger
+  /// line so a later change cannot rewrite a past settlement (payouts D4).
+  commissionBps  Int @default(1500)
+  /// How deep this org may discount its **own** goods. A guard against mis-keying a
+  /// margin away with self-serve signup — not a platform protection, since an org's
+  /// discount shrinks the platform's commission proportionally and can never drive it
+  /// negative (promotions D13a).
+  maxDiscountBps Int @default(5000)
+
   joinedAt  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
-  products Product[]
+  products  Product[]
   shipments Shipment[]
-  members  OrgMember[]
-  
+  members   OrgMember[]
+
+  promotions      Promotion[]
+  orderDiscounts  OrderDiscount[]
+  commissionRules OrgCommissionRule[]
+  ledgerEntries   OrgLedgerEntry[]
+  settlements     Settlement[]
+
   @@index([email])
   @@index([isActive])
   @@index([code])
@@ -294,38 +318,43 @@ model VerificationToken {
 }
 
 model Order {
-  id      String  @id @default(cuid())
-  code    String  @unique // "BB-1001"
-  userId  String?
-  user    User?   @relation(fields: [userId], references: [id])
-  
+  id     String  @id @default(cuid())
+  code   String  @unique // "BB-1001"
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
   // Delivery address (same for all shipments)
-  address Json    // OrderAddress
+  address Json // OrderAddress
   notes   String? @db.Text
-  
+
   // ✅ NEW: Order-level totals
   itemsTotal    Int @default(0) // paise
   shippingTotal Int @default(0) // paise
   discount      Int @default(0) // paise
   grandTotal    Int @default(0) // paise: itemsTotal + shippingTotal - discount
-  
+
   // Payment (single for entire order)
-  paymentMethod String? // "razorpay"
-  paymentStatus String? @default("pending") // pending, paid, failed
-  paymentId     String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
+  paymentMethod  String? // "razorpay"
+  paymentStatus  String? @default("pending") // pending, paid, failed
+  paymentId      String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
   gatewayOrderId String? // the gateway order this order was charged through; created with amount = grandTotal
-  
+
   // Overall order status (derived from shipments)
   status String @default("processing") // processing, partially_shipped, completed
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // ✅ NEW: Relations to shipments
-  items     OrderItem[]
-  shipments Shipment[]
+  items          OrderItem[]
+  shipments      Shipment[]
   shippingEvents ShippingEvent[] // ← ADD THIS
-  
+
+  /// One row per offer that touched this order, carrying who funded it (ADR-0019).
+  /// `discount` above is their sum — a display total, never an input to settlement.
+  discounts     OrderDiscount[]
+  ledgerEntries OrgLedgerEntry[]
+
   @@index([userId])
   @@index([code])
   @@index([status])
@@ -354,11 +383,22 @@ model OrderItem {
   /// not what those buyers saw.
   thumbnail String?
 
+  /// This line's share of the buyer's discount, allocated by largest-remainder
+  /// rounding so per-line shares sum to the scope total exactly (ADR-0019).
+  discountPaise  Int @default(0)
+  /// How much of `discountPaise` the org bore; the platform bore the remainder.
+  /// Persisted per line rather than only per offer because the ledger's commission
+  /// base is `unitPrice * quantity - orgFundedPaise` **per line**, and rates resolve
+  /// per line too (org-payouts D4c). Deriving it at settlement time would mean
+  /// re-running the offer engine against a catalogue that has since moved.
+  orgFundedPaise Int @default(0)
+
   // The chosen variant. Nullable: products without options have neither.
   size  String?
   color String?
 
   shipmentItems ShipmentItem[]
+  ledgerLines   OrgLedgerEntryLine[]
 
   @@index([orderId])
   @@index([productId])
@@ -381,60 +421,60 @@ model ShipmentItem {
 }
 
 model Shipment {
-  id      String @id @default(cuid())
-  code    String @unique // "BB-1001-SH1", "BB-1001-SH2"
-  
+  id   String @id @default(cuid())
+  code String @unique // "BB-1001-SH1", "BB-1001-SH2"
+
   // Parent order
   orderId String
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+
   // The pre-PR-43 blob, kept one release as the audit copy of the lift. Read by
   // nothing; lines live in ShipmentItem rows (order-and-cart-lines trd.md).
-  legacyItems Json? @map("items")
+  legacyItems Json?          @map("items")
   items       ShipmentItem[]
-  
+
   // ✅ Origin details (where it ships from)
-  orgId    String
-  org      Org @relation(fields: [orgId], references: [id])
+  orgId        String
+  org          Org         @relation(fields: [orgId], references: [id])
   /// The pickup location this parcel was allocated from (stock-locations D5/D6).
   /// Nullable: pre-existing shipments keep NULL rather than a guessed attribution.
   /// The from* columns below stay as the historical snapshot — editing a location's
   /// address must never rewrite where a delivered parcel came from (A5).
   orgAddressId String?
   orgAddress   OrgAddress? @relation(fields: [orgAddressId], references: [id], onDelete: Restrict)
-  fromPincode String
-  fromCity    String
-  fromState   String
-  
+  fromPincode  String
+  fromCity     String
+  fromState    String
+
   // ✅ Shipping details (specific to this shipment)
   shippingCost       Int // paise
   shippingProviderId String?
   shippingProvider   ShippingProvider? @relation(fields: [shippingProviderId], references: [id])
-  
+
   // ✅ Tracking (independent per shipment)
-  trackingNumber   String?
-  courierName      String? // "BlueDart Surface"
-  trackingUrl      String?
-  
+  trackingNumber String?
+  courierName    String? // "BlueDart Surface"
+  trackingUrl    String?
+
   // ✅ Status (independent per shipment)
-  status           String @default("processing") // processing, packed, shipped, delivered
-  shipmentStatus   String? // Provider-specific status
+  status            String    @default("processing") // processing, packed, shipped, delivered
+  shipmentStatus    String? // Provider-specific status
   estimatedDelivery DateTime?
-  deliveredAt      DateTime?
-  
+  deliveredAt       DateTime?
+
   // Package details
   packageWeight     Float?
   packageDimensions Json? // {length, width, height}
-  
+
   // Metadata
   shippingMeta Json? // Provider-specific data
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   // Relations
   shippingEvents ShippingEvent[]
-  
+
   @@index([orderId])
   @@index([orgId])
   @@index([status])
@@ -447,15 +487,15 @@ model ShippingProvider {
   name        String // Display name: "Shiprocket", "Delhivery"
   description String? @db.Text // Provider description
 
-  priority    Int     @default(0) // Higher number = higher priority
+  priority Int @default(0) // Higher number = higher priority
 
   // Authentication & Connection Status
-  isConnected Boolean   @default(false) // Is account connected?
-  connectedAt DateTime? // When was it connected?
-  connectedBy String? // Admin user ID who connected it
-  connectionType String   @default("email_password") // [ 'email_password', 'api_key', 'oauth' ]
-  lastAuthAt  DateTime? // Last successful authentication
-  authError   String?   @db.Text // Last auth error message
+  isConnected    Boolean   @default(false) // Is account connected?
+  connectedAt    DateTime? // When was it connected?
+  connectedBy    String? // Admin user ID who connected it
+  connectionType String    @default("email_password") // [ 'email_password', 'api_key', 'oauth' ]
+  lastAuthAt     DateTime? // Last successful authentication
+  authError      String?   @db.Text // Last auth error message
 
   // Encrypted sensitive data
   authToken      String?   @db.Text // Encrypted JWT token
@@ -470,7 +510,7 @@ model ShippingProvider {
   //   companyId: number,
   //   warehousePincode?: string
   // }
-  
+
   // Capabilities
   paymentOptions String[] // ['prepaid', 'cod']
   deliveryModes  String[] // ['air', 'surface']
@@ -642,7 +682,7 @@ model ProductStock {
 }
 
 model OrgMember {
-  id     String @id @default(cuid())
+  id     String  @id @default(cuid())
   userId String
   orgId  String
   role   OrgRole
@@ -725,4 +765,315 @@ model UserAddress {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Promotions — offers the platform and its orgs can run
+// (docs/specs/promotions/, ADR-0018, ADR-0019, ADR-0020)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Who funds an offer. Genuinely two-valued and staying so, which is why it is an
+/// enum while *what an offer covers* is a table (promotions D2).
+enum PromotionScope {
+  PLATFORM
+  ORG
+}
+
+/// How an offer activates. AUTOMATIC offers set the price shown on a product page,
+/// so they may carry no basket-level condition; CODE offers are entered at checkout,
+/// where the basket is known, and may (promotions D5).
+enum PromotionTrigger {
+  AUTOMATIC
+  CODE
+}
+
+/// PERCENT and AMOUNT_OFF reduce; FIXED_PRICE sets an outright selling price, which
+/// is what a per-product markdown means and what a percentage cannot express
+/// (promotions D4/D9). FIXED_PRICE is only legal on a product-targeted offer.
+enum PromotionValueType {
+  PERCENT
+  AMOUNT_OFF
+  FIXED_PRICE
+}
+
+/// A time-boxed offer. Three independent axes: who funds it (`scope`), how it
+/// activates (`trigger`), and what it covers (`targets` — zero rows means everything
+/// in scope, promotions D3).
+///
+/// Constraints the schema language cannot express are added as raw SQL in the
+/// migration: scope/orgId agreement, trigger/code agreement, a value matching its
+/// type, and endsAt after startsAt.
+model Promotion {
+  id    String @id @default(cuid())
+  /// Shown to the buyer on the line badge and frozen onto OrderDiscount at purchase.
+  label String
+
+  scope PromotionScope
+  /// Set iff scope = ORG. Restrict: an org with campaign history is not deletable.
+  orgId String?
+  org   Org?           @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  trigger PromotionTrigger
+  /// Set iff trigger = CODE. Globally unique — a buyer types one string and it must
+  /// resolve to exactly one offer. Org codes carry the org's own code as a prefix
+  /// (promotions D13), which makes collisions impossible rather than merely reported.
+  code    String?          @unique
+
+  valueType       PromotionValueType
+  /// Basis points — 2000 = 20%. Integer, so no float reaches the money path (ADR-0004).
+  percentBps      Int?
+  amountOffPaise  Int?
+  fixedPricePaise Int?
+
+  /// CODE offers only (promotions D5): a product page cannot know the basket.
+  maxDiscountPaise Int?
+  minSubtotalPaise Int  @default(0)
+
+  /// Every offer is time-boxed — no offer runs indefinitely (spec R4).
+  startsAt DateTime
+  endsAt   DateTime
+  /// The kill switch, independent of the window: a mispriced sale must die in one
+  /// click, not a date edit (spec R5).
+  isActive Boolean  @default(true)
+
+  /// Enforced with a conditional update inside the order transaction (promotions D11,
+  /// ADR-0007). Read-then-write oversells a coupon exactly as it oversells stock.
+  usageLimit   Int?
+  usageCount   Int  @default(0)
+  perUserLimit Int?
+
+  targets        PromotionTarget[]
+  orderDiscounts OrderDiscount[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+  @@index([scope, orgId])
+  @@index([trigger])
+}
+
+/// What an offer covers. Exactly one dimension per row; zero rows on a promotion
+/// means "everything in scope" (promotions D3), which is why these **restrict**
+/// their category and product: a cascade would remove an offer's only target and
+/// silently widen it store-wide (promotions D3a, ADR-0020).
+///
+/// Cascade on `promotionId` is composition, not reference — the same distinction
+/// `OrderItem` already draws between its order and its product.
+model PromotionTarget {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  /// A category target covers its whole subtree (promotions spec R2).
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([promotionId, categoryId])
+  @@unique([promotionId, productId])
+  @@index([categoryId])
+  @@index([productId])
+}
+
+/// One offer's effect on one order, with its cost divided between the two parties
+/// who could have paid for it (ADR-0019). `orgFundedPaise + platformFundedPaise =
+/// buyerDiscountPaise` is asserted by a CHECK in the migration, so no settlement can
+/// be computed from a split that does not reconcile.
+///
+/// Restricts both its promotion and its order: this row is the attribution a payout
+/// reads, and it must outlive any tidying of either (ADR-0020).
+model OrderDiscount {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Restrict)
+
+  /// Whose lines this concerns. Always set — a platform offer still lands on some
+  /// org's goods, and the ledger needs to know whose.
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  /// Frozen at purchase, so a renamed or reworded offer cannot rewrite a receipt —
+  /// the same reasoning that froze `thumbnail` onto OrderItem.
+  labelSnapshot String
+  codeSnapshot  String?
+
+  buyerDiscountPaise  Int
+  orgFundedPaise      Int
+  platformFundedPaise Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([orderId, promotionId, orgId])
+  @@index([promotionId])
+  @@index([orgId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payouts — what each org earned, what the platform kept, what is still owed
+// (docs/specs/org-payouts/, ADR-0019, ADR-0020)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// SALE is written from the paid transition; REVERSAL offsets one; ADJUSTMENT is a
+/// manual line the order flow does not produce — a reimbursement, a penalty
+/// (payouts D6, spec R5).
+enum LedgerEntryKind {
+  SALE
+  REVERSAL
+  ADJUSTMENT
+}
+
+/// What gates editing (payouts D6). DRAFT is editable; once its settlement is paid
+/// the entry is SETTLED and its figures are fixed, because it now records a transfer
+/// that actually happened.
+enum LedgerEntryState {
+  DRAFT
+  SETTLED
+  REVERSED
+}
+
+enum SettlementStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+/// An org's commission rate for a category, overriding its default. Nearest ancestor
+/// wins, so a rate on a parent means "unless a child says otherwise" with no
+/// precedence field to configure (payouts D4a/D4b).
+///
+/// Restricts its category: a cascade here would silently move an org onto a
+/// different rate (ADR-0020).
+model OrgCommissionRule {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  rateBps Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, categoryId])
+  @@index([orgId])
+  @@index([categoryId])
+}
+
+/// One org's share of one order, written when the order is paid — never when it is
+/// placed, so an order that never pays never appears in a payout (payouts D5).
+///
+/// `commissionBase = grossItemsPaise - orgFundedDiscountPaise`: commission is charged
+/// on what the org's goods earned after the org's own discount, and before any
+/// discount the platform chose to fund. Basing it on what the buyer paid would
+/// quietly make the org co-fund the platform's campaign (payouts D2).
+///
+/// No rate column: rates resolve per item, so one entry can carry several and the
+/// rate lives on the line (payouts D4c).
+model OrgLedgerEntry {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  /// Null for a manual adjustment, which has no order behind it (spec R5).
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  kind  LedgerEntryKind  @default(SALE)
+  state LedgerEntryState @default(DRAFT)
+
+  grossItemsPaise             Int
+  orgFundedDiscountPaise      Int
+  /// Informational: excluded from the base, shown as the platform's campaign cost
+  /// against this order (payouts D2, spec R17).
+  platformFundedDiscountPaise Int
+  commissionBasePaise         Int
+  commissionPaise             Int
+  /// Signed, so a REVERSAL is the same shape with the opposite sign (payouts D6).
+  payablePaise                Int
+
+  /// Raised on write rather than found in a reconciliation (payouts D12). True when
+  /// the platform funded more than it earned on this entry.
+  isNegativeMargin Boolean   @default(false)
+  /// A figure that no longer derives from its order should not look like one that
+  /// does (payouts D9b).
+  isManuallyEdited Boolean   @default(false)
+  /// Soft delete: a hard one would drop money out of a balance leaving nothing to
+  /// explain the change (payouts D9a).
+  deletedAt        DateTime?
+
+  note String?
+
+  settlementId String?
+  settlement   Settlement? @relation(fields: [settlementId], references: [id], onDelete: Restrict)
+
+  lines OrgLedgerEntryLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orderId, orgId, kind])
+  @@index([orgId, deletedAt])
+  @@index([settlementId])
+  @@index([isNegativeMargin])
+}
+
+/// One order line's contribution to an entry, carrying the rate that actually
+/// applied to it (payouts D4c). Cascade on the entry is composition; Restrict on the
+/// order line is a reference to another aggregate — the same split `OrderItem` draws
+/// between its order and its product.
+model OrgLedgerEntryLine {
+  id      String         @id @default(cuid())
+  entryId String
+  entry   OrgLedgerEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  /// Null for a manual adjustment's line.
+  orderItemId String?
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+
+  basePaise       Int
+  rateBps         Int
+  commissionPaise Int
+
+  @@index([entryId])
+  @@index([orderItemId])
+}
+
+/// A batch of entries the platform has paid, or intends to. Free-form over whatever
+/// is unsettled — no period and no schedule, because a transfer is decided when it
+/// suits and a period column would only describe which entries happened to be picked
+/// (payouts D7).
+model Settlement {
+  id    String @id @default(cuid())
+  code  String @unique
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  amountPaise Int
+  status      SettlementStatus @default(PENDING)
+  reference   String?
+  paidAt      DateTime?
+  note        String?
+
+  /// Restrict, as `AdminLog` already does: removing a person must never erase the
+  /// record of what they authorised.
+  createdByUserId String
+  createdBy       User    @relation("SettlementCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedByUserId String?
+  updatedBy       User?   @relation("SettlementUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  entries OrgLedgerEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId, status])
+  @@index([code])
 }

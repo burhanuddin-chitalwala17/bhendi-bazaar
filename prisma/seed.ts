@@ -29,6 +29,12 @@ import {
 } from "./seed/index";
 import type { SeedProduct } from "./seed/types";
 
+/** Per-unit markdown on a seeded line, or zero — the same guard the engine applies. */
+function markdownOf(item: { price: number; salePrice?: number }): number {
+  const { price, salePrice } = item;
+  return salePrice && salePrice > 0 && salePrice < price ? price - salePrice : 0;
+}
+
 // Use the same adapter configuration as the main app
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -234,7 +240,6 @@ async function main() {
         name: productData.name,
         description: productData.description,
         price: productData.price,
-        salePrice: productData.salePrice || null,
         orgId: productData.orgId,
         currency: productData.currency,
         categoryId: productData.categoryId,
@@ -258,6 +263,33 @@ async function main() {
     console.log(`  ✓ ${product.name} (Stock: ${productData.stock})`);
   }
   console.log(`✅ ${seedProducts.length} products seeded\n`);
+
+  // A markdown is an org-funded offer at a fixed selling price, not a column
+  // (promotions D9). Ids mirror the backfill migration, so a seeded store and a
+  // migrated one are shaped the same.
+  console.log("🏷️  Seeding markdowns as offers...");
+  const markedDown = seedProducts.flatMap((product) =>
+    markdownOf(product) > 0 && product.salePrice !== undefined
+      ? [{ ...product, salePrice: product.salePrice }]
+      : []
+  );
+  for (const productData of markedDown) {
+    await prisma.promotion.create({
+      data: {
+        id: `mkdn_${productData.id}`,
+        label: `Markdown — ${productData.name}`,
+        scope: "ORG",
+        orgId: productData.orgId,
+        trigger: "AUTOMATIC",
+        valueType: "FIXED_PRICE",
+        fixedPricePaise: productData.salePrice,
+        startsAt: new Date(),
+        endsAt: new Date("2099-12-31T00:00:00Z"),
+        targets: { create: [{ id: `mkdntgt_${productData.id}`, productId: productData.id }] },
+      },
+    });
+  }
+  console.log(`✅ ${markedDown.length} markdowns seeded as offers\n`);
 
   // ====================
   // SEED ORDERS
@@ -311,10 +343,12 @@ async function main() {
                 orderId: shipmentData.orderId,
                 productId: item.productId,
                 quantity: item.quantity,
-                unitPrice:
-                  item.salePrice && item.salePrice > 0 && item.salePrice < item.price
-                    ? item.salePrice
-                    : item.price,
+                // unitPrice is the list price and the reduction is its own figure,
+                // matching how checkout records a line now (ADR-0019). A markdown is
+                // org-funded, so it lands wholly on the organisation's side.
+                unitPrice: item.price,
+                discountPaise: markdownOf(item) * item.quantity,
+                orgFundedPaise: markdownOf(item) * item.quantity,
               },
             },
           })),

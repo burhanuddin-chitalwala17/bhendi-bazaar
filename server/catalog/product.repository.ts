@@ -5,6 +5,7 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import { promotionRepository } from "@server/promotions/promotion.repository";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
 
@@ -29,7 +30,86 @@ const PRODUCT_INCLUDE = {
   },
 };
 
+/**
+ * "Currently on offer" as a query.
+ *
+ * This used to be `salePrice IS NOT NULL` — a column test. Coverage is computed now:
+ * an offer may name products, name a category and reach its subtree, or name nothing
+ * and cover everything in its scope (promotions D3). A store-wide platform offer is
+ * expressed as an empty filter rather than by enumerating the catalogue.
+ */
+async function offerFilter() {
+  const { coversEverything, productIds, orgIds, categoryIds } =
+    await promotionRepository.productsOnOffer(new Date());
+  if (coversEverything) return {};
+  const clauses = [
+    productIds.length > 0 ? { id: { in: productIds } } : null,
+    categoryIds.length > 0 ? { categoryId: { in: categoryIds } } : null,
+    orgIds.length > 0 ? { orgId: { in: orgIds } } : null,
+  ].filter((clause) => clause !== null);
+  // Nothing live: match nothing, rather than silently matching everything.
+  if (clauses.length === 0) return { id: { in: [] as string[] } };
+  return { OR: clauses };
+}
+
 export class ProductsRepository {
+
+  /** How many of these products belong to someone else — the org-scoping guard. */
+  async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
+    if (productIds.length === 0) return 0;
+    return await prisma.product.count({ where: { id: { in: productIds }, NOT: { orgId } } });
+  }
+
+  /** What offer resolution needs about a set of products, and nothing more. */
+  async listForPricing(productIds: string[]) {
+    if (productIds.length === 0) return [];
+    return await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, price: true, orgId: true, categoryId: true },
+    });
+  }
+
+  /**
+   * Id and name only — what a target picker needs, one page at a time.
+   *
+   * Searched and counted at the database rather than filtered in the browser: a
+   * capped fetch with client-side filtering silently stops finding products once the
+   * catalogue outgrows the cap, and nothing on screen says so.
+   */
+  async listForPicker({
+    orgId,
+    search,
+    ids,
+    limit = 30,
+  }: { orgId?: string; search?: string; ids?: string[]; limit?: number } = {}) {
+    const where = {
+      ...(orgId ? { orgId } : {}),
+      ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
+      // Already-selected products are always included, so a picker never hides a
+      // choice the offer has already made just because it is off the current page.
+      ...(ids && ids.length > 0 && !search ? {} : {}),
+    };
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+        take: limit,
+      }),
+      prisma.product.count({ where }),
+    ]);
+    return { products, total };
+  }
+
+  /** The named products, whatever page they would otherwise fall on. */
+  async listByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    return await prisma.product.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+  }
 
   async getProducts(filter: ProductFilter) {
     const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
@@ -43,7 +123,7 @@ export class ProductsRepository {
           ...(search && { name: { contains: search, mode: "insensitive" } }),
           ...(minPrice && { price: { gte: minPrice } }),
           ...(maxPrice && { price: { lte: maxPrice } }),
-          ...(offerOnly && { salePrice: { not: null } }),
+          ...(offerOnly ? await offerFilter() : {}),
           ...(featuredOnly && { flags: { has: "FEATURED" } }),
         },
         include: {
@@ -119,7 +199,7 @@ export class ProductsRepository {
   async getOfferProducts(limit: number) {
     try {
       const products = await prisma.product.findMany({
-        where: { salePrice: { not: null } },
+        where: await offerFilter(),
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {

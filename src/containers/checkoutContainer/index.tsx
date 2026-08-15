@@ -6,6 +6,8 @@ import { useCartStore } from "@/store/cartStore";
 import { useMultiShippingRates } from "@/hooks/shipping/useMultiShippingRates";
 import { useCheckoutPayment } from "./hooks/useCheckoutPayment";
 import { CheckoutSummary } from "./components/checkout-summary";
+import { CouponField } from "./components/CouponField";
+import { useCheckoutOffers } from "./hooks/useCheckoutOffers";
 import { MultiShippingSection } from "./components/MultiShippingSection";
 import { CheckoutActions } from "./components/CheckoutActions";
 import { EmptyState } from "../../components/shared/states/EmptyState";
@@ -68,37 +70,23 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
 
   const canCheckout = validationErrors.length === 0 && !isProcessing && !isShippingLoading;
 
+  // What every live offer does to this basket, priced by the server.
+  const offers = useCheckoutOffers(checkoutItems);
+
   const totals = useMemo(() => {
-    // Items total at sale price (what customer actually pays for items)
+    // List prices, exactly as the server totals them — the reduction is its own
+    // figure (ADR-0019). Totalling offer-adjusted prices instead would double-count
+    // the moment a coupon applied, because the engine's discount already includes
+    // the automatic offers those prices have baked in.
     const itemsTotal = checkoutItems.reduce(
-      (sum, item) => sum + (item.salePrice ?? item.price) * item.quantity,
+      (sum, item) => sum + item.price * item.quantity,
       0
     );
-
-    // Discount for COUPONS only (set to 0 for now)
-    const discount = 0;  // ← Changed from calculating price difference
-
-    // Grand total = items (already at sale price) + shipping - coupon discount
+    const discount = Math.min(offers.quote.totalDiscountPaise, itemsTotal);
     const grandTotal = itemsTotal + totalShippingCost - discount;
 
-    // Calculate savings for DISPLAY purposes only (not sent to backend)
-    const savings = checkoutItems.reduce(
-      (sum, item) => {
-        if (item.salePrice) {
-          return sum + (item.price - item.salePrice) * item.quantity;
-        }
-        return sum;
-      },
-      0
-    );
-
-    return {
-      itemsTotal,      // At sale price
-      discount,        // Coupon discount (0 for now)
-      grandTotal,      // itemsTotal + shipping - coupon
-      savings          // For display only ("You saved ₹X")
-    };
-  }, [checkoutItems, totalShippingCost]);
+    return { itemsTotal, discount, grandTotal, savings: discount };
+  }, [checkoutItems, totalShippingCost, offers.quote.totalDiscountPaise]);
   // Handle checkout - MUST be defined before any returns
   const handleCheckout = async () => {
     if (!canCheckout || !selectedAddress) return;
@@ -119,6 +107,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
         notes: undefined,
         paymentMethod: "razorpay",
         paymentStatus: "pending",
+        couponCode: offers.appliedCode ?? undefined,
         isBuyNow: !!buyNowProduct,
       });
     } catch (error) {
@@ -191,8 +180,18 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
       {/* On mobile the summary must precede the CTA — a buyer sees the bill before the
           button that commits to it. On md the summary is the right rail spanning both rows. */}
       <div className="md:col-start-2 md:row-start-1 md:row-span-2">
+        <CouponField
+          quote={offers.quote}
+          appliedCode={offers.appliedCode}
+          isPricing={offers.isPricing}
+          onApply={offers.applyCode}
+          onClear={offers.clearCode}
+          lineCount={checkoutItems.length}
+        />
+
         <CheckoutSummary
           items={checkoutItems}
+          lineDiscounts={offers.quote.lineDiscounts}
           subtotal={totals.itemsTotal}
           discount={totals.discount}
           shipping={totalShippingCost}

@@ -16,6 +16,8 @@ import {
   ShoppingBag,
   Truck,
   Store,
+  Tag,
+  Wallet,
 } from "lucide-react";
 
 const navItems = [
@@ -38,6 +40,16 @@ const navItems = [
     title: "Categories",
     href: "/admin/categories",
     icon: FolderTree,
+  },
+  {
+    title: "Offers",
+    href: "/admin/promotions",
+    icon: Tag,
+  },
+  {
+    title: "Payouts",
+    href: "/admin/payouts",
+    icon: Wallet,
   },
   {
     title: "Users",

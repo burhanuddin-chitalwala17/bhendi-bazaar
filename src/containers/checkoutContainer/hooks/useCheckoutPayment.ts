@@ -25,6 +25,8 @@ interface ProcessPaymentInput {
 
 interface ProcessPaymentWithShipmentsInput {
   shippingGroups: ShippingGroup[];
+  /** The code the buyer typed, if any — a string, never an amount (Invariant 1). */
+  couponCode?: string;
   totals: {
     itemsTotal: number;
     shippingTotal: number;
@@ -120,6 +122,7 @@ export function useCheckoutPayment() {
           };
         }),
         displayedGrandTotal: orderData.totals.grandTotal,
+        couponCode: orderData.couponCode,
         address: orderData.address,
         notes: orderData.notes,
         paymentMethod: orderData.paymentMethod,

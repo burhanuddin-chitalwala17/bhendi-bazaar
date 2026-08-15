@@ -40,10 +40,11 @@ export function mediaWrite(media: ProductMediaInput[]) {
 // ✅ Efficient select - only fetch needed fields
 const PRODUCT_LIST_SELECT = {
     id: true,
+    orgId: true,
+    categoryId: true,
     name: true,
     sku: true,
     price: true,
-    salePrice: true,
     currency: true,
     rating: true,
     // Admin truth: every row, active or not (R9) — summed into `stock` on the way out.
@@ -222,7 +223,6 @@ export class AdminProductsRepository {
                 name: data.name,
                 description: data.description || "",
                 price: data.price,
-                salePrice: data.salePrice,
                 currency: data.currency || "INR",
                 orgId: data.orgId,
                 categoryId: data.categoryId,
@@ -345,7 +345,6 @@ export class AdminProductsRepository {
                     name: data.name,
                     description: data.description,
                     price: data.price,
-                    salePrice: data.salePrice,
                     currency: data.currency,
                     orgId: data.orgId,
                     categoryId: data.categoryId,

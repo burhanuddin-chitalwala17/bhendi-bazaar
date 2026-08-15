@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-08-13
+- **Verified:** 2026-08-16
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -32,6 +32,8 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |
 | [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in production, and an environment that can't enforce says so at deploy time | 4 | cross-domain | 📝 Draft |
 | [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
+| [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions, catalog, checkout | 🔨 In progress — PR-67 |
+| [org-payouts](org-payouts/) | What each organisation has earned, what the platform kept, and what is still owed | 7 | payouts, checkout | 🔨 In progress — PR-67 |
 
 ### Subfeatures
 
@@ -44,5 +46,7 @@ Within Phase 2, [money-as-paise](money-as-paise/) should land before [server-sid
 Phase 3 is strictly ordered: [product-weight-and-rates](product-weight-and-rates/) before [multi-vendor-marketplace](multi-vendor-marketplace/) before [shipping-fulfilment](shipping-fulfilment/). Booking real parcels at default weights turns a pricing error into courier invoices that do not match what customers paid, and booking them from a guessed origin does the same for the pickup leg.
 
 [multi-vendor-marketplace](multi-vendor-marketplace/) also depends on [inventory-reservation](inventory-reservation/) from Phase 2, which is the one cross-phase dependency here: it moves the stock guard's target, so the guard has to exist first. Its `trd.md` D7 records why the guard is not simply written in its final place.
+
+Phase 7 is a pair: [promotions](promotions/) must land before [org-payouts](org-payouts/). The ledger's arithmetic reads a discount's funding split, so the thing that produces the split has to exist before the thing that settles from it — and building the ledger first would mean writing entries whose discount attribution is a constant zero, then migrating them.
 
 [shipping-fulfilment](shipping-fulfilment/) carries an open product decision — whether to book real shipments or stop quoting live rates — stated in its `spec.md`. It is the one item here that cannot be resolved by engineering judgement.

@@ -12,6 +12,14 @@ export class CategoryRepository {
   /**
    * List all categories sorted by order
    */
+  /** Id and name only — what a target picker needs. */
+  async listForPicker() {
+    return await prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
   async list(): Promise<ServerCategory[]> {
     const categories = await prisma.category.findMany({
       orderBy: [

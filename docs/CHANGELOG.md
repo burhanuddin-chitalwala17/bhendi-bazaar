@@ -10,6 +10,26 @@
 
 ## Entries
 
+## [PR-67] 2026-08-16 — Offers, and a ledger of what each organisation is owed `[CONTRACT]` `[MIGRATION]`
+
+The platform and each organisation can now run time-boxed offers — applied automatically to the price a buyer sees, or unlocked by a coupon at checkout — and every paid order records what each organisation earned. Specs: [promotions](specs/promotions/), [org-payouts](specs/org-payouts/). Decisions: [ADR-0018](adr/0018-one-effective-price-function.md), [ADR-0019](adr/0019-discount-is-one-winning-offer.md), [ADR-0020](adr/0020-money-bearing-records-never-cascade.md).
+
+**Offers compete; they never stack.** A line's discount is the single largest offer covering it, allocated across lines by largest-remainder rounding so per-line shares sum to the scope total exactly. Every discount records its funding split — the organisation bears its own best offer, the platform bears only the remainder needed to reach what the buyer got, floored at zero. A check constraint asserts the two halves sum to the buyer's discount, so no settlement can be computed from a split that does not reconcile.
+
+**`Product.salePrice` is gone.** A markdown is an organisation's own offer at a fixed selling price; one that sat outside the comparison could be neither weighed against a platform campaign nor charged to whoever paid for it. Three ordered migrations: the tables, then markdowns backfilled into offers, then the column dropped. The product form still collects a sale price inline — what moved is where it is stored.
+
+That retirement had to land with the display change rather than after it, contrary to the delivery order both TRDs first described. Splitting them diverges the two sides: display would take the better of a markdown and an offer while the order path applied the offer *on top of* the markdown, and every dual-priced product would then fail the displayed-total guard. Recorded here because the sequencing looks separable and is not.
+
+**Commission is charged on what an organisation's goods earned after its own discount**, and before any discount the platform funded — basing it on what the buyer paid would quietly make the organisation co-fund the platform's campaign. Rates resolve per item by walking a product's category ancestry, so one entry can carry several and the rate lives on the line rather than the entry.
+
+**A ledger write cannot fail a payment** — the gateway already has the money. So the omission is a query (`paidOrdersMissingEntries`) rather than a log line, and the nightly reconcile sweep writes whatever is missing. Idempotent per `(order, organisation)`.
+
+Ledger entries are editable until paid out and fixed afterwards, because a paid entry records a transfer that happened and the record has to keep matching the bank. Corrections after that point are new entries. Every change is captured in `AdminLog`.
+
+Nothing in either feature cascades on delete. This closes a trap rather than following a preference: an offer with no target rows applies to everything in scope, so a cascading category delete would have silently turned a category campaign into a store-wide one.
+
+`[CONTRACT]`: order creation accepts an optional `couponCode` — a string, never an amount; a new quote endpoint returns per-line discounts and rejection reasons; product and cart DTOs keep `salePrice` as a field name but it is now the offer-adjusted price, resolved server-side, not a column.
+
 ## [PR-65] 2026-08-13 — A shared link carries a picture, and a product can be shared from its page
 
 `src/app/(main)/product/[slug]/page.tsx` gains `generateMetadata`: title, description, canonical URL, and `og:image` set to the product's cover. Until now the route exported no metadata at all, so a link pasted into WhatsApp fell back to the root layout's site-wide card — the shop name and tagline, and no picture.

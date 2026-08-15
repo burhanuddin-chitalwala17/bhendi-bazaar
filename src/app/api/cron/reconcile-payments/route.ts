@@ -7,6 +7,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { paymentService } from "@server/payments/payment.service";
+import { ledgerService } from "@server/payouts/ledger.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: NextRequest) {
@@ -22,7 +23,16 @@ export async function GET(request: NextRequest) {
       console.log(`Reconciliation recovered ${recovered} order(s)`, results);
     }
 
-    return NextResponse.json({ checked: results.length, recovered, results });
+    // A ledger entry is deliberately not allowed to fail a payment, which leaves the
+    // possibility of a paid order nobody was credited for. Recording it is idempotent,
+    // so this simply writes whatever is missing — and reports it, because a gap that
+    // keeps reappearing is a defect rather than a hiccup (org-payouts D5).
+    const ledger = await ledgerService.backfillMissing();
+    if (ledger.written > 0) {
+      console.log(`Ledger backfill wrote ${ledger.written} entry(ies) across ${ledger.scanned} order(s)`);
+    }
+
+    return NextResponse.json({ checked: results.length, recovered, ledger, results });
   } catch (error) {
     return toErrorResponse(error, "Reconciliation failed");
   }

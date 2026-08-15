@@ -47,6 +47,15 @@ export class AdminLogRepository {
   /**
    * Get paginated logs with filters
    */
+  /** One resource's trail, newest first — an entry's change history (org-payouts D9). */
+  async listForResource(resource: string, resourceId: string) {
+    return await prisma.adminLog.findMany({
+      where: { resource, resourceId },
+      orderBy: { createdAt: "desc" },
+      include: { admin: { select: { name: true, email: true } } },
+    });
+  }
+
   async getLogs(filters: LogFilters) {
     const {
       adminId,

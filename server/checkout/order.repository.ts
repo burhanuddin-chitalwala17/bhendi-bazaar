@@ -9,6 +9,7 @@ import { prisma, toJsonColumn } from "@server/shared/prisma";
 import type { ShipmentItem } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+import { promotionService } from "@server/promotions/promotion.service";
 
 /**
  * Order lines live in OrderItem/ShipmentItem rows (order-and-cart-lines), but the
@@ -229,7 +230,38 @@ export class OrderRepository {
           });
         }
       }
+
+      // A coupon claim is held exactly like stock, so it comes back in the same
+      // transaction (promotions D11). Releasing it afterwards would leave a window
+      // where a "first 100" coupon had been spent by an order that no longer exists.
+      // Promotions' own surface does the work — this passes it the transaction so
+      // both releases commit or neither does.
+      await promotionService.releaseForOrder(orderId, tx);
+
       return true;
+    });
+  }
+
+  /**
+   * Paid orders that produced no ledger entry (org-payouts D5).
+   *
+   * Recording an entry deliberately cannot fail a payment, which leaves the
+   * possibility of a gap. A gap in a log line is one nobody finds, so it is a query.
+   */
+  async findPaidWithoutLedgerEntries(limit = 200): Promise<string[]> {
+    const orders = await prisma.order.findMany({
+      where: { paymentStatus: "paid", ledgerEntries: { none: {} } },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+    return orders.map((order) => order.id);
+  }
+
+  /** The same question as a count — an unbounded list would be loaded to be measured. */
+  async countPaidWithoutLedgerEntries(): Promise<number> {
+    return await prisma.order.count({
+      where: { paymentStatus: "paid", ledgerEntries: { none: {} } },
     });
   }
 

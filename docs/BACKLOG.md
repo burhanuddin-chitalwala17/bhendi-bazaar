@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-13
+- **Verified:** 2026-08-16
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -18,6 +18,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started — 1 spec drafted (rate-limiting) |
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
+| **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
 
 ---
 
@@ -80,6 +81,21 @@ A new phase, added 2026-08-13. Phase 1 built the storefront and closed; this is 
 
 Ordering does not bind this phase to the ones before it, with one exception: `product-video` replaces `Product.images` with a `ProductMedia` relation, so it is a `[CONTRACT]` change on the product DTO and wants the [CONTRACTS.md](CONTRACTS.md) consolidation on the watch list below not to be mid-flight when it lands.
 
+## Phase 7 — Promotions & settlement
+
+A new phase, added 2026-08-15. It pairs two features that look separate and are not: the moment the platform and an organisation can both discount the same item, "what did this order earn" stops being a subtraction and becomes a question about who funded the discount. A ledger built without that answer would be wrong from its first row.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [promotions](specs/promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or unlocked by a coupon code | 🔨 In progress — PR-67 |
+| [org-payouts](specs/org-payouts/) | A record of what each organisation has earned, what the platform kept, and what is still owed | 🔨 In progress — PR-67 |
+
+Strictly ordered: `promotions` before `org-payouts`. The ledger reads the funding split each discount records, so building it first would mean writing entries whose attribution is a constant zero and then migrating them.
+
+`promotions` reaches back into the catalogue: it removes `Product.salePrice` and re-expresses each markdown as an organisation-funded offer, which makes it a `[CONTRACT]` change on the product and cart DTOs. That is deliberate rather than incidental — a markdown is an organisation's own offer, and an offer outside the comparison can be neither weighed against a platform offer nor attributed to whoever paid for it.
+
+`org-payouts` is a ledger, not a payments integration. Money continues to move by bank transfer; what it adds is the record of how much and whether it has gone.
+
 ---
 
 ## Cross-cutting watch list
@@ -92,13 +108,14 @@ Not a phase, but tracked:
 - **Duplicate declarations** ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — runtime symbol names resolved in PR-08 (14 → 2). Two remain, both deliberate: `formatCurrency` is behaviourally identical, and `isValidPincode` needs the decision below. The 26 remaining *type* duplicates are the [CONTRACTS.md](CONTRACTS.md) work.
 - **PIN code validation** — consolidated to one rule in PR-09 (eleven declarations → one). Remaining: query existing `Address` rows for PIN codes with a leading zero, which the tightened rule rejects on update.
 - **Error swallowing in the data layer** — PR-13 fixed `products.dal.ts`; the same catch-and-relabel pattern remains in the other DAL modules and in `server/catalog/product.repository.ts`, where a query failure is reported as `"Product not found"`. Preserve `cause`; keep absence distinguishable from failure.
+- **Sale price is read two different ways** — `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price, matching `effectiveUnitPrice` in `server/checkout/pricing.ts`. Eight other sites — the cart line, the checkout summary, the shipping-rate hook, both order detail pages, the org parcel value — simply fall back with `??`, so a sale price of zero or one above the regular price renders differently depending on where the buyer is looking. [promotions](specs/promotions/) PR 3 consolidates them onto the one function; until then it is a display inconsistency on the money path.
 - **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling.
 - **Route the database through Prisma Accelerate** — it is already provisioned (`PRISMA_DATABASE_URL`) and read by nothing. Pooling and caching at the proxy addresses serverless connection pressure more thoroughly than tuning `max` on the local pool. See [OPERATIONS.md](OPERATIONS.md) § Infrastructure.
 - **Rate limiting is currently a no-op wherever Upstash isn't configured** — PR-55's fail-open was an unblock, not a posture. Now a spec: [rate-limiting](specs/rate-limiting/), Phase 4.
 - **Prune unused connection strings from `.env`** — `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, `PRISMA_DATABASE_URL` are read by nothing. Several live connection strings in one file is the hazard behind [Invariant 7](../CLAUDE.md).
 - **Slug redirects** — slugs are now generated and frozen (PR-15), but there is no redirect for a slug that changed before that rule existed. One product's URL moved (`product test 001` → `product-test-001`); the old URL 404s. If slugs ever need to change again, a slug-history table or redirect is required.
 - **Existing products all weigh 0.5 kg** — weight was collected and never persisted until PR-22, so every row created before it carries the schema default. [product-weight-and-rates](specs/product-weight-and-rates/) R6; rates are wrong in both directions until the catalogue is corrected.
-- **`Product.categoryId` cascades on delete** — deleting a category would delete its products. Unreachable today because `adminCategoryService.deleteCategory` refuses when `productsCount > 0`, but that is an application-level read-then-write check, not a database guarantee. `onDelete: Restrict`, as `sellerId` already uses, moves the guarantee to where it cannot be bypassed. Needs a migration.
+- ~~**`Product.categoryId` cascades on delete**~~ ✅ Closed — the `category_tree` migration moved it to `onDelete: Restrict` on 2026-08-10 (`prisma/migrations/20260810120000_category_tree/`); this entry stayed open for six days afterwards because the fix was a local judgement with nothing to check the watch list against. Now a stated rule: [ADR-0020](adr/0020-money-bearing-records-never-cascade.md).
 
 - **Documentation system** — see [CHANGELOG.md](CHANGELOG.md) PR-01. Remaining: mine and delete [_archive/](_archive/); delete `src/lib/csrf.ts` (still dead).
 

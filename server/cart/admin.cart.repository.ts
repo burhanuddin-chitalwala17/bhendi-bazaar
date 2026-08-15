@@ -4,10 +4,20 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-context";
 import type {
   AbandonedCart,
   AbandonedCartFilters,
 } from "@server/cart/admin.cart.types";
+
+/** What an abandoned line is worth today, offers included (ADR-0018). */
+const offerPriceOf = (
+  product: { id: string; price: number; orgId: string; categoryId: string },
+  context: Awaited<ReturnType<typeof loadPriceContext>>
+): number | undefined => {
+  const { pricePaise, offerPricePaise } = resolveProductPrice(product, context);
+  return offerPricePaise < pricePaise ? offerPricePaise : undefined;
+};
 
 export class AdminCartRepository {
   /**
@@ -48,7 +58,7 @@ export class AdminCartRepository {
         items: {
           include: {
             product: {
-              select: { name: true, slug: true, thumbnail: true, price: true, salePrice: true },
+              select: { id: true, name: true, slug: true, thumbnail: true, price: true, orgId: true, categoryId: true },
             },
           },
         },
@@ -57,6 +67,8 @@ export class AdminCartRepository {
 
     // Lines are rows since order-and-cart-lines; value is the product's price
     // today — what recovering the cart would actually be worth.
+    const context = await loadPriceContext();
+
     const abandonedCarts: AbandonedCart[] = carts
       .map((cart) => {
         const items = cart.items.map((line) => ({
@@ -65,7 +77,7 @@ export class AdminCartRepository {
           productSlug: line.product.slug,
           thumbnail: line.product.thumbnail,
           price: line.product.price,
-          salePrice: line.product.salePrice ?? undefined,
+          salePrice: offerPriceOf(line.product, context),
           quantity: line.quantity,
           size: line.size ?? undefined,
           color: line.color ?? undefined,
