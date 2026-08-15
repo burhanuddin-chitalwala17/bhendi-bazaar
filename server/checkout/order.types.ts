@@ -97,6 +97,13 @@ export interface CreateOrderWithShipmentsInput {
    * and the order is refused rather than silently repriced (trd.md D4, R5).
    */
   displayedGrandTotal: number;
+  /**
+   * A coupon code, if the buyer entered one. A **string** — the only promotional
+   * input a request may carry (promotions spec R16). The discount it produces is
+   * computed server-side from the persisted offer; an amount arriving here would be
+   * discarded, not validated (Invariant 1, ADR-0002).
+   */
+  couponCode?: string;
   notes?: string;
   paymentMethod?: string;
 }

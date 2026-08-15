@@ -45,7 +45,8 @@ describe("toWireCartItem", () => {
       name: "Cream Rida",
       thumbnail: "t.jpg",
       price: 120000,
-      salePrice: null as number | null,
+      orgId: "org-1",
+      categoryId: "cat-1",
       weight: 0.5 as number | null,
       stockLocations: [] as Array<{ quantity: number; orgAddress: { address: { pincode: string } } }>,
       org: {

@@ -61,6 +61,20 @@ export const priceSchema = rupeeAmount('Price');
 /** An amount already in paise — every stored or wire amount (CONTRACTS.md rule 4). */
 export const paiseAmount = z.number().int('Amounts cross the wire as integer paise').min(0);
 
+/**
+ * A coupon code as typed. Normalised here — uppercased and trimmed — so the value the
+ * engine matches on is the value the database stores, whatever the buyer's keyboard
+ * did. The charset is deliberately narrow: codes are read aloud, written on posters
+ * and retyped, so anything that survives that is letters, digits and a separator.
+ */
+export const couponCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .min(3, 'That code is too short')
+  .max(32, 'That code is too long')
+  .regex(/^[A-Z0-9][A-Z0-9-]*$/, 'Codes use letters, numbers and hyphens');
+
 // Quantity validation
 export const quantitySchema = z
   .number()

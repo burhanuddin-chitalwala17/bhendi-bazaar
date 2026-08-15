@@ -4,7 +4,7 @@
 // client influence as much as the presence of correct sums.
 import { describe, expect, it } from "vitest";
 import {
-  effectiveUnitPrice,
+  catalogueUnitPrice,
   priceGroupItems,
   assembleOrderTotals,
   type PricingProduct,
@@ -16,7 +16,6 @@ const product = (overrides: Partial<PricingProduct> = {}): PricingProduct => ({
   slug: "cream-rida",
   thumbnail: "https://cdn.example.com/1.jpg",
   price: 120000, // ₹1,200 in paise
-  salePrice: null,
   weight: 0.5,
   orgId: "org-a",
   sizes: ["S", "M", "L"],
@@ -30,10 +29,10 @@ describe("priceGroupItems — variants (order-and-cart-lines D5)", () => {
   it("carries the chosen size and colour onto the priced line, with the unit price paid", () => {
     const [line] = priceGroupItems(
       [{ productId: "p1", quantity: 2, size: "M", color: "Gold" }],
-      catalogue(product({ salePrice: 100000 })),
+      catalogue(product()),
       "org-a"
     ).items;
-    expect(line).toMatchObject({ size: "M", color: "Gold", unitPrice: 100000 });
+    expect(line).toMatchObject({ size: "M", color: "Gold", unitPrice: 120000 });
   });
 
   it("refuses a size the product never offered — an unfulfillable instruction", () => {
@@ -51,22 +50,18 @@ describe("priceGroupItems — variants (order-and-cart-lines D5)", () => {
   });
 });
 
-describe("effectiveUnitPrice — the one place the sale-price rule lives (D6)", () => {
-  it("uses the regular price when there is no sale", () => {
-    expect(effectiveUnitPrice(product())).toBe(120000);
+describe("catalogueUnitPrice — pricing starts from the list price (ADR-0018)", () => {
+  it("prices from the catalogue's list price", () => {
+    expect(catalogueUnitPrice(product())).toBe(120000);
   });
 
-  it("applies a sale price that is set, positive, and below the regular price", () => {
-    expect(effectiveUnitPrice(product({ salePrice: 90000 }))).toBe(90000);
-  });
-
-  it("ignores a sale price at or above the regular price", () => {
-    expect(effectiveUnitPrice(product({ salePrice: 120000 }))).toBe(120000);
-    expect(effectiveUnitPrice(product({ salePrice: 150000 }))).toBe(120000);
-  });
-
-  it("ignores a zero sale price", () => {
-    expect(effectiveUnitPrice(product({ salePrice: 0 }))).toBe(120000);
+  it("has no second reduction mechanism to consult", () => {
+    // `Product.salePrice` used to be resolved here. A markdown is an offer now, so
+    // there is one reduction path rather than two — and, crucially, the reduction is
+    // applied by the engine *against this base* rather than baked into it. Pricing
+    // from a partly-discounted base is what made a markdown compound with a campaign
+    // instead of competing with it (ADR-0019 decision 1).
+    expect(catalogueUnitPrice({ price: 90000 })).toBe(90000);
   });
 });
 
@@ -93,14 +88,14 @@ describe("priceGroupItems", () => {
     expect(result.items[0].productSlug).toBe("real-slug");
   });
 
-  it("totals with the sale price when one applies", () => {
+  it("totals at the list price, leaving reductions to the offer engine", () => {
     const result = priceGroupItems(
       [{ productId: "p1", quantity: 3 }],
-      catalogue(product({ salePrice: 100000 })),
+      catalogue(product()),
       "org-a"
     );
 
-    expect(result.itemsTotal).toBe(300000);
+    expect(result.itemsTotal).toBe(360000);
   });
 
   it("fails the whole group when a product does not exist", () => {

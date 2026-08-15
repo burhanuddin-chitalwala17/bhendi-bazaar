@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { uuidSchema, paiseAmount, quantitySchema, nameSchema, emailSchema, phoneSchema, postalCodeSchema } from './common.schemas';
+import { uuidSchema, paiseAmount, quantitySchema, nameSchema, emailSchema, phoneSchema, postalCodeSchema, couponCodeSchema } from './common.schemas';
 
 // Order-specific address schema (requires fullName and state)
 const orderAddressSchema = z.object({
@@ -125,6 +125,13 @@ export const createOrderWithShipmentsSchema = z.object({
     .max(10, "Order cannot have more than 10 shipments"),
   /** The grand total the customer saw, compared against the server's own — never persisted. */
   displayedGrandTotal: paiseAmount,
+  /**
+   * A coupon code, if one was entered. The **only** promotional input a request may
+   * carry (promotions spec R16): the discount it produces is computed server-side
+   * from the persisted offer, so no amount, percentage or promotion id is accepted
+   * here — those are server-owned in exactly the way `paymentStatus` is.
+   */
+  couponCode: couponCodeSchema.optional(),
   address: orderAddressSchema,
   notes: z.string().max(1000, "Notes too long").optional(),
   paymentMethod: z.enum(["razorpay"]).optional(),

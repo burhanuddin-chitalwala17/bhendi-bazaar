@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-08-13
+- **Verified:** 2026-08-16
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -63,6 +63,15 @@ Since PR-44 the server stores only the buyer's choice per line (`CartLineInput`:
 `Shipment` is declared in three places across `src/domain/order.ts` and `server/checkout/order.types.ts`. Timestamp fields (`estimatedDelivery`, `createdAt`, `updatedAt`) are typed `Date` on the client side and `string` on the server side; JSON delivers strings, so Rule 3 is not currently met.
 
 Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ productId, quantity, size?, color? }` — plus a `displayedGrandTotal` used only for the changed-mid-session comparison and never persisted (PR-38). The optional variant (PR-43) is validated against the product's declared options server-side; on every outbound items array, `price` is the unit price actually paid and lines are rebuilt from `OrderItem`/`ShipmentItem` rows — the JSON blob is legacy. `paymentStatus` crosses the wire in **no direction** since PR-39: the update route is deleted, and the paid/failed transitions in `order.repository.ts` are the only writers (ADR-0005).
+
+### Offers
+`POST /api/checkout/promotions/quote` takes `{ items[], code? }` and returns `{ lineDiscounts, applied[], couponCoveredKeys, totalDiscountPaise, rejection }`. Every eligibility rule stays server-side: the response carries **per-line amounts** so the browser can badge covered items without re-deriving one, which is the same reason a discount amount is never accepted inbound.
+
+`rejection` is a shape, not a string — `{ code, reason, message, shortfallPaise? }` — because the four reasons a code does nothing are acted on differently by the UI. **A code that would take nothing off is a rejection, never a success**: reporting one as applied means the buyer only finds out on the payment screen.
+
+Order creation gains an optional **`couponCode`** — a string, normalised to upper case, and the only promotional input a request may carry (PR-67). Discount amounts, percentages and promotion ids are server-owned in exactly the way `paymentStatus` is; the amount is computed inside the order transaction from the persisted offer.
+
+**`salePrice` is no longer a column.** It survives as a field name on the product and cart wire shapes, where it now means *the offer-adjusted price*, resolved server-side through the one function checkout prices with (ADR-0018). The name is retained because every consumer already reads it as "the reduced price"; renaming it is a follow-up, and until then the comment on each producer says what it is. Nothing accepts it inbound except `ProductFormInput`, where it is the seller's markdown and is stored as an offer rather than on the product.
 
 ### Payments
 - `POST /api/payments/create-order` takes `{ localOrderId, customer? }` and **derives the amount from the persisted order's `grandTotal`** (PR-38) — which was itself computed from the catalogue inside the creation transaction. An `amount` in the body is not read; the field no longer exists in the schema.

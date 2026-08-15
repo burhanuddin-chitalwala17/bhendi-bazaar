@@ -44,7 +44,7 @@ export function ProductPricingFields({
           placeholder="Optional"
           {...register("salePrice", { valueAsNumber: true })}
           error={errors.salePrice?.message}
-          hint="Leave empty if not on sale"
+          hint="Sells at this instead. Leave empty if not on sale; schedule or stop it under Offers."
         />
 
         {/* CHANGED: Now using FormSelect */}

@@ -18,6 +18,7 @@ import type {
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
+import { promotionService } from "@server/promotions/promotion.service";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
@@ -73,6 +74,28 @@ export class OrderService {
   async onPaymentConfirmed(orderId: string): Promise<void> {
     const order = await orderRepository.findById(orderId);
     if (!order) return;
+
+    // What each organisation earned, recorded now that the money is real
+    // (org-payouts D5). Idempotent per (order, org), so a replayed confirmation
+    // cannot pay an organisation twice.
+    //
+    // A failure here must not unwind a confirmed payment — the gateway has already
+    // taken the money, so refusing to confirm an order over a bookkeeping row is the
+    // worse outcome. It therefore does not throw.
+    //
+    // What that leaves is a gap, and a gap living only in a log line is one nobody
+    // finds. So the omission is queryable: `paidOrdersMissingEntries` returns exactly
+    // these orders, the nightly reconcile sweep writes them, and the payout console
+    // shows the count. The log is a breadcrumb, not the safety net.
+    try {
+      const { ledgerService } = await import("@server/payouts/ledger.service");
+      await ledgerService.recordSale(orderId);
+    } catch (error) {
+      console.error(
+        `[onPaymentConfirmed] ledger entry not written for order ${orderId} — the reconcile sweep will pick it up`,
+        error
+      );
+    }
 
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
     if (deliveryAddress?.email) {
@@ -143,8 +166,11 @@ export class OrderService {
           where: { id: { in: productIds } },
           select: {
             id: true, name: true, slug: true, thumbnail: true,
-            price: true, salePrice: true, weight: true, orgId: true,
+            price: true, weight: true, orgId: true,
             sizes: true, colors: true,
+            // Offers target categories and resolve commission rates by ancestry, so
+            // the line needs to know where in the tree it sits (ADR-0019).
+            categoryId: true,
           },
         });
         const products = new Map(productRows.map((row) => [row.id, row]));
@@ -162,6 +188,34 @@ export class OrderService {
         }
         const requestedLines = [...mergedLines.values()];
         const { lines: pricedLines, itemsTotal } = priceLines(requestedLines, products);
+
+        // Offers, decided from persisted rows inside this transaction and at one
+        // instant, so the preview and the charge are priced from the same moment
+        // (ADR-0018). The request contributed a coupon *code* and nothing else: the
+        // amount is computed here (Invariant 1, ADR-0002).
+        const now = new Date();
+        const discountableLines = pricedLines.map((line) => {
+          const product = products.get(line.productId) as NonNullable<ReturnType<typeof products.get>>;
+          return {
+            key: `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`,
+            productId: line.productId,
+            orgId: product.orgId,
+            categoryId: product.categoryId,
+            unitPrice: line.unitPrice,
+            quantity: line.quantity,
+          };
+        });
+        // Also claims any coupon use with a conditional write, so a limited coupon
+        // cannot be oversold by concurrent checkouts (promotions D11, ADR-0007).
+        const discounts = await promotionService.applyToOrder(discountableLines, {
+          code: input.couponCode,
+          // A per-buyer limit needs an identity to count against; a guest order has
+          // none, and the engine refuses such a code rather than exempting it.
+          userId: input.userId ?? null,
+          now,
+          tx,
+        });
+        const discountByKey = new Map(discounts.lines.map((line) => [line.key, line]));
 
         // Where the stock actually is (active locations only): the same pure
         // allocation the checkout preview ran, now against the rows this transaction
@@ -240,7 +294,8 @@ export class OrderService {
         });
 
         const totals = assembleOrderTotals(
-          plans.map((plan) => ({ itemsTotal: plan.parcelItemsTotal, shippingRate: plan.rate.rate }))
+          plans.map((plan) => ({ itemsTotal: plan.parcelItemsTotal, shippingRate: plan.rate.rate })),
+          discounts.totalDiscountPaise
         );
 
         // R5: the customer confirms the number they saw. A mismatch means prices
@@ -338,6 +393,8 @@ export class OrderService {
         // history — this persists that value instead of re-deriving it on every read.
         const orderItemIdByKey = new Map<string, string>();
         for (const line of pricedLines) {
+          const key = `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`;
+          const share = discountByKey.get(key);
           const created = await tx.orderItem.create({
             data: {
               orderId: order.id,
@@ -347,12 +404,33 @@ export class OrderService {
               thumbnail: line.thumbnail,
               size: line.size ?? null,
               color: line.color ?? null,
+              // This line's allocated share, and the part of it the org bore. Both
+              // are persisted rather than re-derived, because the ledger's commission
+              // base is per line and the catalogue will have moved by settlement time
+              // (ADR-0019, org-payouts D4c).
+              discountPaise: share?.buyerDiscountPaise ?? 0,
+              orgFundedPaise: share?.orgFundedPaise ?? 0,
             },
           });
-          orderItemIdByKey.set(
-            `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`,
-            created.id
-          );
+          orderItemIdByKey.set(key, created.id);
+        }
+
+        // One attribution row per offer per organisation, carrying who funded what.
+        // A database check asserts the two halves sum to the buyer's discount, so no
+        // settlement can later be computed from a split that does not reconcile.
+        for (const attribution of discounts.attributions) {
+          await tx.orderDiscount.create({
+            data: {
+              orderId: order.id,
+              promotionId: attribution.promotionId,
+              orgId: attribution.orgId,
+              labelSnapshot: attribution.labelSnapshot,
+              codeSnapshot: attribution.codeSnapshot,
+              buyerDiscountPaise: attribution.buyerDiscountPaise,
+              orgFundedPaise: attribution.orgFundedPaise,
+              platformFundedPaise: attribution.platformFundedPaise,
+            },
+          });
         }
         for (const { shipment, lines } of createdShipments) {
           for (const line of lines) {

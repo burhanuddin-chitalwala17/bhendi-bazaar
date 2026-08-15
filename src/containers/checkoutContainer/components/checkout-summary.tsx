@@ -8,6 +8,8 @@ import { formatCurrency } from "@/lib/format";
 
 interface CheckoutSummaryProps {
   items: CartItem[];
+  /** Per-line discount, keyed as the server allocates it. */
+  lineDiscounts?: Record<string, number>;
   subtotal: number; // Sum of all original prices
   discount: number; // Total savings
   total: number; // Final total including shipping
@@ -15,6 +17,7 @@ interface CheckoutSummaryProps {
 }
 export function CheckoutSummary({
   items,
+  lineDiscounts = {},
   subtotal,
   discount,
   total,
@@ -35,10 +38,9 @@ export function CheckoutSummary({
       {/* Items List */}
       <div className="space-y-2 text-xs">
         {items.map((item) => {
-          const itemTotal = (item.salePrice ?? item.price) * item.quantity;
-          const itemSavings = item.salePrice
-            ? (item.price - item.salePrice) * item.quantity
-            : 0;
+          const itemTotal = item.price * item.quantity;
+          const itemSavings =
+            lineDiscounts[`${item.productId}::${item.size ?? ""}::${item.color ?? ""}`] ?? 0;
 
           return (
             <div key={item.id} className="space-y-0.5">
@@ -52,9 +54,7 @@ export function CheckoutSummary({
               {/* Show savings for this item if applicable */}
               {itemSavings > 0 && (
                 <div className="flex items-baseline justify-between gap-2 text-[0.65rem]">
-                  <span className="text-muted-foreground/60">
-                    Original: {formatCurrency(item.price * item.quantity)}
-                  </span>
+                  <span className="text-muted-foreground/60">Offer applied</span>
                   <span className="text-success">
                     Save {formatCurrency(itemSavings)}
                   </span>
@@ -76,7 +76,7 @@ export function CheckoutSummary({
         {/* Discount */}
         {discount > 0 && (
           <div className="flex items-center justify-between text-success">
-            <span>Savings</span>
+            <span>Discount</span>
             <span className="font-medium">- {formatCurrency(discount)}</span>
           </div>
         )}

@@ -42,6 +42,12 @@ export interface ShippingGroupPayload {
 }
 
 export interface CreateOrderWithShipmentsInput {
+  /**
+   * A coupon code, if one was entered. The only promotional input the wire carries —
+   * the discount it produces is computed server-side from the persisted offer, so no
+   * amount, percentage or promotion id belongs here (promotions R16).
+   */
+  couponCode?: string;
   shippingGroups: ShippingGroupPayload[];
   /** The total the customer saw — compared server-side, never persisted (R5). */
   displayedGrandTotal: number;

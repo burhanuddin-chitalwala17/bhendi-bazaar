@@ -1,6 +1,12 @@
 import { prisma } from "@server/shared/prisma";
 import type { CartItem, CartLineInput, ServerCart } from "@server/cart/cart.types";
 import { ConflictError } from "@server/shared/domain-error";
+import {
+  loadPriceContext,
+  resolveProductPrice,
+  EMPTY_PRICE_CONTEXT,
+  type PriceContext,
+} from "@server/promotions/price-context";
 
 /**
  * Cart repository — the only place `prisma.cart` / `prisma.cartItem` are touched
@@ -38,15 +44,36 @@ interface CartLineRow {
     name: string;
     thumbnail: string;
     price: number;
-    salePrice: number | null;
+    orgId: string;
+    categoryId: string;
     weight: number | null;
     stockLocations: Array<{ quantity: number; orgAddress: { address: { pincode: string } } }>;
     org: CartItem["org"];
   };
 }
 
-/** Exported for tests: the stored choice plus everything the product row answers for. */
-export function toWireCartItem(row: CartLineRow): CartItem {
+/**
+ * Exported for tests: the stored choice plus everything the product row answers for.
+ *
+ * The cart is a display surface, so its prices come from the same resolver the
+ * product page and checkout use (ADR-0018) — a cart showing a price offers have
+ * already moved is the divergence that ADR in one line exists to prevent. The context
+ * defaults to empty so a caller that genuinely has no offer set still gets list
+ * prices rather than a database read it did not ask for.
+ */
+export function toWireCartItem(
+  row: CartLineRow,
+  context: PriceContext = EMPTY_PRICE_CONTEXT
+): CartItem {
+  const { pricePaise, offerPricePaise } = resolveProductPrice(
+    {
+      id: row.product.id,
+      price: row.product.price,
+      orgId: row.product.orgId,
+      categoryId: row.product.categoryId,
+    },
+    context
+  );
   return {
     id: row.id,
     productId: row.product.id,
@@ -54,7 +81,7 @@ export function toWireCartItem(row: CartLineRow): CartItem {
     productName: row.product.name,
     thumbnail: row.product.thumbnail,
     price: row.product.price,
-    salePrice: row.product.salePrice ?? undefined,
+    salePrice: offerPricePaise < pricePaise ? offerPricePaise : undefined,
     quantity: row.quantity,
     size: row.size ?? undefined,
     color: row.color ?? undefined,
@@ -75,11 +102,11 @@ type CartRow = {
   items: CartLineRow[];
 };
 
-function toServerCart(cart: CartRow): ServerCart {
+function toServerCart(cart: CartRow, context: PriceContext): ServerCart {
   return {
     id: cart.id,
     userId: cart.userId,
-    items: cart.items.map(toWireCartItem),
+    items: cart.items.map((item) => toWireCartItem(item, context)),
     version: cart.version,
     updatedAt: cart.updatedAt,
   };
@@ -102,7 +129,7 @@ export class CartRepository {
         where: { userId },
         include: CART_INCLUDE,
       });
-      return cart ? toServerCart(cart) : null;
+      return cart ? toServerCart(cart, await loadPriceContext()) : null;
     } catch (error) {
       console.error("[CartRepository] findByUserId failed:", error);
       throw new Error("Failed to fetch cart from database", { cause: error });
@@ -168,7 +195,7 @@ export class CartRepository {
       where: { userId },
       include: CART_INCLUDE,
     });
-    return toServerCart(saved);
+    return toServerCart(saved, await loadPriceContext());
   }
 
   /** Empty the cart, bumping the version so other tabs learn about it. */

@@ -74,6 +74,32 @@ export class OrgRepository {
     };
   }
 
+  /** Set what the platform charges this org. Platform-owned; never org input. */
+  async updateCommercialTerms(id: string, terms: { commissionBps: number; maxDiscountBps: number }) {
+    return await prisma.org.update({ where: { id }, data: terms });
+  }
+
+  /**
+   * The commercial terms an offer or a payout needs — nothing else.
+   *
+   * Distinct from `findById`, which joins products and stock to build console stats;
+   * loading that to read one rate would be paying for a page to answer a question.
+   */
+  async findCommercialTerms(id: string) {
+    return await prisma.org.findUnique({
+      where: { id },
+      select: { id: true, name: true, code: true, commissionBps: true, maxDiscountBps: true },
+    });
+  }
+
+  /** Every org's terms, for the payout overview. */
+  async listCommercialTerms() {
+    return await prisma.org.findMany({
+      select: { id: true, name: true, code: true, commissionBps: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
   /**
    * Find org by code
    */
