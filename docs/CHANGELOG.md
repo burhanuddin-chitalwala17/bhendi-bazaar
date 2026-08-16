@@ -10,6 +10,28 @@
 
 ## Entries
 
+## [PR-69] 2026-08-16 — The seed guard Invariant 7 already promised
+
+Invariant 7 has described a guard on `prisma/seed.ts` since it was written, and the guard did not exist. `npx prisma db seed` against a production `DATABASE_URL` would have wiped the store — documented protection with nothing behind it, which is worse than no protection, because the doc is what people trust.
+
+`assertSeedTargetIsAllowed()` now runs as the first statement of `main()`, before any delete. It lives in the seed rather than a wrapper so it holds when the raw command is typed.
+
+**Hostname alone cannot decide this, which is likely why it was never written.** Invariant 7 specified an allowlist of `localhost` / `127.0.0.1`, but this project's development database is Prisma Postgres at `db.prisma.io` — the same host that serves production. Implementing the invariant literally would have blocked development seeding outright, and allowlisting the host would have permitted production. So a non-local target must instead be named exactly by `SEED_ALLOWED_DATABASE_URL`, which distinguishes two databases sharing a hostname. Production is protected by never holding that variable, nor `SEED_ALLOW_DESTRUCTIVE=1`, which remains a separate gate so seeding and wiping stay separate intents.
+
+Both gates are allowlists. An unset, unparseable, or unrecognised `DATABASE_URL` is refused.
+
+Invariant 7 in [CLAUDE.md](../CLAUDE.md) is corrected to describe the mechanism that exists, and [OPERATIONS.md](OPERATIONS.md) documents both variables and why a cloud development database needs the second one.
+
+## [PR-68] 2026-08-16 — A carrier's catalogue row ships as a migration, not a seed `[MIGRATION]`
+
+Production had no shipping providers, so `/api/shipping/rates` returned 503 on every checkout while dev quoted normally. The Shiprocket row existed only in `prisma/seed.ts`, and that seed deletes every table, so it can only ever run against a developer's machine — leaving no path by which the row could reach production. The admin console could not close the gap either: it exposes list, connect and disconnect, all keyed on a provider id that must already exist.
+
+`20260816030000_register_shiprocket_provider` inserts the row with `ON CONFLICT ("code") DO NOTHING`, so it is a no-op where the seed already created it. `vercel.json` already runs `prisma migrate deploy` before the build, so merging is what carries it to production.
+
+The general rule this establishes: **a fixture belongs in the seed, reference data belongs in a migration.** The test is whether production breaks without it. Anything the app cannot function without must ride the migration pipeline, because the seed is destructive by design and therefore permanently dev-only.
+
+No credentials are in the migration — `isConnected` is false, and an operator still connects the account from the admin console ([shipping ADR-0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)).
+
 ## [PR-67] 2026-08-16 — Offers, and a ledger of what each organisation is owed `[CONTRACT]` `[MIGRATION]`
 
 The platform and each organisation can now run time-boxed offers — applied automatically to the price a buyer sees, or unlocked by a coupon at checkout — and every paid order records what each organisation earned. Specs: [promotions](specs/promotions/), [org-payouts](specs/org-payouts/). Decisions: [ADR-0018](adr/0018-one-effective-price-function.md), [ADR-0019](adr/0019-discount-is-one-winning-offer.md), [ADR-0020](adr/0020-money-bearing-records-never-cascade.md).

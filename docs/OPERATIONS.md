@@ -35,8 +35,22 @@ npm run dev                 # http://localhost:3000
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
 | `NEXT_PUBLIC_ASSETS_URL` | ○ | Base URL for blob-hosted assets |
+| `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
+| `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
 
 `src/lib/env.ts` holds the required-variable list. Note it does not currently include `ENCRYPTION_KEY` or `RAZORPAY_WEBHOOK_SECRET`, so add those to any check you rely on.
+
+### ⚠️ Seeding a cloud development database
+`prisma/seed.ts` deletes every table, so it refuses to run unless the target is named (Invariant 7). Both gates are needed together:
+
+```
+SEED_ALLOW_DESTRUCTIVE=1
+SEED_ALLOWED_DATABASE_URL=<the exact same string as your dev DATABASE_URL>
+```
+
+`SEED_ALLOWED_DATABASE_URL` exists because **hostname cannot tell dev from production here** — Prisma Postgres serves both from `db.prisma.io`, so allowing the host would allow production. Matching the full connection string identifies one specific database. Keep both variables in your local `.env` only; production stays protected precisely by never having them.
+
+To seed reference data that production also needs, do not reach for the seed — write a data migration. `vercel.json` runs `prisma migrate deploy` before the build, so a migration reaches every environment on merge, while the seed reaches none of them.
 
 ### ⚠️ The Upstash naming trap
 The rate limiter reads **`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`, and using those names produces **two different failures from the same missing config**: `src/lib/rate-limit.ts` asserts non-null at module load, so `signup` and `forgot-password` throw at import (fail closed), while `src/middleware.ts` catches the absence and disables limiting with only a logged warning (fail open). Use the names in the table.

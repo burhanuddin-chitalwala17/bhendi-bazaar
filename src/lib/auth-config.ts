@@ -1,12 +1,12 @@
 import type { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import GoogleProvider, { type GoogleProfile } from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@server/shared/prisma";
+import { bhendiPrismaAdapter } from "./auth-adapter";
 import { compare } from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: bhendiPrismaAdapter(prisma),
   session: {
     strategy: "jwt",
   },
@@ -14,6 +14,10 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      // Someone who signed up with a password and later clicks "Sign in with Google"
+      // must land in the same account rather than hitting OAuthAccountNotLinked. Safe
+      // only because signIn() below refuses any profile Google has not verified.
+      allowDangerousEmailAccountLinking: true,
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -30,7 +34,7 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
         });
 
-        if (!user || !user.passwordHash) {
+        if (!user || !user.passwordHash || user.isBlocked) {
           return null;
         }
 
@@ -48,44 +52,42 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Only process OAuth logins
-      if (account?.provider === "google") {
-        try {
-          // Check if user with this email exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email! },
-            include: { accounts: true },
-          });
-
-          if (existingUser) {
-            // Check if Google account is already linked
-            const googleAccount = existingUser.accounts.find(
-              (a) => a.provider === "google"
-            );
-
-            if (!googleAccount) {
-              // Link Google account to existing user
-              await prisma.account.create({
-                data: {
-                  userId: existingUser.id,
-                  type: account.type,
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                  access_token: account.access_token,
-                  expires_at: account.expires_at,
-                  token_type: account.token_type,
-                  scope: account.scope,
-                  id_token: account.id_token,
-                },
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Error linking account:", error);
-          return false;
-        }
+    // Runs before NextAuth links or creates anything, so returning false here is what
+    // makes allowDangerousEmailAccountLinking safe.
+    async signIn({ account, profile }) {
+      if (account?.provider !== "google") {
+        return true;
       }
+
+      // Without this, a Workspace admin could assert an address they do not own and
+      // claim the matching password account.
+      const google = profile as GoogleProfile | undefined;
+      if (!google?.email || google.email_verified !== true) {
+        return false;
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { email: google.email },
+        select: { id: true, isBlocked: true, isEmailVerified: true },
+      });
+
+      if (!existingUser) {
+        return true; // New user — the adapter creates it, already marked verified.
+      }
+
+      if (existingUser.isBlocked) {
+        return false;
+      }
+
+      // They signed up with a password and never clicked the verification link, but
+      // Google has now vouched for the same address.
+      if (!existingUser.isEmailVerified) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: { isEmailVerified: true, emailVerified: new Date() },
+        });
+      }
+
       return true;
     },
     async jwt({ token, user }) {
