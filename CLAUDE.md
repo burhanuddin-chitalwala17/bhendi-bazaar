@@ -84,7 +84,13 @@ Each table is reached through exactly one repository module. Two repositories wr
 Stock is changed with a guarded `updateMany({ where: { stock: { gte: qty } } })` in the same `$transaction` as the order, and `count === 0` means out-of-stock. Read-then-write is a race, not a check. ([ADR-0007](docs/adr/0007-conditional-stock-decrement.md))
 
 ### 7. Seeds refuse to run against a non-local database
-`prisma/seed.ts` deletes every table, so it aborts unless `DATABASE_URL` points at a local host. The check is an **allowlist** (`localhost`, `127.0.0.1`), never a denylist of production hostnames — a denylist fails open on an unrecognised host, which is the wrong default for an irreversible operation. Deleting rows requires a second explicit gate (`SEED_ALLOW_DESTRUCTIVE=1`), so seeding and wiping are separate intents. No credential literal lives in a seed. The guard lives in the seed itself, so it holds when someone types the raw command.
+`prisma/seed.ts` deletes every table, so it aborts unless the target database has been named as a seed target. Every check is an **allowlist**, never a denylist of production hostnames — a denylist fails open on an unrecognised host, which is the wrong default for an irreversible operation.
+
+**Hostname alone is not sufficient**, and assuming it was is how this invariant sat unimplemented: Prisma Postgres serves development and production from the same `db.prisma.io`, so allowing that host would allow production. `localhost` / `127.0.0.1` pass on their own; any other target must be named exactly by `SEED_ALLOWED_DATABASE_URL`, set in a local `.env` and never in a deployment environment.
+
+Deleting rows requires a second explicit gate (`SEED_ALLOW_DESTRUCTIVE=1`), so seeding and wiping are separate intents. No credential literal lives in a seed. The guard lives in the seed itself, so it holds when someone types the raw command.
+
+**Reference data does not belong in the seed.** The seed is destructive and therefore permanently dev-only, so anything production cannot run without — a carrier's catalogue row, for instance — ships as a data migration, which `vercel.json` applies on deploy. The test is whether production breaks without it.
 
 ---
 
