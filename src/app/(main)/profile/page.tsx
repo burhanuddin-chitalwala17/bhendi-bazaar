@@ -14,14 +14,12 @@ import { ErrorState } from "@/components/shared/states/ErrorState";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Package } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { useAddressManager } from "@/hooks/useAddressManager";
 
 export default function ProfilePage() {
   const { status } = useAuth();
   const isAuthenticated = status === "authenticated";
-  const router = useRouter();
 
   // Use context instead of hook
   const {
@@ -32,6 +30,7 @@ export default function ProfilePage() {
     saving,
     updateUserInfo,
     updateProfilePic,
+    refetch: refetchProfile,
   } = useProfileContext();
 
   const {
@@ -44,8 +43,20 @@ export default function ProfilePage() {
     refetchDependencies: [isAuthenticated],
   });
 
-  // use address manager
-  const { addAddress, updateAddress, deleteAddress, selectAddress } = useAddressManager();
+  // The address list is served by ProfileContext, so every mutation refetches it —
+  // useAddressManager keeps its own copy that this page never reads.
+  const { addAddress, deleteAddress, isSaving, isDeleting } =
+    useAddressManager();
+
+  async function handleSaveAddress(address: DeliveryAddress) {
+    await addAddress(address);
+    await refetchProfile();
+  }
+
+  async function handleDeleteAddress(addressId: string) {
+    await deleteAddress(addressId);
+    await refetchProfile();
+  }
 
   if (loading) {
     return <LoadingSkeleton count={3} />;
@@ -107,10 +118,10 @@ export default function ProfilePage() {
         <AddressesSection
           addresses={profile?.addresses ?? []}
           loading={loading}
-          saving={saving}
-          onSaveAddress={addAddress}
-          onDeleteAddress={deleteAddress}
-        /> 
+          saving={saving || isSaving || isDeleting}
+          onSaveAddress={handleSaveAddress}
+          onDeleteAddress={handleDeleteAddress}
+        />
       </section>
 
       {/* Section 3: Recent Orders */}
@@ -122,12 +133,6 @@ export default function ProfilePage() {
             icon={Package}
             title="No orders found"
             description="You haven't placed any orders yet."
-            action={{
-              label: "View all orders",
-              onClick: () => {
-                router.push("/orders");
-              },
-            }}
           />
         ) : ordersError ? (
           <ErrorState message={ordersError} retry={refetch} />

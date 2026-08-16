@@ -20,6 +20,20 @@ interface AddressesSectionProps {
   onDeleteAddress: (addressId: string) => Promise<void>;
 }
 
+const EMPTY_ADDRESS: DeliveryAddress = {
+  id: "",
+  fullName: "",
+  mobile: "",
+  email: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  pincode: "",
+  country: "India",
+  label: "",
+};
+
 export function AddressesSection({
   addresses,
   loading,
@@ -37,7 +51,7 @@ export function AddressesSection({
   const hasAddresses = addresses.length > 0;
 
   function handleAddClick() {
-
+    setActiveAddress(EMPTY_ADDRESS);
     setModalMode("add");
   }
 
@@ -136,7 +150,7 @@ export function AddressesSection({
       {activeAddress && modalMode && (
         <AddressModal
           mode={modalMode}
-          address={{ ...activeAddress, id: "" }}
+          address={activeAddress}
           saving={saving ?? false}
           onClose={handleCloseModal}
           onSave={handleSave}
