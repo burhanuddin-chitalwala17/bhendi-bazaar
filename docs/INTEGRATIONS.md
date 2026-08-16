@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-08-13
+- **Verified:** 2026-08-17
 
 ## Purpose
 What the services we depend on actually do — the behaviour that is not derivable from our code and not obvious from their documentation. Payment, courier, and platform quirks belong to no single domain and outlive any one call site, so they live here rather than in a comment.
@@ -33,7 +33,8 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 
 ## Shiprocket (courier)
 
-- **Auth is a bearer token with an expiry**, obtained by posting email and password. It is not a long-lived API key, so the token must be cached, its expiry tracked, and re-authentication handled — a 401 mid-session is normal operation, not an error condition. This is why credentials rather than a key are stored ([shipping ADR-0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)).
+- **The API credentials are a separate "API user", not the dashboard login.** Created in the Shiprocket dashboard under *Settings → API → Configure → Create an API User*, and the email **must differ from the registered account email** — reusing it is rejected. The dashboard itself signs in by mobile and OTP, so there is no dashboard password to reuse even if one wanted to. This costs an hour the first time, because the failure looks like wrong credentials rather than the wrong *kind* of credentials.
+- **Auth is a bearer token with an expiry**, obtained by posting the API user's email and password. Their 240-hour validity is what `TOKEN_EXPIRY_HOURS` in `providers/shiprocket/shiprocket.config.ts` mirrors. It is not a long-lived API key, so the token must be cached, its expiry tracked, and re-authentication handled — a 401 mid-session is normal operation, not an error condition. This is why credentials rather than a key are stored ([shipping ADR-0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)).
 - **Rate requests are priced on weight** in kilograms, with origin and destination pincodes. Serviceability is per-pincode-pair, so a rate response can legitimately be empty rather than an error.
 - **Status vocabulary is theirs and is finer-grained than ours**, and they can add to it. Normalised on entry ([shipping ADR-0003](../server/shipping/adr/0003-normalise-carrier-status-on-entry.md)).
 - **Webhooks carry no signature by default.** ⚠️ *Unverified* — confirm current options in their dashboard before relying on this. If no signature is available, a shared-secret header or a hard-to-guess path is the fallback, and the handler must still fail loudly on an unmatched payload.
