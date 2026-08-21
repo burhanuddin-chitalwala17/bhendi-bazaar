@@ -14,8 +14,10 @@ export async function GET() {
     const sheet = workbook.addWorksheet("Categories");
     sheet.addRow(["name", "description", "parent", "accent", "order", "image"]);
     sheet.getRow(1).font = { bold: true };
-    sheet.addRow(["Abayas", "Elegant everyday and occasion abayas.", "", "EMERALD", 1, "abayas/hero.jpg"]);
-    sheet.addRow(["Silk Abayas", "The silk end of the abaya rail.", "abayas", "PURPLE", 2, "silk-abayas/hero.jpg"]);
+    // Placeholder names, not plausible ones: a template whose example rows collide
+    // with the real catalogue fails validation the first time anyone tries it.
+    sheet.addRow(["Example Category", "Replace this row with your own.", "", "EMERALD", 1, "example-category/hero.jpg"]);
+    sheet.addRow(["Example Subcategory", "Shows how a child names its parent.", "example-category", "PURPLE", 2, "example-subcategory/hero.jpg"]);
 
     const notes = workbook.addWorksheet("How to fill");
     notes.addRow(["Column", "What goes in it"]);
