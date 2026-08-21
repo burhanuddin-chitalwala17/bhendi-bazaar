@@ -28,51 +28,39 @@ export class AdminDashboardRepository {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Get all orders with date filters
+    // Aggregation happens in the database, not JS: the previous shape fetched
+    // every order row in each window to sum one column, and asked five separate
+    // counts for what one GROUP BY answers (billed-operations work, PR-72).
+    const revenueWindow = (gte: Date) =>
+      prisma.order.aggregate({
+        where: { createdAt: { gte } },
+        _sum: { grandTotal: true },
+        _count: true,
+      });
+
     const [
-      todayOrders,
-      weekOrders,
-      monthOrders,
-      yearOrders,
-      allOrders,
-      orderStatuses,
-      productStats,
+      todayTotals,
+      weekTotals,
+      monthTotals,
+      yearTotals,
+      ordersByStatus,
+      // One read of (threshold, quantities) answers total, low-stock and
+      // out-of-stock together — "stock ≤ its own threshold" compares an aggregate
+      // to a column, which Prisma cannot express as a filter.
+      productRows,
       userStats,
     ] = await Promise.all([
-      prisma.order.findMany({
-        where: { createdAt: { gte: startOfToday } },
-        select: { grandTotal: true },
+      revenueWindow(startOfToday),
+      revenueWindow(startOfWeek),
+      revenueWindow(startOfMonth),
+      revenueWindow(startOfYear),
+      prisma.order.groupBy({ by: ["status"], _count: true }),
+      prisma.product.findMany({
+        select: {
+          stockLocations: { select: { quantity: true } },
+          lowStockThreshold: true,
+        },
       }),
-      prisma.order.findMany({
-        where: { createdAt: { gte: startOfWeek } },
-        select: { grandTotal: true },
-      }),
-      prisma.order.findMany({
-        where: { createdAt: { gte: startOfMonth } },
-        select: { grandTotal: true },
-      }),
-      prisma.order.findMany({
-        where: { createdAt: { gte: startOfYear } },
-        select: { grandTotal: true },
-      }),
-      prisma.order.count(),
-      Promise.all([
-        prisma.order.count({ where: { status: "processing" } }),
-        prisma.order.count({ where: { status: "packed" } }),
-        prisma.order.count({ where: { status: "shipped" } }),
-        prisma.order.count({ where: { status: "delivered" } }),
-      ]),
-      Promise.all([
-        prisma.product.count(),
-        prisma.product.findMany({
-          where: { stockLocations: { some: { quantity: { gt: 0 } } } },
-          select: {
-            stockLocations: { select: { quantity: true } },
-            lowStockThreshold: true,
-          },
-        }),
-        prisma.product.count({ where: { stockLocations: { none: { quantity: { gt: 0 } } } } }),
-      ]),
       Promise.all([
         prisma.user.count(),
         prisma.user.count({
@@ -84,47 +72,33 @@ export class AdminDashboardRepository {
       ]),
     ]);
 
-    // Calculate revenues
-    const revenueToday = todayOrders.reduce(
-      (sum, o) => sum + (o.grandTotal || 0),
-      0
-    );
-    const revenueWeek = weekOrders.reduce(
-      (sum, o) => sum + (o.grandTotal || 0),
-      0
-    );
-    const revenueMonth = monthOrders.reduce(
-      (sum, o) => sum + (o.grandTotal || 0),
-      0
-    );
-    const revenueYear = yearOrders.reduce(
-      (sum, o) => sum + (o.grandTotal || 0),
-      0
-    );
+    const statusCount = (status: string) =>
+      ordersByStatus.find((group) => group.status === status)?._count ?? 0;
+
+    const stockTotals = productRows.map((product) => ({
+      total: product.stockLocations.reduce((sum, row) => sum + row.quantity, 0),
+      threshold: product.lowStockThreshold,
+    }));
 
     return {
       revenue: {
-        today: revenueToday,
-        week: revenueWeek,
-        month: revenueMonth,
-        year: revenueYear,
+        today: todayTotals._sum.grandTotal ?? 0,
+        week: weekTotals._sum.grandTotal ?? 0,
+        month: monthTotals._sum.grandTotal ?? 0,
+        year: yearTotals._sum.grandTotal ?? 0,
       },
       orders: {
-        total: allOrders,
-        processing: orderStatuses[0],
-        packed: orderStatuses[1],
-        shipped: orderStatuses[2],
-        delivered: orderStatuses[3],
-        todayCount: todayOrders.length,
+        total: ordersByStatus.reduce((sum, group) => sum + group._count, 0),
+        processing: statusCount("processing"),
+        packed: statusCount("packed"),
+        shipped: statusCount("shipped"),
+        delivered: statusCount("delivered"),
+        todayCount: todayTotals._count,
       },
       products: {
-        total: productStats[0],
-        lowStock: productStats[1].filter(
-          (p) =>
-            p.stockLocations.reduce((sum, row) => sum + row.quantity, 0) <= p.lowStockThreshold
-        )
-          .length,
-        outOfStock: productStats[2],
+        total: productRows.length,
+        lowStock: stockTotals.filter((p) => p.total > 0 && p.total <= p.threshold).length,
+        outOfStock: stockTotals.filter((p) => p.total === 0).length,
       },
       customers: {
         total: userStats[0],
@@ -140,6 +114,7 @@ export class AdminDashboardRepository {
   async getRecentActivities(limit: number = 10): Promise<RecentActivity[]> {
     // Get recent orders
     const recentOrders = await prisma.order.findMany({
+      relationLoadStrategy: "join",
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
@@ -151,6 +126,7 @@ export class AdminDashboardRepository {
 
     // Get recent reviews
     const recentReviews = await prisma.review.findMany({
+      relationLoadStrategy: "join",
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
@@ -164,6 +140,9 @@ export class AdminDashboardRepository {
     const recentUsers = await prisma.user.findMany({
       take: limit,
       orderBy: { createdAt: "desc" },
+      // The activity feed needs three fields; the unselected row carries the
+      // password hash, which has no business leaving the table for a feed.
+      select: { id: true, name: true, email: true, createdAt: true },
     });
 
     // Combine and sort

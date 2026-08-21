@@ -501,6 +501,7 @@ export class OrderService {
   async fulfillOrder(orderId: string): Promise<void> {
     // Get order with shipments
     const order = await prisma.order.findUnique({
+      relationLoadStrategy: "join",
       where: { id: orderId },
       include: { shipments: true },
     });

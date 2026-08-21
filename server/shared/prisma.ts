@@ -20,12 +20,25 @@ const pool =
     connectionTimeoutMillis: 10_000,
   });
 
+// PRISMA_LOG_QUERIES=1 prints every SQL statement — the measuring instrument for
+// the billed-operations work. Dev-only diagnostics; never set in a deployment.
+const logQueries = process.env.PRISMA_LOG_QUERIES === "1";
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     adapter: new PrismaPg(pool),
-    log: ["error", "warn"],
+    log: logQueries
+      ? [{ emit: "event", level: "query" }, "error", "warn"]
+      : ["error", "warn"],
   });
+
+if (logQueries && !globalForPrisma.prisma) {
+  (prisma as PrismaClient<{ log: [{ emit: "event"; level: "query" }] }>).$on(
+    "query",
+    (e) => console.log(`prisma:query ${e.query}`)
+  );
+}
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.pool = pool;

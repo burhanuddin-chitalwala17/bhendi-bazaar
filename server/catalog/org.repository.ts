@@ -25,6 +25,7 @@ export class OrgRepository {
    */
   async findAllWithStats() {
     const orgs = await prisma.org.findMany({
+      relationLoadStrategy: "join",
       include: {
         _count: { select: { products: true } },
         products: { select: { stockLocations: { select: { quantity: true } } } },
@@ -49,6 +50,7 @@ export class OrgRepository {
    */
   async findById(id: string) {
     const org = await prisma.org.findUnique({
+      relationLoadStrategy: "join",
       where: { id },
       include: {
         _count: {

@@ -62,6 +62,7 @@ export class AdminReviewRepository {
 
     const [reviews, total] = await Promise.all([
       prisma.review.findMany({
+        relationLoadStrategy: "join",
         where,
         skip,
         take: limit,
@@ -125,6 +126,7 @@ export class AdminReviewRepository {
 
   async getReviewById(id: string): Promise<AdminReview | null> {
     const review = await prisma.review.findUnique({
+      relationLoadStrategy: "join",
       where: { id },
       include: {
         product: {

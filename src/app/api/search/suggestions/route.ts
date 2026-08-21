@@ -1,7 +1,7 @@
 // src/app/api/search/suggestions/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { productService } from "@server/catalog/product.service";
-import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { categoryService } from "@server/catalog/category.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,8 +17,10 @@ export async function GET(request: NextRequest) {
     // Get matching products (limit to 5 for suggestions)
     const products = await productService.searchProducts(query, 5);
 
-    // Get matching categories
-    const matchingCategories = (await adminCategoriesDAL.getCategories()).categories
+    // Matching categories, from the storefront's own list — the admin listing this
+    // used to call carried a per-category product count and a total-count query
+    // that the dropdown never rendered.
+    const matchingCategories = (await categoryService.getCategories())
       .filter(
         (cat) =>
           cat.name.toLowerCase().includes(q) ||

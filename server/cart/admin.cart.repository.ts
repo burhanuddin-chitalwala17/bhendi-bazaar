@@ -40,6 +40,7 @@ export class AdminCartRepository {
     dateThreshold.setDate(dateThreshold.getDate() - minDays);
 
     const carts = await prisma.cart.findMany({
+      relationLoadStrategy: "join",
       where: {
         updatedAt: {
           lte: dateThreshold,
@@ -56,6 +57,7 @@ export class AdminCartRepository {
           },
         },
         items: {
+          orderBy: { id: "asc" as const },
           include: {
             product: {
               select: { id: true, name: true, slug: true, thumbnail: true, price: true, orgId: true, categoryId: true },

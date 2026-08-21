@@ -49,7 +49,10 @@ export class PromotionRepository {
    * The set is small — live campaigns are coarse and few.
    */
   async listLive(now: Date, db: Db = prisma): Promise<EnginePromotion[]> {
+    // Joined, not queried per relation: this read is on every storefront render,
+    // so its targets sub-read was a second billed operation per page.
     return await db.promotion.findMany({
+      relationLoadStrategy: "join",
       where: { isActive: true, startsAt: { lte: now }, endsAt: { gt: now } },
       select: PROMOTION_SELECT,
     });
@@ -65,69 +68,6 @@ export class PromotionRepository {
     return await db.promotion.findUnique({ where: { code }, select: PROMOTION_SELECT });
   }
 
-  /**
-   * Which products currently carry an offer — the "on offer" listing's question.
-   *
-   * Used to be `salePrice IS NOT NULL`, a column test. Coverage is a computed thing
-   * now: an offer may name products, name a category and reach its whole subtree, or
-   * name nothing and cover everything in its scope.
-   *
-   * `coversEverything` is returned rather than materialising every product id,
-   * because a store-wide platform offer covers the entire catalogue and enumerating
-   * it to answer "show me eight" would be absurd.
-   */
-  async productsOnOffer(
-    now: Date,
-    db: Db = prisma
-  ): Promise<{ coversEverything: boolean; productIds: string[]; orgIds: string[]; categoryIds: string[] }> {
-    const live = await this.listLive(now, db);
-    const automatic = live.filter((promotion) => promotion.trigger === "AUTOMATIC");
-
-    const productIds = new Set<string>();
-    const orgIds = new Set<string>();
-    const categoryIds = new Set<string>();
-    let coversEverything = false;
-
-    const parents = await this.categoryParents(db);
-    const childrenOf = new Map<string, string[]>();
-    for (const [id, parentId] of parents) {
-      if (parentId === null) continue;
-      childrenOf.set(parentId, [...(childrenOf.get(parentId) ?? []), id]);
-    }
-    // A Set, not an array with `includes` — the walk runs per targeted category on a
-    // path that renders every listing, and a linear membership test inside a loop is
-    // quadratic in the size of the tree.
-    const subtree = (root: string): string[] => {
-      const out = new Set<string>();
-      const stack = [root];
-      while (stack.length > 0) {
-        const id = stack.pop() as string;
-        if (out.has(id)) continue;
-        out.add(id);
-        stack.push(...(childrenOf.get(id) ?? []));
-      }
-      return [...out];
-    };
-
-    for (const promotion of automatic) {
-      if (promotion.targets.length === 0) {
-        if (promotion.scope === "PLATFORM") coversEverything = true;
-        else if (promotion.orgId) orgIds.add(promotion.orgId);
-        continue;
-      }
-      for (const target of promotion.targets) {
-        if (target.productId) productIds.add(target.productId);
-        else if (target.categoryId) subtree(target.categoryId).forEach((id) => categoryIds.add(id));
-      }
-    }
-
-    return {
-      coversEverything,
-      productIds: [...productIds],
-      orgIds: [...orgIds],
-      categoryIds: [...categoryIds],
-    };
-  }
 
   /** The whole category tree as `id -> parentId`. One small table; read whole. */
   async categoryParents(db: Db = prisma): Promise<CategoryParents> {
@@ -183,6 +123,7 @@ export class PromotionRepository {
   /** The same scoped lookup, with everything an edit form needs to prefill. */
   async findScopedWithTargets(id: string, scope: Prisma.PromotionWhereInput, db: Db = prisma) {
     return await db.promotion.findFirst({
+      relationLoadStrategy: "join",
       where: { id, ...scope },
       include: { targets: { select: { categoryId: true, productId: true } } },
     });
@@ -195,6 +136,7 @@ export class PromotionRepository {
   ) {
     const [offers, total] = await Promise.all([
       db.promotion.findMany({
+      relationLoadStrategy: "join",
       where: scope,
       skip: (page - 1) * limit,
       take: limit,
@@ -224,7 +166,7 @@ export class PromotionRepository {
   ) {
     return await db.promotion.create({
       data: { ...data, targets: { create: targets } },
-      include: { targets: true },
+      include: { targets: { orderBy: { id: "asc" as const } } },
     });
   }
 
@@ -245,7 +187,7 @@ export class PromotionRepository {
       return await tx.promotion.update({
         where: { id },
         data: { ...data, targets: { create: targets } },
-        include: { targets: true },
+        include: { targets: { orderBy: { id: "asc" as const } } },
       });
     });
   }
