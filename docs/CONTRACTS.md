@@ -95,5 +95,25 @@ The three shipping-origin fields — `shippingFromPincode`, `shippingFromCity`, 
 
 ---
 
+## Bulk catalogue upload
+
+Two-step by design: validate writes nothing, create writes everything or nothing
+([bulk-catalog-upload](specs/bulk-catalog-upload/spec.md)). Both steps re-run the
+same checks — the second request is as untrusted as the first.
+
+| Endpoint | Shape |
+|---|---|
+| `POST /api/org/:orgId/products/bulk/validate` | multipart `sheet` (.xlsx/.csv) + `filenames` (JSON array of dropped image names) → `{ ok, errors: RowError[], rows, orgCode, summary }` |
+| `POST /api/org/:orgId/products/bulk` | `{ rows: (BulkProductRow & { imageUrls: Record<filename, blobUrl> })[] }` → `{ ok, created }`, or 400 `{ ok: false, errors }` |
+| `GET /api/org/:orgId/products/bulk/sample` | `.xlsx`, generated from the org's live locations and current category slugs |
+| `POST /api/org/:orgId/upload/token` | `@vercel/blob` client-upload handshake, scoped to `products/<org-code>/` |
+| `POST /api/admin/categories/bulk/validate` · `/bulk` · `/bulk/sample` | the same three shapes for categories |
+| `POST /api/admin/upload/token` | client-upload handshake, scoped to `categories/` |
+
+`RowError` is `{ row, field, message }` — `row` is the Excel row number the user
+sees, `0` for sheet-level problems. Row shapes: `server/catalog/bulk/bulk.types.ts`,
+validated by `src/lib/validation/schemas/bulk-product.schema.ts` and
+`bulk-category.schema.ts`.
+
 ## Adding a DTO to this file
 Record a shape when it crosses the boundary and either more than one route uses it, or getting it wrong would fail silently. A one-off response shape used by a single route does not need an entry — its Zod schema is its documentation.

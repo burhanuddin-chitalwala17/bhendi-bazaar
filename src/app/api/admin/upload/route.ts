@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { uploadImages, type ImageFolder } from "@server/catalog/image-upload";
+import { orgRepository } from "@server/catalog/org.repository";
 import { DomainError } from "@server/shared/domain-error";
 
 const UPLOAD_TYPES: Record<string, ImageFolder> = {
@@ -30,12 +31,13 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
-    const identifier =
-      folder === "products"
-        ? (formData.get("productSlug") as string | null)
-        : (formData.get("categorySlug") as string | null);
+    // The entity's name, sent by the form — the blob path names what it belongs to
+    // instead of the old `unnamed-` fallback (bulk-catalog-upload D4).
+    const identifier = formData.get("identifier") as string | null;
+    const orgId = formData.get("orgId") as string | null;
+    const org = folder === "products" && orgId ? await orgRepository.findById(orgId) : null;
 
-    const urls = await uploadImages(files, folder, identifier);
+    const urls = await uploadImages(files, folder, identifier, org?.code);
 
     return NextResponse.json({ success: true, urls, type: requestedType, folder });
   } catch (error) {

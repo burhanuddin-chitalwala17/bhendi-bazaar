@@ -70,7 +70,7 @@ model Product {
   sizes        String[] // Available sizes
   colors       String[] // Available colors
 
-  sku               String? @unique // Stock Keeping Unit
+  sku               String? // Stock Keeping Unit — unique within the org, not the platform
   lowStockThreshold Int     @default(10) // Alert when stock falls below this
 
   orderItems       OrderItem[]
@@ -90,6 +90,8 @@ model Product {
   updatedAt DateTime @updatedAt
   reviews   Review[]
 
+  // A SKU is the org's own identifier; two orgs may legitimately use the same one.
+  @@unique([orgId, sku])
   @@index([slug])
   @@index([categoryId])
   @@index([createdAt])
