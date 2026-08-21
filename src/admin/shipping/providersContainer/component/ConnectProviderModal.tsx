@@ -76,8 +76,17 @@ export function ConnectProviderModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="rounded-xl border border-border/60 bg-muted/50 p-3 text-xs text-muted-foreground">
+            These are <span className="font-semibold text-foreground">API user</span>{" "}
+            credentials, not your {providerName} dashboard login. Create them under{" "}
+            <span className="font-semibold text-foreground">
+              Settings → API → Configure
+            </span>
+            , using an email different from your registered one.
+          </p>
+
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">API user email</Label>
             <Input
               id="email"
               type="email"
@@ -89,7 +98,7 @@ export function ConnectProviderModal({
           </div>
 
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">API user password</Label>
             <Input
               id="password"
               type="password"

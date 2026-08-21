@@ -4,34 +4,36 @@
  * This repository handles all database operations for categories.
  */
 
+import { cache } from "react";
 import { prisma } from "@server/shared/prisma";
+import type { Category } from "@prisma/client";
 import type { ServerCategory } from "@server/catalog/category.types";
 import type { CategoryTreeNode } from "@server/catalog/category.tree";
 
+/**
+ * The whole table, once per request. Tens of rows, and a single category page used
+ * to read them four times in four shapes (slug lookup, subtree walk, parents map,
+ * offer filter) — four billed operations for one small table. Every reader below
+ * derives from this one request-memoised query instead. Same pattern and request
+ * scope as loadPriceContext; deliberately memoised no further than a request.
+ */
+const allCategories = cache(async (): Promise<Category[]> => {
+  return prisma.category.findMany({
+    orderBy: [{ order: "asc" }, { name: "asc" }],
+  });
+});
+
 export class CategoryRepository {
-  /**
-   * List all categories sorted by order
-   */
   /** Id and name only — what a target picker needs. */
   async listForPicker() {
-    return await prisma.category.findMany({
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
+    const categories = await allCategories();
+    return categories
+      .map(({ id, name }) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async list(): Promise<ServerCategory[]> {
-    const categories = await prisma.category.findMany({
-      orderBy: [
-        {
-          order: "asc",
-        },
-        {
-          name: "asc",
-        },
-      ],
-    });
-    return categories;
+    return await allCategories();
   }
 
   /**
@@ -39,29 +41,24 @@ export class CategoryRepository {
    * category.tree.ts walk. Tens of rows; loaded whole on purpose (TRD D1).
    */
   async listTree(): Promise<Array<CategoryTreeNode & { slug: string }>> {
-    return prisma.category.findMany({
-      select: { id: true, parentId: true, slug: true },
-    });
+    const categories = await allCategories();
+    return categories.map(({ id, parentId, slug }) => ({ id, parentId, slug }));
   }
 
   /**
    * Find category by slug
    */
   async findBySlug(slug: string): Promise<ServerCategory | null> {
-    const category = await prisma.category.findUnique({
-      where: { slug },
-    });
-    return category;
+    const categories = await allCategories();
+    return categories.find((category) => category.slug === slug) ?? null;
   }
 
   /**
    * Get category by ID
    */
   async findById(id: string): Promise<ServerCategory | null> {
-    const category = await prisma.category.findUnique({
-      where: { id },
-    });
-    return category;
+    const categories = await allCategories();
+    return categories.find((category) => category.id === id) ?? null;
   }
 }
 

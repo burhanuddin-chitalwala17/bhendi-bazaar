@@ -80,3 +80,74 @@ export function isLive(promotion: EnginePromotion, now: Date): boolean {
 export function isExhausted(promotion: EnginePromotion): boolean {
   return promotion.usageLimit !== null && promotion.usageCount >= promotion.usageLimit;
 }
+
+export interface OfferCoverage {
+  coversEverything: boolean;
+  productIds: string[];
+  orgIds: string[];
+  categoryIds: string[];
+}
+
+/**
+ * Which products the live automatic offers reach — the "on offer" listing's question.
+ *
+ * Pure computation over an already-loaded PriceContext: the same promotions and
+ * parents map every price read shares. It used to be a repository method that
+ * re-queried both tables, which billed two extra operations per listing for data
+ * the request had already paid for — and read the clock a second time, so the
+ * filter and the price labels could disagree across an offer boundary.
+ *
+ * `coversEverything` is returned rather than materialising every product id,
+ * because a store-wide platform offer covers the entire catalogue and enumerating
+ * it to answer "show me eight" would be absurd.
+ */
+export function offerCoverage(
+  promotions: readonly EnginePromotion[],
+  parents: CategoryParents
+): OfferCoverage {
+  const automatic = promotions.filter((promotion) => promotion.trigger === "AUTOMATIC");
+
+  const productIds = new Set<string>();
+  const orgIds = new Set<string>();
+  const categoryIds = new Set<string>();
+  let coversEverything = false;
+
+  const childrenOf = new Map<string, string[]>();
+  for (const [id, parentId] of parents) {
+    if (parentId === null) continue;
+    childrenOf.set(parentId, [...(childrenOf.get(parentId) ?? []), id]);
+  }
+  // A Set, not an array with `includes` — the walk runs per targeted category on a
+  // path that renders every listing, and a linear membership test inside a loop is
+  // quadratic in the size of the tree.
+  const subtree = (root: string): string[] => {
+    const out = new Set<string>();
+    const stack = [root];
+    while (stack.length > 0) {
+      const id = stack.pop() as string;
+      if (out.has(id)) continue;
+      out.add(id);
+      stack.push(...(childrenOf.get(id) ?? []));
+    }
+    return [...out];
+  };
+
+  for (const promotion of automatic) {
+    if (promotion.targets.length === 0) {
+      if (promotion.scope === "PLATFORM") coversEverything = true;
+      else if (promotion.orgId) orgIds.add(promotion.orgId);
+      continue;
+    }
+    for (const target of promotion.targets) {
+      if (target.productId) productIds.add(target.productId);
+      else if (target.categoryId) subtree(target.categoryId).forEach((id) => categoryIds.add(id));
+    }
+  }
+
+  return {
+    coversEverything,
+    productIds: [...productIds],
+    orgIds: [...orgIds],
+    categoryIds: [...categoryIds],
+  };
+}

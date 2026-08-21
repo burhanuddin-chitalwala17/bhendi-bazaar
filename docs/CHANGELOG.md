@@ -10,6 +10,42 @@
 
 ## Entries
 
+## [PR-72] 2026-08-21 — Dashboards aggregate in the database, not JS
+
+`getDashboardStats` fetched every order row in four date windows to sum one column in JS, asked five separate counts for what one `GROUP BY status` answers, and ran three product queries whose answers all live in one (threshold, quantities) row-set. Consolidated to database-side aggregation: 15 queries → 9, and the payload drops from every-order-this-year to a handful of aggregate rows — the shape that was always going to degrade first as order history grew. A value-equivalence test (`tests/integration/dashboard-stats-equivalence.test.ts`) recomputes every figure the old way and pins equality, and the ops budget (≤9) joins `db-ops-budget.test.ts`.
+
+The widget registry keeps its one-entry-per-widget architecture (dashboard-widgets R1–R4) but widgets now share request-memoised reads — the `loadPriceContext` pattern: products + low-stock share one row-set, platform revenue + average-order share one paid-orders aggregate. Admin dashboard page 7→5, org dashboard 7→6.
+
+Hygiene found on the way: the recent-users activity feed selected full user rows — password hash included — for a feed that renders three fields. It selects those three now.
+
+**Measured**: admin dashboard page+API+activities 8+16+5 → 5+9+3 (29→17 per load).
+
+## [PR-71] 2026-08-21 — Relation reads become one join `[MIGRATION-FREE]`
+
+The remaining per-page cost after PR-70 was pure relation fan-out: every `PRODUCT_INCLUDE` read ran one query per related table — Product, Category, Org, ProductMedia, ProductStock, OrgAddress, Address — seven billed operations for one logical read, because the client ran Prisma's per-relation strategy. The `relationJoins` preview flag is now on, and **every relation-carrying `find*` read in `server/` (35 sites across 16 repositories — storefront, org portal, admin, payouts, analytics) passes `relationLoadStrategy: "join"`**, collapsing each to a single `LATERAL JOIN`. Applied per-read, never on writes.
+
+One real semantic difference surfaced and was handled: the join strategy returns *unordered nested lists* in arbitrary order, where the query strategy's order was accidental-but-stable. Nested lists that reach a screen now carry an explicit `orderBy` (shipments by `code`, shipment lines / promotion targets / admin cart items by `id`); lists that are only aggregated stay unordered on purpose. `tests/integration/join-equivalence.test.ts` pins deep equality between the two strategies over the seeded catalogue for each aggregate's real include shape, so a Prisma upgrade that changes join semantics fails there, not in production.
+
+Equivalence was proven, not assumed: both strategies were run over the entire seeded catalogue (including the filtered nested `stockLocations` include and the promotion targets) and returned deep-equal results. The three `@map` columns in the schema sit on legacy JSON blobs outside every join tree, clear of the known query-compiler issue.
+
+**Measured across the full surface** (authenticated sweep, dev server, second hit): storefront home/product/category 21/17/12 → 5/4/4; search page 10→3; org portal dashboard/products/offers/orders/earnings 10/16/8/9/13 → 7/10/4/4/9; admin products/orders-API/carts-API/dashboard-API 13/7/7/16 → 8/2/3/15. The budget tests in `tests/integration/db-ops-budget.test.ts` are tightened to ≤1 query per product read, so a client regeneration that loses the preview flag fails the suite instead of silently re-inflating the bill sevenfold.
+
+## [PR-70] 2026-08-21 — Development moves to a local database, and reads stop paying twice
+
+The Prisma Postgres workspace hit its 100K-operations month and blocked every query, prod included. Two causes, two fixes in this PR (the relation-join strategy is a follow-up):
+
+**Dev now runs on a local Postgres** (`bhendi_bazaar_dev` on `localhost:5432`) — a metered database was billing every hot-reload render. The seed's wipe list is completed for the ten models added since it was last touched (child-first, per ADR-0020's Restrict rules), and the Invariant 7 guard is tightened: this machine's localhost also hosts unrelated work databases, so a local *hostname* no longer passes alone — the *database name* must be allowlisted too. Verified refused against a non-allowlisted local database.
+
+**Read paths stop re-buying data the request already holds:**
+- The "on offer" filter re-ran the price context's two queries per listing and read the clock a second time, so filter and price labels could straddle an offer boundary. Coverage is now a pure function over the request's `PriceContext` (`offerCoverage` in `server/promotions/targeting.ts`); `productsOnOffer` is deleted.
+- One category page read the category table four times in four shapes. All category reads now derive from one request-memoised query (`server/catalog/category.repository.ts`).
+- Search suggestions ran the full product include tree plus the admin category listing (with its per-category counts) per keystroke — ~9 operations for a dropdown of name+thumbnail rows. The service now uses the lean `searchProducts` select it had been bypassing, and the storefront category list: 2 operations.
+- Each cart row fetched its own stock check; `CartLineItems` now asks once for the whole cart (`/api/products/check-stock` always took an array): a 5-item cart drops 10 queries to 2.
+
+**Measured** (dev server, second hit, `scripts/measure-db-ops.sh`): homepage 21→18, category 12→11, product 17→17, search keystroke 9→2, cart×5 10→2. Product-read fan-out (7 queries per `PRODUCT_INCLUDE` read) is the dominant remaining cost — that is the join-strategy follow-up.
+
+**Guardrails:** `PRISMA_LOG_QUERIES=1` makes the client print every SQL statement; `scripts/measure-db-ops.sh` measures per-page counts end-to-end; `tests/integration/db-ops-budget.test.ts` pins a per-call query budget (skips off the local dev database); `tests/unit/offer-coverage.test.ts` covers the extracted pure function.
+
 ## [PR-69] 2026-08-16 — The seed guard Invariant 7 already promised
 
 Invariant 7 has described a guard on `prisma/seed.ts` since it was written, and the guard did not exist. `npx prisma db seed` against a production `DATABASE_URL` would have wiped the store — documented protection with nothing behind it, which is worse than no protection, because the doc is what people trust.

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useCartStore } from "@/store/cartStore";
 import { formatCurrency } from "@/lib/format";
@@ -10,31 +10,21 @@ import { Button } from "@/components/ui/button";
 import { StockStatus } from "@/components/shared/StockStatus";
 import type { CartItem as CartItemType } from "@/domain/cart";
 
-export function CartItem(item: CartItemType) {
+// Stock arrives as props from CartLineItems, which checks the whole cart in one
+// request — each row fetching its own was N round trips (and 2N queries) to answer
+// one question the endpoint already answers for the full array.
+export function CartItem({
+  item,
+  stock,
+  isLoadingStock,
+}: {
+  item: CartItemType;
+  stock: number | null;
+  isLoadingStock: boolean;
+}) {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
-  const [stock, setStock] = useState<number | null>(null);
-  const [isLoadingStock, setIsLoadingStock] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  useEffect(() => {
-    // Fetch stock
-    fetch("/api/products/check-stock", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: [{ productId: item.productId, quantity: item.quantity }],
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.items?.[0]) {
-          setStock(data.items[0].stock);
-        }
-      })
-      .catch((err) => console.error("Failed to fetch stock:", err))
-      .finally(() => setIsLoadingStock(false));
-  }, [item.productId]);
 
   const handleIncrease = () => {
     if (isUpdating) return; // Prevent multiple clicks

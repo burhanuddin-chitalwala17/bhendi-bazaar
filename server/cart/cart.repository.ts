@@ -126,6 +126,7 @@ export class CartRepository {
   async findByUserId(userId: string): Promise<ServerCart | null> {
     try {
       const cart = await prisma.cart.findUnique({
+        relationLoadStrategy: "join",
         where: { userId },
         include: CART_INCLUDE,
       });
@@ -192,6 +193,7 @@ export class CartRepository {
     });
 
     const saved = await prisma.cart.findUniqueOrThrow({
+      relationLoadStrategy: "join",
       where: { userId },
       include: CART_INCLUDE,
     });

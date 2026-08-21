@@ -5,7 +5,8 @@
  */
 
 import { prisma } from "@server/shared/prisma";
-import { promotionRepository } from "@server/promotions/promotion.repository";
+import { loadPriceContext } from "@server/promotions/price-context";
+import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
 
@@ -39,8 +40,13 @@ const PRODUCT_INCLUDE = {
  * expressed as an empty filter rather than by enumerating the catalogue.
  */
 async function offerFilter() {
+  // The request's shared price context, not a fresh query pair: `loadPriceContext`
+  // is request-memoised, so this costs nothing here — and the filter now shares the
+  // context's clock, so a listing cannot filter by one offer set and label prices
+  // with another across an offer boundary.
+  const { promotions, categoryParents } = await loadPriceContext();
   const { coversEverything, productIds, orgIds, categoryIds } =
-    await promotionRepository.productsOnOffer(new Date());
+    offerCoverage(promotions, categoryParents);
   if (coversEverything) return {};
   const clauses = [
     productIds.length > 0 ? { id: { in: productIds } } : null,
@@ -115,6 +121,7 @@ export class ProductsRepository {
     const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
     try {
       const products = await prisma.product.findMany({
+        relationLoadStrategy: "join",
         // categoryIds (a resolved subtree) wins over a bare slug, which matches
         // only the category's own products.
         where: { ...(categoryIds
@@ -139,6 +146,7 @@ export class ProductsRepository {
   async getProductById(id: string) {
     try {
       const product = await prisma.product.findUnique({
+        relationLoadStrategy: "join",
         where: { id },
         include: {
           ...PRODUCT_INCLUDE,
@@ -153,6 +161,7 @@ export class ProductsRepository {
   async getProductBySlug(slug: string) {
     try {
       const product = await prisma.product.findUnique({
+        relationLoadStrategy: "join",
         where: { slug },
         include: {
           ...PRODUCT_INCLUDE,
@@ -167,6 +176,7 @@ export class ProductsRepository {
   async getSimilarProducts(slug: string, count: number) {
     try {
       const products = await prisma.product.findMany({
+        relationLoadStrategy: "join",
         where: { slug: { not: slug } },
         orderBy: { createdAt: "desc" },
         take: count,
@@ -183,6 +193,7 @@ export class ProductsRepository {
   async getHeroProducts(limit: number) {
     try {
       const products = await prisma.product.findMany({
+        relationLoadStrategy: "join",
         where: { flags: { has: "HERO" } },
         orderBy: { createdAt: "desc" },
         take: limit,
@@ -199,6 +210,7 @@ export class ProductsRepository {
   async getOfferProducts(limit: number) {
     try {
       const products = await prisma.product.findMany({
+        relationLoadStrategy: "join",
         where: await offerFilter(),
         orderBy: { createdAt: "desc" },
         take: limit,
@@ -214,12 +226,20 @@ export class ProductsRepository {
 
   async searchProducts(query: string, limit: number) {
     try {
+      // Suggestion rows, not product detail: the dropdown renders name, thumbnail
+      // and price, so the full include tree here was several queries per keystroke
+      // buying data the response never carried.
       const products = await prisma.product.findMany({
         where: { name: { contains: query, mode: "insensitive" } },
         orderBy: { createdAt: "desc" },
         take: limit,
-        include: {
-          ...PRODUCT_INCLUDE,
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          thumbnail: true,
+          currency: true,
+          price: true,
         },
       });
       return products;

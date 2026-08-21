@@ -5,7 +5,11 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Join strategy for relation reads: one LATERAL JOIN instead of one query per
+  // relation table. On per-operation billing that difference is the bill (CHANGELOG
+  // PR-70/71). Applied per-query via relationLoadStrategy, not globally.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {

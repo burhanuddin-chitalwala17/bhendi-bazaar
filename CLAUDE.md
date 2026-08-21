@@ -86,7 +86,7 @@ Stock is changed with a guarded `updateMany({ where: { stock: { gte: qty } } })`
 ### 7. Seeds refuse to run against a non-local database
 `prisma/seed.ts` deletes every table, so it aborts unless the target database has been named as a seed target. Every check is an **allowlist**, never a denylist of production hostnames — a denylist fails open on an unrecognised host, which is the wrong default for an irreversible operation.
 
-**Hostname alone is not sufficient**, and assuming it was is how this invariant sat unimplemented: Prisma Postgres serves development and production from the same `db.prisma.io`, so allowing that host would allow production. `localhost` / `127.0.0.1` pass on their own; any other target must be named exactly by `SEED_ALLOWED_DATABASE_URL`, set in a local `.env` and never in a deployment environment.
+**Hostname alone is not sufficient**, and assuming it was is how this invariant sat unimplemented: Prisma Postgres serves development and production from the same `db.prisma.io`, so allowing that host would allow production. Nor does `localhost` prove anything by itself — the same local server hosts unrelated work databases — so a local target must also be a database *named* in the seed's allowlist (`bhendi_bazaar_dev`); any other target must be named exactly by `SEED_ALLOWED_DATABASE_URL`, set in a local `.env` and never in a deployment environment.
 
 Deleting rows requires a second explicit gate (`SEED_ALLOW_DESTRUCTIVE=1`), so seeding and wiping are separate intents. No credential literal lives in a seed. The guard lives in the seed itself, so it holds when someone types the raw command.
 
