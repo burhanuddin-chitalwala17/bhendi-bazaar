@@ -70,6 +70,16 @@ SEED_ALLOWED_DATABASE_URL=<the exact same string as your dev DATABASE_URL>
 
 To seed reference data that production also needs, do not reach for the seed — write a data migration. `vercel.json` runs `prisma migrate deploy` before the build, so a migration reaches every environment on merge, while the seed reaches none of them.
 
+### Cleaning up old catalogue images
+`scripts/cleanup-flat-blobs.ts` removes pre-2026-08 flat-layout product images from Blob once a catalogue has been re-onboarded through bulk upload. Two intents, like the seed:
+
+```
+npx tsx scripts/cleanup-flat-blobs.ts                              # dry-run, lists what would go
+CLEANUP_ALLOW_DELETE=1 npx tsx scripts/cleanup-flat-blobs.ts --delete
+```
+
+The keep-set is every `ProductMedia.ref` and `Product.thumbnail` **in the database `DATABASE_URL` currently names**. The Blob store is shared across environments, so run the deletion only when that database is the one those images serve — the script prints the host it read for exactly this reason.
+
 ### ⚠️ The Upstash naming trap
 The rate limiter reads **`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`, and using those names produces **two different failures from the same missing config**: `src/lib/rate-limit.ts` asserts non-null at module load, so `signup` and `forgot-password` throw at import (fail closed), while `src/middleware.ts` catches the absence and disables limiting with only a logged warning (fail open). Use the names in the table.
 

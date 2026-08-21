@@ -28,76 +28,12 @@ import {
   seedShippingProviders,
 } from "./seed/index";
 import type { SeedProduct } from "./seed/types";
+import { assertSeedTargetIsAllowed } from "./seed-guard";
 
 /** Per-unit markdown on a seeded line, or zero — the same guard the engine applies. */
 function markdownOf(item: { price: number; salePrice?: number }): number {
   const { price, salePrice } = item;
   return salePrice && salePrice > 0 && salePrice < price ? price - salePrice : 0;
-}
-
-const LOCAL_DB_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
-// The only local databases this destructive seed may target (Invariant 7).
-const LOCAL_SEED_DATABASES = new Set(["bhendi_bazaar_dev"]);
-
-/**
- * Refuses to run unless the target database has been named as a seed target.
- *
- * Lives here rather than in a wrapper script so it still holds when someone types
- * `npx prisma db seed` directly (Invariant 7).
- *
- * Hostname alone cannot decide this: Prisma Postgres serves development and production
- * from the same `db.prisma.io`, so allowing that host would allow production. And a
- * local server is no safer by name — this machine's localhost also hosts unrelated
- * work databases, so on a local host the *database name* must be allowlisted too.
- * A cloud target must be named exactly, via SEED_ALLOWED_DATABASE_URL in a local .env
- * that is never set in Vercel. Every check is an allowlist — an unrecognised URL is
- * refused, because a denylist fails open on the one host nobody thought to list.
- */
-function assertSeedTargetIsAllowed(): void {
-  const url = process.env.DATABASE_URL;
-
-  if (!url) {
-    throw new Error("DATABASE_URL is not set — refusing to seed.");
-  }
-
-  // Wiping is a second intent, deliberately separate from seeding.
-  if (process.env.SEED_ALLOW_DESTRUCTIVE !== "1") {
-    throw new Error(
-      "This seed deletes every table. Re-run with SEED_ALLOW_DESTRUCTIVE=1 if that is what you want."
-    );
-  }
-
-  let host: string;
-  try {
-    host = new URL(url).hostname;
-  } catch {
-    throw new Error("DATABASE_URL is not a parseable URL — refusing to seed.");
-  }
-
-  const allowed = process.env.SEED_ALLOWED_DATABASE_URL;
-  if (allowed && allowed === url) {
-    return;
-  }
-
-  if (LOCAL_DB_HOSTS.has(host)) {
-    // A local host is not a blank cheque: this machine's Postgres also holds
-    // unrelated work databases, so the database name is allowlisted as well.
-    const database = new URL(url).pathname.replace(/^\//, "");
-    if (LOCAL_SEED_DATABASES.has(database)) {
-      return;
-    }
-    throw new Error(
-      `Refusing to seed: "${database}" on ${host} is not an allowlisted seed target. ` +
-        "This machine's local Postgres hosts databases this seed must never wipe; " +
-        "only " + [...LOCAL_SEED_DATABASES].join(", ") + " may be seeded here."
-    );
-  }
-
-  throw new Error(
-    `Refusing to seed: "${host}" is not a local database, and DATABASE_URL does not match ` +
-      "SEED_ALLOWED_DATABASE_URL. Set SEED_ALLOWED_DATABASE_URL to the exact development " +
-      "connection string in your local .env — never in a deployment environment."
-  );
 }
 
 // Use the same adapter configuration as the main app

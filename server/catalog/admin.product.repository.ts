@@ -12,7 +12,7 @@ import { ProductFlag } from "@server/catalog/product.flags";
 import { Prisma } from "@prisma/client";
 import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
-import { NotFoundError } from "@server/shared/domain-error";
+import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { coverOf, type ProductMediaInput } from "@server/catalog/media";
 
 /**
@@ -194,6 +194,27 @@ export class AdminProductsRepository {
     }
 
     /**
+     * The product already wearing this SKU in this org, so the refusal can name it.
+     * SKU uniqueness is org-scoped (bulk-catalog-upload R4): the constraint is
+     * (orgId, sku), and the violation surfaces as a correctable form error rather
+     * than a raw P2002.
+     */
+    private async skuConflictError(orgId: string, sku: string | null | undefined) {
+        const taken = sku
+            ? await prisma.product.findUnique({
+                  where: { orgId_sku: { orgId, sku } },
+                  select: { name: true },
+              })
+            : null;
+        return new ConflictError(
+            taken
+                ? `SKU "${sku}" is already used by "${taken.name}"`
+                : `SKU "${sku}" is already used by another product in this organisation`,
+            { field: "sku" }
+        );
+    }
+
+    /**
      * Create new product
      */
     async createProduct(data: ProductFormInput) {
@@ -207,6 +228,9 @@ export class AdminProductsRepository {
                 return await this.insertProduct(slug, data);
             } catch (error) {
                 if (isUniqueViolation(error, "slug") && attempt < 25) continue;
+                if (isUniqueViolation(error, "sku")) {
+                    throw await this.skuConflictError(data.orgId, data.sku);
+                }
                 throw error;
             }
         }
@@ -336,7 +360,9 @@ export class AdminProductsRepository {
         // never reaches here — the payload fails validation first, which is what A12's
         // refusal is (D4c).
         const media = mediaWrite(data.media);
-        const product = await prisma.$transaction(async (tx) => {
+        let product;
+        try {
+            product = await prisma.$transaction(async (tx) => {
             await tx.productStock.deleteMany({ where: { productId: id } });
             await tx.productMedia.deleteMany({ where: { productId: id } });
             return tx.product.update({
@@ -365,7 +391,13 @@ export class AdminProductsRepository {
                     },
                 },
             });
-        });
+            });
+        } catch (error) {
+            if (isUniqueViolation(error, "sku")) {
+                throw await this.skuConflictError(data.orgId, data.sku);
+            }
+            throw error;
+        }
         if (!product) {
             throw new NotFoundError("Product not found");
         }

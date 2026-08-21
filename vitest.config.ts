@@ -8,6 +8,11 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./tests/setup.ts'],
     globals: true,
+    // Test files run in parallel by default, but tests/integration/ share one
+    // local database: a file that creates products races a file that counts
+    // them. Serial file execution is the only honest fix — the suite is seconds
+    // long, so the cost is nil.
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json-summary'],

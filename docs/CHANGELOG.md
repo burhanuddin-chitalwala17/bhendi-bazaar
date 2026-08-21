@@ -10,6 +10,34 @@
 
 ## Entries
 
+## [PR-74] 2026-08-21 — The seed guard becomes a control, and gets tested
+
+Invariant 7's protection rested on one procedural rule: never set `SEED_ALLOWED_DATABASE_URL` in a deployment environment. That variable is matched before any host check, so setting it in Vercel would have made `prisma db seed` wipe production — a documented "don't" as the last line of defence, which is the same shape of gap that left the invariant unimplemented for months.
+
+A deployed environment is detectable, so it is now detected: `VERCEL`, `VERCEL_ENV`, `CI`, or `NODE_ENV=production` refuses the seed before `DATABASE_URL`, the destructive flag, or the allowlist is consulted. It can only ever refuse more, never allow more.
+
+The guard also had no test and was not exported, which makes an untested guard indistinguishable from a missing one. The decision is now a pure function in `prisma/seed-guard.ts` — called as the seed's first statement, so it still holds when someone types the raw command — with 13 cases in `tests/unit/seed-guard.test.ts` covering every route to destruction: cloud host, another database on the same local Postgres, missing flag, unparseable URL, unrecognised host (fails closed, as a denylist would not), and the fully-armed deployed case where every permitting variable is set and it must still refuse.
+
+Verified end to end by running the real `npx prisma db seed` against the production connection string: refused. Against it with the destructive flag, the allowlist variable, and `VERCEL=1`: refused. Against the local development database: seeds normally.
+
+## [PR-73] 2026-08-21 — Bulk catalogue upload, and SKUs become the org's own `[CONTRACT]` `[MIGRATION]`
+
+Implements [bulk-catalog-upload](specs/bulk-catalog-upload/spec.md) as five changes in one PR set.
+
+**SKU uniqueness is org-scoped.** `Product.sku` was globally unique, so one org using `ABAYA-001` locked every other org out of it — a platform-wide identifier for a thing that is an org's internal code. Now `@@unique([orgId, sku])`. Loosening cannot collide on existing data, so the migration is a constraint swap. The single-product create and update paths gained the graceful refusal they never had: a duplicate now names the product already wearing the SKU, as a `ConflictError` on the `sku` field, instead of surfacing a raw P2002.
+
+**Blob paths gained structure, and `unnamed-` is gone.** Images now land at `products/<org-code>/<product>/<original-name>-<ts>.<ext>`. The upload utility always accepted an identifier for exactly this; no client ever sent one, so every image since day one took the `"unnamed"` fallback. The forms send it now. Existing flat blobs keep their URLs and stay put.
+
+**The upload itself.** An org member uploads one sheet plus the photos it names; an admin does the same for categories. Validation is a dry run that writes nothing and reports every problem at once with row numbers — unknown category, unknown pickup location, SKU taken (in the sheet or in the org), missing image file, cover that is not one of the row's images, unparseable video link. Only a clean sheet proceeds, so a rejected upload leaves no orphaned blobs. Images go browser → Blob directly through scoped client-upload tokens: a function body is capped at 4.5MB, which is one large photo. Creation is one transaction of `createMany` per table — 3 statements for 300 products, not 1,200 — which is what makes all-or-nothing affordable. Videos ride the existing embedded-reference model ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md)); the cover column names a photo, defaulting to the first. Pickup locations and categories must pre-exist: a location is an address a courier collects from, not a name a column header can invent. The sample sheet is generated per org from live locations and current slugs, so it cannot drift from what validation expects.
+
+**Photos are matched by path, not by name.** Keying the dropped files on their bare filename meant two products could not each have a `front.jpg` — the second silently replaced the first, and one product would have shown the other's photograph. Both wizards now accept a folder (`webkitdirectory`, with plain multi-select kept for phones) and identify files by relative path. A sheet reference resolves against the trailing segments of that path, so `front.jpg` and `emerald-abaya/front.jpg` both work when unambiguous — and when a bare name could mean two files, it is a row error listing the candidates and showing the qualified form to use. The matcher is one pure module shared by the wizard preview and server validation.
+
+Two things the folder picker surfaced on the way: a folder hands back everything it holds, so `.DS_Store` and stray PDFs were being counted and previewed as photographs — the selection is filtered to images now; and the blob-path sanitiser allowed `..` through, because dots are legal inside a segment (they carry the extension) and a traversal segment therefore survives character filtering. It is dropped as a segment now, and both client-upload token routes refuse `.`/`..` outright — a `startsWith` prefix test is not containment when `products/<org>/../elsewhere` satisfies it.
+
+**A cleanup script** (`scripts/cleanup-flat-blobs.ts`) deletes old flat-layout product images once a catalogue is re-onboarded — dry-run by default, deletion behind `CLEANUP_ALLOW_DELETE=1` plus `--delete`, and never touching a file any product still references. It reports which database supplied the keep-set, because the Blob store is shared across environments and that is the one way to get this wrong.
+
+Also here: `tests/integration/` share one local database, and Vitest runs files in parallel — a file creating products raced a file counting them. `fileParallelism: false` fixes it; the suite is ten seconds.
+
 ## [PR-72] 2026-08-21 — Dashboards aggregate in the database, not JS
 
 `getDashboardStats` fetched every order row in four date windows to sum one column in JS, asked five separate counts for what one `GROUP BY status` answers, and ran three product queries whose answers all live in one (threshold, quantities) row-set. Consolidated to database-side aggregation: 15 queries → 9, and the payload drops from every-order-this-year to a handful of aggregate rows — the shape that was always going to degrade first as order history grew. A value-equivalence test (`tests/integration/dashboard-stats-equivalence.test.ts`) recomputes every figure the old way and pins equality, and the ops budget (≤9) joins `db-ops-budget.test.ts`.
