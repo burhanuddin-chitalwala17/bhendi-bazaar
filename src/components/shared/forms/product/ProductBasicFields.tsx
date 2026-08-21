@@ -67,17 +67,6 @@ export function ProductBasicFields({
               </option>
             ))}
           </FormSelect>
-          
-          {/* Add Category Button */}
-          <button
-            disabled={readOnly}
-            type="button"
-            onClick={handleAddCategory}
-            className="mt-2 w-full px-3 py-2 text-sm border disabled:opacity-50 disabled:cursor-not-allowed border-dashed border-primary text-primary rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add New Category
-          </button>
         </div>
         <FormInput
           label="SKU"
