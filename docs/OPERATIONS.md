@@ -51,7 +51,7 @@ npx prisma migrate deploy
 SEED_ALLOW_DESTRUCTIVE=1 npx prisma db seed
 ```
 
-`PRISMA_LOG_QUERIES=1` makes the Prisma client print every SQL statement — the instrument behind `scripts/measure-db-ops.sh`, which counts billed operations per storefront page. Dev-only; never set in a deployment.
+`PRISMA_LOG_QUERIES=1` makes the Prisma client print every SQL statement, so you can count the billed operations a page costs. Dev-only; never set in a deployment. `tests/integration/db-ops-budget.test.ts` pins the per-call budgets.
 
 ### ⚠️ Seeding
 `prisma/seed.ts` deletes every table, so it refuses to run unless the target is named (Invariant 7). Wiping is its own gate:
