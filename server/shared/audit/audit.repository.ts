@@ -10,12 +10,20 @@ import type {
   LogFilters,
 } from "@server/shared/audit/audit.types";
 
+/** Enough of the client to write the trail — satisfied by `prisma` or a `$transaction` tx. */
+export type AuditDb = Pick<typeof prisma, "adminLog">;
+
 export class AdminLogRepository {
   /**
-   * Create a new admin log entry
+   * Append one entry to the trail.
+   *
+   * Callers go through `recordAdminAction` / `recordAdminActionIn` in audit.service,
+   * which decide whether a failure here may reach the caller.
    */
-  async createLog(data: CreateLogInput): Promise<AdminLogEntry> {
-    const log = await prisma.adminLog.create({
+  async createLog(data: CreateLogInput, db: AuditDb = prisma): Promise<void> {
+    // No `include`: the writer never reads the admin's name back, and joining for it
+    // put a second query on every admin mutation.
+    await db.adminLog.create({
       data: {
         adminId: data.adminId,
         action: data.action,
@@ -23,25 +31,7 @@ export class AdminLogRepository {
         resourceId: data.resourceId,
         metadata: data.metadata || {},
       },
-      include: {
-        admin: {
-          select: {
-            name: true,
-          },
-        },
-      },
     });
-
-    return {
-      id: log.id,
-      adminId: log.adminId,
-      adminName: log.admin.name,
-      action: log.action,
-      resource: log.resource,
-      resourceId: log.resourceId,
-      metadata: log.metadata,
-      createdAt: log.createdAt,
-    };
   }
 
   /**

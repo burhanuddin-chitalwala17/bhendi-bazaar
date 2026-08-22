@@ -24,6 +24,14 @@ const allCategories = cache(async (): Promise<Category[]> => {
 });
 
 export class CategoryRepository {
+  /** Id, name and slug — what a bulk sheet needs to resolve a `parent` cell to a
+   *  category. Name as well as slug, because a renamed category keeps its original
+   *  slug (Invariant 4) and the two stop being derivable from each other. */
+  async listIdentifiers(): Promise<Array<{ id: string; name: string; slug: string }>> {
+    const categories = await allCategories();
+    return categories.map(({ id, name, slug }) => ({ id, name, slug }));
+  }
+
   /** Id and name only — what a target picker needs. */
   async listForPicker() {
     const categories = await allCategories();
