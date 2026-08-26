@@ -98,7 +98,16 @@ export class OrderService {
     }
 
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
-    if (deliveryAddress?.email) {
+
+    // The address email is optional at checkout, so it is the preferred recipient
+    // rather than the only one: the account email is the fallback, otherwise a buyer
+    // who left the field blank pays and hears nothing. A guest order with neither is
+    // the one case with nobody to write to.
+    const recipient =
+      deliveryAddress?.email ??
+      (order.userId ? await this.contactEmailFor(order.userId) : null);
+
+    if (deliveryAddress && recipient) {
       const { emailService } = await import("@server/notifications/email.service");
       emailService
         .sendPurchaseConfirmationEmail(
@@ -109,7 +118,19 @@ export class OrderService {
             paymentStatus: order.paymentStatus,
             createdAt: order.createdAt,
             notes: order.notes,
+            // The bill, flattened across shipments: a buyer reading a receipt wants
+            // the goods they bought, not how the warehouse split the parcels.
+            items: order.shipments.flatMap((shipment) =>
+              shipment.items.map((item) => ({
+                productName: item.productName,
+                quantity: item.quantity,
+                unitPrice: item.price,
+                size: item.size,
+                color: item.color,
+              }))
+            ),
             itemsTotal: order.itemsTotal,
+            shippingTotal: order.shippingTotal,
             discount: order.discount,
             grandTotal: order.grandTotal,
             address: deliveryAddress,
@@ -117,12 +138,23 @@ export class OrderService {
               estimatedDelivery: s.estimatedDelivery?.toISOString(),
             })),
           },
-          deliveryAddress.email
+          recipient
         )
         .catch((error) => {
           console.error("Failed to send purchase confirmation email:", error);
           // Email failure must not unwind a confirmed payment.
         });
+    }
+  }
+
+  /** Identity's public surface, not its tables — checkout does not read `User`. */
+  private async contactEmailFor(userId: string): Promise<string | null> {
+    try {
+      const { profileService } = await import("@server/identity/profile.service");
+      return await profileService.getContactEmail(userId);
+    } catch (error) {
+      console.error(`[onPaymentConfirmed] could not resolve an email for user ${userId}`, error);
+      return null;
     }
   }
 

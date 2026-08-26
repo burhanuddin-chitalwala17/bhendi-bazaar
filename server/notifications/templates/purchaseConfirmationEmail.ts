@@ -1,6 +1,16 @@
 import { baseEmailStyles } from "./styles/baseEmailStyles";
-import { formatCurrency, formatDate } from "../formatters";
+import { escapeHtml, formatDate } from "../formatters";
+import { formatCurrency } from "@server/shared/money";
 import { appUrl } from "@server/shared/app-url";
+
+/** One billed line. `unitPrice` is what was actually paid per unit, in paise. */
+export interface OrderEmailLine {
+  productName: string;
+  quantity: number;
+  unitPrice: number; // paise
+  size?: string;
+  color?: string;
+}
 
 /** What this template renders — the caller maps its row onto this, whatever its source. */
 export interface OrderEmailView {
@@ -10,7 +20,9 @@ export interface OrderEmailView {
   paymentStatus: string | null;
   createdAt: Date;
   notes?: string | null;
+  items: OrderEmailLine[];
   itemsTotal: number; // paise
+  shippingTotal: number; // paise
   discount: number; // paise
   grandTotal: number; // paise
   address: {
@@ -27,11 +39,28 @@ export interface OrderEmailView {
   shipments: Array<{ estimatedDelivery?: string | null }>;
 }
 
-export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
-  // Generate order items HTML
-  const orderItemsHtml = order.itemsTotal
+function renderLine(line: OrderEmailLine): string {
+  const variant = [line.size, line.color].filter(Boolean).join(" · ");
+  return `
+    <tr class="item-row">
+      <td>
+        <div class="item-name">${escapeHtml(line.productName)}</div>
+        ${variant ? `<div class="item-meta">${escapeHtml(variant)}</div>` : ""}
+        <div class="item-meta">${line.quantity} × ${formatCurrency(line.unitPrice)}</div>
+      </td>
+      <td class="item-amount">${formatCurrency(line.unitPrice * line.quantity)}</td>
+    </tr>
+  `;
+}
 
-  // Tracking URL
+export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
+  // The bill. An order with no lines is a bug upstream, but an empty table with a
+  // total under it reads as a billing error to the customer, so say so plainly.
+  const orderItemsHtml =
+    order.items.length > 0
+      ? order.items.map(renderLine).join("")
+      : `<tr class="item-row"><td colspan="2" class="item-meta">Item details are on your order page.</td></tr>`;
+
   const trackingUrl = `${appUrl()}/order/${order.id}`;
 
   return `
@@ -115,6 +144,27 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
           }
           .items-header th:last-child {
             text-align: right;
+          }
+          .items-table td {
+            padding: 12px 15px;
+            border-top: 1px solid #e5e5e5;
+            font-size: 14px;
+            vertical-align: top;
+          }
+          .item-name {
+            font-weight: 600;
+            color: #1a1a1a;
+          }
+          .item-meta {
+            font-size: 13px;
+            color: #666;
+            margin-top: 3px;
+          }
+          .item-amount {
+            text-align: right;
+            font-weight: 600;
+            color: #1a1a1a;
+            white-space: nowrap;
           }
           .totals-section {
             background: #f8f8f8;
@@ -202,7 +252,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
           </div>
           
           <div class="content">
-            <h2 class="greeting">Hello ${order.address.fullName}! 🎉</h2>
+            <h2 class="greeting">Hello ${escapeHtml(order.address.fullName)}! 🎉</h2>
             
             <p class="message">
               Thank you for shopping with Bhendi Bazaar! Your order has been confirmed and is being processed.
@@ -215,7 +265,8 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             <div class="order-details">
               <div class="order-details-header">
                 <div>
-                  <div class="order-number">Order #${order.code}</div>
+                  <div class="info-label">Order ID</div>
+                  <div class="order-number">${escapeHtml(order.code)}</div>
                 </div>
                 <div class="order-date">${formatDate(new Date(order.createdAt))}</div>
               </div>
@@ -230,7 +281,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
                 <div class="info-item">
                   <div class="info-label">Order Status</div>
                   <div class="info-value" style="color: #2563eb;">
-                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    ${escapeHtml(order.status.charAt(0).toUpperCase() + order.status.slice(1))}
                   </div>
                 </div>
                 ${
@@ -267,6 +318,12 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
                 <span class="total-label">Subtotal:</span>
                 <span class="total-value">${formatCurrency(order.itemsTotal)}</span>
               </div>
+              <div class="total-row">
+                <span class="total-label">Shipping:</span>
+                <span class="total-value">${
+                  order.shippingTotal > 0 ? formatCurrency(order.shippingTotal) : "Free"
+                }</span>
+              </div>
               ${
     order.discount > 0
                   ? `
@@ -286,14 +343,14 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             <div class="shipping-address">
               <div class="address-title">📦 Shipping Address</div>
               <div class="address-content">
-                <strong>${order.address.fullName}</strong><br>
-                ${order.address.addressLine1}<br>
-                ${order.address.addressLine2 ? `${order.address.addressLine2}<br>` : ""}
-                ${order.address.city}, ${order.address.state} ${order.address.pincode}<br>
-                ${order.address.country}<br>
+                <strong>${escapeHtml(order.address.fullName)}</strong><br>
+                ${escapeHtml(order.address.addressLine1)}<br>
+                ${order.address.addressLine2 ? `${escapeHtml(order.address.addressLine2)}<br>` : ""}
+                ${escapeHtml(order.address.city)}, ${escapeHtml(order.address.state)} ${escapeHtml(order.address.pincode)}<br>
+                ${escapeHtml(order.address.country)}<br>
                 <br>
-                📱 ${order.address.mobile}
-                ${order.address.email ? `<br>✉️ ${order.address.email}` : ""}
+                📱 ${escapeHtml(order.address.mobile)}
+                ${order.address.email ? `<br>✉️ ${escapeHtml(order.address.email)}` : ""}
               </div>
             </div>
             
@@ -302,7 +359,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
                 ? `
             <div class="shipping-address">
               <div class="address-title">📝 Order Notes</div>
-              <div class="address-content">${order.notes}</div>
+              <div class="address-content">${escapeHtml(order.notes)}</div>
             </div>
             `
                 : ""
@@ -310,7 +367,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             
             <div class="cta-container">
               <a href="${trackingUrl}" class="button">
-                Track Your Order
+                View Your Order
               </a>
             </div>
             
@@ -318,7 +375,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
               <p><strong>Need Help?</strong></p>
               <p>If you have any questions about your order, please contact our support team.</p>
               <p style="margin-top: 10px;">
-                <strong>Order Code:</strong> ${order.code}
+                <strong>Order ID:</strong> ${escapeHtml(order.code)}
               </p>
             </div>
             

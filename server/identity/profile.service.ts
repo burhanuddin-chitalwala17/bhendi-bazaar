@@ -28,6 +28,14 @@ export class ProfileService {
   }
 
   /**
+   * The account email, for another domain that needs to reach this user — the order
+   * confirmation, when the delivery address carries no email of its own.
+   */
+  async getContactEmail(userId: string): Promise<string | null> {
+    return await profileRepository.getEmailByUserId(userId);
+  }
+
+  /**
    * Update user profile with validation
    */
   async updateProfile(

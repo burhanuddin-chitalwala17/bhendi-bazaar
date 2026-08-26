@@ -62,10 +62,16 @@ export function toWireShipmentItems(rows: ShipmentLineRow[]): ShipmentItem[] {
 }
 
 /** Swap row relations for the wire array, and keep the legacy blob off the wire. */
+export type WireShipment<S> = Omit<S, "legacyItems" | "items"> & { items: ShipmentItem[] };
+
+// The return type is annotated, not inferred: TypeScript resolves the generic rest
+// spread below to an intersection that keeps the row shape of `items`, so callers
+// were told they had Prisma rows while holding wire items (order.service's
+// confirmation email mapping was the first to notice).
 export function withWireItems<
   S extends { legacyItems?: unknown; items: ShipmentLineRow[] },
   O extends { shipments: S[] }
->(order: O) {
+>(order: O): Omit<O, "shipments"> & { shipments: Array<WireShipment<O["shipments"][number]>> } {
   return {
     ...order,
     shipments: order.shipments.map(({ legacyItems: _legacy, items, ...shipment }) => ({

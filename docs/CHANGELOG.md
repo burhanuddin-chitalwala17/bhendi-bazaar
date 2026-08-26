@@ -10,6 +10,21 @@
 
 ## Entries
 
+## [PR-77] 2026-08-26 — The order confirmation email is an actual bill
+
+The purchase confirmation had never sent a correct one. Three defects, each independently enough to make it useless.
+
+**There were no line items.** `const orderItemsHtml = order.itemsTotal` — an assignment left mid-thought, so the `<tbody>` of the Order Items table interpolated a raw paise integer and nothing else. `OrderEmailView` had no items field at all, so the caller could not have passed them. The view now carries `items: OrderEmailLine[]`, `order.service.ts` flattens them across shipments (a buyer reading a receipt wants the goods, not how the warehouse split the parcels), and each row shows the variant, the quantity, the unit price actually paid, and the line amount.
+
+**Every amount was 100× too large.** `server/notifications/formatters.ts` had its own `formatCurrency` that ran `Intl.NumberFormat` straight over the stored value, so a ₹999 kaftan mailed as ₹99,900 (Invariant 3). The second copy is deleted. Formatting moved into `server/shared/money.ts` — emails render on the server and `server/` must not import from `src/`, so the client's `src/lib/format.ts` now re-exports it and there is one implementation for the browser and the mail. `shippingTotal` was also missing from the view entirely, so subtotal − discount did not reach the total it printed next to it; the bill shows a Shipping row, or "Free".
+
+**Most buyers were never written to at all.** The recipient was `order.address.email`, and that field is optional at checkout — a signed-in buyer who left it blank paid and heard nothing, with no log line to say so. The address email is now the preferred recipient rather than the only one, falling back to the account email through `profileService.getContactEmail` (identity's public surface, not its tables). A guest order with neither remains the one case with nobody to write to.
+
+Also: user-typed text — the recipient's name, address lines, order notes, product names — reached the HTML unescaped. A `<` in a delivery note swallowed the rest of the bill. `escapeHtml` in the notifications formatters now wraps every interpolated value.
+
+And `withWireItems` in `order.repository.ts` got an explicit return type. TypeScript resolved its generic rest spread to an intersection that kept the Prisma row shape of `items`, so callers were told they held database rows while holding wire items — the email mapping was the first read to trip over it.
+
+
 ## [PR-76] 2026-08-23 — The category sheet takes names, and the theme colour is a dropdown
 
 Three fixes to bulk category upload, all of them about a sheet not telling you what it wants.
