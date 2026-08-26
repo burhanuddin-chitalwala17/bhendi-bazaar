@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-16
+- **Verified:** 2026-08-26
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -19,6 +19,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 | **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
+| **8** — Notifications | Every audience hears about what concerns it, through one capability rather than one sender per email | notifications, *(cross-domain callers)* | ⏳ Not started — 1 spec drafted (transactional-email) |
 
 ---
 
@@ -96,6 +97,20 @@ Strictly ordered: `promotions` before `org-payouts`. The ledger reads the fundin
 `promotions` reaches back into the catalogue: it removes `Product.salePrice` and re-expresses each markdown as an organisation-funded offer, which makes it a `[CONTRACT]` change on the product and cart DTOs. That is deliberate rather than incidental — a markdown is an organisation's own offer, and an offer outside the comparison can be neither weighed against a platform offer nor attributed to whoever paid for it.
 
 `org-payouts` is a ledger, not a payments integration. Money continues to move by bank transfer; what it adds is the record of how much and whether it has gone.
+
+---
+
+## Phase 8 — Notifications
+
+A new phase, added 2026-08-26. It exists because the marketplace gave the store more than one audience. A sale now concerns the buyer who paid, the organisation whose goods sold, and the platform that earns from it, and a settlement concerns the organisation being paid — so "send an email" stopped being a function and became a question about who hears what.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [transactional-email](specs/transactional-email/spec.md) | One notification capability the whole store sends through — a domain announces an occasion, the capability decides who hears about it | 📝 Draft — TRD pending a spike |
+
+Ordered after Phase 7. Two of the four occasions the spec must carry are produced by the ledger and settlement, so building the capability first would mean declaring occasions that nothing announces yet.
+
+The spec is deliberately about the machinery rather than about any email. Its `trd.md` is unwritten: how an occasion reaches a recipient on a serverless deployment, and what makes a send idempotent across a replayed gateway signal, are decisions that want a `/bb-brainstorm` before they are recorded.
 
 ---
 
