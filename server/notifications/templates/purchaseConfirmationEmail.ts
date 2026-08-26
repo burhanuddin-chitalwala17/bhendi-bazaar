@@ -25,11 +25,31 @@ export interface OrderEmailView {
     country: string;
   };
   shipments: Array<{ estimatedDelivery?: string | null }>;
+  items: Array<{
+    productName: string;
+    quantity: number;
+    price: number; // unit price, paise
+    size?: string;
+    color?: string;
+  }>;
 }
 
 export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
-  // Generate order items HTML
-  const orderItemsHtml = order.itemsTotal
+  const orderItemsHtml = order.items
+    .map((item) => {
+      const variant = [item.size, item.color].filter(Boolean).join(" / ");
+      return `
+                <tr>
+                  <td style="padding: 12px 15px; border-bottom: 1px solid #e5e5e5;">
+                    ${item.productName}${variant ? ` <span style="color: #666; font-size: 13px;">(${variant})</span>` : ""}
+                    <span style="color: #666; font-size: 13px;"> × ${item.quantity}</span>
+                  </td>
+                  <td style="padding: 12px 15px; border-bottom: 1px solid #e5e5e5; text-align: right;">
+                    ${formatCurrency(item.price * item.quantity)}
+                  </td>
+                </tr>`;
+    })
+    .join("");
 
   // Tracking URL
   const trackingUrl = `${appUrl()}/order/${order.id}`;
@@ -209,7 +229,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             </p>
             
             <p class="message">
-              We'll send you another email once your order has been shipped with tracking information.
+              We'll send you another email once your order has been dispatched with tracking information.
             </p>
             
             <div class="order-details">
@@ -310,7 +330,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             
             <div class="cta-container">
               <a href="${trackingUrl}" class="button">
-                Track Your Order
+                View Order Details
               </a>
             </div>
             
@@ -333,7 +353,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             
             <div class="social-links">
               <a href="#" class="social-link">Contact Us</a> •
-              <a href="#" class="social-link">Track Order</a> •
+              <a href="#" class="social-link">View Order Details</a> •
               <a href="#" class="social-link">Returns Policy</a>
             </div>
             

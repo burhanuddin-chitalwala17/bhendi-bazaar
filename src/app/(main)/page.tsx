@@ -1,7 +1,7 @@
 import { CategorySections } from "@/components/home/category-sections";
 import { HeroProductsGrid } from "@/components/home/hero-products-grid";
-import { HomeHero } from "@/components/home/home-hero";
 import { OffersStrip } from "@/components/home/offers-strip";
+import { HomeHero } from "@/components/home/home-hero";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { productsDAL } from "@/data-access-layer/products.dal";
@@ -13,12 +13,12 @@ export default async function HomePage() {
   const categories = await categoriesDAL.getCategories();
   return (
     <div className="space-y-8 sm:space-y-10">
+      <Suspense fallback={<LoadingSkeleton />}>
+        <OffersStrip offers={offers} />
+      </Suspense>
       <HomeHero />
       <Suspense fallback={<LoadingSkeleton />}>
         <HeroProductsGrid heroes={heroes} />
-      </Suspense>
-      <Suspense fallback={<LoadingSkeleton />}>
-        <OffersStrip offers={offers} />
       </Suspense>
       <Suspense fallback={<LoadingSkeleton />}>
         <CategorySections categories={categories} />

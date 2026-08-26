@@ -10,6 +10,64 @@
 
 ## Entries
 
+## [PR-83] 2026-08-25 — Every payment confirmation was crashing with a 500
+
+PR-82's item list for the purchase confirmation email fed `order.shipments[].items` through `toWireShipmentItems()` — but `orderRepository.findById()` already returns that array in wire shape (`withWireItems()` calls the same mapper internally). Applying it twice tried to read `.orderItem.productId` off an object that no longer has an `orderItem` at all, throwing `TypeError: Cannot read properties of undefined (reading 'productId')` out of `OrderService.onPaymentConfirmed()` — reached from both the Razorpay browser-return and webhook paths, so **every** payment confirmation failed with a 500 rather than just missing an email.
+
+`onPaymentConfirmed` now uses `order.shipments.flatMap((s) => s.items)` directly — the array is already what `OrderEmailView.items` needs.
+
+This shipped past `tsc` clean because `withWireItems()`'s declared return type was wrong in a way that made the bug invisible: its second generic parameter inferred down to its own bare constraint (`{ legacyItems?: unknown; items: ShipmentLineRow[] }`), erasing every field a shipment actually carries beyond `items`/`legacyItems` from the *declared* type — including, critically, the fact that `items` had already been transformed. The broken code and the fixed code both "type-checked" against that wrong declaration; only the broken one crashed. `withWireItems()`'s return type is now derived via an indexed access on the input (`O["shipments"][number]`) instead of an independently-constrained type parameter, which correctly preserves every field through the transformation — a type-precision fix only, the wire JSON these functions produce hasn't changed — and every caller of `orderRepository.findById()`/`listByUserId()` and their `admin.order.repository.ts` counterparts now sees the real shape. Covered by three new cases in `tests/unit/order-lines.test.ts`, including one that directly re-creates the crash (calling `toWireShipmentItems` on an already-wire array throws).
+
+## [PR-82] 2026-08-25 — A logged-in buyer with no email on their delivery address never got order emails
+
+The delivery-address form's email field is optional and separate from account login ("Optional — for order updates"), so most orders' `address.email` was empty — and both the purchase-confirmation and shipment-tracking emails only sent `if (deliveryAddress?.email)`. A signed-in buyer with a perfectly good account email got neither, silently.
+
+`OrderService.resolveContactEmail()` now falls back to the signed-in buyer's account email (`profileRepository.getEmailByUserId()`, a new light read that doesn't pay for `getByUserId()`'s profile-row creation and address-book load) when the delivery address doesn't carry one. A guest order without an email in the form still gets nothing — there's no account to fall back to.
+
+## [PR-81] 2026-08-25 — Real shipment booking, and the tracking email it makes possible
+
+Picks up the first scoped slice of [shipping-fulfilment](specs/shipping-fulfilment/) (deferred 2026-08-10): a paid order now books a real shipment with Shiprocket and gets a real, working tracking link, rather than the deleted `providers/_placeholder/mock.booking.ts` placeholder's generated AWB that led nowhere.
+
+`IShippingProvider` gains `createShipment()`; `ShiprocketProvider` implements it as Shiprocket's two-call flow (create order, then assign AWB to the courier that was quoted), through the same authenticated connection rate quoting already uses. The request-building is a pure function (`buildShiprocketOrderPayload`, `shiprocket.mapper.ts`) so it's tested without mocking auth or network (`tests/unit/shipping-booking.test.ts`) — never call the live courier API from a test.
+
+`OrderService.fulfillOrder()` — previously written but never called — now runs from `onPaymentConfirmed()`, detached with its own `.catch()` so a booking failure can never unwind a confirmed payment. It only books shipments still `"pending"`; one already `"confirmed"` or `"failed"` is skipped, which is what keeps a retried call from double-booking. The shipment's own code is sent as Shiprocket's order id on every attempt for the same reason — a repeat is rejected by Shiprocket rather than silently creating a second parcel.
+
+A new `sendShipmentTrackingEmail` (`server/notifications/templates/shipmentTrackingEmail.ts`) fires once a shipment is actually booked, carrying the real AWB and tracking link — separate from the purchase confirmation, which still fires immediately on payment and cannot know a tracking number that doesn't exist yet.
+
+**Deliberately out of scope for this slice** (the spec's remaining requirements, unstarted): no webhook-driven status sync (R5), no cancellation (R6), no admin-visible booking-failure UI (R7), and no automatic pickup scheduling (TRD Q3, resolved *not automatic* here — `SCHEDULE_PICKUP` stays unused). Also unresolved: who eats a courier-charge variance (Q2), and what happens to an order whose booking keeps failing (Q4) — it currently just stays `failed` with the reason in `shippingMeta`, readable only from the database. `docs/specs/shipping-fulfilment/{spec,trd}.md` record all of this in detail.
+
+**External dependency this doesn't remove:** each org's pickup location (`OrgAddress.name`, or `providerRef` if set) must already exist as a registered pickup nickname inside the connected Shiprocket account, with `contactName`/`contactPhone` filled in — booking fails fast with a clear error otherwise rather than sending Shiprocket incomplete data.
+
+## [PR-80] 2026-08-25 — A newly-connected shipping provider never became available without a server restart
+
+`initializeShippingModule()` (`server/shipping/init.ts`) auto-runs once at server start, before any provider is necessarily connected. It set `isInitialized = true` unconditionally once `loadProviders()` returned — including when zero providers loaded, which is the normal state before anyone has connected one. Every later request to `/api/shipping/rates` correctly detected zero providers and called `initializeShippingModule()` again to pick up a newly-connected one, but that call hit the now-permanent `isInitialized` cache and returned instantly without re-querying the database. Connecting Shiprocket from `/admin/shipping/providers` afterward had no way to reach the running process — only a full restart picked it up.
+
+`isInitialized` is now `loadedCount > 0` — zero providers is treated as "not yet initialized" rather than a cached success, so the existing retry-on-empty logic in `route.ts` can actually retry.
+
+## [PR-79] 2026-08-25 — The Shiprocket connect/list endpoints were sending the live carrier bearer token to the browser
+
+ADR-0002 rule 3 says a response never carries `authToken`, `accountInfo`, or an auth error — but nothing enforced it. `GET /api/admin/shipping/providers` and the provider-by-id read returned the raw Prisma row with no `select`, so the plaintext Shiprocket bearer token (`authToken`) and the encrypted-password blob went straight to the browser on every load of `/admin/shipping/providers`. `POST .../connect` was worse: `AdminConnectionService.connect()` is typed to return `AdminConnectionResult`, which correctly omits `token` — but the implementation just did `return connectionResult`, the raw object, which still had it. TypeScript's structural typing doesn't strip fields at runtime; the return type was a promise nothing built, and the connect response leaked the live token directly.
+
+`server/shipping/utils/safe-provider.ts` is now the one place that projects a `ShippingProvider` row down to what a client may see — drops `authToken`/`authError` entirely, keeps `accountInfo.email` (the admin UI's "connected as" line) and drops `accountInfo.password`. `admin.shipping.service.ts`'s list/detail reads and `connection.service.ts`'s connect response both go through it now, and the admin audit log's `PROVIDER_CONNECTED` entry no longer stores the password ciphertext either. Also removed `ShippingProviderRepository.connectAccount()` — dead code, unused, and would have double-encrypted an already-encrypted password had anything ever called it. Covered by `tests/unit/shipping-provider-credential-safety.test.ts`.
+
+No credential was actually compromised by this in production — no Shiprocket account had been connected yet ([PR-78](#pr-78-2026-08-25--blocked-couriers-could-still-win-a-rate-slot-and-local-dev-had-no-shipping-provider-row) added the row, uncredentialed, the same day this was found before anyone connected through the admin UI).
+
+## [PR-78] 2026-08-25 — Blocked couriers could still win a rate slot, and local dev had no shipping provider row
+
+`getBestRatesByDeliveryDays` (`server/shipping/services/orchestrator.service.ts`) computed `availableRates` — rates with a blocked courier filtered out — but then grouped the cheapest-per-delivery-day winners from the original `rates` array instead of the filtered one. A blocked courier that happened to be cheapest for its delivery-day slot could still be quoted to a buyer. The grouping loop now iterates `availableRates`. Covered by `tests/unit/shipping-best-rates.test.ts`.
+
+Separately, checkout was stuck at "Please select shipping for 1 item group(s)" with no way past it: the local database's `ShippingProvider` table was empty, so `/api/shipping/rates` had nothing to quote from and returned 503 for every group. The registering migration (`20260816030000_register_shiprocket_provider`, PR-68) was applied, but the row was gone — the destructive `prisma/seed.ts` deletes `ShippingProvider` early and re-seeds it near the end, and a crash partway through (missing `orgAddress.deleteMany()` before `address.deleteMany()`, fixed separately) left the delete without its recreation. The row is reinserted, uncredentialed (`isConnected: false`), matching the migration exactly — connect it from `/admin/shipping/providers` per [OPERATIONS.md](OPERATIONS.md#connecting-a-shipping-provider).
+
+## [PR-77] 2026-08-25 — Purchase confirmation email rendered a raw number, and every amount was 100x too large
+
+The purchase confirmation email (`server/notifications/templates/purchaseConfirmationEmail.ts`) was already wired to fire from `OrderService.onPaymentConfirmed()`, but two defects meant it never rendered correctly: the "Order Items" table body was assigned `order.itemsTotal` directly instead of a row per line item, and `formatCurrency` in `server/notifications/formatters.ts` never converted paise to rupees, so a ₹3,600 order displayed as ₹3,60,000 throughout the email.
+
+`OrderEmailView` now carries an `items` array (product name, quantity, unit price, size/color), built in `onPaymentConfirmed` from the existing `toWireShipmentItems` mapper, and the template renders one row per item. `formatCurrency` now goes through `paiseToRupees` (`server/shared/money.ts`), matching the display rule already used by the canonical client-side `formatCurrency` in `src/lib/format.ts`.
+
+Tracking numbers/URLs are still not included — `fulfillOrder()`, the only code that would populate them, is not called anywhere yet (pending `shipping-fulfilment`), so the email continues to promise tracking in a separate later email rather than claim it has one.
+
+Covered by `tests/unit/purchase-confirmation-email.test.ts`.
+
 ## [PR-76] 2026-08-23 — The category sheet takes names, and the theme colour is a dropdown
 
 Three fixes to bulk category upload, all of them about a sheet not telling you what it wants.

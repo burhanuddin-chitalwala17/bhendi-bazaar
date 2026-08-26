@@ -7,7 +7,6 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { ShippingProvider, Prisma } from "@prisma/client";
-import { encryptionService } from "../utils/encryption";
 export class ShippingProviderRepository {
   // ============================================================================
   // QUERY OPERATIONS
@@ -85,38 +84,6 @@ export class ShippingProviderRepository {
   // ============================================================================
   // UTILITY OPERATIONS
   // ============================================================================
-
-  /**
-   * Connect provider account (store encrypted credentials)
-   */
-  async connectAccount(
-    id: string,
-    data: {
-      email: string;
-      password: string; // Plain password (will be encrypted)
-      authToken: string; // Plain token (will be encrypted)
-      tokenExpiresAt: Date;
-      accountInfo: any;
-      connectedBy: string; // Admin user ID
-    }
-  ): Promise<ShippingProvider> {
-    return await prisma.shippingProvider.update({
-      where: { id },
-      data: {
-        isConnected: true,
-        connectedAt: new Date(),
-        connectedBy: data.connectedBy,
-        lastAuthAt: new Date(),
-        authError: null,
-        authToken: data.authToken,
-        tokenExpiresAt: data.tokenExpiresAt,
-        accountInfo: {
-          ...data.accountInfo,
-          password: encryptionService.encrypt(data.password), // Encrypt password
-        },
-      },
-    });
-  }
 
   /**
    * Disconnect provider account (clear all auth data)

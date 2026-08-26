@@ -159,7 +159,7 @@ function sources(dir: string): string[] {
 describe("the convention holds across every domain", () => {
   it("no service writes the trail directly — that is how the decision gets lost", () => {
     const offenders = sources("server")
-      .filter((f) => !f.includes("audit/audit."))
+      .filter((f) => !f.replace(/\\/g, "/").includes("audit/audit."))
       .filter((f) => readFileSync(f, "utf8").includes("adminLogRepository.createLog"));
 
     expect(offenders).toEqual([]);

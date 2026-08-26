@@ -1,9 +1,9 @@
 # TRD — shipping fulfilment
 
-- **Status:** Draft — depends on the open decision in [spec.md](spec.md)
+- **Status:** Delivery 1 landed 2026-08-25 (below); Delivery 2–5 not started.
 - **Domain:** shipping
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-25
 - **References:** [spec.md](spec.md), [product-weight-and-rates](../product-weight-and-rates/), [ADR-0005](../../adr/0005-payment-state-server-only.md), [INTEGRATIONS.md](../../INTEGRATIONS.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -42,14 +42,14 @@ Never call the live courier API from a test ([TESTING.md](../../TESTING.md)). Te
 - The weight sent equals the weight the quote used, even after the product's weight changes.
 
 ## Delivery (PRs)
-1. Booking state on `Shipment`, plus the test double. Inert.
-2. Route booking through the real provider behind the post-confirmation trigger, with failure handling. The behaviour change.
-3. Delete the placeholder module.
-4. Status webhook handling.
-5. Cancellation.
+1. ~~Booking state on `Shipment`, plus the test double. Inert.~~ **Skipped as its own step** — Delivery 2 reused the existing `status`/`shippingMeta` fields instead of adding dedicated booking-state columns, to land the customer-visible fix without a migration. Revisit if `shippingMeta.fulfillmentError` proves too informal for R7's admin visibility.
+2. **Landed 2026-08-25.** Booking routed through the real provider (`IShippingProvider.createShipment()`, `ShiprocketProvider`), triggered from `onPaymentConfirmed` (D3), with failure handling: a shipment stays `pending` until booked, becomes `confirmed` or `failed`, and only `pending` shipments are attempted — the idempotency guard in place of a per-attempt API idempotency key.
+3. **Landed 2026-08-25.** `providers/_placeholder/mock.booking.ts` is deleted.
+4. Status webhook handling. **Not started** — R5/A5 remain open.
+5. Cancellation. **Not started** — R6 remains open.
 
 ## Open questions
-- **Q1** — The spec's open decision. Nothing here proceeds until it is answered.
-- **Q2** — Who pays when a courier's actual charge exceeds what the customer was quoted? Affects whether a variance needs recording per shipment.
-- **Q3** — Is a pickup scheduled automatically at booking, or requested separately by an admin? Depends on the courier account's configuration.
-- **Q4** — What happens to an order whose booking keeps failing — does it stay open indefinitely, or reach a state that prompts a refund?
+- **Q1** — Resolved 2026-08-10: book for real (see spec.md).
+- **Q2** — Who pays when a courier's actual charge exceeds what the customer was quoted? **Still unresolved** — Delivery 2 records no variance; if Shiprocket's charge differs from the quote, nothing notices.
+- **Q3** — Is a pickup scheduled automatically at booking, or requested separately by an admin? **Resolved for Delivery 2: not automatic.** Booking creates the order and AWB only; `SCHEDULE_PICKUP` (`shiprocket.config.ts`) is defined but unused. Revisit if manual pickup requests prove to be the actual bottleneck.
+- **Q4** — What happens to an order whose booking keeps failing — does it stay open indefinitely, or reach a state that prompts a refund? **Still unresolved** — a failed shipment stays `failed` with `requiresManualIntervention: true` in `shippingMeta`, visible only to someone reading the database directly.

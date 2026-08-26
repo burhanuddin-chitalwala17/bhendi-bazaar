@@ -21,10 +21,7 @@ export function ProductBasicFields({
   readOnly = false,
 }: ProductBasicFieldsProps) {
   const router = useRouter();
-  const handleAddCategory = () => {
-    // Save current product form and navigate to category form
-    router.push("/admin/categories/new?returnUrl=/admin/products/new");
-  };
+
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">
@@ -51,7 +48,7 @@ export function ProductBasicFields({
             error={errors.description?.message}
           />
         </div>
-        {/* Category with Add button */}
+        {/* Category */}
         <div>
           <FormSelect
             label="Category"

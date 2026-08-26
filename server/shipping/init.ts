@@ -53,8 +53,13 @@ export async function initializeShippingModule(): Promise<{
       });
 
       const loadedCount = shippingOrchestrator['providers'].size;
-      
-      isInitialized = true;
+
+      // Zero providers is not a terminal success: it usually means none is connected
+      // *yet*, and an admin can connect one from /admin/shipping/providers at any
+      // time afterward. Caching success here would permanently hide that provider
+      // from every later request until the server restarts — leaving the caller's
+      // retry-when-empty logic (route.ts) with nothing left to retry.
+      isInitialized = loadedCount > 0;
       console.log(`✅ Shipping module initialized with ${loadedCount} provider(s)`);
     } catch (error) {
       console.error('❌ Failed to initialize shipping module:', error);

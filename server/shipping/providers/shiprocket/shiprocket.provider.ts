@@ -11,17 +11,22 @@ import type {
   ShiprocketAuthResponse,
   GetShippingRatesRequestShiprocket,
   ShiprocketWebhookPayload,
+  ShiprocketCreateOrderResponse,
+  ShiprocketAssignAwbResponse,
 } from "./shiprocket.types";
 import { SHIPROCKET_CONFIG, SHIPROCKET_ENDPOINTS } from "./shiprocket.config";
 import { shippingProviderRepository } from "../../repositories/provider.repository";
 import { encryptionService } from "../../utils/encryption";
 import type {
   ConnectionRequestBody,
+  CreateShipmentRequest,
+  CreateShipmentResult,
   GetShippingRatesResponse,
   ProviderConnectionResult,
 } from "../../domain/shipping.types";
-import { mapShiprocketRateToShippingRate } from "./shiprocket.mapper";
+import { mapShiprocketRateToShippingRate, buildShiprocketOrderPayload } from "./shiprocket.mapper";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
+import { NonRetryableError } from "@server/shared/retry";
 
 export class ShiprocketProvider extends BaseShippingProvider {
   private authToken?: string;
@@ -252,6 +257,87 @@ export class ShiprocketProvider extends BaseShippingProvider {
         toPincode: request.toPincode,
       };
     }
+  }
+
+  /**
+   * Book a real shipment: create the order, then assign it to the courier that
+   * was quoted, in Shiprocket's own two-call flow.
+   */
+  async createShipment(
+    request: CreateShipmentRequest
+  ): Promise<CreateShipmentResult> {
+    await this.ensureAuthenticated();
+
+    const orderPayload = buildShiprocketOrderPayload(request);
+
+    const orderResponse = await fetch(
+      `${this.baseUrl}${SHIPROCKET_ENDPOINTS.CREATE_ORDER}`,
+      {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(orderPayload),
+      }
+    );
+
+    if (!orderResponse.ok) {
+      const error = await orderResponse
+        .json()
+        .catch(() => ({ message: orderResponse.statusText }));
+      const message = error.message || orderResponse.statusText;
+      // A 4xx here is bad input or a duplicate order id — retrying with the same
+      // payload only reproduces it, so it is not retryable.
+      if (orderResponse.status < 500) {
+        throw new NonRetryableError(`Shiprocket order creation rejected: ${message}`);
+      }
+      throw new Error(`Shiprocket order creation failed: ${message}`);
+    }
+
+    const orderData: ShiprocketCreateOrderResponse = await orderResponse.json();
+
+    if (!orderData.shipment_id) {
+      throw new NonRetryableError(
+        `Shiprocket order created without a shipment id (status: ${orderData.status})`
+      );
+    }
+
+    const awbResponse = await fetch(
+      `${this.baseUrl}${SHIPROCKET_ENDPOINTS.ASSIGN_AWB}`,
+      {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({
+          shipment_id: orderData.shipment_id,
+          courier_id: Number(request.courierCode),
+        }),
+      }
+    );
+
+    if (!awbResponse.ok) {
+      const error = await awbResponse
+        .json()
+        .catch(() => ({ message: awbResponse.statusText }));
+      const message = error.message || awbResponse.statusText;
+      if (awbResponse.status < 500) {
+        throw new NonRetryableError(`Shiprocket AWB assignment rejected: ${message}`);
+      }
+      throw new Error(`Shiprocket AWB assignment failed: ${message}`);
+    }
+
+    const awbData: ShiprocketAssignAwbResponse = await awbResponse.json();
+    const awb = awbData.response?.data?.awb_code;
+
+    if (!awb) {
+      throw new NonRetryableError("Shiprocket did not return an AWB code");
+    }
+
+    return {
+      success: true,
+      awb,
+      trackingUrl: `${SHIPROCKET_CONFIG.TRACKING_URL_BASE}/${awb}`,
+      courierName: awbData.response.data.courier_name,
+      providerOrderId: String(orderData.order_id),
+      providerShipmentId: String(orderData.shipment_id),
+    };
   }
 
   /**

@@ -1,9 +1,9 @@
 # Spec — shipping fulfilment
 
-- **Status:** Draft — deferred by decision (2026-08-10, see Open decision)
+- **Status:** In progress — a scoped first slice (R1, R2, R3 partial, R4) landed 2026-08-25; R5–R7 and A5 remain unbuilt. See Scoped delivery below.
 - **Domain:** shipping
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-10
+- **Verified:** 2026-08-25
 - **References:** [trd.md](trd.md), [product-weight-and-rates](../product-weight-and-rates/), [INTEGRATIONS.md](../../INTEGRATIONS.md)
 
 > Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
@@ -34,6 +34,20 @@ until then.
 - **Stop quoting live** — quote a flat or table-based shipping fee and fulfil manually outside the system. Much smaller, and honest. Real booking becomes a later feature.
 
 Everything below assumes *book for real*. If the answer is *stop quoting live*, this spec is replaced by a much smaller one and the requirements here move to a future phase.
+
+## Scoped delivery (2026-08-25)
+
+**"Book for real" is picked back up, deliberately scoped to less than the full requirement list below**, because a customer receiving no working tracking reference at all was the most visible gap. What landed: booking a shipment through the real Shiprocket provider (R1), a courier-issued tracking reference the customer can actually follow (R2), a booking failure recorded on the shipment rather than silently appearing fulfilled (R3, though without the admin-visible retry UI A3 calls for), and the weight sent matching the weight the rate was quoted on (R4, since it's read from the same persisted `shipment.packageWeight` the quote used).
+
+**Not delivered, and known gaps as of this slice:**
+- **R5/A5 (status sync)** — no webhook handler updates a shipment after booking. Its status is whatever `fulfillOrder` set at booking time.
+- **R6 (cancellation)** — not implemented.
+- **R7 (admin visibility)** — a failed booking's error lives in `shippingMeta.fulfillmentError`; nothing in the admin UI surfaces it yet.
+- **Pickup scheduling (TRD Q3)** — resolved *not automatic* for this slice: booking creates the order and AWB only. A pickup must still be requested through Shiprocket directly, or in a follow-up PR against `SCHEDULE_PICKUP`.
+- **Q2 (courier-charge variance)** — unresolved; no variance is recorded if Shiprocket's actual charge differs from the quote.
+- **Q4 (stuck failures)** — unresolved; a shipment that keeps failing to book stays `failed` indefinitely with no prompt to refund or retry.
+
+Real, external dependency this slice does not remove: each org's pickup location (`OrgAddress.name`, or `providerRef` if set) must already exist as a registered pickup nickname in the connected Shiprocket account, and its `contactName`/`contactPhone` must be filled in — booking fails fast with a clear error otherwise, rather than sending Shiprocket incomplete data.
 
 ## Requirements
 - **R1** — A confirmed, paid order produces a shipment booked with the courier.

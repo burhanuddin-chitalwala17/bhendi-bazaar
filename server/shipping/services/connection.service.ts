@@ -9,6 +9,7 @@
 
 import { shippingProviderRepository } from "@server/shipping/repositories";
 import { PROVIDER_FACTORIES } from "@server/shipping";
+import { toSafeAccountInfo } from "@server/shipping/utils/safe-provider";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   ProviderConnectionResult,
@@ -77,7 +78,7 @@ export class AdminConnectionService {
           resourceId: providerId,
           metadata: {
             providerCode: provider.code,
-            accountInfo: connectionResult.accountInfo,
+            accountInfo: toSafeAccountInfo(connectionResult.accountInfo),
           },
         });
       } else {
@@ -92,7 +93,19 @@ export class AdminConnectionService {
           },
         });
       }
-      return connectionResult;
+      // `connectionResult` still carries the live carrier bearer token (`token`) —
+      // a caller further out serialises this straight into an HTTP response, so
+      // building the safe shape here, rather than trusting the AdminConnectionResult
+      // return type to have stripped it, is what actually keeps it off the wire.
+      const safeResult: AdminConnectionResult = {
+        success: connectionResult.success,
+        error: connectionResult.error,
+        tokenExpiresAt: connectionResult.tokenExpiresAt,
+        lastAuthAt: connectionResult.lastAuthAt,
+        connectedBy: "admin",
+        accountInfo: toSafeAccountInfo(connectionResult.accountInfo) ?? undefined,
+      };
+      return safeResult;
     } catch (error) {
       await recordAdminAction({
         adminId,
