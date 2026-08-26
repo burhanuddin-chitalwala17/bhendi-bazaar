@@ -133,6 +133,54 @@ export interface ShippingRate {
 }
 
 // ============================================================================
+// BOOKING
+// ============================================================================
+
+export interface CreateShipmentOrderItem {
+  name: string;
+  sku: string;
+  units: number;
+  sellingPrice: number; // paise
+}
+
+export interface CreateShipmentRequest {
+  /** Sent as the provider's own order id on every attempt — the idempotency key
+   *  that keeps a retried booking from creating a second parcel (D5). */
+  shipmentCode: string;
+  orderDate: Date;
+  /** Must match a pickup location already registered in the provider's own
+   *  account — our database having the address is not sufficient. */
+  pickupLocationName: string;
+  courierCode: string;
+  paymentMethod: "prepaid" | "cod";
+  subTotalPaise: number;
+  weightKg: number;
+  dimensions?: { length: number; width: number; height: number };
+  billing: {
+    customerName: string;
+    address: string;
+    address2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+    email?: string;
+    phone: string;
+  };
+  items: CreateShipmentOrderItem[];
+}
+
+export interface CreateShipmentResult {
+  success: boolean;
+  awb?: string;
+  trackingUrl?: string;
+  courierName?: string;
+  providerOrderId?: string;
+  providerShipmentId?: string;
+  error?: string;
+}
+
+// ============================================================================
 // WEBHOOK
 // ============================================================================
 

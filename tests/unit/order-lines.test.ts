@@ -50,6 +50,28 @@ describe("withWireItems", () => {
     expect(order.shipments[0]).not.toHaveProperty("legacyItems");
     expect(order.shipments[0].items[0].productName).toBe("Cream Rida");
   });
+
+  it("keeps every field a shipment carries beyond items/legacyItems (a bare-constraint return type once erased these)", () => {
+    const order = withWireItems({
+      id: "order-1",
+      shipments: [
+        { id: "sh-1", status: "confirmed", estimatedDelivery: "2026-09-01", legacyItems: null, items: [lineRow()] },
+      ],
+    });
+    expect(order.shipments[0].status).toBe("confirmed");
+    expect(order.shipments[0].estimatedDelivery).toBe("2026-09-01");
+  });
+
+  it("produces items already in wire shape — feeding them back into toWireShipmentItems is the bug this guards against", () => {
+    const order = withWireItems({
+      id: "order-1",
+      shipments: [{ id: "sh-1", legacyItems: null, items: [lineRow()] }],
+    });
+    // The real regression: onPaymentConfirmed called toWireShipmentItems(shipment.items)
+    // on an already-wire array, and crashed reading `.orderItem` off an object that
+    // doesn't have one — every payment confirmation failed with a 500.
+    expect(() => toWireShipmentItems(order.shipments[0].items as any)).toThrow();
+  });
 });
 
 describe("the order-lines lift migration", () => {

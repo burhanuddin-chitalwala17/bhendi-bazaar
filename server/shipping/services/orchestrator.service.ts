@@ -168,7 +168,7 @@ export class ShippingOrchestratorService {
     // Step 3: Group rates by estimatedDays and find cheapest for each day
     const cheapestByDays = new Map<number, ShippingRate>();
 
-    for (const rate of rates) {
+    for (const rate of availableRates) {
       const days = rate.estimatedDays;
       const existingCheapest = cheapestByDays.get(days);
 
@@ -225,6 +225,14 @@ export class ShippingOrchestratorService {
    */
   isProviderLoaded(providerId: string): boolean {
     return this.providers.has(providerId);
+  }
+
+  /**
+   * Get a loaded provider instance by its code (e.g. "shiprocket"), for callers
+   * that need to invoke a provider-specific operation like booking directly.
+   */
+  getProvider(code: string): IShippingProvider | undefined {
+    return this.providers.get(code);
   }
 
   /**

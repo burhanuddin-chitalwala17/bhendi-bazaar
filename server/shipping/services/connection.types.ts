@@ -4,5 +4,5 @@ export interface AdminConnectionResult {
   tokenExpiresAt?: Date;
   lastAuthAt?: Date;
   connectedBy?: string;
-  accountInfo?: Record<string, string | number>;
+  accountInfo?: Record<string, unknown>;
 }

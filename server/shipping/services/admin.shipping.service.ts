@@ -6,17 +6,17 @@
  */
 
 import { shippingProviderRepository } from "@server/shipping/repositories";
-import type { ShippingProvider } from "@prisma/client";
+import { toSafeProvider, type SafeShippingProvider } from "@server/shipping/utils/safe-provider";
 
 export interface GetProvidersResponse {
   success: boolean;
-  providers: ShippingProvider[];
+  providers: SafeShippingProvider[];
   error?: string;
 }
 
 export interface GetProviderByIdResponse {
   success: boolean;
-  provider?: ShippingProvider;
+  provider?: SafeShippingProvider;
   error?: string;
 }
 export class AdminShippingService {
@@ -28,13 +28,13 @@ export class AdminShippingService {
     if (providers.length === 0) {
       return {
         success: false,
-        providers,
+        providers: [],
         error: "No providers found",
       };
     }
     return {
       success: true,
-      providers,
+      providers: providers.map(toSafeProvider),
     };
   }
 
@@ -54,7 +54,7 @@ export class AdminShippingService {
     } else {
       return {
         success: true,
-        provider,
+        provider: toSafeProvider(provider),
       };
     }
   }

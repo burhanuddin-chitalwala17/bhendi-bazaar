@@ -8,9 +8,12 @@
  */
 
 import { orderRepository } from "@server/checkout/order.repository";
+import { profileRepository } from "@server/identity/profile.repository";
 import { prisma, toJsonColumn } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
-import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
+import { shippingOrchestrator } from "@server/shipping/services/orchestrator.service";
+import { shippingProviderRepository } from "@server/shipping/repositories/provider.repository";
+import type { CreateShipmentOrderItem } from "@server/shipping/domain/shipping.types";
 import type {
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
@@ -67,9 +70,11 @@ export class OrderService {
    * Side effects of an order becoming paid — reached exactly once per order, because
    * the caller is the conditional transition (payment-confirmation D3). The
    * confirmation email moves here from updateOrder, where it fired on whoever
-   * happened to write the status. Fulfilment is deliberately NOT triggered here:
-   * booking is a placeholder until shipping-fulfilment, and a failed booking must
-   * never look like a failed payment.
+   * happened to write the status.
+   *
+   * Fulfilment (shipping-fulfilment D3) runs from here too, but detached with its own
+   * `.catch()`: a courier booking is a real network call that can fail, and a failed
+   * booking must never look like a failed payment or block the response to the payer.
    */
   async onPaymentConfirmed(orderId: string): Promise<void> {
     const order = await orderRepository.findById(orderId);
@@ -98,7 +103,11 @@ export class OrderService {
     }
 
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
-    if (deliveryAddress?.email) {
+    // The delivery address form's email field is optional (it's not the account's own
+    // email), so most orders never carry one there. A signed-in buyer's account email
+    // is the natural fallback — it's the address they'd expect this to go to.
+    const contactEmail = deliveryAddress?.email || (await this.resolveContactEmail(order.userId));
+    if (deliveryAddress && contactEmail) {
       const { emailService } = await import("@server/notifications/email.service");
       emailService
         .sendPurchaseConfirmationEmail(
@@ -116,14 +125,35 @@ export class OrderService {
             shipments: order.shipments.map((s) => ({
               estimatedDelivery: s.estimatedDelivery?.toISOString(),
             })),
+            // orderRepository.findById() already returns wire-format items (it
+            // calls toWireShipmentItems internally via withWireItems) — calling
+            // it again here fed already-flat items back in expecting raw
+            // Prisma rows with `.orderItem`, which crashed every payment
+            // confirmation.
+            items: order.shipments.flatMap((s) => s.items),
           },
-          deliveryAddress.email
+          contactEmail
         )
         .catch((error) => {
           console.error("Failed to send purchase confirmation email:", error);
           // Email failure must not unwind a confirmed payment.
         });
     }
+
+    this.fulfillOrder(orderId).catch((error) => {
+      console.error(`[onPaymentConfirmed] fulfilment failed for order ${orderId}:`, error);
+      // A booking failure must not unwind a confirmed payment — fulfillOrder has
+      // already recorded the failure on the shipment for an admin to retry.
+    });
+  }
+
+  /** The signed-in buyer's account email, for a guest-less order whose delivery
+   *  address didn't carry one. `undefined` for a guest order — there is no account
+   *  to fall back to. */
+  private async resolveContactEmail(userId: string | null): Promise<string | undefined> {
+    if (!userId) return undefined;
+    const email = await profileRepository.getEmailByUserId(userId);
+    return email ?? undefined;
   }
 
   /**
@@ -488,21 +518,28 @@ export class OrderService {
   }
 
   /**
-   * Fulfill order after successful payment
-   * 
-   * This method is called AFTER payment confirmation to:
-   * 1. Create shipments with shipping providers
-   * 2. Generate AWB numbers
-   * 3. Schedule pickups
-   * 4. Update shipment tracking info
-   * 
-   * Uses retry logic for resilience against provider API failures
+   * Book each "pending" shipment on this order with its real shipping provider,
+   * after payment is confirmed (shipping-fulfilment D3). Idempotent: a shipment
+   * already "confirmed" or "failed" is skipped, so re-entry cannot double-book.
+   *
+   * Does not schedule a pickup or sync status after booking — those remain
+   * unbuilt (shipping-fulfilment R5/R6, Q3). Failure is recorded on the shipment,
+   * not surfaced to an admin yet (R7).
    */
   async fulfillOrder(orderId: string): Promise<void> {
-    // Get order with shipments
+    // Get order with shipments, their line items (for the courier's manifest),
+    // and the pickup location each shipment was allocated from (its name is the
+    // courier pickup nickname — stock-locations D5/D6 / OrgAddress.name).
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { shipments: true },
+      include: {
+        shipments: {
+          include: {
+            orgAddress: true,
+            items: { include: { orderItem: { include: { product: true } } } },
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -516,28 +553,91 @@ export class OrderService {
       );
     }
 
+    const address = order.address as OrderEmailView["address"];
+
     const fulfillmentResults = {
       successful: [] as string[],
       failed: [] as { shipmentId: string; code: string; error: string }[],
     };
+    const bookedForEmail: Array<{
+      trackingNumber?: string;
+      trackingUrl?: string;
+      courierName?: string;
+    }> = [];
 
-    // Process each shipment
+    // Process each shipment. Only "pending" ones are booked — a shipment already
+    // "confirmed" or "failed" from a prior call is left alone, so re-running this
+    // (a retried webhook, an admin re-triggering) cannot double-book a parcel.
     for (const shipment of order.shipments) {
+      if (shipment.status !== "pending") continue;
+
       try {
-        // Call provider API with retry logic
+        if (!shipment.shippingProviderId) {
+          throw new NonRetryableError(`Shipment ${shipment.code} has no shipping provider`);
+        }
+        const providerRow = await shippingProviderRepository.getById(shipment.shippingProviderId);
+        const provider = providerRow ? shippingOrchestrator.getProvider(providerRow.code) : undefined;
+        if (!provider) {
+          throw new NonRetryableError(
+            `Provider ${providerRow?.code ?? shipment.shippingProviderId} is not loaded — is it still connected?`
+          );
+        }
+
+        const courierCode = (shipment.shippingMeta as { courierCode?: string } | null)?.courierCode;
+        if (!courierCode) {
+          throw new NonRetryableError(`Shipment ${shipment.code} has no courier selected`);
+        }
+        if (!shipment.packageWeight) {
+          throw new NonRetryableError(`Shipment ${shipment.code} has no package weight`);
+        }
+        // "Required if fulfilment books real pickups" (schema comment on OrgAddress) —
+        // this is that moment.
+        if (!shipment.orgAddress?.contactName || !shipment.orgAddress?.contactPhone) {
+          throw new NonRetryableError(
+            `Pickup location "${shipment.orgAddress?.name ?? shipment.orgAddressId}" is missing a contact name/phone — complete it in the org's pickup locations before this shipment can be booked`
+          );
+        }
+
+        const items: CreateShipmentOrderItem[] = shipment.items.map((line) => ({
+          name: line.orderItem.product.name,
+          sku: line.orderItem.product.sku ?? line.orderItem.productId,
+          units: line.quantity,
+          sellingPrice: line.orderItem.unitPrice,
+        }));
+        const subTotalPaise = items.reduce((sum, item) => sum + item.sellingPrice * item.units, 0);
+
+        // Call provider API with retry logic. shipment.code is passed as the
+        // provider's own order id on every attempt (D5): Shiprocket rejects a
+        // repeated order id rather than booking a second parcel, so a retry that
+        // reaches it after a partial success fails safely instead of duplicating.
         const providerResult = await retryWithBackoff(
-          async () => {
-            return await createShipmentWithProvider(
-              shipment.id,
-              shipment.shippingProviderId!,
-              {
-                courierCode: (shipment.shippingMeta as { courierCode?: string } | null)?.courierCode,
-                weight: shipment.packageWeight!,
-                fromPincode: shipment.fromPincode,
-                toPincode: (order.address as { pincode: string }).pincode,
-              }
-            );
-          },
+          () =>
+            provider.createShipment({
+              shipmentCode: shipment.code,
+              orderDate: order.createdAt,
+              pickupLocationName: shipment.orgAddress!.providerRef || shipment.orgAddress!.name,
+              courierCode,
+              // Only prepaid orders reach fulfilment today — Razorpay is checkout's
+              // only payment method.
+              paymentMethod: "prepaid",
+              subTotalPaise,
+              weightKg: shipment.packageWeight!,
+              dimensions: shipment.packageDimensions as
+                | { length: number; width: number; height: number }
+                | undefined,
+              billing: {
+                customerName: address.fullName,
+                address: address.addressLine1,
+                address2: address.addressLine2,
+                city: address.city,
+                state: address.state,
+                pincode: address.pincode,
+                country: address.country,
+                email: address.email,
+                phone: address.mobile,
+              },
+              items,
+            }),
           {
             maxRetries: 3,
             baseDelay: 1000,
@@ -554,12 +654,23 @@ export class OrderService {
           data: {
             trackingNumber: providerResult.awb,
             trackingUrl: providerResult.trackingUrl,
+            courierName: providerResult.courierName,
             status: "confirmed", // Now confirmed with provider
+            shippingMeta: toJsonColumn({
+              ...(shipment.shippingMeta as Record<string, unknown> | null),
+              providerOrderId: providerResult.providerOrderId,
+              providerShipmentId: providerResult.providerShipmentId,
+            }),
             updatedAt: new Date(),
           },
         });
 
         fulfillmentResults.successful.push(shipment.code);
+        bookedForEmail.push({
+          trackingNumber: providerResult.awb,
+          trackingUrl: providerResult.trackingUrl,
+          courierName: providerResult.courierName,
+        });
 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -614,6 +725,25 @@ export class OrderService {
       fulfillmentResults.failed.forEach(f => {
         console.error(`   - ${f.code}: ${f.error}`);
       });
+    }
+
+    const trackingContactEmail = address.email || (await this.resolveContactEmail(order.userId));
+    if (bookedForEmail.length > 0 && trackingContactEmail) {
+      const { emailService } = await import("@server/notifications/email.service");
+      emailService
+        .sendShipmentTrackingEmail(
+          {
+            id: order.id,
+            code: order.code,
+            customerName: address.fullName,
+            shipments: bookedForEmail,
+          },
+          trackingContactEmail
+        )
+        .catch((error) => {
+          console.error("Failed to send shipment tracking email:", error);
+          // Email failure must not unwind a booked shipment.
+        });
     }
   }
 

@@ -9,6 +9,11 @@ export const SHIPROCKET_CONFIG = {
   TOKEN_EXPIRY_HOURS: 240, // 10 days
   DEFAULT_CHANNEL_ID: "",
   TIMEOUT_MS: 30000, // 30 seconds
+  // Shiprocket requires an order email; a guest checkout may not collect one, and
+  // this address is internal to the booking, never shown to the customer.
+  FALLBACK_ORDER_EMAIL: "orders@bhendibazaar.com",
+  // Shiprocket's public customer-facing tracking page, keyed by AWB.
+  TRACKING_URL_BASE: "https://shiprocket.co/tracking",
 } as const;
 
 export const SHIPROCKET_ENDPOINTS = {

@@ -57,7 +57,7 @@ PostgreSQL via Prisma 7 with the `pg` driver adapter. 34 migrations; **`prisma/s
 
 The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defines the provider contract, `server/shipping/providers/shiprocket/` implements it, and `server/shipping/services/orchestrator.service.ts` coordinates rate quoting. Provider credentials are stored encrypted and connected through the admin console.
 
-**Rate quoting and shipment booking use different implementations.** Quotes come from the Shiprocket provider; booking goes through `server/shipping/providers/_placeholder/mock.booking.ts`, which returns a generated AWB and a placeholder tracking URL. The `_placeholder` prefix is deliberate — it marks the module as not a carrier implementation, so it cannot be mistaken for one. Unifying them is [shipping-fulfilment](specs/shipping-fulfilment/).
+**Rate quoting and shipment booking both go through the Shiprocket provider.** Booking (`IShippingProvider.createShipment()`) is the first scoped slice of [shipping-fulfilment](specs/shipping-fulfilment/) — a real order and AWB per shipment, idempotent retries, no double-booking. Not yet built: webhook-driven status sync, cancellation, and automatic pickup scheduling. See [server/shipping/ARCHITECTURE.md](../server/shipping/ARCHITECTURE.md) for the detail.
 
 ## Testing
 

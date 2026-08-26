@@ -8,6 +8,8 @@
 import type { IShippingProvider } from "../domain/provider.interface";
 import type {
   ConnectionRequestBody,
+  CreateShipmentRequest,
+  CreateShipmentResult,
   GetShippingRatesRequest,
   GetShippingRatesResponse,
   ProviderConnectionResult,
@@ -36,6 +38,9 @@ export abstract class BaseShippingProvider implements IShippingProvider {
   abstract getRates(
     request: GetShippingRatesRequest
   ): Promise<GetShippingRatesResponse>;
+  abstract createShipment(
+    request: CreateShipmentRequest
+  ): Promise<CreateShipmentResult>;
   abstract handleWebhook(payload: any): Promise<any>;
 
   // ============================================================================

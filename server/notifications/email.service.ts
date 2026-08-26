@@ -17,6 +17,7 @@ import type { SendEmailOptions } from "./types";
 import { getVerificationEmailTemplate } from "./templates/verificationEmail";
 import { getPasswordResetEmailTemplate } from "./templates/passwordResetEmail";
 import { getPurchaseConfirmationEmailTemplate } from "./templates/purchaseConfirmationEmail";
+import { getShipmentTrackingEmailTemplate, type ShipmentTrackingEmailView } from "./templates/shipmentTrackingEmail";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 class EmailService {
@@ -201,6 +202,22 @@ class EmailService {
       to: customerEmail,
       subject: `Order Confirmation #${order.code} - Bhendi Bazaar`,
       html: getPurchaseConfirmationEmailTemplate(order),
+    });
+  }
+
+  /**
+   * Send the real tracking reference once a shipment is actually booked with a
+   * courier — separate from the purchase confirmation, which fires immediately
+   * on payment and cannot know the tracking number yet.
+   */
+  async sendShipmentTrackingEmail(
+    order: ShipmentTrackingEmailView,
+    customerEmail: string
+  ): Promise<void> {
+    await this.sendEmail({
+      to: customerEmail,
+      subject: `Your order has shipped #${order.code} - Bhendi Bazaar`,
+      html: getShipmentTrackingEmailTemplate(order),
     });
   }
 }

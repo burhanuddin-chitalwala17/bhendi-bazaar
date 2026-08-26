@@ -16,6 +16,19 @@ import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 
 export class ProfileRepository {
   /**
+   * The account's own email, for a caller that only needs a contact address
+   * (e.g. a fallback when a delivery address didn't carry one) and shouldn't
+   * pay for `getByUserId`'s profile-row creation and address-book read.
+   */
+  async getEmailByUserId(userId: string): Promise<string | null> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    return user?.email ?? null;
+  }
+
+  /**
    * Get user profile by user ID
    * Creates a profile if it doesn't exist
    */

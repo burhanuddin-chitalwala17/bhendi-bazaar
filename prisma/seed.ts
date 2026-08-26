@@ -139,6 +139,7 @@ async function main() {
   await prisma.order.deleteMany();
   await prisma.product.deleteMany();
   await prisma.userAddress.deleteMany(); // before users and addresses
+  await prisma.orgAddress.deleteMany(); // before orgs and addresses
   await prisma.address.deleteMany();
   await prisma.orgMember.deleteMany(); // before orgs; explicit rather than via cascade
   await prisma.org.deleteMany();

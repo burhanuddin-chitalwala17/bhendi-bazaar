@@ -58,18 +58,42 @@ export function toWireShipmentItems(rows: ShipmentLineRow[]): ShipmentItem[] {
   }));
 }
 
-/** Swap row relations for the wire array, and keep the legacy blob off the wire. */
+/**
+ * Swap row relations for the wire array, and keep the legacy blob off the wire.
+ *
+ * Every `shipment.items` coming out of this function is already the flat wire
+ * shape (`ShipmentItem[]`) — never raw `ShipmentLineRow[]` with a nested
+ * `orderItem`. The return type is derived via an indexed access on `O`
+ * (`O["shipments"][number]`) rather than a second, independently-constrained
+ * type parameter — the earlier version of this signature inferred that second
+ * parameter down to its bare constraint, which erased every field beyond
+ * `items`/`legacyItems` from the *declared* return type (though not from the
+ * real runtime value). A caller reading `.status` or `.estimatedDelivery` off a
+ * shipment still worked, structurally, but a caller re-applying
+ * `toWireShipmentItems()` to an already-wire `items` array *also* type-checked
+ * — and crashed reading `.orderItem` off an object that doesn't have one.
+ */
+type WithWireItems<O extends { shipments: Array<{ legacyItems?: unknown; items: ShipmentLineRow[] }> }> =
+  Omit<O, "shipments"> & {
+    shipments: Array<
+      Omit<O["shipments"][number], "legacyItems" | "items"> & { items: ShipmentItem[] }
+    >;
+  };
+
 export function withWireItems<
-  S extends { legacyItems?: unknown; items: ShipmentLineRow[] },
-  O extends { shipments: S[] }
->(order: O) {
+  O extends { shipments: Array<{ legacyItems?: unknown; items: ShipmentLineRow[] }> }
+>(order: O): WithWireItems<O> {
   return {
     ...order,
     shipments: order.shipments.map(({ legacyItems: _legacy, items, ...shipment }) => ({
       ...shipment,
       items: toWireShipmentItems(items),
     })),
-  };
+    // The map above provably returns every field of O["shipments"][number] minus
+    // legacyItems/items, plus the wire items — WithWireItems<O> exactly — but the
+    // function body only has the generic's *constraint* to reason from, one level
+    // less precise than the declared return type. The cast bridges that gap.
+  } as unknown as WithWireItems<O>;
 }
 
 /**

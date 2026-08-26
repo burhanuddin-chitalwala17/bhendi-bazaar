@@ -6,6 +6,8 @@
  */
 
 import type {
+  CreateShipmentRequest,
+  CreateShipmentResult,
   GetShippingRatesRequest,
   GetShippingRatesResponse,
   ShippingRate,
@@ -51,6 +53,16 @@ export interface IShippingProvider {
    * @returns Array of available shipping rates
    */
   getRates(request: GetShippingRatesRequest): Promise<GetShippingRatesResponse>;
+
+  // ============================================================================
+  // BOOKING
+  // ============================================================================
+
+  /**
+   * Book a real shipment with the courier and obtain a tracking reference.
+   * @param request What to book, including the idempotency key (D5)
+   */
+  createShipment(request: CreateShipmentRequest): Promise<CreateShipmentResult>;
 
   // ============================================================================
   // WEBHOOKS

@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — shipping domain, current state
 
-- **Verified:** 2026-08-03
+- **Verified:** 2026-08-25
 - **Scope:** `server/shipping/**`. Product-wide architecture is [`/docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
 Describes what exists now. Update after a structural change, never before.
@@ -50,11 +50,13 @@ Connected through the admin console at `/admin/shipping/providers`, encrypted wi
 
 ## Current state of quoting vs booking
 
-**Quoting is real; booking is not.** Rate quotes come from the Shiprocket provider through the orchestrator. Shipment booking is called from `server/checkout/order.service.ts` and routed to `providers/_placeholder/mock.booking.ts`, which returns a generated AWB and a placeholder tracking URL rather than contacting a carrier.
+**Both are real, but booking is the first, scoped slice of [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), not the full spec.** `IShippingProvider.createShipment()` books through the same Shiprocket provider that quotes, called from `OrderService.fulfillOrder()` (`server/checkout/order.service.ts`), which runs automatically right after payment confirms (`onPaymentConfirmed`). `providers/_placeholder/mock.booking.ts` is deleted — nothing in application code returns a fake AWB any more.
 
-It sits under `providers/` because that is where an implementation of the carrier boundary belongs, and it is prefixed `_placeholder` because it is not one. That naming is the safeguard: it cannot be mistaken for a real provider at a call site or in a directory listing. [shipping-fulfilment](../../docs/specs/shipping-fulfilment/) deletes it.
+What this slice does: books one real order + AWB per shipment, idempotently (the shipment's own code is sent as the provider's order id on every retry, so a repeated attempt cannot double-book), and marks a shipment `failed` with the courier's error recorded rather than silently appearing fulfilled. A customer gets a real, working tracking link.
 
-Unifying them is [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), which is gated on a product decision and on [product-weight-and-rates](../../docs/specs/product-weight-and-rates/).
+What it deliberately does not do yet (the rest of the spec's 5-PR plan): no webhook-driven status sync (R5) — a shipment's status after booking is not updated as the parcel moves. No cancellation propagation (R6). No automatic pickup scheduling — Shiprocket's `SCHEDULE_PICKUP` endpoint is unused, so a booked shipment still needs a pickup requested through Shiprocket directly or a follow-up PR. No handling for the TRD's open questions Q2 (courier-charge variance) or Q4 (an order stuck on repeated booking failure) — a failed shipment surfaces only as `status: "failed"` with `shippingMeta.fulfillmentError`, read today by nothing in the admin UI.
+
+The pickup location a shipment books against is `OrgAddress.name` (or `providerRef` if set) — this must match a pickup location nickname already registered in the connected Shiprocket account, and `OrgAddress.contactName`/`contactPhone` must be filled in, or booking fails fast with `NonRetryableError` rather than sending Shiprocket incomplete data.
 
 ## Weight
 
