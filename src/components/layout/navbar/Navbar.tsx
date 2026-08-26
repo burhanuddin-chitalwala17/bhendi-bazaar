@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
 import { Button } from "@/components/ui/button";
 import { NavbarSearch } from "./NavbarSearch";
-import { CategoriesDropdown } from "./CategoriesDropdown";
 import { ProfileMenu } from "./ProfileMenu";
 import Image from "next/image";
 import { APP_NAME, LOGO } from "@/lib/config";
@@ -24,9 +23,9 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
-      {/* One compact row on a phone — logo, search, account. Categories, cart, and
-          orders moved down to MobileTabBar rather than disappearing, so nothing the
-          old second row carried was lost (ADR-0015 rule 2, ADR-0016). */}
+      {/* One compact row on a phone — logo, search, account. Cart and orders live in
+          MobileTabBar; categories are the lane row the pages render below this, so
+          nothing the old second row carried was lost (ADR-0015 rule 2, ADR-0016). */}
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image
@@ -38,11 +37,6 @@ export function Navbar() {
             className="h-8 w-auto sm:h-16"
           />
         </Link>
-
-        {/* Categories dropdown is desktop-only; the tab bar's sheet replaces it. */}
-        <div className="hidden shrink-0 md:block">
-          <CategoriesDropdown />
-        </div>
 
         <NavbarSearch />
 

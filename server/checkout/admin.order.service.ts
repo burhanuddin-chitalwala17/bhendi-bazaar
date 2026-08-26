@@ -4,7 +4,7 @@
  */
 
 import { adminOrderRepository } from "@server/checkout/admin.order.repository";
-import { adminLogRepository } from "@server/shared/audit/audit.repository";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   OrderListFilters,
   OrderListResult,
@@ -58,7 +58,7 @@ export class AdminOrderService {
     const order = await adminOrderRepository.updateOrderStatus(id, data);
 
     if (order) {
-      await adminLogRepository.createLog({
+      await recordAdminAction({
         adminId,
         action: "ORDER_UPDATED",
         resource: "Order",
@@ -84,7 +84,7 @@ export class AdminOrderService {
 
     const count = await adminOrderRepository.bulkUpdateStatus(orderIds, status);
 
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId,
       action: "ORDERS_BULK_UPDATED",
       resource: "Order",

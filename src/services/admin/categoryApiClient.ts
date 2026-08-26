@@ -3,6 +3,7 @@
  * Handles API calls for category management
  */
 
+import { readApiError } from "@/lib/api-error";
 import type {
   AdminCategory,
   CategoryListFilters,
@@ -28,10 +29,7 @@ class AdminCategoryService {
 
     const response = await fetch(`/api/admin/categories?${params.toString()}`);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch categories");
-    }
+    if (!response.ok) throw await readApiError(response);
 
     return response.json();
   }
@@ -42,10 +40,7 @@ class AdminCategoryService {
   async getCategoryById(id: string): Promise<AdminCategory> {
     const response = await fetch(`/api/admin/categories/${id}`);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch category");
-    }
+    if (!response.ok) throw await readApiError(response);
 
     return response.json();
   }
@@ -60,10 +55,7 @@ class AdminCategoryService {
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to create category");
-    }
+    if (!response.ok) throw await readApiError(response);
 
     return response.json();
   }
@@ -81,10 +73,7 @@ class AdminCategoryService {
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to update category");
-    }
+    if (!response.ok) throw await readApiError(response);
 
     return response.json();
   }
@@ -97,10 +86,7 @@ class AdminCategoryService {
       method: "DELETE",
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to delete category");
-    }
+    if (!response.ok) throw await readApiError(response);
   }
 }
 

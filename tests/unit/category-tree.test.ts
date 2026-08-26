@@ -5,7 +5,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
+  collectAncestorIds,
   collectSubtreeIds,
+  flattenDescendantIds,
   wouldCreateCycle,
   type CategoryTreeNode,
 } from "@server/catalog/category.tree";
@@ -83,6 +85,85 @@ describe("wouldCreateCycle", () => {
       { id: "c", parentId: null },
     ];
     expect(wouldCreateCycle(corrupt, "c", "a")).toBe(false);
+  });
+});
+
+// The storefront's lane row: descend-only, so what these return is exactly what a
+// page may offer and never a route back to where the shopper already is.
+describe("flattenDescendantIds", () => {
+  it("returns the whole tree, shallowest first, for the home page", () => {
+    expect(flattenDescendantIds(tree, null)).toEqual([
+      "ridas",
+      "kurtas",
+      "bridal-ridas",
+      "daily-ridas",
+      "heavy-bridal",
+    ]);
+  });
+
+  it("excludes the category itself — a page never offers where you are", () => {
+    expect(flattenDescendantIds(tree, "ridas")).not.toContain("ridas");
+  });
+
+  it("returns the whole subtree, not just the immediate children", () => {
+    expect(flattenDescendantIds(tree, "ridas")).toEqual([
+      "bridal-ridas",
+      "daily-ridas",
+      "heavy-bridal",
+    ]);
+  });
+
+  it("returns nothing for a leaf, so the row renders nothing", () => {
+    expect(flattenDescendantIds(tree, "heavy-bridal")).toEqual([]);
+  });
+
+  it("omits ancestors and siblings from a mid-tree page", () => {
+    expect(flattenDescendantIds(tree, "bridal-ridas")).toEqual(["heavy-bridal"]);
+  });
+
+  it("preserves input order among siblings, which is the `order` column", () => {
+    const reordered: CategoryTreeNode[] = [
+      { id: "kurtas", parentId: null },
+      { id: "ridas", parentId: null },
+    ];
+    expect(flattenDescendantIds(reordered, null)).toEqual(["kurtas", "ridas"]);
+  });
+
+  it("matches nothing for an unknown root rather than everything", () => {
+    expect(flattenDescendantIds(tree, "not-a-category")).toEqual([]);
+  });
+
+  it("terminates on already-corrupt data instead of hanging", () => {
+    const corrupt: CategoryTreeNode[] = [
+      { id: "a", parentId: "b" },
+      { id: "b", parentId: "a" },
+    ];
+    expect(flattenDescendantIds(corrupt, "a").sort()).toEqual(["b"]);
+  });
+});
+
+describe("collectAncestorIds", () => {
+  it("returns the trail root-first, excluding the category itself", () => {
+    expect(collectAncestorIds(tree, "heavy-bridal")).toEqual([
+      "ridas",
+      "bridal-ridas",
+    ]);
+  });
+
+  it("returns nothing for a root", () => {
+    expect(collectAncestorIds(tree, "ridas")).toEqual([]);
+  });
+
+  it("returns nothing for an unknown category", () => {
+    expect(collectAncestorIds(tree, "not-a-category")).toEqual([]);
+  });
+
+  it("terminates on already-corrupt data instead of hanging", () => {
+    const corrupt: CategoryTreeNode[] = [
+      { id: "a", parentId: "b" },
+      { id: "b", parentId: "a" },
+    ];
+    expect(collectAncestorIds(corrupt, "a")).toEqual(["b"]);
   });
 });
 

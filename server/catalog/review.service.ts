@@ -4,7 +4,7 @@
  */
 
 import { adminReviewRepository } from "@server/catalog/review.repository";
-import { adminLogRepository } from "@server/shared/audit/audit.repository";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   ReviewListFilters,
   ReviewListResult,
@@ -59,7 +59,7 @@ export class AdminReviewService {
             : "REVIEW_UNAPPROVED"
           : "REVIEW_UPDATED";
 
-      await adminLogRepository.createLog({
+      await recordAdminAction({
         adminId,
         action,
         resource: "Review",
@@ -87,7 +87,7 @@ export class AdminReviewService {
 
     await adminReviewRepository.deleteReview(id);
 
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId,
       action: "REVIEW_DELETED",
       resource: "Review",

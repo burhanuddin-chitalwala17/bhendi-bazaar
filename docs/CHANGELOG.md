@@ -10,6 +10,50 @@
 
 ## Entries
 
+## [PR-77] 2026-08-27 — Categories come out of the dropdown and become a lane row
+
+The storefront's category navigation was a desktop dropdown plus a phone bottom-sheet, both fetching the list from the browser on every page. It is now one flat, scrollable row of tiles that every page renders inline — no trigger, no client fetch, no second component for the phone.
+
+**The rule is descend-only.** A page draws its own descendants and nothing else: home draws the whole tree, a category draws its entire subtree, a leaf draws nothing and the row disappears. The current category, its ancestors and its siblings are all absent, so the set shrinks with every descent and there is no active state to draw. `flattenDescendantIds` (`server/catalog/category.tree.ts`) is breadth-first so the shallowest lanes reach the visible left end of a single scrolling line, and preserves input order within a level — which is how siblings inherit `order` without the pure module knowing the column exists.
+
+**Fixed on contact: the home page was rendering the whole category table flat.** `categoriesDAL.getCategories()` returns every row, and home fed it straight to `CategorySections` — so the first child category created in the admin would have appeared on the homepage beside its own parent. Home now asks for the tree from the root, and the answer is ordered.
+
+`CategoryLanes` and `CategoryBreadcrumb` are **server components**: display over data the page already reads, so a route handler for either would be a round trip bought for nothing. Both ride `allCategories()`, the repository's request-memoised read, so the tiles cost no database operation the product grid was not already paying for. The breadcrumb exists because descend-only leaves no route back up the tree — a shopper landing on a leaf from search would otherwise have only the logo.
+
+**Removed:** `CategoriesDropdown`, `CategorySheet`, `CategorySections` — the first two replaced, the third an unordered second rendering of the same list on the same page. `GET /api/categories` and `categoryApiClient` go with them: their only two callers were the deleted components, and a route handler with no browser caller is a fetch of data a server component already had. `categoryService.getCategories()` stays — search suggestions still use it. The phone tab bar drops to four tabs; browsing is now something the page shows rather than a destination.
+
+`ServerCategory` and the storefront `Category` both gain `id` and `parentId`, which the repository was already returning and the types were under-declaring. No wire shape changed — the only route that sent this DTO is the one deleted — so this is not a `[CONTRACT]` change.
+
+**Known gap:** tiles centre-crop the 1200×600 `heroImage`, which is often the wrong 600×600. A nullable square `thumbnail` with this crop as its fallback is the follow-up; it needs a migration plus its field in the category form and the bulk sheet, and is deliberately not in this PR.
+
+## [PR-76] 2026-08-23 — The category sheet takes names, and the theme colour is a dropdown
+
+Three fixes to bulk category upload, all of them about a sheet not telling you what it wants.
+
+**`parent` accepts the parent's name.** It was compared literally against slugs, so a category named `Men's Clothing` could not be referenced at all: its slug is `men-s-clothing`, which nobody guesses and nothing in the sheet or the wizard ever showed. `Abayas & Kaftans` was `abayas-kaftans`; `mens clothing` and `Mens Clothing` both failed on a space. The cell is now normalised with `slugify`, which is idempotent on a slug — so the name and the slug both resolve, and you write the parent exactly as you wrote it in its own `name` cell.
+
+Resolution runs off one index shared by validate and create, so the two cannot disagree about which category a cell meant. Existing categories are indexed by slug *and* by name, because a category renamed after creation keeps its original slug (Invariant 4) and the two stop being derivable from each other. A key that reaches two different categories — one's slug is another's name — is refused rather than settled by precedence: a subcategory silently attached to the wrong parent is a wrong tree that says nothing about itself. The one case where precedence is unavoidable is two categories sharing a name; the exact slug wins there, because refusing the word would leave the first unreachable.
+
+**A parent below its child now says so.** The rule that a parent must appear above its children is what makes a cycle unrepresentable, so it stays — but the error said *"neither an existing category slug nor an earlier row of this sheet"* about a row that was plainly in the sheet. It now names the row and says to move it up. A row naming itself is called what it is.
+
+**The accent column is a dropdown.** Eight theme colours existed only as prose on the instructions tab, so the column was free text an admin had to guess at. The sample sheet now carries Excel list validation on `accent` for all 300 rows, set to reject rather than warn, plus a *Theme colours* tab generated from `CATEGORY_ACCENTS` — the same module the UI renders from, so the sheet cannot drift from the palette.
+
+Also: `createCategories` derived `maxOrder` with its own `ORDER BY` query over a table the request had already loaded and memoised. It reads the loaded rows now.
+
+## [PR-75] 2026-08-22 — A completed admin action stops reporting itself as failed
+
+Creating a category in production returned `409 — That adminId no longer exists — pick another`. So did deleting one. Both had worked: the row was created, the rows were deleted. The retry that message invited then failed on the unique slug of the category the "failed" attempt had already created.
+
+The cause was two statements pretending to be one. Every admin service mutated, then appended to `AdminLog`. `AdminLog.adminId` is a foreign key onto `User`, and `session.user.id` is a JWT claim (`token.sub`) that nothing re-checked — so an admin whose row was no longer in the production database kept passing `requirePlatformAdmin` while every trail write raised `P2003`, after the mutation had already committed. `toErrorResponse` did exactly what it should with a foreign-key violation naming a column; the column just happened to belong to a table the request was not about.
+
+Services no longer write the trail themselves. `recordAdminAction` (after a committed mutation — never throws, reports the dropped entry to the platform logs) and `recordAdminActionIn` (inside the caller's transaction — throws with it, so both roll back) replace all sixteen `adminLogRepository.createLog` call sites across catalog, checkout, identity, shipping and payouts. Why not simply wrap everything in a transaction is on the record in [ADR-0021](adr/0021-audit-trail-never-fails-the-action.md): shipping logs `PROVIDER_CONNECTION_FAILED` from a `catch`, and an entry recording a failure must outlive the operation it records.
+
+The dangling id is fixed where it originates. `requirePlatformAdmin` now re-reads the row behind `session.user.id` and refuses a session whose user is gone (401, "sign out and sign in again"), demoted, or blocked (403) — one primary-key read on a low-traffic surface, which also revokes a demoted admin immediately instead of at token expiry. `createLog` stopped joining `User` to return a name nothing reads, so the net query cost of an admin mutation is unchanged.
+
+Two things found alongside: the categories page fired `toast.success("Category deleted successfully!")` twice on every delete — once from `useMutation`'s `successMessage` and once from a `.then` on the same call — and its API client hand-read the error envelope, dropping `details` before a form could attribute anything ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)). Both corrected; the reorder path gets its success message from the hook now too.
+
+Diagnosed from `vercel logs --environment production --since 24h`, which had all five requests with their Prisma errors attached.
+
 ## [PR-74] 2026-08-21 — The seed guard becomes a control, and gets tested
 
 Invariant 7's protection rested on one procedural rule: never set `SEED_ALLOWED_DATABASE_URL` in a deployment environment. That variable is matched before any host check, so setting it in Vercel would have made `prisma db seed` wipe production — a documented "don't" as the last line of defence, which is the same shape of gap that left the invariant unimplemented for months.

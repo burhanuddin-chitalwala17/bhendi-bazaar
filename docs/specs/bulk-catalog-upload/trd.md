@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
-- **Verified:** 2026-08-21
+- **Verified:** 2026-08-23
 - **References:** [spec.md](spec.md), [sheet-parsing-options.md](sheet-parsing-options.md), [ADR-0002](../../adr/0002-server-holds-pricing-authority.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -46,8 +46,13 @@ attempts leave no orphaned blobs.
   the whole transaction and maps to the same row-error shape. Caps: 300 rows/sheet,
   10 images/product, existing 5MB/image (MAX_IMAGE_BYTES).
 - D6 — **Categories are the admin variant of the same core:** shared parse/validate
-  module, category row schema, parent resolved by slug; the existing cycle-refusal
-  on the category write path is the guard, unchanged.
+  module, category row schema; the existing cycle-refusal on the category write path
+  is the guard, unchanged. A `parent` cell is normalised with `slugify` — idempotent
+  on a slug — so it accepts the parent's name or its slug, and resolves against
+  existing categories (by slug *and* by name, since a rename freezes the slug) or a
+  row above it. One index serves validate and create, so they cannot disagree about
+  which category a cell meant. A key reaching two different categories is refused,
+  not resolved by precedence.
 - D11 — **Images are identified by relative path, matched by trailing segments.**
   A folder upload carries `webkitRelativePath`; a reference matches a file when it
   is the whole path or a trailing run of whole segments, so the sheet need not know

@@ -6,8 +6,8 @@
  * Counting works through the PRISMA_LOG_QUERIES instrument in
  * server/shared/prisma.ts — set before the client module loads, spied via
  * console.log. Request-level deduplication (React cache) is invisible here
- * because vitest has no request scope; scripts/measure-db-ops.sh measures that
- * end-to-end against the dev server.
+ * because vitest has no request scope: these are per-call budgets, and a
+ * rendered page pays less than their sum.
  *
  * Budgets are exact today. The PRODUCT_INCLUDE reads run relationLoadStrategy
  * "join" (one LATERAL JOIN), so a budget of 1 is the contract: a bust means the
@@ -114,7 +114,7 @@ describe.skipIf(!isLocalDb)("db ops budgets (local seeded db)", () => {
   it("getOfferProducts stays within budget", async () => {
     // 2 for the price context (no request dedupe in vitest) + 1 joined product
     // read. On a rendered page the context is request-shared, so the real
-    // marginal cost is the product read alone — measure-db-ops.sh proves that.
+    // marginal cost is the product read alone.
     const n = await countQueries(() => productsRepository.getOfferProducts(4));
     expect(n).toBeLessThanOrEqual(3);
   });

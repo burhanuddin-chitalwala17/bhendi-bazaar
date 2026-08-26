@@ -6,7 +6,7 @@
 import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
 import { categoryRepository } from "@server/catalog/category.repository";
 import { wouldCreateCycle } from "@server/catalog/category.tree";
-import { adminLogRepository } from "@server/shared/audit/audit.repository";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   CategoryListFilters,
   CategoryListResult,
@@ -68,7 +68,7 @@ export class AdminCategoryService {
 
     const category = await adminCategoryRepository.createCategory(data);
 
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId,
       action: "CATEGORY_CREATED",
       resource: "Category",
@@ -105,7 +105,7 @@ export class AdminCategoryService {
     const category = await adminCategoryRepository.updateCategory(id, data);
 
     if (category) {
-      await adminLogRepository.createLog({
+      await recordAdminAction({
         adminId,
         action: "CATEGORY_UPDATED",
         resource: "Category",
@@ -144,7 +144,7 @@ export class AdminCategoryService {
 
     await adminCategoryRepository.deleteCategory(id);
 
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId,
       action: "CATEGORY_DELETED",
       resource: "Category",
