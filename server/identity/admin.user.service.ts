@@ -4,7 +4,7 @@
  */
 
 import { adminUserRepository } from "@server/identity/admin.user.repository";
-import { adminLogRepository } from "@server/shared/audit/audit.repository";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   UserListFilters,
   UserListResult,
@@ -60,7 +60,7 @@ export class AdminUserService {
 
     if (user) {
       // Log the action
-      await adminLogRepository.createLog({
+      await recordAdminAction({
         adminId,
         action: "USER_UPDATED",
         resource: "User",
@@ -83,7 +83,7 @@ export class AdminUserService {
     const user = await adminUserRepository.updateUser(id, { isBlocked });
 
     if (user) {
-      await adminLogRepository.createLog({
+      await recordAdminAction({
         adminId,
         action: isBlocked ? "USER_BLOCKED" : "USER_UNBLOCKED",
         resource: "User",

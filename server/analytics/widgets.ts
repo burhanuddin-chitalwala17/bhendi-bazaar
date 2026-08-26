@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@server/shared/prisma";
 
 /**
@@ -39,6 +40,26 @@ export interface WidgetDefinition {
 
 const orgScope = (ctx: WidgetContext) => (ctx.audience === "org" ? { orgId: ctx.orgId } : {});
 
+/**
+ * Reads shared by more than one widget, memoised per request (the loadPriceContext
+ * pattern). Widgets stay independently declared; what they stop doing is buying
+ * the same rows twice in one render (PR-72).
+ */
+const productStockRows = cache(async (orgId: string | null) =>
+  prisma.product.findMany({
+    where: orgId === null ? {} : { orgId },
+    select: { lowStockThreshold: true, stockLocations: { select: { quantity: true } } },
+  })
+);
+
+const paidOrderTotals = cache(async () =>
+  prisma.order.aggregate({
+    where: { paymentStatus: "paid" },
+    _sum: { grandTotal: true },
+    _count: true,
+  })
+);
+
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
     key: "products",
@@ -49,7 +70,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     href: "/products",
     fetch: async (ctx) => ({
       kind: "count",
-      value: await prisma.product.count({ where: orgScope(ctx) }),
+      value: (await productStockRows(ctx.audience === "org" ? ctx.orgId : null)).length,
     }),
   },
   {
@@ -60,10 +81,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     scope: "Product.orgId",
     href: "/products",
     fetch: async (ctx) => {
-      const products = await prisma.product.findMany({
-        where: orgScope(ctx),
-        select: { lowStockThreshold: true, stockLocations: { select: { quantity: true } } },
-      });
+      const products = await productStockRows(ctx.audience === "org" ? ctx.orgId : null);
       const low = products.filter((product) => {
         const total = product.stockLocations.reduce((sum, row) => sum + row.quantity, 0);
         return total > 0 && total <= product.lowStockThreshold;
@@ -115,10 +133,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     scope: "the org's parcels' item value on paid orders (ShipmentItem × unitPrice)",
     fetch: async (ctx) => {
       if (ctx.audience === "platform") {
-        const paid = await prisma.order.aggregate({
-          where: { paymentStatus: "paid" },
-          _sum: { grandTotal: true },
-        });
+        const paid = await paidOrderTotals();
         return { kind: "money", value: paid._sum.grandTotal ?? 0, caption: "all paid orders" };
       }
       // The attribution order-and-cart-lines exists for: this org's parcel lines,
@@ -151,11 +166,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     icon: "trend",
     audience: "platform",
     fetch: async () => {
-      const paid = await prisma.order.aggregate({
-        where: { paymentStatus: "paid" },
-        _sum: { grandTotal: true },
-        _count: true,
-      });
+      const paid = await paidOrderTotals();
       const count = paid._count;
       return {
         kind: "money",

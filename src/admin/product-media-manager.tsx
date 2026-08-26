@@ -30,12 +30,18 @@ interface ProductMediaManagerProps {
   onChange: (media: ProductMediaInput[]) => void;
   /** Upload route — the caller knows whose guard applies (admin vs org member). */
   endpoint?: string;
+  /** The product's name — names the blob path instead of the `unnamed-` fallback. */
+  identifier?: string;
+  /** Owning org, so admin uploads land under the org's folder. */
+  orgId?: string;
 }
 
 export function ProductMediaManager({
   value,
   onChange,
   endpoint = "/api/admin/upload",
+  identifier,
+  orgId,
 }: ProductMediaManagerProps) {
   const media = value ?? [];
   const [isUploading, setIsUploading] = useState(false);
@@ -59,6 +65,8 @@ export function ProductMediaManager({
     try {
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
+      if (identifier) formData.append("identifier", identifier);
+      if (orgId) formData.append("orgId", orgId);
       const response = await fetch(`${endpoint}?type=products`, { method: "POST", body: formData });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));

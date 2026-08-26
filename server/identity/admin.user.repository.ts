@@ -50,6 +50,7 @@ export class AdminUserRepository {
     // Get users with order aggregation
     const [users, total] = await Promise.all([
       prisma.user.findMany({
+        relationLoadStrategy: "join",
         where,
         skip,
         take: limit,
@@ -94,6 +95,7 @@ export class AdminUserRepository {
    */
   async getUserById(id: string): Promise<AdminUser | null> {
     const user = await prisma.user.findUnique({
+      relationLoadStrategy: "join",
       where: { id },
       include: {
         _count: {

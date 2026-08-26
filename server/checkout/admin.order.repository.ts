@@ -66,6 +66,7 @@ export class AdminOrderRepository {
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
+        relationLoadStrategy: "join",
         where,
         skip,
         take: limit,
@@ -105,6 +106,7 @@ export class AdminOrderRepository {
    */
   async getOrderById(id: string) {
     const order = await prisma.order.findUnique({
+      relationLoadStrategy: "join",
       where: { id },
       include: {
         user: {

@@ -14,6 +14,7 @@
 
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import { adminLogRepository } from "@server/shared/audit/audit.repository";
+import { recordAdminAction, recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { ledgerRepository } from "@server/payouts/ledger.repository";
 import { prisma } from "@server/shared/prisma";
 
@@ -52,7 +53,7 @@ export class SettlementService {
 
     const updated = await ledgerRepository.updateEntry(entryId, { ...edit, isManuallyEdited: true });
 
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId: actorId,
       action: "LEDGER_ENTRY_EDITED",
       resource: "OrgLedgerEntry",
@@ -86,7 +87,7 @@ export class SettlementService {
       deletedAt: new Date(),
       note: reason,
     });
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId: actorId,
       action: "LEDGER_ENTRY_REMOVED",
       resource: "OrgLedgerEntry",
@@ -99,7 +100,7 @@ export class SettlementService {
   /** Put a removed entry back. */
   async restoreEntry(entryId: string, actorId: string) {
     const restored = await ledgerRepository.updateEntry(entryId, { deletedAt: null });
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId: actorId,
       action: "LEDGER_ENTRY_RESTORED",
       resource: "OrgLedgerEntry",
@@ -191,7 +192,7 @@ export class SettlementService {
           },
           tx
         );
-        await adminLogRepository.createLog({
+        await recordAdminActionIn(tx, {
           adminId: actorId,
           action: "SETTLEMENT_PAID",
           resource: "Settlement",
@@ -207,7 +208,7 @@ export class SettlementService {
         tx
       );
       await ledgerRepository.releaseSettlementEntries(id, tx);
-      await adminLogRepository.createLog({
+      await recordAdminActionIn(tx, {
         adminId: actorId,
         action: "SETTLEMENT_CANCELLED",
         resource: "Settlement",

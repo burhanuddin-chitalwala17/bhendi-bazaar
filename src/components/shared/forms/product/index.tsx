@@ -179,6 +179,8 @@ export function ProductForm({
                   value={field.value as ProductMediaInput[]}
                   onChange={field.onChange}
                   endpoint={uploadEndpoint}
+                  identifier={watch("name")}
+                  orgId={watch("orgId")}
                 />
               )}
             />

@@ -531,6 +531,7 @@ export class OrderService {
     // and the pickup location each shipment was allocated from (its name is the
     // courier pickup nickname — stock-locations D5/D6 / OrgAddress.name).
     const order = await prisma.order.findUnique({
+      relationLoadStrategy: "join",
       where: { id: orderId },
       include: {
         shipments: {

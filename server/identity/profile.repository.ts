@@ -34,6 +34,7 @@ export class ProfileRepository {
    */
   async getByUserId(userId: string): Promise<ServerProfileData | null> {
     const user = await prisma.user.findUnique({
+      relationLoadStrategy: "join",
       where: { id: userId },
       include: { profile: true },
     });
@@ -156,6 +157,7 @@ export class ProfileRepository {
 
     // Get the user with profile
     const user = await prisma.user.findUnique({
+      relationLoadStrategy: "join",
       where: { id: userId },
       include: { profile: true },
     });

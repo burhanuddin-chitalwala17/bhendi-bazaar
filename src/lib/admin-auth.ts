@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
+import { prisma } from "@server/shared/prisma";
 import { UnauthorizedError, ForbiddenError } from "@server/shared/domain-error";
 
 /**
@@ -17,12 +18,39 @@ export async function requireSession(): Promise<Session> {
   return session;
 }
 
-/** The session, having established that this person runs the platform. */
+/**
+ * The session, having established that this person runs the platform.
+ *
+ * The role and the id both arrive as JWT claims minted at sign-in, so they outlive
+ * the row they describe. Re-reading the row is what makes an admin id safe to use as
+ * a foreign key: a deleted admin kept passing this check until `AdminLog.adminId`
+ * rejected it, by which point the category write had already committed and the
+ * failure was reported against an operation that had succeeded. It also revokes a
+ * demoted or blocked admin now rather than at token expiry.
+ *
+ * One primary-key read per admin request. The platform portal is low-traffic, and an
+ * unverifiable claim is not a cheaper answer — it is a wrong one.
+ */
 export async function requirePlatformAdmin(): Promise<Session> {
   const session = await requireSession();
   if (session.user.platformRole !== "ADMIN") {
     throw new ForbiddenError("This area is restricted to platform administrators");
   }
+
+  const admin = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { platformRole: true, isBlocked: true },
+  });
+
+  if (!admin) {
+    throw new UnauthorizedError(
+      "Your session is no longer valid. Sign out and sign in again."
+    );
+  }
+  if (admin.isBlocked || admin.platformRole !== "ADMIN") {
+    throw new ForbiddenError("This area is restricted to platform administrators");
+  }
+
   return session;
 }
 

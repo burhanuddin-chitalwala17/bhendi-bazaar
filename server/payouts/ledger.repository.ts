@@ -167,6 +167,7 @@ export class LedgerRepository {
   ) {
     const [entries, total] = await Promise.all([
       db.orgLedgerEntry.findMany({
+        relationLoadStrategy: "join",
         where: { orgId },
         include: { lines: true, settlement: { select: { status: true } } },
         orderBy: { createdAt: "desc" },
@@ -209,6 +210,7 @@ export class LedgerRepository {
   /** An entry with the settlement status that decides whether it may be edited. */
   async entryWithSettlement(entryId: string, db: PayoutDb = prisma) {
     return await db.orgLedgerEntry.findUnique({
+      relationLoadStrategy: "join",
       where: { id: entryId },
       include: { settlement: { select: { status: true } } },
     });

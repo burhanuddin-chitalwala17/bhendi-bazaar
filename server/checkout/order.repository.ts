@@ -18,8 +18,11 @@ import { promotionService } from "@server/promotions/promotion.service";
  * the row), `price` = the unit price actually paid (TRD D2), and `thumbnail` = the
  * picture as it stood at purchase (product-video R17).
  */
+// Nested lists are explicitly ordered: under relationLoadStrategy "join" an
+// unordered nested list comes back in arbitrary order, and these are displayed.
 export const SHIPMENT_LINES_INCLUDE = {
   items: {
+    orderBy: { id: "asc" as const },
     include: {
       orderItem: {
         include: {
@@ -120,10 +123,11 @@ export class OrderRepository {
    */
   async listByUserId(userId: string) {
     const orders = await prisma.order.findMany({
+      relationLoadStrategy: "join",
       where: { userId },
       orderBy: { createdAt: "desc" },
       include: {
-        shipments: { include: SHIPMENT_LINES_INCLUDE },
+        shipments: { orderBy: { code: "asc" as const }, include: SHIPMENT_LINES_INCLUDE },
       },
     });
 
@@ -135,9 +139,10 @@ export class OrderRepository {
    */
   async findById(orderId: string) {
     const order = await prisma.order.findUnique({
+      relationLoadStrategy: "join",
       where: { id: orderId },
       include: {
-        shipments: { include: SHIPMENT_LINES_INCLUDE },
+        shipments: { orderBy: { code: "asc" as const }, include: SHIPMENT_LINES_INCLUDE },
       },
     });
 

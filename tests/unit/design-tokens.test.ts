@@ -29,7 +29,7 @@ function tsxFiles(dir: string): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) out = out.concat(tsxFiles(path));
-    else if (/\.tsx?$/.test(entry)) out.push(path);
+    else if (/\.tsx?$/.test(entry)) out.push(path.replace(/\\/g, "/"));
   }
   return out;
 }

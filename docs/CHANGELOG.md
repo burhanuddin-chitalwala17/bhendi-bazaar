@@ -10,21 +10,21 @@
 
 ## Entries
 
-## [PR-76] 2026-08-25 — Every payment confirmation was crashing with a 500
+## [PR-83] 2026-08-25 — Every payment confirmation was crashing with a 500
 
-PR-75's item list for the purchase confirmation email fed `order.shipments[].items` through `toWireShipmentItems()` — but `orderRepository.findById()` already returns that array in wire shape (`withWireItems()` calls the same mapper internally). Applying it twice tried to read `.orderItem.productId` off an object that no longer has an `orderItem` at all, throwing `TypeError: Cannot read properties of undefined (reading 'productId')` out of `OrderService.onPaymentConfirmed()` — reached from both the Razorpay browser-return and webhook paths, so **every** payment confirmation failed with a 500 rather than just missing an email.
+PR-82's item list for the purchase confirmation email fed `order.shipments[].items` through `toWireShipmentItems()` — but `orderRepository.findById()` already returns that array in wire shape (`withWireItems()` calls the same mapper internally). Applying it twice tried to read `.orderItem.productId` off an object that no longer has an `orderItem` at all, throwing `TypeError: Cannot read properties of undefined (reading 'productId')` out of `OrderService.onPaymentConfirmed()` — reached from both the Razorpay browser-return and webhook paths, so **every** payment confirmation failed with a 500 rather than just missing an email.
 
 `onPaymentConfirmed` now uses `order.shipments.flatMap((s) => s.items)` directly — the array is already what `OrderEmailView.items` needs.
 
 This shipped past `tsc` clean because `withWireItems()`'s declared return type was wrong in a way that made the bug invisible: its second generic parameter inferred down to its own bare constraint (`{ legacyItems?: unknown; items: ShipmentLineRow[] }`), erasing every field a shipment actually carries beyond `items`/`legacyItems` from the *declared* type — including, critically, the fact that `items` had already been transformed. The broken code and the fixed code both "type-checked" against that wrong declaration; only the broken one crashed. `withWireItems()`'s return type is now derived via an indexed access on the input (`O["shipments"][number]`) instead of an independently-constrained type parameter, which correctly preserves every field through the transformation — a type-precision fix only, the wire JSON these functions produce hasn't changed — and every caller of `orderRepository.findById()`/`listByUserId()` and their `admin.order.repository.ts` counterparts now sees the real shape. Covered by three new cases in `tests/unit/order-lines.test.ts`, including one that directly re-creates the crash (calling `toWireShipmentItems` on an already-wire array throws).
 
-## [PR-75] 2026-08-25 — A logged-in buyer with no email on their delivery address never got order emails
+## [PR-82] 2026-08-25 — A logged-in buyer with no email on their delivery address never got order emails
 
 The delivery-address form's email field is optional and separate from account login ("Optional — for order updates"), so most orders' `address.email` was empty — and both the purchase-confirmation and shipment-tracking emails only sent `if (deliveryAddress?.email)`. A signed-in buyer with a perfectly good account email got neither, silently.
 
 `OrderService.resolveContactEmail()` now falls back to the signed-in buyer's account email (`profileRepository.getEmailByUserId()`, a new light read that doesn't pay for `getByUserId()`'s profile-row creation and address-book load) when the delivery address doesn't carry one. A guest order without an email in the form still gets nothing — there's no account to fall back to.
 
-## [PR-74] 2026-08-25 — Real shipment booking, and the tracking email it makes possible
+## [PR-81] 2026-08-25 — Real shipment booking, and the tracking email it makes possible
 
 Picks up the first scoped slice of [shipping-fulfilment](specs/shipping-fulfilment/) (deferred 2026-08-10): a paid order now books a real shipment with Shiprocket and gets a real, working tracking link, rather than the deleted `providers/_placeholder/mock.booking.ts` placeholder's generated AWB that led nowhere.
 
@@ -38,27 +38,27 @@ A new `sendShipmentTrackingEmail` (`server/notifications/templates/shipmentTrack
 
 **External dependency this doesn't remove:** each org's pickup location (`OrgAddress.name`, or `providerRef` if set) must already exist as a registered pickup nickname inside the connected Shiprocket account, with `contactName`/`contactPhone` filled in — booking fails fast with a clear error otherwise rather than sending Shiprocket incomplete data.
 
-## [PR-73] 2026-08-25 — A newly-connected shipping provider never became available without a server restart
+## [PR-80] 2026-08-25 — A newly-connected shipping provider never became available without a server restart
 
 `initializeShippingModule()` (`server/shipping/init.ts`) auto-runs once at server start, before any provider is necessarily connected. It set `isInitialized = true` unconditionally once `loadProviders()` returned — including when zero providers loaded, which is the normal state before anyone has connected one. Every later request to `/api/shipping/rates` correctly detected zero providers and called `initializeShippingModule()` again to pick up a newly-connected one, but that call hit the now-permanent `isInitialized` cache and returned instantly without re-querying the database. Connecting Shiprocket from `/admin/shipping/providers` afterward had no way to reach the running process — only a full restart picked it up.
 
 `isInitialized` is now `loadedCount > 0` — zero providers is treated as "not yet initialized" rather than a cached success, so the existing retry-on-empty logic in `route.ts` can actually retry.
 
-## [PR-72] 2026-08-25 — The Shiprocket connect/list endpoints were sending the live carrier bearer token to the browser
+## [PR-79] 2026-08-25 — The Shiprocket connect/list endpoints were sending the live carrier bearer token to the browser
 
 ADR-0002 rule 3 says a response never carries `authToken`, `accountInfo`, or an auth error — but nothing enforced it. `GET /api/admin/shipping/providers` and the provider-by-id read returned the raw Prisma row with no `select`, so the plaintext Shiprocket bearer token (`authToken`) and the encrypted-password blob went straight to the browser on every load of `/admin/shipping/providers`. `POST .../connect` was worse: `AdminConnectionService.connect()` is typed to return `AdminConnectionResult`, which correctly omits `token` — but the implementation just did `return connectionResult`, the raw object, which still had it. TypeScript's structural typing doesn't strip fields at runtime; the return type was a promise nothing built, and the connect response leaked the live token directly.
 
 `server/shipping/utils/safe-provider.ts` is now the one place that projects a `ShippingProvider` row down to what a client may see — drops `authToken`/`authError` entirely, keeps `accountInfo.email` (the admin UI's "connected as" line) and drops `accountInfo.password`. `admin.shipping.service.ts`'s list/detail reads and `connection.service.ts`'s connect response both go through it now, and the admin audit log's `PROVIDER_CONNECTED` entry no longer stores the password ciphertext either. Also removed `ShippingProviderRepository.connectAccount()` — dead code, unused, and would have double-encrypted an already-encrypted password had anything ever called it. Covered by `tests/unit/shipping-provider-credential-safety.test.ts`.
 
-No credential was actually compromised by this in production — no Shiprocket account had been connected yet ([PR-71](#pr-71-2026-08-25--blocked-couriers-could-still-win-a-rate-slot-and-local-dev-had-no-shipping-provider-row) added the row, uncredentialed, the same day this was found before anyone connected through the admin UI).
+No credential was actually compromised by this in production — no Shiprocket account had been connected yet ([PR-78](#pr-78-2026-08-25--blocked-couriers-could-still-win-a-rate-slot-and-local-dev-had-no-shipping-provider-row) added the row, uncredentialed, the same day this was found before anyone connected through the admin UI).
 
-## [PR-71] 2026-08-25 — Blocked couriers could still win a rate slot, and local dev had no shipping provider row
+## [PR-78] 2026-08-25 — Blocked couriers could still win a rate slot, and local dev had no shipping provider row
 
 `getBestRatesByDeliveryDays` (`server/shipping/services/orchestrator.service.ts`) computed `availableRates` — rates with a blocked courier filtered out — but then grouped the cheapest-per-delivery-day winners from the original `rates` array instead of the filtered one. A blocked courier that happened to be cheapest for its delivery-day slot could still be quoted to a buyer. The grouping loop now iterates `availableRates`. Covered by `tests/unit/shipping-best-rates.test.ts`.
 
 Separately, checkout was stuck at "Please select shipping for 1 item group(s)" with no way past it: the local database's `ShippingProvider` table was empty, so `/api/shipping/rates` had nothing to quote from and returned 503 for every group. The registering migration (`20260816030000_register_shiprocket_provider`, PR-68) was applied, but the row was gone — the destructive `prisma/seed.ts` deletes `ShippingProvider` early and re-seeds it near the end, and a crash partway through (missing `orgAddress.deleteMany()` before `address.deleteMany()`, fixed separately) left the delete without its recreation. The row is reinserted, uncredentialed (`isConnected: false`), matching the migration exactly — connect it from `/admin/shipping/providers` per [OPERATIONS.md](OPERATIONS.md#connecting-a-shipping-provider).
 
-## [PR-70] 2026-08-25 — Purchase confirmation email rendered a raw number, and every amount was 100x too large
+## [PR-77] 2026-08-25 — Purchase confirmation email rendered a raw number, and every amount was 100x too large
 
 The purchase confirmation email (`server/notifications/templates/purchaseConfirmationEmail.ts`) was already wired to fire from `OrderService.onPaymentConfirmed()`, but two defects meant it never rendered correctly: the "Order Items" table body was assigned `order.itemsTotal` directly instead of a row per line item, and `formatCurrency` in `server/notifications/formatters.ts` never converted paise to rupees, so a ₹3,600 order displayed as ₹3,60,000 throughout the email.
 
@@ -67,6 +67,98 @@ The purchase confirmation email (`server/notifications/templates/purchaseConfirm
 Tracking numbers/URLs are still not included — `fulfillOrder()`, the only code that would populate them, is not called anywhere yet (pending `shipping-fulfilment`), so the email continues to promise tracking in a separate later email rather than claim it has one.
 
 Covered by `tests/unit/purchase-confirmation-email.test.ts`.
+
+## [PR-76] 2026-08-23 — The category sheet takes names, and the theme colour is a dropdown
+
+Three fixes to bulk category upload, all of them about a sheet not telling you what it wants.
+
+**`parent` accepts the parent's name.** It was compared literally against slugs, so a category named `Men's Clothing` could not be referenced at all: its slug is `men-s-clothing`, which nobody guesses and nothing in the sheet or the wizard ever showed. `Abayas & Kaftans` was `abayas-kaftans`; `mens clothing` and `Mens Clothing` both failed on a space. The cell is now normalised with `slugify`, which is idempotent on a slug — so the name and the slug both resolve, and you write the parent exactly as you wrote it in its own `name` cell.
+
+Resolution runs off one index shared by validate and create, so the two cannot disagree about which category a cell meant. Existing categories are indexed by slug *and* by name, because a category renamed after creation keeps its original slug (Invariant 4) and the two stop being derivable from each other. A key that reaches two different categories — one's slug is another's name — is refused rather than settled by precedence: a subcategory silently attached to the wrong parent is a wrong tree that says nothing about itself. The one case where precedence is unavoidable is two categories sharing a name; the exact slug wins there, because refusing the word would leave the first unreachable.
+
+**A parent below its child now says so.** The rule that a parent must appear above its children is what makes a cycle unrepresentable, so it stays — but the error said *"neither an existing category slug nor an earlier row of this sheet"* about a row that was plainly in the sheet. It now names the row and says to move it up. A row naming itself is called what it is.
+
+**The accent column is a dropdown.** Eight theme colours existed only as prose on the instructions tab, so the column was free text an admin had to guess at. The sample sheet now carries Excel list validation on `accent` for all 300 rows, set to reject rather than warn, plus a *Theme colours* tab generated from `CATEGORY_ACCENTS` — the same module the UI renders from, so the sheet cannot drift from the palette.
+
+Also: `createCategories` derived `maxOrder` with its own `ORDER BY` query over a table the request had already loaded and memoised. It reads the loaded rows now.
+
+## [PR-75] 2026-08-22 — A completed admin action stops reporting itself as failed
+
+Creating a category in production returned `409 — That adminId no longer exists — pick another`. So did deleting one. Both had worked: the row was created, the rows were deleted. The retry that message invited then failed on the unique slug of the category the "failed" attempt had already created.
+
+The cause was two statements pretending to be one. Every admin service mutated, then appended to `AdminLog`. `AdminLog.adminId` is a foreign key onto `User`, and `session.user.id` is a JWT claim (`token.sub`) that nothing re-checked — so an admin whose row was no longer in the production database kept passing `requirePlatformAdmin` while every trail write raised `P2003`, after the mutation had already committed. `toErrorResponse` did exactly what it should with a foreign-key violation naming a column; the column just happened to belong to a table the request was not about.
+
+Services no longer write the trail themselves. `recordAdminAction` (after a committed mutation — never throws, reports the dropped entry to the platform logs) and `recordAdminActionIn` (inside the caller's transaction — throws with it, so both roll back) replace all sixteen `adminLogRepository.createLog` call sites across catalog, checkout, identity, shipping and payouts. Why not simply wrap everything in a transaction is on the record in [ADR-0021](adr/0021-audit-trail-never-fails-the-action.md): shipping logs `PROVIDER_CONNECTION_FAILED` from a `catch`, and an entry recording a failure must outlive the operation it records.
+
+The dangling id is fixed where it originates. `requirePlatformAdmin` now re-reads the row behind `session.user.id` and refuses a session whose user is gone (401, "sign out and sign in again"), demoted, or blocked (403) — one primary-key read on a low-traffic surface, which also revokes a demoted admin immediately instead of at token expiry. `createLog` stopped joining `User` to return a name nothing reads, so the net query cost of an admin mutation is unchanged.
+
+Two things found alongside: the categories page fired `toast.success("Category deleted successfully!")` twice on every delete — once from `useMutation`'s `successMessage` and once from a `.then` on the same call — and its API client hand-read the error envelope, dropping `details` before a form could attribute anything ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)). Both corrected; the reorder path gets its success message from the hook now too.
+
+Diagnosed from `vercel logs --environment production --since 24h`, which had all five requests with their Prisma errors attached.
+
+## [PR-74] 2026-08-21 — The seed guard becomes a control, and gets tested
+
+Invariant 7's protection rested on one procedural rule: never set `SEED_ALLOWED_DATABASE_URL` in a deployment environment. That variable is matched before any host check, so setting it in Vercel would have made `prisma db seed` wipe production — a documented "don't" as the last line of defence, which is the same shape of gap that left the invariant unimplemented for months.
+
+A deployed environment is detectable, so it is now detected: `VERCEL`, `VERCEL_ENV`, `CI`, or `NODE_ENV=production` refuses the seed before `DATABASE_URL`, the destructive flag, or the allowlist is consulted. It can only ever refuse more, never allow more.
+
+The guard also had no test and was not exported, which makes an untested guard indistinguishable from a missing one. The decision is now a pure function in `prisma/seed-guard.ts` — called as the seed's first statement, so it still holds when someone types the raw command — with 13 cases in `tests/unit/seed-guard.test.ts` covering every route to destruction: cloud host, another database on the same local Postgres, missing flag, unparseable URL, unrecognised host (fails closed, as a denylist would not), and the fully-armed deployed case where every permitting variable is set and it must still refuse.
+
+Verified end to end by running the real `npx prisma db seed` against the production connection string: refused. Against it with the destructive flag, the allowlist variable, and `VERCEL=1`: refused. Against the local development database: seeds normally.
+
+## [PR-73] 2026-08-21 — Bulk catalogue upload, and SKUs become the org's own `[CONTRACT]` `[MIGRATION]`
+
+Implements [bulk-catalog-upload](specs/bulk-catalog-upload/spec.md) as five changes in one PR set.
+
+**SKU uniqueness is org-scoped.** `Product.sku` was globally unique, so one org using `ABAYA-001` locked every other org out of it — a platform-wide identifier for a thing that is an org's internal code. Now `@@unique([orgId, sku])`. Loosening cannot collide on existing data, so the migration is a constraint swap. The single-product create and update paths gained the graceful refusal they never had: a duplicate now names the product already wearing the SKU, as a `ConflictError` on the `sku` field, instead of surfacing a raw P2002.
+
+**Blob paths gained structure, and `unnamed-` is gone.** Images now land at `products/<org-code>/<product>/<original-name>-<ts>.<ext>`. The upload utility always accepted an identifier for exactly this; no client ever sent one, so every image since day one took the `"unnamed"` fallback. The forms send it now. Existing flat blobs keep their URLs and stay put.
+
+**The upload itself.** An org member uploads one sheet plus the photos it names; an admin does the same for categories. Validation is a dry run that writes nothing and reports every problem at once with row numbers — unknown category, unknown pickup location, SKU taken (in the sheet or in the org), missing image file, cover that is not one of the row's images, unparseable video link. Only a clean sheet proceeds, so a rejected upload leaves no orphaned blobs. Images go browser → Blob directly through scoped client-upload tokens: a function body is capped at 4.5MB, which is one large photo. Creation is one transaction of `createMany` per table — 3 statements for 300 products, not 1,200 — which is what makes all-or-nothing affordable. Videos ride the existing embedded-reference model ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md)); the cover column names a photo, defaulting to the first. Pickup locations and categories must pre-exist: a location is an address a courier collects from, not a name a column header can invent. The sample sheet is generated per org from live locations and current slugs, so it cannot drift from what validation expects.
+
+**Photos are matched by path, not by name.** Keying the dropped files on their bare filename meant two products could not each have a `front.jpg` — the second silently replaced the first, and one product would have shown the other's photograph. Both wizards now accept a folder (`webkitdirectory`, with plain multi-select kept for phones) and identify files by relative path. A sheet reference resolves against the trailing segments of that path, so `front.jpg` and `emerald-abaya/front.jpg` both work when unambiguous — and when a bare name could mean two files, it is a row error listing the candidates and showing the qualified form to use. The matcher is one pure module shared by the wizard preview and server validation.
+
+Two things the folder picker surfaced on the way: a folder hands back everything it holds, so `.DS_Store` and stray PDFs were being counted and previewed as photographs — the selection is filtered to images now; and the blob-path sanitiser allowed `..` through, because dots are legal inside a segment (they carry the extension) and a traversal segment therefore survives character filtering. It is dropped as a segment now, and both client-upload token routes refuse `.`/`..` outright — a `startsWith` prefix test is not containment when `products/<org>/../elsewhere` satisfies it.
+
+**A cleanup script** (`scripts/cleanup-flat-blobs.ts`) deletes old flat-layout product images once a catalogue is re-onboarded — dry-run by default, deletion behind `CLEANUP_ALLOW_DELETE=1` plus `--delete`, and never touching a file any product still references. It reports which database supplied the keep-set, because the Blob store is shared across environments and that is the one way to get this wrong.
+
+Also here: `tests/integration/` share one local database, and Vitest runs files in parallel — a file creating products raced a file counting them. `fileParallelism: false` fixes it; the suite is ten seconds.
+
+## [PR-72] 2026-08-21 — Dashboards aggregate in the database, not JS
+
+`getDashboardStats` fetched every order row in four date windows to sum one column in JS, asked five separate counts for what one `GROUP BY status` answers, and ran three product queries whose answers all live in one (threshold, quantities) row-set. Consolidated to database-side aggregation: 15 queries → 9, and the payload drops from every-order-this-year to a handful of aggregate rows — the shape that was always going to degrade first as order history grew. A value-equivalence test (`tests/integration/dashboard-stats-equivalence.test.ts`) recomputes every figure the old way and pins equality, and the ops budget (≤9) joins `db-ops-budget.test.ts`.
+
+The widget registry keeps its one-entry-per-widget architecture (dashboard-widgets R1–R4) but widgets now share request-memoised reads — the `loadPriceContext` pattern: products + low-stock share one row-set, platform revenue + average-order share one paid-orders aggregate. Admin dashboard page 7→5, org dashboard 7→6.
+
+Hygiene found on the way: the recent-users activity feed selected full user rows — password hash included — for a feed that renders three fields. It selects those three now.
+
+**Measured**: admin dashboard page+API+activities 8+16+5 → 5+9+3 (29→17 per load).
+
+## [PR-71] 2026-08-21 — Relation reads become one join `[MIGRATION-FREE]`
+
+The remaining per-page cost after PR-70 was pure relation fan-out: every `PRODUCT_INCLUDE` read ran one query per related table — Product, Category, Org, ProductMedia, ProductStock, OrgAddress, Address — seven billed operations for one logical read, because the client ran Prisma's per-relation strategy. The `relationJoins` preview flag is now on, and **every relation-carrying `find*` read in `server/` (35 sites across 16 repositories — storefront, org portal, admin, payouts, analytics) passes `relationLoadStrategy: "join"`**, collapsing each to a single `LATERAL JOIN`. Applied per-read, never on writes.
+
+One real semantic difference surfaced and was handled: the join strategy returns *unordered nested lists* in arbitrary order, where the query strategy's order was accidental-but-stable. Nested lists that reach a screen now carry an explicit `orderBy` (shipments by `code`, shipment lines / promotion targets / admin cart items by `id`); lists that are only aggregated stay unordered on purpose. `tests/integration/join-equivalence.test.ts` pins deep equality between the two strategies over the seeded catalogue for each aggregate's real include shape, so a Prisma upgrade that changes join semantics fails there, not in production.
+
+Equivalence was proven, not assumed: both strategies were run over the entire seeded catalogue (including the filtered nested `stockLocations` include and the promotion targets) and returned deep-equal results. The three `@map` columns in the schema sit on legacy JSON blobs outside every join tree, clear of the known query-compiler issue.
+
+**Measured across the full surface** (authenticated sweep, dev server, second hit): storefront home/product/category 21/17/12 → 5/4/4; search page 10→3; org portal dashboard/products/offers/orders/earnings 10/16/8/9/13 → 7/10/4/4/9; admin products/orders-API/carts-API/dashboard-API 13/7/7/16 → 8/2/3/15. The budget tests in `tests/integration/db-ops-budget.test.ts` are tightened to ≤1 query per product read, so a client regeneration that loses the preview flag fails the suite instead of silently re-inflating the bill sevenfold.
+
+## [PR-70] 2026-08-21 — Development moves to a local database, and reads stop paying twice
+
+The Prisma Postgres workspace hit its 100K-operations month and blocked every query, prod included. Two causes, two fixes in this PR (the relation-join strategy is a follow-up):
+
+**Dev now runs on a local Postgres** (`bhendi_bazaar_dev` on `localhost:5432`) — a metered database was billing every hot-reload render. The seed's wipe list is completed for the ten models added since it was last touched (child-first, per ADR-0020's Restrict rules), and the Invariant 7 guard is tightened: this machine's localhost also hosts unrelated work databases, so a local *hostname* no longer passes alone — the *database name* must be allowlisted too. Verified refused against a non-allowlisted local database.
+
+**Read paths stop re-buying data the request already holds:**
+- The "on offer" filter re-ran the price context's two queries per listing and read the clock a second time, so filter and price labels could straddle an offer boundary. Coverage is now a pure function over the request's `PriceContext` (`offerCoverage` in `server/promotions/targeting.ts`); `productsOnOffer` is deleted.
+- One category page read the category table four times in four shapes. All category reads now derive from one request-memoised query (`server/catalog/category.repository.ts`).
+- Search suggestions ran the full product include tree plus the admin category listing (with its per-category counts) per keystroke — ~9 operations for a dropdown of name+thumbnail rows. The service now uses the lean `searchProducts` select it had been bypassing, and the storefront category list: 2 operations.
+- Each cart row fetched its own stock check; `CartLineItems` now asks once for the whole cart (`/api/products/check-stock` always took an array): a 5-item cart drops 10 queries to 2.
+
+**Measured** (dev server, second hit, `scripts/measure-db-ops.sh`): homepage 21→18, category 12→11, product 17→17, search keystroke 9→2, cart×5 10→2. Product-read fan-out (7 queries per `PRODUCT_INCLUDE` read) is the dominant remaining cost — that is the join-strategy follow-up.
+
+**Guardrails:** `PRISMA_LOG_QUERIES=1` makes the client print every SQL statement; `scripts/measure-db-ops.sh` measures per-page counts end-to-end; `tests/integration/db-ops-budget.test.ts` pins a per-call query budget (skips off the local dev database); `tests/unit/offer-coverage.test.ts` covers the extracted pure function.
 
 ## [PR-69] 2026-08-16 — The seed guard Invariant 7 already promised
 

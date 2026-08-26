@@ -9,8 +9,8 @@
 
 import { shippingProviderRepository } from "@server/shipping/repositories";
 import { PROVIDER_FACTORIES } from "@server/shipping";
-import { adminLogRepository } from "@server/shared/audit/audit.repository";
 import { toSafeAccountInfo } from "@server/shipping/utils/safe-provider";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   ProviderConnectionResult,
   ConnectionRequestBody,
@@ -71,7 +71,7 @@ export class AdminConnectionService {
       }
       if (connectionResult.success) {
         // 6. Log admin action
-        await adminLogRepository.createLog({
+        await recordAdminAction({
           adminId,
           action: "PROVIDER_CONNECTED",
           resource: "ShippingProvider",
@@ -82,7 +82,7 @@ export class AdminConnectionService {
           },
         });
       } else {
-        await adminLogRepository.createLog({
+        await recordAdminAction({
           adminId,
           action: "PROVIDER_CONNECTION_FAILED",
           resource: "ShippingProvider",
@@ -107,7 +107,7 @@ export class AdminConnectionService {
       };
       return safeResult;
     } catch (error) {
-      await adminLogRepository.createLog({
+      await recordAdminAction({
         adminId,
         action: "PROVIDER_CONNECTION_FAILED",
         resource: "ShippingProvider",
@@ -146,7 +146,7 @@ export class AdminConnectionService {
       throw new Error("Failed to disconnect provider");
     }
 
-    await adminLogRepository.createLog({
+    await recordAdminAction({
       adminId,
       action: "PROVIDER_DISCONNECTED",
       resource: "ShippingProvider",

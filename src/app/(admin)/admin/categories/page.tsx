@@ -9,11 +9,10 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
 import { DataTable, Column } from "@/admin/data-table";
-import { Search, Plus, Edit, Trash2, MoveUp, MoveDown } from "lucide-react";
+import { Search, Plus, Upload, Edit, Trash2, MoveUp, MoveDown } from "lucide-react";
 import Link from "next/link";
 import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 
@@ -49,6 +48,7 @@ export default function AdminCategoriesPage() {
     ({ id, order }: { id: string; order: number }) =>
       adminCategoryApiClient.updateCategory(id, { order }),
     {
+      successMessage: "Category reordered successfully!",
       onSuccess: () => refetch(),
     }
   );
@@ -69,9 +69,9 @@ export default function AdminCategoriesPage() {
     ) {
       return;
     }
-    deleteCategory(categoryId).then(() =>
-      toast.success("Category deleted successfully!")
-    );
+    // useMutation toasts both outcomes and rethrows; catching keeps a failed delete
+    // from also becoming an unhandled rejection.
+    void deleteCategory(categoryId).catch(() => {});
   };
 
   const handleReorder = (
@@ -80,9 +80,7 @@ export default function AdminCategoriesPage() {
     direction: "up" | "down"
   ) => {
     const newOrder = direction === "up" ? currentOrder - 1 : currentOrder + 1;
-    updateCategory({ id: categoryId, order: newOrder }).then(() =>
-      toast.success("Category reordered successfully!")
-    );
+    void updateCategory({ id: categoryId, order: newOrder }).catch(() => {});
   };
 
   const columns: Column<AdminCategory>[] = [
@@ -216,13 +214,22 @@ export default function AdminCategoriesPage() {
             Manage product categories and organization
           </p>
         </div>
-        <Link
-          href="/admin/categories/new"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Category
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/categories/bulk"
+            className="px-4 py-2 border border-border rounded-lg hover:bg-muted flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            <span className="hidden sm:inline">Bulk upload</span>
+          </Link>
+          <Link
+            href="/admin/categories/new"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Category
+          </Link>
+        </div>
       </div>
 
       {/* Search */}

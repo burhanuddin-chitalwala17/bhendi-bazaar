@@ -57,3 +57,4 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0018](0018-one-effective-price-function.md) | One effective-price function serves display and charge | Accepted | 2026-08-16 |
 | [0019](0019-discount-is-one-winning-offer.md) | A discount is one winning offer, allocated to lines, with its funding recorded | Accepted | 2026-08-16 |
 | [0020](0020-money-bearing-records-never-cascade.md) | Records that carry money or attribution never cascade | Accepted | 2026-08-16 |
+| [0021](0021-audit-trail-never-fails-the-action.md) | The audit trail records an action; it never decides whether it happened | Accepted | 2026-08-22 |
