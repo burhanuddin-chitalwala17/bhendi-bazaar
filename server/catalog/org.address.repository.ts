@@ -91,6 +91,7 @@ export function toOrgLocation(row: LocationRow): OrgLocation {
 export class OrgAddressRepository {
   async listByOrg(orgId: string): Promise<OrgLocation[]> {
     const rows = await prisma.orgAddress.findMany({
+      relationLoadStrategy: "join",
       where: { orgId },
       include: ROW_INCLUDE,
       orderBy: { createdAt: "asc" },
@@ -101,6 +102,7 @@ export class OrgAddressRepository {
   /** Ownership is the query: another org's location is simply not found. */
   async findOwned(orgId: string, locationId: string): Promise<OrgLocation | null> {
     const row = await prisma.orgAddress.findFirst({
+      relationLoadStrategy: "join",
       where: { id: locationId, orgId },
       include: ROW_INCLUDE,
     });

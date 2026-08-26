@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
+import { GoogleIcon } from "@/components/shared/GoogleIcon";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
@@ -125,6 +126,7 @@ export default function SignInPage() {
           onClick={handleGoogleSignIn}
           className="w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
         >
+          <GoogleIcon />
           Continue with Google
         </Button>
         <p className="pt-2 text-center text-[0.7rem] text-muted-foreground">

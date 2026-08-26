@@ -100,10 +100,10 @@ export class ProductService {
       throw new DomainError("Search query must be at least 2 characters");
     }
 
-    return await productsRepository.getProducts({
-      search: query,
-      limit,
-    });
+    // The lean suggestion read, not the listing read: getProducts carries the
+    // full include tree and no row cap, so it answered a dropdown with the
+    // entire matching catalogue at detail-page cost.
+    return await productsRepository.searchProducts(query, limit);
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import type { Metadata } from "next";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
@@ -36,12 +36,20 @@ export default async function OrgProductsPage({ params, searchParams }: PageProp
           <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground">Your organisation&apos;s catalogue</p>
         </div>
-        <Button asChild>
-          <Link href={`/org/${orgId}/products/new`}>
-            <Plus className="h-4 w-4" />
-            New Product
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/org/${orgId}/products/bulk`}>
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Bulk upload</span>
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={`/org/${orgId}/products/new`}>
+              <Plus className="h-4 w-4" />
+              New Product
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Suspense fallback={<ProductsTableSkeleton />}>

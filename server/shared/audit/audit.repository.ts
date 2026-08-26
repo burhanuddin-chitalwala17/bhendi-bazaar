@@ -50,6 +50,7 @@ export class AdminLogRepository {
   /** One resource's trail, newest first — an entry's change history (org-payouts D9). */
   async listForResource(resource: string, resourceId: string) {
     return await prisma.adminLog.findMany({
+      relationLoadStrategy: "join",
       where: { resource, resourceId },
       orderBy: { createdAt: "desc" },
       include: { admin: { select: { name: true, email: true } } },
@@ -83,6 +84,7 @@ export class AdminLogRepository {
 
     const [logs, total] = await Promise.all([
       prisma.adminLog.findMany({
+        relationLoadStrategy: "join",
         where,
         skip,
         take: limit,

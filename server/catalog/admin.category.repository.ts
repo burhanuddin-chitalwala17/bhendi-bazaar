@@ -38,6 +38,7 @@ class AdminCategoryRepository {
 
     const [categories, total] = await Promise.all([
       prisma.category.findMany({
+        relationLoadStrategy: "join",
         where,
         skip,
         take: limit,
@@ -73,6 +74,7 @@ class AdminCategoryRepository {
    */
   async getCategoryById(id: string): Promise<AdminCategory | null> {
     const category = await prisma.category.findUnique({
+      relationLoadStrategy: "join",
       where: { id },
       include: {
         _count: {

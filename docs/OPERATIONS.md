@@ -40,17 +40,45 @@ npm run dev                 # http://localhost:3000
 
 `src/lib/env.ts` holds the required-variable list. Note it does not currently include `ENCRYPTION_KEY` or `RAZORPAY_WEBHOOK_SECRET`, so add those to any check you rely on.
 
-### ⚠️ Seeding a cloud development database
-`prisma/seed.ts` deletes every table, so it refuses to run unless the target is named (Invariant 7). Both gates are needed together:
+### Local development database
+Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
+
+```
+createdb bhendi_bazaar_dev
+# .env
+DATABASE_URL="postgres://<your-user>@localhost:5432/bhendi_bazaar_dev"
+npx prisma migrate deploy
+SEED_ALLOW_DESTRUCTIVE=1 npx prisma db seed
+```
+
+`PRISMA_LOG_QUERIES=1` makes the Prisma client print every SQL statement — the instrument behind `scripts/measure-db-ops.sh`, which counts billed operations per storefront page. Dev-only; never set in a deployment.
+
+### ⚠️ Seeding
+`prisma/seed.ts` deletes every table, so it refuses to run unless the target is named (Invariant 7). Wiping is its own gate:
 
 ```
 SEED_ALLOW_DESTRUCTIVE=1
+```
+
+On localhost, only the database **named** `bhendi_bazaar_dev` may be seeded — a local hostname alone proves nothing when the same server hosts unrelated work databases. For a cloud development database, name the exact connection string as well:
+
+```
 SEED_ALLOWED_DATABASE_URL=<the exact same string as your dev DATABASE_URL>
 ```
 
-`SEED_ALLOWED_DATABASE_URL` exists because **hostname cannot tell dev from production here** — Prisma Postgres serves both from `db.prisma.io`, so allowing the host would allow production. Matching the full connection string identifies one specific database. Keep both variables in your local `.env` only; production stays protected precisely by never having them.
+`SEED_ALLOWED_DATABASE_URL` exists because **hostname cannot tell dev from production here** — Prisma Postgres serves both from `db.prisma.io`, so allowing the host would allow production. Matching the full connection string identifies one specific database. Keep these variables in your local `.env` only; production stays protected precisely by never having them.
 
 To seed reference data that production also needs, do not reach for the seed — write a data migration. `vercel.json` runs `prisma migrate deploy` before the build, so a migration reaches every environment on merge, while the seed reaches none of them.
+
+### Cleaning up old catalogue images
+`scripts/cleanup-flat-blobs.ts` removes pre-2026-08 flat-layout product images from Blob once a catalogue has been re-onboarded through bulk upload. Two intents, like the seed:
+
+```
+npx tsx scripts/cleanup-flat-blobs.ts                              # dry-run, lists what would go
+CLEANUP_ALLOW_DELETE=1 npx tsx scripts/cleanup-flat-blobs.ts --delete
+```
+
+The keep-set is every `ProductMedia.ref` and `Product.thumbnail` **in the database `DATABASE_URL` currently names**. The Blob store is shared across environments, so run the deletion only when that database is the one those images serve — the script prints the host it read for exactly this reason.
 
 ### ⚠️ The Upstash naming trap
 The rate limiter reads **`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`, and using those names produces **two different failures from the same missing config**: `src/lib/rate-limit.ts` asserts non-null at module load, so `signup` and `forgot-password` throw at import (fail closed), while `src/middleware.ts` catches the absence and disables limiting with only a logged warning (fail open). Use the names in the table.

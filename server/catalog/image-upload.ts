@@ -42,11 +42,35 @@ export function sanitizeIdentifier(name: string | null | undefined): string {
   return cleaned || "unnamed";
 }
 
+/**
+ * Where a catalog image lives in Blob (bulk-catalog-upload D4):
+ * `products/<org-code>/<identifier>/<original-name>-<ts>.<ext>`, categories
+ * without the org segment. Structured paths make the store browsable per org and
+ * product, and keep the original filename — which is what makes a bulk upload's
+ * matching debuggable. The timestamp prevents same-name overwrites. Pure and
+ * exported so tests pin the shape.
+ */
+export function buildImagePath(
+  folder: ImageFolder,
+  originalName: string,
+  identifier?: string | null,
+  orgCode?: string | null,
+  now: number = Date.now()
+): string {
+  const id = sanitizeIdentifier(identifier);
+  const dot = originalName.lastIndexOf(".");
+  const base = sanitizeIdentifier(dot > 0 ? originalName.slice(0, dot) : originalName);
+  const extension = dot > 0 ? originalName.slice(dot + 1).toLowerCase() : "bin";
+  const orgSegment = folder === "products" ? `${sanitizeIdentifier(orgCode)}/` : "";
+  return `${folder}/${orgSegment}${id}/${base}-${now}.${extension}`;
+}
+
 /** Validates every file first — an upload is all-or-nothing, not a partial batch. */
 export async function uploadImages(
   files: File[],
   folder: ImageFolder,
-  identifier?: string | null
+  identifier?: string | null,
+  orgCode?: string | null
 ): Promise<string[]> {
   if (!files || files.length === 0) {
     throw new DomainError("No files provided");
@@ -56,12 +80,9 @@ export async function uploadImages(
     if (problem) throw new DomainError(problem);
   }
 
-  const name = sanitizeIdentifier(identifier);
   const urls: string[] = [];
   for (const file of files) {
-    const extension = file.name.split(".").pop();
-    const filename = `${folder}/${name}-${Date.now()}.${extension}`;
-    const blob = await put(filename, file, {
+    const blob = await put(buildImagePath(folder, file.name, identifier, orgCode), file, {
       access: "public",
       addRandomSuffix: false,
     });

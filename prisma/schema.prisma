@@ -5,7 +5,11 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Join strategy for relation reads: one LATERAL JOIN instead of one query per
+  // relation table. On per-operation billing that difference is the bill (CHANGELOG
+  // PR-70/71). Applied per-query via relationLoadStrategy, not globally.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -66,7 +70,7 @@ model Product {
   sizes        String[] // Available sizes
   colors       String[] // Available colors
 
-  sku               String? @unique // Stock Keeping Unit
+  sku               String? // Stock Keeping Unit — unique within the org, not the platform
   lowStockThreshold Int     @default(10) // Alert when stock falls below this
 
   orderItems       OrderItem[]
@@ -86,6 +90,8 @@ model Product {
   updatedAt DateTime @updatedAt
   reviews   Review[]
 
+  // A SKU is the org's own identifier; two orgs may legitimately use the same one.
+  @@unique([orgId, sku])
   @@index([slug])
   @@index([categoryId])
   @@index([createdAt])

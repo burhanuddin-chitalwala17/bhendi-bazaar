@@ -28,62 +28,12 @@ import {
   seedShippingProviders,
 } from "./seed/index";
 import type { SeedProduct } from "./seed/types";
+import { assertSeedTargetIsAllowed } from "./seed-guard";
 
 /** Per-unit markdown on a seeded line, or zero — the same guard the engine applies. */
 function markdownOf(item: { price: number; salePrice?: number }): number {
   const { price, salePrice } = item;
   return salePrice && salePrice > 0 && salePrice < price ? price - salePrice : 0;
-}
-
-const LOCAL_DB_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
-
-/**
- * Refuses to run unless the target database has been named as a seed target.
- *
- * Lives here rather than in a wrapper script so it still holds when someone types
- * `npx prisma db seed` directly (Invariant 7).
- *
- * Hostname alone cannot decide this: Prisma Postgres serves development and production
- * from the same `db.prisma.io`, so allowing that host would allow production. A cloud
- * target must therefore be named exactly, via SEED_ALLOWED_DATABASE_URL in a local .env
- * that is never set in Vercel. Both checks are allowlists — an unrecognised URL is
- * refused, because a denylist fails open on the one host nobody thought to list.
- */
-function assertSeedTargetIsAllowed(): void {
-  const url = process.env.DATABASE_URL;
-
-  if (!url) {
-    throw new Error("DATABASE_URL is not set — refusing to seed.");
-  }
-
-  // Wiping is a second intent, deliberately separate from seeding.
-  if (process.env.SEED_ALLOW_DESTRUCTIVE !== "1") {
-    throw new Error(
-      "This seed deletes every table. Re-run with SEED_ALLOW_DESTRUCTIVE=1 if that is what you want."
-    );
-  }
-
-  let host: string;
-  try {
-    host = new URL(url).hostname;
-  } catch {
-    throw new Error("DATABASE_URL is not a parseable URL — refusing to seed.");
-  }
-
-  if (LOCAL_DB_HOSTS.has(host)) {
-    return;
-  }
-
-  const allowed = process.env.SEED_ALLOWED_DATABASE_URL;
-  if (allowed && allowed === url) {
-    return;
-  }
-
-  throw new Error(
-    `Refusing to seed: "${host}" is not a local database, and DATABASE_URL does not match ` +
-      "SEED_ALLOWED_DATABASE_URL. Set SEED_ALLOWED_DATABASE_URL to the exact development " +
-      "connection string in your local .env — never in a deployment environment."
-  );
 }
 
 // Use the same adapter configuration as the main app
@@ -132,16 +82,34 @@ async function main() {
 
   // Clear existing data (in correct order to respect foreign keys)
   console.log("🗑️  Clearing existing data...");
-  await prisma.shippingProvider.deleteMany();
+  // Children before parents, always — money and attribution rows are Restrict
+  // (ADR-0020), so a wrong order here is an FK error, not a silent cascade.
+  // Ledger and settlement first: they hang off orders, items, and orgs.
+  await prisma.orgLedgerEntryLine.deleteMany();
+  await prisma.orgLedgerEntry.deleteMany();
+  await prisma.settlement.deleteMany();
+  await prisma.orderDiscount.deleteMany(); // before orders and promotions
+  await prisma.promotionTarget.deleteMany(); // before promotions, products, categories
+  await prisma.promotion.deleteMany();
+  await prisma.orgCommissionRule.deleteMany();
+  await prisma.shippingEvent.deleteMany(); // before shipments
+  await prisma.shipmentItem.deleteMany(); // before shipments and order items
+  await prisma.shipment.deleteMany(); // before orders and org addresses
+  await prisma.shippingRateCache.deleteMany();
+  await prisma.shippingProvider.deleteMany(); // re-created below from fixtures
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.cartItem.deleteMany();
   await prisma.cart.deleteMany();
   await prisma.review.deleteMany();
-  await prisma.shipment.deleteMany(); // ⭐ NEW - Clear shipments before orders
-  await prisma.order.deleteMany();
+  await prisma.productStock.deleteMany(); // before products and org addresses
+  await prisma.productMedia.deleteMany();
   await prisma.product.deleteMany();
+  await prisma.orgMember.deleteMany(); // before orgs; explicit rather than via cascade
+  await prisma.orgAddress.deleteMany(); // before orgs and addresses
   await prisma.userAddress.deleteMany(); // before users and addresses
   await prisma.orgAddress.deleteMany(); // before orgs and addresses
   await prisma.address.deleteMany();
-  await prisma.orgMember.deleteMany(); // before orgs; explicit rather than via cascade
   await prisma.org.deleteMany();
   await prisma.category.deleteMany();
   await prisma.profile.deleteMany();

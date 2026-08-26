@@ -9,7 +9,7 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
 import { DataTable, Column } from "@/admin/data-table";
-import { Search, Plus, Edit, Trash2, MoveUp, MoveDown } from "lucide-react";
+import { Search, Plus, Upload, Edit, Trash2, MoveUp, MoveDown } from "lucide-react";
 import Link from "next/link";
 import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
@@ -216,13 +216,22 @@ export default function AdminCategoriesPage() {
             Manage product categories and organization
           </p>
         </div>
-        <Link
-          href="/admin/categories/new"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Add Category
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/categories/bulk"
+            className="px-4 py-2 border border-border rounded-lg hover:bg-muted flex items-center gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            <span className="hidden sm:inline">Bulk upload</span>
+          </Link>
+          <Link
+            href="/admin/categories/new"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Category
+          </Link>
+        </div>
       </div>
 
       {/* Search */}
