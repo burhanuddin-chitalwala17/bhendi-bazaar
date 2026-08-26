@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-77] 2026-08-27 — Categories come out of the dropdown and become a lane row
+
+The storefront's category navigation was a desktop dropdown plus a phone bottom-sheet, both fetching the list from the browser on every page. It is now one flat, scrollable row of tiles that every page renders inline — no trigger, no client fetch, no second component for the phone.
+
+**The rule is descend-only.** A page draws its own descendants and nothing else: home draws the whole tree, a category draws its entire subtree, a leaf draws nothing and the row disappears. The current category, its ancestors and its siblings are all absent, so the set shrinks with every descent and there is no active state to draw. `flattenDescendantIds` (`server/catalog/category.tree.ts`) is breadth-first so the shallowest lanes reach the visible left end of a single scrolling line, and preserves input order within a level — which is how siblings inherit `order` without the pure module knowing the column exists.
+
+**Fixed on contact: the home page was rendering the whole category table flat.** `categoriesDAL.getCategories()` returns every row, and home fed it straight to `CategorySections` — so the first child category created in the admin would have appeared on the homepage beside its own parent. Home now asks for the tree from the root, and the answer is ordered.
+
+`CategoryLanes` and `CategoryBreadcrumb` are **server components**: display over data the page already reads, so a route handler for either would be a round trip bought for nothing. Both ride `allCategories()`, the repository's request-memoised read, so the tiles cost no database operation the product grid was not already paying for. The breadcrumb exists because descend-only leaves no route back up the tree — a shopper landing on a leaf from search would otherwise have only the logo.
+
+**Removed:** `CategoriesDropdown`, `CategorySheet`, `CategorySections` — the first two replaced, the third an unordered second rendering of the same list on the same page. `GET /api/categories` and `categoryApiClient` go with them: their only two callers were the deleted components, and a route handler with no browser caller is a fetch of data a server component already had. `categoryService.getCategories()` stays — search suggestions still use it. The phone tab bar drops to four tabs; browsing is now something the page shows rather than a destination.
+
+`ServerCategory` and the storefront `Category` both gain `id` and `parentId`, which the repository was already returning and the types were under-declaring. No wire shape changed — the only route that sent this DTO is the one deleted — so this is not a `[CONTRACT]` change.
+
+**Known gap:** tiles centre-crop the 1200×600 `heroImage`, which is often the wrong 600×600. A nullable square `thumbnail` with this crop as its fallback is the follow-up; it needs a migration plus its field in the category form and the bulk sheet, and is deliberately not in this PR.
+
 ## [PR-76] 2026-08-23 — The category sheet takes names, and the theme colour is a dropdown
 
 Three fixes to bulk category upload, all of them about a sheet not telling you what it wants.

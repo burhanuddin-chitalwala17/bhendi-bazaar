@@ -6,7 +6,10 @@ import type { CategoryAccent } from "@prisma/client";
  */
 
 export interface Category {
+  id: string;
   slug: string;
+  /** Self-referencing tree; null = root. Lane rows are built from it server-side. */
+  parentId: string | null;
   name: string;
   description: string;
   heroImage: string;

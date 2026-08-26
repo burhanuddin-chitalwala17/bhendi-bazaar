@@ -1,4 +1,4 @@
-import { CategorySections } from "@/components/home/category-sections";
+import { CategoryLanes } from "@/components/category/category-lanes";
 import { HeroProductsGrid } from "@/components/home/hero-products-grid";
 import { HomeHero } from "@/components/home/home-hero";
 import { OffersStrip } from "@/components/home/offers-strip";
@@ -10,9 +10,11 @@ import { Suspense } from "react";
 export default async function HomePage() {
   const heroes = await productsDAL.getHeroProducts(6);
   const offers = await productsDAL.getOfferProducts(4);
-  const categories = await categoriesDAL.getCategories();
+  // The whole tree — home is the one page with no ancestor to descend from.
+  const lanes = await categoriesDAL.getDescendants(null);
   return (
     <div className="space-y-8 sm:space-y-10">
+      <CategoryLanes categories={lanes} />
       <HomeHero />
       <Suspense fallback={<LoadingSkeleton />}>
         <HeroProductsGrid heroes={heroes} />
@@ -20,11 +22,6 @@ export default async function HomePage() {
       <Suspense fallback={<LoadingSkeleton />}>
         <OffersStrip offers={offers} />
       </Suspense>
-      <Suspense fallback={<LoadingSkeleton />}>
-        <CategorySections categories={categories} />
-      </Suspense>
     </div>
   );
 }
-
-
