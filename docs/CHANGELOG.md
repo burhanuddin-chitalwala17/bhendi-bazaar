@@ -10,6 +10,46 @@
 
 ## Entries
 
+## [PR-82] 2026-08-31 — Storefront links stop prefetching pages the router throws away
+
+A production log showed 26 page requests in four seconds with no navigation behind them: nine `/category/*`, four `/product/*` and `/cart`, each fetched twice. Nobody clicked anything — the shopper scrolled, and every `<Link>` that entered the viewport prefetched.
+
+**The prefetches were never used.** Next's client router cache defaults to `staleTimes.dynamic: 0`, and that value applies whenever the `prefetch` prop is left unspecified, which it was at all 62 call sites. Every storefront route is dynamic — no `revalidate`, no `generateStaticParams` — so each prefetched payload arrived already stale and the tap refetched from scratch. There is no `loading.tsx` anywhere either, so `prefetch="auto"` had no boundary to stop at. Next floors the `static` stale time at 30s expressly "to ensure prefetching is not completely wasteful"; nothing floors `dynamic`.
+
+So this was not a cache with a poor hit rate. It was speculative rendering with no reader.
+
+**It cost more than the wasted queries.** A category render is roughly three sequential round trips, so one scroll was on the order of 70 Postgres queries. Worse, thirteen simultaneous requests make Vercel scale out — `✅ Rate limiter initialized` appears twice inside that four-second window, two instances booted for work nobody would read — and they queue against the connection pool. The shopper's actual tap could land behind speculation, or on a cold instance that existed only because of it. Removing prefetch should *lower* tap latency, not raise it, which is the opposite of the usual trade.
+
+`prefetch={false}` now sits on 24 storefront link sites across 14 files. The two that produced the burst — `ProductCard` and `CategoryLanes`, up to twelve and nine links in view at once — carry a short comment saying why, so the prop is not read as an oversight and removed.
+
+**Deliberately not done here.** Page-level ISR would cut more, and [ADR-0018](adr/0018-one-effective-price-function.md) forbids it: offer resolution is capped at one request, and response caching must not outlive an offer window. A fixed `revalidate` would advertise an expired offer's price, which is the divergence [ADR-0002](adr/0002-server-holds-pricing-authority.md) exists to prevent. The remaining work is caching the reads that carry no resolved price — the category tree and catalogue rows — while prices stay resolved per request. That helps real traffic rather than only speculative traffic, and is tracked in [BACKLOG.md](BACKLOG.md).
+
+Prefetch is not wrong here, it is misconfigured. Once those reads are cached, a `loading.tsx` plus a non-zero `staleTimes.dynamic` would make it pay off, and it is worth revisiting then.
+
+Presentation only — no schema, no wire shape, no money path. 554 tests pass, typecheck clean, lint unchanged.
+
+## [PR-81] 2026-08-30 — The admin portal gates itself, and rate limiting stops pretending
+
+**`/admin` was reachable without signing in.** The middleware matcher excluded any path containing a dot — meant to skip static files — so `/admin/orders/abc.def` never reached the gate. Thirteen admin pages carried no guard of their own, on a comment in the layout that said "middleware already gates /admin to platform admins; this fetch is for display". Unauthenticated, `/admin/orders` redirected and `/admin/orders/abc.def` returned 200.
+
+Nothing was disclosed: every `/api/admin/*` route independently returns 401, and a dotted id matches no record, so the bypass rendered an empty shell. That is two accidents standing in for a control, and it holds only until an admin route keys on something that legitimately contains a dot — an email, a slug, a filename.
+
+**The layout owns the gate now**, as the org portal always has: `requirePlatformAdmin` in `src/app/(admin)/admin/layout.tsx`, which re-reads the row rather than trusting a JWT claim that outlives a demotion ([ADR-0021](adr/0021-audit-trail-never-fails-the-action.md)). The middleware still runs — an unauthenticated request should be turned away before anything renders — but it is a fast rejection, not the authority, and it now names `/admin` and `/org` explicitly instead of inheriting a catch-all that excluded them by punctuation. Every path that returned 200 above returns 307. `tests/unit/portal-guards.test.ts` fails if a portal layout stops guarding or the matcher goes back to the catch-all.
+
+**Rate limiting is detached, deliberately and visibly.** It had three implementations — an Upstash module, an in-memory `Map`, and a third copy inline in the middleware — and all three allowed everything whenever Redis was absent or unreachable. The middleware copy also marked itself initialised before its async setup finished, so cold-start concurrency skipped it, and every copy derived the caller's identity from the first `x-forwarded-for` entry, which the caller supplies: rotating that header defeated each per-IP window.
+
+`src/lib/rate-limit/` is now one seam that allows everything and says so (`RATE_LIMITING_ENABLED === false`). No live module imports `@upstash/*`, so the request path carries no cache dependency while the cache is unwired. Both implementations are parked beside it, unimported and intact, and reconnecting is an edit to one file. `getClientIp` there already ignores caller-supplied headers, so what returns is not what left.
+
+**These endpoints are unthrottled until the cache is wired**, and are listed in the seam's header so the next reader does not have to infer it: `POST /api/auth/signup`, `/api/auth/forgot-password`, `/api/payments/create-order`, `/api/orders*`, `/api/cart*`. `reset-password`, `resend-verification` and `verify-email` never had limits. A control that silently does nothing is worse than an absent one, because it gets budgeted for as protection.
+
+**The site now states what it is, and what it no longer is.** This domain served a WordPress site before this one — 4,682 URLs in the archive: genuine Bhendi Bazaar posts from 2019–2020, then from March 2021 Indonesian gambling spam, scraped filler and adult posts, still serving 200s as late as September 2025. Bing is still working that index; two such requests arrived 0.74 seconds apart on 2026-08-30.
+
+`src/app/robots.ts` and `src/app/sitemap.ts` did not exist, so crawlers had no statement of the real URL set and kept working the remembered one. Both exist now, built from `appUrl()` rather than a hardcoded origin. And `src/middleware.ts` answers the `/YYYY/MM/DD/` permalink shape with **410 Gone** instead of 404: 404 means "not here right now" and invites a retry for months, 410 means "gone, stop asking". Nothing this app serves begins with a four-digit year, and `isDeadPermalink` is exported so that claim is tested against real paths rather than against the file's text.
+
+What is left needs an account rather than a commit — Search Console and Bing Webmaster verification, a manual-action check, and a backlink review — and is recorded on the watch list in [BACKLOG.md](BACKLOG.md).
+
+Presentation and routing only — no schema, no wire shape, no money path. 554 tests (21 new), typecheck clean, lint one error below its prior baseline: the middleware's `any` is gone.
+
 ## [PR-80] 2026-08-30 — Banners become the platform owner's, not the deploy's [CONTRACT] [MIGRATION]
 
 The hero's three banners were a TypeScript array. Changing a campaign — new artwork, new copy, a different order, taking one down for Eid — was a code edit and a deploy, done by the person who does deploys rather than the person who decides what the shop is selling. `/admin/banners` now owns it. See [docs/specs/home-banners/](specs/home-banners/).

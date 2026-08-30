@@ -1,19 +1,36 @@
-/**
- * Admin Layout
- * Layout wrapper for admin pages
- */
+import { redirect } from "next/navigation";
 
 import { AdminSidebar } from "@/admin/sidebar";
 import { PortalHeader } from "@/components/layout/PortalHeader";
-import { requireSession } from "@/lib/admin-auth";
+import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { isDomainError } from "@server/shared/domain-error";
 
+/**
+ * Everything beneath `/admin` is gated here, not in the middleware.
+ *
+ * It used to say "middleware already gates this; the fetch is for display", and that
+ * was wrong twice over. The matcher skips any path containing a dot, so
+ * `/admin/orders/abc.def` reached the page with no check at all — thirteen admin pages
+ * carried no guard of their own. And an edge check reads a JWT claim, which survives
+ * the account being demoted or blocked; `requirePlatformAdmin` re-reads the row
+ * (ADR-0021). The org portal has always done it this way.
+ */
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Middleware already gates /admin to platform admins; this fetch is for display.
-  const session = await requireSession();
+  let session;
+  try {
+    session = await requirePlatformAdmin();
+  } catch (error) {
+    // 401 means sign in and come back; 403 means this account will never have access,
+    // so sending it to a sign-in page would be a loop.
+    if (isDomainError(error) && error.status === 401) {
+      redirect("/signin?callbackUrl=/admin");
+    }
+    redirect("/");
+  }
 
   return (
     <div className="portal flex min-h-screen bg-background">
@@ -29,5 +46,3 @@ export default async function AdminLayout({
     </div>
   );
 }
-
-

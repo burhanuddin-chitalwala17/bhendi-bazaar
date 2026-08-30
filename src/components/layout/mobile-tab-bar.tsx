@@ -36,12 +36,13 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 pb-safe backdrop-blur md:hidden"
     >
       <div className="mx-auto flex h-tabbar max-w-6xl items-stretch">
-        <Link href="/" className={cn(TAB_CLASSES, tabTone(pathname === "/"))}>
+        <Link href="/" className={cn(TAB_CLASSES, tabTone(pathname === "/"))} prefetch={false}>
           <Home className="size-5" />
           Home
         </Link>
 
         <Link
+          prefetch={false}
           href="/cart"
           className={cn(TAB_CLASSES, tabTone(pathname === "/cart"))}
         >
@@ -57,6 +58,7 @@ export function MobileTabBar() {
         </Link>
 
         <Link
+          prefetch={false}
           href="/orders"
           className={cn(TAB_CLASSES, tabTone(pathname.startsWith("/order")))}
         >
@@ -65,6 +67,7 @@ export function MobileTabBar() {
         </Link>
 
         <Link
+          prefetch={false}
           href={accountHref}
           className={cn(
             TAB_CLASSES,

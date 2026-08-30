@@ -108,7 +108,7 @@ export function HeroBanner({
                     : "bg-primary text-hero hover:bg-primary/80"
                 )}
               >
-                <Link href={action.href}>{action.label}</Link>
+                <Link href={action.href} prefetch={false}>{action.label}</Link>
               </Button>
             ))}
           </div>

@@ -60,7 +60,7 @@ export function PageHeader({
       <div className="flex min-w-0 items-center gap-3">
         {back && (
           <Button asChild variant="ghost" size="icon">
-            <Link href={back.href} aria-label={back.label ?? "Go back"}>
+            <Link href={back.href} aria-label={back.label ?? "Go back"} prefetch={false}>
               <ArrowLeft />
             </Link>
           </Button>

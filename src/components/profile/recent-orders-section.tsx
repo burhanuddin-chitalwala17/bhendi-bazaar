@@ -32,6 +32,7 @@ export function RecentOrdersSection({ orders }: RecentOrdersSectionProps) {
           <div className="space-y-2">
             {orders.map((order) => (
               <Link
+                prefetch={false}
                 key={order.id}
                 href={`/order/${order.id}`}
                 className="flex flex-col justify-between gap-2 rounded-xl border border-border/70 bg-card/80 p-3 text-xs sm:flex-row sm:items-center"

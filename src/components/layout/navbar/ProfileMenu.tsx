@@ -46,6 +46,7 @@ export function ProfileMenu() {
       {open && (
         <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-border/70 bg-popover/95 p-2 text-xs shadow-overlay">
           <Link
+            prefetch={false}
             href="/profile"
             onClick={() => {
               setOpen(false);
@@ -68,6 +69,7 @@ export function ProfileMenu() {
             )}
           </Link>
           <Link
+            prefetch={false}
             href="/orders"
             onClick={() => {
               setOpen(false);
@@ -77,6 +79,7 @@ export function ProfileMenu() {
             Orders
           </Link>
           <Link
+            prefetch={false}
             href="/org"
             onClick={() => {
               setOpen(false);

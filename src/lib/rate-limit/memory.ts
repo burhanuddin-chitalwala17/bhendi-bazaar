@@ -1,3 +1,10 @@
+/**
+ * PARKED — not imported by anything. The live seam is `./index.ts`.
+ *
+ * An in-process Map, so on serverless each instance keeps its own counts and the real
+ * limit is the window times the number of running instances. It also never evicts, so
+ * the map grows for the life of the instance. Useful locally; not a production control.
+ */
 // src/lib/rateLimit.ts
 
 import { NextRequest, NextResponse } from "next/server";
