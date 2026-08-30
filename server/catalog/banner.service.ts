@@ -1,4 +1,5 @@
 import { bannerRepository } from "@server/catalog/banner.repository";
+import { isCompleteReorder } from "@server/catalog/banner.order";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import { NotFoundError, DomainError } from "@server/shared/domain-error";
 import type { AdminBanner, BannerInput } from "@server/catalog/banner.types";
@@ -68,7 +69,7 @@ class BannerService {
    *  unnamed ones holding an order that now collides with a named one. */
   async reorder(adminId: string, ids: string[]): Promise<void> {
     const total = await bannerRepository.countAll();
-    if (ids.length !== total || new Set(ids).size !== ids.length) {
+    if (!isCompleteReorder(ids, total)) {
       throw new DomainError("Reorder must list every banner exactly once");
     }
     await bannerRepository.reorder(ids);

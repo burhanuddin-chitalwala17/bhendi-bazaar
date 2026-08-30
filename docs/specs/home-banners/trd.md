@@ -97,6 +97,14 @@ from and remain server-rendered apart from the rail.
 
 ## Tests
 
-The reorder transaction, the create-appends-to-end rule, the schema's rejection of a
-server-owned `order`, and the dimension check's arithmetic. The storefront's "no active
-banners renders nothing" path is the one most likely to regress silently.
+The reorder rule and the append rule are pure (`server/catalog/banner.order.ts`) so they
+can be tested without a database, the same shape as `server/promotions/targeting.ts`.
+Alongside them: the schema's rejection of a server-owned `order`, the dimension check's
+arithmetic, and the CSS aspect token against the dimensions it mirrors.
+
+Two paths fail silently rather than loudly and carry their own suites. The storefront's
+"no active banners renders nothing" is one. The other is the admin list: it must render
+what the server returned rather than a copy taken on first mount — `router.refresh()`
+preserves client state, so a list holding its own `useState` shows a deleted banner and
+an un-flipped switch while reporting success. Both suites were checked by breaking the
+code they guard and watching them fail.

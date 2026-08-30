@@ -11,6 +11,8 @@ import {
   reorderBannersSchema,
 } from "@/lib/validation/schemas/banner.schema";
 import { describeBannerImageProblem } from "@/components/banners/banner-image-check";
+import { isCompleteReorder, nextBannerOrder } from "@server/catalog/banner.order";
+import { readFileSync } from "node:fs";
 import { toHeroBanner } from "@/data-access-layer/banners.dal";
 import { BANNER_IMAGE } from "@/lib/config";
 import type { AdminBanner } from "@server/catalog/banner.types";
@@ -158,5 +160,53 @@ describe("describeBannerImageProblem", () => {
 
   it("treats an unreadable image as a problem, not a pass", () => {
     expect(describeBannerImageProblem(0, 0)).not.toBeNull();
+  });
+});
+
+// The TRD named these three and the first version of this suite skipped them; the
+// reorder rule and the empty hero are both the kind that fail silently.
+describe("nextBannerOrder", () => {
+  it("puts the first banner at 0", () => {
+    expect(nextBannerOrder(null)).toBe(0);
+    expect(nextBannerOrder(undefined)).toBe(0);
+  });
+
+  it("appends after the last one, so a create never lands mid-list", () => {
+    expect(nextBannerOrder(0)).toBe(1);
+    expect(nextBannerOrder(7)).toBe(8);
+  });
+});
+
+describe("isCompleteReorder", () => {
+  it("accepts a list naming every banner exactly once", () => {
+    expect(isCompleteReorder(["a", "b", "c"], 3)).toBe(true);
+  });
+
+  // A short list leaves the unnamed rows holding a position that now collides.
+  it("refuses a list that misses a banner", () => {
+    expect(isCompleteReorder(["a", "b"], 3)).toBe(false);
+  });
+
+  it("refuses a list with a repeat, which would put two banners in one place", () => {
+    expect(isCompleteReorder(["a", "a", "b"], 3)).toBe(false);
+  });
+
+  it("refuses a list longer than the set", () => {
+    expect(isCompleteReorder(["a", "b", "c", "d"], 3)).toBe(false);
+  });
+});
+
+// The banner's shape is stated in three places — the upload check, the CSS token, and
+// the artwork guidance. They are one fact and drift silently if nothing compares them.
+describe("banner aspect ratio", () => {
+  it("derives from the stated dimensions rather than restating them", () => {
+    expect(BANNER_IMAGE.ratio).toBe(BANNER_IMAGE.width / BANNER_IMAGE.height);
+  });
+
+  it("matches --aspect-banner in globals.css", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const declared = css.match(/--aspect-banner:\s*(\d+)\s*\/\s*(\d+)/);
+    expect(declared, "--aspect-banner is not defined").not.toBeNull();
+    expect(Number(declared![1]) / Number(declared![2])).toBe(BANNER_IMAGE.ratio);
   });
 });

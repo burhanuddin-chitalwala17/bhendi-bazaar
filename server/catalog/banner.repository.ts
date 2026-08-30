@@ -6,6 +6,7 @@
 import { cache } from "react";
 import { prisma } from "@server/shared/prisma";
 import type { AdminBanner, BannerInput } from "@server/catalog/banner.types";
+import { nextBannerOrder } from "@server/catalog/banner.order";
 
 const SELECT = {
   id: true,
@@ -50,7 +51,7 @@ class BannerRepository {
     return prisma.banner.create({
       data: {
         ...banner,
-        order: (last?.order ?? -1) + 1,
+        order: nextBannerOrder(last?.order),
         actions: { create: actions.map((a, i) => ({ ...a, order: i })) },
       },
       select: SELECT,

@@ -48,3 +48,6 @@ export type BannerFormSchemaInput = z.infer<typeof bannerFormSchema>;
 export const reorderBannersSchema = z.object({
   ids: z.array(z.string().trim().min(1)).min(1, "Nothing to reorder"),
 });
+
+/** The toggle carries only what it changes. */
+export const setBannerActiveSchema = z.object({ isActive: z.boolean() });

@@ -79,6 +79,11 @@
   /* Tracking. One design idea — the tracked-out uppercase eyebrow — had drifted into
      nine values between 0.12em and 0.35em. Four steps, because the eyebrow genuinely
      widens as it gets larger; anything finer was drift, not intent. */
+  /* The hero banner's shape, wherever it is drawn — the storefront box, the admin
+     preview, the list thumbnail. Mirrors BANNER_IMAGE in src/lib/config.ts, which is
+     what the upload check enforces; a test asserts the two agree. */
+  --aspect-banner: 5 / 2;
+
   /* The storefront column. The layout and the verification banner that spans it were
      two separate `max-w-6xl` literals; a token is what keeps them the same column. */
   --container-page: 72rem;

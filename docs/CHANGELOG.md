@@ -32,6 +32,8 @@ The hero's three banners were a TypeScript array. Changing a campaign — new ar
 
 **Deliberately not built:** scheduling (an unset date field is a worse answer than no field) and per-banner colours (a per-banner palette is how a shop stops looking like one shop).
 
+**Found by `/bb-review` and fixed before merge.** The admin list held `useState(banners)`, and `router.refresh()` preserves client state — so a deleted banner stayed on screen and a toggled switch stayed put, both while reporting success. It derives from props now, with `useOptimistic` covering only the in-flight reorder. Three more went with it: the toggle got its own `PATCH .../active` route (the content PATCH replaces action rows wholesale, so flipping a switch was rewriting copy and re-minting button ids — and `bannerService.setActive` had been dead code); delete moved out of arm's reach of edit behind a `Dialog`, with 40px touch targets; and the 5:2 shape became one `--aspect-banner` token derived from `BANNER_IMAGE` instead of four literals and a hand-written `2.5`.
+
 Verified end to end against the running app and a live database, not just a build: deactivating a row dropped the hero to two slides, changing `order` changed which banner led, deactivating all three made the hero vanish while the page still rendered its products, and restoring brought all three back. 518 tests pass (20 new), typecheck clean, lint at baseline.
 
 ## [PR-79] 2026-08-30 — The hero becomes a configurable banner, and the banners become a rail
