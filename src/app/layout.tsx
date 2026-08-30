@@ -16,6 +16,7 @@ import {
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { redirect } from "next/navigation";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const headingFont = Playfair_Display({
   variable: "--font-heading-face",
@@ -79,6 +80,7 @@ export default async function RootLayout({
         <Providers session={session}>
           <Suspense fallback={<LoadingSkeleton />}>{children}</Suspense>
           <FloatingAdminButton />
+          <SpeedInsights />
         </Providers>
       </body>
     </html>
