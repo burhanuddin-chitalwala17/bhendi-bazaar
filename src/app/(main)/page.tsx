@@ -17,10 +17,10 @@ export default async function HomePage() {
       <CategoryLanes categories={lanes} />
       <HomeHero />
       <Suspense fallback={<LoadingSkeleton />}>
-        <HeroProductsGrid heroes={heroes} />
+        <OffersStrip offers={offers} />
       </Suspense>
       <Suspense fallback={<LoadingSkeleton />}>
-        <OffersStrip offers={offers} />
+        <HeroProductsGrid heroes={heroes} />
       </Suspense>
     </div>
   );
