@@ -1,7 +1,7 @@
 import { BANNER_IMAGE } from "@/lib/config";
 
 /** The one sentence an admin is shown, built from the same constant the check uses. */
-export const BANNER_IMAGE_HINT = `${BANNER_IMAGE.width}×${BANNER_IMAGE.height} or larger, roughly 5:2 landscape. Keep the left third clear — the headline sits there.`;
+export const BANNER_IMAGE_HINT = `${BANNER_IMAGE.width}×${BANNER_IMAGE.height} or larger, landscape. The hero is a fixed-height box, so it re-crops per screen: a wide desktop shows almost all of this, a 360px phone only the middle ~55%. Put the subject right of centre and keep the left half free of detail — the headline sits over it at every size.`;
 
 /**
  * Refuses a file the banner cannot render well, and says what it should have been.

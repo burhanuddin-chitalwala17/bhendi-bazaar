@@ -70,9 +70,9 @@ export function BannerImageField({
       <div className="space-y-2">
         {value ? (
           <div className="relative overflow-hidden rounded-field border border-border">
-            {/* The preview is deliberately the storefront's aspect ratio, so a bad
-                crop shows up here rather than on the shop. */}
-            <div className="relative aspect-banner w-full">
+            {/* The uploaded file at its own shape — not the storefront's, which varies
+                by breakpoint. What the hero keeps of it is the hint's job to explain. */}
+            <div className="relative aspect-banner-source w-full">
               <Image src={value} alt="" fill sizes="(min-width: 640px) 48rem, 100vw" className="object-cover" />
             </div>
             <Button
@@ -91,7 +91,7 @@ export function BannerImageField({
             </Button>
           </div>
         ) : (
-          <div className="flex aspect-banner w-full items-center justify-center rounded-field border border-dashed border-border bg-muted/50">
+          <div className="flex aspect-banner-source w-full items-center justify-center rounded-field border border-dashed border-border bg-muted/50">
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
               <ImageIcon className="size-6" />
               <p className="text-2xs uppercase tracking-eyebrow">

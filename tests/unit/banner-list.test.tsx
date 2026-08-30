@@ -6,6 +6,7 @@
  * in its old position. Nothing failed; the screen just lied.
  */
 import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, waitFor } from "@testing-library/react";
 import { render, screen } from "@testing-library/react";
 import { BannerList } from "@/components/banners/BannerList";
 import type { AdminBanner } from "@server/catalog/banner.types";
@@ -57,5 +58,67 @@ describe("BannerList", () => {
     render(<BannerList banners={[]} />);
     expect(screen.getByText("No banners yet")).toBeInTheDocument();
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+  });
+});
+
+/**
+ * The in-flight window. A reorder is optimistic, and the first fix keyed that optimism
+ * to a transition — but `router.refresh()` returns when the refresh is dispatched, not
+ * when the new props land, so the transition settled early: the list snapped back to
+ * the old order and the buttons re-armed while the write was still in the air. The
+ * rerender-based tests above cannot see this; they never leave a request pending.
+ */
+describe("BannerList while a reorder is in flight", () => {
+  function pendingFetch() {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        await gate;
+        return { ok: true, json: async () => ({ success: true }) } as Response;
+      })
+    );
+    return { release: () => act(() => (release(), gate)) };
+  }
+
+  const order = () => screen.getAllByRole("listitem").map((li) => li.textContent);
+
+  it("keeps the moved order while the server has not caught up", async () => {
+    const { release } = pendingFetch();
+    render(<BannerList banners={[banner("a"), banner("b")]} />);
+
+    fireEvent.click(screen.getByLabelText("Move Banner a down"));
+    // Request still open, props unchanged — the moved order must hold.
+    await waitFor(() => expect(order()[0]).toContain("Banner b"));
+
+    await release();
+    expect(order()[0]).toContain("Banner b");
+  });
+
+  it("does not re-arm the buttons mid-flight", async () => {
+    const { release } = pendingFetch();
+    render(<BannerList banners={[banner("a"), banner("b")]} />);
+
+    fireEvent.click(screen.getByLabelText("Move Banner a down"));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Move Banner a up")).toBeDisabled()
+    );
+    await release();
+  });
+
+  it("returns to the server's order when the reorder is refused", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: "Reorder must list every banner exactly once" }),
+      }) as unknown as Response)
+    );
+    render(<BannerList banners={[banner("a"), banner("b")]} />);
+
+    fireEvent.click(screen.getByLabelText("Move Banner a down"));
+    await waitFor(() => expect(order()[0]).toContain("Banner a"));
   });
 });

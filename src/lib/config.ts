@@ -34,7 +34,7 @@ export const BANNER_IMAGE = {
   width: BANNER_IMAGE_WIDTH,
   height: BANNER_IMAGE_HEIGHT,
   /** Derived, never restated — a hand-written 2.5 beside the dimensions is one
-   *  edit away from disagreeing with them. `--aspect-banner` carries the same
+   *  edit away from disagreeing with them. `--aspect-banner-source` carries the same
    *  shape to CSS, and `tests/unit/home-banners.test.ts` holds the two together. */
   ratio: BANNER_IMAGE_WIDTH / BANNER_IMAGE_HEIGHT,
   /** How far from that shape a file may be before it is refused. */

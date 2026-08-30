@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,61 +23,81 @@ import { EmptyState } from "@/components/shared/states/EmptyState";
 import { readApiError } from "@/lib/api-error";
 import type { AdminBanner } from "@server/catalog/banner.types";
 
+/** Order as written, and membership regardless of order. */
+const sequenceOf = (list: AdminBanner[]) => list.map((b) => b.id).join("|");
+const membersOf = (list: AdminBanner[]) =>
+  list.map((b) => b.id).sort().join("|");
+
 /** 40px on touch, the tighter desktop size from `sm`. */
 const TAP = "size-10 sm:size-9";
 
 export function BannerList({ banners }: { banners: AdminBanner[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  // The server's list is the truth. A move shows its result before the round trip
-  // finishes, and React drops the optimistic copy when the transition settles — so
-  // nothing here can outlive the data it was guessing about, which is exactly how a
-  // deleted banner used to stay on screen.
-  const [rows, showReordered] = useOptimistic(
-    banners,
-    (_current, next: AdminBanner[]) => next
-  );
+  const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState<AdminBanner | null>(null);
+  // A move shows its result before the round trip finishes. The override is held
+  // against the server's list rather than against a transition: `router.refresh()`
+  // returns as soon as the refresh is *dispatched*, so anything keyed to the
+  // transition settling lets go while the RSC round trip is still in the air — the
+  // list snaps back and the buttons re-arm mid-flight.
+  const [override, setOverride] = useState<AdminBanner[] | null>(null);
 
-  async function send(url: string, init: RequestInit) {
+  // Adjusting state during render is React's documented escape hatch for exactly this,
+  // and it drops the override on a fact rather than on a timer: either the server now
+  // agrees with it, or the set of banners changed under it and the server wins.
+  let optimistic = override;
+  if (
+    override &&
+    (sequenceOf(override) === sequenceOf(banners) ||
+      membersOf(override) !== membersOf(banners))
+  ) {
+    setOverride(null);
+    optimistic = null;
+  }
+  const rows = optimistic ?? banners;
+  const frozen = busy || isPending;
+
+  async function send(url: string, init: RequestInit): Promise<boolean> {
+    setBusy(true);
     try {
       const response = await fetch(url, init);
       if (!response.ok) throw await readApiError(response);
-      router.refresh();
+      startTransition(() => router.refresh());
+      return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
+      return false;
+    } finally {
+      setBusy(false);
     }
   }
 
-  function move(from: number, to: number) {
-    if (to < 0 || to >= rows.length) return;
+  async function move(from: number, to: number) {
+    if (to < 0 || to >= rows.length || frozen) return;
     const next = [...rows];
     [next[from], next[to]] = [next[to], next[from]];
-    startTransition(async () => {
-      showReordered(next);
-      await send("/api/admin/banners/reorder", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: next.map((banner) => banner.id) }),
-      });
+    setOverride(next);
+    const ok = await send("/api/admin/banners/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: next.map((banner) => banner.id) }),
     });
+    // A refused reorder must not leave the screen showing an order nobody stored.
+    if (!ok) setOverride(null);
   }
 
   function setActive(banner: AdminBanner, isActive: boolean) {
-    startTransition(() =>
-      send(`/api/admin/banners/${banner.id}/active`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive }),
-      })
-    );
+    void send(`/api/admin/banners/${banner.id}/active`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive }),
+    });
   }
 
   function remove(banner: AdminBanner) {
     setConfirming(null);
-    startTransition(() =>
-      send(`/api/admin/banners/${banner.id}`, { method: "DELETE" })
-    );
+    void send(`/api/admin/banners/${banner.id}`, { method: "DELETE" });
   }
 
   if (rows.length === 0) {
@@ -103,7 +123,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     variant="outline"
                     size="icon"
                     aria-label={`Move ${banner.title} up`}
-                    disabled={index === 0 || isPending}
+                    disabled={index === 0 || frozen}
                     onClick={() => move(index, index - 1)}
                     className={TAP}
                   >
@@ -113,7 +133,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     variant="outline"
                     size="icon"
                     aria-label={`Move ${banner.title} down`}
-                    disabled={index === rows.length - 1 || isPending}
+                    disabled={index === rows.length - 1 || frozen}
                     onClick={() => move(index, index + 1)}
                     className={TAP}
                   >
@@ -122,11 +142,11 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                 </div>
 
                 {banner.imageUrl ? (
-                  <div className="relative aspect-banner w-24 shrink-0 overflow-hidden rounded-field">
+                  <div className="relative aspect-banner-source w-24 shrink-0 overflow-hidden rounded-field">
                     <Image src={banner.imageUrl} alt="" fill sizes="6rem" className="object-cover" />
                   </div>
                 ) : (
-                  <div className="flex aspect-banner w-24 shrink-0 items-center justify-center rounded-field bg-muted text-muted-foreground">
+                  <div className="flex aspect-banner-source w-24 shrink-0 items-center justify-center rounded-field bg-muted text-muted-foreground">
                     <ImageIcon className="size-4" />
                   </div>
                 )}
@@ -153,7 +173,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <Switch
                     checked={banner.isActive}
                     aria-label={`${banner.isActive ? "Take down" : "Publish"} ${banner.title}`}
-                    disabled={isPending}
+                    disabled={frozen}
                     onCheckedChange={(on) => setActive(banner, on)}
                   />
                   <Button asChild variant="outline" size="icon" aria-label={`Edit ${banner.title}`} className={TAP}>
@@ -169,7 +189,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                       variant="ghost"
                       size="icon"
                       aria-label={`Delete ${banner.title}`}
-                      disabled={isPending}
+                      disabled={frozen}
                       onClick={() => setConfirming(banner)}
                       className={`${TAP} text-muted-foreground hover:bg-destructive/10 hover:text-destructive`}
                     >

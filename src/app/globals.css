@@ -79,19 +79,22 @@
   /* Tracking. One design idea — the tracked-out uppercase eyebrow — had drifted into
      nine values between 0.12em and 0.35em. Four steps, because the eyebrow genuinely
      widens as it gets larger; anything finer was drift, not intent. */
-  /* The hero banner's shape, wherever it is drawn — the storefront box, the admin
-     preview, the list thumbnail. Mirrors BANNER_IMAGE in src/lib/config.ts, which is
-     what the upload check enforces; a test asserts the two agree. */
-  --aspect-banner: 5 / 2;
-
-  /* The storefront column. The layout and the verification banner that spans it were
-     two separate `max-w-6xl` literals; a token is what keeps them the same column. */
-  --container-page: 72rem;
-
   --tracking-label: 0.15em;
   --tracking-eyebrow: 0.2em;
   --tracking-eyebrow-wide: 0.25em;
   --tracking-display: 0.32em;
+
+  /* The shape of the *artwork*, not of the rendered banner. The hero box is fixed by
+     height and so changes ratio across breakpoints (~1.4:1 on a 360px phone, ~2.8:1 on
+     a wide desktop): a responsive box that must hold a headline on a phone cannot also
+     be one ratio. This is what the upload check enforces and what the admin preview
+     draws, mirroring BANNER_IMAGE in src/lib/config.ts; a test asserts the two agree.
+     Cropping between the two is inherent — the field hint is where that is explained. */
+  --aspect-banner-source: 5 / 2;
+
+  /* The storefront column. The layout and the verification banner that spans it were
+     two separate `max-w-6xl` literals; a token is what keeps them the same column. */
+  --container-page: 72rem;
 
   /* Elevation as a role, not a size. Tailwind's shadow scale answers "how big"; these
      answer "what is this thing" — which is the question a redesign changes. Values are

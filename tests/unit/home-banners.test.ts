@@ -203,10 +203,10 @@ describe("banner aspect ratio", () => {
     expect(BANNER_IMAGE.ratio).toBe(BANNER_IMAGE.width / BANNER_IMAGE.height);
   });
 
-  it("matches --aspect-banner in globals.css", () => {
+  it("matches --aspect-banner-source in globals.css", () => {
     const css = readFileSync("src/app/globals.css", "utf8");
-    const declared = css.match(/--aspect-banner:\s*(\d+)\s*\/\s*(\d+)/);
-    expect(declared, "--aspect-banner is not defined").not.toBeNull();
+    const declared = css.match(/--aspect-banner-source:\s*(\d+)\s*\/\s*(\d+)/);
+    expect(declared, "--aspect-banner-source is not defined").not.toBeNull();
     expect(Number(declared![1]) / Number(declared![2])).toBe(BANNER_IMAGE.ratio);
   });
 });
