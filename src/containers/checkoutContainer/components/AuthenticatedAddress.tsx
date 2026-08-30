@@ -40,7 +40,7 @@ export function AuthenticatedAddress({
     <div className="space-y-6">
       {/* Address Selection */}
       <div className="space-y-3">
-        <label className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
+        <label className="text-xs font-medium uppercase tracking-eyebrow text-muted-foreground/80">
           Delivery Address
         </label>
         <AddressSelector

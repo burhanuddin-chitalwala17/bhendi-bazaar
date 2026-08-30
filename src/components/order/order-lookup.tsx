@@ -42,7 +42,7 @@ export function OrderLookup() {
           />
         </header>
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-[0.18em]">
+          <label className="text-xs font-medium uppercase tracking-eyebrow">
             Order ID
           </label>
           <Input
@@ -57,11 +57,11 @@ export function OrderLookup() {
         <Button
           type="submit"
           disabled={!code.trim() || isLoading}
-          className="w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+          className="w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
         >
           {isLoading ? "Searching…" : "Find order"}
         </Button>
-        {error && <p className="text-[0.7rem] text-destructive">{error}</p>}
+        {error && <p className="text-2xs text-destructive">{error}</p>}
       </form>
 
       {order && (

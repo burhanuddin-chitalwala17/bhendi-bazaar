@@ -19,7 +19,7 @@ export function CartSummary() {
   return (
     <aside className="space-y-3 rounded-xl border border-border/70 bg-card/80 p-4 text-sm">
       <header>
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground/80">
+        <p className="text-2xs font-semibold uppercase tracking-display text-muted-foreground/80">
           Summary
         </p>
       </header>
@@ -41,14 +41,14 @@ export function CartSummary() {
       <Button
         asChild
         variant="outline"
-        className="w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+        className="w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
       >
         <Link href="/">Add More</Link>
       </Button>
       <Button
         disabled={!hasItems}
         onClick={handleCheckout}
-        className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+        className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
       >
         Proceed to checkout
       </Button>

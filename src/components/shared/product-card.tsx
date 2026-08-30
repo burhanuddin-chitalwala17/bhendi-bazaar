@@ -19,7 +19,7 @@ export function ProductCard(product: Product) {
   return (
     <Link href={`/product/${product.slug}`} className="block">
       {/* py-0/gap-0 override Card's defaults so the image bleeds to the card edge */}
-      <Card className="group h-full gap-0 overflow-hidden rounded-lg py-0 transition-all sm:rounded-xl md:hover:-translate-y-1 md:hover:shadow-md">
+      <Card className="group h-full gap-0 overflow-hidden rounded-lg py-0 transition-all sm:rounded-xl md:hover:-translate-y-1 md:hover:shadow-lifted">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
           <img
             src={product.thumbnail}
@@ -29,14 +29,14 @@ export function ProductCard(product: Product) {
           />
 
           {discountPercent > 0 && product.stock > 0 && (
-            <span className="absolute left-1 top-1 rounded bg-destructive px-1 py-0.5 text-[0.5625rem] font-bold leading-none text-primary-foreground sm:left-2 sm:top-2 sm:px-1.5 sm:py-1 sm:text-[0.625rem]">
+            <span className="absolute left-1 top-1 rounded bg-destructive px-1 py-0.5 text-4xs font-bold leading-none text-primary-foreground sm:left-2 sm:top-2 sm:px-1.5 sm:py-1 sm:text-3xs">
               {discountPercent}% OFF
             </span>
           )}
 
           {product.stock === 0 && (
             <div className="absolute inset-0 flex items-center justify-center bg-scrim/60">
-              <span className="text-[0.625rem] font-semibold uppercase tracking-wide text-primary-foreground sm:text-sm sm:tracking-normal">
+              <span className="text-3xs font-semibold uppercase tracking-wide text-primary-foreground sm:text-sm sm:tracking-normal">
                 Out of Stock
               </span>
             </div>
@@ -44,10 +44,10 @@ export function ProductCard(product: Product) {
         </div>
 
         <div className="space-y-1 p-2 sm:space-y-2 sm:p-4">
-          <p className="hidden text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground/80 sm:block">
+          <p className="hidden text-2xs font-semibold uppercase tracking-eyebrow-wide text-muted-foreground/80 sm:block">
             {product.categorySlug?.replace("-", " ")}
           </p>
-          <h3 className="line-clamp-2 font-heading text-[0.6875rem] font-semibold leading-snug tracking-tight sm:text-sm">
+          <h3 className="line-clamp-2 font-heading text-2xs font-semibold leading-snug tracking-tight sm:text-sm">
             {product.name}
           </h3>
 

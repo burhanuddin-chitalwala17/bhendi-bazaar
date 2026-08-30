@@ -12,7 +12,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <EmailVerificationBanner />
       <main className="flex-1">
         {/* px-3 on a phone: at 3-up, every 4px of gutter is 4px off each tile. */}
-        <div className="mx-auto max-w-6xl px-3 py-4 pb-tabbar sm:px-6 sm:py-8 md:pb-8 lg:px-8">
+        <div className="mx-auto max-w-page px-3 py-4 pb-tabbar sm:px-6 sm:py-8 md:pb-8 lg:px-8">
           {children}
         </div>
       </main>

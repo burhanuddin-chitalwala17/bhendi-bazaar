@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
       </Link>
 
       <header className="space-y-1">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground/80">
+        <p className="text-2xs font-semibold uppercase tracking-display text-muted-foreground/80">
           Forgot Password
         </p>
         <h1 className="font-heading text-xl font-semibold tracking-tight">
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
       ) : (
         <form onSubmit={handleFormSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-[0.18em]">
+            <label className="text-xs font-medium uppercase tracking-eyebrow">
               Email Address
             </label>
             <Input
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
               {...register("email")}
             />
             {errors.email && (
-              <p className="text-[0.7rem] text-destructive">{errors.email.message}</p>
+              <p className="text-2xs text-destructive">{errors.email.message}</p>
             )}
           </div>
 
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+            className="w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
           >
             {isSubmitting ? "Sending..." : "Send Reset Link"}
           </Button>

@@ -1,6 +1,7 @@
 import { requireSession } from "@/lib/admin-auth";
 import { CreateOrg } from "@/org/create-org";
 
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export const metadata = {
   title: "Create an organisation",
   robots: { index: false, follow: false },
@@ -14,14 +15,12 @@ export default async function NewOrgPage() {
   await requireSession();
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Create an organisation</h1>
-        <p className="mt-2 text-muted-foreground">
-          Selling happens through an organisation. You will be its first owner.
-        </p>
-      </div>
+    <PageShell width="narrow" className="px-6 py-12">
+      <PageHeader
+        title="Create an organisation"
+        description="Selling happens through an organisation. You will be its first owner."
+      />
       <CreateOrg />
-    </div>
+    </PageShell>
   );
 }

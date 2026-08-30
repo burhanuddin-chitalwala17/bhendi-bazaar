@@ -330,7 +330,7 @@ export function ProductGallery(product: Product) {
 
       {/* Mobile pinch zoom instruction */}
       <div className="text-center md:hidden">
-        <p className="text-[0.625rem] text-muted-foreground/70">
+        <p className="text-3xs text-muted-foreground/70">
           Swipe to navigate • Pinch to zoom
         </p>
       </div>

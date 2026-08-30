@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-08-16
+- **Verified:** 2026-08-30
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -80,6 +80,15 @@ Order creation gains an optional **`couponCode`** — a string, normalised to up
 
 ### Admin
 `GET /api/admin/shipping/providers` returns `ShippingProvider` rows without a `select`, so credential and auth-error fields reach the browser. Rule 5 requires an explicit projection exposing only connection state.
+
+### Banners
+`BannerFormSchemaInput` (`src/lib/validation/schemas/banner.schema.ts`) is one declaration used by three things — `POST /api/admin/banners`, `PATCH /api/admin/banners/[id]`, and the admin form's resolver — so what an admin sees inline is what the route enforces (ADR-0013).
+
+**`order` is absent from it deliberately, and that absence is the contract.** Display order is server-owned: a create appends to the end, and `PATCH /api/admin/banners/reorder` is the only thing that writes it. Accepting it here even optionally is Rule 7's case exactly — the field a form forgot to send would silently reset the hero's order, and nothing would fail to compile. `tests/unit/home-banners.test.ts` holds the line.
+
+Two further shapes worth naming. Action `href` must be **relative** — the hero is the storefront's most prominent surface and an absolute URL sends a shopper off it — and `actions` is capped at two, which is what the banner lays out before a phone wraps a third onto its own line. Null and `""` are the same intent for every optional text column, and the schema normalises to `null` so only one of them reaches the database.
+
+The read side does not cross this boundary: the storefront hero is a server component reading `bannersDAL.getActiveBanners()`, so there is no storefront route handler and no wire shape to keep in step.
 
 ### Addresses
 The address-book wire shape (`DeliveryAddress`) is flat and stable, but since PR-41 its `id` is the **UserAddress** relationship id (server-generated — clients no longer mint ids), `metadata` is gone (label and notes are top-level), and `fullName`, `mobile`, `state` are required. Storage is two tables: `Address` (postal fact, written only by `server/shared/address.repository.ts`) and `UserAddress` (the person's relationship). `Order.address` remains an embedded snapshot, deliberately.

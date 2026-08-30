@@ -55,7 +55,7 @@ export function ChangePasswordModal() {
         <Button
           variant="outline"
           size="sm"
-          className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+          className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
         >
           <Key className="mr-1 h-3 w-3" />
           Change Password
@@ -70,7 +70,7 @@ export function ChangePasswordModal() {
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-[0.18em]">
+            <label className="text-xs font-medium uppercase tracking-eyebrow">
               Current Password
             </label>
             <div className="relative">
@@ -85,7 +85,7 @@ export function ChangePasswordModal() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-[0.18em]">
+            <label className="text-xs font-medium uppercase tracking-eyebrow">
               New Password
             </label>
             <Input
@@ -95,13 +95,13 @@ export function ChangePasswordModal() {
             {errors.newPassword && (
               <p role="alert" className="text-xs text-destructive">{errors.newPassword.message}</p>
             )}
-            <p className="text-[0.65rem] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               At least 8 characters with uppercase, lowercase, and numbers
             </p>
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-[0.18em]">
+            <label className="text-xs font-medium uppercase tracking-eyebrow">
               Confirm New Password
             </label>
             <Input

@@ -42,7 +42,7 @@ export function MultiSelect({
       <label className="block text-sm font-medium text-foreground/80 mb-1">
         {label}
       </label>
-      <div className="border border-input rounded-lg p-2 focus-within:ring-2 focus-within:ring-ring">
+      <div className="border border-input rounded-field p-2 focus-within:ring-2 focus-within:ring-ring">
         <div className="flex flex-wrap gap-2 mb-2">
           {value.map((item) => (
             <span

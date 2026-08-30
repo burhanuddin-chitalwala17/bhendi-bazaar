@@ -35,7 +35,7 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
         </div>
         <div className="flex items-center gap-2">
           {paymentLabel && (
-            <p className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-primary">
+            <p className="text-2xs font-medium uppercase tracking-eyebrow text-primary">
               {paymentLabel}
             </p>
           )}

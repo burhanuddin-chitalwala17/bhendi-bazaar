@@ -8,7 +8,7 @@ export async function OffersStrip({ offers }: { offers: Product[] }) {
   return (
     <section className="overflow-hidden rounded-xl border border-dashed border-accent bg-gradient-to-r from-accent/15 via-accent/5 to-primary/10 px-3 py-2.5 text-warning sm:px-4 sm:py-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <span className="w-fit shrink-0 rounded-full bg-accent px-2.5 py-1 text-[0.5625rem] font-semibold uppercase tracking-[0.2em] text-accent-foreground shadow-sm sm:px-3 sm:text-[0.65rem] sm:tracking-[0.25em]">
+        <span className="w-fit shrink-0 rounded-full bg-accent px-2.5 py-1 text-4xs font-semibold uppercase tracking-eyebrow text-accent-foreground shadow-raised sm:px-3 sm:text-2xs sm:tracking-eyebrow-wide">
           Ongoing Offers
         </span>
         {/* A rail, not a wrap: four offers wrapping on a phone push the rest of the
@@ -18,9 +18,9 @@ export async function OffersStrip({ offers }: { offers: Product[] }) {
             <Link
               key={offer.id}
               href={`/product/${offer.slug}`}
-              className="flex shrink-0 snap-start items-center gap-2 border-l border-accent/60 pl-3 text-[0.6875rem] sm:text-[0.7rem]"
+              className="flex shrink-0 snap-start items-center gap-2 border-l border-accent/60 pl-3 text-2xs sm:text-2xs"
             >
-              <span className="max-w-[10rem] truncate font-medium uppercase tracking-[0.12em] sm:max-w-none sm:tracking-[0.18em]">
+              <span className="max-w-[10rem] truncate font-medium uppercase tracking-label sm:max-w-none sm:tracking-eyebrow">
                 {offer.name}
               </span>
               {offer.salePrice && (

@@ -1,6 +1,6 @@
 ---
 name: bb-review
-description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus mobile-first UI (ADR-0015) and the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
+description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus design tokens across every axis — colour, type scale, tracking, elevation, shape, page width and font resolution (ADR-0022) — mobile-first UI (ADR-0015), and the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
 ---
 
 # /bb-review — pre-merge review
@@ -106,14 +106,37 @@ Not an Invariant, but the same kind of failure: silent, and invisible to `tsc`.
 - A new route handler with no browser caller — a read reachable from a server component does not need one.
 - `"use client"` at the top of a page whose interactive part is one button. Push the boundary down to the leaf.
 
-**Design tokens** ([CLAUDE.md](../../../CLAUDE.md) — colour goes through tokens)
-- A raw palette class (`bg-emerald-50`, `text-gray-500`, `border-red-200`) in a className. Colour reaches the UI only through the semantic tokens in `src/app/globals.css` — `primary`, `muted`, `destructive`, `success`/`warning`/`info`, `scrim`, `hero`. `tests/unit/design-tokens.test.ts` fails the build on these; the review job is the cases the test cannot judge:
-  - a **new allowlist entry** — legitimate only for literals that are *data* (values stored in the database), never for styling convenience;
-  - a `dark:` override next to a token — usually a sign the wrong token was chosen, since tokens flip themes by themselves;
-  - an overlay or fixed brand surface mapped to a theme token (`bg-foreground/50` as a dim layer inverts in dark mode — that is `scrim`);
-  - a new one-off token added for a single component — the vocabulary is small on purpose; ask whether an existing token names the same job.
-- Arbitrary bracket values (`w-[123px]`, `text-[#0a0a0a]`) without a stated reason — Tailwind's scale is the size/spacing token system.
-- A new UI element hand-rolled where a shared component exists (`DataTable`, `StatusBadge`, `Card`, `FormInput`, `PortalSidebar`, `PortalHeader`) — the org orders page shipped with a hand-rolled table while `DataTable` sat unused, which is how two of everything happens.
+**Design tokens — every axis, not just colour** ([ADR-0022](../../../docs/adr/0022-design-decisions-go-through-tokens.md))
+
+Every design decision reaches the UI through a token in `src/app/globals.css`. A literal at the call site pins one value in one place, which is what made a rebrand a one-file edit here while a redesign was a hundred-file hunt. `tests/unit/design-tokens.test.ts` fails the build on the mechanical cases across all six axes:
+
+| Axis | Use | Never |
+|---|---|---|
+| Colour | `primary`, `muted`, `destructive`, `success`/`warning`/`info`, `scrim`, `hero` | `bg-emerald-50`, `text-gray-500`, `text-[#0a0a0a]` |
+| Type size | `text-4xs`/`3xs`/`2xs` below Tailwind's `text-xs`, then the normal scale | `text-[0.7rem]`, `text-[11px]` |
+| Tracking | `tracking-label`/`-eyebrow`/`-eyebrow-wide`/`-display` | `tracking-[0.18em]` |
+| Elevation | `shadow-raised`/`-lifted`/`-overlay`/`-inset-field` | `shadow-sm`, `shadow-lg` |
+| Shape | `rounded-card` (surfaces), `rounded-field` (controls) | picking a raw step per component |
+| Page width | `<PageShell width=…>`, `max-w-page` | `mx-auto max-w-3xl` on a page |
+
+The test catches those. **The review job is the cases it cannot judge:**
+
+- A **new allowlist entry** — legitimate only for literals that are *data* (`category-accent.ts`) or a third party's property (`social-brand.ts`), never for styling convenience. Each entry names the one rule it is excused from; an entry that widens is a finding.
+- A **raw colour smuggled inside an arbitrary value** — `bg-[radial-gradient(…,rgba(250,250,249,0.12),…)]`, `shadow-[0_2px_#000]`, `border-[oklch(…)]`. The regexes scan named palette classes and bare hex, so these pass the suite and are still literals. **This has already shipped once**, in the home hero's two decorative overlays.
+- A **`dark:` override next to a token** — usually the wrong token, since tokens flip themes by themselves.
+- An **overlay mapped to a theme token** — `bg-foreground/50` as a dim layer inverts in dark mode; that is `scrim`.
+- A **new one-off token for a single component** — the vocabulary is small on purpose; ask whether an existing token names the same job. Elevation especially: the roles answer *what is this*, so a fifth role needs a fifth kind of thing, not a fifth shadow size.
+- A **type step used against its meaning** — `text-4xs` exists for the 105px product tile ([ADR-0016](../../../docs/adr/0016-mobile-app-shell.md)), not as a way to fit copy that is too long. Nine-pixel text on a desktop surface is a finding.
+- **Other arbitrary bracket values** (`w-[123px]`, `max-w-[10rem]`, `h-[42px]`) without a stated reason — Tailwind's scale is the size/spacing token system, and these are outside every regex above.
+
+**A `font-*` class must resolve to a real family.** `--font-heading` was set by `next/font` but never registered as a theme token, so `font-heading` sat in twenty files — every page title among them — generating **no CSS at all** while every heading silently rendered in the body face. The suite now fails any `font-*` class with no matching `--font-*` token. In review, treat a new font utility as a claim to verify, not a class to read past: a class that does nothing looks exactly like a class that works.
+
+**Reuse before invention.** A new UI element hand-rolled where a shared component exists (`PageShell`, `PageHeader`, `HeroBanner`, `DataTable`, `StatusBadge`, `Card`, `FormInput`, `PortalSidebar`, `PortalHeader`) — the org orders page shipped with a hand-rolled table while `DataTable` sat unused, and eight admin pages each spelled out the same `<h1>` before `PageHeader` existed. That is how two of everything happens.
+
+```bash
+git diff main...HEAD -- 'src/**/*.tsx' | grep -nE 'text-\[[0-9.]+(rem|px|em)|tracking-\[|shadow-(xs|sm|md|lg|xl)\b|rgba?\(|oklch\(|mx-auto max-w-|font-[a-z]+'
+```
+The grep is a prompt, not the check — the suite already blocks the mechanical cases, so a hit here is usually either a blind spot above or a false positive.
 
 **Mobile-first** ([ADR-0015](../../../docs/adr/0015-mobile-first-design.md) — base styles target a ~360px phone; breakpoints add, never restore)
 - A **multi-column base**: `grid-cols-2/3/4` or a side-by-side flex row with no breakpoint prefix and no single-column base. The base layout is one column; `sm:`/`md:` add columns.

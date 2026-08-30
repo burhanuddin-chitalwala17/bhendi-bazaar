@@ -7,6 +7,7 @@ import { productsRepository } from "@server/catalog/product.repository";
 import { OfferForm } from "@/components/promotions/OfferForm";
 import { toInitialValues } from "@/components/promotions/toInitialValues";
 
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export default async function EditPlatformOfferPage({
   params,
 }: {
@@ -27,14 +28,11 @@ export default async function EditPlatformOfferPage({
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Edit offer</h1>
-        <p className="text-sm text-muted-foreground">
-          Changes apply from now on. Discounts already given keep the terms they were
-          given under.
-        </p>
-      </div>
+    <PageShell width="narrow">
+      <PageHeader
+        title="Edit offer"
+        description="Changes apply from now on. Discounts already given keep the terms they were given under."
+      />
       <OfferForm
         action={`/api/admin/promotions/${id}`}
         method="PATCH"
@@ -46,6 +44,6 @@ export default async function EditPlatformOfferPage({
         selectedProducts={selectedProducts}
         productSearchPath="/api/admin/promotions/products"
       />
-    </div>
+    </PageShell>
   );
 }

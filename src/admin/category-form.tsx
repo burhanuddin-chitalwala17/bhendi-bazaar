@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { useCategoryForm } from "@/hooks/admin/useCategoryForm";
 import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
@@ -17,6 +16,7 @@ import {
 import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CreateCategoryInput } from "@/domain/admin";
 
+import { PageHeader } from "@/components/shared/page-shell";
 interface CategoryFormProps {
   category?: AdminCategory;
   isEdit?: boolean;
@@ -100,27 +100,15 @@ export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link
-            href={returnUrl || "/admin/categories"}
-            className="p-2 hover:bg-muted rounded-lg"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-heading font-bold text-foreground">
-              {isEdit ? "Edit Category" : "Create New Category"}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isEdit
-                ? "Update category details"
-                : "Add a new category to organize products"}
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        back={{ href: returnUrl || "/admin/categories", label: "Back to categories" }}
+        title={isEdit ? "Edit Category" : "Create New Category"}
+        description={
+          isEdit
+            ? "Update category details"
+            : "Add a new category to organize products"
+        }
+      />
 
       {/* Error/Success Messages */}
       {formError && (

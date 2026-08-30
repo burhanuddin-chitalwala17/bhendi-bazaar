@@ -16,7 +16,7 @@ export const ALLOWED_IMAGE_TYPES = [
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-export type ImageFolder = "products" | "categories";
+export type ImageFolder = "products" | "categories" | "banners";
 
 /** A user-attributable reason this file cannot be accepted, or null if it can. */
 export function imageFileProblem(file: {

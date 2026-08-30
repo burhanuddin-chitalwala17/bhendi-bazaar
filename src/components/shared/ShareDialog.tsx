@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useShare } from "@/hooks/core/useShare";
+import { SOCIAL_BRAND } from "@/lib/social-brand";
 import {
   Share2,
   Copy,
@@ -121,48 +122,48 @@ export function ShareDialog({
       id: "facebook",
       name: "Facebook",
       icon: Facebook,
-      color: "text-[#1877F2]",
-      hoverColor: "hover:bg-[#1877F2]/10",
+      color: SOCIAL_BRAND.facebook.color,
+      hoverColor: SOCIAL_BRAND.facebook.hover,
       action: handleFacebook,
     },
     {
       id: "twitter",
       name: "X (Twitter)",
       icon: Twitter,
-      color: "text-[#000000]",
-      hoverColor: "hover:bg-muted",
+      color: SOCIAL_BRAND.twitter.color,
+      hoverColor: SOCIAL_BRAND.twitter.hover,
       action: handleTwitter,
     },
     {
       id: "whatsapp",
       name: "WhatsApp",
       icon: MessageCircle,
-      color: "text-[#25D366]",
-      hoverColor: "hover:bg-[#25D366]/10",
+      color: SOCIAL_BRAND.whatsapp.color,
+      hoverColor: SOCIAL_BRAND.whatsapp.hover,
       action: handleWhatsApp,
     },
     {
       id: "linkedin",
       name: "LinkedIn",
       icon: Linkedin,
-      color: "text-[#0A66C2]",
-      hoverColor: "hover:bg-[#0A66C2]/10",
+      color: SOCIAL_BRAND.linkedin.color,
+      hoverColor: SOCIAL_BRAND.linkedin.hover,
       action: handleLinkedIn,
     },
     {
       id: "email",
       name: "Email",
       icon: Mail,
-      color: "text-muted-foreground",
-      hoverColor: "hover:bg-muted",
+      color: SOCIAL_BRAND.email.color,
+      hoverColor: SOCIAL_BRAND.email.hover,
       action: handleEmail,
     },
     {
       id: "instagram",
       name: "Instagram",
       icon: Instagram,
-      color: "text-[#E4405F]",
-      hoverColor: "hover:bg-[#E4405F]/10",
+      color: SOCIAL_BRAND.instagram.color,
+      hoverColor: SOCIAL_BRAND.instagram.hover,
       action: handleInstagram,
     },
   ];

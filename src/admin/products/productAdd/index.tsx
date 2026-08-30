@@ -3,8 +3,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
-import Link from "next/link";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
@@ -12,6 +11,7 @@ import type { OrgSummary } from "@/domain/org";
 import type { LocationOption } from "@/components/shared/forms/product/ProductOrgShippingFields";
 
 
+import { PageHeader } from "@/components/shared/page-shell";
 interface ProductAddContainerProps {
     categories: { id: string; name: string }[];
     orgs: OrgSummary[];
@@ -32,25 +32,11 @@ export function ProductAddContainer({ categories, orgs, locations, uploadEndpoin
 
     return (
         <div className="space-y-8">
-            {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-4">
-                    <Link
-                        href={productsBasePath}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <div>
-                        <h1 className="text-3xl font-heading font-bold text-foreground">
-                            Create New Product
-                        </h1>
-                        <p className="text-muted-foreground mt-1">
-                            Add a new product to your catalog
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <PageHeader
+                back={{ href: productsBasePath, label: "Back to products" }}
+                title="Create New Product"
+                description="Add a new product to your catalog"
+            />
 
             {/* Messages */}
             {error && (

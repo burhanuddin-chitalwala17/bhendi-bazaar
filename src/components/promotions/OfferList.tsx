@@ -77,30 +77,30 @@ export function OfferList({
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="font-medium">{offer.label}</span>
                 {offer.code && (
-                  <Badge variant="outline" className="font-mono text-[0.6875rem]">
+                  <Badge variant="outline" className="font-mono text-2xs">
                     {offer.code}
                   </Badge>
                 )}
                 {live && !exhausted && (
-                  <Badge className="bg-success/15 text-success text-[0.6875rem]">Live</Badge>
+                  <Badge className="bg-success/15 text-success text-2xs">Live</Badge>
                 )}
                 {!offer.isActive && (
-                  <Badge variant="outline" className="text-[0.6875rem]">
+                  <Badge variant="outline" className="text-2xs">
                     Stopped
                   </Badge>
                 )}
                 {exhausted && (
-                  <Badge variant="outline" className="text-[0.6875rem]">
+                  <Badge variant="outline" className="text-2xs">
                     Fully claimed
                   </Badge>
                 )}
                 {offer.isActive && offer.endsAt <= now && (
-                  <Badge variant="outline" className="text-[0.6875rem]">
+                  <Badge variant="outline" className="text-2xs">
                     Ended
                   </Badge>
                 )}
                 {offer.isActive && offer.startsAt > now && (
-                  <Badge variant="outline" className="text-[0.6875rem]">
+                  <Badge variant="outline" className="text-2xs">
                     Scheduled
                   </Badge>
                 )}

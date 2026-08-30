@@ -17,7 +17,7 @@ export function CategoryBreadcrumb({
 }) {
   return (
     <nav aria-label="Breadcrumb" className="mb-2 sm:mb-3">
-      <ol className="no-scrollbar flex items-center gap-1 overflow-x-auto text-[0.6875rem] text-muted-foreground sm:text-xs">
+      <ol className="no-scrollbar flex items-center gap-1 overflow-x-auto text-2xs text-muted-foreground sm:text-xs">
         <li className="shrink-0">
           <Link href="/" className="hover:text-foreground">
             Home

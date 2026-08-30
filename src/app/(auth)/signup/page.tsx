@@ -56,7 +56,7 @@ export default function SignUpPage() {
   return (
     <div className="space-y-4">
       <header className="space-y-1 text-center">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground/80">
+        <p className="text-2xs font-semibold uppercase tracking-display text-muted-foreground/80">
           Sign up
         </p>
         <h1 className="font-heading text-xl font-semibold tracking-tight">
@@ -70,25 +70,25 @@ export default function SignUpPage() {
 
       <form onSubmit={handleFormSubmit} className="space-y-3 text-sm">
         <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-[0.18em]">
+          <label className="text-xs font-medium uppercase tracking-eyebrow">
             Name
           </label>
           <Input autoComplete="name" {...register("name")} />
           {errors.name && (
-            <p className="text-[0.7rem] text-destructive">{errors.name.message}</p>
+            <p className="text-2xs text-destructive">{errors.name.message}</p>
           )}
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-[0.18em]">
+          <label className="text-xs font-medium uppercase tracking-eyebrow">
             Email
           </label>
           <Input type="email" autoComplete="email" {...register("email")} />
           {errors.email && (
-            <p className="text-[0.7rem] text-destructive">{errors.email.message}</p>
+            <p className="text-2xs text-destructive">{errors.email.message}</p>
           )}
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-[0.18em]">
+          <label className="text-xs font-medium uppercase tracking-eyebrow">
             Password
           </label>
           <div className="relative">
@@ -112,23 +112,23 @@ export default function SignUpPage() {
             </button>
           </div>
           {errors.password && (
-            <p className="text-[0.7rem] text-destructive">{errors.password.message}</p>
+            <p className="text-2xs text-destructive">{errors.password.message}</p>
           )}
         </div>
 
-        {formError && <p className="text-[0.7rem] text-destructive">{formError}</p>}
+        {formError && <p className="text-2xs text-destructive">{formError}</p>}
 
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+          className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
 
         <div className="flex items-center gap-2 pt-2">
           <span className="h-px flex-1 bg-border/70" />
-          <span className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
             or
           </span>
           <span className="h-px flex-1 bg-border/70" />
@@ -138,12 +138,12 @@ export default function SignUpPage() {
           type="button"
           variant="outline"
           onClick={handleGoogleSignUp}
-          className="w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+          className="w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
         >
           Continue with Google
         </Button>
 
-        <p className="pt-2 text-center text-[0.7rem] text-muted-foreground">
+        <p className="pt-2 text-center text-2xs text-muted-foreground">
           Already have an account?{" "}
           <Link href="/signin" className="underline underline-offset-4">
             Sign in

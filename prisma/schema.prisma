@@ -1083,3 +1083,45 @@ model Settlement {
   @@index([orgId, status])
   @@index([code])
 }
+
+/// The storefront's hero banners. Platform-owned shelf space: an org promoting its own
+/// products is what offers are for.
+model Banner {
+  id          String         @id @default(cuid())
+  title       String
+  eyebrow     String?
+  description String?
+  /// Blob URL. Null renders the brand gradient scene rather than a blank box.
+  imageUrl    String?
+  imageAlt    String?
+  /// Server-owned. A create appends to the end; only the reorder route rewrites it.
+  order       Int            @default(0)
+  /// Taken down, not deleted — the copy and artwork survive for the next run.
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  actions     BannerAction[]
+
+  @@index([isActive, order])
+}
+
+/// Rows rather than JSON on Banner, so a label and a destination are columns the
+/// database can constrain.
+model BannerAction {
+  id       String              @id @default(cuid())
+  bannerId String
+  /// Cascade is the correct side of ADR-0020: an action carries no money and no
+  /// attribution, and has no meaning apart from its banner.
+  banner   Banner              @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  label    String
+  href     String
+  variant  BannerActionVariant @default(PRIMARY)
+  order    Int                 @default(0)
+
+  @@index([bannerId, order])
+}
+
+enum BannerActionVariant {
+  PRIMARY
+  SECONDARY
+}

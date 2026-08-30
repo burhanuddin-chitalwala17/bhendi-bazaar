@@ -36,7 +36,7 @@ export function ProfileMenu() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card/80 text-xs font-semibold uppercase tracking-[0.15em] relative"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card/80 text-xs font-semibold uppercase tracking-label relative"
       >
         {user?.name?.charAt(0)?.toUpperCase() ?? "B"}
         {!isEmailVerified && (
@@ -44,7 +44,7 @@ export function ProfileMenu() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-border/70 bg-popover/95 p-2 text-xs shadow-lg">
+        <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-border/70 bg-popover/95 p-2 text-xs shadow-overlay">
           <Link
             href="/profile"
             onClick={() => {
@@ -54,14 +54,14 @@ export function ProfileMenu() {
           >
             <p className="font-semibold">{user?.name}</p>
             {user?.email && (
-              <p className="text-[0.7rem] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 {user?.email}
               </p>
             )}
             {!isEmailVerified && (
               <div className="mt-2 flex items-center gap-1.5 text-warning dark:text-warning">
                 <ShieldAlert className="h-3 w-3" />
-                <span className="text-[0.65rem] font-medium">
+                <span className="text-2xs font-medium">
                   Email not verified
                 </span>
               </div>

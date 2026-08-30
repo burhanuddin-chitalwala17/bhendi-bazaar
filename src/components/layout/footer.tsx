@@ -7,7 +7,7 @@ export function Footer() {
         <p className="tracking-wide">
           © {year} Bhendi Bazaar. Curated Islamic boutique wear and more.
         </p>
-        <p className="text-[0.7rem] uppercase tracking-[0.25em]">
+        <p className="text-2xs uppercase tracking-eyebrow-wide">
           Crafted with niyyah in Mumbai&apos;s old quarter.
         </p>
       </div>

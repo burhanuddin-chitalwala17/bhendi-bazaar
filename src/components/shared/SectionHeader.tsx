@@ -26,7 +26,7 @@ export function SectionHeader({
   return (
     <header className={cn("space-y-1", className)}>
       {overline && (
-        <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground/80 sm:text-[0.7rem] sm:tracking-[0.32em]">
+        <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-muted-foreground/80 sm:text-2xs sm:tracking-display">
           {overline}
         </p>
       )}
@@ -36,7 +36,7 @@ export function SectionHeader({
             {title}
           </h2>
           {description && (
-            <p className="text-[0.6875rem] text-muted-foreground sm:text-sm">
+            <p className="text-2xs text-muted-foreground sm:text-sm">
               {description}
             </p>
           )}

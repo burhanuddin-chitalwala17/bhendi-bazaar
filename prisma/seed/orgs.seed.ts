@@ -24,7 +24,7 @@ export const seedOrgs: SeedOrg[] = [
     isActive: true,
     isVerified: true,
     description: "Leading wholesaler and retailer of traditional Islamic clothing and accessories in Mumbai. Established 1985.",
-    logoUrl: "https://placehold.co/200x200/10b981/ffffff?text=BBT",
+    logoUrl: "https://placehold.co/200x200/10b981/ffffff.png?text=BBT",
   },
   {
     id: "org-2",
@@ -45,6 +45,6 @@ export const seedOrgs: SeedOrg[] = [
     isActive: true,
     isVerified: true,
     description: "Premium supplier of attars, prayer essentials, and traditional jewelry. Quality products with authentic sourcing.",
-    logoUrl: "https://placehold.co/200x200/0ea5e9/ffffff?text=IEH",
+    logoUrl: "https://placehold.co/200x200/0ea5e9/ffffff.png?text=IEH",
   },
 ];

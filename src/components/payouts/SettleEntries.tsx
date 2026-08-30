@@ -119,20 +119,20 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
                     {entry.orderId ?? "manual adjustment"}
                   </span>
                   {entry.settlementStatus && (
-                    <Badge variant="outline" className="text-[0.6875rem]">
+                    <Badge variant="outline" className="text-2xs">
                       {entry.settlementStatus.toLowerCase()}
                     </Badge>
                   )}
                   {entry.isManuallyEdited && (
-                    <Badge variant="outline" className="gap-1 text-[0.6875rem]">
+                    <Badge variant="outline" className="gap-1 text-2xs">
                       <PencilLine className="size-3" aria-hidden /> edited
                     </Badge>
                   )}
                   {entry.deletedAt && (
-                    <Badge variant="outline" className="text-[0.6875rem]">removed</Badge>
+                    <Badge variant="outline" className="text-2xs">removed</Badge>
                   )}
                   {entry.isNegativeMargin && (
-                    <Badge className="gap-1 bg-warning/15 text-warning text-[0.6875rem]">
+                    <Badge className="gap-1 bg-warning/15 text-warning text-2xs">
                       <AlertTriangle className="size-3" aria-hidden /> below cost
                     </Badge>
                   )}

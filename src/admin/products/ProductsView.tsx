@@ -2,7 +2,7 @@
 
 "use client";
 
-import { ArrowLeft, Edit, ExternalLink } from "lucide-react";
+import { Edit, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ProductForm } from "@/components/shared/forms/product";
@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useProductsBasePath } from "@/admin/products/useProductsBasePath";
 import type { OrgSummary } from "@/domain/org";
 
+import { PageHeader } from "@/components/shared/page-shell";
 interface ProductViewProps {
   product: ProductDetails;
   /** False on the platform's support view — editing happens in the owning org's portal. */
@@ -27,41 +28,29 @@ export function ProductsView({ product, category, org, canEdit = true }: Product
   };
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-4">
-          <Link
-            href={productsBasePath}
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-heading font-bold text-foreground">
-              {product.name}
-            </h1>
-            <p className="text-muted-foreground mt-1">Product Details</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <Link href={`/product/${product.slug}`} target="_blank">
-            <Button variant="outline" className="gap-2">
-              <ExternalLink className="w-4 h-4" />
-              View Live
-            </Button>
-          </Link>
-          {canEdit && (
-            <Link href={`${productsBasePath}/${product.id}/edit`}>
-              <Button className="gap-2">
-                <Edit className="w-4 h-4" />
-                Edit Product
+      <PageHeader
+        back={{ href: productsBasePath, label: "Back to products" }}
+        title={product.name}
+        description="Product Details"
+        actions={
+          <>
+            <Link href={`/product/${product.slug}`} target="_blank">
+              <Button variant="outline" className="gap-2">
+                <ExternalLink className="w-4 h-4" />
+                View Live
               </Button>
             </Link>
-          )}
-        </div>
-      </div>
+            {canEdit && (
+              <Link href={`${productsBasePath}/${product.id}/edit`}>
+                <Button className="gap-2">
+                  <Edit className="w-4 h-4" />
+                  Edit Product
+                </Button>
+              </Link>
+            )}
+          </>
+        }
+      />
 
       {/* Product Form in Read-Only Mode */}
       <ProductForm

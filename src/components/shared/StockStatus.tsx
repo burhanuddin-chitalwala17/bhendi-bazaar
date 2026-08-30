@@ -44,7 +44,7 @@ export function StockStatus({
 
   const dotSize = isXs ? "h-1 w-1" : size === "sm" ? "h-1.5 w-1.5" : "h-2 w-2";
   const textSize = isXs
-    ? "text-[0.625rem]"
+    ? "text-3xs"
     : size === "sm"
     ? "text-xs"
     : "text-sm";

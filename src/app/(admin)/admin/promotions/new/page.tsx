@@ -4,6 +4,7 @@ import { categoryRepository } from "@server/catalog/category.repository";
 import { productsRepository } from "@server/catalog/product.repository";
 import { OfferForm } from "@/components/promotions/OfferForm";
 
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export default async function NewPlatformOfferPage() {
   await requirePlatformAdmin();
   const [categories, products] = await Promise.all([
@@ -12,14 +13,11 @@ export default async function NewPlatformOfferPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">New offer</h1>
-        <p className="text-sm text-muted-foreground">
-          Platform-funded. Where an organisation already offers something on the same item, you
-          pay only the difference.
-        </p>
-      </div>
+    <PageShell width="narrow">
+      <PageHeader
+        title="New offer"
+        description="Platform-funded. Where an organisation already offers something on the same item, you pay only the difference."
+      />
       <OfferForm
         action="/api/admin/promotions"
         returnTo="/admin/promotions"
@@ -28,6 +26,6 @@ export default async function NewPlatformOfferPage() {
         productTotal={products.total}
         productSearchPath="/api/admin/promotions/products"
       />
-    </div>
+    </PageShell>
   );
 }

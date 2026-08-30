@@ -16,6 +16,7 @@ import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 
+import { PageHeader } from "@/components/shared/page-shell";
 export default function AdminCategoriesPage() {
   const [filters, setFilters] = useState<CategoryListFilters>({
     page: 1,
@@ -205,16 +206,11 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">
-            Categories
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage product categories and organization
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Categories"
+        description="Manage product categories and organization"
+        actions={
+          <>
           <Link
             href="/admin/categories/bulk"
             className="px-4 py-2 border border-border rounded-lg hover:bg-muted flex items-center gap-2"
@@ -229,8 +225,9 @@ export default function AdminCategoriesPage() {
             <Plus className="w-4 h-4" />
             Add Category
           </Link>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Search */}
       <div className="bg-card rounded-lg border border-border p-4">

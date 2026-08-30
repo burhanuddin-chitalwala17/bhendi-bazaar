@@ -18,13 +18,13 @@ import { authOptions } from "@/lib/auth-config";
 import { redirect } from "next/navigation";
 
 const headingFont = Playfair_Display({
-  variable: "--font-heading",
+  variable: "--font-heading-face",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
 });
 
 const bodyFont = DM_Sans({
-  variable: "--font-body",
+  variable: "--font-body-face",
   subsets: ["latin"],
 });
 

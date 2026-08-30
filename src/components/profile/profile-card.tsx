@@ -108,7 +108,7 @@ export function ProfileCard({
               size="sm"
               onClick={handleEdit}
               disabled={loading}
-              className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+              className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
             >
               <Edit3 className="mr-1 h-3 w-3" />
               Edit
@@ -136,7 +136,7 @@ export function ProfileCard({
                 <button
                   type="button"
                   onClick={handleEditPic}
-                  className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-raised hover:bg-primary/90"
                   title="Change profile picture"
                 >
                   <Camera className="h-4 w-4" />
@@ -178,7 +178,7 @@ export function ProfileCard({
             className="space-y-3 text-xs"
           >
             <div className="space-y-1">
-              <label className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <label className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
                 Name
               </label>
               <Input
@@ -190,7 +190,7 @@ export function ProfileCard({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <label className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
                 Email
               </label>
               <Input
@@ -203,7 +203,7 @@ export function ProfileCard({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              <label className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
                 Mobile Number
               </label>
               <Input

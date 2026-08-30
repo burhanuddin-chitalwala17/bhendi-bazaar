@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 
 const statusBadgeVariants = cva(
-  "text-[0.65rem] font-semibold uppercase tracking-[0.18em]",
+  "text-2xs font-semibold uppercase tracking-eyebrow",
   {
     variants: {
       // Washes are the status colour at low opacity, so a status reads the same

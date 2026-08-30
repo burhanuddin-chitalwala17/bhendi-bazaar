@@ -21,6 +21,7 @@ import {
 import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
 import type { AdminReview, ReviewListFilters } from "@/domain/admin";
 
+import { PageHeader } from "@/components/shared/page-shell";
 export default function AdminReviewsPage() {
   const [filters, setFilters] = useState<ReviewListFilters>({
     page: 1,
@@ -211,24 +212,20 @@ export default function AdminReviewsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">
-            Reviews
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Moderate and manage customer reviews
-          </p>
-        </div>
-        <button
+      <PageHeader
+        title="Reviews"
+        description="Moderate and manage customer reviews"
+        actions={
+          <button
           onClick={handleRefresh}
           disabled={isLoading}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           {isLoading ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
+          </button>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-card rounded-lg border border-border p-4">

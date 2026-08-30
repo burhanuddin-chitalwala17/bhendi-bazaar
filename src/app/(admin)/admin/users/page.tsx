@@ -16,6 +16,7 @@ import type { AdminUser, UserListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
 import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
 
+import { PageHeader } from "@/components/shared/page-shell";
 export default function AdminUsersPage() {
   const [filters, setFilters] = useState<UserListFilters>({
     page: 1,
@@ -146,14 +147,11 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">
-            Users
-          </h1>
-          <p className="text-muted-foreground mt-1">Manage platform users</p>
-        </div>
-        <button
+      <PageHeader
+        title="Users"
+        description="Manage platform users"
+        actions={
+          <button
           onClick={handleRefresh}
           disabled={isLoading}
           className={cn(
@@ -163,8 +161,9 @@ export default function AdminUsersPage() {
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           {isLoading ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
+          </button>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-card rounded-lg border border-border p-4">

@@ -19,7 +19,7 @@ export function PortalHeader({
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 md:px-6">
       {/* Hidden below md: the drawer hamburger occupies the top-left, and the label
           plus a full email cannot fit a phone-width row anyway. */}
-      <span className="hidden text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground md:inline">
+      <span className="hidden text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground md:inline">
         {label}
       </span>
       <div className="ml-auto flex items-center gap-2 sm:gap-4">
