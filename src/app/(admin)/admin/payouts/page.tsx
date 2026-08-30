@@ -48,6 +48,7 @@ export default async function AdminPayoutsPage() {
         {orgs.map((org) => (
           <li key={org.id}>
             <Link
+              prefetch={false}
               href={`/admin/payouts/${org.id}`}
               className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-primary"
             >

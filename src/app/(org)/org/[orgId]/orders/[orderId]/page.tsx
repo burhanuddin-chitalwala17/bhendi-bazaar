@@ -32,7 +32,7 @@ export default async function OrgOrderDetailPage({
             {order.paymentStatus}
           </StatusBadge>
         </div>
-        <Link href={`/org/${orgId}/orders`} className="text-sm text-primary hover:underline">
+        <Link href={`/org/${orgId}/orders`} className="text-sm text-primary hover:underline" prefetch={false}>
           ← All orders
         </Link>
       </div>

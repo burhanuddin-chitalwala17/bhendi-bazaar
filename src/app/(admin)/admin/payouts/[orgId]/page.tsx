@@ -29,7 +29,7 @@ export default async function AdminOrgPayoutPage({
   return (
     <div className="space-y-5">
       <div>
-        <Link href="/admin/payouts" className="text-xs text-muted-foreground hover:underline">
+        <Link href="/admin/payouts" className="text-xs text-muted-foreground hover:underline" prefetch={false}>
           ← All payouts
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">{org.name}</h1>

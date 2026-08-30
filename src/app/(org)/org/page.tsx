@@ -30,12 +30,14 @@ export default async function OrgIndexPage() {
           </p>
           <div className="mt-8 flex gap-3">
             <Link
+              prefetch={false}
               href="/org/new"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Create an organisation
             </Link>
             <Link
+              prefetch={false}
               href="/"
               className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted/60"
             >
@@ -54,6 +56,7 @@ export default async function OrgIndexPage() {
             {orgs.map((org) => (
               <li key={org.id}>
                 <Link
+                  prefetch={false}
                   href={`/org/${org.id}`}
                   className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40"
                 >
@@ -70,6 +73,7 @@ export default async function OrgIndexPage() {
           </ul>
 
           <Link
+            prefetch={false}
             href="/org/new"
             className="mt-6 inline-block text-sm text-primary hover:underline"
           >

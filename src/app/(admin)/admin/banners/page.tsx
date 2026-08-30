@@ -19,7 +19,7 @@ export default async function AdminBannersPage() {
         description="The storefront hero, top to bottom in the order shoppers see it"
         actions={
           <Button asChild>
-            <Link href="/admin/banners/new">
+            <Link href="/admin/banners/new" prefetch={false}>
               <Plus /> Add banner
             </Link>
           </Button>

@@ -30,6 +30,7 @@ export function OrgOrdersTable({
       label: "Order",
       render: (order) => (
         <Link
+          prefetch={false}
           href={`/org/${orgId}/orders/${order.id}`}
           className="font-medium text-primary hover:underline"
         >

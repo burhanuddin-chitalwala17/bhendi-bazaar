@@ -17,7 +17,7 @@ export function AdminAccessButton() {
       asChild
       className="rounded-full bg-info px-6 text-xs font-semibold uppercase tracking-eyebrow text-primary-foreground hover:bg-info/90"
     >
-      <Link href="/admin" className="flex items-center gap-2">
+      <Link href="/admin" className="flex items-center gap-2" prefetch={false}>
         <Shield className="h-4 w-4" />
         Admin Dashboard
       </Link>

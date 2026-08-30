@@ -32,6 +32,7 @@ export function FloatingAdminButton() {
     <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-full bg-info px-6 py-3 text-primary-foreground shadow-overlay transition-all hover:shadow-overlay">
       <Shield className="h-5 w-5" />
       <Link
+        prefetch={false}
         href="/admin"
         className="text-sm font-semibold uppercase tracking-wider hover:underline"
       >

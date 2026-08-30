@@ -89,7 +89,7 @@ export function ProductOrgShippingFields({
             <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
               This organisation has no pickup locations yet.{" "}
               {selectedOrgId && (
-                <Link href={`/org/${selectedOrgId}/locations`} className="underline">
+                <Link href={`/org/${selectedOrgId}/locations`} className="underline" prefetch={false}>
                   Add one first
                 </Link>
               )}{" "}

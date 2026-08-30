@@ -97,5 +97,5 @@ function WidgetCard({
     </Card>
   );
 
-  return widget.href ? <Link href={`${basePath}${widget.href}`}>{body}</Link> : body;
+  return widget.href ? <Link href={`${basePath}${widget.href}`} prefetch={false}>{body}</Link> : body;
 }

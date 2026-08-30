@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
         <p className="text-muted-foreground">
           This password reset link is invalid or has expired.
         </p>
-        <Link href="/forgot-password">
+        <Link href="/forgot-password" prefetch={false}>
           <Button>Request New Link</Button>
         </Link>
       </div>

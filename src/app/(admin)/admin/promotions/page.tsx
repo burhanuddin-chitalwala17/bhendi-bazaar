@@ -24,7 +24,7 @@ export default async function AdminPromotionsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/admin/promotions/new">
+          <Link href="/admin/promotions/new" prefetch={false}>
             <Plus className="size-4" aria-hidden /> New offer
           </Link>
         </Button>

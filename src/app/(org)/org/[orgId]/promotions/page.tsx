@@ -30,7 +30,7 @@ export default async function OrgPromotionsPage({
           </p>
         </div>
         <Button asChild>
-          <Link href={`/org/${scope.orgId}/promotions/new`}>
+          <Link href={`/org/${scope.orgId}/promotions/new`} prefetch={false}>
             <Plus className="size-4" aria-hidden /> New offer
           </Link>
         </Button>

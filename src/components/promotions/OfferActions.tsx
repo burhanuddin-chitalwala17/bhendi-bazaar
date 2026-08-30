@@ -50,7 +50,7 @@ export function OfferActions({
   return (
     <div className="mt-3 flex gap-2 border-t border-border pt-3">
       <Button asChild variant="outline" size="sm">
-        <Link href={editHref}>
+        <Link href={editHref} prefetch={false}>
           <Pencil className="size-3.5" aria-hidden /> Edit
         </Link>
       </Button>

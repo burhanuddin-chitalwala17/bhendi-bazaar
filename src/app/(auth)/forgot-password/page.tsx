@@ -37,6 +37,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="space-y-6">
       <Link
+        prefetch={false}
         href="/signin"
         className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground"
       >
@@ -66,7 +67,7 @@ export default function ForgotPasswordPage() {
               reset link shortly.
             </p>
           </div>
-          <Link href="/signin">
+          <Link href="/signin" prefetch={false}>
             <Button variant="outline" className="mt-4">
               Return to Sign In
             </Button>
