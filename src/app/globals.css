@@ -6,8 +6,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-body);
-  --font-mono: var(--font-heading);
+  /* The faces are named `*-face` so a theme token can carry the same name as the
+     utility it generates without referencing itself. `font-mono` is deliberately
+     absent: it keeps Tailwind's system mono stack, because the SKUs, order codes and
+     payment ids that use it are identifiers, not display type. */
+  --font-sans: var(--font-body-face);
+  --font-heading: var(--font-heading-face);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -52,6 +56,45 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* Semantic shape. The steps above are a scale; these say which step a surface takes,
+     so card corners can move without dragging every input and button with them. */
+  --radius-card: calc(var(--radius) + 4px);
+  --radius-field: calc(var(--radius) - 2px);
+}
+
+/* The axes colour already had, and type/rhythm/elevation did not. Every value below
+   replaced a literal that was spelled out at the call site — 86 arbitrary `text-[…]`
+   across six near-identical sizes, 78 `tracking-[…]` across nine — which is what made
+   a redesign a hundred-file edit while a rebrand stayed a one-file edit. (ADR-0022) */
+@theme {
+  /* Type steps below Tailwind's `text-xs` (0.75rem). The 3-up phone tile lives
+     entirely down here (ADR-0016), which is why the scale needs three of them.
+     Size-only, no paired line-height: the literals these replaced set font-size and
+     nothing else, so pairing leading here would silently reflow ~90 call sites.
+     Leading stays an explicit `leading-*` decision at the call site. */
+  --text-2xs: 0.6875rem; /* 11px — the tile's body and label size */
+  --text-3xs: 0.625rem; /* 10px — category lane captions */
+  --text-4xs: 0.5625rem; /* 9px  — the smallest thing legible on a 105px tile */
+
+  /* Tracking. One design idea — the tracked-out uppercase eyebrow — had drifted into
+     nine values between 0.12em and 0.35em. Four steps, because the eyebrow genuinely
+     widens as it gets larger; anything finer was drift, not intent. */
+  /* The storefront column. The layout and the verification banner that spans it were
+     two separate `max-w-6xl` literals; a token is what keeps them the same column. */
+  --container-page: 72rem;
+
+  --tracking-label: 0.15em;
+  --tracking-eyebrow: 0.2em;
+  --tracking-eyebrow-wide: 0.25em;
+  --tracking-display: 0.32em;
+
+  /* Elevation as a role, not a size. Tailwind's shadow scale answers "how big"; these
+     answer "what is this thing" — which is the question a redesign changes. Values are
+     Tailwind's own steps, so adopting them moved nothing. */
+  --shadow-raised: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-lifted: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-overlay: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-inset-field: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 :root {

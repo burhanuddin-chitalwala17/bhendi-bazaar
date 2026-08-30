@@ -46,7 +46,7 @@ export default function SignInPage() {
   return (
     <div className="space-y-4">
       <header className="space-y-1 text-center">
-        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-muted-foreground/80">
+        <p className="text-2xs font-semibold uppercase tracking-display text-muted-foreground/80">
           Sign in
         </p>
         <h1 className="font-heading text-xl font-semibold tracking-tight">
@@ -60,16 +60,16 @@ export default function SignInPage() {
 
       <form onSubmit={handleFormSubmit} className="space-y-3 text-sm">
         <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-[0.18em]">
+          <label className="text-xs font-medium uppercase tracking-eyebrow">
             Email
           </label>
           <Input type="email" autoComplete="email" {...register("email")} />
           {errors.email && (
-            <p className="text-[0.7rem] text-destructive">{errors.email.message}</p>
+            <p className="text-2xs text-destructive">{errors.email.message}</p>
           )}
         </div>
         <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-[0.18em]">
+          <label className="text-xs font-medium uppercase tracking-eyebrow">
             Password
           </label>
           <div className="relative">
@@ -93,7 +93,7 @@ export default function SignInPage() {
             </button>
           </div>
           {errors.password && (
-            <p className="text-[0.7rem] text-destructive">{errors.password.message}</p>
+            <p className="text-2xs text-destructive">{errors.password.message}</p>
           )}
         </div>
 
@@ -105,17 +105,17 @@ export default function SignInPage() {
             Forgot password?
           </Link>
         </div>
-        {formError && <p className="text-[0.7rem] text-destructive">{formError}</p>}
+        {formError && <p className="text-2xs text-destructive">{formError}</p>}
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+          className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
         >
           {isSubmitting ? "Signing in..." : "Sign in"}
         </Button>
         <div className="flex items-center gap-2 pt-2">
           <span className="h-px flex-1 bg-border/70" />
-          <span className="text-[0.65rem] uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
             or
           </span>
           <span className="h-px flex-1 bg-border/70" />
@@ -124,12 +124,12 @@ export default function SignInPage() {
           type="button"
           variant="outline"
           onClick={handleGoogleSignIn}
-          className="w-full rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+          className="w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
         >
           <GoogleIcon />
           Continue with Google
         </Button>
-        <p className="pt-2 text-center text-[0.7rem] text-muted-foreground">
+        <p className="pt-2 text-center text-2xs text-muted-foreground">
           New to Bhendi Bazaar?{" "}
           <Link href="/signup" className="underline underline-offset-4">
             Create an account

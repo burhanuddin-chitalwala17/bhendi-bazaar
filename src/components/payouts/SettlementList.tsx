@@ -67,7 +67,7 @@ export function SettlementList({ settlements }: { settlements: SettlementRow[] }
                   <span className="font-mono text-xs">{settlement.code}</span>
                   <Badge
                     variant="outline"
-                    className={`text-[0.6875rem] ${
+                    className={`text-2xs ${
                       settlement.status === "PAID" ? "border-success text-success" : ""
                     }`}
                   >

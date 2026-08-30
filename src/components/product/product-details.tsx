@@ -24,7 +24,7 @@ export function ProductDetails(product: Product) {
     <section className="space-y-3 sm:space-y-4">
       {/* Header */}
       <div className="space-y-1.5 sm:space-y-2">
-        <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground/80 sm:text-[0.7rem] sm:tracking-[0.32em]">
+        <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-muted-foreground/80 sm:text-2xs sm:tracking-display">
           Bhendi Bazaar · {product.categorySlug.replace("-", " ")}
         </p>
         {/* Share sits beside the title rather than with the cart buttons: those dock to
@@ -72,14 +72,14 @@ export function ProductDetails(product: Product) {
       {/* Sizes (if available) */}
       {product.options?.sizes && (
         <div className="space-y-2">
-          <p className="text-[0.625rem] font-medium uppercase tracking-[0.2em] text-muted-foreground sm:text-xs">
+          <p className="text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground sm:text-xs">
             Sizes
           </p>
           <div className="flex flex-wrap gap-2 text-xs">
             {product.options.sizes.map((size) => (
               <span
                 key={size}
-                className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-border/80 px-3 uppercase tracking-[0.18em]"
+                className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-border/80 px-3 uppercase tracking-eyebrow"
               >
                 {size}
               </span>

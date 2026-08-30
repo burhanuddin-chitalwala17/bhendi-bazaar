@@ -5,11 +5,12 @@
 
 import { CategoryForm } from "@/admin/category-form";
 
+import { PageShell } from "@/components/shared/page-shell";
 export default function NewCategoryPage() {
   return (
-    <div className="max-w-4xl mx-auto">
+    <PageShell width="form">
       <CategoryForm />
-    </div>
+    </PageShell>
   );
 }
 

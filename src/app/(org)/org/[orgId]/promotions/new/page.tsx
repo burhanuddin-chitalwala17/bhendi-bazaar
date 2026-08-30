@@ -11,6 +11,7 @@ import { productsRepository } from "@server/catalog/product.repository";
 import { orgRepository } from "@server/catalog/org.repository";
 import { OfferForm } from "@/components/promotions/OfferForm";
 
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export default async function NewOrgOfferPage({
   params,
 }: {
@@ -26,14 +27,11 @@ export default async function NewOrgOfferPage({
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">New offer</h1>
-        <p className="text-sm text-muted-foreground">
-          You bear what this costs, up to {(org?.maxDiscountBps ?? 5000) / 100}%. If the platform
-          runs something deeper on the same item, it pays the difference.
-        </p>
-      </div>
+    <PageShell width="narrow">
+      <PageHeader
+        title="New offer"
+        description={`You bear what this costs, up to ${(org?.maxDiscountBps ?? 5000) / 100}%. If the platform runs something deeper on the same item, it pays the difference.`}
+      />
       <OfferForm
         action={`/api/org/${scope.orgId}/promotions`}
         returnTo={`/org/${scope.orgId}/promotions`}
@@ -43,6 +41,6 @@ export default async function NewOrgOfferPage({
         productSearchPath={`/api/org/${scope.orgId}/promotions/products`}
         codePrefix={org ? `${org.code}-` : undefined}
       />
-    </div>
+    </PageShell>
   );
 }

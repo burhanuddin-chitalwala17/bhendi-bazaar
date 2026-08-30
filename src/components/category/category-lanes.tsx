@@ -48,7 +48,7 @@ export function CategoryLanes({ categories }: { categories: Category[] }) {
                   className="object-cover"
                 />
               </span>
-              <span className="line-clamp-2 text-center text-[0.625rem] font-medium leading-tight text-muted-foreground">
+              <span className="line-clamp-2 text-center text-3xs font-medium leading-tight text-muted-foreground">
                 {category.name}
               </span>
             </Link>

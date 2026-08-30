@@ -21,7 +21,7 @@ export function ProductActions({
     <div className="flex gap-2 md:mt-4">
       <Button
         size="lg"
-        className="flex-1 rounded-full text-[0.6875rem] font-semibold uppercase tracking-[0.15em] sm:text-xs sm:tracking-[0.2em]"
+        className="flex-1 rounded-full text-2xs font-semibold uppercase tracking-label sm:text-xs sm:tracking-eyebrow"
         variant="outline"
         disabled={isAddingToCart || isOutOfStock}
         onClick={onAddToCart}
@@ -34,7 +34,7 @@ export function ProductActions({
       </Button>
       <Button
         size="lg"
-        className="flex-1 rounded-full text-[0.6875rem] font-semibold uppercase tracking-[0.15em] sm:text-xs sm:tracking-[0.2em]"
+        className="flex-1 rounded-full text-2xs font-semibold uppercase tracking-label sm:text-xs sm:tracking-eyebrow"
         disabled={isBuyingNow || isOutOfStock}
         onClick={onBuyNow}
       >

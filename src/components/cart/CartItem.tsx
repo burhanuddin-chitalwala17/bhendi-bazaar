@@ -58,7 +58,7 @@ export function CartItem({
   return (
     <div className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-card/80 p-3 text-sm">
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground/80">
+        <p className="text-xs font-medium uppercase tracking-eyebrow text-muted-foreground/80">
           {item.productName}
         </p>
         {(item.size || item.color) && (

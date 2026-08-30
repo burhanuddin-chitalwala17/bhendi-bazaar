@@ -11,6 +11,7 @@ import { CategoryForm } from "@/admin/category-form";
 import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory } from "@/domain/admin";
 
+import { PageShell } from "@/components/shared/page-shell";
 export default function EditCategoryPage() {
   const params = useParams();
   const categoryId = params.id as string;
@@ -61,9 +62,9 @@ export default function EditCategoryPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <PageShell width="form">
       <CategoryForm category={category} isEdit />
-    </div>
+    </PageShell>
   );
 }
 

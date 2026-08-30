@@ -8,6 +8,7 @@ import { orgRepository } from "@server/catalog/org.repository";
 import { OfferForm } from "@/components/promotions/OfferForm";
 import { toInitialValues } from "@/components/promotions/toInitialValues";
 
+import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export default async function EditOrgOfferPage({
   params,
 }: {
@@ -30,14 +31,11 @@ export default async function EditOrgOfferPage({
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Edit offer</h1>
-        <p className="text-sm text-muted-foreground">
-          Changes apply from now on. Discounts already given keep the terms they were
-          given under.
-        </p>
-      </div>
+    <PageShell width="narrow">
+      <PageHeader
+        title="Edit offer"
+        description="Changes apply from now on. Discounts already given keep the terms they were given under."
+      />
       <OfferForm
         action={`/api/org/${scope.orgId}/promotions/${id}`}
         method="PATCH"
@@ -50,6 +48,6 @@ export default async function EditOrgOfferPage({
         productSearchPath={`/api/org/${scope.orgId}/promotions/products`}
         codePrefix={org ? `${org.code}-` : undefined}
       />
-    </div>
+    </PageShell>
   );
 }

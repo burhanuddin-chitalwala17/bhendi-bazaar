@@ -215,7 +215,7 @@ export function ProfilePicUpload({
             variant="destructive"
             size="sm"
             onClick={handleRemove}
-            className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+            className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
           >
             Remove
           </Button>
@@ -226,7 +226,7 @@ export function ProfilePicUpload({
           size="sm"
           disabled={uploading}
           onClick={onCancel}
-          className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+          className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
         >
           Cancel
         </Button>

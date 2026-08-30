@@ -53,7 +53,7 @@ export default async function OrgEarningsPage({
                     {order.orderId ?? "adjustment"}
                   </span>
                   {order.settlementStatus && (
-                    <Badge variant="outline" className="text-[0.6875rem]">
+                    <Badge variant="outline" className="text-2xs">
                       {order.settlementStatus.toLowerCase()}
                     </Badge>
                   )}

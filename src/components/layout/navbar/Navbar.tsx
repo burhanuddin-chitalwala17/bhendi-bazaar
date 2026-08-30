@@ -47,7 +47,7 @@ export function Navbar() {
             <Button
               asChild
               variant="outline"
-              className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] md:inline-flex lg:px-4"
+              className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex lg:px-4"
             >
               <Link href="/signin">Login</Link>
             </Button>
@@ -57,7 +57,7 @@ export function Navbar() {
             <Link
               href="/orders"
               className={cn(
-                "hidden px-1 py-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors md:block",
+                "hidden px-1 py-2 text-xs font-medium uppercase tracking-eyebrow text-muted-foreground transition-colors md:block",
                 pathname === "/orders" && "text-primary"
               )}
             >
@@ -70,7 +70,7 @@ export function Navbar() {
             variant={hasCartItems ? "default" : "outline"}
             disabled={!hasCartItems}
             className={cn(
-              "relative hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] md:inline-flex",
+              "relative hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex",
               !hasCartItems &&
                 "cursor-not-allowed border-border/80 bg-muted text-muted-foreground"
             )}
@@ -84,7 +84,7 @@ export function Navbar() {
               <ShoppingBag className="mr-1 h-4 w-4" />
               Cart
               {cartCount > 0 && (
-                <span className="ml-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[0.65rem] font-semibold leading-none text-primary-foreground">
+                <span className="ml-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-2xs font-semibold leading-none text-primary-foreground">
                   {cartCount}
                 </span>
               )}

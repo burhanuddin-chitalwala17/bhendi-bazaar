@@ -27,7 +27,7 @@ export function FormActions({
         size="sm"
         disabled={isSubmitting || disabled}
         onClick={onCancel}
-        className="h-10 rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em] sm:h-8"
+        className="h-10 rounded-full text-2xs font-semibold uppercase tracking-eyebrow sm:h-8"
       >
         {cancelLabel}
       </Button>
@@ -36,7 +36,7 @@ export function FormActions({
         size="sm"
         disabled={isSubmitting || disabled}
         onClick={onSubmit}
-        className="h-10 rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em] sm:h-8"
+        className="h-10 rounded-full text-2xs font-semibold uppercase tracking-eyebrow sm:h-8"
       >
         {isSubmitting ? "Saving…" : submitLabel}
       </Button>

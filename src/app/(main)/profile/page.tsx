@@ -81,7 +81,7 @@ export default function ProfilePage() {
             </p>
             <Button
               asChild
-              className="mt-1 rounded-full px-6 text-xs font-semibold uppercase tracking-[0.2em]"
+              className="mt-1 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow"
             >
               <a href="/signin">Go to login</a>
             </Button>

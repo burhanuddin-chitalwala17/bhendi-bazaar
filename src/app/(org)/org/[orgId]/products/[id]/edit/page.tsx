@@ -7,6 +7,7 @@ import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import type { AdminCategory } from "@/domain/admin";
 import { orgAddressService } from "@server/catalog/org.address.service";
 
+import { PageShell } from "@/components/shared/page-shell";
 export default async function OrgEditProductPage({
   params,
 }: {
@@ -37,7 +38,7 @@ export default async function OrgEditProductPage({
     }));
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <PageShell>
       <Suspense fallback={<LoadingSkeleton />}>
         <ProductEditContainer
           product={product}
@@ -47,6 +48,6 @@ export default async function OrgEditProductPage({
           uploadEndpoint={`/api/org/${orgId}/upload`}
         />
       </Suspense>
-    </div>
+    </PageShell>
   );
 }

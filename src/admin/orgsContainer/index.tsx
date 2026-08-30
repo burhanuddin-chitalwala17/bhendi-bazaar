@@ -10,6 +10,7 @@ import { useOrgs } from "./hooks/useOrgs";
 import type { OrgWithStats } from "@/domain/org";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 
+import { PageHeader } from "@/components/shared/page-shell";
 const ITEMS_PER_PAGE = 10;
 
 export function OrgsContainer() {
@@ -137,18 +138,11 @@ export function OrgsContainer() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">
-            Orgs Management
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage orgs and vendors on your platform (
-            {filteredOrgs.length}{" "}
-            {filteredOrgs.length === 1 ? "org" : "orgs"})
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+      <PageHeader
+        title="Orgs Management"
+        description={`Manage orgs and vendors on your platform (${filteredOrgs.length} ${filteredOrgs.length === 1 ? "org" : "orgs"})`}
+        actions={
+          <>
           <button
             onClick={() => refetch()}
             disabled={loading}
@@ -168,8 +162,9 @@ export function OrgsContainer() {
             <Plus className="w-4 h-4" />
             Add Org
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Filters */}
       <div className="bg-card rounded-lg border border-border p-4">

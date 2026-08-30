@@ -34,17 +34,17 @@ export function AddressModal({
   }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-scrim/40 px-4">
-      <div className="max-h-overlay w-full max-w-md overflow-y-auto rounded-2xl border border-border/60 bg-background shadow-xl">
+      <div className="max-h-overlay w-full max-w-md overflow-y-auto rounded-2xl border border-border/60 bg-background shadow-overlay">
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground/80">
+            <p className="text-xs font-semibold uppercase tracking-eyebrow text-muted-foreground/80">
               {mode === "add"
                 ? "Add address"
                 : mode === "edit"
                 ? "Edit address"
                 : "Address details"}
             </p>
-            <p className="text-[0.7rem] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {mode === "view"
                 ? "Full address and contact details."
                 : "These details will be used for delivery and updates."}
@@ -126,7 +126,7 @@ function AddressViewMode({
               size="sm"
               disabled={saving}
               onClick={onDelete}
-              className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+              className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
             >
               Delete
             </Button>
@@ -137,7 +137,7 @@ function AddressViewMode({
           size="sm"
           variant="outline"
           onClick={onStartEdit}
-          className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+          className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
         >
           <Edit3 className="mr-1 h-3 w-3" />
           Edit

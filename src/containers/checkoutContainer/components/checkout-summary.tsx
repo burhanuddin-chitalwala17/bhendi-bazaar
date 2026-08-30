@@ -53,7 +53,7 @@ export function CheckoutSummary({
 
               {/* Show savings for this item if applicable */}
               {itemSavings > 0 && (
-                <div className="flex items-baseline justify-between gap-2 text-[0.65rem]">
+                <div className="flex items-baseline justify-between gap-2 text-2xs">
                   <span className="text-muted-foreground/60">Offer applied</span>
                   <span className="text-success">
                     Save {formatCurrency(itemSavings)}
@@ -102,7 +102,7 @@ export function CheckoutSummary({
 
       {/* Update description at bottom (lines 96-99): */}
       {shipping === 0 && (
-        <p className="pt-1 text-[0.65rem] text-muted-foreground">
+        <p className="pt-1 text-2xs text-muted-foreground">
           Shipping charges will be calculated based on your location and selected
           delivery method.
         </p>

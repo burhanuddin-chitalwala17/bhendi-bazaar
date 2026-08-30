@@ -139,14 +139,14 @@ export default function AdminAbandonedCartsPage() {
             variant="outline"
             onClick={handleRefresh}
             disabled={isLoading}
-            className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]"
+            className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
           >
             <RefreshCw
               className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
             />
             {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
-          <div className="rounded-full text-[0.7rem] font-semibold uppercase tracking-[0.2em]">
+          <div className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow">
             <span className="text-muted-foreground">Total Value</span>
             <PriceDisplay price={data?.totalValue || 0} size="lg" />
           </div>

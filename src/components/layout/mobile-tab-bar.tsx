@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 // something the page shows, not a destination.
 
 const TAB_CLASSES =
-  "flex flex-1 flex-col items-center justify-center gap-0.5 text-[0.625rem] font-medium transition-colors";
+  "flex flex-1 flex-col items-center justify-center gap-0.5 text-3xs font-medium transition-colors";
 
 function tabTone(active: boolean) {
   return active ? "text-primary" : "text-muted-foreground";
@@ -48,7 +48,7 @@ export function MobileTabBar() {
           <span className="relative">
             <ShoppingBag className="size-5" />
             {cartCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[0.5625rem] font-semibold leading-none text-primary-foreground">
+              <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-4xs font-semibold leading-none text-primary-foreground">
                 {cartCount}
               </span>
             )}

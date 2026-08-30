@@ -35,7 +35,7 @@ export function OrgSwitcher({ orgs, currentOrgId }: { orgs: SwitcherOrg[]; curre
         aria-expanded={open}
       >
         <span className="min-w-0">
-          <span className="block text-[0.7rem] uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="block text-2xs uppercase tracking-eyebrow text-muted-foreground">
             Organisation
           </span>
           <span className="block truncate text-lg font-semibold text-foreground" title={current?.name}>
@@ -46,7 +46,7 @@ export function OrgSwitcher({ orgs, currentOrgId }: { orgs: SwitcherOrg[]; curre
       </button>
 
       {open && (
-        <div className="absolute left-3 right-3 z-20 mt-1 rounded-lg border border-border bg-card p-1 shadow-lg">
+        <div className="absolute left-3 right-3 z-20 mt-1 rounded-lg border border-border bg-card p-1 shadow-overlay">
           {orgs.map((org) => (
             <Link
               key={org.id}

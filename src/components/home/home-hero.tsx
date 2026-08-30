@@ -12,7 +12,7 @@ export function HomeHero() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,24,40,0.35),transparent_70%)]" />
 
       <div className="relative max-w-xl space-y-2 sm:space-y-4">
-        <p className="text-[0.5625rem] font-semibold uppercase tracking-[0.25em] text-hero-foreground/70 sm:text-[0.7rem] sm:tracking-[0.35em]">
+        <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-hero-foreground/70 sm:text-2xs sm:tracking-display">
           Bhendi Bazaar · Islamic Boutique
         </p>
         <h1 className="font-heading text-xl font-semibold leading-tight tracking-tight sm:text-4xl">
@@ -26,14 +26,14 @@ export function HomeHero() {
           {/* coming soon tag */}
           {/* <Button
             asChild
-            className="rounded-full bg-primary px-6 text-xs font-semibold uppercase tracking-[0.2em] text-hero hover:bg-primary/80"
+            className="rounded-full bg-primary px-6 text-xs font-semibold uppercase tracking-eyebrow text-hero hover:bg-primary/80"
           >
             <Link href="/category/abayas">Shop Abayas</Link>
           </Button>
           <Button
             variant="outline"
             asChild
-            className="rounded-full border-primary/20 bg-transparent text-xs font-semibold uppercase tracking-[0.2em] text-hero-foreground hover:bg-hero/40"
+            className="rounded-full border-primary/20 bg-transparent text-xs font-semibold uppercase tracking-eyebrow text-hero-foreground hover:bg-hero/40"
           >
             <Link href="/category/attars">Browse Attars</Link>
           </Button> */}

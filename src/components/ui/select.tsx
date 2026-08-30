@@ -15,7 +15,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       <div>
         <select
           ref={ref}
-          className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring ${
+          className={`w-full px-4 py-2 border rounded-field focus:outline-none focus:ring-2 focus:ring-ring ${
             error ? "border-destructive" : "border-input"
           } ${className}`}
           {...props}

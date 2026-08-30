@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-78] 2026-08-30 — Every design axis goes through tokens, not just colour
+
+Colour had been governed since PR-33 — semantic tokens, a `.portal` scope, and a test that refuses a raw palette class — so a rebrand was a one-file edit. No other axis had any of that, and a redesign is mostly the other axes: **a rebrand cost one file, a redesign cost more than a hundred.** This closes that asymmetry. 182 call-site literals across 53 files became 15 tokens. (See [ADR-0022](adr/0022-design-decisions-go-through-tokens.md).)
+
+**Two live font defects, fixed.** `--font-mono` was aliased to `var(--font-heading)`, so the twelve places rendering SKUs, order codes and payment ids drew identifiers in Playfair Display. Worse, `--font-heading` was set by `next/font` but never registered as a theme token — so `font-heading`, present in twenty files including every page title, **generated no CSS at all** and every heading silently rendered in DM Sans. The two faces were exactly inverted. The `next/font` variables are now `--font-heading-face` / `--font-body-face`, `--font-heading` is a real theme token, and `font-mono` keeps Tailwind's system mono stack.
+
+**New tokens in `src/app/globals.css`.** A type scale below `text-xs` (`--text-2xs/3xs/4xs`) where the 3-up phone tile lives; four tracking steps (`--tracking-label`, `-eyebrow`, `-eyebrow-wide`, `-display`) replacing nine spellings of one eyebrow across 32 files; four elevation *roles* (`--shadow-raised`, `-lifted`, `-overlay`, `-inset-field`) — Tailwind's scale answers "how big", these answer "what is this"; two semantic shape steps (`--radius-card`, `--radius-field`); and `--container-page`, so the verification banner cannot drift from the column it sits above. The type steps carry size only: the literals they replaced set `font-size` alone, and pairing leading here would have reflowed ninety call sites under cover of a refactor.
+
+**`PageShell` and `PageHeader`** (`src/components/shared/page-shell.tsx`) own page width and the page title. Eight `mx-auto max-w-*` literals over eight widths, and eight verbatim copies of one `<h1>`, are now one component each; widths are named for the page's job (`narrow`/`form`/`default`/`wide`), not its pixel count.
+
+**`src/lib/social-brand.ts`** holds the third-party share colours. Not ours to theme — Facebook blue is Facebook blue in either mode — so they live in one module like `category-accent.ts` rather than at the call site. X moves from `#000000` to `text-foreground`, which is what makes it visible in dark mode at all.
+
+**`tests/unit/design-tokens.test.ts` now enforces every axis**: arbitrary sizes, arbitrary tracking, raw hex, raw Tailwind shadows and ad-hoc page containers all fail the suite. It additionally fails on any `font-*` class with no matching `--font-*` theme token — the check that would have caught `font-heading` the day it was written.
+
+**Visible changes ship with this**, each a drift the tokens exist to remove: headings change face to Playfair; page titles on the four offer pages and `/org/new` move to the shared `text-3xl` treatment; `select` and `multi-select` corners move 2px to match `input`; dialog and alert corners move 4px to the card step.
+
+No wire shape, route, or server behaviour changed — this is presentation only. 498 tests pass, typecheck is clean, and lint is at its exact prior baseline (226 problems, all pre-existing).
+
 ## [PR-77] 2026-08-27 — Categories come out of the dropdown and become a lane row
 
 The storefront's category navigation was a desktop dropdown plus a phone bottom-sheet, both fetching the list from the browser on every page. It is now one flat, scrollable row of tiles that every page renders inline — no trigger, no client fetch, no second component for the phone.

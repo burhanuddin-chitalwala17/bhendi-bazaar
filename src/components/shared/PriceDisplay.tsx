@@ -29,8 +29,8 @@ export function PriceDisplay({
   // the same tile is twice as wide.
   const sizeClasses = {
     xs: {
-      price: "text-[0.8125rem] sm:text-sm",
-      original: "text-[0.6875rem] sm:text-xs",
+      price: "text-xs sm:text-sm",
+      original: "text-2xs sm:text-xs",
       row: "flex-wrap gap-x-1.5 gap-y-0",
     },
     sm: { price: "text-sm", original: "text-xs", row: "flex-wrap gap-x-2 gap-y-0.5" },
