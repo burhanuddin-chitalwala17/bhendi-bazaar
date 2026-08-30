@@ -1,3 +1,14 @@
+/**
+ * PARKED — not imported by anything. The live seam is `./index.ts`, which is detached
+ * while the cache is unwired; see its header for how to reconnect this.
+ *
+ * Kept because the limiter shapes and windows are the decisions worth preserving. Two
+ * things must be fixed before it is wired again: it fails *open* on a missing or
+ * unreachable Redis, which is a control that reports success while doing nothing; and
+ * `getClientIp` reads the first `x-forwarded-for` entry, which the caller supplies, so
+ * rotating that header defeats every per-IP window. `./index.ts` already has the
+ * corrected address helper — take it from there rather than from here.
+ */
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 

@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-16
+- **Verified:** 2026-08-30
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -112,7 +112,15 @@ Not a phase, but tracked:
 - **Sale price is read two different ways** — `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price, matching `effectiveUnitPrice` in `server/checkout/pricing.ts`. Eight other sites — the cart line, the checkout summary, the shipping-rate hook, both order detail pages, the org parcel value — simply fall back with `??`, so a sale price of zero or one above the regular price renders differently depending on where the buyer is looking. [promotions](specs/promotions/) PR 3 consolidates them onto the one function; until then it is a display inconsistency on the money path.
 - **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling.
 - **Route the database through Prisma Accelerate** — it is already provisioned (`PRISMA_DATABASE_URL`) and read by nothing. Pooling and caching at the proxy addresses serverless connection pressure more thoroughly than tuning `max` on the local pool. See [OPERATIONS.md](OPERATIONS.md) § Infrastructure.
-- **Rate limiting is currently a no-op wherever Upstash isn't configured** — PR-55's fail-open was an unblock, not a posture. Now a spec: [rate-limiting](specs/rate-limiting/), Phase 4.
+- **Rate limiting is detached, and says so** — PR-81 replaced three fail-open implementations with one seam in `src/lib/rate-limit/` that allows everything and reports `RATE_LIMITING_ENABLED === false`. No live module imports `@upstash/*`, so the request path carries no cache dependency; both implementations are parked beside the seam, unimported. **Unthrottled until the cache is wired:** `POST /api/auth/signup`, `/api/auth/forgot-password`, `/api/payments/create-order`, `/api/orders*`, `/api/cart*` — and `reset-password`, `resend-verification`, `verify-email`, which never had limits. Reconnecting is an edit to one file; the correctness fixes it needs first are in the parked file's header. Spec: [rate-limiting](specs/rate-limiting/), Phase 4.
+- **This domain served a WordPress site before this one, and search engines still hold its index** — the archive has 4,682 URLs for `bhendi-bazaar.com`. Genuine Bhendi Bazaar posts from 2019–2020 (`explore-bhendi-bazaar`, `ashara-ohbat-1442`), then from March 2021 a turn into Indonesian gambling spam (`situs-judi-slot-gacor`, `apakah-legal-bermain-di-kasino-online`), scraped filler, and adult posts — still serving 200s as late as September 2025. The two shapes share one permalink structure, which reads as a compromised WordPress install rather than a resale, though that cannot be established from outside. Bing is still crawling it: two such requests arrived 0.74s apart on 2026-08-30.
+
+  PR-81 answered the code half — `src/app/robots.ts` and `src/app/sitemap.ts` state what exists, and `src/middleware.ts` returns **410 Gone** for the `/YYYY/MM/DD/` shape so crawlers retire those URLs instead of retrying a 404. **What remains needs an account, not a commit:**
+    - Verify the domain in **Google Search Console** and **Bing Webmaster Tools**, and check both for a manual action inherited from the gambling era — one would cap the store's ranking regardless of the store's quality.
+    - Submit the sitemap in each, and use removals for the old URL set.
+    - Review the backlink profile; gambling and adult inbound links are disavow candidates.
+    - Confirm `NEXT_PUBLIC_APP_URL` is set in the Vercel production environment — `appUrl()` throws without it, and both `robots.txt` and `sitemap.xml` are built from it.
+
 - **Prune unused connection strings from `.env`** — `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, `PRISMA_DATABASE_URL` are read by nothing. Several live connection strings in one file is the hazard behind [Invariant 7](../CLAUDE.md).
 - **Slug redirects** — slugs are now generated and frozen (PR-15), but there is no redirect for a slug that changed before that rule existed. One product's URL moved (`product test 001` → `product-test-001`); the old URL 404s. If slugs ever need to change again, a slug-history table or redirect is required.
 - **Existing products all weigh 0.5 kg** — weight was collected and never persisted until PR-22, so every row created before it carries the schema default. [product-weight-and-rates](specs/product-weight-and-rates/) R6; rates are wrong in both directions until the catalogue is corrected.

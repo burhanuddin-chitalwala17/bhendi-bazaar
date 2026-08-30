@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { cartService } from "@server/cart/cart.service";
 import { updateCartSchema, validateRequest } from "@/lib/validation";
-import { withRateLimit, getRateLimitIdentifier } from "@/lib/rateLimit";
+import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
 
 /**
  * POST /api/cart/sync

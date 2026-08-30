@@ -1,158 +1,84 @@
-/**
- * Middleware for Next.js
- * Protects admin routes and redirects unauthorized users
- */
-
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-// Rate limiter - initialized lazily
-let authRateLimitMiddleware: any = null;
-let rateLimitInitialized = false;
-
-async function initRateLimiter() {
-  if (rateLimitInitialized) return;
-  rateLimitInitialized = true;
-
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-    console.warn(
-      "⚠️ Redis credentials not configured - rate limiting disabled"
-    );
-    return;
+/**
+ * Edge gate for the two portals.
+ *
+ * This is a fast rejection, not the authority. It reads a JWT claim, which survives an
+ * account being demoted or blocked, and it cannot reach Postgres — so the real check is
+ * `requirePlatformAdmin` / `requireOrgMember` in each portal's layout (ADR-0021).
+ * Keeping it means an unauthenticated request is turned away without rendering, and a
+ * signed-out visitor gets a sign-in redirect rather than a bare error.
+ *
+ * Rate limiting used to live here and no longer does: it kept module-scope mutable
+ * state across invocations, marked itself initialised before its async setup finished,
+ * and derived the client IP from the first `x-forwarded-for` entry — which the caller
+ * supplies. See `src/lib/rate-limit/`, where it now sits detached.
+ */
+async function signedIn(request: NextRequest) {
+  if (!process.env.NEXTAUTH_SECRET) {
+    console.error("NEXTAUTH_SECRET is not configured — refusing portal access");
+    return null;
   }
-
-  try {
-    const { Ratelimit } = await import("@upstash/ratelimit");
-    const { Redis } = await import("@upstash/redis");
-
-    const redis = new Redis({
-      url: process.env.KV_REST_API_URL,
-      token: process.env.KV_REST_API_TOKEN,
-    });
-
-    authRateLimitMiddleware = new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(5, "15 m"),
-      analytics: true,
-      prefix: "ratelimit:auth:middleware",
-    });
-
-    console.log("✅ Rate limiter initialized");
-  } catch (error) {
-    console.error("❌ Failed to initialize rate limiter:", error);
-    authRateLimitMiddleware = null;
-  }
+  return getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 }
 
-function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const cfConnectingIp = request.headers.get("cf-connecting-ip");
-
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
-
-  return cfConnectingIp || realIp || "unknown";
+function toSignIn(request: NextRequest, pathname: string) {
+  const url = new URL("/signin", request.url);
+  url.searchParams.set("callbackUrl", pathname);
+  return NextResponse.redirect(url);
 }
+
+/**
+ * `/2022/05/27/some-post` — the dated permalink shape of the WordPress site this
+ * domain used to serve. Bing is still working through that index years on, and a 404
+ * invites it to keep trying: 404 means "not here right now", 410 means "gone, stop
+ * asking", and crawlers retire a 410 far sooner. Nothing this app serves begins with a
+ * four-digit year, so the shape is unambiguous.
+ */
+const DEAD_PERMALINK = /^\/\d{4}\/\d{1,2}\/\d{1,2}\//;
+
+/** Exported so the rule is tested against real paths, not against this file's text. */
+export const isDeadPermalink = (pathname: string) => DEAD_PERMALINK.test(pathname);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Initialize rate limiter on first request
-  if (!rateLimitInitialized) {
-    await initRateLimiter();
+  if (isDeadPermalink(pathname)) {
+    return new NextResponse(null, { status: 410 });
   }
 
-  // Rate limit auth endpoints (only if rate limiter is available)
-  if (
-    authRateLimitMiddleware &&
-    (pathname.startsWith("/api/auth/signin") ||
-      pathname.startsWith("/api/auth/callback"))
-  ) {
-    try {
-      const ip = getClientIp(request);
-      const { success, reset } = await authRateLimitMiddleware.limit(ip);
+  const guarded = pathname.startsWith("/admin") || pathname.startsWith("/org");
+  if (!guarded) return NextResponse.next();
 
-      if (!success) {
-        const timeRemaining = reset - Date.now();
-        const seconds = Math.ceil(timeRemaining / 1000);
+  try {
+    const token = await signedIn(request);
+    if (!token) return toSignIn(request, pathname);
 
-        return NextResponse.json(
-          {
-            error: `Too many authentication attempts. Please try again in ${seconds} seconds.`,
-          },
-          { status: 429 }
-        );
-      }
-    } catch (error) {
-      console.error("Rate limiting error:", error);
-      // Continue without rate limiting on error
-    }
-  }
-
-  // Protect admin routes
-  if (pathname.startsWith("/admin")) {
-    if (!process.env.NEXTAUTH_SECRET) {
-      console.error("⚠️ NEXTAUTH_SECRET not configured");
+    // Membership is not checked here — it lives in the database and can be revoked
+    // mid-session, so the org layout owns it.
+    if (pathname.startsWith("/admin") && (token.platformRole ?? "USER") !== "ADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
     }
-
-    try {
-      const token = await getToken({
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET,
-      });
-
-      if (!token) {
-        const signInUrl = new URL("/signin", request.url);
-        signInUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(signInUrl);
-      }
-
-      const userRole = token.platformRole ?? "USER";
-      if (userRole !== "ADMIN") {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-    } catch (error) {
-      console.error("Error protecting admin route:", error);
-      return NextResponse.redirect(new URL("/signin", request.url));
-    }
-  }
-
-  // Protect the org portal — signed in only. Membership is *not* checked here: this runs
-  // on the edge and cannot reach Postgres, and a membership can be revoked mid-session,
-  // so it is verified where the data is read (portal-separation trd.md D3).
-  if (pathname.startsWith("/org")) {
-    if (!process.env.NEXTAUTH_SECRET) {
-      console.error("⚠️ NEXTAUTH_SECRET not configured");
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    try {
-      const token = await getToken({
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET,
-      });
-
-      if (!token) {
-        const signInUrl = new URL("/signin", request.url);
-        signInUrl.searchParams.set("callbackUrl", pathname);
-        return NextResponse.redirect(signInUrl);
-      }
-    } catch (error) {
-      console.error("Error protecting org route:", error);
-      return NextResponse.redirect(new URL("/signin", request.url));
-    }
+  } catch (error) {
+    console.error("Portal gate failed:", error);
+    return toSignIn(request, pathname);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
+  // The portals are matched by name rather than left to the catch-all below. That
+  // pattern excludes any path containing a dot — meant for static files, but it also
+  // let `/admin/orders/abc.def` through with no check at all.
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)",
-    "/api/auth/:path*",
+    "/admin",
+    "/admin/:path*",
+    "/org",
+    "/org/:path*",
+    // The previous site's permalinks, answered with 410 above.
+    "/:year(\\d{4})/:month(\\d{1,2})/:day(\\d{1,2})/:slug*",
   ],
 };
