@@ -68,6 +68,7 @@ export function NavbarSearch() {
                   </p>
                   {suggestions.products.map((product) => (
                     <Link
+                      prefetch={false}
                       key={product.id}
                       href={`/product/${product.slug}`}
                       onClick={() => {
@@ -99,6 +100,7 @@ export function NavbarSearch() {
                   </p>
                   {suggestions.categories.map((category) => (
                     <Link
+                      prefetch={false}
                       key={category.slug}
                       href={`/category/${category.slug}`}
                       onClick={() => {

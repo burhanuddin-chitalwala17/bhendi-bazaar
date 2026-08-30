@@ -19,7 +19,7 @@ export function CategoryBreadcrumb({
     <nav aria-label="Breadcrumb" className="mb-2 sm:mb-3">
       <ol className="no-scrollbar flex items-center gap-1 overflow-x-auto text-2xs text-muted-foreground sm:text-xs">
         <li className="shrink-0">
-          <Link href="/" className="hover:text-foreground">
+          <Link href="/" className="hover:text-foreground" prefetch={false}>
             Home
           </Link>
         </li>
@@ -27,6 +27,7 @@ export function CategoryBreadcrumb({
           <li key={ancestor.slug} className="flex shrink-0 items-center gap-1">
             <ChevronRight className="size-3 shrink-0" aria-hidden />
             <Link
+              prefetch={false}
               href={`/category/${ancestor.slug}`}
               className="whitespace-nowrap hover:text-foreground"
             >

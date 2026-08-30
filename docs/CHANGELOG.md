@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-82] 2026-08-31 — Storefront links stop prefetching pages the router throws away
+
+A production log showed 26 page requests in four seconds with no navigation behind them: nine `/category/*`, four `/product/*` and `/cart`, each fetched twice. Nobody clicked anything — the shopper scrolled, and every `<Link>` that entered the viewport prefetched.
+
+**The prefetches were never used.** Next's client router cache defaults to `staleTimes.dynamic: 0`, and that value applies whenever the `prefetch` prop is left unspecified, which it was at all 62 call sites. Every storefront route is dynamic — no `revalidate`, no `generateStaticParams` — so each prefetched payload arrived already stale and the tap refetched from scratch. There is no `loading.tsx` anywhere either, so `prefetch="auto"` had no boundary to stop at. Next floors the `static` stale time at 30s expressly "to ensure prefetching is not completely wasteful"; nothing floors `dynamic`.
+
+So this was not a cache with a poor hit rate. It was speculative rendering with no reader.
+
+**It cost more than the wasted queries.** A category render is roughly three sequential round trips, so one scroll was on the order of 70 Postgres queries. Worse, thirteen simultaneous requests make Vercel scale out — `✅ Rate limiter initialized` appears twice inside that four-second window, two instances booted for work nobody would read — and they queue against the connection pool. The shopper's actual tap could land behind speculation, or on a cold instance that existed only because of it. Removing prefetch should *lower* tap latency, not raise it, which is the opposite of the usual trade.
+
+`prefetch={false}` now sits on 24 storefront link sites across 14 files. The two that produced the burst — `ProductCard` and `CategoryLanes`, up to twelve and nine links in view at once — carry a short comment saying why, so the prop is not read as an oversight and removed.
+
+**Deliberately not done here.** Page-level ISR would cut more, and [ADR-0018](adr/0018-one-effective-price-function.md) forbids it: offer resolution is capped at one request, and response caching must not outlive an offer window. A fixed `revalidate` would advertise an expired offer's price, which is the divergence [ADR-0002](adr/0002-server-holds-pricing-authority.md) exists to prevent. The remaining work is caching the reads that carry no resolved price — the category tree and catalogue rows — while prices stay resolved per request. That helps real traffic rather than only speculative traffic, and is tracked in [BACKLOG.md](BACKLOG.md).
+
+Prefetch is not wrong here, it is misconfigured. Once those reads are cached, a `loading.tsx` plus a non-zero `staleTimes.dynamic` would make it pay off, and it is worth revisiting then.
+
+Presentation only — no schema, no wire shape, no money path. 554 tests pass, typecheck clean, lint unchanged.
+
 ## [PR-81] 2026-08-30 — The admin portal gates itself, and rate limiting stops pretending
 
 **`/admin` was reachable without signing in.** The middleware matcher excluded any path containing a dot — meant to skip static files — so `/admin/orders/abc.def` never reached the gate. Thirteen admin pages carried no guard of their own, on a comment in the layout that said "middleware already gates /admin to platform admins; this fetch is for display". Unauthenticated, `/admin/orders` redirected and `/admin/orders/abc.def` returned 200.

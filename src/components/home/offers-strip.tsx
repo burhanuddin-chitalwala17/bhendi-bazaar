@@ -16,6 +16,7 @@ export async function OffersStrip({ offers }: { offers: Product[] }) {
         <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:flex-1 sm:flex-wrap sm:gap-4 sm:overflow-visible sm:px-0">
           {offers.slice(0, 4).map((offer) => (
             <Link
+              prefetch={false}
               key={offer.id}
               href={`/product/${offer.slug}`}
               className="flex shrink-0 snap-start items-center gap-2 border-l border-accent/60 pl-3 text-2xs sm:text-2xs"

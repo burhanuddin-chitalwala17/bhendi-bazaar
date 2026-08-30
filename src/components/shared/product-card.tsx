@@ -17,7 +17,9 @@ export function ProductCard(product: Product) {
     : 0;
 
   return (
-    <Link href={`/product/${product.slug}`} className="block">
+    // Prefetch off: the grid puts up to 12 of these in view at once, and with every
+    // storefront route dynamic, Next's staleTimes.dynamic of 0 discards each payload.
+    <Link href={`/product/${product.slug}`} className="block" prefetch={false}>
       {/* py-0/gap-0 override Card's defaults so the image bleeds to the card edge */}
       <Card className="group h-full gap-0 overflow-hidden rounded-lg py-0 transition-all sm:rounded-xl md:hover:-translate-y-1 md:hover:shadow-lifted">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">

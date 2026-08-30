@@ -28,7 +28,10 @@ export function CategoryLanes({ categories }: { categories: Category[] }) {
       <ul className="no-scrollbar flex gap-3 overflow-x-auto px-3 sm:gap-4 sm:px-6 lg:px-8">
         {categories.map((category) => (
           <li key={category.slug} className="shrink-0">
+            {/* Prefetch off for the same reason as ProductCard: the whole rail is in view,
+                and a dynamic route's prefetch is discarded before the tap can use it. */}
             <Link
+              prefetch={false}
               href={`/category/${category.slug}`}
               className="flex w-16 flex-col items-center gap-1.5 sm:w-20"
             >
