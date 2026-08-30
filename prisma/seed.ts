@@ -26,6 +26,7 @@ import {
   seedReviews,
   seedCarts,
   seedShippingProviders,
+  seedBanners,
 } from "./seed/index";
 import type { SeedProduct } from "./seed/types";
 import { assertSeedTargetIsAllowed } from "./seed-guard";
@@ -85,6 +86,8 @@ async function main() {
   // Children before parents, always — money and attribution rows are Restrict
   // (ADR-0020), so a wrong order here is an FK error, not a silent cascade.
   // Ledger and settlement first: they hang off orders, items, and orgs.
+  await prisma.bannerAction.deleteMany(); // explicit rather than via cascade
+  await prisma.banner.deleteMany();
   await prisma.orgLedgerEntryLine.deleteMany();
   await prisma.orgLedgerEntry.deleteMany();
   await prisma.settlement.deleteMany();
@@ -486,6 +489,19 @@ async function main() {
   }
   console.log(`✅ ${seedShippingProviders.length} shipping providers seeded\n`);
 
+  console.log("🖼️  Seeding home banners...");
+  for (const [index, banner] of seedBanners.entries()) {
+    const { actions, ...fields } = banner;
+    await prisma.banner.create({
+      data: {
+        ...fields,
+        order: index,
+        actions: { create: actions.map((a, i) => ({ ...a, order: i })) },
+      },
+    });
+  }
+  console.log(`✅ ${seedBanners.length} banners seeded\n`);
+
   // ====================
   // SUMMARY
   // ====================
@@ -515,6 +531,7 @@ async function main() {
   );
   console.log(`   • ${seedCarts.length} abandoned carts`);
   console.log(`   • ${seedShippingProviders.length} shipping providers`);
+  console.log(`   • ${seedBanners.length} home banners`);
   console.log("\n💡 Next steps:");
   console.log("   1. Upload product/category images to Vercel Blob");
   console.log("   2. Update image URLs in seed data files");

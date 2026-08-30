@@ -14,6 +14,7 @@ import { DomainError } from "@server/shared/domain-error";
 const UPLOAD_TYPES: Record<string, ImageFolder> = {
   products: "products",
   categories: "categories",
+  banners: "banners",
 };
 
 export async function POST(request: NextRequest) {

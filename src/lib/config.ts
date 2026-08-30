@@ -18,3 +18,19 @@ export const FAVICON = "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/
  */
 export const OG_IMAGE = "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/og-image.png";
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
+/**
+ * What a hero banner image has to be. One constant, read by the field label, the file
+ * picker's check and the docs, so the size an admin is told cannot drift from the size
+ * that is enforced.
+ *
+ * 5:2 because the banner is a fixed box (h-60 → lg:h-96) that is far wider than tall on
+ * every breakpoint, and 1600px wide covers the 1152px column on a 2× display. The left
+ * third carries the words, so the subject belongs right of centre.
+ */
+export const BANNER_IMAGE = {
+  width: 1600,
+  height: 640,
+  ratio: 2.5,
+  /** How far from 5:2 a file may be before it is refused. */
+  ratioTolerance: 0.25,
+} as const;

@@ -12,7 +12,7 @@ export const seedCategories: SeedCategory[] = [
     name: "Abayas & Jilbabs",
     description:
       "Flowing silhouettes in deep emeralds, maroons, and midnight blacks. Elegant modest wear crafted from premium fabrics for everyday grace and special occasions.",
-    heroImage: "https://placehold.co/1200x600/10b981/ffffff?text=Abayas+%26+Jilbabs", // Placeholder
+    heroImage: "https://placehold.co/1200x600/10b981/ffffff.png?text=Abayas+%26+Jilbabs", // Placeholder
     accent: "EMERALD",
     order: 1,
   },
@@ -22,7 +22,7 @@ export const seedCategories: SeedCategory[] = [
     name: "Attars & Scents",
     description:
       "Oil-based fragrances inspired by the lanes of Bhendi Bazaar. Traditional attar perfumes blended with oud, musk, rose, and sandalwood for a lasting impression.",
-    heroImage: "https://placehold.co/1200x600/f59e0b/ffffff?text=Attars+%26+Scents", // Placeholder
+    heroImage: "https://placehold.co/1200x600/f59e0b/ffffff.png?text=Attars+%26+Scents", // Placeholder
     accent: "ORANGE",
     order: 2,
   },
@@ -32,7 +32,7 @@ export const seedCategories: SeedCategory[] = [
     name: "Jewellery",
     description:
       "Filigree, stones, and gold-toned details for elevated evenings. Handcrafted traditional and contemporary jewelry pieces that celebrate timeless elegance.",
-    heroImage: "https://placehold.co/1200x600/eab308/ffffff?text=Jewellery", // Placeholder
+    heroImage: "https://placehold.co/1200x600/eab308/ffffff.png?text=Jewellery", // Placeholder
     accent: "YELLOW",
     order: 3,
   },
@@ -42,7 +42,7 @@ export const seedCategories: SeedCategory[] = [
     name: "Prayer Essentials",
     description:
       "Prayer mats, tasbihs, and accessories for sacred routines. Quality prayer essentials to enhance your spiritual practice and daily devotion.",
-    heroImage: "https://placehold.co/1200x600/0ea5e9/ffffff?text=Prayer+Essentials", // Placeholder
+    heroImage: "https://placehold.co/1200x600/0ea5e9/ffffff.png?text=Prayer+Essentials", // Placeholder
     accent: "BLUE",
     order: 4,
   },

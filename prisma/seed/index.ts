@@ -13,3 +13,4 @@ export * from "./shipments.seed"; // ⭐ NEW
 export * from "./reviews.seed";
 export * from "./carts.seed";
 export * from "./shipping.seed";
+export * from "./banners.seed";

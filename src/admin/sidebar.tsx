@@ -18,6 +18,7 @@ import {
   Store,
   Tag,
   Wallet,
+  GalleryHorizontal,
 } from "lucide-react";
 
 const navItems = [
@@ -40,6 +41,11 @@ const navItems = [
     title: "Categories",
     href: "/admin/categories",
     icon: FolderTree,
+  },
+  {
+    title: "Banners",
+    href: "/admin/banners",
+    icon: GalleryHorizontal,
   },
   {
     title: "Offers",

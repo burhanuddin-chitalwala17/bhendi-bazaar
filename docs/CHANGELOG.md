@@ -10,6 +10,50 @@
 
 ## Entries
 
+## [PR-80] 2026-08-30 — Banners become the platform owner's, not the deploy's [CONTRACT] [MIGRATION]
+
+The hero's three banners were a TypeScript array. Changing a campaign — new artwork, new copy, a different order, taking one down for Eid — was a code edit and a deploy, done by the person who does deploys rather than the person who decides what the shop is selling. `/admin/banners` now owns it. See [docs/specs/home-banners/](specs/home-banners/).
+
+**Two tables.** `Banner` holds copy, artwork and position; `BannerAction` holds the buttons as rows rather than JSON, so a label and a destination are columns the database can constrain. `BannerAction` cascades from `Banner` — the correct side of [ADR-0020](adr/0020-money-bearing-records-never-cascade.md), since an action carries no money and no attribution and has no meaning apart from its banner.
+
+**`order` is server-owned and absent from the write schema.** A create appends to the end; `PATCH /api/admin/banners/reorder` is the only thing that writes it, in one transaction over the whole set, because a half-applied reorder is a duplicate order value. Accepting `order` in the form body — even optionally — is how the field a form forgot to send silently resets the hero. `[CONTRACT]`: `BannerFormSchemaInput` is recorded in [CONTRACTS.md](CONTRACTS.md).
+
+**The upload field states the size before the picker opens and checks it before uploading.** `BANNER_IMAGE` in `src/lib/config.ts` is read by the label, by the check, and by the empty-state placeholder, so the number an admin is told cannot drift from the number enforced — a file that is too small or the wrong shape is refused with the dimensions it actually had. The check is client-side on purpose: the uploader is already a platform admin, and re-measuring server-side would mean an image library to defend nothing.
+
+**Reordering is move-up / move-down, not drag-and-drop.** Drag-and-drop needs a package, and a pointer-only reorder fails [ADR-0015](adr/0015-mobile-first-design.md); buttons are reachable by touch and keyboard for free.
+
+**`isActive` separates "taken down" from "deleted"**, which is what makes a campaign re-runnable — an inactive banner keeps its copy and artwork and stays listed in admin. With no active banners the hero renders nothing and the homepage is still a shop.
+
+**`[MIGRATION]`: one, and it creates tables only.** No rows ship — the three banners live in `prisma/seed/banners.seed.ts` instead, so a developer who pulls and seeds gets a populated hero while production gets an empty one. That split is Invariant 7's own test applied honestly: the seed is destructive and permanently dev-only, and reference data goes in a migration **only when production breaks without it**. Production does not break without a banner. The hard-coded banners were house copy written during development, not the owner's, and putting unapproved words on the shop's most prominent surface would make removing them the owner's first task rather than their first decision. **So a fresh environment deploys with an empty hero, by design** — the homepage renders its categories and products and reads as a shop; the first banner is one the owner wrote. `src/lib/home-banners.ts` is deleted in the same change: keeping it as a fallback would be two sources of truth for one shelf, and would smuggle the same copy back in through code.
+
+**No new dependency, and no new domain.** Banners live in `catalog` — merchandising over catalog content, whose links point at categories ([ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md)). `HeroBanner` and `HeroSlider` did not change shape; the DAL returns the props type they already took, so they stay unaware of where the words came from.
+
+**On desktop the artwork stands alone until you point at it.** From `md`, a banner that has an image renders just the image; the scrim and the words fade in on hover, and fade out again — the picture is the point, and a permanent dim costs it. On a phone nothing changes: touch has no hover, so the base state keeps the overlay exactly as it was, and the reveal is a `md:` addition rather than a mobile removal ([ADR-0015](adr/0015-mobile-first-design.md)). Two details that are not optional: `group-focus-within` rides alongside `group-hover`, or a keyboard tabs to an invisible button, which is worse than a hidden one; and the reveal is conditional on there *being* an image, since hiding the words on the gradient scene would leave an empty coloured box. The dots gained their own translucent ground for the same reason the scrim left — they had been relying on it to stay visible.
+
+**Deliberately not built:** scheduling (an unset date field is a worse answer than no field) and per-banner colours (a per-banner palette is how a shop stops looking like one shop).
+
+Verified end to end against the running app and a live database, not just a build: deactivating a row dropped the hero to two slides, changing `order` changed which banner led, deactivating all three made the hero vanish while the page still rendered its products, and restoring brought all three back. 518 tests pass (20 new), typecheck clean, lint at baseline.
+
+## [PR-79] 2026-08-30 — The hero becomes a configurable banner, and the banners become a rail
+
+`HomeHero` held one hard-coded banner: its copy, its two category links and its background were all markup. It is now three pieces — `HeroBanner` (`src/components/home/hero-banner.tsx`) takes a background, words and calls to action as props and knows nothing about a campaign; `HeroSlider` (`src/components/home/hero-slider.tsx`) is the rail around N of them; and `src/lib/home-banners.ts` holds the content. Adding a banner is a config entry.
+
+**Built on scroll-snap, not a transform track** — the same pattern `OffersStrip` and `CategoryLanes` already use. A phone gets native momentum swipe for free, and the rail is the source of truth for which slide is showing, so a swipe and a dot press converge instead of fighting. No carousel dependency was added; one would have needed a TRD to earn.
+
+`"use client"` is earned by the rail alone. `HeroBanner` stays a server component.
+
+**Every banner is the same box.** Height is fixed per breakpoint (`h-60 sm:h-80 lg:h-96`) and the copy is clamped to fit it, because a content-sized banner makes the rail jump on every swipe — one banner's second CTA or third line is another's blank space.
+
+**Auto-advance pauses on hover, on focus, and while a finger is held on the rail, and never starts under `prefers-reduced-motion`.** There is no pause button: reaching for a dot or an arrow stops rotation for good instead, which is the durable stop that hover and hold are not. Arrows are pointer-only (`hidden sm:flex`); swipe and the dots are the affordance that exists on a phone, so hiding them costs nothing.
+
+**Known gap:** hover, hold and focus each pause only for as long as they last, so the stop mechanism is now "press a control" rather than a labelled pause. That is weaker than WCAG 2.2.2 asks for on an auto-updating region. Accepted deliberately — a visible pause button on a phone hero was judged the worse trade.
+
+**Banner images are a slot, not a decision.** `image` is optional and the banner falls back to the brand gradient scene without one; artwork goes to Blob like every other image and its URL comes back to the config. Content lives in code rather than a `Banner` table on purpose — a table needs a migration, an admin CRUD surface and a scheduling story, none of which is worth building until the copy changes often enough to hurt.
+
+**Fixed on contact:** the two decorative overlays were raw `rgba()` literals inside `bg-[radial-gradient(…)]`, which the design-token rules do not catch because they only scan named palette classes and bare hex. They are token gradients now. And the page keeps exactly one `h1`: each banner titles itself with an `h2`, and which banner is "first" changes as the rail rotates, so `src/app/(main)/page.tsx` carries an `sr-only` `h1` naming the store.
+
+Presentation only — no route, wire shape, or server behaviour changed. Verified rendering against a running dev server: three slides with correct `aria` labelling, arrows and dots present, no pause control, and identical dimension classes on all three. 498 tests pass, typecheck clean, lint two below its prior baseline.
+
 ## [PR-78] 2026-08-30 — Every design axis goes through tokens, not just colour
 
 Colour had been governed since PR-33 — semantic tokens, a `.portal` scope, and a test that refuses a raw palette class — so a rebrand was a one-file edit. No other axis had any of that, and a redesign is mostly the other axes: **a rebrand cost one file, a redesign cost more than a hundred.** This closes that asymmetry. 182 call-site literals across 53 files became 15 tokens. (See [ADR-0022](adr/0022-design-decisions-go-through-tokens.md).)
