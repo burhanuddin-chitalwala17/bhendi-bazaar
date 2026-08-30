@@ -177,7 +177,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     onCheckedChange={(on) => setActive(banner, on)}
                   />
                   <Button asChild variant="outline" size="icon" aria-label={`Edit ${banner.title}`} className={TAP}>
-                    <Link href={`/admin/banners/${banner.id}/edit`}>
+                    <Link href={`/admin/banners/${banner.id}/edit`} prefetch={false}>
                       <Pencil />
                     </Link>
                   </Button>

@@ -124,9 +124,12 @@ export function ProductsTable({
     {
       key: "actions",
       label: "Actions",
+      // Prefetch off: two links per row, so a listing puts ~20 admin page fetches in
+      // view — each one an auth re-read plus the product tree, all of it discarded.
       render: (product) => (
         <div className="flex items-center gap-2">
           <Link
+            prefetch={false}
             href={`${productsBasePath}/${product.id}`}
             className="p-2 text-muted-foreground hover:bg-muted/60 rounded-lg transition-colors"
             title="View product"
@@ -135,6 +138,7 @@ export function ProductsTable({
           </Link>
           {!readOnly && (
           <Link
+            prefetch={false}
               href={`${productsBasePath}/${product.id}/edit`}
               className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
               title="Edit product"

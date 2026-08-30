@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-83] 2026-08-31 — Prefetch goes off in the portals too, where the only live traffic is
+
+PR-82 turned prefetch off across the storefront and left the admin, org and auth links alone, reasoning they were low fan-out and behind a login. Both halves of that were wrong, and the Prisma dashboard is what showed it: 23,592 operations in ten days on a store with no customers, while the only people using the site were uploading products in `/admin`. The half that was optimised is the half nobody is using.
+
+**The fan-out is larger in admin than on the storefront.** `ProductsTable` renders its View and Edit links from a per-row column renderer, so a listing at its `limit: 10` puts ~20 links in view at once — and unlike a product grid, a ten-row table is entirely on screen, so every one of them prefetches. Each target is an admin product page: `requirePlatformAdmin` plus the product tree.
+
+**And each of those speculative renders re-reads the admin row.** `requirePlatformAdmin` is deliberately not memoised — it re-reads `User` so a demoted or blocked admin is revoked immediately rather than at token expiry ([ADR-0021](adr/0021-audit-trail-never-fails-the-action.md)), and its own comment justifies the cost as "one primary-key read per admin request. The platform portal is low-traffic." That reasoning is sound for a navigation and silently false under prefetch, which turned one auth read per click into roughly twenty-one. The re-read is correct and stays; what was wrong is how many times it was being asked for.
+
+So one admin listing view cost on the order of **90 operations instead of 8** — the page's own ~8 (PR-71's measurement) plus ~20 discarded renders at ~4 each. At that rate, fewer than thirty listing views a day accounts for the entire ten-day meter, and a team uploading a catalogue opens that list far more often than thirty times.
+
+`prefetch={false}` now covers the remaining **37 link sites across 25 files** — admin, org portal, and the auth pages, where a signin page prefetching `/signup` is the same discarded round trip. Nothing is left prefetching. The per-row site in `ProductsTable` carries a comment saying why, as the two storefront sites do.
+
+**The estimate is not a measurement.** What share of the 23,592 is admin rather than crawlers or storefront is not knowable from here; the Queries tab in the Prisma console answers it, and the next few days of daily bars answer it better. Crawl volume is ramping at the same time — PR-81's `robots.txt` and sitemap went live on 2026-08-30 — so a smaller-than-expected drop is confounded, not a refutation.
+
+Presentation only — no schema, no wire shape, no money path. 554 tests pass, typecheck clean, lint unchanged (the one error in `admin/categories/page.tsx` is a pre-existing `as any` on a sort key, untouched here).
+
 ## [PR-82] 2026-08-31 — Storefront links stop prefetching pages the router throws away
 
 A production log showed 26 page requests in four seconds with no navigation behind them: nine `/category/*`, four `/product/*` and `/cart`, each fetched twice. Nobody clicked anything — the shopper scrolled, and every `<Link>` that entered the viewport prefetched.

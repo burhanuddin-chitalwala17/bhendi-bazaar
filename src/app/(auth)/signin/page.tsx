@@ -99,6 +99,7 @@ export default function SignInPage() {
 
         <div className="flex justify-end">
           <Link
+            prefetch={false}
             href="/forgot-password"
             className="text-xs text-muted-foreground hover:text-foreground hover:underline"
           >
@@ -131,7 +132,7 @@ export default function SignInPage() {
         </Button>
         <p className="pt-2 text-center text-2xs text-muted-foreground">
           New to Bhendi Bazaar?{" "}
-          <Link href="/signup" className="underline underline-offset-4">
+          <Link href="/signup" className="underline underline-offset-4" prefetch={false}>
             Create an account
           </Link>
         </p>

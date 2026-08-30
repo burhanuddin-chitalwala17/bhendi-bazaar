@@ -145,7 +145,7 @@ export default function SignUpPage() {
 
         <p className="pt-2 text-center text-2xs text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/signin" className="underline underline-offset-4">
+          <Link href="/signin" className="underline underline-offset-4" prefetch={false}>
             Sign in
           </Link>
           .

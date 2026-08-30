@@ -32,6 +32,7 @@ export function PortalHeader({
         </span>
         <div className="flex items-center border-l border-border pl-2 sm:pl-4">
           <Link
+            prefetch={false}
             href="/"
             className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >

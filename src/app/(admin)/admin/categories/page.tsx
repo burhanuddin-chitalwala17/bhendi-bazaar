@@ -182,6 +182,7 @@ export default function AdminCategoriesPage() {
       render: (category) => (
         <div className="flex items-center gap-2">
           <Link
+            prefetch={false}
             href={`/admin/categories/${category.id}/edit`}
             className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
             title="Edit category"
@@ -212,6 +213,7 @@ export default function AdminCategoriesPage() {
         actions={
           <>
           <Link
+            prefetch={false}
             href="/admin/categories/bulk"
             className="px-4 py-2 border border-border rounded-lg hover:bg-muted flex items-center gap-2"
           >
@@ -219,6 +221,7 @@ export default function AdminCategoriesPage() {
             <span className="hidden sm:inline">Bulk upload</span>
           </Link>
           <Link
+            prefetch={false}
             href="/admin/categories/new"
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
           >

@@ -38,13 +38,13 @@ export default async function OrgProductsPage({ params, searchParams }: PageProp
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/org/${orgId}/products/bulk`}>
+            <Link href={`/org/${orgId}/products/bulk`} prefetch={false}>
               <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">Bulk upload</span>
             </Link>
           </Button>
           <Button asChild>
-            <Link href={`/org/${orgId}/products/new`}>
+            <Link href={`/org/${orgId}/products/new`} prefetch={false}>
               <Plus className="h-4 w-4" />
               New Product
             </Link>

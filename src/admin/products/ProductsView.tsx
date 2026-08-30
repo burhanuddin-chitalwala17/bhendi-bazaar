@@ -34,14 +34,14 @@ export function ProductsView({ product, category, org, canEdit = true }: Product
         description="Product Details"
         actions={
           <>
-            <Link href={`/product/${product.slug}`} target="_blank">
+            <Link href={`/product/${product.slug}`} target="_blank" prefetch={false}>
               <Button variant="outline" className="gap-2">
                 <ExternalLink className="w-4 h-4" />
                 View Live
               </Button>
             </Link>
             {canEdit && (
-              <Link href={`${productsBasePath}/${product.id}/edit`}>
+              <Link href={`${productsBasePath}/${product.id}/edit`} prefetch={false}>
                 <Button className="gap-2">
                   <Edit className="w-4 h-4" />
                   Edit Product

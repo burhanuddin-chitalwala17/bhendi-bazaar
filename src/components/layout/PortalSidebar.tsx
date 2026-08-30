@@ -81,6 +81,7 @@ export function PortalSidebar({
             const active = exact ? pathname === href : pathname.startsWith(href);
             return (
               <Link
+                prefetch={false}
                 key={href}
                 href={href}
                 onClick={() => setOpen(false)}
@@ -100,6 +101,7 @@ export function PortalSidebar({
 
         <div className="border-t border-border p-4">
           <Link
+            prefetch={false}
             href="/"
             className="flex items-center justify-center gap-2 px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >

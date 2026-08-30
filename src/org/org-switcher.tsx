@@ -49,6 +49,7 @@ export function OrgSwitcher({ orgs, currentOrgId }: { orgs: SwitcherOrg[]; curre
         <div className="absolute left-3 right-3 z-20 mt-1 rounded-lg border border-border bg-card p-1 shadow-overlay">
           {orgs.map((org) => (
             <Link
+              prefetch={false}
               key={org.id}
               href={`/org/${org.id}${suffix}`}
               onClick={() => setOpen(false)}
@@ -65,6 +66,7 @@ export function OrgSwitcher({ orgs, currentOrgId }: { orgs: SwitcherOrg[]; curre
             </Link>
           ))}
           <Link
+            prefetch={false}
             href="/org/new"
             onClick={() => setOpen(false)}
             className="mt-1 flex items-center gap-2 rounded-md border-t border-border/60 px-3 py-2 text-sm text-primary hover:bg-muted/60"
