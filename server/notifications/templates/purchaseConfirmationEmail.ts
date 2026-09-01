@@ -1,6 +1,17 @@
 import { baseEmailStyles } from "./styles/baseEmailStyles";
 import { formatCurrency, formatDate } from "../formatters";
 import { appUrl } from "@server/shared/app-url";
+import { paiseToRupees } from "@server/shared/money";
+
+/** One purchased line, as it stood at the time of the order. */
+export interface OrderEmailLineItem {
+  name: string;
+  quantity: number;
+  unitPrice: number; // paise
+  totalPrice: number; // paise
+  size?: string;
+  color?: string;
+}
 
 /** What this template renders — the caller maps its row onto this, whatever its source. */
 export interface OrderEmailView {
@@ -10,6 +21,7 @@ export interface OrderEmailView {
   paymentStatus: string | null;
   createdAt: Date;
   notes?: string | null;
+  items: OrderEmailLineItem[];
   itemsTotal: number; // paise
   discount: number; // paise
   grandTotal: number; // paise
@@ -28,8 +40,27 @@ export interface OrderEmailView {
 }
 
 export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
-  // Generate order items HTML
-  const orderItemsHtml = order.itemsTotal
+  const orderItemsHtml = order.items
+    .map((item) => {
+      const variant = [
+        item.size ? `Size: ${item.size}` : null,
+        item.color ? `Color: ${item.color}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+
+      return `
+                <tr>
+                  <td>
+                    <div class="item-name">${item.name}</div>
+                    ${variant ? `<div class="item-variant">${variant}</div>` : ""}
+                  </td>
+                  <td class="item-qty">${item.quantity}</td>
+                  <td class="item-price">${formatCurrency(paiseToRupees(item.unitPrice))}</td>
+                  <td class="item-total">${formatCurrency(paiseToRupees(item.totalPrice))}</td>
+                </tr>`;
+    })
+    .join("");
 
   // Tracking URL
   const trackingUrl = `${appUrl()}/order/${order.id}`;
@@ -113,8 +144,31 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             font-size: 14px;
             letter-spacing: 0.5px;
           }
-          .items-header th:last-child {
+          .items-header th:not(:first-child) {
             text-align: right;
+          }
+          .items-table td {
+            padding: 15px;
+            border-top: 1px solid #e5e5e5;
+            font-size: 14px;
+            color: #1a1a1a;
+          }
+          .items-table td:not(:first-child) {
+            text-align: right;
+          }
+          .item-name {
+            font-weight: 600;
+          }
+          .item-variant {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+          }
+          .item-qty, .item-price {
+            color: #666;
+          }
+          .item-total {
+            font-weight: 600;
           }
           .totals-section {
             background: #f8f8f8;
@@ -254,6 +308,8 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
               <thead class="items-header">
                 <tr>
                   <th>Product</th>
+                  <th>Qty</th>
+                  <th>Price</th>
                   <th>Total</th>
                 </tr>
               </thead>
@@ -265,21 +321,21 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             <div class="totals-section">
               <div class="total-row">
                 <span class="total-label">Subtotal:</span>
-                <span class="total-value">${formatCurrency(order.itemsTotal)}</span>
+                <span class="total-value">${formatCurrency(paiseToRupees(order.itemsTotal))}</span>
               </div>
               ${
     order.discount > 0
                   ? `
               <div class="total-row">
                 <span class="total-label">Discount:</span>
-                <span class="total-value" style="color: #22c55e;">-${formatCurrency(order.discount)}</span>
+                <span class="total-value" style="color: #22c55e;">-${formatCurrency(paiseToRupees(order.discount))}</span>
               </div>
               `
                   : ""
               }
               <div class="total-row final">
                 <span>Total:</span>
-                <span>${formatCurrency(order.grandTotal)}</span>
+                <span>${formatCurrency(paiseToRupees(order.grandTotal))}</span>
               </div>
             </div>
             

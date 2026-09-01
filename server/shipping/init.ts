@@ -6,7 +6,7 @@
  */
 
 import { shippingOrchestrator } from './services/orchestrator.service';
-import { ShiprocketProvider } from './providers/shiprocket/shiprocket.provider';
+import { PROVIDER_FACTORIES } from './providers';
 
 let isInitialized = false;
 let initPromise: Promise<void> | null = null;
@@ -22,20 +22,20 @@ export async function initializeShippingModule(): Promise<{
 }> {
   // Return immediately if already initialized
   if (isInitialized) {
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'Shipping module already initialized',
-      providersLoaded: shippingOrchestrator['providers'].size 
+      providersLoaded: shippingOrchestrator.getProviderCount()
     };
   }
 
   // If initialization is in progress, wait for it
   if (initPromise) {
     await initPromise;
-    return { 
-      success: isInitialized, 
+    return {
+      success: isInitialized,
       message: isInitialized ? 'Initialized' : 'Initialization failed',
-      providersLoaded: shippingOrchestrator['providers'].size 
+      providersLoaded: shippingOrchestrator.getProviderCount()
     };
   }
 
@@ -44,17 +44,18 @@ export async function initializeShippingModule(): Promise<{
     try {
       console.log('🚀 Initializing shipping module...');
 
-      // Register available provider factories
-      await shippingOrchestrator.loadProviders({
-        shiprocket: () => new ShiprocketProvider(),
-        // Add more providers here as you implement them:
-        // delhivery: (config) => new DelhiveryProvider(),
-        // bluedart: (config) => new BlueDartProvider(),
-      });
+      // The registry in providers/index.ts is the one list of carriers — declared
+      // once, so adding a carrier there cannot leave it silently unloaded at boot.
+      await shippingOrchestrator.loadProviders(PROVIDER_FACTORIES);
 
-      const loadedCount = shippingOrchestrator['providers'].size;
-      
-      isInitialized = true;
+      const loadedCount = shippingOrchestrator.getProviderCount();
+
+      // A run that loaded nothing is not an initialised module. Latching it true
+      // would make this function a no-op forever after — which is how a carrier
+      // connected through the admin console after boot (ADR-0002's whole point)
+      // stayed invisible until someone restarted the server, and how the rates
+      // route's recovery path became dead code.
+      isInitialized = loadedCount > 0;
       console.log(`✅ Shipping module initialized with ${loadedCount} provider(s)`);
     } catch (error) {
       console.error('❌ Failed to initialize shipping module:', error);
