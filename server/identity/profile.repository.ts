@@ -15,6 +15,15 @@ import type {
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 
 export class ProfileRepository {
+  /** An account's login email — nothing else. For notifying the account holder. */
+  async findEmailById(userId: string): Promise<string | null> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    return user?.email ?? null;
+  }
+
   /**
    * Get user profile by user ID
    * Creates a profile if it doesn't exist

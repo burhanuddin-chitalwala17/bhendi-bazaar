@@ -98,7 +98,31 @@ export class OrderService {
     }
 
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
-    if (deliveryAddress?.email) {
+    // The address book's email is per-address and usually left blank (it isn't asked
+    // for at checkout, only when adding an address). Falling back to the account's
+    // login email is why a signed-in buyer gets this at all — without it, this branch
+    // was reached almost never, only for guests, who fill email in explicitly.
+    let recipientEmail = deliveryAddress?.email ?? null;
+    if (!recipientEmail && order.userId) {
+      const { profileRepository } = await import("@server/identity/profile.repository");
+      recipientEmail = await profileRepository.findEmailById(order.userId);
+    }
+
+    if (deliveryAddress && recipientEmail) {
+      const lineItems: OrderEmailView["items"] = [];
+      for (const shipment of order.shipments) {
+        for (const item of shipment.items) {
+          lineItems.push({
+            name: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+            size: item.size,
+            color: item.color,
+          });
+        }
+      }
+
       const { emailService } = await import("@server/notifications/email.service");
       emailService
         .sendPurchaseConfirmationEmail(
@@ -109,6 +133,7 @@ export class OrderService {
             paymentStatus: order.paymentStatus,
             createdAt: order.createdAt,
             notes: order.notes,
+            items: lineItems,
             itemsTotal: order.itemsTotal,
             discount: order.discount,
             grandTotal: order.grandTotal,
@@ -117,7 +142,7 @@ export class OrderService {
               estimatedDelivery: s.estimatedDelivery?.toISOString(),
             })),
           },
-          deliveryAddress.email
+          recipientEmail
         )
         .catch((error) => {
           console.error("Failed to send purchase confirmation email:", error);

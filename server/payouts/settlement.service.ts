@@ -170,7 +170,7 @@ export class SettlementService {
     input: { status: "PAID" | "CANCELLED"; reference?: string; paidAt?: Date },
     actorId: string
   ) {
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const settlement = await ledgerRepository.findSettlement(id, tx);
       if (!settlement) throw new NotFoundError("Settlement not found");
       if (settlement.status === "PAID") {
@@ -217,6 +217,46 @@ export class SettlementService {
       });
       return cancelled;
     });
+
+    // Side effect of the transition, fired after commit — same shape as the order-paid
+    // confirmation email: the transfer already happened, so a failed email must never
+    // look like a failed payout, and it must not undo one either.
+    if (input.status === "PAID") {
+      this.sendPayoutEmail(result).catch((error) => {
+        console.error(
+          `[setSettlementStatus] payout email not sent for settlement ${id}`,
+          error
+        );
+      });
+    }
+
+    return result;
+  }
+
+  /** Notify the organisation once their settlement is recorded as paid. */
+  private async sendPayoutEmail(settlement: {
+    orgId: string;
+    code: string;
+    amountPaise: number;
+    reference: string | null;
+    paidAt: Date | null;
+  }): Promise<void> {
+    const { orgRepository } = await import("@server/catalog/org.repository");
+    const org = await orgRepository.findEmailContact(settlement.orgId);
+    if (!org?.email) return;
+
+    const { emailService } = await import("@server/notifications/email.service");
+    await emailService.sendPayoutEmail(
+      {
+        orgId: settlement.orgId,
+        orgName: org.name,
+        code: settlement.code,
+        amountPaise: settlement.amountPaise,
+        reference: settlement.reference,
+        paidAt: settlement.paidAt ?? new Date(),
+      },
+      org.email
+    );
   }
 
   /** An entry's change history, read from the audit trail rather than a second table (D9). */
