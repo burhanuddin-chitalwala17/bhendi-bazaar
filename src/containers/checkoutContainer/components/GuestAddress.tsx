@@ -28,11 +28,17 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
   const {
     register,
     watch,
+    setError,
+    clearErrors,
     formState: { errors, isValid },
   } = useForm<DeliveryAddress>({
     resolver: zodResolver(addressSchema),
     mode: "onChange",
     defaultValues: {
+      // `id` is never registered/entered by this form (a guest has none yet) — seeded
+      // here so the required `id: z.string()` check has something to validate against
+      // instead of leaving the form permanently invalid on an unset field.
+      id: "",
       country: "India",
     },
   });
@@ -61,15 +67,28 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     country: country || "India",
   }), [fullName, mobile, email, addressLine1, addressLine2, city, state, pincode, country]);
 
+  // A guest has no account to fall back to for the order-confirmation email
+  // (server/checkout/order.service.ts onPaymentConfirmed), so unlike the
+  // address-book form, email is mandatory here. Enforced manually rather than
+  // in addressSchema so the field's type stays string | undefined, matching
+  // DeliveryAddress.email? and the AddressFields component's shared prop type.
+  const hasEmail = !!email;
   useEffect(() => {
+    if (!hasEmail) {
+      setError("email", { type: "required", message: "Email required for order updates" });
+    } else if (errors.email?.type === "required") {
+      clearErrors("email");
+    }
+  }, [hasEmail, errors.email, setError, clearErrors]);
 
-    if (isValid) {
+  useEffect(() => {
+    if (isValid && hasEmail) {
       console.log('✅ Calling onAddressChange with:', formValues);
       onAddressChange({ ...formValues, id: "" });
     } else {
       console.log('❌ Form not valid yet');
     }
-  }, [formValues, isValid, onAddressChange]);
+  }, [formValues, isValid, hasEmail, onAddressChange]);
 
   return (
     <div className="space-y-3">
@@ -81,6 +100,7 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
         <AddressFields
           register={register}
           errors={errors}
+          emailRequired
         />
       </div>
     </div>

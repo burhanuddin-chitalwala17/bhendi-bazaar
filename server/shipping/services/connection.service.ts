@@ -69,6 +69,29 @@ export class AdminConnectionService {
           throw new DomainError(`Unsupported connection type: ${requestBody.type}`);
       }
       if (connectionResult.success) {
+        // The credentials are stored, but the running process still holds the
+        // provider map it built at boot. Load the carrier into it now, or quoting
+        // keeps returning "no providers" until someone restarts the server —
+        // which would make connecting-without-a-deploy (ADR-0002) untrue.
+        //
+        // A failure here has not undone the connection, so it must not fail the
+        // request: the next initialize retries, now that the record is connected.
+        try {
+          const { shippingOrchestrator } = await import(
+            "@server/shipping/services/orchestrator.service"
+          );
+          await shippingOrchestrator.refreshProvider(
+            provider.code,
+            providerId,
+            factory
+          );
+        } catch (error) {
+          console.error(
+            `[connect] ${provider.code} stored but not loaded into the running orchestrator — it will load on the next initialize`,
+            error
+          );
+        }
+
         // 6. Log admin action
         await recordAdminAction({
           adminId,
@@ -132,6 +155,13 @@ export class AdminConnectionService {
     if (!result) {
       throw new Error("Failed to disconnect provider");
     }
+
+    // Same reasoning as connect: the record says disconnected, so the live map
+    // must stop quoting it rather than keep using the token until a restart.
+    const { shippingOrchestrator } = await import(
+      "@server/shipping/services/orchestrator.service"
+    );
+    shippingOrchestrator.removeProvider(provider.code);
 
     await recordAdminAction({
       adminId,

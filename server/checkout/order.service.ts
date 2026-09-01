@@ -55,9 +55,12 @@ export class OrderService {
 
   /**
    * Lookup order by code (for guest orders)
-   * This allows guests to track their order using the order code
+   * This allows guests to track their order using the order code. Unauthenticated
+   * by design, so the repository returns a projection rather than the raw row
+   * (checkout/CLAUDE.md) — this return type follows that shape rather than the
+   * full prisma `Order`.
    */
-  async lookupOrderByCode(code: string): Promise<Order | null> {
+  async lookupOrderByCode(code: string): Promise<Awaited<ReturnType<typeof orderRepository.findByCode>>> {
     return await orderRepository.findByCode(code);
   }
 
@@ -148,6 +151,14 @@ export class OrderService {
           console.error("Failed to send purchase confirmation email:", error);
           // Email failure must not unwind a confirmed payment.
         });
+    } else if (!recipientEmail) {
+      // Order creation requires an email for guests and falls back to the account
+      // email for logged-in buyers, so this should be unreachable in practice — if
+      // it fires, something upstream (e.g. an account with no email) let an order
+      // through with no way to notify the buyer.
+      console.error(
+        `[onPaymentConfirmed] order ${order.code} has no resolvable email — confirmation not sent`
+      );
     }
   }
 
@@ -729,6 +740,14 @@ export class OrderService {
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(mobile)) {
       throw new DomainError("Phone number must be 10 digits");
+    }
+
+    // A logged-in buyer's confirmation email can fall back to their account email
+    // (onPaymentConfirmed); a guest has no account to fall back to, so their address
+    // is the only place it can come from — require it here rather than finding out
+    // silently at payment-confirmation time that no email exists to send to.
+    if (!input.userId && !input.address.email) {
+      throw new DomainError("Email is required so we can send your order confirmation");
     }
 
     // Validate postal code
