@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { appUrl } from "@server/shared/app-url";
+import { crawlersBlocked } from "@/lib/crawl-block";
 
 /**
  * Crawlers had no statement of what this site is, so they were still working a list
@@ -12,6 +13,11 @@ import { appUrl } from "@server/shared/app-url";
  * spent on redirects to /signin.
  */
 export default function robots(): MetadataRoute.Robots {
+  // Pre-launch: no crawling at all, and no sitemap to advertise (src/lib/crawl-block.ts).
+  if (crawlersBlocked()) {
+    return { rules: { userAgent: "*", disallow: "/" } };
+  }
+
   return {
     rules: {
       userAgent: "*",
