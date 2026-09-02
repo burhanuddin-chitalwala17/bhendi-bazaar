@@ -15,6 +15,7 @@ import { adminOrderApiClient } from "@/services/admin/orderApiClient";
 import type { Order } from "@/domain/order";
 import type { OrderListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export default function AdminOrdersPage() {
@@ -59,14 +60,6 @@ export default function AdminOrdersPage() {
   const handleRefresh = () => {
     toast.info("Refreshing orders...");
     refetch().then(() => toast.success("Orders refreshed!"));
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const columns: Column<Order>[] = [

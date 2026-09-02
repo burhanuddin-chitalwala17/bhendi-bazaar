@@ -15,6 +15,7 @@ import { adminCartApiClient } from "@/services/admin/cartApiClient";
 import type { AbandonedCart, AbandonedCartFilters } from "@/domain/admin";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/format";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 
 export default function AdminAbandonedCartsPage() {
@@ -46,14 +47,6 @@ export default function AdminAbandonedCartsPage() {
   const handleRefresh = () => {
     toast.info("Refreshing carts...");
     refetch().then(() => toast.success("Carts refreshed successfully!"));
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const columns: Column<AbandonedCart>[] = [
@@ -195,11 +188,12 @@ export default function AdminAbandonedCartsPage() {
               }
               className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             >
+              {/* Option values are paise — the API compares them to Cart.totalValue. */}
               <option value="0">All Values</option>
-              <option value="500">₹500+</option>
-              <option value="1000">₹1,000+</option>
-              <option value="2000">₹2,000+</option>
-              <option value="5000">₹5,000+</option>
+              <option value="50000">₹500+</option>
+              <option value="100000">₹1,000+</option>
+              <option value="200000">₹2,000+</option>
+              <option value="500000">₹5,000+</option>
             </select>
           </div>
         </div>

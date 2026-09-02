@@ -26,6 +26,7 @@ import {
   XCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 export default function AdminOrderDetailsPage({
   params,
@@ -47,14 +48,6 @@ export default function AdminOrderDetailsPage({
       refetchDependencies: [orderId],
     }
   );
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
