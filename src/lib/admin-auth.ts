@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
@@ -28,10 +29,14 @@ export async function requireSession(): Promise<Session> {
  * failure was reported against an operation that had succeeded. It also revokes a
  * demoted or blocked admin now rather than at token expiry.
  *
- * One primary-key read per admin request. The platform portal is low-traffic, and an
- * unverifiable claim is not a cheaper answer — it is a wrong one.
+ * One primary-key read per admin request. Memoised with React `cache()` (like
+ * `requireOrgMember`) so the layout and the page it wraps share that one read within a
+ * request rather than paying it twice — never across requests, so a demoted or blocked
+ * admin is still revoked on their next request rather than at token expiry. In a route
+ * handler `cache()` has no request scope to key on, so each handler still does its own
+ * read; the dedupe is for the server-component render tree.
  */
-export async function requirePlatformAdmin(): Promise<Session> {
+async function resolvePlatformAdmin(): Promise<Session> {
   const session = await requireSession();
   if (session.user.platformRole !== "ADMIN") {
     throw new ForbiddenError("This area is restricted to platform administrators");
@@ -53,6 +58,8 @@ export async function requirePlatformAdmin(): Promise<Session> {
 
   return session;
 }
+
+export const requirePlatformAdmin = cache(resolvePlatformAdmin);
 
 /** The signed-in user's id, having established they run the platform. */
 export async function requirePlatformAdminId(): Promise<string> {

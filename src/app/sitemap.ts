@@ -24,9 +24,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const origin = appUrl();
 
-  const [categories, products] = await Promise.all([
+  const [categories, productSlugs] = await Promise.all([
     categoriesDAL.getCategories(),
-    productsDAL.getProducts({}),
+    productsDAL.listSlugs(),
   ]);
 
   return [
@@ -37,8 +37,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),
-    ...products.map((product) => ({
-      url: `${origin}/product/${product.slug}`,
+    ...productSlugs.map((slug) => ({
+      url: `${origin}/product/${slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),

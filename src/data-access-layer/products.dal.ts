@@ -137,4 +137,10 @@ export const productsDAL = {
     ]);
     return products.filter(p => p !== null).map((product) => mapProduct(product, context));
   },
+
+  /** Slugs only, for the sitemap — no relations, no offer resolution. */
+  listSlugs: async (): Promise<string[]> => {
+    const rows = await productsRepository.listSlugs();
+    return rows.map((row) => row.slug);
+  },
 };

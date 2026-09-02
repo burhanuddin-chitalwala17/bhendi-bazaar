@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useClickOutside } from "@/hooks/useClickOutside";
-import { useProfileContext } from "@/context/ProfileContext";
 import { ShieldAlert } from "lucide-react";
 
 export function ProfileMenu() {
@@ -14,7 +13,8 @@ export function ProfileMenu() {
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const user = session?.user;
-  const { isEmailVerified } = useProfileContext(); // ✨ Only use for email verification
+  // Rides the session token (see auth-config.ts) — no /api/profile fetch for a badge.
+  const isEmailVerified = session?.user?.isEmailVerified ?? true;
 
   useClickOutside(dropdownRef as React.RefObject<HTMLElement>, () =>
     setOpen(false)

@@ -24,21 +24,32 @@ const SELECT = {
 } as const;
 
 class BannerRepository {
-  /** The storefront read. Memoised per request like every other hot read. */
+  /** The storefront read. Memoised per request like every other hot read. The nested
+   *  `actions` load with the banner in one LATERAL JOIN, not a second statement — this
+   *  runs on every homepage render. */
   listActive = cache(async (): Promise<AdminBanner[]> => {
     return prisma.banner.findMany({
       where: { isActive: true },
       orderBy: { order: "asc" },
       select: SELECT,
+      relationLoadStrategy: "join",
     });
   });
 
   async listAll(): Promise<AdminBanner[]> {
-    return prisma.banner.findMany({ orderBy: { order: "asc" }, select: SELECT });
+    return prisma.banner.findMany({
+      orderBy: { order: "asc" },
+      select: SELECT,
+      relationLoadStrategy: "join",
+    });
   }
 
   async findById(id: string): Promise<AdminBanner | null> {
-    return prisma.banner.findUnique({ where: { id }, select: SELECT });
+    return prisma.banner.findUnique({
+      where: { id },
+      select: SELECT,
+      relationLoadStrategy: "join",
+    });
   }
 
   /** Appends. `order` is never taken from the caller — only `reorder` sets it. */

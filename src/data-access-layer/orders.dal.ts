@@ -4,10 +4,15 @@ import { orderService } from "@server/checkout/order.service";
 import { Order, Shipment } from "@/domain/order";
 import { OrderAddress } from "@/domain/order";
 
-export const ordersDAL = { 
-  getOrderById: async (id: string): Promise<Order | null> => {
+export const ordersDAL = {
+  getOrderById: async (id: string, viewerUserId?: string): Promise<Order | null> => {
     try {
-      const order = await orderService.getOrderById(id);
+      // viewerUserId enforces ownership for registered-user orders: the service throws
+      // ForbiddenError when the order belongs to a different user. Guest orders
+      // (order.userId null) are still readable by id here — closing that requires an
+      // order-scoped access token in the post-checkout URL, a product decision tracked
+      // separately (checkout/CLAUDE.md: "decide explicitly what a guest order permits").
+      const order = await orderService.getOrderById(id, viewerUserId);
       if (!order) {
         return null;
       }

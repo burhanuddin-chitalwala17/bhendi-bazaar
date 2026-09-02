@@ -117,8 +117,23 @@ export class ProductsRepository {
     });
   }
 
+  /**
+   * Every product slug, for the sitemap. One lean statement — no relations and no offer
+   * resolution, because a URL list needs neither. `getProducts({})` used to serve this,
+   * loading the whole join tree and pricing every row to emit a path.
+   */
+  async listSlugs(): Promise<Array<{ slug: string }>> {
+    return await prisma.product.findMany({ select: { slug: true } });
+  }
+
+  // Nothing a storefront listing renders needs the whole catalogue at once. When the
+  // caller gives no limit we still cap the row set: a bare search like `?q=a` otherwise
+  // loads every matching product with the full join tree. The service validates an
+  // explicit limit to ≤100 (product.service.ts); this bounds the no-limit case.
+  private static readonly MAX_LIST_ROWS = 200;
+
   async getProducts(filter: ProductFilter) {
-    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
+    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly, limit, offset } = filter;
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
@@ -136,6 +151,8 @@ export class ProductsRepository {
         include: {
           ...PRODUCT_INCLUDE,
         },
+        ...(offset ? { skip: offset } : {}),
+        take: limit ?? ProductsRepository.MAX_LIST_ROWS,
       });
       return products;
     } catch (error) {

@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-87] 2026-09-02 — Cut the Prisma-ops bleed: kill the admin poll, stop per-page profile fetches, close the N+1s
+
+A four-layer audit traced why a store with no customers was burning ~3,500 Prisma operations a day against a 100k/month budget. Almost none of it was page views. The fixes, in order of ops recovered:
+
+- **The admin dashboard polled every 60s** (`src/admin/dashboard-live.tsx`) — 14 ops/tick, no `visibilityState` gate, so one forgotten open tab was ~17k ops/day and could exhaust the month in under six days. Interval removed; the manual Refresh button stays.
+- **`ProfileProvider` fetched `/api/profile` on every page load** for every signed-in user (mounted app-wide in `src/app/providers.tsx`), for data only the profile page renders. It now scopes to `src/app/(main)/profile/layout.tsx`; the chrome's one need, `isEmailVerified`, rides the session token (stamped in the same sign-in query that already read `platformRole`, refreshed via `session.update()` on the verification-success redirect). See `src/lib/auth-config.ts`, `src/types/next-auth.d.ts`.
+- **The cart-sync debounce was defeated** (`src/hooks/cart/useCartSync.ts`): `updateCart` in the effect deps fired a write on the raw change *and* again after the debounce, and a rehydrating persisted cart wrote on every page load. Now reached through a ref, guarded by a last-written snapshot, and silent on the mount rehydrate.
+- **Payouts overview was 4N+2 queries** (grew with every org onboarded). `ledgerRepository.balancesByOrg`/`entryCountsByOrg` group once across all orgs — a constant six queries. No arithmetic changed; the per-org methods stay for the single-org views.
+- **Missing `relationLoadStrategy: "join"`** added to the admin order/product, org-review, banner (every homepage), address (every signed-in page) and commission-rule reads — one LATERAL JOIN instead of a statement per nested relation.
+- **Unbounded storefront product reads** now carry `take` (the validated `limit`/`offset` wired through, plus a 200-row safety cap); the sitemap reads slugs only via `productsRepository.listSlugs` instead of the full priced catalogue; `products/new` reads one org by id instead of every platform org with stats. Home and category pages `Promise.all` their independent reads.
+- **`requirePlatformAdmin` is now request-memoised** with `cache()` (like `requireOrgMember`), halving the guard read on the nine admin pages that call it after the layout already did. The ADR-0021 per-request re-read is preserved.
+- **Security bycatch:** `/order/[orderId]` now passes the viewer's id so a signed-in user can only open their own order (a mismatch reads as "not found"). Guest orders remain readable by id — closing that needs an order-scoped token in the post-checkout URL, a product decision left for its own spec.
+- **Ops config:** `BLOCK_CRAWLERS=1` set in Vercel Production (the PR-84 crawl block had never been enabled); doc-drift fixed in `OPERATIONS.md` (the reconcile cron is daily, not every 15 min).
+
+Three checkout-flow defects surfaced while testing the above and are fixed in the same batch (all pre-existing, none introduced by the ops work): (1) an infinite `effect→setState→re-render` loop in the guest address form — `handleGuestAddress` and `useAddressManager.selectAddress` both changed identity every render, so `GuestAddress`'s `onAddressChange` effect never settled; both are stabilised (a ref for the options callback, `useCallback` for the handler). (2) `useAddressManager({ autoFetch: true })` fired `GET /api/addresses` on every checkout mount including for guests, who have no saved addresses — a guaranteed 401; auto-fetch is now gated on `!!user`. (3) the addresses GET handler read `(session.user as any).id`, an `any` at an auth boundary (Invariant 4); now the typed `session.user.id`, which the session augmentation already provides.
+
+Not done here, deliberately: moving `getServerSession` out of the root layout to make pages cacheable (a baseline change that intersects ADR-0018 and needs its own spec). 568 tests pass, typecheck and lint clean on touched files.
+
 ## [PR-86] 2026-09-02 — A failed payment attempt no longer strands the stock reservation
 
 `payment.failed` from the gateway was treated as the end of the order: `markPaymentFailed` set `status: "failed"` terminally, which removed the order from the reconcile sweep's worklist (`paymentStatus: "pending"` filter) and made it ineligible for `expireAndRestock` (`status: "pending_payment"` guard). The reserved stock never came back — every failed payment attempt permanently leaked its quantity until manual correction.
