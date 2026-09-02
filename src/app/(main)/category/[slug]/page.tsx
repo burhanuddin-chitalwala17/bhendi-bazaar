@@ -16,11 +16,15 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   const { slug } = await params;
 
-  const category = await categoriesDAL.getCategoryBySlug(slug);
-  const products = await productsDAL.getProducts({ categorySlug: slug });
-  // Lanes below this one only; the trail is what points back up.
-  const lanes = await categoriesDAL.getDescendants(slug);
-  const ancestors = await categoriesDAL.getAncestors(slug);
+  // Independent reads, fetched together rather than in a four-step waterfall. The three
+  // category shapes all resolve against the same request-memoised tree, so they add no
+  // queries; lanes are below this one only, and the ancestor trail points back up.
+  const [category, products, lanes, ancestors] = await Promise.all([
+    categoriesDAL.getCategoryBySlug(slug),
+    productsDAL.getProducts({ categorySlug: slug }),
+    categoriesDAL.getDescendants(slug),
+    categoriesDAL.getAncestors(slug),
+  ]);
 
   return (
     <div className="space-y-4">

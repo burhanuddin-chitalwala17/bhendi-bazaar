@@ -40,6 +40,13 @@ class OrgsDAL {
     const orgs = await orgRepository.findAllWithStats();
     return orgs.map(toOrgWithStats);
   });
+
+  /** One org's identity — for a page that names an org rather than listing them. */
+  getOrgSummary = cache(
+    async (orgId: string): Promise<{ id: string; name: string; code: string } | null> => {
+      return await orgRepository.findSummary(orgId);
+    }
+  );
 }
 
 export const orgsDAL = new OrgsDAL();

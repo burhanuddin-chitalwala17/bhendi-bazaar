@@ -8,7 +8,7 @@ vi.mock("@/data-access-layer/categories.dal", () => ({
   categoriesDAL: { getCategories: vi.fn().mockResolvedValue([]) },
 }));
 vi.mock("@/data-access-layer/products.dal", () => ({
-  productsDAL: { getProducts: vi.fn().mockResolvedValue([]) },
+  productsDAL: { listSlugs: vi.fn().mockResolvedValue([]) },
 }));
 
 afterEach(() => {
