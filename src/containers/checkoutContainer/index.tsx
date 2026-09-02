@@ -31,7 +31,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
 
   const { groups: shippingGroups, totalShippingCost, isLoading: isShippingLoading, allocationError, fetchAllRates, selectRateForGroup } = useMultiShippingRates();
 
-  const { selectedAddress, addresses, addAddress, updateAddress, selectAddress } = useAddressManager({ autoFetch: true });
+  const { selectedAddress, addresses, addAddress, updateAddress, selectAddress } = useAddressManager({ autoFetch: !!user });
 
   // Payment hook
   const { processPaymentWithShipments, isProcessing, error: paymentError, setError: setPaymentError } = useCheckoutPayment();
