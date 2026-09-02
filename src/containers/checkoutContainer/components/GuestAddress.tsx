@@ -8,11 +8,12 @@ import { AddressFields } from "@/components/shared/forms/AddressFields";
 import { DeliveryAddress } from "@/domain/profile";
 import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 
-const addressSchema = z.object({
+export const guestAddressSchema = z.object({
   id: z.string(),
   fullName: z.string().min(2, "Name required"),
   mobile: z.string().regex(/^\d{10}$/, "10 digits required"),
-  email: z.string().email("Invalid email").optional(),
+  // Optional (the UI says so), but validated when present; "" is "left blank".
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
   addressLine1: z.string().min(5, "Address required"),
   addressLine2: z.string().optional(),
   landmark: z.string().optional(),
@@ -30,9 +31,12 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     watch,
     formState: { errors, isValid },
   } = useForm<DeliveryAddress>({
-    resolver: zodResolver(addressSchema),
+    resolver: zodResolver(guestAddressSchema),
     mode: "onChange",
     defaultValues: {
+      // A guest address has no id; without this default the required `id`
+      // keeps the form invalid forever and shipping rates never load.
+      id: "",
       country: "India",
     },
   });
@@ -59,15 +63,11 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     state: state || "",
     pincode: pincode || "",
     country: country || "India",
-  }), [fullName, mobile, email, addressLine1, addressLine2, city, state, pincode, country]);
+  }), [fullName, mobile, email, addressLine1, addressLine2, landmark, city, state, pincode, country]);
 
   useEffect(() => {
-
     if (isValid) {
-      console.log('✅ Calling onAddressChange with:', formValues);
       onAddressChange({ ...formValues, id: "" });
-    } else {
-      console.log('❌ Form not valid yet');
     }
   }, [formValues, isValid, onAddressChange]);
 

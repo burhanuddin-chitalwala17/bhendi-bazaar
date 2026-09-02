@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-85] 2026-09-02 — Guest checkout unstuck, and admin pages stop showing paise as rupees
+
+Two production defects, both display/validation only — no schema, no wire shape, no money-path change.
+
+**Guest checkout never fetched shipping rates.** `GuestAddress` validates with a Zod schema requiring `id: z.string()`, but the form never registers an id field, so the resolver failed on the missing `id` on every keystroke, `isValid` never went true, `onAddressChange` never fired, and the checkout sat on "Please select a delivery address" with every field filled. Fix: the form's `defaultValues` now carry `id: ""` (a guest address has no id until submit). The schema's `email` also rejected `""` despite the UI labelling it optional — an empty text input yields `""`, not `undefined` — so it now accepts blank while still validating a typed address. Debug `console.log`s removed; `landmark` added to the memo deps it was missing from. Regression tests in `tests/unit/guest-address.test.tsx` render the form, fill it, and assert the callback fires (verified failing without the fix). The 401 from `/api/addresses` in the same console was a red herring — the saved-addresses fetch correctly refusing a guest.
+
+**Four admin pages formatted raw paise as rupees — everything showed 100× too big.** `admin/orders`, `admin/orders/[orderId]`, `admin/carts` and `admin/users` each hand-rolled a local `formatCurrency` with no ÷100, violating the "one module knows money is paise" rule (`src/lib/format.ts`, [ADR-0004](adr/0004-money-as-integer-paise.md)); `ProductsStats` did the same with a template string. All five now import the shared `formatCurrency`. Same bug in reverse on the carts value filter: its "₹500+" options sent rupee numbers that the repository compared against paise totals, filtering at ₹5+ — option values are now paise. The dashboard widgets (admin and org portal) were already correct end-to-end; if the org dashboard looks wrong next to the old admin pages, it was the admin pages that were inflated.
+
+563 tests pass, typecheck clean.
+
 ## [PR-84] 2026-09-01 — Pre-launch crawl block behind one env switch
 
 The store is not live, yet production logs show search crawlers (PetalBot, Bing) steadily working through the domain's old WooCommerce URL space — each hit a function invocation bought for nothing. `BLOCK_CRAWLERS=1` in the deployment environment now turns every compliant crawler away: `src/app/robots.ts` answers disallow-all with no sitemap reference, `src/app/sitemap.ts` returns an empty set instead of reading the catalogue (crawlers that already know the URL keep polling it), and `next.config.ts` stamps `X-Robots-Tag: noindex, nofollow` on every response for bots that skip robots.txt but honour the header. Unset, nothing changes — the launch flip is deleting one variable.
