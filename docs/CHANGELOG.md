@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-86] 2026-09-02 — A failed payment attempt no longer strands the stock reservation
+
+`payment.failed` from the gateway was treated as the end of the order: `markPaymentFailed` set `status: "failed"` terminally, which removed the order from the reconcile sweep's worklist (`paymentStatus: "pending"` filter) and made it ineligible for `expireAndRestock` (`status: "pending_payment"` guard). The reserved stock never came back — every failed payment attempt permanently leaked its quantity until manual correction.
+
+The premise was also wrong: Razorpay fires `payment.failed` per *attempt*, and the buyer can retry inside the same checkout, so a failed attempt is not a dead order. Now the handler records `paymentStatus: "failed"` only (never over a captured payment, never on an expired order) and the order stays `pending_payment` — the reservation deliberately holds for a retry, and the existing sweep expires and restocks it after the hold window, exactly as it does for a closed-modal abandonment. The sweep worklist now includes `paymentStatus: "failed"` so those orders are asked about at the gateway (a retried capture whose webhook was lost is recovered, not expired), and `expireAndRestock` also accepts the legacy `status: "failed"` rows this bug already created, so the historical leaks drain through the same path (at the sweep's cap of 20 per run).
+
+Known limitation, unchanged here: the sweep cron runs daily at 03:30 (`vercel.json`), so release takes up to ~24h, not the designed 60 minutes. Tests: `tests/unit/payment-failed-restock.test.ts` pins the conditional-write shapes. 568 tests pass, typecheck clean.
+
 ## [PR-85] 2026-09-02 — Guest checkout unstuck, and admin pages stop showing paise as rupees
 
 Two production defects, both display/validation only — no schema, no wire shape, no money-path change.
