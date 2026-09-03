@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-84] 2026-09-01 — Transactional email reaches its recipient, and shipping recovers from an empty init
+## [PR-87] 2026-09-03 — Transactional email reaches its recipient, and shipping recovers from an empty init
 
 Two unrelated silences, both of the same kind: code that ran, logged nothing, and did not do the thing it was there for.
 
@@ -25,6 +25,30 @@ Two unrelated silences, both of the same kind: code that ran, logged nothing, an
 **And shipping could not recover from booting with no carrier.** `initializeShippingModule` set `isInitialized = true` even when it loaded zero providers, so the recovery path in `src/app/api/shipping/rates/route.ts` — which notices an empty provider map and re-initialises — returned at the guard without reloading, and every quote 503'd until someone restarted the server. It now latches only on a provider actually loading. The matching half is that `AdminConnectionService.connect` wrote credentials and never told the running orchestrator, so a carrier connected through the admin console was invisible to the process that quotes with it; connect and disconnect now refresh the live map. Together these are what make "an operator connects a carrier without a developer or a deploy" ([server/shipping/adr/0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)) true rather than aspirational.
 
 **One more found while wiring that up:** the orchestrator's provider map is keyed by carrier `code`, but the Shiprocket webhook route looked it up by record `id` — `"shiprocket_001"` against a key of `"shiprocket"` — so every tracking webhook failed as "Provider not found". The route passes the code, and the dead `reloadProvider` that baked in the same id/code confusion (it would have registered one carrier twice and quoted it twice) is replaced by `refreshProvider`/`removeProvider`, both keyed the way `loadProviders` keys. `init.ts` also stopped declaring its own carrier list and uses the `PROVIDER_FACTORIES` registry, so a second carrier cannot be added to the registry and silently not load at boot.
+
+## [PR-86] 2026-09-02 — A failed payment attempt no longer strands the stock reservation
+
+`payment.failed` from the gateway was treated as the end of the order: `markPaymentFailed` set `status: "failed"` terminally, which removed the order from the reconcile sweep's worklist (`paymentStatus: "pending"` filter) and made it ineligible for `expireAndRestock` (`status: "pending_payment"` guard). The reserved stock never came back — every failed payment attempt permanently leaked its quantity until manual correction.
+
+The premise was also wrong: Razorpay fires `payment.failed` per *attempt*, and the buyer can retry inside the same checkout, so a failed attempt is not a dead order. Now the handler records `paymentStatus: "failed"` only (never over a captured payment, never on an expired order) and the order stays `pending_payment` — the reservation deliberately holds for a retry, and the existing sweep expires and restocks it after the hold window, exactly as it does for a closed-modal abandonment. The sweep worklist now includes `paymentStatus: "failed"` so those orders are asked about at the gateway (a retried capture whose webhook was lost is recovered, not expired), and `expireAndRestock` also accepts the legacy `status: "failed"` rows this bug already created, so the historical leaks drain through the same path (at the sweep's cap of 20 per run).
+
+Known limitation, unchanged here: the sweep cron runs daily at 03:30 (`vercel.json`), so release takes up to ~24h, not the designed 60 minutes. Tests: `tests/unit/payment-failed-restock.test.ts` pins the conditional-write shapes. 568 tests pass, typecheck clean.
+
+## [PR-85] 2026-09-02 — Guest checkout unstuck, and admin pages stop showing paise as rupees
+
+Two production defects, both display/validation only — no schema, no wire shape, no money-path change.
+
+**Guest checkout never fetched shipping rates.** `GuestAddress` validates with a Zod schema requiring `id: z.string()`, but the form never registers an id field, so the resolver failed on the missing `id` on every keystroke, `isValid` never went true, `onAddressChange` never fired, and the checkout sat on "Please select a delivery address" with every field filled. Fix: the form's `defaultValues` now carry `id: ""` (a guest address has no id until submit). The schema's `email` also rejected `""` despite the UI labelling it optional — an empty text input yields `""`, not `undefined` — so it now accepts blank while still validating a typed address. Debug `console.log`s removed; `landmark` added to the memo deps it was missing from. Regression tests in `tests/unit/guest-address.test.tsx` render the form, fill it, and assert the callback fires (verified failing without the fix). The 401 from `/api/addresses` in the same console was a red herring — the saved-addresses fetch correctly refusing a guest.
+
+**Four admin pages formatted raw paise as rupees — everything showed 100× too big.** `admin/orders`, `admin/orders/[orderId]`, `admin/carts` and `admin/users` each hand-rolled a local `formatCurrency` with no ÷100, violating the "one module knows money is paise" rule (`src/lib/format.ts`, [ADR-0004](adr/0004-money-as-integer-paise.md)); `ProductsStats` did the same with a template string. All five now import the shared `formatCurrency`. Same bug in reverse on the carts value filter: its "₹500+" options sent rupee numbers that the repository compared against paise totals, filtering at ₹5+ — option values are now paise. The dashboard widgets (admin and org portal) were already correct end-to-end; if the org dashboard looks wrong next to the old admin pages, it was the admin pages that were inflated.
+
+563 tests pass, typecheck clean.
+
+## [PR-84] 2026-09-01 — Pre-launch crawl block behind one env switch
+
+The store is not live, yet production logs show search crawlers (PetalBot, Bing) steadily working through the domain's old WooCommerce URL space — each hit a function invocation bought for nothing. `BLOCK_CRAWLERS=1` in the deployment environment now turns every compliant crawler away: `src/app/robots.ts` answers disallow-all with no sitemap reference, `src/app/sitemap.ts` returns an empty set instead of reading the catalogue (crawlers that already know the URL keep polling it), and `next.config.ts` stamps `X-Robots-Tag: noindex, nofollow` on every response for bots that skip robots.txt but honour the header. Unset, nothing changes — the launch flip is deleting one variable.
+
+Two deliberate consequences, documented in `src/lib/crawl-block.ts` and OPERATIONS.md: while blocked, the 410 purge of the old WordPress index (PR-era `src/middleware.ts` rule) is paused, since a crawler that may not fetch never sees the 410; and non-compliant scrapers are unaffected — those are a Vercel Firewall concern, not code. Tests: `tests/unit/crawl-block.test.ts`.
 
 ## [PR-83] 2026-08-31 — Prefetch goes off in the portals too, where the only live traffic is
 

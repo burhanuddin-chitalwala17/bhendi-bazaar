@@ -8,11 +8,12 @@ import { AddressFields } from "@/components/shared/forms/AddressFields";
 import { DeliveryAddress } from "@/domain/profile";
 import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 
-const addressSchema = z.object({
+export const guestAddressSchema = z.object({
   id: z.string(),
   fullName: z.string().min(2, "Name required"),
   mobile: z.string().regex(/^\d{10}$/, "10 digits required"),
-  email: z.string().email("Invalid email").optional(),
+  // Optional (the UI says so), but validated when present; "" is "left blank".
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
   addressLine1: z.string().min(5, "Address required"),
   addressLine2: z.string().optional(),
   landmark: z.string().optional(),
@@ -32,12 +33,11 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     clearErrors,
     formState: { errors, isValid },
   } = useForm<DeliveryAddress>({
-    resolver: zodResolver(addressSchema),
+    resolver: zodResolver(guestAddressSchema),
     mode: "onChange",
     defaultValues: {
-      // `id` is never registered/entered by this form (a guest has none yet) — seeded
-      // here so the required `id: z.string()` check has something to validate against
-      // instead of leaving the form permanently invalid on an unset field.
+      // A guest address has no id; without this default the required `id`
+      // keeps the form invalid forever and shipping rates never load.
       id: "",
       country: "India",
     },
@@ -65,7 +65,7 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     state: state || "",
     pincode: pincode || "",
     country: country || "India",
-  }), [fullName, mobile, email, addressLine1, addressLine2, city, state, pincode, country]);
+  }), [fullName, mobile, email, addressLine1, addressLine2, landmark, city, state, pincode, country]);
 
   // A guest has no account to fall back to for the order-confirmation email
   // (server/checkout/order.service.ts onPaymentConfirmed), so unlike the
@@ -83,10 +83,7 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
 
   useEffect(() => {
     if (isValid && hasEmail) {
-      console.log('✅ Calling onAddressChange with:', formValues);
       onAddressChange({ ...formValues, id: "" });
-    } else {
-      console.log('❌ Form not valid yet');
     }
   }, [formValues, isValid, hasEmail, onAddressChange]);
 
