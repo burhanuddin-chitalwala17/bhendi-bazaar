@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-89] 2026-09-03 — One email shell, four templates that only carry their content
+
+Each of the four transactional emails rendered its own complete document: doctype, head,
+`<style>` block, accent bars, header with the logo, and a footer with the copyright line.
+Four copies of the same chrome meant a brand change was four edits, and they had already
+drifted — the payout email's total sat at 22px against the order's 20px, and the same
+"can't click the button?" fallback existed twice, worded identically and maintained
+separately.
+
+`server/notifications/templates/layout.ts` is now the only file that knows what an email
+looks like. `renderEmail` takes a title, an optional tagline and banner, a body and an
+optional footer; the shared stylesheet is injected once, by it. A template supplies only
+what differs, composed from blocks that live beside it — `greeting`, `paragraph`,
+`closingNote`, `button`, `noticeBox`, `alternateLink`, `detailPanel`. The purchase
+confirmation drops from 405 lines to ~300, most of that its own line-item table CSS; the
+other three are under 45 lines each. `.success-banner` and the detail/total row styles moved
+into `baseEmailStyles.ts`, since two templates had each declared them.
+
+**Interpolated data is escaped now.** Customer names, addresses, order notes and product
+titles reached the HTML raw — an order note containing `<` produced broken markup, and the
+same path would have carried a `<script>` into anything that renders the mail as HTML. All
+of it goes through `esc()`. Invariant 4 is about the payload being untrusted, and that does
+not stop at the parse.
+
+`formatPaise` in `formatters.ts` replaces the `formatCurrency(paiseToRupees(x))` pair
+repeated at every call site. No visual change beyond the payout total's 2px and class
+renames backed by equivalent CSS — verified by rendering all four emails before and after
+and diffing. New rules in `server/notifications/CLAUDE.md`; covered by
+`tests/unit/email-templates.test.ts`.
+
 ## [PR-88] 2026-09-03 — Transactional email reaches its recipient, and shipping recovers from an empty init
 
 Two unrelated silences, both of the same kind: code that ran, logged nothing, and did not do the thing it was there for.
