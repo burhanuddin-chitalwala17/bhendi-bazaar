@@ -27,7 +27,7 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ✅ | The same key **id**, exposed to the browser checkout widget. Never expose the secret |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
-| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook backstop, every 15 min per `vercel.json`). Any long random string; set it in Vercel env |
+| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
 | `BLOB_READ_WRITE_TOKEN` | ✅ | Vercel Blob, for product and profile images |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ✅ | Upstash Redis for rate limiting — see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |

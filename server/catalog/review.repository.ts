@@ -118,6 +118,8 @@ export class AdminReviewRepository {
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
+        // Review + product + user in one JOIN, matching getReviews/getReviewById below.
+        relationLoadStrategy: "join",
       }),
       prisma.review.count({ where }),
     ]);

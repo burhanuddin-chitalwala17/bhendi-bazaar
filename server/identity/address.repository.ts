@@ -76,6 +76,7 @@ export class UserAddressRepository {
       where: { userId },
       select: ROW_SELECT,
       orderBy: { updatedAt: "desc" },
+      relationLoadStrategy: "join",
     });
     return rows.map(toDeliveryAddress);
   }
@@ -85,6 +86,7 @@ export class UserAddressRepository {
     const row = await prisma.userAddress.findFirst({
       where: { id: userAddressId, userId },
       select: ROW_SELECT,
+      relationLoadStrategy: "join",
     });
     return row ? toDeliveryAddress(row) : null;
   }

@@ -23,6 +23,11 @@ export function useCartSync() {
   // The server-cart version our next write is based on. 0 = no basis yet, so the
   // first write after a failed sync is last-write-wins once rather than failing.
   const versionRef = useRef(0);
+  // Serialized items as of the last server write (or the mount snapshot). A write
+  // only goes out when the basket actually differs — the persisted cart rehydrating
+  // on page load is not a change, and neither is the debounce settling on a value
+  // that was already written.
+  const lastWrittenRef = useRef<string | null>(null);
 
   const syncCart = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -34,6 +39,7 @@ export function useCartSync() {
       const merged = await cartApiClient.syncCart(items);
       setItems(merged.items);
       versionRef.current = merged.version;
+      lastWrittenRef.current = JSON.stringify(merged.items);
       
       // Cleanup old anonymous cart data after successful sync
       cleanupOldCartData();
@@ -66,6 +72,7 @@ export function useCartSync() {
         versionRef.current || undefined
       );
       versionRef.current = version;
+      lastWrittenRef.current = JSON.stringify(items);
     } catch (error) {
       // 409: another tab or device wrote first. Re-sync merges both carts instead
       // of either overwriting the other (inventory-reservation R7).
@@ -90,14 +97,26 @@ export function useCartSync() {
     prevStatusRef.current = status;
   }, [session?.user?.id, status, syncCart]);
 
-  // Background updates (debounced)
+  // Background updates (debounced). updateCart is reached through a ref so the
+  // effect fires only when the debounced value settles — with updateCart itself
+  // in the deps, its identity change on the raw items change fired the effect
+  // immediately AND again after the debounce: two writes per cart mutation.
+  const updateCartRef = useRef(updateCart);
+  updateCartRef.current = updateCart;
   const debouncedItems = useDebounce(items, 500);
-  
+
   useEffect(() => {
-    if (status === "authenticated" && debouncedItems.length > 0) {
-      updateCart();
+    if (status !== "authenticated" || debouncedItems.length === 0) return;
+    const snapshot = JSON.stringify(debouncedItems);
+    if (lastWrittenRef.current === null) {
+      // First settle after mount: the persisted cart rehydrating. Record it,
+      // don't write it — the server cart is not stale just because a page loaded.
+      lastWrittenRef.current = snapshot;
+      return;
     }
-  }, [debouncedItems, status, updateCart]);
+    if (snapshot === lastWrittenRef.current) return;
+    updateCartRef.current();
+  }, [debouncedItems, status]);
 
   return {
     isSyncing,

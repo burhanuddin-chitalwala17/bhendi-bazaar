@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-87] 2026-09-03 — Transactional email reaches its recipient, and shipping recovers from an empty init
+## [PR-88] 2026-09-03 — Transactional email reaches its recipient, and shipping recovers from an empty init
 
 Two unrelated silences, both of the same kind: code that ran, logged nothing, and did not do the thing it was there for.
 
@@ -25,6 +25,23 @@ Two unrelated silences, both of the same kind: code that ran, logged nothing, an
 **And shipping could not recover from booting with no carrier.** `initializeShippingModule` set `isInitialized = true` even when it loaded zero providers, so the recovery path in `src/app/api/shipping/rates/route.ts` — which notices an empty provider map and re-initialises — returned at the guard without reloading, and every quote 503'd until someone restarted the server. It now latches only on a provider actually loading. The matching half is that `AdminConnectionService.connect` wrote credentials and never told the running orchestrator, so a carrier connected through the admin console was invisible to the process that quotes with it; connect and disconnect now refresh the live map. Together these are what make "an operator connects a carrier without a developer or a deploy" ([server/shipping/adr/0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)) true rather than aspirational.
 
 **One more found while wiring that up:** the orchestrator's provider map is keyed by carrier `code`, but the Shiprocket webhook route looked it up by record `id` — `"shiprocket_001"` against a key of `"shiprocket"` — so every tracking webhook failed as "Provider not found". The route passes the code, and the dead `reloadProvider` that baked in the same id/code confusion (it would have registered one carrier twice and quoted it twice) is replaced by `refreshProvider`/`removeProvider`, both keyed the way `loadProviders` keys. `init.ts` also stopped declaring its own carrier list and uses the `PROVIDER_FACTORIES` registry, so a second carrier cannot be added to the registry and silently not load at boot.
+## [PR-87] 2026-09-02 — Cut the Prisma-ops bleed: kill the admin poll, stop per-page profile fetches, close the N+1s
+
+A four-layer audit traced why a store with no customers was burning ~3,500 Prisma operations a day against a 100k/month budget. Almost none of it was page views. The fixes, in order of ops recovered:
+
+- **The admin dashboard polled every 60s** (`src/admin/dashboard-live.tsx`) — 14 ops/tick, no `visibilityState` gate, so one forgotten open tab was ~17k ops/day and could exhaust the month in under six days. Interval removed; the manual Refresh button stays.
+- **`ProfileProvider` fetched `/api/profile` on every page load** for every signed-in user (mounted app-wide in `src/app/providers.tsx`), for data only the profile page renders. It now scopes to `src/app/(main)/profile/layout.tsx`; the chrome's one need, `isEmailVerified`, rides the session token (stamped in the same sign-in query that already read `platformRole`, refreshed via `session.update()` on the verification-success redirect). See `src/lib/auth-config.ts`, `src/types/next-auth.d.ts`.
+- **The cart-sync debounce was defeated** (`src/hooks/cart/useCartSync.ts`): `updateCart` in the effect deps fired a write on the raw change *and* again after the debounce, and a rehydrating persisted cart wrote on every page load. Now reached through a ref, guarded by a last-written snapshot, and silent on the mount rehydrate.
+- **Payouts overview was 4N+2 queries** (grew with every org onboarded). `ledgerRepository.balancesByOrg`/`entryCountsByOrg` group once across all orgs — a constant six queries. No arithmetic changed; the per-org methods stay for the single-org views.
+- **Missing `relationLoadStrategy: "join"`** added to the admin order/product, org-review, banner (every homepage), address (every signed-in page) and commission-rule reads — one LATERAL JOIN instead of a statement per nested relation.
+- **Unbounded storefront product reads** now carry `take` (the validated `limit`/`offset` wired through, plus a 200-row safety cap); the sitemap reads slugs only via `productsRepository.listSlugs` instead of the full priced catalogue; `products/new` reads one org by id instead of every platform org with stats. Home and category pages `Promise.all` their independent reads.
+- **`requirePlatformAdmin` is now request-memoised** with `cache()` (like `requireOrgMember`), halving the guard read on the nine admin pages that call it after the layout already did. The ADR-0021 per-request re-read is preserved.
+- **Security bycatch:** `/order/[orderId]` now passes the viewer's id so a signed-in user can only open their own order (a mismatch reads as "not found"). Guest orders remain readable by id — closing that needs an order-scoped token in the post-checkout URL, a product decision left for its own spec.
+- **Ops config:** `BLOCK_CRAWLERS=1` set in Vercel Production (the PR-84 crawl block had never been enabled); doc-drift fixed in `OPERATIONS.md` (the reconcile cron is daily, not every 15 min).
+
+Three checkout-flow defects surfaced while testing the above and are fixed in the same batch (all pre-existing, none introduced by the ops work): (1) an infinite `effect→setState→re-render` loop in the guest address form — `handleGuestAddress` and `useAddressManager.selectAddress` both changed identity every render, so `GuestAddress`'s `onAddressChange` effect never settled; both are stabilised (a ref for the options callback, `useCallback` for the handler). (2) `useAddressManager({ autoFetch: true })` fired `GET /api/addresses` on every checkout mount including for guests, who have no saved addresses — a guaranteed 401; auto-fetch is now gated on `!!user`. (3) the addresses GET handler read `(session.user as any).id`, an `any` at an auth boundary (Invariant 4); now the typed `session.user.id`, which the session augmentation already provides.
+
+Not done here, deliberately: moving `getServerSession` out of the root layout to make pages cacheable (a baseline change that intersects ADR-0018 and needs its own spec). 568 tests pass, typecheck and lint clean on touched files.
 
 ## [PR-86] 2026-09-02 — A failed payment attempt no longer strands the stock reservation
 

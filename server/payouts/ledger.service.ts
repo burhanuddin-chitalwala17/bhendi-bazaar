@@ -120,22 +120,26 @@ export class LedgerService {
   /**
    * Every organisation's balances — the payout overview.
    *
-   * Four aggregates per organisation rather than its whole ledger: this page used to
-   * load every entry ever written, for every organisation, to add up two numbers.
+   * Grouped once across all orgs rather than four aggregates per org (which was 4N+2
+   * queries and grew with each org onboarded); before that it loaded every entry ever
+   * written to add up two numbers. Now a constant six queries whatever N is.
    */
   async overview() {
-    const orgs = await orgRepository.listCommercialTerms();
-    const rows = await Promise.all(
-      orgs.map(async (org) => {
-        const [balance, entryCount, negativeMarginOrders] = await Promise.all([
-          ledgerRepository.balancesFor(org.id),
-          ledgerRepository.countEntries(org.id),
-          ledgerRepository.negativeMarginCount(org.id),
-        ]);
-        return { ...org, ...balance, entryCount, negativeMarginOrders };
-      })
-    );
-    return { orgs: rows, unrecorded: await this.unrecordedCount() };
+    const [orgs, { unclaimedByOrg, owedByOrg }, { entryCountByOrg, negativeMarginByOrg }, unrecorded] =
+      await Promise.all([
+        orgRepository.listCommercialTerms(),
+        ledgerRepository.balancesByOrg(),
+        ledgerRepository.entryCountsByOrg(),
+        this.unrecordedCount(),
+      ]);
+    const rows = orgs.map((org) => ({
+      ...org,
+      unclaimedPaise: unclaimedByOrg.get(org.id) ?? 0,
+      owedPaise: owedByOrg.get(org.id) ?? 0,
+      entryCount: entryCountByOrg.get(org.id) ?? 0,
+      negativeMarginOrders: negativeMarginByOrg.get(org.id) ?? 0,
+    }));
+    return { orgs: rows, unrecorded };
   }
 
   /** One organisation's ledger, plus who they are and what has been settled. */
