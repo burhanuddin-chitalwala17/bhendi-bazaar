@@ -55,9 +55,12 @@ export class OrderService {
 
   /**
    * Lookup order by code (for guest orders)
-   * This allows guests to track their order using the order code
+   * This allows guests to track their order using the order code. Unauthenticated
+   * by design, so the repository returns a projection rather than the raw row
+   * (checkout/CLAUDE.md) — this return type follows that shape rather than the
+   * full prisma `Order`.
    */
-  async lookupOrderByCode(code: string): Promise<Order | null> {
+  async lookupOrderByCode(code: string): Promise<Awaited<ReturnType<typeof orderRepository.findByCode>>> {
     return await orderRepository.findByCode(code);
   }
 
@@ -98,7 +101,31 @@ export class OrderService {
     }
 
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
-    if (deliveryAddress?.email) {
+    // The address book's email is per-address and usually left blank (it isn't asked
+    // for at checkout, only when adding an address). Falling back to the account's
+    // login email is why a signed-in buyer gets this at all — without it, this branch
+    // was reached almost never, only for guests, who fill email in explicitly.
+    let recipientEmail = deliveryAddress?.email ?? null;
+    if (!recipientEmail && order.userId) {
+      const { profileRepository } = await import("@server/identity/profile.repository");
+      recipientEmail = await profileRepository.findEmailById(order.userId);
+    }
+
+    if (deliveryAddress && recipientEmail) {
+      const lineItems: OrderEmailView["items"] = [];
+      for (const shipment of order.shipments) {
+        for (const item of shipment.items) {
+          lineItems.push({
+            name: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+            size: item.size,
+            color: item.color,
+          });
+        }
+      }
+
       const { emailService } = await import("@server/notifications/email.service");
       emailService
         .sendPurchaseConfirmationEmail(
@@ -109,6 +136,7 @@ export class OrderService {
             paymentStatus: order.paymentStatus,
             createdAt: order.createdAt,
             notes: order.notes,
+            items: lineItems,
             itemsTotal: order.itemsTotal,
             discount: order.discount,
             grandTotal: order.grandTotal,
@@ -117,12 +145,20 @@ export class OrderService {
               estimatedDelivery: s.estimatedDelivery?.toISOString(),
             })),
           },
-          deliveryAddress.email
+          recipientEmail
         )
         .catch((error) => {
           console.error("Failed to send purchase confirmation email:", error);
           // Email failure must not unwind a confirmed payment.
         });
+    } else if (!recipientEmail) {
+      // Order creation requires an email for guests and falls back to the account
+      // email for logged-in buyers, so this should be unreachable in practice — if
+      // it fires, something upstream (e.g. an account with no email) let an order
+      // through with no way to notify the buyer.
+      console.error(
+        `[onPaymentConfirmed] order ${order.code} has no resolvable email — confirmation not sent`
+      );
     }
   }
 
@@ -704,6 +740,14 @@ export class OrderService {
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(mobile)) {
       throw new DomainError("Phone number must be 10 digits");
+    }
+
+    // A logged-in buyer's confirmation email can fall back to their account email
+    // (onPaymentConfirmed); a guest has no account to fall back to, so their address
+    // is the only place it can come from — require it here rather than finding out
+    // silently at payment-confirmation time that no email exists to send to.
+    if (!input.userId && !input.address.email) {
+      throw new DomainError("Email is required so we can send your order confirmation");
     }
 
     // Validate postal code

@@ -102,6 +102,14 @@ export class OrgRepository {
     });
   }
 
+  /** Name and email for a payout notification — nothing else. */
+  async findEmailContact(id: string) {
+    return await prisma.org.findUnique({
+      where: { id },
+      select: { name: true, email: true },
+    });
+  }
+
   /** Every org's terms, for the payout overview. */
   async listCommercialTerms() {
     return await prisma.org.findMany({

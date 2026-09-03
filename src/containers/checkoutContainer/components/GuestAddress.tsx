@@ -29,6 +29,8 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
   const {
     register,
     watch,
+    setError,
+    clearErrors,
     formState: { errors, isValid },
   } = useForm<DeliveryAddress>({
     resolver: zodResolver(guestAddressSchema),
@@ -65,11 +67,25 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     country: country || "India",
   }), [fullName, mobile, email, addressLine1, addressLine2, landmark, city, state, pincode, country]);
 
+  // A guest has no account to fall back to for the order-confirmation email
+  // (server/checkout/order.service.ts onPaymentConfirmed), so unlike the
+  // address-book form, email is mandatory here. Enforced manually rather than
+  // in addressSchema so the field's type stays string | undefined, matching
+  // DeliveryAddress.email? and the AddressFields component's shared prop type.
+  const hasEmail = !!email;
   useEffect(() => {
-    if (isValid) {
+    if (!hasEmail) {
+      setError("email", { type: "required", message: "Email required for order updates" });
+    } else if (errors.email?.type === "required") {
+      clearErrors("email");
+    }
+  }, [hasEmail, errors.email, setError, clearErrors]);
+
+  useEffect(() => {
+    if (isValid && hasEmail) {
       onAddressChange({ ...formValues, id: "" });
     }
-  }, [formValues, isValid, onAddressChange]);
+  }, [formValues, isValid, hasEmail, onAddressChange]);
 
   return (
     <div className="space-y-3">
@@ -81,6 +97,7 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
         <AddressFields
           register={register}
           errors={errors}
+          emailRequired
         />
       </div>
     </div>

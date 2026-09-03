@@ -1,6 +1,25 @@
-import { baseEmailStyles } from "./styles/baseEmailStyles";
-import { formatCurrency, formatDate } from "../formatters";
 import { appUrl } from "@server/shared/app-url";
+import { formatDate, formatPaise } from "../formatters";
+import {
+  button,
+  closingNote,
+  detailPanel,
+  esc,
+  greeting,
+  paragraph,
+  renderEmail,
+  type DetailRow,
+} from "./layout";
+
+/** One purchased line, as it stood at the time of the order. */
+export interface OrderEmailLineItem {
+  name: string;
+  quantity: number;
+  unitPrice: number; // paise
+  totalPrice: number; // paise
+  size?: string;
+  color?: string;
+}
 
 /** What this template renders — the caller maps its row onto this, whatever its source. */
 export interface OrderEmailView {
@@ -10,6 +29,7 @@ export interface OrderEmailView {
   paymentStatus: string | null;
   createdAt: Date;
   notes?: string | null;
+  items: OrderEmailLineItem[];
   itemsTotal: number; // paise
   discount: number; // paise
   grandTotal: number; // paise
@@ -27,39 +47,8 @@ export interface OrderEmailView {
   shipments: Array<{ estimatedDelivery?: string | null }>;
 }
 
-export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
-  // Generate order items HTML
-  const orderItemsHtml = order.itemsTotal
-
-  // Tracking URL
-  const trackingUrl = `${appUrl()}/order/${order.id}`;
-
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Order Confirmation #${order.code} - Bhendi Bazaar</title>
-        <style>
-          ${baseEmailStyles}
-          
-          /* Additional styles for purchase confirmation */
-          .success-banner {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            padding: 20px 30px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: 600;
-          }
-          .order-details {
-            background: #f8f8f8;
-            border: 2px solid #d4af37;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 25px 0;
-          }
+/** Only what this email adds to the shared sheet — the line-item table and its callouts. */
+const purchaseStyles = `
           .order-details-header {
             display: flex;
             justify-content: space-between;
@@ -113,50 +102,46 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
             font-size: 14px;
             letter-spacing: 0.5px;
           }
-          .items-header th:last-child {
+          .items-header th:not(:first-child) {
             text-align: right;
           }
-          .totals-section {
-            background: #f8f8f8;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 25px 0;
-          }
-          .total-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 15px;
-          }
-          .total-row.final {
-            border-top: 2px solid #d4af37;
-            margin-top: 10px;
-            padding-top: 15px;
-            font-size: 20px;
-            font-weight: 700;
+          .items-table td {
+            padding: 15px;
+            border-top: 1px solid #e5e5e5;
+            font-size: 14px;
             color: #1a1a1a;
           }
-          .total-label {
+          .items-table td:not(:first-child) {
+            text-align: right;
+          }
+          .item-name {
+            font-weight: 600;
+          }
+          .item-variant {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+          }
+          .item-qty, .item-price {
             color: #666;
           }
-          .total-value {
+          .item-total {
             font-weight: 600;
-            color: #1a1a1a;
           }
-          .shipping-address {
+          .callout {
             background: #f8f8f8;
             padding: 20px;
             border-radius: 8px;
             border-left: 4px solid #d4af37;
             margin: 25px 0;
           }
-          .address-title {
+          .callout-title {
             font-weight: 700;
             font-size: 16px;
             color: #1a1a1a;
             margin-bottom: 12px;
           }
-          .address-content {
+          .callout-content {
             font-size: 14px;
             line-height: 1.8;
             color: #4a4a4a;
@@ -186,165 +171,167 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
               gap: 10px;
             }
           }
-        </style>
-      </head>
-      <body>
-        <div class="email-wrapper">
-          <div class="accent-bar"></div>
-          
-          <div class="header">
-            <h1 class="logo">Bhendi Bazaar</h1>
-            <p class="tagline">Royal Curation of Islamic Clothing</p>
-          </div>
-          
-          <div class="success-banner">
-            ✓ Order Confirmed! Thank you for your purchase
-          </div>
-          
-          <div class="content">
-            <h2 class="greeting">Hello ${order.address.fullName}! 🎉</h2>
-            
-            <p class="message">
-              Thank you for shopping with Bhendi Bazaar! Your order has been confirmed and is being processed.
-            </p>
-            
-            <p class="message">
-              We'll send you another email once your order has been shipped with tracking information.
-            </p>
-            
-            <div class="order-details">
+`;
+
+function renderItemRows(items: OrderEmailLineItem[]): string {
+  return items
+    .map((item) => {
+      const variant = [
+        item.size ? `Size: ${esc(item.size)}` : null,
+        item.color ? `Color: ${esc(item.color)}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+
+      return `
+                <tr>
+                  <td>
+                    <div class="item-name">${esc(item.name)}</div>
+                    ${variant ? `<div class="item-variant">${variant}</div>` : ""}
+                  </td>
+                  <td class="item-qty">${item.quantity}</td>
+                  <td class="item-price">${formatPaise(item.unitPrice)}</td>
+                  <td class="item-total">${formatPaise(item.totalPrice)}</td>
+                </tr>`;
+    })
+    .join("");
+}
+
+function renderOrderSummary(order: OrderEmailView): string {
+  const paid = order.paymentStatus === "paid";
+  const delivery = order.shipments[0]?.estimatedDelivery;
+
+  return `
+            <div class="panel">
               <div class="order-details-header">
-                <div>
-                  <div class="order-number">Order #${order.code}</div>
-                </div>
+                <div><div class="order-number">Order #${esc(order.code)}</div></div>
                 <div class="order-date">${formatDate(new Date(order.createdAt))}</div>
               </div>
-              
+
               <div class="order-info-grid">
                 <div class="info-item">
                   <div class="info-label">Payment Status</div>
-                  <div class="info-value" style="color: ${order.paymentStatus === "paid" ? "#22c55e" : "#f59e0b"};">
-                    ${order.paymentStatus === "paid" ? "✓ Paid" : "Pending"}
+                  <div class="info-value" style="color: ${paid ? "#22c55e" : "#f59e0b"};">
+                    ${paid ? "✓ Paid" : "Pending"}
                   </div>
                 </div>
                 <div class="info-item">
                   <div class="info-label">Order Status</div>
                   <div class="info-value" style="color: #2563eb;">
-                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    ${esc(order.status.charAt(0).toUpperCase() + order.status.slice(1))}
                   </div>
                 </div>
                 ${
-    order.shipments.length > 0
+                  order.shipments.length > 0
                     ? `
                 <div class="info-item">
                   <div class="info-label">Estimated Delivery</div>
-                  <div class="info-value">${order.shipments[0].estimatedDelivery ? formatDate(new Date(order.shipments[0].estimatedDelivery)) : "N/A"}</div>
+                  <div class="info-value">${delivery ? formatDate(new Date(delivery)) : "N/A"}</div>
                 </div>
                 `
                     : ""
                 }
               </div>
-            </div>
-            
+            </div>`;
+}
+
+function renderAddress(address: OrderEmailView["address"]): string {
+  return `
+            <div class="callout">
+              <div class="callout-title">📦 Shipping Address</div>
+              <div class="callout-content">
+                <strong>${esc(address.fullName)}</strong><br>
+                ${esc(address.addressLine1)}<br>
+                ${address.addressLine2 ? `${esc(address.addressLine2)}<br>` : ""}
+                ${esc(address.city)}, ${esc(address.state)} ${esc(address.pincode)}<br>
+                ${esc(address.country)}<br>
+                <br>
+                📱 ${esc(address.mobile)}
+                ${address.email ? `<br>✉️ ${esc(address.email)}` : ""}
+              </div>
+            </div>`;
+}
+
+export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
+  const totals: DetailRow[] = [
+    { label: "Subtotal:", value: formatPaise(order.itemsTotal) },
+    ...(order.discount > 0
+      ? [
+          {
+            label: "Discount:",
+            value: `<span style="color: #22c55e;">-${formatPaise(order.discount)}</span>`,
+          },
+        ]
+      : []),
+    { label: "Total:", value: formatPaise(order.grandTotal), final: true },
+  ];
+
+  return renderEmail({
+    title: `Order Confirmation #${order.code}`,
+    banner: "✓ Order Confirmed! Thank you for your purchase",
+    styles: purchaseStyles,
+    body: `
+            ${greeting(`Hello ${order.address.fullName}! 🎉`)}
+
+            ${paragraph(
+              "Thank you for shopping with Bhendi Bazaar! Your order has been confirmed and is being processed."
+            )}
+
+            ${paragraph(
+              "You can check your order's status at any time using the link below."
+            )}
+
+            ${renderOrderSummary(order)}
+
             <h3 style="font-size: 18px; margin-top: 30px; margin-bottom: 15px; color: #1a1a1a;">
               Order Items
             </h3>
-            
+
             <table class="items-table">
               <thead class="items-header">
                 <tr>
                   <th>Product</th>
+                  <th>Qty</th>
+                  <th>Price</th>
                   <th>Total</th>
                 </tr>
               </thead>
-              <tbody>
-                ${orderItemsHtml}
+              <tbody>${renderItemRows(order.items)}
               </tbody>
             </table>
-            
-            <div class="totals-section">
-              <div class="total-row">
-                <span class="total-label">Subtotal:</span>
-                <span class="total-value">${formatCurrency(order.itemsTotal)}</span>
-              </div>
-              ${
-    order.discount > 0
-                  ? `
-              <div class="total-row">
-                <span class="total-label">Discount:</span>
-                <span class="total-value" style="color: #22c55e;">-${formatCurrency(order.discount)}</span>
-              </div>
-              `
-                  : ""
-              }
-              <div class="total-row final">
-                <span>Total:</span>
-                <span>${formatCurrency(order.grandTotal)}</span>
-              </div>
-            </div>
-            
-            <div class="shipping-address">
-              <div class="address-title">📦 Shipping Address</div>
-              <div class="address-content">
-                <strong>${order.address.fullName}</strong><br>
-                ${order.address.addressLine1}<br>
-                ${order.address.addressLine2 ? `${order.address.addressLine2}<br>` : ""}
-                ${order.address.city}, ${order.address.state} ${order.address.pincode}<br>
-                ${order.address.country}<br>
-                <br>
-                📱 ${order.address.mobile}
-                ${order.address.email ? `<br>✉️ ${order.address.email}` : ""}
-              </div>
-            </div>
-            
+
+            ${detailPanel(totals, "plain")}
+
+            ${renderAddress(order.address)}
+
             ${
               order.notes
                 ? `
-            <div class="shipping-address">
-              <div class="address-title">📝 Order Notes</div>
-              <div class="address-content">${order.notes}</div>
+            <div class="callout">
+              <div class="callout-title">📝 Order Notes</div>
+              <div class="callout-content">${esc(order.notes)}</div>
             </div>
             `
                 : ""
             }
-            
-            <div class="cta-container">
-              <a href="${trackingUrl}" class="button">
-                Track Your Order
-              </a>
-            </div>
-            
+
+            ${button(`${appUrl()}/order/${order.id}`, "View Order")}
+
             <div class="help-section">
               <p><strong>Need Help?</strong></p>
               <p>If you have any questions about your order, please contact our support team.</p>
-              <p style="margin-top: 10px;">
-                <strong>Order Code:</strong> ${order.code}
-              </p>
+              <p style="margin-top: 10px;"><strong>Order Code:</strong> ${esc(order.code)}</p>
             </div>
-            
-            <p class="message" style="margin-top: 30px; font-size: 14px; color: #666; text-align: center;">
-              Thank you for choosing Bhendi Bazaar. We appreciate your business!
-            </p>
-          </div>
-          
-          <div class="footer">
-            <p style="font-weight: 600; color: #1a1a1a;">Questions or Concerns?</p>
-            <p>Our support team is here to help you.</p>
-            
-            <div class="social-links">
-              <a href="#" class="social-link">Contact Us</a> •
-              <a href="#" class="social-link">Track Order</a> •
-              <a href="#" class="social-link">Returns Policy</a>
-            </div>
-            
-            <p class="copyright">
-              &copy; ${new Date().getFullYear()} Bhendi Bazaar. All rights reserved.
-            </p>
-          </div>
-          
-          <div class="accent-bar"></div>
-        </div>
-      </body>
-    </html>
-  `;
+
+            ${closingNote("Thank you for choosing Bhendi Bazaar. We appreciate your business!", "center")}`,
+    footer: {
+      heading: "Questions or Concerns?",
+      note: "Our support team is here to help you.",
+      links: [
+        { label: "Contact Us", href: "#" },
+        { label: "View Order", href: "#" },
+        { label: "Returns Policy", href: "#" },
+      ],
+    },
+  });
 }

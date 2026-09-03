@@ -130,18 +130,53 @@ export class OrderRepository {
   }
 
   /**
-   * Find order by code (for guest lookup)
+   * Find order by code, for the unauthenticated guest-tracking lookup — the API
+   * route takes no session, so anyone who has (or guesses) the code reaches this.
+   * Returns a projection, not the raw row (checkout/CLAUDE.md "Order lookup returns
+   * a projection"): userId, notes and gateway ids are dropped, and the address is
+   * reduced to its geography — the name/phone/email/street-level fields are for the
+   * order's owner only, not for anyone who merely knows its code.
    */
   async findByCode(code: string) {
     const order = await prisma.order.findUnique({
+      relationLoadStrategy: "join",
       where: { code },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        paymentMethod: true,
+        paymentStatus: true,
+        itemsTotal: true,
+        shippingTotal: true,
+        discount: true,
+        grandTotal: true,
+        createdAt: true,
+        updatedAt: true,
+        address: true,
+        shipments: { orderBy: { code: "asc" as const }, include: SHIPMENT_LINES_INCLUDE },
+      },
     });
 
     if (!order) {
       return null;
     }
 
-    return order;
+    const rawAddress = order.address as
+      | { city?: string; state?: string; pincode?: string; country?: string }
+      | null;
+
+    return {
+      ...withWireItems(order),
+      address: rawAddress
+        ? {
+            city: rawAddress.city,
+            state: rawAddress.state,
+            pincode: rawAddress.pincode,
+            country: rawAddress.country,
+          }
+        : null,
+    };
   }
 
   /**

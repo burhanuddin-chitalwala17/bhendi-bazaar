@@ -39,13 +39,17 @@ describe("GuestAddress", () => {
     );
   });
 
-  it("still reports the address when the optional email is left blank", async () => {
+  // A guest has no account to fall back to for the confirmation email, so unlike
+  // the address-book form this one holds the address back until email is filled.
+  it("withholds the address while email is blank, then reports it once filled", async () => {
     const onAddressChange = vi.fn();
     const { container } = render(<GuestAddress onAddressChange={onAddressChange} />);
 
     const { email: _email, ...withoutEmail } = filledForm;
     fill(container, withoutEmail);
+    expect(onAddressChange).not.toHaveBeenCalled();
 
+    fill(container, { email: filledForm.email });
     await waitFor(() => expect(onAddressChange).toHaveBeenCalled());
   });
 });

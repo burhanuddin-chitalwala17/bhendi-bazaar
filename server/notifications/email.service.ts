@@ -13,10 +13,12 @@ import { appUrl } from "@server/shared/app-url";
 import crypto from "crypto";
 import { Resend } from "resend";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
+import type { PayoutEmailView } from "@server/notifications/templates/payoutEmail";
 import type { SendEmailOptions } from "./types";
 import { getVerificationEmailTemplate } from "./templates/verificationEmail";
 import { getPasswordResetEmailTemplate } from "./templates/passwordResetEmail";
 import { getPurchaseConfirmationEmailTemplate } from "./templates/purchaseConfirmationEmail";
+import { getPayoutEmailTemplate } from "./templates/payoutEmail";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 class EmailService {
@@ -201,6 +203,17 @@ class EmailService {
       to: customerEmail,
       subject: `Order Confirmation #${order.code} - Bhendi Bazaar`,
       html: getPurchaseConfirmationEmailTemplate(order),
+    });
+  }
+
+   async sendPayoutEmail(
+    settlement: PayoutEmailView,
+    orgEmail: string
+  ): Promise<void> {
+    await this.sendEmail({
+      to: orgEmail,
+      subject: `Payout Sent — Settlement #${settlement.code} - Bhendi Bazaar`,
+      html: getPayoutEmailTemplate(settlement),
     });
   }
 }
