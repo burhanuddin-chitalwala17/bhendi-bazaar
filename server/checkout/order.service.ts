@@ -98,31 +98,65 @@ export class OrderService {
     }
 
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
-    if (deliveryAddress?.email) {
-      const { emailService } = await import("@server/notifications/email.service");
-      emailService
-        .sendPurchaseConfirmationEmail(
-          {
-            id: order.id,
-            code: order.code,
-            status: order.status,
-            paymentStatus: order.paymentStatus,
-            createdAt: order.createdAt,
-            notes: order.notes,
-            itemsTotal: order.itemsTotal,
-            discount: order.discount,
-            grandTotal: order.grandTotal,
-            address: deliveryAddress,
-            shipments: order.shipments.map((s) => ({
-              estimatedDelivery: s.estimatedDelivery?.toISOString(),
-            })),
-          },
-          deliveryAddress.email
-        )
-        .catch((error) => {
-          console.error("Failed to send purchase confirmation email:", error);
-          // Email failure must not unwind a confirmed payment.
-        });
+    if (!deliveryAddress) {
+      console.warn(
+        `[onPaymentConfirmed] order ${order.code} has no address — confirmation not sent`
+      );
+      return;
+    }
+
+    const details = await orderRepository.findConfirmationDetails(order.id);
+
+    // The address's email is optional on the form, so it is routinely blank — and a
+    // signed-in buyer's account address was never consulted, which meant the one
+    // person we hold a verified address for got no confirmation at all.
+    const recipient = deliveryAddress.email || details?.accountEmail;
+
+    if (!recipient) {
+      // A guest who gave no email: nothing to send to, but the gap is recorded
+      // rather than inferred from an email nobody received.
+      console.warn(
+        `[onPaymentConfirmed] order ${order.code} has no email address — confirmation not sent`
+      );
+      return;
+    }
+
+    const { emailService } = await import("@server/notifications/email.service");
+    try {
+      // Awaited on purpose: detached, the send raced the serverless function's
+      // freeze — the request died with the instance and no error was ever logged.
+      await emailService.sendPurchaseConfirmationEmail(
+        {
+          id: order.id,
+          code: order.code,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          createdAt: order.createdAt,
+          notes: order.notes,
+          itemsTotal: order.itemsTotal,
+          discount: order.discount,
+          grandTotal: order.grandTotal,
+          address: deliveryAddress,
+          shipments: order.shipments.map((s) => ({
+            estimatedDelivery: s.estimatedDelivery?.toISOString(),
+          })),
+          items: (details?.items ?? []).map((item) => ({
+            productName: item.productName,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            size: item.size,
+            color: item.color,
+          })),
+        },
+        recipient
+      );
+    } catch (error) {
+      // Still swallowed: the gateway has the money, and refusing to confirm a paid
+      // order over an email provider's bad day is the worse outcome.
+      console.error(
+        `Failed to send purchase confirmation email for order ${order.code}:`,
+        error
+      );
     }
   }
 

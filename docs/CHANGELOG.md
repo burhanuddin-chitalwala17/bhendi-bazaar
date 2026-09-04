@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-86] 2026-09-04 — The purchase confirmation email, which was four defects deep
+
+Asked whether the confirmation email works, the answer turned out to be "sometimes, to some people, wrong". Resend itself is fine — key set, `bhendi-bazaar.com` verified, sending enabled — and `onPaymentConfirmed` is reached exactly once per order from the payment transition. Everything between those two facts was broken, and every one of the four failures is silent.
+
+**It was skipped whenever the address had no email.** The only gate was `if (deliveryAddress?.email)`. That field is optional in `orderAddressSchema`, optional in both checkout forms — labelled "Optional — for order updates" — and absent from the required-field validation. So the common case sent nothing. Worse, a *signed-in* buyer's account address was never consulted: `Order.userId` points at a `User.email` we have already verified, and `findById` does not even load the relation. The one customer we can always reach was the one we never did. Now the address email wins if present (an empty string is not present), the account email backs it up via `findConfirmationDetails`, and a genuine absence is logged with the order code instead of being inferred later from an email nobody received.
+
+**The send was detached inside a serverless function.** `emailService.send…(…).catch(…)` with no `await`, so once the route returned, Vercel was free to freeze the instance mid-request. No `waitUntil` anywhere in the repo. It is awaited now, inside the try/catch — the reason for the original detachment (an email failure must never unwind a confirmed payment) is preserved by the catch, which was doing that job already.
+
+**The Order Items table printed the paise total.** `const orderItemsHtml = order.itemsTotal` — the integer, interpolated into `<tbody>`, so the one place a buyer checks what they bought read `129900`. `OrderEmailView` carried no items at all, so there was nothing else it could have rendered; it takes lines now, flattened across parcels by `findConfirmationDetails` (a split order lists a product once per parcel, which is what will actually arrive), with size and colour named.
+
+**And every rupee figure was 100× too large.** `server/notifications/formatters.ts` declared its own `formatCurrency` that formatted paise as rupees, so a ₹1,299 order was billed to the customer as ₹1,29,900. This is exactly the drift the declare-once rule exists to stop: `src/lib/format.ts` called itself "the one module that knows money is stored as integer paise" and asserted "server code never formats money" — transactional email is the counter-example, and the notifications domain answered it with a second copy that dropped the ÷100. The function moves to `server/shared/money.ts` beside `rupeesToPaise`; `src/lib/format.ts` and the notifications formatters both re-export it. No call site changes.
+
+Buyer-typed values — name, address, notes — are escaped on the way into the template while it was open; they were interpolated raw.
+
+`tests/unit/purchase-confirmation-email.test.ts` is new and covers all four: 13 cases over recipient selection, the awaited send, the rendered lines, and the paise-to-rupees conversion. There were none before.
+
+**Not addressed:** delivery is still best-effort. Nothing records that a confirmation was sent, so a Resend outage loses the email with only a log line to show for it — a `sentAt` column and a sweep, like the ledger's, is the honest fix and is its own change. `findConfirmationDetails` also adds one query per paid order; that path runs once per order, so it is not worth folding into `findById` at the cost of exposing the buyer's account email to admin and org readers of the same shape.
+
 ## [PR-85] 2026-09-04 — Changing the account email now costs a password
 
 `PUT /api/profile` accepted a new `email` on the strength of the session cookie alone. That is the account: the address is where `requestPasswordReset` sends the reset link, so anyone with a borrowed session — a shared laptop, a stolen token, an XSS payload — could point the recovery channel at themselves and take the account over at leisure. No password, no confirmation on the old address, no second factor. `profile.repository.ts:126` even mailed the verification to the *new* address, so the real owner was told nothing.

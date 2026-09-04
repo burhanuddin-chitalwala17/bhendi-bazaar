@@ -130,6 +130,38 @@ export class OrderRepository {
   }
 
   /**
+   * What the confirmation email needs and `findById` cannot give it: the account's
+   * address (for a buyer who left the optional one on the form blank), and the lines
+   * flattened across parcels.
+   *
+   * The account email is deliberately not folded into `findById`'s include — that
+   * shape is returned to admin and org readers too, and the buyer's account address
+   * is not theirs to see.
+   */
+  async findConfirmationDetails(
+    orderId: string
+  ): Promise<{ accountEmail: string | null; items: ShipmentItem[] } | null> {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        user: { select: { email: true } },
+        shipments: { orderBy: { code: "asc" as const }, include: SHIPMENT_LINES_INCLUDE },
+      },
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    return {
+      accountEmail: order.user?.email ?? null,
+      // One row per line per parcel: a split order lists a product once per parcel,
+      // which is what the buyer will actually receive.
+      items: order.shipments.flatMap((shipment) => toWireShipmentItems(shipment.items)),
+    };
+  }
+
+  /**
    * Find order by code (for guest lookup)
    */
   async findByCode(code: string) {
