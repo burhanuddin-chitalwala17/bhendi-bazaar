@@ -15,6 +15,7 @@ const view = (over: Partial<OrderEmailView> = {}): OrderEmailView => ({
   paymentStatus: "paid",
   createdAt: new Date("2026-09-04T10:00:00Z"),
   itemsTotal: 129900,
+  shippingTotal: 0,
   discount: 0,
   grandTotal: 129900,
   address: {
@@ -64,6 +65,25 @@ describe("the order items table", () => {
 
     expect(html).toContain("(M)");
     expect(html).toContain("(L)");
+  });
+
+  it("shows shipping, so subtotal minus discount reaches the total charged", () => {
+    // BB-1015 in the dev database: ₹3,200 less ₹320 shown against a ₹3,017.08
+    // total, with the ₹137.08 of carriage nowhere on the page.
+    const html = getPurchaseConfirmationEmailTemplate(
+      view({ itemsTotal: 320000, discount: 32000, shippingTotal: 13708, grandTotal: 301708 })
+    );
+
+    expect(html).toContain("Shipping:");
+    expect(html).toContain("₹137.08");
+    expect(html).toContain("₹3,017.08");
+  });
+
+  it("names free shipping rather than dropping the row", () => {
+    const html = getPurchaseConfirmationEmailTemplate(view({ shippingTotal: 0 }));
+
+    expect(html).toContain("Shipping:");
+    expect(html).toContain("Free");
   });
 
   it("says something rather than nothing when an order has no readable lines", () => {
@@ -120,6 +140,7 @@ const orderRow = (address: Record<string, unknown> | null) => ({
   createdAt: new Date("2026-09-04T10:00:00Z"),
   notes: null,
   itemsTotal: 129900,
+  shippingTotal: 0,
   discount: 0,
   grandTotal: 129900,
   address,

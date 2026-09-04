@@ -134,6 +134,7 @@ export class OrderService {
           createdAt: order.createdAt,
           notes: order.notes,
           itemsTotal: order.itemsTotal,
+          shippingTotal: order.shippingTotal,
           discount: order.discount,
           grandTotal: order.grandTotal,
           address: deliveryAddress,

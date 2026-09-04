@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-87] 2026-09-04 — Shipping reappears in the confirmation's totals
+
+Verifying PR-86 against the dev database rather than against mocks turned up a fifth defect it had not touched. Driving `onPaymentConfirmed` for a real paid order — BB-1015, mailer intercepted, nothing sent — produced totals reading **Subtotal ₹3,200, Discount −₹320, Total ₹3,017.08**. Those do not reconcile, and the missing ₹137.08 is the carriage: `OrderEmailView` had no `shippingTotal`, so the row was never rendered. The receipt asked the customer to accept a number it did not explain.
+
+The field is on the order and now on the view, and the row always renders — "Free" when it is zero, because an absent row reads as an unexplained difference rather than as nothing owed.
+
+The same run confirmed PR-86's fixes on real rows: BB-1015 has no address email and belongs to a signed-in buyer, so it resolved through the account fallback and would have been sent nothing at all before. Across the 13 paid orders in that database, **3 would have been emailed under the old rule, 8 are recovered by the fallback, and 2 are guests with no address anywhere** — those last are unreachable by any means and are now logged rather than silently dropped.
+
+Also moves the explanatory comment out of the template literal. It was an HTML comment, so it was being mailed to customers.
+
 ## [PR-86] 2026-09-04 — The purchase confirmation email, which was four defects deep
 
 Asked whether the confirmation email works, the answer turned out to be "sometimes, to some people, wrong". Resend itself is fine — key set, `bhendi-bazaar.com` verified, sending enabled — and `onPaymentConfirmed` is reached exactly once per order from the payment transition. Everything between those two facts was broken, and every one of the four failures is silent.

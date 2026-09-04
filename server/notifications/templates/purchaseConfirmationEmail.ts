@@ -11,6 +11,7 @@ export interface OrderEmailView {
   createdAt: Date;
   notes?: string | null;
   itemsTotal: number; // paise
+  shippingTotal: number; // paise
   discount: number; // paise
   grandTotal: number; // paise
   address: {
@@ -67,6 +68,17 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
         })
         .join("")
     : `<tr><td colspan="2">See your order online for the full list.</td></tr>`;
+
+  // Shipping was omitted from the totals entirely, so subtotal minus discount did
+  // not reach the total charged. Always rendered, "Free" included — a missing row
+  // reads as an unexplained difference.
+  const shippingRowHtml = `
+              <div class="total-row">
+                <span class="total-label">Shipping:</span>
+                <span class="total-value">${
+                  order.shippingTotal > 0 ? formatCurrency(order.shippingTotal) : "Free"
+                }</span>
+              </div>`;
 
   // Tracking URL
   const trackingUrl = `${appUrl()}/order/${order.id}`;
@@ -320,6 +332,7 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
               `
                   : ""
               }
+              ${shippingRowHtml}
               <div class="total-row final">
                 <span>Total:</span>
                 <span>${formatCurrency(order.grandTotal)}</span>
