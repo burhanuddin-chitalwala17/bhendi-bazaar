@@ -34,6 +34,7 @@ interface ProfileContextValue {
     name?: string;
     email?: string;
     mobile?: string;
+    currentPassword?: string;
   }) => Promise<void>;
   updateProfilePic: (profilePic: string) => Promise<void>;
   refetch: () => Promise<void>;
@@ -204,7 +205,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateUserInfo = useCallback(
-    async (input: { name?: string; email?: string; mobile?: string }) => {
+    async (input: {
+      name?: string;
+      email?: string;
+      mobile?: string;
+      currentPassword?: string;
+    }) => {
       await updateProfile(input);
     },
     [updateProfile]

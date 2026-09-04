@@ -26,6 +26,12 @@ export const updateProfileSchema = z.object({
   mobile: phoneSchema.optional(),
   addresses: z.array(profileAddressSchema).max(10, 'Maximum 10 addresses allowed').optional(),
   profilePic: z.string().url().max(2048).optional().or(z.literal('')),
+  /**
+   * Re-authentication for a change of email. Optional here because most updates do
+   * not touch the email; the service requires it once it knows the address is
+   * actually changing, which is the only place that comparison can be trusted.
+   */
+  currentPassword: z.string().min(1).max(200).optional(),
 }).refine(
   (data) => {
     // Ensure only one default address

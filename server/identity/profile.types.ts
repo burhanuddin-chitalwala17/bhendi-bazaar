@@ -51,5 +51,7 @@ export interface UpdateProfileInput {
   // Profile fields
   addresses?: DeliveryAddress[];
   profilePic?: string | null;
+  /** Re-authentication, required only when `email` differs from the stored one. */
+  currentPassword?: string;
 }
 

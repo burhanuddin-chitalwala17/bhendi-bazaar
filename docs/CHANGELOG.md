@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-85] 2026-09-04 — Changing the account email now costs a password
+
+`PUT /api/profile` accepted a new `email` on the strength of the session cookie alone. That is the account: the address is where `requestPasswordReset` sends the reset link, so anyone with a borrowed session — a shared laptop, a stolen token, an XSS payload — could point the recovery channel at themselves and take the account over at leisure. No password, no confirmation on the old address, no second factor. `profile.repository.ts:126` even mailed the verification to the *new* address, so the real owner was told nothing.
+
+`ProfileService.updateProfile` now re-authenticates before anything is written. The check is `authoriseEmailChange`, and it runs only when the submitted address actually differs from the stored one — the edit form posts every field, so a name change carries the unchanged email along with it, and prompting there would be a password on every save. Wrong or missing password is a 401 attributed to `currentPassword`; the repository is never reached.
+
+**A Google account is refused rather than waved through.** It has no `passwordHash` to compare against, so there is no proof available — and its address belongs to the provider anyway. Refusing is the only honest answer; the alternative was to let exactly the accounts that cannot be re-authenticated change their email freely.
+
+The password is proof, not state: `updateProfile` destructures `currentPassword` off before the input reaches `profileRepository.update`. The repository already whitelisted its fields, so this is belt and braces on Invariant 4's "write paths whitelist their fields".
+
+The form asks for the password the moment the email field diverges, disables Save until it is filled, and keeps itself open on a rejection so the field to correct is still on screen — the page-level error banner is scrolled away by then. It also stops swallowing the rejection into an unhandled promise.
+
+**The handler was converted while it was open** ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)). Both branches returned hand-rolled bodies and the `PUT` catch flattened everything to 400, so a wrong password would have read as a duplicate address. They go through `toErrorResponse` now, and the four `(session.user as any).id` casts — `any` at an auth boundary, which the Development Principles call a defect — are gone in favour of `requireSession()`.
+
+`tests/unit/profile-email-reauth.test.ts` covers it: seven cases, and the four that matter fail when the gate is commented out.
+
+Not fixed here, and worth a look: the change still does not notify the *old* address, which is what tells an owner a takeover is in progress. Nor does it verify the new address before the switch — `emailVerified` is cleared and a verification sent, but the account is already on the new address by then. Both are their own change.
+
 ## [PR-84] 2026-09-04 — The size tiles become a choice, and two share targets start working
 
 Two bugs, both the same shape: a control that looks live and does nothing.

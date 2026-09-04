@@ -6,67 +6,42 @@
  */
 
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
+import { requireSession } from "@/lib/admin-auth";
+import { toErrorResponse } from "@/lib/api-error-response";
 import { profileService } from "@server/identity/profile.service";
 import { validateRequest } from "@/lib/validation";
 import { updateProfileSchema } from "@/lib/validation/schemas/profile.schemas";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userId = (session.user as any).id as string;
-
   try {
-    const profile = await profileService.getProfile(userId);
+    const session = await requireSession();
+    const profile = await profileService.getProfile(session.user.id);
     return NextResponse.json(profile);
   } catch (error) {
-    console.error("Failed to fetch profile:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to fetch profile",
-      },
-      { status: 500 }
-    );
+    return toErrorResponse(error, "Failed to fetch profile");
   }
 }
 
 export async function PUT(req: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || !(session.user as any).id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const userId = (session.user as any).id as string;
-
-  // Validate request body
-  const validation = await validateRequest(req, updateProfileSchema);
-
-  if ("error" in validation) {
-    return validation.error;
-  }
-
   try {
+    const session = await requireSession();
+
+    // Validate request body
+    const validation = await validateRequest(req, updateProfileSchema);
+
+    if ("error" in validation) {
+      return validation.error;
+    }
+
     const updated = await profileService.updateProfile(
-      userId,
+      session.user.id,
       validation.data
     );
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Failed to update profile:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to update profile",
-      },
-      { status: 400 }
-    );
+    // A flat 400 here collapsed every failure into one status — a wrong password
+    // read the same as a duplicate address. The envelope keeps them apart.
+    return toErrorResponse(error, "Failed to update profile");
   }
 }

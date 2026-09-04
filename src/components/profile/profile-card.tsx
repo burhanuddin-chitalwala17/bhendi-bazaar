@@ -22,6 +22,7 @@ interface ProfileCardProps {
     name?: string;
     email?: string;
     mobile?: string;
+    currentPassword?: string;
   }) => Promise<void>;
   onUpdateProfilePic: (profilePic: string) => Promise<void>;
 }
@@ -43,11 +44,17 @@ export function ProfileCard({
     email: user?.email ?? "",
     mobile: user?.mobile ?? "",
   });
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const name = user?.name ?? fallbackName;
   const email = user?.email ?? null;
   const mobile = user?.mobile ?? null;
   const initial = name?.charAt(0)?.toUpperCase() ?? "B";
+
+  // Changing the address the account recovers through is a credentialed action, so
+  // the field appears the moment it diverges. The server decides — this only asks.
+  const isEmailChanging = formData.email !== (email ?? "");
 
   function handleEdit() {
     setFormData({
@@ -55,19 +62,36 @@ export function ProfileCard({
       email: user?.email ?? "",
       mobile: user?.mobile ?? "",
     });
+    setCurrentPassword("");
+    setSaveError(null);
     setIsEditing(true);
   }
 
   async function handleSave() {
-    await onUpdate({
-      name: formData.name || undefined,
-      email: formData.email || undefined,
-      mobile: formData.mobile || undefined,
-    });
+    setSaveError(null);
+    try {
+      await onUpdate({
+        name: formData.name || undefined,
+        email: formData.email || undefined,
+        mobile: formData.mobile || undefined,
+        currentPassword: isEmailChanging ? currentPassword : undefined,
+      });
+    } catch (error) {
+      // The form stays open on a rejected password: the field to correct is in it,
+      // and the page-level banner is scrolled away by the time you are typing here.
+      setSaveError(
+        error instanceof Error ? error.message : "Unable to save your changes"
+      );
+      return;
+    }
+    setCurrentPassword("");
+    setSaveError(null);
     setIsEditing(false);
   }
 
   function handleCancel() {
+    setCurrentPassword("");
+    setSaveError(null);
     setIsEditing(false);
   }
 
@@ -215,12 +239,40 @@ export function ProfileCard({
                 placeholder="10-digit mobile number"
               />
             </div>
+            {isEmailChanging && (
+              <div className="space-y-1">
+                <label
+                  htmlFor="profile-current-password"
+                  className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground"
+                >
+                  Current password
+                </label>
+                <Input
+                  id="profile-current-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Confirm your password"
+                />
+                <p className="text-2xs text-muted-foreground">
+                  Changing your email needs your password. The new address will
+                  have to be verified again.
+                </p>
+              </div>
+            )}
+            {saveError && (
+              <p role="alert" className="text-2xs text-destructive">
+                {saveError}
+              </p>
+            )}
             <div className="flex gap-2">
               <ChangePasswordModal />
             </div>
             <FormActions
               onCancel={handleCancel}
               isSubmitting={saving}
+              disabled={isEmailChanging && !currentPassword}
               submitLabel="Save"
               cancelLabel="Cancel"
             />
