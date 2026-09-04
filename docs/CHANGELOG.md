@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-84] 2026-09-04 — The size tiles become a choice, and two share targets start working
+
+Two bugs, both the same shape: a control that looks live and does nothing.
+
+**Sizes were labels, not buttons.** `product-details.tsx` rendered `product.options.sizes` as `<span>` pills — nothing to tap, no selected state, and no `size` on the line `useProductActions` handed to the cart. Everything below the UI already carried the choice: `CartItem.size` exists in `server/cart/cart.types.ts`, `cart.schemas.ts` and `order.schemas.ts` accept it, `useCheckoutPayment` forwards it, and `server/checkout/pricing.ts:80` refuses a size the product never offered. Only the one surface where the shopper picks was missing, so every order for a sized product shipped with no size to pack.
+
+They are now a `radiogroup` of buttons with a selected state, and both actions refuse to proceed without one. A single-size product is pre-selected — a control with one option is not a decision. Buy Now carries the size in the query string, and the checkout page re-checks it against `options.sizes` before it reaches the line, because a URL param is untrusted input like any other.
+
+Two smaller defects fell out of the same code. The section was gated on `product.options?.sizes` being truthy, which an empty array is, so a product with no sizes still rendered a bare "Sizes" heading. And `currentCartQty` read the *first* cart line for the product; once one product can hold several lines, that undercounts against a stock figure held per product, not per size.
+
+**Instagram copied the wrong link, behind a blocking dialog.** `handleInstagram` copied `url` — the relative path the component is given (`/product/foo`), not the `shareUrl` every other handler resolves against `window.location.origin` — then called `alert()` without awaiting the clipboard write. It now awaits the copy of the resolved URL and reports through `sonner`, like the rest of the app. The copy-link row had the same relative-path bug in its preview text.
+
+**Email opened a tab it could not use.** `window.open("mailto:…", "_blank")` is the first thing a popup blocker stops, and where it survives it hands the mail client the navigation and leaves a blank tab behind. It is a `window.location.href` assignment now. An empty `text` also produced a body starting with two blank lines, and an empty `title` an empty subject.
+
+Presentation and client wiring only — no schema, no wire shape, no money path. Typecheck clean, lint clean on the four changed files, 530 tests pass; the four failures (`design-tokens` ×2, `rate-limit-detached`, `admin-audit-trail`) are pre-existing and reproduce on a stashed tree.
+
 ## [PR-83] 2026-08-31 — Prefetch goes off in the portals too, where the only live traffic is
 
 PR-82 turned prefetch off across the storefront and left the admin, org and auth links alone, reasoning they were low fan-out and behind a login. Both halves of that were wrong, and the Prisma dashboard is what showed it: 23,592 operations in ten days on a store with no customers, while the only people using the site were uploading products in `/admin`. The half that was optimised is the half nobody is using.

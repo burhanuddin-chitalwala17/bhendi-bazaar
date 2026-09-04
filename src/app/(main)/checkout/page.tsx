@@ -9,14 +9,18 @@ import { uuidv4 } from "zod";
 export default async function CheckoutPage({
   searchParams
 }: {
-  searchParams: Promise<{ buyNow?: string }>
+  searchParams: Promise<{ buyNow?: string; size?: string }>
 }) {
   const params = await searchParams;
-  const { buyNow } = params;
+  const { buyNow, size } = params;
   let buyNowProductCartItem: CartItem | undefined;
   if (buyNow) {
 
     const buyNowProduct = await productsDAL.getProductBySlug(buyNow);
+    // The size is a URL param, so it is untrusted: only one the catalogue actually
+    // offers reaches the line. Checkout would refuse the rest anyway, later and louder.
+    const chosenSize =
+      size && buyNowProduct.options?.sizes?.includes(size) ? size : undefined;
     buyNowProductCartItem = {
       weight: 0.5,
       id: uuidv4().toString(),
@@ -27,6 +31,7 @@ export default async function CheckoutPage({
       price: buyNowProduct.price,
       salePrice: buyNowProduct.salePrice,
       quantity: 1,
+      size: chosenSize,
       shippingFromPincode: buyNowProduct.shippingFromPincode,
       org: buyNowProduct.org,
     };

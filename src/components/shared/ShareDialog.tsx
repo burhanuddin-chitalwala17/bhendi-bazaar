@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -74,9 +75,11 @@ export function ShareDialog({
   };
 
   const handleEmail = () => {
-    const subject = encodeURIComponent(title);
-    const body = encodeURIComponent(`${text}\n\n${shareUrl}`);
-    window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
+    const subject = encodeURIComponent(title || "Bhendi Bazaar");
+    const body = encodeURIComponent(text ? `${text}\n\n${shareUrl}` : shareUrl);
+    // A mail client is a navigation, not a document: `window.open` is what a popup
+    // blocker stops first, and where it survives it leaves a blank tab behind.
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
     setOpen(false);
   };
 
@@ -108,12 +111,16 @@ export function ShareDialog({
     setOpen(false);
   };
 
-  const handleInstagram = () => {
-    // Instagram doesn't have direct web sharing, so we copy and inform user
-    copyToClipboard(url);
-    alert(
-      "Link copied! Instagram doesn't support direct web sharing. Please paste the link in your Instagram post or story."
-    );
+  const handleInstagram = async () => {
+    // Instagram has no web share endpoint, so the link goes to the clipboard. The
+    // write is awaited before the dialog closes: the alert that used to stand here
+    // blocked the gesture the clipboard needs, and it copied the bare relative path.
+    const success = await copyToClipboard(shareUrl);
+    if (success) {
+      toast.success("Link copied — paste it into your Instagram post or story");
+    } else {
+      toast.error("Could not copy the link");
+    }
     setOpen(false);
   };
 
@@ -218,7 +225,7 @@ export function ShareDialog({
                     {copySuccess ? "Copied!" : "Copy Link"}
                   </span>
                   <span className="text-xs text-muted-foreground truncate w-full">
-                    {url}
+                    {shareUrl}
                   </span>
                 </div>
               </div>

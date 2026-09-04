@@ -2,6 +2,7 @@
 
 "use client";
 
+import { useState } from "react";
 import type { Product } from "@/domain/product";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
@@ -10,6 +11,13 @@ import { ShareButton } from "@/components/shared/ShareButton";
 import { useProductActions } from "@/hooks/product/useProductActions";
 
 export function ProductDetails(product: Product) {
+  const sizes = product.options?.sizes ?? [];
+  // Pre-selected when there is nothing to choose between, so a one-size product
+  // does not make the shopper tap a control with a single option.
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(
+    sizes.length === 1 ? sizes[0] : undefined
+  );
+
   const {
     handleAddToCart,
     handleBuyNow,
@@ -17,7 +25,7 @@ export function ProductDetails(product: Product) {
     isBuyingNow,
     isOutOfStock,
     currentCartQty
-  } = useProductActions(product);
+  } = useProductActions(product, selectedSize);
   // console.log("ProductDetails: ", JSON.stringify(product, null, 2));
 
   return (
@@ -69,21 +77,37 @@ export function ProductDetails(product: Product) {
         {product.description}
       </p>
 
-      {/* Sizes (if available) */}
-      {product.options?.sizes && (
+      {/* Sizes (if available) — a choice, not a label: the order line carries the
+          size to pack, so these have to be selectable and one has to be picked. */}
+      {sizes.length > 0 && (
         <div className="space-y-2">
           <p className="text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground sm:text-xs">
-            Sizes
+            Size
           </p>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {product.options.sizes.map((size) => (
-              <span
-                key={size}
-                className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-border/80 px-3 uppercase tracking-eyebrow"
-              >
-                {size}
-              </span>
-            ))}
+          <div
+            role="radiogroup"
+            aria-label="Size"
+            className="flex flex-wrap gap-2 text-xs"
+          >
+            {sizes.map((size) => {
+              const isSelected = size === selectedSize;
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => setSelectedSize(size)}
+                  className={`inline-flex h-9 min-w-9 items-center justify-center rounded-full border px-3 uppercase tracking-eyebrow transition-colors ${
+                    isSelected
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border/80 hover:border-foreground/40"
+                  }`}
+                >
+                  {size}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

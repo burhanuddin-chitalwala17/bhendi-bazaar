@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useCartStore } from "@/store/cartStore";
 import type { Product } from "@/domain/product";
 
-export function useProductActions(product: Product) {
+export function useProductActions(product: Product, selectedSize?: string) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
@@ -14,14 +14,26 @@ export function useProductActions(product: Product) {
   const [isAddingToCart, startAddToCart] = useTransition();
   const [isBuyingNow, startBuyNow] = useTransition();
 
+  // A product that offers sizes cannot be ordered without one: the order line is
+  // the packing instruction, and checkout rejects a line whose size it never offered.
+  const requiresSize = (product.options?.sizes?.length ?? 0) > 0;
+
   const isOutOfStock = product.stock === 0;
-  const currentCartQty =
-    items.find((item) => item.productId === product.id)?.quantity || 0;
+  // Stock is held per product, not per size, so every line of this product counts
+  // against it — one size's line alone would undercount once sizes are selectable.
+  const currentCartQty = items
+    .filter((item) => item.productId === product.id)
+    .reduce((sum, item) => sum + item.quantity, 0);
   const remainingStock = product.stock - currentCartQty;
 
   const handleAddToCart = () => {
     if (isOutOfStock) {
       toast.warning("This item is out of stock");
+      return;
+    }
+
+    if (requiresSize && !selectedSize) {
+      toast.warning("Please select a size");
       return;
     }
 
@@ -44,6 +56,7 @@ export function useProductActions(product: Product) {
               price: product.price,
               salePrice: product.salePrice,
               quantity: 1,
+              size: selectedSize,
               weight: product.weight ?? 0.5,
               shippingFromPincode: product.shippingFromPincode,
               org: product.org,
@@ -62,6 +75,11 @@ export function useProductActions(product: Product) {
       return;
     }
 
+    if (requiresSize && !selectedSize) {
+      toast.warning("Please select a size");
+      return;
+    }
+
     if (currentCartQty >= product.stock) {
       toast.error(
         `You already have ${currentCartQty} in your cart (maximum available)`
@@ -71,7 +89,9 @@ export function useProductActions(product: Product) {
 
     // Navigate to checkout with product ID in URL
     startBuyNow(() => {
-      router.push(`/checkout?buyNow=${product.slug}`);
+      const query = new URLSearchParams({ buyNow: product.slug });
+      if (selectedSize) query.set("size", selectedSize);
+      router.push(`/checkout?${query.toString()}`);
     });
   };
 
