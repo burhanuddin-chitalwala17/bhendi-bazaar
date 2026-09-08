@@ -75,6 +75,7 @@ model Product {
 
   orderItems       OrderItem[]
   cartItems        CartItem[]
+  wishlistItems    WishlistItem[]
   stockLocations   ProductStock[]
   media            ProductMedia[]
   promotionTargets PromotionTarget[]
@@ -190,6 +191,44 @@ model CartItem {
   @@index([productId])
 }
 
+/// A user's saved products. One per user, created on the first heart rather than at
+/// signup — a wishlist nobody has opened should not exist. No `wlId` on `User`: the
+/// unique `userId` here is the whole relationship, and a second copy on the other side
+/// is a column that can disagree with this one.
+model Wishlist {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items WishlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// One saved product. Rows rather than a `productIds String[]` on the parent, for the
+/// reason PR-41/43/44 lifted their blobs: an array cannot carry a foreign key, so a
+/// deleted product leaves an id nothing resolves, and every add is a read-modify-write
+/// of the whole array that a second device silently overwrites.
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+
+  // Cascade, like CartItem and unlike OrderItem: a saved product is a wish, not
+  // history, so deleting the product just removes it from wishlists. ADR-0020 governs
+  // rows carrying money or attribution; this one carries neither.
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Hearting twice is the same wish: the second click is a no-op, not a duplicate row.
+  // Also the index for "is this product saved", so no separate wishlistId index.
+  @@unique([wishlistId, productId])
+  @@index([productId])
+}
+
 model User {
   id              String       @id @default(cuid())
   name            String?
@@ -203,6 +242,7 @@ model User {
   lastActiveAt    DateTime     @default(now())
   profile         Profile?
   cart            Cart?
+  wishlist        Wishlist?
   orders          Order[]
   reviews         Review[]
   adminLogs       AdminLog[]

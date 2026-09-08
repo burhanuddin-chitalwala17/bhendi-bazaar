@@ -80,6 +80,16 @@ export function ProfileMenu() {
           </Link>
           <Link
             prefetch={false}
+            href="/wishlist"
+            onClick={() => {
+              setOpen(false);
+            }}
+            className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Wishlist
+          </Link>
+          <Link
+            prefetch={false}
             href="/org"
             onClick={() => {
               setOpen(false);

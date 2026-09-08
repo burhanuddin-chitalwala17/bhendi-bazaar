@@ -100,6 +100,10 @@ export class OrderService {
       );
     }
 
+    // Deliberately nothing here for the wishlist: a purchase does not clear a wish.
+    // Only the heart removes a saved product, so someone who bought one as a gift
+    // still has theirs saved, and a cancelled order needs nothing put back.
+
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
     // The address book's email is per-address and usually left blank (it isn't asked
     // for at checkout, only when adding an address). Falling back to the account's

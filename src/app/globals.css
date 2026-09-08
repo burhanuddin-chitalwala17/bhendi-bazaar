@@ -32,6 +32,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-favorite: var(--favorite);
   /* Fixed in both themes, deliberately: a scrim dims, whatever the theme; the hero
      scene is the storefront's deep-emerald brand surface and does not flip. */
   --color-scrim: oklch(0.1 0.02 260);
@@ -130,6 +131,9 @@
   --success: oklch(0.55 0.15 145);
   --warning: oklch(0.55 0.13 70);
   --info: oklch(0.52 0.13 245);
+  /* A saved product. Its own role rather than `destructive`, which means "this will
+     break something" — a filled heart is the opposite of a warning. */
+  --favorite: oklch(0.58 0.22 15);
   --border: oklch(0.9 0.01 95);
   --input: oklch(0.9 0.01 95);
   --ring: oklch(0.7 0.15 150);
@@ -168,6 +172,7 @@
   --success: oklch(0.72 0.16 145);
   --warning: oklch(0.78 0.14 75);
   --info: oklch(0.72 0.13 245);
+  --favorite: oklch(0.7 0.2 15);
   --border: oklch(0.32 0.03 260);
   --input: oklch(0.3 0.03 260);
   --ring: oklch(0.7 0.19 150);
