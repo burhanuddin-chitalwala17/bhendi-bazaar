@@ -155,6 +155,58 @@ export class LedgerRepository {
     });
   }
 
+  /**
+   * The overview's balances for every organisation at once, keyed by orgId.
+   *
+   * The O(1) replacement for calling `balancesFor` per organisation: the overview was
+   * 4N+2 queries and grew with each org onboarded. The two figures use different
+   * filters (org-payouts D7), so they stay two grouped sums — but two, not two-per-org.
+   * An org with no entries is simply absent from the maps; the caller defaults to 0,
+   * exactly as an empty aggregate did.
+   */
+  async balancesByOrg(db: PayoutDb = prisma) {
+    const live = { deletedAt: null };
+    const [unclaimed, owed] = await Promise.all([
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: { ...live, settlementId: null },
+        _sum: { payablePaise: true },
+      }),
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: {
+          ...live,
+          OR: [{ settlementId: null }, { settlement: { status: { not: "PAID" } } }],
+        },
+        _sum: { payablePaise: true },
+      }),
+    ]);
+    return {
+      unclaimedByOrg: new Map(unclaimed.map((r) => [r.orgId, r._sum.payablePaise ?? 0])),
+      owedByOrg: new Map(owed.map((r) => [r.orgId, r._sum.payablePaise ?? 0])),
+    };
+  }
+
+  /** Entry counts — total and negative-margin — for every organisation, grouped. */
+  async entryCountsByOrg(db: PayoutDb = prisma) {
+    const [all, negative] = await Promise.all([
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: { deletedAt: null },
+        _count: true,
+      }),
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: { deletedAt: null, isNegativeMargin: true },
+        _count: true,
+      }),
+    ]);
+    return {
+      entryCountByOrg: new Map(all.map((r) => [r.orgId, r._count])),
+      negativeMarginByOrg: new Map(negative.map((r) => [r.orgId, r._count])),
+    };
+  }
+
   async countEntries(orgId: string, db: PayoutDb = prisma) {
     return await db.orgLedgerEntry.count({ where: { orgId, deletedAt: null } });
   }
@@ -315,6 +367,7 @@ export class LedgerRepository {
       where: { orgId },
       select: { rateBps: true, category: { select: { name: true } } },
       orderBy: { rateBps: "asc" },
+      relationLoadStrategy: "join",
     });
   }
 }

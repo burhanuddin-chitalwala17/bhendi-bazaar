@@ -266,6 +266,9 @@ export class AdminOrderRepository {
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
+        // Order + its org-scoped shipments + their lines in one LATERAL JOIN rather
+        // than a statement per nested relation (matches the storefront order reads).
+        relationLoadStrategy: "join",
       }),
       prisma.order.count({ where }),
     ]);
@@ -308,6 +311,7 @@ export class AdminOrderRepository {
           },
         },
       },
+      relationLoadStrategy: "join",
     });
     if (!order) return null;
     return {

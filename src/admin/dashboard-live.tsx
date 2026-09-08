@@ -3,8 +3,10 @@
 /**
  * The platform richness the widget registry doesn't model — period revenue, the
  * order-status overview and the activity feed — kept as a client island because
- * refresh (manual and once a minute) is interactivity. The key-metrics row that
- * used to live here is the registry now (dashboard-widgets TRD D6).
+ * refresh (manual) is interactivity. The key-metrics row that used to live here
+ * is the registry now (dashboard-widgets TRD D6). No auto-refresh interval: at
+ * ~14 Prisma ops per tick, a forgotten open tab was the store's largest single
+ * consumer of the DB-operations budget.
  */
 
 import { useAsyncData } from "@/hooks/core/useAsyncData";
@@ -15,7 +17,6 @@ import { adminDashboardApiClient } from "@/services/admin/dashboardApiClient";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { formatCurrency } from "@/lib/format";
-import { useEffect } from "react";
 
 export function AdminDashboardLive() {
   const {
@@ -37,14 +38,6 @@ export function AdminDashboardLive() {
     await Promise.all([refetchStats(), refetchActivities()]);
     toast.success("Dashboard refreshed!");
   };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      refetchStats();
-      refetchActivities();
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [refetchStats, refetchActivities]);
 
   if (isLoadingStats || isLoadingActivities) {
     return <LoadingSkeleton />;

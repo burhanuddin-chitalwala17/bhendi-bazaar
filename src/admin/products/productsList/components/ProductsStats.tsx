@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Package, AlertTriangle, XCircle, Star, DollarSign } from "lucide-react";
+import { formatCurrency } from "@/lib/format";
 import type { ProductStats } from "../../types";
 
 interface ProductsStatsProps {
@@ -40,7 +41,7 @@ export function ProductsStats({ stats }: ProductsStatsProps) {
     },
     {
       label: "Inventory Value",
-      value: `₹${stats.totalInventoryValue.toLocaleString()}`,
+      value: formatCurrency(stats.totalInventoryValue),
       icon: DollarSign,
       color: "text-success",
       bgColor: "bg-success/10",

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { appUrl } from "@server/shared/app-url";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { productsDAL } from "@/data-access-layer/products.dal";
+import { crawlersBlocked } from "@/lib/crawl-block";
 
 /** Rebuilt hourly. A catalogue changes on a human timescale, not per request. */
 export const revalidate = 3600;
@@ -15,11 +16,17 @@ export const revalidate = 3600;
  * distrust the whole file.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Pre-launch: crawlers that already know this URL keep polling it, so answer
+  // with an empty set rather than the catalogue (src/lib/crawl-block.ts).
+  if (crawlersBlocked()) {
+    return [];
+  }
+
   const origin = appUrl();
 
-  const [categories, products] = await Promise.all([
+  const [categories, productSlugs] = await Promise.all([
     categoriesDAL.getCategories(),
-    productsDAL.getProducts({}),
+    productsDAL.listSlugs(),
   ]);
 
   return [
@@ -30,8 +37,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     })),
-    ...products.map((product) => ({
-      url: `${origin}/product/${product.slug}`,
+    ...productSlugs.map((slug) => ({
+      url: `${origin}/product/${slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),

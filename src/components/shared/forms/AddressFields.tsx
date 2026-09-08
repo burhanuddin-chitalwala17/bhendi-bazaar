@@ -12,6 +12,7 @@ interface AddressFieldsProps {
   includeEmail?: boolean;
   includeNotes?: boolean;
   includeLabel?: boolean;
+  emailRequired?: boolean;
 }
 
 export function AddressFields({
@@ -21,6 +22,7 @@ export function AddressFields({
   includeEmail = true,
   includeNotes = false,
   includeLabel = false,
+  emailRequired = false,
 }: AddressFieldsProps) {
   const getFieldName = (field: string) => `${namePrefix}${field}`;
 
@@ -79,15 +81,16 @@ export function AddressFields({
         />
       </div>
 
-      {/* Email (optional) */}
+      {/* Email */}
       {includeEmail && (
         <FormInput
           label="Email"
+          required={emailRequired}
           type="email"
           placeholder="your@email.com"
           autoComplete="email"
-          {...register("email")}
-          hint="Optional - for order updates"
+          {...register("email", { required: emailRequired })}
+          hint={emailRequired ? "For your order confirmation" : "Optional - for order updates"}
           error={getError("email")}
         />
       )}

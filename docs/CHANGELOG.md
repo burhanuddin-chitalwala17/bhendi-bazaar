@@ -63,6 +63,92 @@ A saved product stores the fact of the wish and nothing else: name, image, stock
 **20 new tests** (the wire mapper including offer resolution, the schema and migration contracts, and the heart: the guest toast writing nothing, optimistic fill, revert on failure, two hearts staying in step, a still-loading session never being told to sign in, and the confirmation toast firing on a landed save but never on a removal or a failure). 550 pass, `tsc` exits 0, `next build` compiles. Four suites fail on Windows only and did so before this branch — `design-tokens`, `admin-audit-trail` and `rate-limit-detached` compare allowlist paths with `/` against `path.join`'s `\`. **Run `npx prisma migrate deploy`.**
 
 Not addressed: the wishlist is not reachable from the mobile tab bar, only the profile menu. Nothing moves a saved product into the cart in one tap. And no page counts how often a product is wishlisted, though `@@index([productId])` is there for the day one does.
+## [PR-89] 2026-09-03 — One email shell, four templates that only carry their content
+
+Each of the four transactional emails rendered its own complete document: doctype, head,
+`<style>` block, accent bars, header with the logo, and a footer with the copyright line.
+Four copies of the same chrome meant a brand change was four edits, and they had already
+drifted — the payout email's total sat at 22px against the order's 20px, and the same
+"can't click the button?" fallback existed twice, worded identically and maintained
+separately.
+
+`server/notifications/templates/layout.ts` is now the only file that knows what an email
+looks like. `renderEmail` takes a title, an optional tagline and banner, a body and an
+optional footer; the shared stylesheet is injected once, by it. A template supplies only
+what differs, composed from blocks that live beside it — `greeting`, `paragraph`,
+`closingNote`, `button`, `noticeBox`, `alternateLink`, `detailPanel`. The purchase
+confirmation drops from 405 lines to ~300, most of that its own line-item table CSS; the
+other three are under 45 lines each. `.success-banner` and the detail/total row styles moved
+into `baseEmailStyles.ts`, since two templates had each declared them.
+
+**Interpolated data is escaped now.** Customer names, addresses, order notes and product
+titles reached the HTML raw — an order note containing `<` produced broken markup, and the
+same path would have carried a `<script>` into anything that renders the mail as HTML. All
+of it goes through `esc()`. Invariant 4 is about the payload being untrusted, and that does
+not stop at the parse.
+
+`formatPaise` in `formatters.ts` replaces the `formatCurrency(paiseToRupees(x))` pair
+repeated at every call site. No visual change beyond the payout total's 2px and class
+renames backed by equivalent CSS — verified by rendering all four emails before and after
+and diffing. New rules in `server/notifications/CLAUDE.md`; covered by
+`tests/unit/email-templates.test.ts`.
+
+## [PR-88] 2026-09-03 — Transactional email reaches its recipient, and shipping recovers from an empty init
+
+Two unrelated silences, both of the same kind: code that ran, logged nothing, and did not do the thing it was there for.
+
+**The purchase confirmation was reaching almost nobody.** `onPaymentConfirmed` in `server/checkout/order.service.ts` guarded the send on `deliveryAddress.email`, but that field is per-address in the address book and is only ever asked for when *adding* an address — checkout never collects it for a signed-in buyer. So the branch was live only for guests, and a logged-in customer's confirmation was skipped without an error. The address email is now a first choice, not the only one: absent it, an order with a `userId` falls back to the account's login email via `profileRepository.findEmailById`. The email also carried no line items — the template rendered totals over an empty list — so the shipment lines are flattened into the view. If neither email resolves the path now logs loudly rather than returning quietly, because by then a payment has been taken.
+
+**A guest had no account to fall back to**, so `orderService` refuses a guest order that carries no email (`!input.userId && !input.address.email`) rather than discovering at payment-confirmation time that there is nobody to notify. The guest checkout form asks for it as required to match, through a new `emailRequired` prop on `AddressFields` — the client rule and the server rule come from the same intent, per [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md). That form was also permanently invalid on a field the user cannot see: its schema requires `id`, which a guest does not have and the form never registers, so `isValid` never became true and the Continue button never enabled. It is seeded empty in `defaultValues`.
+
+**The guest order-lookup response was the whole row.** `orderRepository.findByCode` backs an unauthenticated route — anyone holding a code reaches it — and returned everything on the order, including `userId`, notes, gateway ids and the full delivery address. It now returns a projection, with the address reduced to city/state/pincode/country; the name, phone and street belong to the order's owner, not to anyone who knows its code. Separately, `findByCode` never loaded `shipments` at all, so the orders page crashed on `order.shipments.flatMap` — the projection includes them. No DTO recorded in [CONTRACTS.md](CONTRACTS.md) changed, because this response was never recorded there; it should be.
+
+**Settlements now tell the organisation they were paid.** `setSettlementStatus` fires a payout email after the transaction commits, on the same reasoning the order confirmation uses: the transfer has already happened, so a failed email must neither look like a failed payout nor undo one. New template at `server/notifications/templates/payoutEmail.ts`; `orgRepository.findEmailContact` reads name and email and nothing else.
+
+**And shipping could not recover from booting with no carrier.** `initializeShippingModule` set `isInitialized = true` even when it loaded zero providers, so the recovery path in `src/app/api/shipping/rates/route.ts` — which notices an empty provider map and re-initialises — returned at the guard without reloading, and every quote 503'd until someone restarted the server. It now latches only on a provider actually loading. The matching half is that `AdminConnectionService.connect` wrote credentials and never told the running orchestrator, so a carrier connected through the admin console was invisible to the process that quotes with it; connect and disconnect now refresh the live map. Together these are what make "an operator connects a carrier without a developer or a deploy" ([server/shipping/adr/0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)) true rather than aspirational.
+
+**One more found while wiring that up:** the orchestrator's provider map is keyed by carrier `code`, but the Shiprocket webhook route looked it up by record `id` — `"shiprocket_001"` against a key of `"shiprocket"` — so every tracking webhook failed as "Provider not found". The route passes the code, and the dead `reloadProvider` that baked in the same id/code confusion (it would have registered one carrier twice and quoted it twice) is replaced by `refreshProvider`/`removeProvider`, both keyed the way `loadProviders` keys. `init.ts` also stopped declaring its own carrier list and uses the `PROVIDER_FACTORIES` registry, so a second carrier cannot be added to the registry and silently not load at boot.
+## [PR-87] 2026-09-02 — Cut the Prisma-ops bleed: kill the admin poll, stop per-page profile fetches, close the N+1s
+
+A four-layer audit traced why a store with no customers was burning ~3,500 Prisma operations a day against a 100k/month budget. Almost none of it was page views. The fixes, in order of ops recovered:
+
+- **The admin dashboard polled every 60s** (`src/admin/dashboard-live.tsx`) — 14 ops/tick, no `visibilityState` gate, so one forgotten open tab was ~17k ops/day and could exhaust the month in under six days. Interval removed; the manual Refresh button stays.
+- **`ProfileProvider` fetched `/api/profile` on every page load** for every signed-in user (mounted app-wide in `src/app/providers.tsx`), for data only the profile page renders. It now scopes to `src/app/(main)/profile/layout.tsx`; the chrome's one need, `isEmailVerified`, rides the session token (stamped in the same sign-in query that already read `platformRole`, refreshed via `session.update()` on the verification-success redirect). See `src/lib/auth-config.ts`, `src/types/next-auth.d.ts`.
+- **The cart-sync debounce was defeated** (`src/hooks/cart/useCartSync.ts`): `updateCart` in the effect deps fired a write on the raw change *and* again after the debounce, and a rehydrating persisted cart wrote on every page load. Now reached through a ref, guarded by a last-written snapshot, and silent on the mount rehydrate.
+- **Payouts overview was 4N+2 queries** (grew with every org onboarded). `ledgerRepository.balancesByOrg`/`entryCountsByOrg` group once across all orgs — a constant six queries. No arithmetic changed; the per-org methods stay for the single-org views.
+- **Missing `relationLoadStrategy: "join"`** added to the admin order/product, org-review, banner (every homepage), address (every signed-in page) and commission-rule reads — one LATERAL JOIN instead of a statement per nested relation.
+- **Unbounded storefront product reads** now carry `take` (the validated `limit`/`offset` wired through, plus a 200-row safety cap); the sitemap reads slugs only via `productsRepository.listSlugs` instead of the full priced catalogue; `products/new` reads one org by id instead of every platform org with stats. Home and category pages `Promise.all` their independent reads.
+- **`requirePlatformAdmin` is now request-memoised** with `cache()` (like `requireOrgMember`), halving the guard read on the nine admin pages that call it after the layout already did. The ADR-0021 per-request re-read is preserved.
+- **Security bycatch:** `/order/[orderId]` now passes the viewer's id so a signed-in user can only open their own order (a mismatch reads as "not found"). Guest orders remain readable by id — closing that needs an order-scoped token in the post-checkout URL, a product decision left for its own spec.
+- **Ops config:** `BLOCK_CRAWLERS=1` set in Vercel Production (the PR-84 crawl block had never been enabled); doc-drift fixed in `OPERATIONS.md` (the reconcile cron is daily, not every 15 min).
+
+Three checkout-flow defects surfaced while testing the above and are fixed in the same batch (all pre-existing, none introduced by the ops work): (1) an infinite `effect→setState→re-render` loop in the guest address form — `handleGuestAddress` and `useAddressManager.selectAddress` both changed identity every render, so `GuestAddress`'s `onAddressChange` effect never settled; both are stabilised (a ref for the options callback, `useCallback` for the handler). (2) `useAddressManager({ autoFetch: true })` fired `GET /api/addresses` on every checkout mount including for guests, who have no saved addresses — a guaranteed 401; auto-fetch is now gated on `!!user`. (3) the addresses GET handler read `(session.user as any).id`, an `any` at an auth boundary (Invariant 4); now the typed `session.user.id`, which the session augmentation already provides.
+
+Not done here, deliberately: moving `getServerSession` out of the root layout to make pages cacheable (a baseline change that intersects ADR-0018 and needs its own spec). 568 tests pass, typecheck and lint clean on touched files.
+
+## [PR-86] 2026-09-02 — A failed payment attempt no longer strands the stock reservation
+
+`payment.failed` from the gateway was treated as the end of the order: `markPaymentFailed` set `status: "failed"` terminally, which removed the order from the reconcile sweep's worklist (`paymentStatus: "pending"` filter) and made it ineligible for `expireAndRestock` (`status: "pending_payment"` guard). The reserved stock never came back — every failed payment attempt permanently leaked its quantity until manual correction.
+
+The premise was also wrong: Razorpay fires `payment.failed` per *attempt*, and the buyer can retry inside the same checkout, so a failed attempt is not a dead order. Now the handler records `paymentStatus: "failed"` only (never over a captured payment, never on an expired order) and the order stays `pending_payment` — the reservation deliberately holds for a retry, and the existing sweep expires and restocks it after the hold window, exactly as it does for a closed-modal abandonment. The sweep worklist now includes `paymentStatus: "failed"` so those orders are asked about at the gateway (a retried capture whose webhook was lost is recovered, not expired), and `expireAndRestock` also accepts the legacy `status: "failed"` rows this bug already created, so the historical leaks drain through the same path (at the sweep's cap of 20 per run).
+
+Known limitation, unchanged here: the sweep cron runs daily at 03:30 (`vercel.json`), so release takes up to ~24h, not the designed 60 minutes. Tests: `tests/unit/payment-failed-restock.test.ts` pins the conditional-write shapes. 568 tests pass, typecheck clean.
+
+## [PR-85] 2026-09-02 — Guest checkout unstuck, and admin pages stop showing paise as rupees
+
+Two production defects, both display/validation only — no schema, no wire shape, no money-path change.
+
+**Guest checkout never fetched shipping rates.** `GuestAddress` validates with a Zod schema requiring `id: z.string()`, but the form never registers an id field, so the resolver failed on the missing `id` on every keystroke, `isValid` never went true, `onAddressChange` never fired, and the checkout sat on "Please select a delivery address" with every field filled. Fix: the form's `defaultValues` now carry `id: ""` (a guest address has no id until submit). The schema's `email` also rejected `""` despite the UI labelling it optional — an empty text input yields `""`, not `undefined` — so it now accepts blank while still validating a typed address. Debug `console.log`s removed; `landmark` added to the memo deps it was missing from. Regression tests in `tests/unit/guest-address.test.tsx` render the form, fill it, and assert the callback fires (verified failing without the fix). The 401 from `/api/addresses` in the same console was a red herring — the saved-addresses fetch correctly refusing a guest.
+
+**Four admin pages formatted raw paise as rupees — everything showed 100× too big.** `admin/orders`, `admin/orders/[orderId]`, `admin/carts` and `admin/users` each hand-rolled a local `formatCurrency` with no ÷100, violating the "one module knows money is paise" rule (`src/lib/format.ts`, [ADR-0004](adr/0004-money-as-integer-paise.md)); `ProductsStats` did the same with a template string. All five now import the shared `formatCurrency`. Same bug in reverse on the carts value filter: its "₹500+" options sent rupee numbers that the repository compared against paise totals, filtering at ₹5+ — option values are now paise. The dashboard widgets (admin and org portal) were already correct end-to-end; if the org dashboard looks wrong next to the old admin pages, it was the admin pages that were inflated.
+
+563 tests pass, typecheck clean.
+
+## [PR-84] 2026-09-01 — Pre-launch crawl block behind one env switch
+
+The store is not live, yet production logs show search crawlers (PetalBot, Bing) steadily working through the domain's old WooCommerce URL space — each hit a function invocation bought for nothing. `BLOCK_CRAWLERS=1` in the deployment environment now turns every compliant crawler away: `src/app/robots.ts` answers disallow-all with no sitemap reference, `src/app/sitemap.ts` returns an empty set instead of reading the catalogue (crawlers that already know the URL keep polling it), and `next.config.ts` stamps `X-Robots-Tag: noindex, nofollow` on every response for bots that skip robots.txt but honour the header. Unset, nothing changes — the launch flip is deleting one variable.
+
+Two deliberate consequences, documented in `src/lib/crawl-block.ts` and OPERATIONS.md: while blocked, the 410 purge of the old WordPress index (PR-era `src/middleware.ts` rule) is paused, since a crawler that may not fetch never sees the 410; and non-compliant scrapers are unaffected — those are a Vercel Firewall concern, not code. Tests: `tests/unit/crawl-block.test.ts`.
 
 ## [PR-83] 2026-08-31 — Prefetch goes off in the portals too, where the only live traffic is
 

@@ -14,6 +14,7 @@ import { Search, RefreshCw } from "lucide-react";
 import { adminUserApiClient } from "@/services/admin/userApiClient";
 import type { AdminUser, UserListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
 
 import { PageHeader } from "@/components/shared/page-shell";
@@ -69,14 +70,6 @@ export default function AdminUsersPage() {
     toggleBlock({ id: userId, isBlocked: !isBlocked }).then(() =>
       toast.success("User status updated successfully!")
     );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const columns: Column<AdminUser>[] = [

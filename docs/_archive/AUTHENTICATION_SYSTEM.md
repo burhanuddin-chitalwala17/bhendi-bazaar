@@ -279,8 +279,8 @@ The verification email includes:
 **Preview**:
 ```
 ┌─────────────────────────────────────┐
-│     BHENDI BAZAAR                   │
-│  Royal Curation of Islamic Clothing │
+│           BHENDI BAZAAR             │
+│     Shop from the Caravan           │
 ├─────────────────────────────────────┤
 │                                     │
 │  Welcome to Bhendi Bazaar! 👋       │

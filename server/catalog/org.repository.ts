@@ -76,6 +76,14 @@ export class OrgRepository {
     };
   }
 
+  /** Identity only — for a page that needs to name one org, not stat it. */
+  async findSummary(id: string) {
+    return await prisma.org.findUnique({
+      where: { id },
+      select: { id: true, name: true, code: true },
+    });
+  }
+
   /** Set what the platform charges this org. Platform-owned; never org input. */
   async updateCommercialTerms(id: string, terms: { commissionBps: number; maxDiscountBps: number }) {
     return await prisma.org.update({ where: { id }, data: terms });
@@ -91,6 +99,14 @@ export class OrgRepository {
     return await prisma.org.findUnique({
       where: { id },
       select: { id: true, name: true, code: true, commissionBps: true, maxDiscountBps: true },
+    });
+  }
+
+  /** Name and email for a payout notification — nothing else. */
+  async findEmailContact(id: string) {
+    return await prisma.org.findUnique({
+      where: { id },
+      select: { name: true, email: true },
     });
   }
 

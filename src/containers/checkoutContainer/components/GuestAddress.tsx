@@ -8,11 +8,12 @@ import { AddressFields } from "@/components/shared/forms/AddressFields";
 import { DeliveryAddress } from "@/domain/profile";
 import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 
-const addressSchema = z.object({
+export const guestAddressSchema = z.object({
   id: z.string(),
   fullName: z.string().min(2, "Name required"),
   mobile: z.string().regex(/^\d{10}$/, "10 digits required"),
-  email: z.string().email("Invalid email").optional(),
+  // Optional (the UI says so), but validated when present; "" is "left blank".
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
   addressLine1: z.string().min(5, "Address required"),
   addressLine2: z.string().optional(),
   landmark: z.string().optional(),
@@ -28,11 +29,16 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
   const {
     register,
     watch,
+    setError,
+    clearErrors,
     formState: { errors, isValid },
   } = useForm<DeliveryAddress>({
-    resolver: zodResolver(addressSchema),
+    resolver: zodResolver(guestAddressSchema),
     mode: "onChange",
     defaultValues: {
+      // A guest address has no id; without this default the required `id`
+      // keeps the form invalid forever and shipping rates never load.
+      id: "",
       country: "India",
     },
   });
@@ -59,17 +65,27 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     state: state || "",
     pincode: pincode || "",
     country: country || "India",
-  }), [fullName, mobile, email, addressLine1, addressLine2, city, state, pincode, country]);
+  }), [fullName, mobile, email, addressLine1, addressLine2, landmark, city, state, pincode, country]);
+
+  // A guest has no account to fall back to for the order-confirmation email
+  // (server/checkout/order.service.ts onPaymentConfirmed), so unlike the
+  // address-book form, email is mandatory here. Enforced manually rather than
+  // in addressSchema so the field's type stays string | undefined, matching
+  // DeliveryAddress.email? and the AddressFields component's shared prop type.
+  const hasEmail = !!email;
+  useEffect(() => {
+    if (!hasEmail) {
+      setError("email", { type: "required", message: "Email required for order updates" });
+    } else if (errors.email?.type === "required") {
+      clearErrors("email");
+    }
+  }, [hasEmail, errors.email, setError, clearErrors]);
 
   useEffect(() => {
-
-    if (isValid) {
-      console.log('✅ Calling onAddressChange with:', formValues);
+    if (isValid && hasEmail) {
       onAddressChange({ ...formValues, id: "" });
-    } else {
-      console.log('❌ Form not valid yet');
     }
-  }, [formValues, isValid, onAddressChange]);
+  }, [formValues, isValid, hasEmail, onAddressChange]);
 
   return (
     <div className="space-y-3">
@@ -81,6 +97,7 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
         <AddressFields
           register={register}
           errors={errors}
+          emailRequired
         />
       </div>
     </div>
