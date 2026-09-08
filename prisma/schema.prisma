@@ -223,13 +223,6 @@ model WishlistItem {
 
   createdAt DateTime @default(now())
 
-  /// Set when the buyer reached this product *from their wishlist* and put it in the
-  /// cart, so a purchase can tell "I bought the thing I saved" from "I happened to buy
-  /// something that is also saved" — only the former clears the wish. It lives on the
-  /// row rather than in the tab because the journey from here to a confirmed payment
-  /// crosses refreshes and devices, and a forgotten origin silently keeps the item.
-  cartedFromWishlistAt DateTime?
-
   // Hearting twice is the same wish: the second click is a no-op, not a duplicate row.
   // Also the index for "is this product saved", so no separate wishlistId index.
   @@unique([wishlistId, productId])

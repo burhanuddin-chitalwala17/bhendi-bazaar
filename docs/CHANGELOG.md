@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-94] 2026-09-08 — Only the heart removes a saved product
+
+**Corrects [PR-93] below, which has not shipped.** A confirmed payment cleared any wish the buyer had opened from `/wishlist` and carted. That is one removal the buyer never asked for, and the provenance rule made it unpredictable rather than safe: the same product, the same order, kept or forgotten depending on which page it was opened from three steps earlier. A saved product now leaves the wishlist when — and only when — the buyer un-hearts it, on the tile, the product page or `/wishlist`.
+
+Everything that existed to support the other rule is gone rather than left dormant: `WishlistItem.cartedFromWishlistAt` and its migration, `markCartedFromWishlist` and `removePurchased` through the repository and service, `PATCH /api/wishlist`, the `?from=wishlist` link parameter the wishlist grid appended, and `orderRepository.findPurchasedProductIds`, whose only caller was the sweep. `onPaymentConfirmed` no longer touches the wishlist at all. A column nothing reads is a column someone re-wires later.
+
+`wishlist.repository.ts` now holds exactly one `deleteMany`, and the test suite pins that: one delete path, no PATCH on the route, no `wishlistService` inside `onPaymentConfirmed`, and one `DELETE` fetch in the client context. The old purchase-rule tests are replaced by these — five in place of four, 25 across both wishlist suites, `tsc` exits 0.
+
+No migration to run. The dropped column was added on this branch and never deployed; a dev database that already applied `20260908000000_wishlist_carted_origin` needs `npx prisma migrate reset` (or a manual `ALTER TABLE "WishlistItem" DROP COLUMN "cartedFromWishlistAt"`) to match the folder.
+
+Not addressed: four unrelated suites fail on this branch already — audit-trail, design-tokens (two) and rate-limit-detached. They are untouched here and predate this change.
+
 ## [PR-93] 2026-09-08 — Buying the thing you saved clears the wish; buying it elsewhere does not [MIGRATION]
 
 The heart now sits beside Share on the product page, not only on grid tiles — the one surface where a shopper decides is the one that was missing it.

@@ -37,28 +37,9 @@ export class WishlistService {
   }
 
   /**
-   * Record that a saved product was carted after being opened from the wishlist.
-   *
-   * A hint about provenance, not a transaction: it never throws at the caller, because
-   * failing to note where a buyer came from must not fail adding to their cart.
+   * Remove a saved product. Reached only from an explicit removal — un-hearting, or
+   * Remove on the wishlist page. Carting, buying and stocking out leave a wish alone.
    */
-  async markCartedFromWishlist(userId: string, productId: string): Promise<void> {
-    try {
-      await wishlistRepository.markCartedFromWishlist(userId, productId);
-    } catch (error) {
-      console.error("[WishlistService] markCartedFromWishlist failed:", error);
-    }
-  }
-
-  /**
-   * Clear the wishes a paid order fulfilled — marked rows only, so a product bought
-   * from anywhere but the wishlist stays saved.
-   */
-  async removePurchased(userId: string, productIds: string[]): Promise<number> {
-    return await wishlistRepository.removePurchased(userId, productIds);
-  }
-
-  /** Remove a saved product. Only ever called from an explicit removal. */
   async removeItem(userId: string, productId: string): Promise<void> {
     await wishlistRepository.remove(userId, productId);
   }

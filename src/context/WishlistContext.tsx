@@ -16,13 +16,13 @@ interface WishlistContextValue {
   isSaved: (productId: string) => boolean;
   /** True while this product's save or removal is in flight. */
   isPending: (productId: string) => boolean;
-  /** Save if hollow, forget if filled. Signed-out callers get the sign-in toast. */
-  toggle: (productId: string) => Promise<void>;
   /**
-   * Note that this product was carted after arriving from the wishlist, so a later
-   * confirmed payment can clear the wish. Fire-and-forget.
+   * Save if hollow, forget if filled. Signed-out callers get the sign-in toast.
+   *
+   * The only thing that removes a saved product — nothing else in the app clears a
+   * wish, so a heart the buyer left filled stays filled.
    */
-  markCartedFromWishlist: (productId: string) => void;
+  toggle: (productId: string) => Promise<void>;
 }
 
 const WishlistContext = createContext<WishlistContextValue | undefined>(undefined);
@@ -127,27 +127,10 @@ export function WishlistProvider({
     [saved, status]
   );
 
-  // Deliberately not awaited and never surfaced: this records where the buyer came
-  // from, and a buyer whose item reached the cart must not see an error because a
-  // breadcrumb did not. Guests have no wishlist row to mark.
-  const markCartedFromWishlist = useCallback(
-    (productId: string) => {
-      if (status !== "authenticated" || !saved.has(productId)) return;
-      void fetch("/api/wishlist", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ productId }),
-      }).catch(() => {});
-    },
-    [saved, status]
-  );
-
   const value: WishlistContextValue = {
     isSaved: useCallback((productId: string) => saved.has(productId), [saved]),
     isPending: useCallback((productId: string) => pending.has(productId), [pending]),
     toggle,
-    markCartedFromWishlist,
   };
 
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;

@@ -46,42 +46,11 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * PATCH /api/wishlist — note that a saved product was carted from the wishlist.
- *
- * Only the journey is recorded; whether the wish is cleared is decided later, by a
- * confirmed payment. Marking something not saved is a no-op, so this needs no
- * existence check of its own.
- */
-export async function PATCH(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Sign in to manage your wishlist" }, { status: 401 });
-    }
-
-    const rateLimitResult = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 60 },
-      () => getRateLimitIdentifier(request, session.user.id)
-    );
-    if (rateLimitResult) return rateLimitResult;
-
-    const validation = await validateRequest(request, wishlistItemSchema);
-    if ("error" in validation) return validation.error;
-
-    await wishlistService.markCartedFromWishlist(session.user.id, validation.data.productId);
-
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error) {
-    return toErrorResponse(error, "Could not update your wishlist");
-  }
-}
-
-/**
  * DELETE /api/wishlist?productId=… — forget a saved product.
  *
- * Only ever reached from an explicit removal: un-hearting, or Remove on the wishlist
- * page. Nothing else in the app deletes a saved row.
+ * The only route that removes a saved product, and it is reached only from an explicit
+ * removal: un-hearting, or Remove on the wishlist page. Carting, buying and stocking
+ * out never delete a saved row.
  */
 export async function DELETE(request: NextRequest) {
   try {

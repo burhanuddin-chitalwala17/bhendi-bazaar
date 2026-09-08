@@ -135,41 +135,12 @@ export class WishlistRepository {
   }
 
   /**
-   * Note that this product was carted after being opened from the wishlist.
+   * Remove a saved product — the only path that deletes a saved row. Nothing else in
+   * the app forgets a wish: not carting it, not buying it, not the product selling
+   * out. A saved product leaves the wishlist when the buyer un-hearts it, and never
+   * otherwise.
    *
-   * `updateMany` so marking something no longer saved is a no-op: the buyer may have
-   * un-hearted it between opening and adding to cart, and that is not an error.
-   * Re-marking simply moves the timestamp — the origin is a fact about the journey,
-   * not a counter.
-   */
-  async markCartedFromWishlist(userId: string, productId: string): Promise<void> {
-    await prisma.wishlistItem.updateMany({
-      where: { productId, wishlist: { userId } },
-      data: { cartedFromWishlistAt: new Date() },
-    });
-  }
-
-  /**
-   * Clear the wishes a completed purchase fulfilled.
-   *
-   * Only rows carrying an origin mark are removed. A product bought from the home page
-   * is still in the wishlist afterwards, because the buyer never said the purchase came
-   * from the wish — buying a second one as a gift must not silently forget the first.
-   */
-  async removePurchased(userId: string, productIds: string[]): Promise<number> {
-    if (productIds.length === 0) return 0;
-    const { count } = await prisma.wishlistItem.deleteMany({
-      where: {
-        productId: { in: productIds },
-        wishlist: { userId },
-        cartedFromWishlistAt: { not: null },
-      },
-    });
-    return count;
-  }
-
-  /**
-   * Remove a saved product. `deleteMany` rather than `delete` so removing something
+   * `deleteMany` rather than `delete` so removing something
    * already gone is a no-op instead of a thrown 404 — two tabs un-hearting the same
    * product both succeed, which is what the user meant either way.
    *

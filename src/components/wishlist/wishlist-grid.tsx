@@ -39,9 +39,7 @@ export function WishlistGrid({ items }: { items: WishlistProduct[] }) {
       {visible.map((item) => (
         <Link
           key={item.id}
-          // The origin the purchase rule reads: opened from here, so buying it clears
-          // the wish; the same product opened from a listing does not.
-          href={`/product/${item.slug}?from=wishlist`}
+          href={`/product/${item.slug}`}
           className="block"
           prefetch={false}
         >

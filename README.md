@@ -49,7 +49,7 @@
 - **Shopping Cart**: Add items, update quantities, remove items with real-time calculations
 - **Guest Checkout**: Purchase without creating an account
 - **User Accounts**: Save addresses, view order history, manage profile
-- **Wishlist**: Save products for later, from the heart on any product
+- **Wishlist**: Save products for later, from the heart on any product — and removed only by the same heart
 
 ### 💳 Payment & Orders
 - **Razorpay Integration**: Secure payment processing with UPI, cards, wallets, and net banking

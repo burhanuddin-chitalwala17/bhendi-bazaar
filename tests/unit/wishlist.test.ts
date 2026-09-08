@@ -120,38 +120,46 @@ describe("the wishlist schema", () => {
   });
 });
 
-describe("the purchase rule: only a wish the buyer acted on is cleared", () => {
+describe("the removal rule: only the heart removes a saved product", () => {
   const schema = readFileSync("prisma/schema.prisma", "utf8");
   const repo = readFileSync("server/wishlist/wishlist.repository.ts", "utf8");
+  const service = readFileSync("server/wishlist/wishlist.service.ts", "utf8");
+  const route = readFileSync("src/app/api/wishlist/route.ts", "utf8");
   const checkout = readFileSync("server/checkout/order.service.ts", "utf8");
+  const context = readFileSync("src/context/WishlistContext.tsx", "utf8");
 
-  it("records the origin on the row, not in the tab it started in", () => {
-    // The journey crosses refreshes and devices; a tab-local flag silently keeps items.
-    expect(schema).toMatch(/cartedFromWishlistAt DateTime\?/);
-  });
-
-  it("removes only rows carrying an origin mark", () => {
-    const body = repo.slice(repo.indexOf("async removePurchased"), repo.indexOf("async remove("));
-    expect(body).toMatch(/cartedFromWishlistAt: \{ not: null \}/);
-    expect(body).toMatch(/productId: \{ in: productIds \}/);
-    // Scoped to the buyer: an order can never reach another person's wishlist.
+  it("has exactly one delete, in the explicit removal", () => {
+    // Two delete paths is how a wish disappears without the buyer asking. There is one.
+    expect(repo.match(/prisma\.wishlistItem\.deleteMany/g)).toHaveLength(1);
+    const body = repo.slice(repo.indexOf("async remove("));
+    expect(body).toMatch(/deleteMany/);
+    // Scoped to the owner: one person's removal can never reach another's wishlist.
     expect(body).toMatch(/wishlist: \{ userId \}/);
   });
 
-  it("does nothing when the order bought nothing that was saved", () => {
-    const body = repo.slice(repo.indexOf("async removePurchased"), repo.indexOf("async remove("));
-    expect(body).toMatch(/if \(productIds\.length === 0\) return 0/);
+  it("keeps no record of where a product was carted from, because nothing reads one", () => {
+    expect(schema).not.toMatch(/cartedFromWishlist/);
+    expect(repo).not.toMatch(/cartedFromWishlist/);
+    expect(service).not.toMatch(/cartedFromWishlist|removePurchased/);
   });
 
-  it("clears the wish on a confirmed payment, and never unwinds one", () => {
+  it("exposes removal on one route method, and no other write that could clear a wish", () => {
+    expect(route).toMatch(/export async function DELETE/);
+    expect(route).not.toMatch(/export async function PATCH/);
+  });
+
+  it("leaves the wishlist alone when a payment is confirmed", () => {
+    // Buying a second one as a gift must not silently forget the first.
     const block = checkout.slice(
-      checkout.indexOf("The wish is fulfilled"),
+      checkout.indexOf("async onPaymentConfirmed"),
       checkout.indexOf("const deliveryAddress")
     );
-    expect(block).toMatch(/wishlistService\.removePurchased/);
-    // Inside onPaymentConfirmed, and caught — a wishlist failure must not fail a payment.
-    expect(block).toMatch(/catch \(error\)/);
-    expect(block).toMatch(/order\.userId/);
+    expect(block).not.toMatch(/wishlistService/);
+  });
+
+  it("gives the client no removal path but the toggle", () => {
+    expect(context).not.toMatch(/markCartedFromWishlist/);
+    expect(context.match(/method: "DELETE"/g)).toHaveLength(1);
   });
 });
 

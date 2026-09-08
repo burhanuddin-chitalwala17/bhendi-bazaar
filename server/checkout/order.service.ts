@@ -97,22 +97,9 @@ export class OrderService {
       );
     }
 
-    // The wish is fulfilled, so it stops being a wish — but only where the buyer
-    // reached the product from their wishlist (`cartedFromWishlistAt`). An identical
-    // product bought from a listing leaves the saved one alone. Like the ledger above
-    // it must not unwind a confirmed payment, so it logs rather than throws.
-    if (order.userId) {
-      try {
-        const { wishlistService } = await import("@server/wishlist/wishlist.service");
-        const purchasedProductIds = await orderRepository.findPurchasedProductIds(orderId);
-        await wishlistService.removePurchased(order.userId, purchasedProductIds);
-      } catch (error) {
-        console.error(
-          `[onPaymentConfirmed] wishlist not cleared for order ${orderId} — the saved items remain, which is the harmless direction`,
-          error
-        );
-      }
-    }
+    // Deliberately nothing here for the wishlist: a purchase does not clear a wish.
+    // Only the heart removes a saved product, so someone who bought one as a gift
+    // still has theirs saved, and a cancelled order needs nothing put back.
 
     const deliveryAddress = order.address as OrderEmailView["address"] | null;
     if (deliveryAddress?.email) {
