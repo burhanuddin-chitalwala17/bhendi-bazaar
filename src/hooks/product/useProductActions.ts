@@ -1,15 +1,20 @@
 // hooks/product/useProductActions.ts
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useCartStore } from "@/store/cartStore";
+import { useWishlist } from "@/context/WishlistContext";
 import type { Product } from "@/domain/product";
 
 export function useProductActions(product: Product) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const items = useCartStore((state) => state.items);
+  const { markCartedFromWishlist } = useWishlist();
+  // Set by the links on /wishlist. Committing to buy from a page reached that way is
+  // what makes the purchase count as fulfilling the wish.
+  const fromWishlist = useSearchParams().get("from") === "wishlist";
 
   const [isAddingToCart, startAddToCart] = useTransition();
   const [isBuyingNow, startBuyNow] = useTransition();
@@ -31,6 +36,8 @@ export function useProductActions(product: Product) {
       );
       return;
     }
+    if (fromWishlist) markCartedFromWishlist(product.id);
+
     // after stock validation done
     startAddToCart(
       () =>
@@ -68,6 +75,8 @@ export function useProductActions(product: Product) {
       );
       return;
     }
+
+    if (fromWishlist) markCartedFromWishlist(product.id);
 
     // Navigate to checkout with product ID in URL
     startBuyNow(() => {

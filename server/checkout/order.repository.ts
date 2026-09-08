@@ -130,6 +130,22 @@ export class OrderRepository {
   }
 
   /**
+   * The distinct products this order bought.
+   *
+   * Read from `OrderItem` — the order's own record of what was purchased — rather than
+   * walked out of the shipment tree, where a product split across two parcels appears
+   * twice and the line shape depends on which mapper ran.
+   */
+  async findPurchasedProductIds(orderId: string): Promise<string[]> {
+    const rows = await prisma.orderItem.findMany({
+      where: { orderId },
+      select: { productId: true },
+      distinct: ["productId"],
+    });
+    return rows.map((row) => row.productId);
+  }
+
+  /**
    * Find order by code (for guest lookup)
    */
   async findByCode(code: string) {

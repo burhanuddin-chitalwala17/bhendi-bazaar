@@ -10,6 +10,48 @@
 
 ## Entries
 
+## [PR-93] 2026-09-08 — Buying the thing you saved clears the wish; buying it elsewhere does not [MIGRATION]
+
+The heart now sits beside Share on the product page, not only on grid tiles — the one surface where a shopper decides is the one that was missing it.
+
+**And a purchase can now tell "I bought the thing I saved" from "I happened to buy something that is also saved".** Both are the same product and the same order, so the difference is provenance: opening it from `/wishlist` and adding it to the cart records `WishlistItem.cartedFromWishlistAt`, and `onPaymentConfirmed` removes only marked rows. The same product reached from the home page is never marked, so it stays saved — buying a second one as a gift must not silently forget the first.
+
+**The mark lives on the row rather than in the tab it started in.** The journey from a product page to a confirmed payment crosses refreshes, a payment redirect and sometimes a different device, and a tab-local flag loses the origin on all three — silently keeping an item the buyer expected to be gone. One nullable column carries it instead, and NULL is the safe default for every row that predates the distinction: it keeps the item, which is the harmless direction.
+
+Removal is scoped to the buyer's own wishlist and to products actually in the order, so an order can never reach another person's saved items. Like the ledger write beside it, it logs rather than throws — a wishlist that failed to clear must not unwind a payment that succeeded.
+
+Purchased products are read from `OrderItem` via `orderRepository.findPurchasedProductIds` rather than walked out of the shipment tree, where a product split across two parcels appears twice and the line shape depends on which mapper ran.
+
+**A defect this branch introduced, fixed here:** `wishlist.dal.ts` wrapped `getServerSession` in a try/catch, and reading the session is how a route declares itself dynamic — by throwing. The catch swallowed Next's control-flow signal and turned a correct render into seven `Failed to fetch saved product ids` errors per build. `unstable_rethrow` now lets framework errors through and catches only real ones.
+
+Saving also confirms itself with an "Added to wishlist" toast, fired after the write lands rather than beside the optimistic fill — a toast that says "Added" and is followed by an error toast has told the buyer two contradictory things about one tap. Removal stays silent; the emptying heart is the feedback.
+
+**26 new tests** across both wishlist suites. 554 pass, `tsc` exits 0, `next build` compiles with a clean log. **Run `npx prisma migrate deploy`.**
+
+Not addressed: a wish is cleared by payment confirmation, so a cancelled or refunded order does not put it back. Buy Now marks the origin on the same rule as Add to Cart, but a buyer who abandons checkout keeps both the mark and the item — harmless, and re-marked next time.
+
+## [PR-92] 2026-09-07 — A wishlist is rows, and there is no guest one [MIGRATION]
+
+The README has advertised "Wishlist: save products for later (coming soon)" since the storefront existed. It exists now: a heart on every product tile, a `/wishlist` page in the profile menu, and removal only on an explicit un-heart.
+
+**Saved products are rows, not a `productIds String[]`.** The array was the shape originally proposed and it is the shape this repo has lifted out three times already — `Profile.addresses` in PR-41, `Shipment.items` in PR-43, `Cart.items` in PR-44, each still carrying its `legacy*` blob as the audit copy. Three things decided it rather than precedent alone. Postgres cannot put a foreign key inside an array, so a deleted product would leave an id nothing resolves and the page would silently render seven of eight tiles. Every add would be a read-modify-write of the whole array, so hearting on a phone and a laptop at once loses one heart with nothing to show it happened — the same race `Cart.version` exists to catch, needed here for a feature that has no other reason to want optimistic locking. And an array has nowhere to put `savedAt`, which is what "recently saved first" sorts by and what a price-drop alert would hang off later.
+
+`WishlistItem.productId` is `Cascade`, deliberately the same as `CartItem` and the opposite of `OrderItem`: a saved product is a wish, not history. [ADR-0020](adr/0020-money-bearing-records-never-cascade.md) governs rows carrying money or attribution, and this one carries neither.
+
+**No `wlId` on `User`.** `Wishlist.userId` is `@unique`, which is the entire relationship; a column on the other side would be a second copy that can disagree with the first and a two-table write to keep them agreeing. `Cart` has never had one either — `User.cart` is a back-relation and nothing more.
+
+**There is no guest wishlist, so there is no sign-in merge.** A signed-out visitor who taps the heart gets `Sign in to add to wishlist` and nothing is stored — no localStorage, no anonymous row, and none of the union-of-two-sets logic `cart.merge.ts` needs. The cost is stated rather than hidden: the heart does not survive the sign-in, and the visitor taps it again afterwards. The toast is a message and not a gate — `/api/wishlist` 401s on its own, and `/wishlist` redirects to `/signin?callbackUrl=/wishlist`, neither of which cares what the client believed.
+
+**The saved set is read on the server.** `(main)/layout.tsx` reads it once through `wishlist.dal.ts` and hands it to `WishlistContext`, so hearts are painted in the first render instead of flashing hollow and re-filling after a fetch — a route handler is for mutations, not for data a server component already had. The state is shared rather than per-button because one product appears twice on a product page (the grid tile and the similar-products rail), and two hearts for one product must not disagree. Writes are optimistic and revert on failure, with the server's own message in the toast.
+
+A saved product stores the fact of the wish and nothing else: name, image, stock and price are derived from the product join at read time, priced through the same resolver the product page and checkout use ([ADR-0018](adr/0018-one-effective-price-function.md)), so a wishlist cannot advertise a price checkout would refuse.
+
+`--favorite` joins the semantic colours in `globals.css`. A filled heart wanted red and `destructive` was the only red available, but `destructive` means "this will break something" — the opposite of what a saved product means — and ADR-0022 asks for roles, not nearest-available values.
+
+**20 new tests** (the wire mapper including offer resolution, the schema and migration contracts, and the heart: the guest toast writing nothing, optimistic fill, revert on failure, two hearts staying in step, a still-loading session never being told to sign in, and the confirmation toast firing on a landed save but never on a removal or a failure). 550 pass, `tsc` exits 0, `next build` compiles. Four suites fail on Windows only and did so before this branch — `design-tokens`, `admin-audit-trail` and `rate-limit-detached` compare allowlist paths with `/` against `path.join`'s `\`. **Run `npx prisma migrate deploy`.**
+
+Not addressed: the wishlist is not reachable from the mobile tab bar, only the profile menu. Nothing moves a saved product into the cart in one tap. And no page counts how often a product is wishlisted, though `@@index([productId])` is there for the day one does.
+
 ## [PR-83] 2026-08-31 — Prefetch goes off in the portals too, where the only live traffic is
 
 PR-82 turned prefetch off across the storefront and left the admin, org and auth links alone, reasoning they were low fan-out and behind a login. Both halves of that were wrong, and the Prisma dashboard is what showed it: 23,592 operations in ten days on a store with no customers, while the only people using the site were uploading products in `/admin`. The half that was optimised is the half nobody is using.
