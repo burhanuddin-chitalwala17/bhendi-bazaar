@@ -40,7 +40,8 @@ export function resolveRateBps(
 
 /** One order line's contribution to an organisation's entry. */
 export interface LedgerLineInput {
-  orderItemId: string;
+  /** Null where there is no order behind the line — a manual adjustment (spec R5). */
+  orderItemId: string | null;
   categoryId: string;
   /** `unitPrice * quantity` — the list value of the goods, before any discount. */
   grossPaise: number;

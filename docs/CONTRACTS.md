@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-08-30
+- **Verified:** 2026-09-09
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -99,6 +99,8 @@ The address-book wire shape (`DeliveryAddress`) is flat and stable, but since PR
 Since PR-63 the product wire shape carries **`media`** — an ordered list of `{ id, kind, ref, description, isThumbnail }` — in place of `images: string[]`, declared once in `server/catalog/media.ts` and re-exported through `src/domain/product.ts`. `ProductFormInput.media` is the write side of the same shape, minus the id. **`thumbnail` is read-only on the wire**: it is a cache of the flagged media row, so it is returned but never accepted, and `productFormSchema` has no field for it — like `slug`, submitting one is submitting a value the server overwrites. `MediaKind` is a Prisma enum with a single TypeScript declaration; the `ProductFlag` duplication this file records is precisely what that avoids.
 
 The order line's `thumbnail` did not change shape in PR-63 but changed *source*: it is now the snapshot persisted on `OrderItem` at creation rather than a live read through the product join, so a cover change no longer alters a completed order. A same-shape change of source is the kind that passes review unnoticed, which is why it is written here.
+
+Since PR-89 the product wire shape carries **`biddingSlug?: string`** — the public link of the bidding event holding the item out of normal sale, absent when it can be bought as usual. It is **read-only on the wire and never accepted**: `productFormSchema` has no field for it, like `thumbnail` and `slug`. It is told to the client rather than inferred because nothing on the product itself changes when an event opens ([bidding](specs/bidding/) R32), and the storefront has to disable its buy actions and point at the event without a second round trip. Purely a display state — the refusal lives in the cart service and the order transaction, so a client ignoring the field gains nothing (R31). Declared once in `src/domain/product.ts`, populated in `src/data-access-layer/products.dal.ts` from one request-memoised lookup.
 
 The three shipping-origin fields — `shippingFromPincode`, `shippingFromCity`, `shippingFromLocation` — are an all-or-none group: either all three are present or all three are absent. Enforced in `productFormSchema`, so both the form and the route apply it. Absent is spelled `NULL`, never `''`; readers treat absence as "fall back to the org's default address". That fallback is evaluated on four separate read paths, and one of them mixes a product's pincode with its org's city; [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) replaces all three fields with a foreign key and removes the fallback.
 

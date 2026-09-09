@@ -17,6 +17,10 @@ import type { SendEmailOptions } from "./types";
 import { getVerificationEmailTemplate } from "./templates/verificationEmail";
 import { getPasswordResetEmailTemplate } from "./templates/passwordResetEmail";
 import { getPurchaseConfirmationEmailTemplate } from "./templates/purchaseConfirmationEmail";
+import {
+  getOutbidEmailTemplate,
+  type OutbidEmailView,
+} from "./templates/outbidEmail";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 class EmailService {
@@ -201,6 +205,20 @@ class EmailService {
       to: customerEmail,
       subject: `Order Confirmation #${order.code} - Bhendi Bazaar`,
       html: getPurchaseConfirmationEmailTemplate(order),
+    });
+  }
+
+  /**
+   * Tell a bidder they have lost the lead (bidding spec R28).
+   *
+   * Callers fire this without awaiting: a mail failure must never unwind an accepted
+   * bid, so the throw stays here and the decision to ignore it stays with the bid.
+   */
+  async sendOutbidEmail(email: string, view: OutbidEmailView): Promise<void> {
+    await this.sendEmail({
+      to: email,
+      subject: `You have been outbid on ${view.productName} - Bhendi Bazaar`,
+      html: getOutbidEmailTemplate(view),
     });
   }
 }

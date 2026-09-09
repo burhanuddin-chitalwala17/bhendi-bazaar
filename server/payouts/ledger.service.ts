@@ -28,6 +28,49 @@ export class LedgerService {
    * pays must never appear in a payout. Idempotent on `(order, org, SALE)`, so a
    * replayed confirmation cannot pay an organisation twice.
    */
+  /**
+   * Record what an organisation earned from a sale the order flow did not produce
+   * (spec R5) — today, an item sold by bidding.
+   *
+   * The buyer paid the platform directly and off the platform, so there is no order
+   * and no gateway signal; what the organisation is owed is the amount the platform
+   * recorded. Commission still applies and resolves exactly as it does for an order,
+   * through the same arithmetic, so a bidding sale and a normal one settle on one set
+   * of rules rather than two.
+   *
+   * Writing this exactly once is the caller's guarantee: it belongs in the same
+   * transaction as whatever transition made the sale final.
+   */
+  async recordBiddingSale(
+    input: { orgId: string; categoryId: string; amountPaise: number; note: string },
+    db: PayoutDb = prisma
+  ) {
+    const parents = await promotionRepository.categoryParents(prisma);
+    const { defaultBps, rules } = await ledgerRepository.ratesFor(input.orgId, db);
+
+    const computation = computeLedgerEntry({
+      lines: [
+        {
+          orderItemId: null,
+          categoryId: input.categoryId,
+          grossPaise: input.amountPaise,
+          // A bid is already the negotiated price; layering an offer on top would
+          // discount it twice (ADR-0019, bidding D11).
+          orgFundedPaise: 0,
+        },
+      ],
+      platformFundedPaise: 0,
+      parents,
+      rules,
+      orgDefaultBps: defaultBps,
+    });
+
+    return await ledgerRepository.createAdjustment(
+      { orgId: input.orgId, computation, note: input.note },
+      db
+    );
+  }
+
   async recordSale(orderId: string, db: PayoutDb = prisma): Promise<number> {
     const lines = await ledgerRepository.orderLines(orderId, db);
     if (lines.length === 0) return 0;

@@ -98,6 +98,7 @@ export function ProductDetails(product: Product) {
           isOutOfStock={isOutOfStock}
           isAddingToCart={isAddingToCart}
           isBuyingNow={isBuyingNow}
+          biddingSlug={product.biddingSlug}
         />
       </div>
     </section>

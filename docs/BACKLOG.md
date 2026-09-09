@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-31
+- **Verified:** 2026-09-09
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -19,6 +19,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 | **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
+| **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-89 |
 
 ---
 
@@ -96,6 +97,22 @@ Strictly ordered: `promotions` before `org-payouts`. The ledger reads the fundin
 `promotions` reaches back into the catalogue: it removes `Product.salePrice` and re-expresses each markdown as an organisation-funded offer, which makes it a `[CONTRACT]` change on the product and cart DTOs. That is deliberate rather than incidental — a markdown is an organisation's own offer, and an offer outside the comparison can be neither weighed against a platform offer nor attributed to whoever paid for it.
 
 `org-payouts` is a ledger, not a payments integration. Money continues to move by bank transfer; what it adds is the record of how much and whether it has gone.
+
+---
+
+## Phase 8 — Bidding
+
+A new phase, added 2026-09-09. A fixed price cannot find out what a one-off item is worth, and a bidding link is also the one thing a product page is not — a reason to share, with a deadline and a number that moves.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [bidding](specs/bidding/) | An organisation puts one product up for timed bidding on a shareable link; the platform sells it directly and records what it fetched | ✅ Implemented — PR-89 |
+
+Depends on Phase 7. The amount a bidding sale fetches is what the organisation is owed, so it has to reach the same ledger `org-payouts` builds rather than a parallel one.
+
+Two things about this phase are deliberate and easy to mistake for gaps. **Settlement is by hand:** the platform speaks to the winning bidder directly and enters the price it sold for, so no payment flow is built and the figure an organisation is paid on is one a person types. **Nothing runs on a schedule:** an event ends because its end time has passed, observed whenever it is next looked at, so correctness never rests on a job having run.
+
+It also lands the store's first real purchase gate. Adding to cart checks nothing today and stock is enforced in exactly one place — the order transaction — so suspending sale during an event has to hold at that same point, and the same seam is what any future reason to bar a purchase will use.
 
 ---
 

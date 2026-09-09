@@ -14,14 +14,50 @@ import { createShipmentWithProvider } from "@server/shipping/providers/_placehol
 import type {
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
+  ShipmentItem,
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
 import { promotionService } from "@server/promotions/promotion.service";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
-import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
+import { assertNotUnderBidding } from "@server/bidding/bidding-lock";
+import type {
+  OrderEmailItem,
+  OrderEmailView,
+} from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+
+/**
+ * What the buyer bought, as one list, for the confirmation email.
+ *
+ * Allocation can split one line across parcels, so the same product may appear on two
+ * shipments; merged by product, variant and price because the email has no parcel
+ * column and two identical rows read as a defect rather than as two deliveries.
+ */
+export function toOrderEmailItems(
+  shipments: Array<{ items: ShipmentItem[] }>
+): OrderEmailItem[] {
+  const merged = new Map<string, OrderEmailItem>();
+  for (const { items } of shipments) {
+    for (const item of items) {
+      const key = `${item.productName}::${item.size ?? ""}::${item.color ?? ""}::${item.price}`;
+      const existing = merged.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        merged.set(key, {
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          size: item.size,
+          color: item.color,
+        });
+      }
+    }
+  }
+  return [...merged.values()];
+}
 
 export class OrderService {
   /**
@@ -109,6 +145,7 @@ export class OrderService {
             paymentStatus: order.paymentStatus,
             createdAt: order.createdAt,
             notes: order.notes,
+            items: toOrderEmailItems(order.shipments),
             itemsTotal: order.itemsTotal,
             discount: order.discount,
             grandTotal: order.grandTotal,
@@ -323,6 +360,17 @@ export class OrderService {
             );
           }
         }
+
+        // Nothing up for bidding may be bought directly (bidding spec R31).
+        //
+        // Deliberately **after** the reservation above, not before. The reservation is
+        // what takes the row lock on this product's stock, and opening a bidding event
+        // takes the same lock — so checking afterwards means an event committed by
+        // another transaction is either already visible here (and refused) or still
+        // blocked behind our lock (and will see the stock we just took). Checking
+        // first would leave a window where both succeed and an item is sold while it
+        // is under auction.
+        await assertNotUnderBidding(productIds, now, tx);
 
         // R6: the bought items leave the cart in the same transaction, so a closed
         // tab cannot leave a cart that has already been purchased.

@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-08-09
+- **Verified:** 2026-09-09
 
 ## Prerequisites
 Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test mode for development).
@@ -157,7 +157,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 
 | Concern | Provider | Notes |
 |---|---|---|
-| Hosting | **Vercel** | Project `bhendi-bazaar`; deploys from `main` |
+| Hosting | **Vercel** | Project `bhendi-bazaar`; deployed from GitHub Actions, not the Git integration — see [Deploy](#deploy) |
 | Domain | **GoDaddy** (registrar) | `bhendi-bazaar.com`; DNS points at Vercel |
 | Database | **Prisma Postgres** (`db.prisma.io`) | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
@@ -176,11 +176,13 @@ The code reads only `DATABASE_URL` and `KV_REST_API_URL` from the connection-str
 
 ## Deploy
 
-Vercel, project `bhendi-bazaar`, from `main`. All routes are server-rendered on demand.
+Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 
-- **Set every variable above in Vercel per environment.** `NEXTAUTH_URL` must be the deployed origin.
+**Deployments come from GitHub Actions, not from Vercel's Git integration.** Hobby only git-deploys commits authored by the Vercel account owner, so a collaborator's push silently never shipped. `vercel.json` sets `git.deploymentEnabled: false`, and `.github/workflows/ci.yml`'s `deploy` job runs `vercel pull` / `vercel build` / `vercel deploy --prebuilt` with an account token — authorship stops mattering. `main` deploys with `--prod`; `develop` deploys a preview. The job needs `test` to pass first, and needs three repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the latter two are in `.vercel/project.json`).
+
+- **Set every variable above in Vercel per environment.** `NEXTAUTH_URL` must be the deployed origin. The CI runner has no env of its own — `vercel pull` supplies the build's variables from the target Vercel environment, so a variable missing there is missing at build.
 - `vercel env pull` before running migrations locally against a deployed database.
-- **Migrations run in the build** ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)): `vercel.json`'s `buildCommand` is `npx prisma migrate deploy && next build`, so every Vercel build applies pending migrations to that environment's `DATABASE_URL` before compiling. A merge to `main` **is** a prod schema change; preview builds migrate whatever database the Preview environment points at. `migrate deploy` only applies pending migrations in order — never resets or drops. Manual `migrate deploy` remains only for local runs against a deployed database (`vercel env pull` first).
+- **Migrations run in the build** ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)): `vercel.json`'s `buildCommand` is `npx prisma migrate deploy && next build`, so every Vercel build applies pending migrations to that environment's `DATABASE_URL` before compiling. A merge to `main` **is** a prod schema change; preview builds migrate whatever database the Preview environment points at — so if Preview has no database of its own, a push to `develop` migrates production. `migrate deploy` only applies pending migrations in order — never resets or drops. Manual `migrate deploy` remains only for local runs against a deployed database (`vercel env pull` first).
 - Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/shiprocket`. Local webhook testing needs a tunnel.
 - Use a pooled connection string (pgbouncer / Neon) in production: `src/lib/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
 

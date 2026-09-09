@@ -2,6 +2,16 @@ import { baseEmailStyles } from "./styles/baseEmailStyles";
 import { formatCurrency, formatDate } from "../formatters";
 import { appUrl } from "@server/shared/app-url";
 
+/** One line of what was bought. Merged across parcels by the caller. */
+export interface OrderEmailItem {
+  productName: string;
+  quantity: number;
+  /** Unit price actually paid, in paise. */
+  unitPrice: number;
+  size?: string;
+  color?: string;
+}
+
 /** What this template renders — the caller maps its row onto this, whatever its source. */
 export interface OrderEmailView {
   id: string;
@@ -10,6 +20,7 @@ export interface OrderEmailView {
   paymentStatus: string | null;
   createdAt: Date;
   notes?: string | null;
+  items: OrderEmailItem[];
   itemsTotal: number; // paise
   discount: number; // paise
   grandTotal: number; // paise
@@ -27,9 +38,33 @@ export interface OrderEmailView {
   shipments: Array<{ estimatedDelivery?: string | null }>;
 }
 
+/** A product name is org-entered text, and an email client renders HTML. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function itemRow(item: OrderEmailItem): string {
+  const variant = [item.size, item.color].filter(Boolean).join(" · ");
+  // Integer paise × a whole quantity stays integer (Invariant 3).
+  const lineTotal = item.unitPrice * item.quantity;
+  return `
+              <tr>
+                <td>
+                  ${escapeHtml(item.productName)} × ${item.quantity}
+                  ${variant ? `<span class="item-variant">${escapeHtml(variant)}</span>` : ""}
+                </td>
+                <td>${formatCurrency(lineTotal)}</td>
+              </tr>`;
+}
+
 export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): string {
-  // Generate order items HTML
-  const orderItemsHtml = order.itemsTotal
+  const orderItemsHtml = order.items.length
+    ? order.items.map(itemRow).join("")
+    : `<tr><td colspan="2">Your order details are on the order page.</td></tr>`;
 
   // Tracking URL
   const trackingUrl = `${appUrl()}/order/${order.id}`;
@@ -115,6 +150,22 @@ export function getPurchaseConfirmationEmailTemplate(order: OrderEmailView): str
           }
           .items-header th:last-child {
             text-align: right;
+          }
+          .items-table td {
+            padding: 15px;
+            border-top: 1px solid #e5e5e5;
+            font-size: 14px;
+            vertical-align: top;
+          }
+          .items-table td:last-child {
+            text-align: right;
+            white-space: nowrap;
+          }
+          .item-variant {
+            display: block;
+            margin-top: 4px;
+            color: #71717a;
+            font-size: 12px;
           }
           .totals-section {
             background: #f8f8f8;
