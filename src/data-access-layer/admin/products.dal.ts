@@ -6,6 +6,7 @@ import type { ProductDetails, ProductFilters, ProductForTable, ProductStats } fr
 import type { Pagination } from "@/types/shared";
 import { ProductFlag } from "@/types/shared";
 import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-context";
+import { wishlistService } from "@server/wishlist/wishlist.service";
 
 /**
  * A product's sale price, read from its markdown offer rather than a column
@@ -27,6 +28,10 @@ class ProductsDAL {
       productsService.getProducts(filters),
       loadPriceContext(),
     ]);
+    // Second round trip, not a join: saves live in the wishlist domain and are read
+    // through its service (ADR-0012). Only the ids on this page, so the query is
+    // bounded by the page size however large the catalogue grows.
+    const saves = await wishlistService.countSavesByProduct(products.map((p) => p.id));
     return {
       products: products.map((product) => ({
         id: product.id,
@@ -40,6 +45,7 @@ class ProductsDAL {
         stock: product.stock,
         lowStockThreshold: product.lowStockThreshold,
         thumbnail: product.thumbnail,
+        wishlistCount: saves.get(product.id) ?? 0,
         createdAt: product.createdAt,
         category: product.category,
         org: product.org,

@@ -6,14 +6,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AddressFields } from "@/components/shared/forms/AddressFields";
 import { DeliveryAddress } from "@/domain/profile";
-import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
+import { emailSchema, postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 
 export const guestAddressSchema = z.object({
   id: z.string(),
   fullName: z.string().min(2, "Name required"),
   mobile: z.string().regex(/^\d{10}$/, "10 digits required"),
-  // Optional (the UI says so), but validated when present; "" is "left blank".
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  // A guest has no account to supply the order-confirmation email
+  // (server/checkout/order.service.ts onPaymentConfirmed), so this form requires
+  // one. A check rather than a required field, so the input type stays
+  // string | undefined and still matches DeliveryAddress.email? and AddressFields.
+  email: z
+    .string()
+    .optional()
+    .refine((value) => emailSchema.safeParse(value).success, "Email required for order updates"),
   addressLine1: z.string().min(5, "Address required"),
   addressLine2: z.string().optional(),
   landmark: z.string().optional(),
@@ -81,6 +87,7 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
         <AddressFields
           register={register}
           errors={errors}
+          emailRequired
         />
       </div>
     </div>

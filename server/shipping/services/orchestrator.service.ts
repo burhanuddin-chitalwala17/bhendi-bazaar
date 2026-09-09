@@ -67,19 +67,29 @@ export class ShippingOrchestratorService {
   }
 
   /**
-   * Reload a specific provider (useful after config changes)
+   * Load (or replace) one provider in the live map — how a carrier connected at
+   * runtime becomes usable without a restart (ADR-0002).
+   *
+   * Keyed by `code`, the same key `loadProviders` uses: keying one path by id and
+   * the other by code put the same carrier in the map twice, which quotes it twice.
    */
-  async reloadProvider(
+  async refreshProvider(
+    code: string,
     providerId: string,
-    factory: (config: any) => IShippingProvider
+    factory: () => IShippingProvider
   ): Promise<void> {
-    if (!providerId) {
-      throw new DomainError("Provider ID is required");
+    if (!code || !providerId) {
+      throw new DomainError("Provider code and id are required");
     }
 
-    const providerInstance = factory(providerId);
+    const providerInstance = factory();
     await providerInstance.initialize(providerId);
-    this.providers.set(providerId, providerInstance);
+    this.providers.set(code, providerInstance);
+  }
+
+  /** Drop a provider from the live map, so a disconnect takes effect immediately. */
+  removeProvider(code: string): void {
+    this.providers.delete(code);
   }
 
   // ============================================================================
@@ -191,20 +201,22 @@ export class ShippingOrchestratorService {
   // ============================================================================
 
   /**
-   * Handle webhook from provider
+   * Handle webhook from provider. Takes the provider's `code` — the key this map
+   * is built with; passing a record id here matched nothing and turned every
+   * carrier webhook into a "provider not found".
    */
   async handleWebhook(
-    providerId: string,
+    providerCode: string,
     payload: any
   ): Promise<{
     orderId?: string;
     trackingNumber: string;
     status: any;
   }> {
-    const provider = this.providers.get(providerId);
+    const provider = this.providers.get(providerCode);
 
     if (!provider) {
-      throw new NotFoundError(`Provider ${providerId} not found`);
+      throw new NotFoundError(`Provider ${providerCode} not found`);
     }
 
     return await provider.handleWebhook(payload);

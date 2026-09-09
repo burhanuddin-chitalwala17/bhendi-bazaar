@@ -3,6 +3,7 @@ import type { Product } from "@/domain/product";
 import { Card } from "@/components/ui/card";
 import { PriceDisplay } from "./PriceDisplay";
 import { StockStatus } from "./StockStatus";
+import { WishlistButton } from "@/components/wishlist/wishlist-button";
 
 // The phone tile is 3-up at ~105px wide (ADR-0016), so everything here is sized for
 // that first and grows at `sm`. Anything that cannot survive 105px — the tracked-out
@@ -35,6 +36,15 @@ export function ProductCard(product: Product) {
               {discountPercent}% OFF
             </span>
           )}
+
+          {/* Opposite the discount chip. Above the out-of-stock scrim in the DOM so it
+              stays tappable — a sold-out product is still worth saving for later. */}
+          <div className="absolute right-1 top-1 z-10 sm:right-2 sm:top-2">
+            <WishlistButton
+              productId={product.id}
+              className="bg-card/80 shadow-raised backdrop-blur-sm"
+            />
+          </div>
 
           {product.stock === 0 && (
             <div className="absolute inset-0 flex items-center justify-center bg-scrim/60">

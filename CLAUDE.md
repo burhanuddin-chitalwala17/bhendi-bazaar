@@ -1,5 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
+
 ## Purpose
 Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-commerce store.
 **Claude Code reads this at the start of every session.** Keep it under 200 lines.
