@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-95] 2026-09-09 — Wishlist demand shows up in the product tables
+
+Both product tables — the org portal's own catalogue and the platform's cross-vendor list — now carry a **Wishlisted** column: how many users have saved that product. Zero reads as an em dash, so the products people actually want stand out from the ones nobody has hearted; a saved product shows a filled heart and the count, with the exact wording ("Saved by 3 users") on hover.
+
+**One column, both tables, because they were already one component.** `ProductsTable` is shared by `src/app/(org)/org/[orgId]/products/page.tsx` and `src/app/(admin)/admin/products/page.tsx`, and org scoping is a filter on the path's `orgId` that the repository already applies — so an org sees demand for its own catalogue and only its own, with no second query path to keep in step.
+
+**The count is read through the wishlist domain, not joined in catalog.** `wishlistRepository.countByProductIds` groups in SQL on the existing `@@index([productId])`; `wishlistService.countSavesByProduct` is the public surface, and `products.dal.ts` merges it into the rows the same way it already merges markdown prices out of `promotions`. The tempting shortcut — `_count: { select: { wishlistItems: true } }` on the catalog `select` — would have given `WishlistItem` a second reader and put a wishlist projection inside the product repository, which is the drift ADR-0003 exists to stop. Composition happens at the DAL, where cross-domain composition already happens (ADR-0012).
+
+**One extra query per page render, bounded by the page size**, not the catalogue: only the ten ids actually being rendered are counted, and an empty page skips the database entirely. A product nobody saved has no row, so absence defaults to zero at the mapper rather than being stored.
+
+**Deliberately not sortable.** The counts are merged after the page has been selected, so sorting on the column would reorder ten already-fetched rows and present it as a ranking. Sorting by demand needs the count in the SQL that paginates, which is a different change.
+
+No migration, no schema change, no new route — the rows already existed and the lists are server-rendered. No buyer identity leaves the wishlist domain: the count is the whole of it, so a selling org learns that fourteen people want a product without learning who they are. Six new tests in `tests/unit/wishlist-demand-column.test.ts` pin the grouping, the zero default, the empty-page skip, and the boundary itself — that `admin.product.repository.ts` never mentions the wishlist and the DAL reaches the service rather than the repository. `tsc` exits 0.
+
 ## [PR-94] 2026-09-08 — Only the heart removes a saved product
 
 **Corrects [PR-93] below, which has not shipped.** A confirmed payment cleared any wish the buyer had opened from `/wishlist` and carted. That is one removal the buyer never asked for, and the provenance rule made it unpredictable rather than safe: the same product, the same order, kept or forgotten depending on which page it was opened from three steps earlier. A saved product now leaves the wishlist when — and only when — the buyer un-hearts it, on the tile, the product page or `/wishlist`.

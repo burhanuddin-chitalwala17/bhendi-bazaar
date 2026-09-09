@@ -118,6 +118,33 @@ export class WishlistRepository {
   }
 
   /**
+   * How many users have saved each of these products.
+   *
+   * Serves the org and admin product tables, which want demand beside stock. Scoped to
+   * the ids on the page rather than the whole catalogue, and grouped in SQL on
+   * `@@index([productId])` — the alternative, a `_count` on the product `select`, would
+   * reference `WishlistItem` from the catalog repository and give this table a second
+   * reader (ADR-0003).
+   *
+   * A product nobody saved is absent from the result, not zero: the caller defaults it,
+   * because "no row" and "zero saves" are the same fact and only one of them is stored.
+   */
+  async countByProductIds(productIds: string[]): Promise<Map<string, number>> {
+    if (productIds.length === 0) return new Map();
+    try {
+      const rows = await prisma.wishlistItem.groupBy({
+        by: ["productId"],
+        where: { productId: { in: productIds } },
+        _count: { _all: true },
+      });
+      return new Map(rows.map((row) => [row.productId, row._count._all]));
+    } catch (error) {
+      console.error("[WishlistRepository] countByProductIds failed:", error);
+      throw new Error("Failed to count wishlist saves", { cause: error });
+    }
+  }
+
+  /**
    * Save a product. Idempotent: hearting something already saved changes nothing and
    * is not an error, because from the buyer's side the wish is already recorded.
    */
