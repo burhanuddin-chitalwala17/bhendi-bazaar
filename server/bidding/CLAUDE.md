@@ -13,7 +13,7 @@ Bidding owns timed auctions on a single item: opening an event, taking bids, sus
 
 ## The two ideas everything here rests on
 
-**1. Stored status records only what the clock cannot decide.** `BiddingStatus` is `OPEN | CANCELLED | SOLD | UNSOLD`. Whether an `OPEN` event is scheduled, running or finished comes from `startAt`/`endAt` against a clock passed in — every time it is read, by `bidding-window.ts`. That is why this feature has no cron and needs none: a read cannot be stale because nothing was cached, and no correctness rests on a job having run.
+**1. Stored status records only what the clock cannot decide.** `BiddingStatus` is `OPEN | CANCELLED | SOLD | UNSOLD`. Whether an `OPEN` event is scheduled, running or finished comes from `startAt`/`endAt` against a clock passed in — every time it is read, by `bidding-window.ts`. That is why this feature has no cron and needs none: a read cannot be stale because nothing was cached, and no correctness rests on a job having run. The decision and the schedulers it rejects are recorded in [ADR-0023](../../docs/adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md).
 
 **Never branch on `status` alone.** `status === "OPEN"` does not mean "biddable". Go through `biddingPhase`, `isAcceptingBids` or `suspendsPurchase`.
 

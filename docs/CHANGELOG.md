@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-99] 2026-09-09 — The bidding docs say why there is no cron, and TESTING.md stops claiming the database is untestable
+
+Documentation only; no behaviour changed.
+
+**[ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md)** records the decision Phase 8 was built on and that only its spec and domain CLAUDE.md held: `BiddingStatus` stores what a person chooses, never what the clock decides, and both the phase and the purchase suspension are derived on every read. It exists because the rejected options are the interesting part — a scheduled flip (the textbook answer, impossible on a Hobby plan that offers daily cron and wrong regardless, since it makes every consumer depend on a job having run), a lazy flip on read (turns the most-read public route into a write path and still races), and a denormalised flag on `Product` (two sources of truth for one fact, plus a cleanup step for the expire-with-no-bids case that decision 4 avoids). Its honest cost is stated: every read path must ask, the compiler cannot check that it did, and an ended-but-unsettled event still blocks a new one on that product. The root [CLAUDE.md](../CLAUDE.md) conventions line and [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) now point at it.
+
+**[TESTING.md](TESTING.md)** carried two statements that were no longer true. It said `vitest.config.ts` lacks the `@server` alias `tsconfig.json` defines — it has had it. And its "Database behaviour is currently untestable" section was written before any of the four files in `tests/integration/` existed; all four now run against a real Postgres behind an allowlist guard (loopback host *and* the database named `bhendi_bazaar_dev`, the shape Invariant 7 requires of the seed). Rewritten to say what is actually true, including the part that matters more than the good news: **they are green by absence in CI**, so a passing pipeline is not evidence that any constraint holds. The remaining gap is a disposable Postgres in the pipeline, not the tests. Coverage targets added for bidding's phase arithmetic and its concurrent writes, and `critical/` is now recorded as empty with its Invariant tests living in `unit/`, rather than the layout implying otherwise.
+
+Also corrected: [BACKLOG.md](BACKLOG.md) (two rows) and [CONTRACTS.md](CONTRACTS.md) credited the bidding feature to PR-89, which is the email-shell PR from 2026-09-03. Bidding is PR-97.
+
+**No edit path for a bidding event remains deliberate but under-documented.** The feature ships create, cancel, bid, record-sale and record-unsold, and no update at any layer. [spec R10](specs/bidding/spec.md) justifies immutability *after the first bid* — a bidder commits money against a stated deadline and cap — but nothing states the position on an event with no bids yet, where cancel-and-recreate is currently the only route and costs a new link. Left as-is rather than invented here; R10 already names the guard (`bidCount === 0`) if it is ever wanted.
+
 ## [PR-98] 2026-09-09 — Guest checkout: the required-email check no longer loops forever
 
 `GuestAddress` made email mandatory by calling `setError("email", …)` from an effect that also listed `errors.email` as a dependency. `setError` writes a fresh error object, so the effect's own write re-triggered it, forever — a render loop with no exit. In the browser that pins the tab on the guest checkout's first paint; in `tests/unit/guest-address.test.tsx` it blocked the event loop synchronously, so vitest printed nothing at all and `--testTimeout` never fired, which is the shape of the bug that made this hard to see.
