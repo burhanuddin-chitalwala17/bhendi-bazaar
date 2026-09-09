@@ -19,6 +19,15 @@ export class WishlistService {
   }
 
   /**
+   * Saves per product, for the org and admin product tables — the wishlist domain's
+   * public answer to "how many people want this", so catalog never reads these rows
+   * itself.
+   */
+  async countSavesByProduct(productIds: string[]): Promise<Map<string, number>> {
+    return await wishlistRepository.countByProductIds(productIds);
+  }
+
+  /**
    * Save a product.
    *
    * The existence check is for the message, not the guarantee — `WishlistItem`'s
