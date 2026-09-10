@@ -10,6 +10,31 @@
 
 ## Entries
 
+## [PR-101] 2026-09-10 — `develop` deploys to a stable preview domain, so a change can be tested before it reaches production
+
+Until now `develop` had never been tested — it deployed nowhere, and the deployment it *claimed* as its origin was production's. Preview's `NEXTAUTH_URL` was `https://bhendi-bazaar.vercel.app`, which is the project's default production alias, so every link a preview generated pointed at the live store. A per-deployment URL cannot be registered as an OAuth redirect URI or a webhook endpoint either, which is the mechanical reason a preview was never testable.
+
+The deploy job now aliases each `develop` deployment to `dev.bhendi-bazaar.com` (`.github/workflows/ci.yml`). `main` gets no alias step — `vercel deploy --prod` assigns the production domains itself.
+
+An audit of the two environments' variables, since a public preview changes what sharing one costs:
+
+- **Preview's `DATABASE_URL` and `MIGRATE_DATABASE_URL` were empty strings**, which is why `develop` had no working environment to deploy into. Both are now set to the preview database. Note that production's copies are `Secret`-type, so `vercel env pull` returns `[SENSITIVE]` rather than the value — the two environments' database URLs cannot be compared from the CLI at all, and neither can `ENCRYPTION_KEY`. That they differ has to be confirmed in the Prisma console, not inferred from a pull.
+- **Shared with production, and now being split:** `NEXTAUTH_SECRET` (a session minted on a public preview was valid on production), `BLOB_READ_WRITE_TOKEN` (test uploads landed in the production store, against the allowance ADR-0017 exists to protect), `RESEND_API_KEY`/`EMAIL_FROM`, and the four `KV_*`/`REDIS_URL` values (preview traffic could throttle real buyers through one limiter).
+- **Absent from Preview entirely:** all three `RAZORPAY_*` keys, so checkout could not be exercised there at all, and `BLOCK_CRAWLERS`, so a public preview would be indexable.
+- **`NODE_ENV` was overridden to `"Non-prod"` in Preview** — not a value Node recognises, so preview builds ran React in development mode. Removed.
+
+**Correcting [PR-88](#pr-88):** the deploy job no longer builds on the GitHub runner. `vercel pull` cannot read Sensitive (`Secret`-type) variables back — it substitutes the literal `[SENSITIVE]` — and `DATABASE_URL` and `MIGRATE_DATABASE_URL` are Sensitive in both environments. A `vercel build` on the runner would therefore have run `prisma migrate deploy` against a placeholder connection string and failed, on `main` as well as `develop`. The job now runs plain `vercel deploy`, which uploads the source and builds on Vercel where those values exist — which is what the Git integration always did. The prebuilt route existed only to spend GitHub's minutes instead of Vercel's; that is not worth a pipeline that cannot deploy.
+
+Found while auditing and *not* fixed here, each wanting its own change: `CRON_SECRET` and `NEXT_PUBLIC_RAZORPAY_KEY_ID` are absent from **both** environments though `OPERATIONS.md` lists them required; and Vercel's Attack Challenge Mode is enabled project-wide, so every request that cannot run JavaScript is answered with a `429` "Security Checkpoint" (`x-vercel-mitigated: challenge`) — including `/api/webhooks/razorpay`, `/api/webhooks/shipping/shiprocket` and `/api/cron/reconcile-payments`. A browser solves the challenge and passes; a payment gateway does not. While it is on, the verified-signal handler of [Invariant 2](../CLAUDE.md) cannot be reached from outside.
+
+## [PR-100] 2026-09-10 — The CI build job gets a real database, because `next build` prerenders two routes that need one
+
+The PR build job failed on `Export encountered an error on /robots.txt`. The cause was the job's own environment, not the code: it ran `next build` against `postgresql://test:test@localhost:5432/test`, which nothing is listening on, and with no `NEXT_PUBLIC_APP_URL`. `src/app/robots.ts` and `src/app/sitemap.ts` are the only two routes prerendered at build — the build's own route table marks them `○` and everything else `ƒ` — and between them they call `appUrl()` and read the catalogue. So a compile check was failing on code that is correct and works in production, where Vercel supplies both.
+
+The job now runs a `postgres:16` service container, applies migrations to it, and passes placeholder `NEXT_PUBLIC_APP_URL` / `NEXTAUTH_URL` / `NEXTAUTH_SECRET`. Placeholders rather than real values on purpose: the artifact is discarded (deploys build via `vercel build` against pulled environment), and a `NEXT_PUBLIC_*` value is inlined into the client bundle, so a real secret there would be published. Giving it a real database rather than stubbing the two routes keeps the job an actual rehearsal of the deploy build — the alternative, setting `BLOCK_CRAWLERS=1` to make both routes short-circuit, would have made the check pass by not performing it.
+
+Noted while reading the build output, neither addressed here: `next build` warns that the `middleware` file convention is deprecated in favour of `proxy`, and `baseline-browser-mapping` is over two months stale.
+
 ## [PR-99] 2026-09-09 — The bidding docs say why there is no cron, and TESTING.md stops claiming the database is untestable
 
 Documentation only; no behaviour changed.

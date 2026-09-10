@@ -54,8 +54,34 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
 
+    # `next build` prerenders robots.txt and the sitemap, which reach appUrl()
+    # and the catalogue — an unreachable connection string turns a compile check
+    # into a prerender crash on code that is fine in production. A throwaway
+    # Postgres makes this a real rehearsal of the deploy build.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bhendi_bazaar_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_ci"
+      # Placeholders. This artifact is discarded — deploys build with
+      # `vercel build` against the environment `vercel pull` fetched — so these
+      # only have to be present and well-formed. Never real credentials: a
+      # NEXT_PUBLIC_* value is inlined into the client bundle.
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXTAUTH_SECRET: "ci-build-placeholder-not-a-real-secret"
 
     steps:
       - name: Checkout code
@@ -69,6 +95,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Apply migrations to the CI database
+        run: npx prisma migrate deploy
 
       - name: Build application
         run: npm run build
@@ -110,25 +139,30 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      # Brings the target environment's variables down as .vercel/.env.*.local,
-      # which is where `vercel build` reads DATABASE_URL / MIGRATE_DATABASE_URL
-      # for the `prisma migrate deploy` in vercel.json's buildCommand.
-      - name: Pull Vercel environment
-        run: >
-          vercel pull --yes
-          --environment=${{ steps.target.outputs.environment }}
-          --git-branch=${{ github.ref_name }}
-          --token="$VERCEL_TOKEN"
-
-      - name: Build
-        run: vercel build ${{ steps.target.outputs.prod_flag }} --token="$VERCEL_TOKEN"
-
+      # Builds on Vercel, not here. The tempting alternative — `vercel pull` +
+      # `vercel build` + `deploy --prebuilt`, to spend GitHub's minutes instead
+      # of Vercel's — cannot work: DATABASE_URL and MIGRATE_DATABASE_URL are
+      # Sensitive variables, which are write-only. `vercel pull` substitutes
+      # "[SENSITIVE]" for them, so the `prisma migrate deploy` in vercel.json's
+      # buildCommand would run against a placeholder and fail. Building remotely
+      # is also what the Git integration always did, so nothing else shifts.
       - name: Deploy
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt ${{ steps.target.outputs.prod_flag }} \
-            --token="$VERCEL_TOKEN")
+          url=$(vercel deploy ${{ steps.target.outputs.prod_flag }} \
+            --yes --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # A preview is only testable if its URL is stable: OAuth redirect URIs and
+      # webhook endpoints have to be registered in advance, and a per-deployment
+      # URL never can be. `main` needs no alias — `--prod` assigns the production
+      # domains itself.
+      - name: Point the preview domain at this deployment
+        if: github.ref_name == 'develop'
+        run: >
+          vercel alias set "${{ steps.deploy.outputs.url }}"
+          dev.bhendi-bazaar.com
+          --token="$VERCEL_TOKEN"
 
       - name: Summary
         run: |
@@ -136,5 +170,8 @@ jobs:
             echo "### Deployed to ${{ steps.target.outputs.environment }}"
             echo ""
             echo "- Branch: \`${{ github.ref_name }}\`"
-            echo "- URL: ${{ steps.deploy.outputs.url }}"
+            echo "- Deployment: ${{ steps.deploy.outputs.url }}"
+            if [ "${{ github.ref_name }}" = "develop" ]; then
+              echo "- Stable preview: https://dev.bhendi-bazaar.com"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
