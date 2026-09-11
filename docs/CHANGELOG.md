@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-102] 2026-09-11 — Phone numbers from any country, stored as one spelling [CONTRACT] [MIGRATION]
+
+Every phone field — account mobile, saved and guest delivery addresses, organisation phone, pickup contact, a guest bidder's phone — now takes a number from any country, with India preselected. Spec and TRD: [international-phone](specs/international-phone/).
+
+**The rule had copies, and they disagreed.** `common.schemas.ts` required a 6–9 leading digit; `address.schema.ts`, the guest checkout schema and `order.service.ts` accepted any ten digits; `profile.service.ts` carried its own `\d{10}`; `shipping/utils/validators.ts` had an unused fifth. There is now `server/shared/phone.ts`, and every check calls it.
+
+**The same number could hold two accounts.** Seeded users stored `+91…` while signup stored bare digits, and `User.mobile`'s unique index compares strings. Phones are now E.164, normalised in the schema. The `phone_numbers_e164` migration prefixes `+91` to bare 10-digit values in `User`, `UserAddress`, `OrgAddress`, `Org` and `Bid`; it skips a user whose `+91` spelling already belongs to another account rather than failing the deploy, and raises a notice with the count of values it left. `Order.address` is a snapshot and is not rewritten — `formatPhone` displays both spellings alike, as do the admin and org order pages, the users and orgs tables, the bid ladder and the confirmation email.
+
+**Validation uses `libphonenumber-js/max`**, 39 KB gzip. `min` is half that and validates most countries by length alone: it accepts `0123456789` as Indian, which the old rule refused.
+
+`PhoneInput` (`src/components/ui/phone-input.tsx`) is a native `<select>` under an `IN +91` label, so a phone opens its own picker, beside a 16px `tel` field. A pasted or autofilled `+44 …` switches the country; a typed trunk `0` stays on screen while E.164 is submitted. `FormPhoneInput` reads its error from field state rather than an `error` prop, so it cannot be rendered without one.
+
+`ProfileCard`'s account form was hand-rolled `useState`; touching it converted it to `useServerForm` (ADR-0013 decision 7), and `ProfileContext` now reads failures through `readApiError`, so a server-side phone error lands on the field. **`BidPanel` was not converted:** its phone field is now `PhoneInput`, but the panel's several amount buttons and its own 409 handling make the conversion a rewrite of the bid submit flow, so it is recorded on the BACKLOG error-envelope entry instead.
+
+`[CONTRACT]`: phones cross the wire as E.164; inbound accepts any valid spelling, and bare digits still parse as Indian — [CONTRACTS.md](CONTRACTS.md) § Phone numbers. `[MIGRATION]`: data only, applied by `prisma migrate deploy` on deploy.
+
+`tsc` clean. 627 tests pass, 26 of them new (`phone.test.ts`, `phone-input.test.tsx`); `guest-address.test.tsx` passes unchanged with the mobile field now a `PhoneInput`. Four fail on the Windows machine this was built on, all in files untouched here — `design-tokens`, `rate-limit-detached` and `admin-audit-trail` compare backslash paths against forward-slash allowlists. Lint reports nothing in the changed lines; the admin order and user pages keep their pre-existing `any`s.
+
 ## [PR-101] 2026-09-10 — `develop` deploys to a stable preview domain, so a change can be tested before it reaches production
 
 Until now `develop` had never been tested — it deployed nowhere, and the deployment it *claimed* as its origin was production's. Preview's `NEXTAUTH_URL` was `https://bhendi-bazaar.vercel.app`, which is the project's default production alias, so every link a preview generated pointed at the live store. A per-deployment URL cannot be registered as an OAuth redirect URI or a webhook endpoint either, which is the mechanical reason a preview was never testable.

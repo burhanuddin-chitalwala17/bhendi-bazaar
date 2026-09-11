@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
   FieldValues,
   Path,
@@ -149,5 +150,56 @@ export function FormController<T extends FieldValues>({
         render={(props) => render(props)} // Pass the entire props object
       />
     </FormField>
+  );
+}
+
+interface FormPhoneInputProps<T extends FieldValues> {
+  name: Path<T>;
+  control: Control<T>;
+  label?: string;
+  required?: boolean;
+  hint?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}
+
+/** Reads its error from field state rather than a prop, so it cannot render without it. */
+export function FormPhoneInput<T extends FieldValues>({
+  name,
+  control,
+  label,
+  required,
+  hint,
+  placeholder,
+  disabled,
+  className,
+}: FormPhoneInputProps<T>) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <FormField
+          label={label}
+          required={required}
+          hint={hint}
+          error={fieldState.error?.message}
+          className={className}
+          disabled={disabled}
+        >
+          <PhoneInput
+            value={typeof field.value === "string" ? field.value : ""}
+            onChange={field.onChange}
+            onBlur={field.onBlur}
+            name={field.name}
+            ref={field.ref}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-invalid={!!fieldState.error}
+          />
+        </FormField>
+      )}
+    />
   );
 }

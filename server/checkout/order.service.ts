@@ -17,6 +17,7 @@ import type {
 } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
+import { isValidPhone, PHONE_MESSAGE } from "@server/shared/phone";
 import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
 import { promotionService } from "@server/promotions/promotion.service";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
@@ -752,10 +753,8 @@ export class OrderService {
       throw new DomainError("Address is missing required fields");
     }
 
-    // Validate phone format
-    const phoneRegex = /^\d{10}$/;
-    if (!phoneRegex.test(mobile)) {
-      throw new DomainError("Phone number must be 10 digits");
+    if (!isValidPhone(mobile)) {
+      throw new DomainError(PHONE_MESSAGE);
     }
 
     // A logged-in buyer's confirmation email can fall back to their account email

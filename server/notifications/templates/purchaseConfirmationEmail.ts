@@ -1,4 +1,5 @@
 import { appUrl } from "@server/shared/app-url";
+import { formatPhone } from "@server/shared/phone";
 import { formatDate, formatPaise } from "../formatters";
 import {
   button,
@@ -246,7 +247,7 @@ function renderAddress(address: OrderEmailView["address"]): string {
                 ${esc(address.city)}, ${esc(address.state)} ${esc(address.pincode)}<br>
                 ${esc(address.country)}<br>
                 <br>
-                📱 ${esc(address.mobile)}
+                📱 ${esc(formatPhone(address.mobile))}
                 ${address.email ? `<br>✉️ ${esc(address.email)}` : ""}
               </div>
             </div>`;

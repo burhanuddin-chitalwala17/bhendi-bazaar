@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { nameSchema, emailSchema, phoneSchema, uuidSchema, postalCodeSchema } from './common.schemas';
+import { nameSchema, emailSchema, phoneSchema, optionalPhoneSchema, uuidSchema, postalCodeSchema } from './common.schemas';
 
 // Profile address schema (includes ID and default flag)
 const profileAddressSchema = z.object({
@@ -39,4 +39,13 @@ export const updateProfileSchema = z.object({
 );
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+/** The account-details card. Any field may be blank (the card sends only what was filled); a filled one meets the route's own rule. */
+export const profileInfoFormSchema = z.object({
+  name: z.literal('').or(nameSchema),
+  email: z.literal('').or(emailSchema),
+  mobile: optionalPhoneSchema,
+});
+
+export type ProfileInfoFormInput = z.infer<typeof profileInfoFormSchema>;
 

@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-09-09
+- **Verified:** 2026-09-11
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -92,6 +92,9 @@ The read side does not cross this boundary: the storefront hero is a server comp
 
 ### Addresses
 The address-book wire shape (`DeliveryAddress`) is flat and stable, but since PR-41 its `id` is the **UserAddress** relationship id (server-generated — clients no longer mint ids), `metadata` is gone (label and notes are top-level), and `fullName`, `mobile`, `state` are required. Storage is two tables: `Address` (postal fact, written only by `server/shared/address.repository.ts`) and `UserAddress` (the person's relationship). `Order.address` remains an embedded snapshot, deliberately.
+
+### Phone numbers
+Since PR-102 every phone on the wire — `DeliveryAddress.mobile`, `User.mobile`, `Org.phone`, `OrgLocation.contactPhone`, a guest bidder's `guestPhone`, and `Order.address.mobile` on new orders — is **E.164** (`+919876543210`). Inbound, any valid spelling of any country's number is accepted and normalised by `phoneSchema` / `optionalPhoneSchema`; a number without `+` is read as Indian, so a pre-PR-102 caller still works. Orders placed earlier keep a bare 10-digit snapshot, and readers display through `formatPhone` (`server/shared/phone.ts`), which treats both spellings alike. The rule lives in that module and nowhere else ([international-phone](specs/international-phone/trd.md)).
 
 ### Products
 `ProductFormInput` has **one declaration** since PR-45 — `server/catalog/admin.product.types.ts`, re-exported by `src/admin/products/types.ts`. It is the shape that already drifted once: `weight` was required by the client copy, absent from the server one, therefore collected and never written ([PR-22](CHANGELOG.md)). The same PR collapsed the ten copies of the org summary block (two domain files, two server types, six inline prop types — [consumer-inventory.md](specs/multi-vendor-marketplace/consumer-inventory.md) §1) into `OrgSummary` (`server/catalog/org.types.ts`), which is where PR-49 removed the `default*` fields in one edit when [stock-locations-and-allocation](specs/multi-vendor-marketplace/stock-locations-and-allocation/) replaced them with pickup locations — `OrgSummary` is now `{ id, name, code }`, and `Product.shippingFromPincode` on the wire is the indicative origin (largest active holding), with allocation deciding the real one at checkout.

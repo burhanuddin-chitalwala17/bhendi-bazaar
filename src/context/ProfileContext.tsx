@@ -9,6 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { useAuth } from "@/lib/auth";
+import { readApiError } from "@/lib/api-error";
 import type {
   DeliveryAddress,
   ProfileData,
@@ -153,8 +154,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           if (response.status === 401) {
             throw new Error("Unauthorized - please sign in");
           }
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to update profile");
+          throw await readApiError(response);
         }
 
         const updated = await response.json();
