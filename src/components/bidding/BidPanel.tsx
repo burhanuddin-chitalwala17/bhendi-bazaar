@@ -15,7 +15,8 @@ import { useCallback, useState } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FormInput } from "@/components/shared/forms/FormField";
+import { FormField, FormInput } from "@/components/shared/forms/FormField";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BidCountdown } from "@/components/bidding/BidCountdown";
@@ -191,17 +192,13 @@ export function BidPanel({
             error={fieldErrors.guestName}
             autoComplete="name"
           />
-          <FormInput
-            label="Phone"
-            required
-            type="tel"
-            inputMode="numeric"
-            maxLength={10}
-            value={guest.phone}
-            onChange={(event) => setGuest({ ...guest, phone: event.target.value })}
-            error={fieldErrors.guestPhone}
-            autoComplete="tel"
-          />
+          <FormField label="Phone" required error={fieldErrors.guestPhone}>
+            <PhoneInput
+              value={guest.phone}
+              onChange={(phone) => setGuest({ ...guest, phone })}
+              aria-invalid={!!fieldErrors.guestPhone}
+            />
+          </FormField>
           <div>
             <Label htmlFor="bid-email" className="text-sm">
               Email

@@ -67,32 +67,4 @@ export function estimateDistanceCategory(
   return "national";
 }
 
-/**
- * Validate phone number format (Indian)
- */
-export function isValidPhone(phone: string): boolean {
-  // Remove spaces, dashes, parentheses
-  const cleaned = phone.replace(/[\s\-\(\)]/g, "");
-  
-  // Check for 10-digit Indian mobile number starting with 6-9
-  return /^[6-9]\d{9}$/.test(cleaned);
-}
-
-/**
- * Normalize phone number
- */
-export function normalizePhone(phone: string): string {
-  return phone.replace(/[\s\-\(\)]/g, "");
-}
-
-/**
- * Format phone for display
- */
-export function formatPhone(phone: string): string {
-  const cleaned = normalizePhone(phone);
-  if (cleaned.length === 10) {
-    return `${cleaned.substring(0, 5)} ${cleaned.substring(5)}`;
-  }
-  return phone;
-}
 

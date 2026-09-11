@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { postalCodeSchema } from "./common.schemas";
+import { phoneSchema, postalCodeSchema } from "./common.schemas";
 
 /**
  * Validation schema for adding a new address
@@ -11,9 +11,7 @@ export const addAddressSchema = z.object({
     .string()
     .min(2, "Full name must be at least 2 characters")
     .max(100, "Full name must be less than 100 characters"),
-  mobile: z
-    .string()
-    .regex(/^\d{10}$/, "Mobile number must be exactly 10 digits"),
+  mobile: phoneSchema,
   addressLine1: z
     .string()
     .min(5, "Address line 1 must be at least 5 characters")

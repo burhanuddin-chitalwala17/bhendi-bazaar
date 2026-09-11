@@ -12,6 +12,7 @@ import { ShipmentTrackingForm } from "@/components/admin/ShipmentTrackingForm";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { ErrorState } from "@/components/shared/states/ErrorState";
+import { formatPhone } from "@server/shared/phone";
 import { 
   Package, 
   MapPin, 
@@ -128,7 +129,7 @@ export default function AdminOrderDetailsPage({
               {address?.mobile && (
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-muted-foreground/70" />
-                  <p>{address.mobile}</p>
+                  <p>{formatPhone(address.mobile)}</p>
                 </div>
               )}
               {address?.email && (

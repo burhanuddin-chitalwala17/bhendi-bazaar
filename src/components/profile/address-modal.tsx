@@ -7,6 +7,7 @@ import { FormActions } from "../shared/button-groups/FormActions";
 import { AddressFields } from "../shared/forms/AddressFields";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { addAddressSchema } from "@/lib/validation/schemas/address.schema";
+import { formatPhone } from "@server/shared/phone";
 
 interface AddressModalProps {
   mode: "view" | "edit" | "add";
@@ -102,7 +103,7 @@ function AddressViewMode({
         </div>
       </div>
       <p className="font-semibold">{address.fullName}</p>
-      <p className="text-xs text-muted-foreground">{address.mobile}</p>
+      <p className="text-xs text-muted-foreground">{formatPhone(address.mobile)}</p>
       <p className="text-xs text-muted-foreground">{address.email}</p>
 
       <div className="space-y-0.5 text-xs text-muted-foreground">
@@ -162,6 +163,7 @@ function AddressForm({
 }: AddressFormProps) {
   const {
     register,
+    control,
     onSubmit: handleFormSubmit,
     formError,
     formState: { errors },
@@ -186,6 +188,7 @@ function AddressForm({
       )}
       <AddressFields
         register={register}
+        control={control}
         errors={errors}
         includeEmail={true}
         includeNotes={false}

@@ -2,6 +2,7 @@ import { DataTable, Column } from "@/admin/data-table";
 import { Edit, Trash2, CheckCircle, XCircle, MapPin, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { OrgWithStats } from "@/domain/org";
+import { formatPhone } from "@server/shared/phone";
 
 interface OrgsTableProps {
   orgs: OrgWithStats[];
@@ -75,7 +76,7 @@ export function OrgsTable({
       render: (org) => (
         <div className="text-sm space-y-1">
           {org.phone && (
-            <p className="font-medium text-foreground">{org.phone}</p>
+            <p className="font-medium text-foreground">{formatPhone(org.phone)}</p>
           )}
         </div>
       ),

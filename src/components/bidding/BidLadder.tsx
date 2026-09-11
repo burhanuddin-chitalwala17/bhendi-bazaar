@@ -33,6 +33,7 @@ import {
 import { readApiError } from "@/lib/api-error";
 import { formatCurrency, paiseToRupees } from "@/lib/format";
 import type { BidLadderEntry } from "@server/bidding/bidding.types";
+import { formatPhone } from "@server/shared/phone";
 
 interface StockLocation {
   orgAddressId: string;
@@ -81,7 +82,7 @@ export function BidLadder({
                 </p>
                 <p className="mt-0.5 truncate text-2xs text-muted-foreground">
                   {bid.bidderName}
-                  {bid.bidderPhone && ` · ${bid.bidderPhone}`}
+                  {bid.bidderPhone && ` · ${formatPhone(bid.bidderPhone)}`}
                   {bid.bidderEmail && ` · ${bid.bidderEmail}`}
                   {!bid.bidderEmail && " · no email — cannot be emailed"}
                 </p>
