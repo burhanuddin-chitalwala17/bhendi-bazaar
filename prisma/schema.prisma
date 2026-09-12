@@ -236,7 +236,8 @@ model User {
   email           String?      @unique
   emailVerified   DateTime? // Keep this for NextAuth compatibility
   isEmailVerified Boolean      @default(false) // Our custom field
-  mobile          String?      @unique
+  /// Contact data, not an identity key: one number may back any number of accounts (ADR-0024).
+  mobile          String?
   passwordHash    String?
   platformRole    PlatformRole @default(USER)
   isBlocked       Boolean      @default(false)

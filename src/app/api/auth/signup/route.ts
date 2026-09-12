@@ -47,15 +47,15 @@ export async function POST(request: NextRequest) {
   const { email, password, name, mobile } = validation.data;
 
   try {
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ email }, mobile ? { mobile } : undefined].filter(Boolean) as any,
-      },
+    // Email alone identifies an account. A phone may back any number of them (ADR-0024).
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User with this email or mobile already exists" },
+        { error: "User with this email already exists" },
         { status: 409 }
       );
     }

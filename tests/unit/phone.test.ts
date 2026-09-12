@@ -133,3 +133,33 @@ describe("the E.164 backfill", () => {
     expect(sql).toContain("RAISE NOTICE");
   });
 });
+
+describe("a phone is contact data, not an identity key (ADR-0024)", () => {
+  const schema = readFileSync("prisma/schema.prisma", "utf8");
+  const sql = readFileSync(
+    "prisma/migrations/20260912090000_phone_is_not_an_identity_key/migration.sql",
+    "utf8"
+  );
+
+  it("leaves User.mobile unconstrained while email stays the identity key", () => {
+    const user = /^model User \{$[\s\S]*?^\}$/m.exec(schema)?.[0] ?? "";
+    expect(user).toMatch(/^\s*mobile\s+String\?\s*$/m);
+    expect(user).toMatch(/^\s*email\s+String\?\s+@unique/m);
+  });
+
+  it("drops the unique index rather than relaxing it — nothing looks a mobile up exactly", () => {
+    expect(sql).toMatch(/DROP INDEX IF EXISTS "User_mobile_key"/);
+    expect(sql).not.toMatch(/CREATE\s+(UNIQUE\s+)?INDEX.*"mobile"/);
+  });
+
+  it("finishes the backfill the old constraint blocked, with no collision guard left", () => {
+    expect(sql).toMatch(
+      /UPDATE "User" SET "mobile" = '\+91' \|\| "mobile"\s+WHERE "mobile" ~ '\^\[0-9\]\{10\}\$'/
+    );
+    expect(sql).not.toMatch(/NOT EXISTS/);
+  });
+
+  it("reports what it left, loudly", () => {
+    expect(sql).toContain("RAISE NOTICE");
+  });
+});

@@ -10,6 +10,28 @@
 
 ## Entries
 
+## [PR-103] 2026-09-12 — One phone number can back any number of accounts [MIGRATION]
+
+A phone number is contact data, not an identity key. Signing up or saving a profile with a number another account already uses now succeeds. Spec and TRD: [shared-phone-numbers](specs/shared-phone-numbers/); decision and rejected alternatives: [ADR-0024](adr/0024-phone-is-contact-data-not-an-identity-key.md).
+
+**The constraint claimed something untrue about the world.** `User.mobile` had been `@unique` since the first auth migration, which made a phone a second identity key without anyone deciding it should be one. But a number belongs to a device and a household: the only phone in a family, the counter of a shop where several people sell, a buyer ordering for a relative who has none. Each is a separate account with its own cart and orders, and the second of them could not be created — the refusal named a number the person genuinely holds, offered no way to prove it, and pointed at an account they may never have heard of. This reverses R4 of [international-phone](specs/international-phone/spec.md), whose *one spelling* half stands and whose *one account* half does not.
+
+**Four places enforced it; all four go.** The unique index `User_mobile_key`; the `OR` arm in the signup handler; the `ConflictError` in `profile.service.ts`; and a duplicate of that check in `profile.repository.ts` that re-read the user to reproduce a decision the service had already made. Validity is untouched — an unparseable number is still refused through `server/shared/phone.ts`. Signup's check narrows to a typed `findUnique` on email, which removes an `as any` it needed to hold an optional clause on an auth path.
+
+**Sign-in never depended on it.** `src/lib/auth-config.ts` resolves a credential login by email and has never consulted `mobile`. Email stays `@unique` and remains what identifies an account.
+
+**The index is dropped, not relaxed to a plain one.** With the three checks gone nothing looks a mobile up exactly, and the only remaining reader — the admin user search — is a `contains` scan a btree cannot serve.
+
+**It also unblocks a backfill that was left half-done.** `phone_numbers_e164` (PR-102) skipped any user whose `+91` spelling was already taken, because this index would have refused the write, leaving those rows as bare digits outside the E.164 every reader assumes. The guard existed only for the constraint, so the new migration re-runs that `UPDATE` without it, after the `DROP`, and raises a notice with the count still outside E.164 rather than failing the deploy.
+
+`[MIGRATION]`: `20260912090000_phone_is_not_an_identity_key` — one `DROP INDEX`, one `UPDATE` on `User.mobile`, one notice. No other table is touched; `UserAddress.phone`, `OrgAddress.contactPhone`, `Org.phone` and `Bid.guestPhone` were never unique. Applied by `prisma migrate deploy` on deploy.
+
+**Not a `[CONTRACT]` change.** No DTO changes shape and phones still cross the wire as E.164; [CONTRACTS.md](CONTRACTS.md) § Phone numbers never claimed exclusivity. The only wire difference is a 409 that stops happening, and the message on the one that remains, which now names email alone.
+
+**What this closes off, deliberately:** OTP sign-in, recovery by phone and dedupe-by-number all assumed one number names one account. Each now needs a way to say *which* account before it can be built, recorded on the [BACKLOG](BACKLOG.md) watch list and in ADR-0024 decision 5. Phone is also no longer any signal against throwaway accounts — it was a weak one, since `mobile` is optional, but it is now none.
+
+`tsc --noEmit` clean. 631 tests pass, four of them new in `phone.test.ts`, pinning the schema and the migration; its existing block over `phone_numbers_e164` is unchanged, that file being history. The same four fail on the Windows machine this was built on as in PR-102 — `design-tokens`, `rate-limit-detached` and `admin-audit-trail` compare backslash paths against forward-slash allowlists — all in files untouched here, and identical on HEAD. Lint reports nothing new; the two warnings in `profile.repository.ts` (`DeliveryAddress`, `addresses`) predate this change.
+
 ## [PR-102] 2026-09-11 — Phone numbers from any country, stored as one spelling [CONTRACT] [MIGRATION]
 
 Every phone field — account mobile, saved and guest delivery addresses, organisation phone, pickup contact, a guest bidder's phone — now takes a number from any country, with India preselected. Spec and TRD: [international-phone](specs/international-phone/).
