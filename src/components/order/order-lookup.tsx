@@ -38,7 +38,7 @@ export function OrderLookup() {
         <header className="space-y-1 text-center">
           <SectionHeader
             overline="Track order"
-            title="Enter your Bhendi Bazaar order ID to track your order"
+            title="Enter your Bhendi Bazaar order ID to View your order"
           />
         </header>
         <div className="space-y-2">

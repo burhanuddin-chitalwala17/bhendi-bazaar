@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
-import { FormInput } from "@/components/shared/forms/FormField";
+import { FormInput, FormPhoneInput } from "@/components/shared/forms/FormField";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { readApiError } from "@/lib/api-error";
@@ -22,6 +22,7 @@ import {
   type OrgLocationInput,
 } from "@/lib/validation/schemas/location.schema";
 import type { OrgLocation } from "@server/catalog/org.address.repository";
+import { formatPhone } from "@server/shared/phone";
 
 interface LocationsManagerProps {
   orgId: string;
@@ -101,7 +102,7 @@ export function LocationsManager({ orgId, locations }: LocationsManagerProps) {
                 <p className="text-muted-foreground">
                   {location.contactName ? (
                     <>
-                      {location.contactName} · {location.contactPhone}
+                      {location.contactName} · {formatPhone(location.contactPhone)}
                     </>
                   ) : (
                     <em>Pickup contact needed</em>
@@ -175,6 +176,7 @@ function LocationForm({
 }) {
   const {
     register,
+    control,
     onSubmit: handleFormSubmit,
     formError,
     formState: { errors, isSubmitting },
@@ -236,13 +238,12 @@ function LocationForm({
           {...register("contactName")}
           error={errors.contactName?.message}
         />
-        <FormInput
+        <FormPhoneInput
+          name="contactPhone"
+          control={control}
           label="Contact phone"
           required
-          type="tel"
-          placeholder="10-digit mobile"
-          {...register("contactPhone")}
-          error={errors.contactPhone?.message}
+          placeholder="Mobile number"
         />
       </div>
       <FormInput

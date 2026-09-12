@@ -125,7 +125,7 @@ export default function AdminAbandonedCartsPage() {
       <div className="flex items-center justify-between">
         <SectionHeader
           overline="Abandoned Carts"
-          title="View and track abandoned shopping carts"
+          title="View and manage abandoned shopping carts"
         />
         <div className="flex items-center gap-4">
           <Button

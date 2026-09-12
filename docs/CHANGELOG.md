@@ -10,6 +10,214 @@
 
 ## Entries
 
+## [PR-102] 2026-09-11 — Phone numbers from any country, stored as one spelling [CONTRACT] [MIGRATION]
+
+Every phone field — account mobile, saved and guest delivery addresses, organisation phone, pickup contact, a guest bidder's phone — now takes a number from any country, with India preselected. Spec and TRD: [international-phone](specs/international-phone/).
+
+**The rule had copies, and they disagreed.** `common.schemas.ts` required a 6–9 leading digit; `address.schema.ts`, the guest checkout schema and `order.service.ts` accepted any ten digits; `profile.service.ts` carried its own `\d{10}`; `shipping/utils/validators.ts` had an unused fifth. There is now `server/shared/phone.ts`, and every check calls it.
+
+**The same number could hold two accounts.** Seeded users stored `+91…` while signup stored bare digits, and `User.mobile`'s unique index compares strings. Phones are now E.164, normalised in the schema. The `phone_numbers_e164` migration prefixes `+91` to bare 10-digit values in `User`, `UserAddress`, `OrgAddress`, `Org` and `Bid`; it skips a user whose `+91` spelling already belongs to another account rather than failing the deploy, and raises a notice with the count of values it left. `Order.address` is a snapshot and is not rewritten — `formatPhone` displays both spellings alike, as do the admin and org order pages, the users and orgs tables, the bid ladder and the confirmation email.
+
+**Validation uses `libphonenumber-js/max`**, 39 KB gzip. `min` is half that and validates most countries by length alone: it accepts `0123456789` as Indian, which the old rule refused.
+
+`PhoneInput` (`src/components/ui/phone-input.tsx`) is a native `<select>` under an `IN +91` label, so a phone opens its own picker, beside a 16px `tel` field. A pasted or autofilled `+44 …` switches the country; a typed trunk `0` stays on screen while E.164 is submitted. `FormPhoneInput` reads its error from field state rather than an `error` prop, so it cannot be rendered without one.
+
+`ProfileCard`'s account form was hand-rolled `useState`; touching it converted it to `useServerForm` (ADR-0013 decision 7), and `ProfileContext` now reads failures through `readApiError`, so a server-side phone error lands on the field. **`BidPanel` was not converted:** its phone field is now `PhoneInput`, but the panel's several amount buttons and its own 409 handling make the conversion a rewrite of the bid submit flow, so it is recorded on the BACKLOG error-envelope entry instead.
+
+`[CONTRACT]`: phones cross the wire as E.164; inbound accepts any valid spelling, and bare digits still parse as Indian — [CONTRACTS.md](CONTRACTS.md) § Phone numbers. `[MIGRATION]`: data only, applied by `prisma migrate deploy` on deploy.
+
+`tsc` clean. 627 tests pass, 26 of them new (`phone.test.ts`, `phone-input.test.tsx`); `guest-address.test.tsx` passes unchanged with the mobile field now a `PhoneInput`. Four fail on the Windows machine this was built on, all in files untouched here — `design-tokens`, `rate-limit-detached` and `admin-audit-trail` compare backslash paths against forward-slash allowlists. Lint reports nothing in the changed lines; the admin order and user pages keep their pre-existing `any`s.
+
+## [PR-101] 2026-09-10 — `develop` deploys to a stable preview domain, so a change can be tested before it reaches production
+
+Until now `develop` had never been tested — it deployed nowhere, and the deployment it *claimed* as its origin was production's. Preview's `NEXTAUTH_URL` was `https://bhendi-bazaar.vercel.app`, which is the project's default production alias, so every link a preview generated pointed at the live store. A per-deployment URL cannot be registered as an OAuth redirect URI or a webhook endpoint either, which is the mechanical reason a preview was never testable.
+
+The deploy job now aliases each `develop` deployment to `dev.bhendi-bazaar.com` (`.github/workflows/ci.yml`). `main` gets no alias step — `vercel deploy --prod` assigns the production domains itself.
+
+An audit of the two environments' variables, since a public preview changes what sharing one costs:
+
+- **Preview's `DATABASE_URL` and `MIGRATE_DATABASE_URL` were empty strings**, which is why `develop` had no working environment to deploy into. Both are now set to the preview database. Note that production's copies are `Secret`-type, so `vercel env pull` returns `[SENSITIVE]` rather than the value — the two environments' database URLs cannot be compared from the CLI at all, and neither can `ENCRYPTION_KEY`. That they differ has to be confirmed in the Prisma console, not inferred from a pull.
+- **Shared with production, and now being split:** `NEXTAUTH_SECRET` (a session minted on a public preview was valid on production), `BLOB_READ_WRITE_TOKEN` (test uploads landed in the production store, against the allowance ADR-0017 exists to protect), `RESEND_API_KEY`/`EMAIL_FROM`, and the four `KV_*`/`REDIS_URL` values (preview traffic could throttle real buyers through one limiter).
+- **Absent from Preview entirely:** all three `RAZORPAY_*` keys, so checkout could not be exercised there at all, and `BLOCK_CRAWLERS`, so a public preview would be indexable.
+- **`NODE_ENV` was overridden to `"Non-prod"` in Preview** — not a value Node recognises, so preview builds ran React in development mode. Removed.
+
+**Correcting [PR-88](#pr-88):** the deploy job no longer builds on the GitHub runner. `vercel pull` cannot read Sensitive (`Secret`-type) variables back — it substitutes the literal `[SENSITIVE]` — and `DATABASE_URL` and `MIGRATE_DATABASE_URL` are Sensitive in both environments. A `vercel build` on the runner would therefore have run `prisma migrate deploy` against a placeholder connection string and failed, on `main` as well as `develop`. The job now runs plain `vercel deploy`, which uploads the source and builds on Vercel where those values exist — which is what the Git integration always did. The prebuilt route existed only to spend GitHub's minutes instead of Vercel's; that is not worth a pipeline that cannot deploy.
+
+Found while auditing and *not* fixed here, each wanting its own change: `CRON_SECRET` and `NEXT_PUBLIC_RAZORPAY_KEY_ID` are absent from **both** environments though `OPERATIONS.md` lists them required; and Vercel's Attack Challenge Mode is enabled project-wide, so every request that cannot run JavaScript is answered with a `429` "Security Checkpoint" (`x-vercel-mitigated: challenge`) — including `/api/webhooks/razorpay`, `/api/webhooks/shipping/shiprocket` and `/api/cron/reconcile-payments`. A browser solves the challenge and passes; a payment gateway does not. While it is on, the verified-signal handler of [Invariant 2](../CLAUDE.md) cannot be reached from outside.
+
+## [PR-100] 2026-09-10 — The CI build job gets a real database, because `next build` prerenders two routes that need one
+
+The PR build job failed on `Export encountered an error on /robots.txt`. The cause was the job's own environment, not the code: it ran `next build` against `postgresql://test:test@localhost:5432/test`, which nothing is listening on, and with no `NEXT_PUBLIC_APP_URL`. `src/app/robots.ts` and `src/app/sitemap.ts` are the only two routes prerendered at build — the build's own route table marks them `○` and everything else `ƒ` — and between them they call `appUrl()` and read the catalogue. So a compile check was failing on code that is correct and works in production, where Vercel supplies both.
+
+The job now runs a `postgres:16` service container, applies migrations to it, and passes placeholder `NEXT_PUBLIC_APP_URL` / `NEXTAUTH_URL` / `NEXTAUTH_SECRET`. Placeholders rather than real values on purpose: the artifact is discarded (deploys build via `vercel build` against pulled environment), and a `NEXT_PUBLIC_*` value is inlined into the client bundle, so a real secret there would be published. Giving it a real database rather than stubbing the two routes keeps the job an actual rehearsal of the deploy build — the alternative, setting `BLOCK_CRAWLERS=1` to make both routes short-circuit, would have made the check pass by not performing it.
+
+Noted while reading the build output, neither addressed here: `next build` warns that the `middleware` file convention is deprecated in favour of `proxy`, and `baseline-browser-mapping` is over two months stale.
+
+## [PR-99] 2026-09-09 — The bidding docs say why there is no cron, and TESTING.md stops claiming the database is untestable
+
+Documentation only; no behaviour changed.
+
+**[ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md)** records the decision Phase 8 was built on and that only its spec and domain CLAUDE.md held: `BiddingStatus` stores what a person chooses, never what the clock decides, and both the phase and the purchase suspension are derived on every read. It exists because the rejected options are the interesting part — a scheduled flip (the textbook answer, impossible on a Hobby plan that offers daily cron and wrong regardless, since it makes every consumer depend on a job having run), a lazy flip on read (turns the most-read public route into a write path and still races), and a denormalised flag on `Product` (two sources of truth for one fact, plus a cleanup step for the expire-with-no-bids case that decision 4 avoids). Its honest cost is stated: every read path must ask, the compiler cannot check that it did, and an ended-but-unsettled event still blocks a new one on that product. The root [CLAUDE.md](../CLAUDE.md) conventions line and [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) now point at it.
+
+**[TESTING.md](TESTING.md)** carried two statements that were no longer true. It said `vitest.config.ts` lacks the `@server` alias `tsconfig.json` defines — it has had it. And its "Database behaviour is currently untestable" section was written before any of the four files in `tests/integration/` existed; all four now run against a real Postgres behind an allowlist guard (loopback host *and* the database named `bhendi_bazaar_dev`, the shape Invariant 7 requires of the seed). Rewritten to say what is actually true, including the part that matters more than the good news: **they are green by absence in CI**, so a passing pipeline is not evidence that any constraint holds. The remaining gap is a disposable Postgres in the pipeline, not the tests. Coverage targets added for bidding's phase arithmetic and its concurrent writes, and `critical/` is now recorded as empty with its Invariant tests living in `unit/`, rather than the layout implying otherwise.
+
+Also corrected: [BACKLOG.md](BACKLOG.md) (two rows) and [CONTRACTS.md](CONTRACTS.md) credited the bidding feature to PR-89, which is the email-shell PR from 2026-09-03. Bidding is PR-97.
+
+**No edit path for a bidding event remains deliberate but under-documented.** The feature ships create, cancel, bid, record-sale and record-unsold, and no update at any layer. [spec R10](specs/bidding/spec.md) justifies immutability *after the first bid* — a bidder commits money against a stated deadline and cap — but nothing states the position on an event with no bids yet, where cancel-and-recreate is currently the only route and costs a new link. Left as-is rather than invented here; R10 already names the guard (`bidCount === 0`) if it is ever wanted.
+
+## [PR-98] 2026-09-09 — Guest checkout: the required-email check no longer loops forever
+
+`GuestAddress` made email mandatory by calling `setError("email", …)` from an effect that also listed `errors.email` as a dependency. `setError` writes a fresh error object, so the effect's own write re-triggered it, forever — a render loop with no exit. In the browser that pins the tab on the guest checkout's first paint; in `tests/unit/guest-address.test.tsx` it blocked the event loop synchronously, so vitest printed nothing at all and `--testTimeout` never fired, which is the shape of the bug that made this hard to see.
+
+The requirement now lives in `guestAddressSchema` where the rest of the form's rules already are, and the manual effect is gone. It is a `.refine` over the shared `emailSchema` rather than a required field, because `useForm<DeliveryAddress>` types the resolver's *input*, and `DeliveryAddress.email` is optional — the reason the original code reached for `setError` in the first place. Reporting the address is now gated on `isValid` alone, since the schema covers email.
+
+The test file gains an assertion that the address is withheld while email is blank, and its docblock now records both regressions it guards. Typecheck clean, 602 unit tests pass.
+
+## [PR-97] 2026-09-09 — Bidding: an item can be sold by timed auction on a shareable link [CONTRACT] [MIGRATION]
+
+A new `bidding` domain ([spec](specs/bidding/spec.md), [trd](specs/bidding/trd.md), Phase 8). An organisation puts one product up for timed bidding from its own console and gets back a public link; while the event runs the item stays listed but cannot be bought; when the clock runs out the platform sees every bid with its bidder's contact details, sells the item directly, and records what it fetched. The organisation is told the amount and never who bid.
+
+Two design decisions carry the whole feature and are worth stating here because neither is visible from the file list.
+
+**Stored status answers less than you would expect, on purpose.** `BiddingStatus` is `OPEN | CANCELLED | SOLD | UNSOLD` — only what the clock cannot decide. Whether an open event is scheduled, running or finished is derived from its two timestamps on every read (`server/bidding/bidding-window.ts`). Consequently **nothing in this feature runs on a schedule**: an event ends because its end time passed, observed whenever it is next looked at, and no read can be stale because nothing was cached. That also sidesteps the fact that this project's Vercel plan cannot run a minute-granularity cron at all.
+
+**Every contested write is decided by Postgres, not by application code that read first.** A bid is one guarded conditional update carrying the clock, the event's state and the price together (`biddingRepository.acceptBid`), so two bidders racing produce one winner and one "the price moved to ₹X" — never two bids at one amount, never a bid a millisecond after the close. Two constraints Prisma cannot express are added in the migration and are load-bearing rather than defensive: a **partial unique index** on `productId` where the status is open, so two simultaneous creations cannot both succeed; and `@@unique([eventId, amountPaise])`, so a tie cannot exist in the data whatever the guard does. Plus `CHECK`s for an ordered window, positive money, a complete sale record, and a bid attributable to either an account or a named guest.
+
+**The purchase gate is the first one this store has had.** Adding to cart checked nothing before this and stock was enforced in exactly one place — the order transaction — so suspension had to hold there or not at all. It is derived, never stored: nothing is written to `Product` when an event opens or closes ([spec](specs/bidding/spec.md) R32). Display surfaces read a request-memoised set of locked product ids (`loadBiddingLockContext`, the shape `loadPriceContext` already uses — one small query per request however many products a page shows); `cartService.updateCart` refuses early for a good message; `assertNotUnderBidding` inside `order.service.ts`'s transaction is the authoritative refusal. That call sits **after** the stock reservation deliberately: the reservation takes the row lock that event creation also takes (`productsRepository.lockStock`), so checking afterwards is what makes the two decisions serial instead of merely close together. Checking first left a window in which an item could be sold and auctioned at the same instant. A locked item also drops out of the sign-in cart merge, the way one whose product has vanished already did.
+
+**Settlement is by hand, by decision.** The platform speaks to the winning bidder off the platform — no payment link, no claim window, no address collected anywhere — and records which bid won and for how much. That figure is what the organisation is owed, so it reaches the ledger as an `OrgLedgerEntry` of kind `ADJUSTMENT` via a new `ledgerService.recordBiddingSale`, which org-payouts R5 anticipated and nothing had needed yet. An `Order` was rejected: it would show the organisation its buyer, and it would have to be marked paid with no gateway signal, which [Invariant 2](../CLAUDE.md) forbids. Commission resolves through the same arithmetic a normal sale uses, so the two settle on one set of rules. Recording an outcome takes the unit out of stock with the guarded `updateMany` ([ADR-0007](adr/0007-conditional-stock-decrement.md)) and audits inside the same transaction ([ADR-0021](adr/0021-audit-trail-never-fails-the-action.md)). An event that nobody buys is recorded unsold and the product returns to sale.
+
+`[CONTRACT]`: the product wire shape gains read-only **`biddingSlug?: string`** — see [CONTRACTS.md](CONTRACTS.md) § Products. `[MIGRATION]`: `20260909120637_bidding`.
+
+Smaller notes: the outbid email is fire-and-forget with the same reasoning as the purchase confirmation — a mail failure must not unwind an accepted bid — and a bidder who left the email blank is simply skipped, which the bid form tells them at the point of choosing. Guest email is optional by decision, not oversight. The bidding page is the first dynamic `opengraph-image` in the repo (`next/og`), and it states an **absolute** closing time rather than a countdown, because scrapers cache and a frozen "2 hours left" keeps being wrong. The countdown on the page runs against a server clock shipped with the render, not the device's. Quick-bid amounts and the maximum one bid may add are set per event by the organisation; that maximum is also the only thing bounding a bad-faith bidder, since rate limiting remains parked. `LedgerLineInput.orderItemId` widened to `string | null`, which its own comment already anticipated. Root [CLAUDE.md](../CLAUDE.md)'s domain table was three domains out of date (`promotions`, `payouts`, now `bidding`) and is corrected.
+
+Doc corrections made while updating [ARCHITECTURE.md](ARCHITECTURE.md), all pre-existing drift: the shape diagram claimed 46 API handlers (83), ~14 admin pages (24) and no `(org)` portal at all, and listed **Upstash Redis as wired for rate limits** when PR-81 detached it — the last one directly contradicts what this feature was designed around, so it is now stated as detached with a pointer to the test that keeps it honest.
+
+27 new tests: 17 pure phase-and-arithmetic, 10 concurrency against a real local database — mocks cannot test what Postgres does under contention. Typecheck, lint and build clean.
+
+Merged with the email rework that landed in PR-88/PR-89 while this was in progress. Those fixed the missing purchase-confirmation line items and moved every template onto one shell, so the outbid email is rendered through `renderEmail` and formats money with `formatPaise` rather than carrying its own document — and a duplicate fix of the same currency bug was dropped in favour of theirs.
+
+## [PR-96] 2026-09-09 — Deploys move to GitHub Actions so a collaborator's push actually ships
+
+Vercel Hobby only git-deploys commits authored by the Vercel account owner, and Hobby has no members to add — so every push from the repo's collaborator built nothing and the branch quietly diverged from what was live. The Git integration is therefore off (`vercel.json`, `git.deploymentEnabled: false`) and deployment is a job in `.github/workflows/ci.yml` that runs `vercel pull` → `vercel build` → `vercel deploy --prebuilt` under an account token, where commit authorship is irrelevant. `main` deploys `--prod`; `develop` deploys a preview. Requires repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
+
+The deploy job is gated on `test`, so a red typecheck or suite now blocks a deployment rather than racing it — which the Vercel trigger never did. The standalone `build` job is scoped to pull requests, since `vercel build` compiles the same commit on a push and building twice bought nothing. Workflow-level concurrency cancels superseded PR runs but never a push run, which may be mid `prisma migrate deploy`. The dead `SKIP_ENV_VALIDATION` env (read by nothing in the repo) is dropped.
+
+Unchanged: migrations still run inside the build ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)) — they now run on the GitHub runner against the environment `vercel pull` fetched, which means a push to `develop` migrates whatever database Vercel's Preview environment points at. Noted in [OPERATIONS.md](OPERATIONS.md).
+
+## [PR-95] 2026-09-09 — Wishlist demand shows up in the product tables
+
+Both product tables — the org portal's own catalogue and the platform's cross-vendor list — now carry a **Wishlisted** column: how many users have saved that product. Zero reads as an em dash, so the products people actually want stand out from the ones nobody has hearted; a saved product shows a filled heart and the count, with the exact wording ("Saved by 3 users") on hover.
+
+**One column, both tables, because they were already one component.** `ProductsTable` is shared by `src/app/(org)/org/[orgId]/products/page.tsx` and `src/app/(admin)/admin/products/page.tsx`, and org scoping is a filter on the path's `orgId` that the repository already applies — so an org sees demand for its own catalogue and only its own, with no second query path to keep in step.
+
+**The count is read through the wishlist domain, not joined in catalog.** `wishlistRepository.countByProductIds` groups in SQL on the existing `@@index([productId])`; `wishlistService.countSavesByProduct` is the public surface, and `products.dal.ts` merges it into the rows the same way it already merges markdown prices out of `promotions`. The tempting shortcut — `_count: { select: { wishlistItems: true } }` on the catalog `select` — would have given `WishlistItem` a second reader and put a wishlist projection inside the product repository, which is the drift ADR-0003 exists to stop. Composition happens at the DAL, where cross-domain composition already happens (ADR-0012).
+
+**One extra query per page render, bounded by the page size**, not the catalogue: only the ten ids actually being rendered are counted, and an empty page skips the database entirely. A product nobody saved has no row, so absence defaults to zero at the mapper rather than being stored.
+
+**Deliberately not sortable.** The counts are merged after the page has been selected, so sorting on the column would reorder ten already-fetched rows and present it as a ranking. Sorting by demand needs the count in the SQL that paginates, which is a different change.
+
+No migration, no schema change, no new route — the rows already existed and the lists are server-rendered. No buyer identity leaves the wishlist domain: the count is the whole of it, so a selling org learns that fourteen people want a product without learning who they are. Six new tests in `tests/unit/wishlist-demand-column.test.ts` pin the grouping, the zero default, the empty-page skip, and the boundary itself — that `admin.product.repository.ts` never mentions the wishlist and the DAL reaches the service rather than the repository. `tsc` exits 0.
+
+## [PR-94] 2026-09-08 — Only the heart removes a saved product
+
+**Corrects [PR-93] below, which has not shipped.** A confirmed payment cleared any wish the buyer had opened from `/wishlist` and carted. That is one removal the buyer never asked for, and the provenance rule made it unpredictable rather than safe: the same product, the same order, kept or forgotten depending on which page it was opened from three steps earlier. A saved product now leaves the wishlist when — and only when — the buyer un-hearts it, on the tile, the product page or `/wishlist`.
+
+Everything that existed to support the other rule is gone rather than left dormant: `WishlistItem.cartedFromWishlistAt` and its migration, `markCartedFromWishlist` and `removePurchased` through the repository and service, `PATCH /api/wishlist`, the `?from=wishlist` link parameter the wishlist grid appended, and `orderRepository.findPurchasedProductIds`, whose only caller was the sweep. `onPaymentConfirmed` no longer touches the wishlist at all. A column nothing reads is a column someone re-wires later.
+
+`wishlist.repository.ts` now holds exactly one `deleteMany`, and the test suite pins that: one delete path, no PATCH on the route, no `wishlistService` inside `onPaymentConfirmed`, and one `DELETE` fetch in the client context. The old purchase-rule tests are replaced by these — five in place of four, 25 across both wishlist suites, `tsc` exits 0.
+
+No migration to run. The dropped column was added on this branch and never deployed; a dev database that already applied `20260908000000_wishlist_carted_origin` needs `npx prisma migrate reset` (or a manual `ALTER TABLE "WishlistItem" DROP COLUMN "cartedFromWishlistAt"`) to match the folder.
+
+Not addressed: four unrelated suites fail on this branch already — audit-trail, design-tokens (two) and rate-limit-detached. They are untouched here and predate this change.
+
+## [PR-93] 2026-09-08 — Buying the thing you saved clears the wish; buying it elsewhere does not [MIGRATION]
+
+The heart now sits beside Share on the product page, not only on grid tiles — the one surface where a shopper decides is the one that was missing it.
+
+**And a purchase can now tell "I bought the thing I saved" from "I happened to buy something that is also saved".** Both are the same product and the same order, so the difference is provenance: opening it from `/wishlist` and adding it to the cart records `WishlistItem.cartedFromWishlistAt`, and `onPaymentConfirmed` removes only marked rows. The same product reached from the home page is never marked, so it stays saved — buying a second one as a gift must not silently forget the first.
+
+**The mark lives on the row rather than in the tab it started in.** The journey from a product page to a confirmed payment crosses refreshes, a payment redirect and sometimes a different device, and a tab-local flag loses the origin on all three — silently keeping an item the buyer expected to be gone. One nullable column carries it instead, and NULL is the safe default for every row that predates the distinction: it keeps the item, which is the harmless direction.
+
+Removal is scoped to the buyer's own wishlist and to products actually in the order, so an order can never reach another person's saved items. Like the ledger write beside it, it logs rather than throws — a wishlist that failed to clear must not unwind a payment that succeeded.
+
+Purchased products are read from `OrderItem` via `orderRepository.findPurchasedProductIds` rather than walked out of the shipment tree, where a product split across two parcels appears twice and the line shape depends on which mapper ran.
+
+**A defect this branch introduced, fixed here:** `wishlist.dal.ts` wrapped `getServerSession` in a try/catch, and reading the session is how a route declares itself dynamic — by throwing. The catch swallowed Next's control-flow signal and turned a correct render into seven `Failed to fetch saved product ids` errors per build. `unstable_rethrow` now lets framework errors through and catches only real ones.
+
+Saving also confirms itself with an "Added to wishlist" toast, fired after the write lands rather than beside the optimistic fill — a toast that says "Added" and is followed by an error toast has told the buyer two contradictory things about one tap. Removal stays silent; the emptying heart is the feedback.
+
+**26 new tests** across both wishlist suites. 554 pass, `tsc` exits 0, `next build` compiles with a clean log. **Run `npx prisma migrate deploy`.**
+
+Not addressed: a wish is cleared by payment confirmation, so a cancelled or refunded order does not put it back. Buy Now marks the origin on the same rule as Add to Cart, but a buyer who abandons checkout keeps both the mark and the item — harmless, and re-marked next time.
+
+## [PR-92] 2026-09-07 — A wishlist is rows, and there is no guest one [MIGRATION]
+
+The README has advertised "Wishlist: save products for later (coming soon)" since the storefront existed. It exists now: a heart on every product tile, a `/wishlist` page in the profile menu, and removal only on an explicit un-heart.
+
+**Saved products are rows, not a `productIds String[]`.** The array was the shape originally proposed and it is the shape this repo has lifted out three times already — `Profile.addresses` in PR-41, `Shipment.items` in PR-43, `Cart.items` in PR-44, each still carrying its `legacy*` blob as the audit copy. Three things decided it rather than precedent alone. Postgres cannot put a foreign key inside an array, so a deleted product would leave an id nothing resolves and the page would silently render seven of eight tiles. Every add would be a read-modify-write of the whole array, so hearting on a phone and a laptop at once loses one heart with nothing to show it happened — the same race `Cart.version` exists to catch, needed here for a feature that has no other reason to want optimistic locking. And an array has nowhere to put `savedAt`, which is what "recently saved first" sorts by and what a price-drop alert would hang off later.
+
+`WishlistItem.productId` is `Cascade`, deliberately the same as `CartItem` and the opposite of `OrderItem`: a saved product is a wish, not history. [ADR-0020](adr/0020-money-bearing-records-never-cascade.md) governs rows carrying money or attribution, and this one carries neither.
+
+**No `wlId` on `User`.** `Wishlist.userId` is `@unique`, which is the entire relationship; a column on the other side would be a second copy that can disagree with the first and a two-table write to keep them agreeing. `Cart` has never had one either — `User.cart` is a back-relation and nothing more.
+
+**There is no guest wishlist, so there is no sign-in merge.** A signed-out visitor who taps the heart gets `Sign in to add to wishlist` and nothing is stored — no localStorage, no anonymous row, and none of the union-of-two-sets logic `cart.merge.ts` needs. The cost is stated rather than hidden: the heart does not survive the sign-in, and the visitor taps it again afterwards. The toast is a message and not a gate — `/api/wishlist` 401s on its own, and `/wishlist` redirects to `/signin?callbackUrl=/wishlist`, neither of which cares what the client believed.
+
+**The saved set is read on the server.** `(main)/layout.tsx` reads it once through `wishlist.dal.ts` and hands it to `WishlistContext`, so hearts are painted in the first render instead of flashing hollow and re-filling after a fetch — a route handler is for mutations, not for data a server component already had. The state is shared rather than per-button because one product appears twice on a product page (the grid tile and the similar-products rail), and two hearts for one product must not disagree. Writes are optimistic and revert on failure, with the server's own message in the toast.
+
+A saved product stores the fact of the wish and nothing else: name, image, stock and price are derived from the product join at read time, priced through the same resolver the product page and checkout use ([ADR-0018](adr/0018-one-effective-price-function.md)), so a wishlist cannot advertise a price checkout would refuse.
+
+`--favorite` joins the semantic colours in `globals.css`. A filled heart wanted red and `destructive` was the only red available, but `destructive` means "this will break something" — the opposite of what a saved product means — and ADR-0022 asks for roles, not nearest-available values.
+
+**20 new tests** (the wire mapper including offer resolution, the schema and migration contracts, and the heart: the guest toast writing nothing, optimistic fill, revert on failure, two hearts staying in step, a still-loading session never being told to sign in, and the confirmation toast firing on a landed save but never on a removal or a failure). 550 pass, `tsc` exits 0, `next build` compiles. Four suites fail on Windows only and did so before this branch — `design-tokens`, `admin-audit-trail` and `rate-limit-detached` compare allowlist paths with `/` against `path.join`'s `\`. **Run `npx prisma migrate deploy`.**
+
+Not addressed: the wishlist is not reachable from the mobile tab bar, only the profile menu. Nothing moves a saved product into the cart in one tap. And no page counts how often a product is wishlisted, though `@@index([productId])` is there for the day one does.
+## [PR-89] 2026-09-03 — One email shell, four templates that only carry their content
+
+Each of the four transactional emails rendered its own complete document: doctype, head,
+`<style>` block, accent bars, header with the logo, and a footer with the copyright line.
+Four copies of the same chrome meant a brand change was four edits, and they had already
+drifted — the payout email's total sat at 22px against the order's 20px, and the same
+"can't click the button?" fallback existed twice, worded identically and maintained
+separately.
+
+`server/notifications/templates/layout.ts` is now the only file that knows what an email
+looks like. `renderEmail` takes a title, an optional tagline and banner, a body and an
+optional footer; the shared stylesheet is injected once, by it. A template supplies only
+what differs, composed from blocks that live beside it — `greeting`, `paragraph`,
+`closingNote`, `button`, `noticeBox`, `alternateLink`, `detailPanel`. The purchase
+confirmation drops from 405 lines to ~300, most of that its own line-item table CSS; the
+other three are under 45 lines each. `.success-banner` and the detail/total row styles moved
+into `baseEmailStyles.ts`, since two templates had each declared them.
+
+**Interpolated data is escaped now.** Customer names, addresses, order notes and product
+titles reached the HTML raw — an order note containing `<` produced broken markup, and the
+same path would have carried a `<script>` into anything that renders the mail as HTML. All
+of it goes through `esc()`. Invariant 4 is about the payload being untrusted, and that does
+not stop at the parse.
+
+`formatPaise` in `formatters.ts` replaces the `formatCurrency(paiseToRupees(x))` pair
+repeated at every call site. No visual change beyond the payout total's 2px and class
+renames backed by equivalent CSS — verified by rendering all four emails before and after
+and diffing. New rules in `server/notifications/CLAUDE.md`; covered by
+`tests/unit/email-templates.test.ts`.
+
+## [PR-88] 2026-09-03 — Transactional email reaches its recipient, and shipping recovers from an empty init
+
+Two unrelated silences, both of the same kind: code that ran, logged nothing, and did not do the thing it was there for.
+
+**The purchase confirmation was reaching almost nobody.** `onPaymentConfirmed` in `server/checkout/order.service.ts` guarded the send on `deliveryAddress.email`, but that field is per-address in the address book and is only ever asked for when *adding* an address — checkout never collects it for a signed-in buyer. So the branch was live only for guests, and a logged-in customer's confirmation was skipped without an error. The address email is now a first choice, not the only one: absent it, an order with a `userId` falls back to the account's login email via `profileRepository.findEmailById`. The email also carried no line items — the template rendered totals over an empty list — so the shipment lines are flattened into the view. If neither email resolves the path now logs loudly rather than returning quietly, because by then a payment has been taken.
+
+**A guest had no account to fall back to**, so `orderService` refuses a guest order that carries no email (`!input.userId && !input.address.email`) rather than discovering at payment-confirmation time that there is nobody to notify. The guest checkout form asks for it as required to match, through a new `emailRequired` prop on `AddressFields` — the client rule and the server rule come from the same intent, per [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md). That form was also permanently invalid on a field the user cannot see: its schema requires `id`, which a guest does not have and the form never registers, so `isValid` never became true and the Continue button never enabled. It is seeded empty in `defaultValues`.
+
+**The guest order-lookup response was the whole row.** `orderRepository.findByCode` backs an unauthenticated route — anyone holding a code reaches it — and returned everything on the order, including `userId`, notes, gateway ids and the full delivery address. It now returns a projection, with the address reduced to city/state/pincode/country; the name, phone and street belong to the order's owner, not to anyone who knows its code. Separately, `findByCode` never loaded `shipments` at all, so the orders page crashed on `order.shipments.flatMap` — the projection includes them. No DTO recorded in [CONTRACTS.md](CONTRACTS.md) changed, because this response was never recorded there; it should be.
+
+**Settlements now tell the organisation they were paid.** `setSettlementStatus` fires a payout email after the transaction commits, on the same reasoning the order confirmation uses: the transfer has already happened, so a failed email must neither look like a failed payout nor undo one. New template at `server/notifications/templates/payoutEmail.ts`; `orgRepository.findEmailContact` reads name and email and nothing else.
+
+**And shipping could not recover from booting with no carrier.** `initializeShippingModule` set `isInitialized = true` even when it loaded zero providers, so the recovery path in `src/app/api/shipping/rates/route.ts` — which notices an empty provider map and re-initialises — returned at the guard without reloading, and every quote 503'd until someone restarted the server. It now latches only on a provider actually loading. The matching half is that `AdminConnectionService.connect` wrote credentials and never told the running orchestrator, so a carrier connected through the admin console was invisible to the process that quotes with it; connect and disconnect now refresh the live map. Together these are what make "an operator connects a carrier without a developer or a deploy" ([server/shipping/adr/0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)) true rather than aspirational.
+
+**One more found while wiring that up:** the orchestrator's provider map is keyed by carrier `code`, but the Shiprocket webhook route looked it up by record `id` — `"shiprocket_001"` against a key of `"shiprocket"` — so every tracking webhook failed as "Provider not found". The route passes the code, and the dead `reloadProvider` that baked in the same id/code confusion (it would have registered one carrier twice and quoted it twice) is replaced by `refreshProvider`/`removeProvider`, both keyed the way `loadProviders` keys. `init.ts` also stopped declaring its own carrier list and uses the `PROVIDER_FACTORIES` registry, so a second carrier cannot be added to the registry and silently not load at boot.
+
 ## [PR-87] 2026-09-02 — Cut the Prisma-ops bleed: kill the admin poll, stop per-page profile fetches, close the N+1s
 
 A four-layer audit traced why a store with no customers was burning ~3,500 Prisma operations a day against a 100k/month budget. Almost none of it was page views. The fixes, in order of ops recovered:
@@ -51,6 +259,8 @@ Two production defects, both display/validation only — no schema, no wire shap
 The store is not live, yet production logs show search crawlers (PetalBot, Bing) steadily working through the domain's old WooCommerce URL space — each hit a function invocation bought for nothing. `BLOCK_CRAWLERS=1` in the deployment environment now turns every compliant crawler away: `src/app/robots.ts` answers disallow-all with no sitemap reference, `src/app/sitemap.ts` returns an empty set instead of reading the catalogue (crawlers that already know the URL keep polling it), and `next.config.ts` stamps `X-Robots-Tag: noindex, nofollow` on every response for bots that skip robots.txt but honour the header. Unset, nothing changes — the launch flip is deleting one variable.
 
 Two deliberate consequences, documented in `src/lib/crawl-block.ts` and OPERATIONS.md: while blocked, the 410 purge of the old WordPress index (PR-era `src/middleware.ts` rule) is paused, since a crawler that may not fetch never sees the 410; and non-compliant scrapers are unaffected — those are a Vercel Firewall concern, not code. Tests: `tests/unit/crawl-block.test.ts`.
+
+## [PR-83] 2026-08-31 — Prefetch goes off in the portals too, where the only live traffic is
 
 PR-82 turned prefetch off across the storefront and left the admin, org and auth links alone, reasoning they were low fan-out and behind a login. Both halves of that were wrong, and the Prisma dashboard is what showed it: 23,592 operations in ten days on a store with no customers, while the only people using the site were uploading products in `/admin`. The half that was optimised is the half nobody is using.
 

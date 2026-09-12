@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-08-31
+- **Verified:** 2026-09-11
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -19,6 +19,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 | **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
+| **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-97 |
 
 ---
 
@@ -99,14 +100,31 @@ Strictly ordered: `promotions` before `org-payouts`. The ledger reads the fundin
 
 ---
 
+## Phase 8 — Bidding
+
+A new phase, added 2026-09-09. A fixed price cannot find out what a one-off item is worth, and a bidding link is also the one thing a product page is not — a reason to share, with a deadline and a number that moves.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [bidding](specs/bidding/) | An organisation puts one product up for timed bidding on a shareable link; the platform sells it directly and records what it fetched | ✅ Implemented — PR-97 |
+
+Depends on Phase 7. The amount a bidding sale fetches is what the organisation is owed, so it has to reach the same ledger `org-payouts` builds rather than a parallel one.
+
+Two things about this phase are deliberate and easy to mistake for gaps. **Settlement is by hand:** the platform speaks to the winning bidder directly and enters the price it sold for, so no payment flow is built and the figure an organisation is paid on is one a person types. **Nothing runs on a schedule:** an event ends because its end time has passed, observed whenever it is next looked at, so correctness never rests on a job having run.
+
+It also lands the store's first real purchase gate. Adding to cart checks nothing today and stock is enforced in exactly one place — the order transaction — so suspending sale during an event has to hold at that same point, and the same seam is what any future reason to bar a purchase will use.
+
+---
+
 ## Cross-cutting watch list
 
 Not a phase, but tracked:
 
 - **The client/server contract** ([CONTRACTS.md](CONTRACTS.md)) — consolidating duplicate DTO declarations is a precondition for several specs above. Changes carry `[CONTRACT]`.
 - **Repository consolidation** ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — the *structural* half is done: `server/` is now one directory per domain ([ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md), CHANGELOG PR-02), so each aggregate has exactly one home. What remains is merging the duplicate repository *modules* that now sit side by side inside a domain — e.g. `catalog/product.repository.ts` and `catalog/admin.product.repository.ts` both read `prisma.product`. That is a behaviour-affecting merge, so it belongs with whichever spec touches the aggregate.
-- **Error-envelope adoption** ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)) — every handler under `/api/admin` now returns through `toErrorResponse` (PR-21, PR-25). Remaining: the signup, forgot-password, reset-password and provider-connect **forms**, and the non-admin handlers they post to. Decision 7 makes conversion obligatory when a file is touched, so this shrinks as work happens rather than needing a dedicated sweep.
+- **Error-envelope adoption** ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)) — every handler under `/api/admin` now returns through `toErrorResponse` (PR-21, PR-25). Remaining: the signup, forgot-password, reset-password and provider-connect **forms**, the bidding panel's guest details (`BidPanel` — its phone field moved to `PhoneInput` in PR-102 without the conversion, which would rewrite the bid submit flow), and the non-admin handlers they post to. Decision 7 makes conversion obligatory when a file is touched, so this shrinks as work happens rather than needing a dedicated sweep.
 - **Duplicate declarations** ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — runtime symbol names resolved in PR-08 (14 → 2). Two remain, both deliberate: `formatCurrency` is behaviourally identical, and `isValidPincode` needs the decision below. The 26 remaining *type* duplicates are the [CONTRACTS.md](CONTRACTS.md) work.
+- **Courier phone format** — every phone has been E.164 since [international-phone](specs/international-phone/) (PR-102), and may be non-Indian. What Shiprocket accepts for a pickup or delivery phone is unverified, and must be known before [shipping-fulfilment](specs/shipping-fulfilment/) books real parcels.
 - **PIN code validation** — consolidated to one rule in PR-09 (eleven declarations → one). Remaining: query existing `Address` rows for PIN codes with a leading zero, which the tightened rule rejects on update.
 - **Error swallowing in the data layer** — PR-13 fixed `products.dal.ts`; the same catch-and-relabel pattern remains in the other DAL modules and in `server/catalog/product.repository.ts`, where a query failure is reported as `"Product not found"`. Preserve `cause`; keep absence distinguishable from failure.
 - **Sale price is read two different ways** — `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price, matching `effectiveUnitPrice` in `server/checkout/pricing.ts`. Eight other sites — the cart line, the checkout summary, the shipping-rate hook, both order detail pages, the org parcel value — simply fall back with `??`, so a sale price of zero or one above the regular price renders differently depending on where the buyer is looking. [promotions](specs/promotions/) PR 3 consolidates them onto the one function; until then it is a display inconsistency on the money path.

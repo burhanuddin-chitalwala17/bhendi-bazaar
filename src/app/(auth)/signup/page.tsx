@@ -63,7 +63,7 @@ export default function SignUpPage() {
           Join the Bhendi Bazaar circle
         </h1>
         <p className="text-xs text-muted-foreground">
-          Create an account to save your details and track your orders. You can
+          Create an account to save your details and view your orders. You can
           still complete purchases as a guest anytime.
         </p>
       </header>

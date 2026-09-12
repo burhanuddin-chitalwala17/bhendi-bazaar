@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { PlatformRole } from "@prisma/client";
 import { PINCODE_PATTERN, PINCODE_MESSAGE } from "@server/shared/pincode";
+import { normalizePhone, PHONE_MESSAGE } from "@server/shared/phone";
 
 // Email validation
 export const emailSchema = z
@@ -11,24 +12,28 @@ export const emailSchema = z
   .min(5, 'Email too short')
   .max(255, 'Email too long');
 
-// Phone validation (Indian format)
-export const PHONE_PATTERN = /^[6-9]\d{9}$/;
-export const PHONE_MESSAGE = 'Enter a 10-digit Indian mobile number';
+// Any country's number, normalised to E.164. A transform is safe here, unlike for money
+// (CONTRACTS.md rule 4): normalising is idempotent, so running on client and server is harmless.
+function toE164(value: string, ctx: z.RefinementCtx): string {
+  const e164 = normalizePhone(value);
+  if (e164 === null) {
+    ctx.addIssue({ code: "custom", message: PHONE_MESSAGE });
+    return z.NEVER;
+  }
+  return e164;
+}
 
-export const phoneSchema = z
-  .string()
-  .regex(PHONE_PATTERN, PHONE_MESSAGE)
-  .length(10, 'Phone must be exactly 10 digits');
+export const phoneSchema = z.string().trim().transform(toE164);
 
 /**
  * A phone field the user may leave blank. `.optional()` alone is not enough: a form
- * sends `""` for an untouched input, which is a string and fails the pattern — the same
+ * sends `""` for an untouched input, which is a string and fails validation — the same
  * defect PR-22 fixed for the product form's pincode.
  */
 export const optionalPhoneSchema = z
   .string()
   .trim()
-  .refine((v) => v === "" || PHONE_PATTERN.test(v), PHONE_MESSAGE)
+  .transform((value, ctx) => (value === "" ? value : toE164(value, ctx)))
   .optional();
 
 // UUID validation

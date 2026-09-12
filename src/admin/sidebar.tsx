@@ -19,6 +19,7 @@ import {
   Tag,
   Wallet,
   GalleryHorizontal,
+  Gavel,
 } from "lucide-react";
 
 const navItems = [
@@ -51,6 +52,11 @@ const navItems = [
     title: "Offers",
     href: "/admin/promotions",
     icon: Tag,
+  },
+  {
+    title: "Bidding",
+    href: "/admin/bidding",
+    icon: Gavel,
   },
   {
     title: "Payouts",

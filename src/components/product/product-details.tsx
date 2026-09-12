@@ -7,6 +7,7 @@ import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
 import { ProductActions } from "@/components/shared/button-groups/ProductActions";
 import { ShareButton } from "@/components/shared/ShareButton";
+import { WishlistButton } from "@/components/wishlist/wishlist-button";
 import { useProductActions } from "@/hooks/product/useProductActions";
 
 export function ProductDetails(product: Product) {
@@ -27,12 +28,13 @@ export function ProductDetails(product: Product) {
         <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-muted-foreground/80 sm:text-2xs sm:tracking-display">
           Bhendi Bazaar · {product.categorySlug.replace("-", " ")}
         </p>
-        {/* Share sits beside the title rather than with the cart buttons: those dock to
-            the bottom bar on a phone, where a third target crowds the primary action. */}
+        {/* Save and share sit beside the title rather than with the cart buttons: those
+            dock to the bottom bar on a phone, where more targets crowd the primary action. */}
         <div className="flex items-start gap-2">
           <h1 className="min-w-0 flex-1 font-heading text-lg font-semibold leading-tight tracking-tight sm:text-3xl">
             {product.name}
           </h1>
+          <WishlistButton productId={product.id} className="shrink-0" />
           <ShareButton
             url={`/product/${product.slug}`}
             title={`${product.name} — Bhendi Bazaar`}
@@ -98,6 +100,7 @@ export function ProductDetails(product: Product) {
           isOutOfStock={isOutOfStock}
           isAddingToCart={isAddingToCart}
           isBuyingNow={isBuyingNow}
+          biddingSlug={product.biddingSlug}
         />
       </div>
     </section>

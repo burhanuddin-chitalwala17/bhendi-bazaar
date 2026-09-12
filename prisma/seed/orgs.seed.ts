@@ -10,7 +10,7 @@ export const seedOrgs: SeedOrg[] = [
     code: "SEL-001",
     name: "Bhendi Bazaar Traders",
     email: "contact@bhendibazaartraders.com",
-    phone: "9876543210",
+    phone: "+919876543210",
     contactPerson: "Ahmed Khan",
     pickup: {
       address: "Shop No. 45, Bhendi Bazaar, Mumbai",
@@ -31,7 +31,7 @@ export const seedOrgs: SeedOrg[] = [
     code: "SEL-002",
     name: "Islamic Essentials Hub",
     email: "info@islamicessentials.in",
-    phone: "9876543211",
+    phone: "+919876543211",
     contactPerson: "Fatima Sheikh",
     pickup: {
       address: "Unit 12, Islamic Market Complex, Mumbai",

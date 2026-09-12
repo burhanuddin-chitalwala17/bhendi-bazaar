@@ -1,5 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
+
 ## Purpose
 Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-commerce store.
 **Claude Code reads this at the start of every session.** Keep it under 200 lines.
@@ -48,6 +49,9 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | shipping | `server/shipping/` | Carriers, rates, shipments |
 | identity | `server/identity/` | Profile, addresses, passwords, users |
 | notifications | `server/notifications/` | Transactional email |
+| promotions | `server/promotions/` | Offers, coupons, and the one effective-price resolver every surface calls |
+| payouts | `server/payouts/` | What each org earned, what the platform kept, what is still owed |
+| bidding | `server/bidding/` | Timed auctions on a single item, and the gate that suspends it from normal sale |
 | analytics | `server/analytics/` | Aggregating read-model for the admin dashboard. **Read-only**, and the one documented exception to the no-cross-domain-reads rule |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry. Only what genuinely spans domains — not a dumping ground |
 
@@ -157,6 +161,7 @@ Canonical index of *how we work*. Each line points; detail lives in the ADR so i
 - **A discount is one winning offer, allocated to lines, with its funding recorded** — offers compete rather than stack; the winner is allocated per line by largest-remainder rounding; the org bears its own best offer and the platform only the remainder, floored at zero. `Order.discount` is a display total, never an input to settlement. ([ADR-0019](docs/adr/0019-discount-is-one-winning-offer.md))
 - **Records that carry money or attribution never cascade** — every foreign key out of a discount, ledger, settlement, rate or promotion-target row is `onDelete: Restrict`; deletion is refused and the real operation is cancellation. Cascade stays correct only for children carrying no money or attribution. ([ADR-0020](docs/adr/0020-money-bearing-records-never-cascade.md))
 - **Every design axis goes through tokens, not just colour** — type (`text-4xs`…), tracking (`tracking-eyebrow`…), elevation *roles* (`shadow-raised`/`-lifted`/`-overlay`), shape (`rounded-card`/`-field`) and page width (`PageShell`, `max-w-page`) are declared in `globals.css` and enforced by `tests/unit/design-tokens.test.ts`, which also fails any `font-*` class with no matching theme token. A literal at the call site is what made a rebrand one file and a redesign a hundred. ([ADR-0022](docs/adr/0022-design-decisions-go-through-tokens.md))
+- **An item up for bidding cannot be bought, and the product never knows it** — suspension is derived at read time from the live event set, memoised per request for display and re-checked inside the order transaction, which is the only race-safe point. Nothing is written to `Product` when an event opens or closes, and `status` alone never means "biddable" — go through `bidding-window.ts`. ([ADR-0023](docs/adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [server/bidding/CLAUDE.md](server/bidding/CLAUDE.md), [bidding spec](docs/specs/bidding/spec.md))
 - **The audit trail records an action; it never decides whether it happened** — services go through `recordAdminAction` (after a committed mutation, never throws) or `recordAdminActionIn(tx, …)` (inside the mutation's transaction, throws with it), never `adminLogRepository.createLog`. An admin id used as a foreign key is re-read, not taken from the JWT claim. ([ADR-0021](docs/adr/0021-audit-trail-never-fails-the-action.md))
 
 ---

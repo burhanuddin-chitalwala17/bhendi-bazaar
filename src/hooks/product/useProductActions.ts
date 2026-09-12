@@ -15,11 +15,21 @@ export function useProductActions(product: Product) {
   const [isBuyingNow, startBuyNow] = useTransition();
 
   const isOutOfStock = product.stock === 0;
+  /**
+   * Display state only. The cart service and the order transaction refuse it too, so a
+   * client that skips this check gains nothing (bidding spec R31).
+   */
+  const isUpForBidding = Boolean(product.biddingSlug);
   const currentCartQty =
     items.find((item) => item.productId === product.id)?.quantity || 0;
   const remainingStock = product.stock - currentCartQty;
 
   const handleAddToCart = () => {
+    if (isUpForBidding) {
+      toast.warning("This item is up for bidding and cannot be bought directly");
+      return;
+    }
+
     if (isOutOfStock) {
       toast.warning("This item is out of stock");
       return;
@@ -57,6 +67,11 @@ export function useProductActions(product: Product) {
   };
 
   const handleBuyNow = () => {
+    if (isUpForBidding) {
+      toast.error("This item is up for bidding and cannot be bought directly");
+      return;
+    }
+
     if (isOutOfStock) {
       toast.error("This item is out of stock");
       return;

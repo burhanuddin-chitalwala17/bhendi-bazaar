@@ -22,6 +22,7 @@ import type {
 } from "../../domain/shipping.types";
 import { mapShiprocketRateToShippingRate } from "./shiprocket.mapper";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
+import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 
 export class ShiprocketProvider extends BaseShippingProvider {
   private authToken?: string;
@@ -112,29 +113,40 @@ export class ShiprocketProvider extends BaseShippingProvider {
     const email = accountInfo.email;
     const password = encryptionService.decrypt(accountInfo.password);
 
-    const response = await fetch(
-      `${this.baseUrl}${SHIPROCKET_ENDPOINTS.AUTH}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      }
+    // A DNS blip or a slow response shouldn't fail the whole quote on the first
+    // try — bounded retry with a timeout on each attempt (shipping CLAUDE.md).
+    // Bad credentials won't succeed on retry, so that path throws NonRetryableError.
+    const data: ShiprocketAuthResponse = await retryWithBackoff(
+      async () => {
+        const response = await fetch(
+          `${this.baseUrl}${SHIPROCKET_ENDPOINTS.AUTH}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+            signal: AbortSignal.timeout(SHIPROCKET_CONFIG.TIMEOUT_MS),
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response
+            .json()
+            .catch(() => ({ message: response.statusText }));
+
+          // Update error in database
+          await shippingProviderRepository.update(provider.id, {
+            authError: error.message || response.statusText,
+          });
+
+          throw new NonRetryableError(
+            `Authentication failed: ${error.message || response.statusText}`
+          );
+        }
+
+        return response.json();
+      },
+      { maxRetries: 2 }
     );
-
-    if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ message: response.statusText }));
-
-      // Update error in database
-      await shippingProviderRepository.update(provider.id, {
-        authError: error.message || response.statusText,
-      });
-
-      throw new DomainError(`Authentication failed: ${error.message || response.statusText}`);
-    }
-
-    const data: ShiprocketAuthResponse = await response.json();
     this.authToken = data.token;
     this.tokenExpiry = new Date(
       Date.now() + SHIPROCKET_CONFIG.TOKEN_EXPIRY_HOURS * 60 * 60 * 1000
@@ -182,10 +194,11 @@ export class ShiprocketProvider extends BaseShippingProvider {
   async getRates(
     request: GetShippingRatesRequestShiprocket
   ): Promise<GetShippingRatesResponse> {
-    await this.ensureAuthenticated();
     console.log("Getting rates for request:", JSON.stringify(request, null, 2));
 
     try {
+      await this.ensureAuthenticated();
+
       const params = {
         pickup_postcode: request.fromPincode,
         delivery_postcode: request.toPincode,
@@ -194,19 +207,26 @@ export class ShiprocketProvider extends BaseShippingProvider {
       };
 
       const queryString = new URLSearchParams(params as any).toString();
-      const response = await fetch(
-        `${this.baseUrl}${SHIPROCKET_ENDPOINTS.SERVICEABILITY}?${queryString}`,
-        {
-          headers: this.getAuthHeaders(),
-        }
+      // A DNS blip or a slow response shouldn't fail the whole quote on the first
+      // try — bounded retry with a timeout on each attempt (shipping CLAUDE.md).
+      const res = await retryWithBackoff(
+        async () => {
+          const response = await fetch(
+            `${this.baseUrl}${SHIPROCKET_ENDPOINTS.SERVICEABILITY}?${queryString}`,
+            {
+              headers: this.getAuthHeaders(),
+              signal: AbortSignal.timeout(SHIPROCKET_CONFIG.TIMEOUT_MS),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`Failed to get rates: ${response.statusText}`);
+          }
+
+          return response.json();
+        },
+        { maxRetries: 2 }
       );
-      // console.log("Shiprocket Rates API response:", response);
-
-      if (!response.ok) {
-        throw new Error(`Failed to get rates: ${response.statusText}`);
-      }
-
-      const res = await response.json();
 
       // Filter couriers: non-blocked AND rating >= 4
       const filteredCouriers = res.data.available_courier_companies.filter(

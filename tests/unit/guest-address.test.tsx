@@ -1,7 +1,13 @@
 /**
- * Regression: the guest checkout form validates against a schema requiring `id`,
- * but no id field is registered. Without an `id` default the form stayed invalid
- * forever, onAddressChange never fired, and shipping rates never loaded for guests.
+ * Two regressions, both of which stopped shipping rates loading for guests.
+ *
+ * 1. The form validates against a schema requiring `id`, but no id field is
+ *    registered. Without an `id` default it stayed invalid forever.
+ * 2. Email was made required by calling setError from an effect that also
+ *    depended on errors.email. setError returns a fresh error object, so the
+ *    effect re-fired without end — an infinite render loop that hung this file
+ *    with no output rather than failing. Requiring email in the schema is what
+ *    makes it terminate, so keep it there.
  */
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/react";
@@ -39,13 +45,17 @@ describe("GuestAddress", () => {
     );
   });
 
-  it("still reports the address when the optional email is left blank", async () => {
+  // A guest has no account to fall back to for the confirmation email, so unlike
+  // the address-book form this one holds the address back until email is filled.
+  it("withholds the address while email is blank, then reports it once filled", async () => {
     const onAddressChange = vi.fn();
     const { container } = render(<GuestAddress onAddressChange={onAddressChange} />);
 
     const { email: _email, ...withoutEmail } = filledForm;
     fill(container, withoutEmail);
+    expect(onAddressChange).not.toHaveBeenCalled();
 
+    fill(container, { email: filledForm.email });
     await waitFor(() => expect(onAddressChange).toHaveBeenCalled());
   });
 });
