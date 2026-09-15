@@ -2,7 +2,8 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Eye, Heart, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, Edit, Eye, Heart, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/admin/data-table";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockBadge } from "@/components/shared/badges/StatusBadge";
@@ -16,6 +17,8 @@ interface ProductsTableProps {
   pagination: Pagination;
   onPageChange: (page: number) => void;
   onDelete: (id: string, name: string) => void;
+  /** Take a product off sale, or put it back (ADR-0026). */
+  onSetArchived: (id: string, archived: boolean, name: string) => void;
   onEdit: (id: string) => void;
   onView: (id: string) => void;
   onSort: (sortBy: string, sortOrder: "asc" | "desc") => void;
@@ -29,6 +32,7 @@ export function ProductsTable({
   pagination,
   onPageChange,
   onDelete,
+  onSetArchived,
   onEdit,
   onView,
   onSort,
@@ -45,10 +49,21 @@ export function ProductsTable({
           <img
             src={product.thumbnail}
             alt={product.name}
-            className="w-12 h-12 object-cover rounded"
+            // A withdrawn product is dimmed rather than hidden: the org asked to see
+            // it, and the state has to be legible at a glance on a phone.
+            className={`w-12 h-12 object-cover rounded${product.archivedAt ? " opacity-50" : ""}`}
           />
-          <div>
-            <p className="font-medium">{product.name}</p>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className={`font-medium${product.archivedAt ? " text-muted-foreground" : ""}`}>
+                {product.name}
+              </p>
+              {product.archivedAt && (
+                <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded">
+                  Withdrawn
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">{product.category.name}</p>
           </div>
         </div>
@@ -167,6 +182,24 @@ export function ProductsTable({
             >
               <Edit className="w-4 h-4" />
             </Link>
+          )}
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onSetArchived(product.id, !product.archivedAt, product.name)}
+              disabled={isPending}
+              title={product.archivedAt ? "Put back on sale" : "Take off sale"}
+            >
+              {product.archivedAt ? (
+                <ArchiveRestore className="w-4 h-4 text-success" />
+              ) : (
+                <Archive className="w-4 h-4 text-muted-foreground" />
+              )}
+              <span className="sr-only">
+                {product.archivedAt ? "Put back on sale" : "Take off sale"}
+              </span>
+            </Button>
           )}
           {!readOnly && (
             <button

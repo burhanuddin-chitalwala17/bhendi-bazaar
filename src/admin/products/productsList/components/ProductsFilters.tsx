@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import type { ProductFilters } from "../../types";
+import type { ProductShelf } from "@server/catalog/product.visibility";
 
 interface ProductsFiltersProps {
   filters: ProductFilters;
@@ -79,6 +80,22 @@ export function ProductsFilters({
               {category.name}
             </option>
           ))}
+        </select>
+
+        {/* Shelf filter — on sale, withdrawn, or both (ADR-0026). Full width at base
+            so it stacks on a phone rather than crowding the row. */}
+        <select
+          value={filters.shelf || "on-sale"}
+          onChange={(e) =>
+            onFilterChange({ shelf: e.target.value as ProductShelf, page: 1 })
+          }
+          disabled={isPending}
+          aria-label="Filter by whether the product is on sale"
+          className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 sm:w-auto"
+        >
+          <option value="on-sale">On Sale</option>
+          <option value="archived">Withdrawn</option>
+          <option value="all">All Products</option>
         </select>
 
         {/* Stock Filter */}

@@ -9,6 +9,7 @@ import { loadPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
+import { ARCHIVED, ON_SALE } from "@server/catalog/product.visibility";
 
 const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
@@ -65,6 +66,9 @@ async function offerFilter() {
  */
 export type ProductStockDb = Pick<typeof prisma, "productStock">;
 
+/** Enough of the client to read products — `prisma`, or a `$transaction` tx. */
+export type ProductDb = Pick<typeof prisma, "product">;
+
 export class ProductsRepository {
 
   /**
@@ -73,7 +77,9 @@ export class ProductsRepository {
    */
   async listingFacts(productId: string, orgId: string) {
     return await prisma.product.findFirst({
-      where: { id: productId, orgId },
+      // An archived product cannot be listed for bidding either: bidding is a way of
+      // selling, and this row is not for sale (ADR-0026).
+      where: { id: productId, orgId, ...ON_SALE },
       select: { id: true, name: true, price: true, sizes: true, colors: true },
     });
   }
@@ -136,6 +142,21 @@ export class ProductsRepository {
     return taken.count === 1;
   }
 
+  /**
+   * Which of these products are withdrawn from sale, by name (ADR-0026).
+   *
+   * Names rather than ids because the only caller shows them to a buyer. Authoritative
+   * when handed a `tx`; `product.sale-gate.ts` is what turns it into a refusal.
+   */
+  async archivedAmong(productIds: string[], db: ProductDb = prisma): Promise<string[]> {
+    if (productIds.length === 0) return [];
+    const rows = await db.product.findMany({
+      where: { id: { in: productIds }, ...ARCHIVED },
+      select: { name: true },
+    });
+    return rows.map((row) => row.name);
+  }
+
   /** How many of these products belong to someone else — the org-scoping guard. */
   async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
     if (productIds.length === 0) return 0;
@@ -165,6 +186,8 @@ export class ProductsRepository {
     limit = 30,
   }: { orgId?: string; search?: string; ids?: string[]; limit?: number } = {}) {
     const where = {
+      // An offer cannot be pointed at something that is not for sale.
+      ...ON_SALE,
       ...(orgId ? { orgId } : {}),
       ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
       // Already-selected products are always included, so a picker never hides a
@@ -199,7 +222,7 @@ export class ProductsRepository {
    * loading the whole join tree and pricing every row to emit a path.
    */
   async listSlugs(): Promise<Array<{ slug: string }>> {
-    return await prisma.product.findMany({ select: { slug: true } });
+    return await prisma.product.findMany({ where: ON_SALE, select: { slug: true } });
   }
 
   // Nothing a storefront listing renders needs the whole catalogue at once. When the
@@ -215,7 +238,8 @@ export class ProductsRepository {
         relationLoadStrategy: "join",
         // categoryIds (a resolved subtree) wins over a bare slug, which matches
         // only the category's own products.
-        where: { ...(categoryIds
+        where: { ...ON_SALE,
+          ...(categoryIds
             ? { categoryId: { in: categoryIds } }
             : { category: { slug: categorySlug } }),
           ...(search && { name: { contains: search, mode: "insensitive" } }),
@@ -238,9 +262,9 @@ export class ProductsRepository {
 
   async getProductById(id: string) {
     try {
-      const product = await prisma.product.findUnique({
+      const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { id },
+        where: { id, ...ON_SALE },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -253,9 +277,9 @@ export class ProductsRepository {
 
   async getProductBySlug(slug: string) {
     try {
-      const product = await prisma.product.findUnique({
+      const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { slug },
+        where: { slug, ...ON_SALE },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -270,7 +294,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { slug: { not: slug } },
+        where: { slug: { not: slug }, ...ON_SALE },
         orderBy: { createdAt: "desc" },
         take: count,
         include: {
@@ -287,7 +311,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { flags: { has: "HERO" } },
+        where: { flags: { has: "HERO" }, ...ON_SALE },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -304,7 +328,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: await offerFilter(),
+        where: { ...(await offerFilter()), ...ON_SALE },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -323,7 +347,7 @@ export class ProductsRepository {
       // and price, so the full include tree here was several queries per keystroke
       // buying data the response never carried.
       const products = await prisma.product.findMany({
-        where: { name: { contains: query, mode: "insensitive" } },
+        where: { name: { contains: query, mode: "insensitive" }, ...ON_SALE },
         orderBy: { createdAt: "desc" },
         take: limit,
         select: {

@@ -46,6 +46,7 @@ class ProductsDAL {
         lowStockThreshold: product.lowStockThreshold,
         thumbnail: product.thumbnail,
         wishlistCount: saves.get(product.id) ?? 0,
+        archivedAt: product.archivedAt,
         createdAt: product.createdAt,
         category: product.category,
         org: product.org,
@@ -58,6 +59,7 @@ class ProductsDAL {
     const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
+      withdrawnProducts: stats.withdrawnProducts,
       lowStockProducts: stats.lowStockProducts,
       outOfStockProducts: stats.outOfStockProducts,
       featuredProducts: stats.featuredProducts,

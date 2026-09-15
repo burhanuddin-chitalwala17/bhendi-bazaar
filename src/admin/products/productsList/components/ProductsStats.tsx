@@ -10,10 +10,23 @@ interface ProductsStatsProps {
 }
 
 export function ProductsStats({ stats }: ProductsStatsProps) {
-  const statCards = [
+  const statCards: Array<{
+    label: string;
+    value: string;
+    note?: string;
+    icon: typeof Package;
+    color: string;
+    bgColor: string;
+  }> = [
     {
-      label: "Total Products",
+      // "On Sale", not "Total": every figure on this row excludes withdrawn products
+      // (ADR-0026 D12), and a label that did not say so would be the ambiguous one.
+      label: "On Sale",
       value: stats.totalProducts.toLocaleString(),
+      note:
+        stats.withdrawnProducts > 0
+          ? `+ ${stats.withdrawnProducts.toLocaleString()} withdrawn`
+          : undefined,
       icon: Package,
       color: "text-info",
       bgColor: "bg-info/10",
@@ -59,6 +72,9 @@ export function ProductsStats({ stats }: ProductsStatsProps) {
                   {stat.label}
                 </p>
                 <h3 className="text-2xl font-bold mt-2">{stat.value}</h3>
+                {stat.note && (
+                  <p className="text-xs text-muted-foreground mt-1">{stat.note}</p>
+                )}
               </div>
               <div className={`p-3 rounded-full ${stat.bgColor}`}>
                 <stat.icon className={`w-6 h-6 ${stat.color}`} />

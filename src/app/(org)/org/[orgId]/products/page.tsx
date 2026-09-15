@@ -7,6 +7,7 @@ import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
 import { Button } from "@/components/ui/button";
+import type { ProductShelf } from "@server/catalog/product.visibility";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -23,8 +24,17 @@ interface PageProps {
     order?: "asc" | "desc";
     lowStock?: string;
     outOfStock?: string;
+    shelf?: string;
   }>;
 }
+
+/**
+ * A query string is caller-controlled, so the shelf is matched against the closed set
+ * rather than cast into it — an unknown value falls back to on sale (Invariant 4).
+ */
+const SHELVES: ProductShelf[] = ["on-sale", "archived", "all"];
+const shelfFrom = (value: string | undefined): ProductShelf =>
+  SHELVES.find((shelf) => shelf === value) ?? "on-sale";
 
 export default async function OrgProductsPage({ params, searchParams }: PageProps) {
   const { orgId } = await params;
@@ -80,6 +90,7 @@ async function OrgProductsData({
     sortOrder: params.order,
     lowStock: params.lowStock === "true" ? true : undefined,
     outOfStock: params.outOfStock === "true" ? true : undefined,
+    shelf: shelfFrom(params.shelf),
   };
 
   const [productsData, stats, categoryList] = await Promise.all([

@@ -22,6 +22,7 @@ import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checko
 import { promotionService } from "@server/promotions/promotion.service";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
 import { assertNotUnderBidding } from "@server/bidding/bidding-lock";
+import { assertNotArchived } from "@server/catalog/product.sale-gate";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
@@ -376,6 +377,14 @@ export class OrderService {
         // first would leave a window where both succeed and an item is sold while it
         // is under auction.
         await assertNotUnderBidding(productIds, now, tx);
+
+        // Nothing withdrawn from sale may be bought (ADR-0026, product-archive R4).
+        //
+        // Here for the same reason as the check above, and behind the same lock: a
+        // listing filter cannot stop a cart filled before the withdrawal, a page
+        // rendered a minute ago, or a request typed by hand. This is the only point
+        // that can refuse, because it is the only one inside the write.
+        await assertNotArchived(productIds, tx);
 
         // R6: the bought items leave the cart in the same transaction, so a closed
         // tab cannot leave a cart that has already been purchased.

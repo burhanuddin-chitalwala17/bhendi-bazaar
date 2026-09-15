@@ -26,6 +26,9 @@ const URL_PARAM_FOR: Partial<Record<keyof ProductFilters, string>> = {
   sortOrder: "order",
 };
 
+/** The default shelf is on-sale, so it stays out of the URL. */
+const DEFAULT_SHELF = "on-sale";
+
 export function ProductsContainer({
   initialData,
   initialStats,
@@ -51,7 +54,7 @@ export function ProductsContainer({
   }
   
   // ✅ Hook for mutations
-  const { deleteProduct } = useProducts({
+  const { deleteProduct, setProductArchived } = useProducts({
     onSuccess: () => {
       router.refresh();
     }
@@ -63,7 +66,9 @@ export function ProductsContainer({
     
     Object.entries(newFilters).forEach(([key, value]) => {
       const param = URL_PARAM_FOR[key as keyof ProductFilters] ?? key;
-      if (value) {
+      if (key === "shelf" && value === DEFAULT_SHELF) {
+        params.delete(param);
+      } else if (value) {
         params.set(param, String(value));
       } else {
         params.delete(param);
@@ -81,7 +86,8 @@ export function ProductsContainer({
     });
   };
   
-  // ⚡ Optimistic delete
+  // ⚡ Optimistic delete. The row leaves the list either way: a delete removes it, and
+  // an archive takes it off the on-sale shelf this list is showing.
   const handleDelete = async (id: string) => {
     // Optimistic UI update
     setData(prev => ({
@@ -94,6 +100,32 @@ export function ProductsContainer({
       await deleteProduct(id);
     } catch (error) {
       // Revert on error
+      setData(initialData);
+      setStats(initialStats);
+      throw error;
+    }
+  };
+
+  /**
+   * Archive and restore, optimistically. The row is dropped rather than re-flagged
+   * whenever it no longer belongs on the shelf being shown — which is every shelf but
+   * `all`, where it stays and only its badge changes.
+   */
+  const handleSetArchived = async (id: string, archived: boolean) => {
+    const shelf = initialFilters.shelf ?? DEFAULT_SHELF;
+    const stillBelongs = shelf === "all";
+    setData(prev => ({
+      ...prev,
+      products: stillBelongs
+        ? prev.products.map(p =>
+            p.id === id ? { ...p, archivedAt: archived ? new Date() : null } : p
+          )
+        : prev.products.filter(p => p.id !== id),
+    }));
+
+    try {
+      await setProductArchived(id, archived);
+    } catch (error) {
       setData(initialData);
       setStats(initialStats);
       throw error;
@@ -115,6 +147,7 @@ export function ProductsContainer({
       
       {/* Table */}
       <ProductsTable
+        onSetArchived={handleSetArchived}
         products={data.products}
         pagination={data.pagination}
         onPageChange={(page) => updateFilters({ page })}
