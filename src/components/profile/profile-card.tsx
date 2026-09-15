@@ -4,13 +4,19 @@ import { useState } from "react";
 import { Camera, Edit3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { User } from "@/domain/profile";
 import { ProfilePicUpload } from "./profile-pic-upload";
 import { LoadingSpinner } from "../shared/states/LoadingSpinner";
 import { SectionHeader } from "../shared/SectionHeader";
 import { FormActions } from "../shared/button-groups/FormActions";
+import { FormInput, FormPhoneInput } from "../shared/forms/FormField";
 import { ChangePasswordModal } from "./change-password-modal";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import {
+  profileInfoFormSchema,
+  type ProfileInfoFormInput,
+} from "@/lib/validation/schemas/profile.schemas";
+import { formatPhone } from "@server/shared/phone";
 
 interface ProfileCardProps {
   user: User | null;
@@ -38,38 +44,11 @@ export function ProfileCard({
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingPic, setIsEditingPic] = useState(false);
   const [picUrl, setPicUrl] = useState(profilePic ?? "");
-  const [formData, setFormData] = useState({
-    name: user?.name ?? fallbackName,
-    email: user?.email ?? "",
-    mobile: user?.mobile ?? "",
-  });
 
   const name = user?.name ?? fallbackName;
   const email = user?.email ?? null;
   const mobile = user?.mobile ?? null;
   const initial = name?.charAt(0)?.toUpperCase() ?? "B";
-
-  function handleEdit() {
-    setFormData({
-      name: user?.name ?? fallbackName,
-      email: user?.email ?? "",
-      mobile: user?.mobile ?? "",
-    });
-    setIsEditing(true);
-  }
-
-  async function handleSave() {
-    await onUpdate({
-      name: formData.name || undefined,
-      email: formData.email || undefined,
-      mobile: formData.mobile || undefined,
-    });
-    setIsEditing(false);
-  }
-
-  function handleCancel() {
-    setIsEditing(false);
-  }
 
   function handleEditPic() {
     setPicUrl(profilePic ?? "");
@@ -106,7 +85,7 @@ export function ProfileCard({
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleEdit}
+              onClick={() => setIsEditing(true)}
               disabled={loading}
               className="rounded-full text-2xs font-semibold uppercase tracking-eyebrow"
             >
@@ -151,7 +130,7 @@ export function ProfileCard({
                 <p className="text-xs text-muted-foreground">{email}</p>
               )}
               {mobile && (
-                <p className="text-xs text-muted-foreground">+91 {mobile}</p>
+                <p className="text-xs text-muted-foreground">{formatPhone(mobile)}</p>
               )}
             </div>
           </div>
@@ -170,63 +149,95 @@ export function ProfileCard({
             }}
           />
         ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSave();
-            }}
-            className="space-y-3 text-xs"
-          >
-            <div className="space-y-1">
-              <label className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
-                Name
-              </label>
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="Your name"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
-                Email
-              </label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                placeholder="your@email.com"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">
-                Mobile Number
-              </label>
-              <Input
-                type="tel"
-                value={formData.mobile}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, mobile: e.target.value }))
-                }
-                placeholder="10-digit mobile number"
-              />
-            </div>
-            <div className="flex gap-2">
-              <ChangePasswordModal />
-            </div>
-            <FormActions
-              onCancel={handleCancel}
-              isSubmitting={saving}
-              submitLabel="Save"
-              cancelLabel="Cancel"
-            />
-          </form>
+          <ProfileInfoForm
+            user={user}
+            fallbackName={fallbackName}
+            saving={saving}
+            onUpdate={onUpdate}
+            onDone={() => setIsEditing(false)}
+          />
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ProfileInfoForm({
+  user,
+  fallbackName,
+  saving,
+  onUpdate,
+  onDone,
+}: {
+  user: User | null;
+  fallbackName: string;
+  saving?: boolean;
+  onUpdate: ProfileCardProps["onUpdate"];
+  onDone: () => void;
+}) {
+  const {
+    register,
+    control,
+    onSubmit,
+    formError,
+    formState: { errors },
+  } = useServerForm<ProfileInfoFormInput>({
+    schema: profileInfoFormSchema,
+    defaultValues: {
+      name: user?.name ?? fallbackName,
+      email: user?.email ?? "",
+      mobile: user?.mobile ?? "",
+    },
+    // A blank field is left unchanged, as before: the profile update has no "clear" operation.
+    submit: (data) =>
+      onUpdate({
+        name: data.name || undefined,
+        email: data.email || undefined,
+        mobile: data.mobile || undefined,
+      }),
+    onSuccess: onDone,
+  });
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-3 text-xs">
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-field border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+        >
+          {formError}
+        </div>
+      )}
+      <FormInput
+        label="Name"
+        placeholder="Your name"
+        autoComplete="name"
+        {...register("name")}
+        error={errors.name?.message}
+      />
+      <FormInput
+        label="Email"
+        type="email"
+        placeholder="your@email.com"
+        autoComplete="email"
+        {...register("email")}
+        error={errors.email?.message}
+      />
+      <FormPhoneInput
+        name="mobile"
+        control={control}
+        label="Mobile Number"
+        placeholder="Mobile number"
+      />
+      <div className="flex gap-2">
+        <ChangePasswordModal />
+      </div>
+      <FormActions
+        onCancel={onDone}
+        isSubmitting={saving}
+        submitLabel="Save"
+        cancelLabel="Cancel"
+      />
+    </form>
   );
 }

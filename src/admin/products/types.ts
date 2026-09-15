@@ -40,6 +40,8 @@ export interface ProductForTable {
   stock: number;
   lowStockThreshold: number;
   thumbnail: string;
+  /** How many users have this saved. Demand, read-only — never sorted or filtered on. */
+  wishlistCount: number;
   createdAt: Date;
   category: { id: string; name: string };
   org: { id: string; name: string; code: string };

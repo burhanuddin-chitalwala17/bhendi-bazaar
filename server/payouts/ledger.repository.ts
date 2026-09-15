@@ -120,6 +120,49 @@ export class LedgerRepository {
   }
 
   /**
+   * Write an entry the order flow did not produce (spec R5).
+   *
+   * A bidding sale is the first caller: the money was collected off the platform, so
+   * there is no order to derive the entry from and no `orderId` to make it idempotent
+   * against. What makes it safe to write exactly once lives with the caller — for
+   * bidding, the guarded transition to SOLD in the same transaction.
+   *
+   * `isManuallyEdited` stays false: the figures were not edited away from an order's,
+   * they never had one (payouts D9b).
+   */
+  async createAdjustment(
+    input: { orgId: string; computation: LedgerEntryComputation; note: string },
+    db: PayoutDb = prisma
+  ) {
+    const { computation: c } = input;
+    return await db.orgLedgerEntry.create({
+      data: {
+        orgId: input.orgId,
+        orderId: null,
+        kind: "ADJUSTMENT",
+        state: "DRAFT",
+        note: input.note,
+        grossItemsPaise: c.grossItemsPaise,
+        orgFundedDiscountPaise: c.orgFundedDiscountPaise,
+        platformFundedDiscountPaise: c.platformFundedDiscountPaise,
+        commissionBasePaise: c.commissionBasePaise,
+        commissionPaise: c.commissionPaise,
+        payablePaise: c.payablePaise,
+        isNegativeMargin: c.isNegativeMargin,
+        lines: {
+          create: c.lines.map((line: ComputedLedgerLine) => ({
+            orderItemId: line.orderItemId,
+            basePaise: line.basePaise,
+            rateBps: line.rateBps,
+            commissionPaise: line.commissionPaise,
+          })),
+        },
+      },
+      ...ENTRY_WITH_LINES,
+    });
+  }
+
+  /**
    * An organisation's balances, summed by the database.
    *
    * Deliberately **not** a reduce over loaded rows: a balance is a property of every
@@ -153,6 +196,58 @@ export class LedgerRepository {
     return await db.orgLedgerEntry.count({
       where: { orgId, deletedAt: null, isNegativeMargin: true },
     });
+  }
+
+  /**
+   * The overview's balances for every organisation at once, keyed by orgId.
+   *
+   * The O(1) replacement for calling `balancesFor` per organisation: the overview was
+   * 4N+2 queries and grew with each org onboarded. The two figures use different
+   * filters (org-payouts D7), so they stay two grouped sums — but two, not two-per-org.
+   * An org with no entries is simply absent from the maps; the caller defaults to 0,
+   * exactly as an empty aggregate did.
+   */
+  async balancesByOrg(db: PayoutDb = prisma) {
+    const live = { deletedAt: null };
+    const [unclaimed, owed] = await Promise.all([
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: { ...live, settlementId: null },
+        _sum: { payablePaise: true },
+      }),
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: {
+          ...live,
+          OR: [{ settlementId: null }, { settlement: { status: { not: "PAID" } } }],
+        },
+        _sum: { payablePaise: true },
+      }),
+    ]);
+    return {
+      unclaimedByOrg: new Map(unclaimed.map((r) => [r.orgId, r._sum.payablePaise ?? 0])),
+      owedByOrg: new Map(owed.map((r) => [r.orgId, r._sum.payablePaise ?? 0])),
+    };
+  }
+
+  /** Entry counts — total and negative-margin — for every organisation, grouped. */
+  async entryCountsByOrg(db: PayoutDb = prisma) {
+    const [all, negative] = await Promise.all([
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: { deletedAt: null },
+        _count: true,
+      }),
+      db.orgLedgerEntry.groupBy({
+        by: ["orgId"],
+        where: { deletedAt: null, isNegativeMargin: true },
+        _count: true,
+      }),
+    ]);
+    return {
+      entryCountByOrg: new Map(all.map((r) => [r.orgId, r._count])),
+      negativeMarginByOrg: new Map(negative.map((r) => [r.orgId, r._count])),
+    };
   }
 
   async countEntries(orgId: string, db: PayoutDb = prisma) {
@@ -315,6 +410,7 @@ export class LedgerRepository {
       where: { orgId },
       select: { rateBps: true, category: { select: { name: true } } },
       orderBy: { rateBps: "asc" },
+      relationLoadStrategy: "join",
     });
   }
 }

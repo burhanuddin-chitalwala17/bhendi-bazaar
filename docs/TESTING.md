@@ -1,12 +1,12 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-08-03
+- **Verified:** 2026-09-09
 
 ## Stack
 
 Vitest 4 · happy-dom · `@testing-library/react` · `@vitest/coverage-v8` — all in `devDependencies`.
 
-Harness configuration lives in `vitest.config.ts`. Note it aliases `@` → `./src` but not the `@server/*` alias that `tsconfig.json` defines, so a test importing `server/` by alias will not resolve until that is added.
+Harness configuration lives in `vitest.config.ts`. It aliases both `@` → `./src` and `@server` → `./server`, mirroring `tsconfig.json` — they must stay in step or an import typechecks and fails at runtime. `fileParallelism` is off, because the database-backed files below share one local database and would race each other.
 
 ## Coverage philosophy
 
@@ -23,6 +23,8 @@ Harness configuration lives in `vitest.config.ts`. Note it aliases `@` → `./sr
 | Money formatting and paise conversion | High | [ADR-0004](adr/0004-money-as-integer-paise.md). Boundary values and rounding |
 | Repositories | High on write paths | Conditional writes, and `select` projections that must exclude credential fields |
 | Cart sync and merge | High | Guest→signed-in merge, conflicting quantities, missing products, price refresh |
+| **Bidding phase and bid arithmetic** | **100%, every branch** | [ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md). Nothing stores these answers, so the function *is* the state machine. Must cover: each phase boundary against a passed-in clock, the admissible bid range with and without a current high, and that an expired event with no bids stops suspending while one with bids does not |
+| **Bidding writes under concurrency** | **100%** | [ADR-0007](adr/0007-conditional-stock-decrement.md), [ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md). Must cover: two bids at one amount yield one winner, a bid at the closing instant is refused, two events opened on one product yield one event, and the purchase gate holds inside the order transaction |
 | Shipping rate calculation | Moderate | Weight resolution and fallback behaviour |
 | React components | Smoke | Renders, key interaction fires. Not snapshot-heavy |
 | Route handler glue | Smoke | Covered through integration tests instead |
@@ -52,13 +54,19 @@ tests/
 
 `critical/` is deliberately separate: those tests are the executable form of [../CLAUDE.md](../CLAUDE.md)'s Invariants, and a failure there blocks regardless of anything else.
 
-### Database behaviour is currently untestable
+### Database behaviour is tested against the local database, and only there
 
-`integration/` exists in the layout and has no database behind it: `vitest.config.ts` runs `happy-dom` with no test datasource, and `tests/setup.ts` stubs `fetch` to throw. So anything whose behaviour lives in Postgres cannot be asserted here — a unique constraint rejecting a duplicate, a cascade removing a row, a guarded `updateMany` returning `count === 0` under contention.
+**This gap is half closed.** Every file in `integration/` runs against a real Postgres, guarded by the same bargain: it reads `DATABASE_URL`, and `describe.skipIf` skips the whole suite unless the host is loopback *and* the database is named `bhendi_bazaar_dev`. That is an allowlist, the shape [Invariant 7](../CLAUDE.md) already requires of the seed — a denylist of production hostnames fails open, and these files write rows.
 
-That matters more than it sounds, because **the project deliberately pushes rules into the database**: Invariant 6's conditional decrement, `@@unique([userId, orgId])` on a membership, `onDelete: Restrict` protecting order history. Those are the rules most worth testing and the ones currently verified by hand.
+The consequence to keep in mind: **they are green by absence anywhere else.** In CI, and on any machine whose `DATABASE_URL` points elsewhere, they report as skipped and the pipeline stays green having verified none of it. A CI run passing is therefore not evidence that a constraint holds; running the suite locally, against a seeded dev database, is. Some of them also expect the seed to have run (`bulk-upload`, `db-ops-budget`, `join-equivalence`) and fail loudly rather than silently if it has not.
 
-Closing it means a disposable Postgres for tests — a container, or a schema-per-run against a local instance — plus `prisma migrate deploy` in the test setup. Until then, a PR whose behaviour is a constraint says so in its CHANGELOG entry and states the SQL that was run instead. **This is a gap, not a policy**: "the database enforces it" is only an argument if something checks that it does.
+This matters because **the project deliberately pushes rules into the database**: Invariant 6's conditional decrement, bidding's partial unique index and `@@unique([eventId, amountPaise])` ([ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md)), `onDelete: Restrict` protecting order history ([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). `bidding-concurrency.test.ts` is the pattern to copy for a new one — contention expressed as concurrent transactions against one row, asserting the affected-row count is the verdict. A stub would happily prove a design that double-accepts in production.
+
+**What is still missing is CI, not the tests.** Closing the rest means a disposable Postgres in the pipeline — a container, or a schema-per-run — plus `prisma migrate deploy` in the test setup, at which point the `skipIf` guards can widen to include it. Until then a PR whose behaviour is a constraint says so in its CHANGELOG entry, and says whether the database-backed suite was actually run.
+
+### `critical/` is empty, and the Invariant tests are in `unit/`
+
+The directory exists; the tests that guard Invariants live beside everything else — `payment-confirmation`, `order-pricing`, `payment-failed-restock`, `seed-guard`, `admin-audit-trail`, `design-tokens`. Recorded here rather than quietly tidied away, because the separation was the point: a failure in one of those blocks regardless of anything else, and nothing in the layout currently says so.
 
 ## Conventions
 

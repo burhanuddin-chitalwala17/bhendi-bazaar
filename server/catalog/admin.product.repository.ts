@@ -144,6 +144,10 @@ export class AdminProductsRepository {
                 where,
                 orderBy,
                 select: PRODUCT_LIST_SELECT,
+                // Product + stockLocations + category + org in one JOIN, not four
+                // statements. (The in-memory slice below stands: stock is a sum across
+                // stockLocations, so this shape cannot paginate in SQL.)
+                relationLoadStrategy: "join",
             })).map(withStockTotal);
 
             let filteredProducts = allProducts;
@@ -182,6 +186,7 @@ export class AdminProductsRepository {
                 skip: (page - 1) * limit,
                 take: limit,
                 select: PRODUCT_LIST_SELECT,
+                relationLoadStrategy: "join",
             }),
             prisma.product.count({ where }),
         ]);
@@ -286,6 +291,7 @@ export class AdminProductsRepository {
         return await prisma.product.findUnique({
             where: { id },
             select: PRODUCT_DETAILS_SELECT,
+            relationLoadStrategy: "join",
         });
     }
 

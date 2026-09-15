@@ -14,7 +14,9 @@ import { Search, RefreshCw } from "lucide-react";
 import { adminUserApiClient } from "@/services/admin/userApiClient";
 import type { AdminUser, UserListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
+import { formatPhone } from "@server/shared/phone";
 
 import { PageHeader } from "@/components/shared/page-shell";
 export default function AdminUsersPage() {
@@ -71,14 +73,6 @@ export default function AdminUsersPage() {
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const columns: Column<AdminUser>[] = [
     {
       key: "name",
@@ -88,7 +82,7 @@ export default function AdminUsersPage() {
           <p className="font-medium">{user.name || "N/A"}</p>
           <p className="text-sm text-muted-foreground">{user.email}</p>
           {user.mobile && (
-            <p className="text-sm text-muted-foreground">{user.mobile}</p>
+            <p className="text-sm text-muted-foreground">{formatPhone(user.mobile)}</p>
           )}
         </div>
       ),

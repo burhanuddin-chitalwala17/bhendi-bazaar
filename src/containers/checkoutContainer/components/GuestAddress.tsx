@@ -6,13 +6,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AddressFields } from "@/components/shared/forms/AddressFields";
 import { DeliveryAddress } from "@/domain/profile";
-import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
+import { emailSchema, phoneSchema, postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 
-const addressSchema = z.object({
+export const guestAddressSchema = z.object({
   id: z.string(),
   fullName: z.string().min(2, "Name required"),
-  mobile: z.string().regex(/^\d{10}$/, "10 digits required"),
-  email: z.string().email("Invalid email").optional(),
+  mobile: phoneSchema,
+  // A guest has no account to supply the order-confirmation email
+  // (server/checkout/order.service.ts onPaymentConfirmed), so this form requires
+  // one. A check rather than a required field, so the input type stays
+  // string | undefined and still matches DeliveryAddress.email? and AddressFields.
+  email: z
+    .string()
+    .optional()
+    .refine((value) => emailSchema.safeParse(value).success, "Email required for order updates"),
   addressLine1: z.string().min(5, "Address required"),
   addressLine2: z.string().optional(),
   landmark: z.string().optional(),
@@ -27,12 +34,16 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
 
   const {
     register,
+    control,
     watch,
     formState: { errors, isValid },
   } = useForm<DeliveryAddress>({
-    resolver: zodResolver(addressSchema),
+    resolver: zodResolver(guestAddressSchema),
     mode: "onChange",
     defaultValues: {
+      // A guest address has no id; without this default the required `id`
+      // keeps the form invalid forever and shipping rates never load.
+      id: "",
       country: "India",
     },
   });
@@ -59,15 +70,11 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
     state: state || "",
     pincode: pincode || "",
     country: country || "India",
-  }), [fullName, mobile, email, addressLine1, addressLine2, city, state, pincode, country]);
+  }), [fullName, mobile, email, addressLine1, addressLine2, landmark, city, state, pincode, country]);
 
   useEffect(() => {
-
     if (isValid) {
-      console.log('✅ Calling onAddressChange with:', formValues);
       onAddressChange({ ...formValues, id: "" });
-    } else {
-      console.log('❌ Form not valid yet');
     }
   }, [formValues, isValid, onAddressChange]);
 
@@ -80,7 +87,9 @@ export function GuestAddress({ onAddressChange }: { onAddressChange: (address: D
       <div className="rounded-xl border border-border/70 bg-card/80 p-4">
         <AddressFields
           register={register}
+          control={control}
           errors={errors}
+          emailRequired
         />
       </div>
     </div>

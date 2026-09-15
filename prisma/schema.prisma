@@ -75,9 +75,11 @@ model Product {
 
   orderItems       OrderItem[]
   cartItems        CartItem[]
+  wishlistItems    WishlistItem[]
   stockLocations   ProductStock[]
   media            ProductMedia[]
   promotionTargets PromotionTarget[]
+  biddingEvents    BiddingEvent[]
 
   // ⭐ Org Association (REQUIRED)
   orgId String
@@ -190,19 +192,59 @@ model CartItem {
   @@index([productId])
 }
 
+/// A user's saved products. One per user, created on the first heart rather than at
+/// signup — a wishlist nobody has opened should not exist. No `wlId` on `User`: the
+/// unique `userId` here is the whole relationship, and a second copy on the other side
+/// is a column that can disagree with this one.
+model Wishlist {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items WishlistItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// One saved product. Rows rather than a `productIds String[]` on the parent, for the
+/// reason PR-41/43/44 lifted their blobs: an array cannot carry a foreign key, so a
+/// deleted product leaves an id nothing resolves, and every add is a read-modify-write
+/// of the whole array that a second device silently overwrites.
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+
+  // Cascade, like CartItem and unlike OrderItem: a saved product is a wish, not
+  // history, so deleting the product just removes it from wishlists. ADR-0020 governs
+  // rows carrying money or attribution; this one carries neither.
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Hearting twice is the same wish: the second click is a no-op, not a duplicate row.
+  // Also the index for "is this product saved", so no separate wishlistId index.
+  @@unique([wishlistId, productId])
+  @@index([productId])
+}
+
 model User {
   id              String       @id @default(cuid())
   name            String?
   email           String?      @unique
   emailVerified   DateTime? // Keep this for NextAuth compatibility
   isEmailVerified Boolean      @default(false) // Our custom field
-  mobile          String?      @unique
+  /// Contact data, not an identity key: one number may back any number of accounts (ADR-0024).
+  mobile          String?
   passwordHash    String?
   platformRole    PlatformRole @default(USER)
   isBlocked       Boolean      @default(false)
   lastActiveAt    DateTime     @default(now())
   profile         Profile?
   cart            Cart?
+  wishlist        Wishlist?
   orders          Order[]
   reviews         Review[]
   adminLogs       AdminLog[]
@@ -216,6 +258,10 @@ model User {
 
   settlementsCreated Settlement[] @relation("SettlementCreatedBy")
   settlementsUpdated Settlement[] @relation("SettlementUpdatedBy")
+
+  bids                 Bid[]          @relation("UserBids")
+  biddingEventsCreated BiddingEvent[] @relation("BiddingCreatedBy")
+  biddingEventsSettled BiddingEvent[] @relation("BiddingSettledBy")
 
   @@index([platformRole])
   @@index([isBlocked])
@@ -281,6 +327,7 @@ model Org {
   commissionRules OrgCommissionRule[]
   ledgerEntries   OrgLedgerEntry[]
   settlements     Settlement[]
+  biddingEvents   BiddingEvent[]
 
   @@index([email])
   @@index([isActive])
@@ -1124,4 +1171,131 @@ model BannerAction {
 enum BannerActionVariant {
   PRIMARY
   SECONDARY
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BIDDING — one item sold by timed bidding on a shareable link
+// (docs/specs/bidding/, ADR-0007, ADR-0020)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Only what the clock cannot decide (bidding D3). Whether an OPEN event is scheduled,
+/// running or finished is derived from its timestamps on every read, so no scheduled job
+/// has to have run for the answer to be right. Nothing may branch on this column alone.
+enum BiddingStatus {
+  OPEN
+  CANCELLED
+  SOLD
+  UNSOLD
+}
+
+/// One item offered for timed bidding on a public link.
+///
+/// `highestBidPaise` and `bidCount` are derived, but written only inside the guarded
+/// conditional update that accepts a bid (bidding D5/D7), so they are authoritative by
+/// construction rather than by reconciliation — and they make the public page, which is
+/// read far more often than it is written, a single row read.
+///
+/// Two constraints the schema language cannot express are raw SQL in the migration: a
+/// partial unique index on `productId` where the status is OPEN, so a product is under
+/// at most one live event and two simultaneous creations cannot both succeed (D4, R7);
+/// and a check that the bidding window is ordered.
+///
+/// Restricts its product, org and people: an event carries money and attribution, so
+/// deletion is refused and the real operation is cancellation (ADR-0020, R27).
+model BiddingEvent {
+  id   String @id @default(cuid())
+  /// The public link's token — random, never the product slug, so the link is
+  /// unguessable and independent of a slug frozen for other reasons (D16, R9).
+  slug String @unique
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orgId     String
+  org       Org     @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  /// Which item this is, where the product has options. Descriptive only: `ProductStock`
+  /// has no variant dimension, so this states what is being sold without creating
+  /// variant-level inventory (D10, R1a).
+  size  String?
+  color String?
+
+  startAt DateTime
+  endAt   DateTime
+
+  startingBidPaise Int
+  /// The most one bid may add to the current high. A bidder wanting to go further bids
+  /// again, which caps a bad-faith bid without capping the auction (R6).
+  maxIncreasePaise Int
+  /// The org's own quick-bid amounts, ascending. The smallest also floors a custom
+  /// increase, so the buttons on screen cannot contradict the rule (R5, R13).
+  quickBidsPaise Int[]
+  /// The product's price when the event opened, copied so later repricing cannot rewrite
+  /// what the event says the item was worth (D9, R4).
+  referencePricePaise Int
+
+  status BiddingStatus @default(OPEN)
+
+  highestBidPaise Int?
+  bidCount        Int  @default(0)
+
+  /// Written together when the platform records the outcome (R40, R43). The amount is
+  /// what the org is owed and may differ from the winning bid, which is why the reason
+  /// is kept beside it rather than inferred later.
+  soldBidId       String?   @unique
+  soldBid         Bid?      @relation("SoldBid", fields: [soldBidId], references: [id], onDelete: Restrict)
+  soldAmountPaise Int?
+  soldReason      String?   @db.Text
+  settledAt       DateTime?
+  settledById     String?
+  settledBy       User?     @relation("BiddingSettledBy", fields: [settledById], references: [id], onDelete: Restrict)
+
+  createdById String
+  createdBy   User   @relation("BiddingCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  bids Bid[] @relation("EventBids")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Serves the purchase-suspension lookup, which asks for OPEN events by product
+  /// (D8/D8a) — the one query on the storefront's read path.
+  @@index([status, productId])
+  @@index([status, endAt])
+  @@index([orgId, status])
+}
+
+/// One bid, kept for good: nothing is removed while an event runs, and the ladder is what
+/// the platform works down when a winner does not go through with it (R27, R39).
+///
+/// A guest's details sit on the row, following the address snapshot already carried on
+/// `Order` — there is no guest table. Email is nullable by decision: a bidder who gives
+/// none cannot be told they were outbid, which the form discloses at the point of
+/// choosing (D14, R22/R22a/R28). A check in the migration requires either a user or a
+/// guest name and phone, so a bid is always attributable to someone.
+///
+/// Unique on `(eventId, amountPaise)`: the guarded update already makes equal bids
+/// impossible, and this makes it impossible independently of that guard being written
+/// correctly, so no tiebreak rule has to exist anywhere (D6, H1).
+model Bid {
+  id      String       @id @default(cuid())
+  eventId String
+  event   BiddingEvent @relation("EventBids", fields: [eventId], references: [id], onDelete: Restrict)
+
+  amountPaise Int
+
+  /// Set for a signed-in bidder, whose contact details are read through the relation so
+  /// they cannot go stale. A guest fills the columns below instead — never both.
+  userId     String?
+  user       User?   @relation("UserBids", fields: [userId], references: [id], onDelete: Restrict)
+  guestName  String?
+  guestPhone String?
+  guestEmail String?
+
+  createdAt DateTime @default(now())
+
+  wonEvent BiddingEvent? @relation("SoldBid")
+
+  @@unique([eventId, amountPaise])
+  @@index([eventId, amountPaise(sort: Desc)])
+  @@index([userId])
 }

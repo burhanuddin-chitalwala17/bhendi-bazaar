@@ -1,5 +1,6 @@
 /**
- * Base styles shared across all email templates
+ * The single stylesheet behind every email. Injected once by `renderEmail`; a template
+ * never imports this directly, it passes its own additions as `styles`.
  */
 export const baseEmailStyles = `
   * {
@@ -152,6 +153,45 @@ export const baseEmailStyles = `
   .accent-bar {
     height: 4px;
     background: linear-gradient(90deg, #d4af37 0%, #f4d775 50%, #d4af37 100%);
+  }
+  .success-banner {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    padding: 20px 30px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .panel {
+    background: #f8f8f8;
+    border: 2px solid #d4af37;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 25px 0;
+  }
+  .panel-plain {
+    border: 0;
+  }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 15px;
+  }
+  .detail-row.final {
+    border-top: 2px solid #d4af37;
+    margin-top: 10px;
+    padding-top: 15px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  .detail-label {
+    color: #666;
+  }
+  .detail-value {
+    font-weight: 600;
+    color: #1a1a1a;
   }
   @media only screen and (max-width: 600px) {
     .email-wrapper {

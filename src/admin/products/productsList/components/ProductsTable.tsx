@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { Edit, Eye, Trash2 } from "lucide-react";
+import { Edit, Eye, Heart, Trash2 } from "lucide-react";
 import { DataTable, Column } from "@/admin/data-table";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockBadge } from "@/components/shared/badges/StatusBadge";
@@ -87,6 +87,28 @@ export function ProductsTable({
           />
         </div>
       ),
+    },
+    {
+      // Not sortable: the count is merged in after the page is selected, so sorting on
+      // it would only reorder the ten rows already fetched — a ranking that lies.
+      key: "wishlistCount",
+      label: "Wishlisted",
+      render: (product) =>
+        product.wishlistCount > 0 ? (
+          <span
+            className="flex items-center gap-1.5 text-destructive"
+            title={`Saved by ${product.wishlistCount} ${
+              product.wishlistCount === 1 ? "user" : "users"
+            }`}
+          >
+            <Heart className="w-4 h-4 fill-current" />
+            <span className="font-semibold">{product.wishlistCount}</span>
+          </span>
+        ) : (
+          <span className="text-muted-foreground" title="Nobody has saved this yet">
+            —
+          </span>
+        ),
     },
     {
       key: "badges",

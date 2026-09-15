@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-08-03
+- **Verified:** 2026-09-11
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
 
@@ -29,6 +29,7 @@
 | `@upstash/ratelimit` + `@upstash/redis` | `^2.0.7` / `^1.36.0` | Distributed rate limiting. Required because Vercel runs many instances, so in-memory counters do not hold. **Reads `KV_REST_API_*`, not `UPSTASH_REDIS_REST_*`** | `src/lib/rate-limit.ts` | 2026-08-03 |
 | `@vercel/blob` | `^2.0.0` | Product and profile image storage | `api/admin/upload`, `api/profile/upload-picture` | 2026-08-03 |
 | `exceljs` | `^4.4.0` | Reads and writes the bulk-upload sheets (.xlsx/.csv) and generates the per-org sample. Chosen over npm `xlsx`/SheetJS, whose free build is unmaintained with unfixed parser advisories — this parses user-supplied files | `server/catalog/bulk/**` | 2026-08-21 |
+| `libphonenumber-js` | `^1.13.13` | Validates, normalises to E.164 and formats phone numbers for every country. Imported as `/max`: `min` metadata validates most countries by length alone and accepts numbers the Indian rule refused ([international-phone](specs/international-phone/trd.md) D1) | `server/shared/phone.ts` only | 2026-09-11 |
 | `resend` | `^6.6.0` | Transactional email | `server/notifications/email.service.ts` | 2026-08-03 |
 | `react-hook-form` + `@hookform/resolvers` | `^7.68.0` / `^5.2.2` | Admin form state with Zod resolvers | `src/components/shared/forms/**` | 2026-08-03 |
 | `@radix-ui/*` | various | Accessible primitives behind shadcn/ui: dialog, separator, slot, switch | `src/components/ui/**` | 2026-08-03 |

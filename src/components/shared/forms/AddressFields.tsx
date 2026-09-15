@@ -1,26 +1,30 @@
 // components/shared/forms/AddressFields.tsx
 
-import { FormInput, FormTextarea } from "./FormField";
-import { UseFormRegister, FieldErrors } from "react-hook-form";
+import { FormInput, FormPhoneInput, FormTextarea } from "./FormField";
+import { Control, UseFormRegister, FieldErrors } from "react-hook-form";
 import { DeliveryAddress } from "@/domain/profile";
 import { PINCODE_PATTERN, PINCODE_MESSAGE } from "@server/shared/pincode";
 
 interface AddressFieldsProps {
   register: UseFormRegister<DeliveryAddress>;
+  control: Control<DeliveryAddress>;
   errors?: FieldErrors;
   namePrefix?: string; // For nested forms like "shippingAddress."
   includeEmail?: boolean;
   includeNotes?: boolean;
   includeLabel?: boolean;
+  emailRequired?: boolean;
 }
 
 export function AddressFields({
   register,
+  control,
   errors,
   namePrefix = "",
   includeEmail = true,
   includeNotes = false,
   includeLabel = false,
+  emailRequired = false,
 }: AddressFieldsProps) {
   const getFieldName = (field: string) => `${namePrefix}${field}`;
 
@@ -68,26 +72,25 @@ export function AddressFields({
           {...register("fullName", { required: true })}
           error={getError("fullName")}
         />
-        <FormInput
+        <FormPhoneInput
+          name="mobile"
+          control={control}
           label="Mobile"
           required
-          type="tel"
-          placeholder="10-digit Mobile Number"
-          autoComplete="tel"
-          {...register("mobile", { required: true })}
-          error={getError("mobile")}
+          placeholder="Mobile number"
         />
       </div>
 
-      {/* Email (optional) */}
+      {/* Email */}
       {includeEmail && (
         <FormInput
           label="Email"
+          required={emailRequired}
           type="email"
           placeholder="your@email.com"
           autoComplete="email"
-          {...register("email")}
-          hint="Optional - for order updates"
+          {...register("email", { required: emailRequired })}
+          hint={emailRequired ? "For your order confirmation" : "Optional - for order updates"}
           error={getError("email")}
         />
       )}

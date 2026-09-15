@@ -16,6 +16,10 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       platformRole: PlatformRole;
+      // Drives only the verification banner and the avatar badge — never access
+      // control. Carried on the token so the chrome does not fetch /api/profile on
+      // every page load; refreshed via session.update() after the user verifies.
+      isEmailVerified: boolean;
     };
   }
 }
@@ -24,5 +28,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     platformRole: PlatformRole;
+    isEmailVerified: boolean;
   }
 }

@@ -1,18 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X, Mail, AlertCircle, CheckCircle } from "lucide-react";
-import { useProfileContext } from "@/context/ProfileContext";
-import { useAuth } from "@/lib/auth";
+import { useSession } from "next-auth/react";
 
 export function EmailVerificationBanner() {
-  const { status } = useAuth();
-  const { 
-    isEmailVerified, 
-    resendVerificationEmail,
-    refetch 
-  } = useProfileContext();
-  
+  const { data: session, status, update } = useSession();
+  // Rides the session token (see auth-config.ts) — the banner no longer forces a
+  // per-page /api/profile fetch just to know whether to show.
+  const isEmailVerified = session?.user?.isEmailVerified ?? true;
+
+  const resendVerificationEmail = useCallback(async () => {
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+      });
+      const result = await response.json();
+      return response.ok
+        ? { success: true, message: result.message || "Verification email sent!" }
+        : { success: false, message: result.error || "Failed to send verification email" };
+    } catch (error) {
+      console.error("Failed to resend verification email:", error);
+      return {
+        success: false,
+        message: "Failed to send verification email. Please try again.",
+      };
+    }
+  }, []);
+
   const [isVisible, setIsVisible] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
@@ -43,7 +58,7 @@ export function EmailVerificationBanner() {
     const verification = params.get("verification");
     
     if (verification === "success") {
-      refetch(); // Refresh profile to get updated verification status
+      update(); // Re-read isEmailVerified into the session token (auth-config jwt update)
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the URL, which we also rewrite below
       setIsVisible(false);
       sessionStorage.removeItem("email-verification-banner-dismissed");
@@ -56,7 +71,7 @@ export function EmailVerificationBanner() {
       setTimeout(() => setResendMessage(null), 5000);
       window.history.replaceState({}, "", window.location.pathname);
     }
-  }, [refetch]);
+  }, [update]);
 
   const handleClose = () => {
     setIsVisible(false);

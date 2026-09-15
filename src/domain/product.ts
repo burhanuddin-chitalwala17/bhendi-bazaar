@@ -39,6 +39,17 @@ export interface Product {
   /** Indicative origin (largest active holding); allocation decides the real one. */
   shippingFromPincode: string;
   org: OrgSummary;
+  /**
+   * The public link of the bidding event holding this item out of normal sale, or
+   * undefined when it can be bought as usual (bidding spec R30).
+   *
+   * Told to the client rather than inferred by it: the storefront has to disable the
+   * buy actions and point at the event, and it cannot work that out from the product's
+   * own fields — deliberately, since nothing about the product changes when an event
+   * opens (spec R32). This is a display state; the refusal itself lives in the order
+   * transaction, so a client that ignores this gains nothing (spec R31).
+   */
+  biddingSlug?: string;
 }
 
 export interface ProductFilter {

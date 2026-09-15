@@ -33,6 +33,7 @@ export function OrgForm({
     register,
     onSubmit: handleFormSubmit,
     formError,
+    control,
     watch,
     setValue,
     formState: { errors },
@@ -68,6 +69,7 @@ export function OrgForm({
       {/* Basic Information */}
       <OrgBasicFields
         register={register}
+        control={control}
         errors={errors}
         code={org?.code}
         readOnly={readOnly}

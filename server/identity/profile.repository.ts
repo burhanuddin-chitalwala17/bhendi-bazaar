@@ -15,6 +15,15 @@ import type {
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 
 export class ProfileRepository {
+  /** An account's login email — nothing else. For notifying the account holder. */
+  async findEmailById(userId: string): Promise<string | null> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    return user?.email ?? null;
+  }
+
   /**
    * Get user profile by user ID
    * Creates a profile if it doesn't exist
@@ -83,26 +92,6 @@ export class ProfileRepository {
 
         if (existingUser && existingUser.id !== userId) {
           throw new ConflictError("This email is already registered to another account");
-        }
-      }
-    }
-
-    // Check if mobile is changing and already taken
-    if (mobile !== undefined) {
-      const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { mobile: true },
-      });
-      const isMobileChanging = mobile !== currentUser?.mobile;
-
-      if (isMobileChanging && mobile) {
-        const existingMobile = await prisma.user.findUnique({
-          where: { mobile },
-          select: { id: true },
-        });
-
-        if (existingMobile && existingMobile.id !== userId) {
-          throw new ConflictError("This mobile number is already registered to another account");
         }
       }
     }

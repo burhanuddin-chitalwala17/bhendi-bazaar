@@ -12,6 +12,7 @@ import { ShipmentTrackingForm } from "@/components/admin/ShipmentTrackingForm";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { ErrorState } from "@/components/shared/states/ErrorState";
+import { formatPhone } from "@server/shared/phone";
 import { 
   Package, 
   MapPin, 
@@ -26,6 +27,7 @@ import {
   XCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 export default function AdminOrderDetailsPage({
   params,
@@ -47,14 +49,6 @@ export default function AdminOrderDetailsPage({
       refetchDependencies: [orderId],
     }
   );
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -135,7 +129,7 @@ export default function AdminOrderDetailsPage({
               {address?.mobile && (
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-muted-foreground/70" />
-                  <p>{address.mobile}</p>
+                  <p>{formatPhone(address.mobile)}</p>
                 </div>
               )}
               {address?.email && (

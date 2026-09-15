@@ -58,7 +58,83 @@ async function offerFilter() {
   return { OR: clauses };
 }
 
+/**
+ * Stock rows, so a caller inside a `$transaction` passes `tx` and gets the same
+ * guarantees. `ProductStock` hangs off a product, so it is reached from here rather
+ * than from each domain that needs a unit (ADR-0003).
+ */
+export type ProductStockDb = Pick<typeof prisma, "productStock">;
+
 export class ProductsRepository {
+
+  /**
+   * What one product carries that decides whether it can be offered at all —
+   * its price to snapshot, and the options a caller may have to choose between.
+   */
+  async listingFacts(productId: string, orgId: string) {
+    return await prisma.product.findFirst({
+      where: { id: productId, orgId },
+      select: { id: true, name: true, price: true, sizes: true, colors: true },
+    });
+  }
+
+  /**
+   * Stock on hand for one product, by location.
+   *
+   * Active locations only, matching what `PRODUCT_INCLUDE` already treats as sellable:
+   * an inactive location's units are held, not offered. Returned per location rather
+   * than summed, because a caller taking a unit has to name where from.
+   */
+  async stockByLocation(productId: string, db: ProductStockDb = prisma) {
+    return await db.productStock.findMany({
+      where: { productId, orgAddress: { isActive: true }, quantity: { gt: 0 } },
+      select: {
+        orgAddressId: true,
+        quantity: true,
+        orgAddress: { select: { name: true } },
+      },
+      orderBy: { quantity: "desc" },
+    });
+  }
+
+  /**
+   * Take the row lock on this product's stock, without moving any.
+   *
+   * The `increment: 0` is the entire point and is not a mistake: an UPDATE takes a
+   * row-level lock on every row it matches whether or not it changes a value. That
+   * makes a caller about to promise this unit to someone serialise against the order
+   * path, which locks the same rows when it reserves. Two transactions that never
+   * touch a common row cannot see each other, which is how an item comes to be sold
+   * and auctioned at the same instant.
+   *
+   * Returns how many locations still hold stock, so the caller's own check runs behind
+   * the lock rather than in front of it.
+   */
+  async lockStock(productId: string, db: ProductStockDb = prisma): Promise<number> {
+    const locked = await db.productStock.updateMany({
+      where: { productId, quantity: { gte: 1 } },
+      data: { quantity: { increment: 0 } },
+    });
+    return locked.count;
+  }
+
+  /**
+   * Take one unit from a named location, conditionally (Invariant 6, ADR-0007).
+   *
+   * `false` means there was nothing there to take — read-then-write would be a race,
+   * so the guard and the decrement are one statement.
+   */
+  async takeOneFromLocation(
+    productId: string,
+    orgAddressId: string,
+    db: ProductStockDb = prisma
+  ): Promise<boolean> {
+    const taken = await db.productStock.updateMany({
+      where: { productId, orgAddressId, quantity: { gte: 1 } },
+      data: { quantity: { decrement: 1 } },
+    });
+    return taken.count === 1;
+  }
 
   /** How many of these products belong to someone else — the org-scoping guard. */
   async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
@@ -117,8 +193,23 @@ export class ProductsRepository {
     });
   }
 
+  /**
+   * Every product slug, for the sitemap. One lean statement — no relations and no offer
+   * resolution, because a URL list needs neither. `getProducts({})` used to serve this,
+   * loading the whole join tree and pricing every row to emit a path.
+   */
+  async listSlugs(): Promise<Array<{ slug: string }>> {
+    return await prisma.product.findMany({ select: { slug: true } });
+  }
+
+  // Nothing a storefront listing renders needs the whole catalogue at once. When the
+  // caller gives no limit we still cap the row set: a bare search like `?q=a` otherwise
+  // loads every matching product with the full join tree. The service validates an
+  // explicit limit to ≤100 (product.service.ts); this bounds the no-limit case.
+  private static readonly MAX_LIST_ROWS = 200;
+
   async getProducts(filter: ProductFilter) {
-    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly } = filter;
+    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly, limit, offset } = filter;
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
@@ -136,6 +227,8 @@ export class ProductsRepository {
         include: {
           ...PRODUCT_INCLUDE,
         },
+        ...(offset ? { skip: offset } : {}),
+        take: limit ?? ProductsRepository.MAX_LIST_ROWS,
       });
       return products;
     } catch (error) {

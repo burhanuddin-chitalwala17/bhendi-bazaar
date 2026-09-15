@@ -2,6 +2,7 @@ import { cartRepository } from "@server/cart/cart.repository";
 import { mergeCartLines } from "@server/cart/cart.merge";
 import type { CartItem, CartLineInput } from "@server/cart/cart.types";
 import { DomainError } from "@server/shared/domain-error";
+import { assertNotUnderBidding, lockedAmong } from "@server/bidding/bidding-lock";
 
 /**
  * Cart service — business logic. Storage is rows since order-and-cart-lines: a
@@ -20,6 +21,13 @@ export class CartService {
     expectedVersion?: number
   ): Promise<{ version: number }> {
     this.validateCartLines(lines);
+    // Refused here as well as in the order transaction, so someone adding an item that
+    // has gone to auction is told now rather than at payment (bidding spec R30/R31).
+    // The transaction remains the enforcement point; this is where the message is good.
+    await assertNotUnderBidding(
+      lines.map((line) => line.productId),
+      new Date()
+    );
     const cart = await cartRepository.upsert(userId, lines, expectedVersion);
     return { version: cart.version };
   }
@@ -47,8 +55,16 @@ export class CartService {
           color: item.color,
         }))
       );
+      // An item that went to auction while the device cart sat there drops out, the
+      // same way one whose product has vanished does. Signing in must not fail because
+      // of it, and it cannot be bought anyway (bidding spec R30).
+      const locked = await lockedAmong(
+        merged.map((line) => line.productId),
+        new Date()
+      );
+      const sellable = merged.filter((line) => !locked.has(line.productId));
       // Unconditional write: signing in is the tiebreak, not a stale-tab race.
-      const saved = await cartRepository.upsert(userId, merged);
+      const saved = await cartRepository.upsert(userId, sellable);
       return { items: saved.items, version: saved.version };
     } catch (error) {
       console.error("[CartService] syncCart failed:", error);

@@ -12,20 +12,27 @@ export default async function OrgNewProductPage({
 }) {
   const { orgId } = await params;
 
-  const categories = (await adminCategoriesDAL.getCategories()).categories.map(
-    (c: AdminCategory) => ({ id: c.id, name: c.name })
-  );
+  // Three independent reads, fetched together. One org, not a list: in this portal there
+  // is nothing to choose between, and offering the choice would be offering a product
+  // owned by somebody else — read that org by id rather than loading every platform org.
+  const [categoriesResult, org, allLocations] = await Promise.all([
+    adminCategoriesDAL.getCategories(),
+    orgsDAL.getOrgSummary(orgId),
+    orgAddressService.listLocations(orgId),
+  ]);
 
-  // One org, not a list: in this portal there is nothing to choose between, and offering
-  // the choice would be offering a product owned by somebody else.
-  const org = (await orgsDAL.getOrgs()).find((o) => o.id === orgId);
   if (!org) notFound();
+
+  const categories = categoriesResult.categories.map((c: AdminCategory) => ({
+    id: c.id,
+    name: c.name,
+  }));
 
   const orgs = [{ id: org.id, name: org.name, code: org.code }];
 
   // Only active locations are offered for new stock; inactive ones keep their rows
   // but take no more (stock-locations, isActive).
-  const locations = (await orgAddressService.listLocations(orgId))
+  const locations = allLocations
     .filter((location) => location.isActive)
     .map((location) => ({
       id: location.id,

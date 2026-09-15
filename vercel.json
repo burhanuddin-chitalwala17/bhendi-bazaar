@@ -1,5 +1,8 @@
 {
   "buildCommand": "npx prisma migrate deploy && next build",
+  "git": {
+    "deploymentEnabled": false
+  },
   "crons": [
     {
       "path": "/api/cron/reconcile-payments",

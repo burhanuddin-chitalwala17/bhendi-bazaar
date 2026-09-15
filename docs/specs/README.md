@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-08-16
+- **Verified:** 2026-09-12
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -35,6 +35,9 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
 | [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions, catalog, checkout | 🔨 In progress — PR-67 |
 | [org-payouts](org-payouts/) | What each organisation has earned, what the platform kept, and what is still owed | 7 | payouts, checkout | 🔨 In progress — PR-67 |
+| [bidding](bidding/) | An organisation puts one product up for timed bidding and shares a link; the platform sells it directly and records what it fetched | 8 | bidding, catalog, checkout, payouts | ✅ Implemented — PR-89 |
+| [international-phone](international-phone/) | Every phone field accepts a number from any country, and one number has one spelling | — | identity, catalog, checkout, bidding | ✅ Implemented — PR-102 |
+| [shared-phone-numbers](shared-phone-numbers/) | One phone number backs any number of accounts; email alone identifies one | — | identity | ✅ Implemented — PR-103 |
 
 ### Subfeatures
 

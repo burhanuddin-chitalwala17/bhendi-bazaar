@@ -12,6 +12,7 @@ import type {
   UpdateProfileInput,
 } from "@server/identity/profile.types";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
+import { isValidPhone, PHONE_MESSAGE } from "@server/shared/phone";
 
 export class ProfileService {
   /**
@@ -75,22 +76,11 @@ export class ProfileService {
       }
     }
 
-    // Validate mobile format if provided (basic validation)
     if (input.mobile !== undefined && input.mobile !== null) {
-      const mobileRegex = /^\d{10}$/;
-      if (!mobileRegex.test(input.mobile)) {
-        throw new DomainError("Mobile number must be 10 digits");
+      if (!isValidPhone(input.mobile)) {
+        throw new DomainError(PHONE_MESSAGE);
       }
-
-      // Check if mobile is already taken by another user
-      const existingMobile = await prisma.user.findUnique({
-        where: { mobile: input.mobile },
-        select: { id: true },
-      });
-
-      if (existingMobile && existingMobile.id !== userId) {
-        throw new ConflictError("This mobile number is already registered to another account");
-      }
+      // No uniqueness check: a phone may back any number of accounts (ADR-0024).
     }
 
     // Validate addresses if provided

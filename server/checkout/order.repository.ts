@@ -130,18 +130,53 @@ export class OrderRepository {
   }
 
   /**
-   * Find order by code (for guest lookup)
+   * Find order by code, for the unauthenticated guest-tracking lookup — the API
+   * route takes no session, so anyone who has (or guesses) the code reaches this.
+   * Returns a projection, not the raw row (checkout/CLAUDE.md "Order lookup returns
+   * a projection"): userId, notes and gateway ids are dropped, and the address is
+   * reduced to its geography — the name/phone/email/street-level fields are for the
+   * order's owner only, not for anyone who merely knows its code.
    */
   async findByCode(code: string) {
     const order = await prisma.order.findUnique({
+      relationLoadStrategy: "join",
       where: { code },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        paymentMethod: true,
+        paymentStatus: true,
+        itemsTotal: true,
+        shippingTotal: true,
+        discount: true,
+        grandTotal: true,
+        createdAt: true,
+        updatedAt: true,
+        address: true,
+        shipments: { orderBy: { code: "asc" as const }, include: SHIPMENT_LINES_INCLUDE },
+      },
     });
 
     if (!order) {
       return null;
     }
 
-    return order;
+    const rawAddress = order.address as
+      | { city?: string; state?: string; pincode?: string; country?: string }
+      | null;
+
+    return {
+      ...withWireItems(order),
+      address: rawAddress
+        ? {
+            city: rawAddress.city,
+            state: rawAddress.state,
+            pincode: rawAddress.pincode,
+            country: rawAddress.country,
+          }
+        : null,
+    };
   }
 
   /**
@@ -173,7 +208,9 @@ export class OrderRepository {
   async findStuckPendingOrders(olderThan: Date, limit = 20) {
     return prisma.order.findMany({
       where: {
-        paymentStatus: "pending",
+        // "failed" is a failed *attempt*, not a dead order — the buyer may have
+        // retried and a capture may exist, so the sweep must ask about these too.
+        paymentStatus: { in: ["pending", "failed"] },
         gatewayOrderId: { not: null },
         createdAt: { lt: olderThan },
       },
@@ -194,7 +231,13 @@ export class OrderRepository {
   async expireAndRestock(orderId: string): Promise<boolean> {
     return await prisma.$transaction(async (tx) => {
       const expired = await tx.order.updateMany({
-        where: { id: orderId, status: "pending_payment", NOT: { paymentStatus: "paid" } },
+        // status "failed" is legacy data: markPaymentFailed once set it terminally,
+        // stranding the stock — those rows are healed here the same way.
+        where: {
+          id: orderId,
+          status: { in: ["pending_payment", "failed"] },
+          NOT: { paymentStatus: "paid" },
+        },
         data: { status: "expired" },
       });
       if (expired.count === 0) return false;
@@ -275,75 +318,21 @@ export class OrderRepository {
     await prisma.order.update({ where: { id: orderId }, data: { gatewayOrderId } });
   }
 
-  /** Failure never overwrites success: a captured payment beats a late failure signal. */
+  /**
+   * Record a failed payment attempt. Failure never overwrites success (a captured
+   * payment beats a late failure signal), and the order deliberately stays
+   * `pending_payment`: the gateway fires payment.failed per attempt and the buyer may
+   * still retry, so the reservation holds until the sweep expires it. A terminal
+   * status here once removed the order from every restock path (inventory-reservation R4).
+   */
   async markPaymentFailed(orderId: string): Promise<boolean> {
     const result = await prisma.order.updateMany({
-      where: { id: orderId, NOT: { paymentStatus: "paid" } },
-      data: { paymentStatus: "failed", status: "failed" },
+      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: "expired" }] },
+      data: { paymentStatus: "failed" },
     });
     return result.count === 1;
   }
 
-
-  /**
-   * Cancel an order and restore stock
-   */
-  // async cancel(orderId: string): Promise<boolean> {
-  //   const result = await prisma.$transaction(async (tx) => {
-  //     // Get order to restore stock
-  //     const existingOrder = await tx.order.findUnique({
-  //       where: { id: orderId },
-  //     });
-
-  //     if (!existingOrder) {
-  //       throw new NotFoundError("Order not found");
-  //     }
-
-  //     // Only restore stock if order is in a cancellable state
-  //     const cancellableStatuses = ["processing", "packed"];
-  //     if (!cancellableStatuses.includes(existingOrder.status)) {
-  //       throw new Error(
-  //         `Cannot cancel order with status: ${existingOrder.status}`
-  //       );
-  //     }
-
-  //     // Update order status to cancelled
-  //     const order = await tx.order.update({
-  //       where: { id: orderId },
-  //       data: { status: "cancelled" },
-  //     });
-
-  //     // Restore stock for each item
-  //     for (const item of items) {
-  //       await tx.product.update({
-  //         where: { id: item.productId },
-  //         data: {
-  //           stock: {
-  //             increment: item.quantity,
-  //           },
-  //         },
-  //       });
-  //     }
-
-  //     return order;
-  //   });
-
-  //   return {
-  //     id: result.id,
-  //     code: result.code,
-  //     userId: result.userId ?? undefined,
-  //     items: normalizeItems(result.items),
-  //     totals: normalizeTotals(result.totals),
-  //     status: result.status as OrderStatus,
-  //     address: normalizeAddress(result.address),
-  //     notes: result.notes ?? undefined,
-  //     placedAt: result.createdAt.toISOString(),
-  //     estimatedDelivery: result.estimatedDelivery?.toISOString(),
-  //     paymentMethod: result.paymentMethod as PaymentMethod | undefined,
-  //     paymentStatus: result.paymentStatus as PaymentStatus | undefined,
-  //     paymentId: result.paymentId ?? undefined,
-  //   };
-  // }
 
   /**
    * Delete an order (admin only)

@@ -1,6 +1,6 @@
 // src/hooks/useAddressManager.ts
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { DeliveryAddress } from "@/domain/profile";
 import { addressApiClient } from "@/services/addressApiClient";
 
@@ -124,11 +124,12 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         }
     }, [addresses]);
 
-    // Select address (for checkout)
+    const optionsRef = useRef(options);
+    optionsRef.current = options;
     const selectAddress = useCallback((address: DeliveryAddress) => {
         setSelectedAddress(address);
-        options?.onAddressSelect?.(address);
-    }, [options]);
+        optionsRef.current?.onAddressSelect?.(address);
+    }, []);
 
     // No default address by decision (addresses-as-entities D3) — selection is
     // always explicit. Kept as null so consumers must handle "nothing chosen".

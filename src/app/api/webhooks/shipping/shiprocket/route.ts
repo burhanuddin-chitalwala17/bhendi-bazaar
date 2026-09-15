@@ -15,10 +15,10 @@ export async function POST(request: NextRequest) {
 
     console.log("Shiprocket webhook received:", payload);
 
-    // Get provider ID
+    // Confirm the carrier is configured before trusting the payload
     const provider = await prisma.shippingProvider.findUnique({
       where: { code: "shiprocket" },
-      select: { id: true },
+      select: { id: true, code: true },
     });
 
     if (!provider) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Process webhook
     const webhookEvent = await shippingOrchestrator.handleWebhook(
-      provider.id,
+      provider.code,
       payload
     );
 

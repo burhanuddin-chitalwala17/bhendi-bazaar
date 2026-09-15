@@ -12,9 +12,18 @@ import {
   resolveProductPrice,
   type PriceContext,
 } from "@server/promotions/price-context";
+import {
+  biddingLockFor,
+  loadBiddingLockContext,
+  type BiddingLockContext,
+} from "@server/bidding/bidding-lock";
 export { NotFoundError };
 
-const mapProduct = (product: any, context: PriceContext): Product => {
+const mapProduct = (
+  product: any,
+  context: PriceContext,
+  locks: BiddingLockContext
+): Product => {
   // The customer sees one availability figure: the total across active locations
   // (stock-locations R4/R11). The indicative origin for serviceability is the
   // largest holding's pincode — allocation decides the real origin at checkout.
@@ -54,6 +63,9 @@ const mapProduct = (product: any, context: PriceContext): Product => {
       name: product.org.name,
       code: product.org.code,
     },
+    // One memoised query per request answers this for every product on the page
+    // (bidding D8). The product itself carries no mark that it is up for bidding.
+    biddingSlug: biddingLockFor(locks, product.id) ?? undefined,
   };
 };
 
@@ -71,11 +83,12 @@ export const productsDAL = {
   getProducts: async (filter: ProductFilter): Promise<Product[]> => {
     try {
       // Through the service, which expands a category slug to its subtree.
-      const [products, context] = await Promise.all([
+      const [products, context, locks] = await Promise.all([
         productService.getProducts(filter),
         loadPriceContext(),
+        loadBiddingLockContext(),
       ]);
-      return products.filter(p => p !== null).map((product) => mapProduct(product, context));
+      return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
     } catch (error) {
       throw new Error("Failed to fetch products", { cause: error });
     }
@@ -83,14 +96,15 @@ export const productsDAL = {
 
   getProductById: async (id: string): Promise<Product> => {
     try {
-      const [product, context] = await Promise.all([
+      const [product, context, locks] = await Promise.all([
         productsRepository.getProductById(id),
         loadPriceContext(),
+        loadBiddingLockContext(),
       ]);
       if (!product) {
         throw new NotFoundError(`No product with id ${JSON.stringify(id)}`);
       }
-      return mapProduct(product, context);
+      return mapProduct(product, context, locks);
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw new Error("Failed to fetch product", { cause: error });
@@ -99,15 +113,16 @@ export const productsDAL = {
 
   getProductBySlug: async (slug: string): Promise<Product> => {
     try {
-      const [product, context] = await Promise.all([
+      const [product, context, locks] = await Promise.all([
         productsRepository.getProductBySlug(slug),
         loadPriceContext(),
+        loadBiddingLockContext(),
       ]);
       // console.log("Product: ", JSON.stringify(product, null, 2));
       if (!product) {
         throw new NotFoundError(`No product with slug ${JSON.stringify(slug)}`);
       }
-      return mapProduct(product, context);
+      return mapProduct(product, context, locks);
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw new Error("Failed to fetch product", { cause: error });
@@ -115,26 +130,35 @@ export const productsDAL = {
   },
 
   getSimilarProducts: async (slug: string, count: number): Promise<Product[]> => {
-    const [products, context] = await Promise.all([
+    const [products, context, locks] = await Promise.all([
       productsRepository.getSimilarProducts(slug, count),
       loadPriceContext(),
+      loadBiddingLockContext(),
     ]);
-    return products.filter(p => p !== null).map((product) => mapProduct(product, context));
+    return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
   },
 
   getHeroProducts: async (limit: number): Promise<Product[]> => {
-    const [products, context] = await Promise.all([
+    const [products, context, locks] = await Promise.all([
       productsRepository.getHeroProducts(limit),
       loadPriceContext(),
+      loadBiddingLockContext(),
     ]);
-    return products.filter(p => p !== null).map((product) => mapProduct(product, context));
+    return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
   },
 
   getOfferProducts: async (limit: number): Promise<Product[]> => {
-    const [products, context] = await Promise.all([
+    const [products, context, locks] = await Promise.all([
       productsRepository.getOfferProducts(limit),
       loadPriceContext(),
+      loadBiddingLockContext(),
     ]);
-    return products.filter(p => p !== null).map((product) => mapProduct(product, context));
+    return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
+  },
+
+  /** Slugs only, for the sitemap — no relations, no offer resolution. */
+  listSlugs: async (): Promise<string[]> => {
+    const rows = await productsRepository.listSlugs();
+    return rows.map((row) => row.slug);
   },
 };

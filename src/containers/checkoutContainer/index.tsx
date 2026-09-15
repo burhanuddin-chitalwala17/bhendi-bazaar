@@ -1,6 +1,6 @@
 // src/components/checkout/checkoutContainer/index.tsx
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Package } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useMultiShippingRates } from "@/hooks/shipping/useMultiShippingRates";
@@ -31,14 +31,17 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
 
   const { groups: shippingGroups, totalShippingCost, isLoading: isShippingLoading, allocationError, fetchAllRates, selectRateForGroup } = useMultiShippingRates();
 
-  const { selectedAddress, addresses, addAddress, updateAddress, selectAddress } = useAddressManager({ autoFetch: true });
+  const { selectedAddress, addresses, addAddress, updateAddress, selectAddress } = useAddressManager({ autoFetch: !!user });
 
   // Payment hook
   const { processPaymentWithShipments, isProcessing, error: paymentError, setError: setPaymentError } = useCheckoutPayment();
 
-  const handleGuestAddress = (address: DeliveryAddress) => {
-    selectAddress(address);
-  }
+  const handleGuestAddress = useCallback(
+    (address: DeliveryAddress) => {
+      selectAddress(address);
+    },
+    [selectAddress],
+  );
 
   // fetching shipping rates
   useEffect(() => {

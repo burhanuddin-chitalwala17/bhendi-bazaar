@@ -1,13 +1,14 @@
 // src/components/shared/forms/org/OrgBasicFields.tsx
 
-import { UseFormRegister, FieldErrors } from "react-hook-form";
+import { Control, UseFormRegister, FieldErrors } from "react-hook-form";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormInput } from "@/components/shared/forms/FormField";
+import { FormInput, FormPhoneInput } from "@/components/shared/forms/FormField";
 import { Store } from "lucide-react";
 
 interface OrgBasicFieldsProps {
   register: UseFormRegister<OrgFormInput>;
+  control: Control<OrgFormInput>;
   errors: FieldErrors<OrgFormInput>;
   /** Shown read-only on an existing org. Absent on create: codes are server-generated. */
   code?: string;
@@ -16,6 +17,7 @@ interface OrgBasicFieldsProps {
 
 export function OrgBasicFields({
   register,
+  control,
   errors,
   code,
   readOnly = false,
@@ -61,12 +63,12 @@ export function OrgBasicFields({
             {...register("email")}
           />
 
-          <FormInput
+          <FormPhoneInput
+            name="phone"
+            control={control}
             label="Phone"
-            error={errors.phone?.message}
             disabled={readOnly}
-            placeholder="+91 98765 43210"
-            {...register("phone")}
+            placeholder="98765 43210"
           />
         </div>
 
