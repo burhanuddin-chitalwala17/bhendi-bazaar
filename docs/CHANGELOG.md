@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-84] 2026-09-15 — The search dropdown shows rupees, and shows the offer price
+
+The suggestion row rendered `{product.currency} {product.price}` straight out of the database, so a ₹1,299 product read **"INR 129900"**. Money is integer paise everywhere inside the system ([ADR-0004](adr/0004-money-as-integer-paise.md)) and leaves as a string in exactly one place — `formatCurrency` — which this surface never called. It was the only price in the storefront doing its own formatting.
+
+**The same line broke the pricing rule underneath it.** `searchProducts` selects `price` off the product row and nothing resolved an offer, so the dropdown quoted the list price while the product page one click later quoted the discounted one. [ADR-0018](adr/0018-one-effective-price-function.md) is explicit that a read path needing a price and not calling the resolver is a defect, not an optimisation — this was that defect, and the formatting bug is what made it visible. Fixing only the formatting would have left a dropdown confidently showing the wrong number in better-looking type.
+
+The row now goes through `productService.toSuggestion`, which calls `resolveProductPrice` against the request's shared `loadPriceContext` — the same function and the same instant the product page, the cart and the order transaction use — and returns `{ price, salePrice }` in paise. Rendering is `PriceDisplay` at `size="xs"`, so the strike-through and the offer treatment match every other tile rather than being re-derived here.
+
+Two supporting changes. `searchProducts` selects `orgId` and `categoryId`, which the resolver keys on and the response does not carry; and the suggestion row gets **one declaration** (`ProductSuggestion` in `server/catalog/product.types.ts`, re-exported by `src/domain/product.ts`) in place of the hook typing a six-field row as the full `Product` — the mistyping that let the raw `currency` field look legitimate at the call site. No CONTRACTS.md entry: one route, one consumer, which [CONTRACTS.md](CONTRACTS.md) says does not need one.
+
+**Migrate on contact** ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) decision 7). The handler was still building its own `{ error }` body, and the hook was storing whatever came back as state — so a 500 put `{ error: "..." }` where the suggestion list goes and the next render read `.products` off it. The handler now returns `toErrorResponse`, the hook checks `response.ok` and falls back to an empty list. Nobody hit it because the route rarely fails; that is the kind of defect this rule exists to sweep up while the file is already open.
+
+`tests/unit/search-suggestions.test.ts` pins both halves — the formatted output, and that a live automatic offer reaches the dropdown. 537 unit tests pass; the 4 pre-existing failures (design-tokens, rate-limit-detached, admin-audit-trail) and the 2 pre-existing `profile.*` typecheck errors reproduce unchanged on a clean tree. No schema, no migration, no money written.
+
 ## [PR-83] 2026-08-31 — Prefetch goes off in the portals too, where the only live traffic is
 
 PR-82 turned prefetch off across the storefront and left the admin, org and auth links alone, reasoning they were low fan-out and behind a login. Both halves of that were wrong, and the Prisma dashboard is what showed it: 23,592 operations in ten days on a store with no customers, while the only people using the site were uploading products in `/admin`. The half that was optimised is the half nobody is using.

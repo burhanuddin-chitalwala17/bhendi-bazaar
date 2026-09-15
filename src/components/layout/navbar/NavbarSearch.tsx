@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { useSearchSuggestions } from "@/hooks/useSearchSuggestions";
 import { useDebounce } from "@/hooks/core/useDebounce";
@@ -84,9 +85,12 @@ export function NavbarSearch() {
                       />
                       <div>
                         <p className="text-sm font-medium">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {product.currency} {product.price}
-                        </p>
+                        <PriceDisplay
+                          price={product.price}
+                          salePrice={product.salePrice}
+                          size="xs"
+                          showBadge={false}
+                        />
                       </div>
                     </Link>
                   ))}

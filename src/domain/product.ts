@@ -10,6 +10,7 @@ import { ProductFlag } from "@/types/product";
 import type { ProductMediaDto } from "@server/catalog/media";
 
 export type { ProductMediaDto };
+export type { ProductSuggestion } from "@server/catalog/product.types";
 
 export interface Product {
   id: string;
@@ -48,5 +49,3 @@ export interface ProductFilter {
   offerOnly?: boolean;
   featuredOnly?: boolean;
 }
-
-

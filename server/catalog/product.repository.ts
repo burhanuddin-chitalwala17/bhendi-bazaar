@@ -238,8 +238,10 @@ export class ProductsRepository {
           slug: true,
           name: true,
           thumbnail: true,
-          currency: true,
           price: true,
+          // Not rendered: the offer resolver keys on them (ADR-0018).
+          orgId: true,
+          categoryId: true,
         },
       });
       return products;
