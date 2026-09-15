@@ -27,6 +27,15 @@ const quickBidsSchema = z
   .min(1, "Add at least one quick-bid button")
   .max(4, "Four quick-bid buttons is the most that fits on a phone");
 
+/**
+ * The longest an event may run, counted from when it opens.
+ *
+ * Exported because the form's date picker caps itself with the same number — a bound a
+ * person can pick past and only fails on submit is the drift ADR-0013 exists to stop.
+ */
+export const MAX_BIDDING_DAYS = 10;
+const MAX_BIDDING_MS = MAX_BIDDING_DAYS * 24 * 60 * 60 * 1000;
+
 export const biddingFormSchema = z
   .object({
     productId: z.string().min(1, "Choose the product being auctioned"),
@@ -50,6 +59,10 @@ export const biddingFormSchema = z
   // event could never take a bid.
   .refine((d) => d.endAt > new Date(), {
     message: "Bidding cannot end in the past",
+    path: ["endAt"],
+  })
+  .refine((d) => d.endAt.getTime() - d.startAt.getTime() <= MAX_BIDDING_MS, {
+    message: `Bidding can run for at most ${MAX_BIDDING_DAYS} days from when it opens`,
     path: ["endAt"],
   })
   .refine((d) => d.maxIncrease >= Math.min(...d.quickBids), {

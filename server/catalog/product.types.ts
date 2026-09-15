@@ -47,3 +47,17 @@ export interface ProductFilter {
   offset?: number;
 }
 
+/**
+ * The search dropdown's row — name, picture, price and nothing else. Deliberately
+ * not `ServerProduct`: typing a lean row as the full shape is how the suggestions
+ * read grew a detail-page include tree it never rendered.
+ */
+export interface ProductSuggestion {
+  id: string;
+  slug: string;
+  name: string;
+  thumbnail: string;
+  /** Integer paise, both fields. `salePrice` is the offer-adjusted price (ADR-0018). */
+  price: number;
+  salePrice?: number;
+}

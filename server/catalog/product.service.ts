@@ -7,7 +7,11 @@
 import { productsRepository } from "@server/catalog/product.repository";
 import { categoryRepository } from "@server/catalog/category.repository";
 import { collectSubtreeIds } from "@server/catalog/category.tree";
-import type { ProductFilter } from "@server/catalog/product.types";
+import type { ProductFilter, ProductSuggestion } from "@server/catalog/product.types";
+import {
+  resolveProductPrice,
+  type PriceContext,
+} from "@server/promotions/price-context";
 import { DomainError } from "@server/shared/domain-error";
 
 export class ProductService {
@@ -104,6 +108,34 @@ export class ProductService {
     // full include tree and no row cap, so it answered a dropdown with the
     // entire matching catalogue at detail-page cost.
     return await productsRepository.searchProducts(query, limit);
+  }
+
+  /**
+   * A suggestion row, priced through the one resolver checkout also uses
+   * (ADR-0018). Kept pure and separate from the read so the dropdown's price
+   * cannot drift from the product page's without a test failing.
+   */
+  toSuggestion(
+    product: {
+      id: string;
+      slug: string;
+      name: string;
+      thumbnail: string;
+      price: number;
+      orgId: string;
+      categoryId: string;
+    },
+    context: PriceContext
+  ): ProductSuggestion {
+    const { pricePaise, offerPricePaise } = resolveProductPrice(product, context);
+    return {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      thumbnail: product.thumbnail,
+      price: pricePaise,
+      salePrice: offerPricePaise < pricePaise ? offerPricePaise : undefined,
+    };
   }
 
   /**

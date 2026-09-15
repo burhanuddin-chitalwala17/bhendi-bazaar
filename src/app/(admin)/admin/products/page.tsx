@@ -28,6 +28,7 @@ interface ProductsPageProps {
     order?: "asc" | "desc";
     lowStock?: string;
     outOfStock?: string;
+    wishlisted?: string;
   }>;
 }
 
@@ -75,6 +76,7 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
     sortOrder: params.order,
     lowStock: params.lowStock === "true" ? true : undefined,
     outOfStock: params.outOfStock === "true" ? true : undefined,
+    wishlistedOnly: params.wishlisted === "true" ? true : undefined,
   };
 
   // ⚡ Parallel data fetching

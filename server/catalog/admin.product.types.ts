@@ -8,6 +8,12 @@ export interface ProductFilters {
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0
+  /**
+   * Narrow to exactly these products. Always resolved server-side by the caller, never
+   * client input, so it cannot widen a query past the org scope. Catalog does not ask
+   * where the list came from — that is what keeps the other domain's table out of here.
+   */
+  productIds?: string[];
   minPrice?: number;
   maxPrice?: number;
   page?: number;

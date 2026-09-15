@@ -13,6 +13,8 @@ export interface ProductFilters {
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0
+  /** Only products at least one person has saved. Resolved to ids in the DAL. */
+  wishlistedOnly?: boolean;
   minPrice?: number;
   maxPrice?: number;
   page?: number;

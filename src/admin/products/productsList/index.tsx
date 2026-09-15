@@ -24,6 +24,7 @@ const URL_PARAM_FOR: Partial<Record<keyof ProductFilters, string>> = {
   categoryId: "category",
   sortBy: "sort",
   sortOrder: "order",
+  wishlistedOnly: "wishlisted",
 };
 
 export function ProductsContainer({

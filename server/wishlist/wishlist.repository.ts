@@ -145,6 +145,30 @@ export class WishlistRepository {
   }
 
   /**
+   * Every product at least one person has saved, optionally within one org.
+   *
+   * Answers the product tables' "wishlisted only" filter. It has to be the whole set
+   * rather than a page: the filter decides *which* page the catalog query returns, so
+   * it must be known before that query runs — unlike the demand column, which is
+   * merged in after. The org scope is what keeps it bounded in the portal; the
+   * platform view asks for all of them, which is the price of not letting catalog
+   * join `WishlistItem` itself (ADR-0003).
+   */
+  async listSavedProductIds(orgId?: string): Promise<string[]> {
+    try {
+      const rows = await prisma.wishlistItem.findMany({
+        where: orgId ? { product: { orgId } } : undefined,
+        select: { productId: true },
+        distinct: ["productId"],
+      });
+      return rows.map((row) => row.productId);
+    } catch (error) {
+      console.error("[WishlistRepository] listSavedProductIds failed:", error);
+      throw new Error("Failed to read saved products", { cause: error });
+    }
+  }
+
+  /**
    * Save a product. Idempotent: hearting something already saved changes nothing and
    * is not an error, because from the buyer's side the wish is already recorded.
    */

@@ -10,6 +10,48 @@
 
 ## Entries
 
+## [PR-106] 2026-09-15 — The search dropdown shows rupees, and shows the offer price
+
+The suggestion row rendered `{product.currency} {product.price}` straight out of the database, so a ₹1,299 product read **"INR 129900"**. Money is integer paise everywhere inside the system ([ADR-0004](adr/0004-money-as-integer-paise.md)) and leaves as a string in exactly one place — `formatCurrency` — which this surface never called. It was the only price in the storefront doing its own formatting.
+
+**The same line broke the pricing rule underneath it.** `searchProducts` selects `price` off the product row and nothing resolved an offer, so the dropdown quoted the list price while the product page one click later quoted the discounted one. [ADR-0018](adr/0018-one-effective-price-function.md) is explicit that a read path needing a price and not calling the resolver is a defect, not an optimisation — this was that defect, and the formatting bug is what made it visible. Fixing only the formatting would have left a dropdown confidently showing the wrong number in better-looking type.
+
+The row now goes through `productService.toSuggestion`, which calls `resolveProductPrice` against the request's shared `loadPriceContext` — the same function and the same instant the product page, the cart and the order transaction use — and returns `{ price, salePrice }` in paise. Rendering is `PriceDisplay` at `size="xs"`, so the strike-through and the offer treatment match every other tile rather than being re-derived here.
+
+Two supporting changes. `searchProducts` selects `orgId` and `categoryId`, which the resolver keys on and the response does not carry; and the suggestion row gets **one declaration** (`ProductSuggestion` in `server/catalog/product.types.ts`, re-exported by `src/domain/product.ts`) in place of the hook typing a six-field row as the full `Product` — the mistyping that let the raw `currency` field look legitimate at the call site. No CONTRACTS.md entry: one route, one consumer, which [CONTRACTS.md](CONTRACTS.md) says does not need one.
+
+**Migrate on contact** ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) decision 7). The handler was still building its own `{ error }` body, and the hook was storing whatever came back as state — so a 500 put `{ error: "..." }` where the suggestion list goes and the next render read `.products` off it. The handler now returns `toErrorResponse`, the hook checks `response.ok` and falls back to an empty list. Nobody hit it because the route rarely fails; that is the kind of defect this rule exists to sweep up while the file is already open.
+
+`tests/unit/search-suggestions.test.ts` pins both halves — the formatted output, and that a live automatic offer reaches the dropdown. 537 unit tests pass; the 4 pre-existing failures (design-tokens, rate-limit-detached, admin-audit-trail) and the 2 pre-existing `profile.*` typecheck errors reproduce unchanged on a clean tree. No schema, no migration, no money written.
+
+## [PR-105] 2026-09-15 — A bidding window may run at most ten days
+
+`biddingFormSchema` bounded a window on three sides — ends after it starts, does not end in the past, quick-bids below the maximum increase — and left its length open, so an org could open an event and close it a year later. It is now capped at ten days from `startAt`.
+
+**The cap is measured from the start, not from now.** An event scheduled to open in a month still gets its full ten days; the rule is about how long bidding runs, not how far ahead it may be scheduled. The refine reports against `endAt`, because that is the field the org can move to fix it.
+
+**The picker stops where the schema stops.** `MAX_BIDDING_DAYS` is exported and the "Bidding closes" input computes its `max` from it, so the dates past the cap are unselectable rather than accepted-then-rejected. That is ADR-0013's rule about a form and its route sharing one schema applied to a bound rather than a field: a literal `10` in the component would have been a second declaration free to drift from the first. The bound follows the start date as it is edited, and lifts while a half-typed value cannot be parsed, so typing a date never fights the picker.
+
+Enforcement is still the schema, not the input. `max` on a `datetime-local` is a convenience a request does not have to honour, and the create route (`POST /api/org/[orgId]/bidding`) is the only path that parses this shape — there is no edit route that moves dates.
+
+`tests/unit/bidding-window-length.test.ts` pins the boundary on both sides: exactly ten days passes, one minute more fails, a start a month out keeps its full run, and the existing order rule still reports its own message. No schema change, no migration, no money path. 643 unit tests pass; the 4 pre-existing failures reproduce unchanged on a clean tree.
+
+## [PR-104] 2026-09-15 — Products can be narrowed to the ones people have saved
+
+The product tables gained a demand column in PR-37. The filter card now carries a **Wishlisted only** switch beside Categories and Stock: on, the list is just the products at least one person has saved; off, it is the whole catalogue. Both portals get it — `ProductsFilters` is one component behind `/org/[orgId]/products` and `/admin/products`.
+
+**It is a filter, so it had to resolve before the query, not after it.** The demand column works by a second round trip: the catalog query picks ten rows, then the wishlist domain is asked for those ten counts. Nothing about that can narrow a result set — filtering that way would hand back a page of ten with three rows on it and a total that disagrees. So the order is inverted for this: the wishlist domain answers with product ids, the DAL passes them to the catalog query as `productIds`, and paging and totals come out of SQL intact.
+
+Neither domain learns to read the other's table ([ADR-0003](adr/0003-one-repository-per-aggregate.md), [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md)). Catalog gains a `productIds` filter that says nothing about where the list came from — the alternative, a `wishlistItems: { some: {} }` relation filter, would have given `WishlistItem` a second reader. `wishlist-demand-column.test.ts` already pinned that rule and caught a first draft of this change naming the table in a *comment*, which is the test working as intended.
+
+**Two things that look like details and are not.** The id list is filtered on `productIds !== undefined`, not on truthiness: `[]` is truthy in JavaScript, so a truthiness test would have worked by accident here and returned the entire catalogue the day someone tidied it. And the switch resets to page 1 — page 4 of everything is not page 4 of the saved ones.
+
+The lookup is scoped to the org in the portal, which is what bounds it; the platform's cross-vendor view asks unscoped. That set grows with saves rather than with the catalogue, and is the cost of keeping the join out of catalog.
+
+The control is the project's existing Radix `Switch` rather than a second switch implementation: it grew an optional `thumbIcon`, so a heart rides where the dot normally sits, and the three existing switches pass `undefined` and are unchanged. A 24px switch is under the 36px touch floor, so the label is wired to it with `htmlFor` — `button` is a labelable element — making the whole 40px row the target ([ADR-0015](adr/0015-mobile-first-design.md)).
+
+`tests/unit/wishlisted-only-filter.test.tsx` covers the client half (param written, param dropped, page reset, column unaffected) and `tests/unit/wishlisted-only-resolution.test.ts` the server half (ids resolved, org scope, empty list preserved, flag never forwarded). No schema, no migration, no wire shape, no money path. 651 unit tests pass; the 4 pre-existing failures reproduce unchanged on a clean tree.
+
 ## [PR-103] 2026-09-12 — One phone number can back any number of accounts [MIGRATION]
 
 A phone number is contact data, not an identity key. Signing up or saving a profile with a number another account already uses now succeeds. Spec and TRD: [shared-phone-numbers](specs/shared-phone-numbers/); decision and rejected alternatives: [ADR-0024](adr/0024-phone-is-contact-data-not-an-identity-key.md).
