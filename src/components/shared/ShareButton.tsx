@@ -21,13 +21,18 @@ export function ShareButton({
   variant = "outline",
   size = "sm",
   className,
-  showLabel = true,
+  showLabel,
 }: ShareButtonProps) {
+  // `size="icon"` is a fixed size-9 square, so a label cannot fit: the content
+  // overflows and `justify-center` pushes the icon outside the box, onto whatever
+  // sits beside it. Defaulted rather than left to each caller to remember.
+  const withLabel = showLabel ?? size !== "icon";
+
   return (
     <ShareDialog url={url} title={title} text={text}>
       <Button variant={variant} size={size} className={className}>
         <Share2 className="h-4 w-4" />
-        {showLabel && <span className="ml-2">Share</span>}
+        {withLabel && <span>Share</span>}
       </Button>
     </ShareDialog>
   );

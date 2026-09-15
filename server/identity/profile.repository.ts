@@ -96,26 +96,6 @@ export class ProfileRepository {
       }
     }
 
-    // Check if mobile is changing and already taken
-    if (mobile !== undefined) {
-      const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { mobile: true },
-      });
-      const isMobileChanging = mobile !== currentUser?.mobile;
-
-      if (isMobileChanging && mobile) {
-        const existingMobile = await prisma.user.findUnique({
-          where: { mobile },
-          select: { id: true },
-        });
-
-        if (existingMobile && existingMobile.id !== userId) {
-          throw new ConflictError("This mobile number is already registered to another account");
-        }
-      }
-    }
-
     // Update User table if user fields are provided
     if (name !== undefined || email !== undefined || mobile !== undefined) {
       await prisma.user.update({

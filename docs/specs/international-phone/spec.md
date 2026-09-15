@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** cross-domain (identity, catalog, checkout)
 - **Phase:** — (cross-cutting)
-- **Verified:** 2026-09-11
+- **Verified:** 2026-09-12
 - **References:** [trd.md](trd.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
@@ -18,7 +18,7 @@ Buyers abroad place orders for family in India, and organisations can have conta
 - R1 — Every phone field — account mobile, saved and guest delivery addresses, organisation phone, pickup contact, a guest bidder's phone — accepts a valid number from any country.
 - R2 — India is preselected, so an Indian buyer types exactly what they typed before.
 - R3 — A number is checked against its own country's rules, identically in the browser and on the server, and a failure shows on the field.
-- R4 — One number is one number however it was typed: it cannot hold two accounts, and it displays the same way everywhere.
+- R4 — One number is one number however it was typed: it compares as one spelling and displays the same way everywhere. *(This requirement originally also said a number could not hold two accounts. That clause was reversed by [ADR-0024](../../adr/0024-phone-is-contact-data-not-an-identity-key.md) — see [shared-phone-numbers](../shared-phone-numbers/). One spelling survives; exclusivity does not.)*
 - R5 — Pasting or autofilling a full international number selects its country.
 - R6 — Numbers already on file, including those on past orders, keep working and display in the new format.
 

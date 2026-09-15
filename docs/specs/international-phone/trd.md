@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** cross-domain (identity, catalog, checkout)
 - **Phase:** — (cross-cutting)
-- **Verified:** 2026-09-11
+- **Verified:** 2026-09-12
 - **References:** [spec.md](spec.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -15,7 +15,7 @@ Before this change, `common.schemas.ts` required a 6–9 leading digit while `ad
 
 ## Technical decisions
 - D1 — **`libphonenumber-js` with `max` metadata.** `min` validates most countries by length only and accepts `0123456789` as Indian, which the previous rule refused. `max` is 39 KB gzip against `min`'s 19 KB, loaded only where a phone is parsed. Hand-written per-country rules were rejected: lengths vary within a country and numbering plans change.
-- D2 — **Stored as E.164 in the existing columns**, not as country and national columns. `User.mobile`'s unique index then compares one spelling. Before, seeded users held `+91…` and signup stored bare digits, so one number could hold two accounts. Razorpay's `contact` takes the same form.
+- D2 — **Stored as E.164 in the existing columns**, not as country and national columns. `User.mobile`'s unique index then compares one spelling. *(That index was removed by [ADR-0024](../../adr/0024-phone-is-contact-data-not-an-identity-key.md); E.164 storage stands, and is what lets the rows this migration skipped finally normalise.)* Before, seeded users held `+91…` and signup stored bare digits, so one number could hold two accounts. Razorpay's `contact` takes the same form.
 - D3 — **Schemas normalise with a transform.** CONTRACTS.md rule 4 bars transforms for money because the schema runs on both sides (ADR-0013); normalising is idempotent, so the second run changes nothing. A test pins that.
 - D4 — **A number without `+` is read as Indian** wherever one is parsed — schema, display, the input's initial value. That is what keeps pre-migration values, existing API callers and order snapshots working.
 - D5 — **`Order.address` is not backfilled.** It is a snapshot (CONTRACTS.md § Addresses), and D4 displays both spellings identically.
