@@ -107,6 +107,7 @@ export class AdminProductsRepository {
             flags,
             lowStock,
             outOfStock,
+            productIds,
             sortBy,
             sortOrder,
         } = filters;
@@ -124,6 +125,9 @@ export class AdminProductsRepository {
             ...(categoryId && { categoryId }),
             ...(orgId && { orgId }),
             ...(flags && { flags: { hasSome: flags } }),
+            // An empty list is a real answer — a caller whose filter matched nothing
+            // wants no rows, not every row — so this tests undefined, not truthiness.
+            ...(productIds !== undefined && { id: { in: productIds } }),
         };
 
         const orderBy: Prisma.ProductOrderByWithRelationInput =
