@@ -248,6 +248,7 @@ model User {
   orders          Order[]
   reviews         Review[]
   adminLogs       AdminLog[]
+  contactMessages ContactMessage[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
@@ -1300,4 +1301,44 @@ model Bid {
   @@unique([eventId, amountPaise])
   @@index([eventId, amountPaise(sort: Desc)])
   @@index([userId])
+}
+
+/// Where a message sent through Contact us lands (docs/specs/contact-us/).
+///
+/// Two states, because the portal only needs to answer "what is still open". A "read"
+/// state would have to be written on every list render to mean anything.
+enum ContactMessageStatus {
+  NEW
+  RESOLVED
+}
+
+/// One inbound message from a buyer or a visitor — the written half of Contact us; the
+/// WhatsApp half leaves no row here because that conversation lives on WhatsApp.
+///
+/// `name` and `email` are copied onto the row rather than read back through `user`:
+/// correspondence must survive the account being deleted, the same reason `Review`
+/// stores `userName`. Not money and not attribution, so ADR-0020's Restrict rule does
+/// not reach it — SetNull keeps the message and drops only the link.
+model ContactMessage {
+  id        String  @id @default(cuid())
+  /// Null for a signed-out visitor, and for a sender whose account was deleted.
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Whoever the sender said they are for a guest; the account's own values for a
+  /// signed-in one, re-read server-side and never taken from the request body
+  /// (contact-us TRD D3).
+  name      String
+  email     String
+  subject   String?
+  message   String  @db.Text
+
+  status    ContactMessageStatus @default(NEW)
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  /// The portal's default view is one status, newest first.
+  @@index([status, createdAt])
+  /// Both read by the flood guard, which counts a sender's recent rows (TRD D6).
+  @@index([email, createdAt])
+  @@index([userId, createdAt])
 }

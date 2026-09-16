@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-107] 2026-09-16 — Contact us: WhatsApp, or a message the admin portal receives [MIGRATION]
+
+A **Contact us** entry now sits above **Logout** in the account menu, and in the footer for signed-out visitors. It opens a bottom sheet with two options: **WhatsApp**, which opens a chat with +91 84529 59340 with an opening line already typed, and **Send a message**, which swaps the options for a form in the same sheet and confirms there. Messages arrive at **/admin/contact**, which opens on the unresolved ones, can be searched, and toggles a message between Open and Resolved. Spec and TRD: [contact-us](specs/contact-us/).
+
+**A new `server/support/` domain, not an addition to `notifications`.** That domain sends email out and knows nothing about what arrives; giving it an inbox would give it a second reason to change ([ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md)). One aggregate, `ContactMessage`, one repository.
+
+**A signed-in sender's name and email are re-read from the account, not taken from the body.** The form posts both because guests need them, and the service discards them whenever there is a session. The form shows them read-only for the same reason: an editable field that cannot change what gets stored misleads the person filling it in. `name` and `email` are copied onto the row and `userId` is `SetNull`, so deleting an account keeps what the store was told. This is the `Review` shape, and ADR-0020's Restrict rule does not apply because a message carries no money or attribution.
+
+**The guest path is protected by a row count, not a rate limit.** `withRateLimit` allows everything while the cache is detached, so the service refuses a fourth message within ten minutes from the same account, or from the same email for a guest. A guest who changes the email gets a fresh allowance. That gap is documented in `server/support/CLAUDE.md` and closes when the route's existing `withRateLimit` call starts enforcing.
+
+WhatsApp has no server side. The number is a brand fact in `src/lib/config.ts`, and `whatsappSupportUrl` in `src/lib/support-contact.ts` is the only place a `wa.me` link gets built. Resolving and reopening go through `recordAdminAction`; submitting a message is not an admin action and is not audited. Nothing is emailed when a message arrives.
+
+The migration `20260916120000_contact_messages` adds `ContactMessage` and the `ContactMessageStatus` enum and is additive only. No money path is involved. No CONTRACTS.md entry, because each route has exactly one consumer. `tests/unit/contact-message.test.ts`, `contact-sheet.test.tsx` and `contact-whatsapp.test.ts` add 35 tests. 709 unit tests pass. The 4 pre-existing failures (design-tokens ×2, rate-limit-detached, admin-audit-trail) are Windows path-separator mismatches in files this PR does not touch, and they reproduce unchanged. Typecheck is clean.
+
 ## [PR-104] 2026-09-16 — An abandoned checkout releases its goods, and is shown to nobody [CONTRACT]
 
 Closing the Razorpay window without paying left the item held and unbuyable. Spec and TRD: [checkout-abandonment](specs/checkout-abandonment/); the order-code decision and its rejected alternatives: [ADR-0025](adr/0025-order-codes-are-random-not-sequential.md).

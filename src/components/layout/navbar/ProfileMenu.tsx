@@ -6,9 +6,13 @@ import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { ShieldAlert } from "lucide-react";
+import { ContactSheet } from "@/components/support/contact-sheet";
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false);
+  // Held here rather than in the menu item: the menu closes on an outside click, so a
+  // sheet owned by its trigger would unmount the moment it was used (contact-us TRD D8).
+  const [contactOpen, setContactOpen] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -101,12 +105,29 @@ export function ProfileMenu() {
           <button
             type="button"
             className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
+            onClick={() => {
+              setOpen(false);
+              setContactOpen(true);
+            }}
+          >
+            Contact us
+          </button>
+          <button
+            type="button"
+            className="block w-full rounded-lg px-3 py-2 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={handleLogout}
           >
             Logout
           </button>
         </div>
       )}
+
+      {/* Outside the dropdown block on purpose — it has to outlive the menu that opened it. */}
+      <ContactSheet
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+        sender={user}
+      />
     </div>
   );
 }
