@@ -6,18 +6,29 @@
  */
 
 import { razorpayRepository } from "@server/payments/providers/razorpay/razorpay.repository";
+import { ORDER_STATUS } from "@server/checkout/order.types";
 import type {
+  ReleaseOutcome,
   ServerPaymentOrder,
   CreatePaymentOrderInput,
   VerifyPaymentInput,
   PaymentVerificationResult,
   WebhookVerificationResult,
 } from "@server/payments/payment.types";
-import { ConflictError, DomainError } from "@server/shared/domain-error";
+import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import { orderService } from "@server/checkout/order.service";
 import { orderRepository } from "@server/checkout/order.repository";
 import { decideConfirmation } from "@server/payments/confirmation";
 import { RAZORPAY_NOTES_ORDER_KEY } from "@server/payments/notes";
+
+/**
+ * How long an unpaid order keeps its reservation before any sweep will release it.
+ *
+ * Short because the release is no longer a guess: the gateway is asked what actually
+ * happened first, and an attempt still moving reports `in-flight` and is left alone
+ * (checkout-abandonment R2/D1). The old hour existed to compensate for not asking.
+ */
+const ABANDONED_HOLD_MINUTES = 15;
 
 export class PaymentService {
   /**
@@ -181,42 +192,109 @@ export class PaymentService {
   }
 
   /**
-   * The backstop for a missed webhook (trd.md D7, R6): ask the gateway about orders
-   * stuck pending, and confirm the ones it says were captured — through the same
-   * checks and the same transition as every other trigger. Not the primary path;
-   * the primary paths are fast, this one is merely certain.
+   * Release an unpaid order's reservation — the one routine behind every abandonment
+   * trigger (checkout-abandonment D1/D2). The gateway decides, never the caller: a
+   * capture arriving after a release is refused by `confirmPaid`, so releasing on a
+   * browser's word would turn a real payment into a manual refund.
    */
-  async reconcileStuckOrders(olderThanMinutes = 30) {
+  async releaseIfUnpaid(
+    localOrderId: string,
+    requester?: { userId: string | null }
+  ): Promise<{ orderId: string; outcome: ReleaseOutcome }> {
+    const order = await orderService.getOrderById(localOrderId); // throws NotFound itself
+
+    // Possession of the order id is authority enough to *ask* (D3) — checkout is open
+    // to guests. Where there is an owner, the caller must be it, absent identity
+    // included; not-found rather than forbidden, so existence is not leaked.
+    if (order.userId !== null && requester !== undefined && requester.userId !== order.userId) {
+      throw new NotFoundError("Order not found");
+    }
+
+    if (order.paymentStatus === "paid") {
+      return { orderId: order.id, outcome: "already-paid" };
+    }
+    if (order.status === ORDER_STATUS.EXPIRED) {
+      return { orderId: order.id, outcome: "already-released" };
+    }
+
+    // No gateway order means nothing was ever chargeable, so there is nothing to ask
+    // about — the buyer left before a payment order existed.
+    if (order.gatewayOrderId) {
+      const state = await razorpayRepository.fetchOrderPaymentState(order.gatewayOrderId);
+
+      if (state.kind === "captured") {
+        // They did pay, they just did not tell us. Confirm through the same routine
+        // every other trigger uses rather than a second transition here.
+        await this.confirmPayment({
+          localOrderId: order.id,
+          gatewayOrderId: order.gatewayOrderId,
+          paymentId: state.paymentId,
+          amount: state.amount,
+        });
+        return { orderId: order.id, outcome: "confirmed" };
+      }
+
+      if (state.kind === "in-flight") {
+        // Money is still moving (R2). Hold the reservation and let a later sweep ask
+        // again — an over-held item costs a sale, an over-released one costs a refund
+        // and a customer.
+        return { orderId: order.id, outcome: "in-flight" };
+      }
+    }
+
+    const released = await orderRepository.expireAndRestock(order.id);
+    return { orderId: order.id, outcome: released ? "released" : "not-released" };
+  }
+
+  /**
+   * Release abandoned holds standing in the way of a checkout that was just refused
+   * (checkout-abandonment D4), and report whether anything actually came back.
+   *
+   * This is what makes the release timely without depending on a schedule: it runs
+   * at the one moment the held stock is demonstrably costing a sale, and spends a
+   * gateway call only then. Each candidate still goes through `releaseIfUnpaid`, so
+   * a hold with a payment still moving is left exactly where it is.
+   */
+  async releaseHoldsOnProducts(productIds: readonly string[]): Promise<boolean> {
+    const olderThan = new Date(Date.now() - ABANDONED_HOLD_MINUTES * 60_000);
+    const candidates = await orderRepository.findAbandonableHoldsForProducts(
+      productIds,
+      olderThan
+    );
+
+    let releasedAny = false;
+    for (const candidate of candidates) {
+      try {
+        const { outcome } = await this.releaseIfUnpaid(candidate.id);
+        if (outcome === "released") releasedAny = true;
+      } catch (error) {
+        // A buyer is waiting on this. One unreachable gateway must not fail their
+        // checkout — they get the out-of-stock answer they would have got anyway.
+        console.error(`Could not release hold on order ${candidate.id}:`, error);
+      }
+    }
+    return releasedAny;
+  }
+
+  /**
+   * The backstop (payment-confirmation trd.md D7, R6): ask the gateway about orders
+   * stuck unpaid, confirm the ones it says were captured, release the rest. Both
+   * outcomes go through `releaseIfUnpaid`, so the sweep has no policy of its own.
+   *
+   * Not the primary path for either job any more — a buyer who closes the payment
+   * window releases their own reservation immediately (D1), and a blocked checkout
+   * releases what is in its way (D4). This catches the buyer who closed the laptop
+   * lid, and how wide its net is depends on how often the host will run it (D5).
+   */
+  async reconcileStuckOrders(olderThanMinutes = ABANDONED_HOLD_MINUTES) {
     const threshold = new Date(Date.now() - olderThanMinutes * 60_000);
     const stuck = await orderRepository.findStuckPendingOrders(threshold);
 
-    const results: Array<{ orderId: string; outcome: string }> = [];
+    const results: Array<{ orderId: string; outcome: ReleaseOutcome | "error" }> = [];
     for (const order of stuck) {
       try {
-        const captured = await razorpayRepository.fetchCapturedPayment(order.gatewayOrderId!);
-        if (!captured) {
-          // Nothing captured and past the hold window: the reservation is released
-          // (inventory-reservation R4). 60 minutes — double the sweep threshold, so
-          // an order the gateway could still tell us about is never released first.
-          const holdExpired = order.createdAt < new Date(Date.now() - 60 * 60_000);
-          if (holdExpired) {
-            const expired = await orderRepository.expireAndRestock(order.id);
-            results.push({ orderId: order.id, outcome: expired ? "expired-released" : "still-unpaid" });
-          } else {
-            results.push({ orderId: order.id, outcome: "still-unpaid" });
-          }
-          continue;
-        }
-        const confirmation = await this.confirmPayment({
-          localOrderId: order.id,
-          gatewayOrderId: order.gatewayOrderId!,
-          paymentId: captured.paymentId,
-          amount: captured.amount,
-        });
-        results.push({
-          orderId: order.id,
-          outcome: confirmation.alreadyConfirmed ? "already-confirmed" : "recovered",
-        });
+        const { outcome } = await this.releaseIfUnpaid(order.id);
+        results.push({ orderId: order.id, outcome });
       } catch (error) {
         // One order's failure must not stop the sweep; it stays pending and is
         // retried next run. The error is the finding.

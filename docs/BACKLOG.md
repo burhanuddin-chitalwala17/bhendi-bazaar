@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-12
+- **Verified:** 2026-09-16
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -25,7 +25,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 
 ## Phase 2 — Transaction integrity
 
-The four specs below implement the Invariants in [../CLAUDE.md](../CLAUDE.md). They are sequenced: pricing authority must land before payment confirmation can check an amount against a trustworthy total.
+The five specs below implement the Invariants in [../CLAUDE.md](../CLAUDE.md). They are sequenced: pricing authority must land before payment confirmation can check an amount against a trustworthy total.
 
 | Spec | Requirement | ADR | Status |
 |---|---|---|---|
@@ -33,6 +33,7 @@ The four specs below implement the Invariants in [../CLAUDE.md](../CLAUDE.md). T
 | [payment-confirmation](specs/payment-confirmation/) | An order's paid state derives only from a verified gateway signal | [0005](adr/0005-payment-state-server-only.md) | ✅ Implemented — PR-39 |
 | [inventory-reservation](specs/inventory-reservation/) | Stock is reserved atomically at placement and released on failure | [0007](adr/0007-conditional-stock-decrement.md) | ✅ Implemented — PR-40 |
 | [money-as-paise](specs/money-as-paise/) | Monetary values are exact from catalogue to gateway to report | [0004](adr/0004-money-as-integer-paise.md) | ✅ Implemented — PR-37 |
+| [checkout-abandonment](specs/checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | [0025](adr/0025-order-codes-are-random-not-sequential.md) | ✅ Implemented — PR-104 |
 
 Also in this phase, no spec required (they are corrections with an ADR already stating the rule): request-body parsing across the remaining handlers ([Invariant 4](../CLAUDE.md)), the seed guard ([Invariant 7](../CLAUDE.md)), and the `next-auth` / `next` upgrades.
 

@@ -6,6 +6,7 @@
  */
 
 import { prisma, toJsonColumn } from "@server/shared/prisma";
+import { ORDER_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type { ShipmentItem } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
@@ -76,14 +77,6 @@ export function withWireItems<
 }
 
 /**
- * Helper to generate order code
- */
-function generateOrderCode(): string {
-  const code = `BB-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-  return code;
-}
-
-/**
  * Helper to calculate estimated delivery date
  */
 function calculateEstimatedDelivery(): string {
@@ -100,7 +93,9 @@ export class OrderRepository {
   async listByUserId(userId: string) {
     const orders = await prisma.order.findMany({
       relationLoadStrategy: "join",
-      where: { userId },
+      // The buyer does not see their own abandoned checkouts either: three attempts
+      // at one purchase is one order, not three (checkout-abandonment R5).
+      where: { userId, ...VISIBLE_ORDER_WHERE },
       orderBy: { createdAt: "desc" },
       include: {
         shipments: { orderBy: { code: "asc" as const }, include: SHIPMENT_LINES_INCLUDE },
@@ -190,10 +185,10 @@ export class OrderRepository {
       // Not paid, and not expired: an expired order's stock is already released, so
       // a late capture is refused here and refunded manually rather than confirming
       // an order the store may no longer be able to fulfil.
-      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: "expired" }] },
+      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: ORDER_STATUS.EXPIRED }] },
       data: {
         paymentStatus: "paid",
-        status: "confirmed",
+        status: ORDER_STATUS.CONFIRMED,
         paymentId,
       },
     });
@@ -201,9 +196,14 @@ export class OrderRepository {
   }
 
   /**
-   * Orders stuck pending past the threshold, with a gateway order to ask about —
-   * the reconciliation sweep's worklist (payment-confirmation D7). Capped: the sweep
-   * runs often, so a long tail drains over several runs rather than one slow one.
+   * Orders stuck unpaid past the threshold — the sweep's worklist
+   * (payment-confirmation D7). Capped: a long tail drains over several runs rather
+   * than one slow one.
+   *
+   * No longer requires a gateway order. That filter was right when the sweep's only
+   * question was "did the gateway capture this", but these rows are also holding
+   * stock, and an order that never reached a gateway is one that certainly was not
+   * paid for — the clearest release there is (checkout-abandonment D1).
    */
   async findStuckPendingOrders(olderThan: Date, limit = 20) {
     return prisma.order.findMany({
@@ -211,10 +211,34 @@ export class OrderRepository {
         // "failed" is a failed *attempt*, not a dead order — the buyer may have
         // retried and a capture may exist, so the sweep must ask about these too.
         paymentStatus: { in: ["pending", "failed"] },
-        gatewayOrderId: { not: null },
+        status: { in: [ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.FAILED] },
         createdAt: { lt: olderThan },
       },
       select: { id: true, gatewayOrderId: true, grandTotal: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+  }
+
+  /**
+   * Unpaid orders past the hold window sitting on one of these products — the
+   * worklist for a checkout that was just refused (checkout-abandonment D4). Capped
+   * hard: this runs inside a buyer's request and each row costs a gateway call, and
+   * releasing the few in their way is enough to let them through.
+   */
+  async findAbandonableHoldsForProducts(
+    productIds: readonly string[],
+    olderThan: Date,
+    limit = 5
+  ) {
+    return prisma.order.findMany({
+      where: {
+        status: { in: [ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.FAILED] },
+        NOT: { paymentStatus: "paid" },
+        createdAt: { lt: olderThan },
+        items: { some: { productId: { in: [...productIds] } } },
+      },
+      select: { id: true },
       orderBy: { createdAt: "asc" },
       take: limit,
     });
@@ -235,10 +259,10 @@ export class OrderRepository {
         // stranding the stock — those rows are healed here the same way.
         where: {
           id: orderId,
-          status: { in: ["pending_payment", "failed"] },
+          status: { in: [ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.FAILED] },
           NOT: { paymentStatus: "paid" },
         },
-        data: { status: "expired" },
+        data: { status: ORDER_STATUS.EXPIRED },
       });
       if (expired.count === 0) return false;
 
@@ -327,7 +351,7 @@ export class OrderRepository {
    */
   async markPaymentFailed(orderId: string): Promise<boolean> {
     const result = await prisma.order.updateMany({
-      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: "expired" }] },
+      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: ORDER_STATUS.EXPIRED }] },
       data: { paymentStatus: "failed" },
     });
     return result.count === 1;

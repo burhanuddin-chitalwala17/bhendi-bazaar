@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-104] 2026-09-16 — An abandoned checkout releases its goods, and is shown to nobody [CONTRACT]
+
+Closing the Razorpay window without paying left the item held and unbuyable. Spec and TRD: [checkout-abandonment](specs/checkout-abandonment/); the order-code decision and its rejected alternatives: [ADR-0025](adr/0025-order-codes-are-random-not-sequential.md).
+
+**The release existed; nothing called it in time.** `expireAndRestock` has been correct since PR-40 — it returns stock to the location it came from and releases the coupon claim in one transaction. Its only caller was the reconciliation sweep, whose only caller is a Vercel cron running `30 3 * * *`, and which then waited a further hour. So an abandoned checkout held its goods until the next 3:30 am: up to a day, on a catalogue where most items are single units. [inventory-reservation](specs/inventory-reservation/) R4 and [payment-confirmation](specs/payment-confirmation/) R7 both already required this; the mechanism was written and the trigger was not.
+
+**One routine, three triggers.** `paymentService.releaseIfUnpaid` asks the gateway what actually happened, then confirms, holds, or releases. The browser's dismissal calls it, a blocked checkout calls it, and the cron calls it — none of them decides anything. The browser may ask and may not decide, and a browser that never asks changes nothing.
+
+**The gateway is asked a wider question than before.** `fetchCapturedPayment` only ever looked for a capture, which would have been wrong to release on: a UPI collect request sits `created` or `authorized` while the buyer approves it in their banking app, often after closing our window. `fetchOrderPaymentState` returns `captured`, `in-flight` or `none`, and only `none` releases. This matters because `confirmPaid` deliberately refuses an expired order — releasing early would have turned a real payment into a manual refund.
+
+**Release happens when someone is actually blocked.** The order transaction now throws `OutOfStockError` naming the products; the create route releases abandoned holds on exactly those and retries once. This is what makes the fix independent of the cron — the hold is released at the moment it is demonstrably costing a sale, and a gateway call is spent only then. The cron is left at daily as a backstop; tightening it is a Vercel plan question (TRD D5), not a code one, and nothing now depends on the answer.
+
+**Abandoned orders are kept and hidden.** Nothing is deleted — the rows carry who nearly bought what, which is the raw material for following those buyers up, and money-bearing children could not be deleted anyway ([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). `VISIBLE_ORDER_WHERE` is applied inside the repositories rather than at nineteen call sites, so the next order query cannot forget it. It covers the admin list, detail, stats and bulk update, the org list and detail, the buyer's own order list, and the analytics revenue, status and chart reads. The sweep's two worklists are the deliberate exemptions.
+
+**`Order.status` is now declared once.** It was a bare `String` whose schema comment named `processing, partially_shipped, completed` — none of which the code writes. All ten real values are in `ORDER_STATUS` (`server/checkout/order.types.ts`), which is what visibility now turns on.
+
+**Order codes are random.** `generateOrderCode` read the highest existing code and added one: a read-then-write against a `@unique` column, so two simultaneous checkouts minted the same code and one died on a constraint violation — likelier now that abandoned attempts multiply orders. Codes are `BB-` plus eight characters from an alphabet without `I L O U 0 1`, generated without touching the database. A second, differently-shaped generator in `order.repository.ts` was dead and is deleted. Old codes stay valid for ever and the lookup accepts both shapes.
+
+`[CONTRACT]`: `POST /api/payments/abandon` is new. Order creation now answers **409** for a sold-out item rather than 400 for everything, through `toErrorResponse` — the handler was on the old error pattern and touching it meant converting it ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)). It also dropped an `(session.user as any)`.
+
+**No migration.** `"expired"` was already written and `status` was already a free string, so hiding an order needs no column. `Order.code` keeps its type and its unique index.
+
+**The orders already holding stock were corrected by hand before this shipped**, through the same `releaseIfUnpaid` the live paths use — so the gateway was asked about each one and nothing that had been paid for was released. The script that did it is not part of this PR: it was a one-time correction for a backlog this change stops accumulating, and a remediation kept after its cause is fixed is one someone eventually runs by mistake. The daily sweep covers the ongoing case.
+
+`tsc --noEmit` clean. 693 tests pass, 25 new across `checkout-abandonment.test.ts` and `order-visibility.test.ts` — the release decision including the in-flight hold and the ownership rule, the visibility predicate on every affected query, and the code generator's alphabet, uniqueness and agreement with the lookup pattern it is deliberately declared apart from.
+
 ## [PR-103] 2026-09-12 — One phone number can back any number of accounts [MIGRATION]
 
 A phone number is contact data, not an identity key. Signing up or saving a profile with a number another account already uses now succeeds. Spec and TRD: [shared-phone-numbers](specs/shared-phone-numbers/); decision and rejected alternatives: [ADR-0024](adr/0024-phone-is-contact-data-not-an-identity-key.md).

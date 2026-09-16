@@ -150,10 +150,20 @@ export function useCheckoutPayment() {
         },
       });
 
+      // A tab closed mid-payment is the same event as a dismissal, and the only one
+      // the modal's own callbacks cannot see. `pagehide` fires where `beforeunload`
+      // does not on mobile Safari, which is most of our buyers (ADR-0015).
+      const releaseOnLeave = () => {
+        void paymentGatewayService.abandon(order.id);
+      };
+      window.addEventListener("pagehide", releaseOnLeave);
+      const stopListening = () => window.removeEventListener("pagehide", releaseOnLeave);
+
       // Step 3: Open Razorpay checkout
       console.log('🔐 Opening Razorpay checkout modal...');
       await paymentGatewayService.openCheckout(paymentOrder, {
         onSuccess: async (response) => {
+          stopListening();
           try {
             // The server verifies the signature against the persisted order and
             // writes the paid state — the browser reports, it does not decide
@@ -182,7 +192,12 @@ export function useCheckoutPayment() {
           }
         },
         onFailure: async (error) => {
+          stopListening();
           console.error("❌ Payment failed:", error);
+          // The gateway records the failure itself; this releases what the order is
+          // holding, and only after the gateway confirms nothing was captured
+          // (checkout-abandonment D1/D2).
+          void paymentGatewayService.abandon(order.id);
           // No state write from here: the gateway's own failure webhook records it,
           // and a failure signal must never be able to overwrite a captured payment.
           const description = (error as { error?: { description?: string } } | null)
@@ -192,6 +207,11 @@ export function useCheckoutPayment() {
         },
         onDismiss: () => {
           console.log('⚠️  Payment modal dismissed');
+          stopListening();
+          // The common case, not the exception: most people who open a payment window
+          // close it. The goods go back on sale now rather than at the next sweep
+          // (checkout-abandonment R1).
+          void paymentGatewayService.abandon(order.id);
           setIsProcessing(false);
         },
       });
