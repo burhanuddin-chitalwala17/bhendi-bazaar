@@ -11,10 +11,10 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 ```
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
             ├── (main)  storefront    11 pages     ──▶ Vercel Blob     (images only — ADR-0017)
-            ├── (admin) console       25 pages     ──▶ Razorpay        (payments)
+            ├── (admin) console       24 pages     ──▶ Razorpay        (payments)
             ├── (org)   seller portal              ──▶ Shiprocket      (shipping rates)
             ├── (auth)  sign-in flow   ~4 pages    ──▶ Resend          (email)
-            └── api/                   87 handlers ──▶ YouTube         (product video, embedded)
+            └── api/                   86 handlers ──▶ YouTube         (product video, embedded)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
@@ -33,7 +33,7 @@ Deployed on Vercel; every route is server-rendered on demand. There is no static
 
 Two entry paths into data, by rendering mode: server components read through `src/data-access-layer/`, while client components call `src/services/`, which call route handlers. Both converge on the same domain services.
 
-Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `notifications`, `analytics`, `promotions`, `payouts`, `bidding`, `wishlist`, `support`, plus `shared` for what genuinely spans them. Each owns its aggregate's repository ([ADR-0003](adr/0003-one-repository-per-aggregate.md)). External systems sit behind an interface in `<domain>/providers/<name>/`. Admin-facing reads are `admin.*` files inside the owning domain — there is no separate admin tree.
+Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `notifications`, `analytics`, `promotions`, `payouts`, `bidding`, `wishlist`, plus `shared` for what genuinely spans them. Each owns its aggregate's repository ([ADR-0003](adr/0003-one-repository-per-aggregate.md)). External systems sit behind an interface in `<domain>/providers/<name>/`. Admin-facing reads are `admin.*` files inside the owning domain — there is no separate admin tree.
 
 `bidding` is the newest and the only domain whose stored state deliberately answers less than the question asked of it: an event's status records whether it was cancelled or settled, and *when* it is — scheduled, running, finished — is derived from its timestamps against the clock on every read. Nothing in the feature runs on a schedule as a result, and no read can be stale, because nothing was cached to go stale. See [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md).
 
@@ -46,11 +46,11 @@ Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `
 - **Cart state** — Zustand store (`src/store/cartStore.ts`) with localStorage persistence, synced to the `Cart` table for signed-in users via `src/hooks/cart/useCartSync.ts`, which must be mounted exactly once above the router. On sign-in the local cart wins on quantity conflicts, items whose product no longer exists are dropped, and price and thumbnail are refreshed from the database.
 - **Rate limiting** — **detached, and says so.** `src/lib/rate-limit/` is one seam that allows everything and reports `RATE_LIMITING_ENABLED === false`; the Upstash and in-memory implementations sit beside it unimported, because no cache is wired. `tests/unit/rate-limit-detached.test.ts` fails the moment the live path grows a cache dependency again, so this cannot quietly become half-true. Nothing may be designed on the assumption that a limiter is protecting it — see [rate-limiting](specs/rate-limiting/) and the watch-list entry in [BACKLOG.md](BACKLOG.md).
 - **Encryption** — AES-256-GCM, per-message random IV, PBKDF2 key derivation (`server/shipping/utils/encryption.ts`). Used for stored shipping-provider credentials.
-- **Email** — Resend, templates under `server/notifications/templates/`. Outbound only: inbound correspondence is `server/support/`, whose Contact us messages are read in the admin portal and notify nobody ([contact-us](specs/contact-us/)). The WhatsApp half of Contact us is a `wa.me` link and has no server side.
+- **Email** — Resend, templates under `server/notifications/templates/`. One of them goes to the store rather than a buyer: Contact us emails a subject and message to the support inbox with the sender as Reply-To, and stores nothing ([contact-us](specs/contact-us/)). The other Contact us option, WhatsApp, is a `wa.me` link with no server side.
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 45 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 39 models, 13 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the remaining `Float` columns are weights and ratings, which are not money. The Prisma client is a dev-mode global singleton in `src/lib/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 44 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 38 models, 12 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the remaining `Float` columns are weights and ratings, which are not money. The Prisma client is a dev-mode global singleton in `src/lib/prisma.ts`; the `pg` Pool is constructed per module evaluation.
 
 **Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
 

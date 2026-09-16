@@ -1,15 +1,12 @@
 import { readApiError } from "@/lib/api-error";
-import type { ContactMessageFormValues } from "@/lib/validation/schemas/contact.schema";
+import type { GuestContactMessageFormValues } from "@/lib/validation/schemas/contact.schema";
 
 /**
- * Send a Contact us message. Open to signed-out visitors, and the only write the
- * storefront makes into the support domain.
- *
- * Failures come back as an `ApiError` so `useServerForm` can put a field-attributed one
- * on its field ([ADR-0013](../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
+ * Email a Contact us message to the store. `email` is sent only by a guest; for a
+ * signed-in sender the server uses the session's address (ADR-0013 for the error shape).
  */
 export async function sendContactMessage(
-  values: ContactMessageFormValues
+  values: Pick<GuestContactMessageFormValues, "subject" | "message"> & { email?: string }
 ): Promise<void> {
   const response = await fetch("/api/contact", {
     method: "POST",

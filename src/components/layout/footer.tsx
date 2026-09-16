@@ -1,5 +1,3 @@
-import { ContactLink } from "@/components/support/contact-link";
-
 export function Footer() {
   const year = new Date().getFullYear();
 
@@ -9,13 +7,9 @@ export function Footer() {
         <p className="tracking-wide">
           © {year} Bhendi Bazaar. Curated Islamic boutique wear and more.
         </p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
-          {/* The signed-out route to Contact us — the account menu carries the other. */}
-          <ContactLink />
-          <p className="text-2xs uppercase tracking-eyebrow-wide">
-            Crafted with niyyah in Mumbai&apos;s old quarter.
-          </p>
-        </div>
+        <p className="text-2xs uppercase tracking-eyebrow-wide">
+          Crafted with niyyah in Mumbai&apos;s old quarter.
+        </p>
       </div>
     </footer>
   );

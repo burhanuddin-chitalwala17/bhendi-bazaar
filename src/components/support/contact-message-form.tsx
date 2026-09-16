@@ -5,51 +5,34 @@ import { FormInput, FormTextarea } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import {
   contactMessageSchema,
-  type ContactMessageFormValues,
+  guestContactMessageSchema,
+  type GuestContactMessageFormValues,
 } from "@/lib/validation/schemas/contact.schema";
 import { sendContactMessage } from "@/services/contactApiClient";
 
-export interface ContactSender {
-  name?: string | null;
-  email?: string | null;
-}
-
 interface ContactMessageFormProps {
-  /** The signed-in account, when there is one. Absent for a visitor. */
-  sender?: ContactSender | null;
+  /** True when a session with an email exists — the reply address is then the account's. */
+  signedIn: boolean;
   onSent: () => void;
   onCancel: () => void;
 }
 
 /**
- * The written half of Contact us.
- *
- * A signed-in person's name and email are shown read-only, because the server discards
- * whatever the body carries and reads their account instead (contact-us TRD D3) — an
- * editable field that cannot change the outcome is a lie about what the form does.
+ * The email half of Contact us: a subject and a message, emailed to the store.
+ * A guest also gives an email, because otherwise there is nobody to reply to.
  */
-export function ContactMessageForm({
-  sender,
-  onSent,
-  onCancel,
-}: ContactMessageFormProps) {
-  const identityIsKnown = Boolean(sender?.email);
-
+export function ContactMessageForm({ signedIn, onSent, onCancel }: ContactMessageFormProps) {
   const {
     register,
     onSubmit,
     formError,
     isSubmitting,
     formState: { errors },
-  } = useServerForm<ContactMessageFormValues>({
-    schema: contactMessageSchema as never,
-    defaultValues: {
-      name: sender?.name ?? "",
-      email: sender?.email ?? "",
-      subject: "",
-      message: "",
-    },
-    submit: sendContactMessage,
+  } = useServerForm<GuestContactMessageFormValues>({
+    schema: (signedIn ? contactMessageSchema : guestContactMessageSchema) as never,
+    defaultValues: { subject: "", message: "", email: "" },
+    submit: ({ subject, message, email }) =>
+      sendContactMessage(signedIn ? { subject, message } : { subject, message, email }),
     successMessage: "Message sent — we will get back to you.",
     onSuccess: onSent,
     fallbackMessage: "Could not send your message. Please try again.",
@@ -66,34 +49,21 @@ export function ContactMessageForm({
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      {!signedIn && (
         <FormInput
-          label="Name"
-          required
-          placeholder="Your name"
-          readOnly={identityIsKnown}
-          {...register("name")}
-          error={errors.name?.message}
-        />
-        <FormInput
-          label="Email"
+          label="Your email"
           required
           type="email"
           placeholder="you@example.com"
-          readOnly={identityIsKnown}
+          hint="So we can reply to you."
           {...register("email")}
           error={errors.email?.message}
         />
-      </div>
-
-      {identityIsKnown && (
-        <p className="text-2xs text-muted-foreground">
-          We will reply to the address on your account.
-        </p>
       )}
 
       <FormInput
         label="Subject"
+        required
         placeholder="Order, sizing, something else"
         {...register("subject")}
         error={errors.subject?.message}

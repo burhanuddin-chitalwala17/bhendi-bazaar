@@ -52,7 +52,6 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | promotions | `server/promotions/` | Offers, coupons, and the one effective-price resolver every surface calls |
 | payouts | `server/payouts/` | What each org earned, what the platform kept, what is still owed |
 | bidding | `server/bidding/` | Timed auctions on a single item, and the gate that suspends it from normal sale |
-| support | `server/support/` | Inbound Contact us messages and the admin inbox that works through them. Outbound email stays in `notifications` |
 | analytics | `server/analytics/` | Aggregating read-model for the admin dashboard. **Read-only**, and the one documented exception to the no-cross-domain-reads rule |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry. Only what genuinely spans domains — not a dumping ground |
 

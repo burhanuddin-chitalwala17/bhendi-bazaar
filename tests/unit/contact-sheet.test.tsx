@@ -1,6 +1,7 @@
 /**
- * Contact us, storefront half: two options, WhatsApp as a link, and a message form that
- * replaces the options in the same sheet and confirms there (spec R2–R4, R6).
+ * Contact us, storefront half: WhatsApp as a link, and a subject + message form that
+ * replaces the options in the same sheet and confirms there. A guest is also asked
+ * for an email, because there is otherwise nobody to reply to.
  */
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -13,20 +14,26 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const { ContactSheet } = await import("@/components/support/contact-sheet");
 
-function renderSheet(sender?: { name?: string | null; email?: string | null }) {
-  return render(<ContactSheet open onOpenChange={() => {}} sender={sender} />);
+function openForm(signedIn: boolean) {
+  render(<ContactSheet open onOpenChange={() => {}} signedIn={signedIn} />);
+  fireEvent.click(screen.getByRole("button", { name: /send a message/i }));
 }
 
+const subject = () => screen.getByPlaceholderText("Order, sizing, something else");
+const message = () => screen.getByPlaceholderText("Tell us what you need help with.");
+const email = () => screen.queryByPlaceholderText("you@example.com");
+const send = () => fireEvent.click(screen.getByRole("button", { name: /send message/i }));
+
 describe("ContactSheet", () => {
-  it("offers exactly the two options", () => {
-    renderSheet();
+  it("offers WhatsApp and a message", () => {
+    render(<ContactSheet open onOpenChange={() => {}} signedIn={false} />);
 
     expect(screen.getByRole("link", { name: /whatsapp/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /send a message/i })).toBeInTheDocument();
   });
 
   it("links WhatsApp to the store's number with an opening message, in a new tab", () => {
-    renderSheet();
+    render(<ContactSheet open onOpenChange={() => {}} signedIn={false} />);
     const link = screen.getByRole("link", { name: /whatsapp/i });
 
     expect(link.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/918452959340\?text=/);
@@ -34,43 +41,49 @@ describe("ContactSheet", () => {
     expect(link.getAttribute("rel")).toContain("noopener");
   });
 
-  it("asks a guest for their name and email", () => {
-    renderSheet();
-    fireEvent.click(screen.getByRole("button", { name: /send a message/i }));
+  it("is a bottom sheet on a phone that becomes a side panel on desktop", () => {
+    render(<ContactSheet open onOpenChange={() => {}} signedIn={false} />);
+    const sheet = document.querySelector('[data-slot="sheet-content"]');
 
-    expect(screen.getByPlaceholderText("Your name")).not.toHaveAttribute("readonly");
-    expect(screen.getByPlaceholderText("you@example.com")).not.toHaveAttribute("readonly");
+    expect(sheet).toHaveAttribute("data-side", "adaptive");
+    expect(sheet?.className).toContain("bottom-0");
+    expect(sheet?.className).toContain("md:right-0");
   });
 
-  it("shows a signed-in person's account details read-only", () => {
-    renderSheet({ name: "Aisha", email: "aisha@example.com" });
-    fireEvent.click(screen.getByRole("button", { name: /send a message/i }));
+  it("shows a signed-in person only a subject and a message", () => {
+    openForm(true);
 
-    const email = screen.getByPlaceholderText("you@example.com");
-    expect(email).toHaveValue("aisha@example.com");
-    expect(email).toHaveAttribute("readonly");
+    expect(subject()).toBeInTheDocument();
+    expect(message()).toBeInTheDocument();
+    expect(email()).toBeNull();
   });
 
-  it("sends the message and confirms in the same sheet", async () => {
+  it("also asks a guest for an email", () => {
+    openForm(false);
+    expect(email()).toBeInTheDocument();
+  });
+
+  it("sends a signed-in message without an email and confirms in the same sheet", async () => {
     sendContactMessage.mockResolvedValue(undefined);
-    renderSheet({ name: "Aisha", email: "aisha@example.com" });
-    fireEvent.click(screen.getByRole("button", { name: /send a message/i }));
+    openForm(true);
 
-    fireEvent.change(screen.getByPlaceholderText("Tell us what you need help with."), {
-      target: { value: "Does the kurta come in XL?" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /send message/i }));
+    fireEvent.change(subject(), { target: { value: "Sizing" } });
+    fireEvent.change(message(), { target: { value: "Does the kurta come in XL?" } });
+    send();
 
     await waitFor(() => expect(screen.getByText(/we have your message/i)).toBeInTheDocument());
-    expect(sendContactMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Does the kurta come in XL?", email: "aisha@example.com" })
-    );
+    expect(sendContactMessage).toHaveBeenCalledWith({
+      subject: "Sizing",
+      message: "Does the kurta come in XL?",
+    });
   });
 
-  it("does not send a message the schema refuses", async () => {
-    renderSheet();
-    fireEvent.click(screen.getByRole("button", { name: /send a message/i }));
-    fireEvent.click(screen.getByRole("button", { name: /send message/i }));
+  it("does not send a guest message with no email", async () => {
+    openForm(false);
+
+    fireEvent.change(subject(), { target: { value: "Sizing" } });
+    fireEvent.change(message(), { target: { value: "Does the kurta come in XL?" } });
+    send();
 
     await waitFor(() =>
       expect(screen.getByText(/please fix the highlighted fields/i)).toBeInTheDocument()
@@ -79,8 +92,7 @@ describe("ContactSheet", () => {
   });
 
   it("goes back to the options without closing", () => {
-    renderSheet();
-    fireEvent.click(screen.getByRole("button", { name: /send a message/i }));
+    openForm(true);
     fireEvent.click(screen.getByRole("button", { name: /back/i }));
 
     expect(screen.getByRole("link", { name: /whatsapp/i })).toBeInTheDocument();

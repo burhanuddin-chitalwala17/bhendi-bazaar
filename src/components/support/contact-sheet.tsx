@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Mail, MessageCircle } from "lucide-react";
+import { CheckCircle2, Mail, MessageCircle, X } from "lucide-react";
 
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetTitle,
@@ -13,35 +14,35 @@ import { Button } from "@/components/ui/button";
 import { SUPPORT_WHATSAPP } from "@/lib/config";
 import { SOCIAL_BRAND } from "@/lib/social-brand";
 import { whatsappSupportUrl } from "@/lib/support-contact";
-import {
-  ContactMessageForm,
-  type ContactSender,
-} from "@/components/support/contact-message-form";
+import { ContactMessageForm } from "@/components/support/contact-message-form";
 
 type Step = "choices" | "message" | "sent";
 
 interface ContactSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The signed-in account, when there is one. */
-  sender?: ContactSender | null;
+  signedIn: boolean;
 }
 
-// A 56px row: icon, what it does, and what to expect from it. Full width at base, which
-// is what makes both options thumb-reachable in a bottom sheet (ADR-0015, ADR-0016).
+// A full-width 56px row keeps both options thumb-reachable in a bottom sheet (ADR-0015).
 const OPTION_ROW =
   "flex w-full items-center gap-3 rounded-card border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:bg-muted";
 
+const TITLES: Record<Step, { title: string; description: string }> = {
+  choices: {
+    title: "Contact us",
+    description: "Chat with us on WhatsApp, or email us a message.",
+  },
+  message: { title: "Send us a message", description: "We will reply by email." },
+  sent: { title: "Message sent", description: "It is on its way to our inbox." },
+};
+
 /**
- * Contact us — the two ways to reach the store (docs/specs/contact-us/).
- *
- * Controlled, because the account menu closes on an outside click: a sheet owning its
- * own state from inside that menu would unmount with its trigger (TRD D8).
- *
- * The form replaces the options in the same sheet rather than navigating, so a back
- * gesture cannot take a half-written message with it (spec R4).
+ * Contact us — WhatsApp, or a message emailed to the store (docs/specs/contact-us/).
+ * A bottom sheet on a phone, a right-hand panel on desktop. The form replaces the
+ * options in place, so a back gesture cannot take a half-written message with it.
  */
-export function ContactSheet({ open, onOpenChange, sender }: ContactSheetProps) {
+export function ContactSheet({ open, onOpenChange, signedIn }: ContactSheetProps) {
   const [step, setStep] = useState<Step>("choices");
 
   function handleOpenChange(next: boolean) {
@@ -51,21 +52,19 @@ export function ContactSheet({ open, onOpenChange, sender }: ContactSheetProps) 
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent className="sm:mx-auto sm:max-w-md">
-        <SheetTitle>
-          {step === "message"
-            ? "Send us a message"
-            : step === "sent"
-              ? "Message sent"
-              : "Contact us"}
-        </SheetTitle>
-        <SheetDescription className="text-2xs">
-          {step === "message"
-            ? "We will reply by email."
-            : step === "sent"
-              ? "It is with us now."
-              : "Chat with us, or leave a message and we will reply by email."}
-        </SheetDescription>
+      <SheetContent side="adaptive">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <SheetTitle>{TITLES[step].title}</SheetTitle>
+            <SheetDescription>{TITLES[step].description}</SheetDescription>
+          </div>
+          <SheetClose
+            aria-label="Close"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="size-4" />
+          </SheetClose>
+        </div>
 
         {step === "choices" && (
           <div className="space-y-2 pt-1">
@@ -90,7 +89,7 @@ export function ContactSheet({ open, onOpenChange, sender }: ContactSheetProps) 
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">Send a message</span>
                 <span className="block text-2xs text-muted-foreground">
-                  Write to us here and we will email you back
+                  Email us a subject and message
                 </span>
               </span>
             </button>
@@ -99,7 +98,7 @@ export function ContactSheet({ open, onOpenChange, sender }: ContactSheetProps) 
 
         {step === "message" && (
           <ContactMessageForm
-            sender={sender}
+            signedIn={signedIn}
             onSent={() => setStep("sent")}
             onCancel={() => setStep("choices")}
           />

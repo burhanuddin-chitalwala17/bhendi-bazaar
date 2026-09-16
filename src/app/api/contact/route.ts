@@ -4,23 +4,25 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { getRateLimitIdentifier, withRateLimit } from "@/lib/rate-limit";
-import { contactMessageSchema } from "@/lib/validation/schemas/contact.schema";
-import { contactService } from "@server/support/contact.service";
+import {
+  contactMessageSchema,
+  guestContactMessageSchema,
+} from "@/lib/validation/schemas/contact.schema";
+import { emailService } from "@server/notifications/email.service";
 
 /**
- * POST /api/contact — send the store a message (docs/specs/contact-us/).
+ * POST /api/contact — email a Contact us message to the store (docs/specs/contact-us/).
  *
- * Deliberately open to signed-out visitors: someone who cannot sign in is exactly the
- * person who needs to make contact (spec R5). A session, when there is one, is used to
- * *replace* the name and email in the body rather than to permit the request — the
- * service re-reads the account (TRD D3).
+ * Open to guests. A signed-in sender's reply address is the session's, never the body's;
+ * the signed session is the only thing here the sender cannot write.
  *
- * **Unthrottled in practice.** `withRateLimit` allows everything while the cache is
- * unwired (specs/rate-limiting), so the real control is the service's flood guard.
+ * **Unthrottled.** `withRateLimit` allows everything while the cache is detached, and
+ * nothing else guards this route — a known gap, accepted until rate limiting returns.
  */
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+    const accountEmail = session?.user?.email ?? null;
 
     const limited = await withRateLimit(
       request,
@@ -29,11 +31,23 @@ export async function POST(request: NextRequest) {
     );
     if (limited) return limited;
 
-    const input = contactMessageSchema.parse(await request.json());
-    await contactService.submit(input, session?.user?.id ?? null);
+    const body = await request.json();
+    const { subject, message } = contactMessageSchema.parse(body);
+    const replyEmail = accountEmail ?? guestContactMessageSchema.parse(body).email;
 
-    return NextResponse.json({ success: true }, { status: 201 });
+    await emailService.sendContactMessage({
+      subject,
+      message,
+      replyEmail,
+      senderName: accountEmail ? (session?.user?.name ?? null) : null,
+      signedIn: accountEmail !== null,
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return toErrorResponse(error, "Could not send your message. Please try again.");
+    return toErrorResponse(
+      error,
+      "Could not send your message. Please try again, or reach us on WhatsApp."
+    );
   }
 }
