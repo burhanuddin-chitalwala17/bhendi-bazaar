@@ -61,3 +61,23 @@ export interface WebhookVerificationResult {
   error?: string;
 }
 
+
+/**
+ * What the gateway reports about one order, reduced to the three answers the store
+ * acts on (checkout-abandonment D1). Gateway-specific statuses stay inside
+ * `providers/razorpay/`; this is the shape business logic is allowed to see.
+ */
+export type GatewayPaymentState =
+  | { kind: "captured"; paymentId: string; amount: number }
+  /** An attempt is neither captured nor dead — the buyer may still be approving it. */
+  | { kind: "in-flight" }
+  | { kind: "none" };
+
+/** What `releaseIfUnpaid` decided, for the caller to log or report. */
+export type ReleaseOutcome =
+  | "released"
+  | "confirmed"
+  | "in-flight"
+  | "already-paid"
+  | "already-released"
+  | "not-released";

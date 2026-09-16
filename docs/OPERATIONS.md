@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-09
+- **Verified:** 2026-09-16
 
 ## Prerequisites
 Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test mode for development).
@@ -27,7 +27,7 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ✅ | The same key **id**, exposed to the browser checkout widget. Never expose the secret |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
-| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
+| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
 | `BLOB_READ_WRITE_TOKEN` | ✅ | Vercel Blob, for product and profile images |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ✅ | Upstash Redis for rate limiting — see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
@@ -177,6 +177,8 @@ The code reads only `DATABASE_URL` and `KV_REST_API_URL` from the connection-str
 ## Deploy
 
 Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
+
+**The reconcile cron runs once a day, and that is the plan's limit, not a judgement.** Hobby permits one cron invocation per day, so `vercel.json`'s `30 3 * * *` is as often as it can run. Nothing depends on it: since [checkout-abandonment](specs/checkout-abandonment/) a buyer who closes the payment window releases their own reservation immediately, and a checkout blocked by a stale hold releases it and retries. The cron only catches the buyer whose browser never asked. If the project ever moves to Pro, tightening the schedule is a one-line edit and needs no code change.
 
 **Deployments come from GitHub Actions, not from Vercel's Git integration.** Hobby only git-deploys commits authored by the Vercel account owner, so a collaborator's push silently never shipped. `vercel.json` sets `git.deploymentEnabled: false`, and `.github/workflows/ci.yml`'s `deploy` job runs `vercel pull` / `vercel build` / `vercel deploy --prebuilt` with an account token — authorship stops mattering. `main` deploys with `--prod`; `develop` deploys a preview. The job needs `test` to pass first, and needs three repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the latter two are in `.vercel/project.json`).
 

@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
     }
 
     const results = await paymentService.reconcileStuckOrders();
-    const recovered = results.filter((r) => r.outcome === "recovered").length;
+    const recovered = results.filter((r) => r.outcome === "confirmed").length;
+    const released = results.filter((r) => r.outcome === "released").length;
     if (recovered > 0) {
       console.log(`Reconciliation recovered ${recovered} order(s)`, results);
     }
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       console.log(`Ledger backfill wrote ${ledger.written} entry(ies) across ${ledger.scanned} order(s)`);
     }
 
-    return NextResponse.json({ checked: results.length, recovered, ledger, results });
+    return NextResponse.json({ checked: results.length, recovered, released, ledger, results });
   } catch (error) {
     return toErrorResponse(error, "Reconciliation failed");
   }

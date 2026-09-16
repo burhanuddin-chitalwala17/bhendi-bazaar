@@ -392,8 +392,10 @@ model Order {
   paymentId      String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
   gatewayOrderId String? // the gateway order this order was charged through; created with amount = grandTotal
 
-  // Overall order status (derived from shipments)
-  status String @default("processing") // processing, partially_shipped, completed
+  // Overall order status. The values live in ORDER_STATUS
+  // (server/checkout/order.types.ts) — "expired" means an abandoned checkout whose
+  // reservation has been released, kept for follow-up and hidden from every panel.
+  status String @default("processing")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -17,6 +17,8 @@ Checkout owns an order's existence and lifecycle — placement, state transition
 - **Never write `paymentStatus`.** That belongs to `payments`, which has exactly one writer ([ADR-0005](../../docs/adr/0005-payment-state-server-only.md)).
 - **Order creation, stock reservation, and cart clearing are one transaction.** An order must not exist without its stock movement ([inventory-reservation](../../docs/specs/inventory-reservation/)).
 - **An ownership check is not `if (userId && ...)`.** A guard that skips when the identity is absent is not a guard — an anonymous caller passes it. Check identity presence and ownership as separate conditions, and decide explicitly what a guest order permits.
+- **An abandoned checkout is kept and hidden, never deleted.** `status: "expired"` is the marker, and `VISIBLE_ORDER_WHERE` is applied inside the repositories — a new order query that does not carry it will show abandoned checkouts as business ([checkout-abandonment](../../docs/specs/checkout-abandonment/)).
+- **`Order.status` values come from `ORDER_STATUS`**, never a string literal — it is a closed set with one home, and visibility turns on it.
 - **Order lookup returns a projection.** An order carries a customer's name, phone, email, and full address; a lookup reachable without authentication must not return them.
 - **One creation path.** Two paths with different behaviour is how one of them silently becomes the weaker one.
 - **A check and a write that must be atomic are one statement.** Read-then-write is not a check, even inside `$transaction` ([ADR-0007](../../docs/adr/0007-conditional-stock-decrement.md)).

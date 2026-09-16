@@ -182,6 +182,26 @@ class PaymentGatewayService {
     return response.json();
   }
 
+  /**
+   * Tell the server the buyer gave up (checkout-abandonment D1). A hint, not a
+   * transaction — the server asks the gateway what really happened, and the sweep
+   * reaches the same answer if this never arrives, so a failure here is swallowed.
+   * `keepalive` because the tab is usually closing as it fires.
+   */
+  async abandon(localOrderId: string): Promise<void> {
+    try {
+      await fetch(`${this.baseUrl}/abandon`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        keepalive: true,
+        body: JSON.stringify({ localOrderId }),
+      });
+    } catch (error) {
+      console.warn("Could not release the abandoned order:", error);
+    }
+  }
+
   /** Zero-total orders: the server checks the persisted total is really zero. */
   async confirmFreeOrder(localOrderId: string): Promise<{ orderId: string }> {
     const response = await fetch(`${this.baseUrl}/confirm-free`, {

@@ -54,9 +54,20 @@ const orderTotalsSchema = z.object({
 // one order-creation path, so the stock guarantee has no weaker sibling.
 
 
-// Order lookup schema
+// Order lookup schema.
+//
+// Both shapes, permanently (ADR-0025 decision 4): `BB-1042` from the sequential era
+// and `BB-` plus eight alphabet characters since. A code already printed on an
+// invoice has to keep working, so this widens rather than replaces.
 export const orderLookupSchema = z.object({
-  code: z.string().regex(/^BB-\d+/, 'Invalid order code format'),
+  code: z
+    .string()
+    .trim()
+    .toUpperCase()
+    // Kept as a literal rather than imported from the generator: this file is
+    // re-exported to client components through src/lib/validation, and the generator
+    // pulls in node:crypto. `checkout-abandonment.test.ts` asserts the two agree.
+    .regex(/^BB-(\d+|[2-9A-HJKMNP-TV-Z]{8})$/, 'Invalid order code format'),
 });
 
 export type OrderLookupInput = z.infer<typeof orderLookupSchema>;
