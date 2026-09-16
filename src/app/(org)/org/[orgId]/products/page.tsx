@@ -23,6 +23,7 @@ interface PageProps {
     order?: "asc" | "desc";
     lowStock?: string;
     outOfStock?: string;
+    wishlisted?: string;
   }>;
 }
 
@@ -80,6 +81,7 @@ async function OrgProductsData({
     sortOrder: params.order,
     lowStock: params.lowStock === "true" ? true : undefined,
     outOfStock: params.outOfStock === "true" ? true : undefined,
+    wishlistedOnly: params.wishlisted === "true" ? true : undefined,
   };
 
   const [productsData, stats, categoryList] = await Promise.all([

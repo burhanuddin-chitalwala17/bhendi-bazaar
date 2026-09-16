@@ -28,6 +28,14 @@ export class WishlistService {
   }
 
   /**
+   * Which products anyone has saved, for the tables' "wishlisted only" filter. Scoped
+   * to an org in the portal; unscoped only for the platform's cross-vendor view.
+   */
+  async listSavedProductIds(orgId?: string): Promise<string[]> {
+    return await wishlistRepository.listSavedProductIds(orgId);
+  }
+
+  /**
    * Save a product.
    *
    * The existence check is for the message, not the guarantee — `WishlistItem`'s

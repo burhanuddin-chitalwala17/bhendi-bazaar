@@ -26,6 +26,7 @@ import { readApiError } from "@/lib/api-error";
 import { formatCurrency, paiseToRupees } from "@/lib/format";
 import {
   biddingFormSchema,
+  MAX_BIDDING_DAYS,
   type BiddingFormInput,
 } from "@/lib/validation/schemas/bidding.schema";
 
@@ -90,10 +91,26 @@ export function BiddingForm({
     control,
     formState: { errors },
     setValue,
+    watch,
     onSubmit,
     formError,
     isSubmitting,
   } = form;
+
+  // The picker stops where the schema stops, so the cap is something the org runs into
+  // while choosing rather than on submit. Seeded as a Date, edited as wall-clock text —
+  // `new Date` reads both, and an unparseable half-typed value simply lifts the cap
+  // until it parses.
+  const startAtValue = watch("startAt" as never) as unknown as
+    | string
+    | Date
+    | undefined;
+  const startAt = new Date(startAtValue ?? opensIn);
+  const latestEnd = Number.isNaN(startAt.getTime())
+    ? undefined
+    : toLocalInput(
+        new Date(startAt.getTime() + MAX_BIDDING_DAYS * 24 * 60 * 60 * 1000)
+      );
 
   const quickBids = useFieldArray({ control, name: "quickBids" as never });
 
@@ -174,8 +191,9 @@ export function BiddingForm({
           label="Bidding closes"
           required
           type="datetime-local"
+          max={latestEnd}
           error={errors.endAt?.message}
-          hint="Bids are refused the moment this passes."
+          hint={`Bids are refused the moment this passes. At most ${MAX_BIDDING_DAYS} days after it opens.`}
           {...register("endAt")}
         />
       </div>
