@@ -23,6 +23,11 @@ import {
   getOutbidEmailTemplate,
   type OutbidEmailView,
 } from "./templates/outbidEmail";
+import {
+  getContactMessageEmailTemplate,
+  type ContactMessageEmailView,
+} from "./templates/contactMessageEmail";
+import { SUPPORT_INBOX } from "./templates/layout";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 class EmailService {
@@ -52,6 +57,7 @@ class EmailService {
         to: options.to,
         subject: options.subject,
         html: options.html,
+        ...(options.replyTo ? { replyTo: options.replyTo } : {}),
       });
 
       if (error) {
@@ -232,6 +238,21 @@ class EmailService {
       to: email,
       subject: `You have been outbid on ${view.productName} - Bhendi Bazaar`,
       html: getOutbidEmailTemplate(view),
+    });
+  }
+
+  /**
+   * Deliver a Contact us message to the store's inbox. Reply-To is the sender, so
+   * answering is an ordinary reply (contact-us TRD D2). Unlike the other sends this one
+   * is awaited by its route: the email is the only record, so a failure must reach the
+   * person who wrote it.
+   */
+  async sendContactMessage(view: ContactMessageEmailView): Promise<void> {
+    await this.sendEmail({
+      to: SUPPORT_INBOX,
+      replyTo: view.replyEmail,
+      subject: `Contact us: ${view.subject}`,
+      html: getContactMessageEmailTemplate(view),
     });
   }
 }

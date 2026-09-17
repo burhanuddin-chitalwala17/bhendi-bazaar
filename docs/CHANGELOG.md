@@ -21,6 +21,21 @@ Opening "Create New Product" prefilled the form with the product just created. T
 **The debounce never debounced.** `useFormPersist` returned a cleanup from inside the `watch` callback, which react-hook-form ignores, so every keystroke queued its own save — and one still pending could land after `clearSaved` and restore the draft. The pending save is now one timer in a ref, cancelled on change, on unmount, and by `clearSaved`.
 
 No contract, schema or migration change. `tsc --noEmit` shows no errors in the changed files; no automated test covers the draft yet.
+## [PR-107] 2026-09-16 — Contact us: WhatsApp, or a message emailed to the store
+
+Every storefront page now has a **Contact us** control. On desktop it is an outline pill left of **Cart** in the header, shown to signed-in people and guests alike. On a phone it is the first tab of the bottom bar, which now reads **Contact · Cart · Home · Orders · Account**, so Home is in the middle. Either one opens a sheet with two options. **WhatsApp** opens a chat with +91 84529 59340 with an opening line typed in. **Send a message** swaps in a form with **Subject** and **Message**, sends it, and confirms without leaving the sheet. Spec and TRD: [contact-us](specs/contact-us/).
+
+**The message is an email and nothing else.** It goes to support@bhendibazaar.com with the sender as **Reply-To**, so answering it is an ordinary reply. Nothing is stored, and there is no admin-portal page, table or migration. The store's inbox already keeps the history, and a second inbox would be one more place to check. The email is a template and a `sendContactMessage` method in `server/notifications/`, following that domain's rule for adding an email, and `SendEmailOptions` gained an optional `replyTo`.
+
+**A signed-in sender is asked for nothing but the subject and message.** The reply address comes from the signed session, and an `email` in the body is ignored, because the session is the one input the sender cannot write. A guest also gets an **Email** field, since otherwise there would be nobody to reply to. The route and the form share one pair of schemas (`contactMessageSchema`, and `guestContactMessageSchema` which adds the email), so a guest who leaves the email out gets the error on that field (ADR-0013).
+
+**The route waits for the send.** Other emails are sent without waiting because they follow an action that has already been saved. Here the email *is* the action, so a failed send returns a 500 telling the sender to retry or use WhatsApp, and what they typed stays in the form.
+
+**Unthrottled, on purpose.** `withRateLimit` allows every request while the cache is detached, and with no table there is nothing to count. The call stays in so this route is covered once the limiter is reconnected.
+
+**The sheet is a bottom sheet on a phone and a right-hand panel from `md` up.** `SheetContent` gained a `side="adaptive"` option instead of a second component, so focus trapping and Escape behave the same in both layouts. At `md` the vertical slide is reset so it does not combine with the horizontal one into a diagonal. The grab handle hides on desktop, and a close button was added. The header pill is `hidden md:inline-flex`, which ADR-0015 permits because the tab bar provides the phone equivalent in the same change. One `ContactLauncher` holds the open state and mounts the sheet for both placements.
+
+`tests/unit/contact-email.test.ts` covers the route and template, `contact-sheet.test.tsx` the UI, and `contact-whatsapp.test.ts` the link builder, and the new template is added to the shared-shell check in `email-templates.test.ts`. No schema, no migration, no money path, and no CONTRACTS.md entry, because the route has one consumer. The 4 pre-existing failures (design-tokens ×2, rate-limit-detached, admin-audit-trail) are Windows path-separator mismatches in files this PR does not touch, and they reproduce unchanged.
 
 ## [PR-104] 2026-09-16 — An abandoned checkout releases its goods, and is shown to nobody [CONTRACT]
 
