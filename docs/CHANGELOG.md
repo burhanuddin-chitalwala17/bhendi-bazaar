@@ -10,6 +10,17 @@
 
 ## Entries
 
+## [PR-108] 2026-09-17 — A new product starts blank, not as the last one created
+
+Opening "Create New Product" prefilled the form with the product just created. The create form persists a draft to `localStorage` (`product-creation-form-draft`) and restores it on mount, but nothing removed it after a successful create.
+
+**The clear was lost in a refactor.** Before `8057071` the old `product-form.tsx` passed `clearSaved` to `useProductForm`, which called it on success — the category form still works this way. The split into `ProductAddContainer` / `ProductForm` / `useProducts` moved the save into `useProducts.createProduct` and left `clearSaved` destructured and unused. The later move to `useServerForm` did not wire its `onSuccess` either. `ProductForm` now clears the draft in `useServerForm`'s `onSuccess`, so it goes only once the server has accepted the product.
+
+**Cancel abandons the draft.** On a create, Cancel resets the form and clears the saved draft before leaving, and the products page is refreshed on the way back, so it never shows a cached list. Editing an existing product is unaffected.
+
+**The debounce never debounced.** `useFormPersist` returned a cleanup from inside the `watch` callback, which react-hook-form ignores, so every keystroke queued its own save — and one still pending could land after `clearSaved` and restore the draft. The pending save is now one timer in a ref, cancelled on change, on unmount, and by `clearSaved`.
+
+No contract, schema or migration change. `tsc --noEmit` shows no errors in the changed files; no automated test covers the draft yet.
 ## [PR-107] 2026-09-16 — Contact us: WhatsApp, or a message emailed to the store
 
 Every storefront page now has a **Contact us** control. On desktop it is an outline pill left of **Cart** in the header, shown to signed-in people and guests alike. On a phone it is the first tab of the bottom bar, which now reads **Contact · Cart · Home · Orders · Account**, so Home is in the middle. Either one opens a sheet with two options. **WhatsApp** opens a chat with +91 84529 59340 with an opening line typed in. **Send a message** swaps in a form with **Subject** and **Message**, sends it, and confirms without leaving the sheet. Spec and TRD: [contact-us](specs/contact-us/).

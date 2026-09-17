@@ -63,6 +63,9 @@ export function ProductForm({
   const form = useServerForm<ProductFormInput>({
     schema: productFormSchema,
     submit: onSubmit,
+    // Deferred: clearSaved is declared below. Without this the saved draft
+    // prefills the next "new product" with the one just created.
+    onSuccess: () => clearSaved(),
     defaultValues: {
       name: product?.name || "",
       description: product?.description || "",
@@ -110,6 +113,16 @@ export function ProductForm({
     excludeFields: ["stockLocations"],
     enabled: !isEdit,
   });
+
+  // Cancelling a create abandons it: the next "new product" starts blank.
+  // Reset first — it fires watch — then clear, which cancels that queued save.
+  const handleCancel = () => {
+    if (!isEdit) {
+      form.reset();
+      clearSaved();
+    }
+    onCancel();
+  };
 
   // Belt to the exclusion above: whatever restored or reset the form, the rows
   // always mirror the offered locations — typed quantities kept, ids re-asserted.
@@ -254,7 +267,7 @@ export function ProductForm({
           <Button
             type="button"
             variant="outline"
-            onClick={onCancel}
+            onClick={handleCancel}
             disabled={isSubmitting}
           >
             Close
@@ -262,7 +275,7 @@ export function ProductForm({
         </div>
       ) : (
         <FormActions
-          onCancel={onCancel}
+          onCancel={handleCancel}
           submitLabel={isEdit ? "Update Product" : "Create Product"}
           isSubmitting={isSubmitting}
         />
