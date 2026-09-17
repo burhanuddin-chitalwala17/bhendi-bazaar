@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-108] 2026-09-17 — A new product starts blank, not as the last one created
+
+Opening "Create New Product" prefilled the form with the product just created. The create form persists a draft to `localStorage` (`product-creation-form-draft`) and restores it on mount, but nothing removed it after a successful create.
+
+**The clear was lost in a refactor.** Before `8057071` the old `product-form.tsx` passed `clearSaved` to `useProductForm`, which called it on success — the category form still works this way. The split into `ProductAddContainer` / `ProductForm` / `useProducts` moved the save into `useProducts.createProduct` and left `clearSaved` destructured and unused. The later move to `useServerForm` did not wire its `onSuccess` either. `ProductForm` now clears the draft in `useServerForm`'s `onSuccess`, so it goes only once the server has accepted the product.
+
+**The debounce never debounced.** `useFormPersist` returned a cleanup from inside the `watch` callback, which react-hook-form ignores, so every keystroke queued its own save — and one still pending could land after `clearSaved` and restore the draft. The pending save is now one timer in a ref, cancelled on change, on unmount, and by `clearSaved`.
+
+No contract, schema or migration change. `tsc --noEmit` shows no errors in the changed files; no automated test covers the draft yet.
+
 ## [PR-104] 2026-09-16 — An abandoned checkout releases its goods, and is shown to nobody [CONTRACT]
 
 Closing the Razorpay window without paying left the item held and unbuyable. Spec and TRD: [checkout-abandonment](specs/checkout-abandonment/); the order-code decision and its rejected alternatives: [ADR-0025](adr/0025-order-codes-are-random-not-sequential.md).

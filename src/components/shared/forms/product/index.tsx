@@ -63,6 +63,9 @@ export function ProductForm({
   const form = useServerForm<ProductFormInput>({
     schema: productFormSchema,
     submit: onSubmit,
+    // Deferred: clearSaved is declared below. Without this the saved draft
+    // prefills the next "new product" with the one just created.
+    onSuccess: () => clearSaved(),
     defaultValues: {
       name: product?.name || "",
       description: product?.description || "",

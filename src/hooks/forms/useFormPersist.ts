@@ -15,6 +15,7 @@ export function useFormPersist<T extends Record<string, any>>(
   const { enabled = true, excludeFields = [], debounceMs = 1000 } = options;
 
   const hasLoadRef = useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -44,8 +45,11 @@ export function useFormPersist<T extends Record<string, any>>(
   useEffect(() => {
     if (!enabled) return;
 
+    // watch() ignores a returned cleanup, so the pending save is tracked here;
+    // otherwise a queued save lands after clearSaved and resurrects the draft.
     const subscription = form.watch((data) => {
-      const timeoutId = setTimeout(() => {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
         // Remove excluded fields
         const dataToSave = { ...data };
         excludeFields.forEach((field) => {
@@ -53,14 +57,16 @@ export function useFormPersist<T extends Record<string, any>>(
         });
         localStorage.setItem(key, JSON.stringify(dataToSave));
       }, debounceMs);
-
-      return () => clearTimeout(timeoutId);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(saveTimerRef.current);
+    };
   }, [key, enabled, form, excludeFields, debounceMs]);
 
   const clearSaved = () => {
+    clearTimeout(saveTimerRef.current);
     localStorage.removeItem(key);
     hasLoadRef.current = false;
   };
