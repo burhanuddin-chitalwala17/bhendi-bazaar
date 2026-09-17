@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  BlobAccessError,
+  BlobNotFoundError,
+  BlobServiceNotAvailable,
+  BlobServiceRateLimited,
+  BlobStoreNotFoundError,
+  BlobStoreSuspendedError,
+} from "@vercel/blob";
+import {
   imageFileProblem,
+  storageFailure,
   sanitizeIdentifier,
   MAX_IMAGE_BYTES,
 } from "@server/catalog/image-upload";
@@ -44,5 +53,33 @@ describe("sanitizeIdentifier", () => {
 
   it("caps at 50 characters", () => {
     expect(sanitizeIdentifier("a".repeat(80)).length).toBe(50);
+  });
+});
+
+describe("storageFailure", () => {
+  it("reports a suspended, missing or unreachable store as 503 with a shown message", () => {
+    for (const error of [
+      new BlobStoreSuspendedError(),
+      new BlobStoreNotFoundError(),
+      new BlobAccessError(),
+      new BlobServiceNotAvailable(),
+    ]) {
+      const failure = storageFailure(error);
+      expect(failure?.status).toBe(503);
+      expect(failure?.message).toContain("unavailable");
+      expect(failure?.cause).toBe(error);
+    }
+  });
+
+  it("reports rate limiting as busy, not unavailable", () => {
+    const failure = storageFailure(new BlobServiceRateLimited(5));
+    expect(failure?.status).toBe(503);
+    expect(failure?.message).toContain("busy");
+  });
+
+  it("leaves every other error to the generic 500", () => {
+    expect(storageFailure(new BlobNotFoundError())).toBeNull();
+    expect(storageFailure(new Error("boom"))).toBeNull();
+    expect(storageFailure(undefined)).toBeNull();
   });
 });

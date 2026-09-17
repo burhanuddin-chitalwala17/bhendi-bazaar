@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-109] 2026-09-17 — A suspended image store says so, instead of a bare 500
+
+When the Vercel Blob store was suspended, every catalogue image upload failed with `Unhandled route error: Vercel Blob: This store has been suspended` and the uploader saw only "Could not upload images" — indistinguishable from a broken form.
+
+`uploadImages` (`server/catalog/image-upload.ts`) now maps the store-level failures the uploader cannot fix — suspended, store not found, access refused, service unavailable — to a 503 `DomainError` saying storage is unavailable and nothing was uploaded, and rate limiting to a 503 saying storage is busy. The original error is kept as `cause` and logged, because `toErrorResponse` does not log a `DomainError` and a suspended store is an operator's problem. Anything else still falls through to the generic 500. Both upload routes (platform admin and org member) go through this function, so both are covered; the profile-picture route has its own `put` on the old error pattern and is unchanged.
+
+The Blob store is shared across environments (OPERATIONS.md), so a suspension from dev usage takes production images with it ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md)). That is not addressed here.
+
+`tsc --noEmit` clean. 3 new tests in `image-upload.test.ts`.
+
 ## [PR-104] 2026-09-16 — An abandoned checkout releases its goods, and is shown to nobody [CONTRACT]
 
 Closing the Razorpay window without paying left the item held and unbuyable. Spec and TRD: [checkout-abandonment](specs/checkout-abandonment/); the order-code decision and its rejected alternatives: [ADR-0025](adr/0025-order-codes-are-random-not-sequential.md).

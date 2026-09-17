@@ -1,4 +1,11 @@
-import { put } from "@vercel/blob";
+import {
+  put,
+  BlobAccessError,
+  BlobServiceNotAvailable,
+  BlobServiceRateLimited,
+  BlobStoreNotFoundError,
+  BlobStoreSuspendedError,
+} from "@vercel/blob";
 import { DomainError } from "@server/shared/domain-error";
 
 /**
@@ -65,6 +72,32 @@ export function buildImagePath(
   return `${folder}/${orgSegment}${id}/${base}-${now}.${extension}`;
 }
 
+/**
+ * A storage failure the uploader should be told about, or null for anything else.
+ * Without this a suspended store reached the browser as a bare 500 and looked like a
+ * broken form. The uploader cannot fix any of these, so the message says to retry.
+ */
+export function storageFailure(error: unknown): DomainError | null {
+  if (error instanceof BlobServiceRateLimited) {
+    return new DomainError("Image storage is busy — please try again in a moment", {
+      status: 503,
+      cause: error,
+    });
+  }
+  if (
+    error instanceof BlobStoreSuspendedError ||
+    error instanceof BlobStoreNotFoundError ||
+    error instanceof BlobAccessError ||
+    error instanceof BlobServiceNotAvailable
+  ) {
+    return new DomainError(
+      "Image storage is unavailable right now, so nothing was uploaded. Please try again later.",
+      { status: 503, cause: error }
+    );
+  }
+  return null;
+}
+
 /** Validates every file first — an upload is all-or-nothing, not a partial batch. */
 export async function uploadImages(
   files: File[],
@@ -82,11 +115,20 @@ export async function uploadImages(
 
   const urls: string[] = [];
   for (const file of files) {
-    const blob = await put(buildImagePath(folder, file.name, identifier, orgCode), file, {
-      access: "public",
-      addRandomSuffix: false,
-    });
-    urls.push(blob.url);
+    try {
+      const blob = await put(buildImagePath(folder, file.name, identifier, orgCode), file, {
+        access: "public",
+        addRandomSuffix: false,
+      });
+      urls.push(blob.url);
+    } catch (error) {
+      const failure = storageFailure(error);
+      if (!failure) throw error;
+      // toErrorResponse does not log a DomainError, and a suspended store is an
+      // operator's problem — keep the real cause in the server log.
+      console.error("Blob upload failed:", error);
+      throw failure;
+    }
   }
   return urls;
 }
