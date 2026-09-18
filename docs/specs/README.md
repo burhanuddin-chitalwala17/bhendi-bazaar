@@ -40,6 +40,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [shared-phone-numbers](shared-phone-numbers/) | One phone number backs any number of accounts; email alone identifies one | — | identity | ✅ Implemented — PR-103 |
 | [checkout-abandonment](checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | 2 | checkout, payments | ✅ Implemented — PR-104 |
 | [image-delivery](image-delivery/) | Images are stored small and served at the size the screen uses | 2 | catalog | ✅ Implemented — PR-105 |
+| [contact-us](contact-us/) | Anyone can reach the store from any page — by WhatsApp, or by a message emailed to its inbox | — | notifications | ✅ Implemented — PR-107 |
 
 ### Subfeatures
 

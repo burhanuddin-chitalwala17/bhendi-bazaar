@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag } from "lucide-react";
+import { Headset, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { NavbarSearch } from "./NavbarSearch";
 import { ProfileMenu } from "./ProfileMenu";
+import { ContactLauncher } from "@/components/support/contact-launcher";
 import Image from "next/image";
 import { APP_NAME, LOGO } from "@/lib/config";
 import { useSession } from "next-auth/react";
@@ -65,6 +66,17 @@ export function Navbar() {
               Orders
             </Link>
           )}
+
+          {/* Desktop only: on a phone Contact us is the tab bar's first tab (ADR-0015 rule). */}
+          <ContactLauncher
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex"
+            )}
+          >
+            <Headset className="h-4 w-4" />
+            Contact us
+          </ContactLauncher>
 
           <Button
             asChild={true}

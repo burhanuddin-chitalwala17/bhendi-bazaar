@@ -3,6 +3,21 @@ export const APP_DESCRIPTION = "Bhendi Bazaar – a royal curation of Islamic cl
 export const APP_TAGLINE = "Shop from the Caravan.";
 export const APP_SUPPORT_EMAIL = "support@bhendibazaar.com";
 /**
+ * The number Contact us opens a conversation on (docs/specs/contact-us/ R3).
+ *
+ * `digits` is E.164 without the `+`, which is what a `wa.me` path accepts; `display` is
+ * for a person to read. A static, public brand fact, so it belongs here rather than in
+ * an environment variable. Build the link with `whatsappSupportUrl` — never by
+ * concatenating a wa.me string at a call site.
+ */
+export const SUPPORT_WHATSAPP = {
+  digits: "918452959340",
+  display: "+91 84529 59340",
+} as const;
+
+/** The opening line a buyer arrives in WhatsApp with, theirs to edit before sending. */
+export const SUPPORT_WHATSAPP_MESSAGE = `Hello ${APP_NAME}, I need some help.`;
+/**
  * Brand assets ship with the app, in `public/brand/` — they are not user content.
  *
  * These pointed at the object store until ADR-0028, which made the site's own logo and

@@ -1,6 +1,11 @@
 # notifications — domain rules
 
-Transactional email. One provider (Resend, in `email.service.ts`), one shell, five templates.
+Transactional email. One provider (Resend, in `email.service.ts`), one shell, six templates.
+
+`contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
+a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route
+awaits the send and reports a failure ([contact-us](../../docs/specs/contact-us/trd.md) D2, D4).
+A signed-in sender's Reply-To is the session's email, never one from the request body.
 
 ## Every email renders through `renderEmail`
 
@@ -36,4 +41,4 @@ exception to "server code never formats money": an email has no client to format
 `BRAND_NAME` / `BRAND_TAGLINE` live in `layout.ts` because `server/` must not import from
 `src/`. Absolute links come from `appUrl()`, never a hardcoded origin.
 
-Verified: 2026-09-03
+Verified: 2026-09-16
