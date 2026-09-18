@@ -87,9 +87,7 @@ describe("signing in at checkout", () => {
   it("offers a guest the sign-in sheet beside the delivery details (R13)", () => {
     render(<CheckoutContainer />);
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(openAuthSheet).toHaveBeenCalledWith(
-      expect.objectContaining({ reason: expect.stringContaining("saved addresses") })
-    );
+    expect(openAuthSheet).toHaveBeenCalledTimes(1);
   });
 
   it("clears the guest's address, re-quotes offers, and keeps the snapshotted items (A10)", async () => {

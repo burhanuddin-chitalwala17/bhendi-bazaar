@@ -12,7 +12,7 @@ import {
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
-import { AUTH_VIEW_COPY, type AuthView, type SwitchAuthView } from "@/components/auth/auth-view";
+import type { AuthView, SwitchAuthView } from "@/components/auth/auth-view";
 
 const SHEET_TITLES: Record<AuthView, string> = {
   signin: "Sign in",
@@ -53,11 +53,12 @@ export function AuthSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="adaptive">
+      {/* Only the heart gives a reason; without one, the explicit undefined tells Radix there is no description. */}
+      <SheetContent side="adaptive" {...(reason ? {} : { "aria-describedby": undefined })}>
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1.5">
             <SheetTitle>{SHEET_TITLES[view]}</SheetTitle>
-            <SheetDescription>{reason ?? AUTH_VIEW_COPY[view].description}</SheetDescription>
+            {reason && <SheetDescription>{reason}</SheetDescription>}
           </div>
           <SheetClose
             aria-label="Close"

@@ -80,7 +80,6 @@ export default function ProfilePage() {
               you&apos;re signed in.
             </p>
             <SignInButton
-              reason="Sign in to see your profile, addresses and orders."
               className="mt-1 h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow"
             >
               Sign in

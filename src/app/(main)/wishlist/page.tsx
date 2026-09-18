@@ -31,7 +31,6 @@ export default async function WishlistPage() {
             Products you save with the heart are kept on your account, on every device.
           </p>
           <SignInButton
-            reason="Sign in to see what you have saved."
             className="h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow"
           />
         </div>

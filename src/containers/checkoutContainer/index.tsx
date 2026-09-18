@@ -172,9 +172,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
               Already have an account?
               <button
                 type="button"
-                onClick={() =>
-                  openAuthSheet({ reason: "Sign in to use your saved addresses and offers." })
-                }
+                onClick={() => openAuthSheet()}
                 className="inline-flex min-h-10 items-center font-semibold text-foreground underline underline-offset-4"
               >
                 Sign in
