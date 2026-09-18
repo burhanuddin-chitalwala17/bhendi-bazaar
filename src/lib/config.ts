@@ -1,7 +1,7 @@
 export const APP_NAME = "Bhendi Bazaar";
 export const APP_DESCRIPTION = "Bhendi Bazaar – a royal curation of Islamic clothing, boutique wear, and essentials.";
 export const APP_TAGLINE = "Shop from the Caravan.";
-export const APP_SUPPORT_EMAIL = "support@bhendibazaar.com";
+export const APP_SUPPORT_EMAIL = "bharmalits@gmail.com";
 /**
  * The number Contact us opens a conversation on (docs/specs/contact-us/ R3).
  *
