@@ -8,6 +8,8 @@ import { baseEmailStyles } from "./styles/baseEmailStyles";
 /** Duplicated from `src/lib/config.ts` on purpose: `server/` must not import from `src/`. */
 export const BRAND_NAME = "Bhendi Bazaar";
 export const BRAND_TAGLINE = "Royal Curation of Islamic Clothing";
+/** Where Contact us messages are delivered. Same duplication reason as `BRAND_NAME`. */
+export const SUPPORT_INBOX = "support@bhendibazaar.com";
 
 export interface EmailFooterLink {
   label: string;

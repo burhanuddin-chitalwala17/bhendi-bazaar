@@ -51,6 +51,9 @@ export function YouTubeEmbed({ ref_, description, productName }: YouTubeEmbedPro
 
   return (
     <div className="relative h-full w-full">
+      {/* `unoptimized` stays here, unlike on Blob URLs: i.ytimg.com serves its own
+          already-sized poster frames, so optimizing spends a transformation to save
+          nothing — and none of it is our Blob egress (ADR-0026). */}
       <Image
         src={youtubePosterUrl(ref_)}
         alt={description ?? `${productName} video`}

@@ -124,9 +124,9 @@ same checks — the second request is as untrusted as the first.
 | `POST /api/org/:orgId/products/bulk/validate` | multipart `sheet` (.xlsx/.csv) + `filenames` (JSON array of dropped image names) → `{ ok, errors: RowError[], rows, orgCode, summary }` |
 | `POST /api/org/:orgId/products/bulk` | `{ rows: (BulkProductRow & { imageUrls: Record<filename, blobUrl> })[] }` → `{ ok, created }`, or 400 `{ ok: false, errors }` |
 | `GET /api/org/:orgId/products/bulk/sample` | `.xlsx`, generated from the org's live locations and current category slugs |
-| `POST /api/org/:orgId/upload/token` | `@vercel/blob` client-upload handshake, scoped to `products/<org-code>/` |
+| `POST /api/org/:orgId/upload/token` | `{ pathname, contentType, size }` → `{ uploadUrl, publicUrl }`. A presigned S3 PUT, scoped to `products/<org-code>/` ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). The browser then PUTs the bytes to `uploadUrl` with exactly the `contentType` that was signed, and uses `publicUrl` thereafter. `size` is validated, **not signed** — `Content-Length` cannot be bound into a presigned PUT |
 | `POST /api/admin/categories/bulk/validate` · `/bulk` · `/bulk/sample` | the same three shapes for categories |
-| `POST /api/admin/upload/token` | client-upload handshake, scoped to `categories/` |
+| `POST /api/admin/upload/token` | The same presigned-PUT exchange, scoped to `categories/` |
 
 `RowError` is `{ row, field, message }` — `row` is the Excel row number the user
 sees, `0` for sheet-level problems. Row shapes: `server/catalog/bulk/bulk.types.ts`,

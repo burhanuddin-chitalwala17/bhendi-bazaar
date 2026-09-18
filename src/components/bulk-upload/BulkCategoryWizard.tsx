@@ -6,7 +6,6 @@
  * one all-or-nothing create.
  */
 import { useMemo, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { readApiError } from "@/lib/api-error";
@@ -14,6 +13,8 @@ import type { RowError } from "@server/catalog/bulk/bulk.types";
 import type { BulkCategoryRow } from "@server/catalog/bulk/bulk-category.service";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { imagesOnly, relativePath, sanitizePath } from "./files";
+import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
+import { uploadDirect } from "@/lib/image/upload-direct";
 
 interface ValidateResponse {
   ok: boolean;
@@ -70,11 +71,14 @@ export function BulkCategoryWizard() {
         const [path] = matchingPaths(row.image, providedPaths);
         const file = path ? filesByPath.get(path) : undefined;
         if (!file) throw new Error(`Missing file "${row.image}"`);
-        const blob = await upload(`categories/bulk/${sanitizePath(path)}`, file, {
-          access: "public",
-          handleUploadUrl: "/api/admin/upload/token",
-        });
-        urls.set(row.image, blob.url);
+        // As in BulkProductWizard: a browser-direct upload is past the server's reach.
+        const hero = await downscaleImage(file);
+        const url = await uploadDirect(
+          `categories/bulk/${storedPathFor(sanitizePath(path), hero)}`,
+          hero,
+          "/api/admin/upload/token"
+        );
+        urls.set(row.image, url);
       }
 
       setStep("creating");

@@ -8,6 +8,7 @@ import {
 } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { getVerificationEmailTemplate } from "@server/notifications/templates/verificationEmail";
 import { getOutbidEmailTemplate } from "@server/notifications/templates/outbidEmail";
+import { getContactMessageEmailTemplate } from "@server/notifications/templates/contactMessageEmail";
 import { esc, renderEmail } from "@server/notifications/templates/layout";
 
 const order: OrderEmailView = {
@@ -56,6 +57,14 @@ const emails = {
       currentBidPaise: 250000,
       endAt: new Date("2026-09-03T10:00:00Z"),
       slug: "ab12cd34ef",
+    }),
+  contactMessage: () =>
+    getContactMessageEmailTemplate({
+      subject: "Sizing",
+      message: "Does the kurta come in XL?",
+      replyEmail: "aisha@example.com",
+      senderName: "Aisha",
+      signedIn: true,
     }),
 };
 

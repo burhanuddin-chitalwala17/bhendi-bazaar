@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isOwnObjectUrl } from "@server/catalog/object-store";
 import { rupeeAmount } from "./common.schemas";
 import { parseYoutubeRef, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
 import type { RawSheetRow } from "@server/catalog/bulk/sheet";
@@ -117,14 +118,14 @@ export function parseBulkProductRow(
   return { row: parsed.data as BulkProductRow };
 }
 
-/** Blob URL the browser got back from the client upload — and nowhere else. */
+/** An object URL the browser got back from the client upload — and nowhere else. */
 const blobUrl = z
   .string()
   .url()
   .refine(
     (url) => {
       try {
-        return new URL(url).hostname.endsWith(".public.blob.vercel-storage.com");
+        return isOwnObjectUrl(url);
       } catch {
         return false;
       }

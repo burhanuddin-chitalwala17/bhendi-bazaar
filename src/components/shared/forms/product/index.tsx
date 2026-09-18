@@ -1,6 +1,7 @@
 // components/shared/forms/product/index.tsx
 
 import React, { useEffect } from "react";
+import Image from "next/image";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,6 +64,9 @@ export function ProductForm({
   const form = useServerForm<ProductFormInput>({
     schema: productFormSchema,
     submit: onSubmit,
+    // Deferred: clearSaved is declared below. Without this the saved draft
+    // prefills the next "new product" with the one just created.
+    onSuccess: () => clearSaved(),
     defaultValues: {
       name: product?.name || "",
       description: product?.description || "",
@@ -110,6 +114,16 @@ export function ProductForm({
     excludeFields: ["stockLocations"],
     enabled: !isEdit,
   });
+
+  // Cancelling a create abandons it: the next "new product" starts blank.
+  // Reset first — it fires watch — then clear, which cancels that queued save.
+  const handleCancel = () => {
+    if (!isEdit) {
+      form.reset();
+      clearSaved();
+    }
+    onCancel();
+  };
 
   // Belt to the exclusion above: whatever restored or reset the form, the rows
   // always mirror the offered locations — typed quantities kept, ids re-asserted.
@@ -201,11 +215,13 @@ export function ProductForm({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.media.map((item) => (
                 <div key={item.id} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
                     alt={item.description ?? ""}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(min-width: 768px) 25vw, 50vw"
+                    unoptimized={item.kind === "YOUTUBE"}
+                    className="object-cover"
                   />
                   {(item.kind === "YOUTUBE" || item.isThumbnail) && (
                     <span className="absolute left-2 top-2 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">
@@ -254,7 +270,7 @@ export function ProductForm({
           <Button
             type="button"
             variant="outline"
-            onClick={onCancel}
+            onClick={handleCancel}
             disabled={isSubmitting}
           >
             Close
@@ -262,7 +278,7 @@ export function ProductForm({
         </div>
       ) : (
         <FormActions
-          onCancel={onCancel}
+          onCancel={handleCancel}
           submitLabel={isEdit ? "Update Product" : "Create Product"}
           isSubmitting={isSubmitting}
         />

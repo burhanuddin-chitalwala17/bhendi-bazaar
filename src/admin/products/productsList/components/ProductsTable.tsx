@@ -1,6 +1,7 @@
 // components/admin/productsContainer/components/ProductsTable.tsx
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Edit, Eye, Heart, Trash2 } from "lucide-react";
 import { DataTable, Column } from "@/admin/data-table";
@@ -42,9 +43,12 @@ export function ProductsTable({
       label: "Product",
       render: (product) => (
         <div className="flex items-center gap-3">
-          <img
+          <Image
             src={product.thumbnail}
             alt={product.name}
+            width={48}
+            height={48}
+            sizes="48px"
             className="w-12 h-12 object-cover rounded"
           />
           <div>

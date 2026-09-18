@@ -28,6 +28,7 @@ export function ProductAddContainer({ categories, orgs, locations, uploadEndpoin
 
     const handleCancel = () => {
         router.push(productsBasePath);
+        router.refresh();
     };
 
     return (
