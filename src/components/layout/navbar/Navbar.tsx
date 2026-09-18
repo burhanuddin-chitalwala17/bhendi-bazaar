@@ -12,6 +12,7 @@ import { ContactLauncher } from "@/components/support/contact-launcher";
 import Image from "next/image";
 import { APP_NAME, LOGO } from "@/lib/config";
 import { useSession } from "next-auth/react";
+import { useAuthSheet } from "@/context/AuthSheetContext";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -21,6 +22,7 @@ export function Navbar() {
 
   const { data: session } = useSession();
   const user = session?.user;
+  const { open: openAuthSheet } = useAuthSheet();
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
@@ -46,11 +48,12 @@ export function Navbar() {
             <ProfileMenu />
           ) : (
             <Button
-              asChild
+              type="button"
               variant="outline"
+              onClick={() => openAuthSheet()}
               className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex lg:px-4"
             >
-              <Link href="/signin" prefetch={false}>Login</Link>
+              Login
             </Button>
           )}
 

@@ -10,14 +10,15 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { readApiError } from "@/lib/api-error";
+import { useAuthSheet } from "@/context/AuthSheetContext";
+import { wishlistApiClient } from "@/services/wishlistApiClient";
 
 interface WishlistContextValue {
   isSaved: (productId: string) => boolean;
   /** True while this product's save or removal is in flight. */
   isPending: (productId: string) => boolean;
   /**
-   * Save if hollow, forget if filled. Signed-out callers get the sign-in toast.
+   * Save if hollow, forget if filled. A signed-out caller is offered the sign-in sheet.
    *
    * The only thing that removes a saved product — nothing else in the app clears a
    * wish, so a heart the buyer left filled stays filled.
@@ -46,6 +47,7 @@ export function WishlistProvider({
   children: ReactNode;
 }) {
   const { status } = useAuth();
+  const { open: openAuthSheet } = useAuthSheet();
   const [saved, setSaved] = useState<Set<string>>(() => new Set(initialProductIds));
   const [pending, setPending] = useState<Set<string>>(() => new Set());
 
@@ -64,12 +66,14 @@ export function WishlistProvider({
 
   const toggle = useCallback(
     async (productId: string) => {
-      // Only a settled "guest" earns the toast. While the session is still loading we
-      // cannot tell a signed-in user from a visitor, and refusing on the guess would
-      // tell someone who *is* signed in to sign in — so let the write go and let the
-      // route's own 401 answer, which carries this same sentence.
+      // Only a settled "guest" gets the sheet: while the session is loading, asking
+      // would tell someone who *is* signed in to sign in, so the route's 401 decides.
+      // The save finishes after sign-in as a save, never this toggle (seamless-sign-in D6, D8).
       if (status === "guest") {
-        toast("Sign in to add to wishlist");
+        openAuthSheet({
+          reason: "Sign in to save this",
+          intent: { kind: "wishlist.save", productId },
+        });
         return;
       }
 
@@ -86,19 +90,8 @@ export function WishlistProvider({
       setPending((current) => new Set(current).add(productId));
 
       try {
-        const response = wasSaved
-          ? await fetch(`/api/wishlist?productId=${encodeURIComponent(productId)}`, {
-              method: "DELETE",
-              credentials: "include",
-            })
-          : await fetch("/api/wishlist", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({ productId }),
-            });
-
-        if (!response.ok) throw await readApiError(response);
+        if (wasSaved) await wishlistApiClient.remove(productId);
+        else await wishlistApiClient.save(productId);
 
         // After the write, not alongside the optimistic fill: a toast that says
         // "Added" and is followed by an error toast when the write fails has told
@@ -124,7 +117,7 @@ export function WishlistProvider({
         });
       }
     },
-    [saved, status]
+    [saved, status, openAuthSheet]
   );
 
   const value: WishlistContextValue = {

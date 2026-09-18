@@ -1,10 +1,11 @@
 import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
+import { Heart } from "lucide-react";
 
 import { authOptions } from "@/lib/auth-config";
 import { wishlistDAL } from "@/data-access-layer/wishlist.dal";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { WishlistGrid } from "@/components/wishlist/wishlist-grid";
+import { SignInButton } from "@/components/auth/sign-in-button";
 
 export const metadata = {
   title: "Wishlist",
@@ -13,13 +14,29 @@ export const metadata = {
 /**
  * The saved-products page, reached from the profile menu.
  *
- * A guest is redirected rather than shown an empty list: there is no guest wishlist,
- * so an empty page here would be indistinguishable from having saved nothing.
+ * A guest gets a sign-in prompt rather than an empty list: there is no guest wishlist,
+ * so an empty page here would be indistinguishable from having saved nothing. Signing
+ * in from the sheet refreshes this page in place (seamless-sign-in D9).
  */
 export default async function WishlistPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    redirect("/signin?callbackUrl=/wishlist");
+    return (
+      <PageShell width="wide">
+        <PageHeader title="Wishlist" />
+        <div className="flex flex-col items-center gap-3 rounded-card border border-border/70 bg-card px-4 py-10 text-center">
+          <Heart className="size-6 text-muted-foreground" />
+          <p className="text-sm font-semibold">Sign in to see your wishlist</p>
+          <p className="max-w-sm text-2xs text-muted-foreground">
+            Products you save with the heart are kept on your account, on every device.
+          </p>
+          <SignInButton
+            reason="Sign in to see what you have saved."
+            className="h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow"
+          />
+        </div>
+      </PageShell>
+    );
   }
 
   const items = await wishlistDAL.getWishlist();
