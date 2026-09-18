@@ -32,7 +32,7 @@ const product = (id: string, wishlistCount: number): ProductForTable => ({
   rating: 0,
   stock: 5,
   lowStockThreshold: 2,
-  thumbnail: "cover.jpg",
+  thumbnail: "/cover.jpg",
   wishlistCount,
   createdAt: new Date("2026-01-01"),
   category: { id: "cat-1", name: "Veg" },

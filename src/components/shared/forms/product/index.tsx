@@ -1,6 +1,7 @@
 // components/shared/forms/product/index.tsx
 
 import React, { useEffect } from "react";
+import Image from "next/image";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -201,11 +202,13 @@ export function ProductForm({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.media.map((item) => (
                 <div key={item.id} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
                     alt={item.description ?? ""}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(min-width: 768px) 25vw, 50vw"
+                    unoptimized={item.kind === "YOUTUBE"}
+                    className="object-cover"
                   />
                   {(item.kind === "YOUTUBE" || item.isThumbnail) && (
                     <span className="absolute left-2 top-2 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">

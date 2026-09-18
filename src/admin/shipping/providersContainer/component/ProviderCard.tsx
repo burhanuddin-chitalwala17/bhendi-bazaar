@@ -33,11 +33,16 @@ export function ProviderCard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {provider.logoUrl && (
+                /* A carrier's own logo, hotlinked from their site by the
+                   register_shiprocket_provider migration. Unoptimized because it is a
+                   third party's already-sized asset: optimizing spends a transformation
+                   to save bytes that are not ours (ADR-0026). */
                 <Image
                   src={provider.logoUrl}
                   alt={provider.name}
                   width={32}
                   height={32}
+                  unoptimized
                 />
               )}
               <h3 className="text-lg font-semibold">{provider.name}</h3>

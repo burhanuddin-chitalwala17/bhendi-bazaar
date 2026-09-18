@@ -8,6 +8,7 @@
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { DataTable, Column } from "@/admin/data-table";
 import { ShoppingCart, Mail, Eye, RefreshCw } from "lucide-react";
@@ -262,9 +263,12 @@ export default function AdminAbandonedCartsPage() {
                       key={index}
                       className="flex items-center gap-3 p-3 bg-background rounded-lg"
                     >
-                      <img
+                      <Image
                         src={item.thumbnail}
                         alt={item.name}
+                        width={64}
+                        height={85}
+                        sizes="64px"
                         className="w-16 aspect-[3/4] object-cover rounded"
                       />
                       <div className="flex-1">

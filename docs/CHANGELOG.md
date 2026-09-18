@@ -10,6 +10,103 @@
 
 ## Entries
 
+## [PR-110] 2026-09-18 — Review fixes for the R2 switch: two blockers the tests did not catch
+
+Pre-merge review of [PR-108] found two defects that would have surfaced during testing, and one control with no coverage at all.
+
+**Bulk upload would have rejected every R2 URL.** Both bulk schemas validated image URLs against a hardcoded `.public.blob.vercel-storage.com` hostname, so the wizards' own uploads — now on `images.bhendi-bazaar.com` — would have been refused by the route that receives them. Replaced with `isOwnObjectUrl`, checked against the configured store. It is a real security control, not a formality: it is the only thing stopping a crafted payload pointing a product at any image on the internet. A host-specific literal inside a validator is how a storage migration silently starts rejecting itself.
+
+**That control had zero tests.** The integration suite calls the bulk *service* and never reaches the route schema, which is exactly how the hardcoded hostname survived. Now covered — our own URLs accepted, the retired store rejected, arbitrary external URLs rejected, and a prefix that merely starts the same (`images.example.test.evil.test`) rejected as not-containment.
+
+**The site's own logo and favicon pointed at the dead store.** Nine hardcoded URLs in `src/lib/config.ts` — logo, favicon, OG image — all 403 in production, and nothing in the database to repoint. Brand assets now ship in `public/brand/`: they change on a rebrand, not on an upload, and keeping them in the repository means a storage outage cannot take down the site's own identity, which is precisely what happened. `metadataBase` is now set from `appUrl()` so the root-relative paths resolve to the custom domain for scrapers rather than the deployment URL. The icon `type` also stopped claiming `image/png` beside an `.svg` value.
+
+**`minimumCacheTTL` was 30 days against immutable objects**, re-transforming the whole catalogue monthly for nothing — against a Hobby allowance of 5,000 transformations. Now a year, matching the `immutable, max-age=31536000` that `object-store.ts` writes.
+
+**A pre-existing bug found by the inventory:** `ShippingProvider.logoUrl` is set to a `shiprocket.in` URL by the `register_shiprocket_provider` data migration, and that host was not in `remotePatterns` — so the admin shipping page threw whenever a provider had a logo. Added, rendered `unoptimized` for the same reason as the YouTube posters: a third party's already-sized asset is not worth a transformation.
+
+**`src/lib/env.ts` was wrong in both directions, and never ran.** It named `BLOB_READ_WRITE_TOKEN` as required — the app stopped reading it in [PR-108] — and omitted all five R2 variables, the ones a boot genuinely cannot proceed without. Corrected, and its header now says plainly that **nothing calls `validateEnv()`**: it documents rather than enforces, which `OPERATIONS.md` points at it as doing. Flagged rather than quietly fixed because a guard that silently does nothing is worse than no guard — the same failure as a `font-*` class generating no CSS ([ADR-0022](adr/0022-design-decisions-go-through-tokens.md)). Wiring it to `instrumentation.ts` is left as a decision, not assumed.
+
+`NEXT_PUBLIC_ASSETS_URL` is now gone from every doc; the only surviving mention is the [PR-109] entry recording its removal.
+
+Also removed five unreferenced `create-next-app` SVGs from `public/`.
+
+
+## [PR-109] 2026-09-17 — Delete the Vercel Blob tooling the R2 move made dead
+
+Three scripts and one environment variable, removed rather than left to rot. [ADR-0009](adr/0009-docs-reference-code-never-copy-it.md) is about docs going stale; the same applies to tooling that describes a system no longer in use.
+
+- **`scripts/upload-images.ts`** — uploaded local folders to Blob for seeding. Superseded: uploads go through `server/catalog/object-store.ts` and are normalised on the way in ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)), which this predated. `QUICK_START.md` pointed at it twice and now points at the admin UI.
+- **`scripts/backfill-blob-images.ts`** — re-encoded stored originals in place. Premise gone twice over: the old store cannot be read while blocked, and nothing new is written there.
+- **`scripts/cleanup-orphan-blobs.ts`** — reclaimed storage by deleting unreferenced blobs. Pointless against a store being abandoned, and R2's allowance is ten times larger. Its one hard-won idea is preserved in [PR-106] and in `scripts/README.md`: the keep-set is the **union across every database sharing the store**, because computing it from one deletes the other environment's live images.
+- **`NEXT_PUBLIC_ASSETS_URL`** — documented as required-ish in `OPERATIONS.md`, referenced by no code at all.
+
+**`scripts/migrate-blob-store.ts` stays, deliberately.** The old store still holds the only copy of anything not reproducible from local originals, and its `copy` phase is the fallback if that turns out to be true. It goes, with `@vercel/blob`, once the catalogue is confirmed intact on R2.
+
+**`OPERATIONS.md` gained the R2 setup procedure** — bucket, scoped API token, public access, and the CORS policy, which is the step that silently breaks browser uploads because CORS applies to presigned URLs too. The Blob transfer section is kept but relabelled as historical: R2 has no egress meter, so that failure mode is gone rather than managed.
+
+## [PR-108] 2026-09-17 — Images move to Cloudflare R2, behind one seam [CONTRACT]
+
+The free Vercel Blob allowance was exhausted and the store blocked — every content read returning `403 Your store is blocked`, our own included. [PR-105] and [PR-107] fixed how much we send and store; neither can fix the shape of the allowance. Decision, the comparison, and the rejected alternatives: [ADR-0028](adr/0028-images-live-in-cloudflare-r2.md).
+
+**R2 removes the meter rather than raising it.** Against Hobby's 1 GB storage / 10 GB egress / 2,000 write operations, R2's free tier is 10 GB / unmetered / 1,000,000. Egress is not a billable dimension on any R2 storage class, so the failure that blanked the catalogue cannot recur. The operations limit was the worst fit of the three: transfer and storage scale with traffic, but operations scale with how much you *work on* the catalogue — and dashboard browsing counts — so a shop in build-out spends them exactly when it can least afford to. This was also the cheapest moment to move: 321 images had to be re-uploaded from local originals anyway, because the old store could not be read.
+
+**Hosting does not move.** Nothing that happened was a hosting failure, and the architecture is Vercel-shaped — cron in `vercel.json`, migrations on deploy ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)), and a deliberate dependency on the image optimizer ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)).
+
+**One seam.** `server/catalog/object-store.ts` owns every write, delete and URL derivation. This migration touched ten files precisely because "where images live" was spread across two upload routes, two bulk wizards, a profile handler and three scripts. Reads deliberately do not pass through it — an object is public and fetched straight from `R2_PUBLIC_BASE_URL`, because proxying reads through a function would rebuild the metered egress path being escaped.
+
+**[CONTRACT] The upload handshake changed.** `POST /api/{admin,org/:orgId}/upload/token` now takes `{ pathname, contentType, size }` and returns `{ uploadUrl, publicUrl }` — a presigned S3 PUT instead of a bearer token, with the path and content type signed so neither can change after approval. The body is parsed by a Zod schema like any other (Invariant 4).
+
+**One guarantee is weaker, and is written down rather than glossed.** `Content-Length` is a forbidden header — the Fetch `Request` constructor strips it — so size cannot be signed into a presigned PUT, and S3 PUT has no `content-length-range`. The declared size is validated but not bound: an authenticated uploader bypassing our client could exceed `MAX_IMAGE_BYTES`. The bound is authentication, not cryptography. A test pins it so it is not later misread as enforced. A stricter version is available if needed — the bulk-create route already receives every uploaded URL and could `head()` and reject.
+
+**`aws4fetch` over the AWS SDK** — one small file against two packages and several megabytes in a function, to issue PUT, DELETE and a presigned URL. The old Vercel Blob host stays in `remotePatterns` until `migrate-blob-store.ts check` reports zero, so a partially repointed catalogue still renders; `@vercel/blob` survives only in the three scripts whose job is to empty the old store.
+
+
+## [PR-107] 2026-09-17 — Zoom is sharp again: the stored ceiling is derived from the zoom, not guessed
+
+[PR-105] capped stored photographs at 1600px and required `sizes` to describe the CSS box. Both are wrong on a surface that magnifies, and this catalogue has two — the gallery pinches to 3× and hover-zooms to 2×, the lightbox zooms to 3× with pan. Decision, measurements and rejected alternatives: [ADR-0027](adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md).
+
+**A zoom scales bytes already downloaded; it does not fetch a sharper image.** So a zoomable element's real slot is its box times the zoom, and describing only the box guarantees softness at magnification — the exact defect [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) existed to prevent, arriving through the rule it wrote. The gallery's active slide and the lightbox now use `ZOOMABLE_IMAGE_SIZES`, the one sanctioned overstatement; the listing tile stays honest, because overstating *there* is what cost the transfer allowance.
+
+**Measured against a pristine source, not argued.** At 3× zoom, 1600px q82 showed 6.63 mean absolute error against 3.33 for 2000px and 1.28 for the original — twice the error for 67KB less. At tile and page sizes the difference was negligible (2.50 vs 2.46), so PR-105's listing gains are untouched; the loss was confined to the surface where a buyer inspects weave and stonework. 3000px measured no better than 2000px (4.08) while storing twice as much, so the ceiling is 2048px and not higher: past `MAX_ZOOM_SCALE` nothing requests the pixels.
+
+**The zoom cap is now declared once.** It was spelled three times — `MAX_SCALE = 3` in the lightbox, `Math.min(3, …)` in the gallery, and implicitly in the chosen ceiling. `MAX_ZOOM_SCALE` lives in `server/catalog/media.ts`, `MAX_IMAGE_EDGE` is derived from it, and `tests/unit/image-delivery.test.ts` fails both on a second spelling and on a ceiling that no longer clears the zoom.
+
+**`scripts/backfill-blob-images.ts` brings existing images in line.** Measured on the real store: 321 blobs, 299 of them over 400KB totalling 649.5 MB — an average of 2.17 MB each. Each blob is overwritten at its own pathname so no URL changes and no database column is touched, with `contentType: image/webp` even where the pathname still says `.jpg`. This inverts the rule `migrate-blob-store.ts` follows, deliberately: a new pathname would mean rewriting eight columns and risking a half-migrated catalogue for a cosmetic gain.
+
+**Also:** the three hand-run Blob scripts now load `.env` themselves — `tsx` does not, unlike Prisma's tooling, so every Blob call failed with "No token found". `dotenv` was already a devDependency.
+
+
+## [PR-106] 2026-09-17 — A blob store can be migrated or garbage-collected, and the runbook says what each costs
+
+Follow-on to [PR-105]. `scripts/migrate-blob-store.ts` copies every blob from one Vercel Blob store to another and repoints all eight URL columns — `Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`, `Org.logoUrl`, `OrderItem.thumbnail`, `ShippingProvider.logoUrl`, `Banner.imageUrl`. Two phases (`copy`, `rewrite`) plus a `check`, dry-run by default, each resumable through `.blob-migration/manifest.jsonl`.
+
+**Rewriting is a host swap, not a lookup.** Pathnames are preserved on copy, so the old and new URLs differ only in hostname, and both phases are idempotent. Rows are matched on the old host rather than on a type column, which is what keeps `ProductMedia.ref` safe — a `YOUTUBE` row holds a bare video id, not a URL ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md)) — and leaves `placehold.co` and external carrier logos alone. A URL with no copy in the new store is reported, never guessed: a wrong URL is worse than a stale one, because the stale one still says where it came from.
+
+**`OrderItem.thumbnail` is migrated despite being a deliberately frozen snapshot.** The freeze protects it from the catalogue changing, not from its store being retired; leaving it would 404 every historical order's images.
+
+**Storage has its own ceiling, and its own lever.** Hobby includes 1 GB of storage against 668 MB in use, and exceeding *any* Hobby limit withdraws Blob access the same way transfer does. `scripts/cleanup-orphan-blobs.ts` deletes blobs no row refers to — the one storage lever that works while transfer is blocked, since `list()` survives the 403 and `del()` costs neither transfer nor a billed operation. Storage is charged as a monthly average (GB-month), so a mid-month deletion lowers what the rest of the month averages against.
+
+**Its keep-set is the union across every database, not one.** One Blob store serves every environment, so a keep-set from a single database marks the other environment's live images as orphans and deletes production's catalogue. `CLEANUP_DATABASE_URLS` is therefore plural and the script refuses to guess; `--single-database` is the explicit escape hatch. It also keeps anything younger than 24 hours, because the bulk wizard uploads every image before creating any row — a blob with no row may be an upload in flight — and refuses outright when a named database yields no referenced URLs, which is far likelier a wrong `DATABASE_URL` than an empty catalogue. This replaces `scripts/cleanup-flat-blobs.ts`, which the runbook documented but which was not in the repository.
+
+**Two facts the runbook was missing, both from Vercel's own pricing page.** A new store in the same account gets no new allowance — storage, operations and transfer "aren't affected by how many stores you create", because the included usage belongs to the plan. And an overrun blocks reads with `403`, including your own: `list()` still works, so the blobs are visible and unreadable, which makes exporting *after* the fact impossible. [OPERATIONS.md](OPERATIONS.md) now records both, and corrects the reset window from "billing anniversary" to the 30 days Vercel documents.
+
+
+## [PR-105] 2026-09-16 — Images are stored small and delivered through the optimizer
+
+The Vercel account exhausted the free tier's 10 GB monthly Blob **Data Transfer** allowance before launch. On that tier the allowance is withdrawn rather than billed, so the failure mode was every product image on the storefront going blank. Spec and TRD: [image-delivery](specs/image-delivery/); the decision and its rejected alternatives: [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md).
+
+**Three causes, none of which changed how anything looked.** The product tile — the most-rendered component on the storefront — used a raw `<img>` from `2d3027b`, so a listing fetched twelve full-size originals to paint twelve ~105px thumbnails: about 7 MB of image for 120 KB of visible pixels. `unoptimized` had been added to the product gallery and lightbox in `1b844b2` and `4e3f301`, which read as someone fixing a broken optimizer and worked on screen, while moving the cost onto a meter on a different dashboard page. And `server/catalog/image-upload.ts` stored whatever was uploaded up to 5 MB with no resize, which multiplied both.
+
+**Delivery and storage are now capped independently.** Every image in `src/` renders through `next/image` — the tile, the wishlist grid, the search dropdown, the admin product/cart/category tables, profile pictures, the read-only product gallery — and the five `unoptimized` props on Blob URLs are gone. Photographs are downscaled to 1600px and re-encoded as WebP before upload. Either ceiling alone was rejected: delivery-only leaves the optimizer as the single thing between a 5 MB original and the browser, and storage-only makes every future `<img>` look harmless.
+
+**Both upload paths enforce the budget, because only one of them is ours.** The bulk wizards upload browser-to-Blob directly to dodge the 4.5MB function body cap ([bulk-catalog-upload](specs/bulk-catalog-upload/) D10), so no server code ever sees those files — the largest single source of images would have been missed entirely. `server/catalog/image-upload.ts` normalises with sharp; `src/lib/image/downscale.ts` does the same on a canvas before `upload()`. `MAX_IMAGE_EDGE` and `IMAGE_QUALITY` are declared once in `server/catalog/media.ts`, which both sides already import.
+
+**`fill` without `sizes` is enforced as its own rule.** Absent `sizes` resolves to `100vw`, so a 64px avatar downloads the width of the viewport — the same overrun in `next/image`'s clothing, and invisible to a rule that only bans `<img>`. Upload previews now render the file still held in the page rather than fetching back the copy just sent (`useLocalPreviews`).
+
+**The reason this went unnoticed for nine months is that it was never written down.** `tests/unit/design-tokens.test.ts` fails the build over a `text-[0.7rem]`; nothing failed over a raw `<img>` on a Blob URL. `tests/unit/image-delivery.test.ts` now blocks all three causes in the same style — file named, allowlist entries carrying their reason, and an honesty check that fails when an exemption stops being needed. Chosen over an ESLint rule because `@next/next/no-img-element` was already enabled and every offending site carried a disable comment. `/bb-review` picks up what a test cannot judge: whether a stated `sizes` is honest. [OPERATIONS.md](OPERATIONS.md) records both meters and that local development spends the same allowance.
+
+Modelled at 10,000 monthly page views, Blob egress falls from ~55 GB to under 1 GB. Existing objects are deliberately not backfilled — their URLs and bytes stay as they are, and the optimizer means they no longer cost full size to serve.
+
 ## [PR-104] 2026-09-16 — An abandoned checkout releases its goods, and is shown to nobody [CONTRACT]
 
 Closing the Razorpay window without paying left the item held and unbuyable. Spec and TRD: [checkout-abandonment](specs/checkout-abandonment/); the order-code decision and its rejected alternatives: [ADR-0025](adr/0025-order-codes-are-random-not-sequential.md).

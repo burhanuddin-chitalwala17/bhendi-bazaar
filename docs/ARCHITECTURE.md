@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-09-09
+- **Verified:** 2026-09-16
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
 
@@ -18,6 +18,8 @@ Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (P
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
+
+Images are the one asset class with a delivery layer of its own: uploads are downscaled and re-encoded before they reach Blob (`server/catalog/image-upload.ts` server-side, `src/lib/image/downscale.ts` for the browser-direct bulk path), and every render goes through `next/image` so the bytes served match the slot. Both ceilings exist because Blob's transfer allowance is withdrawn rather than billed ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)).
 
 ## Layers
 

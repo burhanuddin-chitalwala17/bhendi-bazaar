@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 
@@ -8,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
+import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
 import { useWishlist } from "@/context/WishlistContext";
@@ -45,11 +47,12 @@ export function WishlistGrid({ items }: { items: WishlistProduct[] }) {
         >
           <Card className="group h-full gap-0 overflow-hidden rounded-lg py-0 transition-all sm:rounded-xl md:hover:-translate-y-1 md:hover:shadow-lifted">
             <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-              <img
+              <Image
                 src={item.thumbnail}
                 alt={item.name}
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform md:group-hover:scale-105"
+                fill
+                sizes={PRODUCT_TILE_SIZES}
+                className="object-cover transition-transform md:group-hover:scale-105"
               />
               <div className="absolute right-1 top-1 z-10 sm:right-2 sm:top-2">
                 <WishlistButton

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { put, del } from "@vercel/blob";
+
 import { authOptions } from "@/lib/auth-config";
 import { prisma } from "@server/shared/prisma";
+import { normalizeImage } from "@server/catalog/image-upload";
+import { deleteObject, putObject } from "@server/catalog/object-store";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -53,36 +55,35 @@ export async function POST(request: Request) {
     // 5. Delete old profile picture from blob (if exists)
     if (user.profile?.profilePic) {
       try {
-        await del(user.profile.profilePic);
+        await deleteObject(user.profile.profilePic);
       } catch (error) {
         console.error("Failed to delete old profile picture:", error);
         // Continue anyway - old blob will be orphaned but won't break upload
       }
     }
 
-    // 6. Upload new file to Vercel Blob
-    const filename = `profile/${userId}-${Date.now()}.${file.type.split("/")[1]}`;
-    
-    const blob = await put(filename, file, {
-      access: "public",
-      addRandomSuffix: false,
-    });
+    // 6. Upload new file to Vercel Blob, downscaled first — an avatar is shown at 96px
+    // and was being stored at whatever the phone produced (ADR-0026).
+    const { body, extension, contentType } = await normalizeImage(file);
+    const filename = `profile/${userId}-${Date.now()}.${extension}`;
+
+    const uploadedUrl = await putObject(filename, body, contentType);
 
     // 7. Update profile with new blob URL
     await prisma.profile.upsert({
       where: { userId },
       create: {
         userId,
-        profilePic: blob.url,
+        profilePic: uploadedUrl,
       },
       update: {
-        profilePic: blob.url,
+        profilePic: uploadedUrl,
       },
     });
 
     // 8. Return success
     return NextResponse.json({
-      url: blob.url,
+      url: uploadedUrl,
       message: "Profile picture uploaded successfully",
     });
   } catch (error) {
@@ -116,8 +117,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Delete from blob
-    await del(user.profile.profilePic);
+    await deleteObject(user.profile.profilePic);
 
     // Update profile
     await prisma.profile.update({

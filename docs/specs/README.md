@@ -39,6 +39,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [international-phone](international-phone/) | Every phone field accepts a number from any country, and one number has one spelling | — | identity, catalog, checkout, bidding | ✅ Implemented — PR-102 |
 | [shared-phone-numbers](shared-phone-numbers/) | One phone number backs any number of accounts; email alone identifies one | — | identity | ✅ Implemented — PR-103 |
 | [checkout-abandonment](checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | 2 | checkout, payments | ✅ Implemented — PR-104 |
+| [image-delivery](image-delivery/) | Images are stored small and served at the size the screen uses | 2 | catalog | ✅ Implemented — PR-105 |
 
 ### Subfeatures
 

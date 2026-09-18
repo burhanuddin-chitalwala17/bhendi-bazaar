@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/domain/product";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,15 @@ import { WishlistButton } from "@/components/wishlist/wishlist-button";
 // that first and grows at `sm`. Anything that cannot survive 105px — the tracked-out
 // category overline, the "SALE" word badge — is dropped below `sm` rather than
 // truncated, and the discount is carried by the corner chip instead.
+/**
+ * What the tile actually occupies, matching PRODUCT_GRID_CLASSES: 3-up on a phone,
+ * 2-up from `md`, 3-up from `lg` inside the 72rem page. Declared next to the tile and
+ * shared with the wishlist grid so the two cannot drift — a `sizes` that overstates the
+ * slot is how a 105px tile ends up downloading a 1600px image (ADR-0026).
+ */
+export const PRODUCT_TILE_SIZES =
+  "(min-width: 1024px) 384px, (min-width: 768px) 50vw, 33vw";
+
 export function ProductCard(product: Product) {
   const { price, salePrice } = product;
   const hasOffer =
@@ -24,11 +34,12 @@ export function ProductCard(product: Product) {
       {/* py-0/gap-0 override Card's defaults so the image bleeds to the card edge */}
       <Card className="group h-full gap-0 overflow-hidden rounded-lg py-0 transition-all sm:rounded-xl md:hover:-translate-y-1 md:hover:shadow-lifted">
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-          <img
+          <Image
             src={product.thumbnail}
             alt={product.name}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform md:group-hover:scale-105"
+            fill
+            sizes={PRODUCT_TILE_SIZES}
+            className="object-cover transition-transform md:group-hover:scale-105"
           />
 
           {discountPercent > 0 && product.stock > 0 && (

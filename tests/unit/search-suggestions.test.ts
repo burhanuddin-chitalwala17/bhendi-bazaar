@@ -15,7 +15,7 @@ const row = {
   id: "prod-1",
   slug: "okra-basket",
   name: "Okra Basket",
-  thumbnail: "cover.jpg",
+  thumbnail: "/cover.jpg",
   price: 129900,
   orgId: "org-1",
   categoryId: "veg",

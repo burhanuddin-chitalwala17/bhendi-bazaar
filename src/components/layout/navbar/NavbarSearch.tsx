@@ -5,6 +5,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
@@ -78,9 +79,12 @@ export function NavbarSearch() {
                       }}
                       className="flex items-center gap-3 px-3 py-2 hover:bg-muted rounded-lg"
                     >
-                      <img
+                      <Image
                         src={product.thumbnail}
                         alt={product.name}
+                        width={40}
+                        height={53}
+                        sizes="40px"
                         className="w-10 aspect-[3/4] object-cover rounded"
                       />
                       <div>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isOwnObjectUrl } from "@server/catalog/object-store";
 import { CategoryAccent } from "@prisma/client";
 import type { RawSheetRow } from "@server/catalog/bulk/sheet";
 import type { RowError } from "@server/catalog/bulk/bulk.types";
@@ -45,7 +46,7 @@ const blobUrl = z
   .refine(
     (url) => {
       try {
-        return new URL(url).hostname.endsWith(".public.blob.vercel-storage.com");
+        return isOwnObjectUrl(url);
       } catch {
         return false;
       }

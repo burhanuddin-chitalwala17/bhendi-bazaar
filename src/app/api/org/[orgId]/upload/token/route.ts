@@ -1,16 +1,20 @@
 /**
- * Client-upload tokens for bulk images (bulk-catalog-upload D10): the browser
- * uploads straight to Blob — request bodies through a function are capped at
- * 4.5MB, one large photo — and this route only signs. The token is scoped to the
- * org's own folder and to image types, so a member cannot write outside it.
+ * Permission for an org member's browser to upload one bulk product image straight to
+ * the object store (bulk-catalog-upload D10): request bodies through a function are
+ * capped at 4.5MB, one large photo, so the browser writes directly and this route only
+ * signs.
+ *
+ * A presigned PUT rather than a bearer token (ADR-0028). The signature binds the path,
+ * the content type and the exact byte count, so a browser cannot widen any of them
+ * after approval — which is what keeps MAX_IMAGE_BYTES a limit (Invariant 4).
  */
 import { NextResponse } from "next/server";
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { withOrg } from "@/lib/org-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { DomainError } from "@server/shared/domain-error";
-import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@server/catalog/image-upload";
+import { presignUpload } from "@server/catalog/object-store";
 import { orgRepository } from "@server/catalog/org.repository";
+import { presignUploadSchema } from "@/lib/validation/schemas/upload.schema";
 
 export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
   try {
@@ -18,31 +22,14 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     if (!org) throw new DomainError("Organisation not found", { status: 404 });
     const prefix = `products/${org.code.toLowerCase()}/`;
 
-    const body = (await request.json()) as HandleUploadBody;
-    const result = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async (pathname) => {
-        // A prefix test alone is not containment: `products/<org>/../other-org/x`
-        // starts with the prefix and still leaves it. The client's path is
-        // untrusted like any other input (Invariant 4).
-        if (pathname.split("/").some((segment) => segment === "." || segment === "..")) {
-          throw new DomainError("Upload path may not contain . or .. segments");
-        }
-        if (!pathname.startsWith(prefix)) {
-          throw new DomainError(`Uploads must live under ${prefix}`);
-        }
-        return {
-          allowedContentTypes: [...ALLOWED_IMAGE_TYPES],
-          maximumSizeInBytes: MAX_IMAGE_BYTES,
-          addRandomSuffix: true,
-        };
-      },
-      // Nothing to do on completion: the create call records the URLs, and an
-      // abandoned wizard's uploads are exactly what the cleanup script reaps.
-      onUploadCompleted: async () => {},
-    });
-    return NextResponse.json(result);
+    const { pathname, contentType, size } = presignUploadSchema.parse(await request.json());
+    // A prefix test alone is not containment — `products/<org>/../other-org/x` starts
+    // with the prefix and still leaves it. The schema rejects `.`/`..` segments first,
+    // so by here the prefix test means what it says.
+    if (!pathname.startsWith(prefix)) {
+      throw new DomainError(`Uploads must live under ${prefix}`);
+    }
+    return NextResponse.json(await presignUpload(pathname, contentType, size));
   } catch (error) {
     return toErrorResponse(error, "Could not authorise the upload");
   }

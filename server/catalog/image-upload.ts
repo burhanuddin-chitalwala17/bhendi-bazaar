@@ -1,9 +1,12 @@
-import { put } from "@vercel/blob";
+import sharp from "sharp";
 import { DomainError } from "@server/shared/domain-error";
+import { IMAGE_QUALITY, MAX_IMAGE_EDGE } from "@server/catalog/media";
+import { putObject } from "@server/catalog/object-store";
 
 /**
- * Catalog image uploads to Vercel Blob — one implementation behind two routes
- * (platform admin, org member), so the guard is the only thing that differs.
+ * Catalog image uploads — one implementation behind two routes (platform admin, org
+ * member), so the guard is the only thing that differs. Where the bytes land is
+ * server/catalog/object-store.ts (ADR-0028).
  */
 
 export const ALLOWED_IMAGE_TYPES = [
@@ -15,6 +18,39 @@ export const ALLOWED_IMAGE_TYPES = [
 ] as const;
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Downscale and re-encode before the bytes reach Blob, because what is stored is what is
+ * billed on every fetch: a 5MB original and its ~150KB equivalent are indistinguishable
+ * in a 105px tile. `animated` keeps a GIF a GIF; `rotate()` applies EXIF orientation
+ * before that metadata is dropped, so a phone photo does not arrive sideways.
+ */
+export async function normalizeImage(
+  file: File
+): Promise<{ body: Buffer; extension: string; contentType: string }> {
+  const input = Buffer.from(await file.arrayBuffer());
+  try {
+    const body = await sharp(input, { animated: true })
+      .rotate()
+      .resize({
+        width: MAX_IMAGE_EDGE,
+        height: MAX_IMAGE_EDGE,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality: Math.round(IMAGE_QUALITY * 100) })
+      .toBuffer();
+    return { body, extension: "webp", contentType: "image/webp" };
+  } catch {
+    // A declared image type that no decoder accepts is a bad upload, not a server fault.
+    throw new DomainError(`Could not read image: ${file.name}`);
+  }
+}
+
+/** The stored name for a normalized file — same base, WebP extension. */
+export function normalizedName(originalName: string, extension: string): string {
+  return `${originalName.replace(/\.[^.]*$/, "")}.${extension}`;
+}
 
 export type ImageFolder = "products" | "categories" | "banners";
 
@@ -82,11 +118,14 @@ export async function uploadImages(
 
   const urls: string[] = [];
   for (const file of files) {
-    const blob = await put(buildImagePath(folder, file.name, identifier, orgCode), file, {
-      access: "public",
-      addRandomSuffix: false,
-    });
-    urls.push(blob.url);
+    const { body, extension, contentType } = await normalizeImage(file);
+    const path = buildImagePath(
+      folder,
+      normalizedName(file.name, extension),
+      identifier,
+      orgCode
+    );
+    urls.push(await putObject(path, body, contentType));
   }
   return urls;
 }

@@ -124,9 +124,6 @@ npx prisma migrate reset
 
 # View database in Prisma Studio
 npx prisma studio
-
-# Upload images to Vercel Blob
-npx tsx scripts/upload-images.ts seed-images/products products
 ```
 
 ---
@@ -158,7 +155,8 @@ npx tsx scripts/upload-images.ts seed-images/products products
 
 **No images showing?**
 - Normal! Seed uses placeholders
-- Upload real images using `scripts/upload-images.ts`
+- Add real images through the admin UI or the bulk upload wizard — both normalise and
+  store them in R2 ([ADR-0028](docs/adr/0028-images-live-in-cloudflare-r2.md))
 - Or update URLs in seed files
 
 ---

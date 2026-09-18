@@ -10,6 +10,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
 import { DataTable, Column } from "@/admin/data-table";
 import { Search, Plus, Upload, Edit, Trash2, MoveUp, MoveDown } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
@@ -163,9 +164,12 @@ export default function AdminCategoriesPage() {
       key: "heroImage",
       label: "Hero Image",
       render: (category) => (
-        <img
+        <Image
           src={category.heroImage}
           alt={category.name}
+          width={64}
+          height={40}
+          sizes="64px"
           className="w-16 h-10 object-cover rounded"
         />
       ),
