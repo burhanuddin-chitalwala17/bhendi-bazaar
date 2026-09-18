@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 import type { CartItem, CartLineInput, ServerCart } from "@server/cart/cart.types";
 import { ConflictError } from "@server/shared/domain-error";
@@ -215,6 +216,33 @@ export class CartRepository {
       console.error("[CartRepository] clear failed:", error);
       throw new Error("Failed to clear cart", { cause: error });
     }
+  }
+
+  /**
+   * Remove the lines an order bought, inside the order's transaction — nothing else in
+   * the cart (seamless-sign-in D12). The version bump makes a stale write from another
+   * tab conflict rather than put the bought lines back.
+   */
+  async removeLinesIn(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    lines: Array<Pick<CartLineInput, "productId" | "size" | "color">>
+  ): Promise<void> {
+    const cart = await tx.cart.findUnique({ where: { userId }, select: { id: true } });
+    if (!cart || lines.length === 0) return;
+
+    await tx.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+        // Stored as null when absent (toLineRows), so an empty variant matches null.
+        OR: lines.map((line) => ({
+          productId: line.productId,
+          size: line.size || null,
+          color: line.color || null,
+        })),
+      },
+    });
+    await tx.cart.update({ where: { id: cart.id }, data: { version: { increment: 1 } } });
   }
 
   /** Delete cart completely — lines cascade with it. */

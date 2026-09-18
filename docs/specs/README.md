@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-09-16
+- **Verified:** 2026-09-17
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -41,6 +41,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [checkout-abandonment](checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | 2 | checkout, payments | ✅ Implemented — PR-104 |
 | [image-delivery](image-delivery/) | Images are stored small and served at the size the screen uses | 2 | catalog | ✅ Implemented — PR-105 |
 | [contact-us](contact-us/) | Anyone can reach the store from any page — by WhatsApp, or by a message emailed to its inbox | — | notifications | ✅ Implemented — PR-107 |
+| [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, cart, checkout | ✅ Implemented — PR-111 |
 
 ### Subfeatures
 

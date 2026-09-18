@@ -40,7 +40,11 @@ const EMPTY: OfferQuote = {
 export const lineKey = (item: Pick<CartItem, "productId" | "size" | "color">) =>
   `${item.productId}::${item.size ?? ""}::${item.color ?? ""}`;
 
-export function useCheckoutOffers(items: CartItem[]) {
+/**
+ * `buyerId` is part of the quote's identity: the route reads the session's user for
+ * per-buyer limits, so signing in mid-checkout must re-quote (seamless-sign-in D10).
+ */
+export function useCheckoutOffers(items: CartItem[], buyerId: string | null = null) {
   const [quote, setQuote] = useState<OfferQuote>(EMPTY);
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
   const [isPricing, setIsPricing] = useState(false);
@@ -51,8 +55,8 @@ export function useCheckoutOffers(items: CartItem[]) {
     size: item.size || undefined,
     color: item.color || undefined,
   }));
-  // Re-quote when the basket changes, not on every render.
-  const basketKey = JSON.stringify(payload);
+  // Re-quote when the basket or the buyer changes, not on every render.
+  const basketKey = JSON.stringify({ payload, buyerId });
 
   const price = useCallback(
     async (code: string | null): Promise<OfferQuote> => {
