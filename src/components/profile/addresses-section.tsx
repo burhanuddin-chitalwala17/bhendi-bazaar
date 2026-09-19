@@ -42,10 +42,10 @@ export function AddressesSection({
   onDeleteAddress,
 }: AddressesSectionProps) {
   const [activeAddress, setActiveAddress] = useState<DeliveryAddress | null>(
-    null
+    null,
   );
   const [modalMode, setModalMode] = useState<"view" | "edit" | "add" | null>(
-    null
+    null,
   );
 
   const hasAddresses = addresses.length > 0;
@@ -117,12 +117,13 @@ export function AddressesSection({
           {hasAddresses && (
             <div className="space-y-2">
               {addresses.map((address) => (
-                <button
+                <Button
+                  variant="ghost"
                   key={address.id}
                   type="button"
                   onClick={() => handleAddressClick(address)}
                   className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/60 px-4 py-3 text-left text-xs transition-colors hover:bg-muted/70"
+                    "flex w-full items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/60 px-4 py-3 text-left text-xs transition-colors hover:bg-muted/70",
                   )}
                 >
                   <div className="space-y-1">
@@ -140,7 +141,7 @@ export function AddressesSection({
                         .join(", ")}
                     </p>
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -161,4 +162,3 @@ export function AddressesSection({
     </>
   );
 }
-

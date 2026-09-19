@@ -9,7 +9,7 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { DataTable, Column } from "@/admin/data-table";
+import { DataTable, Column } from "@/components/shared/data-table";
 import {
   Search,
   CheckCircle,
@@ -22,6 +22,9 @@ import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
 import type { AdminReview, ReviewListFilters } from "@/domain/admin";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 export default function AdminReviewsPage() {
   const [filters, setFilters] = useState<ReviewListFilters>({
     page: 1,
@@ -51,7 +54,7 @@ export default function AdminReviewsPage() {
     {
       successMessage: "Review updated successfully!",
       onSuccess: () => refetch(),
-    }
+    },
   );
 
   const { mutate: deleteReview, isLoading: isDeleting } = useMutation(
@@ -59,7 +62,7 @@ export default function AdminReviewsPage() {
     {
       successMessage: "Review deleted successfully!",
       onSuccess: () => refetch(),
-    }
+    },
   );
 
   const handleRefresh = () => {
@@ -73,20 +76,20 @@ export default function AdminReviewsPage() {
 
   const handleToggleApprove = (reviewId: string, isApproved: boolean) => {
     updateReview({ id: reviewId, data: { isApproved: !isApproved } }).then(() =>
-      toast.success("Review updated successfully!")
+      toast.success("Review updated successfully!"),
     );
   };
 
   const handleDelete = async (reviewId: string, userName: string) => {
     if (
       !confirm(
-        `Are you sure you want to delete review by "${userName}"? This action cannot be undone.`
+        `Are you sure you want to delete review by "${userName}"? This action cannot be undone.`,
       )
     ) {
       return;
     }
     deleteReview(reviewId).then(() =>
-      toast.success("Review deleted successfully!")
+      toast.success("Review deleted successfully!"),
     );
   };
 
@@ -160,7 +163,8 @@ export default function AdminReviewsPage() {
       key: "isApproved",
       label: "Status",
       render: (review) => (
-        <button
+        <Button
+          variant="ghost"
           onClick={() => handleToggleApprove(review.id, review.isApproved)}
           className={`px-3 py-1 rounded-full text-xs font-medium ${
             review.isApproved
@@ -169,7 +173,7 @@ export default function AdminReviewsPage() {
           }`}
         >
           {review.isApproved ? "Approved" : "Pending"}
-        </button>
+        </Button>
       ),
     },
     {
@@ -183,7 +187,8 @@ export default function AdminReviewsPage() {
       label: "Actions",
       render: (review) => (
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => handleToggleApprove(review.id, review.isApproved)}
             className={`p-2 rounded-lg transition-colors ${
               review.isApproved
@@ -197,14 +202,16 @@ export default function AdminReviewsPage() {
             ) : (
               <CheckCircle className="w-4 h-4" />
             )}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => handleDelete(review.id, review.userName)}
-            className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+            className="text-destructive hover:bg-destructive/10"
             title="Delete review"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -216,14 +223,17 @@ export default function AdminReviewsPage() {
         title="Reviews"
         description="Moderate and manage customer reviews"
         actions={
-          <button
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          {isLoading ? "Refreshing..." : "Refresh"}
-          </button>
+          <Button
+            variant="default"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
+            {isLoading ? "Refreshing..." : "Refresh"}
+          </Button>
         }
       />
 
@@ -232,31 +242,31 @@ export default function AdminReviewsPage() {
         <div className="flex flex-wrap gap-4">
           <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by product, customer, or review..."
-                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <button
+              <Button
+                variant="default"
                 onClick={handleSearch}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+                className="flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
-              </button>
+              </Button>
             </div>
           </div>
 
-          <select
+          <Select
             value={
               filters.isApproved === undefined
                 ? "all"
                 : filters.isApproved
-                ? "approved"
-                : "pending"
+                  ? "approved"
+                  : "pending"
             }
             onChange={(e) =>
               setFilters({
@@ -268,20 +278,19 @@ export default function AdminReviewsPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Reviews</option>
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={
               filters.isVerified === undefined
                 ? "all"
                 : filters.isVerified
-                ? "verified"
-                : "unverified"
+                  ? "verified"
+                  : "unverified"
             }
             onChange={(e) =>
               setFilters({
@@ -293,14 +302,13 @@ export default function AdminReviewsPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Types</option>
             <option value="verified">Verified Purchase</option>
             <option value="unverified">Not Verified</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={filters.minRating || "all"}
             onChange={(e) =>
               setFilters({
@@ -312,7 +320,6 @@ export default function AdminReviewsPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="all">All Ratings</option>
             <option value="5">5 Stars</option>
@@ -320,7 +327,7 @@ export default function AdminReviewsPage() {
             <option value="3">3+ Stars</option>
             <option value="2">2+ Stars</option>
             <option value="1">1+ Stars</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -340,4 +347,3 @@ export default function AdminReviewsPage() {
     </div>
   );
 }
-

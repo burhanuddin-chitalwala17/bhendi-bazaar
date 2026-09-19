@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
-import { ProductAddContainer } from "@/admin/products/productAdd";
+import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import type { AdminCategory } from "@/domain/admin";

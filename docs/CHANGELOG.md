@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-104] 2026-09-15 — The share button stops landing on the bidding page's heading
+
+On `/bid/<slug>` the share control rendered its icon on top of the product title, with the hover background sitting beside the icon rather than under it. Both were one cause. `ShareButton` defaulted `showLabel` to `true`, and the bidding page asked for `size="icon"` without turning it off — that size is a fixed `size-9` square (`src/components/ui/button.tsx:27`), so icon plus label overflowed it, and the base `justify-center` centred the too-wide content on the box, pushing the icon outside to the left onto the `<h1>` next to it. The highlight was the square, in the right place all along, which is why it looked like a second bug.
+
+Fixed in the component rather than at the call site: the label now follows the size unless a caller says otherwise. The two call sites that already paired `size="icon"` with `showLabel={false}` (`order-summary.tsx`, `product-details.tsx`) were the tell — a prop pairing that three callers have to remember is one that a fourth will get wrong. Also dropped the label's `ml-2`, which double-spaced against the button's own `gap-2`; no surface renders a labelled share button today, so nothing moves.
+
+`tests/unit/share-button.test.tsx` pins it, and was checked against the old default first to confirm it fails without the fix.
+
+Unrelated, found while verifying: `libphonenumber-js` was declared in `package.json` and absent from `node_modules`, which failed typecheck and twelve test files on a stale local install. `npm install` fixed it with no change to `package.json` or the lockfile.
+
 ## [PR-103] 2026-09-12 — One phone number can back any number of accounts [MIGRATION]
 
 A phone number is contact data, not an identity key. Signing up or saving a profile with a number another account already uses now succeeds. Spec and TRD: [shared-phone-numbers](specs/shared-phone-numbers/); decision and rejected alternatives: [ADR-0024](adr/0024-phone-is-contact-data-not-an-identity-key.md).

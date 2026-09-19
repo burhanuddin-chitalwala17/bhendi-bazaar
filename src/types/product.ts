@@ -61,3 +61,17 @@ export function toggleFlag(flags: ProductFlag[], flag: ProductFlag): ProductFlag
     : [...flags, flag];
 }
 
+
+/**
+ * Narrow the database's `String[]` to the closed set.
+ *
+ * `Product.flags` is an untyped string array in Postgres, so a row can hold anything an
+ * older deploy or a hand-edit put there. The data layer used to take the product as
+ * `any`, which let those strings through as `ProductFlag[]` unchecked — a cast here
+ * would restore exactly that fiction. Unknown values are dropped rather than thrown on:
+ * a stale flag is not a reason to fail a product page.
+ */
+export function toProductFlags(values: readonly string[]): ProductFlag[] {
+  const known = new Set<string>(Object.values(ProductFlag));
+  return values.filter((value): value is ProductFlag => known.has(value));
+}

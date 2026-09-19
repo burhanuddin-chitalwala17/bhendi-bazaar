@@ -10,7 +10,10 @@ import { GoogleIcon } from "@/components/shared/GoogleIcon";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { loginSchema, type LoginInput } from "@/lib/validation/schemas/auth.schemas";
+import {
+  loginSchema,
+  type LoginInput,
+} from "@/lib/validation/schemas/auth.schemas";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -79,7 +82,9 @@ export default function SignInPage() {
               className="pr-10" // Add padding for the icon
               {...register("password")}
             />
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
@@ -90,10 +95,12 @@ export default function SignInPage() {
               ) : (
                 <Eye className="h-4 w-4" />
               )}
-            </button>
+            </Button>
           </div>
           {errors.password && (
-            <p className="text-2xs text-destructive">{errors.password.message}</p>
+            <p className="text-2xs text-destructive">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
@@ -132,7 +139,11 @@ export default function SignInPage() {
         </Button>
         <p className="pt-2 text-center text-2xs text-muted-foreground">
           New to Bhendi Bazaar?{" "}
-          <Link href="/signup" className="underline underline-offset-4" prefetch={false}>
+          <Link
+            href="/signup"
+            className="underline underline-offset-4"
+            prefetch={false}
+          >
             Create an account
           </Link>
         </p>

@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 import { productsService } from "@server/catalog/admin.product.service";
-import type { ProductDetails, ProductFilters, ProductForTable, ProductStats } from "@/admin/products/types";
+import type { ProductDetails, ProductFilters, ProductForTable, ProductStats } from "@/components/product/console/types";
 import type { Pagination } from "@/types/shared";
 import { ProductFlag } from "@/types/shared";
 import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-context";

@@ -9,7 +9,7 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { DataTable, Column } from "@/admin/data-table";
+import { DataTable, Column } from "@/components/shared/data-table";
 import { ShoppingCart, Mail, Eye, RefreshCw } from "lucide-react";
 import { adminCartApiClient } from "@/services/admin/cartApiClient";
 import type { AbandonedCart, AbandonedCartFilters } from "@/domain/admin";
@@ -17,6 +17,7 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
+import { Select } from "@/components/ui/select";
 
 export default function AdminAbandonedCartsPage() {
   const [filters, setFilters] = useState<AbandonedCartFilters>({
@@ -41,7 +42,7 @@ export default function AdminAbandonedCartsPage() {
     {
       successMessage: "Reminder sent successfully!",
       onSuccess: () => refetch(),
-    }
+    },
   );
 
   const handleRefresh = () => {
@@ -100,21 +101,25 @@ export default function AdminAbandonedCartsPage() {
       label: "Actions",
       render: (cart) => (
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setSelectedCart(cart)}
-            className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
+            className="text-info hover:bg-info/10"
             title="View cart details"
           >
             <Eye className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => sendReminder(cart.id)}
             disabled={isSendingReminder}
-            className="p-2 text-success hover:bg-success/10 rounded-lg transition-colors"
+            className="text-success hover:bg-success/10"
             title="Send reminder email"
           >
             <Mail className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -153,7 +158,7 @@ export default function AdminAbandonedCartsPage() {
             <label className="block text-sm font-medium text-foreground/80 mb-1">
               Minimum Days Abandoned
             </label>
-            <select
+            <Select
               value={filters.minDays}
               onChange={(e) =>
                 setFilters({
@@ -162,7 +167,6 @@ export default function AdminAbandonedCartsPage() {
                   page: 1,
                 })
               }
-              className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="1">1+ days</option>
               <option value="2">2+ days</option>
@@ -170,14 +174,14 @@ export default function AdminAbandonedCartsPage() {
               <option value="7">7+ days</option>
               <option value="14">14+ days</option>
               <option value="30">30+ days</option>
-            </select>
+            </Select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground/80 mb-1">
               Minimum Cart Value
             </label>
-            <select
+            <Select
               value={filters.minValue || 0}
               onChange={(e) =>
                 setFilters({
@@ -186,7 +190,6 @@ export default function AdminAbandonedCartsPage() {
                   page: 1,
                 })
               }
-              className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {/* Option values are paise — the API compares them to Cart.totalValue. */}
               <option value="0">All Values</option>
@@ -194,7 +197,7 @@ export default function AdminAbandonedCartsPage() {
               <option value="100000">₹1,000+</option>
               <option value="200000">₹2,000+</option>
               <option value="500000">₹5,000+</option>
-            </select>
+            </Select>
           </div>
         </div>
       </div>
@@ -225,12 +228,13 @@ export default function AdminAbandonedCartsPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Cart Details</h2>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setSelectedCart(null)}
                 className="text-muted-foreground hover:text-foreground"
               >
                 ✕
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -293,20 +297,22 @@ export default function AdminAbandonedCartsPage() {
 
               {/* Actions */}
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
+                  variant="default"
                   onClick={() => sendReminder(selectedCart.id)}
                   disabled={isSendingReminder}
-                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center justify-center gap-2"
+                  className="flex-1 flex items-center justify-center gap-2"
                 >
                   <Mail className="w-4 h-4" />
                   {isSendingReminder ? "Sending..." : "Send Reminder Email"}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => setSelectedCart(null)}
-                  className="px-4 py-2 border border-input text-foreground/80 rounded-lg hover:bg-muted/60"
+                  className="text-foreground/80 hover:bg-muted/60"
                 >
                   Close
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -315,4 +321,3 @@ export default function AdminAbandonedCartsPage() {
     </div>
   );
 }
-

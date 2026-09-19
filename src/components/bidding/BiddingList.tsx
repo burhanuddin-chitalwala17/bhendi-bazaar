@@ -69,8 +69,12 @@ export function BiddingList({
                 </dd>
               </div>
               <div>
-                <dt className="uppercase tracking-label text-muted-foreground">Bids</dt>
-                <dd className="mt-0.5 text-sm font-semibold">{event.bidCount}</dd>
+                <dt className="uppercase tracking-label text-muted-foreground">
+                  Bids
+                </dt>
+                <dd className="mt-0.5 text-sm font-semibold">
+                  {event.bidCount}
+                </dd>
               </div>
             </dl>
 

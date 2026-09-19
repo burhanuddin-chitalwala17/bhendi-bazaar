@@ -25,7 +25,9 @@ interface WishlistContextValue {
   toggle: (productId: string) => Promise<void>;
 }
 
-const WishlistContext = createContext<WishlistContextValue | undefined>(undefined);
+const WishlistContext = createContext<WishlistContextValue | undefined>(
+  undefined,
+);
 
 /**
  * The saved-product set, shared by every heart on the page.
@@ -46,7 +48,9 @@ export function WishlistProvider({
   children: ReactNode;
 }) {
   const { status } = useAuth();
-  const [saved, setSaved] = useState<Set<string>>(() => new Set(initialProductIds));
+  const [saved, setSaved] = useState<Set<string>>(
+    () => new Set(initialProductIds),
+  );
   const [pending, setPending] = useState<Set<string>>(() => new Set());
 
   // The server is the authority on what is saved; adopt its set whenever a navigation
@@ -87,10 +91,13 @@ export function WishlistProvider({
 
       try {
         const response = wasSaved
-          ? await fetch(`/api/wishlist?productId=${encodeURIComponent(productId)}`, {
-              method: "DELETE",
-              credentials: "include",
-            })
+          ? await fetch(
+              `/api/wishlist?productId=${encodeURIComponent(productId)}`,
+              {
+                method: "DELETE",
+                credentials: "include",
+              },
+            )
           : await fetch("/api/wishlist", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -114,7 +121,7 @@ export function WishlistProvider({
         toast.error(
           error instanceof Error
             ? error.message
-            : "Could not update your wishlist. Please try again."
+            : "Could not update your wishlist. Please try again.",
         );
       } finally {
         setPending((current) => {
@@ -124,16 +131,23 @@ export function WishlistProvider({
         });
       }
     },
-    [saved, status]
+    [saved, status],
   );
 
   const value: WishlistContextValue = {
     isSaved: useCallback((productId: string) => saved.has(productId), [saved]),
-    isPending: useCallback((productId: string) => pending.has(productId), [pending]),
+    isPending: useCallback(
+      (productId: string) => pending.has(productId),
+      [pending],
+    ),
     toggle,
   };
 
-  return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
+  return (
+    <WishlistContext.Provider value={value}>
+      {children}
+    </WishlistContext.Provider>
+  );
 }
 
 export function useWishlist(): WishlistContextValue {

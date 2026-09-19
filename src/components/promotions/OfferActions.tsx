@@ -41,7 +41,9 @@ export function OfferActions({
       toast.success(`“${label}” stopped`);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not stop the offer");
+      toast.error(
+        error instanceof Error ? error.message : "Could not stop the offer",
+      );
     } finally {
       setIsStopping(false);
     }

@@ -16,8 +16,8 @@ import {
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { redirect } from "next/navigation";
-import { SpeedInsights } from "@vercel/speed-insights/next"
-import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const headingFont = Playfair_Display({
   variable: "--font-heading-face",
@@ -88,4 +88,3 @@ export default async function RootLayout({
     </html>
   );
 }
-

@@ -33,7 +33,7 @@ export function BulkCategoryWizard() {
 
   const filesByPath = useMemo(
     () => new Map(images.map((file) => [relativePath(file), file])),
-    [images]
+    [images],
   );
   const providedPaths = useMemo(() => [...filesByPath.keys()], [filesByPath]);
 
@@ -55,7 +55,9 @@ export function BulkCategoryWizard() {
       setReport((await response.json()) as ValidateResponse);
       setStep("report");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not check the sheet");
+      toast.error(
+        error instanceof Error ? error.message : "Could not check the sheet",
+      );
       setStep("pick");
     }
   };
@@ -70,15 +72,22 @@ export function BulkCategoryWizard() {
         const [path] = matchingPaths(row.image, providedPaths);
         const file = path ? filesByPath.get(path) : undefined;
         if (!file) throw new Error(`Missing file "${row.image}"`);
-        const blob = await upload(`categories/bulk/${sanitizePath(path)}`, file, {
-          access: "public",
-          handleUploadUrl: "/api/admin/upload/token",
-        });
+        const blob = await upload(
+          `categories/bulk/${sanitizePath(path)}`,
+          file,
+          {
+            access: "public",
+            handleUploadUrl: "/api/admin/upload/token",
+          },
+        );
         urls.set(row.image, blob.url);
       }
 
       setStep("creating");
-      const rows = report.rows.map(({ row }) => ({ ...row, imageUrl: urls.get(row.image)! }));
+      const rows = report.rows.map(({ row }) => ({
+        ...row,
+        imageUrl: urls.get(row.image)!,
+      }));
       const response = await fetch("/api/admin/categories/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,8 +138,8 @@ export function BulkCategoryWizard() {
         <div className="space-y-1 pt-2">
           <p className="text-sm font-medium">2 · The hero images</p>
           <p className="text-xs text-muted-foreground">
-            A folder or individual files — write the folder in the sheet
-            (<code>abayas/hero.jpg</code>) when two rows share a filename.
+            A folder or individual files — write the folder in the sheet (
+            <code>abayas/hero.jpg</code>) when two rows share a filename.
           </p>
         </div>
         <div className="space-y-2">
@@ -156,20 +165,24 @@ export function BulkCategoryWizard() {
           </label>
         </div>
         {images.length > 0 && (
-          <p className="text-xs text-muted-foreground">{images.length} files selected</p>
+          <p className="text-xs text-muted-foreground">
+            {images.length} files selected
+          </p>
         )}
       </section>
 
       {step === "report" && report && !report.ok && (
         <section className="space-y-2 rounded-xl border border-destructive/40 bg-card p-4">
           <p className="text-sm font-semibold text-destructive">
-            {report.errors.length} problem{report.errors.length === 1 ? "" : "s"} — nothing was created
+            {report.errors.length} problem
+            {report.errors.length === 1 ? "" : "s"} — nothing was created
           </p>
           <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
             {report.errors.map((error, i) => (
               <li key={i}>
                 <span className="font-medium">
-                  {error.row === 0 ? "Sheet" : `Row ${error.row}`} · {error.field}:
+                  {error.row === 0 ? "Sheet" : `Row ${error.row}`} ·{" "}
+                  {error.field}:
                 </span>{" "}
                 {error.message}
               </li>
@@ -180,13 +193,20 @@ export function BulkCategoryWizard() {
 
       {step === "report" && report?.ok && (
         <section className="space-y-2 rounded-xl border border-border bg-card p-4">
-          <p className="text-sm font-semibold">✓ Sheet is clean — {report.rows.length} categories</p>
+          <p className="text-sm font-semibold">
+            ✓ Sheet is clean — {report.rows.length} categories
+          </p>
           <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
             {report.rows.map(({ row, rowNumber }) => (
-              <li key={rowNumber} className="flex items-center justify-between gap-2">
+              <li
+                key={rowNumber}
+                className="flex items-center justify-between gap-2"
+              >
                 <span className="truncate">{row.name}</span>
                 {row.parent && (
-                  <span className="shrink-0 text-xs text-muted-foreground">under {row.parent}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    under {row.parent}
+                  </span>
                 )}
               </li>
             ))}
@@ -196,7 +216,9 @@ export function BulkCategoryWizard() {
 
       {(step === "uploading" || step === "creating") && (
         <section className="rounded-xl border border-border bg-card p-4 text-sm">
-          {step === "uploading" ? "Uploading hero images…" : "Creating categories…"}
+          {step === "uploading"
+            ? "Uploading hero images…"
+            : "Creating categories…"}
         </section>
       )}
 
@@ -209,7 +231,9 @@ export function BulkCategoryWizard() {
           <Button
             className="w-full md:w-auto"
             onClick={check}
-            disabled={step === "checking" || step === "uploading" || step === "creating"}
+            disabled={
+              step === "checking" || step === "uploading" || step === "creating"
+            }
           >
             {step === "checking" ? "Checking…" : "Check the sheet"}
           </Button>

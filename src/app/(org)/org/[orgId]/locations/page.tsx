@@ -1,8 +1,11 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { orgAddressService } from "@server/catalog/org.address.service";
-import { LocationsManager } from "@/org/locations-manager";
+import { LocationsManager } from "@/components/org/locations-manager";
 
-export const metadata = { title: "Locations", robots: { index: false, follow: false } };
+export const metadata = {
+  title: "Locations",
+  robots: { index: false, follow: false },
+};
 
 export default async function OrgLocationsPage({
   params,

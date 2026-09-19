@@ -151,7 +151,7 @@ export function ProfilePicUpload({
           isDragging
             ? "border-primary bg-primary/5"
             : "border-border hover:border-primary/50 hover:bg-muted/30",
-          uploading && "pointer-events-none opacity-60"
+          uploading && "pointer-events-none opacity-60",
         )}
       >
         <input

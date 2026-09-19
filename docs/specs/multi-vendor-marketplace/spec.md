@@ -72,7 +72,7 @@ which is why they share a parent, and why neither can be reviewed sensibly as a 
 ## Out of scope (this programme)
 
 - **Vendor settlement.** A marketplace normally owes each organisation money for what it sold, less commission. Nothing here calculates, records or pays that, and no requirement above implies it. It is the largest absent piece and needs its own feature before real vendors are onboarded.
-- **Per-organisation branding, domains, or storefronts.** One storefront, many vendors.
+- **Per-organisation branding, domains, or storefronts.** One storefront, many vendors. **Reversed 2026-09-15** by [ADR-0025](../../adr/0025-org-storefronts-are-scoped-projections-on-one-domain.md) and [org-storefront](../org-storefront/) — branding and a per-org storefront are now in scope, on one domain; per-org *domains* remain out.
 - **Organisation-level permissions beyond a role on the membership.** The role makes authorization expressible; a permission matrix is a later feature if it is ever needed.
 - **Vendor-facing analytics** beyond the lists in R4.
 - **Approval or verification of a new organisation.** Creation is self-serve; `isVerified` already exists on the record and nothing gates on it yet.

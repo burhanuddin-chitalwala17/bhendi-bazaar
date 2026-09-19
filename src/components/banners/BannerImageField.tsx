@@ -53,7 +53,7 @@ export function BannerImageField({
       onChange(urls[0] ?? null);
     } catch (uploadError) {
       setError(
-        uploadError instanceof Error ? uploadError.message : "Upload failed."
+        uploadError instanceof Error ? uploadError.message : "Upload failed.",
       );
     } finally {
       setUploading(false);
@@ -73,7 +73,13 @@ export function BannerImageField({
             {/* The uploaded file at its own shape — not the storefront's, which varies
                 by breakpoint. What the hero keeps of it is the hint's job to explain. */}
             <div className="relative aspect-banner-source w-full">
-              <Image src={value} alt="" fill sizes="(min-width: 640px) 48rem, 100vw" className="object-cover" />
+              <Image
+                src={value}
+                alt=""
+                fill
+                sizes="(min-width: 640px) 48rem, 100vw"
+                className="object-cover"
+              />
             </div>
             <Button
               type="button"

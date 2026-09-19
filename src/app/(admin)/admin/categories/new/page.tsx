@@ -3,7 +3,7 @@
  * Create a new category
  */
 
-import { CategoryForm } from "@/admin/category-form";
+import { CategoryForm } from "@/components/category/category-form";
 
 import { PageShell } from "@/components/shared/page-shell";
 export default function NewCategoryPage() {
@@ -13,4 +13,3 @@ export default function NewCategoryPage() {
     </PageShell>
   );
 }
-

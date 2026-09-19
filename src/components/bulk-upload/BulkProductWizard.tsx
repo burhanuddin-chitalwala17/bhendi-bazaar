@@ -39,7 +39,7 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
 
   const filesByPath = useMemo(
     () => new Map(images.map((file) => [relativePath(file), file])),
-    [images]
+    [images],
   );
   const providedPaths = useMemo(() => [...filesByPath.keys()], [filesByPath]);
 
@@ -62,7 +62,9 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       setReport(body);
       setStep("report");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not check the sheet");
+      toast.error(
+        error instanceof Error ? error.message : "Could not check the sheet",
+      );
       setStep("pick");
     }
   };
@@ -79,7 +81,11 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       const queue = [...needed];
       let done = 0;
       const worker = async () => {
-        for (let reference = queue.shift(); reference; reference = queue.shift()) {
+        for (
+          let reference = queue.shift();
+          reference;
+          reference = queue.shift()
+        ) {
           // Validation already proved each reference names exactly one file.
           const [path] = matchingPaths(reference, providedPaths);
           const file = path ? filesByPath.get(path) : undefined;
@@ -87,7 +93,10 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           const blob = await upload(
             `products/${report.orgCode!.toLowerCase()}/bulk/${sanitizePath(path)}`,
             file,
-            { access: "public", handleUploadUrl: `/api/org/${orgId}/upload/token` }
+            {
+              access: "public",
+              handleUploadUrl: `/api/org/${orgId}/upload/token`,
+            },
           );
           urls.set(reference, blob.url);
           done += 1;
@@ -99,7 +108,9 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       setStep("creating");
       const rows = report.rows.map(({ row }) => ({
         ...row,
-        imageUrls: Object.fromEntries(row.images.map((name) => [name, urls.get(name)!])),
+        imageUrls: Object.fromEntries(
+          row.images.map((name) => [name, urls.get(name)!]),
+        ),
       }));
       const response = await fetch(`/api/org/${orgId}/products/bulk`, {
         method: "POST",
@@ -134,7 +145,10 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           <p className="text-sm font-medium">1 · The filled-in sheet</p>
           <p className="text-xs text-muted-foreground">
             .xlsx or .csv —{" "}
-            <a className="underline" href={`/api/org/${orgId}/products/bulk/sample`}>
+            <a
+              className="underline"
+              href={`/api/org/${orgId}/products/bulk/sample`}
+            >
               download the sample
             </a>{" "}
             made for your locations and categories.
@@ -151,10 +165,10 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
         <div className="space-y-1 pt-2">
           <p className="text-sm font-medium">2 · The product photos</p>
           <p className="text-xs text-muted-foreground">
-            A folder keeps each product&apos;s photos apart, so two products can both
-            have a <code>front.jpg</code> — write the folder in the sheet as{" "}
-            <code>emerald-abaya/front.jpg</code>. A flat selection works too when
-            every filename is different.
+            A folder keeps each product&apos;s photos apart, so two products can
+            both have a <code>front.jpg</code> — write the folder in the sheet
+            as <code>emerald-abaya/front.jpg</code>. A flat selection works too
+            when every filename is different.
           </p>
         </div>
         <div className="space-y-2">
@@ -182,7 +196,9 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
         {images.length > 0 && (
           <p className="text-xs text-muted-foreground">
             {images.length} files selected
-            {providedPaths.some((path) => path.includes("/")) ? ", with folders" : ""}
+            {providedPaths.some((path) => path.includes("/"))
+              ? ", with folders"
+              : ""}
           </p>
         )}
       </section>
@@ -190,13 +206,15 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       {step === "report" && report && !report.ok && (
         <section className="space-y-2 rounded-xl border border-destructive/40 bg-card p-4">
           <p className="text-sm font-semibold text-destructive">
-            {report.errors.length} problem{report.errors.length === 1 ? "" : "s"} — nothing was created
+            {report.errors.length} problem
+            {report.errors.length === 1 ? "" : "s"} — nothing was created
           </p>
           <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
             {report.errors.map((error, i) => (
               <li key={i}>
                 <span className="font-medium">
-                  {error.row === 0 ? "Sheet" : `Row ${error.row}`} · {error.field}:
+                  {error.row === 0 ? "Sheet" : `Row ${error.row}`} ·{" "}
+                  {error.field}:
                 </span>{" "}
                 {error.message}
               </li>
@@ -208,11 +226,15 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       {step === "report" && report?.ok && (
         <section className="space-y-2 rounded-xl border border-border bg-card p-4">
           <p className="text-sm font-semibold">
-            ✓ Sheet is clean — {report.rows.length} products, {report.summary.images} images
+            ✓ Sheet is clean — {report.rows.length} products,{" "}
+            {report.summary.images} images
           </p>
           <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
             {report.rows.map(({ row, rowNumber }) => (
-              <li key={rowNumber} className="flex items-center justify-between gap-2">
+              <li
+                key={rowNumber}
+                className="flex items-center justify-between gap-2"
+              >
                 <span className="truncate">{row.name}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {row.images.length} photo{row.images.length === 1 ? "" : "s"}
@@ -241,7 +263,9 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           <Button
             className="w-full md:w-auto"
             onClick={check}
-            disabled={step === "checking" || step === "uploading" || step === "creating"}
+            disabled={
+              step === "checking" || step === "uploading" || step === "creating"
+            }
           >
             {step === "checking" ? "Checking…" : "Check the sheet"}
           </Button>

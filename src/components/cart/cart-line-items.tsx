@@ -6,7 +6,9 @@ import { CartItem } from "./CartItem";
 
 export function CartLineItems() {
   const items = useCartStore((state) => state.items);
-  const [stockByProduct, setStockByProduct] = useState<Record<string, number>>({});
+  const [stockByProduct, setStockByProduct] = useState<Record<string, number>>(
+    {},
+  );
   const [isLoadingStock, setIsLoadingStock] = useState(true);
 
   // One check for the whole cart — the endpoint takes the full array, so per-row

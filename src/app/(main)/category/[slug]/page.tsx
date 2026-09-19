@@ -13,7 +13,6 @@ interface CategoryPageProps {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-
   const { slug } = await params;
 
   // Independent reads, fetched together rather than in a four-step waterfall. The three
@@ -29,22 +28,21 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   return (
     <div className="space-y-4">
       <Suspense fallback={<LoadingSkeleton />}>
-      {category && products ? (
-        <>
-          <CategoryBreadcrumb ancestors={ancestors} current={category} />
-          <CategoryHero category={category} />
-          <CategoryLanes categories={lanes} />
-          <ProductGrid products={products} />
-        </>
+        {category && products ? (
+          <>
+            <CategoryBreadcrumb ancestors={ancestors} current={category} />
+            <CategoryHero category={category} />
+            <CategoryLanes categories={lanes} />
+            <ProductGrid products={products} />
+          </>
         ) : (
-        <EmptyState
-          icon={Package}
-          title="No category or products found"
-          description="Try different keywords or browse categories"
-        />
-      )}
+          <EmptyState
+            icon={Package}
+            title="No category or products found"
+            description="Try different keywords or browse categories"
+          />
+        )}
       </Suspense>
-
     </div>
   );
 }

@@ -17,7 +17,7 @@ export function ProductDetails(product: Product) {
     isAddingToCart,
     isBuyingNow,
     isOutOfStock,
-    currentCartQty
+    currentCartQty,
   } = useProductActions(product);
   // console.log("ProductDetails: ", JSON.stringify(product, null, 2));
 

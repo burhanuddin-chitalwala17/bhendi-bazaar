@@ -1,7 +1,7 @@
 // src/server/services/admin/org.service.ts
 
 import { orgRepository } from "@server/catalog/org.repository";
-import type { CreateOrgInput } from "@/domain/org";
+import type { CreateOrgInput } from "@server/catalog/org.types";
 import type { CreateOrgInput as CreateOrgSchemaInput } from "@/lib/validation/schemas/org.schema";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 import { orgCodeCandidates } from "@server/catalog/org.code";

@@ -27,7 +27,11 @@ export function Navbar() {
           MobileTabBar; categories are the lane row the pages render below this, so
           nothing the old second row carried was lost (ADR-0015 rule 2, ADR-0016). */}
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-3 sm:h-20 sm:gap-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2" prefetch={false}>
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-2"
+          prefetch={false}
+        >
           <Image
             src={LOGO.FULL}
             alt={APP_NAME}
@@ -49,7 +53,9 @@ export function Navbar() {
               variant="outline"
               className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex lg:px-4"
             >
-              <Link href="/signin" prefetch={false}>Login</Link>
+              <Link href="/signin" prefetch={false}>
+                Login
+              </Link>
             </Button>
           )}
 
@@ -59,7 +65,7 @@ export function Navbar() {
               href="/orders"
               className={cn(
                 "hidden px-1 py-2 text-xs font-medium uppercase tracking-eyebrow text-muted-foreground transition-colors md:block",
-                pathname === "/orders" && "text-primary"
+                pathname === "/orders" && "text-primary",
               )}
             >
               Orders
@@ -73,7 +79,7 @@ export function Navbar() {
             className={cn(
               "relative hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex",
               !hasCartItems &&
-                "cursor-not-allowed border-border/80 bg-muted text-muted-foreground"
+                "cursor-not-allowed border-border/80 bg-muted text-muted-foreground",
             )}
           >
             <Link

@@ -20,20 +20,32 @@ export default async function OrgEarningsPage({
   // Being authorised and being scoped are the same act — this id came from a
   // membership check that passed, never from the URL alone.
   const scope = await requireOrgMember(orgId);
-  const { owedPaise, unclaimedPaise, orders, defaultBps, categoryRates, settlements } =
-    await payoutsDAL.earningsFor(scope.orgId);
+  const {
+    owedPaise,
+    unclaimedPaise,
+    orders,
+    defaultBps,
+    categoryRates,
+    settlements,
+  } = await payoutsDAL.earningsFor(scope.orgId);
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold">Earnings</h1>
-        <p className="text-sm text-muted-foreground">What you have earned, and what is due.</p>
+        <p className="text-sm text-muted-foreground">
+          What you have earned, and what is due.
+        </p>
       </div>
 
       {/* Leads with the figure they came for. */}
       <Card className="p-5">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">You are owed</p>
-        <p className="text-3xl font-semibold tabular-nums">{formatCurrency(owedPaise)}</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          You are owed
+        </p>
+        <p className="text-3xl font-semibold tabular-nums">
+          {formatCurrency(owedPaise)}
+        </p>
         <p className="mt-1 text-sm text-muted-foreground tabular-nums">
           {formatCurrency(unclaimedPaise)} not yet in a settlement
         </p>
@@ -42,7 +54,9 @@ export default async function OrgEarningsPage({
       <section className="space-y-3">
         <h2 className="text-sm font-semibold">Orders</h2>
         {orders.length === 0 && (
-          <p className="text-sm text-muted-foreground">Nothing yet — your first sale will appear here.</p>
+          <p className="text-sm text-muted-foreground">
+            Nothing yet — your first sale will appear here.
+          </p>
         )}
         <ul className="space-y-3">
           {orders.map((order) => (
@@ -62,8 +76,12 @@ export default async function OrgEarningsPage({
                 {/* Reads down as a derivation: each line explains the next. */}
                 <dl className="space-y-1.5 text-sm">
                   <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Goods sold, at list</dt>
-                    <dd className="tabular-nums">{formatCurrency(order.grossItemsPaise)}</dd>
+                    <dt className="text-muted-foreground">
+                      Goods sold, at list
+                    </dt>
+                    <dd className="tabular-nums">
+                      {formatCurrency(order.grossItemsPaise)}
+                    </dd>
                   </div>
                   {order.orgFundedDiscountPaise > 0 && (
                     <div className="flex justify-between gap-4">
@@ -78,15 +96,25 @@ export default async function OrgEarningsPage({
                       Commission
                       {order.rates.length > 0 && (
                         <span className="ml-1 text-xs">
-                          ({[...new Set(order.rates.map((r) => `${r.rateBps / 100}%`))].join(" & ")})
+                          (
+                          {[
+                            ...new Set(
+                              order.rates.map((r) => `${r.rateBps / 100}%`),
+                            ),
+                          ].join(" & ")}
+                          )
                         </span>
                       )}
                     </dt>
-                    <dd className="tabular-nums">−{formatCurrency(order.commissionPaise)}</dd>
+                    <dd className="tabular-nums">
+                      −{formatCurrency(order.commissionPaise)}
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-4 border-t border-border pt-2 text-base font-semibold">
                     <dt>You receive</dt>
-                    <dd className="tabular-nums text-primary">{formatCurrency(order.payablePaise)}</dd>
+                    <dd className="tabular-nums text-primary">
+                      {formatCurrency(order.payablePaise)}
+                    </dd>
                   </div>
                 </dl>
 
@@ -95,9 +123,10 @@ export default async function OrgEarningsPage({
                     to move this organisation's stock. */}
                 {order.platformContributionPaise !== null && (
                   <p className="mt-3 border-t border-dashed border-border pt-3 text-xs text-muted-foreground">
-                    Buyers paid {formatCurrency(order.buyerPaidPaise)} — the platform funded{" "}
-                    {formatCurrency(order.platformContributionPaise)} of discount on your goods.
-                    Your credit is unaffected.
+                    Buyers paid {formatCurrency(order.buyerPaidPaise)} — the
+                    platform funded{" "}
+                    {formatCurrency(order.platformContributionPaise)} of
+                    discount on your goods. Your credit is unaffected.
                   </p>
                 )}
               </Card>
@@ -124,7 +153,9 @@ export default async function OrgEarningsPage({
                     {settlement.reference ? ` · ${settlement.reference}` : ""}
                   </p>
                 </div>
-                <span className="tabular-nums">{formatCurrency(settlement.amountPaise)}</span>
+                <span className="tabular-nums">
+                  {formatCurrency(settlement.amountPaise)}
+                </span>
               </li>
             ))}
           </ul>
@@ -140,8 +171,13 @@ export default async function OrgEarningsPage({
             <span className="tabular-nums">{defaultBps / 100}%</span>
           </div>
           {categoryRates.map((rule) => (
-            <div key={rule.category.name} className="mt-1.5 flex justify-between gap-4">
-              <span className="text-muted-foreground">{rule.category.name}</span>
+            <div
+              key={rule.category.name}
+              className="mt-1.5 flex justify-between gap-4"
+            >
+              <span className="text-muted-foreground">
+                {rule.category.name}
+              </span>
               <span className="tabular-nums">{rule.rateBps / 100}%</span>
             </div>
           ))}

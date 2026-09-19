@@ -1,7 +1,10 @@
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
-import { OrgOrdersTable } from "@/org/org-orders-table";
+import { OrgOrdersTable } from "@/components/org/org-orders-table";
 
-export const metadata = { title: "Orders", robots: { index: false, follow: false } };
+export const metadata = {
+  title: "Orders",
+  robots: { index: false, follow: false },
+};
 
 export default async function OrgOrdersPage({
   params,
@@ -12,7 +15,10 @@ export default async function OrgOrdersPage({
 }) {
   const { orgId } = await params;
   const { page } = await searchParams;
-  const { orders, pagination } = await orgOrdersDAL.getOrders(orgId, Number(page) || 1);
+  const { orders, pagination } = await orgOrdersDAL.getOrders(
+    orgId,
+    Number(page) || 1,
+  );
 
   return (
     <div className="space-y-6">

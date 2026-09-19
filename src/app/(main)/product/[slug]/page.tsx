@@ -17,7 +17,9 @@ interface ProductPageProps {
 // generateMetadata and the page each need the product; cache() makes that one query.
 const getProduct = cache((slug: string) => productsDAL.getProductBySlug(slug));
 
-export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
 
   let product;

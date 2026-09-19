@@ -31,7 +31,7 @@ function SheetContent({
           "bg-background fixed inset-x-0 bottom-0 z-50 flex max-h-overlay flex-col gap-3 overflow-y-auto rounded-t-2xl border-t p-4 shadow-overlay outline-none duration-200",
           "pb-[calc(1rem+env(safe-area-inset-bottom))]",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
-          className
+          className,
         )}
         {...props}
       >
@@ -72,4 +72,11 @@ function SheetDescription({
   );
 }
 
-export { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger };
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+};

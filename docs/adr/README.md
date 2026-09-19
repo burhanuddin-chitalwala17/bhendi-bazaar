@@ -61,3 +61,6 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0022](0022-design-decisions-go-through-tokens.md) | Every design axis goes through tokens, not just colour | Accepted | 2026-08-30 |
 | [0023](0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) | Bidding status stores only what the clock cannot decide | Accepted | 2026-09-09 |
 | [0024](0024-phone-is-contact-data-not-an-identity-key.md) | A phone number is contact data, not an identity key | Accepted | 2026-09-12 |
+| [0025](0025-org-storefronts-are-scoped-projections-on-one-domain.md) | An org storefront is a scoped projection of the marketplace, on one domain | Accepted | 2026-09-15 |
+| [0026](0026-public-product-reads-carry-one-visibility-clause.md) | A public product read carries its visibility policy, declared once | Accepted | 2026-09-19 |
+| [0027](0027-one-components-home-organised-by-domain.md) | One components home, organised by domain, with controls through the primitives | Accepted | 2026-09-19 |

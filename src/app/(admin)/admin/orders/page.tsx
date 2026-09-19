@@ -9,7 +9,7 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { DataTable, Column } from "@/admin/data-table";
+import { DataTable, Column } from "@/components/shared/data-table";
 import { Search, Filter, RefreshCw } from "lucide-react";
 import { adminOrderApiClient } from "@/services/admin/orderApiClient";
 import type { Order } from "@/domain/order";
@@ -17,6 +17,9 @@ import type { OrderListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 export default function AdminOrdersPage() {
   const [filters, setFilters] = useState<OrderListFilters>({
@@ -42,7 +45,7 @@ export default function AdminOrdersPage() {
     {
       successMessage: "Order status updated!",
       onSuccess: () => refetch(),
-    }
+    },
   );
 
   // Extract data with fallbacks
@@ -82,7 +85,9 @@ export default function AdminOrdersPage() {
       render: (order) => (
         <div>
           <p className="font-medium">{order.address?.fullName || "Guest"}</p>
-          <p className="text-sm text-muted-foreground">{order.address?.email}</p>
+          <p className="text-sm text-muted-foreground">
+            {order.address?.email}
+          </p>
         </div>
       ),
     },
@@ -99,7 +104,7 @@ export default function AdminOrdersPage() {
       key: "status",
       label: "Status",
       render: (order) => (
-        <select
+        <Select
           value={order.status}
           onChange={(e) => handleStatusChange(order.id, e.target.value)}
           disabled={isUpdatingStatus}
@@ -108,14 +113,14 @@ export default function AdminOrdersPage() {
             order.status === "processing" && "bg-warning/15 text-warning",
             order.status === "packed" && "bg-info/15 text-info",
             order.status === "shipped" && "bg-accent/40 text-accent-foreground",
-            order.status === "delivered" && "bg-success/15 text-success"
+            order.status === "delivered" && "bg-success/15 text-success",
           )}
         >
           <option value="processing">Processing</option>
           <option value="packed">Packed</option>
           <option value="shipped">Shipped</option>
           <option value="delivered">Delivered</option>
-        </select>
+        </Select>
       ),
     },
     {
@@ -127,8 +132,8 @@ export default function AdminOrdersPage() {
             order.paymentStatus === "paid"
               ? "bg-success/15 text-success"
               : order.paymentStatus === "failed"
-              ? "bg-destructive/15 text-destructive"
-              : "bg-warning/15 text-warning"
+                ? "bg-destructive/15 text-destructive"
+                : "bg-warning/15 text-warning"
           }`}
         >
           {order.paymentStatus || "pending"}
@@ -149,14 +154,15 @@ export default function AdminOrdersPage() {
         <div>
           <SectionHeader overline="Orders" title="Orders" />
         </div>
-        <button
+        <Button
+          variant="default"
           onClick={handleRefresh}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className="flex items-center gap-2"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
           {isLoading ? "Refreshing..." : "Refresh"}
-        </button>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -164,25 +170,25 @@ export default function AdminOrdersPage() {
         <div className="flex flex-wrap gap-4">
           <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by order code, customer..."
-                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <button
+              <Button
+                variant="default"
                 onClick={handleSearch}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+                className="flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
-              </button>
+              </Button>
             </div>
           </div>
 
-          <select
+          <Select
             value={filters.status || ""}
             onChange={(e) =>
               setFilters({
@@ -191,7 +197,6 @@ export default function AdminOrdersPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Statuses</option>
             <option value="pending_payment">Pending Payment</option>
@@ -202,9 +207,9 @@ export default function AdminOrdersPage() {
             <option value="delivered">Delivered</option>
             <option value="partially_fulfilled">Partially Fulfilled</option>
             <option value="fulfillment_failed">Fulfillment Failed</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={filters.paymentStatus || ""}
             onChange={(e) =>
               setFilters({
@@ -213,13 +218,12 @@ export default function AdminOrdersPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Payments</option>
             <option value="pending">Pending</option>
             <option value="paid">Paid</option>
             <option value="failed">Failed</option>
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -239,5 +243,3 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
-
-

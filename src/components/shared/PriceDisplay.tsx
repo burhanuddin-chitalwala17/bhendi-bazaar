@@ -33,17 +33,27 @@ export function PriceDisplay({
       original: "text-2xs sm:text-xs",
       row: "flex-wrap gap-x-1.5 gap-y-0",
     },
-    sm: { price: "text-sm", original: "text-xs", row: "flex-wrap gap-x-2 gap-y-0.5" },
+    sm: {
+      price: "text-sm",
+      original: "text-xs",
+      row: "flex-wrap gap-x-2 gap-y-0.5",
+    },
     md: { price: "text-xl", original: "text-sm", row: "gap-3" },
-    lg: { price: "text-xl sm:text-2xl", original: "text-sm sm:text-base", row: "gap-3" },
+    lg: {
+      price: "text-xl sm:text-2xl",
+      original: "text-sm sm:text-base",
+      row: "gap-3",
+    },
   };
 
   return (
-    <div className={cn("flex items-baseline", sizeClasses[size].row, className)}>
+    <div
+      className={cn("flex items-baseline", sizeClasses[size].row, className)}
+    >
       <span
         className={cn(
           "font-semibold text-primary tabular-nums",
-          sizeClasses[size].price
+          sizeClasses[size].price,
         )}
       >
         {formatCurrency(displayPrice)}
@@ -53,7 +63,7 @@ export function PriceDisplay({
           <span
             className={cn(
               "text-muted-foreground line-through",
-              sizeClasses[size].original
+              sizeClasses[size].original,
             )}
           >
             {formatCurrency(price)}

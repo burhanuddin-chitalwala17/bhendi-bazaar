@@ -3,7 +3,7 @@
 import { prisma } from "@server/shared/prisma";
 import type { Org } from "@prisma/client";
 import { OrgRole } from "@prisma/client";
-import type { CreateOrgInput } from "@/domain/org";
+import type { CreateOrgInput } from "@server/catalog/org.types";
 
 export class OrgRepository {
   /**

@@ -2,9 +2,13 @@
 
 // fetch product direct from the database using repository pattern
 
-import { productsRepository } from "@server/catalog/product.repository";
+import {
+  productsRepository,
+  type ProductWithRelations,
+} from "@server/catalog/product.repository";
 import { productService } from "@server/catalog/product.service";
 import { Product, ProductFilter } from "@/domain/product";
+import { toProductFlags } from "@/types/product";
 
 import { NotFoundError } from "@server/shared/domain-error";
 import {
@@ -20,15 +24,14 @@ import {
 export { NotFoundError };
 
 const mapProduct = (
-  product: any,
+  product: ProductWithRelations,
   context: PriceContext,
   locks: BiddingLockContext
 ): Product => {
   // The customer sees one availability figure: the total across active locations
   // (stock-locations R4/R11). The indicative origin for serviceability is the
   // largest holding's pincode — allocation decides the real origin at checkout.
-  const stockRows: Array<{ quantity: number; orgAddress: { address: { pincode: string } } }> =
-    product.stockLocations ?? [];
+  const stockRows = product.stockLocations ?? [];
   const totalStock = stockRows.reduce((sum: number, row) => sum + row.quantity, 0);
   const mainRow = [...stockRows].sort((a, b) => b.quantity - a.quantity)[0];
   return {
@@ -45,7 +48,7 @@ const mapProduct = (
     currency: product.currency,
     categorySlug: product.category.slug,
     tags: product.tags,
-    flags: product.flags,
+    flags: toProductFlags(product.flags),
     rating: product.rating,
     reviewsCount: product.reviewsCount,
     media: product.media ?? [],
@@ -70,7 +73,10 @@ const mapProduct = (
 };
 
 /** The reduced price a buyer sees, or undefined when nothing applies. */
-const offerPrice = (product: any, context: PriceContext): number | undefined => {
+const offerPrice = (
+  product: ProductWithRelations,
+  context: PriceContext
+): number | undefined => {
   const { pricePaise, offerPricePaise } = resolveProductPrice(
     { id: product.id, price: product.price, orgId: product.orgId, categoryId: product.categoryId },
     context

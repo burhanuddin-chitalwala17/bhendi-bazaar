@@ -4,7 +4,7 @@ import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
 import Link from "next/link";
 import { FormSelect, FormInput } from "../FormField";
 import { MapPin } from "lucide-react";
-import type { ProductFormInput } from "@/admin/products/types";
+import type { ProductFormInput } from "@/components/product/console/types";
 import type { OrgSummary } from "@/domain/org";
 
 export interface LocationOption {
@@ -36,22 +36,25 @@ export function ProductOrgShippingFields({
   const selectedOrgId = watch("orgId");
   const stockRows = watch("stockLocations") ?? [];
   const totalStock = stockRows.reduce(
-    (sum, row) => sum + (Number.isFinite(row?.quantity) ? Number(row.quantity) : 0),
-    0
+    (sum, row) =>
+      sum + (Number.isFinite(row?.quantity) ? Number(row.quantity) : 0),
+    0,
   );
   // Root-level rules (min one location, some stock somewhere, no duplicates) land here.
-  const stockLocationsError = (
-    errors.stockLocations as { message?: string; root?: { message?: string } } | undefined
-  );
-  const rootMessage = stockLocationsError?.message ?? stockLocationsError?.root?.message;
+  const stockLocationsError = errors.stockLocations as
+    { message?: string; root?: { message?: string } } | undefined;
+  const rootMessage =
+    stockLocationsError?.message ?? stockLocationsError?.root?.message;
 
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Org & Stock Locations</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          Org & Stock Locations
+        </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Choose the organisation, then say where this product physically sits — nothing
-          is preselected, and the customer only ever sees the total.
+          Choose the organisation, then say where this product physically sits —
+          nothing is preselected, and the customer only ever sees the total.
         </p>
       </div>
 
@@ -74,9 +77,12 @@ export function ProductOrgShippingFields({
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">
-              Stock per pickup location <span className="text-destructive">*</span>
+              Stock per pickup location{" "}
+              <span className="text-destructive">*</span>
             </span>
-            <span className="text-sm text-muted-foreground">Total: {totalStock}</span>
+            <span className="text-sm text-muted-foreground">
+              Total: {totalStock}
+            </span>
           </div>
 
           {rootMessage && (
@@ -89,7 +95,11 @@ export function ProductOrgShippingFields({
             <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
               This organisation has no pickup locations yet.{" "}
               {selectedOrgId && (
-                <Link href={`/org/${selectedOrgId}/locations`} className="underline" prefetch={false}>
+                <Link
+                  href={`/org/${selectedOrgId}/locations`}
+                  className="underline"
+                  prefetch={false}
+                >
                   Add one first
                 </Link>
               )}{" "}
@@ -127,7 +137,8 @@ export function ProductOrgShippingFields({
                     className="w-28"
                     disabled={readOnly}
                     {...register(`stockLocations.${index}.quantity`, {
-                      setValueAs: (v) => (v === "" || v === null ? 0 : Number(v)),
+                      setValueAs: (v) =>
+                        v === "" || v === null ? 0 : Number(v),
                     })}
                     error={errors.stockLocations?.[index]?.quantity?.message}
                   />

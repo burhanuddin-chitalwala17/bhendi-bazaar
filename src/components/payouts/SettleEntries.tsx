@@ -36,14 +36,20 @@ export interface LedgerEntryRow {
   settlementStatus: "PENDING" | "PAID" | "CANCELLED" | null;
 }
 
-export function SettleEntries({ orgId, entries }: { orgId: string; entries: LedgerEntryRow[] }) {
+export function SettleEntries({
+  orgId,
+  entries,
+}: {
+  orgId: string;
+  entries: LedgerEntryRow[];
+}) {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   // Only entries nothing has claimed yet can go into a new settlement.
   const claimable = entries.filter(
-    (entry) => entry.deletedAt === null && entry.settlementStatus === null
+    (entry) => entry.deletedAt === null && entry.settlementStatus === null,
   );
   const selectedTotal = claimable
     .filter((entry) => selected.includes(entry.id))
@@ -51,7 +57,7 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
 
   const toggle = (id: string) =>
     setSelected((current) =>
-      current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
     );
 
   const settle = async () => {
@@ -67,7 +73,11 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
       setSelected([]);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not create the settlement");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not create the settlement",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -83,11 +93,15 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
             size="sm"
             onClick={() =>
               setSelected(
-                selected.length === claimable.length ? [] : claimable.map((entry) => entry.id)
+                selected.length === claimable.length
+                  ? []
+                  : claimable.map((entry) => entry.id),
               )
             }
           >
-            {selected.length === claimable.length ? "Clear selection" : "Select all unclaimed"}
+            {selected.length === claimable.length
+              ? "Clear selection"
+              : "Select all unclaimed"}
           </Button>
         )}
       </div>
@@ -98,7 +112,8 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
 
       <ul className="space-y-3">
         {entries.map((entry) => {
-          const selectable = entry.deletedAt === null && entry.settlementStatus === null;
+          const selectable =
+            entry.deletedAt === null && entry.settlementStatus === null;
           return (
             <li key={entry.id}>
               <Card
@@ -129,11 +144,14 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
                     </Badge>
                   )}
                   {entry.deletedAt && (
-                    <Badge variant="outline" className="text-2xs">removed</Badge>
+                    <Badge variant="outline" className="text-2xs">
+                      removed
+                    </Badge>
                   )}
                   {entry.isNegativeMargin && (
                     <Badge className="gap-1 bg-warning/15 text-warning text-2xs">
-                      <AlertTriangle className="size-3" aria-hidden /> below cost
+                      <AlertTriangle className="size-3" aria-hidden /> below
+                      cost
                     </Badge>
                   )}
                 </div>
@@ -141,7 +159,9 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
                 <dl className="space-y-1.5 text-sm">
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">Buyer paid</dt>
-                    <dd className="tabular-nums">{formatCurrency(entry.buyerPaidPaise)}</dd>
+                    <dd className="tabular-nums">
+                      {formatCurrency(entry.buyerPaidPaise)}
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">Payable</dt>
@@ -151,16 +171,22 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
                   </div>
                   <div className="flex justify-between gap-4 border-t border-border pt-1.5 font-medium">
                     <dt>Platform net</dt>
-                    <dd className="tabular-nums">{formatCurrency(entry.platformNetPaise)}</dd>
+                    <dd className="tabular-nums">
+                      {formatCurrency(entry.platformNetPaise)}
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-4 pt-1 text-xs text-muted-foreground">
                     <dt>Commission</dt>
-                    <dd className="tabular-nums">{formatCurrency(entry.commissionPaise)}</dd>
+                    <dd className="tabular-nums">
+                      {formatCurrency(entry.commissionPaise)}
+                    </dd>
                   </div>
                   {entry.campaignCostPaise > 0 && (
                     <div className="flex justify-between gap-4 text-xs text-muted-foreground">
                       <dt>Campaign cost</dt>
-                      <dd className="tabular-nums">−{formatCurrency(entry.campaignCostPaise)}</dd>
+                      <dd className="tabular-nums">
+                        −{formatCurrency(entry.campaignCostPaise)}
+                      </dd>
                     </div>
                   )}
                 </dl>
@@ -176,9 +202,13 @@ export function SettleEntries({ orgId, entries }: { orgId: string; entries: Ledg
         <div className="sticky bottom-tabbar z-10 -mx-4 border-t border-border bg-background/95 p-4 backdrop-blur md:mx-0 md:rounded-lg md:border">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm">
-              <span className="font-semibold tabular-nums">{formatCurrency(selectedTotal)}</span>
+              <span className="font-semibold tabular-nums">
+                {formatCurrency(selectedTotal)}
+              </span>
               <span className="text-muted-foreground">
-                {" "}across {selected.length} {selected.length === 1 ? "entry" : "entries"}
+                {" "}
+                across {selected.length}{" "}
+                {selected.length === 1 ? "entry" : "entries"}
               </span>
             </p>
             <Button onClick={settle} disabled={isSaving}>

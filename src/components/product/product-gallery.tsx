@@ -28,7 +28,15 @@ export function ProductGallery(product: Product) {
   const media =
     product.media.length > 0
       ? product.media
-      : [{ id: "cover", kind: "IMAGE" as const, ref: product.thumbnail, description: null, isThumbnail: true }];
+      : [
+          {
+            id: "cover",
+            kind: "IMAGE" as const,
+            ref: product.thumbnail,
+            description: null,
+            isThumbnail: true,
+          },
+        ];
 
   // Zoom, pinch, and the lightbox are photograph behaviours; a video slide owns its own
   // gestures. Keeping a separate list of the photographs is what lets the lightbox stay
@@ -37,7 +45,8 @@ export function ProductGallery(product: Product) {
   const activeItem = media[activeIndex] ?? media[0];
   const isVideoSlide = activeItem.kind === "YOUTUBE";
   const photographIndexOf = (mediaIndex: number) =>
-    media.slice(0, mediaIndex + 1).filter((item) => item.kind === "IMAGE").length - 1;
+    media.slice(0, mediaIndex + 1).filter((item) => item.kind === "IMAGE")
+      .length - 1;
 
   // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -48,7 +57,7 @@ export function ProductGallery(product: Product) {
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
+        touch2.clientY - touch1.clientY,
       );
       setTouchStart(distance);
     } else if (e.touches.length === 1) {
@@ -62,13 +71,13 @@ export function ProductGallery(product: Product) {
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
+        touch2.clientY - touch1.clientY,
       );
       setTouchEnd(distance);
 
       const newScale = Math.max(
         1,
-        Math.min(3, scale * (distance / touchStart))
+        Math.min(3, scale * (distance / touchStart)),
       );
       setScale(newScale);
       setTouchStart(distance);
@@ -132,7 +141,8 @@ export function ProductGallery(product: Product) {
 
   // Mouse hover zoom for desktop
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!imageContainerRef.current || window.innerWidth < 768 || isVideoSlide) return;
+    if (!imageContainerRef.current || window.innerWidth < 768 || isVideoSlide)
+      return;
 
     const rect = imageContainerRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -217,7 +227,10 @@ export function ProductGallery(product: Product) {
                       src={item.ref}
                       // The org's own words when they exist; a position is not a
                       // description (R7).
-                      alt={item.description ?? `${product.name} - Image ${index + 1}`}
+                      alt={
+                        item.description ??
+                        `${product.name} - Image ${index + 1}`
+                      }
                       fill
                       className="object-cover select-none"
                       loading={index === 0 ? "eager" : "lazy"}
@@ -302,11 +315,17 @@ export function ProductGallery(product: Product) {
               }`}
               aria-label={
                 item.description ??
-                (item.kind === "YOUTUBE" ? `Video ${index + 1}` : `Image ${index + 1}`)
+                (item.kind === "YOUTUBE"
+                  ? `Video ${index + 1}`
+                  : `Image ${index + 1}`)
               }
             >
               <Image
-                src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
+                src={
+                  item.kind === "YOUTUBE"
+                    ? youtubePosterUrl(item.ref)
+                    : item.ref
+                }
                 alt=""
                 fill
                 className="object-cover"
@@ -316,7 +335,10 @@ export function ProductGallery(product: Product) {
               {/* A video is identifiable before it is opened, without hover (R4). */}
               {item.kind === "YOUTUBE" && (
                 <span className="absolute inset-0 z-10 flex items-center justify-center bg-scrim/40">
-                  <Play className="size-5 fill-hero-foreground text-hero-foreground" aria-hidden />
+                  <Play
+                    className="size-5 fill-hero-foreground text-hero-foreground"
+                    aria-hidden
+                  />
                 </span>
               )}
               {/* Active indicator */}

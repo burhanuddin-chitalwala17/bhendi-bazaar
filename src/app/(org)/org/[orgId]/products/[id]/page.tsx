@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ProductsView } from "@/admin/products/ProductsView";
+import { ProductsView } from "@/components/product/console/ProductsView";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 
 export default async function OrgProductViewPage({
@@ -17,7 +17,11 @@ export default async function OrgProductViewPage({
 
   return (
     <Suspense>
-      <ProductsView product={product} category={product.category} org={product.org} />
+      <ProductsView
+        product={product}
+        category={product.category}
+        org={product.org}
+      />
     </Suspense>
   );
 }

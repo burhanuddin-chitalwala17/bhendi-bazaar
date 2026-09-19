@@ -23,16 +23,22 @@ export interface OfferRow {
   isActive: boolean;
   usageLimit: number | null;
   usageCount: number;
-  targets: Array<{ category: { name: string } | null; product: { name: string } | null }>;
+  targets: Array<{
+    category: { name: string } | null;
+    product: { name: string } | null;
+  }>;
 }
 
 /** What the offer takes off, in the terms it was written in. */
 function value(offer: OfferRow): string {
-  if (offer.valueType === "PERCENT") return `${(offer.percentBps ?? 0) / 100}% off`;
+  if (offer.valueType === "PERCENT")
+    return `${(offer.percentBps ?? 0) / 100}% off`;
   if (offer.valueType === "AMOUNT_OFF") {
     // Same figure, two meanings — say which (promotions D5).
     const amount = formatCurrency(offer.amountOffPaise ?? 0);
-    return offer.trigger === "CODE" ? `${amount} off the order` : `${amount} off each item`;
+    return offer.trigger === "CODE"
+      ? `${amount} off the order`
+      : `${amount} off each item`;
   }
   return `${formatCurrency(offer.fixedPricePaise ?? 0)} each`;
 }
@@ -68,8 +74,10 @@ export function OfferList({
   return (
     <ul className="grid gap-3 md:grid-cols-2">
       {offers.map((offer) => {
-        const live = offer.isActive && offer.startsAt <= now && offer.endsAt > now;
-        const exhausted = offer.usageLimit !== null && offer.usageCount >= offer.usageLimit;
+        const live =
+          offer.isActive && offer.startsAt <= now && offer.endsAt > now;
+        const exhausted =
+          offer.usageLimit !== null && offer.usageCount >= offer.usageLimit;
 
         return (
           <li key={offer.id}>
@@ -82,7 +90,9 @@ export function OfferList({
                   </Badge>
                 )}
                 {live && !exhausted && (
-                  <Badge className="bg-success/15 text-success text-2xs">Live</Badge>
+                  <Badge className="bg-success/15 text-success text-2xs">
+                    Live
+                  </Badge>
                 )}
                 {!offer.isActive && (
                   <Badge variant="outline" className="text-2xs">
@@ -107,7 +117,9 @@ export function OfferList({
               </div>
 
               <p className="text-sm">{value(offer)}</p>
-              <p className="mt-1 text-xs text-muted-foreground">Covers: {covers(offer)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Covers: {covers(offer)}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground tabular-nums">
                 {offer.startsAt.toLocaleDateString("en-IN")} –{" "}
                 {/* Markdowns migrated from the old column carry a placeholder end date
@@ -115,7 +127,8 @@ export function OfferList({
                 {offer.endsAt.getFullYear() > 2090
                   ? "no end date set"
                   : offer.endsAt.toLocaleDateString("en-IN")}
-                {offer.usageLimit !== null && ` · ${offer.usageCount}/${offer.usageLimit} used`}
+                {offer.usageLimit !== null &&
+                  ` · ${offer.usageCount}/${offer.usageLimit} used`}
               </p>
 
               <OfferActions

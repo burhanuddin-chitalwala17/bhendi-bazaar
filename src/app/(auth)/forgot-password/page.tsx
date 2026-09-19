@@ -53,7 +53,8 @@ export default function ForgotPasswordPage() {
           Reset Your Password
         </h1>
         <p className="text-xs text-muted-foreground">
-          Enter your email and we&apos;ll send you a link to reset your password.
+          Enter your email and we&apos;ll send you a link to reset your
+          password.
         </p>
       </header>
 
@@ -63,8 +64,8 @@ export default function ForgotPasswordPage() {
           <div className="space-y-2">
             <h3 className="font-semibold text-success">Check Your Email</h3>
             <p className="text-sm text-success">
-              If an account exists with this email, you&apos;ll receive a password
-              reset link shortly.
+              If an account exists with this email, you&apos;ll receive a
+              password reset link shortly.
             </p>
           </div>
           <Link href="/signin" prefetch={false}>
@@ -86,7 +87,9 @@ export default function ForgotPasswordPage() {
               {...register("email")}
             />
             {errors.email && (
-              <p className="text-2xs text-destructive">{errors.email.message}</p>
+              <p className="text-2xs text-destructive">
+                {errors.email.message}
+              </p>
             )}
           </div>
 

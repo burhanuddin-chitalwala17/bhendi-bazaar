@@ -6,6 +6,7 @@ import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function ProfileMenu() {
   const [open, setOpen] = useState(false);
@@ -17,7 +18,7 @@ export function ProfileMenu() {
   const isEmailVerified = session?.user?.isEmailVerified ?? true;
 
   useClickOutside(dropdownRef as React.RefObject<HTMLElement>, () =>
-    setOpen(false)
+    setOpen(false),
   );
 
   async function handleLogout() {
@@ -33,16 +34,18 @@ export function ProfileMenu() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <button
+      <Button
+        variant="outline"
+        size="icon"
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-card/80 text-xs font-semibold uppercase tracking-label relative"
+        className="flex h-9 w-9 items-center justify-center rounded-full border-border/70 bg-card/80 text-xs font-semibold uppercase tracking-label relative"
       >
         {user?.name?.charAt(0)?.toUpperCase() ?? "B"}
         {!isEmailVerified && (
           <span className="absolute -top-1 -right-1 h-3 w-3 bg-warning rounded-full border-2 border-background" />
         )}
-      </button>
+      </Button>
       {open && (
         <div className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-border/70 bg-popover/95 p-2 text-xs shadow-overlay">
           <Link
@@ -55,16 +58,12 @@ export function ProfileMenu() {
           >
             <p className="font-semibold">{user?.name}</p>
             {user?.email && (
-              <p className="text-2xs text-muted-foreground">
-                {user?.email}
-              </p>
+              <p className="text-2xs text-muted-foreground">{user?.email}</p>
             )}
             {!isEmailVerified && (
               <div className="mt-2 flex items-center gap-1.5 text-warning dark:text-warning">
                 <ShieldAlert className="h-3 w-3" />
-                <span className="text-2xs font-medium">
-                  Email not verified
-                </span>
+                <span className="text-2xs font-medium">Email not verified</span>
               </div>
             )}
           </Link>
@@ -98,13 +97,14 @@ export function ProfileMenu() {
           >
             Org Portal
           </Link>
-          <button
+          <Button
+            variant="ghost"
             type="button"
-            className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="mt-1 block w-full text-left text-muted-foreground hover:text-foreground"
             onClick={handleLogout}
           >
             Logout
-          </button>
+          </Button>
         </div>
       )}
     </div>

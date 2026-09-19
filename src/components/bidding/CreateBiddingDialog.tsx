@@ -52,20 +52,26 @@ export function CreateBiddingDialog({
   // say so. Debounced, so typing a word is one query.
   useEffect(() => {
     if (!open) return;
-    const timer = setTimeout(async () => {
-      setIsLoading(true);
-      try {
-        const query = term ? `?q=${encodeURIComponent(term)}` : "";
-        const response = await fetch(`${searchPath}${query}`);
-        if (response.ok) {
-          const data = (await response.json()) as { products: PickerProduct[]; total: number };
-          setResults(data.products);
-          setTotal(data.total);
+    const timer = setTimeout(
+      async () => {
+        setIsLoading(true);
+        try {
+          const query = term ? `?q=${encodeURIComponent(term)}` : "";
+          const response = await fetch(`${searchPath}${query}`);
+          if (response.ok) {
+            const data = (await response.json()) as {
+              products: PickerProduct[];
+              total: number;
+            };
+            setResults(data.products);
+            setTotal(data.total);
+          }
+        } finally {
+          setIsLoading(false);
         }
-      } finally {
-        setIsLoading(false);
-      }
-    }, term ? 250 : 0);
+      },
+      term ? 250 : 0,
+    );
     return () => clearTimeout(timer);
   }, [term, open, searchPath]);
 
@@ -86,8 +92,8 @@ export function CreateBiddingDialog({
         <DialogHeader>
           <DialogTitle>Which item?</DialogTitle>
           <DialogDescription>
-            One item per bidding event. While it runs, that item cannot be bought
-            directly.
+            One item per bidding event. While it runs, that item cannot be
+            bought directly.
           </DialogDescription>
         </DialogHeader>
 

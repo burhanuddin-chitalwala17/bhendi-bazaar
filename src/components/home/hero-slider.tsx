@@ -47,7 +47,7 @@ export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
         behavior: reducedMotion ? "auto" : "smooth",
       });
     },
-    [banners.length, reducedMotion]
+    [banners.length, reducedMotion],
   );
 
   // Auto-advance stops while a pointer or the keyboard is on the rail, and never
@@ -85,7 +85,7 @@ export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
         aria-live={stopped || held ? "polite" : "off"}
         className={cn(
           "flex no-scrollbar",
-          many && "snap-x snap-mandatory overflow-x-auto"
+          many && "snap-x snap-mandatory overflow-x-auto",
         )}
       >
         {banners.map((banner, i) => (
@@ -142,29 +142,29 @@ export function HeroSlider({ banners }: { banners: HeroBannerContent[] }) {
               — otherwise they vanish on any light-coloured artwork. */}
           <div className="absolute inset-x-0 bottom-2 flex justify-center">
             <div className="flex items-center gap-1 rounded-full bg-scrim/40 px-1 backdrop-blur-sm">
-            {banners.map((banner, i) => (
-              <Button
-                key={banner.id}
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={`Go to banner ${i + 1}`}
-                aria-current={i === index}
-                onClick={() => {
-                  setStopped(true);
-                  goTo(i);
-                }}
-                className="rounded-full hover:bg-transparent"
-              >
-                <span
-                  className={cn(
-                    "block h-1.5 rounded-full transition-all",
-                    i === index
-                      ? "w-5 bg-hero-foreground"
-                      : "w-1.5 bg-hero-foreground/50"
-                  )}
-                />
-              </Button>
+              {banners.map((banner, i) => (
+                <Button
+                  key={banner.id}
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Go to banner ${i + 1}`}
+                  aria-current={i === index}
+                  onClick={() => {
+                    setStopped(true);
+                    goTo(i);
+                  }}
+                  className="rounded-full hover:bg-transparent"
+                >
+                  <span
+                    className={cn(
+                      "block h-1.5 rounded-full transition-all",
+                      i === index
+                        ? "w-5 bg-hero-foreground"
+                        : "w-1.5 bg-hero-foreground/50",
+                    )}
+                  />
+                </Button>
               ))}
             </div>
           </div>

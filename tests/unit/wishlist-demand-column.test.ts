@@ -68,7 +68,7 @@ describe("who may read the saves", () => {
 
   it("shows the count and never sorts on it — the merge happens after the page is chosen", () => {
     const table = readFileSync(
-      "src/admin/products/productsList/components/ProductsTable.tsx",
+      "src/components/product/console/productsList/components/ProductsTable.tsx",
       "utf8"
     );
     const column = table.slice(

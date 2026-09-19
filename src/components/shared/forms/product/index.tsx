@@ -5,19 +5,28 @@ import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormController } from "../FormField";
-import { ProductMediaManager } from "@/admin/product-media-manager";
+import { ProductMediaManager } from "@/components/product/product-media-manager";
 import { ProductBasicFields } from "./ProductBasicFields";
 import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
 import { ProductAttributeFields } from "./ProductAttributeFields";
 import { ProductFlagsFields } from "./ProductFlagsFields";
-import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
+import {
+  ProductOrgShippingFields,
+  type LocationOption,
+} from "./ProductOrgShippingFields";
 import { FormActions } from "../../button-groups/FormActions";
-import type { ProductFormInput, ProductDetails } from "@/admin/products/types";
+import type {
+  ProductFormInput,
+  ProductDetails,
+} from "@/components/product/console/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import { paiseToRupees } from "@/lib/format";
-import { youtubePosterUrl, type ProductMediaInput } from "@server/catalog/media";
+import {
+  youtubePosterUrl,
+  type ProductMediaInput,
+} from "@server/catalog/media";
 import type { OrgSummary } from "@/domain/org";
 interface ProductFormProps {
   product?: ProductDetails;
@@ -25,7 +34,9 @@ interface ProductFormProps {
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
-  onSubmit: (data: ProductFormInput) => Promise<ProductDetails | null | undefined>;
+  onSubmit: (
+    data: ProductFormInput,
+  ) => Promise<ProductDetails | null | undefined>;
   onCancel: () => void;
   isSubmitting?: boolean;
   readOnly?: boolean;
@@ -44,19 +55,20 @@ export function ProductForm({
   readOnly = false,
   uploadEndpoint,
 }: ProductFormProps) {
-
   const isEdit = !!product;
 
   // One row per offered location, prefilled from the product's existing rows. A
   // location the product never stocked shows 0; zero rows are dropped on write.
   const stockByLocation = new Map(
-    (product?.stockLocations ?? []).map((row) => [row.orgAddressId, row.quantity])
+    (product?.stockLocations ?? []).map((row) => [
+      row.orgAddressId,
+      row.quantity,
+    ]),
   );
   const defaultStockRows = locations.map((location) => ({
     orgAddressId: location.id,
     quantity: stockByLocation.get(location.id) ?? 0,
   }));
-
 
   // Client validation and server error routing both come from this one call:
   // field-attributed server errors land on their fields with no code here.
@@ -68,7 +80,10 @@ export function ProductForm({
       description: product?.description || "",
       // Stored paise → rupee inputs; the service converts back on submit.
       price: product ? paiseToRupees(product.price) : 0,
-      salePrice: product?.salePrice != null ? paiseToRupees(product.salePrice) : undefined,
+      salePrice:
+        product?.salePrice != null
+          ? paiseToRupees(product.salePrice)
+          : undefined,
       currency: product?.currency || "INR",
       categoryId: product?.category?.id || "",
       orgId: product?.org?.id || "",
@@ -90,7 +105,7 @@ export function ProductForm({
       sku: product?.sku || "",
       lowStockThreshold: product?.lowStockThreshold || 10,
     },
-  }); 
+  });
   const {
     register,
     onSubmit: handleFormSubmit,
@@ -119,14 +134,17 @@ export function ProductForm({
     const typed = new Map(
       current
         .filter((row) => row && row.orgAddressId)
-        .map((row) => [row.orgAddressId, row.quantity])
+        .map((row) => [row.orgAddressId, row.quantity]),
     );
     setValue(
       "stockLocations",
       locations.map((location) => ({
         orgAddressId: location.id,
-        quantity: Number(typed.get(location.id) ?? stockByLocation.get(location.id) ?? 0) || 0,
-      }))
+        quantity:
+          Number(
+            typed.get(location.id) ?? stockByLocation.get(location.id) ?? 0,
+          ) || 0,
+      })),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationIds]);
@@ -169,7 +187,9 @@ export function ProductForm({
       {!readOnly && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Gallery</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Gallery
+            </h2>
             <FormController
               name="media"
               control={control}
@@ -197,13 +217,22 @@ export function ProductForm({
       {readOnly && product?.media && product.media.length > 0 && (
         <Card>
           <CardContent className="pt-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4">Gallery</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">
+              Gallery
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {product.media.map((item) => (
-                <div key={item.id} className="relative aspect-[3/4] rounded-lg overflow-hidden border">
+                <div
+                  key={item.id}
+                  className="relative aspect-[3/4] rounded-lg overflow-hidden border"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
+                    src={
+                      item.kind === "YOUTUBE"
+                        ? youtubePosterUrl(item.ref)
+                        : item.ref
+                    }
                     alt={item.description ?? ""}
                     className="w-full h-full object-cover"
                   />
@@ -227,16 +256,10 @@ export function ProductForm({
       />
 
       {/* Attributes */}
-      <ProductAttributeFields
-        control={control}
-        readOnly={readOnly}
-      />
+      <ProductAttributeFields control={control} readOnly={readOnly} />
 
       {/* Flags */}
-      <ProductFlagsFields
-        control={control}
-        readOnly={readOnly}
-      />
+      <ProductFlagsFields control={control} readOnly={readOnly} />
 
       {/* Org Shipping */}
       <ProductOrgShippingFields

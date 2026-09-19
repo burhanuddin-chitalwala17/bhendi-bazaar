@@ -5,12 +5,14 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import type { Prisma } from "@prisma/client";
 import { loadPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
+import { PUBLIC_PRODUCT_WHERE } from "@server/catalog/product-visibility";
 
-const PRODUCT_INCLUDE = {
+export const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
   org: { select: { id: true, name: true, code: true } },
   // The gallery, in gallery order — the only order it is ever read in (product-video
@@ -30,6 +32,17 @@ const PRODUCT_INCLUDE = {
     },
   },
 };
+
+/**
+ * One product with everything a storefront render needs, as the database returns it.
+ *
+ * Derived from `PRODUCT_INCLUDE` rather than restated: the mapper in
+ * `src/data-access-layer/products.dal.ts` took `any` before this existed, which is what
+ * let the include tree change shape without the mapper noticing.
+ */
+export type ProductWithRelations = Prisma.ProductGetPayload<{
+  include: typeof PRODUCT_INCLUDE;
+}>;
 
 /**
  * "Currently on offer" as a query.
@@ -199,7 +212,10 @@ export class ProductsRepository {
    * loading the whole join tree and pricing every row to emit a path.
    */
   async listSlugs(): Promise<Array<{ slug: string }>> {
-    return await prisma.product.findMany({ select: { slug: true } });
+    return await prisma.product.findMany({
+      where: { ...PUBLIC_PRODUCT_WHERE },
+      select: { slug: true },
+    });
   }
 
   // Nothing a storefront listing renders needs the whole catalogue at once. When the
@@ -215,7 +231,9 @@ export class ProductsRepository {
         relationLoadStrategy: "join",
         // categoryIds (a resolved subtree) wins over a bare slug, which matches
         // only the category's own products.
-        where: { ...(categoryIds
+        where: {
+          ...PUBLIC_PRODUCT_WHERE,
+          ...(categoryIds
             ? { categoryId: { in: categoryIds } }
             : { category: { slug: categorySlug } }),
           ...(search && { name: { contains: search, mode: "insensitive" } }),
@@ -238,9 +256,11 @@ export class ProductsRepository {
 
   async getProductById(id: string) {
     try {
-      const product = await prisma.product.findUnique({
+      // findFirst, not findUnique: a relation filter cannot ride along with a unique
+      // selector (ADR-0026). The primary key still serves the lookup.
+      const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { id },
+        where: { id, ...PUBLIC_PRODUCT_WHERE },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -253,9 +273,10 @@ export class ProductsRepository {
 
   async getProductBySlug(slug: string) {
     try {
-      const product = await prisma.product.findUnique({
+      // findFirst, not findUnique — see getProductById.
+      const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { slug },
+        where: { slug, ...PUBLIC_PRODUCT_WHERE },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -270,7 +291,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { slug: { not: slug } },
+        where: { slug: { not: slug }, ...PUBLIC_PRODUCT_WHERE },
         orderBy: { createdAt: "desc" },
         take: count,
         include: {
@@ -287,7 +308,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { flags: { has: "HERO" } },
+        where: { flags: { has: "HERO" }, ...PUBLIC_PRODUCT_WHERE },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -304,7 +325,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: await offerFilter(),
+        where: { ...(await offerFilter()), ...PUBLIC_PRODUCT_WHERE },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -323,7 +344,7 @@ export class ProductsRepository {
       // and price, so the full include tree here was several queries per keystroke
       // buying data the response never carried.
       const products = await prisma.product.findMany({
-        where: { name: { contains: query, mode: "insensitive" } },
+        where: { name: { contains: query, mode: "insensitive" }, ...PUBLIC_PRODUCT_WHERE },
         orderBy: { createdAt: "desc" },
         take: limit,
         select: {

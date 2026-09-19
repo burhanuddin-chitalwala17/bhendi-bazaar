@@ -27,7 +27,10 @@ import { FormInput, FormSelect } from "@/components/shared/forms/FormField";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ProductPicker, type TargetOption } from "@/components/promotions/ProductPicker";
+import {
+  ProductPicker,
+  type TargetOption,
+} from "@/components/promotions/ProductPicker";
 import { readApiError } from "@/lib/api-error";
 
 /** An offer as stored, for editing. Paise and basis points — converted on the way in. */
@@ -101,13 +104,24 @@ export function OfferForm({
           ...initial,
           code: initial.code ?? undefined,
           // Back to the units a person types (ADR-0004 keeps the storage integral).
-          percent: initial.percentBps !== null ? initial.percentBps / 100 : undefined,
-          amountOff: initial.amountOffPaise !== null ? initial.amountOffPaise / 100 : undefined,
+          percent:
+            initial.percentBps !== null ? initial.percentBps / 100 : undefined,
+          amountOff:
+            initial.amountOffPaise !== null
+              ? initial.amountOffPaise / 100
+              : undefined,
           fixedPrice:
-            initial.fixedPricePaise !== null ? initial.fixedPricePaise / 100 : undefined,
+            initial.fixedPricePaise !== null
+              ? initial.fixedPricePaise / 100
+              : undefined,
           maxDiscount:
-            initial.maxDiscountPaise !== null ? initial.maxDiscountPaise / 100 : undefined,
-          minSubtotal: initial.minSubtotalPaise > 0 ? initial.minSubtotalPaise / 100 : undefined,
+            initial.maxDiscountPaise !== null
+              ? initial.maxDiscountPaise / 100
+              : undefined,
+          minSubtotal:
+            initial.minSubtotalPaise > 0
+              ? initial.minSubtotalPaise / 100
+              : undefined,
           usageLimit: initial.usageLimit ?? undefined,
           perUserLimit: initial.perUserLimit ?? undefined,
           startsAt: toLocalInput(initial.startsAt),
@@ -141,7 +155,15 @@ export function OfferForm({
     },
   });
 
-  const { register, watch, setValue, formState, onSubmit, formError, isSubmitting } = form;
+  const {
+    register,
+    watch,
+    setValue,
+    formState,
+    onSubmit,
+    formError,
+    isSubmitting,
+  } = form;
   const trigger = watch("trigger");
   const valueType = watch("valueType");
   const categoryIds = watch("categoryIds") ?? [];
@@ -150,10 +172,18 @@ export function OfferForm({
   const isCoupon = trigger === "CODE";
   const isMarkdown = valueType === "FIXED_PRICE";
 
-  const toggle = (field: "categoryIds" | "productIds", id: string, current: string[]) =>
-    setValue(field, current.includes(id) ? current.filter((x) => x !== id) : [...current, id], {
-      shouldValidate: true,
-    });
+  const toggle = (
+    field: "categoryIds" | "productIds",
+    id: string,
+    current: string[],
+  ) =>
+    setValue(
+      field,
+      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
+      {
+        shouldValidate: true,
+      },
+    );
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
@@ -182,7 +212,9 @@ export function OfferForm({
             {...register("trigger")}
             error={formState.errors.trigger?.message}
           >
-            <option value="AUTOMATIC">Automatically — shown as the price</option>
+            <option value="AUTOMATIC">
+              Automatically — shown as the price
+            </option>
             <option value="CODE">With a coupon code</option>
           </FormSelect>
 
@@ -238,7 +270,11 @@ export function OfferForm({
               // A flat amount means two different things depending on how the offer
               // applies, and the difference is invisible until an order is placed —
               // so the label carries it rather than the documentation.
-              label={isCoupon ? "Amount off the order (₹)" : "Amount off each item (₹)"}
+              label={
+                isCoupon
+                  ? "Amount off the order (₹)"
+                  : "Amount off each item (₹)"
+              }
               required
               type="number"
               step="0.01"
@@ -384,7 +420,9 @@ export function OfferForm({
           initialTotal={productTotal}
           selectedOptions={selectedProducts}
           value={productIds}
-          onChange={(ids) => setValue("productIds", ids, { shouldValidate: true })}
+          onChange={(ids) =>
+            setValue("productIds", ids, { shouldValidate: true })
+          }
           required={isMarkdown}
           error={formState.errors.productIds?.message}
         />
@@ -394,10 +432,22 @@ export function OfferForm({
           without scrolling a long form to its foot (ADR-0016). */}
       <div className="sticky bottom-tabbar z-10 -mx-4 border-t border-border bg-background/95 p-4 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
         <div className="flex gap-3">
-          <Button type="submit" disabled={isSubmitting} className="flex-1 md:flex-none">
-            {isSubmitting ? "Saving…" : isEdit ? "Save changes" : "Create offer"}
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 md:flex-none"
+          >
+            {isSubmitting
+              ? "Saving…"
+              : isEdit
+                ? "Save changes"
+                : "Create offer"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => router.push(returnTo)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push(returnTo)}
+          >
             Cancel
           </Button>
         </div>

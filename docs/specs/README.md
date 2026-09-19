@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-09-12
+- **Verified:** 2026-09-19
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -38,10 +38,14 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [bidding](bidding/) | An organisation puts one product up for timed bidding and shares a link; the platform sells it directly and records what it fetched | 8 | bidding, catalog, checkout, payouts | ✅ Implemented — PR-89 |
 | [international-phone](international-phone/) | Every phone field accepts a number from any country, and one number has one spelling | — | identity, catalog, checkout, bidding | ✅ Implemented — PR-102 |
 | [shared-phone-numbers](shared-phone-numbers/) | One phone number backs any number of accounts; email alone identifies one | — | identity | ✅ Implemented — PR-103 |
+| [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog | 📝 Draft — **parent of 7 subfeatures** |
+| [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain | 📝 Draft |
 
 ### Subfeatures
 
-[multi-vendor-marketplace](multi-vendor-marketplace/) is the one parent folder here. It grew out of a single question about shipping origin and turned into nine subfeatures, because the data-model work and the portal work are the same change seen from two sides. Its `spec.md` is the programme overview; each subfeature carries its own `spec.md`, and a `trd.md` is written when that subfeature is picked up rather than all nine up front.
+Two parent folders here. [multi-vendor-marketplace](multi-vendor-marketplace/) grew out of a single question about shipping origin and turned into nine subfeatures, because the data-model work and the portal work are the same change seen from two sides. [org-storefront](org-storefront/) is seven subfeatures for the same reason in reverse: giving one organisation a public face touches its identity, the product page, the catalogue query, the seller portal and the crawl rules, and none of those is reviewable inside the others.
+
+In both, `spec.md` is the programme overview and each subfeature carries its own `spec.md`; a subfeature's `trd.md` is written when that subfeature is picked up rather than all of them up front. `org-storefront` also carries a parent `trd.md`, because the decisions its subfeatures inherit — where a storefront lives, what stays canonical, what a public query may select — are settled once for the programme rather than re-argued six times.
 
 ### Sequencing
 
@@ -52,5 +56,9 @@ Phase 3 is strictly ordered: [product-weight-and-rates](product-weight-and-rates
 [multi-vendor-marketplace](multi-vendor-marketplace/) also depends on [inventory-reservation](inventory-reservation/) from Phase 2, which is the one cross-phase dependency here: it moves the stock guard's target, so the guard has to exist first. Its `trd.md` D7 records why the guard is not simply written in its final place.
 
 Phase 7 is a pair: [promotions](promotions/) must land before [org-payouts](org-payouts/). The ledger's arithmetic reads a discount's funding split, so the thing that produces the split has to exist before the thing that settles from it — and building the ledger first would mean writing entries whose discount attribution is a constant zero, then migrating them.
+
+Phase 9 has two entry points. [org-withdrawal](org-storefront/org-withdrawal/) depends on nothing and closes a gap that exists today — `Org.isActive` is read by nothing a buyer sees, so the platform's only compliance control is one it does not have; publishing ungated public pages is defensible only once it works. [org-handle](org-storefront/org-handle/) blocks every remaining subfeature, since nothing can link to a storefront that has no address. [seller-identity](org-storefront/seller-identity/) is the smallest slice with standalone value, can ship before any storefront page exists, and is also the channel most storefronts will be found through — a buyer already looking at a product is the platform's own route into its seller's shop, needing nothing shared and nothing indexed. It also reverses a decision recorded in [multi-vendor-marketplace](multi-vendor-marketplace/spec.md) — *"one storefront, many vendors"* — which needs an ADR before the first PR, not after.
+
+Phase 10's [seo](seo/) deliberately overlaps Phase 9. [storefront-discovery](org-storefront/storefront-discovery/) states the discovery rules for `/store/<handle>`; [seo](seo/) states them for the marketplace. Neither imports the other, because a storefront's rules are about a shop being found and the marketplace's are about goods being found, and collapsing them would make one document answerable for both. What they must agree on — that a product keeps one address — is recorded as a requirement in both.
 
 [shipping-fulfilment](shipping-fulfilment/) carries an open product decision — whether to book real shipments or stop quoting live rates — stated in its `spec.md`. It is the one item here that cannot be resolved by engineering judgement.

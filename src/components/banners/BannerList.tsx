@@ -26,7 +26,10 @@ import type { AdminBanner } from "@server/catalog/banner.types";
 /** Order as written, and membership regardless of order. */
 const sequenceOf = (list: AdminBanner[]) => list.map((b) => b.id).join("|");
 const membersOf = (list: AdminBanner[]) =>
-  list.map((b) => b.id).sort().join("|");
+  list
+    .map((b) => b.id)
+    .sort()
+    .join("|");
 
 /** 40px on touch, the tighter desktop size from `sm`. */
 const TAP = "size-10 sm:size-9";
@@ -66,7 +69,9 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
       startTransition(() => router.refresh());
       return true;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Something went wrong");
+      toast.error(
+        error instanceof Error ? error.message : "Something went wrong",
+      );
       return false;
     } finally {
       setBusy(false);
@@ -143,7 +148,13 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
 
                 {banner.imageUrl ? (
                   <div className="relative aspect-banner-source w-24 shrink-0 overflow-hidden rounded-field">
-                    <Image src={banner.imageUrl} alt="" fill sizes="6rem" className="object-cover" />
+                    <Image
+                      src={banner.imageUrl}
+                      alt=""
+                      fill
+                      sizes="6rem"
+                      className="object-cover"
+                    />
                   </div>
                 ) : (
                   <div className="flex aspect-banner-source w-24 shrink-0 items-center justify-center rounded-field bg-muted text-muted-foreground">
@@ -159,7 +170,9 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   )}
                   <p className="truncate font-medium">{banner.title}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <StatusBadge status={banner.isActive ? "inStock" : "outOfStock"}>
+                    <StatusBadge
+                      status={banner.isActive ? "inStock" : "outOfStock"}
+                    >
                       {banner.isActive ? "Live" : "Down"}
                     </StatusBadge>
                     <span className="text-2xs text-muted-foreground">
@@ -176,8 +189,17 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     disabled={frozen}
                     onCheckedChange={(on) => setActive(banner, on)}
                   />
-                  <Button asChild variant="outline" size="icon" aria-label={`Edit ${banner.title}`} className={TAP}>
-                    <Link href={`/admin/banners/${banner.id}/edit`} prefetch={false}>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Edit ${banner.title}`}
+                    className={TAP}
+                  >
+                    <Link
+                      href={`/admin/banners/${banner.id}/edit`}
+                      prefetch={false}
+                    >
                       <Pencil />
                     </Link>
                   </Button>
@@ -203,17 +225,24 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
         ))}
       </ul>
 
-      <Dialog open={confirming !== null} onOpenChange={(open) => !open && setConfirming(null)}>
+      <Dialog
+        open={confirming !== null}
+        onOpenChange={(open) => !open && setConfirming(null)}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Delete this banner?</DialogTitle>
             <DialogDescription>
-              “{confirming?.title}” and its buttons are removed for good. Taking it down
-              with the switch keeps the copy and artwork for next time.
+              “{confirming?.title}” and its buttons are removed for good. Taking
+              it down with the switch keeps the copy and artwork for next time.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setConfirming(null)} className="h-10">
+            <Button
+              variant="outline"
+              onClick={() => setConfirming(null)}
+              className="h-10"
+            >
               Keep it
             </Button>
             <Button

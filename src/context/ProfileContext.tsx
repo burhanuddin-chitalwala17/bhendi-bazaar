@@ -44,7 +44,7 @@ interface ProfileContextValue {
 }
 
 const ProfileContext = createContext<ProfileContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
@@ -85,7 +85,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to load your profile right now."
+          : "Unable to load your profile right now.",
       );
     } finally {
       setLoading(false);
@@ -171,7 +171,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         setSaving(false);
       }
     },
-    [data]
+    [data],
   );
 
   // Resend verification email
@@ -207,14 +207,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     async (input: { name?: string; email?: string; mobile?: string }) => {
       await updateProfile(input);
     },
-    [updateProfile]
+    [updateProfile],
   );
 
   const updateProfilePic = useCallback(
     async (profilePic: string) => {
       await updateProfile({ profilePic });
     },
-    [updateProfile]
+    [updateProfile],
   );
 
   const value: ProfileContextValue = {
