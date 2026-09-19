@@ -21,7 +21,11 @@ interface ContactMessageFormProps {
  * The email half of Contact us: a subject and a message, emailed to the store.
  * A guest also gives an email, because otherwise there is nobody to reply to.
  */
-export function ContactMessageForm({ signedIn, onSent, onCancel }: ContactMessageFormProps) {
+export function ContactMessageForm({
+  signedIn,
+  onSent,
+  onCancel,
+}: ContactMessageFormProps) {
   const {
     register,
     onSubmit,
@@ -29,10 +33,14 @@ export function ContactMessageForm({ signedIn, onSent, onCancel }: ContactMessag
     isSubmitting,
     formState: { errors },
   } = useServerForm<GuestContactMessageFormValues>({
-    schema: (signedIn ? contactMessageSchema : guestContactMessageSchema) as never,
+    schema: (signedIn
+      ? contactMessageSchema
+      : guestContactMessageSchema) as never,
     defaultValues: { subject: "", message: "", email: "" },
     submit: ({ subject, message, email }) =>
-      sendContactMessage(signedIn ? { subject, message } : { subject, message, email }),
+      sendContactMessage(
+        signedIn ? { subject, message } : { subject, message, email },
+      ),
     successMessage: "Message sent — we will get back to you.",
     onSuccess: onSent,
     fallbackMessage: "Could not send your message. Please try again.",

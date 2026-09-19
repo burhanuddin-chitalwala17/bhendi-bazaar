@@ -3,8 +3,8 @@
 import { Suspense } from "react";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
-import { ProductsContainer } from "@/admin/products/productsList";
-import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
+import { ProductsContainer } from "@/components/product/console/productsList";
+import { ProductsTableSkeleton } from "@/components/product/console/productsList/components/ProductsTableSkeleton";
 import type { Metadata } from "next";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
@@ -43,8 +43,8 @@ export default async function ProductsPage({
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
           <p className="text-muted-foreground">
-            Every organisation&apos;s catalogue, for support — products are managed in
-            each org&apos;s own portal
+            Every organisation&apos;s catalogue, for support — products are
+            managed in each org&apos;s own portal
           </p>
         </div>
       </div>
@@ -72,8 +72,8 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
       params.status === "active"
         ? true
         : params.status === "inactive"
-        ? false
-        : undefined,
+          ? false
+          : undefined,
     sortBy: params.sort as "name" | "createdAt" | "price" | "stock" | undefined,
     sortOrder: params.order,
     lowStock: params.lowStock === "true" ? true : undefined,

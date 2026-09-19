@@ -38,7 +38,7 @@ export function CategoryLanes({ categories }: { categories: Category[] }) {
               <span
                 className={cn(
                   "relative size-14 overflow-hidden rounded-full border border-border/70 bg-gradient-to-br sm:size-16",
-                  CATEGORY_ACCENTS[category.accent].heroGradient
+                  CATEGORY_ACCENTS[category.accent].heroGradient,
                 )}
               >
                 {/* Centre crop of the 1200×600 hero — a square thumbnail column

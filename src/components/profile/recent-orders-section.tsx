@@ -46,7 +46,8 @@ export function RecentOrdersSection({ orders }: RecentOrdersSectionProps) {
                     })}
                   </p>
                   <p className="text-muted-foreground">
-                    {order.address.addressLine1} · {order.shipments.length} items
+                    {order.address.addressLine1} · {order.shipments.length}{" "}
+                    items
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -60,4 +61,3 @@ export function RecentOrdersSection({ orders }: RecentOrdersSectionProps) {
     </Card>
   );
 }
-

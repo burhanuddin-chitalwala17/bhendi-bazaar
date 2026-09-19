@@ -29,25 +29,25 @@ export function StockStatus({
   if (variant === "warn-only" && !isOutOfStock && !isLowStock) return null;
 
   const status = isOutOfStock
-    ? { color: "bg-destructive", textColor: "text-destructive", label: "Out of Stock" }
-    : isLowStock
     ? {
-        color: "bg-warning",
-        textColor: "text-warning",
-        label: isXs ? `Only ${stock} left` : `Only ${stock} left in stock!`,
+        color: "bg-destructive",
+        textColor: "text-destructive",
+        label: "Out of Stock",
       }
-    : {
-        color: "bg-success",
-        textColor: "text-success",
-        label: "In Stock",
-      };
+    : isLowStock
+      ? {
+          color: "bg-warning",
+          textColor: "text-warning",
+          label: isXs ? `Only ${stock} left` : `Only ${stock} left in stock!`,
+        }
+      : {
+          color: "bg-success",
+          textColor: "text-success",
+          label: "In Stock",
+        };
 
   const dotSize = isXs ? "h-1 w-1" : size === "sm" ? "h-1.5 w-1.5" : "h-2 w-2";
-  const textSize = isXs
-    ? "text-3xs"
-    : size === "sm"
-    ? "text-xs"
-    : "text-sm";
+  const textSize = isXs ? "text-3xs" : size === "sm" ? "text-xs" : "text-sm";
 
   return (
     <div className="space-y-1">
@@ -56,7 +56,7 @@ export function StockStatus({
           className={cn(
             "inline-block shrink-0 rounded-full",
             status.color,
-            dotSize
+            dotSize,
           )}
         />
         {showText && (

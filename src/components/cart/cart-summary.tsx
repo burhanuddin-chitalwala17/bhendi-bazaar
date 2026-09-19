@@ -43,7 +43,9 @@ export function CartSummary() {
         variant="outline"
         className="w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
       >
-        <Link href="/" prefetch={false}>Add More</Link>
+        <Link href="/" prefetch={false}>
+          Add More
+        </Link>
       </Button>
       <Button
         disabled={!hasItems}

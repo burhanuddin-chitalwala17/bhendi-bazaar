@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { X, Mail, AlertCircle, CheckCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 export function EmailVerificationBanner() {
   const { data: session, status, update } = useSession();
@@ -17,8 +18,14 @@ export function EmailVerificationBanner() {
       });
       const result = await response.json();
       return response.ok
-        ? { success: true, message: result.message || "Verification email sent!" }
-        : { success: false, message: result.error || "Failed to send verification email" };
+        ? {
+            success: true,
+            message: result.message || "Verification email sent!",
+          }
+        : {
+            success: false,
+            message: result.error || "Failed to send verification email",
+          };
     } catch (error) {
       console.error("Failed to resend verification email:", error);
       return {
@@ -42,7 +49,9 @@ export function EmailVerificationBanner() {
 
     // Show banner if not verified and user hasn't dismissed it
     if (status === "authenticated" && !isEmailVerified) {
-      const dismissed = sessionStorage.getItem("email-verification-banner-dismissed");
+      const dismissed = sessionStorage.getItem(
+        "email-verification-banner-dismissed",
+      );
       if (!dismissed) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- reflects sessionStorage, an external system
         setIsVisible(true);
@@ -56,7 +65,7 @@ export function EmailVerificationBanner() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const verification = params.get("verification");
-    
+
     if (verification === "success") {
       update(); // Re-read isEmailVerified into the session token (auth-config jwt update)
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reacts to the URL, which we also rewrite below
@@ -85,7 +94,7 @@ export function EmailVerificationBanner() {
     const result = await resendVerificationEmail();
     setResendMessage(result.message);
     setIsResending(false);
-    
+
     setTimeout(() => setResendMessage(null), 5000);
   };
 
@@ -105,28 +114,32 @@ export function EmailVerificationBanner() {
               </p>
               <p className="text-xs text-warning/80 mt-0.5">
                 Check your inbox for a verification link or{" "}
-                <button
+                <Button
+                  variant="link"
                   onClick={handleResendEmail}
                   disabled={isResending}
-                  className="underline hover:no-underline font-semibold disabled:opacity-50"
+                  className="underline hover:no-underline font-semibold"
                 >
                   {isResending ? "Sending..." : "resend email"}
-                </button>
+                </Button>
               </p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleClose}
             className="-m-2 flex h-10 w-10 items-center justify-center text-warning hover:text-warning/80"
             aria-label="Dismiss"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
-        
+
         {resendMessage && (
           <div className="mt-2 flex items-center gap-2 text-sm">
-            {resendMessage.includes("success") || resendMessage.includes("sent") ? (
+            {resendMessage.includes("success") ||
+            resendMessage.includes("sent") ? (
               <>
                 <CheckCircle className="h-4 w-4 text-success" />
                 <span className="text-success">{resendMessage}</span>

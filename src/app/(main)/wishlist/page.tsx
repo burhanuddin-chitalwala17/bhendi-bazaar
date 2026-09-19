@@ -28,11 +28,10 @@ export default async function WishlistPage() {
           <Heart className="size-6 text-muted-foreground" />
           <p className="text-sm font-semibold">Sign in to see your wishlist</p>
           <p className="max-w-sm text-2xs text-muted-foreground">
-            Products you save with the heart are kept on your account, on every device.
+            Products you save with the heart are kept on your account, on every
+            device.
           </p>
-          <SignInButton
-            className="h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow"
-          />
+          <SignInButton className="h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow" />
         </div>
       </PageShell>
     );

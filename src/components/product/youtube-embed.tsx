@@ -24,7 +24,11 @@ interface YouTubeEmbedProps {
  * whoever uploaded it and can be deleted, made private, or un-embedded at any time
  * (product-video R13). A failed poster is the only signal available before playing.
  */
-export function YouTubeEmbed({ ref_, description, productName }: YouTubeEmbedProps) {
+export function YouTubeEmbed({
+  ref_,
+  description,
+  productName,
+}: YouTubeEmbedProps) {
   const [playing, setPlaying] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -32,7 +36,9 @@ export function YouTubeEmbed({ ref_, description, productName }: YouTubeEmbedPro
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted px-4 text-center">
         <VideoOff className="size-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm font-medium text-muted-foreground">This video is no longer available</p>
+        <p className="text-sm font-medium text-muted-foreground">
+          This video is no longer available
+        </p>
       </div>
     );
   }
@@ -72,7 +78,9 @@ export function YouTubeEmbed({ ref_, description, productName }: YouTubeEmbedPro
           event.stopPropagation();
           setPlaying(true);
         }}
-        aria-label={description ? `Play: ${description}` : `Play video of ${productName}`}
+        aria-label={
+          description ? `Play: ${description}` : `Play video of ${productName}`
+        }
         className="absolute left-1/2 top-1/2 z-20 size-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/30 bg-scrim/80 backdrop-blur-sm hover:bg-hero/90"
       >
         <Play className="size-6 fill-hero-foreground text-hero-foreground" />

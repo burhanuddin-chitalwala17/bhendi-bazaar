@@ -8,15 +8,15 @@
 import { use, useState } from "react";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { adminOrderApiClient } from "@/services/admin/orderApiClient";
-import { ShipmentTrackingForm } from "@/components/admin/ShipmentTrackingForm";
+import { ShipmentTrackingForm } from "@/components/shipping/ShipmentTrackingForm";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { ErrorState } from "@/components/shared/states/ErrorState";
 import { formatPhone } from "@server/shared/phone";
-import { 
-  Package, 
-  MapPin, 
-  CreditCard, 
+import {
+  Package,
+  MapPin,
+  CreditCard,
   Truck,
   Calendar,
   User,
@@ -24,10 +24,11 @@ import {
   Phone,
   CheckCircle2,
   Clock,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 
 export default function AdminOrderDetailsPage({
   params,
@@ -36,19 +37,18 @@ export default function AdminOrderDetailsPage({
 }) {
   const resolvedParams = use(params);
   const { orderId } = resolvedParams;
-  const [editingShipmentId, setEditingShipmentId] = useState<string | null>(null);
+  const [editingShipmentId, setEditingShipmentId] = useState<string | null>(
+    null,
+  );
 
   const {
     data: order,
     loading,
     error,
     refetch,
-  } = useAsyncData(
-    () => adminOrderApiClient.getOrderById(orderId),
-    {
-      refetchDependencies: [orderId],
-    }
-  );
+  } = useAsyncData(() => adminOrderApiClient.getOrderById(orderId), {
+    refetchDependencies: [orderId],
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -77,10 +77,7 @@ export default function AdminOrderDetailsPage({
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <SectionHeader
-          overline="Order Details"
-          title={`Order ${order.code}`}
-        />
+        <SectionHeader overline="Order Details" title={`Order ${order.code}`} />
         <div className="flex items-center gap-2">
           <span
             className={cn(
@@ -88,8 +85,8 @@ export default function AdminOrderDetailsPage({
               order.paymentStatus === "paid"
                 ? "bg-success/15 text-success"
                 : order.paymentStatus === "failed"
-                ? "bg-destructive/15 text-destructive"
-                : "bg-warning/15 text-warning"
+                  ? "bg-destructive/15 text-destructive"
+                  : "bg-warning/15 text-warning",
             )}
           >
             {order.paymentStatus}
@@ -100,8 +97,8 @@ export default function AdminOrderDetailsPage({
               order.status === "confirmed"
                 ? "bg-info/15 text-info"
                 : order.status === "processing"
-                ? "bg-warning/15 text-warning"
-                : "bg-muted text-foreground"
+                  ? "bg-warning/15 text-warning"
+                  : "bg-muted text-foreground",
             )}
           >
             {order.status}
@@ -123,7 +120,6 @@ export default function AdminOrderDetailsPage({
                 <User className="w-4 h-4 text-muted-foreground/70 mt-0.5" />
                 <div>
                   <p className="font-medium">{address?.fullName || "Guest"}</p>
-                 
                 </div>
               </div>
               {address?.mobile && (
@@ -179,9 +175,7 @@ export default function AdminOrderDetailsPage({
               {(order as any).discount > 0 && (
                 <div className="flex justify-between text-success">
                   <span>Discount</span>
-                  <span>
-                    -{formatCurrency((order as any).discount)}
-                  </span>
+                  <span>-{formatCurrency((order as any).discount)}</span>
                 </div>
               )}
               <div className="border-t pt-2 flex justify-between text-base font-semibold">
@@ -201,7 +195,9 @@ export default function AdminOrderDetailsPage({
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Payment Method</span>
-              <span className="font-medium">{order.paymentMethod || "N/A"}</span>
+              <span className="font-medium">
+                {order.paymentMethod || "N/A"}
+              </span>
             </div>
             {order.paymentId && (
               <div className="flex justify-between text-xs">
@@ -252,8 +248,8 @@ export default function AdminOrderDetailsPage({
                     shipment.status === "shipped"
                       ? "bg-success/15 text-success"
                       : shipment.status === "pending"
-                      ? "bg-warning/15 text-warning"
-                      : "bg-muted text-foreground"
+                        ? "bg-warning/15 text-warning"
+                        : "bg-muted text-foreground",
                   )}
                 >
                   {shipment.status}
@@ -271,7 +267,7 @@ export default function AdminOrderDetailsPage({
                       </span>
                       <span className="font-medium">
                         {formatCurrency(
-                          (item.salePrice ?? item.price) * item.quantity
+                          (item.salePrice ?? item.price) * item.quantity,
                         )}
                       </span>
                     </div>
@@ -286,15 +282,26 @@ export default function AdminOrderDetailsPage({
                     <h5 className="font-medium text-sm text-primary">
                       Tracking Information
                     </h5>
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => setEditingShipmentId(shipment.id)}
-                      className="text-xs text-primary hover:text-primary font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-primary/15 transition-colors"
+                      className="text-xs text-primary hover:text-primary flex items-center gap-1 px-2 py-1 rounded hover:bg-primary/15"
                     >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
                       </svg>
                       Edit
-                    </button>
+                    </Button>
                   </div>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
@@ -328,25 +335,32 @@ export default function AdminOrderDetailsPage({
                   <div className="flex items-center justify-between mb-3">
                     <h5 className="font-medium text-sm text-warning flex items-center gap-2">
                       <Clock className="w-4 h-4" />
-                      {shipment.trackingNumber ? 'Update Tracking' : 'Tracking Required - Update After Creating on Shiprocket'}
+                      {shipment.trackingNumber
+                        ? "Update Tracking"
+                        : "Tracking Required - Update After Creating on Shiprocket"}
                     </h5>
                     {shipment.trackingNumber && (
-                      <button
+                      <Button
+                        variant="ghost"
                         onClick={() => setEditingShipmentId(null)}
-                        className="text-xs text-muted-foreground hover:text-foreground font-medium"
+                        className="text-xs text-muted-foreground hover:text-foreground"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     )}
                   </div>
                   <ShipmentTrackingForm
                     shipmentId={shipment.id}
                     shipmentCode={shipment.code}
                     courierName={shipment.courierName}
-                    existingTracking={shipment.trackingNumber ? {
-                      trackingNumber: shipment.trackingNumber,
-                      trackingUrl: shipment.trackingUrl || '',
-                    } : undefined}
+                    existingTracking={
+                      shipment.trackingNumber
+                        ? {
+                            trackingNumber: shipment.trackingNumber,
+                            trackingUrl: shipment.trackingUrl || "",
+                          }
+                        : undefined
+                    }
                     onSuccess={() => {
                       refetch();
                       setEditingShipmentId(null);

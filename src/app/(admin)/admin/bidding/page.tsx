@@ -72,9 +72,16 @@ export default async function AdminBiddingPage() {
                       : "No bids"}
                 </p>
 
-                <Button asChild variant="outline" size="sm" className="mt-auto w-fit">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="mt-auto w-fit"
+                >
                   <Link href={`/admin/bidding/${event.id}`}>
-                    {event.phase === "ENDED" ? "Record the outcome" : "View bidders"}
+                    {event.phase === "ENDED"
+                      ? "Record the outcome"
+                      : "View bidders"}
                   </Link>
                 </Button>
               </Card>

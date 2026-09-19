@@ -2,7 +2,7 @@
 
 import { UseFormRegister, FieldErrors, UseFormSetValue } from "react-hook-form";
 import { FormInput, FormSelect, FormTextarea } from "../FormField";
-import type { ProductFormInput } from "@/admin/products/types";
+import type { ProductFormInput } from "@/components/product/console/types";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -47,7 +47,9 @@ export function ProductBasicFields({
             disabled={readOnly}
             placeholder="Detailed product description..."
             rows={4}
-            {...register("description", { required: "Description is required" })}
+            {...register("description", {
+              required: "Description is required",
+            })}
             error={errors.description?.message}
           />
         </div>

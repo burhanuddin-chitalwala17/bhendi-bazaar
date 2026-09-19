@@ -22,14 +22,25 @@ export default async function AdminOrgPayoutPage({
 }) {
   await requirePlatformAdmin();
   const { orgId } = await params;
-  const { org, entries, unclaimedPaise, owedPaise, settlements, categoryRules, categories } =
-    await payoutsDAL.forOrg(orgId);
+  const {
+    org,
+    entries,
+    unclaimedPaise,
+    owedPaise,
+    settlements,
+    categoryRules,
+    categories,
+  } = await payoutsDAL.forOrg(orgId);
   if (!org) notFound();
 
   return (
     <div className="space-y-5">
       <div>
-        <Link href="/admin/payouts" className="text-xs text-muted-foreground hover:underline" prefetch={false}>
+        <Link
+          href="/admin/payouts"
+          className="text-xs text-muted-foreground hover:underline"
+          prefetch={false}
+        >
           ← All payouts
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">{org.name}</h1>
@@ -41,13 +52,23 @@ export default async function AdminOrgPayoutPage({
       {/* Two figures because they differ and both matter (D7). */}
       <div className="grid gap-3 sm:grid-cols-2">
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Owed</p>
-          <p className="text-xl font-semibold tabular-nums">{formatCurrency(owedPaise)}</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Owed
+          </p>
+          <p className="text-xl font-semibold tabular-nums">
+            {formatCurrency(owedPaise)}
+          </p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Unclaimed</p>
-          <p className="text-xl font-semibold tabular-nums">{formatCurrency(unclaimedPaise)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Not yet in a settlement</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Unclaimed
+          </p>
+          <p className="text-xl font-semibold tabular-nums">
+            {formatCurrency(unclaimedPaise)}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Not yet in a settlement
+          </p>
         </Card>
       </div>
 

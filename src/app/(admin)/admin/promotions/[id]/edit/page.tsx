@@ -24,7 +24,9 @@ export default async function EditPlatformOfferPage({
 
   // Products this offer already names, whichever page they would fall on.
   const selectedProducts = await productsRepository.listByIds(
-    offer.targets.flatMap((target) => (target.productId ? [target.productId] : []))
+    offer.targets.flatMap((target) =>
+      target.productId ? [target.productId] : [],
+    ),
   );
 
   return (

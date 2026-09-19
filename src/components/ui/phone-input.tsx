@@ -69,8 +69,13 @@ export function PhoneInput({
 
   const changeNumber = (typed: string) => {
     // Autofill and paste deliver the whole international number; take its country from it.
-    const international = typed.trimStart().startsWith("+") && isValidPhone(typed);
-    emit(international ? splitPhone(typed) : { country: parts.country, national: typed });
+    const international =
+      typed.trimStart().startsWith("+") && isValidPhone(typed);
+    emit(
+      international
+        ? splitPhone(typed)
+        : { country: parts.country, national: typed },
+    );
   };
 
   const changeCountry = (code: string) => {
@@ -83,13 +88,16 @@ export function PhoneInput({
         className={cn(
           "relative flex h-9 shrink-0 items-center gap-1 rounded-field border border-input px-2 text-base shadow-inset-field md:text-sm",
           "has-[select:focus-visible]:border-ring has-[select:focus-visible]:ring-[3px] has-[select:focus-visible]:ring-ring/50",
-          disabled && "opacity-50"
+          disabled && "opacity-50",
         )}
       >
         <span aria-hidden="true" className="tabular-nums">
           {parts.country} +{callingCodeOf(parts.country)}
         </span>
-        <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" />
+        <ChevronDown
+          aria-hidden="true"
+          className="size-4 text-muted-foreground"
+        />
         <select
           aria-label="Country code"
           value={parts.country}

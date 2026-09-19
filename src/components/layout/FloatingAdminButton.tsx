@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useSession } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { Shield, X } from 'lucide-react';
-import { useState } from 'react';
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { Shield, X } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function FloatingAdminButton() {
   const { data: session, status } = useSession();
@@ -12,19 +13,20 @@ export function FloatingAdminButton() {
   const [isMinimized, setIsMinimized] = useState(false);
 
   // Don't show while loading, if not admin, or already on admin pages
-  if (status === 'loading') return null;
-  if (!session?.user || session.user.platformRole !== 'ADMIN') return null;
-  if (pathname?.startsWith('/admin')) return null;
+  if (status === "loading") return null;
+  if (!session?.user || session.user.platformRole !== "ADMIN") return null;
+  if (pathname?.startsWith("/admin")) return null;
 
   if (isMinimized) {
     return (
-      <button
+      <Button
+        variant="ghost"
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-info text-primary-foreground shadow-overlay hover:bg-info/90 transition-all hover:scale-110"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-info shadow-overlay hover:bg-info/90 hover:scale-110"
         aria-label="Show admin access"
       >
         <Shield className="h-6 w-6" />
-      </button>
+      </Button>
     );
   }
 
@@ -38,13 +40,14 @@ export function FloatingAdminButton() {
       >
         Admin Dashboard
       </Link>
-      <button
+      <Button
+        variant="ghost"
         onClick={() => setIsMinimized(true)}
-        className="ml-2 rounded-full p-1 hover:bg-info/90 transition-colors"
+        className="ml-2 rounded-full p-1 hover:bg-info/90"
         aria-label="Minimize"
       >
         <X className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }

@@ -13,7 +13,9 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const ROOTS = ["src/components", "src/admin", "src/app"];
+// One components home since the consolidation — src/admin, src/org and
+// src/containers were folded into src/components by domain.
+const ROOTS = ["src/components", "src/app"];
 
 const EXEMPT = new Map([
   ["accent", "fixed-option select over the CategoryAccent enum, schema-defaulted; no reachable failure"],

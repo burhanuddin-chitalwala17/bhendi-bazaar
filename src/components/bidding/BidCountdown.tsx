@@ -23,7 +23,7 @@ export function BidCountdown({
   className?: string;
 }) {
   const [remaining, setRemaining] = useState(() =>
-    Math.max(0, new Date(endAt).getTime() - new Date(serverNow).getTime())
+    Math.max(0, new Date(endAt).getTime() - new Date(serverNow).getTime()),
   );
 
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import { Control } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { ProductFormInput } from "@/admin/products/types";
+import type { ProductFormInput } from "@/components/product/console/types";
 import { FormController } from "../FormField";
 import { ProductFlag, PRODUCT_FLAG_METADATA } from "@/types/product";
 
@@ -11,7 +11,10 @@ interface ProductFlagsFieldsProps {
   readOnly?: boolean;
 }
 
-export function ProductFlagsFields({ control, readOnly = false }: ProductFlagsFieldsProps) {
+export function ProductFlagsFields({
+  control,
+  readOnly = false,
+}: ProductFlagsFieldsProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">

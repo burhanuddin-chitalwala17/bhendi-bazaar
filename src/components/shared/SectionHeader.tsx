@@ -45,14 +45,12 @@ export function SectionHeader({
           <>
             {action.href ? (
               <Button asChild variant="outline" size="sm">
-                <Link href={action.href} prefetch={false}>{action.label}</Link>
+                <Link href={action.href} prefetch={false}>
+                  {action.label}
+                </Link>
               </Button>
             ) : (
-              <Button
-                onClick={action.onClick}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={action.onClick} variant="outline" size="sm">
                 {action.label}
               </Button>
             )}

@@ -79,9 +79,7 @@ export default function ProfilePage() {
               Your profile hosts your saved addresses and recent orders once
               you&apos;re signed in.
             </p>
-            <SignInButton
-              className="mt-1 h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow"
-            >
+            <SignInButton className="mt-1 h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow">
               Sign in
             </SignInButton>
           </CardContent>

@@ -95,7 +95,7 @@ export function ImageLightbox({
       const [t1, t2] = [e.touches[0], e.touches[1]];
       pinchDistanceRef.current = Math.hypot(
         t2.clientX - t1.clientX,
-        t2.clientY - t1.clientY
+        t2.clientY - t1.clientY,
       );
     } else if (e.touches.length === 1) {
       const t = e.touches[0];
@@ -110,7 +110,7 @@ export function ImageLightbox({
       const [t1, t2] = [e.touches[0], e.touches[1]];
       const distance = Math.hypot(
         t2.clientX - t1.clientX,
-        t2.clientY - t1.clientY
+        t2.clientY - t1.clientY,
       );
       zoomTo(scale * (distance / pinchDistanceRef.current));
       pinchDistanceRef.current = distance;
@@ -119,7 +119,7 @@ export function ImageLightbox({
       if (scale > 1) {
         panBy(
           t.clientX - lastTouchRef.current.x,
-          t.clientY - lastTouchRef.current.y
+          t.clientY - lastTouchRef.current.y,
         );
         lastTouchRef.current = { x: t.clientX, y: t.clientY };
       } else {
@@ -147,7 +147,10 @@ export function ImageLightbox({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isMouseDraggingRef.current) return;
-    panBy(e.clientX - lastTouchRef.current.x, e.clientY - lastTouchRef.current.y);
+    panBy(
+      e.clientX - lastTouchRef.current.x,
+      e.clientY - lastTouchRef.current.y,
+    );
     lastTouchRef.current = { x: e.clientX, y: e.clientY };
   };
 

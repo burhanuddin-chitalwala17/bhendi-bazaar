@@ -2,6 +2,7 @@ import { prisma } from "@server/shared/prisma";
 import { wishlistRepository } from "@server/wishlist/wishlist.repository";
 import type { WishlistProduct } from "@server/wishlist/wishlist.types";
 import { NotFoundError } from "@server/shared/domain-error";
+import { ON_SALE } from "@server/catalog/product.visibility";
 
 /**
  * Wishlist service — saving a product, forgetting one, and reading the set back.
@@ -43,8 +44,11 @@ export class WishlistService {
    * if the product is deleted between this read and the insert.
    */
   async addItem(userId: string, productId: string): Promise<void> {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
+    // Withdrawn products are refused here too (ADR-0029): saving one would promise a
+    // buyer something not for sale. Wishes already saved are deliberately left alone —
+    // withdrawal is reversible, and a removed wish cannot come back (R5/R6).
+    const product = await prisma.product.findFirst({
+      where: { id: productId, ...ON_SALE },
       select: { id: true },
     });
     if (!product) {

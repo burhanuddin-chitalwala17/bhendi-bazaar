@@ -12,6 +12,7 @@ import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { useSearchSuggestions } from "@/hooks/useSearchSuggestions";
 import { useDebounce } from "@/hooks/core/useDebounce";
+import { Button } from "@/components/ui/button";
 
 export function NavbarSearch() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export function NavbarSearch() {
   const { suggestions, loading } = useSearchSuggestions(debouncedSearch);
 
   useClickOutside(searchRef as React.RefObject<HTMLElement>, () =>
-    setShowSuggestions(false)
+    setShowSuggestions(false),
   );
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -58,9 +59,7 @@ export function NavbarSearch() {
       {showSuggestions && search.length >= 2 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border/70 rounded-xl shadow-overlay z-50 max-h-96 overflow-y-auto">
           {loading ? (
-            <div className="p-4 text-sm text-muted-foreground">
-              Loading...
-            </div>
+            <div className="p-4 text-sm text-muted-foreground">Loading...</div>
           ) : (
             <>
               {suggestions.products.length > 0 && (
@@ -124,12 +123,13 @@ export function NavbarSearch() {
               )}
 
               <div className="p-2 border-t border-border/70">
-                <button
+                <Button
+                  variant="ghost"
                   onClick={handleSearchSubmit}
-                  className="w-full px-3 py-2 text-sm text-primary hover:bg-muted rounded-lg text-left"
+                  className="w-full text-primary text-left"
                 >
                   See all results for &quot;{search}&quot;
-                </button>
+                </Button>
               </div>
             </>
           )}

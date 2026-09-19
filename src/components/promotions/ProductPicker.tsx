@@ -62,9 +62,14 @@ export function ProductPicker({
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`${searchPath}?q=${encodeURIComponent(term)}`);
+        const response = await fetch(
+          `${searchPath}?q=${encodeURIComponent(term)}`,
+        );
         if (response.ok) {
-          const data = (await response.json()) as { products: TargetOption[]; total: number };
+          const data = (await response.json()) as {
+            products: TargetOption[];
+            total: number;
+          };
           setResults(data.products);
           setTotal(data.total);
         }
@@ -86,7 +91,9 @@ export function ProductPicker({
   }, [selectedOptions, results]);
 
   const toggle = (id: string) =>
-    onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+    onChange(
+      value.includes(id) ? value.filter((x) => x !== id) : [...value, id],
+    );
 
   const hidden = Math.max(0, total - results.length);
 

@@ -95,7 +95,11 @@ export function BidLadder({
                 </p>
               </div>
               {canRecordOutcome && (
-                <Button size="sm" variant="outline" onClick={() => setChosen(bid)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setChosen(bid)}
+                >
                   They bought it
                 </Button>
               )}
@@ -149,7 +153,9 @@ function ConfirmSaleDialog({
 }) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
-  const [orgAddressId, setOrgAddressId] = useState(locations[0]?.orgAddressId ?? "");
+  const [orgAddressId, setOrgAddressId] = useState(
+    locations[0]?.orgAddressId ?? "",
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   if (!bid) return null;
@@ -176,7 +182,7 @@ function ConfirmSaleDialog({
       onDone();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not record the sale"
+        error instanceof Error ? error.message : "Could not record the sale",
       );
     } finally {
       setIsSaving(false);
@@ -189,8 +195,9 @@ function ConfirmSaleDialog({
         <DialogHeader>
           <DialogTitle>Record the sale</DialogTitle>
           <DialogDescription>
-            {bid.bidderName} bought this for the amount below. The organisation is paid
-            on this figure, one unit leaves stock, and the item goes back on sale.
+            {bid.bidderName} bought this for the amount below. The organisation
+            is paid on this figure, one unit leaves stock, and the item goes
+            back on sale.
           </DialogDescription>
         </DialogHeader>
 
@@ -225,14 +232,18 @@ function ConfirmSaleDialog({
               onChange={(event) => setOrgAddressId(event.target.value)}
             >
               {locations.map((location) => (
-                <option key={location.orgAddressId} value={location.orgAddressId}>
+                <option
+                  key={location.orgAddressId}
+                  value={location.orgAddressId}
+                >
                   {location.orgAddress.name} ({location.quantity} in stock)
                 </option>
               ))}
             </Select>
             {locations.length === 0 && (
               <p className="mt-1.5 text-sm text-destructive">
-                No location holds stock of this product. The sale cannot be recorded.
+                No location holds stock of this product. The sale cannot be
+                recorded.
               </p>
             )}
           </div>
@@ -240,7 +251,8 @@ function ConfirmSaleDialog({
           {differs && (
             <div>
               <Label htmlFor="sale-reason" className="text-sm">
-                Why the amount differs <span className="text-destructive">*</span>
+                Why the amount differs{" "}
+                <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="sale-reason"
@@ -251,7 +263,8 @@ function ConfirmSaleDialog({
                 placeholder="Negotiated down after they saw it in person"
               />
               <p className="mt-1.5 text-2xs text-muted-foreground">
-                Required: this is what explains the figure the organisation is paid on.
+                Required: this is what explains the figure the organisation is
+                paid on.
               </p>
             </div>
           )}
@@ -305,7 +318,7 @@ function MarkUnsoldDialog({
       onDone();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not record the outcome"
+        error instanceof Error ? error.message : "Could not record the outcome",
       );
     } finally {
       setIsSaving(false);
@@ -318,8 +331,8 @@ function MarkUnsoldDialog({
         <DialogHeader>
           <DialogTitle>Nobody bought it?</DialogTitle>
           <DialogDescription>
-            The item goes back on sale at its normal price and the organisation is owed
-            nothing. Every bid stays on record.
+            The item goes back on sale at its normal price and the organisation
+            is owed nothing. Every bid stays on record.
           </DialogDescription>
         </DialogHeader>
 

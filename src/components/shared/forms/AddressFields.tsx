@@ -90,7 +90,11 @@ export function AddressFields({
           placeholder="your@email.com"
           autoComplete="email"
           {...register("email", { required: emailRequired })}
-          hint={emailRequired ? "For your order confirmation" : "Optional - for order updates"}
+          hint={
+            emailRequired
+              ? "For your order confirmation"
+              : "Optional - for order updates"
+          }
           error={getError("email")}
         />
       )}

@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 import { productsService } from "@server/catalog/admin.product.service";
-import type { ProductDetails, ProductFilters, ProductForTable, ProductStats } from "@/admin/products/types";
+import type { ProductDetails, ProductFilters, ProductForTable, ProductStats } from "@/components/product/console/types";
 import type { Pagination } from "@/types/shared";
 import { ProductFlag } from "@/types/shared";
 import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-context";
@@ -55,6 +55,7 @@ class ProductsDAL {
         lowStockThreshold: product.lowStockThreshold,
         thumbnail: product.thumbnail,
         wishlistCount: saves.get(product.id) ?? 0,
+        archivedAt: product.archivedAt,
         createdAt: product.createdAt,
         category: product.category,
         org: product.org,
@@ -67,6 +68,7 @@ class ProductsDAL {
     const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
+      withdrawnProducts: stats.withdrawnProducts,
       lowStockProducts: stats.lowStockProducts,
       outOfStockProducts: stats.outOfStockProducts,
       featuredProducts: stats.featuredProducts,
@@ -109,6 +111,7 @@ class ProductsDAL {
         id: product.org.id,
         name: product.org.name,
         code: product.org.code,
+        handle: "a-shop",
       },
       stockLocations: (product.stockLocations ?? []).map(
         (row: { orgAddressId: string; quantity: number; orgAddress: { name: string } }) => ({

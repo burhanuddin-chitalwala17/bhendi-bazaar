@@ -13,6 +13,9 @@ import { Prisma } from "@prisma/client";
 import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+import { ARCHIVED, ON_SALE, shelfFilter } from "@server/catalog/product.visibility";
+import { productsRepository } from "@server/catalog/product.repository";
+import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type ProductMediaInput } from "@server/catalog/media";
 
 /**
@@ -54,6 +57,10 @@ const PRODUCT_LIST_SELECT = {
     thumbnail: true,
     weight: true,
     createdAt: true,
+    // The org sees its own withdrawn products and can restore them, so this travels
+    // on the org-facing shape (ADR-0029). The buyer-facing DTO never carries it —
+    // a buyer is never handed a withdrawn product at all.
+    archivedAt: true,
     category: {
         select: { id: true, name: true },
     },
@@ -101,6 +108,7 @@ export class AdminProductsRepository {
         const {
             page = 1,
             limit = 20,
+            shelf = "on-sale",
             search,
             categoryId,
             orgId,
@@ -116,6 +124,7 @@ export class AdminProductsRepository {
         // stock-dependent filters and sorts happen in memory below — measured fine at
         // this catalogue size (tens of rows), which was D3's open question.
         const where: Prisma.ProductWhereInput = {
+            ...shelfFilter(shelf),
             ...(search && {
                 OR: [
                     { name: { contains: search, mode: "insensitive" } },
@@ -212,15 +221,19 @@ export class AdminProductsRepository {
         const taken = sku
             ? await prisma.product.findUnique({
                   where: { orgId_sku: { orgId, sku } },
-                  select: { name: true },
+                  select: { name: true, archivedAt: true },
               })
             : null;
-        return new ConflictError(
-            taken
-                ? `SKU "${sku}" is already used by "${taken.name}"`
-                : `SKU "${sku}" is already used by another product in this organisation`,
-            { field: "sku" }
-        );
+        // A withdrawn product still holds its SKU, so the clash is with something the
+        // org cannot see in its default list. Saying so is the whole mitigation
+        // (ADR-0029 D8) — "already in use" would send them hunting for a product that
+        // is not there.
+        const message = !taken
+            ? `SKU "${sku}" is already used by another product in this organisation`
+            : taken.archivedAt
+              ? `SKU "${sku}" is still held by "${taken.name}", which is off sale. A withdrawn product keeps its SKU so it can be restored — reuse the code by restoring and editing that product, or choose another.`
+              : `SKU "${sku}" is already used by "${taken.name}"`;
+        return new ConflictError(message, { field: "sku" });
     }
 
     /**
@@ -305,6 +318,72 @@ export class AdminProductsRepository {
     }
 
     /**
+     * Take a product off sale, or put it back (ADR-0029). `archivedAt` is server-owned
+     * and never arrives from a request body (Invariant 4), so it is set here from a
+     * clock rather than passed through.
+     *
+     * The stock row lock is the point of the transaction. Archiving is a one-row
+     * update that needs no transaction of its own, but the order path locks these same
+     * rows when it reserves stock, and `assertNotArchived` runs behind that lock — so
+     * taking it here makes a withdrawal and a checkout serialise instead of
+     * interleaving. Whichever gets the lock wins, and the other sees the result.
+     *
+     * `guard` runs *after* the lock for the same reason: a check made in front of it
+     * is a read-then-write, and whatever it was looking for can commit in the gap
+     * (Invariant 6). Opening a bidding event takes this same lock, so the caller's
+     * bidding check only means anything from in here.
+     */
+    async setArchived(
+        id: string,
+        archivedAt: Date | null,
+        adminId: string,
+        guard?: (tx: Prisma.TransactionClient) => Promise<void>
+    ) {
+        return await prisma.$transaction(async (tx) => {
+            await productsRepository.lockStock(id, tx);
+            if (guard) await guard(tx);
+            const product = await tx.product.update({
+                where: { id },
+                data: { archivedAt },
+                select: PRODUCT_DETAILS_SELECT,
+            });
+            // In-transaction, so the trail cannot record a withdrawal that rolled back
+            // (ADR-0021). `adminId` is the org membership's user, re-read by
+            // `resolveOrgScope` rather than taken from the token claim.
+            await recordAdminActionIn(tx, {
+                adminId,
+                action: archivedAt ? "PRODUCT_ARCHIVED" : "PRODUCT_RESTORED",
+                resource: "Product",
+                resourceId: id,
+                metadata: { name: product.name },
+            });
+            return product;
+        });
+    }
+
+    /**
+     * How many rows hold a `Restrict` foreign key on this product, per relation —
+     * null when there is no such product.
+     *
+     * These three are the only referrers that do not cascade (ADR-0020): an order
+     * line, a promotion target and a bidding event each carry money or attribution,
+     * so the database refuses to orphan them. Counted here, through the product's own
+     * relations in one round trip, purely so the refusal can name its reason — the
+     * foreign keys remain the enforcement, and a count is not a lock.
+     */
+    async countDeleteBlockers(id: string) {
+        const row = await prisma.product.findUnique({
+            where: { id },
+            select: {
+                _count: {
+                    select: { orderItems: true, promotionTargets: true, biddingEvents: true },
+                },
+            },
+        });
+        return row?._count ?? null;
+    }
+
+    /**
      * Get product statistics
      */
     /**
@@ -320,10 +399,15 @@ export class AdminProductsRepository {
 
         // Stock is an aggregate (D3): load the scope's products with their rows and
         // sum in memory — measured fine at this catalogue size.
-        const [totalProducts, scopedProducts] = await Promise.all([
-            prisma.product.count({ where: scope }),
+        // Every figure below is about what is on sale (ADR-0029): a withdrawn
+        // product's stock is real but not sellable, and a low-stock alert on something
+        // deliberately off sale is noise. Withdrawn is reported as its own count
+        // rather than folded in, so no figure is silently ambiguous.
+        const [totalProducts, withdrawnProducts, scopedProducts] = await Promise.all([
+            prisma.product.count({ where: { ...scope, ...ON_SALE } }),
+            prisma.product.count({ where: { ...scope, ...ARCHIVED } }),
             prisma.product.findMany({
-                where: scope,
+                where: { ...scope, ...ON_SALE },
                 select: {
                     price: true,
                     stockLocations: { select: { quantity: true } },
@@ -349,6 +433,7 @@ export class AdminProductsRepository {
 
         return {
             totalProducts,
+            withdrawnProducts,
             lowStockProducts,
             outOfStockProducts,
             featuredProducts,

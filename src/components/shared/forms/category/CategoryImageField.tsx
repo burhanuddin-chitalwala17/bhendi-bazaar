@@ -1,6 +1,6 @@
 import { Control, FieldErrors } from "react-hook-form";
 import { FormController } from "../FormField";
-import { ImageUpload } from "@/admin/image-upload";
+import { ImageUpload } from "@/components/shared/image-upload";
 import type { CreateCategoryInput } from "@/domain/admin";
 
 interface CategoryImageFieldProps {
@@ -39,4 +39,3 @@ export function CategoryImageField({
     </div>
   );
 }
-

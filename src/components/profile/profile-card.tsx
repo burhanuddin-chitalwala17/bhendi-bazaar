@@ -116,14 +116,15 @@ export function ProfileCard({
                 </div>
               )}
               {!isEditingPic && (
-                <button
+                <Button
+                  variant="default"
                   type="button"
                   onClick={handleEditPic}
-                  className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-raised hover:bg-primary/90"
+                  className="absolute -bottom-1.5 -right-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background shadow-raised"
                   title="Change profile picture"
                 >
                   <Camera className="h-4 w-4" />
-                </button>
+                </Button>
               )}
             </div>
             <div className="space-y-1 text-sm">
@@ -134,7 +135,9 @@ export function ProfileCard({
                 <p className="text-xs text-muted-foreground">{email}</p>
               )}
               {mobile && (
-                <p className="text-xs text-muted-foreground">{formatPhone(mobile)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatPhone(mobile)}
+                </p>
               )}
             </div>
           </div>

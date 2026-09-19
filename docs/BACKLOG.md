@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-16
+- **Verified:** 2026-09-19
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -20,6 +20,8 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 | **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
 | **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-97 |
+| **9** — Seller storefronts | Every selling organisation gets a public storefront of its own, at a link it can promote | catalog | ✅ **Done** — 7 subfeatures |
+| **10** — Discoverability | The store is findable: every public page describes itself, every product is machine-readable, every URL answers honestly | catalog, *(cross-domain)* | ⏳ Not started — 1 spec drafted (seo) |
 
 ---
 
@@ -81,6 +83,9 @@ A new phase, added 2026-08-13. Phase 1 built the storefront and closed; this is 
 |---|---|---|
 | [product-video](specs/product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 📝 Draft — all questions closed 2026-08-13 |
 | [bulk-catalog-upload](specs/bulk-catalog-upload/) | An org sets up its catalogue from one spreadsheet plus local photos; admins likewise for categories. Corrects SKU uniqueness to org scope | ✅ Implemented — 2026-08-21 (PR-73) |
+| [product-archive](specs/product-archive/) | An org takes a product off sale and back, without destroying the orders, payouts or ledger entries it appears on | ✅ Implemented — 2026-09-16 (PR-113) |
+
+`product-archive` is catalogue *lifecycle* rather than page capability, and lands here because it is the phase that owns the catalogue; it needs nothing from the rest of the phase and nothing in the phase needs it.
 
 Ordering does not bind this phase to the ones before it, with one exception: `product-video` replaces `Product.images` with a `ProductMedia` relation, so it is a `[CONTRACT]` change on the product DTO and wants the [CONTRACTS.md](CONTRACTS.md) consolidation on the watch list below not to be mid-flight when it lands.
 
@@ -115,6 +120,38 @@ Two things about this phase are deliberate and easy to mistake for gaps. **Settl
 
 It also lands the store's first real purchase gate. Adding to cart checks nothing today and stock is enforced in exactly one place — the order transaction — so suspending sale during an event has to hold at that same point, and the same seam is what any future reason to bar a purchase will use.
 
+## Phase 9 — Seller storefronts
+
+A new phase, added 2026-09-15. Phases 1–8 built a marketplace; this is the first that builds something *for the seller to show people*. A small shop that joins today becomes invisible — the organisation owns products, offers, shipments and earnings, and is rendered nowhere a buyer can see, so the trade it made was its shopfront for a catalogue row. This phase gives it back an address.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [org-storefront](specs/org-storefront/) | Every organisation has a storefront at a link it can promote: its own landing and about pages, its own goods, its own search | ✅ Implemented — **7 subfeatures** |
+
+Depends on Phase 3's [multi-vendor-marketplace](specs/multi-vendor-marketplace/), which built the organisation this phase makes public — and **reverses one of its recorded out-of-scope lines** (*"per-organisation branding, domains, or storefronts"*). That reversal needs an ADR before the first PR; it is a change of direction, not an oversight being corrected.
+
+Three things about this phase are deliberate. **A storefront is a projection, not a second shop:** same catalogue, same price resolver, same basket, same checkout — so nothing on the money path moves and an order spanning two organisations still splits exactly as it does now. **It is a path, not a subdomain:** `/store/<handle>` on the platform's domain, so search authority pools into one site and no wildcard DNS or per-domain certificate has to be operated; a subdomain stays available later as a redirect to the same canonical URL. **Branding is fields, not a page builder:** an accent from the declared palette and validated copy, so [ADR-0022](adr/0022-design-decisions-go-through-tokens.md) keeps holding and no seller can break a layout.
+
+One subfeature closes a gap that exists **today**, independent of storefronts: [org-withdrawal](specs/org-storefront/org-withdrawal/). `Org.isActive` is set by the console and read by nothing a buyer sees — no catalogue or storefront query filters on it — so deactivating an organisation currently leaves every product it sells listed and purchasable. Since this phase publishes public pages under the platform's name with no approval in front of them, the remedy has to work before that is defensible, and it is the one piece here that touches the marketplace read path rather than only the storefront.
+
+Two existing watch-list entries below become load-bearing here rather than merely open: **storefront reads are uncached and unpaginated** — a shared link is precisely the URL that gets a traffic spike — and **the inherited WordPress index**, since this phase adds a new public URL namespace into one that crawlers are still working through.
+
+---
+
+## Phase 10 — Discoverability
+
+A new phase, added 2026-09-19. Phases 1–9 built a marketplace and gave its sellers a shopfront; none of them made any of it findable. Organic search is the store's only acquisition channel — there is no ad budget — and an e-commerce result is won on price, stock and stars appearing beneath the title, which appear only for a site that declares them. The store declares nothing today.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [seo](specs/seo/) | Every public page describes itself, every product is machine-readable at the price it is actually sold for, and every URL answers with the status that is true of it | 📝 Draft |
+
+Sequenced after Phase 9 rather than before it, because storefronts add a public URL namespace and the rules for what gets indexed should be settled once, across both. The overlap is deliberate and bounded: [storefront-discovery](specs/org-storefront/storefront-discovery/) owns `/store/<handle>`, [seo](specs/seo/) owns the marketplace, and the two state the same rules for their own surfaces rather than one importing the other.
+
+Two of this phase's constraints come from earlier decisions rather than from search practice. [ADR-0018](adr/0018-one-effective-price-function.md) means a machine-readable price is a second surface needing the same per-request resolution, so nothing here may be cached past an offer window — the declared price and the displayed price have to be the same value, not two readings of one. [ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) means availability is decided by the clock and not by a field, so an item held by a live bidding event must not be declared purchasable even though nothing on the product says it isn't. Getting either wrong is a Google policy violation rather than a display bug.
+
+It also closes the **soft 404** entry on the watch list below, which has been open since it was recorded: the fix is one of four PRs here rather than a standalone commit, because the missing `not-found.tsx` and `error.tsx` boundaries are what make 404 and 500 separable at all.
+
 ---
 
 ## Cross-cutting watch list
@@ -130,7 +167,8 @@ Not a phase, but tracked:
 - **PIN code validation** — consolidated to one rule in PR-09 (eleven declarations → one). Remaining: query existing `Address` rows for PIN codes with a leading zero, which the tightened rule rejects on update.
 - **Error swallowing in the data layer** — PR-13 fixed `products.dal.ts`; the same catch-and-relabel pattern remains in the other DAL modules and in `server/catalog/product.repository.ts`, where a query failure is reported as `"Product not found"`. Preserve `cause`; keep absence distinguishable from failure.
 - **Sale price is read two different ways** — `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price, matching `effectiveUnitPrice` in `server/checkout/pricing.ts`. Eight other sites — the cart line, the checkout summary, the shipping-rate hook, both order detail pages, the org parcel value — simply fall back with `??`, so a sale price of zero or one above the regular price renders differently depending on where the buyer is looking. [promotions](specs/promotions/) PR 3 consolidates them onto the one function; until then it is a display inconsistency on the money path.
-- **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling.
+- ~~**A sold product cannot be withdrawn from sale**~~ ✅ Closed — PR-112 made the refusal honest and PR-113 made it avoidable: a product leaves sale by archiving ([ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [product-archive](specs/product-archive/)). Hard delete survives only for a product no record depends on.
+- **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling. Now owned by [seo](specs/seo/) R7, Phase 10 — it needs the `not-found.tsx`/`error.tsx` boundaries that do not exist yet, so it is not the one-line change this entry assumed.
 - **Route the database through Prisma Accelerate** — it is already provisioned (`PRISMA_DATABASE_URL`) and read by nothing. Pooling and caching at the proxy addresses serverless connection pressure more thoroughly than tuning `max` on the local pool. See [OPERATIONS.md](OPERATIONS.md) § Infrastructure.
 - **Storefront reads are uncached, and page-level ISR cannot fix it** — PR-82 and PR-83 turned prefetch off at all 61 link sites (storefront, then the portals), which removed the speculative load but not the per-request cost: a category page is still roughly three sequential round trips, and it renders identical HTML for every visitor. Nothing under `src/app/(main)` reads `cookies()`, `headers()` or the session on the server — the auth-aware chrome is all `"use client"` on `useSession()` — so there is nothing per-user in the render to justify repeating it.
 
@@ -146,6 +184,14 @@ Not a phase, but tracked:
     - Submit the sitemap in each, and use removals for the old URL set.
     - Review the backlink profile; gambling and adult inbound links are disavow candidates.
     - Confirm `NEXT_PUBLIC_APP_URL` is set in the Vercel production environment — `appUrl()` throws without it, and both `robots.txt` and `sitemap.xml` are built from it.
+
+- **Two idioms for every cross-cutting job in a route handler** — validation is `schema.parse(await request.json())` in 32 handlers and `validateRequest(request, schema)` in 11; errors are `toErrorResponse` in 57 files and a bare `NextResponse.json({ error })` in 19, with **13 files using both**. Neither split is a correctness bug today — 43 of 52 mutating handlers do validate, and the 9 that do not are uploads taking FormData, signature-verifying webhooks, and no-body actions. The cost is that a reviewer cannot tell a correct handler from an incorrect one by shape. [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) already makes error conversion obligatory on touch; validation wants the same rule and one chosen idiom.
+
+- **Validation schemas live in `src/` and the server reaches out for their types** — `server/catalog/org.service.ts`, `server/bidding/bidding.service.ts`, `server/promotions/admin.promotion.service.ts` and `server/payouts/ledger.service.ts` each `import type` from `src/lib/validation/schemas/`, which is the direction CLAUDE.md forbids. `CreateOrgInput` was the tractable half and now lives in `server/catalog/org.types.ts` with `src/domain/org.ts` re-exporting it. The remaining three are `z.infer` of schemas the forms also consume, so inverting them means **moving the schemas themselves into `server/`** — defensible (`src/` may import from `server/`, and a zod schema is isomorphic) but it changes where every form imports from, so it is a decision needing an ADR rather than a drive-by edit.
+
+- **`ProductFilter` is declared twice and has already drifted** — `server/catalog/product.types.ts` carries `categoryIds`, `limit` and `offset`; the copy in `src/domain/product.ts` carries none of them. The client's is a strict subset today, so nothing is broken, which is exactly how `ProductFlag` drifted before it. Part of the [CONTRACTS.md](CONTRACTS.md) type-duplication work; 20 exported type names are duplicated across `server/` and `src/`, `ProductFilters`, `UpdateProfileInput` and `CreateOrderWithShipmentsInput` at three declarations each.
+
+- **`ProductFlag` is declared three times, and TypeScript enums are nominal** — `server/catalog/product.flags.ts`, `src/types/product.ts` and `src/types/shared.ts`. Two of them cannot be assigned to each other even though their members are identical, which is why narrowing at the data layer had to pick the one the domain type happens to use. CLAUDE.md already cites this symbol as the reason for the no-magic-strings rule; it is still three.
 
 - **Prune unused connection strings from `.env`** — `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, `PRISMA_DATABASE_URL` are read by nothing. Several live connection strings in one file is the hazard behind [Invariant 7](../CLAUDE.md).
 - **Slug redirects** — slugs are now generated and frozen (PR-15), but there is no redirect for a slug that changed before that rule existed. One product's URL moved (`product test 001` → `product-test-001`); the old URL 404s. If slugs ever need to change again, a slug-history table or redirect is required.

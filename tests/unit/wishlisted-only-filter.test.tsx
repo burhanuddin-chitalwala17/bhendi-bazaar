@@ -8,8 +8,8 @@
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ProductsContainer } from "@/admin/products/productsList";
-import type { ProductForTable, ProductFilters, ProductStats } from "@/admin/products/types";
+import { ProductsContainer } from "@/components/product/console/productsList";
+import type { ProductForTable, ProductFilters, ProductStats } from "@/components/product/console/types";
 import { ProductFlag } from "@/types/shared";
 
 const push = vi.fn();
@@ -34,6 +34,8 @@ const product = (id: string, wishlistCount: number): ProductForTable => ({
   lowStockThreshold: 2,
   thumbnail: "/cover.jpg",
   wishlistCount,
+  // On sale — this file is about the wishlist filter, not the shelf (ADR-0029).
+  archivedAt: null,
   createdAt: new Date("2026-01-01"),
   category: { id: "cat-1", name: "Veg" },
   org: { id: "org-1", name: "Org One", code: "ORG1" },
@@ -41,6 +43,7 @@ const product = (id: string, wishlistCount: number): ProductForTable => ({
 
 const stats: ProductStats = {
   totalProducts: 2,
+  withdrawnProducts: 0,
   lowStockProducts: 0,
   outOfStockProducts: 0,
   featuredProducts: 0,

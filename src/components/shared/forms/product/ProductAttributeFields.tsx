@@ -3,14 +3,17 @@
 import { Control } from "react-hook-form";
 import { FormController } from "../FormField";
 import { MultiSelect } from "@/components/ui/multi-select";
-import type { ProductFormInput } from "@/admin/products/types";
+import type { ProductFormInput } from "@/components/product/console/types";
 
 interface ProductAttributeFieldsProps {
   control: Control<ProductFormInput>;
   readOnly?: boolean;
 }
 
-export function ProductAttributeFields({ control, readOnly = false }: ProductAttributeFieldsProps) {
+export function ProductAttributeFields({
+  control,
+  readOnly = false,
+}: ProductAttributeFieldsProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">

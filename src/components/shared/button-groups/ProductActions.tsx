@@ -28,7 +28,8 @@ export function ProductActions({
     return (
       <div className="flex flex-col gap-2 md:mt-4">
         <p className="text-2xs leading-relaxed text-muted-foreground sm:text-xs">
-          This item is up for bidding, so it cannot be bought directly right now.
+          This item is up for bidding, so it cannot be bought directly right
+          now.
         </p>
         <Button
           asChild
@@ -56,8 +57,8 @@ export function ProductActions({
         {isOutOfStock
           ? "Out of Stock"
           : isAddingToCart
-          ? "Adding..."
-          : "Add to cart"}
+            ? "Adding..."
+            : "Add to cart"}
       </Button>
       <Button
         size="lg"
@@ -65,11 +66,7 @@ export function ProductActions({
         disabled={isBuyingNow || isOutOfStock}
         onClick={onBuyNow}
       >
-        {isOutOfStock
-          ? "Unavailable"
-          : isBuyingNow
-          ? "Loading..."
-          : "Buy Now"}
+        {isOutOfStock ? "Unavailable" : isBuyingNow ? "Loading..." : "Buy Now"}
       </Button>
     </div>
   );

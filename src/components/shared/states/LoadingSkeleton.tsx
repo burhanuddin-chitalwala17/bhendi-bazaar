@@ -29,7 +29,7 @@ export function LoadingSkeleton({
           className={cn(
             "animate-pulse bg-muted",
             variantClasses[variant],
-            className
+            className,
           )}
         />
       ))}
@@ -77,10 +77,7 @@ export function PaginationSkeleton() {
       <div className="h-8 w-32 bg-muted animate-pulse rounded" />
       <div className="flex gap-2">
         {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="w-10 h-10 bg-muted animate-pulse rounded"
-          />
+          <div key={i} className="w-10 h-10 bg-muted animate-pulse rounded" />
         ))}
       </div>
     </div>
@@ -92,7 +89,10 @@ export function StatsSkeleton({ count = 5 }: { count?: number }) {
     <div className="bg-card rounded-lg border border-border p-4">
       <div className="flex gap-4">
         {[...Array(count)].map((_, i) => (
-          <div key={i} className="flex-1 h-24 bg-muted animate-pulse rounded-lg" />
+          <div
+            key={i}
+            className="flex-1 h-24 bg-muted animate-pulse rounded-lg"
+          />
         ))}
       </div>
     </div>
@@ -135,7 +135,6 @@ export function ProductGridSkeleton({ count = 6 }: { count?: number }) {
     </div>
   );
 }
-
 
 export function ProductPageSkeleton() {
   return (

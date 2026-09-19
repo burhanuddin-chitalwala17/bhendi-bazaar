@@ -7,5 +7,7 @@ export default async function ForgotPasswordPage({
   searchParams: Promise<{ callbackUrl?: string | string[] }>;
 }) {
   const { callbackUrl } = await searchParams;
-  return <AuthPageHost view="forgot" callbackUrl={safeCallbackUrl(callbackUrl)} />;
+  return (
+    <AuthPageHost view="forgot" callbackUrl={safeCallbackUrl(callbackUrl)} />
+  );
 }

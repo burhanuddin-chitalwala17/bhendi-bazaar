@@ -118,7 +118,9 @@ export function BidPanel({
     );
   }
 
-  const customPaise = customIncrease ? rupeesToPaise(Number(customIncrease)) : 0;
+  const customPaise = customIncrease
+    ? rupeesToPaise(Number(customIncrease))
+    : 0;
   const customTotal = (state.highestBidPaise ?? 0) + customPaise;
   const canSubmitCustom =
     customPaise >= minIncrease &&
@@ -143,7 +145,11 @@ export function BidPanel({
           <span className="text-2xs uppercase tracking-label text-muted-foreground">
             Closes in{" "}
           </span>
-          <BidCountdown endAt={endAt} serverNow={serverNow} onExpire={onExpire} />
+          <BidCountdown
+            endAt={endAt}
+            serverNow={serverNow}
+            onExpire={onExpire}
+          />
         </p>
       </div>
 
@@ -151,8 +157,8 @@ export function BidPanel({
         <div className="space-y-2 rounded-card border border-warning/40 bg-warning/10 p-3">
           <p className="text-sm font-medium">This page is behind</p>
           <p className="text-2xs text-muted-foreground">
-            Someone bid while you were deciding, or bidding has closed. Reload for the
-            current price.
+            Someone bid while you were deciding, or bidding has closed. Reload
+            for the current price.
           </p>
           <Button
             variant="outline"
@@ -188,7 +194,9 @@ export function BidPanel({
             label="Name"
             required
             value={guest.name}
-            onChange={(event) => setGuest({ ...guest, name: event.target.value })}
+            onChange={(event) =>
+              setGuest({ ...guest, name: event.target.value })
+            }
             error={fieldErrors.guestName}
             autoComplete="name"
           />
@@ -208,18 +216,26 @@ export function BidPanel({
               type="email"
               className="mt-1.5"
               value={guest.email}
-              onChange={(event) => setGuest({ ...guest, email: event.target.value })}
+              onChange={(event) =>
+                setGuest({ ...guest, email: event.target.value })
+              }
               aria-invalid={!!fieldErrors.guestEmail}
               aria-describedby="bid-email-hint"
               autoComplete="email"
             />
             {/* R22a: the cost of leaving this blank, at the moment of choosing. */}
-            <p id="bid-email-hint" className="mt-1.5 text-2xs text-muted-foreground">
-              Optional — but without it there is no way to tell you if someone outbids
-              you. Add one and we will let you know so you can bid again.
+            <p
+              id="bid-email-hint"
+              className="mt-1.5 text-2xs text-muted-foreground"
+            >
+              Optional — but without it there is no way to tell you if someone
+              outbids you. Add one and we will let you know so you can bid
+              again.
             </p>
             {fieldErrors.guestEmail && (
-              <p className="mt-1 text-sm text-destructive">{fieldErrors.guestEmail}</p>
+              <p className="mt-1 text-sm text-destructive">
+                {fieldErrors.guestEmail}
+              </p>
             )}
           </div>
         </div>
@@ -233,12 +249,17 @@ export function BidPanel({
             disabled={isPlacing}
             onClick={() => place(state.minBidPaise)}
           >
-            {isPlacing ? "Placing…" : `Bid ${formatCurrency(state.minBidPaise)}`}
+            {isPlacing
+              ? "Placing…"
+              : `Bid ${formatCurrency(state.minBidPaise)}`}
           </Button>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {quickBidsPaise
-              .filter((step) => (state.highestBidPaise ?? 0) + step <= state.maxBidPaise)
+              .filter(
+                (step) =>
+                  (state.highestBidPaise ?? 0) + step <= state.maxBidPaise,
+              )
               .map((step) => (
                 <Button
                   key={step}
@@ -264,7 +285,9 @@ export function BidPanel({
                 type="number"
                 inputMode="numeric"
                 min={paiseToRupees(minIncrease)}
-                max={paiseToRupees(state.maxBidPaise - (state.highestBidPaise ?? 0))}
+                max={paiseToRupees(
+                  state.maxBidPaise - (state.highestBidPaise ?? 0),
+                )}
                 step="1"
                 placeholder={`${paiseToRupees(minIncrease)} or more`}
                 value={customIncrease}
@@ -288,7 +311,9 @@ export function BidPanel({
               )}
             </p>
             {fieldErrors.amount && (
-              <p className="mt-1 text-sm text-destructive">{fieldErrors.amount}</p>
+              <p className="mt-1 text-sm text-destructive">
+                {fieldErrors.amount}
+              </p>
             )}
           </div>
         )}

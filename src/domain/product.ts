@@ -53,6 +53,7 @@ export interface Product {
 }
 
 export interface ProductFilter {
+  orgId?: string;
   categorySlug?: string;
   search?: string;
   minPrice?: number;

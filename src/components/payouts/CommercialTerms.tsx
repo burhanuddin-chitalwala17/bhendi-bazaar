@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readApiError } from "@/lib/api-error";
+import { Select } from "@/components/ui/select";
 
 export interface CategoryOption {
   id: string;
@@ -45,33 +46,49 @@ export function CommercialTerms({
   const [commission, setCommission] = useState(String(commissionBps / 100));
   const [maxDiscount, setMaxDiscount] = useState(String(maxDiscountBps / 100));
   const [rates, setRates] = useState(
-    current.map((rule) => ({ categoryId: rule.categoryId, percent: String(rule.rateBps / 100) }))
+    current.map((rule) => ({
+      categoryId: rule.categoryId,
+      percent: String(rule.rateBps / 100),
+    })),
   );
   const [busy, setBusy] = useState(false);
 
-  const unused = categories.filter((c) => !rates.some((r) => r.categoryId === c.id));
-  const nameOf = (id: string) => categories.find((c) => c.id === id)?.name ?? id;
+  const unused = categories.filter(
+    (c) => !rates.some((r) => r.categoryId === c.id),
+  );
+  const nameOf = (id: string) =>
+    categories.find((c) => c.id === id)?.name ?? id;
 
   const save = async () => {
     setBusy(true);
     try {
-      const response = await fetch(`/api/admin/orgs/${orgId}/commercial-terms`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          commissionPercent: Number(commission),
-          maxDiscountPercent: Number(maxDiscount),
-          categoryRates: rates
-            .filter((rate) => rate.percent !== "")
-            .map((rate) => ({ categoryId: rate.categoryId, ratePercent: Number(rate.percent) })),
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/orgs/${orgId}/commercial-terms`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            commissionPercent: Number(commission),
+            maxDiscountPercent: Number(maxDiscount),
+            categoryRates: rates
+              .filter((rate) => rate.percent !== "")
+              .map((rate) => ({
+                categoryId: rate.categoryId,
+                ratePercent: Number(rate.percent),
+              })),
+          }),
+        },
+      );
       if (!response.ok) throw await readApiError(response);
       toast.success("Commission updated");
       setOpen(false);
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update the commission");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not update the commission",
+      );
     } finally {
       setBusy(false);
     }
@@ -85,7 +102,8 @@ export function CommercialTerms({
             <p className="text-sm font-medium">Commission</p>
             <p className="text-xs text-muted-foreground">
               {commissionBps / 100}% by default
-              {current.length > 0 && ` · ${current.length} category ${current.length === 1 ? "rate" : "rates"}`}
+              {current.length > 0 &&
+                ` · ${current.length} category ${current.length === 1 ? "rate" : "rates"}`}
               {" · "}discounts capped at {maxDiscountBps / 100}%
             </p>
           </div>
@@ -103,7 +121,9 @@ export function CommercialTerms({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="commission" className="text-xs">Default rate (%)</Label>
+          <Label htmlFor="commission" className="text-xs">
+            Default rate (%)
+          </Label>
           <Input
             id="commission"
             type="number"
@@ -119,7 +139,9 @@ export function CommercialTerms({
           </p>
         </div>
         <div>
-          <Label htmlFor="maxDiscount" className="text-xs">Their discount ceiling (%)</Label>
+          <Label htmlFor="maxDiscount" className="text-xs">
+            Their discount ceiling (%)
+          </Label>
           <Input
             id="maxDiscount"
             type="number"
@@ -139,11 +161,14 @@ export function CommercialTerms({
       <div className="space-y-2">
         <Label className="text-xs">Category rates</Label>
         <p className="text-xs text-muted-foreground">
-          A rate on a category covers everything beneath it, unless a child sets its own.
+          A rate on a category covers everything beneath it, unless a child sets
+          its own.
         </p>
         {rates.map((rate, index) => (
           <div key={rate.categoryId} className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm">{nameOf(rate.categoryId)}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">
+              {nameOf(rate.categoryId)}
+            </span>
             <Input
               type="number"
               step="0.01"
@@ -152,7 +177,9 @@ export function CommercialTerms({
               value={rate.percent}
               onChange={(event) =>
                 setRates((current) =>
-                  current.map((r, i) => (i === index ? { ...r, percent: event.target.value } : r))
+                  current.map((r, i) =>
+                    i === index ? { ...r, percent: event.target.value } : r,
+                  ),
                 )
               }
               className="w-24"
@@ -171,28 +198,33 @@ export function CommercialTerms({
         ))}
 
         {unused.length > 0 && (
-          <select
+          <Select
             value=""
             onChange={(event) =>
               event.target.value &&
-              setRates((c) => [...c, { categoryId: event.target.value, percent: "" }])
+              setRates((c) => [
+                ...c,
+                { categoryId: event.target.value, percent: "" },
+              ])
             }
-            className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            className="mt-1 h-10 w-full rounded-md bg-background text-sm"
             aria-label="Add a category rate"
           >
             <option value="">＋ Add a category rate…</option>
             {unused.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
 
       {/* Changing a rate never rewrites a settlement: every rate is snapshotted onto
           the line that used it when the entry was written (R4). */}
       <p className="text-xs text-muted-foreground">
-        Applies to orders from now on. Entries already recorded keep the rates they were
-        written with.
+        Applies to orders from now on. Entries already recorded keep the rates
+        they were written with.
       </p>
 
       <div className="flex gap-2">

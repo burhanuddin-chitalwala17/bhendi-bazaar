@@ -29,7 +29,7 @@ vi.mock("@/hooks/shipping/useMultiShippingRates", () => ({
     selectRateForGroup: vi.fn(),
   }),
 }));
-vi.mock("@/containers/checkoutContainer/hooks/useCheckoutPayment", () => ({
+vi.mock("@/components/checkout/hooks/useCheckoutPayment", () => ({
   useCheckoutPayment: () => ({
     processPaymentWithShipments: vi.fn(),
     isProcessing: false,
@@ -37,22 +37,22 @@ vi.mock("@/containers/checkoutContainer/hooks/useCheckoutPayment", () => ({
     setError: vi.fn(),
   }),
 }));
-vi.mock("@/containers/checkoutContainer/components/GuestAddress", () => ({
+vi.mock("@/components/checkout/components/GuestAddress", () => ({
   GuestAddress: ({ onAddressChange }: { onAddressChange: (a: { id: string; fullName: string; pincode: string }) => void }) => (
     <button type="button" onClick={() => onAddressChange({ id: "", fullName: "Guest Address", pincode: "400003" })}>
       fill guest address
     </button>
   ),
 }));
-vi.mock("@/containers/checkoutContainer/components/AuthenticatedAddress", () => ({
+vi.mock("@/components/checkout/components/AuthenticatedAddress", () => ({
   AuthenticatedAddress: ({ selectedAddress }: { selectedAddress: { fullName: string } | null }) => (
     <p>selected: {selectedAddress?.fullName ?? "none"}</p>
   ),
 }));
-vi.mock("@/containers/checkoutContainer/components/MultiShippingSection", () => ({ MultiShippingSection: () => null }));
-vi.mock("@/containers/checkoutContainer/components/CheckoutActions", () => ({ CheckoutActions: () => null }));
-vi.mock("@/containers/checkoutContainer/components/CouponField", () => ({ CouponField: () => null }));
-vi.mock("@/containers/checkoutContainer/components/checkout-summary", () => ({
+vi.mock("@/components/checkout/components/MultiShippingSection", () => ({ MultiShippingSection: () => null }));
+vi.mock("@/components/checkout/components/CheckoutActions", () => ({ CheckoutActions: () => null }));
+vi.mock("@/components/checkout/components/CouponField", () => ({ CouponField: () => null }));
+vi.mock("@/components/checkout/components/checkout-summary", () => ({
   CheckoutSummary: ({ items }: { items: CartItem[] }) => (
     <ul aria-label="checkout items">
       {items.map((item) => (
@@ -62,7 +62,7 @@ vi.mock("@/containers/checkoutContainer/components/checkout-summary", () => ({
   ),
 }));
 
-import { CheckoutContainer } from "@/containers/checkoutContainer";
+import { CheckoutContainer } from "@/components/checkout";
 import { useCartStore } from "@/store/cartStore";
 
 const item = (productId: string): CartItem =>

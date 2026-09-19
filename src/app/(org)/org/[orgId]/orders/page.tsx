@@ -1,8 +1,11 @@
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
-import { OrgOrdersTable } from "@/org/org-orders-table";
+import { OrgOrdersTable } from "@/components/org/org-orders-table";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
-export const metadata = { title: "Orders", robots: { index: false, follow: false } };
+export const metadata = {
+  title: "Orders",
+  robots: { index: false, follow: false },
+};
 
 export default async function OrgOrdersPage({
   params,
@@ -16,7 +19,7 @@ export default async function OrgOrdersPage({
   const { orders, pagination } = await orgOrdersDAL.getOrders(
     orgId,
     resolvePageNumber(page),
-    resolvePageSize(limit)
+    resolvePageSize(limit),
   );
 
   return (

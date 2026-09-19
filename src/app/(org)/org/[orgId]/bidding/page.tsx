@@ -28,7 +28,10 @@ export default async function OrgBiddingPage({
           />
         }
       />
-      <BiddingList events={events} apiPath={`/api/org/${scope.orgId}/bidding`} />
+      <BiddingList
+        events={events}
+        apiPath={`/api/org/${scope.orgId}/bidding`}
+      />
     </PageShell>
   );
 }

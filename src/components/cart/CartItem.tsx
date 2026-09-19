@@ -84,26 +84,30 @@ export function CartItem({
       </div>
       <div className="flex flex-col items-end gap-2">
         <div className="flex items-center rounded-full border border-border/70 bg-background text-sm">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             aria-label="Decrease quantity"
             className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted"
             onClick={handleDecrease}
           >
             −
-          </button>
+          </Button>
           <span className="min-w-[2rem] text-center text-xs font-medium">
             {item.quantity}
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             aria-label="Increase quantity"
-            className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground active:bg-muted"
             onClick={handleIncrease}
             disabled={isAtMaxStock || stock === 0}
           >
             +
-          </button>
+          </Button>
         </div>
         <Button
           variant="ghost"

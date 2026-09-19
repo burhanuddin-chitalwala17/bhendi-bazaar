@@ -75,12 +75,19 @@ export function BannerForm({
         </p>
       )}
 
-      <FormField label="Eyebrow" error={errors.eyebrow?.message} hint="The small line above the headline.">
+      <FormField
+        label="Eyebrow"
+        error={errors.eyebrow?.message}
+        hint="The small line above the headline."
+      >
         <Input {...form.register("eyebrow")} placeholder="The Abaya Edit" />
       </FormField>
 
       <FormField label="Headline" required error={errors.title?.message}>
-        <Input {...form.register("title")} placeholder="Cut for the everyday…" />
+        <Input
+          {...form.register("title")}
+          placeholder="Cut for the everyday…"
+        />
       </FormField>
 
       <FormField
@@ -93,7 +100,9 @@ export function BannerForm({
 
       <BannerImageField
         value={imageUrl ?? null}
-        onChange={(url) => form.setValue("imageUrl", url, { shouldDirty: true })}
+        onChange={(url) =>
+          form.setValue("imageUrl", url, { shouldDirty: true })
+        }
         disabled={form.isSubmitting}
       />
 
@@ -122,7 +131,10 @@ export function BannerForm({
               className="sm:flex-1"
               error={errors.actions?.[index]?.label?.message}
             >
-              <Input {...form.register(`actions.${index}.label`)} placeholder="Shop Abayas" />
+              <Input
+                {...form.register(`actions.${index}.label`)}
+                placeholder="Shop Abayas"
+              />
             </FormField>
             <FormField
               label="Destination"
@@ -130,7 +142,10 @@ export function BannerForm({
               className="sm:flex-1"
               error={errors.actions?.[index]?.href?.message}
             >
-              <Input {...form.register(`actions.${index}.href`)} placeholder="/category/abayas" />
+              <Input
+                {...form.register(`actions.${index}.href`)}
+                placeholder="/category/abayas"
+              />
             </FormField>
             <FormField label="Style" className="sm:w-40">
               <Select {...form.register(`actions.${index}.variant`)}>
@@ -165,10 +180,15 @@ export function BannerForm({
         )}
       </fieldset>
 
-      <FormField label="Live on the storefront" hint="Turn off to take it down without losing it.">
+      <FormField
+        label="Live on the storefront"
+        hint="Turn off to take it down without losing it."
+      >
         <Switch
           checked={form.watch("isActive")}
-          onCheckedChange={(on) => form.setValue("isActive", on, { shouldDirty: true })}
+          onCheckedChange={(on) =>
+            form.setValue("isActive", on, { shouldDirty: true })
+          }
         />
       </FormField>
 

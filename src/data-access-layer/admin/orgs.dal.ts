@@ -43,7 +43,9 @@ class OrgsDAL {
 
   /** One org's identity — for a page that names an org rather than listing them. */
   getOrgSummary = cache(
-    async (orgId: string): Promise<{ id: string; name: string; code: string } | null> => {
+    async (
+      orgId: string
+    ): Promise<{ id: string; name: string; code: string; handle: string } | null> => {
       return await orgRepository.findSummary(orgId);
     }
   );

@@ -49,7 +49,7 @@ describe("retired vocabulary does not come back", () => {
   }
 
   it("also catches it in a path, not just an identifier", () => {
-    expect(/seller/i.test("src/admin/sellersContainer/index.tsx")).toBe(true);
-    expect(/seller/i.test("src/admin/orgsContainer/index.tsx")).toBe(false);
+    expect(/seller/i.test("src/components/sellersContainer/index.tsx")).toBe(true);
+    expect(/seller/i.test("src/components/orgsContainer/index.tsx")).toBe(false);
   });
 });

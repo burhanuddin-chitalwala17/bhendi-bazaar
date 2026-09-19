@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { readApiError } from "@/lib/api-error";
-import { changePasswordSchema, type ChangePasswordInput } from "@/lib/validation/schemas/auth.schemas";
+import {
+  changePasswordSchema,
+  type ChangePasswordInput,
+} from "@/lib/validation/schemas/auth.schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,7 +32,11 @@ export function ChangePasswordModal() {
     formState: { errors, isSubmitting },
   } = useServerForm<ChangePasswordInput>({
     schema: changePasswordSchema,
-    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
     submit: async (data) => {
       const response = await fetch("/api/auth/change-password", {
         method: "POST",
@@ -78,9 +85,11 @@ export function ChangePasswordModal() {
                 type={showPasswords ? "text" : "password"}
                 {...register("currentPassword")}
               />
-            {errors.currentPassword && (
-              <p role="alert" className="text-xs text-destructive">{errors.currentPassword.message}</p>
-            )}
+              {errors.currentPassword && (
+                <p role="alert" className="text-xs text-destructive">
+                  {errors.currentPassword.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -93,7 +102,9 @@ export function ChangePasswordModal() {
               {...register("newPassword")}
             />
             {errors.newPassword && (
-              <p role="alert" className="text-xs text-destructive">{errors.newPassword.message}</p>
+              <p role="alert" className="text-xs text-destructive">
+                {errors.newPassword.message}
+              </p>
             )}
             <p className="text-2xs text-muted-foreground">
               At least 8 characters with uppercase, lowercase, and numbers
@@ -109,14 +120,17 @@ export function ChangePasswordModal() {
               {...register("confirmPassword")}
             />
             {errors.confirmPassword && (
-              <p role="alert" className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+              <p role="alert" className="text-xs text-destructive">
+                {errors.confirmPassword.message}
+              </p>
             )}
           </div>
 
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={() => setShowPasswords(!showPasswords)}
-            className="-mx-2 flex min-h-10 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="-mx-2 flex min-h-10 items-center gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             {showPasswords ? (
               <>
@@ -127,10 +141,13 @@ export function ChangePasswordModal() {
                 <Eye className="h-4 w-4" /> Show passwords
               </>
             )}
-          </button>
+          </Button>
 
           {formError && (
-            <p role="alert" className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+            <p
+              role="alert"
+              className="text-sm text-destructive bg-destructive/10 p-3 rounded-md"
+            >
               {formError}
             </p>
           )}
@@ -150,11 +167,7 @@ export function ChangePasswordModal() {
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1"
-            >
+            <Button type="submit" disabled={isSubmitting} className="flex-1">
               {isSubmitting ? "Changing..." : "Change Password"}
             </Button>
           </div>

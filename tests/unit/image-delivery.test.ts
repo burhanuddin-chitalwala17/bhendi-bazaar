@@ -37,12 +37,12 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     reason:
       "ImageResponse renders through Satori, which implements a small subset of HTML and does not know next/image. It runs server-side per OG render, so no browser fetches this.",
   },
-  "src/admin/image-upload.tsx": {
+  "src/components/shared/image-upload.tsx": {
     rules: ["raw <img> elements"],
     reason:
       "Previews the file still held in the page as a blob: URL, which next/image cannot take — and which costs no egress precisely because it is not fetched from Blob.",
   },
-  "src/admin/product-media-manager.tsx": {
+  "src/components/product/product-media-manager.tsx": {
     rules: ["raw <img> elements", "optimization bypasses"],
     reason:
       "Same local blob: preview as image-upload.tsx; the bypass is conditional on a YouTube poster, whose host is not ours to optimize.",
@@ -52,7 +52,7 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     reason:
       "The just-picked avatar is a local data: URL from FileReader. The saved picture next to it goes through next/image.",
   },
-  "src/admin/shipping/providersContainer/component/ProviderCard.tsx": {
+  "src/components/shipping/providers-console/component/ProviderCard.tsx": {
     rules: ["optimization bypasses"],
     reason:
       "A carrier's own logo, hotlinked from shiprocket.in by a data migration. Already sized at 32px and not our asset: optimizing spends a transformation to save bytes we do not pay for.",

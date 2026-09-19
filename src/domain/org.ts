@@ -26,25 +26,9 @@ export interface Org {
   updatedAt: string;
 }
 
-export interface CreateOrgInput {
-  code: string;
-  name: string;
-  email: string;
-  phone?: string;
-  contactPerson?: string;
-
-
-  businessName?: string;
-  gstNumber?: string;
-  panNumber?: string;
-
-  isActive: boolean;
-  description?: string;
-}
-
-export interface UpdateOrgInput extends Partial<CreateOrgInput> {
-  id: string;
-}
+// Declared server-side so `server/` need not import from `src/`; re-exported here so
+// client code keeps one import path for them.
+export type { CreateOrgInput, UpdateOrgInput } from "@server/catalog/org.types";
 
 export interface OrgWithStats extends Org {
   productCount: number;

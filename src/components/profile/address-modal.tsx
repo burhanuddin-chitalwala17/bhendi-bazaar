@@ -42,8 +42,8 @@ export function AddressModal({
               {mode === "add"
                 ? "Add address"
                 : mode === "edit"
-                ? "Edit address"
-                : "Address details"}
+                  ? "Edit address"
+                  : "Address details"}
             </p>
             <p className="text-2xs text-muted-foreground">
               {mode === "view"
@@ -51,13 +51,15 @@ export function AddressModal({
                 : "These details will be used for delivery and updates."}
             </p>
           </div>
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60 text-xs hover:bg-muted"
+            className="flex h-10 w-10 items-center justify-center rounded-full border-border/60 text-xs"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         {mode === "view" && (
@@ -103,7 +105,9 @@ function AddressViewMode({
         </div>
       </div>
       <p className="font-semibold">{address.fullName}</p>
-      <p className="text-xs text-muted-foreground">{formatPhone(address.mobile)}</p>
+      <p className="text-xs text-muted-foreground">
+        {formatPhone(address.mobile)}
+      </p>
       <p className="text-xs text-muted-foreground">{address.email}</p>
 
       <div className="space-y-0.5 text-xs text-muted-foreground">
@@ -174,10 +178,7 @@ function AddressForm({
   });
 
   return (
-    <form
-      onSubmit={handleFormSubmit}
-      className="space-y-3 px-4 py-4 text-xs"
-    >
+    <form onSubmit={handleFormSubmit} className="space-y-3 px-4 py-4 text-xs">
       {formError && (
         <div
           role="alert"
@@ -206,4 +207,3 @@ function AddressForm({
     </form>
   );
 }
-

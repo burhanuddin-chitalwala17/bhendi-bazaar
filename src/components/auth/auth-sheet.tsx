@@ -49,12 +49,17 @@ export function AuthSheet({
 }: AuthSheetProps) {
   // Only read while open, which is only ever in the browser.
   const here = () =>
-    typeof window === "undefined" ? "/" : `${window.location.pathname}${window.location.search}`;
+    typeof window === "undefined"
+      ? "/"
+      : `${window.location.pathname}${window.location.search}`;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       {/* Only the heart gives a reason; without one, the explicit undefined tells Radix there is no description. */}
-      <SheetContent side="adaptive" {...(reason ? {} : { "aria-describedby": undefined })}>
+      <SheetContent
+        side="adaptive"
+        {...(reason ? {} : { "aria-describedby": undefined })}
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1.5">
             <SheetTitle>{SHEET_TITLES[view]}</SheetTitle>
@@ -87,7 +92,12 @@ export function AuthSheet({
             onBeforeGoogle={onBeforeGoogle}
           />
         )}
-        {view === "forgot" && <ForgotPasswordForm onSwitchView={onSwitchView} defaultEmail={email} />}
+        {view === "forgot" && (
+          <ForgotPasswordForm
+            onSwitchView={onSwitchView}
+            defaultEmail={email}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );

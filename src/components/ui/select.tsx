@@ -23,8 +23,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {error && <p className="text-destructive text-sm mt-1">{error}</p>}
       </div>
     );
-  }
+  },
 );
 
 Select.displayName = "Select";
-
