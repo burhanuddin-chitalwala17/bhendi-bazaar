@@ -19,17 +19,23 @@ export async function POST(req: NextRequest) {
     const verification = await paymentService.verifyWebhook(signature, rawBody);
     if (!verification.isValid || !verification.event) {
       console.error("Webhook verification failed:", verification.error);
-      return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid webhook signature" },
+        { status: 400 },
+      );
     }
 
     const { event } = verification;
-    const entity = (event.payload as { payment?: { entity?: Record<string, unknown> } })
-      ?.payment?.entity;
+    const entity = (
+      event.payload as { payment?: { entity?: Record<string, unknown> } }
+    )?.payment?.entity;
 
     switch (event.eventType) {
       case "payment.captured":
       case "payment.success": {
-        const result = await paymentService.confirmFromWebhookEvent(entity ?? {});
+        const result = await paymentService.confirmFromWebhookEvent(
+          entity ?? {},
+        );
         return NextResponse.json({ received: true, ...result });
       }
 
@@ -47,8 +53,11 @@ export async function POST(req: NextRequest) {
     console.error("Webhook processing failed:", error);
     const status = isDomainError(error) ? error.status : 500;
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Webhook processing failed" },
-      { status }
+      {
+        error:
+          error instanceof Error ? error.message : "Webhook processing failed",
+      },
+      { status },
     );
   }
 }

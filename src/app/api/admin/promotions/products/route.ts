@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
   try {
     await requirePlatformAdmin();
     const search = new URL(request.url).searchParams.get("q") ?? undefined;
-    return NextResponse.json(await productsRepository.listForPicker({ search }));
+    return NextResponse.json(
+      await productsRepository.listForPicker({ search }),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not search products");
   }

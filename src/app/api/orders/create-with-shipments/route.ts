@@ -2,7 +2,7 @@
  * Create Order with Shipments API Route
  *
  * POST /api/orders/create-with-shipments - Create order with multiple shipments
- * 
+ *
  * Flow:
  * 1. Rate limiting check
  * 2. Validate request with Zod
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: `Too many order requests. Please try again in ${formatTimeRemaining(
-          timeRemaining
+          timeRemaining,
         )}.`,
         retryAfter: Math.ceil(timeRemaining / 1000),
       },
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
           "X-RateLimit-Reset": reset.toString(),
           "Retry-After": Math.ceil(timeRemaining / 1000).toString(),
         },
-      }
+      },
     );
   }
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
   // Validate request body
   const validation = await validateRequest(
     request,
-    createOrderWithShipmentsSchema
+    createOrderWithShipmentsSchema,
   );
 
   if ("error" in validation) {
@@ -69,19 +69,27 @@ export async function POST(request: NextRequest) {
   const input = { ...validation.data, userId };
 
   try {
-    return NextResponse.json(await orderService.createOrderWithShipments(input), {
-      status: 201,
-    });
+    return NextResponse.json(
+      await orderService.createOrderWithShipments(input),
+      {
+        status: 201,
+      },
+    );
   } catch (error) {
     // The item may not be sold — it may be held by an abandoned checkout. Release
     // those and retry once before refusing a buyer (checkout-abandonment D4); a
     // second failure means the stock is genuinely gone.
     if (error instanceof OutOfStockError) {
-      const releasedAny = await paymentService.releaseHoldsOnProducts(error.productIds);
+      const releasedAny = await paymentService.releaseHoldsOnProducts(
+        error.productIds,
+      );
       if (releasedAny) {
-        return NextResponse.json(await orderService.createOrderWithShipments(input), {
-          status: 201,
-        });
+        return NextResponse.json(
+          await orderService.createOrderWithShipments(input),
+          {
+            status: 201,
+          },
+        );
       }
     }
     // One envelope, and a 409 that stays a 409 — this handler used to answer 400 for

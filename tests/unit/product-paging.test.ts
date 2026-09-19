@@ -86,3 +86,67 @@ describe("the parser refuses what a listing should not be asked for", () => {
     expect(PRODUCT_PAGE_SIZE % 3).toBe(0);
   });
 });
+
+describe("sorting", () => {
+  it("offers new arrivals as the default", async () => {
+    const { PRODUCT_SORTS, productPageParams } = await import(
+      "@/lib/product-paging"
+    );
+    expect(PRODUCT_SORTS[0]).toBe("newest");
+    expect(productPageParams.parse({}).sort).toBe("newest");
+  });
+
+  it("leaves the default out of the URL, so a plain listing stays plain", async () => {
+    const { productPageUrl } = await import("@/lib/product-paging");
+    expect(
+      new URL(productPageUrl({ sort: "newest" }, 0), "https://x.test").searchParams.has(
+        "sort"
+      )
+    ).toBe(false);
+  });
+
+  it("carries a price sort through", async () => {
+    const { productPageUrl } = await import("@/lib/product-paging");
+    const q = new URL(
+      productPageUrl({ sort: "price-asc" }, 12),
+      "https://x.test"
+    ).searchParams;
+    expect(q.get("sort")).toBe("price-asc");
+  });
+
+  it("refuses a sort the listing does not have", async () => {
+    const { productPageParams } = await import("@/lib/product-paging");
+    expect(productPageParams.safeParse({ sort: "rating" }).success).toBe(false);
+  });
+});
+
+describe("price sorting uses the price a shopper is asked to pay", () => {
+  it("takes the offer price when one applies", async () => {
+    const { effectivePrice } = await import("@/domain/product");
+    // The case the whole thing turns on: ₹100 reduced to ₹75 sorts as 75.
+    expect(effectivePrice({ price: 10000, salePrice: 7500 })).toBe(7500);
+  });
+
+  it("takes the list price when there is no offer", async () => {
+    const { effectivePrice } = await import("@/domain/product");
+    expect(effectivePrice({ price: 10000 })).toBe(10000);
+    expect(effectivePrice({ price: 10000, salePrice: null })).toBe(10000);
+  });
+
+  it.each([
+    [0, "zero is not a price, it is a missing one"],
+    [10000, "equal to list is not a reduction"],
+    [12000, "above list is not a reduction"],
+  ])("ignores a sale price of %s — %s", async (salePrice) => {
+    const { effectivePrice } = await import("@/domain/product");
+    expect(effectivePrice({ price: 10000, salePrice })).toBe(10000);
+  });
+
+  it("orders a reduced item by what it costs now, not what it cost", async () => {
+    const { effectivePrice } = await import("@/domain/product");
+    const cheapAfterOffer = { price: 100000, salePrice: 5000 };
+    const plainlyCheap = { price: 9000 };
+    // Sorting by the column would put the ₹1,000 item first; the shopper sees ₹50.
+    expect(effectivePrice(cheapAfterOffer)).toBeLessThan(effectivePrice(plainlyCheap));
+  });
+});

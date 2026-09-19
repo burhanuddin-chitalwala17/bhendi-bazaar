@@ -24,13 +24,16 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Sign in to add to wishlist" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Sign in to add to wishlist" },
+        { status: 401 },
+      );
     }
 
     const rateLimitResult = await withRateLimit(
       request,
       { interval: 60 * 1000, uniqueTokenPerInterval: 60 },
-      () => getRateLimitIdentifier(request, session.user.id)
+      () => getRateLimitIdentifier(request, session.user.id),
     );
     if (rateLimitResult) return rateLimitResult;
 
@@ -56,23 +59,29 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Sign in to manage your wishlist" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Sign in to manage your wishlist" },
+        { status: 401 },
+      );
     }
 
     const rateLimitResult = await withRateLimit(
       request,
       { interval: 60 * 1000, uniqueTokenPerInterval: 60 },
-      () => getRateLimitIdentifier(request, session.user.id)
+      () => getRateLimitIdentifier(request, session.user.id),
     );
     if (rateLimitResult) return rateLimitResult;
 
     const validation = validateQueryParams(
       request.nextUrl.searchParams,
-      wishlistItemSchema
+      wishlistItemSchema,
     );
     if ("error" in validation) return validation.error;
 
-    await wishlistService.removeItem(session.user.id, validation.data.productId);
+    await wishlistService.removeItem(
+      session.user.id,
+      validation.data.productId,
+    );
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

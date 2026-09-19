@@ -7,7 +7,8 @@ import {
   type ProductWithRelations,
 } from "@server/catalog/product.repository";
 import { productService } from "@server/catalog/product.service";
-import { Product, ProductFilter } from "@/domain/product";
+import { Product, ProductFilter, effectivePrice } from "@/domain/product";
+import { PRODUCT_PAGE_SIZE, type ProductSort } from "@/lib/product-paging";
 import { toProductFlags } from "@/types/product";
 
 import { NotFoundError } from "@server/shared/domain-error";
@@ -26,13 +27,16 @@ export { NotFoundError };
 const mapProduct = (
   product: ProductWithRelations,
   context: PriceContext,
-  locks: BiddingLockContext
+  locks: BiddingLockContext,
 ): Product => {
   // The customer sees one availability figure: the total across active locations
   // (stock-locations R4/R11). The indicative origin for serviceability is the
   // largest holding's pincode — allocation decides the real origin at checkout.
   const stockRows = product.stockLocations ?? [];
-  const totalStock = stockRows.reduce((sum: number, row) => sum + row.quantity, 0);
+  const totalStock = stockRows.reduce(
+    (sum: number, row) => sum + row.quantity,
+    0,
+  );
   const mainRow = [...stockRows].sort((a, b) => b.quantity - a.quantity)[0];
   return {
     id: product.id,
@@ -76,17 +80,21 @@ const mapProduct = (
 /** The reduced price a buyer sees, or undefined when nothing applies. */
 const offerPrice = (
   product: ProductWithRelations,
-  context: PriceContext
+  context: PriceContext,
 ): number | undefined => {
   const { pricePaise, offerPricePaise } = resolveProductPrice(
-    { id: product.id, price: product.price, orgId: product.orgId, categoryId: product.categoryId },
-    context
+    {
+      id: product.id,
+      price: product.price,
+      orgId: product.orgId,
+      categoryId: product.categoryId,
+    },
+    context,
   );
   return offerPricePaise < pricePaise ? offerPricePaise : undefined;
 };
 
 export const productsDAL = {
-
   getProducts: async (filter: ProductFilter): Promise<Product[]> => {
     try {
       // Through the service, which expands a category slug to its subtree.
@@ -95,7 +103,9 @@ export const productsDAL = {
         loadPriceContext(),
         loadBiddingLockContext(),
       ]);
-      return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
+      return products
+        .filter((p) => p !== null)
+        .map((product) => mapProduct(product, context, locks));
     } catch (error) {
       throw new Error("Failed to fetch products", { cause: error });
     }
@@ -136,13 +146,18 @@ export const productsDAL = {
     }
   },
 
-  getSimilarProducts: async (slug: string, count: number): Promise<Product[]> => {
+  getSimilarProducts: async (
+    slug: string,
+    count: number,
+  ): Promise<Product[]> => {
     const [products, context, locks] = await Promise.all([
       productsRepository.getSimilarProducts(slug, count),
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);
-    return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
+    return products
+      .filter((p) => p !== null)
+      .map((product) => mapProduct(product, context, locks));
   },
 
   getHeroProducts: async (limit: number): Promise<Product[]> => {
@@ -151,7 +166,9 @@ export const productsDAL = {
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);
-    return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
+    return products
+      .filter((p) => p !== null)
+      .map((product) => mapProduct(product, context, locks));
   },
 
   getOfferProducts: async (limit: number): Promise<Product[]> => {
@@ -160,7 +177,64 @@ export const productsDAL = {
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);
-    return products.filter(p => p !== null).map((product) => mapProduct(product, context, locks));
+    return products
+      .filter((p) => p !== null)
+      .map((product) => mapProduct(product, context, locks));
+  },
+
+  /**
+   * One page of a listing, ordered as the shopper asked.
+   *
+   * The one function behind every product grid — the page that renders the first batch
+   * and the route that serves the rest both come through here, so a listing cannot be
+   * ordered one way on load and another on scroll.
+   *
+   * Two paths, because only one of the orders exists in the database:
+   *
+   * **`newest`** is `ORDER BY createdAt DESC, id DESC` with `LIMIT`/`OFFSET`. Cheap —
+   * twelve rows per page, whatever the catalogue's size. This is the default, so the
+   * common path stays the cheap one.
+   *
+   * **The price sorts** are by the offer price, which no column holds: it is resolved
+   * per request against the live promotion set (ADR-0018), so the database cannot
+   * order by it. The set is fetched under the repository's own row cap, priced,
+   * ordered and sliced here. That cap is the honest limit of this approach and it is
+   * not a new one — before pagination every listing already loaded up to it.
+   */
+  getPage: async (
+    filter: ProductFilter,
+    {
+      sort = "newest",
+      offset = 0,
+      limit = PRODUCT_PAGE_SIZE,
+    }: { sort?: ProductSort; offset?: number; limit?: number } = {},
+  ): Promise<{ products: Product[]; done: boolean }> => {
+    // A caller's own limit/offset would fight the ones below; the page is named here.
+    const { limit: _l, offset: _o, ...where } = filter;
+
+    if (sort === "newest") {
+      const products = await productsDAL.getProducts({
+        ...where,
+        limit,
+        offset,
+      });
+      // A short page is the end. Said by the server so the grid never has to guess.
+      return { products, done: products.length < limit };
+    }
+
+    const all = await productsDAL.getProducts(where);
+    const direction = sort === "price-asc" ? 1 : -1;
+    const ordered = [...all].sort((a, b) => {
+      const byPrice = (effectivePrice(a) - effectivePrice(b)) * direction;
+      // A total order, so paging cannot repeat or skip a row: two items at the same
+      // price would otherwise be free to swap places between requests.
+      return byPrice !== 0 ? byPrice : a.id.localeCompare(b.id);
+    });
+
+    return {
+      products: ordered.slice(offset, offset + limit),
+      done: offset + limit >= ordered.length,
+    };
   },
 
   /** Slugs only, for the sitemap — no relations, no offer resolution. */

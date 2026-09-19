@@ -1,7 +1,7 @@
 /**
  * Shiprocket Webhook Handler
  * POST /api/webhooks/shipping/shiprocket
- * 
+ *
  * Receives tracking updates from Shiprocket and updates order status.
  */
 
@@ -25,14 +25,14 @@ export async function POST(request: NextRequest) {
       console.error("Shiprocket provider not found in database");
       return NextResponse.json(
         { success: false, error: "Provider not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     // Process webhook
     const webhookEvent = await shippingOrchestrator.handleWebhook(
       provider.code,
-      payload
+      payload,
     );
 
     // Find shipment by tracking number
@@ -42,9 +42,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!shipment) {
-      console.warn(`Shipment not found for tracking number: ${webhookEvent.trackingNumber}`);
+      console.warn(
+        `Shipment not found for tracking number: ${webhookEvent.trackingNumber}`,
+      );
       // Still return 200 to acknowledge webhook
-      return NextResponse.json({ success: true, message: "Shipment not found" });
+      return NextResponse.json({
+        success: true,
+        message: "Shipment not found",
+      });
     }
 
     // Update shipment status
@@ -68,7 +73,7 @@ export async function POST(request: NextRequest) {
       where: { orderId: shipment.orderId },
     });
 
-    const allDelivered = allShipments.every(s => s.status === "delivered");
+    const allDelivered = allShipments.every((s) => s.status === "delivered");
 
     // If all shipments delivered, update order status
     if (allDelivered) {
@@ -109,7 +114,9 @@ export async function POST(request: NextRequest) {
     //   await sendDeliveredNotification(shipment.order);
     // }
 
-    console.log(`✓ Webhook processed for shipment ${shipment.code} (order ${shipment.order.code})`);
+    console.log(
+      `✓ Webhook processed for shipment ${shipment.code} (order ${shipment.order.code})`,
+    );
 
     return NextResponse.json({
       success: true,
@@ -133,8 +140,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Webhook processing failed",
       },
-      { status: 200 }
+      { status: 200 },
     );
   }
 }
-

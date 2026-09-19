@@ -1,7 +1,7 @@
 /**
  * Shipping Rates API
  * POST /api/shipping/rates
- * 
+ *
  * Get available shipping rates for delivery to a pincode.
  * Uses all enabled shipping providers and returns rates from each.
  */
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
             error:
               "No shipping providers available. Please check server configuration.",
           },
-          { status: 503 }
+          { status: 503 },
         );
       }
     }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Get best rates using two-step filtering
     const response = await shippingOrchestrator.getRatesFromAllProviders(
       rateRequest,
-      { useCache: false }
+      { useCache: false },
     );
     // console.log("response", response);
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "No shipping options available for this location",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
           error: "Validation error",
           details: error.message,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Failed to get shipping rates",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

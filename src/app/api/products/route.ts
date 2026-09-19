@@ -25,9 +25,10 @@ import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: Request) {
   try {
-    const { offset, handle, category, q, offers } = productPageParams.parse(
-      Object.fromEntries(new URL(request.url).searchParams),
-    );
+    const { offset, handle, category, q, offers, sort } =
+      productPageParams.parse(
+        Object.fromEntries(new URL(request.url).searchParams),
+      );
 
     let orgId: string | undefined;
     if (handle) {
@@ -40,21 +41,20 @@ export async function GET(request: Request) {
       orgId = shop.id;
     }
 
-    const products = await productsDAL.getProducts({
-      orgId,
-      categorySlug: category,
-      search: q,
-      offerOnly: offers === "1",
-      limit: PRODUCT_PAGE_SIZE,
-      offset,
-    });
+    // Same function the page's first batch came from, so page two is ordered like
+    // page one — a listing sorted one way on load and another on scroll would
+    // interleave two orders in the same grid.
+    const page = await productsDAL.getPage(
+      {
+        orgId,
+        categorySlug: category,
+        search: q,
+        offerOnly: offers === "1",
+      },
+      { sort, offset, limit: PRODUCT_PAGE_SIZE },
+    );
 
-    return NextResponse.json({
-      products,
-      // Said by the server rather than inferred from a short page, so a grid never has
-      // to guess whether a partial page means the end.
-      done: products.length < PRODUCT_PAGE_SIZE,
-    });
+    return NextResponse.json(page);
   } catch (error) {
     return toErrorResponse(error, "Could not load more products");
   }

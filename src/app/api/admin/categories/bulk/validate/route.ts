@@ -17,16 +17,22 @@ export async function POST(request: NextRequest) {
     await requirePlatformAdmin();
     const formData = await request.formData();
     const sheet = formData.get("sheet");
-    if (!(sheet instanceof File)) throw new DomainError("Attach the filled-in sheet.");
+    if (!(sheet instanceof File))
+      throw new DomainError("Attach the filled-in sheet.");
     let filenames: string[];
     try {
       filenames = JSON.parse(String(formData.get("filenames") ?? "[]"));
       if (!Array.isArray(filenames)) throw new Error();
     } catch {
-      throw new DomainError("filenames must be a JSON array of the dropped image names.");
+      throw new DomainError(
+        "filenames must be a JSON array of the dropped image names.",
+      );
     }
 
-    const raw = await parseSheet(Buffer.from(await sheet.arrayBuffer()), sheet.name);
+    const raw = await parseSheet(
+      Buffer.from(await sheet.arrayBuffer()),
+      sheet.name,
+    );
     const rows: CategoryRowWithNumber<BulkCategoryRow>[] = [];
     const errors: RowError[] = [];
     for (const rawRow of raw.rows) {

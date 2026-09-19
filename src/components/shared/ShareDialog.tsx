@@ -209,7 +209,7 @@ export function ShareDialog({
             <Button
               variant="outline"
               onClick={handleCopyLink}
-              className="flex w-full items-center justify-between gap-3 border-border/70 bg-muted/30 hover:bg-muted/50 hover:border-border"
+              className="flex h-auto w-full items-center justify-between gap-3 whitespace-normal border-border/70 bg-muted/30 hover:bg-muted/50 hover:border-border"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {copySuccess ? (

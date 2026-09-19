@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const rateLimitResult = await withRateLimit(
       request,
       { interval: 60 * 1000, uniqueTokenPerInterval: 10 },
-      () => getRateLimitIdentifier(request, session.user.id)
+      () => getRateLimitIdentifier(request, session.user.id),
     );
     if (rateLimitResult) return rateLimitResult;
 
@@ -34,7 +34,10 @@ export async function POST(request: NextRequest) {
 
     // Only the buyer's choice is read from each line (CartLineInput); the rest of
     // the payload is display baggage the server re-derives from the product.
-    const merged = await cartService.syncCart(session.user.id, validation.data.items);
+    const merged = await cartService.syncCart(
+      session.user.id,
+      validation.data.items,
+    );
 
     return NextResponse.json(merged, { status: 200 });
   } catch (error) {

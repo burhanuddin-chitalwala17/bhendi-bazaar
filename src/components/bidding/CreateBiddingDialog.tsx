@@ -117,7 +117,7 @@ export function CreateBiddingDialog({
               key={product.id}
               type="button"
               variant="ghost"
-              className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm font-normal"
+              className="h-auto w-full justify-start whitespace-normal px-3 py-2.5 text-left text-sm font-normal"
               onClick={() => choose(product.id)}
             >
               {product.name}

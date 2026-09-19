@@ -15,6 +15,24 @@ import { z } from "zod";
 export const PRODUCT_PAGE_SIZE = 12;
 
 /**
+ * How a listing may be ordered.
+ *
+ * `newest` is the default everywhere and the only one the database can serve directly.
+ * The price sorts are by the **offer price** — what a shopper is actually asked to pay
+ * — which no column holds, so they are resolved and ordered in memory over the row cap
+ * (`productsDAL.getPage`). Ordering by the `price` column instead would put an item
+ * reduced from ₹1,000 to ₹350 where ₹1,000 belongs.
+ */
+export const PRODUCT_SORTS = ["newest", "price-asc", "price-desc"] as const;
+export type ProductSort = (typeof PRODUCT_SORTS)[number];
+
+export const PRODUCT_SORT_LABELS: Record<ProductSort, string> = {
+  newest: "New arrivals",
+  "price-asc": "Price: low to high",
+  "price-desc": "Price: high to low",
+};
+
+/**
  * What a listing carries forward when it asks for more.
  *
  * Deliberately **no `orgId`**. A shop is named by its public handle and resolved on the
@@ -27,6 +45,8 @@ export interface ProductPageQuery {
   category?: string;
   search?: string;
   offersOnly?: boolean;
+  /** Absent means `newest` — the default a shopper gets without asking. */
+  sort?: ProductSort;
 }
 
 /**
@@ -39,6 +59,7 @@ export const productPageParams = z.object({
   category: z.string().trim().min(1).max(120).optional(),
   q: z.string().trim().min(1).max(120).optional(),
   offers: z.literal("1").optional(),
+  sort: z.enum(PRODUCT_SORTS).default("newest"),
 });
 
 /** Build the query string for one more page of `query`, starting at `offset`. */
@@ -51,5 +72,7 @@ export function productPageUrl(
   if (query.category) params.set("category", query.category);
   if (query.search) params.set("q", query.search);
   if (query.offersOnly) params.set("offers", "1");
+  // Omitted when it is the default, so a plain listing's URL stays plain.
+  if (query.sort && query.sort !== "newest") params.set("sort", query.sort);
   return `/api/products?${params}`;
 }

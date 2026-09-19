@@ -12,5 +12,7 @@ import { biddingService } from "@server/bidding/bidding.service";
 
 export const GET = withOrg(async (request, scope) => {
   const search = new URL(request.url).searchParams.get("q") ?? undefined;
-  return NextResponse.json(await biddingService.pickableProducts(scope.orgId, search));
+  return NextResponse.json(
+    await biddingService.pickableProducts(scope.orgId, search),
+  );
 });

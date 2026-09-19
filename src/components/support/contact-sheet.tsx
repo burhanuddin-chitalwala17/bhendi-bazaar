@@ -28,14 +28,15 @@ interface ContactSheetProps {
 /**
  * The two ways to reach the store, as one row shape.
  *
- * `h-auto` and `justify-start` are both load-bearing, and both look removable. One row
- * is an `<a>` and the other a `<Button>`, and `Button`'s base brings a fixed `h-9` and
- * `justify-center` with it. Without these the second row is capped at 36px with its
- * contents centred, while the first grows to fit two lines and starts at the left —
- * so the pair sit at different heights with their icons in different places.
+ * `h-auto`, `justify-start` and `whitespace-normal` are all load-bearing, and all look
+ * removable. One row is an `<a>` and the other a `<Button>`, and `Button`'s base brings
+ * a fixed `h-9`, `justify-center` and `whitespace-nowrap` with it. Without these the
+ * second row is capped at 36px with its contents centred and its description running
+ * off the edge, while the first grows to fit two lines and starts at the left — so the
+ * pair sit at different heights with their icons in different places.
  */
 const OPTION_ROW =
-  "flex h-auto w-full items-center justify-start gap-3 rounded-card border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:bg-muted";
+  "flex h-auto w-full items-center justify-start gap-3 whitespace-normal rounded-card border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:bg-muted";
 
 const TITLES: Record<Step, { title: string; description: string }> = {
   choices: {
@@ -112,7 +113,7 @@ export function ContactSheet({
               className={OPTION_ROW}
             >
               <Mail className="size-5 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 whitespace-normal">
+              <span className="min-w-0">
                 <span className="block text-sm font-semibold">
                   Send a message
                 </span>

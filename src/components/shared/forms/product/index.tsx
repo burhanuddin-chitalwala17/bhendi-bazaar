@@ -219,9 +219,7 @@ export function ProductForm({
                   tokenEndpoint={uploadTokenEndpoint}
                   identifier={watch("name")}
                   // The code, not the id: it is the folder the presign route signs under.
-                  orgCode={
-                    orgs?.find((org) => org.id === watch("orgId"))?.code
-                  }
+                  orgCode={orgs?.find((org) => org.id === watch("orgId"))?.code}
                 />
               )}
             />

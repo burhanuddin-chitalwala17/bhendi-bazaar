@@ -32,7 +32,7 @@ export async function GET() {
         error:
           error instanceof Error ? error.message : "Failed to fetch profile",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -54,10 +54,7 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const updated = await profileService.updateProfile(
-      userId,
-      validation.data
-    );
+    const updated = await profileService.updateProfile(userId, validation.data);
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Failed to update profile:", error);
@@ -66,7 +63,7 @@ export async function PUT(req: Request) {
         error:
           error instanceof Error ? error.message : "Failed to update profile",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

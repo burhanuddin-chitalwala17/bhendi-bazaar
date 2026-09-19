@@ -17,9 +17,10 @@ export async function checkBannerImage(file: File): Promise<string | null> {
 /** The judgement, without the file — pure, so it can be tested and reasoned about. */
 export function describeBannerImageProblem(
   width: number,
-  height: number
+  height: number,
 ): string | null {
-  if (width <= 0 || height <= 0) return "That file could not be read as an image.";
+  if (width <= 0 || height <= 0)
+    return "That file could not be read as an image.";
   if (width < BANNER_IMAGE.width) {
     return `That image is ${width}px wide. The banner needs at least ${BANNER_IMAGE.width}px, or it will look soft on a large screen.`;
   }
@@ -31,7 +32,9 @@ export function describeBannerImageProblem(
   return null;
 }
 
-function readDimensions(file: File): Promise<{ width: number; height: number } | null> {
+function readDimensions(
+  file: File,
+): Promise<{ width: number; height: number } | null> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const image = new Image();

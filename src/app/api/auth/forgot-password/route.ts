@@ -18,11 +18,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: `Too many requests. Please try again in ${formatTimeRemaining(
-          timeRemaining
+          timeRemaining,
         )}.`,
         retryAfter: Math.ceil(timeRemaining / 1000),
       },
-      { status: 429 }
+      { status: 429 },
     );
   }
 

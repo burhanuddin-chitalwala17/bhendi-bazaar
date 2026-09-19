@@ -123,7 +123,7 @@ export function AddressesSection({
                   type="button"
                   onClick={() => handleAddressClick(address)}
                   className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/60 px-4 py-3 text-left text-xs transition-colors hover:bg-muted/70",
+                    "flex h-auto w-full items-center justify-between gap-3 whitespace-normal rounded-xl border border-border/70 bg-card/60 px-4 py-3 text-left text-xs transition-colors hover:bg-muted/70",
                   )}
                 >
                   <div className="space-y-1">

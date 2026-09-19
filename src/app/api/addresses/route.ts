@@ -41,11 +41,11 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || !(session.user).id) {
+  if (!session?.user || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user).id;
+  const userId = session.user.id;
 
   // Validate request body
   const validation = await validateRequest(req, addAddressSchema);
@@ -57,9 +57,15 @@ export async function POST(req: Request) {
   try {
     const success = await addressService.addAddress(userId, validation.data);
     if (!success) {
-      return NextResponse.json({ error: "Failed to add address" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Failed to add address" },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ success: true, message: "Address added" }, { status: 201 });
+    return NextResponse.json(
+      { success: true, message: "Address added" },
+      { status: 201 },
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not add address");
   }

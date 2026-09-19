@@ -182,7 +182,7 @@ function ShippingGroupCard({
               type="button"
               onClick={() => onRateSelect(rate)}
               className={`
-                w-full p-3 rounded-lg border-2 transition-all text-left
+                h-auto w-full justify-start whitespace-normal p-3 rounded-lg border-2 transition-all text-left
                 ${
                   group.selectedRate?.courierCode === rate.courierCode
                     ? "border-primary bg-primary/5"
@@ -190,7 +190,7 @@ function ShippingGroupCard({
                 }
               `}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex w-full items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <Truck className="h-4 w-4 text-muted-foreground" />

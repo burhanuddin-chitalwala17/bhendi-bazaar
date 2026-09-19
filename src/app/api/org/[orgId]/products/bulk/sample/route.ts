@@ -18,13 +18,17 @@ export const GET = withOrg<{ orgId: string }>(async (_request, scope) => {
     ]);
     const buffer = await buildProductSampleSheet({
       orgName: org?.name ?? "org",
-      locationNames: locations.filter((l) => l.isActive !== false).map((l) => l.name),
+      locationNames: locations
+        .filter((l) => l.isActive !== false)
+        .map((l) => l.name),
       categorySlugs: categories.map((c) => c.slug),
     });
     return new Response(new Uint8Array(buffer), {
       headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": 'attachment; filename="bulk-products-sample.xlsx"',
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition":
+          'attachment; filename="bulk-products-sample.xlsx"',
       },
     });
   } catch (error) {

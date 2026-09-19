@@ -73,7 +73,11 @@ export interface ProductDetails {
   colors: string[];
   org: OrgSummary;
   /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
-  stockLocations: Array<{ orgAddressId: string; locationName: string; quantity: number }>;
+  stockLocations: Array<{
+    orgAddressId: string;
+    locationName: string;
+    quantity: number;
+  }>;
   createdAt: Date;
 }
 
@@ -87,4 +91,3 @@ export interface ProductStats {
   featuredProducts: number;
   totalInventoryValue: number;
 }
-

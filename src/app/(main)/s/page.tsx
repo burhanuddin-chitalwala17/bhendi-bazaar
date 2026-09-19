@@ -1,5 +1,4 @@
 import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
-import { PRODUCT_PAGE_SIZE } from "@/lib/product-paging";
 import { Package } from "lucide-react";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { SectionHeader } from "@/components/shared/SectionHeader";
@@ -14,10 +13,7 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
 
-  const products = await productsDAL.getProducts({
-    search: q,
-    limit: PRODUCT_PAGE_SIZE,
-  });
+  const page = await productsDAL.getPage({ search: q });
 
   return (
     // The (main) layout already provides the max-width container and padding.
@@ -27,10 +23,10 @@ export default async function SearchPage({
         title={`Search Results for "${q}"`}
       />
       <Suspense fallback={<ProductGridSkeleton />}>
-        {products && products.length > 0 ? (
+        {page.products.length > 0 ? (
           <PaginatedProductGrid
-            initial={products}
-            initiallyDone={products.length < PRODUCT_PAGE_SIZE}
+            initial={page.products}
+            initiallyDone={page.done}
             query={{ search: q }}
             emptyLabel="results"
           />

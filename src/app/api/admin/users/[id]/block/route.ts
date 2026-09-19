@@ -10,7 +10,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
@@ -21,7 +21,7 @@ export async function POST(
     const user = await adminUserService.toggleBlockUser(
       id,
       session.user.id,
-      isBlocked
+      isBlocked,
     );
 
     if (!user) {
@@ -33,5 +33,3 @@ export async function POST(
     return toErrorResponse(error, "Could not update user status:");
   }
 }
-
-

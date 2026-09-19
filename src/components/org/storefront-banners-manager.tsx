@@ -64,7 +64,9 @@ export function StorefrontBannersManager({
       return true;
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not save. Please try again."
+        error instanceof Error
+          ? error.message
+          : "Could not save. Please try again.",
       );
       return false;
     } finally {
@@ -103,8 +105,8 @@ export function StorefrontBannersManager({
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-2xs text-muted-foreground">
-          Cards that run across the top of your shop — a picture, a line of words, and
-          somewhere to go. Add more than one and they rotate.
+          Cards that run across the top of your shop — a picture, a line of
+          words, and somewhere to go. Add more than one and they rotate.
           <br />
           <strong className="text-foreground">
             Changes here apply straight away

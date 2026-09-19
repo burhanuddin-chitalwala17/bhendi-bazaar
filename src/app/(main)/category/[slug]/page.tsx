@@ -2,7 +2,6 @@ import { CategoryBreadcrumb } from "@/components/category/category-breadcrumb";
 import { CategoryHero } from "@/components/category/category-hero";
 import { CategoryLanes } from "@/components/category/category-lanes";
 import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
-import { PRODUCT_PAGE_SIZE } from "@/lib/product-paging";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Package } from "lucide-react";
 import { productsDAL } from "@/data-access-layer/products.dal";
@@ -19,9 +18,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   // Independent reads, fetched together rather than in a four-step waterfall. The three
   // category shapes all resolve against the same request-memoised tree, so they add no
   // queries; lanes are below this one only, and the ancestor trail points back up.
-  const [category, products, lanes, ancestors] = await Promise.all([
+  const [category, page, lanes, ancestors] = await Promise.all([
     categoriesDAL.getCategoryBySlug(slug),
-    productsDAL.getProducts({ categorySlug: slug, limit: PRODUCT_PAGE_SIZE }),
+    productsDAL.getPage({ categorySlug: slug }),
     categoriesDAL.getDescendants(slug),
     categoriesDAL.getAncestors(slug),
   ]);
@@ -29,14 +28,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   return (
     <div className="space-y-4">
       <Suspense fallback={<LoadingSkeleton />}>
-        {category && products ? (
+        {category && page ? (
           <>
             <CategoryBreadcrumb ancestors={ancestors} current={category} />
             <CategoryHero category={category} />
             <CategoryLanes categories={lanes} />
             <PaginatedProductGrid
-              initial={products}
-              initiallyDone={products.length < PRODUCT_PAGE_SIZE}
+              initial={page.products}
+              initiallyDone={page.done}
               query={{ category: slug }}
             />
           </>

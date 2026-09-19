@@ -1,6 +1,6 @@
 /**
  * useShippingProviders Hook
- * 
+ *
  * Custom hook for managing shipping providers in admin UI.
  * Provides state management and operations for provider list.
  */
@@ -29,7 +29,7 @@ export interface UseShippingProvidersReturn {
   refreshProviders: () => Promise<void>;
   connectProvider: (
     providerId: string,
-    requestBody: ConnectionRequestBody
+    requestBody: ConnectionRequestBody,
   ) => Promise<ConnectionResponse>;
   disconnectProvider: (providerId: string) => Promise<void>;
 }
@@ -69,7 +69,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
   const connectProvider = useCallback(
     async (
       providerId: string,
-      requestBody: ConnectionRequestBody
+      requestBody: ConnectionRequestBody,
     ): Promise<ConnectionResponse> => {
       setIsConnecting(true);
       setError(null);
@@ -77,7 +77,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
       try {
         const response = await shippingProviderService.connectProvider(
           providerId,
-          requestBody
+          requestBody,
         );
         if (response.success) {
           setProviders((prev) =>
@@ -90,8 +90,8 @@ export function useShippingProviders(): UseShippingProvidersReturn {
                     connectedBy: response.provider?.connectedBy,
                     isConnected: true,
                   }
-                : provider
-            )
+                : provider,
+            ),
           );
           return response;
         } else {
@@ -108,7 +108,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
         setIsConnecting(false);
       }
     },
-    []
+    [],
   );
 
   /**
@@ -118,9 +118,8 @@ export function useShippingProviders(): UseShippingProvidersReturn {
     setIsDisconnecting(true);
     setError(null);
     try {
-      const response = await shippingProviderService.disconnectProvider(
-        providerId
-      );
+      const response =
+        await shippingProviderService.disconnectProvider(providerId);
       if (response.success) {
         setProviders((prev) =>
           prev.map((provider) =>
@@ -132,8 +131,8 @@ export function useShippingProviders(): UseShippingProvidersReturn {
                   connectedBy: response.provider?.connectedBy,
                   isConnected: false,
                 }
-              : provider
-          )
+              : provider,
+          ),
         );
       } else {
         setError(response.error || "Failed to disconnect provider");
@@ -161,4 +160,3 @@ export function useShippingProviders(): UseShippingProvidersReturn {
     disconnectProvider,
   };
 }
-

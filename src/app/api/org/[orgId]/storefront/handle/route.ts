@@ -20,5 +20,7 @@ export const PATCH = withOrg(async (request, scope) => {
     throw new ForbiddenError("Only an owner can change this shop's address.");
   }
   const { handle } = handleChangeSchema.parse(await request.json());
-  return NextResponse.json(await storefrontService.changeHandle(scope.orgId, handle));
+  return NextResponse.json(
+    await storefrontService.changeHandle(scope.orgId, handle),
+  );
 });

@@ -1,7 +1,7 @@
 /**
  * Shipping Providers API - Admin
  * GET /api/admin/shipping/providers
- * 
+ *
  * Fetch all shipping providers with statistics (Admin only)
  */
 
@@ -23,4 +23,3 @@ export async function GET() {
     return toErrorResponse(error, "Could not fetch providers");
   }
 }
-

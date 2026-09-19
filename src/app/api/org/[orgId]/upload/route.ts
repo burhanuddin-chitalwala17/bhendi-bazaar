@@ -25,5 +25,10 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
   const org = await orgRepository.findById(scope.orgId);
   const urls = await uploadImages(files, "products", identifier, org?.code);
 
-  return NextResponse.json({ success: true, urls, type: "products", folder: "products" });
+  return NextResponse.json({
+    success: true,
+    urls,
+    type: "products",
+    folder: "products",
+  });
 });

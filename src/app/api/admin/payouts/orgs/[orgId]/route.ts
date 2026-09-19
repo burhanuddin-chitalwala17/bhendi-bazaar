@@ -4,7 +4,10 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { ledgerService } from "@server/payouts/ledger.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 
-export async function GET(_request: Request, context: { params: Promise<{ orgId: string }> }) {
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ orgId: string }> },
+) {
   try {
     await requirePlatformAdmin();
     const { orgId } = await context.params;

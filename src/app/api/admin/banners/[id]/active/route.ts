@@ -15,14 +15,14 @@ import { setBannerActiveSchema } from "@/lib/validation/schemas/banner.schema";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
     const { id } = await params;
     const { isActive } = setBannerActiveSchema.parse(await request.json());
     return NextResponse.json(
-      await bannerService.setActive(session.user.id, id, isActive)
+      await bannerService.setActive(session.user.id, id, isActive),
     );
   } catch (error) {
     return toErrorResponse(error, "Could not update banner");

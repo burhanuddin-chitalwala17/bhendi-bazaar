@@ -39,7 +39,7 @@ export function OrgSwitcher({
         variant="ghost"
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 text-left hover:bg-muted/60"
+        className="flex h-auto w-full items-center justify-between gap-2 whitespace-normal text-left hover:bg-muted/60"
         aria-expanded={open}
       >
         <span className="min-w-0">

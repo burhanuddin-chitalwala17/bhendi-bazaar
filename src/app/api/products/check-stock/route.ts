@@ -39,20 +39,35 @@ export async function POST(request: NextRequest) {
     ]);
     const totals = new Map<string, number>();
     for (const row of stockRows) {
-      totals.set(row.productId, (totals.get(row.productId) ?? 0) + row.quantity);
+      totals.set(
+        row.productId,
+        (totals.get(row.productId) ?? 0) + row.quantity,
+      );
     }
-    const productsById = new Map(products.map((product) => [product.id, product]));
+    const productsById = new Map(
+      products.map((product) => [product.id, product]),
+    );
     const stockStatus = validation.data.items.map((item) => {
       const product = productsById.get(item.productId);
       const stock = totals.get(item.productId) ?? 0;
       if (!product) {
-        return { productId: item.productId, name: "Unknown product", available: false, stock: 0 };
+        return {
+          productId: item.productId,
+          name: "Unknown product",
+          available: false,
+          stock: 0,
+        };
       }
       // A withdrawn product is never available, whatever is on the shelf: its stock
       // is real but not for sale (product-archive R5). The cart already renders this
       // state, so withdrawal reuses it rather than adding a second one.
       if (product.archivedAt) {
-        return { productId: item.productId, name: product.name, available: false, stock: 0 };
+        return {
+          productId: item.productId,
+          name: product.name,
+          available: false,
+          stock: 0,
+        };
       }
       return {
         productId: item.productId,
@@ -72,10 +87,9 @@ export async function POST(request: NextRequest) {
     console.error("Stock check failed:", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Failed to check stock",
+        error: error instanceof Error ? error.message : "Failed to check stock",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

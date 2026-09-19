@@ -27,13 +27,14 @@ export async function POST(request: NextRequest) {
     const limited = await withRateLimit(
       request,
       { interval: 10 * 60 * 1000, uniqueTokenPerInterval: 5 },
-      (req) => getRateLimitIdentifier(req, session?.user?.id)
+      (req) => getRateLimitIdentifier(req, session?.user?.id),
     );
     if (limited) return limited;
 
     const body = await request.json();
     const { subject, message } = contactMessageSchema.parse(body);
-    const replyEmail = accountEmail ?? guestContactMessageSchema.parse(body).email;
+    const replyEmail =
+      accountEmail ?? guestContactMessageSchema.parse(body).email;
 
     await emailService.sendContactMessage({
       subject,
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return toErrorResponse(
       error,
-      "Could not send your message. Please try again, or reach us on WhatsApp."
+      "Could not send your message. Please try again, or reach us on WhatsApp.",
     );
   }
 }

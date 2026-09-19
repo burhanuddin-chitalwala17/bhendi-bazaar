@@ -17,12 +17,12 @@ export const PATCH = withOrg<{ orgId: string; bannerId: string }>(
     const body = orgBannerSchema.parse(await request.json());
     await storefrontService.editBanner(scope.orgId, params.bannerId, body);
     return NextResponse.json({ ok: true });
-  }
+  },
 );
 
 export const DELETE = withOrg<{ orgId: string; bannerId: string }>(
   async (_request, scope, params) => {
     await storefrontService.removeBanner(scope.orgId, params.bannerId);
     return NextResponse.json({ ok: true });
-  }
+  },
 );

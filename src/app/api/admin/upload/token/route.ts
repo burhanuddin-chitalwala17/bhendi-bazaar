@@ -19,7 +19,9 @@ const PREFIX = "categories/";
 export async function POST(request: NextRequest) {
   try {
     await requirePlatformAdmin();
-    const { pathname, contentType, size } = presignUploadSchema.parse(await request.json());
+    const { pathname, contentType, size } = presignUploadSchema.parse(
+      await request.json(),
+    );
     // The schema rejected traversal segments, so a prefix test is containment here.
     if (!pathname.startsWith(PREFIX)) {
       throw new DomainError(`Uploads must live under ${PREFIX}`);

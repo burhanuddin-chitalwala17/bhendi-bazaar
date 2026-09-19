@@ -14,11 +14,16 @@ import { adminPromotionService } from "@server/promotions/admin.promotion.servic
 import { promotionFormSchema } from "@/lib/validation/schemas/promotion.schema";
 
 export const GET = withOrg(async (_request, scope) =>
-  NextResponse.json(await adminPromotionService.list({ scope: "ORG", orgId: scope.orgId }))
+  NextResponse.json(
+    await adminPromotionService.list({ scope: "ORG", orgId: scope.orgId }),
+  ),
 );
 
 export const POST = withOrg(async (request, scope) => {
   const body = promotionFormSchema.parse(await request.json());
-  const promotion = await adminPromotionService.create(body, { scope: "ORG", orgId: scope.orgId });
+  const promotion = await adminPromotionService.create(body, {
+    scope: "ORG",
+    orgId: scope.orgId,
+  });
   return NextResponse.json(promotion, { status: 201 });
 });

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: `Too many payment requests. Please try again in ${formatTimeRemaining(
-          timeRemaining
+          timeRemaining,
         )}.`,
         retryAfter: Math.ceil(timeRemaining / 1000),
       },
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           "X-RateLimit-Reset": reset.toString(),
           "Retry-After": Math.ceil(timeRemaining / 1000).toString(),
         },
-      }
+      },
     );
   }
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const paymentOrder = await paymentService.createPaymentOrder(
-      validation.data
+      validation.data,
     );
 
     return NextResponse.json(paymentOrder);
@@ -62,8 +62,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Failed to create payment order",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
-

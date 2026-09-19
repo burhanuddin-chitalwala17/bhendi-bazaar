@@ -63,3 +63,35 @@ export interface ProductFilter {
   limit?: number;
   offset?: number;
 }
+
+/**
+ * What a shopper is actually asked to pay, in paise.
+ *
+ * The one rule for "is this on offer" — a sale price that exists, is above zero and is
+ * below the list price. Anything looser lets a zero or an inverted sale price through
+ * as a discount; a bare `salePrice ?? price` does exactly that, which is the
+ * inconsistency the BACKLOG records across eight call sites.
+ *
+ * Declared here because two things must agree on it and they are far apart: the price
+ * a listing *shows* (`PriceDisplay`) and the price a listing *sorts by*. If they use
+ * different rules, "price: low to high" puts a reduced item where its old price
+ * belongs — which is the whole reason sorting by the database column is not an option
+ * (ADR-0018).
+ */
+export function effectivePrice(product: {
+  price: number;
+  salePrice?: number | null;
+}): number {
+  const { price, salePrice } = product;
+  return salePrice != null && salePrice > 0 && salePrice < price
+    ? salePrice
+    : price;
+}
+
+/** Whether a reduction is actually in force, by the same rule. */
+export function hasOffer(product: {
+  price: number;
+  salePrice?: number | null;
+}): boolean {
+  return effectivePrice(product) < product.price;
+}

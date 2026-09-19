@@ -1,6 +1,6 @@
 /**
  * Client-Side Shipping Service
- * 
+ *
  * Service layer for making API calls related to shipping.
  * Used by hooks and components to communicate with backend.
  */
@@ -46,7 +46,7 @@ export class ShippingProviderService {
    */
   async connectProvider(
     providerId: string,
-    requestBody: ConnectionRequestBody
+    requestBody: ConnectionRequestBody,
   ): Promise<ConnectionResponse> {
     try {
       const response = await fetch(
@@ -55,7 +55,7 @@ export class ShippingProviderService {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
-        }
+        },
       );
 
       const data = await response.json();
@@ -85,7 +85,7 @@ export class ShippingProviderService {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
 
       const data = await response.json();
@@ -110,4 +110,3 @@ export class ShippingProviderService {
 
 // Singleton instance
 export const shippingProviderService = new ShippingProviderService();
-

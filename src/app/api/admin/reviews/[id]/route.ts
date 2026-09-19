@@ -11,10 +11,9 @@ import { adminReviewService } from "@server/catalog/review.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { updateReviewSchema } from "@/lib/validation/schemas/admin.schemas";
 
-
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
@@ -24,7 +23,7 @@ export async function PATCH(
     const review = await adminReviewService.updateReview(
       id,
       session.user.id,
-      body
+      body,
     );
 
     if (!review) {
@@ -39,7 +38,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
@@ -51,4 +50,3 @@ export async function DELETE(
     return toErrorResponse(error, "Could not delete review:");
   }
 }
-

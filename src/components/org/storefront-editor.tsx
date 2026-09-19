@@ -6,13 +6,12 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { FormInput, FormSelect, FormTextarea } from "@/components/shared/forms/FormField";
+  FormInput,
+  FormSelect,
+  FormTextarea,
+} from "@/components/shared/forms/FormField";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { ImageUpload } from "@/components/shared/image-upload";
 import { useServerForm } from "@/hooks/core/useServerForm";
@@ -98,8 +97,8 @@ export function StorefrontEditor({
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            This is the link you share. It works on a card, in a message, or in an
-            advertisement.
+            This is the link you share. It works on a card, in a message, or in
+            an advertisement.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <code className="rounded-field bg-muted px-2 py-1 text-sm">
@@ -195,9 +194,10 @@ export function StorefrontEditor({
           <CardContent className="space-y-4">
             {/* R3a: unambiguous whose promise this is. */}
             <p className="text-2xs text-muted-foreground">
-              Delivery and returns are yours to set. Payment and fraud protection stay
-              Bhendi Bazaar&apos;s, and cannot be signed away here. Leave a field blank
-              and the platform&apos;s own terms stand in.
+              Delivery and returns are yours to set. Payment and fraud
+              protection stay Bhendi Bazaar&apos;s, and cannot be signed away
+              here. Leave a field blank and the platform&apos;s own terms stand
+              in.
             </p>
             <FormTextarea
               label="Delivery"

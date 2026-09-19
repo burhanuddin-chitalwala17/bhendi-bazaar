@@ -19,13 +19,17 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
   try {
     const parsed = bulkProductCreateSchema.safeParse(await request.json());
     if (!parsed.success) {
-      throw new DomainError(parsed.error.issues[0]?.message ?? "Invalid payload");
+      throw new DomainError(
+        parsed.error.issues[0]?.message ?? "Invalid payload",
+      );
     }
 
-    const rows: RowWithNumber<BulkProductCreateRow>[] = parsed.data.rows.map((row, index) => ({
-      rowNumber: index + 2, // header is row 1, mirroring the sheet the user saw
-      row: row as BulkProductCreateRow,
-    }));
+    const rows: RowWithNumber<BulkProductCreateRow>[] = parsed.data.rows.map(
+      (row, index) => ({
+        rowNumber: index + 2, // header is row 1, mirroring the sheet the user saw
+        row: row as BulkProductCreateRow,
+      }),
+    );
 
     // Same checks as the dry run; every named image must have an uploaded URL.
     const filenames = rows.flatMap(({ row }) => Object.keys(row.imageUrls));
@@ -33,7 +37,11 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     for (const { row, rowNumber } of rows) {
       for (const filename of row.images) {
         if (!row.imageUrls[filename]) {
-          errors.push({ row: rowNumber, field: "images", message: `No uploaded URL for "${filename}".` });
+          errors.push({
+            row: rowNumber,
+            field: "images",
+            message: `No uploaded URL for "${filename}".`,
+          });
         }
       }
     }

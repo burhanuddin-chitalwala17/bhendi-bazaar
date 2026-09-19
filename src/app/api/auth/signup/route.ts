@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: `Too many signup attempts. Please try again in ${formatTimeRemaining(
-          timeRemaining
+          timeRemaining,
         )}.`,
         retryAfter: Math.ceil(timeRemaining / 1000),
       },
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
           "X-RateLimit-Reset": reset.toString(),
           "Retry-After": Math.ceil(timeRemaining / 1000).toString(),
         },
-      }
+      },
     );
   }
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: "User with this email already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -70,8 +70,7 @@ export async function POST(request: NextRequest) {
         passwordHash,
         isEmailVerified: false, // Explicitly set to false
         profile: {
-          create: {
-          },
+          create: {},
         },
       },
     });
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
         message:
           "Account created! Please check your email to verify your account.",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     return toErrorResponse(error, "Something went wrong");

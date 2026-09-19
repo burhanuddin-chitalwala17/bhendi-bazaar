@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
 
   if (!token) {
     return NextResponse.redirect(
-      new URL("/?verification=error&message=Invalid verification link", request.url)
+      new URL(
+        "/?verification=error&message=Invalid verification link",
+        request.url,
+      ),
     );
   }
 
@@ -16,11 +19,14 @@ export async function GET(request: NextRequest) {
 
   if (result.success) {
     return NextResponse.redirect(
-      new URL("/?verification=success", request.url)
+      new URL("/?verification=success", request.url),
     );
   } else {
     return NextResponse.redirect(
-      new URL(`/?verification=error&message=${encodeURIComponent(result.error || "Verification failed")}`, request.url)
+      new URL(
+        `/?verification=error&message=${encodeURIComponent(result.error || "Verification failed")}`,
+        request.url,
+      ),
     );
   }
 }

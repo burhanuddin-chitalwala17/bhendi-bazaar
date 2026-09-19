@@ -15,7 +15,10 @@ export const AUTH_VIEW_PATHS: Record<AuthView, string> = {
   forgot: "/forgot-password",
 };
 
-export const AUTH_VIEW_COPY: Record<AuthView, { eyebrow: string; title: string; description: string }> = {
+export const AUTH_VIEW_COPY: Record<
+  AuthView,
+  { eyebrow: string; title: string; description: string }
+> = {
   signin: {
     eyebrow: "Sign in",
     title: "Welcome back to Bhendi Bazaar",
@@ -31,6 +34,7 @@ export const AUTH_VIEW_COPY: Record<AuthView, { eyebrow: string; title: string; 
   forgot: {
     eyebrow: "Forgot password",
     title: "Reset your password",
-    description: "Enter your email and we'll send you a link to reset your password.",
+    description:
+      "Enter your email and we'll send you a link to reset your password.",
   },
 };

@@ -17,7 +17,6 @@ import { toErrorResponse } from "@/lib/api-error-response";
 // Next passes (request, context); `params` is a Promise in Next 15+.
 type RouteParams = { params: Promise<{ id: string }> };
 
-
 /**
  * PATCH /api/addresses/[id]
  * Update an existing address
@@ -25,11 +24,11 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || !(session.user).id) {
+  if (!session?.user || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user).id;
+  const userId = session.user.id;
   const { id: addressId } = await params;
 
   // Validate request body
@@ -40,14 +39,16 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   }
 
   try {
-
     const success = await addressService.updateAddress(
       userId,
       addressId,
-      validation.data
+      validation.data,
     );
     if (!success) {
-      return NextResponse.json({ error: "Failed to update address" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Failed to update address" },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ success: true, message: "Address updated" });
   } catch (error) {
@@ -62,17 +63,20 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || !(session.user).id) {
+  if (!session?.user || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user).id;
+  const userId = session.user.id;
   const { id: addressId } = await params;
 
   try {
     const success = await addressService.deleteAddress(userId, addressId);
     if (!success) {
-      return NextResponse.json({ error: "Failed to delete address" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Failed to delete address" },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ success: true, message: "Address deleted" });
   } catch (error) {

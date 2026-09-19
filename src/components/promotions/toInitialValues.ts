@@ -22,7 +22,11 @@ export function toInitialValues(offer: {
     ...offer,
     trigger: offer.trigger as OfferInitialValues["trigger"],
     valueType: offer.valueType as OfferInitialValues["valueType"],
-    categoryIds: offer.targets.flatMap((t) => (t.categoryId ? [t.categoryId] : [])),
-    productIds: offer.targets.flatMap((t) => (t.productId ? [t.productId] : [])),
+    categoryIds: offer.targets.flatMap((t) =>
+      t.categoryId ? [t.categoryId] : [],
+    ),
+    productIds: offer.targets.flatMap((t) =>
+      t.productId ? [t.productId] : [],
+    ),
   };
 }

@@ -17,5 +17,3 @@ export async function GET() {
     return toErrorResponse(error, "Could not fetch dashboard stats:");
   }
 }
-
-

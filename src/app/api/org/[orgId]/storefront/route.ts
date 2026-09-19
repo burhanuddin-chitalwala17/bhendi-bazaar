@@ -17,5 +17,7 @@ export const PATCH = withOrg(async (request, scope) => {
   // The org comes from the verified membership, never the payload (Invariant 4), and
   // the schema carries no `handle` — that is its own operation next door.
   const body = storefrontSettingsSchema.parse(await request.json());
-  return NextResponse.json(await storefrontService.saveSettings(scope.orgId, body));
+  return NextResponse.json(
+    await storefrontService.saveSettings(scope.orgId, body),
+  );
 });

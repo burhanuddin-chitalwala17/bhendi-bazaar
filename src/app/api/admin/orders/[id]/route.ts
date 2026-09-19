@@ -12,7 +12,7 @@ import { updateOrderStatusSchema } from "@/lib/validation/schemas/admin.schemas"
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
@@ -31,7 +31,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
@@ -41,7 +41,7 @@ export async function PATCH(
     const order = await adminOrderService.updateOrderStatus(
       id,
       session.user.id,
-      body
+      body,
     );
 
     if (!order) {
@@ -53,5 +53,3 @@ export async function PATCH(
     return toErrorResponse(error, "Could not update order:");
   }
 }
-
-

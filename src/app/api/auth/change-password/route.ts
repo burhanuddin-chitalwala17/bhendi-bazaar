@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { currentPassword, newPassword, confirmPassword } = changePasswordSchema.parse(await request.json());
+    const { currentPassword, newPassword, confirmPassword } =
+      changePasswordSchema.parse(await request.json());
 
     // Validation
     // Validate password strength
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     const result = await passwordService.changePassword(
       (session.user as any).id,
       currentPassword,
-      newPassword
+      newPassword,
     );
 
     if (!result.success) {

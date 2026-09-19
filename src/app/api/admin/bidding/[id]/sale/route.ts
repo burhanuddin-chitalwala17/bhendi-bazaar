@@ -16,7 +16,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const adminId = await requirePlatformAdminId();

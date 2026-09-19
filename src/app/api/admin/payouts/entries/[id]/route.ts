@@ -23,23 +23,33 @@ const editSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     const session = await requirePlatformAdmin();
     const { id } = await context.params;
     const body = editSchema.parse(await request.json());
-    return NextResponse.json(await settlementService.editEntry(id, body, session.user.id));
+    return NextResponse.json(
+      await settlementService.editEntry(id, body, session.user.id),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not update the entry");
   }
 }
 
-export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     const session = await requirePlatformAdmin();
     const { id } = await context.params;
     const reason = new URL(request.url).searchParams.get("reason") ?? undefined;
-    return NextResponse.json(await settlementService.removeEntry(id, session.user.id, reason));
+    return NextResponse.json(
+      await settlementService.removeEntry(id, session.user.id, reason),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not remove the entry");
   }

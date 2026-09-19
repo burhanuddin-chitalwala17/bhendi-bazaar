@@ -397,7 +397,8 @@ export function ProductMediaManager({
         {photographCount === 0
           ? "At least one photograph is required. Video is optional."
           : `${media.length} of ${MAX_MEDIA_PER_PRODUCT} items. Tap "Cover" on the photograph that should represent this product in listings.`}{" "}
-        Photos are resized in your browser before upload, so large files are fine.
+        Photos are resized in your browser before upload, so large files are
+        fine.
       </p>
     </div>
   );

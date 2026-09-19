@@ -15,7 +15,9 @@ export class ProductsApiClient {
   constructor(private readonly orgId?: string) {}
 
   private get baseUrl() {
-    return this.orgId ? `/api/org/${this.orgId}/products` : "/api/admin/products";
+    return this.orgId
+      ? `/api/org/${this.orgId}/products`
+      : "/api/admin/products";
   }
   /**
    * Create product
@@ -37,7 +39,9 @@ export class ProductsApiClient {
    * The server decides which, and says so in the response, so the caller can report
    * what happened without a second request.
    */
-  async deleteProduct(id: string): Promise<{ outcome: "deleted" | "archived" }> {
+  async deleteProduct(
+    id: string,
+  ): Promise<{ outcome: "deleted" | "archived" }> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: "DELETE",
     });
@@ -58,7 +62,10 @@ export class ProductsApiClient {
     if (!response.ok) throw await readApiError(response);
   }
 
-  async updateProduct(id: string, data: ProductFormInput): Promise<ProductDetails | null> {
+  async updateProduct(
+    id: string,
+    data: ProductFormInput,
+  ): Promise<ProductDetails | null> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

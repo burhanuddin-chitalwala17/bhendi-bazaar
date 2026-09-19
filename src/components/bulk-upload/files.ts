@@ -13,7 +13,9 @@ export function imagesOnly(files: FileList | null): File[] {
   return Array.from(files ?? []).filter((file) => {
     if (file.name.startsWith(".")) return false; // hidden files, .DS_Store included
     // Type first; some browsers leave it empty, so the extension is the fallback.
-    return file.type ? file.type.startsWith("image/") : IMAGE_EXTENSIONS.test(file.name);
+    return file.type
+      ? file.type.startsWith("image/")
+      : IMAGE_EXTENSIONS.test(file.name);
   });
 }
 
@@ -22,7 +24,8 @@ export function imagesOnly(files: FileList | null): File[] {
  * path; two products may each hold their own `front.jpg`, so the path is the
  * identity and the bare name is only a convenience.
  */
-export const relativePath = (file: File): string => file.webkitRelativePath || file.name;
+export const relativePath = (file: File): string =>
+  file.webkitRelativePath || file.name;
 
 /**
  * Sanitise per segment so a folder path stays a folder path in Blob. `.` and
@@ -33,6 +36,11 @@ export const relativePath = (file: File): string => file.webkitRelativePath || f
 export const sanitizePath = (path: string): string =>
   path
     .split("/")
-    .map((segment) => segment.toLowerCase().replace(/[^a-z0-9.]+/g, "-").replace(/^-+|-+$/g, ""))
+    .map((segment) =>
+      segment
+        .toLowerCase()
+        .replace(/[^a-z0-9.]+/g, "-")
+        .replace(/^-+|-+$/g, ""),
+    )
     .filter((segment) => segment && segment !== "." && segment !== "..")
     .join("/");

@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     // A list price here and an offer price one click later is the drift ADR-0018
     // exists to stop, so the dropdown prices through the same resolver.
     const suggestions = products.map((product) =>
-      productService.toSuggestion(product, priceContext)
+      productService.toSuggestion(product, priceContext),
     );
 
     // Matching categories, from the storefront's own list — the admin listing this
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       .filter(
         (cat) =>
           cat.name.toLowerCase().includes(q) ||
-          cat.slug.toLowerCase().includes(q)
+          cat.slug.toLowerCase().includes(q),
       )
       .map((cat) => ({ name: cat.name, slug: cat.slug }))
       .slice(0, 3);

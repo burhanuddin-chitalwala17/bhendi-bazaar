@@ -11,13 +11,15 @@ import { bannerFormSchema } from "@/lib/validation/schemas/banner.schema";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
     const { id } = await params;
     const body = bannerFormSchema.parse(await request.json());
-    return NextResponse.json(await bannerService.update(session.user.id, id, body));
+    return NextResponse.json(
+      await bannerService.update(session.user.id, id, body),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not update banner");
   }
@@ -25,7 +27,7 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();

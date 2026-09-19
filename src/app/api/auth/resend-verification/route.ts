@@ -8,10 +8,7 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -22,10 +19,13 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Resend verification error:", error);
     return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : "Failed to send verification email" 
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to send verification email",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

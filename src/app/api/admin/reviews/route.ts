@@ -22,14 +22,14 @@ export async function GET(request: NextRequest) {
         searchParams.get("isApproved") === "true"
           ? true
           : searchParams.get("isApproved") === "false"
-          ? false
-          : undefined,
+            ? false
+            : undefined,
       isVerified:
         searchParams.get("isVerified") === "true"
           ? true
           : searchParams.get("isVerified") === "false"
-          ? false
-          : undefined,
+            ? false
+            : undefined,
       minRating: searchParams.get("minRating")
         ? parseInt(searchParams.get("minRating")!)
         : undefined,
@@ -48,4 +48,3 @@ export async function GET(request: NextRequest) {
     return toErrorResponse(error, "Could not fetch reviews:");
   }
 }
-

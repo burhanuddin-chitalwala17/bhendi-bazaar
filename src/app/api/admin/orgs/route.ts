@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
       limit: resolvePageSize(searchParams.get("limit")),
       search: searchParams.get("search") || undefined,
       // Only "active" and "inactive" narrow; anything else — "all", a typo — is everything.
-      isActive: status === "active" ? true : status === "inactive" ? false : undefined,
+      isActive:
+        status === "active" ? true : status === "inactive" ? false : undefined,
     });
 
     return NextResponse.json(orgs);

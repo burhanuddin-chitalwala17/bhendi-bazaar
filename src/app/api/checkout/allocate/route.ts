@@ -25,7 +25,7 @@ const allocateSchema = z.object({
         quantity: quantitySchema,
         size: z.string().trim().min(1).max(50).optional(),
         color: z.string().trim().min(1).max(50).optional(),
-      })
+      }),
     )
     .min(1)
     .max(100),
@@ -40,10 +40,20 @@ export async function POST(request: NextRequest) {
     const [products, stockRows] = await Promise.all([
       prisma.product.findMany({
         where: { id: { in: productIds } },
-        select: { id: true, name: true, weight: true, orgId: true, org: { select: { name: true, code: true } } },
+        select: {
+          id: true,
+          name: true,
+          weight: true,
+          orgId: true,
+          org: { select: { name: true, code: true } },
+        },
       }),
       prisma.productStock.findMany({
-        where: { productId: { in: productIds }, quantity: { gt: 0 }, orgAddress: { isActive: true } },
+        where: {
+          productId: { in: productIds },
+          quantity: { gt: 0 },
+          orgAddress: { isActive: true },
+        },
         select: {
           productId: true,
           orgAddressId: true,
@@ -59,15 +69,24 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    const productsById = new Map(products.map((product) => [product.id, product]));
-    const locationInfo = new Map(stockRows.map((row) => [row.orgAddressId, row.orgAddress]));
+    const productsById = new Map(
+      products.map((product) => [product.id, product]),
+    );
+    const locationInfo = new Map(
+      stockRows.map((row) => [row.orgAddressId, row.orgAddress]),
+    );
     const parcels = allocateAcrossOrgs(
       body.items,
       new Map(products.map((product) => [product.id, product.orgId])),
       stockRows,
-      new Map([...locationInfo.entries()].map(([id, info]) => [id, info.address.pincode])),
+      new Map(
+        [...locationInfo.entries()].map(([id, info]) => [
+          id,
+          info.address.pincode,
+        ]),
+      ),
       body.destinationPincode,
-      new Map(products.map((product) => [product.id, product.name]))
+      new Map(products.map((product) => [product.id, product.name])),
     );
 
     return NextResponse.json({
@@ -75,8 +94,10 @@ export async function POST(request: NextRequest) {
         const location = locationInfo.get(parcel.orgAddressId);
         const anyProduct = productsById.get(parcel.lines[0]?.productId ?? "");
         const totalWeight = parcel.lines.reduce(
-          (sum, line) => sum + (productsById.get(line.productId)?.weight ?? 0) * line.quantity,
-          0
+          (sum, line) =>
+            sum +
+            (productsById.get(line.productId)?.weight ?? 0) * line.quantity,
+          0,
         );
         return {
           groupId: parcel.orgAddressId,

@@ -59,7 +59,7 @@ export function AddressSelector({
           variant="ghost"
           type="button"
           onClick={onToggle}
-          className="flex w-full items-start justify-between gap-4 p-5 text-left hover:bg-muted/30"
+          className="flex h-auto w-full items-start justify-between gap-4 whitespace-normal p-5 text-left hover:bg-muted/30"
         >
           <div className="flex min-w-0 gap-3">
             <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-info" />

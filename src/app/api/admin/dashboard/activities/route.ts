@@ -20,5 +20,3 @@ export async function GET(request: NextRequest) {
     return toErrorResponse(error, "Could not fetch activities:");
   }
 }
-
-

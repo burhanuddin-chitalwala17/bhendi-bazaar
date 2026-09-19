@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Tag } from "lucide-react";
 
 import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
-import { PRODUCT_PAGE_SIZE } from "@/lib/product-paging";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { productsDAL } from "@/data-access-layer/products.dal";
@@ -23,10 +22,7 @@ export const metadata: Metadata = {
  * reduced, which is the failure mode a separate "sale" list would have.
  */
 export default async function OffersPage() {
-  const offers = await productsDAL.getProducts({
-    offerOnly: true,
-    limit: PRODUCT_PAGE_SIZE,
-  });
+  const page = await productsDAL.getPage({ offerOnly: true });
 
   return (
     <div className="space-y-6">
@@ -35,10 +31,10 @@ export default async function OffersPage() {
         title="Everything reduced right now"
       />
 
-      {offers.length > 0 ? (
+      {page.products.length > 0 ? (
         <PaginatedProductGrid
-          initial={offers}
-          initiallyDone={offers.length < PRODUCT_PAGE_SIZE}
+          initial={page.products}
+          initiallyDone={page.done}
           query={{ offersOnly: true }}
           emptyLabel="offers"
         />

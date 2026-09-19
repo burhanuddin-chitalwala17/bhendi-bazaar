@@ -3,6 +3,7 @@
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { OfferBadge } from "./badges/StatusBadge";
+import { effectivePrice, hasOffer } from "@/domain/product";
 
 interface PriceDisplayProps {
   price: number;
@@ -21,8 +22,10 @@ export function PriceDisplay({
   showBadge = true,
   className,
 }: PriceDisplayProps) {
-  const hasOffer = salePrice != null && salePrice > 0 && salePrice < price;
-  const displayPrice = hasOffer ? salePrice : price;
+  // The same rule the listing sorts by (`src/domain/product.ts`), so a reduced
+  // item cannot show one price and be ordered by another.
+  const offerApplies = hasOffer({ price, salePrice });
+  const displayPrice = effectivePrice({ price, salePrice });
 
   // xs is the dense grid tile: at 3-up on a 360px phone it gets ~105px of width, which
   // has no room for a gap-3 row — so it wraps tightly and grows back at `sm`, where
@@ -58,7 +61,7 @@ export function PriceDisplay({
       >
         {formatCurrency(displayPrice)}
       </span>
-      {hasOffer && (
+      {offerApplies && (
         <>
           <span
             className={cn(

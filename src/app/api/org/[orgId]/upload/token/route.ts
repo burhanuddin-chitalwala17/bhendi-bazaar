@@ -22,7 +22,9 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     if (!org) throw new DomainError("Organisation not found", { status: 404 });
     const prefix = `products/${org.code.toLowerCase()}/`;
 
-    const { pathname, contentType, size } = presignUploadSchema.parse(await request.json());
+    const { pathname, contentType, size } = presignUploadSchema.parse(
+      await request.json(),
+    );
     // A prefix test alone is not containment — `products/<org>/../other-org/x` starts
     // with the prefix and still leaves it. The schema rejects `.`/`..` segments first,
     // so by here the prefix test means what it says.

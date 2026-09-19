@@ -1,7 +1,7 @@
 /**
  * Admin Orders API Routes
  * GET /api/admin/orders - List orders with filters
- * 
+ *
  * Query params: search, status, paymentStatus, dateFrom, dateTo, minAmount, maxAmount, page, limit, sortBy, sortOrder
  */
 
@@ -41,5 +41,3 @@ export async function GET(request: NextRequest) {
     return toErrorResponse(error, "Could not fetch orders:");
   }
 }
-
-

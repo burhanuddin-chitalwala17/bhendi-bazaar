@@ -16,12 +16,17 @@ const statusSchema = z.object({
   paidAt: z.coerce.date().optional(),
 });
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     const session = await requirePlatformAdmin();
     const { id } = await context.params;
     const body = statusSchema.parse(await request.json());
-    return NextResponse.json(await settlementService.setSettlementStatus(id, body, session.user.id));
+    return NextResponse.json(
+      await settlementService.setSettlementStatus(id, body, session.user.id),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not update the settlement");
   }

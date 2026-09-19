@@ -1,7 +1,7 @@
 /**
  * Admin Users API Routes
  * GET /api/admin/users - List users with filters
- * 
+ *
  * Query params: search, platformRole, isBlocked, page, limit, sortBy, sortOrder
  */
 
@@ -21,13 +21,15 @@ export async function GET(request: NextRequest) {
 
     const filters: UserListFilters = {
       search: searchParams.get("search") || undefined,
-      platformRole: platformRoleParam ? platformRoleSchema.parse(platformRoleParam) : undefined,
+      platformRole: platformRoleParam
+        ? platformRoleSchema.parse(platformRoleParam)
+        : undefined,
       isBlocked:
         searchParams.get("isBlocked") === "true"
           ? true
           : searchParams.get("isBlocked") === "false"
-          ? false
-          : undefined,
+            ? false
+            : undefined,
       page: resolvePageNumber(searchParams.get("page")),
       limit: resolvePageSize(searchParams.get("limit")),
       sortBy: (searchParams.get("sortBy") as any) || "createdAt",
@@ -40,5 +42,3 @@ export async function GET(request: NextRequest) {
     return toErrorResponse(error, "Could not fetch users:");
   }
 }
-
-

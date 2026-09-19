@@ -6,18 +6,17 @@ import { adminOrgService } from "@server/catalog/org.service";
 import { updateOrgSchema } from "@/lib/validation/schemas/org.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
 
-
 /**
  * PUT /api/admin/orgs/[id]
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // ⭐ params is Promise
+  { params }: { params: Promise<{ id: string }> }, // ⭐ params is Promise
 ) {
   try {
     // ⭐ Await params first
     const { id } = await params;
-    
+
     // Auth check
     await requirePlatformAdmin();
 
@@ -45,21 +44,21 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // ⭐ params is Promise
+  { params }: { params: Promise<{ id: string }> }, // ⭐ params is Promise
 ) {
   try {
     // ⭐ Await params first
     const { id } = await params;
-    
+
     // Auth check
     await requirePlatformAdmin();
 
     // Delete org via service
     await adminOrgService.deleteOrg(id);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Organisation deleted successfully" 
+      message: "Organisation deleted successfully",
     });
   } catch (error) {
     return toErrorResponse(error, "Could not delete org");

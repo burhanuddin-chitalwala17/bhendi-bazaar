@@ -33,7 +33,7 @@ export function useProducts(options?: UseProductsOptions) {
 
     try {
       const product = await productsApiClient.createProduct(data);
-      
+
       const successMsg = "Product created successfully!";
       setSuccessMessage(successMsg);
       toast.success(successMsg);
@@ -74,14 +74,13 @@ export function useProducts(options?: UseProductsOptions) {
 
       options?.onSuccess?.();
       return product;
-    }
-    catch (err) {
+    } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   /**
    * Remove a product. The server deletes it outright when nothing depends on it and
@@ -91,7 +90,7 @@ export function useProducts(options?: UseProductsOptions) {
   const deleteProduct = async (id: string) => {
     if (
       !confirm(
-        "Remove this product?\n\nIf it has never been ordered it is deleted permanently. If it appears on an order, a promotion or a bidding event it is taken off sale instead, so those records stay intact — you can restore it later."
+        "Remove this product?\n\nIf it has never been ordered it is deleted permanently. If it appears on an order, a promotion or a bidding event it is taken off sale instead, so those records stay intact — you can restore it later.",
       )
     ) {
       return;
@@ -103,7 +102,7 @@ export function useProducts(options?: UseProductsOptions) {
       toast.success(
         outcome === "archived"
           ? "Product taken off sale. Past orders keep it; restore it from the Withdrawn filter."
-          : "Product deleted"
+          : "Product deleted",
       );
 
       // ⚡ Trigger server refresh
@@ -111,7 +110,9 @@ export function useProducts(options?: UseProductsOptions) {
       options?.onSuccess?.();
     } catch (error) {
       // ApiError extends Error, so this is the server's own message when there is one.
-      toast.error(error instanceof Error ? error.message : "Could not remove the product");
+      toast.error(
+        error instanceof Error ? error.message : "Could not remove the product",
+      );
       throw error;
     } finally {
       setIsLoading(false);
@@ -123,7 +124,9 @@ export function useProducts(options?: UseProductsOptions) {
     setIsLoading(true);
     try {
       await productsApiClient.setArchived(id, archived);
-      toast.success(archived ? "Product taken off sale" : "Product back on sale");
+      toast.success(
+        archived ? "Product taken off sale" : "Product back on sale",
+      );
       router.refresh();
       options?.onSuccess?.();
     } catch (error) {
@@ -132,14 +135,14 @@ export function useProducts(options?: UseProductsOptions) {
           ? error.message
           : archived
             ? "Could not take the product off sale"
-            : "Could not put the product back on sale"
+            : "Could not put the product back on sale",
       );
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   return {
     // Mutations
     createProduct,

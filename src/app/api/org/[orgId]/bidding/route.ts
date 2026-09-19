@@ -14,7 +14,7 @@ import { biddingService } from "@server/bidding/bidding.service";
 import { biddingFormSchema } from "@/lib/validation/schemas/bidding.schema";
 
 export const GET = withOrg(async (_request, scope) =>
-  NextResponse.json(await biddingService.listForOrg(scope.orgId))
+  NextResponse.json(await biddingService.listForOrg(scope.orgId)),
 );
 
 export const POST = withOrg(async (request, scope) => {

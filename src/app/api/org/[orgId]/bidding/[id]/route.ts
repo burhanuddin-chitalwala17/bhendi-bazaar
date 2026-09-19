@@ -14,5 +14,5 @@ export const DELETE = withOrg<{ orgId: string; id: string }>(
   async (_request, scope, params) => {
     await biddingService.cancel(params.id, scope.orgId);
     return NextResponse.json({ cancelled: true });
-  }
+  },
 );

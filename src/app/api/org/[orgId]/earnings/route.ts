@@ -15,5 +15,5 @@ import { withOrg } from "@/lib/org-auth";
 import { ledgerService } from "@server/payouts/ledger.service";
 
 export const GET = withOrg(async (_request, scope) =>
-  NextResponse.json(await ledgerService.orgViewWithContext(scope.orgId))
+  NextResponse.json(await ledgerService.orgViewWithContext(scope.orgId)),
 );

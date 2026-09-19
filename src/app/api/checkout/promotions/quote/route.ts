@@ -14,7 +14,10 @@ import { z } from "zod";
 import { productsRepository } from "@server/catalog/product.repository";
 import { promotionService } from "@server/promotions/promotion.service";
 import { catalogueUnitPrice } from "@server/checkout/pricing";
-import { quantitySchema, couponCodeSchema } from "@/lib/validation/schemas/common.schemas";
+import {
+  quantitySchema,
+  couponCodeSchema,
+} from "@/lib/validation/schemas/common.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
@@ -27,7 +30,7 @@ const quoteSchema = z.object({
         quantity: quantitySchema,
         size: z.string().trim().min(1).max(50).optional(),
         color: z.string().trim().min(1).max(50).optional(),
-      })
+      }),
     )
     .min(1)
     .max(100),
@@ -60,7 +63,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (lines.length === 0) {
-      return NextResponse.json({ error: "Nothing in this basket is still available" }, { status: 409 });
+      return NextResponse.json(
+        { error: "Nothing in this basket is still available" },
+        { status: 409 },
+      );
     }
 
     // Signed in or not — a per-buyer limit is enforced only where there is a buyer
@@ -68,11 +74,14 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
-    const quote = await promotionService.quote(lines, { code: body.code, userId });
+    const quote = await promotionService.quote(lines, {
+      code: body.code,
+      userId,
+    });
 
     return NextResponse.json({
       lineDiscounts: Object.fromEntries(
-        quote.lines.map((line) => [line.key, line.buyerDiscountPaise])
+        quote.lines.map((line) => [line.key, line.buyerDiscountPaise]),
       ),
       applied: quote.attributions.map((attribution) => ({
         label: attribution.labelSnapshot,

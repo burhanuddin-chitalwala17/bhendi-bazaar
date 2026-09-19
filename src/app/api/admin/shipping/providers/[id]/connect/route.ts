@@ -14,7 +14,7 @@ const connectSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Verify admin access
@@ -28,13 +28,13 @@ export async function POST(
     const result = await adminConnectionService.connect(
       id,
       validated,
-      session.user.id
+      session.user.id,
     );
 
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: result.error },
-        { status: 500 }
+        { status: 500 },
       );
     }
 

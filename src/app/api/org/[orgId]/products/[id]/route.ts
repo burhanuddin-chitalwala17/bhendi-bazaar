@@ -32,7 +32,7 @@ export const PATCH = withOrg<{ orgId: string; id: string }>(
 
     const product = await productsService.updateProduct(params.id, body);
     return NextResponse.json(product);
-  }
+  },
 );
 
 /**
@@ -49,5 +49,5 @@ export const DELETE = withOrg<{ orgId: string; id: string }>(
       userId: scope.userId,
     });
     return NextResponse.json(result);
-  }
+  },
 );

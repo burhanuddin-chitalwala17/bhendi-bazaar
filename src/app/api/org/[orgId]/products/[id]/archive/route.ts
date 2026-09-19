@@ -22,6 +22,9 @@ export const PATCH = withOrg<{ orgId: string; id: string }>(
       ? await productsService.archiveProduct(params.id, actor)
       : await productsService.restoreProduct(params.id, actor);
 
-    return NextResponse.json({ id: product.id, archivedAt: product.archivedAt });
-  }
+    return NextResponse.json({
+      id: product.id,
+      archivedAt: product.archivedAt,
+    });
+  },
 );

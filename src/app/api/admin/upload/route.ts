@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const folder = UPLOAD_TYPES[requestedType];
     if (!folder) {
       throw new DomainError(
-        `Invalid upload type. Allowed types: ${Object.keys(UPLOAD_TYPES).join(", ")}`
+        `Invalid upload type. Allowed types: ${Object.keys(UPLOAD_TYPES).join(", ")}`,
       );
     }
 
@@ -37,11 +37,19 @@ export async function POST(request: NextRequest) {
     // instead of the old `unnamed-` fallback (bulk-catalog-upload D4).
     const identifier = formData.get("identifier") as string | null;
     const orgId = formData.get("orgId") as string | null;
-    const org = folder === "products" && orgId ? await orgRepository.findById(orgId) : null;
+    const org =
+      folder === "products" && orgId
+        ? await orgRepository.findById(orgId)
+        : null;
 
     const urls = await uploadImages(files, folder, identifier, org?.code);
 
-    return NextResponse.json({ success: true, urls, type: requestedType, folder });
+    return NextResponse.json({
+      success: true,
+      urls,
+      type: requestedType,
+      folder,
+    });
   } catch (error) {
     return toErrorResponse(error, "Could not upload images");
   }

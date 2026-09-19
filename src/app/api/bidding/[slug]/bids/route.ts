@@ -25,7 +25,7 @@ import type { BidderIdentity } from "@server/bidding/bidding.types";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
     const { slug } = await params;

@@ -8,18 +8,26 @@ import { adminPromotionService } from "@server/promotions/admin.promotion.servic
 import { promotionFormSchema } from "@/lib/validation/schemas/promotion.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     await requirePlatformAdmin();
     const { id } = await context.params;
     const body = promotionFormSchema.parse(await request.json());
-    return NextResponse.json(await adminPromotionService.update(id, body, { scope: "PLATFORM" }));
+    return NextResponse.json(
+      await adminPromotionService.update(id, body, { scope: "PLATFORM" }),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not update the offer");
   }
 }
 
-export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     await requirePlatformAdmin();
     const { id } = await context.params;

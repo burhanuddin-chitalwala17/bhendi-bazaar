@@ -12,7 +12,10 @@ import { ledgerService } from "@server/payouts/ledger.service";
 import { commercialTermsSchema } from "@/lib/validation/schemas/commercial-terms.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
   try {
     await requirePlatformAdmin();
     const { id } = await context.params;

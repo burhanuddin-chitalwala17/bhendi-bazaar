@@ -10,10 +10,9 @@ import { adminUserService } from "@server/identity/admin.user.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { updateUserSchema } from "@/lib/validation/schemas/admin.schemas";
 
-
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await requirePlatformAdmin();
@@ -31,5 +30,3 @@ export async function PATCH(
     return toErrorResponse(error, "Could not update user:");
   }
 }
-
-

@@ -5,7 +5,9 @@ import { resetPasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, password, confirmPassword } = resetPasswordSchema.parse(await request.json());
+    const { token, password, confirmPassword } = resetPasswordSchema.parse(
+      await request.json(),
+    );
 
     // Validation
     // Validate password strength
@@ -22,7 +24,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "Password reset successfully. You can now sign in with your new password.",
+      message:
+        "Password reset successfully. You can now sign in with your new password.",
     });
   } catch (error) {
     return toErrorResponse(error, "Could not reset password");

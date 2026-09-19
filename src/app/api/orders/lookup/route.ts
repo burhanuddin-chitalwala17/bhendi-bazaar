@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: `Too many lookup requests. Please try again in ${formatTimeRemaining(
-          timeRemaining
+          timeRemaining,
         )}.`,
         retryAfter: Math.ceil(timeRemaining / 1000),
       },
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           "X-RateLimit-Reset": reset.toString(),
           "Retry-After": Math.ceil(timeRemaining / 1000).toString(),
         },
-      }
+      },
     );
   }
 
@@ -64,8 +64,7 @@ export async function POST(request: NextRequest) {
         error:
           error instanceof Error ? error.message : "Failed to lookup order",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

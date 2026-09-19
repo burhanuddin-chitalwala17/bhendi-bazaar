@@ -3,4 +3,3 @@
 export { CategoryBasicFields } from "./CategoryBasicFields";
 export { CategoryStylingFields } from "./CategoryStylingFields";
 export { CategoryImageField } from "./CategoryImageField";
-

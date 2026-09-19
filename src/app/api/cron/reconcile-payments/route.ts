@@ -13,7 +13,10 @@ import { toErrorResponse } from "@/lib/api-error-response";
 export async function GET(request: NextRequest) {
   try {
     const secret = process.env.CRON_SECRET;
-    if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) {
+    if (
+      !secret ||
+      request.headers.get("authorization") !== `Bearer ${secret}`
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -30,10 +33,18 @@ export async function GET(request: NextRequest) {
     // keeps reappearing is a defect rather than a hiccup (org-payouts D5).
     const ledger = await ledgerService.backfillMissing();
     if (ledger.written > 0) {
-      console.log(`Ledger backfill wrote ${ledger.written} entry(ies) across ${ledger.scanned} order(s)`);
+      console.log(
+        `Ledger backfill wrote ${ledger.written} entry(ies) across ${ledger.scanned} order(s)`,
+      );
     }
 
-    return NextResponse.json({ checked: results.length, recovered, released, ledger, results });
+    return NextResponse.json({
+      checked: results.length,
+      recovered,
+      released,
+      ledger,
+      results,
+    });
   } catch (error) {
     return toErrorResponse(error, "Reconciliation failed");
   }

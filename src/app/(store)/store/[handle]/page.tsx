@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { StorefrontHero } from "@/components/storefront/storefront-hero";
 import { StorefrontTheme } from "@/components/storefront/storefront-theme";
 import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
-import { PRODUCT_PAGE_SIZE } from "@/lib/product-paging";
+import { PRODUCT_SORTS, type ProductSort } from "@/lib/product-paging";
+import { ProductSortSelect } from "@/components/shared/product-sort-select";
 import { HomeHero } from "@/components/home/home-hero";
 import { OffersStrip, OFFERS_IN_STRIP } from "@/components/home/offers-strip";
 import { CategoryLanes } from "@/components/category/category-lanes";
@@ -23,6 +24,7 @@ interface StorefrontPageProps {
   searchParams: Promise<{
     category?: string;
     offers?: string;
+    sort?: string;
   }>;
 }
 
@@ -76,16 +78,24 @@ export default async function StorefrontPage({
   // (ADR-0030 decision 6), so no query parameter can widen this past one shop.
   // Prices resolve through the one function the rest of the store uses, so a
   // storefront cannot advertise a price checkout would refuse.
-  const [products, categories, promotions, offers] = await Promise.all([
+  // Anything else in the URL is not a sort this listing has; new arrivals is what a
+  // shopper gets without asking.
+  const sort: ProductSort = PRODUCT_SORTS.includes(query.sort as ProductSort)
+    ? (query.sort as ProductSort)
+    : "newest";
+
+  const [page, categories, promotions, offers] = await Promise.all([
     // Only the first page. The rest arrive as the shopper scrolls, through
     // /api/store/[handle]/products — one more than the page size, so the server can
     // tell the grid whether this was already the end.
-    productsDAL.getProducts({
-      orgId: shop.id,
-      categorySlug: query.category,
-      offerOnly: query.offers === "1",
-      limit: PRODUCT_PAGE_SIZE,
-    }),
+    productsDAL.getPage(
+      {
+        orgId: shop.id,
+        categorySlug: query.category,
+        offerOnly: query.offers === "1",
+      },
+      { sort },
+    ),
     storefrontDAL.categoriesFor(shop.id),
     storefrontDAL.promotionsFor(shop.id),
     // This shop's reductions, not the marketplace's — same filter, scoped.
@@ -96,6 +106,7 @@ export default async function StorefrontPage({
     }),
   ]);
 
+  const products = page.products;
   const filtering = Boolean(query.category || query.offers);
 
   return (
@@ -146,23 +157,27 @@ export default async function StorefrontPage({
                   overline="The shop"
                   title={
                     filtering
-                      ? `${products.length} ${products.length === 1 ? "item" : "items"}`
+                      ? `Filtered — ${shop.name}`
                       : `Everything from ${shop.name}`
                   }
                 />
-                {filtering && (
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href={`/store/${shop.handle}`}>Clear filters</Link>
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {filtering && (
+                    <Button asChild variant="ghost" size="sm">
+                      <Link href={`/store/${shop.handle}`}>Clear filters</Link>
+                    </Button>
+                  )}
+                  <ProductSortSelect basePath={`/store/${shop.handle}`} />
+                </div>
               </div>
               <PaginatedProductGrid
                 initial={products}
-                initiallyDone={products.length < PRODUCT_PAGE_SIZE}
+                initiallyDone={page.done}
                 query={{
                   handle: shop.handle,
                   category: query.category,
                   offersOnly: query.offers === "1",
+                  sort,
                 }}
               />
             </>

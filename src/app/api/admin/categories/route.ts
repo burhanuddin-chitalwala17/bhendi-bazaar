@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const body = categoryFormSchema.parse(await request.json());
     const category = await adminCategoryService.createCategory(
       session.user.id,
-      body
+      body,
     );
 
     return NextResponse.json(category, { status: 201 });
@@ -49,5 +49,3 @@ export async function POST(request: NextRequest) {
     return toErrorResponse(error, "Could not create category");
   }
 }
-
-

@@ -31,14 +31,14 @@ export async function POST(request: Request) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "Invalid file type. Only JPEG, PNG, and WebP are allowed" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         { error: "File too large. Maximum size is 5MB" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     console.error("Profile picture upload error:", error);
     return NextResponse.json(
       { error: "Failed to upload profile picture" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -113,7 +113,7 @@ export async function DELETE(request: Request) {
     if (!user?.profile?.profilePic) {
       return NextResponse.json(
         { error: "No profile picture to delete" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -130,7 +130,7 @@ export async function DELETE(request: Request) {
     console.error("Profile picture delete error:", error);
     return NextResponse.json(
       { error: "Failed to delete profile picture" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

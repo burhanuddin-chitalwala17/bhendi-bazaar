@@ -49,11 +49,14 @@ export function HandleChangeDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const stopsWorking = new Date(oldAddressWorksUntil).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const stopsWorking = new Date(oldAddressWorksUntil).toLocaleDateString(
+    undefined,
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    },
+  );
 
   const {
     register,
@@ -120,12 +123,12 @@ export function HandleChangeDialog({
                 <strong>{stopsWorking}</strong>, then stops.
               </li>
               <li>
-                After that it may be given to another shop — an old link could take your
-                customers somewhere else.
+                After that it may be given to another shop — an old link could
+                take your customers somewhere else.
               </li>
               <li>
-                Update anything already printed, paid for or posted: cards, signage,
-                advertisements, your social profiles.
+                Update anything already printed, paid for or posted: cards,
+                signage, advertisements, your social profiles.
               </li>
               <li>
                 Search results for the old address will not fully carry over to{" "}

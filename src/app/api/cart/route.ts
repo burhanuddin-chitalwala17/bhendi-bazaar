@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest) {
     const rateLimitResult = await withRateLimit(
       request,
       { interval: 60 * 1000, uniqueTokenPerInterval: 100 },
-      () => getRateLimitIdentifier(request, session.user.id)
+      () => getRateLimitIdentifier(request, session.user.id),
     );
     if (rateLimitResult) return rateLimitResult;
 
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest) {
     const { version } = await cartService.updateCart(
       session.user.id,
       validation.data.items,
-      validation.data.version
+      validation.data.version,
     );
 
     return NextResponse.json({ success: true, version }, { status: 200 });
@@ -68,7 +68,7 @@ export async function DELETE(request: NextRequest) {
     const rateLimitResult = await withRateLimit(
       request,
       { interval: 60 * 1000, uniqueTokenPerInterval: 20 },
-      () => getRateLimitIdentifier(request, session.user.id)
+      () => getRateLimitIdentifier(request, session.user.id),
     );
     if (rateLimitResult) return rateLimitResult;
 
@@ -79,7 +79,7 @@ export async function DELETE(request: NextRequest) {
     console.error("[API] DELETE /api/cart failed:", error);
     return NextResponse.json(
       { error: "Failed to clear cart" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

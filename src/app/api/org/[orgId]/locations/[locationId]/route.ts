@@ -15,15 +15,15 @@ export const PATCH = withOrg<{ orgId: string; locationId: string }>(
     const location = await orgAddressService.updateLocation(
       scope.orgId,
       params.locationId,
-      body
+      body,
     );
     return NextResponse.json(location);
-  }
+  },
 );
 
 export const DELETE = withOrg<{ orgId: string; locationId: string }>(
   async (_request, scope, params) => {
     await orgAddressService.removeLocation(scope.orgId, params.locationId);
     return NextResponse.json({ success: true });
-  }
+  },
 );

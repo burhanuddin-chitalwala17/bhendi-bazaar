@@ -11,6 +11,6 @@ import { productsRepository } from "@server/catalog/product.repository";
 export const GET = withOrg(async (request, scope) => {
   const search = new URL(request.url).searchParams.get("q") ?? undefined;
   return NextResponse.json(
-    await productsRepository.listForPicker({ orgId: scope.orgId, search })
+    await productsRepository.listForPicker({ orgId: scope.orgId, search }),
   );
 });
