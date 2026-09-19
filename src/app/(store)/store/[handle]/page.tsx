@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Package } from "lucide-react";
 
-import { ProductGrid } from "@/components/shared/product-grid";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Button } from "@/components/ui/button";
 import { StorefrontHero } from "@/components/storefront/storefront-hero";
 import { StorefrontTheme } from "@/components/storefront/storefront-theme";
+import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
+import { PRODUCT_PAGE_SIZE } from "@/lib/product-paging";
 import { HomeHero } from "@/components/home/home-hero";
-import { OffersStrip } from "@/components/home/offers-strip";
-import { StorefrontFilters } from "./storefront-filters";
+import { OffersStrip, OFFERS_IN_STRIP } from "@/components/home/offers-strip";
 import { CategoryLanes } from "@/components/category/category-lanes";
 import type { Product } from "@/domain/product";
 import { productsDAL } from "@/data-access-layer/products.dal";
@@ -23,7 +23,6 @@ interface StorefrontPageProps {
   searchParams: Promise<{
     category?: string;
     offers?: string;
-    sort?: string;
   }>;
 }
 
@@ -78,18 +77,25 @@ export default async function StorefrontPage({
   // Prices resolve through the one function the rest of the store uses, so a
   // storefront cannot advertise a price checkout would refuse.
   const [products, categories, promotions, offers] = await Promise.all([
+    // Only the first page. The rest arrive as the shopper scrolls, through
+    // /api/store/[handle]/products — one more than the page size, so the server can
+    // tell the grid whether this was already the end.
     productsDAL.getProducts({
       orgId: shop.id,
       categorySlug: query.category,
       offerOnly: query.offers === "1",
+      limit: PRODUCT_PAGE_SIZE,
     }),
     storefrontDAL.categoriesFor(shop.id),
     storefrontDAL.promotionsFor(shop.id),
     // This shop's reductions, not the marketplace's — same filter, scoped.
-    productsDAL.getProducts({ orgId: shop.id, offerOnly: true, limit: 5 }),
+    productsDAL.getProducts({
+      orgId: shop.id,
+      offerOnly: true,
+      limit: OFFERS_IN_STRIP + 1,
+    }),
   ]);
 
-  const sorted = sortProducts(products, query.sort);
   const filtering = Boolean(query.category || query.offers);
 
   return (
@@ -120,9 +126,9 @@ export default async function StorefrontPage({
           />
 
           <OffersStrip
-            offers={offers.slice(0, 4)}
+            offers={offers.slice(0, OFFERS_IN_STRIP)}
             viewAll={
-              offers.length > 4 && query.offers !== "1"
+              offers.length > OFFERS_IN_STRIP && query.offers !== "1"
                 ? {
                     // Stays on the shop and narrows the grid below, rather than sending a
                     // shopper to the marketplace's offers page and out of the storefront.
@@ -132,16 +138,15 @@ export default async function StorefrontPage({
                 : undefined
             }
           />
-          <StorefrontFilters handle={shop.handle} />
 
-          {sorted.length > 0 ? (
+          {products.length > 0 ? (
             <>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <SectionHeader
                   overline="The shop"
                   title={
                     filtering
-                      ? `${sorted.length} ${sorted.length === 1 ? "item" : "items"}`
+                      ? `${products.length} ${products.length === 1 ? "item" : "items"}`
                       : `Everything from ${shop.name}`
                   }
                 />
@@ -151,7 +156,15 @@ export default async function StorefrontPage({
                   </Button>
                 )}
               </div>
-              <ProductGrid products={sorted} />
+              <PaginatedProductGrid
+                initial={products}
+                initiallyDone={products.length < PRODUCT_PAGE_SIZE}
+                query={{
+                  handle: shop.handle,
+                  category: query.category,
+                  offersOnly: query.offers === "1",
+                }}
+              />
             </>
           ) : (
             <EmptyState
@@ -181,11 +194,18 @@ export default async function StorefrontPage({
  * Rebuild the storefront's query string with one value changed.
  *
  * Declared once so every link that narrows the view keeps the rest of it: picking a
- * category must not silently discard the search term a shopper just typed.
+ * category must not silently discard the offers filter.
+ *
+ * No `sort`. Sorting by price died with pagination, and deliberately: the price a
+ * shopper sees is resolved per request against the live offer set (ADR-0018), so the
+ * database can only order by the list price — which puts a reduced item where its old
+ * price belongs. Sorting the loaded pages client-side is worse: it reorders the first
+ * twelve and then appends unsorted rows underneath. Newest-first, stable, is what the
+ * query now guarantees; a real price sort needs a resolved price in a column.
  */
 function storefrontQuery(
-  current: { category?: string; offers?: string; sort?: string },
-  change: Partial<Record<"category" | "offers" | "sort", string | null>>,
+  current: { category?: string; offers?: string },
+  change: Partial<Record<"category" | "offers", string | null>>,
 ): string {
   const next = new URLSearchParams();
   for (const [key, value] of Object.entries({ ...current, ...change })) {
@@ -193,22 +213,4 @@ function storefrontQuery(
   }
   const query = next.toString();
   return query ? `?${query}` : "";
-}
-
-/**
- * Sorting is done here rather than in the query.
- *
- * The price a shopper sorts by is the *effective* price, which the DAL resolves per
- * request against the live offer set (ADR-0018) — the database column would sort by the
- * list price and put a discounted item in the wrong place. The listing is already
- * capped well below a page size where this matters.
- */
-function sortProducts(products: Product[], sort?: string): Product[] {
-  if (sort !== "price-asc" && sort !== "price-desc") return products;
-  const effective = (product: Product) => product.salePrice ?? product.price;
-  return [...products].sort((a, b) =>
-    sort === "price-asc"
-      ? effective(a) - effective(b)
-      : effective(b) - effective(a),
-  );
 }

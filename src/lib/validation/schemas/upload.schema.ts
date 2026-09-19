@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@server/catalog/image-upload";
+import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@server/catalog/image-paths";
 
 /**
  * What a browser must send to be granted one upload (ADR-0028).

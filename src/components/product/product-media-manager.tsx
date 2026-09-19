@@ -1,6 +1,12 @@
 /**
- * The product gallery editor: photographs uploaded to Blob, videos referenced by link,
- * in an order the org sets, with one photograph designated the cover.
+ * The product gallery editor: photographs uploaded to the object store, videos
+ * referenced by link, in an order the org sets, with one photograph designated the cover.
+ *
+ * Photographs go browser-to-store against a presigned PUT, never through a function
+ * (ADR-0028): a function request body is capped at 4.5MB, which one phone photograph
+ * clears on its own and a multi-file selection clears easily — that cap was returning
+ * FUNCTION_PAYLOAD_TOO_LARGE before any of our code ran. Downscaling therefore happens
+ * here, since the server's sharp normalisation never sees these bytes (ADR-0026).
  *
  * Why video is a link and not an upload: [ADR-0017](../../docs/adr/0017-video-is-embedded-not-hosted.md).
  * Why the cover is chosen rather than derived, and why nothing here pre-selects one:
@@ -34,27 +40,37 @@ import {
   youtubePosterUrl,
   type ProductMediaInput,
 } from "@server/catalog/media";
+import { buildImagePath, imageFileProblem } from "@server/catalog/image-paths";
+import { downscaleImage } from "@/lib/image/downscale";
+import { uploadDirect } from "@/lib/image/upload-direct";
+
+/** Bounded, not a stampede: a phone's radio and the presign route both prefer it. */
+const UPLOAD_CONCURRENCY = 3;
 
 interface ProductMediaManagerProps {
   value: ProductMediaInput[];
   onChange: (media: ProductMediaInput[]) => void;
-  /** Upload route — the caller knows whose guard applies (admin vs org member). */
-  endpoint?: string;
-  /** The product's name — names the blob path instead of the `unnamed-` fallback. */
+  /** The presign route — the caller knows whose guard applies. Bytes never reach it. */
+  tokenEndpoint: string;
+  /**
+   * The owning org's code. It is the folder the presign route will sign a path under,
+   * so without it there is nothing to ask permission for.
+   */
+  orgCode?: string;
+  /** The product's name — names the stored path instead of the `unnamed-` fallback. */
   identifier?: string;
-  /** Owning org, so admin uploads land under the org's folder. */
-  orgId?: string;
 }
 
 export function ProductMediaManager({
   value,
   onChange,
-  endpoint = "/api/admin/upload",
+  tokenEndpoint,
+  orgCode,
   identifier,
-  orgId,
 }: ProductMediaManagerProps) {
   const media = value ?? [];
   const [isUploading, setIsUploading] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [linkDraft, setLinkDraft] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,41 +90,88 @@ export function ProductMediaManager({
       );
       return;
     }
+    if (!orgCode) {
+      setNotice("Choose the selling organisation before uploading photographs");
+      return;
+    }
 
     setIsUploading(true);
     setNotice(null);
+    setProgress({ done: 0, total: files.length });
     try {
-      const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
-      if (identifier) formData.append("identifier", identifier);
-      if (orgId) formData.append("orgId", orgId);
-      const response = await fetch(`${endpoint}?type=products`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.error?.message || body.error || "Upload failed");
+      // Downscale first, then check the size: the whole point is that what was picked
+      // may be far larger than what we are willing to store. Type is checked on the
+      // result too, since a file no decoder accepts comes back through unchanged.
+      // The whole selection is validated before any of it is uploaded — a batch refused
+      // outright is easier to explain than a half-done one.
+      const prepared: File[] = [];
+      for (const file of files) {
+        const ready = await downscaleImage(file);
+        const problem = imageFileProblem(ready);
+        if (problem) throw new Error(problem);
+        prepared.push(ready);
       }
-      const data = await response.json();
-      remember(files, data.urls as string[]);
-      const uploaded: ProductMediaInput[] = (data.urls as string[]).map(
-        (url) => ({
-          kind: "IMAGE",
-          ref: url,
-          isThumbnail: false,
-        }),
-      );
+
+      const uploadedUrls: (string | undefined)[] = new Array(prepared.length);
+      const failed: string[] = [];
+      let firstError: string | null = null;
+      const queue = prepared.map((file, index) => ({ file, index }));
+      let done = 0;
+      const worker = async () => {
+        for (let job = queue.shift(); job; job = queue.shift()) {
+          try {
+            uploadedUrls[job.index] = await uploadDirect(
+              buildImagePath("products", job.file.name, identifier, orgCode),
+              job.file,
+              tokenEndpoint,
+            );
+          } catch (error) {
+            // A network failure part-way through cannot be undone without deleting what
+            // already landed, so the successes are kept and the rest are named.
+            failed.push(files[job.index].name);
+            firstError ??=
+              error instanceof Error ? error.message : "Upload failed";
+          }
+          done += 1;
+          setProgress({ done, total: prepared.length });
+        }
+      };
+      await Promise.all(Array.from({ length: UPLOAD_CONCURRENCY }, worker));
+
+      // Index-aligned with the originals, which is what useLocalPreviews pairs on — and
+      // the original is the right preview: it is the picture the org member picked.
+      const localFiles: File[] = [];
+      const urls: string[] = [];
+      uploadedUrls.forEach((url, index) => {
+        if (!url) return;
+        localFiles.push(files[index]);
+        urls.push(url);
+      });
+      remember(localFiles, urls);
+
+      const uploaded: ProductMediaInput[] = urls.map((url) => ({
+        kind: "IMAGE",
+        ref: url,
+        isThumbnail: false,
+      }));
       // Deliberately does not designate a cover, even for the very first upload: a
       // default that stands in for a missing choice is what makes its absence
       // invisible (D17a). The org taps "Cover".
       onChange([...media, ...uploaded]);
+
+      if (failed.length > 0) {
+        setNotice(
+          `Could not upload ${failed.join(", ")} (${firstError}).` +
+            (urls.length > 0 ? " The rest were added." : ""),
+        );
+      }
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : "Failed to upload images",
       );
     } finally {
       setIsUploading(false);
+      setProgress({ done: 0, total: 0 });
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -294,7 +357,11 @@ export function ProductMediaManager({
           ) : (
             <Upload className="mr-2 size-4" />
           )}
-          {isUploading ? "Uploading…" : "Upload photos"}
+          {isUploading
+            ? progress.total > 1
+              ? `Uploading ${progress.done}/${progress.total}…`
+              : "Uploading…"
+            : "Upload photos"}
         </Button>
       </div>
 
@@ -330,7 +397,7 @@ export function ProductMediaManager({
         {photographCount === 0
           ? "At least one photograph is required. Video is optional."
           : `${media.length} of ${MAX_MEDIA_PER_PRODUCT} items. Tap "Cover" on the photograph that should represent this product in listings.`}{" "}
-        Max 5MB per photo.
+        Photos are resized in your browser before upload, so large files are fine.
       </p>
     </div>
   );

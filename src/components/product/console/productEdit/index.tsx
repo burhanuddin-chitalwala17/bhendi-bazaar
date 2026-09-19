@@ -17,8 +17,8 @@ interface ProductEditContainerProps {
   categories: { id: string; name: string }[];
   orgs: OrgSummary[];
   locations: LocationOption[];
-  /** Where image uploads go; the org portal passes its member-guarded route. */
-  uploadEndpoint?: string;
+  /** The presign route for image uploads; the org portal passes its member-guarded one. */
+  uploadTokenEndpoint?: string;
 }
 
 export function ProductEditContainer({
@@ -26,7 +26,7 @@ export function ProductEditContainer({
   categories,
   orgs,
   locations,
-  uploadEndpoint,
+  uploadTokenEndpoint,
 }: ProductEditContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -66,7 +66,7 @@ export function ProductEditContainer({
         onCancel={handleCancel}
         isSubmitting={isLoading}
         readOnly={false}
-        uploadEndpoint={uploadEndpoint}
+        uploadTokenEndpoint={uploadTokenEndpoint}
       />
     </div>
   );

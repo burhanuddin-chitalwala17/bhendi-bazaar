@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import { OffersStrip } from "@/components/home/offers-strip";
+import { OffersStrip, OFFERS_IN_STRIP } from "@/components/home/offers-strip";
 import type { Product } from "@/domain/product";
 
 const product = (n: number): Product =>
@@ -52,6 +52,14 @@ describe("the offers strip", () => {
     await draw({ offers: [product(1), product(2)] });
     // Decorative: the product name beside it is the accessible label.
     expect(document.querySelectorAll("img")).toHaveLength(2);
+  });
+
+  it("shows at most the declared number, however many it is handed", async () => {
+    // The pages slice before passing, but the strip enforces it too — a caller that
+    // forgot would otherwise overflow the row rather than fail visibly.
+    const many = Array.from({ length: OFFERS_IN_STRIP + 3 }, (_, i) => product(i));
+    await draw({ offers: many });
+    expect(document.querySelectorAll("img")).toHaveLength(OFFERS_IN_STRIP);
   });
 
   it("offers no way onward when everything fits", async () => {

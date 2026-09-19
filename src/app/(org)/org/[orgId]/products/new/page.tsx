@@ -49,7 +49,7 @@ export default async function OrgNewProductPage({
       categories={categories}
       orgs={orgs}
       locations={locations}
-      uploadEndpoint={`/api/org/${orgId}/upload`}
+      uploadTokenEndpoint={`/api/org/${orgId}/upload/token`}
     />
   );
 }

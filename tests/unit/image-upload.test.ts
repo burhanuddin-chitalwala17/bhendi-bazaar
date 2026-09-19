@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
+import { normalizeImage } from "@server/catalog/image-upload";
 import {
+  buildImagePath,
   imageFileProblem,
-  normalizeImage,
   normalizedName,
   sanitizeIdentifier,
   MAX_IMAGE_BYTES,
-} from "@server/catalog/image-upload";
+} from "@server/catalog/image-paths";
+import { ORG_CODE_PATTERN, orgCodeCandidates } from "@server/catalog/org.code";
 import { MAX_IMAGE_EDGE } from "@server/catalog/media";
 
 describe("imageFileProblem", () => {
@@ -97,5 +99,32 @@ describe("normalizeImage", () => {
       type: "image/png",
     });
     await expect(normalizeImage(notAnImage)).rejects.toThrow(/Could not read image: x\.png/);
+  });
+});
+
+describe("buildImagePath agrees with the presign route's prefix", () => {
+  /**
+   * The product gallery builds its path in the browser and the presign route checks it
+   * against `products/<org.code.toLowerCase()>/`. The two use different functions to
+   * reach the same segment, so a code shape that sanitizes differently from lowercasing
+   * would refuse every upload from the page that was just converted to use it.
+   */
+  const prefixFor = (orgCode: string) => `products/${orgCode.toLowerCase()}/`;
+
+  it("holds for generated org codes", () => {
+    const codes = orgCodeCandidates();
+    for (let i = 0; i < 50; i++) {
+      const code = codes.next().value as string;
+      expect(code).toMatch(ORG_CODE_PATTERN);
+      const prefix = prefixFor(code);
+      const path = buildImagePath("products", "front.webp", "Silk Abaya", code);
+      expect(path.slice(0, prefix.length)).toBe(prefix);
+    }
+  });
+
+  it("holds for the legacy SEL- codes the generator no longer issues", () => {
+    const prefix = prefixFor("SEL-1234");
+    const path = buildImagePath("products", "front.webp", "Silk Abaya", "SEL-1234");
+    expect(path.slice(0, prefix.length)).toBe(prefix);
   });
 });

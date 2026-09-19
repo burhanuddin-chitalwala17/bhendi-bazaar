@@ -1,7 +1,8 @@
 import { CategoryBreadcrumb } from "@/components/category/category-breadcrumb";
 import { CategoryHero } from "@/components/category/category-hero";
 import { CategoryLanes } from "@/components/category/category-lanes";
-import { ProductGrid } from "@/components/shared/product-grid";
+import { PaginatedProductGrid } from "@/components/shared/paginated-product-grid";
+import { PRODUCT_PAGE_SIZE } from "@/lib/product-paging";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Package } from "lucide-react";
 import { productsDAL } from "@/data-access-layer/products.dal";
@@ -20,7 +21,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   // queries; lanes are below this one only, and the ancestor trail points back up.
   const [category, products, lanes, ancestors] = await Promise.all([
     categoriesDAL.getCategoryBySlug(slug),
-    productsDAL.getProducts({ categorySlug: slug }),
+    productsDAL.getProducts({ categorySlug: slug, limit: PRODUCT_PAGE_SIZE }),
     categoriesDAL.getDescendants(slug),
     categoriesDAL.getAncestors(slug),
   ]);
@@ -33,7 +34,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <CategoryBreadcrumb ancestors={ancestors} current={category} />
             <CategoryHero category={category} />
             <CategoryLanes categories={lanes} />
-            <ProductGrid products={products} />
+            <PaginatedProductGrid
+              initial={products}
+              initiallyDone={products.length < PRODUCT_PAGE_SIZE}
+              query={{ category: slug }}
+            />
           </>
         ) : (
           <EmptyState

@@ -1,7 +1,7 @@
 import { CategoryLanes } from "@/components/category/category-lanes";
 import { HeroProductsGrid } from "@/components/home/hero-products-grid";
 import { HomeHero } from "@/components/home/home-hero";
-import { OffersStrip } from "@/components/home/offers-strip";
+import { OffersStrip, OFFERS_IN_STRIP } from "@/components/home/offers-strip";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { bannersDAL } from "@/data-access-layer/banners.dal";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
@@ -15,9 +15,9 @@ export default async function HomePage() {
   const [banners, heroes, offers, lanes] = await Promise.all([
     bannersDAL.getActiveBanners(),
     productsDAL.getHeroProducts(6),
-    // Five for four shown: the extra row is how the strip knows whether to
-    // offer a way to the rest, without a second count query.
-    productsDAL.getOfferProducts(5),
+    // One more than the strip shows: the extra row is how it knows whether to offer
+    // a way to the rest, without a second count query.
+    productsDAL.getOfferProducts(OFFERS_IN_STRIP + 1),
     categoriesDAL.getDescendants(null),
   ]);
   return (
@@ -29,9 +29,9 @@ export default async function HomePage() {
       <HomeHero banners={banners} />
       <Suspense fallback={<LoadingSkeleton />}>
         <OffersStrip
-          offers={offers.slice(0, 4)}
+          offers={offers.slice(0, OFFERS_IN_STRIP)}
           viewAll={
-            offers.length > 4
+            offers.length > OFFERS_IN_STRIP
               ? { href: "/offers", label: "View more" }
               : undefined
           }
