@@ -320,6 +320,10 @@ export class ProductsRepository {
         // only the category's own products.
         where: {
           ...ON_SALE,
+          ...FROM_ACTIVE_ORG,
+          // Scoped to one shop when a storefront asks; resolved server-side from the
+          // handle, so no query parameter can widen it (ADR-0030 decision 6).
+          ...(orgId ? { orgId } : {}),
           ...(categoryIds
             ? { categoryId: { in: categoryIds } }
             : { category: { slug: categorySlug } }),
