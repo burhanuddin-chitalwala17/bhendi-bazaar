@@ -5,6 +5,7 @@ import type { CreateOrgInput } from "@server/catalog/org.types";
 import type { CreateOrgInput as CreateOrgSchemaInput } from "@/lib/validation/schemas/org.schema";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 import { orgCodeCandidates } from "@server/catalog/org.code";
+import { handleCandidates } from "@server/catalog/org.handle";
 import { isUniqueViolation } from "@server/shared/constraint";
 import { DEFAULT_PAGE_SIZE, type Pagination } from "@server/shared/pagination";
 
@@ -71,14 +72,27 @@ export class AdminOrgService {
     insert: (row: CreateOrgInput) => Promise<T>,
     data: CreateOrgSchemaInput
   ): Promise<T> {
-    const candidates = orgCodeCandidates();
+    const codes = orgCodeCandidates();
+    const handles = handleCandidates(data.name);
+    let code = codes.next().value as string;
+    let handle = handles.next().value as string;
+
     for (let attempt = 0; ; attempt++) {
-      const code = candidates.next().value as string;
       try {
         // A new org is active by definition; deactivation is an admin act later.
-        return await insert({ ...data, code, isActive: true });
+        return await insert({ ...data, code, handle, isActive: true });
       } catch (error) {
-        if (isUniqueViolation(error, "code") && attempt < 25) continue;
+        // Two generated identifiers, two collision domains — advance only the one the
+        // database actually objected to, or a handle collision would burn through codes
+        // and a name like "Traders" would never reach `traders-2`.
+        if (attempt < 25 && isUniqueViolation(error, "code")) {
+          code = codes.next().value as string;
+          continue;
+        }
+        if (attempt < 25 && isUniqueViolation(error, "handle")) {
+          handle = handles.next().value as string;
+          continue;
+        }
         throw error;
       }
     }

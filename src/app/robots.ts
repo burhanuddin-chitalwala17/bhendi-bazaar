@@ -22,7 +22,23 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/org", "/api/", "/profile", "/orders", "/order/", "/checkout", "/cart", "/signin", "/signup", "/reset-password", "/forgot-password"],
+      // `/store` is public and must stay crawlable — it is one letter from `/org` in
+      // the line below, and the two read alike. Adding it there would silently
+      // de-index every storefront (ADR-0030 decision 3).
+      disallow: [
+        "/admin",
+        "/org",
+        "/api/",
+        "/profile",
+        "/orders",
+        "/order/",
+        "/checkout",
+        "/cart",
+        "/signin",
+        "/signup",
+        "/reset-password",
+        "/forgot-password",
+      ],
     },
     sitemap: `${appUrl()}/sitemap.xml`,
   };

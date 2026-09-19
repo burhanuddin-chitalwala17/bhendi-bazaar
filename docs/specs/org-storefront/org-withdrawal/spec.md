@@ -21,10 +21,17 @@ decision 9), which is the right trade only if there is a way to act on a shop th
 something it should not. Without it the platform has published a page under its own name and has no way to
 withdraw it.
 
-`Org.isActive` already exists and is already set by the console. **It currently does nothing a buyer would
-notice** — no storefront or catalogue query reads it, and the only `isActive` filters on the read path are
-on `OrgAddress` pickup locations. So the switch is in the wall with no wire behind it, and the platform
-believes it has a control it does not have. That is worse than knowing there is none.
+`Org.isActive` already exists and is already set by the console. **Half of it now works.**
+`FROM_ACTIVE_ORG` (`server/catalog/product.visibility.ts`) is spread by every public product read, so a
+withdrawn organisation's goods have stopped being *shown* — the listings, the product page, search, the
+home rows and the sitemap all honour it, and `tests/unit/product-visibility.test.ts` fails a new read that
+forgets.
+
+What does not work is the half that matters most: nothing stops those goods being **bought**. The order
+transaction carries `assertNotUnderBidding` and `assertNotArchived` and no org equivalent, and every
+`isActive` check on the checkout path is on `OrgAddress` — pickup locations, not the organisation. A buyer
+holding a link, or a basket filled before the withdrawal, still completes the purchase. Hiding is not
+refusing ([ADR-0029](../../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md) decision 4).
 
 The same switch is what an organisation that closes should get: goods gone from sale, nothing deleted.
 
@@ -57,8 +64,8 @@ The same switch is what an organisation that closes should get: goods gone from 
 
 ## Hazards
 
-- **H1 — There are at least a dozen public read paths and the compiler cannot tell you when you miss one.** Listings, product page, similar products, hero row, offers row, search, suggestions, sitemap, wishlist, storefront, bidding page. Missing one leaves a withdrawn shop selling, which is exactly the failure this feature exists to prevent. [ADR-0023](../../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) admits the same weakness for bidding; whatever makes this checkable has to be a test, because nothing else will catch it.
-- **H2 — Hiding is not refusing.** A page that stops rendering a button still has a route behind it. The authoritative refusal belongs where the stock guard already is, inside the order transaction — the one race-safe point the codebase has.
+- **H1 — ~~A dozen unguarded read paths~~ — answered.** The reads now share one clause and a census test names every product query in the codebase with a reason for filtering or not (`tests/unit/product-visibility.test.ts`). Adding a read without classifying it fails. What remains of this hazard is only that the census must be kept honest when a new query lands.
+- **H2 — Hiding is not refusing, and this is now the whole of the work.** A page that stops rendering a button still has a route behind it. The refusal belongs inside the order transaction beside `assertNotArchived`, after the stock reservation for the same locking reason that gate documents — one assertion, next to two that already exist.
 - **H3 — Withdrawal must not read as deletion anywhere on the money path.** Records carrying money or attribution never disappear ([ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md)); a past order is a fact about what happened and is not the platform's to unpublish.
 - **H4 — A buyer can be mid-checkout when the switch is flipped.** They must be told, not charged and then disappointed.
 - **H5 — Withdrawal is a fact about an organisation, and it must not be copied onto its products.** A per-product flag would need writing at withdrawal and unwriting at reactivation, and would be wrong in between — the mistake [ADR-0023](../../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) already rejected for bidding.

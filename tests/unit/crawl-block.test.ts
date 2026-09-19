@@ -10,6 +10,9 @@ vi.mock("@/data-access-layer/categories.dal", () => ({
 vi.mock("@/data-access-layer/products.dal", () => ({
   productsDAL: { listSlugs: vi.fn().mockResolvedValue([]) },
 }));
+vi.mock("@/data-access-layer/storefront.dal", () => ({
+  storefrontDAL: { listShops: vi.fn().mockResolvedValue([]) },
+}));
 
 afterEach(() => {
   vi.unstubAllEnvs();

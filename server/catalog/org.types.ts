@@ -8,6 +8,12 @@ export interface OrgSummary {
   id: string;
   name: string;
   code: string;
+  /**
+   * The shop's public address. Carried on every product so a card, a cart line or a
+   * product page can link to `/store/<handle>` without asking again — the storefront is
+   * reachable from anything the org sells (org-storefront R5).
+   */
+  handle: string;
 }
 
 /**
@@ -19,6 +25,9 @@ export interface OrgSummary {
  */
 export interface CreateOrgInput {
   code: string;
+  /// Server-generated from the name, never accepted from a request body. Changing one
+  /// later is its own authorised operation, not a field on an update.
+  handle: string;
   name: string;
   email: string;
   phone?: string;

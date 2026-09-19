@@ -53,6 +53,7 @@ describe("toWireCartItem", () => {
         id: "org-1",
         name: "Rida House",
         code: "ORG-1",
+        handle: "rida-house",
         defaultPincode: "400003",
         defaultCity: "Mumbai",
         defaultState: "MH",

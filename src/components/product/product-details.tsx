@@ -2,6 +2,7 @@
 
 "use client";
 
+import Link from "next/link";
 import type { Product } from "@/domain/product";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockStatus } from "@/components/shared/StockStatus";
@@ -45,9 +46,25 @@ export function ProductDetails(product: Product) {
             className="shrink-0"
           />
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span>
             {product.rating.toFixed(1)} · {product.reviewsCount} reviews
+          </span>
+          {/* Who sells this, and the way through to everything else they sell
+              (org-storefront R5). Above the fold on a phone: someone deciding whether to
+              spend money wants to know who is on the other end, and this is also the
+              route most storefronts are actually found through. */}
+          <span aria-hidden className="text-muted-foreground/50">
+            ·
+          </span>
+          <span className="inline-flex items-center gap-1">
+            Sold by
+            <Link
+              href={`/store/${product.org.handle}`}
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              {product.org.name}
+            </Link>
           </span>
         </div>
       </div>

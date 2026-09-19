@@ -3,8 +3,8 @@
 - **Status:** Draft
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
-- **Verified:** 2026-09-15
-- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D2/D4/D10, [seller-identity](../seller-identity/), [storefront-pages](../storefront-pages/), [storefront-branding](../storefront-branding/)
+- **Verified:** 2026-09-19
+- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D2/D4/D10, [seo](../../seo/), [seller-identity](../seller-identity/), [storefront-pages](../storefront-pages/), [storefront-branding](../storefront-branding/)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 
@@ -33,10 +33,26 @@ The domain carries a complication: it served a WordPress site before this one, a
 hold that index (see [BACKLOG.md](../../../BACKLOG.md)). New public URLs arrive into a namespace that is
 still being cleaned up, so what crawlers are told about them has to be deliberate.
 
+## Where this stops and [seo](../../seo/) starts
+
+The two overlap and the line is worth stating once. **[seo](../../seo/) owns the mechanism** — how any public
+page declares a title, a canonical and a description, what a product looks like to a machine, and what HTTP
+status an honest URL returns. It applies to the whole store, storefronts included, and this feature does not
+restate or reimplement any of it.
+
+**This feature owns applying that to shops, and the one surface seo has no reason to know about:** an
+organisation's page describing *itself* rather than the platform, its entry in the sitemap, the answer a
+retired handle gives, and a directory of shops — which exists nowhere else and is the only way to reach a
+shop whose name you do not already know.
+
+Where they touch, seo wins and this follows. That makes seo a dependency in practice even though it sits a
+phase later: a storefront must be shareable the day it exists, so the per-org metadata here lands first and
+is rewritten onto seo's pattern rather than competing with it.
+
 ## Requirements
 
 - **R1** — A storefront link pasted into WhatsApp, Instagram or Slack shows the organisation's name, description and mark — not the platform's.
-- **R2** — A storefront is indexable in its own right and states plainly what it is.
+- **R2** — A storefront is indexable in its own right and states plainly what it is, through whatever pattern [seo](../../seo/) sets for every other page rather than one of its own.
 - **R3** — Every live storefront is listed where search engines will find it; every dead one is not.
 - **R4** — A product keeps one address. Nothing here creates a second URL for the same goods.
 - **R4a** — A storefront has one current address. For 180 days after a change, a visitor or crawler arriving on the previous one is sent permanently to the current one, so shared links and ranking consolidate rather than split; after that the old address stops resolving and may in time belong to another shop.
@@ -46,6 +62,7 @@ still being cleaned up, so what crawlers are told about them has to be deliberat
 - **R6** — An inactive organisation gives crawlers a definite answer, so a closed shop's URL stops being re-checked.
 - **R7** — The platform's existing crawl rules are extended deliberately to admit storefronts, and still exclude everything gated.
 - **R8** — Nothing published here vouches for a shop on the shop's own word — the platform does not assert a rating an organisation supplied about itself.
+- **R10** — A storefront declares no machine-readable price of its own. Prices are time-boxed offers resolved against the clock ([ADR-0018](../../../adr/0018-one-effective-price-function.md)); a second surface declaring them is [seo](../../seo/)'s problem to solve once, for the product page, and a storefront links to that page rather than restating it.
 - **R9** — While the store is pre-launch, storefronts are as invisible to crawlers as everything else.
 
 ## Product acceptance
@@ -64,4 +81,5 @@ still being cleaned up, so what crawlers are told about them has to be deliberat
 - Paid placement, sponsored shops, or any ranking of one shop above another.
 - Shop-level ratings and review aggregation. Nothing rates an organisation today, and a platform asserting a self-supplied rating invites a manual action.
 - Search across shops as a feature of the marketplace search.
+- The metadata pattern itself, product structured data, and the `not-found.tsx` / `error.tsx` boundaries that make an honest HTTP answer possible — all [seo](../../seo/), Phase 10.
 - The Search Console and Bing Webmaster work on the inherited WordPress index — tracked in [BACKLOG.md](../../../BACKLOG.md); this feature must not make it worse.

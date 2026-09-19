@@ -294,6 +294,12 @@ model Profile {
 model Org {
   id   String @id @default(cuid())
   code String @unique // "SEL-001", "SEL-002"
+
+  /// The shop's public address: `/store/<handle>`. Generated from the name at creation
+  /// and changeable by its owner thereafter; a retired one is held, then released
+  /// (ADR-0030 decision 4). Never accepted on a general org update — only through the
+  /// handle-change operation, which is why it is absent from CreateOrgInput.
+  handle String @unique
   name String // "ABC Traders", "XYZ Wholesale"
 
   // Contact Information
@@ -313,8 +319,23 @@ model Org {
   isVerified Boolean @default(false) // KYC verification
 
   // Metadata
+  /// Doubles as the storefront's introduction — the long-form "who we are".
   description String? @db.Text
   logoUrl     String?
+
+  // ── Storefront presentation (org-storefront/storefront-branding) ──
+  /// One line under the name. Not the introduction; a shelf label, not a paragraph.
+  tagline String?
+  /// The hero image, through the same object store and optimizer as every other
+  /// image on the platform (ADR-0026, ADR-0028).
+  heroUrl String?
+  /// A token name from the palette in globals.css — never a colour literal, so a
+  /// storefront cannot express a colour the design system does not own (ADR-0022).
+  accent  String?
+  /// What this shop promises about delivery and returns. The platform's own terms
+  /// stand in where these are null; payment and fraud are never the shop's to disclaim.
+  deliveryPolicy String? @db.Text
+  returnsPolicy  String? @db.Text
 
   /// The platform's cut, in basis points — 1500 = 15%. Set per org by design; rates
   /// differ between orgs (org-payouts spec R12). Category overrides live in
@@ -336,6 +357,9 @@ model Org {
   shipments Shipment[]
   members   OrgMember[]
 
+  storefrontBanners OrgBanner[]
+  handleHistory     OrgHandleHistory[]
+
   promotions      Promotion[]
   orderDiscounts  OrderDiscount[]
   commissionRules OrgCommissionRule[]
@@ -346,6 +370,7 @@ model Org {
   @@index([email])
   @@index([isActive])
   @@index([code])
+  @@index([handle])
 }
 
 model Account {
@@ -713,6 +738,58 @@ enum OrgRole {
 /// pickup, and the aggregator registration designed for but not built (D11).
 /// Restrict both ways: an org with locations, or a location an Address underpins,
 /// cannot be deleted out from under the other.
+/// A handle this org used to hold.
+///
+/// Kept forever rather than deleted at expiry: the hold is *derived* by comparing
+/// `retiredAt` against the window, so nothing has to run for the answer to be right
+/// (ADR-0023's shape). While held the handle redirects here and no other org may take
+/// it; past the window it stops doing both. Taking a handle back deletes its rows, or
+/// the old address would redirect away from the shop now living at it (ADR-0030).
+model OrgHandleHistory {
+  id     String @id @default(cuid())
+  handle String
+  orgId  String
+  org    Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  retiredAt DateTime @default(now())
+
+  /// Not unique on `handle` alone: an org may leave a handle, take it back, and leave
+  /// it again, which is two rows for one string.
+  @@index([handle, retiredAt])
+  @@index([orgId])
+}
+
+/// A banner an org runs on its own storefront.
+///
+/// Deliberately not `orgId` on `Banner`: that table is the platform's home page, and
+/// "an org's banner never reaches it" (storefront-branding R2d) is a rule worth making
+/// structural rather than a where-clause every future query has to remember.
+model OrgBanner {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  /// Through the optimizer, like every other image (ADR-0026).
+  imageUrl    String?
+  imageAlt    String?
+
+  /// Where it points — always inside this org's own storefront (R2c), enforced in the
+  /// schema that parses it rather than by the column's type.
+  href String?
+
+  /// Server-owned: a create appends, only a reorder rewrites it.
+  order    Int     @default(0)
+  /// Taken down, not deleted, so a campaign can run again next season (R2b).
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId, isActive, order])
+}
+
 model OrgAddress {
   id        String  @id @default(cuid())
   orgId     String

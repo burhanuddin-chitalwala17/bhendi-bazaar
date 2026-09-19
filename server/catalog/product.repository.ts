@@ -10,16 +10,26 @@ import { loadPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
-import { ARCHIVED, FROM_ACTIVE_ORG, ON_SALE } from "@server/catalog/product.visibility";
+import {
+  ARCHIVED,
+  FROM_ACTIVE_ORG,
+  ON_SALE,
+} from "@server/catalog/product.visibility";
 
 export const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
-  org: { select: { id: true, name: true, code: true } },
+  org: { select: { id: true, name: true, code: true, handle: true } },
   // The gallery, in gallery order — the only order it is ever read in (product-video
   // R16). Selected explicitly rather than left to `include`'s defaults so the ordering
   // travels with the query instead of being re-established by each caller.
   media: {
-    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true },
+    select: {
+      id: true,
+      kind: true,
+      ref: true,
+      description: true,
+      isThumbnail: true,
+    },
     orderBy: { position: "asc" as const },
   },
   // Sellable stock lives on the join rows (stock-locations D3): active locations
@@ -56,8 +66,10 @@ async function offerFilter() {
   // context's clock, so a listing cannot filter by one offer set and label prices
   // with another across an offer boundary.
   const { promotions, categoryParents } = await loadPriceContext();
-  const { coversEverything, productIds, orgIds, categoryIds } =
-    offerCoverage(promotions, categoryParents);
+  const { coversEverything, productIds, orgIds, categoryIds } = offerCoverage(
+    promotions,
+    categoryParents,
+  );
   if (coversEverything) return {};
   const clauses = [
     productIds.length > 0 ? { id: { in: productIds } } : null,
@@ -80,7 +92,6 @@ export type ProductStockDb = Pick<typeof prisma, "productStock">;
 export type ProductDb = Pick<typeof prisma, "product">;
 
 export class ProductsRepository {
-
   /**
    * What one product carries that decides whether it can be offered at all —
    * its price to snapshot, and the options a caller may have to choose between.
@@ -126,7 +137,10 @@ export class ProductsRepository {
    * Returns how many locations still hold stock, so the caller's own check runs behind
    * the lock rather than in front of it.
    */
-  async lockStock(productId: string, db: ProductStockDb = prisma): Promise<number> {
+  async lockStock(
+    productId: string,
+    db: ProductStockDb = prisma,
+  ): Promise<number> {
     const locked = await db.productStock.updateMany({
       where: { productId, quantity: { gte: 1 } },
       data: { quantity: { increment: 0 } },
@@ -143,7 +157,7 @@ export class ProductsRepository {
   async takeOneFromLocation(
     productId: string,
     orgAddressId: string,
-    db: ProductStockDb = prisma
+    db: ProductStockDb = prisma,
   ): Promise<boolean> {
     const taken = await db.productStock.updateMany({
       where: { productId, orgAddressId, quantity: { gte: 1 } },
@@ -153,12 +167,35 @@ export class ProductsRepository {
   }
 
   /**
+   * Which of these products belong to a withdrawn organisation, by name.
+   *
+   * The org-level twin of `archivedAmong`: `FROM_ACTIVE_ORG` stops a withdrawn shop's
+   * goods being *shown*, and this is what stops them being *bought*. Two queries rather
+   * than one because the two refusals say different things to a buyer — an archived
+   * item is gone, a withdrawn shop's item may well come back.
+   */
+  async fromWithdrawnOrgAmong(
+    productIds: string[],
+    db: ProductDb = prisma,
+  ): Promise<string[]> {
+    if (productIds.length === 0) return [];
+    const rows = await db.product.findMany({
+      where: { id: { in: productIds }, org: { isActive: false } },
+      select: { name: true },
+    });
+    return rows.map((row) => row.name);
+  }
+
+  /**
    * Which of these products are withdrawn from sale, by name (ADR-0029).
    *
    * Names rather than ids because the only caller shows them to a buyer. Authoritative
    * when handed a `tx`; `product.sale-gate.ts` is what turns it into a refusal.
    */
-  async archivedAmong(productIds: string[], db: ProductDb = prisma): Promise<string[]> {
+  async archivedAmong(
+    productIds: string[],
+    db: ProductDb = prisma,
+  ): Promise<string[]> {
     if (productIds.length === 0) return [];
     const rows = await db.product.findMany({
       where: { id: { in: productIds }, ...ARCHIVED },
@@ -170,7 +207,9 @@ export class ProductsRepository {
   /** How many of these products belong to someone else — the org-scoping guard. */
   async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
     if (productIds.length === 0) return 0;
-    return await prisma.product.count({ where: { id: { in: productIds }, NOT: { orgId } } });
+    return await prisma.product.count({
+      where: { id: { in: productIds }, NOT: { orgId } },
+    });
   }
 
   /** What offer resolution needs about a set of products, and nothing more. */
@@ -199,7 +238,9 @@ export class ProductsRepository {
       // An offer cannot be pointed at something that is not for sale.
       ...ON_SALE,
       ...(orgId ? { orgId } : {}),
-      ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
+      ...(search
+        ? { name: { contains: search, mode: "insensitive" as const } }
+        : {}),
       // Already-selected products are always included, so a picker never hides a
       // choice the offer has already made just because it is off the current page.
       ...(ids && ids.length > 0 && !search ? {} : {}),
@@ -232,7 +273,10 @@ export class ProductsRepository {
    * loading the whole join tree and pricing every row to emit a path.
    */
   async listSlugs(): Promise<Array<{ slug: string }>> {
-    return await prisma.product.findMany({ where: { ...ON_SALE, ...FROM_ACTIVE_ORG, ...FROM_ACTIVE_ORG }, select: { slug: true } });
+    return await prisma.product.findMany({
+      where: { ...ON_SALE, ...FROM_ACTIVE_ORG, ...FROM_ACTIVE_ORG },
+      select: { slug: true },
+    });
   }
 
   // Nothing a storefront listing renders needs the whole catalogue at once. When the
@@ -242,13 +286,25 @@ export class ProductsRepository {
   private static readonly MAX_LIST_ROWS = 200;
 
   async getProducts(filter: ProductFilter) {
-    const { categorySlug, categoryIds, search, minPrice, maxPrice, offerOnly, featuredOnly, limit, offset } = filter;
+    const {
+      orgId,
+      categorySlug,
+      categoryIds,
+      search,
+      minPrice,
+      maxPrice,
+      offerOnly,
+      featuredOnly,
+      limit,
+      offset,
+    } = filter;
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
         // categoryIds (a resolved subtree) wins over a bare slug, which matches
         // only the category's own products.
-        where: { ...ON_SALE,
+        where: {
+          ...ON_SALE,
           ...(categoryIds
             ? { categoryId: { in: categoryIds } }
             : { category: { slug: categorySlug } }),
@@ -357,7 +413,11 @@ export class ProductsRepository {
       // and price, so the full include tree here was several queries per keystroke
       // buying data the response never carried.
       const products = await prisma.product.findMany({
-        where: { name: { contains: query, mode: "insensitive" }, ...ON_SALE, ...FROM_ACTIVE_ORG },
+        where: {
+          name: { contains: query, mode: "insensitive" },
+          ...ON_SALE,
+          ...FROM_ACTIVE_ORG,
+        },
         orderBy: { createdAt: "desc" },
         take: limit,
         select: {

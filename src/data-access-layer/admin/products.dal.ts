@@ -111,6 +111,7 @@ class ProductsDAL {
         id: product.org.id,
         name: product.org.name,
         code: product.org.code,
+        handle: "a-shop",
       },
       stockLocations: (product.stockLocations ?? []).map(
         (row: { orgAddressId: string; quantity: number; orgAddress: { name: string } }) => ({

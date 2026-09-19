@@ -28,8 +28,8 @@ const READ_CALL = /\b(?:prisma|tx|db)\.product\.(?:findMany|findFirst|findUnique
  */
 const CENSUS: Record<string, { reads: number; note: string }> = {
   "server/catalog/product.repository.ts": {
-    reads: 15,
-    note: "filtered — the storefront's own reads, plus archivedAmong (which backs the sale gate) and two ownership/pricing lookups that must see every row",
+    reads: 16,
+    note: "filtered — the storefront's own reads carry ON_SALE and FROM_ACTIVE_ORG together, plus archivedAmong and fromWithdrawnOrgAmong (which back the two sale gates and must therefore see the rows they refuse) and two ownership/pricing lookups that must see every row",
   },
   "server/catalog/admin.product.repository.ts": {
     reads: 9,

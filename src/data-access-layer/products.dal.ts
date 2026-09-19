@@ -65,6 +65,7 @@ const mapProduct = (
       id: product.org.id,
       name: product.org.name,
       code: product.org.code,
+      handle: product.org.handle,
     },
     // One memoised query per request answers this for every product on the page
     // (bidding D8). The product itself carries no mark that it is up for bidding.

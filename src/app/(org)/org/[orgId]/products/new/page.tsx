@@ -28,7 +28,9 @@ export default async function OrgNewProductPage({
     name: c.name,
   }));
 
-  const orgs = [{ id: org.id, name: org.name, code: org.code }];
+  const orgs = [
+    { id: org.id, name: org.name, code: org.code, handle: org.handle },
+  ];
 
   // Only active locations are offered for new stock; inactive ones keep their rows
   // but take no more (stock-locations, isActive).

@@ -28,7 +28,9 @@ export class OrgRepository {
       relationLoadStrategy: "join",
       include: {
         _count: { select: { products: true } },
-        products: { select: { stockLocations: { select: { quantity: true } } } },
+        products: {
+          select: { stockLocations: { select: { quantity: true } } },
+        },
       },
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
     });
@@ -36,10 +38,12 @@ export class OrgRepository {
     return orgs.map((org) => ({
       ...org,
       productCount: org._count?.products || 0,
-      totalStock: org.products?.reduce(
-        (sum, p) => sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
-        0
-      ) || 0,
+      totalStock:
+        org.products?.reduce(
+          (sum, p) =>
+            sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
+          0,
+        ) || 0,
       products: undefined,
       _count: undefined,
     }));
@@ -67,7 +71,12 @@ export class OrgRepository {
               { name: { contains: search, mode: "insensitive" as const } },
               { code: { contains: search, mode: "insensitive" as const } },
               { email: { contains: search, mode: "insensitive" as const } },
-              { businessName: { contains: search, mode: "insensitive" as const } },
+              {
+                businessName: {
+                  contains: search,
+                  mode: "insensitive" as const,
+                },
+              },
               { gstNumber: { contains: search, mode: "insensitive" as const } },
             ],
           }
@@ -80,7 +89,9 @@ export class OrgRepository {
         relationLoadStrategy: "join",
         include: {
           _count: { select: { products: true } },
-          products: { select: { stockLocations: { select: { quantity: true } } } },
+          products: {
+            select: { stockLocations: { select: { quantity: true } } },
+          },
         },
         orderBy: [{ isActive: "desc" }, { name: "asc" }],
         skip: (filters.page - 1) * filters.limit,
@@ -95,8 +106,9 @@ export class OrgRepository {
         productCount: org._count?.products || 0,
         totalStock:
           org.products?.reduce(
-            (sum, p) => sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
-            0
+            (sum, p) =>
+              sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
+            0,
           ) || 0,
         products: undefined,
         _count: undefined,
@@ -128,24 +140,91 @@ export class OrgRepository {
       productCount: org._count?.products || 0,
       totalStock:
         org.products?.reduce(
-        (sum, p) => sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
-        0
-      ) || 0,
+          (sum, p) =>
+            sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
+          0,
+        ) || 0,
       products: undefined, // Remove to avoid sending all products
       _count: undefined, // Remove internal field
     };
+  }
+
+  /**
+   * The public face of one shop, by handle — or null.
+   *
+   * Everything a storefront renders and nothing else: no commission, no discount
+   * ceiling, no tax identifier, no ledger. That is a property of this select list
+   * rather than of the template that consumes it (ADR-0030 decision 7), so no page can
+   * leak one by rendering a field it was handed.
+   *
+   * `isActive` is in the where, not the select: a withdrawn shop is absent, not
+   * present-and-hidden, so the caller's only option is `notFound()`.
+   */
+  async findPublicByHandle(handle: string) {
+    return await prisma.org.findFirst({
+      where: { handle, isActive: true },
+      select: {
+        id: true,
+        handle: true,
+        name: true,
+        description: true,
+        tagline: true,
+        logoUrl: true,
+        heroUrl: true,
+        accent: true,
+        deliveryPolicy: true,
+        returnsPolicy: true,
+      },
+    });
+  }
+
+  /**
+   * A handle this org used to hold and still holds the lease on, for the redirect.
+   *
+   * Returns the org's *current* handle so the caller can send the visitor there. Only
+   * rows inside the window count — past it the handle answers 404 and may belong to
+   * somebody else later (ADR-0030 decision 4).
+   */
+  async findCurrentHandleForRetired(handle: string, cutoff: Date) {
+    const row = await prisma.orgHandleHistory.findFirst({
+      where: { handle, retiredAt: { gt: cutoff }, org: { isActive: true } },
+      orderBy: { retiredAt: "desc" },
+      select: { org: { select: { handle: true } } },
+    });
+    return row?.org.handle ?? null;
+  }
+
+  /**
+   * The directory: every shop open for business, alphabetical.
+   *
+   * A shop with nothing on sale is omitted — the directory exists so a stranger can
+   * find somewhere to buy from, and an empty shop is a dead end. Its own URL still
+   * works, so nothing an org shared is broken by being absent here.
+   */
+  async listPublicShops() {
+    return await prisma.org.findMany({
+      where: {
+        isActive: true,
+        products: { some: { archivedAt: null } },
+      },
+      select: { handle: true, name: true, tagline: true, logoUrl: true },
+      orderBy: { name: "asc" },
+    });
   }
 
   /** Identity only — for a page that needs to name one org, not stat it. */
   async findSummary(id: string) {
     return await prisma.org.findUnique({
       where: { id },
-      select: { id: true, name: true, code: true },
+      select: { id: true, name: true, code: true, handle: true },
     });
   }
 
   /** Set what the platform charges this org. Platform-owned; never org input. */
-  async updateCommercialTerms(id: string, terms: { commissionBps: number; maxDiscountBps: number }) {
+  async updateCommercialTerms(
+    id: string,
+    terms: { commissionBps: number; maxDiscountBps: number },
+  ) {
     return await prisma.org.update({ where: { id }, data: terms });
   }
 
@@ -158,7 +237,13 @@ export class OrgRepository {
   async findCommercialTerms(id: string) {
     return await prisma.org.findUnique({
       where: { id },
-      select: { id: true, name: true, code: true, commissionBps: true, maxDiscountBps: true },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        commissionBps: true,
+        maxDiscountBps: true,
+      },
     });
   }
 

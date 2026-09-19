@@ -30,6 +30,7 @@ import {
 } from "./seed/index";
 import type { SeedProduct } from "./seed/types";
 import { assertSeedTargetIsAllowed } from "./seed-guard";
+import { handleCandidates } from "../server/catalog/org.handle";
 
 /** Per-unit markdown on a seeded line, or zero — the same guard the engine applies. */
 function markdownOf(item: { price: number; salePrice?: number }): number {
@@ -209,6 +210,9 @@ async function main() {
       data: {
         id: orgData.id,
         code: orgData.code,
+        // Generated from the name the same way the service does, so seeded orgs have
+        // real storefront addresses rather than ones invented in the fixture.
+        handle: handleCandidates(orgData.name).next().value as string,
         name: orgData.name,
         email: orgData.email,
         phone: orgData.phone,

@@ -3,7 +3,7 @@
 - **Status:** Draft — programme overview; each subfeature carries its own spec and TRD
 - **Domain:** catalog, with cross-domain reads
 - **Phase:** 9 — Seller storefronts
-- **Verified:** 2026-09-15
+- **Verified:** 2026-09-19
 - **References:** [multi-vendor-marketplace](../multi-vendor-marketplace/), [promotions](../promotions/), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md), [ADR-0018](../../adr/0018-one-effective-price-function.md), [ADR-0022](../../adr/0022-design-decisions-go-through-tokens.md), and the subfeatures below
 
 > Requirements and product approach only. Each subfeature's technical approach lives in its own `trd.md`.
@@ -35,7 +35,7 @@ reversal is recorded in an ADR rather than by editing that spec.
 ## Requirements
 
 - **R1** — Every organisation has a public storefront at a stable, human-readable URL it can promote. The URL survives the organisation renaming itself.
-- **R2** — The storefront presents the organisation: its mark, a hero, who it is, what it sells, and how to reach it.
+- **R2** — The storefront presents the organisation: its mark, a hero, who it is and what it sells. Reaching a human goes through the platform's own Contact us, never a channel of the shop's own (see out of scope).
 - **R3** — The storefront lists that organisation's products and no other's, and buying from it behaves exactly as buying from the marketplace does.
 - **R4** — A visitor can search, browse by category and filter within one organisation's catalogue without leaving its storefront.
 - **R5** — From any product, a buyer can see which organisation sells it and reach that organisation's storefront.
@@ -46,7 +46,7 @@ reversal is recorded in an ADR rather than by editing that spec.
 - **R10** — An organisation that is inactive, or has nothing to sell, has a defined public answer at its URL rather than an error.
 - **R11** — A visitor who arrives on a storefront can still reach the rest of the marketplace.
 - **R12** — An organisation's own running offers appear on its storefront, through the one price resolver every other surface uses.
-- **R13** — The platform can withdraw an organisation from public view with one switch, and that removes its storefront *and every one of its products, everywhere on the platform* — not only from `/store/<handle>`. It is reversible and deletes nothing.
+- **R13** — The platform can withdraw an organisation from public view with one switch — reads already honour it, the purchase refusal does not yet exist — and that removes its storefront *and every one of its products, everywhere on the platform* — not only from `/store/<handle>`. It is reversible and deletes nothing.
 - **R14** — Each shop states its own delivery and returns terms, and a buyer can find them before they pay.
 
 ## Product acceptance
@@ -70,10 +70,10 @@ Stated here so no subfeature's TRD can quietly skip one.
 - **H3 — The same product becomes reachable at two URLs.** Marketplace and storefront show one product. Left unstated, a search engine splits the ranking signal between them, which defeats the argument that justifies the feature.
 - **H4 — Every storefront query runs for a stranger.** These are the first org-scoped reads with no membership behind them. Inactive organisations, unpublished storefronts and commercial fields must be unreachable by editing a URL, and that has to be a property of the query rather than of a template.
 - **H5 — A seller writes text and links that strangers read on the platform's domain.** Introductions, policies and social links are organisation input rendered publicly under the platform's name. Unconstrained, that is an injection surface and a route to selling off-platform.
-- **H6 — A storefront is public from the moment its organisation exists, and so is every product in it.** There is no approval step and no draft state: an organisation uploading its catalogue is doing so on a live page. That is the decision ([ADR-0030](../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decision 9), not an oversight — but it means the empty shop and the half-built shop are both states the design has to carry well, not error paths. Curation itself is not blocked: `ProductFlag.FEATURED` and `HERO` already exist (`server/catalog/product.flags.ts`), orgs already set them through the product form, and `ProductFilter.featuredOnly` already reads them.
-- **H9 — The withdrawal switch does not currently work, and it is the promise everything else rests on.** R13 rests on `Org.isActive`, which is read by nothing a buyer sees: no storefront or catalogue query filters on it, and the only `isActive` checks on the read path are on `OrgAddress` (`server/catalog/product.repository.ts`). Deactivating an organisation today leaves every product it sells listed and purchasable. Because the programme publishes pages under the platform's name with no gate in front of them, the remedy has to exist before that is defensible — so it is [org-withdrawal](org-withdrawal/), a subfeature of this programme, and not a prerequisite left to somebody else. It is the one piece that touches the **marketplace** read path rather than only the storefront.
+- **H6 — A storefront is public from the moment its organisation exists, and so is every product in it.** There is no approval step, and creating a product puts it on sale immediately: `Product.archivedAt` is a *withdrawal* state, not a draft one ([ADR-0029](../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md)), so nothing lets an org build a catalogue privately and reveal it. That is the decision ([ADR-0030](../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decision 9), not an oversight — but the empty shop and the half-built shop are both states the design has to carry well, not error paths. Curation is not blocked: `ProductFlag.FEATURED` and `HERO` exist (`server/catalog/product.flags.ts`), orgs set them through the product form, and `ProductFilter.featuredOnly` reads them — and archiving now gives an org a way to take one item off its shelf without deleting it.
 - **H7 — A shared link is exactly the URL that gets a spike.** The storefront grid runs the same uncached, unpaginated catalogue read the category page does; see the storefront-caching entry in [BACKLOG.md](../../BACKLOG.md), which [ADR-0018](../../adr/0018-one-effective-price-function.md) constrains.
 - **H8 — Deactivating an organisation does not recall its printed links.** What a promoted URL answers after the shop closes is a product decision, not a 500.
+- **H9 — The withdrawal switch half works, and the missing half is the one that refuses a purchase.** `FROM_ACTIVE_ORG` (`server/catalog/product.visibility.ts`) is now spread by every public product read, so a withdrawn org's goods stop being *shown*. Nothing yet stops them being *bought*: the order transaction carries `assertNotUnderBidding` and `assertNotArchived` and no org equivalent, and every `isActive` check on the checkout path is on `OrgAddress` (pickup locations), not `Org`. Hiding is not refusing ([ADR-0029](../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md) decision 4), so [org-withdrawal](org-withdrawal/) still owns the gate — but it is now one assertion beside two that already exist, not the sweep this hazard first described.
 
 ## Subfeatures
 
@@ -103,5 +103,6 @@ shared and nothing indexed. `storefront-discovery` covers the slower channels, n
 - **Per-organisation checkout, payment accounts, or shipping policy.** R8 settles this: one basket, one payment, one set of courier rates.
 - **A product draft or publish state**, and any approval or verification before a storefront goes live. Decided against in [ADR-0030](../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decision 9 — a shop is live when its organisation is created.
 - **Following a shop, shop notifications, or shop-level messaging.**
+- **A shop's own contact channel.** Decided 2026-09-19: [contact-us](../contact-us/) stays platform-scoped, so a storefront publishes no WhatsApp number, phone or inbox of its own and a buyer with a question reaches the platform. Revisit when a shop is expected to answer for itself.
 - **New offer mechanics.** `Promotion` already carries `scope: ORG`; R12 is about surfacing what exists.
 - **The platform's own About and landing pages.** Platform marketing, not a seller surface.

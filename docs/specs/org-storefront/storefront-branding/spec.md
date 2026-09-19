@@ -3,8 +3,8 @@
 - **Status:** Draft
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
-- **Verified:** 2026-09-15
-- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D8/D9, [storefront-pages](../storefront-pages/), [home-banners](../../home-banners/), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md)
+- **Verified:** 2026-09-19
+- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D8/D9, [storefront-pages](../storefront-pages/), [home-banners](../../home-banners/), [image-delivery](../../image-delivery/), [ADR-0022](../../../adr/0022-design-decisions-go-through-tokens.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 
@@ -25,7 +25,7 @@ sellers, and the seller who most needs an online shop is the one least able to w
 ## Requirements
 
 - **R1** — An organisation edits its own storefront from its portal, with no platform involvement and no deploy.
-- **R2** — It can set a mark, a hero image, a tagline, an introduction, contact details and links to where else it exists.
+- **R2** — It can set a mark, a hero image, a tagline and an introduction. Not a phone number, WhatsApp or inbox of its own: [contact-us](../../contact-us/) is platform-scoped for now, and R2c already bars pointing a buyer off the platform.
 - **R2a** — It can publish its own banners on its storefront — a picture, words, and somewhere to go — and run more than one.
 - **R2b** — It controls the order its banners appear in, and can take one down without deleting it, so a campaign can run again next season.
 - **R2c** — A banner can only point somewhere inside that organisation's own storefront — its goods, a category it sells in, its about page. It is a shop's own signage, not advertising space pointed off the platform or at another shop.
@@ -39,6 +39,8 @@ sellers, and the seller who most needs an online shop is the one least able to w
 - **R7** — Nothing an organisation supplies can execute, redirect a visitor somewhere the platform would not send them, or misrepresent whose shop it is.
 - **R8** — An organisation can only edit its own storefront, checked against a current membership on the request.
 - **R9** — Images are held to a stated shape and size, and an organisation is told the requirement before it uploads, not after.
+- **R9a** — A storefront's images go through the platform's one image seam — stored in the object store the rest of the catalogue uses and served through the optimizer at the size the screen asks for, under the same stored ceiling ([ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md)). A hero is the largest thing on the page and the first thing a phone downloads; a storefront that bypasses the optimizer spends the transfer allowance the whole catalogue shares.
+- **R9b** — No storefront surface introduces a raw `<img>`. `tests/unit/image-delivery.test.ts` holds an allowlist of the few that exist, and a new one fails it rather than shipping.
 - **R10** — The platform can take a storefront's presentation down without deleting the organisation or its goods.
 - **R11** — The editor works on a phone. A seller running a shop from a phone must be able to run their storefront from one.
 
@@ -47,6 +49,7 @@ sellers, and the seller who most needs an online shop is the one least able to w
 - **A1** — An owner uploads a logo and a banner, writes two paragraphs, saves, and sees the storefront change.
 - **A1a** — An owner runs three banners, reorders them, takes the middle one down, and the storefront shows the remaining two in the order given.
 - **A1b** — A banner pointing at another organisation's goods, or off the platform, is refused.
+- **A1f** — A storefront hero on a phone downloads a phone-sized image, not a desktop-sized one.
 - **A1c** — Nothing an organisation publishes appears anywhere on the platform's own home page.
 - **A1d** — A buyer reading a shop's returns policy can tell it is that shop's and not the platform's.
 - **A1e** — A shop cannot publish terms that purport to remove the platform's own payment or fraud protections.
