@@ -100,7 +100,7 @@ export function ProfileMenu() {
           <Button
             variant="ghost"
             type="button"
-            className="mt-1 block w-full text-left text-muted-foreground hover:text-foreground"
+            className="mt-1 w-full justify-start text-left text-muted-foreground hover:text-foreground"
             onClick={handleLogout}
           >
             Logout

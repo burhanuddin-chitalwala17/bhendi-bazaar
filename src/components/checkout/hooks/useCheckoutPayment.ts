@@ -46,11 +46,10 @@ export function useCheckoutPayment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-
   /**
    * NEW: Process payment with multiple shipments
    * Production-ready flow with post-payment fulfillment
-   * 
+   *
    * Flow:
    * 1. Validate stock
    * 2. Create order (pending_payment)
@@ -62,13 +61,13 @@ export function useCheckoutPayment() {
    *    - Redirect
    */
   const processPaymentWithShipments = async (
-    orderData: ProcessPaymentWithShipmentsInput
+    orderData: ProcessPaymentWithShipmentsInput,
   ) => {
     setError(null);
     setIsProcessing(true);
 
     try {
-      console.log('🛒 Starting checkout with multiple shipments...');
+      console.log("🛒 Starting checkout with multiple shipments...");
 
       // Step 0: Validate stock for all items across all groups
       const allItems = orderData.shippingGroups.flatMap((group) => group.items);
@@ -86,20 +85,24 @@ export function useCheckoutPayment() {
       }).then((r) => r.json());
 
       if (!stockCheck.available) {
-        const outOfStock = stockCheck.items.filter((i: { available: boolean; name: string }) => !i.available);
+        const outOfStock = stockCheck.items.filter(
+          (i: { available: boolean; name: string }) => !i.available,
+        );
         throw new Error(
-          `Sorry, ${outOfStock[0].name} is out of stock. Please update your cart.`
+          `Sorry, ${outOfStock[0].name} is out of stock. Please update your cart.`,
         );
       }
 
       // Step 1: Create order with shipments (pending payment & fulfillment)
-      console.log('📦 Creating order with shipments...');
+      console.log("📦 Creating order with shipments...");
       const order = await orderApiClient.createOrderWithShipments({
         // Lines carry product + quantity only; the server prices them from the
         // catalogue and refuses if its total differs from the one displayed below.
         shippingGroups: orderData.shippingGroups.map((group) => {
           if (!group.selectedRate) {
-            throw new Error("Select a shipping option for every parcel before paying.");
+            throw new Error(
+              "Select a shipping option for every parcel before paying.",
+            );
           }
           return {
             groupId: group.groupId,
@@ -111,12 +114,17 @@ export function useCheckoutPayment() {
             // The chosen size/colour ride along — without them the order cannot
             // say which variant to pack (order-and-cart-lines D5).
             items: group.items.map(
-              (item: { productId: string; quantity: number; size?: string; color?: string }) => ({
+              (item: {
+                productId: string;
+                quantity: number;
+                size?: string;
+                color?: string;
+              }) => ({
                 productId: item.productId,
                 quantity: item.quantity,
                 size: item.size || undefined,
                 color: item.color || undefined,
-              })
+              }),
             ),
             selectedRate: group.selectedRate,
           };
@@ -141,7 +149,7 @@ export function useCheckoutPayment() {
       }
 
       // Step 2: Create payment gateway order
-      console.log('💳 Creating Razorpay payment order...');
+      console.log("💳 Creating Razorpay payment order...");
       const paymentOrder = await paymentGatewayService.createPaymentOrder({
         localOrderId: order.id,
         customer: {
@@ -158,10 +166,11 @@ export function useCheckoutPayment() {
         void paymentGatewayService.abandon(order.id);
       };
       window.addEventListener("pagehide", releaseOnLeave);
-      const stopListening = () => window.removeEventListener("pagehide", releaseOnLeave);
+      const stopListening = () =>
+        window.removeEventListener("pagehide", releaseOnLeave);
 
       // Step 3: Open Razorpay checkout
-      console.log('🔐 Opening Razorpay checkout modal...');
+      console.log("🔐 Opening Razorpay checkout modal...");
       await paymentGatewayService.openCheckout(paymentOrder, {
         onSuccess: async (response) => {
           stopListening();
@@ -181,13 +190,13 @@ export function useCheckoutPayment() {
             useCartStore.getState().removeLines(allItems);
 
             // Step 7: Redirect to order page
-            console.log('🎉 Redirecting to order page...');
+            console.log("🎉 Redirecting to order page...");
             router.push(`/order/${order.id}`);
-
           } catch (error) {
             console.error("Failed to process after payment:", error);
             setError(
-              "Payment succeeded but post-payment processing failed. Your order is saved. Order ID: " + order.code
+              "Payment succeeded but post-payment processing failed. Your order is saved. Order ID: " +
+                order.code,
             );
           }
         },
@@ -200,13 +209,14 @@ export function useCheckoutPayment() {
           void paymentGatewayService.abandon(order.id);
           // No state write from here: the gateway's own failure webhook records it,
           // and a failure signal must never be able to overwrite a captured payment.
-          const description = (error as { error?: { description?: string } } | null)
-            ?.error?.description;
+          const description = (
+            error as { error?: { description?: string } } | null
+          )?.error?.description;
           setError(description || "Payment failed. Please try again.");
           setIsProcessing(false);
         },
         onDismiss: () => {
-          console.log('⚠️  Payment modal dismissed');
+          console.log("⚠️  Payment modal dismissed");
           stopListening();
           // The common case, not the exception: most people who open a payment window
           // close it. The goods go back on sale now rather than at the next sweep
@@ -217,7 +227,6 @@ export function useCheckoutPayment() {
       });
 
       return order;
-
     } catch (error) {
       console.error("Checkout error:", error);
 
@@ -227,7 +236,7 @@ export function useCheckoutPayment() {
         setError(
           error.details
             .map((d) => (d.path ? `${d.path}: ${d.message}` : d.message))
-            .join(" · ")
+            .join(" · "),
         );
         return;
       }

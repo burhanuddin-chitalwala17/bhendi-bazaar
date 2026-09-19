@@ -44,7 +44,10 @@ export const lineKey = (item: Pick<CartItem, "productId" | "size" | "color">) =>
  * `buyerId` is part of the quote's identity: the route reads the session's user for
  * per-buyer limits, so signing in mid-checkout must re-quote (seamless-sign-in D10).
  */
-export function useCheckoutOffers(items: CartItem[], buyerId: string | null = null) {
+export function useCheckoutOffers(
+  items: CartItem[],
+  buyerId: string | null = null,
+) {
   const [quote, setQuote] = useState<OfferQuote>(EMPTY);
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
   const [isPricing, setIsPricing] = useState(false);
@@ -75,7 +78,7 @@ export function useCheckoutOffers(items: CartItem[], buyerId: string | null = nu
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [basketKey]
+    [basketKey],
   );
 
   // Automatic offers, with no code — what the buyer already had before typing one.
@@ -107,7 +110,7 @@ export function useCheckoutOffers(items: CartItem[], buyerId: string | null = nu
       setAppliedCode(result.rejection === null ? code : null);
       return result;
     },
-    [price]
+    [price],
   );
 
   const clearCode = useCallback(() => {

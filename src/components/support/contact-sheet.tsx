@@ -28,13 +28,14 @@ interface ContactSheetProps {
 /**
  * The two ways to reach the store, as one row shape.
  *
- * `h-auto` is load-bearing: one row is an `<a>` and the other a `<Button>`, and
- * `Button`'s default size carries a fixed `h-9`. Without the override the second row
- * is capped at 36px while the first grows to fit its two lines, so the pair sit at
- * different heights and the squashed one reads as a smaller, lesser option.
+ * `h-auto` and `justify-start` are both load-bearing, and both look removable. One row
+ * is an `<a>` and the other a `<Button>`, and `Button`'s base brings a fixed `h-9` and
+ * `justify-center` with it. Without these the second row is capped at 36px with its
+ * contents centred, while the first grows to fit two lines and starts at the left —
+ * so the pair sit at different heights with their icons in different places.
  */
 const OPTION_ROW =
-  "flex h-auto w-full items-center gap-3 rounded-card border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:bg-muted";
+  "flex h-auto w-full items-center justify-start gap-3 rounded-card border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:bg-muted";
 
 const TITLES: Record<Step, { title: string; description: string }> = {
   choices: {
