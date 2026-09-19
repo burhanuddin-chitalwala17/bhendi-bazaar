@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
 import { productsService } from "@server/catalog/admin.product.service";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export const GET = withOrg(async (request, scope) => {
   const { searchParams } = new URL(request.url);
@@ -17,8 +18,8 @@ export const GET = withOrg(async (request, scope) => {
     orgId: scope.orgId,
     search: searchParams.get("search") || undefined,
     categoryId: searchParams.get("category") || undefined,
-    page: Number(searchParams.get("page")) || 1,
-    limit: Number(searchParams.get("limit")) || 10,
+    page: resolvePageNumber(searchParams.get("page")),
+    limit: resolvePageSize(searchParams.get("limit")),
   });
 
   return NextResponse.json(products);

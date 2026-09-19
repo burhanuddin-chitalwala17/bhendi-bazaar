@@ -16,12 +16,13 @@ import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
 export default function AdminCategoriesPage() {
   const [filters, setFilters] = useState<CategoryListFilters>({
     page: 1,
-    limit: 50,
+    limit: DEFAULT_PAGE_SIZE,
     sortBy: "order",
     sortOrder: "asc",
   });
@@ -268,7 +269,9 @@ export default function AdminCategoriesPage() {
         totalPages={totalPages}
         currentPage={filters.page || 1}
         totalItems={data?.total || 0}
+        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
         onPageChange={(page) => setFilters({ ...filters, page })}
+        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onSort={(key, order) =>
           setFilters({ ...filters, sortBy: key as any, sortOrder: order })
         }

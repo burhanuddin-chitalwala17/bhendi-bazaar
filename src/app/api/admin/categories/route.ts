@@ -12,6 +12,7 @@ import type {
   CreateCategoryInput,
 } from "@server/catalog/admin.category.types";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
 
 export async function GET(request: NextRequest) {
@@ -21,8 +22,8 @@ export async function GET(request: NextRequest) {
 
     const filters: CategoryListFilters = {
       search: searchParams.get("search") || undefined,
-      page: parseInt(searchParams.get("page") || "1"),
-      limit: parseInt(searchParams.get("limit") || "50"),
+      page: resolvePageNumber(searchParams.get("page")),
+      limit: resolvePageSize(searchParams.get("limit")),
       sortBy: (searchParams.get("sortBy") as any) || "order",
       sortOrder: (searchParams.get("sortOrder") as any) || "asc",
     };

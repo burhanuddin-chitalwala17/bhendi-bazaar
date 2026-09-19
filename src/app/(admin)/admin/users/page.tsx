@@ -17,12 +17,13 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
 import { formatPhone } from "@server/shared/phone";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
 export default function AdminUsersPage() {
   const [filters, setFilters] = useState<UserListFilters>({
     page: 1,
-    limit: 20,
+    limit: DEFAULT_PAGE_SIZE,
   });
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -232,7 +233,9 @@ export default function AdminUsersPage() {
         totalPages={totalPages}
         currentPage={filters.page || 1}
         totalItems={data?.total || 0}
+        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
         onPageChange={(page) => setFilters({ ...filters, page })}
+        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onSort={(key, order) =>
           setFilters({ ...filters, sortBy: key as any, sortOrder: order })
         }

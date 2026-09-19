@@ -18,11 +18,12 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 export default function AdminAbandonedCartsPage() {
   const [filters, setFilters] = useState<AbandonedCartFilters>({
     page: 1,
-    limit: 20,
+    limit: DEFAULT_PAGE_SIZE,
     minDays: 1,
   });
 
@@ -207,7 +208,9 @@ export default function AdminAbandonedCartsPage() {
         totalPages={data?.totalPages || 1}
         currentPage={filters.page || 1}
         totalItems={data?.total || 0}
+        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
         onPageChange={(page) => setFilters({ ...filters, page })}
+        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onSort={(key, order) =>
           setFilters({ ...filters, sortBy: key as any, sortOrder: order })
         }

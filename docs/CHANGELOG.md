@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-111] 2026-09-19 — [CONTRACT] Rows-per-page on every table, server-side
+
+Every paginated table in both portals showed ten rows and offered no way to change it. All nine now carry a rows-per-page control (10 / 25 / 50 / 100), and in every case the choice is a new server query — nothing is fetched and then sliced.
+
+**One declaration of the page sizes.** `PAGE_SIZE_OPTIONS`, `DEFAULT_PAGE_SIZE`, `resolvePageSize` and `resolvePageNumber` live in `server/shared/pagination.ts`, alongside the `Pagination` shape that was previously declared there *and* in `src/types/shared.ts` — two declarations of the same concept, which is the drift Rule 1 exists to stop. `src/types/shared.ts` now re-exports.
+
+**`limit` is parsed, not coerced.** Six route handlers read it as `parseInt(searchParams.get("limit") || "20")`, which happily accepts `limit=1000000` — an unbounded `take` any caller could ask for. Every handler now resolves against the closed set, and `page` through `resolvePageNumber` so a negative page cannot become a negative `skip`. This is Invariant 4 at a read boundary: the payload is untrusted whether or not the caller is an admin.
+
+**The admin orgs listing was not paginated at all.** It fetched every organisation with its product count and per-location stock, then searched, filtered and sliced in the browser — the page's cost grew with the platform, and `Showing 1 to 10 of N` counted rows already downloaded. `orgRepository.findPageWithStats` now filters, orders, pages and counts in one query pair; search and status are query parameters. `GET /api/admin/orgs` therefore returns `{ orgs, pagination }` rather than a bare array, and `includeStats` is gone — stats were the only caller. `adminOrgService.getAllOrgs` was left with no callers and is deleted.
+
+**The pagination bar no longer unmounts.** `DataTable` returned early on both loading and empty results, so the whole card — controls included — vanished on every page change, and a filter that emptied the table took away the control needed to widen it. Header and footer now stay mounted; only the body swaps. Its prev/next and sort controls are `ui/button` rather than raw `<button>`, and prev/next disable correctly at both ends (`currentPage >= totalPages`, previously `=== totalPages`, so the next button stayed live past the last page whenever a filter shrank the result set mid-session).
+
+Default page size is now **10 everywhere**. Users, orders, reviews and carts previously defaulted to 20 and categories to 50; neither is in the offered set, and a one-click selector makes the cheapest first load the right default.
+
+Surfaces changed: org products, org orders, admin products, admin users, admin orders, admin reviews, admin abandoned carts, admin categories, admin orgs.
+
+Not included: the org reviews page and the offer and bidding lists are card lists, not tables — the reviews DAL already returns `pagination` and renders no control for it, which is a pre-existing gap rather than one this PR introduces.
+
+
 ## [PR-110] 2026-09-18 — Review fixes for the R2 switch: two blockers the tests did not catch
 
 Pre-merge review of [PR-108] found two defects that would have surfaced during testing, and one control with no coverage at all.

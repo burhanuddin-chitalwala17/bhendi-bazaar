@@ -11,6 +11,7 @@ import { adminUserService } from "@server/identity/admin.user.service";
 import type { UserListFilters } from "@server/identity/admin.user.types";
 import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,8 +28,8 @@ export async function GET(request: NextRequest) {
           : searchParams.get("isBlocked") === "false"
           ? false
           : undefined,
-      page: parseInt(searchParams.get("page") || "1"),
-      limit: parseInt(searchParams.get("limit") || "20"),
+      page: resolvePageNumber(searchParams.get("page")),
+      limit: resolvePageSize(searchParams.get("limit")),
       sortBy: (searchParams.get("sortBy") as any) || "createdAt",
       sortOrder: (searchParams.get("sortOrder") as any) || "desc",
     };

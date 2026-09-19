@@ -1,5 +1,6 @@
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
 import { OrgOrdersTable } from "@/org/org-orders-table";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export const metadata = { title: "Orders", robots: { index: false, follow: false } };
 
@@ -8,11 +9,15 @@ export default async function OrgOrdersPage({
   searchParams,
 }: {
   params: Promise<{ orgId: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { orgId } = await params;
-  const { page } = await searchParams;
-  const { orders, pagination } = await orgOrdersDAL.getOrders(orgId, Number(page) || 1);
+  const { page, limit } = await searchParams;
+  const { orders, pagination } = await orgOrdersDAL.getOrders(
+    orgId,
+    resolvePageNumber(page),
+    resolvePageSize(limit)
+  );
 
   return (
     <div className="space-y-6">

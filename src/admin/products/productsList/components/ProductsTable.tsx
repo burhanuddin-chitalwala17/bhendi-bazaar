@@ -16,6 +16,7 @@ interface ProductsTableProps {
   products: ProductForTable[];
   pagination: Pagination;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
   onDelete: (id: string, name: string) => void;
   onEdit: (id: string) => void;
   onView: (id: string) => void;
@@ -29,6 +30,7 @@ export function ProductsTable({
   products,
   pagination,
   onPageChange,
+  onPageSizeChange,
   onDelete,
   onEdit,
   onView,
@@ -194,7 +196,9 @@ export function ProductsTable({
       totalPages={pagination.totalPages}
       currentPage={pagination.page}
       totalItems={pagination.total}
+      pageSize={pagination.limit}
       onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       onSort={onSort}
       isLoading={isPending}
     />

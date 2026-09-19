@@ -7,6 +7,7 @@ import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
 import { Button } from "@/components/ui/button";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -17,6 +18,7 @@ interface PageProps {
   params: Promise<{ orgId: string }>;
   searchParams: Promise<{
     page?: string;
+    limit?: string;
     search?: string;
     category?: string;
     sort?: string;
@@ -73,8 +75,8 @@ async function OrgProductsData({
   // could otherwise widen this to another org's catalogue.
   const filters = {
     orgId,
-    page: Number(params.page) || 1,
-    limit: 10,
+    page: resolvePageNumber(params.page),
+    limit: resolvePageSize(params.limit),
     search: params.search,
     categoryId: params.category,
     sortBy: params.sort as "name" | "createdAt" | "price" | "stock" | undefined,
