@@ -85,7 +85,7 @@ export function useProducts(options?: UseProductsOptions) {
 
   /**
    * Remove a product. The server deletes it outright when nothing depends on it and
-   * takes it off sale otherwise (ADR-0026), so the confirmation says both may happen
+   * takes it off sale otherwise (ADR-0029), so the confirmation says both may happen
    * and the toast reports which one did.
    */
   const deleteProduct = async (id: string) => {

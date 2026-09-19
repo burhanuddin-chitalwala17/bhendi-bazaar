@@ -24,6 +24,7 @@ const URL_PARAM_FOR: Partial<Record<keyof ProductFilters, string>> = {
   categoryId: "category",
   sortBy: "sort",
   sortOrder: "order",
+  wishlistedOnly: "wishlisted",
 };
 
 /** The default shelf is on-sale, so it stays out of the URL. */
@@ -151,6 +152,7 @@ export function ProductsContainer({
         products={data.products}
         pagination={data.pagination}
         onPageChange={(page) => updateFilters({ page })}
+        onPageSizeChange={(limit) => updateFilters({ limit })}
         onSort={(sortBy: string, sortOrder: "asc" | "desc") => updateFilters({ sortBy: sortBy as "name"|"createdAt"|"price"|"stock", sortOrder })}
         onDelete={handleDelete}
         readOnly={readOnly}

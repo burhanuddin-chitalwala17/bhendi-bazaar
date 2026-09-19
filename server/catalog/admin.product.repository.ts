@@ -58,7 +58,7 @@ const PRODUCT_LIST_SELECT = {
     weight: true,
     createdAt: true,
     // The org sees its own withdrawn products and can restore them, so this travels
-    // on the org-facing shape (ADR-0026). The buyer-facing DTO never carries it —
+    // on the org-facing shape (ADR-0029). The buyer-facing DTO never carries it —
     // a buyer is never handed a withdrawn product at all.
     archivedAt: true,
     category: {
@@ -115,6 +115,7 @@ export class AdminProductsRepository {
             flags,
             lowStock,
             outOfStock,
+            productIds,
             sortBy,
             sortOrder,
         } = filters;
@@ -133,6 +134,9 @@ export class AdminProductsRepository {
             ...(categoryId && { categoryId }),
             ...(orgId && { orgId }),
             ...(flags && { flags: { hasSome: flags } }),
+            // An empty list is a real answer — a caller whose filter matched nothing
+            // wants no rows, not every row — so this tests undefined, not truthiness.
+            ...(productIds !== undefined && { id: { in: productIds } }),
         };
 
         const orderBy: Prisma.ProductOrderByWithRelationInput =
@@ -222,7 +226,7 @@ export class AdminProductsRepository {
             : null;
         // A withdrawn product still holds its SKU, so the clash is with something the
         // org cannot see in its default list. Saying so is the whole mitigation
-        // (ADR-0026 D8) — "already in use" would send them hunting for a product that
+        // (ADR-0029 D8) — "already in use" would send them hunting for a product that
         // is not there.
         const message = !taken
             ? `SKU "${sku}" is already used by another product in this organisation`
@@ -314,7 +318,7 @@ export class AdminProductsRepository {
     }
 
     /**
-     * Take a product off sale, or put it back (ADR-0026). `archivedAt` is server-owned
+     * Take a product off sale, or put it back (ADR-0029). `archivedAt` is server-owned
      * and never arrives from a request body (Invariant 4), so it is set here from a
      * clock rather than passed through.
      *
@@ -395,7 +399,7 @@ export class AdminProductsRepository {
 
         // Stock is an aggregate (D3): load the scope's products with their rows and
         // sum in memory — measured fine at this catalogue size.
-        // Every figure below is about what is on sale (ADR-0026): a withdrawn
+        // Every figure below is about what is on sale (ADR-0029): a withdrawn
         // product's stock is real but not sellable, and a low-stock alert on something
         // deliberately off sale is noise. Withdrawn is reported as its own count
         // rather than folded in, so no figure is silently ambiguous.

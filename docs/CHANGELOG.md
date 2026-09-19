@@ -10,11 +10,124 @@
 
 ## Entries
 
-## [PR-105] 2026-09-16 — A product leaves sale by archiving, not deletion [CONTRACT] [MIGRATION]
+## [PR-111] 2026-09-19 — [CONTRACT] Rows-per-page on every table, server-side
 
-An org can now take any of its products off sale and put it back, at the same URL, without touching the orders, payouts or ledger entries it appears on. Spec and TRD: [product-archive](specs/product-archive/); decision and rejected alternatives: [ADR-0026](adr/0026-a-product-leaves-sale-by-archiving-not-deletion.md).
+Every paginated table in both portals showed ten rows and offered no way to change it. All nine now carry a rows-per-page control (10 / 25 / 50 / 100), and in every case the choice is a new server query — nothing is fetched and then sliced.
 
-**The operation orgs wanted did not exist.** PR-104 made the refusal honest — a product with an order against it cannot be deleted, and never will be, because an order line records what was sold and for how much ([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). It did not make the refusal avoidable. Nothing on `Product` expressed a lifecycle: no status, and flags that are display badges. So an org whose product had a single abandoned unpaid order against it could not remove it from the storefront at all, and zeroing the stock — the only available lever — leaves the product listed, browsable and indexed, reading as a shop that cannot restock.
+**One declaration of the page sizes.** `PAGE_SIZE_OPTIONS`, `DEFAULT_PAGE_SIZE`, `resolvePageSize` and `resolvePageNumber` live in `server/shared/pagination.ts`, alongside the `Pagination` shape that was previously declared there *and* in `src/types/shared.ts` — two declarations of the same concept, which is the drift Rule 1 exists to stop. `src/types/shared.ts` now re-exports.
+
+**`limit` is parsed, not coerced.** Six route handlers read it as `parseInt(searchParams.get("limit") || "20")`, which happily accepts `limit=1000000` — an unbounded `take` any caller could ask for. Every handler now resolves against the closed set, and `page` through `resolvePageNumber` so a negative page cannot become a negative `skip`. This is Invariant 4 at a read boundary: the payload is untrusted whether or not the caller is an admin.
+
+**The admin orgs listing was not paginated at all.** It fetched every organisation with its product count and per-location stock, then searched, filtered and sliced in the browser — the page's cost grew with the platform, and `Showing 1 to 10 of N` counted rows already downloaded. `orgRepository.findPageWithStats` now filters, orders, pages and counts in one query pair; search and status are query parameters. `GET /api/admin/orgs` therefore returns `{ orgs, pagination }` rather than a bare array, and `includeStats` is gone — stats were the only caller. `adminOrgService.getAllOrgs` was left with no callers and is deleted.
+
+**The pagination bar no longer unmounts.** `DataTable` returned early on both loading and empty results, so the whole card — controls included — vanished on every page change, and a filter that emptied the table took away the control needed to widen it. Header and footer now stay mounted; only the body swaps. Its prev/next and sort controls are `ui/button` rather than raw `<button>`, and prev/next disable correctly at both ends (`currentPage >= totalPages`, previously `=== totalPages`, so the next button stayed live past the last page whenever a filter shrank the result set mid-session).
+
+Default page size is now **10 everywhere**. Users, orders, reviews and carts previously defaulted to 20 and categories to 50; neither is in the offered set, and a one-click selector makes the cheapest first load the right default.
+
+Surfaces changed: org products, org orders, admin products, admin users, admin orders, admin reviews, admin abandoned carts, admin categories, admin orgs.
+
+Not included: the org reviews page and the offer and bidding lists are card lists, not tables — the reviews DAL already returns `pagination` and renders no control for it, which is a pre-existing gap rather than one this PR introduces.
+
+## [PR-111] 2026-09-18 — Sign in without leaving the page, and finish what prompted it
+
+Signing in, creating an account and asking for a password reset now happen in a panel over the current page — a bottom sheet on a phone, a right-hand panel from `md` — opened by **Login** in the header and the tab bar. On success it closes, the shopper is where they were, and the chrome, cart, hearts and page content update without a reload. Spec and TRD: [seamless-sign-in](specs/seamless-sign-in/).
+
+**One form per flow.** `SignInForm`, `SignUpForm`, `ForgotPasswordForm` and `GoogleSignInButton` in `src/components/auth/` own their fields, schema and submit; the `(auth)` pages and the sheet are a heading plus the form, so a message cannot differ between them. The pages became server components that pass `callbackUrl` through `safeCallbackUrl` — a same-origin path or `/` — and return the shopper there instead of the home page. A signed-out visit to a portal still goes to the sign-in page and comes back.
+
+**A prompt to sign in finishes its action.** The heart, for a guest, opens the sheet ("Sign in to save this") with a `wishlist.save` intent, which runs after a password sign-in, a new account, or the Google round trip, where it rides in `sessionStorage` for at most ten minutes and is removed before it runs. It is a save, never the toggle, so it cannot unsave. Closing the sheet discards it, and so does coming back from Google signed out. The wishlist page shows a guest a sign-in prompt instead of redirecting, and the profile page's prompt opens the sheet — that prompt was unreachable before, because `ProfileProvider` never left its loading state for a guest.
+
+**Checkout.** A guest sees **Already have an account? Sign in** above the delivery form. After signing in, the guest's address is cleared for the account's saved ones, offers are re-quoted for the buyer (the quote key now includes the user), and the items being checked out stay as snapshotted — whatever the sign-in merge brought into the cart stays in the cart.
+
+**An order removes only what it bought.** The order transaction used to delete the whole cart row, Buy Now included. It now calls `cartService.removeBoughtLinesIn(tx, …)`, which deletes the lines matching the order's `(productId, size, color)` and bumps `version`, and the client drops the same lines with `removeLines` instead of `clear()` — on the free-order path too, which previously cleared nothing locally. The order service no longer touches `tx.cart` directly (ADR-0003). [inventory-reservation](specs/inventory-reservation/) R6 is reworded to match. A 409 on the next cart write now only announces "updated in another tab" when the merge actually changed something, since an order this tab placed produces one.
+
+Tests: `auth-forms`, `auth-sheet`, `auth-intent`, `safe-callback-url`, `checkout-sign-in`, `order-removes-bought-lines`; `wishlist-button` and the removal-rule check in `wishlist.test.ts` updated. No schema, no migration, no DTO change. The 6 failures already on `develop` (design-tokens ×2, image-delivery ×2, rate-limit-detached, admin-audit-trail) reproduce unchanged.
+
+## [PR-110] 2026-09-18 — Review fixes for the R2 switch: two blockers the tests did not catch
+
+Pre-merge review of [PR-108] found two defects that would have surfaced during testing, and one control with no coverage at all.
+
+**Bulk upload would have rejected every R2 URL.** Both bulk schemas validated image URLs against a hardcoded `.public.blob.vercel-storage.com` hostname, so the wizards' own uploads — now on `images.bhendi-bazaar.com` — would have been refused by the route that receives them. Replaced with `isOwnObjectUrl`, checked against the configured store. It is a real security control, not a formality: it is the only thing stopping a crafted payload pointing a product at any image on the internet. A host-specific literal inside a validator is how a storage migration silently starts rejecting itself.
+
+**That control had zero tests.** The integration suite calls the bulk *service* and never reaches the route schema, which is exactly how the hardcoded hostname survived. Now covered — our own URLs accepted, the retired store rejected, arbitrary external URLs rejected, and a prefix that merely starts the same (`images.example.test.evil.test`) rejected as not-containment.
+
+**The site's own logo and favicon pointed at the dead store.** Nine hardcoded URLs in `src/lib/config.ts` — logo, favicon, OG image — all 403 in production, and nothing in the database to repoint. Brand assets now ship in `public/brand/`: they change on a rebrand, not on an upload, and keeping them in the repository means a storage outage cannot take down the site's own identity, which is precisely what happened. `metadataBase` is now set from `appUrl()` so the root-relative paths resolve to the custom domain for scrapers rather than the deployment URL. The icon `type` also stopped claiming `image/png` beside an `.svg` value.
+
+**`minimumCacheTTL` was 30 days against immutable objects**, re-transforming the whole catalogue monthly for nothing — against a Hobby allowance of 5,000 transformations. Now a year, matching the `immutable, max-age=31536000` that `object-store.ts` writes.
+
+**A pre-existing bug found by the inventory:** `ShippingProvider.logoUrl` is set to a `shiprocket.in` URL by the `register_shiprocket_provider` data migration, and that host was not in `remotePatterns` — so the admin shipping page threw whenever a provider had a logo. Added, rendered `unoptimized` for the same reason as the YouTube posters: a third party's already-sized asset is not worth a transformation.
+
+**`src/lib/env.ts` was wrong in both directions, and never ran.** It named `BLOB_READ_WRITE_TOKEN` as required — the app stopped reading it in [PR-108] — and omitted all five R2 variables, the ones a boot genuinely cannot proceed without. Corrected, and its header now says plainly that **nothing calls `validateEnv()`**: it documents rather than enforces, which `OPERATIONS.md` points at it as doing. Flagged rather than quietly fixed because a guard that silently does nothing is worse than no guard — the same failure as a `font-*` class generating no CSS ([ADR-0022](adr/0022-design-decisions-go-through-tokens.md)). Wiring it to `instrumentation.ts` is left as a decision, not assumed.
+
+`NEXT_PUBLIC_ASSETS_URL` is now gone from every doc; the only surviving mention is the [PR-109] entry recording its removal.
+
+Also removed five unreferenced `create-next-app` SVGs from `public/`.
+
+
+## [PR-109] 2026-09-17 — Delete the Vercel Blob tooling the R2 move made dead
+
+Three scripts and one environment variable, removed rather than left to rot. [ADR-0009](adr/0009-docs-reference-code-never-copy-it.md) is about docs going stale; the same applies to tooling that describes a system no longer in use.
+
+- **`scripts/upload-images.ts`** — uploaded local folders to Blob for seeding. Superseded: uploads go through `server/catalog/object-store.ts` and are normalised on the way in ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)), which this predated. `QUICK_START.md` pointed at it twice and now points at the admin UI.
+- **`scripts/backfill-blob-images.ts`** — re-encoded stored originals in place. Premise gone twice over: the old store cannot be read while blocked, and nothing new is written there.
+- **`scripts/cleanup-orphan-blobs.ts`** — reclaimed storage by deleting unreferenced blobs. Pointless against a store being abandoned, and R2's allowance is ten times larger. Its one hard-won idea is preserved in [PR-106] and in `scripts/README.md`: the keep-set is the **union across every database sharing the store**, because computing it from one deletes the other environment's live images.
+- **`NEXT_PUBLIC_ASSETS_URL`** — documented as required-ish in `OPERATIONS.md`, referenced by no code at all.
+
+**`scripts/migrate-blob-store.ts` stays, deliberately.** The old store still holds the only copy of anything not reproducible from local originals, and its `copy` phase is the fallback if that turns out to be true. It goes, with `@vercel/blob`, once the catalogue is confirmed intact on R2.
+
+**`OPERATIONS.md` gained the R2 setup procedure** — bucket, scoped API token, public access, and the CORS policy, which is the step that silently breaks browser uploads because CORS applies to presigned URLs too. The Blob transfer section is kept but relabelled as historical: R2 has no egress meter, so that failure mode is gone rather than managed.
+
+## [PR-108] 2026-09-17 — Images move to Cloudflare R2, behind one seam [CONTRACT]
+
+The free Vercel Blob allowance was exhausted and the store blocked — every content read returning `403 Your store is blocked`, our own included. [PR-105] and [PR-107] fixed how much we send and store; neither can fix the shape of the allowance. Decision, the comparison, and the rejected alternatives: [ADR-0028](adr/0028-images-live-in-cloudflare-r2.md).
+
+**R2 removes the meter rather than raising it.** Against Hobby's 1 GB storage / 10 GB egress / 2,000 write operations, R2's free tier is 10 GB / unmetered / 1,000,000. Egress is not a billable dimension on any R2 storage class, so the failure that blanked the catalogue cannot recur. The operations limit was the worst fit of the three: transfer and storage scale with traffic, but operations scale with how much you *work on* the catalogue — and dashboard browsing counts — so a shop in build-out spends them exactly when it can least afford to. This was also the cheapest moment to move: 321 images had to be re-uploaded from local originals anyway, because the old store could not be read.
+
+**Hosting does not move.** Nothing that happened was a hosting failure, and the architecture is Vercel-shaped — cron in `vercel.json`, migrations on deploy ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)), and a deliberate dependency on the image optimizer ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)).
+
+**One seam.** `server/catalog/object-store.ts` owns every write, delete and URL derivation. This migration touched ten files precisely because "where images live" was spread across two upload routes, two bulk wizards, a profile handler and three scripts. Reads deliberately do not pass through it — an object is public and fetched straight from `R2_PUBLIC_BASE_URL`, because proxying reads through a function would rebuild the metered egress path being escaped.
+
+**[CONTRACT] The upload handshake changed.** `POST /api/{admin,org/:orgId}/upload/token` now takes `{ pathname, contentType, size }` and returns `{ uploadUrl, publicUrl }` — a presigned S3 PUT instead of a bearer token, with the path and content type signed so neither can change after approval. The body is parsed by a Zod schema like any other (Invariant 4).
+
+**One guarantee is weaker, and is written down rather than glossed.** `Content-Length` is a forbidden header — the Fetch `Request` constructor strips it — so size cannot be signed into a presigned PUT, and S3 PUT has no `content-length-range`. The declared size is validated but not bound: an authenticated uploader bypassing our client could exceed `MAX_IMAGE_BYTES`. The bound is authentication, not cryptography. A test pins it so it is not later misread as enforced. A stricter version is available if needed — the bulk-create route already receives every uploaded URL and could `head()` and reject.
+
+**`aws4fetch` over the AWS SDK** — one small file against two packages and several megabytes in a function, to issue PUT, DELETE and a presigned URL. The old Vercel Blob host stays in `remotePatterns` until `migrate-blob-store.ts check` reports zero, so a partially repointed catalogue still renders; `@vercel/blob` survives only in the three scripts whose job is to empty the old store.
+
+
+## [PR-107] 2026-09-17 — Zoom is sharp again: the stored ceiling is derived from the zoom, not guessed
+
+[PR-105] capped stored photographs at 1600px and required `sizes` to describe the CSS box. Both are wrong on a surface that magnifies, and this catalogue has two — the gallery pinches to 3× and hover-zooms to 2×, the lightbox zooms to 3× with pan. Decision, measurements and rejected alternatives: [ADR-0027](adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md).
+
+**A zoom scales bytes already downloaded; it does not fetch a sharper image.** So a zoomable element's real slot is its box times the zoom, and describing only the box guarantees softness at magnification — the exact defect [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) existed to prevent, arriving through the rule it wrote. The gallery's active slide and the lightbox now use `ZOOMABLE_IMAGE_SIZES`, the one sanctioned overstatement; the listing tile stays honest, because overstating *there* is what cost the transfer allowance.
+
+**Measured against a pristine source, not argued.** At 3× zoom, 1600px q82 showed 6.63 mean absolute error against 3.33 for 2000px and 1.28 for the original — twice the error for 67KB less. At tile and page sizes the difference was negligible (2.50 vs 2.46), so PR-105's listing gains are untouched; the loss was confined to the surface where a buyer inspects weave and stonework. 3000px measured no better than 2000px (4.08) while storing twice as much, so the ceiling is 2048px and not higher: past `MAX_ZOOM_SCALE` nothing requests the pixels.
+
+**The zoom cap is now declared once.** It was spelled three times — `MAX_SCALE = 3` in the lightbox, `Math.min(3, …)` in the gallery, and implicitly in the chosen ceiling. `MAX_ZOOM_SCALE` lives in `server/catalog/media.ts`, `MAX_IMAGE_EDGE` is derived from it, and `tests/unit/image-delivery.test.ts` fails both on a second spelling and on a ceiling that no longer clears the zoom.
+
+**`scripts/backfill-blob-images.ts` brings existing images in line.** Measured on the real store: 321 blobs, 299 of them over 400KB totalling 649.5 MB — an average of 2.17 MB each. Each blob is overwritten at its own pathname so no URL changes and no database column is touched, with `contentType: image/webp` even where the pathname still says `.jpg`. This inverts the rule `migrate-blob-store.ts` follows, deliberately: a new pathname would mean rewriting eight columns and risking a half-migrated catalogue for a cosmetic gain.
+
+**Also:** the three hand-run Blob scripts now load `.env` themselves — `tsx` does not, unlike Prisma's tooling, so every Blob call failed with "No token found". `dotenv` was already a devDependency.
+
+
+## [PR-106] 2026-09-17 — A blob store can be migrated or garbage-collected, and the runbook says what each costs
+
+Follow-on to [PR-105]. `scripts/migrate-blob-store.ts` copies every blob from one Vercel Blob store to another and repoints all eight URL columns — `Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`, `Org.logoUrl`, `OrderItem.thumbnail`, `ShippingProvider.logoUrl`, `Banner.imageUrl`. Two phases (`copy`, `rewrite`) plus a `check`, dry-run by default, each resumable through `.blob-migration/manifest.jsonl`.
+
+**Rewriting is a host swap, not a lookup.** Pathnames are preserved on copy, so the old and new URLs differ only in hostname, and both phases are idempotent. Rows are matched on the old host rather than on a type column, which is what keeps `ProductMedia.ref` safe — a `YOUTUBE` row holds a bare video id, not a URL ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md)) — and leaves `placehold.co` and external carrier logos alone. A URL with no copy in the new store is reported, never guessed: a wrong URL is worse than a stale one, because the stale one still says where it came from.
+
+**`OrderItem.thumbnail` is migrated despite being a deliberately frozen snapshot.** The freeze protects it from the catalogue changing, not from its store being retired; leaving it would 404 every historical order's images.
+
+**Storage has its own ceiling, and its own lever.** Hobby includes 1 GB of storage against 668 MB in use, and exceeding *any* Hobby limit withdraws Blob access the same way transfer does. `scripts/cleanup-orphan-blobs.ts` deletes blobs no row refers to — the one storage lever that works while transfer is blocked, since `list()` survives the 403 and `del()` costs neither transfer nor a billed operation. Storage is charged as a monthly average (GB-month), so a mid-month deletion lowers what the rest of the month averages against.
+
+**Its keep-set is the union across every database, not one.** One Blob store serves every environment, so a keep-set from a single database marks the other environment's live images as orphans and deletes production's catalogue. `CLEANUP_DATABASE_URLS` is therefore plural and the script refuses to guess; `--single-database` is the explicit escape hatch. It also keeps anything younger than 24 hours, because the bulk wizard uploads every image before creating any row — a blob with no row may be an upload in flight — and refuses outright when a named database yields no referenced URLs, which is far likelier a wrong `DATABASE_URL` than an empty catalogue. This replaces `scripts/cleanup-flat-blobs.ts`, which the runbook documented but which was not in the repository.
+
+**Two facts the runbook was missing, both from Vercel's own pricing page.** A new store in the same account gets no new allowance — storage, operations and transfer "aren't affected by how many stores you create", because the included usage belongs to the plan. And an overrun blocks reads with `403`, including your own: `list()` still works, so the blobs are visible and unreadable, which makes exporting *after* the fact impossible. [OPERATIONS.md](OPERATIONS.md) now records both, and corrects the reset window from "billing anniversary" to the 30 days Vercel documents.
+
+
+## [PR-113] 2026-09-16 — A product leaves sale by archiving, not deletion [CONTRACT] [MIGRATION]
+
+An org can now take any of its products off sale and put it back, at the same URL, without touching the orders, payouts or ledger entries it appears on. Spec and TRD: [product-archive](specs/product-archive/); decision and rejected alternatives: [ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md).
+
+**The operation orgs wanted did not exist.** PR-112 made the refusal honest — a product with an order against it cannot be deleted, and never will be, because an order line records what was sold and for how much ([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). It did not make the refusal avoidable. Nothing on `Product` expressed a lifecycle: no status, and flags that are display badges. So an org whose product had a single abandoned unpaid order against it could not remove it from the storefront at all, and zeroing the stock — the only available lever — leaves the product listed, browsable and indexed, reading as a shop that cannot restock.
 
 **One nullable timestamp, one `where` fragment, one assertion.** `Product.archivedAt` says when a product left sale; `ON_SALE` in `server/catalog/product.visibility.ts` is how every buyer-facing query asks about it; `assertNotArchived` inside the order transaction is what actually refuses a purchase. The first two are presentation. The third is the control, for the reason [ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) gives for bidding suspension: hiding a product from a listing does not stop a cart filled before the withdrawal, a page rendered a minute ago, or a request typed by hand.
 
@@ -36,7 +149,7 @@ An org can now take any of its products off sale and put it back, at the same UR
 
 **Two open questions were closed by assumption, and are recorded in the TRD rather than silently settled:** a catalogue import refuses a row whose SKU matches a withdrawn product rather than restoring it (putting a product back on sale must be an explicit act), and a withdrawn product's URL answers 404 rather than 410, since 410 tells a crawler to retire a URL an org may restore tomorrow. The latter is entangled with the standing soft-404 item on the [BACKLOG](BACKLOG.md).
 
-## [PR-104] 2026-09-15 — A refused product delete says why
+## [PR-112] 2026-09-15 — A refused product delete says why
 
 Deleting a product that has been ordered now fails with `This product cannot be deleted — 1 order still refers to it, and deleting it would break that record.` It previously failed with `One of the selected records no longer exists`, which named nothing that was true.
 
@@ -55,6 +168,115 @@ Deleting a product that has been ordered now fails with `This product cannot be 
 **What this does not do.** There is still no way to withdraw a product that *has* sold. Nothing on `Product` expresses "exists but is not for sale" — no status column, and `flags` carries only display badges — so an org whose product has one abandoned unpaid order against it cannot remove it from the storefront at all. That is a feature, not a message fix: it needs a column, a filter on every storefront read, and a re-check inside the order transaction the way bidding suspension does ([ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md)). Specced separately; on the [BACKLOG](BACKLOG.md) watch list. Decided in advance: when it lands, Delete stays one button — unsold hard-deletes, sold archives, and the response says which happened.
 
 No schema change, so no `[MIGRATION]`. Not a `[CONTRACT]` change: the envelope in [CONTRACTS.md](CONTRACTS.md) is unchanged and a `restricted` failure simply omits `details`, which the shape already permits. `tsc --noEmit` clean, lint clean. 679 tests pass, 11 new in `tests/unit/delete-refusal.test.ts`; its two P2003 payloads were captured from Prisma 7.1 + `@prisma/adapter-pg` against the local dev database rather than written from documentation, since the discrepancy between documented and actual shape is what caused the bug.
+
+## [PR-105] 2026-09-16 — Images are stored small and delivered through the optimizer
+
+The Vercel account exhausted the free tier's 10 GB monthly Blob **Data Transfer** allowance before launch. On that tier the allowance is withdrawn rather than billed, so the failure mode was every product image on the storefront going blank. Spec and TRD: [image-delivery](specs/image-delivery/); the decision and its rejected alternatives: [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md).
+
+**Three causes, none of which changed how anything looked.** The product tile — the most-rendered component on the storefront — used a raw `<img>` from `2d3027b`, so a listing fetched twelve full-size originals to paint twelve ~105px thumbnails: about 7 MB of image for 120 KB of visible pixels. `unoptimized` had been added to the product gallery and lightbox in `1b844b2` and `4e3f301`, which read as someone fixing a broken optimizer and worked on screen, while moving the cost onto a meter on a different dashboard page. And `server/catalog/image-upload.ts` stored whatever was uploaded up to 5 MB with no resize, which multiplied both.
+
+**Delivery and storage are now capped independently.** Every image in `src/` renders through `next/image` — the tile, the wishlist grid, the search dropdown, the admin product/cart/category tables, profile pictures, the read-only product gallery — and the five `unoptimized` props on Blob URLs are gone. Photographs are downscaled to 1600px and re-encoded as WebP before upload. Either ceiling alone was rejected: delivery-only leaves the optimizer as the single thing between a 5 MB original and the browser, and storage-only makes every future `<img>` look harmless.
+
+**Both upload paths enforce the budget, because only one of them is ours.** The bulk wizards upload browser-to-Blob directly to dodge the 4.5MB function body cap ([bulk-catalog-upload](specs/bulk-catalog-upload/) D10), so no server code ever sees those files — the largest single source of images would have been missed entirely. `server/catalog/image-upload.ts` normalises with sharp; `src/lib/image/downscale.ts` does the same on a canvas before `upload()`. `MAX_IMAGE_EDGE` and `IMAGE_QUALITY` are declared once in `server/catalog/media.ts`, which both sides already import.
+
+**`fill` without `sizes` is enforced as its own rule.** Absent `sizes` resolves to `100vw`, so a 64px avatar downloads the width of the viewport — the same overrun in `next/image`'s clothing, and invisible to a rule that only bans `<img>`. Upload previews now render the file still held in the page rather than fetching back the copy just sent (`useLocalPreviews`).
+
+**The reason this went unnoticed for nine months is that it was never written down.** `tests/unit/design-tokens.test.ts` fails the build over a `text-[0.7rem]`; nothing failed over a raw `<img>` on a Blob URL. `tests/unit/image-delivery.test.ts` now blocks all three causes in the same style — file named, allowlist entries carrying their reason, and an honesty check that fails when an exemption stops being needed. Chosen over an ESLint rule because `@next/next/no-img-element` was already enabled and every offending site carried a disable comment. `/bb-review` picks up what a test cannot judge: whether a stated `sizes` is honest. [OPERATIONS.md](OPERATIONS.md) records both meters and that local development spends the same allowance.
+
+Modelled at 10,000 monthly page views, Blob egress falls from ~55 GB to under 1 GB. Existing objects are deliberately not backfilled — their URLs and bytes stay as they are, and the optimizer means they no longer cost full size to serve.
+## [PR-108] 2026-09-17 — A new product starts blank, not as the last one created
+
+Opening "Create New Product" prefilled the form with the product just created. The create form persists a draft to `localStorage` (`product-creation-form-draft`) and restores it on mount, but nothing removed it after a successful create.
+
+**The clear was lost in a refactor.** Before `8057071` the old `product-form.tsx` passed `clearSaved` to `useProductForm`, which called it on success — the category form still works this way. The split into `ProductAddContainer` / `ProductForm` / `useProducts` moved the save into `useProducts.createProduct` and left `clearSaved` destructured and unused. The later move to `useServerForm` did not wire its `onSuccess` either. `ProductForm` now clears the draft in `useServerForm`'s `onSuccess`, so it goes only once the server has accepted the product.
+
+**Cancel abandons the draft.** On a create, Cancel resets the form and clears the saved draft before leaving, and the products page is refreshed on the way back, so it never shows a cached list. Editing an existing product is unaffected.
+
+**The debounce never debounced.** `useFormPersist` returned a cleanup from inside the `watch` callback, which react-hook-form ignores, so every keystroke queued its own save — and one still pending could land after `clearSaved` and restore the draft. The pending save is now one timer in a ref, cancelled on change, on unmount, and by `clearSaved`.
+
+No contract, schema or migration change. `tsc --noEmit` shows no errors in the changed files; no automated test covers the draft yet.
+## [PR-107] 2026-09-16 — Contact us: WhatsApp, or a message emailed to the store
+
+Every storefront page now has a **Contact us** control. On desktop it is an outline pill left of **Cart** in the header, shown to signed-in people and guests alike. On a phone it is the first tab of the bottom bar, which now reads **Contact · Cart · Home · Orders · Account**, so Home is in the middle. Either one opens a sheet with two options. **WhatsApp** opens a chat with +91 84529 59340 with an opening line typed in. **Send a message** swaps in a form with **Subject** and **Message**, sends it, and confirms without leaving the sheet. Spec and TRD: [contact-us](specs/contact-us/).
+
+**The message is an email and nothing else.** It goes to support@bhendibazaar.com with the sender as **Reply-To**, so answering it is an ordinary reply. Nothing is stored, and there is no admin-portal page, table or migration. The store's inbox already keeps the history, and a second inbox would be one more place to check. The email is a template and a `sendContactMessage` method in `server/notifications/`, following that domain's rule for adding an email, and `SendEmailOptions` gained an optional `replyTo`.
+
+**A signed-in sender is asked for nothing but the subject and message.** The reply address comes from the signed session, and an `email` in the body is ignored, because the session is the one input the sender cannot write. A guest also gets an **Email** field, since otherwise there would be nobody to reply to. The route and the form share one pair of schemas (`contactMessageSchema`, and `guestContactMessageSchema` which adds the email), so a guest who leaves the email out gets the error on that field (ADR-0013).
+
+**The route waits for the send.** Other emails are sent without waiting because they follow an action that has already been saved. Here the email *is* the action, so a failed send returns a 500 telling the sender to retry or use WhatsApp, and what they typed stays in the form.
+
+**Unthrottled, on purpose.** `withRateLimit` allows every request while the cache is detached, and with no table there is nothing to count. The call stays in so this route is covered once the limiter is reconnected.
+
+**The sheet is a bottom sheet on a phone and a right-hand panel from `md` up.** `SheetContent` gained a `side="adaptive"` option instead of a second component, so focus trapping and Escape behave the same in both layouts. At `md` the vertical slide is reset so it does not combine with the horizontal one into a diagonal. The grab handle hides on desktop, and a close button was added. The header pill is `hidden md:inline-flex`, which ADR-0015 permits because the tab bar provides the phone equivalent in the same change. One `ContactLauncher` holds the open state and mounts the sheet for both placements.
+
+`tests/unit/contact-email.test.ts` covers the route and template, `contact-sheet.test.tsx` the UI, and `contact-whatsapp.test.ts` the link builder, and the new template is added to the shared-shell check in `email-templates.test.ts`. No schema, no migration, no money path, and no CONTRACTS.md entry, because the route has one consumer. The 4 pre-existing failures (design-tokens ×2, rate-limit-detached, admin-audit-trail) are Windows path-separator mismatches in files this PR does not touch, and they reproduce unchanged.
+
+## [PR-104] 2026-09-16 — An abandoned checkout releases its goods, and is shown to nobody [CONTRACT]
+
+Closing the Razorpay window without paying left the item held and unbuyable. Spec and TRD: [checkout-abandonment](specs/checkout-abandonment/); the order-code decision and its rejected alternatives: [ADR-0025](adr/0025-order-codes-are-random-not-sequential.md).
+
+**The release existed; nothing called it in time.** `expireAndRestock` has been correct since PR-40 — it returns stock to the location it came from and releases the coupon claim in one transaction. Its only caller was the reconciliation sweep, whose only caller is a Vercel cron running `30 3 * * *`, and which then waited a further hour. So an abandoned checkout held its goods until the next 3:30 am: up to a day, on a catalogue where most items are single units. [inventory-reservation](specs/inventory-reservation/) R4 and [payment-confirmation](specs/payment-confirmation/) R7 both already required this; the mechanism was written and the trigger was not.
+
+**One routine, three triggers.** `paymentService.releaseIfUnpaid` asks the gateway what actually happened, then confirms, holds, or releases. The browser's dismissal calls it, a blocked checkout calls it, and the cron calls it — none of them decides anything. The browser may ask and may not decide, and a browser that never asks changes nothing.
+
+**The gateway is asked a wider question than before.** `fetchCapturedPayment` only ever looked for a capture, which would have been wrong to release on: a UPI collect request sits `created` or `authorized` while the buyer approves it in their banking app, often after closing our window. `fetchOrderPaymentState` returns `captured`, `in-flight` or `none`, and only `none` releases. This matters because `confirmPaid` deliberately refuses an expired order — releasing early would have turned a real payment into a manual refund.
+
+**Release happens when someone is actually blocked.** The order transaction now throws `OutOfStockError` naming the products; the create route releases abandoned holds on exactly those and retries once. This is what makes the fix independent of the cron — the hold is released at the moment it is demonstrably costing a sale, and a gateway call is spent only then. The cron is left at daily as a backstop; tightening it is a Vercel plan question (TRD D5), not a code one, and nothing now depends on the answer.
+
+**Abandoned orders are kept and hidden.** Nothing is deleted — the rows carry who nearly bought what, which is the raw material for following those buyers up, and money-bearing children could not be deleted anyway ([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). `VISIBLE_ORDER_WHERE` is applied inside the repositories rather than at nineteen call sites, so the next order query cannot forget it. It covers the admin list, detail, stats and bulk update, the org list and detail, the buyer's own order list, and the analytics revenue, status and chart reads. The sweep's two worklists are the deliberate exemptions.
+
+**`Order.status` is now declared once.** It was a bare `String` whose schema comment named `processing, partially_shipped, completed` — none of which the code writes. All ten real values are in `ORDER_STATUS` (`server/checkout/order.types.ts`), which is what visibility now turns on.
+
+**Order codes are random.** `generateOrderCode` read the highest existing code and added one: a read-then-write against a `@unique` column, so two simultaneous checkouts minted the same code and one died on a constraint violation — likelier now that abandoned attempts multiply orders. Codes are `BB-` plus eight characters from an alphabet without `I L O U 0 1`, generated without touching the database. A second, differently-shaped generator in `order.repository.ts` was dead and is deleted. Old codes stay valid for ever and the lookup accepts both shapes.
+
+`[CONTRACT]`: `POST /api/payments/abandon` is new. Order creation now answers **409** for a sold-out item rather than 400 for everything, through `toErrorResponse` — the handler was on the old error pattern and touching it meant converting it ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)). It also dropped an `(session.user as any)`.
+
+**No migration.** `"expired"` was already written and `status` was already a free string, so hiding an order needs no column. `Order.code` keeps its type and its unique index.
+
+**The orders already holding stock were corrected by hand before this shipped**, through the same `releaseIfUnpaid` the live paths use — so the gateway was asked about each one and nothing that had been paid for was released. The script that did it is not part of this PR: it was a one-time correction for a backlog this change stops accumulating, and a remediation kept after its cause is fixed is one someone eventually runs by mistake. The daily sweep covers the ongoing case.
+
+`tsc --noEmit` clean. 693 tests pass, 25 new across `checkout-abandonment.test.ts` and `order-visibility.test.ts` — the release decision including the in-flight hold and the ownership rule, the visibility predicate on every affected query, and the code generator's alphabet, uniqueness and agreement with the lookup pattern it is deliberately declared apart from.
+## [PR-106] 2026-09-15 — The search dropdown shows rupees, and shows the offer price
+
+The suggestion row rendered `{product.currency} {product.price}` straight out of the database, so a ₹1,299 product read **"INR 129900"**. Money is integer paise everywhere inside the system ([ADR-0004](adr/0004-money-as-integer-paise.md)) and leaves as a string in exactly one place — `formatCurrency` — which this surface never called. It was the only price in the storefront doing its own formatting.
+
+**The same line broke the pricing rule underneath it.** `searchProducts` selects `price` off the product row and nothing resolved an offer, so the dropdown quoted the list price while the product page one click later quoted the discounted one. [ADR-0018](adr/0018-one-effective-price-function.md) is explicit that a read path needing a price and not calling the resolver is a defect, not an optimisation — this was that defect, and the formatting bug is what made it visible. Fixing only the formatting would have left a dropdown confidently showing the wrong number in better-looking type.
+
+The row now goes through `productService.toSuggestion`, which calls `resolveProductPrice` against the request's shared `loadPriceContext` — the same function and the same instant the product page, the cart and the order transaction use — and returns `{ price, salePrice }` in paise. Rendering is `PriceDisplay` at `size="xs"`, so the strike-through and the offer treatment match every other tile rather than being re-derived here.
+
+Two supporting changes. `searchProducts` selects `orgId` and `categoryId`, which the resolver keys on and the response does not carry; and the suggestion row gets **one declaration** (`ProductSuggestion` in `server/catalog/product.types.ts`, re-exported by `src/domain/product.ts`) in place of the hook typing a six-field row as the full `Product` — the mistyping that let the raw `currency` field look legitimate at the call site. No CONTRACTS.md entry: one route, one consumer, which [CONTRACTS.md](CONTRACTS.md) says does not need one.
+
+**Migrate on contact** ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) decision 7). The handler was still building its own `{ error }` body, and the hook was storing whatever came back as state — so a 500 put `{ error: "..." }` where the suggestion list goes and the next render read `.products` off it. The handler now returns `toErrorResponse`, the hook checks `response.ok` and falls back to an empty list. Nobody hit it because the route rarely fails; that is the kind of defect this rule exists to sweep up while the file is already open.
+
+`tests/unit/search-suggestions.test.ts` pins both halves — the formatted output, and that a live automatic offer reaches the dropdown. 537 unit tests pass; the 4 pre-existing failures (design-tokens, rate-limit-detached, admin-audit-trail) and the 2 pre-existing `profile.*` typecheck errors reproduce unchanged on a clean tree. No schema, no migration, no money written.
+
+## [PR-105] 2026-09-15 — A bidding window may run at most ten days
+
+`biddingFormSchema` bounded a window on three sides — ends after it starts, does not end in the past, quick-bids below the maximum increase — and left its length open, so an org could open an event and close it a year later. It is now capped at ten days from `startAt`.
+
+**The cap is measured from the start, not from now.** An event scheduled to open in a month still gets its full ten days; the rule is about how long bidding runs, not how far ahead it may be scheduled. The refine reports against `endAt`, because that is the field the org can move to fix it.
+
+**The picker stops where the schema stops.** `MAX_BIDDING_DAYS` is exported and the "Bidding closes" input computes its `max` from it, so the dates past the cap are unselectable rather than accepted-then-rejected. That is ADR-0013's rule about a form and its route sharing one schema applied to a bound rather than a field: a literal `10` in the component would have been a second declaration free to drift from the first. The bound follows the start date as it is edited, and lifts while a half-typed value cannot be parsed, so typing a date never fights the picker.
+
+Enforcement is still the schema, not the input. `max` on a `datetime-local` is a convenience a request does not have to honour, and the create route (`POST /api/org/[orgId]/bidding`) is the only path that parses this shape — there is no edit route that moves dates.
+
+`tests/unit/bidding-window-length.test.ts` pins the boundary on both sides: exactly ten days passes, one minute more fails, a start a month out keeps its full run, and the existing order rule still reports its own message. No schema change, no migration, no money path. 643 unit tests pass; the 4 pre-existing failures reproduce unchanged on a clean tree.
+
+## [PR-104] 2026-09-15 — Products can be narrowed to the ones people have saved
+
+The product tables gained a demand column in PR-37. The filter card now carries a **Wishlisted only** switch beside Categories and Stock: on, the list is just the products at least one person has saved; off, it is the whole catalogue. Both portals get it — `ProductsFilters` is one component behind `/org/[orgId]/products` and `/admin/products`.
+
+**It is a filter, so it had to resolve before the query, not after it.** The demand column works by a second round trip: the catalog query picks ten rows, then the wishlist domain is asked for those ten counts. Nothing about that can narrow a result set — filtering that way would hand back a page of ten with three rows on it and a total that disagrees. So the order is inverted for this: the wishlist domain answers with product ids, the DAL passes them to the catalog query as `productIds`, and paging and totals come out of SQL intact.
+
+Neither domain learns to read the other's table ([ADR-0003](adr/0003-one-repository-per-aggregate.md), [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md)). Catalog gains a `productIds` filter that says nothing about where the list came from — the alternative, a `wishlistItems: { some: {} }` relation filter, would have given `WishlistItem` a second reader. `wishlist-demand-column.test.ts` already pinned that rule and caught a first draft of this change naming the table in a *comment*, which is the test working as intended.
+
+**Two things that look like details and are not.** The id list is filtered on `productIds !== undefined`, not on truthiness: `[]` is truthy in JavaScript, so a truthiness test would have worked by accident here and returned the entire catalogue the day someone tidied it. And the switch resets to page 1 — page 4 of everything is not page 4 of the saved ones.
+
+The lookup is scoped to the org in the portal, which is what bounds it; the platform's cross-vendor view asks unscoped. That set grows with saves rather than with the catalogue, and is the cost of keeping the join out of catalog.
+
+The control is the project's existing Radix `Switch` rather than a second switch implementation: it grew an optional `thumbIcon`, so a heart rides where the dot normally sits, and the three existing switches pass `undefined` and are unchanged. A 24px switch is under the 36px touch floor, so the label is wired to it with `htmlFor` — `button` is a labelable element — making the whole 40px row the target ([ADR-0015](adr/0015-mobile-first-design.md)).
+
+`tests/unit/wishlisted-only-filter.test.tsx` covers the client half (param written, param dropped, page reset, column unaffected) and `tests/unit/wishlisted-only-resolution.test.ts` the server half (ids resolved, org scope, empty list preserved, flag never forwarded). No schema, no migration, no wire shape, no money path. 651 unit tests pass; the 4 pre-existing failures reproduce unchanged on a clean tree.
 
 ## [PR-103] 2026-09-12 — One phone number can back any number of accounts [MIGRATION]
 

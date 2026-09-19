@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingBag } from "lucide-react";
+import { Headset, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cartStore";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { NavbarSearch } from "./NavbarSearch";
 import { ProfileMenu } from "./ProfileMenu";
+import { ContactLauncher } from "@/components/support/contact-launcher";
 import Image from "next/image";
 import { APP_NAME, LOGO } from "@/lib/config";
 import { useSession } from "next-auth/react";
+import { useAuthSheet } from "@/context/AuthSheetContext";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -20,6 +22,7 @@ export function Navbar() {
 
   const { data: session } = useSession();
   const user = session?.user;
+  const { open: openAuthSheet } = useAuthSheet();
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur">
@@ -45,11 +48,12 @@ export function Navbar() {
             <ProfileMenu />
           ) : (
             <Button
-              asChild
+              type="button"
               variant="outline"
+              onClick={() => openAuthSheet()}
               className="hidden rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex lg:px-4"
             >
-              <Link href="/signin" prefetch={false}>Login</Link>
+              Login
             </Button>
           )}
 
@@ -65,6 +69,17 @@ export function Navbar() {
               Orders
             </Link>
           )}
+
+          {/* Desktop only: on a phone Contact us is the tab bar's first tab (ADR-0015 rule). */}
+          <ContactLauncher
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "hidden items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-eyebrow md:inline-flex"
+            )}
+          >
+            <Headset className="h-4 w-4" />
+            Contact us
+          </ContactLauncher>
 
           <Button
             asChild={true}

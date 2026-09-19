@@ -1,5 +1,5 @@
 /**
- * Refusing a purchase of something withdrawn from sale (ADR-0026 decision 4).
+ * Refusing a purchase of something withdrawn from sale (ADR-0029 decision 4).
  *
  * The same three-part shape bidding uses — pure rules in `product.visibility.ts`, the
  * query in the repository, the gate here — so nothing but a repository reads the

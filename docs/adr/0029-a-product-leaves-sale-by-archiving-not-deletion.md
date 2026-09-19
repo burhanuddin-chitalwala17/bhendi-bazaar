@@ -1,4 +1,4 @@
-# ADR-0026: A product leaves sale by archiving, not deletion
+# ADR-0029: A product leaves sale by archiving, not deletion
 
 - **Date:** 2026-09-16
 - **Status:** Accepted

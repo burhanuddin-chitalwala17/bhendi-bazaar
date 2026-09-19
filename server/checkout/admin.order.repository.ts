@@ -10,6 +10,7 @@ import {
   withWireItems,
 } from "@server/checkout/order.repository";
 import { Prisma } from "@prisma/client";
+import { ORDER_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   OrderListFilters,
   UpdateOrderStatusInput,
@@ -37,7 +38,10 @@ export class AdminOrderRepository {
 
     const skip = (page - 1) * limit;
 
-    const where: Prisma.OrderWhereInput = {};
+    // Abandoned checkouts are invisible here (checkout-abandonment R4). Combined with
+    // AND rather than assigned, so an explicit `status` filter narrows within the
+    // visible set instead of replacing the predicate.
+    const where: Prisma.OrderWhereInput = { AND: [VISIBLE_ORDER_WHERE] };
 
     if (search) {
       where.OR = [
@@ -105,9 +109,9 @@ export class AdminOrderRepository {
    * Get single order by ID
    */
   async getOrderById(id: string) {
-    const order = await prisma.order.findUnique({
+    const order = await prisma.order.findFirst({
       relationLoadStrategy: "join",
-      where: { id },
+      where: { id, ...VISIBLE_ORDER_WHERE },
       include: {
         user: {
           select: {
@@ -174,16 +178,20 @@ export class AdminOrderRepository {
       allOrders,
       monthOrders,
     ] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({ where: { status: "processing" } }),
-      prisma.order.count({ where: { status: "packed" } }),
-      prisma.order.count({ where: { status: "shipped" } }),
-      prisma.order.count({ where: { status: "delivered" } }),
+      // Every figure on this dashboard excludes abandoned checkouts: counting them
+      // would report business that did not happen (checkout-abandonment R4).
+      prisma.order.count({ where: VISIBLE_ORDER_WHERE }),
+      prisma.order.count({ where: { status: ORDER_STATUS.PROCESSING } }),
+      prisma.order.count({ where: { status: ORDER_STATUS.PACKED } }),
+      prisma.order.count({ where: { status: ORDER_STATUS.SHIPPED } }),
+      prisma.order.count({ where: { status: ORDER_STATUS.DELIVERED } }),
       prisma.order.findMany({
+        where: VISIBLE_ORDER_WHERE,
         select: { grandTotal: true },
       }),
       prisma.order.findMany({
         where: {
+          ...VISIBLE_ORDER_WHERE,
           createdAt: {
             gte: startOfMonth,
           },
@@ -223,6 +231,7 @@ export class AdminOrderRepository {
   ): Promise<number> {
     const result = await prisma.order.updateMany({
       where: {
+        ...VISIBLE_ORDER_WHERE,
         id: {
           in: orderIds,
         },
@@ -241,7 +250,7 @@ export class AdminOrderRepository {
    * never leave the database. Read-only; an org mutates its shipments, never the order.
    */
   async getOrdersForOrg(orgId: string, page = 1, limit = 20) {
-    const where = { shipments: { some: { orgId } } };
+    const where = { ...VISIBLE_ORDER_WHERE, shipments: { some: { orgId } } };
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,
@@ -286,7 +295,7 @@ export class AdminOrderRepository {
   /** One order, only if this org has a shipment in it — otherwise null (not-found, never forbidden). */
   async getOrderForOrg(orderId: string, orgId: string) {
     const order = await prisma.order.findFirst({
-      where: { id: orderId, shipments: { some: { orgId } } },
+      where: { id: orderId, ...VISIBLE_ORDER_WHERE, shipments: { some: { orgId } } },
       select: {
         id: true,
         code: true,

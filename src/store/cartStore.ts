@@ -7,8 +7,14 @@ type CartStoreState = Cart & {
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clear: () => void;
+  /** Drop the lines an order bought, by (product, size, colour) — nothing else. */
+  removeLines: (lines: Array<Pick<CartItem, "productId" | "size" | "color">>) => void;
   setItems: (items: CartItem[]) => void;
 };
+
+// Missing and empty variants are the same line, as on the server (server/cart/cart.merge.ts).
+const variantKey = (line: Pick<CartItem, "productId" | "size" | "color">) =>
+  `${line.productId}::${line.size || ""}::${line.color || ""}`;
 
 function computeTotals(items: CartItem[]) {
   const subtotal = items.reduce(
@@ -167,6 +173,14 @@ export const useCartStore = create<CartStoreState>()(
             total: 0,
           },
           updatedAt: new Date(),
+        });
+      },
+
+      removeLines: (lines) => {
+        set((state) => {
+          const bought = new Set(lines.map(variantKey));
+          const nextItems = state.items.filter((i) => !bought.has(variantKey(i)));
+          return { items: nextItems, totals: computeTotals(nextItems), updatedAt: new Date() };
         });
       },
 

@@ -1,10 +1,10 @@
 # TRD — product-archive
 
-- **Status:** Implemented — PR-105
+- **Status:** Implemented — PR-113
 - **Domain:** catalog (enforcement point in checkout; figures in analytics)
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-09-16
-- **References:** [spec.md](spec.md), [ADR-0026](../../adr/0026-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md), CHANGELOG PR-104
+- **References:** [spec.md](spec.md), [ADR-0029](../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md), CHANGELOG PR-112
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
 
@@ -24,7 +24,7 @@ This is the complement of [ADR-0023](../../adr/0023-bidding-status-stores-only-w
 - **D6 — A cart keeps the line; `check-stock` reports it unavailable.** `src/app/api/products/check-stock/route.ts` already answers `available: false` per item and the cart already renders that state, so withdrawal reuses the unavailability path instead of adding one. Filtering the line out of the cart read was rejected: withdrawal is reversible and a removed line cannot come back, which would break R6.
 - **D7 — The product page 404s through the existing `NotFoundError`.** `getProductBySlug` spreads `ON_SALE`, so a withdrawn slug resolves to nothing and the page behaves exactly as an unknown slug does. `slug` stays `@unique` across withdrawn rows, so the address is reserved for the restore; no separate reservation mechanism is needed, and `slugCandidates` already resolves a new product's name collision by suffixing.
 - **D8 — The SKU clash is where the reserved-row surprise actually lands.** `@@unique([orgId, sku])` means an org re-listing a withdrawn product's SKU gets a duplicate error naming a product it cannot see. On that violation the create path checks whether the holder is withdrawn and says so, rather than reporting a mysterious duplicate.
-- **D9 — Two controls, because R1 and R8 are different requirements.** Archive and restore are explicit actions on `PATCH /api/org/[orgId]/products/[id]/archive`, usable on any product including one never sold. `DELETE` keeps its own meaning and degrades: never ordered, promoted or bid on → hard delete; otherwise → archive. It returns `{ outcome: "deleted" | "archived" }` so the toast can say which happened without a second round trip. The blocker count added in PR-104 already computes exactly what that branch needs.
+- **D9 — Two controls, because R1 and R8 are different requirements.** Archive and restore are explicit actions on `PATCH /api/org/[orgId]/products/[id]/archive`, usable on any product including one never sold. `DELETE` keeps its own meaning and degrades: never ordered, promoted or bid on → hard delete; otherwise → archive. It returns `{ outcome: "deleted" | "archived" }` so the toast can say which happened without a second round trip. The blocker count added in PR-112 already computes exactly what that branch needs.
 - **D10 — A live bidding event refuses the archive, checked inside the write and behind the stock lock.** Asked through `lockedAmong` in `server/bidding/bidding-lock.ts` rather than a second reading of the event table, and passed into the archive transaction as a guard: opening an event takes the same stock lock archiving does, so a check made before the transaction is a read-then-write whose answer can go stale in the gap (Invariant 6). Cancelling the event is the org's own separate act, deliberately not chained to this one.
 - **D11 — Archive and restore are audited with `recordAdminActionIn(tx, …)`** ([ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md)), inside the same transaction as the write, since the trail should not record a withdrawal that rolled back. Product create and update remain unaudited; that is a pre-existing gap, and widening it is not this feature's job.
 - **D12 — Analytics excludes withdrawn stock from current inventory, and keeps it in history.** `productStockRows` in `server/analytics/widgets.ts` and the inventory read in `server/analytics/dashboard.repository.ts` spread `ON_SALE`: stock you cannot sell is not sellable inventory, and a low-stock alert on a withdrawn product is noise. Revenue and order aggregates are untouched — they are about what happened, and forgetting a product existed would falsify them.
@@ -58,7 +58,7 @@ Per [TESTING.md](../../TESTING.md). Unit: the `ON_SALE` fragment's shape; the de
 
 ## Open questions
 
-Both closed by assumption at implementation (PR-105); reopen with a spec change rather than a code change.
+Both closed by assumption at implementation (PR-113); reopen with a spec change rather than a code change.
 
 - **Q1 — What does a bulk catalogue upload do when its SKU matches a withdrawn product?** Restoring and updating it silently would put a product back on sale as a side effect of an import, which R6 says is an explicit act. Refusing the row is safer and is the assumed default until [bulk-catalog-upload](../bulk-catalog-upload/) decides.
 - **Q2 — Should a withdrawn product's URL answer 410 rather than 404?** 410 tells a crawler to retire the URL, which is wrong for something an org may restore tomorrow. 404 is assumed. This touches the standing soft-404 item in [BACKLOG.md](../../BACKLOG.md), which should be resolved first so both answers come from one place.

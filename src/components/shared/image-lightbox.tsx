@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MAX_ZOOM_SCALE, ZOOMABLE_IMAGE_SIZES } from "@server/catalog/media";
 import {
   Dialog,
   DialogClose,
@@ -12,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 
 const MIN_SCALE = 1;
-const MAX_SCALE = 3;
+const MAX_SCALE = MAX_ZOOM_SCALE;
 
 interface ImageLightboxProps {
   images: string[];
@@ -212,7 +213,6 @@ export function ImageLightbox({
               fill
               className="object-cover"
               sizes="80px"
-              unoptimized
             />
             <div
               className="absolute border-2 border-primary bg-primary/15 rounded-sm"
@@ -249,13 +249,16 @@ export function ImageLightbox({
               }%) scale(${scale})`,
             }}
           >
+            {/* sizes overstates the box on purpose (ADR-0027): this element zooms to
+                MAX_ZOOM_SCALE, and a zoom scales the bytes already downloaded rather
+                than fetching sharper ones. Paid only when someone opens the lightbox. */}
             <Image
               src={images[activeIndex]}
               alt={`${alt} - Image ${activeIndex + 1}`}
               fill
               className="object-contain select-none"
-              sizes="100vw"
-              unoptimized
+              sizes={ZOOMABLE_IMAGE_SIZES}
+              quality={88}
               draggable={false}
             />
           </div>
@@ -283,7 +286,6 @@ export function ImageLightbox({
                   fill
                   className="object-cover"
                   sizes="48px"
-                  unoptimized
                 />
               </Button>
             ))}

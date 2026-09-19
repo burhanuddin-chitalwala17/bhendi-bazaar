@@ -61,4 +61,8 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0022](0022-design-decisions-go-through-tokens.md) | Every design axis goes through tokens, not just colour | Accepted | 2026-08-30 |
 | [0023](0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) | Bidding status stores only what the clock cannot decide | Accepted | 2026-09-09 |
 | [0024](0024-phone-is-contact-data-not-an-identity-key.md) | A phone number is contact data, not an identity key | Accepted | 2026-09-12 |
-| [0026](0026-a-product-leaves-sale-by-archiving-not-deletion.md) | A product leaves sale by archiving, not deletion | Accepted | 2026-09-16 |
+| [0025](0025-order-codes-are-random-not-sequential.md) | Order codes are random, not sequential | Accepted | 2026-09-16 |
+| [0026](0026-images-are-delivered-through-the-optimizer.md) | Images are stored small and delivered through the optimizer | Accepted | 2026-09-16 |
+| [0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) | A zoomable surface declares the size it zooms to; the stored ceiling clears it | Accepted | 2026-09-17 |
+| [0028](0028-images-live-in-cloudflare-r2.md) | Images live in Cloudflare R2, reached through one seam | Accepted | 2026-09-17 |
+| [0029](0029-a-product-leaves-sale-by-archiving-not-deletion.md) | A product leaves sale by archiving, not deletion | Accepted | 2026-09-16 |

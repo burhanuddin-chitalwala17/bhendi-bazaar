@@ -10,6 +10,7 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminOrderService } from "@server/checkout/admin.order.service";
 import type { OrderListFilters } from "@server/checkout/admin.order.types";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,8 +29,8 @@ export async function GET(request: NextRequest) {
       maxAmount: searchParams.get("maxAmount")
         ? parseFloat(searchParams.get("maxAmount")!)
         : undefined,
-      page: parseInt(searchParams.get("page") || "1"),
-      limit: parseInt(searchParams.get("limit") || "20"),
+      page: resolvePageNumber(searchParams.get("page")),
+      limit: resolvePageSize(searchParams.get("limit")),
       sortBy: (searchParams.get("sortBy") as any) || "createdAt",
       sortOrder: (searchParams.get("sortOrder") as any) || "desc",
     };

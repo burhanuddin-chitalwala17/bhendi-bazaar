@@ -20,7 +20,7 @@ export function ProductsStats({ stats }: ProductsStatsProps) {
   }> = [
     {
       // "On Sale", not "Total": every figure on this row excludes withdrawn products
-      // (ADR-0026 D12), and a label that did not say so would be the ambiguous one.
+      // (ADR-0029 D12), and a label that did not say so would be the ambiguous one.
       label: "On Sale",
       value: stats.totalProducts.toLocaleString(),
       note:

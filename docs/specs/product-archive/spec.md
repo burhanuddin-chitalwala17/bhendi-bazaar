@@ -1,10 +1,10 @@
 # Spec — product-archive
 
-- **Status:** Implemented — PR-105
+- **Status:** Implemented — PR-113
 - **Domain:** catalog (enforcement point in checkout)
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-09-16
-- **References:** [trd.md](trd.md), [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0026](../../adr/0026-a-product-leaves-sale-by-archiving-not-deletion.md), CHANGELOG PR-104
+- **References:** [trd.md](trd.md), [ADR-0020](../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0023](../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0029](../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), CHANGELOG PR-112
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

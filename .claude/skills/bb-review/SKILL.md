@@ -1,6 +1,6 @@
 ---
 name: bb-review
-description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus design tokens across every axis — colour, type scale, tracking, elevation, shape, page width and font resolution (ADR-0022) — mobile-first UI (ADR-0015), and the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
+description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus design tokens across every axis — colour, type scale, tracking, elevation, shape, page width and font resolution (ADR-0022) — image delivery and stored image size (ADR-0026), mobile-first UI (ADR-0015), and the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
 ---
 
 # /bb-review — pre-merge review
@@ -137,6 +137,21 @@ The test catches those. **The review job is the cases it cannot judge:**
 git diff main...HEAD -- 'src/**/*.tsx' | grep -nE 'text-\[[0-9.]+(rem|px|em)|tracking-\[|shadow-(xs|sm|md|lg|xl)\b|rgba?\(|oklch\(|mx-auto max-w-|font-[a-z]+'
 ```
 The grep is a prompt, not the check — the suite already blocks the mechanical cases, so a hit here is usually either a blind spot above or a false positive.
+
+**Image delivery** ([ADR-0026](../../../docs/adr/0026-images-are-delivered-through-the-optimizer.md) — stored small, served through the optimizer)
+
+The free tier's 10 GB Blob transfer allowance was exhausted pre-launch by three changes that all looked right on screen. `tests/unit/image-delivery.test.ts` fails the build on a raw `<img>`, on `unoptimized`, and on `fill` without `sizes`. **The review job is what it cannot judge:**
+
+- A **new allowlist entry**. Legitimate only for a local `blob:`/`data:` preview (bytes already in the page, and not something `next/image` accepts) or a renderer that cannot take `next/image` — Satori, in `opengraph-image.tsx`. "It was easier" is a finding, and so is an entry whose stated reason does not match what the file does.
+- A **`sizes` that overstates the slot.** The test only checks that `sizes` exists. `sizes="100vw"` on a 64px avatar passes it and downloads the viewport width — the same overrun, now invisible. Read the value against the class list: a `size-16` box is `64px`, not `100vw`. The product tile's value is `PRODUCT_TILE_SIZES`; a second spelling of the same grid is a finding.
+- A **new upload path that skips normalisation.** Anything reaching `put()` without `normalizeImage`, or any browser-direct `upload()` without `downscaleImage`. The bulk wizards are browser-direct precisely because no server code sees those bytes, so a new one inherits nothing.
+- **A second spelling of the size budget.** `MAX_IMAGE_EDGE` and `IMAGE_QUALITY` are declared once in `server/catalog/media.ts` because two paths enforce them; a local `1600` is the drift starting.
+- An **image fetched server-side per render** — an OG image or a metadata route pulling a Blob URL on every request is egress the optimizer never sees.
+
+```bash
+git diff main...HEAD -- 'src/**/*.tsx' | grep -nE '<img|unoptimized|sizes="100vw"|no-img-element'
+```
+The grep is a prompt, not the check — the suite blocks the mechanical cases, so a hit is usually a new allowlist entry to judge or an overstated `sizes`.
 
 **Mobile-first** ([ADR-0015](../../../docs/adr/0015-mobile-first-design.md) — base styles target a ~360px phone; breakpoints add, never restore)
 - A **multi-column base**: `grid-cols-2/3/4` or a side-by-side flex row with no breakpoint prefix and no single-column base. The base layout is one column; `sm:`/`md:` add columns.

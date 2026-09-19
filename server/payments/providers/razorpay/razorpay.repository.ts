@@ -8,6 +8,7 @@
 import crypto from "crypto";
 import { RAZORPAY_NOTES_ORDER_KEY } from "@server/payments/notes";
 import type {
+  GatewayPaymentState,
   ServerPaymentOrder,
   GatewayOrderRequest,
   VerifyPaymentInput,
@@ -177,13 +178,12 @@ export class RazorpayRepository {
   }
 
   /**
-   * The captured payment against a gateway order, if any — the reconciliation
-   * sweep's question for orders stuck pending (trd.md D7). Returns null when nothing
-   * was captured, which is a normal answer, not an error.
+   * What the gateway says has happened, reduced to the three answers the store acts
+   * on (checkout-abandonment D1). "in-flight" is why this replaced a captured-only
+   * lookup: a UPI collect request sits `created` while the buyer approves it in their
+   * banking app, long after closing our window — releasing there strands a payment.
    */
-  async fetchCapturedPayment(
-    gatewayOrderId: string
-  ): Promise<{ paymentId: string; amount: number } | null> {
+  async fetchOrderPaymentState(gatewayOrderId: string): Promise<GatewayPaymentState> {
     const auth = Buffer.from(`${this.keyId}:${this.keySecret}`).toString("base64");
 
     const response = await fetch(`${this.apiUrl}/orders/${gatewayOrderId}/payments`, {
@@ -196,8 +196,32 @@ export class RazorpayRepository {
     const body = (await response.json()) as {
       items?: Array<{ id: string; status: string; amount: number }>;
     };
-    const captured = body.items?.find((p) => p.status === "captured");
-    return captured ? { paymentId: captured.id, amount: captured.amount } : null;
+    const attempts = body.items ?? [];
+
+    const captured = attempts.find((p) => p.status === "captured");
+    if (captured) {
+      return { kind: "captured", paymentId: captured.id, amount: captured.amount };
+    }
+    // Anything not yet resolved one way or the other. `failed` and `refunded` are
+    // resolved; everything else the gateway reports is still moving.
+    if (attempts.some((p) => p.status !== "failed" && p.status !== "refunded")) {
+      return { kind: "in-flight" };
+    }
+    return { kind: "none" };
+  }
+
+  /**
+   * The captured payment against a gateway order, if any — the reconciliation
+   * sweep's question (payment-confirmation trd.md D7). Returns null when nothing
+   * was captured, which is a normal answer, not an error.
+   */
+  async fetchCapturedPayment(
+    gatewayOrderId: string
+  ): Promise<{ paymentId: string; amount: number } | null> {
+    const state = await this.fetchOrderPaymentState(gatewayOrderId);
+    return state.kind === "captured"
+      ? { paymentId: state.paymentId, amount: state.amount }
+      : null;
   }
 }
 

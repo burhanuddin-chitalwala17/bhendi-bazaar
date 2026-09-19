@@ -10,13 +10,14 @@
  * docks above the tab bar (ADR-0015/0016).
  */
 import { useMemo, useRef, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { readApiError } from "@/lib/api-error";
 import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { imagesOnly, relativePath, sanitizePath } from "./files";
+import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
+import { uploadDirect } from "@/lib/image/upload-direct";
 
 interface ValidateResponse {
   ok: boolean;
@@ -84,12 +85,15 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           const [path] = matchingPaths(reference, providedPaths);
           const file = path ? filesByPath.get(path) : undefined;
           if (!file) throw new Error(`Missing file "${reference}"`);
-          const blob = await upload(
-            `products/${report.orgCode!.toLowerCase()}/bulk/${sanitizePath(path)}`,
-            file,
-            { access: "public", handleUploadUrl: `/api/org/${orgId}/upload/token` }
+          // Downscaled here because these bytes never pass through a function, so the
+          // server's normalisation cannot reach them (ADR-0026).
+          const downscaled = await downscaleImage(file);
+          const url = await uploadDirect(
+            `products/${report.orgCode!.toLowerCase()}/bulk/${storedPathFor(sanitizePath(path), downscaled)}`,
+            downscaled,
+            `/api/org/${orgId}/upload/token`
           );
-          urls.set(reference, blob.url);
+          urls.set(reference, url);
           done += 1;
           setProgress({ done, total: needed.length });
         }

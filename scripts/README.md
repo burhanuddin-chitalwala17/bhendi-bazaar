@@ -1,90 +1,15 @@
-# Image Upload Helper
+# Scripts
 
-This script helps you upload local images to Vercel Blob storage for seeding purposes.
+| Script | What it does |
+|---|---|
+| `migrate-blob-store.ts` | Copies blobs out of the retired Vercel Blob store and repoints the database ([OPERATIONS.md](../docs/OPERATIONS.md#moving-to-a-different-blob-store)) |
 
-## Setup
+## Why there is only one
 
-1. Create a folder structure for your images:
-```bash
-mkdir -p seed-images/{products,categories,profile,reviews}
-```
+Images live in Cloudflare R2 ([ADR-0028](../docs/adr/0028-images-live-in-cloudflare-r2.md)). Three scripts written against Vercel Blob were deleted when that landed:
 
-2. Place your images in the appropriate folders:
-```
-seed-images/
-├── categories/
-│   ├── abayas.jpg
-│   ├── attars.jpg
-│   ├── jewellery.jpg
-│   └── prayer-essentials.jpg
-├── products/
-│   ├── emerald-abaya-1.jpg
-│   ├── emerald-abaya-2.jpg
-│   ├── black-jilbab.jpg
-│   └── ...
-└── profile/
-    ├── user-1.jpg
-    └── ...
-```
+- **`upload-images.ts`** — uploaded local folders to Blob for seeding. Superseded: uploads now go through `server/catalog/object-store.ts`, and images are normalised on the way in ([ADR-0026](../docs/adr/0026-images-are-delivered-through-the-optimizer.md)), which this predated.
+- **`backfill-blob-images.ts`** — re-encoded stored originals in place. Its premise is gone twice over: the old store cannot be read while blocked, and nothing new is being written there.
+- **`cleanup-orphan-blobs.ts`** — deleted unreferenced blobs to reclaim storage. Pointless against a store being abandoned, and R2's allowance is ten times larger. Its one hard-won idea — that the keep-set is the **union across every database sharing the store**, or you delete the other environment's live images — is recorded in [PR-106] and worth re-reading before writing anything similar for R2.
 
-## Usage
-
-Run the script with the folder path and upload type:
-
-```bash
-# Upload category images
-npx tsx scripts/upload-images.ts seed-images/categories categories
-
-# Upload product images
-npx tsx scripts/upload-images.ts seed-images/products products
-
-# Upload profile pictures
-npx tsx scripts/upload-images.ts seed-images/profile profile
-
-# Upload review images
-npx tsx scripts/upload-images.ts seed-images/reviews reviews
-```
-
-## Output
-
-The script will:
-1. Upload all images to Vercel Blob
-2. Display progress for each file
-3. Output all URLs in a copy-paste friendly format
-
-Example output:
-```
-📤 Uploading 4 images to Vercel Blob...
-
-✅ abayas.jpg → https://abc123.public.blob.vercel-storage.com/categories/abayas-1703123456.jpg
-✅ attars.jpg → https://abc123.public.blob.vercel-storage.com/categories/attars-1703123457.jpg
-✅ jewellery.jpg → https://abc123.public.blob.vercel-storage.com/categories/jewellery-1703123458.jpg
-✅ prayer-essentials.jpg → https://abc123.public.blob.vercel-storage.com/categories/prayer-essentials-1703123459.jpg
-
-🎉 Successfully uploaded 4/4 images
-
-📋 URLs for your seed data:
-
-// abayas.jpg
-"https://abc123.public.blob.vercel-storage.com/categories/abayas-1703123456.jpg",
-
-// attars.jpg
-"https://abc123.public.blob.vercel-storage.com/categories/attars-1703123457.jpg",
-
-...
-```
-
-## Update Seed Data
-
-After uploading:
-1. Copy the generated URLs
-2. Update the appropriate seed data files:
-   - `src/data/seed/categories.seed.ts` - for category images
-   - `src/data/seed/products.seed.ts` - for product images
-   - `src/data/seed/users.seed.ts` - for profile pictures
-3. Re-run the seed script: `npx prisma db seed`
-
-## Environment Variables
-
-Make sure you have `BLOB_READ_WRITE_TOKEN` set in your `.env` file.
-
+`migrate-blob-store.ts` stays only as long as the old store holds something not reproducible from local originals. Delete it, and `@vercel/blob` with it, once the catalogue is confirmed intact on R2.

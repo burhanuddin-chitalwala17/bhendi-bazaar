@@ -1,6 +1,7 @@
 // components/admin/productsContainer/components/ProductsTable.tsx
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Archive, ArchiveRestore, Edit, Eye, Heart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,9 @@ interface ProductsTableProps {
   products: ProductForTable[];
   pagination: Pagination;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
   onDelete: (id: string, name: string) => void;
-  /** Take a product off sale, or put it back (ADR-0026). */
+  /** Take a product off sale, or put it back (ADR-0029). */
   onSetArchived: (id: string, archived: boolean, name: string) => void;
   onEdit: (id: string) => void;
   onView: (id: string) => void;
@@ -31,6 +33,7 @@ export function ProductsTable({
   products,
   pagination,
   onPageChange,
+  onPageSizeChange,
   onDelete,
   onSetArchived,
   onEdit,
@@ -46,12 +49,15 @@ export function ProductsTable({
       label: "Product",
       render: (product) => (
         <div className="flex items-center gap-3">
-          <img
+          <Image
             src={product.thumbnail}
             alt={product.name}
             // A withdrawn product is dimmed rather than hidden: the org asked to see
             // it, and the state has to be legible at a glance on a phone.
             className={`w-12 h-12 object-cover rounded${product.archivedAt ? " opacity-50" : ""}`}
+            width={48}
+            height={48}
+            sizes="48px"
           />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
@@ -223,7 +229,9 @@ export function ProductsTable({
       totalPages={pagination.totalPages}
       currentPage={pagination.page}
       totalItems={pagination.total}
+      pageSize={pagination.limit}
       onPageChange={onPageChange}
+      onPageSizeChange={onPageSizeChange}
       onSort={onSort}
       isLoading={isPending}
     />

@@ -16,6 +16,8 @@ export interface ProductFilters {
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0
+  /** Only products at least one person has saved. Resolved to ids in the DAL. */
+  wishlistedOnly?: boolean;
   minPrice?: number;
   maxPrice?: number;
   page?: number;
@@ -43,7 +45,7 @@ export interface ProductForTable {
   thumbnail: string;
   /** How many users have this saved. Demand, read-only — never sorted or filtered on. */
   wishlistCount: number;
-  /** Set when the product is off sale (ADR-0026); null while it is for sale. */
+  /** Set when the product is off sale (ADR-0029); null while it is for sale. */
   archivedAt: Date | null;
   createdAt: Date;
   category: { id: string; name: string };
@@ -78,7 +80,7 @@ export interface ProductDetails {
 export interface ProductStats {
   /** On sale. Withdrawn products are counted separately, never folded in here. */
   totalProducts: number;
-  /** Off sale but intact (ADR-0026) — excluded from every other figure here. */
+  /** Off sale but intact (ADR-0029) — excluded from every other figure here. */
   withdrawnProducts: number;
   lowStockProducts: number;
   outOfStockProducts: number;

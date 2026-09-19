@@ -80,7 +80,7 @@ export class ProductsService {
   }
 
   /**
-   * One control, two outcomes (ADR-0026 decision 2, product-archive R8).
+   * One control, two outcomes (ADR-0029 decision 2, product-archive R8).
    *
    * A product no record depends on is deleted outright — its media, cart lines,
    * wishlist entries and stock rows cascade with it, which is right for a listing

@@ -20,12 +20,13 @@ import {
 } from "lucide-react";
 import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
 import type { AdminReview, ReviewListFilters } from "@/domain/admin";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
 export default function AdminReviewsPage() {
   const [filters, setFilters] = useState<ReviewListFilters>({
     page: 1,
-    limit: 20,
+    limit: DEFAULT_PAGE_SIZE,
   });
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -331,7 +332,9 @@ export default function AdminReviewsPage() {
         totalPages={totalPages}
         currentPage={filters.page || 1}
         totalItems={data?.total || 0}
+        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
         onPageChange={(page) => setFilters({ ...filters, page })}
+        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onSort={(key, order) =>
           setFilters({ ...filters, sortBy: key as any, sortOrder: order })
         }

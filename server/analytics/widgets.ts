@@ -49,7 +49,7 @@ const orgScope = (ctx: WidgetContext) => (ctx.audience === "org" ? { orgId: ctx.
 const productStockRows = cache(async (orgId: string | null) =>
   prisma.product.findMany({
     // Inventory and low-stock are about what can be sold, so withdrawn products are
-    // out (ADR-0026 D12). Revenue and order aggregates below are about what happened
+    // out (ADR-0029 D12). Revenue and order aggregates below are about what happened
     // and deliberately keep them.
     where: { ...(orgId === null ? {} : { orgId }), ...ON_SALE },
     select: { lowStockThreshold: true, stockLocations: { select: { quantity: true } } },

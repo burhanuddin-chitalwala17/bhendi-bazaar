@@ -106,7 +106,7 @@ export const PRODUCT_FORM_FIELDS = [
 ] as const;
 
 /**
- * Taking a product off sale, or putting it back (ADR-0026).
+ * Taking a product off sale, or putting it back (ADR-0029).
  *
  * A parsed body rather than two verbs, so the intent is explicit and idempotent: a
  * client that means "on sale" says so, instead of a POST whose meaning depends on the

@@ -32,7 +32,7 @@ export class ProductsApiClient {
     return response.json() as Promise<ProductDetails | null>;
   }
   /**
-   * Delete product — or archive it, if any record depends on it (ADR-0026).
+   * Delete product — or archive it, if any record depends on it (ADR-0029).
    *
    * The server decides which, and says so in the response, so the caller can report
    * what happened without a second request.

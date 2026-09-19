@@ -8,6 +8,7 @@ import { ProductsContainer } from "@/admin/products/productsList";
 import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
 import { Button } from "@/components/ui/button";
 import type { ProductShelf } from "@server/catalog/product.visibility";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -18,6 +19,7 @@ interface PageProps {
   params: Promise<{ orgId: string }>;
   searchParams: Promise<{
     page?: string;
+    limit?: string;
     search?: string;
     category?: string;
     sort?: string;
@@ -25,6 +27,7 @@ interface PageProps {
     lowStock?: string;
     outOfStock?: string;
     shelf?: string;
+    wishlisted?: string;
   }>;
 }
 
@@ -82,8 +85,8 @@ async function OrgProductsData({
   // could otherwise widen this to another org's catalogue.
   const filters = {
     orgId,
-    page: Number(params.page) || 1,
-    limit: 10,
+    page: resolvePageNumber(params.page),
+    limit: resolvePageSize(params.limit),
     search: params.search,
     categoryId: params.category,
     sortBy: params.sort as "name" | "createdAt" | "price" | "stock" | undefined,
@@ -91,6 +94,7 @@ async function OrgProductsData({
     lowStock: params.lowStock === "true" ? true : undefined,
     outOfStock: params.outOfStock === "true" ? true : undefined,
     shelf: shelfFrom(params.shelf),
+    wishlistedOnly: params.wishlisted === "true" ? true : undefined,
   };
 
   const [productsData, stats, categoryList] = await Promise.all([

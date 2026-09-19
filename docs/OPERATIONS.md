@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-09
+- **Verified:** 2026-09-16
 
 ## Prerequisites
 Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test mode for development).
@@ -27,19 +27,22 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ✅ | The same key **id**, exposed to the browser checkout widget. Never expose the secret |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
-| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
-| `BLOB_READ_WRITE_TOKEN` | ✅ | Vercel Blob, for product and profile images |
+| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
+| `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — the bucket's custom domain in production, its `r2.dev` URL locally. **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
+| `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
+| `R2_BUCKET` | ✅ | Bucket name |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | ✅ | R2 API token with read+write on that bucket |
+| `BLOB_READ_WRITE_TOKEN` | ○ | The retired Vercel Blob store. Only `scripts/*-blob-*.ts` still read it; delete once the migration is verified |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ✅ | Upstash Redis for rate limiting — see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
-| `NEXT_PUBLIC_ASSETS_URL` | ○ | Base URL for blob-hosted assets |
 | `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
 | `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 
-`src/lib/env.ts` holds the required-variable list. Note it does not currently include `ENCRYPTION_KEY` or `RAZORPAY_WEBHOOK_SECRET`, so add those to any check you rely on.
+`src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
 
 ### Local development database
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
@@ -71,15 +74,97 @@ SEED_ALLOWED_DATABASE_URL=<the exact same string as your dev DATABASE_URL>
 
 To seed reference data that production also needs, do not reach for the seed — write a data migration. `vercel.json` runs `prisma migrate deploy` before the build, so a migration reaches every environment on merge, while the seed reaches none of them.
 
-### Cleaning up old catalogue images
-`scripts/cleanup-flat-blobs.ts` removes pre-2026-08 flat-layout product images from Blob once a catalogue has been re-onboarded through bulk upload. Two intents, like the seed:
+### Setting up the R2 bucket
+Images live in Cloudflare R2 ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). From a fresh Cloudflare account:
+
+**1. Create the bucket.** Dashboard → R2 → *Create bucket*. Name it (e.g. `bhendi-bazaar`) and pick a location hint near your buyers (APAC for India). → `R2_BUCKET`.
+
+**2. Mint an API token.** **Not inside the bucket** — this trips people up. Go to the **R2 object storage** page (the one listing your buckets), find the **Account Details** panel, and select **Manage** next to **API Tokens** → *Create Account API token*. A *User* API token also works but is tied to one person's login; an account token is not.
+
+Permission **Object Read & Write** — not Admin, since the app only reads and writes objects and never manages buckets. That permission level then lets you **scope the token to specific buckets**; pick just this one.
+
+- Access Key ID → `R2_ACCESS_KEY_ID`
+- Secret Access Key → `R2_SECRET_ACCESS_KEY` — **shown once**, and only rotatable afterwards, never retrievable
+- Account ID, also in the Account Details panel → `R2_ENDPOINT` is `https://<account-id>.r2.cloudflarestorage.com`, **without** the bucket name; the code appends it
+
+If you are looking at something that asks you to *supply* a secret rather than generating one, that is Workers secrets — a different feature.
+
+**3. Turn on public read.** Bucket → Settings → Public access.
+
+- *Developing:* enable the **r2.dev subdomain** and use that as `R2_PUBLIC_BASE_URL`. Cloudflare rate-limits it and says not to use it in production.
+- *Production:* add a **custom domain**. See below — it needs the zone on Cloudflare DNS first. That URL becomes `R2_PUBLIC_BASE_URL`.
+
+#### Putting the custom domain on Cloudflare DNS
+
+R2 refuses a domain it does not host DNS for: *"Public bucket access supports only domains on your account and managed through Cloudflare DNS."* The registrar stays GoDaddy; only the nameservers move. No domain transfer.
+
+**Use a subdomain — `images.bhendi-bazaar.com`, never the apex.** Attaching `bhendi-bazaar.com` itself would point the storefront's apex at the bucket, and the shop would start serving image files.
+
+1. **Export the zone from GoDaddy first** — do not rely on Cloudflare's scan. DNS cannot be enumerated, so the scan guesses at common names and routinely misses the ones that matter. GoDaddy's DNS page has an *Export* action; keep that file until the migration is verified.
+
+   For this domain the records that a scan can miss, and what each costs:
+
+   | Record | Purpose | Lost means |
+   |---|---|---|
+   | `TXT resend._domainkey` | Resend DKIM | Transactional email keeps sending and starts landing in spam |
+   | `MX send` → `feedback-smtp.*.amazonses.com` | Resend bounce handling | Bounces stop being processed |
+   | `TXT send` → `v=spf1 include:amazonses.com ~all` | Resend SPF | Same, quietly |
+   | `MX` apex (two records) | Inbound mail | Inbound email silently lost |
+
+   Copy `MX` priorities exactly — this domain has two at the apex and the lower number wins, so reversing them reroutes all inbound mail.
+2. Cloudflare → **Add a site** → `bhendi-bazaar.com`, Free plan. Compare the scanned records against your list and fix the gaps **before** switching.
+3. **Keep every Vercel record DNS-only (grey cloud).** Vercel [advises against a reverse proxy in front of it](https://vercel.com/kb/guide/cloudflare-with-vercel) — an orange-clouded record is the usual cause of "Invalid Configuration" and failed certificate generation, and it puts two CDNs in series.
+4. Change the nameservers at GoDaddy to the two Cloudflare gives you. Activation is usually under an hour, occasionally up to 24.
+5. Once active: R2 → bucket → Settings → Public access → **Custom domain** → `images.bhendi-bazaar.com`. Cloudflare creates the record itself. **This one is proxied (orange) and must be** — that is how R2 serves it, and it is unrelated to rule 3, which is about the records pointing at Vercel.
+6. Set `R2_PUBLIC_BASE_URL=https://images.bhendi-bazaar.com` and **redeploy** — `next.config.ts` reads it at build time.
+
+Until this is done, `r2.dev` works. It is rate-limited and Cloudflare says not to use it in production, so it is a way to defer the DNS move, not to skip it.
+
+**4. Add a CORS policy — the step that is easy to miss.** The bulk wizards PUT straight from the browser to the bucket, and *CORS applies to presigned URLs*: without this, uploads fail even though the URL is valid. Bucket → Settings → CORS Policy → *Add CORS policy* → JSON:
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://bhendi-bazaar.com"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Every origin that uploads must be listed — add Vercel preview URLs if you upload from them. Only `PUT` is needed: reads are plain public GETs and are not a CORS matter.
+
+**5. Set the five variables** locally and in Vercel (see the table above), then redeploy. `R2_PUBLIC_BASE_URL` is read by `next.config.ts` **at build time** for `remotePatterns`, so a change to it needs a new build, not just a restart.
+
+**6. Smoke-test before trusting it.** Upload one image through the admin UI. That exercises the whole path — presign, PUT, public URL, optimizer — and is where a wrong endpoint or a missing CORS rule shows up. Then check the image renders on the storefront, which proves `remotePatterns` too.
+
+### Moving to a different Blob store
+`scripts/migrate-blob-store.ts` copies every blob from one store to another and repoints all eight URL columns (`Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`, `Org.logoUrl`, `OrderItem.thumbnail`, `ShippingProvider.logoUrl`, `Banner.imageUrl`). Two phases, each resumable, dry-run by default:
 
 ```
-npx tsx scripts/cleanup-flat-blobs.ts                              # dry-run, lists what would go
-CLEANUP_ALLOW_DELETE=1 npx tsx scripts/cleanup-flat-blobs.ts --delete
+OLD_BLOB_READ_WRITE_TOKEN=… npx tsx scripts/migrate-blob-store.ts copy            # what would move
+OLD_BLOB_READ_WRITE_TOKEN=… npx tsx scripts/migrate-blob-store.ts copy --apply
+npx tsx scripts/migrate-blob-store.ts rewrite --apply
+npx tsx scripts/migrate-blob-store.ts check                                        # nothing left behind
 ```
 
-The keep-set is every `ProductMedia.ref` and `Product.thumbnail` **in the database `DATABASE_URL` currently names**. The Blob store is shared across environments, so run the deletion only when that database is the one those images serve — the script prints the host it read for exactly this reason.
+`BLOB_READ_WRITE_TOKEN` is the **destination** — the same variable the app reads, so a finished migration leaves the app already pointed at the new store. Pathnames are preserved, so only the hostname changes; the new host must be added to `next.config.ts` `remotePatterns` or every image 404s at the optimizer.
+
+**The copy phase downloads everything, which is Data Transfer on the *old* store.** If that store is already over its allowance the downloads return `403` and the export cannot run at all — `list()` keeps working, so the blobs are visible but unreadable. Progress is written to `.blob-migration/manifest.jsonl` as it goes, so a re-run resumes.
+
+**A new store in the same Vercel account does not get a new allowance.** Vercel's pricing page is explicit that storage, operations and transfer "aren't affected by how many stores you create" — the included usage belongs to the plan, not the store. Migrating is only worth doing to reach a *different account* or a different provider.
+
+### ⚠️ Why the Vercel Blob store is retired (historical)
+Vercel Blob meters **Data Transfer** — bytes served *out* of the store — against a monthly allowance (10 GB on the free tier; Vercel documents the wait after an overrun as 30 days, so treat the reset as a rolling window rather than a calendar month). On the free tier, exceeding it does not bill: it **blocks further transfer** with `403`, so every product image on the storefront goes blank — and so does your own ability to read the store's contents, which is what makes exporting after the fact impossible. It was exhausted pre-launch in September 2026; [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) has the causes and the fix.
+
+Images now live in Cloudflare R2, which has no egress meter at all ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)), so this failure mode is gone rather than managed. Kept here because the store still holds the pre-migration originals, and because the reasoning transfers: two things moved that meter, and both still apply to whatever store you are on.
+
+- **A delivery regression.** Anything serving an original instead of an optimized derivative — a raw `<img>`, an `unoptimized`, a `fill` with no `sizes`. `tests/unit/image-delivery.test.ts` fails the build on all three, so a jump with that suite green means something outside `src/` is fetching.
+- **Your own dev traffic.** `localhost` reads the same Blob URLs as production, so image-heavy local work and repeated bulk-upload runs draw on the same meter.
+
+Image *optimization* is a separate quota with its own limit. If images break again and Blob transfer looks healthy, look there next.
 
 ### ⚠️ The Upstash naming trap
 The rate limiter reads **`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`, and using those names produces **two different failures from the same missing config**: `src/lib/rate-limit.ts` asserts non-null at module load, so `signup` and `forgot-password` throw at import (fail closed), while `src/middleware.ts` catches the absence and disables limiting with only a logged warning (fail open). Use the names in the table.
@@ -162,7 +247,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 | Database | **Prisma Postgres** (`db.prisma.io`) | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
 | Redis (rate limiting) | **Upstash** | Via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*` |
-| File storage | **Vercel Blob** | `BLOB_READ_WRITE_TOKEN`; hostname allow-listed in `next.config.ts` |
+| File storage | **Vercel Blob** | `BLOB_READ_WRITE_TOKEN`; hostname allow-listed in `next.config.ts`. **Data Transfer is a capped monthly meter that withdraws access on the free tier** — see above |
 | Payments | **Razorpay** | Test keys locally (`rzp_test_*`) |
 | Email | **Resend** | |
 | Shipping | **Shiprocket** | Rates live; booking see [ARCHITECTURE.md](ARCHITECTURE.md) |
@@ -177,6 +262,8 @@ The code reads only `DATABASE_URL` and `KV_REST_API_URL` from the connection-str
 ## Deploy
 
 Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
+
+**The reconcile cron runs once a day, and that is the plan's limit, not a judgement.** Hobby permits one cron invocation per day, so `vercel.json`'s `30 3 * * *` is as often as it can run. Nothing depends on it: since [checkout-abandonment](specs/checkout-abandonment/) a buyer who closes the payment window releases their own reservation immediately, and a checkout blocked by a stale hold releases it and retries. The cron only catches the buyer whose browser never asked. If the project ever moves to Pro, tightening the schedule is a one-line edit and needs no code change.
 
 **Deployments come from GitHub Actions, not from Vercel's Git integration.** Hobby only git-deploys commits authored by the Vercel account owner, so a collaborator's push silently never shipped. `vercel.json` sets `git.deploymentEnabled: false`, and `.github/workflows/ci.yml`'s `deploy` job runs `vercel pull` / `vercel build` / `vercel deploy --prebuilt` with an account token — authorship stops mattering. `main` deploys with `--prod`; `develop` deploys a preview. The job needs `test` to pass first, and needs three repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the latter two are in `.vercel/project.json`).
 

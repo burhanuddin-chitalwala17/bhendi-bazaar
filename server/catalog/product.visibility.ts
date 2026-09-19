@@ -1,6 +1,6 @@
 /**
  * Whether a product is on sale — one definition, spread by every query that answers
- * to a buyer ([ADR-0026](../../docs/adr/0026-a-product-leaves-sale-by-archiving-not-deletion.md) decision 3).
+ * to a buyer ([ADR-0029](../../docs/adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md) decision 3).
  *
  * Pure, and deliberately free of Prisma: the fragments are spread by the repositories,
  * so a query here would be a third module reading the Product aggregate (Invariant 5).

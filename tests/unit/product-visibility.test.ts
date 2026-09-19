@@ -1,5 +1,5 @@
 /**
- * A product leaves sale by archiving (ADR-0026), and the rule has to hold at every
+ * A product leaves sale by archiving (ADR-0029), and the rule has to hold at every
  * place that reads a product — roughly thirty-five of them across a dozen files.
  *
  * Some must exclude withdrawn products and some must keep them: an order's own lines,
@@ -95,7 +95,7 @@ function readCensus(): Record<string, number> {
   return found;
 }
 
-describe("every product read is classified (ADR-0026)", () => {
+describe("every product read is classified (ADR-0029)", () => {
   const found = readCensus();
 
   it("has no product read in a file this census does not know about", () => {

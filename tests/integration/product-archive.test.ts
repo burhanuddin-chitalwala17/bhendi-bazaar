@@ -1,5 +1,5 @@
 /**
- * Archiving, against a real database (ADR-0026, docs/specs/product-archive/).
+ * Archiving, against a real database (ADR-0029, docs/specs/product-archive/).
  *
  * The claims worth testing here are claims about what Postgres returns and refuses:
  * that a withdrawn product vanishes from every buyer-facing query, that the order

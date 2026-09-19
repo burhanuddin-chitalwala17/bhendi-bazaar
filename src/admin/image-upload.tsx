@@ -6,7 +6,9 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import NextImage from "next/image";
+import { Upload, X } from "lucide-react";
+import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 
 interface ImageUploadProps {
   label: string;
@@ -31,6 +33,7 @@ export function ImageUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { remember, localPreview } = useLocalPreviews();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -60,6 +63,7 @@ export function ImageUpload({
       }
 
       const data = await response.json();
+      remember(files, data.urls as string[]);
       onChange([...value, ...data.urls]);
       setUploadProgress(100);
     } catch (error) {
@@ -102,20 +106,25 @@ export function ImageUpload({
             key={index}
             className="relative group aspect-[3/4] bg-muted rounded-lg overflow-hidden border-2 border-border"
           >
-            <img
-              src={url}
-              alt={`Upload ${index + 1}`}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                console.error("❌ Image failed to load:", url);
-                e.currentTarget.src =
-                  'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="%23f3f4f6"/><text x="50%" y="50%" font-size="14" text-anchor="middle" dy=".3em" fill="%239ca3af">Failed to load</text></svg>';
-                e.currentTarget.style.objectFit = "contain";
-              }}
-              onLoad={(e) => {
-                console.log("✅ Image loaded successfully:", url);
-              }}
-            />
+            {localPreview(url) ? (
+              /* Uploaded in this session, so the bytes are already here — rendering the
+                 Blob copy instead would buy nothing and cost egress (ADR-0026). A
+                 blob: URL is also not something next/image can take. */
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={localPreview(url)!}
+                alt={`Upload ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <NextImage
+                src={url}
+                alt={`Upload ${index + 1}`}
+                fill
+                sizes="(min-width: 768px) 25vw, 50vw"
+                className="object-cover"
+              />
+            )}
 
             {/* Overlay with buttons - shows on hover */}
             <div className="absolute inset-0 transition-all flex items-center justify-center gap-2">

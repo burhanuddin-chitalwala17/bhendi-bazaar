@@ -2,7 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Heart, Search } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import type { ProductFilters } from "../../types";
 import type { ProductShelf } from "@server/catalog/product.visibility";
 
@@ -82,7 +83,7 @@ export function ProductsFilters({
           ))}
         </select>
 
-        {/* Shelf filter — on sale, withdrawn, or both (ADR-0026). Full width at base
+        {/* Shelf filter — on sale, withdrawn, or both (ADR-0029). Full width at base
             so it stacks on a phone rather than crowding the row. */}
         <select
           value={filters.shelf || "on-sale"}
@@ -109,6 +110,33 @@ export function ProductsFilters({
           <option value="low">Low Stock</option>
           <option value="out">Out of Stock</option>
         </select>
+
+        {/* Wishlisted only. A filter, so it goes through onFilterChange like the
+            others — the server picks the page, and paging stays honest. */}
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-input">
+          <Switch
+            id="wishlisted-only"
+            checked={!!filters.wishlistedOnly}
+            disabled={isPending}
+            onCheckedChange={(checked) =>
+              onFilterChange({ wishlistedOnly: checked || undefined, page: 1 })
+            }
+            thumbIcon={
+              <Heart
+                className={`w-3 h-3 ${
+                  filters.wishlistedOnly
+                    ? "fill-current text-primary"
+                    : "text-muted-foreground"
+                }`}
+              />
+            }
+          />
+          {/* A 24px switch is under the 36px floor, so the label is the rest of the
+              target — `button` is labelable, so clicking it toggles (ADR-0015). */}
+          <label htmlFor="wishlisted-only" className="cursor-pointer select-none">
+            Wishlisted only
+          </label>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-09-16
+- **Verified:** 2026-09-19
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -56,6 +56,13 @@ on an error path is a defect.
 
 ## Current shapes
 
+### Paginated listings
+Every admin and org listing crosses the wire as `{ ..., pagination: { page, limit, total, totalPages } }` — one `Pagination` declaration in `server/shared/pagination.ts`, re-exported by `src/types/shared.ts` (Rule 1; it was declared twice until PR-111).
+
+`limit` is **caller-chosen but not caller-defined**: it is parsed at every handler against the closed set `PAGE_SIZE_OPTIONS` (10/25/50/100) by `resolvePageSize`, and anything else falls back to `DEFAULT_PAGE_SIZE` rather than reaching a Prisma `take`. An unbounded `take` is a table scan a query string can ask for, so this is Invariant 4 at a read boundary, not a convenience. `page` goes through `resolvePageNumber` for the same reason — a negative page is a negative `skip`.
+
+`GET /api/admin/orgs` returns this envelope as of PR-111, where it previously returned a bare `OrgWithStats[]` and the browser searched, filtered and sliced it locally. Its `search` and `status` params now narrow the query, so `total` counts matching rows rather than fetched ones.
+
 ### Cart
 Since PR-44 the server stores only the buyer's choice per line (`CartLineInput`: product, quantity, size, colour) and **derives everything else from the product at read time** — prices, names, `weight`, `shippingFromPincode`, and the `org` block all come from the join, so a cart can no longer hold a stale or spoofed price and the boundary casts are gone. Since PR-45 there is **one `CartItem` declaration** (`server/cart/cart.types.ts`, re-exported by `src/domain/cart.ts`), satisfying Rule 1.
 
@@ -63,6 +70,8 @@ Since PR-44 the server stores only the buyer's choice per line (`CartLineInput`:
 `Shipment` is declared in three places across `src/domain/order.ts` and `server/checkout/order.types.ts`. Timestamp fields (`estimatedDelivery`, `createdAt`, `updatedAt`) are typed `Date` on the client side and `string` on the server side; JSON delivers strings, so Rule 3 is not currently met.
 
 Order creation (`create-with-shipments`) accepts **unpriced lines** — `{ productId, quantity, size?, color? }` — plus a `displayedGrandTotal` used only for the changed-mid-session comparison and never persisted (PR-38). The optional variant (PR-43) is validated against the product's declared options server-side; on every outbound items array, `price` is the unit price actually paid and lines are rebuilt from `OrderItem`/`ShipmentItem` rows — the JSON blob is legacy. `paymentStatus` crosses the wire in **no direction** since PR-39: the update route is deleted, and the paid/failed transitions in `order.repository.ts` are the only writers (ADR-0005).
+
+Order creation answers **409** for a sold-out item since PR-104, where it previously answered 400 for every failure — a client could not tell an unavailable item from a malformed payload. Failures now travel in the one envelope (`toErrorResponse`, ADR-0013). Order **codes** returned in `code` are `BB-` plus eight characters since PR-104 ([ADR-0025](adr/0025-order-codes-are-random-not-sequential.md)); the older `BB-1042` shape remains valid for ever, and `POST /api/orders/lookup` accepts both.
 
 ### Offers
 `POST /api/checkout/promotions/quote` takes `{ items[], code? }` and returns `{ lineDiscounts, applied[], couponCoveredKeys, totalDiscountPaise, rejection }`. Every eligibility rule stays server-side: the response carries **per-line amounts** so the browser can badge covered items without re-deriving one, which is the same reason a discount amount is never accepted inbound.
@@ -77,6 +86,8 @@ Order creation gains an optional **`couponCode`** — a string, normalised to up
 - `POST /api/payments/create-order` takes `{ localOrderId, customer? }` and **derives the amount from the persisted order's `grandTotal`** (PR-38) — which was itself computed from the catalogue inside the creation transaction. An `amount` in the body is not read; the field no longer exists in the schema.
 - `POST /api/payments/verify` **is the browser-return confirmation trigger** (PR-39): it takes `{ localOrderId, razorpay_* }`, verifies the signature against the persisted order, performs the paid transition, and returns `{ orderId, paymentStatus }`. `POST /api/payments/confirm-free` does the same for zero-total orders. `PATCH /api/orders/[id]` is **deleted** — nothing updates an order from the browser any more.
 - Gateway webhook payloads are Razorpay's contract, not ours. See [INTEGRATIONS.md](INTEGRATIONS.md) for the `notes` round-trip.
+
+`POST /api/payments/abandon` (PR-104) takes `{ localOrderId }` — an order reference and deliberately nothing else. It reports that the buyer left the payment window; it does **not** assert what happened to the money, which the server establishes by asking the gateway. Returns `{ orderId, outcome }`, where `outcome` is one of `released`, `confirmed`, `in-flight`, `already-paid`, `already-released`, `not-released`. Safe to call more than once, and safe never to call — the reconciliation sweep reaches the same answer later.
 
 ### Admin
 `GET /api/admin/shipping/providers` returns `ShippingProvider` rows without a `select`, so credential and auth-error fields reach the browser. Rule 5 requires an explicit projection exposing only connection state.
@@ -105,7 +116,7 @@ The order line's `thumbnail` did not change shape in PR-63 but changed *source*:
 
 Since PR-97 the product wire shape carries **`biddingSlug?: string`** — the public link of the bidding event holding the item out of normal sale, absent when it can be bought as usual. It is **read-only on the wire and never accepted**: `productFormSchema` has no field for it, like `thumbnail` and `slug`. It is told to the client rather than inferred because nothing on the product itself changes when an event opens ([bidding](specs/bidding/) R32), and the storefront has to disable its buy actions and point at the event without a second round trip. Purely a display state — the refusal lives in the cart service and the order transaction, so a client ignoring the field gains nothing (R31). Declared once in `src/domain/product.ts`, populated in `src/data-access-layer/products.dal.ts` from one request-memoised lookup.
 
-Since PR-105 the **org-facing** product shape carries **`archivedAt: Date | null`** — set when the org has taken the product off sale ([ADR-0026](adr/0026-a-product-leaves-sale-by-archiving-not-deletion.md)). The **buyer-facing shape does not carry it**, and deliberately never will: a buyer is never handed a withdrawn product at all, so a field saying "this one is not for sale" would have no true value to hold. It is **read-only on the wire and never accepted**, like `thumbnail`, `slug` and `biddingSlug` — the server sets the clock, and `productFormSchema` has no field for it. Declared once in `server/catalog/admin.product.types.ts`, re-exported through `src/admin/products/types.ts`; `ProductShelf` (`on-sale` | `archived` | `all`) is the matching read filter, declared once in `server/catalog/product.visibility.ts`.
+Since PR-113 the **org-facing** product shape carries **`archivedAt: Date | null`** — set when the org has taken the product off sale ([ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md)). The **buyer-facing shape does not carry it**, and deliberately never will: a buyer is never handed a withdrawn product at all, so a field saying "this one is not for sale" would have no true value to hold. It is **read-only on the wire and never accepted**, like `thumbnail`, `slug` and `biddingSlug` — the server sets the clock, and `productFormSchema` has no field for it. Declared once in `server/catalog/admin.product.types.ts`, re-exported through `src/admin/products/types.ts`; `ProductShelf` (`on-sale` | `archived` | `all`) is the matching read filter, declared once in `server/catalog/product.visibility.ts`.
 
 Two handler contracts changed with it. `DELETE /api/org/[orgId]/products/[id]` now answers **`{ outcome: "deleted" | "archived" }`** where it answered `{ success: true }`: one control does whichever is correct, and the client reports which happened rather than asking again. `PATCH /api/org/[orgId]/products/[id]/archive` takes **`{ archived: boolean }`** and answers `{ id, archivedAt }` — a parsed body rather than two verbs, so the intent is explicit and idempotent, and `archivedAt` itself is never an input. `ProductStats` gains **`withdrawnProducts`**, and its `totalProducts` now counts only what is on sale; every other figure on that row excludes withdrawn stock, which is why the label reads "On Sale".
 
@@ -124,9 +135,9 @@ same checks — the second request is as untrusted as the first.
 | `POST /api/org/:orgId/products/bulk/validate` | multipart `sheet` (.xlsx/.csv) + `filenames` (JSON array of dropped image names) → `{ ok, errors: RowError[], rows, orgCode, summary }` |
 | `POST /api/org/:orgId/products/bulk` | `{ rows: (BulkProductRow & { imageUrls: Record<filename, blobUrl> })[] }` → `{ ok, created }`, or 400 `{ ok: false, errors }` |
 | `GET /api/org/:orgId/products/bulk/sample` | `.xlsx`, generated from the org's live locations and current category slugs |
-| `POST /api/org/:orgId/upload/token` | `@vercel/blob` client-upload handshake, scoped to `products/<org-code>/` |
+| `POST /api/org/:orgId/upload/token` | `{ pathname, contentType, size }` → `{ uploadUrl, publicUrl }`. A presigned S3 PUT, scoped to `products/<org-code>/` ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). The browser then PUTs the bytes to `uploadUrl` with exactly the `contentType` that was signed, and uses `publicUrl` thereafter. `size` is validated, **not signed** — `Content-Length` cannot be bound into a presigned PUT |
 | `POST /api/admin/categories/bulk/validate` · `/bulk` · `/bulk/sample` | the same three shapes for categories |
-| `POST /api/admin/upload/token` | client-upload handshake, scoped to `categories/` |
+| `POST /api/admin/upload/token` | The same presigned-PUT exchange, scoped to `categories/` |
 
 `RowError` is `{ row, field, message }` — `row` is the Excel row number the user
 sees, `0` for sheet-level problems. Row shapes: `server/catalog/bulk/bulk.types.ts`,

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         where: { id: { in: ids } },
         // `archivedAt` rather than an ON_SALE filter: a withdrawn product must come
         // back unavailable *by name*, so the cart can say which line is the problem.
-        // Filtering it out here would report it as an unknown product (ADR-0026 D6).
+        // Filtering it out here would report it as an unknown product (ADR-0029 D6).
         select: { id: true, name: true, archivedAt: true },
       }),
       prisma.productStock.findMany({

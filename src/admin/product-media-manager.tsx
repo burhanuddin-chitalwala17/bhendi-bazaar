@@ -14,7 +14,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import NextImage from "next/image";
 import { ArrowDown, ArrowUp, Loader2, Star, Upload, X, Youtube } from "lucide-react";
+import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +50,7 @@ export function ProductMediaManager({
   const [linkDraft, setLinkDraft] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { remember, localPreview } = useLocalPreviews();
 
   const atCapacity = media.length >= MAX_MEDIA_PER_PRODUCT;
   const photographCount = media.filter((item) => item.kind === "IMAGE").length;
@@ -73,6 +76,7 @@ export function ProductMediaManager({
         throw new Error(body.error?.message || body.error || "Upload failed");
       }
       const data = await response.json();
+      remember(files, data.urls as string[]);
       const uploaded: ProductMediaInput[] = (data.urls as string[]).map((url) => ({
         kind: "IMAGE",
         ref: url,
@@ -149,12 +153,25 @@ export function ProductMediaManager({
             className="flex gap-3 rounded-lg border border-border p-3"
           >
             <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-muted">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
-                alt=""
-                className="size-full object-cover"
-              />
+              {item.kind === "IMAGE" && localPreview(item.ref) ? (
+                /* Just uploaded, so the file is still in the page — fetching the Blob
+                   copy back would be egress for nothing (ADR-0026). */
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={localPreview(item.ref)!}
+                  alt=""
+                  className="size-full object-cover"
+                />
+              ) : (
+                <NextImage
+                  src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
+                  alt=""
+                  fill
+                  sizes="64px"
+                  unoptimized={item.kind === "YOUTUBE"}
+                  className="object-cover"
+                />
+              )}
               {item.kind === "YOUTUBE" && (
                 <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
                   <Youtube className="size-5 text-hero-foreground" aria-hidden />

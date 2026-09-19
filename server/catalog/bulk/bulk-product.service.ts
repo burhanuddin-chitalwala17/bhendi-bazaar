@@ -62,7 +62,7 @@ export async function validateProductRows(
         where: { orgId, sku: { in: skus.map((s) => s.sku) } },
         // Withdrawn products are included deliberately: they still hold their SKU, so
         // a row claiming one is refused rather than silently restoring the product an
-        // import must never put back on sale (ADR-0026, product-archive Q1).
+        // import must never put back on sale (ADR-0029, product-archive Q1).
         select: { sku: true, name: true, archivedAt: true },
       })
     : [];
@@ -144,7 +144,7 @@ export async function validateProductRows(
  */
 async function assignSlugs(rows: RowWithNumber<BulkProductCreateRow>[]): Promise<string[]> {
   const existing = new Set(
-    // Every slug, withdrawn included (ADR-0026): an archived product keeps its slug so
+    // Every slug, withdrawn included (ADR-0029): an archived product keeps its slug so
     // a restore finds its own URL free, so an import must not reuse it.
     (await prisma.product.findMany({ select: { slug: true } })).map((p) => p.slug)
   );

@@ -14,6 +14,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { orderService } from "@server/checkout/order.service";
+import { paymentService } from "@server/payments/payment.service";
+import { OutOfStockError } from "@server/shared/domain-error";
+import { toErrorResponse } from "@/lib/api-error-response";
 import {
   orderRateLimit,
   getClientIp,
@@ -51,7 +54,7 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   // Orders can be created by both authenticated users and guests
-  const userId = session?.user ? (session.user as any).id : undefined;
+  const userId = session?.user?.id;
 
   // Validate request body
   const validation = await validateRequest(
@@ -63,24 +66,27 @@ export async function POST(request: NextRequest) {
     return validation.error;
   }
 
-  try {
-    // Create order with shipments (pending fulfillment)
-    const order = await orderService.createOrderWithShipments({
-      ...validation.data,
-      userId,
-    });
+  const input = { ...validation.data, userId };
 
-    return NextResponse.json(order, { status: 201 });
+  try {
+    return NextResponse.json(await orderService.createOrderWithShipments(input), {
+      status: 201,
+    });
   } catch (error) {
-    console.error("Failed to create order with shipments:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to create order with shipments",
-      },
-      { status: 400 }
-    );
+    // The item may not be sold — it may be held by an abandoned checkout. Release
+    // those and retry once before refusing a buyer (checkout-abandonment D4); a
+    // second failure means the stock is genuinely gone.
+    if (error instanceof OutOfStockError) {
+      const releasedAny = await paymentService.releaseHoldsOnProducts(error.productIds);
+      if (releasedAny) {
+        return NextResponse.json(await orderService.createOrderWithShipments(input), {
+          status: 201,
+        });
+      }
+    }
+    // One envelope, and a 409 that stays a 409 — this handler used to answer 400 for
+    // everything, so the client could not tell a sold-out item from a bad payload
+    // (ADR-0013).
+    return toErrorResponse(error, "Failed to create order with shipments");
   }
 }

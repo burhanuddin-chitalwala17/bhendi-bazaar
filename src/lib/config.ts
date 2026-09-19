@@ -1,23 +1,53 @@
 export const APP_NAME = "Bhendi Bazaar";
 export const APP_DESCRIPTION = "Bhendi Bazaar – a royal curation of Islamic clothing, boutique wear, and essentials.";
 export const APP_TAGLINE = "Shop from the Caravan.";
-export const APP_SUPPORT_EMAIL = "support@bhendibazaar.com";
-export const LOGO = {
-    FULL: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
-    ICON: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
-    LIGHT: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
-    DARK: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
-    TEXT: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
-    192: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
-    512: "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg",
-}
-export const FAVICON = "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/bhendi-bazaar.svg";
+export const APP_SUPPORT_EMAIL = "bharmalits@gmail.com";
 /**
- * Deliberately a PNG at the 1.91:1 the scrapers want, not `LOGO` — WhatsApp, Facebook
- * and Slack render no SVG at all, which is why a shared link used to arrive pictureless.
+ * The number Contact us opens a conversation on (docs/specs/contact-us/ R3).
+ *
+ * `digits` is E.164 without the `+`, which is what a `wa.me` path accepts; `display` is
+ * for a person to read. A static, public brand fact, so it belongs here rather than in
+ * an environment variable. Build the link with `whatsappSupportUrl` — never by
+ * concatenating a wa.me string at a call site.
  */
-export const OG_IMAGE = "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/logos/og-image.png";
-export const OG_IMAGE_SIZE = { width: 1200, height: 630 } as const;
+export const SUPPORT_WHATSAPP = {
+  digits: "918452959340",
+  display: "+91 84529 59340",
+} as const;
+
+/** The opening line a buyer arrives in WhatsApp with, theirs to edit before sending. */
+export const SUPPORT_WHATSAPP_MESSAGE = `Hello ${APP_NAME}, I need some help.`;
+/**
+ * Brand assets ship with the app, in `public/brand/` — they are not user content.
+ *
+ * These pointed at the object store until ADR-0028, which made the site's own logo and
+ * favicon disappear the moment that store was blocked, with nothing in the database to
+ * repoint. A logo belongs in the repository: it changes on a rebrand, not on an upload,
+ * it is served free from the CDN, it needs no optimizer, and it cannot be broken by a
+ * storage provider. Root-relative because `metadataBase` in app/layout.tsx makes these
+ * absolute where a scraper needs them — the origin is never a constant here.
+ */
+export const LOGO = {
+  FULL: "/brand/bhendi-bazaar.png",
+  ICON: "/brand/bhendi-bazaar.png",
+  LIGHT: "/brand/bhendi-bazaar.png",
+  DARK: "/brand/bhendi-bazaar.png",
+  TEXT: "/brand/bhendi-bazaar.png",
+  192: "/brand/bhendi-bazaar.png",
+  512: "/brand/bhendi-bazaar.png",
+}
+export const FAVICON = "/brand/bhendi-bazaar.png";
+/**
+ * A raster, not `LOGO` — WhatsApp, Facebook and Slack render no SVG at all, which is
+ * why a shared link used to arrive pictureless.
+ *
+ * The size is the file's real one, measured, not the 1.91:1 the platforms prefer: a
+ * declared size that disagrees with the bytes is what makes a scraper crop the card
+ * wrong, so an honest 3:2 beats an aspirational 1.91:1. Re-cut the artwork to 1200x630
+ * and update both together if the cropping ever looks wrong in a share.
+ */
+export const OG_IMAGE = "/brand/og-image.jpeg";
+export const OG_IMAGE_SIZE = { width: 1536, height: 1024 } as const;
 /**
  * What a hero banner image has to be. One constant, read by the field label, the file
  * picker's check and the docs, so the size an admin is told cannot drift from the size

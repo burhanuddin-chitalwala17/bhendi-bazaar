@@ -13,6 +13,7 @@ import {
   OG_IMAGE,
   OG_IMAGE_SIZE,
 } from "@/lib/config";
+import { appUrl } from "@server/shared/app-url";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { redirect } from "next/navigation";
@@ -31,11 +32,18 @@ const bodyFont = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  // Makes the root-relative brand paths below absolute, which is what a scraper needs —
+  // without it Next resolves them against the deployment URL, not the custom domain.
+  metadataBase: new URL(appUrl()),
   title: APP_NAME,
   description: APP_DESCRIPTION,
   icons: {
+    // `type` says what the file is, not what we wish it were: these are the SVG, and
+    // declaring it as PNG (as this did) is a claim a browser can act on and be wrong.
+    // `sizes` describes the rendering hint, `type` the actual bytes — the logo is a
+    // 500x500 PNG, so both 192 and 512 point at it and the browser downscales.
     icon: [
-      { url: FAVICON },
+      { url: FAVICON, type: "image/png" },
       { url: LOGO["192"], sizes: "192x192", type: "image/png" },
       { url: LOGO["512"], sizes: "512x512", type: "image/png" },
     ],

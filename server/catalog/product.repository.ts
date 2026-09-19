@@ -78,7 +78,7 @@ export class ProductsRepository {
   async listingFacts(productId: string, orgId: string) {
     return await prisma.product.findFirst({
       // An archived product cannot be listed for bidding either: bidding is a way of
-      // selling, and this row is not for sale (ADR-0026).
+      // selling, and this row is not for sale (ADR-0029).
       where: { id: productId, orgId, ...ON_SALE },
       select: { id: true, name: true, price: true, sizes: true, colors: true },
     });
@@ -143,7 +143,7 @@ export class ProductsRepository {
   }
 
   /**
-   * Which of these products are withdrawn from sale, by name (ADR-0026).
+   * Which of these products are withdrawn from sale, by name (ADR-0029).
    *
    * Names rather than ids because the only caller shows them to a buyer. Authoritative
    * when handed a `tx`; `product.sale-gate.ts` is what turns it into a refusal.
@@ -355,8 +355,10 @@ export class ProductsRepository {
           slug: true,
           name: true,
           thumbnail: true,
-          currency: true,
           price: true,
+          // Not rendered: the offer resolver keys on them (ADR-0018).
+          orgId: true,
+          categoryId: true,
         },
       });
       return products;

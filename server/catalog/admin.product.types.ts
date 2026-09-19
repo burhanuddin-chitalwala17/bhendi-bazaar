@@ -4,7 +4,7 @@ import type { ProductMediaInput } from "@server/catalog/media";
 
 export interface ProductFilters {
   /**
-   * Which shelf the org is asking about (ADR-0026). Defaults to `on-sale`: a
+   * Which shelf the org is asking about (ADR-0029). Defaults to `on-sale`: a
    * withdrawn product is absent from the working list unless asked for, which is
    * what makes withdrawal feel like removal without being one.
    */
@@ -15,6 +15,12 @@ export interface ProductFilters {
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0
+  /**
+   * Narrow to exactly these products. Always resolved server-side by the caller, never
+   * client input, so it cannot widen a query past the org scope. Catalog does not ask
+   * where the list came from — that is what keeps the other domain's table out of here.
+   */
+  productIds?: string[];
   minPrice?: number;
   maxPrice?: number;
   page?: number;

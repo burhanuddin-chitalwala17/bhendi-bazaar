@@ -4,16 +4,22 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminOrgService } from "@server/catalog/org.service";
 import { createOrgSchema } from "@/lib/validation/schemas/org.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 export async function GET(request: NextRequest) {
   try {
     await requirePlatformAdmin();
 
     const { searchParams } = new URL(request.url);
-    const includeStats = searchParams.get("includeStats") === "true";
+    const status = searchParams.get("status");
 
-    const orgs = await adminOrgService.getAllOrgs(includeStats);
+    const orgs = await adminOrgService.listOrgs({
+      page: resolvePageNumber(searchParams.get("page")),
+      limit: resolvePageSize(searchParams.get("limit")),
+      search: searchParams.get("search") || undefined,
+      // Only "active" and "inactive" narrow; anything else — "all", a typo — is everything.
+      isActive: status === "active" ? true : status === "inactive" ? false : undefined,
+    });
 
-    // ⭐ Make sure this always returns JSON
     return NextResponse.json(orgs);
   } catch (error) {
     return toErrorResponse(error, "Could not fetch orgs");

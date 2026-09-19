@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DataTable, type Column } from "@/admin/data-table";
+import type { Pagination } from "@/types/shared";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { formatCurrency } from "@/lib/format";
 import type { OrgOrderView } from "@/data-access-layer/org/orders.dal";
@@ -19,10 +20,14 @@ export function OrgOrdersTable({
   orgId,
 }: {
   orders: OrgOrderView[];
-  pagination: { page: number; totalPages: number; total: number };
+  pagination: Pagination;
   orgId: string;
 }) {
   const router = useRouter();
+
+  /** Pagination lives in the URL, so a size change is a navigation like any other. */
+  const goTo = (page: number, limit: number) =>
+    router.push(`/org/${orgId}/orders?page=${page}&limit=${limit}`);
 
   const columns: Column<OrgOrderView>[] = [
     {
@@ -78,7 +83,9 @@ export function OrgOrdersTable({
       currentPage={pagination.page}
       totalPages={pagination.totalPages}
       totalItems={pagination.total}
-      onPageChange={(page) => router.push(`/org/${orgId}/orders?page=${page}`)}
+      pageSize={pagination.limit}
+      onPageChange={(page) => goTo(page, pagination.limit)}
+      onPageSizeChange={(limit) => goTo(1, limit)}
     />
   );
 }

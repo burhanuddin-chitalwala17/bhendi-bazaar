@@ -36,7 +36,7 @@ export const PATCH = withOrg<{ orgId: string; id: string }>(
 );
 
 /**
- * One control, two outcomes (ADR-0026): a product no record depends on is deleted,
+ * One control, two outcomes (ADR-0029): a product no record depends on is deleted,
  * and anything an order, promotion or bidding event refers to is archived instead.
  * The outcome travels in the response so the client can say which happened without
  * asking again.

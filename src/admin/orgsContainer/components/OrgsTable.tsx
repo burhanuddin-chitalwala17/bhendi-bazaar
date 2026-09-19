@@ -2,16 +2,15 @@ import { DataTable, Column } from "@/admin/data-table";
 import { Edit, Trash2, CheckCircle, XCircle, MapPin, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { OrgWithStats } from "@/domain/org";
+import type { Pagination } from "@/types/shared";
 import { formatPhone } from "@server/shared/phone";
 
 interface OrgsTableProps {
   orgs: OrgWithStats[];
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
+  pagination: Pagination;
   isLoading: boolean;
   onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
   onView: (org: OrgWithStats) => void;
   onEdit: (org: OrgWithStats) => void;
   onDelete: (id: string, name: string) => void;
@@ -19,18 +18,17 @@ interface OrgsTableProps {
 
 export function OrgsTable({
   orgs,
-  currentPage,
-  totalPages,
-  totalItems,
-  itemsPerPage,
+  pagination,
   isLoading,
   onPageChange,
+  onPageSizeChange,
   onView,
   onEdit,
   onDelete,
 }: OrgsTableProps) {
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  const { page, limit, total, totalPages } = pagination;
+  const startItem = total === 0 ? 0 : (page - 1) * limit + 1;
+  const endItem = Math.min(page * limit, total);
 
   const columns: Column<OrgWithStats>[] = [
     {
@@ -178,7 +176,7 @@ export function OrgsTable({
       {/* Showing X-Y of Z results */}
       <div className="flex justify-between items-center text-sm text-muted-foreground">
         <p>
-          Showing {startItem} to {endItem} of {totalItems} orgs
+          Showing {startItem} to {endItem} of {total} orgs
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -186,9 +184,11 @@ export function OrgsTable({
           data={orgs}
           columns={columns}
           totalPages={totalPages}
-          currentPage={currentPage}
-          totalItems={totalItems}
+          currentPage={page}
+          totalItems={total}
+          pageSize={limit}
           onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
           isLoading={isLoading}
         />
       </div>
