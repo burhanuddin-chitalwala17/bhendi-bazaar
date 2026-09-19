@@ -16,7 +16,10 @@ export function AuthField({
 }) {
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="text-xs font-medium uppercase tracking-eyebrow">
+      <label
+        htmlFor={id}
+        className="text-xs font-medium uppercase tracking-eyebrow"
+      >
         {label}
       </label>
       {children}
@@ -29,7 +32,9 @@ export function OrDivider() {
   return (
     <div className="flex items-center gap-2 pt-2">
       <span className="h-px flex-1 bg-border/70" />
-      <span className="text-2xs uppercase tracking-eyebrow text-muted-foreground">or</span>
+      <span className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
+        or
+      </span>
       <span className="h-px flex-1 bg-border/70" />
     </div>
   );

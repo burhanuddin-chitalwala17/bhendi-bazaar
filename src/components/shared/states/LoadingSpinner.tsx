@@ -7,7 +7,10 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
-export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) {
+export function LoadingSpinner({
+  size = "md",
+  className,
+}: LoadingSpinnerProps) {
   const sizeClasses = {
     sm: "h-4 w-4 border",
     md: "h-8 w-8 border-2",
@@ -19,7 +22,7 @@ export function LoadingSpinner({ size = "md", className }: LoadingSpinnerProps) 
       className={cn(
         "animate-spin rounded-full border-primary border-t-transparent",
         sizeClasses[size],
-        className
+        className,
       )}
       role="status"
       aria-label="Loading"

@@ -8,7 +8,11 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 
 export const metadata = { robots: { index: false, follow: false } };
 
-const PAYMENT_BADGE = { paid: "paid", pending: "pending", failed: "failed" } as const;
+const PAYMENT_BADGE = {
+  paid: "paid",
+  pending: "pending",
+  failed: "failed",
+} as const;
 
 export default async function OrgOrderDetailPage({
   params,
@@ -28,12 +32,20 @@ export default async function OrgOrderDetailPage({
         <div className="flex items-center gap-3">
           <h1 className="text-3xl font-bold">{order.code}</h1>
           <StatusBadge
-            status={PAYMENT_BADGE[order.paymentStatus as keyof typeof PAYMENT_BADGE] ?? "default"}
+            status={
+              PAYMENT_BADGE[
+                order.paymentStatus as keyof typeof PAYMENT_BADGE
+              ] ?? "default"
+            }
           >
             {order.paymentStatus}
           </StatusBadge>
         </div>
-        <Link href={`/org/${orgId}/orders`} className="text-sm text-primary hover:underline" prefetch={false}>
+        <Link
+          href={`/org/${orgId}/orders`}
+          className="text-sm text-primary hover:underline"
+          prefetch={false}
+        >
           ← All orders
         </Link>
       </div>
@@ -51,9 +63,12 @@ export default async function OrgOrderDetailPage({
           <p className="font-medium">{order.address.fullName}</p>
           <p className="text-sm text-muted-foreground">
             {order.address.addressLine1}
-            {order.address.addressLine2 ? `, ${order.address.addressLine2}` : ""}
+            {order.address.addressLine2
+              ? `, ${order.address.addressLine2}`
+              : ""}
             <br />
-            {order.address.city}, {order.address.state} — {order.address.pincode}
+            {order.address.city}, {order.address.state} —{" "}
+            {order.address.pincode}
             <br />
             {formatPhone(order.address.mobile)}
           </p>
@@ -80,12 +95,19 @@ export default async function OrgOrderDetailPage({
                     {item.productName}{" "}
                     {(item.size || item.color) && (
                       <span className="text-muted-foreground">
-                        ({[item.size, item.color].filter(Boolean).join(", ")}){" "}
+                        ({[item.size, item.color].filter(Boolean).join(", ")}
+                        ){" "}
                       </span>
                     )}
-                    <span className="text-muted-foreground">× {item.quantity}</span>
+                    <span className="text-muted-foreground">
+                      × {item.quantity}
+                    </span>
                   </span>
-                  <span>{formatCurrency((item.salePrice ?? item.price) * item.quantity)}</span>
+                  <span>
+                    {formatCurrency(
+                      (item.salePrice ?? item.price) * item.quantity,
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -102,8 +124,8 @@ export default async function OrgOrderDetailPage({
       ))}
 
       <p className="text-xs text-muted-foreground">
-        You see only the parcels that ship from your organisation. The buyer&apos;s full order may
-        contain more.
+        You see only the parcels that ship from your organisation. The
+        buyer&apos;s full order may contain more.
       </p>
     </div>
   );

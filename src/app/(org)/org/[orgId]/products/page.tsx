@@ -4,8 +4,8 @@ import { Plus, Upload } from "lucide-react";
 import type { Metadata } from "next";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
-import { ProductsContainer } from "@/admin/products/productsList";
-import { ProductsTableSkeleton } from "@/admin/products/productsList/components/ProductsTableSkeleton";
+import { ProductsContainer } from "@/components/product/console/productsList";
+import { ProductsTableSkeleton } from "@/components/product/console/productsList/components/ProductsTableSkeleton";
 import { Button } from "@/components/ui/button";
 import type { ProductShelf } from "@server/catalog/product.visibility";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
@@ -39,7 +39,10 @@ const SHELVES: ProductShelf[] = ["on-sale", "archived", "all"];
 const shelfFrom = (value: string | undefined): ProductShelf =>
   SHELVES.find((shelf) => shelf === value) ?? "on-sale";
 
-export default async function OrgProductsPage({ params, searchParams }: PageProps) {
+export default async function OrgProductsPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { orgId } = await params;
 
   return (
@@ -47,7 +50,9 @@ export default async function OrgProductsPage({ params, searchParams }: PageProp
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">Your organisation&apos;s catalogue</p>
+          <p className="text-muted-foreground">
+            Your organisation&apos;s catalogue
+          </p>
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">

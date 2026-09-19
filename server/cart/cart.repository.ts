@@ -1,6 +1,10 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
-import type { CartItem, CartLineInput, ServerCart } from "@server/cart/cart.types";
+import type {
+  CartItem,
+  CartLineInput,
+  ServerCart,
+} from "@server/cart/cart.types";
 import { ConflictError } from "@server/shared/domain-error";
 import {
   loadPriceContext,
@@ -24,10 +28,12 @@ const CART_INCLUDE = {
             where: { orgAddress: { isActive: true } },
             select: {
               quantity: true,
-              orgAddress: { select: { address: { select: { pincode: true } } } },
+              orgAddress: {
+                select: { address: { select: { pincode: true } } },
+              },
             },
           },
-          org: { select: { id: true, name: true, code: true } },
+          org: { select: { id: true, name: true, code: true, handle: true } },
         },
       },
     },
@@ -48,7 +54,10 @@ interface CartLineRow {
     orgId: string;
     categoryId: string;
     weight: number | null;
-    stockLocations: Array<{ quantity: number; orgAddress: { address: { pincode: string } } }>;
+    stockLocations: Array<{
+      quantity: number;
+      orgAddress: { address: { pincode: string } };
+    }>;
     org: CartItem["org"];
   };
 }
@@ -64,7 +73,7 @@ interface CartLineRow {
  */
 export function toWireCartItem(
   row: CartLineRow,
-  context: PriceContext = EMPTY_PRICE_CONTEXT
+  context: PriceContext = EMPTY_PRICE_CONTEXT,
 ): CartItem {
   const { pricePaise, offerPricePaise } = resolveProductPrice(
     {
@@ -73,7 +82,7 @@ export function toWireCartItem(
       orgId: row.product.orgId,
       categoryId: row.product.categoryId,
     },
-    context
+    context,
   );
   return {
     id: row.id,
@@ -89,8 +98,8 @@ export function toWireCartItem(
     weight: row.product.weight ?? 0,
     // Indicative origin only — allocation picks the real one at checkout.
     shippingFromPincode:
-      [...row.product.stockLocations].sort((a, b) => b.quantity - a.quantity)[0]?.orgAddress
-        .address.pincode || "",
+      [...row.product.stockLocations].sort((a, b) => b.quantity - a.quantity)[0]
+        ?.orgAddress.address.pincode || "",
     org: row.product.org,
   };
 }
@@ -147,7 +156,7 @@ export class CartRepository {
   async upsert(
     userId: string,
     lines: CartLineInput[],
-    expectedVersion?: number
+    expectedVersion?: number,
   ): Promise<ServerCart> {
     const productIds = [...new Set(lines.map((line) => line.productId))];
     const existing = await prisma.product.findMany({
@@ -167,10 +176,13 @@ export class CartRepository {
           data: { version: { increment: 1 } },
         });
         if (updated.count === 0) {
-          const cart = await tx.cart.findUnique({ where: { userId }, select: { id: true } });
+          const cart = await tx.cart.findUnique({
+            where: { userId },
+            select: { id: true },
+          });
           if (cart) {
             throw new ConflictError(
-              "Your cart changed in another tab or on another device. It has been refreshed — please review it."
+              "Your cart changed in another tab or on another device. It has been refreshed — please review it.",
             );
           }
           // No cart yet: the version was optimistic about a row that does not exist.
@@ -184,7 +196,10 @@ export class CartRepository {
         });
       }
 
-      const cart = await tx.cart.findUniqueOrThrow({ where: { userId }, select: { id: true } });
+      const cart = await tx.cart.findUniqueOrThrow({
+        where: { userId },
+        select: { id: true },
+      });
       await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
       if (rows.length > 0) {
         await tx.cartItem.createMany({
@@ -226,9 +241,12 @@ export class CartRepository {
   async removeLinesIn(
     tx: Prisma.TransactionClient,
     userId: string,
-    lines: Array<Pick<CartLineInput, "productId" | "size" | "color">>
+    lines: Array<Pick<CartLineInput, "productId" | "size" | "color">>,
   ): Promise<void> {
-    const cart = await tx.cart.findUnique({ where: { userId }, select: { id: true } });
+    const cart = await tx.cart.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
     if (!cart || lines.length === 0) return;
 
     await tx.cartItem.deleteMany({
@@ -242,7 +260,10 @@ export class CartRepository {
         })),
       },
     });
-    await tx.cart.update({ where: { id: cart.id }, data: { version: { increment: 1 } } });
+    await tx.cart.update({
+      where: { id: cart.id },
+      data: { version: { increment: 1 } },
+    });
   }
 
   /** Delete cart completely — lines cascade with it. */

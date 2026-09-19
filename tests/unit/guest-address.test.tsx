@@ -11,7 +11,7 @@
  */
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, waitFor } from "@testing-library/react";
-import { GuestAddress, guestAddressSchema } from "@/containers/checkoutContainer/components/GuestAddress";
+import { GuestAddress, guestAddressSchema } from "@/components/checkout/components/GuestAddress";
 
 const filledForm: Record<string, string> = {
   fullName: "Farida Chitalwala",

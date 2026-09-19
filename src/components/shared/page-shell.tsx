@@ -54,13 +54,17 @@ export function PageHeader({
     <div
       className={cn(
         "flex flex-wrap items-center justify-between gap-3",
-        className
+        className,
       )}
     >
       <div className="flex min-w-0 items-center gap-3">
         {back && (
           <Button asChild variant="ghost" size="icon">
-            <Link href={back.href} aria-label={back.label ?? "Go back"} prefetch={false}>
+            <Link
+              href={back.href}
+              aria-label={back.label ?? "Go back"}
+              prefetch={false}
+            >
               <ArrowLeft />
             </Link>
           </Button>

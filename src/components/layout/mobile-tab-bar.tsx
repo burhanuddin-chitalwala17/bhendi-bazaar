@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/cartStore";
 import { cn } from "@/lib/utils";
 import { ContactLauncher } from "@/components/support/contact-launcher";
 import { useAuthSheet } from "@/context/AuthSheetContext";
+import { Button } from "@/components/ui/button";
 
 // The phone's primary navigation (ADR-0016). It exists so the four things a shopper
 // does are one thumb-reach apart instead of behind a header dropdown, and so the app
@@ -60,7 +61,11 @@ export function MobileTabBar() {
           Cart
         </Link>
 
-        <Link href="/" className={cn(TAB_CLASSES, tabTone(pathname === "/"))} prefetch={false}>
+        <Link
+          href="/"
+          className={cn(TAB_CLASSES, tabTone(pathname === "/"))}
+          prefetch={false}
+        >
           <Home className="size-5" />
           Home
         </Link>
@@ -85,14 +90,15 @@ export function MobileTabBar() {
           </Link>
         ) : (
           // Opens the sheet over this page, so like Contact it is never "active".
-          <button
+          <Button
+            variant="ghost"
             type="button"
             onClick={() => openAuthSheet()}
             className={cn(TAB_CLASSES, tabTone(pathname === "/signin"))}
           >
             <User className="size-5" />
             Login
-          </button>
+          </Button>
         )}
       </div>
     </nav>

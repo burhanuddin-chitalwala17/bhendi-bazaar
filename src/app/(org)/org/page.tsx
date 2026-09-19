@@ -23,10 +23,12 @@ export default async function OrgIndexPage() {
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16">
       {orgs.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8">
-          <h1 className="text-2xl font-bold">You are not part of an organisation</h1>
+          <h1 className="text-2xl font-bold">
+            You are not part of an organisation
+          </h1>
           <p className="mt-2 text-muted-foreground">
-            Selling on Bhendi Bazaar happens through an organisation. Ask an owner to add
-            you to theirs, or create your own.
+            Selling on Bhendi Bazaar happens through an organisation. Ask an
+            owner to add you to theirs, or create your own.
           </p>
           <div className="mt-8 flex gap-3">
             <Link
@@ -39,7 +41,7 @@ export default async function OrgIndexPage() {
             <Link
               prefetch={false}
               href="/"
-              className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted/60"
+              className="text-sm font-medium hover:bg-muted/60"
             >
               Back to Store
             </Link>
@@ -62,7 +64,9 @@ export default async function OrgIndexPage() {
                 >
                   <Building2 className="h-6 w-6 shrink-0 text-primary" />
                   <span className="min-w-0">
-                    <span className="block truncate font-medium">{org.name}</span>
+                    <span className="block truncate font-medium">
+                      {org.name}
+                    </span>
                     <span className="text-sm text-muted-foreground">
                       {org.code} · {org.role.toLowerCase()}
                     </span>

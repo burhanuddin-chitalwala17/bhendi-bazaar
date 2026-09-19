@@ -14,7 +14,13 @@ function CartSyncProvider({ children }: { children: React.ReactNode }) {
 // ProfileProvider is intentionally NOT here — it fetches /api/profile on mount and is
 // scoped to src/app/(main)/profile/layout.tsx. The chrome reads isEmailVerified from
 // the session instead.
-export function Providers({ children, session }: { children: React.ReactNode, session: Session | null }) {
+export function Providers({
+  children,
+  session,
+}: {
+  children: React.ReactNode;
+  session: Session | null;
+}) {
   return (
     <SessionProvider session={session}>
       <CartSyncProvider>

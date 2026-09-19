@@ -7,7 +7,6 @@ interface OrderClientProps {
 }
 
 export function OrderClient({ order }: OrderClientProps) {
-
   return (
     <div className="space-y-6">
       <header className="space-y-3">
@@ -23,5 +22,3 @@ export function OrderClient({ order }: OrderClientProps) {
     </div>
   );
 }
-
-

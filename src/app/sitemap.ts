@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { appUrl } from "@server/shared/app-url";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { productsDAL } from "@/data-access-layer/products.dal";
+import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { crawlersBlocked } from "@/lib/crawl-block";
 
 /** Rebuilt hourly. A catalogue changes on a human timescale, not per request. */
@@ -24,9 +25,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const origin = appUrl();
 
-  const [categories, productSlugs] = await Promise.all([
+  const [categories, productSlugs, shops] = await Promise.all([
     categoriesDAL.getCategories(),
     productsDAL.listSlugs(),
+    // Live shops only, and only those with something to sell — a withdrawn org is
+    // absent from `listShops` by its where clause, so a closed shop leaves the sitemap
+    // without anything here having to remember to remove it (storefront-discovery R3).
+    storefrontDAL.listShops(),
   ]);
 
   return [
@@ -42,5 +47,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
+    {
+      url: `${origin}/store`,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    },
+    ...shops.flatMap((shop) => [
+      {
+        url: `${origin}/store/${shop.handle}`,
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+      },
+      {
+        url: `${origin}/store/${shop.handle}/about`,
+        changeFrequency: "monthly" as const,
+        priority: 0.4,
+      },
+    ]),
   ];
 }

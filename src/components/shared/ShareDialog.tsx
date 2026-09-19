@@ -55,7 +55,9 @@ export function ShareDialog({
   // runtime-known). SSR renders the trigger only, so `window` is safe by the
   // time any share action runs.
   const shareUrl =
-    typeof window === "undefined" ? url : new URL(url, window.location.origin).toString();
+    typeof window === "undefined"
+      ? url
+      : new URL(url, window.location.origin).toString();
 
   const handleCopyLink = async () => {
     const success = await copyToClipboard(shareUrl);
@@ -84,7 +86,7 @@ export function ShareDialog({
     window.open(
       `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
       "_blank",
-      "width=600,height=400"
+      "width=600,height=400",
     );
     setOpen(false);
   };
@@ -94,7 +96,7 @@ export function ShareDialog({
     window.open(
       `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(shareUrl)}`,
       "_blank",
-      "width=600,height=400"
+      "width=600,height=400",
     );
     setOpen(false);
   };
@@ -103,7 +105,7 @@ export function ShareDialog({
     window.open(
       `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
       "_blank",
-      "width=600,height=400"
+      "width=600,height=400",
     );
     setOpen(false);
   };
@@ -112,7 +114,7 @@ export function ShareDialog({
     // Instagram doesn't have direct web sharing, so we copy and inform user
     copyToClipboard(url);
     alert(
-      "Link copied! Instagram doesn't support direct web sharing. Please paste the link in your Instagram post or story."
+      "Link copied! Instagram doesn't support direct web sharing. Please paste the link in your Instagram post or story.",
     );
     setOpen(false);
   };
@@ -186,7 +188,8 @@ export function ShareDialog({
           {/* Social Media Grid */}
           <div className="grid grid-cols-3 gap-4">
             {shareOptions.map((option) => (
-              <button
+              <Button
+                variant="ghost"
                 key={option.id}
                 onClick={option.action}
                 className={`flex flex-col items-center gap-2 rounded-lg border border-border/70 p-4 transition-all ${option.hoverColor} hover:border-border`}
@@ -197,15 +200,16 @@ export function ShareDialog({
                 <span className="text-xs font-medium text-center line-clamp-1">
                   {option.name}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Copy Link Section */}
           <div className="pt-2">
-            <button
+            <Button
+              variant="outline"
               onClick={handleCopyLink}
-              className="flex w-full items-center justify-between gap-3 rounded-lg border border-border/70 bg-muted/30 px-4 py-3 transition-all hover:bg-muted/50 hover:border-border"
+              className="flex w-full items-center justify-between gap-3 border-border/70 bg-muted/30 hover:bg-muted/50 hover:border-border"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {copySuccess ? (
@@ -222,7 +226,7 @@ export function ShareDialog({
                   </span>
                 </div>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
       </DialogContent>

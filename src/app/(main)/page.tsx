@@ -20,7 +20,9 @@ export default async function HomePage() {
   ]);
   return (
     <div className="space-y-8 sm:space-y-10">
-      <h1 className="sr-only">{APP_NAME} — {APP_DESCRIPTION}</h1>
+      <h1 className="sr-only">
+        {APP_NAME} — {APP_DESCRIPTION}
+      </h1>
       <CategoryLanes categories={lanes} />
       <HomeHero banners={banners} />
       <Suspense fallback={<LoadingSkeleton />}>

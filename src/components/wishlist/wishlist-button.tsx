@@ -3,6 +3,7 @@
 import { Heart } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 /**
  * The heart. A client leaf inside otherwise-server product surfaces, the same shape
@@ -25,8 +26,12 @@ export function WishlistButton({
   const pending = isPending(productId);
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      // size-9 is the floor for a tap target (ADR-0015) and all a 105px tile can
+      // spare; the icon inside carries the visual size instead.
+      size="icon"
       aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
       aria-pressed={saved}
       disabled={pending}
@@ -36,17 +41,14 @@ export function WishlistButton({
         void toggle(productId);
       }}
       className={cn(
-        // size-9 is the floor for a tap target (ADR-0015) and all a 105px tile can
-        // spare; the icon inside carries the visual size instead.
-        "inline-flex size-9 items-center justify-center rounded-full transition-colors",
-        "disabled:opacity-60",
+        "rounded-full disabled:opacity-60",
         showLabel && "w-auto gap-2 px-3 text-2xs font-medium",
         saved ? "text-favorite" : "text-muted-foreground",
-        className
+        className,
       )}
     >
       <Heart className={cn("size-4", saved && "fill-favorite")} />
       {showLabel && <span>{saved ? "Saved" : "Save"}</span>}
-    </button>
+    </Button>
   );
 }

@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { CategoryForm } from "@/admin/category-form";
+import { CategoryForm } from "@/components/category/category-form";
 import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory } from "@/domain/admin";
 
@@ -30,9 +30,7 @@ export default function EditCategoryPage() {
       setCategory(data);
     } catch (err) {
       console.error("Failed to load category:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load category"
-      );
+      setError(err instanceof Error ? err.message : "Failed to load category");
     } finally {
       setIsLoading(false);
     }
@@ -67,4 +65,3 @@ export default function EditCategoryPage() {
     </PageShell>
   );
 }
-

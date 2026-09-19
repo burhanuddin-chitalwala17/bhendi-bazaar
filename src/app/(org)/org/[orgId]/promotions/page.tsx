@@ -16,7 +16,10 @@ export default async function OrgPromotionsPage({
   const offers = (await adminPromotionService.list({
     scope: "ORG",
     orgId: scope.orgId,
-  })) as unknown as { offers: OfferRow[]; pagination: { page: number; totalPages: number; total: number } };
+  })) as unknown as {
+    offers: OfferRow[];
+    pagination: { page: number; totalPages: number; total: number };
+  };
 
   return (
     <div className="space-y-5">

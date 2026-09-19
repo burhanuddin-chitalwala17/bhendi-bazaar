@@ -16,8 +16,8 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
           order.paymentStatus === "paid"
             ? "Paid"
             : order.paymentStatus === "failed"
-            ? "Failed"
-            : "Pending"
+              ? "Failed"
+              : "Pending"
         }`
       : null;
 

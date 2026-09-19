@@ -25,5 +25,4 @@ export default async function OrderPage({ params }: OrderPageProps) {
       <OrderClient order={order} />
     </Suspense>
   );
-
 }

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export interface PortalNavItem {
   title: string;
@@ -42,14 +43,16 @@ export function PortalSidebar({
 
   return (
     <>
-      <button
+      <Button
+        variant="outline"
+        size="icon"
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open navigation"
-        className="fixed left-3 top-2.5 z-40 flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-foreground md:hidden"
+        className="fixed left-3 top-2.5 z-40 flex h-9 w-9 items-center justify-center border-border bg-card text-foreground md:hidden"
       >
         <Menu className="h-5 w-5" />
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -62,23 +65,27 @@ export function PortalSidebar({
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full"
+          open ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
           onClick={() => setOpen(false)}
           aria-label="Close navigation"
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground md:hidden"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground md:hidden"
         >
           <X className="h-5 w-5" />
-        </button>
+        </Button>
 
         {header}
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-4">
           {items.map(({ title, href, icon: Icon, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href);
+            const active = exact
+              ? pathname === href
+              : pathname.startsWith(href);
             return (
               <Link
                 prefetch={false}
@@ -89,7 +96,7 @@ export function PortalSidebar({
                   "flex items-center gap-3 rounded-lg px-4 py-3 transition-colors",
                   active
                     ? "bg-primary/10 font-medium text-primary"
-                    : "text-foreground/80 hover:bg-muted/60"
+                    : "text-foreground/80 hover:bg-muted/60",
                 )}
               >
                 <Icon className="h-5 w-5" />

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
-import { ProductAddContainer } from "@/admin/products/productAdd";
+import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import type { AdminCategory } from "@/domain/admin";
@@ -28,7 +28,9 @@ export default async function OrgNewProductPage({
     name: c.name,
   }));
 
-  const orgs = [{ id: org.id, name: org.name, code: org.code }];
+  const orgs = [
+    { id: org.id, name: org.name, code: org.code, handle: org.handle },
+  ];
 
   // Only active locations are offered for new stock; inactive ones keep their rows
   // but take no more (stock-locations, isActive).

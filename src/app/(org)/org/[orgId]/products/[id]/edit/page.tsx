@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
-import { ProductEditContainer } from "@/admin/products/productEdit";
+import { ProductEditContainer } from "@/components/product/console/productEdit";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import type { AdminCategory } from "@/domain/admin";
@@ -18,7 +18,7 @@ export default async function OrgEditProductPage({
   if (!product || product.org.id !== orgId) notFound();
 
   const categories = (await adminCategoriesDAL.getCategories()).categories.map(
-    (c: AdminCategory) => ({ id: c.id, name: c.name })
+    (c: AdminCategory) => ({ id: c.id, name: c.name }),
   );
 
   // The product's own org, so the form cannot reassign ownership.

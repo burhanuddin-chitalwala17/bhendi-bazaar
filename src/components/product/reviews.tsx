@@ -17,5 +17,3 @@ export function Reviews({ product }: ReviewsProps) {
     </section>
   );
 }
-
-

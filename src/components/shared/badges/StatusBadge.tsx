@@ -26,7 +26,7 @@ const statusBadgeVariants = cva(
     defaultVariants: {
       status: "default",
     },
-  }
+  },
 );
 
 interface StatusBadgeProps extends VariantProps<typeof statusBadgeVariants> {
@@ -34,11 +34,7 @@ interface StatusBadgeProps extends VariantProps<typeof statusBadgeVariants> {
   className?: string;
 }
 
-export function StatusBadge({
-  status,
-  children,
-  className,
-}: StatusBadgeProps) {
+export function StatusBadge({ status, children, className }: StatusBadgeProps) {
   return (
     <Badge className={cn(statusBadgeVariants({ status }), className)}>
       {children}
@@ -55,7 +51,13 @@ export function DefaultBadge() {
   return <StatusBadge status="default">Default</StatusBadge>;
 }
 
-export function StockBadge({ stock, threshold = 10 }: { stock: number; threshold?: number }) {
+export function StockBadge({
+  stock,
+  threshold = 10,
+}: {
+  stock: number;
+  threshold?: number;
+}) {
   if (stock === 0) {
     return <StatusBadge status="outOfStock">Out of Stock</StatusBadge>;
   }

@@ -21,15 +21,18 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           {...props}
         />
         <div className="ml-3">
-          <label className="text-sm font-medium text-foreground/80">{label}</label>
+          <label className="text-sm font-medium text-foreground/80">
+            {label}
+          </label>
           {description && (
-            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {description}
+            </p>
           )}
         </div>
       </div>
     );
-  }
+  },
 );
 
 Checkbox.displayName = "Checkbox";
-

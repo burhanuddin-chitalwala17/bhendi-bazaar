@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireOrgMember } from "@/lib/org-auth";
-import { OrgSidebar } from "@/org/sidebar";
+import { OrgSidebar } from "@/components/layout/OrgSidebar";
 import { isDomainError } from "@server/shared/domain-error";
 import { orgMemberRepository } from "@server/catalog/org.member.repository";
 import { requireSession } from "@/lib/admin-auth";

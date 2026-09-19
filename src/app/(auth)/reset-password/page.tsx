@@ -65,7 +65,9 @@ export default function ResetPasswordPage() {
       <div className="space-y-4 rounded-lg border border-success/30 bg-success/10 p-6 text-center">
         <CheckCircle className="mx-auto h-12 w-12 text-success" />
         <div className="space-y-2">
-          <h3 className="font-semibold text-success">Password Reset Successfully!</h3>
+          <h3 className="font-semibold text-success">
+            Password Reset Successfully!
+          </h3>
           <p className="text-sm text-success">
             Your password has been changed. Redirecting to sign in...
           </p>
@@ -100,10 +102,13 @@ export default function ResetPasswordPage() {
             {...register("password")}
           />
           {errors.password ? (
-            <p className="text-2xs text-destructive">{errors.password.message}</p>
+            <p className="text-2xs text-destructive">
+              {errors.password.message}
+            </p>
           ) : (
             <p className="text-2xs text-muted-foreground">
-              At least 8 characters with uppercase, lowercase, a number and a symbol
+              At least 8 characters with uppercase, lowercase, a number and a
+              symbol
             </p>
           )}
         </div>
@@ -124,7 +129,8 @@ export default function ResetPasswordPage() {
           )}
         </div>
 
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={() => setShowPasswords(!showPasswords)}
           className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
@@ -138,7 +144,7 @@ export default function ResetPasswordPage() {
               <Eye className="h-3 w-3" /> Show passwords
             </>
           )}
-        </button>
+        </Button>
 
         {(formError || errors.token) && (
           <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">

@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/admin-auth";
-import { CreateOrg } from "@/org/create-org";
+import { CreateOrg } from "@/components/org/create-org";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export const metadata = {

@@ -33,8 +33,14 @@ const TITLES: Record<Step, { title: string; description: string }> = {
     title: "Contact us",
     description: "Chat with us on WhatsApp, or email us a message.",
   },
-  message: { title: "Send us a message", description: "We will reply by email." },
-  sent: { title: "Message sent", description: "It is on its way to our inbox." },
+  message: {
+    title: "Send us a message",
+    description: "We will reply by email.",
+  },
+  sent: {
+    title: "Message sent",
+    description: "It is on its way to our inbox.",
+  },
 };
 
 /**
@@ -42,7 +48,11 @@ const TITLES: Record<Step, { title: string; description: string }> = {
  * A bottom sheet on a phone, a right-hand panel on desktop. The form replaces the
  * options in place, so a back gesture cannot take a half-written message with it.
  */
-export function ContactSheet({ open, onOpenChange, signedIn }: ContactSheetProps) {
+export function ContactSheet({
+  open,
+  onOpenChange,
+  signedIn,
+}: ContactSheetProps) {
   const [step, setStep] = useState<Step>("choices");
 
   function handleOpenChange(next: boolean) {
@@ -75,7 +85,9 @@ export function ContactSheet({ open, onOpenChange, signedIn }: ContactSheetProps
               onClick={() => handleOpenChange(false)}
               className={OPTION_ROW}
             >
-              <MessageCircle className={`size-5 shrink-0 ${SOCIAL_BRAND.whatsapp.color}`} />
+              <MessageCircle
+                className={`size-5 shrink-0 ${SOCIAL_BRAND.whatsapp.color}`}
+              />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">WhatsApp</span>
                 <span className="block text-2xs text-muted-foreground">
@@ -84,15 +96,22 @@ export function ContactSheet({ open, onOpenChange, signedIn }: ContactSheetProps
               </span>
             </a>
 
-            <button type="button" onClick={() => setStep("message")} className={OPTION_ROW}>
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setStep("message")}
+              className={OPTION_ROW}
+            >
               <Mail className="size-5 shrink-0 text-muted-foreground" />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">Send a message</span>
+                <span className="block text-sm font-semibold">
+                  Send a message
+                </span>
                 <span className="block text-2xs text-muted-foreground">
                   Email us a subject and message
                 </span>
               </span>
-            </button>
+            </Button>
           </div>
         )}
 
@@ -111,7 +130,8 @@ export function ContactSheet({ open, onOpenChange, signedIn }: ContactSheetProps
               Thank you — we have your message.
             </p>
             <p className="text-2xs text-muted-foreground">
-              We usually reply within a day. For something urgent, WhatsApp is faster.
+              We usually reply within a day. For something urgent, WhatsApp is
+              faster.
             </p>
             <Button
               type="button"

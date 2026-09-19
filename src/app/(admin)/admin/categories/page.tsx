@@ -8,8 +8,16 @@
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
-import { DataTable, Column } from "@/admin/data-table";
-import { Search, Plus, Upload, Edit, Trash2, MoveUp, MoveDown } from "lucide-react";
+import { DataTable, Column } from "@/components/shared/data-table";
+import {
+  Search,
+  Plus,
+  Upload,
+  Edit,
+  Trash2,
+  MoveUp,
+  MoveDown,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
@@ -19,6 +27,8 @@ import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 export default function AdminCategoriesPage() {
   const [filters, setFilters] = useState<CategoryListFilters>({
     page: 1,
@@ -44,7 +54,7 @@ export default function AdminCategoriesPage() {
     {
       successMessage: "Category deleted successfully!",
       onSuccess: () => refetch(),
-    }
+    },
   );
 
   const { mutate: updateCategory, isLoading: isUpdating } = useMutation(
@@ -53,7 +63,7 @@ export default function AdminCategoriesPage() {
     {
       successMessage: "Category reordered successfully!",
       onSuccess: () => refetch(),
-    }
+    },
   );
 
   // Extract data
@@ -67,7 +77,7 @@ export default function AdminCategoriesPage() {
   const handleDelete = (categoryId: string, categoryName: string) => {
     if (
       !confirm(
-        `Are you sure you want to delete "${categoryName}"? This will also affect products in this category.`
+        `Are you sure you want to delete "${categoryName}"? This will also affect products in this category.`,
       )
     ) {
       return;
@@ -80,7 +90,7 @@ export default function AdminCategoriesPage() {
   const handleReorder = (
     categoryId: string,
     currentOrder: number,
-    direction: "up" | "down"
+    direction: "up" | "down",
   ) => {
     const newOrder = direction === "up" ? currentOrder - 1 : currentOrder + 1;
     void updateCategory({ id: categoryId, order: newOrder }).catch(() => {});
@@ -97,28 +107,30 @@ export default function AdminCategoriesPage() {
             {category.order}
           </span>
           <div className="flex flex-col gap-1">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => handleReorder(category.id, category.order, "up")}
               disabled={category.order === 0 || isUpdating}
               className={cn(
                 "p-0.5 text-muted-foreground/70 hover:text-foreground",
-                isUpdating && "opacity-50 cursor-not-allowed"
+                isUpdating && "opacity-50 cursor-not-allowed",
               )}
               title="Move up"
             >
               <MoveUp className="w-3 h-3" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               onClick={() => handleReorder(category.id, category.order, "down")}
               disabled={isUpdating}
               className={cn(
                 "p-0.5 text-muted-foreground/70 hover:text-foreground",
-                isUpdating && "opacity-50 cursor-not-allowed"
+                isUpdating && "opacity-50 cursor-not-allowed",
               )}
               title="Move down"
             >
               <MoveDown className="w-3 h-3" />
-            </button>
+            </Button>
           </div>
         </div>
       ),
@@ -194,17 +206,18 @@ export default function AdminCategoriesPage() {
           >
             <Edit className="w-4 h-4" />
           </Link>
-          <button
+          <Button
+            variant="ghost"
             onClick={() => handleDelete(category.id, category.name)}
             disabled={isDeleting}
             className={cn(
               "p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors",
-              isDeleting && "opacity-50 cursor-not-allowed"
+              isDeleting && "opacity-50 cursor-not-allowed",
             )}
             title="Delete category"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -217,22 +230,22 @@ export default function AdminCategoriesPage() {
         description="Manage product categories and organization"
         actions={
           <>
-          <Link
-            prefetch={false}
-            href="/admin/categories/bulk"
-            className="px-4 py-2 border border-border rounded-lg hover:bg-muted flex items-center gap-2"
-          >
-            <Upload className="w-4 h-4" />
-            <span className="hidden sm:inline">Bulk upload</span>
-          </Link>
-          <Link
-            prefetch={false}
-            href="/admin/categories/new"
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            Add Category
-          </Link>
+            <Link
+              prefetch={false}
+              href="/admin/categories/bulk"
+              className="px-4 py-2 border border-border rounded-lg hover:bg-muted flex items-center gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Bulk upload</span>
+            </Link>
+            <Link
+              prefetch={false}
+              href="/admin/categories/new"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Category
+            </Link>
           </>
         }
       />
@@ -242,21 +255,22 @@ export default function AdminCategoriesPage() {
         <div className="flex flex-wrap gap-4">
           <div className="w-full min-w-0 grow sm:w-auto">
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search categories..."
-                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                className="flex-1"
               />
-              <button
+              <Button
+                variant="default"
                 onClick={handleSearch}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+                className="flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -280,4 +294,3 @@ export default function AdminCategoriesPage() {
     </div>
   );
 }
-

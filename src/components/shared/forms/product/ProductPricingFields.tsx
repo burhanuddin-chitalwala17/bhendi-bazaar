@@ -2,7 +2,7 @@
 
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput, FormSelect } from "../FormField";
-import type { ProductFormInput } from "@/admin/products/types";
+import type { ProductFormInput } from "@/components/product/console/types";
 
 interface ProductPricingFieldsProps {
   register: UseFormRegister<ProductFormInput>;

@@ -9,7 +9,7 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { DataTable, Column } from "@/admin/data-table";
+import { DataTable, Column } from "@/components/shared/data-table";
 import { Search, RefreshCw } from "lucide-react";
 import { adminUserApiClient } from "@/services/admin/userApiClient";
 import type { AdminUser, UserListFilters } from "@/domain/admin";
@@ -20,6 +20,9 @@ import { formatPhone } from "@server/shared/phone";
 import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 export default function AdminUsersPage() {
   const [filters, setFilters] = useState<UserListFilters>({
     page: 1,
@@ -43,7 +46,7 @@ export default function AdminUsersPage() {
     {
       successMessage: "User status updated successfully!",
       onSuccess: () => refetch(),
-    }
+    },
   );
   const { mutate: updateUser, isLoading: updatingUser } = useMutation(
     ({
@@ -56,7 +59,7 @@ export default function AdminUsersPage() {
     {
       successMessage: "User updated successfully!",
       onSuccess: () => refetch(),
-    }
+    },
   );
 
   const handleRefresh = () => {
@@ -70,7 +73,7 @@ export default function AdminUsersPage() {
 
   const handleToggleBlock = (userId: string, isBlocked: boolean) => {
     toggleBlock({ id: userId, isBlocked: !isBlocked }).then(() =>
-      toast.success("User status updated successfully!")
+      toast.success("User status updated successfully!"),
     );
   };
 
@@ -83,7 +86,9 @@ export default function AdminUsersPage() {
           <p className="font-medium">{user.name || "N/A"}</p>
           <p className="text-sm text-muted-foreground">{user.email}</p>
           {user.mobile && (
-            <p className="text-sm text-muted-foreground">{formatPhone(user.mobile)}</p>
+            <p className="text-sm text-muted-foreground">
+              {formatPhone(user.mobile)}
+            </p>
           )}
         </div>
       ),
@@ -123,7 +128,8 @@ export default function AdminUsersPage() {
       key: "isBlocked",
       label: "Status",
       render: (user) => (
-        <button
+        <Button
+          variant="ghost"
           onClick={() => handleToggleBlock(user.id, user.isBlocked)}
           disabled={isTogglingBlock}
           className={cn(
@@ -131,11 +137,11 @@ export default function AdminUsersPage() {
             user.isBlocked
               ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
               : "bg-success/15 text-success hover:bg-success/25",
-            isTogglingBlock && "opacity-50 cursor-not-allowed"
+            isTogglingBlock && "opacity-50 cursor-not-allowed",
           )}
         >
           {user.isBlocked ? "Blocked" : "Active"}
-        </button>
+        </Button>
       ),
     },
   ];
@@ -146,17 +152,20 @@ export default function AdminUsersPage() {
         title="Users"
         description="Manage platform users"
         actions={
-          <button
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all",
-            isLoading && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          {isLoading ? "Refreshing..." : "Refresh"}
-          </button>
+          <Button
+            variant="ghost"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all",
+              isLoading && "opacity-50 cursor-not-allowed",
+            )}
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+            />
+            {isLoading ? "Refreshing..." : "Refresh"}
+          </Button>
         }
       />
 
@@ -165,25 +174,25 @@ export default function AdminUsersPage() {
         <div className="flex flex-wrap gap-4">
           <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
             <div className="flex gap-2">
-              <input
+              <Input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by name, email, mobile..."
-                className="flex-1 px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <button
+              <Button
+                variant="default"
                 onClick={handleSearch}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+                className="flex items-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Search
-              </button>
+              </Button>
             </div>
           </div>
 
-          <select
+          <Select
             value={filters.platformRole || ""}
             onChange={(e) =>
               setFilters({
@@ -192,20 +201,19 @@ export default function AdminUsersPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Roles</option>
             <option value="USER">User</option>
             <option value="ADMIN">Admin</option>
-          </select>
+          </Select>
 
-          <select
+          <Select
             value={
               filters.isBlocked === undefined
                 ? ""
                 : filters.isBlocked
-                ? "blocked"
-                : "active"
+                  ? "blocked"
+                  : "active"
             }
             onChange={(e) =>
               setFilters({
@@ -217,12 +225,11 @@ export default function AdminUsersPage() {
                 page: 1,
               })
             }
-            className="px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
-          </select>
+          </Select>
         </div>
       </div>
 

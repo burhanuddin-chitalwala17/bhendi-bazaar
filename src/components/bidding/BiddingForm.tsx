@@ -102,14 +102,12 @@ export function BiddingForm({
   // `new Date` reads both, and an unparseable half-typed value simply lifts the cap
   // until it parses.
   const startAtValue = watch("startAt" as never) as unknown as
-    | string
-    | Date
-    | undefined;
+    string | Date | undefined;
   const startAt = new Date(startAtValue ?? opensIn);
   const latestEnd = Number.isNaN(startAt.getTime())
     ? undefined
     : toLocalInput(
-        new Date(startAt.getTime() + MAX_BIDDING_DAYS * 24 * 60 * 60 * 1000)
+        new Date(startAt.getTime() + MAX_BIDDING_DAYS * 24 * 60 * 60 * 1000),
       );
 
   const quickBids = useFieldArray({ control, name: "quickBids" as never });
@@ -135,8 +133,8 @@ export function BiddingForm({
           {formatCurrency(product.pricePaise)}
         </p>
         <p className="text-2xs text-muted-foreground">
-          {product.unitsOnHand} in stock. One unit is auctioned; the rest stay off sale
-          until this event ends.
+          {product.unitsOnHand} in stock. One unit is auctioned; the rest stay
+          off sale until this event ends.
         </p>
         {/* The product is a hidden field, but its failures are real and reachable —
             nothing in stock, or already up for bidding — so they surface here rather
@@ -224,8 +222,8 @@ export function BiddingForm({
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Quick-bid buttons (₹)</legend>
         <p className="text-2xs text-muted-foreground">
-          What a bidder can add with one tap. The smallest is also the least anyone may
-          add with a custom amount.
+          What a bidder can add with one tap. The smallest is also the least
+          anyone may add with a custom amount.
         </p>
         <div className="space-y-2">
           {quickBids.fields.map((field, index) => (
@@ -237,7 +235,9 @@ export function BiddingForm({
                 min="1"
                 className="flex-1"
                 error={errors.quickBids?.[index]?.message}
-                {...register(`quickBids.${index}` as never, { valueAsNumber: true })}
+                {...register(`quickBids.${index}` as never, {
+                  valueAsNumber: true,
+                })}
               />
               {quickBids.fields.length > 1 && (
                 <Button
@@ -276,7 +276,11 @@ export function BiddingForm({
       )}
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button type="button" variant="outline" onClick={() => router.push(returnTo)}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push(returnTo)}
+        >
           Cancel
         </Button>
         <Button type="submit" disabled={isSubmitting}>

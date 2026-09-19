@@ -30,7 +30,7 @@ export function OrdersClient() {
     return orders?.filter(
       (order) =>
         order.code.toLowerCase().includes(q) ||
-        order.address.fullName.toLowerCase().includes(q)
+        order.address.fullName.toLowerCase().includes(q),
     );
   }, [orders, query]);
 
@@ -70,22 +70,22 @@ export function OrdersClient() {
         />
       ) : (
         <div className="space-y-3">
-            {filtered?.map((order) => {
-              const totalItems = order.shipments.reduce(
-                (sum, shipment) => sum + shipment.items.length,
-                0
-              );
+          {filtered?.map((order) => {
+            const totalItems = order.shipments.reduce(
+              (sum, shipment) => sum + shipment.items.length,
+              0,
+            );
 
-              return (
-                <Link
-                  prefetch={false}
-                  key={order.id}
-                  href={`/order/${order.id}`}
-                  className="flex flex-col justify-between gap-2 rounded-xl border border-border/70 bg-card/80 p-4 text-xs transition-colors hover:border-primary/40 hover:bg-card sm:flex-row sm:items-center"
-                >
-                  <div className="space-y-1">
-                    <p className="font-semibold">
-                      {order.code} ·{" "}
+            return (
+              <Link
+                prefetch={false}
+                key={order.id}
+                href={`/order/${order.id}`}
+                className="flex flex-col justify-between gap-2 rounded-xl border border-border/70 bg-card/80 p-4 text-xs transition-colors hover:border-primary/40 hover:bg-card sm:flex-row sm:items-center"
+              >
+                <div className="space-y-1">
+                  <p className="font-semibold">
+                    {order.code} ·{" "}
                     {new Date(order.createdAt).toLocaleDateString("en-IN", {
                       day: "numeric",
                       month: "short",
@@ -109,5 +109,3 @@ export function OrdersClient() {
     </div>
   );
 }
-
-

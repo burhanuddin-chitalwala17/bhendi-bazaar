@@ -7,8 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { readApiError } from "@/lib/api-error";
-import { signupSchema, type SignupInput } from "@/lib/validation/schemas/auth.schemas";
-import { AuthField, OrDivider, PRIMARY_BUTTON } from "@/components/auth/auth-field";
+import {
+  signupSchema,
+  type SignupInput,
+} from "@/lib/validation/schemas/auth.schemas";
+import {
+  AuthField,
+  OrDivider,
+  PRIMARY_BUTTON,
+} from "@/components/auth/auth-field";
 import { PasswordInput } from "@/components/auth/password-input";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { SWITCH_LINK, type AuthFormHost } from "@/components/auth/sign-in-form";
@@ -57,15 +64,31 @@ export function SignUpForm({
   });
 
   return (
-    <form onSubmit={(event) => void onSubmit(event).catch(() => {})} className="space-y-3 text-sm">
+    <form
+      onSubmit={(event) => void onSubmit(event).catch(() => {})}
+      className="space-y-3 text-sm"
+    >
       <AuthField id={`${id}-name`} label="Name" error={errors.name?.message}>
         <Input id={`${id}-name`} autoComplete="name" {...register("name")} />
       </AuthField>
       <AuthField id={`${id}-email`} label="Email" error={errors.email?.message}>
-        <Input id={`${id}-email`} type="email" autoComplete="email" {...register("email")} />
+        <Input
+          id={`${id}-email`}
+          type="email"
+          autoComplete="email"
+          {...register("email")}
+        />
       </AuthField>
-      <AuthField id={`${id}-password`} label="Password" error={errors.password?.message}>
-        <PasswordInput id={`${id}-password`} autoComplete="new-password" {...register("password")} />
+      <AuthField
+        id={`${id}-password`}
+        label="Password"
+        error={errors.password?.message}
+      >
+        <PasswordInput
+          id={`${id}-password`}
+          autoComplete="new-password"
+          {...register("password")}
+        />
       </AuthField>
 
       {formError && (
@@ -77,12 +100,20 @@ export function SignUpForm({
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
       <OrDivider />
-      <GoogleSignInButton callbackUrl={googleCallbackUrl} beforeRedirect={onBeforeGoogle} />
+      <GoogleSignInButton
+        callbackUrl={googleCallbackUrl}
+        beforeRedirect={onBeforeGoogle}
+      />
       <p className="pt-2 text-center text-2xs text-muted-foreground">
         Already have an account?{" "}
-        <button type="button" onClick={() => onSwitchView("signin")} className={SWITCH_LINK}>
+        <Button
+          variant="ghost"
+          type="button"
+          onClick={() => onSwitchView("signin")}
+          className={SWITCH_LINK}
+        >
           Sign in
-        </button>
+        </Button>
       </p>
     </form>
   );

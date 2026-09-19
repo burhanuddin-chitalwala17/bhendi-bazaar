@@ -1,21 +1,20 @@
 // src/app/(main)/checkout/page.tsx
 
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { CheckoutContainer } from "@/containers/checkoutContainer";
+import { CheckoutContainer } from "@/components/checkout";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { CartItem } from "@/domain/cart";
 import { uuidv4 } from "zod";
 
 export default async function CheckoutPage({
-  searchParams
+  searchParams,
 }: {
-  searchParams: Promise<{ buyNow?: string }>
+  searchParams: Promise<{ buyNow?: string }>;
 }) {
   const params = await searchParams;
   const { buyNow } = params;
   let buyNowProductCartItem: CartItem | undefined;
   if (buyNow) {
-
     const buyNowProduct = await productsDAL.getProductBySlug(buyNow);
     buyNowProductCartItem = {
       weight: 0.5,

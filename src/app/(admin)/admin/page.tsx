@@ -1,5 +1,5 @@
 import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
-import { AdminDashboardLive } from "@/admin/dashboard-live";
+import { AdminDashboardLive } from "@/components/dashboard/dashboard-live";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 
 /**
@@ -10,7 +10,10 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 export default function AdminDashboardPage() {
   return (
     <div className="space-y-8">
-      <SectionHeader overline="Welcome to Bhendi Bazaar Admin Panel" title="Dashboard" />
+      <SectionHeader
+        overline="Welcome to Bhendi Bazaar Admin Panel"
+        title="Dashboard"
+      />
 
       <DashboardWidgets ctx={{ audience: "platform" }} basePath="/admin" />
 

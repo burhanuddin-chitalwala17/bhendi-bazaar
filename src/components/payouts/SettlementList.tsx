@@ -27,13 +27,21 @@ export interface SettlementRow {
   paidAt: Date | null;
 }
 
-export function SettlementList({ settlements }: { settlements: SettlementRow[] }) {
+export function SettlementList({
+  settlements,
+}: {
+  settlements: SettlementRow[];
+}) {
   const router = useRouter();
   const [recording, setRecording] = useState<string | null>(null);
   const [reference, setReference] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const send = async (id: string, body: Record<string, unknown>, done: string) => {
+  const send = async (
+    id: string,
+    body: Record<string, unknown>,
+    done: string,
+  ) => {
     setBusy(true);
     try {
       const response = await fetch(`/api/admin/settlements/${id}`, {
@@ -47,7 +55,11 @@ export function SettlementList({ settlements }: { settlements: SettlementRow[] }
       setReference("");
       router.refresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not update the settlement");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not update the settlement",
+      );
     } finally {
       setBusy(false);
     }
@@ -60,7 +72,10 @@ export function SettlementList({ settlements }: { settlements: SettlementRow[] }
       <h2 className="text-sm font-semibold">Settlements</h2>
       <ul className="space-y-2">
         {settlements.map((settlement) => (
-          <li key={settlement.id} className="rounded-lg border border-border bg-card p-3">
+          <li
+            key={settlement.id}
+            className="rounded-lg border border-border bg-card p-3"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="flex items-center gap-2">
@@ -68,7 +83,9 @@ export function SettlementList({ settlements }: { settlements: SettlementRow[] }
                   <Badge
                     variant="outline"
                     className={`text-2xs ${
-                      settlement.status === "PAID" ? "border-success text-success" : ""
+                      settlement.status === "PAID"
+                        ? "border-success text-success"
+                        : ""
                     }`}
                   >
                     {settlement.status.toLowerCase()}
@@ -95,7 +112,13 @@ export function SettlementList({ settlements }: { settlements: SettlementRow[] }
                   size="sm"
                   variant="ghost"
                   disabled={busy}
-                  onClick={() => send(settlement.id, { status: "CANCELLED" }, "Settlement cancelled")}
+                  onClick={() =>
+                    send(
+                      settlement.id,
+                      { status: "CANCELLED" },
+                      "Settlement cancelled",
+                    )
+                  }
                 >
                   Cancel
                 </Button>
@@ -118,8 +141,9 @@ export function SettlementList({ settlements }: { settlements: SettlementRow[] }
                   {/* The reference is what makes the ledger checkable against a bank
                       statement, which is the whole point of recording the transfer. */}
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Recorded against {formatCurrency(settlement.amountPaise)}. Once saved, the
-                    amount and reference are fixed — a correction is a new entry.
+                    Recorded against {formatCurrency(settlement.amountPaise)}.
+                    Once saved, the amount and reference are fixed — a
+                    correction is a new entry.
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -129,14 +153,21 @@ export function SettlementList({ settlements }: { settlements: SettlementRow[] }
                     onClick={() =>
                       send(
                         settlement.id,
-                        { status: "PAID", reference: reference.trim() || undefined },
-                        `${settlement.code} recorded as paid`
+                        {
+                          status: "PAID",
+                          reference: reference.trim() || undefined,
+                        },
+                        `${settlement.code} recorded as paid`,
                       )
                     }
                   >
                     {busy ? "Saving…" : "Confirm payment"}
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setRecording(null)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setRecording(null)}
+                  >
                     Back
                   </Button>
                 </div>

@@ -34,7 +34,9 @@ interface AuthSheetContextValue {
   open: (options?: OpenAuthSheet) => void;
 }
 
-const AuthSheetContext = createContext<AuthSheetContextValue | undefined>(undefined);
+const AuthSheetContext = createContext<AuthSheetContextValue | undefined>(
+  undefined,
+);
 
 /**
  * The single auth sheet, mounted once for the app and opened from anywhere — the

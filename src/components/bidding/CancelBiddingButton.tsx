@@ -43,7 +43,7 @@ export function CancelBiddingButton({
       router.refresh();
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not cancel this event"
+        error instanceof Error ? error.message : "Could not cancel this event",
       );
     } finally {
       setIsCancelling(false);
@@ -70,7 +70,11 @@ export function CancelBiddingButton({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Keep it running
           </Button>
-          <Button variant="destructive" onClick={cancel} disabled={isCancelling}>
+          <Button
+            variant="destructive"
+            onClick={cancel}
+            disabled={isCancelling}
+          >
             {isCancelling ? "Cancelling…" : "Cancel bidding"}
           </Button>
         </DialogFooter>

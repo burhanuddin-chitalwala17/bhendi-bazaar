@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { AdminSidebar } from "@/admin/sidebar";
+import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { PortalHeader } from "@/components/layout/PortalHeader";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { isDomainError } from "@server/shared/domain-error";

@@ -14,6 +14,20 @@ import type { Prisma } from "@prisma/client";
 /** A product a buyer may see and buy. */
 export const ON_SALE = { archivedAt: null } satisfies Prisma.ProductWhereInput;
 
+/**
+ * A product whose selling organisation is still trading.
+ *
+ * The org-level counterpart of `ON_SALE`: that one asks whether the *product* was
+ * withdrawn, this one whether the *shop* was. Both are spread together by the reads a
+ * buyer can reach — an active org's archived product and a withdrawn org's live product
+ * are equally unbuyable, and neither is expressed by the other.
+ *
+ * Derived from the org row on every read, never copied onto `Product`: withdrawing an
+ * organisation writes nothing to its catalogue, so restoring it needs no backfill.
+ * `Org.isActive` is the platform's one withdrawal switch — see the org-withdrawal spec.
+ */
+export const FROM_ACTIVE_ORG = { org: { isActive: true } } satisfies Prisma.ProductWhereInput;
+
 /** Archived only — the org portal's "Withdrawn" filter. */
 export const ARCHIVED = { archivedAt: { not: null } } satisfies Prisma.ProductWhereInput;
 

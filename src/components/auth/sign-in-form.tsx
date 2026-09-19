@@ -6,8 +6,15 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { loginSchema, type LoginInput } from "@/lib/validation/schemas/auth.schemas";
-import { AuthField, OrDivider, PRIMARY_BUTTON } from "@/components/auth/auth-field";
+import {
+  loginSchema,
+  type LoginInput,
+} from "@/lib/validation/schemas/auth.schemas";
+import {
+  AuthField,
+  OrDivider,
+  PRIMARY_BUTTON,
+} from "@/components/auth/auth-field";
 import { PasswordInput } from "@/components/auth/password-input";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import type { SwitchAuthView } from "@/components/auth/auth-view";
@@ -36,7 +43,10 @@ export function SignInForm({
   googleCallbackUrl,
   onBeforeGoogle,
   defaultEmail = "",
-}: AuthFormHost & { onSuccess: () => void | Promise<void>; defaultEmail?: string }) {
+}: AuthFormHost & {
+  onSuccess: () => void | Promise<void>;
+  defaultEmail?: string;
+}) {
   const id = useId();
 
   // The same schema the credentials provider validates with; next-auth reports a
@@ -62,11 +72,23 @@ export function SignInForm({
   });
 
   return (
-    <form onSubmit={(event) => void onSubmit(event).catch(() => {})} className="space-y-3 text-sm">
+    <form
+      onSubmit={(event) => void onSubmit(event).catch(() => {})}
+      className="space-y-3 text-sm"
+    >
       <AuthField id={`${id}-email`} label="Email" error={errors.email?.message}>
-        <Input id={`${id}-email`} type="email" autoComplete="email" {...register("email")} />
+        <Input
+          id={`${id}-email`}
+          type="email"
+          autoComplete="email"
+          {...register("email")}
+        />
       </AuthField>
-      <AuthField id={`${id}-password`} label="Password" error={errors.password?.message}>
+      <AuthField
+        id={`${id}-password`}
+        label="Password"
+        error={errors.password?.message}
+      >
         <PasswordInput
           id={`${id}-password`}
           autoComplete="current-password"
@@ -75,13 +97,16 @@ export function SignInForm({
       </AuthField>
 
       <div className="flex justify-end">
-        <button
+        <Button
+          variant="ghost"
           type="button"
-          onClick={() => onSwitchView("forgot", { email: getValues("email") || undefined })}
+          onClick={() =>
+            onSwitchView("forgot", { email: getValues("email") || undefined })
+          }
           className={SWITCH_LINK}
         >
           Forgot password?
-        </button>
+        </Button>
       </div>
       {formError && (
         <p role="alert" className="text-2xs text-destructive">
@@ -92,12 +117,20 @@ export function SignInForm({
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
       <OrDivider />
-      <GoogleSignInButton callbackUrl={googleCallbackUrl} beforeRedirect={onBeforeGoogle} />
+      <GoogleSignInButton
+        callbackUrl={googleCallbackUrl}
+        beforeRedirect={onBeforeGoogle}
+      />
       <p className="pt-2 text-center text-2xs text-muted-foreground">
         New to Bhendi Bazaar?{" "}
-        <button type="button" onClick={() => onSwitchView("signup")} className={SWITCH_LINK}>
+        <Button
+          variant="ghost"
+          type="button"
+          onClick={() => onSwitchView("signup")}
+          className={SWITCH_LINK}
+        >
           Create an account
-        </button>
+        </Button>
       </p>
     </form>
   );

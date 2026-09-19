@@ -46,21 +46,29 @@ export function ForgotPasswordForm({
   });
 
   const back = (
-    <button type="button" onClick={() => onSwitchView("signin")} className={SWITCH_LINK}>
+    <Button
+      variant="ghost"
+      type="button"
+      onClick={() => onSwitchView("signin")}
+      className={SWITCH_LINK}
+    >
       <ArrowLeft className="mr-1 size-3" />
       Back to sign in
-    </button>
+    </Button>
   );
 
   if (sent) {
     return (
       <div className="space-y-3">
-        <div role="status" className="space-y-2 rounded-card border border-success/30 bg-success/10 p-4 text-center">
+        <div
+          role="status"
+          className="space-y-2 rounded-card border border-success/30 bg-success/10 p-4 text-center"
+        >
           <Mail className="mx-auto size-8 text-success" />
           <p className="font-semibold text-success">Check your inbox</p>
           <p className="text-sm text-success">
-            If an account exists with this email, you&apos;ll receive a password reset link
-            shortly.
+            If an account exists with this email, you&apos;ll receive a password
+            reset link shortly.
           </p>
         </div>
         {back}
@@ -69,7 +77,10 @@ export function ForgotPasswordForm({
   }
 
   return (
-    <form onSubmit={(event) => void onSubmit(event).catch(() => {})} className="space-y-3 text-sm">
+    <form
+      onSubmit={(event) => void onSubmit(event).catch(() => {})}
+      className="space-y-3 text-sm"
+    >
       <AuthField id={`${id}-email`} label="Email" error={errors.email?.message}>
         <Input
           id={`${id}-email`}

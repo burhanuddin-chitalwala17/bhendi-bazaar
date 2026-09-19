@@ -46,7 +46,7 @@ export function HeroBanner({
       className={cn(
         "group relative isolate flex h-60 items-center overflow-hidden rounded-xl border border-border/70 px-4 py-6 text-hero-foreground sm:h-80 sm:rounded-2xl sm:px-10 sm:py-10 lg:h-96",
         !image && "bg-gradient-to-br from-hero via-hero/90 to-scrim",
-        className
+        className,
       )}
     >
       {image ? (
@@ -64,7 +64,7 @@ export function HeroBanner({
           <div
             className={cn(
               "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-scrim/85 via-scrim/55 to-scrim/20",
-              "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
             )}
           />
         </>
@@ -78,7 +78,8 @@ export function HeroBanner({
       <div
         className={cn(
           "relative max-w-xl space-y-2 sm:space-y-4",
-          image && "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+          image &&
+            "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
         )}
       >
         {eyebrow && (
@@ -105,10 +106,12 @@ export function HeroBanner({
                   "rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow",
                   action.variant === "secondary"
                     ? "border-primary/20 bg-transparent text-hero-foreground hover:bg-hero/40"
-                    : "bg-primary text-hero hover:bg-primary/80"
+                    : "bg-primary text-hero hover:bg-primary/80",
                 )}
               >
-                <Link href={action.href} prefetch={false}>{action.label}</Link>
+                <Link href={action.href} prefetch={false}>
+                  {action.label}
+                </Link>
               </Button>
             ))}
           </div>

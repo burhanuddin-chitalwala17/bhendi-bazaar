@@ -7,5 +7,7 @@ export default async function SignInPage({
   searchParams: Promise<{ callbackUrl?: string | string[] }>;
 }) {
   const { callbackUrl } = await searchParams;
-  return <AuthPageHost view="signin" callbackUrl={safeCallbackUrl(callbackUrl)} />;
+  return (
+    <AuthPageHost view="signin" callbackUrl={safeCallbackUrl(callbackUrl)} />
+  );
 }

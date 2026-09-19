@@ -10,6 +10,35 @@
 
 ## Entries
 
+## [PR-115] 2026-09-19 — Every organisation gets a storefront of its own [MIGRATION] [CONTRACT]
+
+An org now has a public address it can print on a card. `/store/<handle>` is its landing page, `/store/<handle>/about` its story, `/store` the directory of every shop trading. Spec and TRD: [org-storefront](specs/org-storefront/) — seven subfeatures; decision and rejected alternatives: [ADR-0030](adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md).
+
+**A storefront is a projection, not a second shop.** Same catalogue, same effective-price function, same basket, same checkout, read through one more filter and dressed in the org's chrome. Nothing on the money path moved. A basket spanning two shops still checks out once and still splits into per-org shipments, because none of that was touched.
+
+**It is a path, not a subdomain.** One domain, so search authority pools instead of scattering across dozens of weak new sites, and no wildcard DNS or per-domain certificate has to be operated. `/store` is public and crawled; `/org` remains the gated portal. `/product/<slug>` stays canonical — a storefront links to products, it never re-serves them, so no ranking signal is split.
+
+**The handle is the part that cannot be got wrong twice.** Generated from the name at creation and changeable by its owner thereafter. A retired handle is *held* for a configurable window (180 days) — redirecting to the current one and unavailable to anyone else, so a card printed last quarter still arrives and the org can revert — then *released*, answering 404 rather than 410 because it may later belong to somebody else. Taking a handle back deletes the redirect pointing away from it, or a revert would be a loop. Changing one is its own authorised operation, owners only, behind a dialog that states all four consequences with the real handles and the real date.
+
+**`Org.isActive` now means something.** It was set by the console and read by nothing a buyer could see — the platform believed it had a compliance control it did not have. `FROM_ACTIVE_ORG` sits beside `ON_SALE` in `product.visibility.ts` and is spread by every public product read, and `assertOrgNotWithdrawn` refuses the purchase inside the order transaction beside `assertNotArchived`, after the stock reservation for the same locking reason. Hiding is not refusing.
+
+**An org composes its own shop from fields, not blocks.** Mark, banner, tagline, introduction, its own delivery and returns terms, and banners it can order and take down without deleting. The accent is a token name from a fixed palette, never a colour value, so nothing an org supplies can break a layout. A banner may point at that org's own storefront or its own products and nowhere else — checked as a shape by the schema and as ownership by the service, since only the service knows whose product a slug names.
+
+`[MIGRATION]`: `20260919090000_org_storefront` — `Org.handle` (backfilled from each org's name, deduped by creation order, then constrained NOT NULL UNIQUE), six nullable presentation columns, and the `OrgHandleHistory` and `OrgBanner` tables. The backfill deliberately does not use `unaccent`: the extension is not guaranteed on a managed Postgres and a migration that needs one it cannot create fails the deploy. Applied and verified against the dev database.
+
+`[CONTRACT]`: `OrgSummary` gains `handle`, so a product card can link to a shop without a second round trip. Every product page now names who sells it.
+
+**Not done, deliberately:** no subdomains or custom domains, no page builder, no per-shop checkout, no approval before a shop goes live — review is a manual pass over shops that are already live, and `isActive` is the remedy. [contact-us](specs/contact-us/) stays platform-scoped, so a storefront publishes no channel of its own.
+
+## [PR-114] 2026-09-15 — The share button stops landing on the bidding page's heading
+
+On `/bid/<slug>` the share control rendered its icon on top of the product title, with the hover background sitting beside the icon rather than under it. Both were one cause. `ShareButton` defaulted `showLabel` to `true`, and the bidding page asked for `size="icon"` without turning it off — that size is a fixed `size-9` square (`src/components/ui/button.tsx:27`), so icon plus label overflowed it, and the base `justify-center` centred the too-wide content on the box, pushing the icon outside to the left onto the `<h1>` next to it. The highlight was the square, in the right place all along, which is why it looked like a second bug.
+
+Fixed in the component rather than at the call site: the label now follows the size unless a caller says otherwise. The two call sites that already paired `size="icon"` with `showLabel={false}` (`order-summary.tsx`, `product-details.tsx`) were the tell — a prop pairing that three callers have to remember is one that a fourth will get wrong. Also dropped the label's `ml-2`, which double-spaced against the button's own `gap-2`; no surface renders a labelled share button today, so nothing moves.
+
+`tests/unit/share-button.test.tsx` pins it, and was checked against the old default first to confirm it fails without the fix.
+
+Unrelated, found while verifying: `libphonenumber-js` was declared in `package.json` and absent from `node_modules`, which failed typecheck and twelve test files on a stale local install. `npm install` fixed it with no change to `package.json` or the lockfile.
 ## [PR-111] 2026-09-19 — [CONTRACT] Rows-per-page on every table, server-side
 
 Every paginated table in both portals showed ten rows and offered no way to change it. All nine now carry a rows-per-page control (10 / 25 / 50 / 100), and in every case the choice is a new server query — nothing is fetched and then sliced.

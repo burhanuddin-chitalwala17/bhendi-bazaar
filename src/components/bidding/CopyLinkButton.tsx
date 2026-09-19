@@ -39,8 +39,18 @@ export function CopyLinkButton({
   };
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={copy} className={className}>
-      {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={copy}
+      className={className}
+    >
+      {copied ? (
+        <Check className="size-4" aria-hidden />
+      ) : (
+        <Copy className="size-4" aria-hidden />
+      )}
       {copied ? "Copied" : label}
     </Button>
   );

@@ -24,8 +24,14 @@ export function PortalHeader({
       </span>
       <div className="ml-auto flex items-center gap-2 sm:gap-4">
         <div className="hidden text-right leading-tight sm:block">
-          <p className="text-sm font-medium text-foreground">{name ?? "Signed in"}</p>
-          {email && <p className="hidden text-xs text-muted-foreground md:block">{email}</p>}
+          <p className="text-sm font-medium text-foreground">
+            {name ?? "Signed in"}
+          </p>
+          {email && (
+            <p className="hidden text-xs text-muted-foreground md:block">
+              {email}
+            </p>
+          )}
         </div>
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold uppercase text-primary">
           {name?.charAt(0)?.toUpperCase() ?? "U"}

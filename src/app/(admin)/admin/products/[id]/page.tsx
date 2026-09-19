@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ProductsView } from "@/admin/products/ProductsView";
+import { ProductsView } from "@/components/product/console/ProductsView";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 
 async function getProduct(id: string) {
@@ -24,7 +24,12 @@ export default async function ProductViewPage({
   const product = await getProduct(id);
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <ProductsView product={product} category={product.category} org={product.org} canEdit={false} />
+      <ProductsView
+        product={product}
+        category={product.category}
+        org={product.org}
+        canEdit={false}
+      />
     </Suspense>
   );
 }

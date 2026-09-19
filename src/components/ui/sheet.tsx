@@ -42,7 +42,7 @@ function SheetContent({
           "pb-[calc(1rem+env(safe-area-inset-bottom))]",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
           side === "adaptive" && SIDE_ON_DESKTOP,
-          className
+          className,
         )}
         {...props}
       >
@@ -51,7 +51,7 @@ function SheetContent({
           aria-hidden
           className={cn(
             "mx-auto h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30",
-            side === "adaptive" && "md:hidden"
+            side === "adaptive" && "md:hidden",
           )}
         />
         {children}
@@ -86,4 +86,11 @@ function SheetDescription({
   );
 }
 
-export { Sheet, SheetClose, SheetContent, SheetDescription, SheetTitle, SheetTrigger };
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+};

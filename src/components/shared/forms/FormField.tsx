@@ -37,7 +37,12 @@ export function FormField({
 }: FormFieldProps) {
   return (
     <div className={cn("space-y-1", className)}>
-      <label className={cn("text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground", disabled && "text-muted-foreground")}>
+      <label
+        className={cn(
+          "text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground",
+          disabled && "text-muted-foreground",
+        )}
+      >
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </label>

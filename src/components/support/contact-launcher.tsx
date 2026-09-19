@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 
 import { ContactSheet } from "@/components/support/contact-sheet";
+import { Button } from "@/components/ui/button";
 
 /**
  * A Contact us trigger plus the sheet it opens. The header (desktop) and the tab bar
@@ -21,9 +22,14 @@ export function ContactLauncher({
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={className}>
+      <Button
+        variant="ghost"
+        type="button"
+        onClick={() => setOpen(true)}
+        className={className}
+      >
         {children}
-      </button>
+      </Button>
       <ContactSheet
         open={open}
         onOpenChange={setOpen}

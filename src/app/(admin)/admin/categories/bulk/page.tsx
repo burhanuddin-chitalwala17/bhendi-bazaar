@@ -9,7 +9,9 @@ export default async function BulkCategoriesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Bulk upload categories</h1>
-        <p className="text-muted-foreground">One sheet, hero images alongside</p>
+        <p className="text-muted-foreground">
+          One sheet, hero images alongside
+        </p>
       </div>
       <BulkCategoryWizard />
     </div>

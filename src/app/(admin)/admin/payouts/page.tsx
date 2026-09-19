@@ -29,14 +29,18 @@ export default async function AdminPayoutsPage() {
       {unrecorded > 0 && (
         <Card className="border-warning/40 bg-warning/5 p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="size-5 shrink-0 text-warning" aria-hidden />
+            <AlertTriangle
+              className="size-5 shrink-0 text-warning"
+              aria-hidden
+            />
             <div className="text-sm">
               <p className="font-medium">
-                {unrecorded} paid {unrecorded === 1 ? "order has" : "orders have"} no ledger entry
+                {unrecorded} paid{" "}
+                {unrecorded === 1 ? "order has" : "orders have"} no ledger entry
               </p>
               <p className="text-muted-foreground">
-                The nightly reconcile writes these automatically. If the figure persists, the
-                entries are failing rather than lagging.
+                The nightly reconcile writes these automatically. If the figure
+                persists, the entries are failing rather than lagging.
               </p>
             </div>
           </div>
@@ -55,21 +59,28 @@ export default async function AdminPayoutsPage() {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{org.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {org.code} · {org.commissionBps / 100}% commission · {org.entryCount} entries
+                  {org.code} · {org.commissionBps / 100}% commission ·{" "}
+                  {org.entryCount} entries
                   {org.negativeMarginOrders > 0 && (
                     <span className="text-warning">
-                      {" "}· {org.negativeMarginOrders} below cost
+                      {" "}
+                      · {org.negativeMarginOrders} below cost
                     </span>
                   )}
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-semibold tabular-nums">{formatCurrency(org.owedPaise)}</p>
+                <p className="font-semibold tabular-nums">
+                  {formatCurrency(org.owedPaise)}
+                </p>
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {formatCurrency(org.unclaimedPaise)} unclaimed
                 </p>
               </div>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <ChevronRight
+                className="size-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
             </Link>
           </li>
         ))}

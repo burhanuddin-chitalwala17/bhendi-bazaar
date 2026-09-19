@@ -8,8 +8,8 @@
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ProductsContainer } from "@/admin/products/productsList";
-import type { ProductForTable, ProductFilters, ProductStats } from "@/admin/products/types";
+import { ProductsContainer } from "@/components/product/console/productsList";
+import type { ProductForTable, ProductFilters, ProductStats } from "@/components/product/console/types";
 import { ProductFlag } from "@/types/shared";
 
 const push = vi.fn();

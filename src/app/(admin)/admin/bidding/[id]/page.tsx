@@ -32,7 +32,9 @@ export default async function AdminBiddingDetailPage({
   });
   const locations = await adminBiddingService.stockLocations(id);
 
-  const variant = [event.product.size, event.product.color].filter(Boolean).join(" · ");
+  const variant = [event.product.size, event.product.color]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <PageShell width="default">
@@ -40,7 +42,12 @@ export default async function AdminBiddingDetailPage({
         title={event.product.name}
         description={`${event.orgName}${variant ? ` · ${variant}` : ""}`}
         back={{ href: "/admin/bidding", label: "Back to bidding" }}
-        actions={<CopyLinkButton path={`/bid/${event.slug}`} label="Copy public link" />}
+        actions={
+          <CopyLinkButton
+            path={`/bid/${event.slug}`}
+            label="Copy public link"
+          />
+        }
       />
 
       <Card className="p-3 sm:p-4">
@@ -55,8 +62,14 @@ export default async function AdminBiddingDetailPage({
           <div className="min-w-0 flex-1 space-y-2">
             <BiddingPhaseBadge phase={event.phase} />
             <dl className="grid grid-cols-2 gap-3 text-2xs sm:grid-cols-4">
-              <Fact label="Usually" value={formatCurrency(event.product.referencePricePaise)} />
-              <Fact label="Opened at" value={formatCurrency(event.startingBidPaise)} />
+              <Fact
+                label="Usually"
+                value={formatCurrency(event.product.referencePricePaise)}
+              />
+              <Fact
+                label="Opened at"
+                value={formatCurrency(event.startingBidPaise)}
+              />
               <Fact
                 label={event.soldAmountPaise !== null ? "Sold for" : "Highest"}
                 value={
@@ -84,7 +97,8 @@ export default async function AdminBiddingDetailPage({
         </h2>
         {event.phase === "LIVE" && (
           <p className="text-sm text-muted-foreground">
-            Bidding is still running — an outcome can be recorded once it closes.
+            Bidding is still running — an outcome can be recorded once it
+            closes.
           </p>
         )}
         <BidLadder
@@ -101,7 +115,9 @@ export default async function AdminBiddingDetailPage({
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="uppercase tracking-label text-muted-foreground">{label}</dt>
+      <dt className="uppercase tracking-label text-muted-foreground">
+        {label}
+      </dt>
       <dd className="mt-0.5 text-sm font-semibold">{value}</dd>
     </div>
   );

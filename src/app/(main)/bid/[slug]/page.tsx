@@ -71,7 +71,11 @@ export async function generateMetadata({
       title: `${event.product.name} — live bidding`,
       description,
     },
-    twitter: { card: "summary_large_image", title: event.product.name, description },
+    twitter: {
+      card: "summary_large_image",
+      title: event.product.name,
+      description,
+    },
   };
 }
 
@@ -88,7 +92,9 @@ export default async function BiddingPage({
   // A slug that never existed is genuinely missing. A finished event is not.
   if (!event) notFound();
 
-  const variant = [event.product.size, event.product.color].filter(Boolean).join(" · ");
+  const variant = [event.product.size, event.product.color]
+    .filter(Boolean)
+    .join(" · ");
   const isOver = event.phase !== "LIVE" && event.phase !== "SCHEDULED";
 
   return (
@@ -167,8 +173,8 @@ export default async function BiddingPage({
                 {absoluteWhen(event.startAt)}
               </p>
               <p className="text-sm text-muted-foreground">
-                Opening bid {formatCurrency(event.startingBidPaise)}. Come back then —
-                or share this link with someone who will want it.
+                Opening bid {formatCurrency(event.startingBidPaise)}. Come back
+                then — or share this link with someone who will want it.
               </p>
               <p className="text-sm font-medium tabular-nums">
                 <span className="text-2xs uppercase tracking-label text-muted-foreground">
@@ -214,8 +220,8 @@ export default async function BiddingPage({
           )}
 
           <p className="text-3xs leading-relaxed text-muted-foreground">
-            The highest bidder is contacted directly once bidding closes. Bids are
-            binding offers; who is leading is never shown, only the amount.
+            The highest bidder is contacted directly once bidding closes. Bids
+            are binding offers; who is leading is never shown, only the amount.
           </p>
         </div>
       </div>

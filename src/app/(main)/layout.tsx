@@ -7,7 +7,11 @@ import { EmailVerificationBanner } from "@/components/layout/EmailVerificationBa
 import { WishlistProvider } from "@/context/WishlistContext";
 import { wishlistDAL } from "@/data-access-layer/wishlist.dal";
 
-export default async function MainLayout({ children }: { children: ReactNode }) {
+export default async function MainLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   // Read here, not in each heart: the set is per-user and the storefront is already
   // dynamic, so this costs one query and lets every heart render filled or hollow in
   // the first paint instead of flickering after a fetch. Guests get an empty set.
