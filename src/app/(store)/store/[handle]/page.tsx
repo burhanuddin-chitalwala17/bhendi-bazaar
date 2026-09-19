@@ -7,7 +7,7 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Button } from "@/components/ui/button";
 import { StorefrontHero } from "@/components/storefront/storefront-hero";
-import { StorefrontBanners } from "@/components/storefront/storefront-banners";
+import { HomeHero } from "@/components/home/home-hero";
 import { StorefrontFilters } from "./storefront-filters";
 import type { Product } from "@/domain/product";
 import { productsDAL } from "@/data-access-layer/products.dal";
@@ -75,7 +75,7 @@ export default async function StorefrontPage({
   // (ADR-0030 decision 6), so no query parameter can widen this past one shop.
   // Prices resolve through the one function the rest of the store uses, so a
   // storefront cannot advertise a price checkout would refuse.
-  const [products, categories, banners] = await Promise.all([
+  const [products, categories, promotions] = await Promise.all([
     productsDAL.getProducts({
       orgId: shop.id,
       search: query.q,
@@ -83,7 +83,7 @@ export default async function StorefrontPage({
       offerOnly: query.offers === "1",
     }),
     storefrontDAL.categoriesFor(shop.id),
-    storefrontDAL.bannersFor(shop.id),
+    storefrontDAL.promotionsFor(shop.id),
   ]);
 
   const sorted = sortProducts(products, query.sort);
@@ -93,7 +93,8 @@ export default async function StorefrontPage({
     <div className="space-y-8">
       <StorefrontHero shop={shop} />
 
-      <StorefrontBanners banners={banners} />
+      {/* The same hero the platform runs, with this shop's promotions in it. */}
+      <HomeHero banners={promotions} />
 
       <section className="space-y-4">
         <StorefrontFilters handle={shop.handle} categories={categories} />

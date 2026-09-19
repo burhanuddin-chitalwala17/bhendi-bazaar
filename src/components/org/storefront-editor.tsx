@@ -129,11 +129,11 @@ export function StorefrontEditor({
 
         <Card>
           <CardHeader>
-            <CardTitle>How your shop looks</CardTitle>
+            <CardTitle>Your shop&apos;s look</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <ImageUpload
-              label="Your mark"
+              label="Logo"
               value={logoUrl ? [logoUrl] : []}
               onChange={(urls) => setLogoUrl(urls[0] ?? "")}
               maxImages={1}
@@ -141,7 +141,7 @@ export function StorefrontEditor({
             />
 
             <ImageUpload
-              label="Banner — wide and short, across the top of your shop"
+              label="Cover image — sits behind your name at the top of your shop"
               value={heroUrl ? [heroUrl] : []}
               onChange={(urls) => setHeroUrl(urls[0] ?? "")}
               maxImages={1}

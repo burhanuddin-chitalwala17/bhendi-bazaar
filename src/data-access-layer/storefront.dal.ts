@@ -11,6 +11,7 @@ import { cache } from "react";
 import { orgRepository } from "@server/catalog/org.repository";
 import { productsRepository } from "@server/catalog/product.repository";
 import { orgBannerRepository } from "@server/catalog/org-banner.repository";
+import type { HeroBannerContent } from "@/components/home/hero-banner";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { holdCutoff } from "@server/catalog/org.handle";
 
@@ -94,9 +95,27 @@ export const storefrontDAL = {
       .map((category) => ({ slug: category.slug, name: category.name }));
   }),
 
-  /** The banners this shop is running, in its chosen order. Live ones only. */
-  bannersFor: cache(async (orgId: string) => {
-    return await orgBannerRepository.listActiveForOrg(orgId);
+  /**
+   * The promotions this shop is running, in its chosen order, as the platform's own
+   * hero content.
+   *
+   * Mapped to `HeroBannerContent` rather than rendered by a second banner component:
+   * a shop's promotion and the platform's are the same thing on the same page shape,
+   * and the hand-rolled version that briefly existed here looked worse for no reason.
+   */
+  promotionsFor: cache(async (orgId: string): Promise<HeroBannerContent[]> => {
+    const rows = await orgBannerRepository.listActiveForOrg(orgId);
+    return rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description ?? undefined,
+      image: row.imageUrl
+        ? { src: row.imageUrl, alt: row.imageAlt ?? row.title }
+        : undefined,
+      // One action, labelled generically: an org sets where a promotion points, not
+      // the words on the button, so there is one less field to get wrong.
+      actions: row.href ? [{ label: "Shop now", href: row.href }] : undefined,
+    }));
   }),
 
   /** Every shop open for business and with something to sell. */

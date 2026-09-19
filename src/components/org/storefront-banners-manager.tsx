@@ -24,27 +24,31 @@ export interface ManagedBanner {
 }
 
 /**
- * Where an org runs its own banners (storefront-branding R2a, R2b).
+ * Where an org runs its promotions (storefront-branding R2a, R2b).
  *
  * Take-down rather than delete is the default action, because a campaign that ran once
- * will run again next season and re-uploading its artwork to do that is busywork. Delete
- * is available and deliberate.
+ * will run again next season and re-uploading its artwork to do that is busywork.
+ * Delete is available and deliberate.
  *
  * Ordering is the whole list at once — the server takes an array of ids — so the result
  * is what the org saw, rather than the sum of several move-up requests that could
  * interleave.
+ *
+ * **The list is read from props, never copied into state.** It was held in
+ * `useState(initial)` once, which meant `router.refresh()` fetched the new list and the
+ * component kept rendering the old one: adding a promotion appeared to do nothing at
+ * all. Server data belongs to the server component; this one owns only the draft.
  */
 export function StorefrontBannersManager({
   orgId,
   handle,
-  banners: initial,
+  banners,
 }: {
   orgId: string;
   handle: string;
   banners: ManagedBanner[];
 }) {
   const router = useRouter();
-  const [banners, setBanners] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [draft, setDraft] = useState<{ title: string; href: string; imageUrl: string }>({
     title: "",
@@ -90,7 +94,7 @@ export function StorefrontBannersManager({
     });
     if (ok) {
       setDraft({ title: "", href: "", imageUrl: "" });
-      toast.success("Banner added.");
+      toast.success("Promotion added.");
     }
   };
 
@@ -103,8 +107,7 @@ export function StorefrontBannersManager({
 
   const remove = async (banner: ManagedBanner) => {
     if (await call(`${base}/${banner.id}`, { method: "DELETE" })) {
-      setBanners((current) => current.filter((b) => b.id !== banner.id));
-      toast.success("Banner deleted.");
+      toast.success("Promotion deleted.");
     }
   };
 
@@ -113,7 +116,6 @@ export function StorefrontBannersManager({
     const target = index + direction;
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
-    setBanners(next);
     await call(`${base}/reorder`, {
       method: "PATCH",
       body: JSON.stringify({ ids: next.map((b) => b.id) }),
@@ -123,12 +125,13 @@ export function StorefrontBannersManager({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your banners</CardTitle>
+        <CardTitle>Promotions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-2xs text-muted-foreground">
-          These appear at the top of your shop. A banner can point at your own shop or
-          one of your own products — not anywhere else.
+          Cards that run across the top of your shop — a picture, a line of words, and
+          somewhere to go. Add more than one and they rotate. A promotion can point at
+          your own shop or one of your own products, nowhere else.
         </p>
 
         {banners.length > 0 && (
@@ -176,7 +179,7 @@ export function StorefrontBannersManager({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Delete banner"
+                    aria-label="Delete promotion"
                     className="text-destructive"
                     disabled={busy}
                     onClick={() => remove(banner)}
@@ -190,7 +193,7 @@ export function StorefrontBannersManager({
         )}
 
         <div className="space-y-3 rounded-field border border-dashed border-border p-3">
-          <p className="text-sm font-medium">Add a banner</p>
+          <p className="text-sm font-medium">Add a promotion</p>
           <FormInput
             label="Title"
             value={draft.title}
@@ -203,7 +206,7 @@ export function StorefrontBannersManager({
             onChange={(event) => setDraft({ ...draft, href: event.target.value })}
           />
           <ImageUpload
-            label="Picture"
+            label="Picture (optional)"
             value={draft.imageUrl ? [draft.imageUrl] : []}
             onChange={(urls) => setDraft({ ...draft, imageUrl: urls[0] ?? "" })}
             maxImages={1}
@@ -211,7 +214,7 @@ export function StorefrontBannersManager({
           />
           <Button onClick={add} disabled={busy}>
             <Plus />
-            Add banner
+            Add promotion
           </Button>
         </div>
       </CardContent>

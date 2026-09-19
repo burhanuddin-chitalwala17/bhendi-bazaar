@@ -300,7 +300,7 @@ model Org {
   /// (ADR-0030 decision 4). Never accepted on a general org update — only through the
   /// handle-change operation, which is why it is absent from CreateOrgInput.
   handle String @unique
-  name String // "ABC Traders", "XYZ Wholesale"
+  name   String // "ABC Traders", "XYZ Wholesale"
 
   // Contact Information
   email         String
@@ -325,13 +325,15 @@ model Org {
 
   // ── Storefront presentation (org-storefront/storefront-branding) ──
   /// One line under the name. Not the introduction; a shelf label, not a paragraph.
-  tagline String?
-  /// The hero image, through the same object store and optimizer as every other
-  /// image on the platform (ADR-0026, ADR-0028).
-  heroUrl String?
+  tagline        String?
+  /// The shop's cover image — it sits behind the name and logo at the top of the
+  /// storefront. Distinct from `OrgBanner`, which is a rotating promotion: calling
+  /// both of them "banner" is what confused the editor before. Through the same object
+  /// store and optimizer as every other image (ADR-0026, ADR-0028).
+  heroUrl        String?
   /// A token name from the palette in globals.css — never a colour literal, so a
   /// storefront cannot express a colour the design system does not own (ADR-0022).
-  accent  String?
+  accent         String?
   /// What this shop promises about delivery and returns. The platform's own terms
   /// stand in where these are null; payment and fraud are never the shop's to disclaim.
   deliveryPolicy String? @db.Text
@@ -759,11 +761,14 @@ model OrgHandleHistory {
   @@index([orgId])
 }
 
-/// A banner an org runs on its own storefront.
+/// A promotion an org runs across the top of its own storefront.
+///
+/// Rendered through the platform's own hero, so a shop's promotion and the platform's
+/// look alike. Distinct from `Org.heroUrl`, which is the shop's static cover image.
 ///
 /// Deliberately not `orgId` on `Banner`: that table is the platform's home page, and
-/// "an org's banner never reaches it" (storefront-branding R2d) is a rule worth making
-/// structural rather than a where-clause every future query has to remember.
+/// "an org's promotion never reaches it" (storefront-branding R2d) is a rule worth
+/// making structural rather than a where-clause every future query has to remember.
 model OrgBanner {
   id    String @id @default(cuid())
   orgId String
@@ -1315,13 +1320,13 @@ model BiddingEvent {
   startAt DateTime
   endAt   DateTime
 
-  startingBidPaise Int
+  startingBidPaise    Int
   /// The most one bid may add to the current high. A bidder wanting to go further bids
   /// again, which caps a bad-faith bid without capping the auction (R6).
-  maxIncreasePaise Int
+  maxIncreasePaise    Int
   /// The org's own quick-bid amounts, ascending. The smallest also floors a custom
   /// increase, so the buttons on screen cannot contradict the rule (R5, R13).
-  quickBidsPaise Int[]
+  quickBidsPaise      Int[]
   /// The product's price when the event opened, copied so later repricing cannot rewrite
   /// what the event says the item was worth (D9, R4).
   referencePricePaise Int

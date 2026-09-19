@@ -153,3 +153,45 @@ describe("a banner points inside its own shop", () => {
     expect(bannerCreate).toHaveBeenCalled();
   });
 });
+
+describe("the payload the editor actually sends", () => {
+  it("parses what the add form posts", async () => {
+    const { orgBannerSchema } = await import(
+      "@/lib/validation/schemas/org-banner.schema"
+    );
+    // Exactly the body `StorefrontBannersManager.add` builds — a contract test, so a
+    // field renamed on one side fails here rather than silently at runtime.
+    const parsed = orgBannerSchema.parse({
+      title: "Eid drop",
+      href: null,
+      imageUrl: null,
+      isActive: true,
+    });
+    expect(parsed.title).toBe("Eid drop");
+    expect(parsed.isActive).toBe(true);
+  });
+
+  it("parses what the toggle posts, extra server fields and all", async () => {
+    const { orgBannerSchema } = await import(
+      "@/lib/validation/schemas/org-banner.schema"
+    );
+    // The toggle spreads the whole row back, including columns the schema does not
+    // declare. Those must be stripped rather than rejected, or taking a promotion
+    // down would fail validation.
+    const parsed = orgBannerSchema.parse({
+      id: "b1",
+      orgId: "org-1",
+      order: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      title: "Eid drop",
+      description: null,
+      imageUrl: null,
+      imageAlt: null,
+      href: null,
+      isActive: false,
+    });
+    expect(parsed.isActive).toBe(false);
+    expect(parsed).not.toHaveProperty("orgId");
+  });
+});
