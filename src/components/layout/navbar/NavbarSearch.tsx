@@ -126,7 +126,7 @@ export function NavbarSearch() {
                 <Button
                   variant="ghost"
                   onClick={handleSearchSubmit}
-                  className="w-full text-primary text-left"
+                  className="w-full justify-start text-left text-primary"
                 >
                   See all results for &quot;{search}&quot;
                 </Button>

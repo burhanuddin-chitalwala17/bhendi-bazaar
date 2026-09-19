@@ -60,4 +60,6 @@ export interface ProductFilter {
   maxPrice?: number;
   offerOnly?: boolean;
   featuredOnly?: boolean;
+  limit?: number;
+  offset?: number;
 }

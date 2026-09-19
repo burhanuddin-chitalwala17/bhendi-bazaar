@@ -2,16 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FormInput } from "@/components/shared/forms/FormField";
-import { ImageUpload } from "@/components/shared/image-upload";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { readApiError } from "@/lib/api-error";
+import { AddPromotionDialog } from "@/components/org/add-promotion-dialog";
 
 export interface ManagedBanner {
   id: string;
@@ -50,11 +49,6 @@ export function StorefrontBannersManager({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<{ title: string; href: string; imageUrl: string }>({
-    title: "",
-    href: "",
-    imageUrl: "",
-  });
 
   const base = `/api/org/${orgId}/storefront/banners`;
 
@@ -75,26 +69,6 @@ export function StorefrontBannersManager({
       return false;
     } finally {
       setBusy(false);
-    }
-  };
-
-  const add = async () => {
-    if (!draft.title.trim()) {
-      toast.error("A banner needs a title.");
-      return;
-    }
-    const ok = await call(base, {
-      method: "POST",
-      body: JSON.stringify({
-        title: draft.title,
-        href: draft.href || null,
-        imageUrl: draft.imageUrl || null,
-        isActive: true,
-      }),
-    });
-    if (ok) {
-      setDraft({ title: "", href: "", imageUrl: "" });
-      toast.success("Promotion added.");
     }
   };
 
@@ -130,8 +104,12 @@ export function StorefrontBannersManager({
       <CardContent className="space-y-5">
         <p className="text-2xs text-muted-foreground">
           Cards that run across the top of your shop — a picture, a line of words, and
-          somewhere to go. Add more than one and they rotate. A promotion can point at
-          your own shop or one of your own products, nowhere else.
+          somewhere to go. Add more than one and they rotate.
+          <br />
+          <strong className="text-foreground">
+            Changes here apply straight away
+          </strong>{" "}
+          — they are not part of the Save button below.
         </p>
 
         {banners.length > 0 && (
@@ -192,31 +170,7 @@ export function StorefrontBannersManager({
           </ul>
         )}
 
-        <div className="space-y-3 rounded-field border border-dashed border-border p-3">
-          <p className="text-sm font-medium">Add a promotion</p>
-          <FormInput
-            label="Title"
-            value={draft.title}
-            onChange={(event) => setDraft({ ...draft, title: event.target.value })}
-          />
-          <FormInput
-            label="Where it points (optional)"
-            placeholder={`/store/${handle}`}
-            value={draft.href}
-            onChange={(event) => setDraft({ ...draft, href: event.target.value })}
-          />
-          <ImageUpload
-            label="Picture (optional)"
-            value={draft.imageUrl ? [draft.imageUrl] : []}
-            onChange={(urls) => setDraft({ ...draft, imageUrl: urls[0] ?? "" })}
-            maxImages={1}
-            endpoint={`/api/org/${orgId}/upload`}
-          />
-          <Button onClick={add} disabled={busy}>
-            <Plus />
-            Add promotion
-          </Button>
-        </div>
+        <AddPromotionDialog orgId={orgId} handle={handle} />
       </CardContent>
     </Card>
   );

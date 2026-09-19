@@ -23,6 +23,7 @@ vi.mock("@server/catalog/org.repository", () => ({
 vi.mock("@server/catalog/product.repository", () => ({
   productsRepository: { getProductBySlug: (...a: unknown[]) => getProductBySlug(...a) },
 }));
+vi.mock("@server/shared/app-url", () => ({ appUrl: () => "https://shop.test" }));
 vi.mock("@server/catalog/org-banner.repository", () => ({
   orgBannerRepository: {
     create: (...a: unknown[]) => bannerCreate(...a),
@@ -152,6 +153,60 @@ describe("a banner points inside its own shop", () => {
     await storefrontService.addBanner("org-1", banner(null));
     expect(bannerCreate).toHaveBeenCalled();
   });
+
+  it("takes the full link an org pastes out of its address bar", async () => {
+    await storefrontService.addBanner(
+      "org-1",
+      banner("https://shop.test/store/naaz-collection")
+    );
+    // Stored as a path: an absolute one carries the origin it was copied from, and
+    // would point at the wrong machine everywhere else.
+    expect(bannerCreate).toHaveBeenCalledWith(
+      "org-1",
+      expect.objectContaining({ href: "/store/naaz-collection" })
+    );
+  });
+
+  it("keeps the query when reducing a full link", async () => {
+    await storefrontService.addBanner(
+      "org-1",
+      banner("https://shop.test/store/naaz-collection?category=abayas")
+    );
+    expect(bannerCreate).toHaveBeenCalledWith(
+      "org-1",
+      expect.objectContaining({ href: "/store/naaz-collection?category=abayas" })
+    );
+  });
+
+  it("takes a full link to its own product", async () => {
+    getProductBySlug.mockResolvedValue({ orgId: "org-1" });
+    await storefrontService.addBanner(
+      "org-1",
+      banner("https://shop.test/product/cream-rida")
+    );
+    expect(bannerCreate).toHaveBeenCalledWith(
+      "org-1",
+      expect.objectContaining({ href: "/product/cream-rida" })
+    );
+  });
+
+  it("refuses a link to somebody else's site rather than keeping its path", async () => {
+    // Reducing it silently would turn a mistake into a different destination that
+    // happens to be valid here.
+    await expect(
+      storefrontService.addBanner(
+        "org-1",
+        banner("https://evil.test/store/naaz-collection")
+      )
+    ).rejects.toMatchObject({ field: "href" });
+    expect(bannerCreate).not.toHaveBeenCalled();
+  });
+
+  it("refuses a full link to another shop on this site", async () => {
+    await expect(
+      storefrontService.addBanner("org-1", banner("https://shop.test/store/a-rival"))
+    ).rejects.toMatchObject({ field: "href" });
+  });
 });
 
 describe("the payload the editor actually sends", () => {
@@ -193,5 +248,50 @@ describe("the payload the editor actually sends", () => {
     });
     expect(parsed.isActive).toBe(false);
     expect(parsed).not.toHaveProperty("orgId");
+  });
+});
+
+describe("a rejected value says which box is wrong", () => {
+  it("refuses a bare / before it reaches the server", async () => {
+    const { orgBannerSchema } = await import(
+      "@/lib/validation/schemas/org-banner.schema"
+    );
+    // The case that exposed this: `/` is a valid-looking path and points at the
+    // marketplace, not the shop. The client form runs this same schema, so it is
+    // caught on the field before a request is made at all. The message asks for a
+    // link rather than naming ownership — whose shop it is, only the server knows.
+    const result = orgBannerSchema.safeParse({ title: "Best", href: "/" });
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues[0].path).toEqual(["href"]);
+    expect(result.error.issues[0].message).toMatch(/paste the link/i);
+  });
+
+  it("puts the ownership refusal on the destination box too", async () => {
+    // Shape and ownership are different checks and only the first is a regex, so the
+    // second has to carry the field itself or the message lands nowhere.
+    getProductBySlug.mockResolvedValue({ orgId: "someone-else" });
+    await expect(
+      storefrontService.addBanner("org-1", {
+        title: "Eid",
+        href: "/product/their-rida",
+      })
+    ).rejects.toMatchObject({ field: "href" });
+  });
+
+  it.each([
+    ["checkout", /reserved/i],
+    ["naaz-collection", /already/i],
+  ])("puts a refused handle %s on the handle box", async (handle, message) => {
+    await expect(
+      storefrontService.changeHandle("org-1", handle)
+    ).rejects.toMatchObject({ field: "handle", message: expect.stringMatching(message) });
+  });
+
+  it("puts an unavailable handle on the handle box", async () => {
+    isHandleHeldByAnother.mockResolvedValue(true);
+    await expect(
+      storefrontService.changeHandle("org-1", "taken")
+    ).rejects.toMatchObject({ field: "handle" });
   });
 });

@@ -25,8 +25,17 @@ interface ContactSheetProps {
 }
 
 // A full-width 56px row keeps both options thumb-reachable in a bottom sheet (ADR-0015).
+/**
+ * The two ways to reach the store, as one row shape.
+ *
+ * `h-auto` and `justify-start` are both load-bearing, and both look removable. One row
+ * is an `<a>` and the other a `<Button>`, and `Button`'s base brings a fixed `h-9` and
+ * `justify-center` with it. Without these the second row is capped at 36px with its
+ * contents centred, while the first grows to fit two lines and starts at the left —
+ * so the pair sit at different heights with their icons in different places.
+ */
 const OPTION_ROW =
-  "flex w-full items-center gap-3 rounded-card border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:bg-muted";
+  "flex h-auto w-full items-center justify-start gap-3 rounded-card border border-border/70 bg-card px-4 py-3 text-left transition-colors hover:bg-muted";
 
 const TITLES: Record<Step, { title: string; description: string }> = {
   choices: {
@@ -103,7 +112,7 @@ export function ContactSheet({
               className={OPTION_ROW}
             >
               <Mail className="size-5 shrink-0 text-muted-foreground" />
-              <span className="min-w-0">
+              <span className="min-w-0 whitespace-normal">
                 <span className="block text-sm font-semibold">
                   Send a message
                 </span>

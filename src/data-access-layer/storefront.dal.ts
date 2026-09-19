@@ -13,6 +13,7 @@ import { productsRepository } from "@server/catalog/product.repository";
 import { orgBannerRepository } from "@server/catalog/org-banner.repository";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
+import type { Category } from "@/domain/category";
 import { holdCutoff } from "@server/catalog/org.handle";
 
 /** One shop, as a visitor sees it. */
@@ -84,15 +85,15 @@ export const storefrontDAL = {
    * platform-owned and most of it is empty for any one shop, so a bar built from the
    * tree would offer a shopper categories with nothing behind them.
    */
-  categoriesFor: cache(async (orgId: string) => {
+  categoriesFor: cache(async (orgId: string): Promise<Category[]> => {
     const [ids, all] = await Promise.all([
       productsRepository.categoryIdsForOrg(orgId),
       categoriesDAL.getCategories(),
     ]);
     const owned = new Set(ids);
-    return all
-      .filter((category) => owned.has(category.id))
-      .map((category) => ({ slug: category.slug, name: category.name }));
+    // Whole rows, not a reduced shape: a shop's rail is the platform's `CategoryLanes`
+    // with a different destination, and that wants the hero image and accent too.
+    return all.filter((category) => owned.has(category.id));
   }),
 
   /**

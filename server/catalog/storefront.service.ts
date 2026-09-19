@@ -7,6 +7,7 @@
  * stops a handle riding along in an update payload.
  */
 
+import { appUrl } from "@server/shared/app-url";
 import { orgRepository } from "@server/catalog/org.repository";
 import {
   orgBannerRepository,
@@ -59,6 +60,22 @@ function normaliseBanner(input: BannerInput): OrgBannerInput {
     href: orNull(input.href),
     isActive: input.isActive ?? true,
   };
+}
+
+/**
+ * Whether an absolute link points at this deployment.
+ *
+ * `appUrl()` throws when the origin is not configured; a promotion is not the place to
+ * take a deploy down over it, so an unset origin falls back to accepting the link and
+ * letting the path check below decide. The path is the security boundary — the stored
+ * value is always relative, so a foreign origin cannot survive into a rendered link.
+ */
+function sameOriginAsApp(url: URL): boolean {
+  try {
+    return url.origin === new URL(appUrl()).origin;
+  } catch {
+    return true;
+  }
 }
 
 export const storefrontService = {
@@ -120,25 +137,33 @@ export const storefrontService = {
     if (!isValidSlug(next)) {
       throw new DomainError(
         "A handle can use lowercase letters, numbers and hyphens only.",
-        { status: 400, field: "handle" }
+        { status: 400, field: "handle" },
       );
     }
     if (isReservedHandle(next)) {
-      throw new ConflictError("That address is reserved by the platform.");
+      throw new ConflictError("That address is reserved by the platform.", {
+        field: "handle",
+      });
     }
     if (next === settings.handle) {
-      throw new ConflictError("That is already this shop's address.");
+      throw new ConflictError("That is already this shop's address.", {
+        field: "handle",
+      });
     }
     if (await orgRepository.isHandleHeldByAnother(next, orgId, holdCutoff())) {
       // Held, not free: another shop left it recently and can still take it back.
-      throw new ConflictError("That address is not available.");
+      throw new ConflictError("That address is not available.", {
+        field: "handle",
+      });
     }
 
     try {
       return await orgRepository.changeHandle(orgId, settings.handle, next);
     } catch (error) {
       if (isUniqueViolation(error, "handle")) {
-        throw new ConflictError("That address is not available.");
+        throw new ConflictError("That address is not available.", {
+          field: "handle",
+        });
       }
       throw error;
     }
@@ -150,13 +175,20 @@ export const storefrontService = {
   },
 
   async addBanner(orgId: string, input: BannerInput) {
-    await this.assertHrefIsOwn(orgId, input.href);
-    return await orgBannerRepository.create(orgId, normaliseBanner(input));
+    const href = await this.resolveOwnHref(orgId, input.href);
+    return await orgBannerRepository.create(
+      orgId,
+      normaliseBanner({ ...input, href }),
+    );
   },
 
   async editBanner(orgId: string, id: string, input: BannerInput) {
-    await this.assertHrefIsOwn(orgId, input.href);
-    const updated = await orgBannerRepository.update(orgId, id, normaliseBanner(input));
+    const href = await this.resolveOwnHref(orgId, input.href);
+    const updated = await orgBannerRepository.update(
+      orgId,
+      id,
+      normaliseBanner({ ...input, href }),
+    );
     if (!updated) throw new NotFoundError("Banner not found");
   },
 
@@ -170,34 +202,68 @@ export const storefrontService = {
   },
 
   /**
-   * A banner points inside this shop, or nowhere (storefront-branding R2c).
+   * Reduce a destination to a path this shop owns, or refuse it
+   * (storefront-branding R2c).
    *
-   * The schema proves the *shape* — `/store/…` or `/product/…`. Only here can the
-   * *ownership* be proved: that the handle is this org's, and that a product slug names
-   * something this org actually sells. Without the second half a shop could point its
-   * banner at a competitor's goods, which is the thing R2c exists to stop.
+   * An org pastes what is in its address bar, so `href` usually arrives absolute. The
+   * stored value is always the **path**: an absolute one carries the origin it was
+   * copied from, and `http://localhost:3000/store/…` is a link that works on one
+   * machine and nowhere else. Normalising here rather than at the call site means the
+   * column cannot hold both shapes.
+   *
+   * The regex proves the shape; this proves the ownership — that the handle is this
+   * org's, and that a product slug names something it actually sells. Without the
+   * second half a shop could point its promotion at a competitor's goods.
    */
-  async assertHrefIsOwn(orgId: string, href: string | null | undefined) {
-    const target = href?.trim();
-    if (!target) return;
+  async resolveOwnHref(
+    orgId: string,
+    href: string | null | undefined,
+  ): Promise<string | null> {
+    const raw = href?.trim();
+    if (!raw) return null;
 
     const settings = await orgRepository.findStorefrontSettings(orgId);
     if (!settings) throw new NotFoundError("Organisation not found");
 
+    const refuse = () => {
+      throw new ConflictError(
+        "A promotion can only point at your own shop or one of your own products.",
+        // Fixable by editing the box, so it belongs on the box (ADR-0013).
+        { field: "href" },
+      );
+    };
+
+    let target = raw;
+    if (/^https?:\/\//i.test(raw)) {
+      let parsed: URL;
+      try {
+        parsed = new URL(raw);
+      } catch {
+        refuse();
+        return null;
+      }
+      // A link to somebody else's site is refused rather than quietly reduced to its
+      // path, which would silently turn a mistake into a different destination.
+      if (!sameOriginAsApp(parsed)) refuse();
+      target = `${parsed.pathname}${parsed.search}`;
+    }
+
     const path = target.split("?")[0];
-    if (path === `/store/${settings.handle}` || path.startsWith(`/store/${settings.handle}/`)) {
-      return;
+    const ownShop =
+      path === `/store/${settings.handle}` ||
+      path.startsWith(`/store/${settings.handle}/`);
+
+    if (!ownShop) {
+      const slug = path.startsWith("/product/")
+        ? path.slice("/product/".length)
+        : null;
+      const product = slug
+        ? await productsRepository.getProductBySlug(slug)
+        : null;
+      if (!product || product.orgId !== orgId) refuse();
     }
 
-    const slug = path.startsWith("/product/") ? path.slice("/product/".length) : null;
-    if (slug) {
-      const product = await productsRepository.getProductBySlug(slug);
-      if (product && product.orgId === orgId) return;
-    }
-
-    throw new ConflictError(
-      "A banner can only point at your own shop or one of your products."
-    );
+    return target;
   },
 
   /** A handle this name would produce, for the editor's suggestion. */

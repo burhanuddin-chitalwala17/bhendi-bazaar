@@ -33,17 +33,17 @@ export default async function OrgStorefrontPage({
         title="Storefront"
         description="Your own page on Bhendi Bazaar, and the link you share."
       />
+      <StorefrontBannersManager
+        orgId={orgId}
+        handle={settings.handle}
+        banners={banners}
+      />
       <StorefrontEditor
         orgId={orgId}
         settings={settings}
         oldAddressWorksUntil={
           storefrontService.previewChange(settings.handle).oldAddressWorksUntil
         }
-      />
-      <StorefrontBannersManager
-        orgId={orgId}
-        handle={settings.handle}
-        banners={banners}
       />
     </PageShell>
   );

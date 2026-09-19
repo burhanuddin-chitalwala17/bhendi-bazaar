@@ -7,15 +7,30 @@ import { cn } from "@/lib/utils";
 
 /**
  * The storefront's category navigation: one flat, scrollable line of tiles for
- * every lane beneath the current page. Descend-only, so the current category,
- * its ancestors and its siblings are all absent — which is why there is no
- * active state to draw and why an empty set renders nothing rather than an
- * empty rail.
+ * every lane beneath the current page. On the marketplace it is descend-only — the
+ * current category, its ancestors and its siblings are all absent — which is why it
+ * takes no active state by default and why an empty set renders nothing rather than
+ * an empty rail.
+ *
+ * A shop's own rail is the other case: it is a filter over one catalogue rather than a
+ * descent through a tree, so the same tiles have to point somewhere else and show
+ * which one is on. Both are passed in rather than branched on, so this stays one
+ * component and a shop's categories cannot drift into looking like something else.
  *
  * A server component: it is display over data the page already has, and a route
  * handler for it would be a round trip bought for nothing.
  */
-export function CategoryLanes({ categories }: { categories: Category[] }) {
+export function CategoryLanes({
+  categories,
+  hrefFor = (category) => `/category/${category.slug}`,
+  activeSlug,
+}: {
+  categories: Category[];
+  /** Where a tile points. Defaults to the marketplace's category page. */
+  hrefFor?: (category: Category) => string;
+  /** Drawn as selected. Only a filtering rail has one. */
+  activeSlug?: string;
+}) {
   if (categories.length === 0) return null;
 
   return (
@@ -32,13 +47,18 @@ export function CategoryLanes({ categories }: { categories: Category[] }) {
                 and a dynamic route's prefetch is discarded before the tap can use it. */}
             <Link
               prefetch={false}
-              href={`/category/${category.slug}`}
+              href={hrefFor(category)}
+              aria-current={activeSlug === category.slug ? "page" : undefined}
               className="flex w-16 flex-col items-center gap-1.5 sm:w-20"
             >
               <span
                 className={cn(
                   "relative size-14 overflow-hidden rounded-full border border-border/70 bg-gradient-to-br sm:size-16",
                   CATEGORY_ACCENTS[category.accent].heroGradient,
+                  // A ring rather than a different tile: the selected category must
+                  // still read as the same thing it was a moment ago.
+                  activeSlug === category.slug &&
+                    "ring-2 ring-primary ring-offset-2 ring-offset-background",
                 )}
               >
                 {/* Centre crop of the 1200×600 hero — a square thumbnail column
@@ -51,7 +71,14 @@ export function CategoryLanes({ categories }: { categories: Category[] }) {
                   className="object-cover"
                 />
               </span>
-              <span className="line-clamp-2 text-center text-3xs font-medium leading-tight text-muted-foreground">
+              <span
+                className={cn(
+                  "line-clamp-2 text-center text-3xs font-medium leading-tight",
+                  activeSlug === category.slug
+                    ? "text-foreground"
+                    : "text-muted-foreground",
+                )}
+              >
                 {category.name}
               </span>
             </Link>

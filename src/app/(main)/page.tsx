@@ -15,7 +15,9 @@ export default async function HomePage() {
   const [banners, heroes, offers, lanes] = await Promise.all([
     bannersDAL.getActiveBanners(),
     productsDAL.getHeroProducts(6),
-    productsDAL.getOfferProducts(4),
+    // Five for four shown: the extra row is how the strip knows whether to
+    // offer a way to the rest, without a second count query.
+    productsDAL.getOfferProducts(5),
     categoriesDAL.getDescendants(null),
   ]);
   return (
@@ -26,7 +28,14 @@ export default async function HomePage() {
       <CategoryLanes categories={lanes} />
       <HomeHero banners={banners} />
       <Suspense fallback={<LoadingSkeleton />}>
-        <OffersStrip offers={offers} />
+        <OffersStrip
+          offers={offers.slice(0, 4)}
+          viewAll={
+            offers.length > 4
+              ? { href: "/offers", label: "View more" }
+              : undefined
+          }
+        />
       </Suspense>
       <Suspense fallback={<LoadingSkeleton />}>
         <HeroProductsGrid heroes={heroes} />

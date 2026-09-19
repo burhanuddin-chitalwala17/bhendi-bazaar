@@ -1,0 +1,163 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FormInput } from "@/components/shared/forms/FormField";
+import { ImageUpload } from "@/components/shared/image-upload";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { readApiError } from "@/lib/api-error";
+import {
+  orgBannerSchema,
+  type OrgBannerFormInput,
+} from "@/lib/validation/schemas/org-banner.schema";
+
+/**
+ * Adding a promotion (storefront-branding R2a).
+ *
+ * A dialog rather than fields sitting in the page, because the page already has a form
+ * with a Save button and these fields are not part of it. Inline, they read as
+ * something that saves with everything else — which is what happened: the fields were
+ * filled, "Save storefront" was pressed, and nothing was created.
+ *
+ * Through `useServerForm`, so the same schema validates here and on the server and a
+ * rejected field shows its reason *on the field* ([ADR-0013](../../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
+ * Hand-rolled state with a toast was the first attempt: typing `/` as the destination
+ * returned a perfectly good per-field message and the dialog dropped it on the floor,
+ * leaving a red flash and no indication of which box was wrong.
+ */
+export function AddPromotionDialog({
+  orgId,
+  handle,
+}: {
+  orgId: string;
+  handle: string;
+}) {
+  const router = useRouter();
+  // The placeholder shows the real thing an org would paste. Read from the browser
+  // rather than a constant: this app's origin differs between a laptop, a preview and
+  // production, and CLAUDE.md keeps it out of `src/lib/config.ts` for that reason.
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  const [open, setOpen] = useState(false);
+  // Outside the form: `ImageUpload` owns its own value and posts on its own.
+  const [imageUrl, setImageUrl] = useState("");
+
+  const {
+    register,
+    reset,
+    onSubmit,
+    formError,
+    formState: { errors, isSubmitting },
+  } = useServerForm<OrgBannerFormInput>({
+    schema: orgBannerSchema,
+    defaultValues: {
+      title: "",
+      description: "",
+      href: "",
+      imageUrl: "",
+      imageAlt: "",
+      isActive: true,
+    },
+    successMessage: "Promotion added — it is live on your shop now.",
+    submit: async (data) => {
+      const response = await fetch(`/api/org/${orgId}/storefront/banners`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, imageUrl: imageUrl || null }),
+      });
+      if (!response.ok) throw await readApiError(response);
+      const created = await response.json();
+      reset();
+      setImageUrl("");
+      setOpen(false);
+      router.refresh();
+      return created;
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <Plus />
+          Add promotion
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="max-h-overlay overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Add a promotion</DialogTitle>
+          <DialogDescription>
+            It goes live on your shop as soon as you add it.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <FormInput
+            label="Title"
+            placeholder="Eid collection"
+            {...register("title")}
+            error={errors.title?.message}
+          />
+          <FormInput
+            label="A line underneath (optional)"
+            placeholder="New ridas, in store now"
+            {...register("description")}
+            error={errors.description?.message}
+          />
+          <FormInput
+            label="Where it points (optional)"
+            placeholder={`${origin}/store/${handle}`}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            {...register("href")}
+            error={errors.href?.message}
+          />
+          <p className="text-2xs text-muted-foreground">
+            Paste the link to your shop or to one of your products — straight
+            from the address bar is fine. Leave it blank for a promotion that is
+            not a link.
+          </p>
+
+          <ImageUpload
+            label="Picture (optional)"
+            value={imageUrl ? [imageUrl] : []}
+            onChange={(urls) => setImageUrl(urls[0] ?? "")}
+            maxImages={1}
+            endpoint={`/api/org/${orgId}/upload`}
+          />
+
+          {/* Anything with no field to sit on — a permission failure, a conflict on
+              something not in this form. Without it those would vanish. */}
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Adding…" : "Add promotion"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

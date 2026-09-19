@@ -213,6 +213,37 @@
   --input: oklch(0.28 0 0);
 }
 
+/* A shop's accent (storefront-branding R2, ADR-0030 decision 8).
+ *
+ * An org picks a token name, never a colour, so the only thing it can change is which
+ * of the palette's existing hues its shop leans on — a storefront cannot express a
+ * colour the design system does not own (ADR-0022).
+ *
+ * Implemented by repointing `--primary` at another declared token rather than by
+ * writing new values: `--success`, `--warning` and `--info` are already redefined for
+ * dark mode, so an accented shop follows the theme with no second block to keep in
+ * step. `--primary-foreground` is left alone deliberately — it already flips with the
+ * theme and pairs legibly with all three.
+ *
+ * Scoped to `.storefront`, which wraps the shop's own content and not the platform
+ * chrome around it: the navbar, tab bar and footer stay the platform's whatever a shop
+ * picks.
+ */
+.storefront[data-accent="success"] {
+  --primary: var(--success);
+  --ring: var(--success);
+}
+
+.storefront[data-accent="warning"] {
+  --primary: var(--warning);
+  --ring: var(--warning);
+}
+
+.storefront[data-accent="info"] {
+  --primary: var(--info);
+  --ring: var(--info);
+}
+
 /* The one height cap for anything fixed+centred (dialogs, hand-rolled modals), so the
    bottom action stays reachable. dvh, not vh: the iOS URL bar eats the difference. */
 @utility max-h-overlay {

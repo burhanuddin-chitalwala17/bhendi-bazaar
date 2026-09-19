@@ -114,7 +114,7 @@ export function AddressSelector({
                   onSelect(address);
                   if (isOpen) onToggle();
                 }}
-                className="flex w-full items-start gap-3 border-border bg-card p-3 text-left hover:bg-muted/50"
+                className="flex h-auto w-full items-start justify-start gap-3 whitespace-normal border-border bg-card p-3 text-left hover:bg-muted/50"
               >
                 <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                 <div className="flex-1 space-y-0.5">
