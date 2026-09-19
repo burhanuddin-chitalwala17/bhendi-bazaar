@@ -144,7 +144,12 @@ export function BannerForm({
             >
               <Input
                 {...form.register(`actions.${index}.href`)}
-                placeholder="/category/abayas"
+                // What an admin will actually paste. Stored as the path, so the origin
+                // in this example never reaches the database.
+                placeholder="https://bhendi-bazaar.com/category/abayas"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
               />
             </FormField>
             <FormField label="Style" className="sm:w-40">

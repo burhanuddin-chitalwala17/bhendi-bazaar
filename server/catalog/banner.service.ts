@@ -2,7 +2,31 @@ import { bannerRepository } from "@server/catalog/banner.repository";
 import { isCompleteReorder } from "@server/catalog/banner.order";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import { NotFoundError, DomainError } from "@server/shared/domain-error";
+import { toInternalPath } from "@server/shared/internal-href";
 import type { AdminBanner, BannerInput } from "@server/catalog/banner.types";
+
+/**
+ * Store the path, whatever was pasted.
+ *
+ * An absolute URL on our own origin is reduced; anything pointing elsewhere is refused
+ * on the field rather than quietly rewritten, because a hero banner is the most
+ * prominent surface the store has and a wrong destination there is expensive.
+ */
+function withInternalHrefs(data: BannerInput): BannerInput {
+  return {
+    ...data,
+    actions: data.actions.map((action, index) => {
+      const href = toInternalPath(action.href);
+      if (!href) {
+        throw new DomainError(
+          "A banner button can only point at a page on this site.",
+          { status: 400, field: `actions.${index}.href` },
+        );
+      }
+      return { ...action, href };
+    }),
+  };
+}
 
 class BannerService {
   listAll(): Promise<AdminBanner[]> {
@@ -16,7 +40,7 @@ class BannerService {
   }
 
   async create(adminId: string, data: BannerInput): Promise<AdminBanner> {
-    const banner = await bannerRepository.create(data);
+    const banner = await bannerRepository.create(withInternalHrefs(data));
     await recordAdminAction({
       adminId,
       action: "BANNER_CREATED",
@@ -27,9 +51,13 @@ class BannerService {
     return banner;
   }
 
-  async update(adminId: string, id: string, data: BannerInput): Promise<AdminBanner> {
+  async update(
+    adminId: string,
+    id: string,
+    data: BannerInput,
+  ): Promise<AdminBanner> {
     await this.getById(id);
-    const banner = await bannerRepository.update(id, data);
+    const banner = await bannerRepository.update(id, withInternalHrefs(data));
     await recordAdminAction({
       adminId,
       action: "BANNER_UPDATED",
@@ -40,7 +68,11 @@ class BannerService {
     return banner;
   }
 
-  async setActive(adminId: string, id: string, isActive: boolean): Promise<AdminBanner> {
+  async setActive(
+    adminId: string,
+    id: string,
+    isActive: boolean,
+  ): Promise<AdminBanner> {
     await this.getById(id);
     const banner = await bannerRepository.setActive(id, isActive);
     await recordAdminAction({

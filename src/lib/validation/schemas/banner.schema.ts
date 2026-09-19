@@ -21,26 +21,39 @@ const blankToNull = (max: number) =>
 
 const action = z.object({
   label: z.string().trim().min(1, "Label is required").max(40),
-  // Relative only: an absolute URL here would send a shopper off the storefront from
-  // its most prominent surface, and our own origin is never a constant (CLAUDE.md).
+  // Either a path or a full URL on this site — an admin pastes what is in the address
+  // bar, and refusing that is a rule about typing rather than about destinations. The
+  // service reduces an absolute one to its path before storing and refuses a foreign
+  // origin outright: a banner on the store's most prominent surface must not send a
+  // shopper off it, and our own origin is never a constant (CLAUDE.md).
   href: z
     .string()
     .trim()
     .min(1, "Destination is required")
     .max(2048)
-    .refine((value) => value.startsWith("/"), "Destination must start with /"),
+    .refine(
+      (value) => value.startsWith("/") || /^https?:\/\/\S+$/i.test(value),
+      "Paste a link to a page on this site, or a path beginning with /",
+    ),
   variant: z.enum(BannerActionVariant).default("PRIMARY"),
 });
 
 export const bannerFormSchema = z.object({
-  title: z.string().trim().min(2, "Title must be at least 2 characters").max(120),
+  title: z
+    .string()
+    .trim()
+    .min(2, "Title must be at least 2 characters")
+    .max(120),
   eyebrow: blankToNull(60).default(null),
   description: blankToNull(400).default(null),
   imageUrl: blankToNull(2048).default(null),
   imageAlt: blankToNull(160).default(null),
   isActive: z.boolean().default(true),
   // Two is what the banner lays out; a third would wrap onto its own line on a phone.
-  actions: z.array(action).max(2, "A banner takes at most two buttons").default([]),
+  actions: z
+    .array(action)
+    .max(2, "A banner takes at most two buttons")
+    .default([]),
 });
 
 export type BannerFormSchemaInput = z.infer<typeof bannerFormSchema>;

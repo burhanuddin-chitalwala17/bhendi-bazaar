@@ -61,15 +61,33 @@ describe("bannerFormSchema", () => {
       ).toBe(false);
     });
 
-    // The hero is the storefront's most prominent surface; an absolute URL there sends
-    // a shopper off the shop.
-    it("refuses a destination that leaves the storefront", () => {
-      for (const href of ["https://example.com", "example.com", ""]) {
+    // The hero is the storefront's most prominent surface, so a destination there must
+    // not send a shopper off the shop. That rule now has two halves: the schema asks
+    // only whether this is link-shaped, because an admin pastes what is in the address
+    // bar; whose site it names is settled in `bannerService`, which stores the path and
+    // refuses a foreign origin (`toInternalPath`).
+    it("refuses a destination that is not link-shaped at all", () => {
+      for (const href of ["example.com", "abayas", ""]) {
         expect(
           bannerFormSchema.safeParse({ ...minimal, actions: [{ ...action, href }] }).success,
           href
         ).toBe(false);
       }
+    });
+
+    it("accepts the full URL an admin pastes, and a bare path", () => {
+      for (const href of ["https://bhendi-bazaar.com/category/abayas", "/category/abayas"]) {
+        expect(
+          bannerFormSchema.safeParse({ ...minimal, actions: [{ ...action, href }] }).success,
+          href
+        ).toBe(true);
+      }
+    });
+
+    it("leaves off-site destinations to the service, which stores only paths", async () => {
+      const { toInternalPath } = await import("@server/shared/internal-href");
+      // What the schema now lets through, and what stops it one layer down.
+      expect(toInternalPath("https://example.com/category/abayas")).toBeNull();
     });
 
     it("defaults the style to the filled treatment", () => {

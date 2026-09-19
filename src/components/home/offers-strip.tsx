@@ -48,8 +48,9 @@ export async function OffersStrip({
         <span className="w-fit shrink-0 rounded-full bg-accent px-2.5 py-1 text-4xs font-semibold uppercase tracking-eyebrow text-accent-foreground shadow-raised sm:px-3 sm:text-2xs sm:tracking-eyebrow-wide">
           Ongoing Offers
         </span>
-        {/* A rail, not a wrap: four offers wrapping on a phone push the rest of the
-            page down by three rows for a strip nobody reads top-to-bottom. */}
+        {/* A rail on a phone, a wrapping row from `sm:` — offers wrapping on a phone
+            would push the page down by two rows for a strip nobody reads
+            top-to-bottom. */}
         <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:flex-1 sm:flex-wrap sm:gap-4 sm:overflow-visible sm:px-0">
           {offers.slice(0, OFFERS_IN_STRIP).map((offer) => (
             <Link
@@ -83,19 +84,23 @@ export async function OffersStrip({
               )}
             </Link>
           ))}
-
-          {viewAll && (
-            <Link
-              prefetch={false}
-              href={viewAll.href}
-              className="flex shrink-0 snap-start items-center gap-1 border-l border-accent/60 pl-3 text-2xs font-semibold uppercase tracking-label text-accent-foreground underline-offset-4 hover:underline sm:tracking-eyebrow"
-            >
-              {viewAll.label}
-              <ChevronRight className="size-3" />
-            </Link>
-          )}
         </div>
       </div>
+
+      {/* Its own row under the strip, pinned to the right. `ml-auto` with `w-fit` is
+          what does it: this is a block-level child of the section, not a flex item, so
+          `self-end` would be inert here — the link is itself `display:flex`, so without
+          a width it stretches the full row and its contents sit at the left. */}
+      {viewAll && (
+        <Link
+          prefetch={false}
+          href={viewAll.href}
+          className="ml-auto mt-1 flex w-fit items-center gap-1 text-2xs font-semibold uppercase tracking-label text-accent-foreground underline-offset-4 hover:underline sm:tracking-eyebrow"
+        >
+          {viewAll.label}
+          <ChevronRight className="size-3" />
+        </Link>
+      )}
     </section>
   );
 }

@@ -7,7 +7,7 @@
  * stops a handle riding along in an update payload.
  */
 
-import { appUrl } from "@server/shared/app-url";
+import { toInternalPath } from "@server/shared/internal-href";
 import { orgRepository } from "@server/catalog/org.repository";
 import {
   orgBannerRepository,
@@ -60,22 +60,6 @@ function normaliseBanner(input: BannerInput): OrgBannerInput {
     href: orNull(input.href),
     isActive: input.isActive ?? true,
   };
-}
-
-/**
- * Whether an absolute link points at this deployment.
- *
- * `appUrl()` throws when the origin is not configured; a promotion is not the place to
- * take a deploy down over it, so an unset origin falls back to accepting the link and
- * letting the path check below decide. The path is the security boundary — the stored
- * value is always relative, so a foreign origin cannot survive into a rendered link.
- */
-function sameOriginAsApp(url: URL): boolean {
-  try {
-    return url.origin === new URL(appUrl()).origin;
-  } catch {
-    return true;
-  }
 }
 
 export const storefrontService = {
@@ -233,22 +217,13 @@ export const storefrontService = {
       );
     };
 
-    let target = raw;
-    if (/^https?:\/\//i.test(raw)) {
-      let parsed: URL;
-      try {
-        parsed = new URL(raw);
-      } catch {
-        refuse();
-        return null;
-      }
-      // A link to somebody else's site is refused rather than quietly reduced to its
-      // path, which would silently turn a mistake into a different destination.
-      if (!sameOriginAsApp(parsed)) refuse();
-      target = `${parsed.pathname}${parsed.search}`;
-    }
+    // One rule for what counts as our own site, shared with the platform's banners
+    // (`internal-href.ts`): a full URL pasted from the address bar is reduced to its
+    // path, and anything pointing elsewhere is refused rather than quietly rewritten.
+    const target = toInternalPath(raw);
+    if (!target) refuse();
 
-    const path = target.split("?")[0];
+    const path = target!.split("?")[0];
     const ownShop =
       path === `/store/${settings.handle}` ||
       path.startsWith(`/store/${settings.handle}/`);

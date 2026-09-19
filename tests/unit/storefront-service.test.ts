@@ -295,3 +295,31 @@ describe("a rejected value says which box is wrong", () => {
     ).rejects.toMatchObject({ field: "handle" });
   });
 });
+
+describe("what counts as a link to this site", () => {
+  it("keeps a path as it was typed", async () => {
+    const { toInternalPath } = await import("@server/shared/internal-href");
+    expect(toInternalPath("/store/naaz?category=abayas")).toBe(
+      "/store/naaz?category=abayas"
+    );
+  });
+
+  it("reduces a full link on this site to its path and query", async () => {
+    const { toInternalPath } = await import("@server/shared/internal-href");
+    expect(toInternalPath("https://shop.test/category/abayas?page=2")).toBe(
+      "/category/abayas?page=2"
+    );
+  });
+
+  it.each([
+    ["https://evil.test/category/abayas", "another site"],
+    ["//evil.test/category/abayas", "protocol-relative, a different site in disguise"],
+    ["javascript:alert(1)", "a script"],
+    ["mailto:someone@example.com", "not a page"],
+    ["category/abayas", "a bare word, not a path"],
+    ["", "nothing"],
+  ])("refuses %s (%s)", async (value) => {
+    const { toInternalPath } = await import("@server/shared/internal-href");
+    expect(toInternalPath(value)).toBeNull();
+  });
+});
