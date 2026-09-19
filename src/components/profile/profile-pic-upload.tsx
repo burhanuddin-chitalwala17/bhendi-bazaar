@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { Upload, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
@@ -136,8 +137,6 @@ export function ProfilePicUpload({
     }
   }
 
-  const displayPic = preview || currentPic;
-
   return (
     <div className="space-y-3">
       {/* Drop Zone */}
@@ -167,10 +166,22 @@ export function ProfilePicUpload({
           <div className="flex h-24 w-24 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : displayPic ? (
+        ) : preview ? (
+          /* The file just picked, as a local data URL: no Blob egress to save, and
+             next/image cannot optimize a data: URL anyway (ADR-0026). */
+          // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={displayPic}
+            src={preview}
             alt="Profile preview"
+            className="h-24 w-24 rounded-full object-cover"
+          />
+        ) : currentPic ? (
+          <Image
+            src={currentPic}
+            alt="Profile preview"
+            width={96}
+            height={96}
+            sizes="96px"
             className="h-24 w-24 rounded-full object-cover"
           />
         ) : (

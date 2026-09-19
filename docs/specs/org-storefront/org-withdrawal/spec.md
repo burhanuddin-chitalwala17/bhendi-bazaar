@@ -4,7 +4,7 @@
 - **Domain:** catalog, reaching into cart, checkout, bidding, promotions
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19
-- **References:** [../spec.md](../spec.md) (programme) R13 and H9, [../trd.md](../trd.md) D9b, [ADR-0025](../../../adr/0025-org-storefronts-are-scoped-projections-on-one-domain.md) decision 10, [ADR-0023](../../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [bidding](../../bidding/)
+- **References:** [../spec.md](../spec.md) (programme) R13 and H9, [../trd.md](../trd.md) D9b, [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decision 10, [ADR-0023](../../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [bidding](../../bidding/)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 
@@ -16,7 +16,7 @@ everywhere a buyer can see them — and one that puts it back.
 ## Why
 
 It is the platform's only remedy. A storefront is live the moment an organisation is created, with no
-approval in front of it ([ADR-0025](../../../adr/0025-org-storefronts-are-scoped-projections-on-one-domain.md)
+approval in front of it ([ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md)
 decision 9), which is the right trade only if there is a way to act on a shop that turns out to be selling
 something it should not. Without it the platform has published a page under its own name and has no way to
 withdraw it.
@@ -66,7 +66,7 @@ The same switch is what an organisation that closes should get: goods gone from 
 
 ## Out of scope (this feature)
 
-- Any approval, verification or gate *before* a shop goes live. Decided against in [ADR-0025](../../../adr/0025-org-storefronts-are-scoped-projections-on-one-domain.md) decisions 9 and 10; review is a manual pass over live shops.
+- Any approval, verification or gate *before* a shop goes live. Decided against in [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md) decisions 9 and 10; review is a manual pass over live shops.
 - Detecting non-compliance. This is the remedy, not the alarm — who looks, and what prompts a look, is a person's job for now.
 - Partial withdrawal — hiding one product, or one category of a shop's goods. The switch is the whole organisation.
 - Telling a withdrawn organisation why, or any appeal flow.

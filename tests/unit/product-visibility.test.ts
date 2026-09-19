@@ -1,158 +1,150 @@
 /**
- * ADR-0026 decision 5: the compiler cannot catch a missing visibility clause — a query
- * without it is valid TypeScript returning valid rows, just rows a buyer should not
- * see. So it is checked here, two ways.
+ * A product leaves sale by archiving (ADR-0029), and the rule has to hold at every
+ * place that reads a product — roughly thirty-five of them across a dozen files.
  *
- * The behavioural block proves each public read passes the clause today. The structural
- * block is the one that matters over time: it fails when somebody adds a *new* product
- * query to the public repository and does not spread the clause into it, which is the
- * failure mode a per-method test cannot see.
+ * Some must exclude withdrawn products and some must keep them: an order's own lines,
+ * the slug pool an import checks against, and the count guarding org deletion are all
+ * wrong if they forget a withdrawn product exists. A rule enforced by memory at that
+ * many call sites is missed at one, so this file pins the census. Adding a product
+ * query fails it until the new site is classified here — which is the point: the
+ * decision is cheap, and forgetting it leaks a withdrawn product onto the storefront.
+ *
+ * Same approach as `vocabulary.test.ts` and `design-tokens.test.ts`: read the source.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { ARCHIVED, ON_SALE, shelfFilter } from "@server/catalog/product.visibility";
 
-const findMany = vi.fn().mockResolvedValue([]);
-const findFirst = vi.fn().mockResolvedValue(null);
+const ROOTS = ["server", "src"];
+const SKIP_DIRS = new Set(["node_modules", ".next", "migrations"]);
+const READ_CALL = /\b(?:prisma|tx|db)\.product\.(?:findMany|findFirst|findUnique|count|aggregate|groupBy)/g;
 
-vi.mock("@server/shared/prisma", () => ({
-  prisma: {
-    product: {
-      findMany: (args: unknown) => findMany(args),
-      findFirst: (args: unknown) => findFirst(args),
-    },
+/**
+ * Every file holding a product read, with how many it holds and why.
+ *
+ * `filtered` — spreads the on-sale fragment (or the org's chosen shelf).
+ * `deliberate` — reads withdrawn products on purpose; the reason is the note.
+ */
+const CENSUS: Record<string, { reads: number; note: string }> = {
+  "server/catalog/product.repository.ts": {
+    reads: 15,
+    note: "filtered — the storefront's own reads, plus archivedAmong (which backs the sale gate) and two ownership/pricing lookups that must see every row",
   },
-}));
+  "server/catalog/admin.product.repository.ts": {
+    reads: 9,
+    note: "the org portal: the list takes a shelf, the detail read sees withdrawn products so they can be restored, and the stats split the two figures",
+  },
+  "server/catalog/bulk/bulk-product.service.ts": {
+    reads: 2,
+    note: "deliberate — an import checks SKUs and slugs against every row, withdrawn included, so it cannot reuse a reserved code or silently restore a product",
+  },
+  "server/analytics/dashboard.repository.ts": {
+    reads: 2,
+    note: "filtered — inventory and top-products are about what is sellable; the revenue and order aggregates beside them are history and touch no product row",
+  },
+  "server/analytics/widgets.ts": {
+    reads: 1,
+    note: "filtered — sellable inventory only",
+  },
+  "src/app/api/products/check-stock/route.ts": {
+    reads: 1,
+    note: "deliberate — selects archivedAt so a withdrawn product comes back unavailable by name, which is what lets the cart say which line is the problem",
+  },
+  "src/app/api/checkout/allocate/route.ts": {
+    reads: 1,
+    note: "deliberate — a parcel preview; the order transaction is what refuses, so this must still resolve the row it is asked about",
+  },
+  "server/wishlist/wishlist.service.ts": {
+    reads: 1,
+    note: "filtered — a withdrawn product cannot be newly saved; wishes already saved are left alone so a restore brings them back",
+  },
+  "server/checkout/order.service.ts": {
+    reads: 1,
+    note: "deliberate — prices the lines from the catalogue inside the transaction; assertNotArchived is the refusal, and it runs after the stock reservation",
+  },
+  "server/catalog/org.repository.ts": {
+    reads: 1,
+    note: "deliberate — guards org deletion, and Product.orgId is Restrict, so a withdrawn product blocks it exactly as an on-sale one does",
+  },
+  "server/cart/cart.repository.ts": {
+    reads: 1,
+    note: "deliberate — drops lines whose product no longer exists; filtering here would delete a cart line for a withdrawn product, and a removed line cannot come back on restore",
+  },
+};
 
-// getOfferProducts resolves live offers before it builds its where; the clause must
-// survive that merge rather than being overwritten by it.
-vi.mock("@server/promotions/price-context", () => ({
-  loadPriceContext: async () => ({ promotions: [], categoryParents: new Map() }),
-}));
-vi.mock("@server/promotions/targeting", () => ({
-  offerCoverage: () => ({
-    coversEverything: false,
-    productIds: ["p1"],
-    orgIds: [],
-    categoryIds: [],
-  }),
-}));
+function sourceFiles(dir: string): string[] {
+  let out: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    if (SKIP_DIRS.has(entry)) continue;
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) out = out.concat(sourceFiles(path));
+    else if (/\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry)) out.push(path);
+  }
+  return out;
+}
 
-const { productsRepository } = await import("@server/catalog/product.repository");
+function readCensus(): Record<string, number> {
+  const found: Record<string, number> = {};
+  for (const root of ROOTS) {
+    for (const file of sourceFiles(root)) {
+      const matches = readFileSync(file, "utf8").match(READ_CALL);
+      if (matches) found[file.split("\\").join("/")] = matches.length;
+    }
+  }
+  return found;
+}
 
-/** What every public read must carry. */
-const CLAUSE = { org: { isActive: true } };
+describe("every product read is classified (ADR-0029)", () => {
+  const found = readCensus();
 
-const lastWhere = (spy: typeof findMany) =>
-  (spy.mock.calls.at(-1)?.[0] as { where?: Record<string, unknown> })?.where;
-
-describe("public product reads carry the visibility clause", () => {
-  beforeEach(() => {
-    findMany.mockClear();
-    findFirst.mockClear();
+  it("has no product read in a file this census does not know about", () => {
+    const unknown = Object.keys(found).filter((file) => !(file in CENSUS));
+    expect(
+      unknown,
+      "A new file reads products. Decide whether it is buyer-facing — if so spread ON_SALE " +
+        "from server/catalog/product.visibility.ts — then add it to CENSUS with the reason."
+    ).toEqual([]);
   });
 
-  const listReads: Array<[string, () => Promise<unknown>]> = [
-    ["listSlugs", () => productsRepository.listSlugs()],
-    ["getProducts", () => productsRepository.getProducts({})],
-    ["getSimilarProducts", () => productsRepository.getSimilarProducts("a-slug", 4)],
-    ["getHeroProducts", () => productsRepository.getHeroProducts(6)],
-    ["getOfferProducts", () => productsRepository.getOfferProducts(4)],
-    ["searchProducts", () => productsRepository.searchProducts("kurta", 5)],
-  ];
-
-  it.each(listReads)("%s filters on an active org", async (_name, call) => {
-    await call();
-    expect(lastWhere(findMany)).toMatchObject(CLAUSE);
+  it("has not gained or lost a read in a file it does know about", () => {
+    const drifted = Object.entries(CENSUS)
+      .filter(([file, { reads }]) => (found[file] ?? 0) !== reads)
+      .map(([file, { reads }]) => `${file}: expected ${reads}, found ${found[file] ?? 0}`);
+    expect(
+      drifted,
+      "A product read was added or removed. If added, decide whether it must exclude " +
+        "withdrawn products, then update its CENSUS count and note."
+    ).toEqual([]);
   });
 
-  const singleReads: Array<[string, () => Promise<unknown>]> = [
-    ["getProductById", () => productsRepository.getProductById("id-1")],
-    ["getProductBySlug", () => productsRepository.getProductBySlug("a-slug")],
-  ];
-
-  it.each(singleReads)("%s filters on an active org", async (_name, call) => {
-    await call();
-    expect(lastWhere(findFirst)).toMatchObject(CLAUSE);
-  });
-
-  it("does not let a resolved offer filter displace the clause", async () => {
-    await productsRepository.getOfferProducts(4);
-    const where = lastWhere(findMany);
-    // Both survive: the offer's own coverage (an OR over the products, categories and
-    // orgs it reaches) and the visibility rule.
-    expect(where).toMatchObject(CLAUSE);
-    expect(where).toHaveProperty("OR");
+  it("states a reason for every file in the census", () => {
+    for (const [file, { note }] of Object.entries(CENSUS)) {
+      expect(note.length, `${file} needs a reason, not a placeholder`).toBeGreaterThan(20);
+    }
   });
 });
 
-describe("no public product query escapes the clause", () => {
-  const source = readFileSync(
-    join(process.cwd(), "server/catalog/product.repository.ts"),
-    "utf8"
-  );
-
-  /** Reads a buyer can reach. Every one of these must carry the clause. */
-  const PUBLIC_READS = [
-    "listSlugs",
-    "getProducts",
-    "getProductById",
-    "getProductBySlug",
-    "getSimilarProducts",
-    "getHeroProducts",
-    "getOfferProducts",
-    "searchProducts",
-  ];
-
-  /**
-   * Reads that must NOT carry it, each for a stated reason (ADR-0026 decision 3).
-   * Being on this list is a claim that the caller is privileged or already holds the
-   * ids — if that stops being true, the entry is the bug.
-   */
-  const EXEMPT: Record<string, string> = {
-    // Scoped by orgId: an org reading its own product to build an offer or an event.
-    listingFacts: "org's own product, already scoped by orgId",
-    // The org and admin promotion pickers — portal surfaces, not storefront.
-    listForPicker: "org/admin portal picker",
-    // The promotion editors load the products an existing offer already names.
-    listByIds: "admin/org promotion editor",
-    // Prices ids the caller already holds. A withdrawn org's line should never be in
-    // a basket to be quoted (org-withdrawal R6), and the authoritative refusal is the
-    // order transaction, not this read (ADR-0026 decision 7).
-    listForPricing: "prices ids already chosen; refusal lives in the order transaction",
-  };
-
-  /** Every method in the file that reaches for a product row. */
-  const readingMethods = source
-    .split(/\n  (?:async |private static )/)
-    .filter((block) => /prisma\.product\.find/.test(block))
-    .map((block) => block.match(/^([a-zA-Z0-9_]+)\s*[(<]/)?.[1])
-    .filter((name): name is string => Boolean(name));
-
-  it("classifies every product read as public or deliberately exempt", () => {
-    const known = new Set([...PUBLIC_READS, ...Object.keys(EXEMPT)]);
-    const unclassified = readingMethods.filter((name) => !known.has(name));
-    // A new product read landed here without a decision about who may see its rows.
-    // Add it to PUBLIC_READS (and spread the clause) or to EXEMPT (and say why).
-    expect(unclassified).toEqual([]);
+describe("the visibility fragments", () => {
+  it("treats absence of a timestamp as on sale", () => {
+    expect(ON_SALE).toEqual({ archivedAt: null });
   });
 
-  it("finds every public read still in the file", () => {
-    for (const name of PUBLIC_READS) {
-      expect(readingMethods).toContain(name);
-    }
+  it("asks for a present timestamp when listing withdrawn products", () => {
+    expect(ARCHIVED).toEqual({ archivedAt: { not: null } });
   });
 
-  it("spreads the clause once per public read, plus the import", () => {
-    const clauses = source.match(/PUBLIC_PRODUCT_WHERE/g) ?? [];
-    expect(clauses.length).toBe(PUBLIC_READS.length + 1);
+  it("defaults the org's shelf to on sale, so withdrawn products are opt-in", () => {
+    expect(shelfFilter()).toEqual(ON_SALE);
+    expect(shelfFilter("on-sale")).toEqual(ON_SALE);
   });
 
-  it("keeps the privileged repository free of it", () => {
-    const admin = readFileSync(
-      join(process.cwd(), "server/catalog/admin.product.repository.ts"),
-      "utf8"
-    );
-    expect(admin).not.toContain("PUBLIC_PRODUCT_WHERE");
+  it("spreads nothing for `all`, so neither shelf is excluded", () => {
+    expect(shelfFilter("all")).toEqual({});
+  });
+
+  it("is a plain object, so spreading it cannot drop a caller's other conditions", () => {
+    const combined = { categoryId: "c1", ...ON_SALE };
+    expect(combined).toEqual({ categoryId: "c1", archivedAt: null });
   });
 });

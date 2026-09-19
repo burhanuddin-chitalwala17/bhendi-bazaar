@@ -28,6 +28,21 @@ const FIELD_LABELS: Record<string, string> = {
 
 const label = (field: string) => FIELD_LABELS[field] ?? field;
 
+/**
+ * Table name -> what its rows are, for a delete refused by a Restrict foreign key.
+ * Only the tables that actually hold such a key need an entry; anything else falls
+ * back to the generic wording.
+ */
+const REFERENCED_BY_LABELS: Record<string, string> = {
+  OrderItem: "existing orders",
+  OrderDiscount: "recorded discounts",
+  OrgLedgerEntry: "payout records",
+  PromotionTarget: "promotions",
+  BiddingEvent: "bidding events",
+  Shipment: "shipments",
+  Product: "products",
+};
+
 export function toErrorResponse(
   error: unknown,
   fallbackMessage = "Something went wrong"
@@ -77,6 +92,22 @@ export function toErrorResponse(
   //    something deleted, a value too long, a missing required value.
   const constraint = constraintFields(error);
   if (constraint) {
+    // 4a. The same foreign key from the other direction: an `onDelete: Restrict`
+    //     refused to orphan rows that still point here (ADR-0020). Nothing the caller
+    //     typed is wrong, so nothing is attributed to a field and "pick another" would
+    //     be nonsense. Domain code that can name the blocker should throw a
+    //     DomainError first; this is the honest fallback when it has not.
+    if (constraint.kind === "restricted") {
+      const referrer = REFERENCED_BY_LABELS[constraint.referencingTable ?? ""];
+      return json(
+        {
+          error: referrer
+            ? `This cannot be deleted while ${referrer} still refer to it`
+            : "This cannot be deleted while other records still refer to it",
+        },
+        409
+      );
+    }
     const perField = (f: string) =>
       constraint.kind === "foreignKey"
         ? `That ${label(f)} no longer exists — pick another`

@@ -2,30 +2,40 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Plus, RefreshCw, Search } from "lucide-react";
 import { OrgsTable } from "./components/OrgsTable";
 import { AddOrgModal } from "./components/AddOrgModal";
 import { useOrgs } from "./hooks/useOrgs";
 import type { OrgWithStats } from "@/domain/org";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
+import type { OrgListFilters } from "@/services/admin/orgService";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-const ITEMS_PER_PAGE = 10;
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 export function OrgsContainer() {
+  // Search and status narrow the query, not the page that came back — so they live
+  // here beside page and limit and are sent together.
+  const [filters, setFilters] = useState<OrgListFilters>({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    status: "all",
+  });
+
   const {
-    orgs: allOrgs,
+    orgs,
+    pagination,
     loading,
     error,
     createOrg,
     updateOrg,
     deleteOrg,
     refetch,
-  } = useOrgs();
+  } = useOrgs(filters);
 
   const [showModal, setShowModal] = useState(false);
   const [editingOrg, setEditingOrg] = useState<OrgWithStats | null>(null);
@@ -34,51 +44,11 @@ export function OrgsContainer() {
     "create",
   ); // ⭐ NEW
 
-  // Client-side filters
+  // Typed but not yet submitted — searching is a fetch, so it waits for Enter.
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "active" | "inactive"
-  >("all");
 
-  // Filter and search orgs
-  const filteredOrgs = useMemo(() => {
-    let filtered = [...allOrgs];
-
-    // Search filter
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (org) =>
-          org.name.toLowerCase().includes(term) ||
-          org.code.toLowerCase().includes(term) ||
-          org.email.toLowerCase().includes(term) ||
-          org.businessName?.toLowerCase().includes(term) ||
-          org.gstNumber?.toLowerCase().includes(term),
-      );
-    }
-
-    // Status filter
-    if (statusFilter === "active") {
-      filtered = filtered.filter((s) => s.isActive);
-    } else if (statusFilter === "inactive") {
-      filtered = filtered.filter((s) => !s.isActive);
-    }
-
-    return filtered;
-  }, [allOrgs, searchTerm, statusFilter]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredOrgs.length / ITEMS_PER_PAGE);
-  const paginatedOrgs = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredOrgs.slice(startIndex, endIndex);
-  }, [filteredOrgs, currentPage]);
-
-  // Reset to page 1 when search/filter changes
   const handleSearch = () => {
-    setCurrentPage(1);
+    setFilters({ ...filters, search: searchTerm.trim() || undefined, page: 1 });
   };
 
   // ⭐ NEW: Handle view
@@ -88,9 +58,8 @@ export function OrgsContainer() {
     setShowModal(true);
   };
 
-  const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value as any);
-    setCurrentPage(1);
+  const handleStatusFilterChange = (value: OrgListFilters["status"]) => {
+    setFilters({ ...filters, status: value, page: 1 });
   };
 
   const handleCreate = async (data: OrgFormInput) => {
@@ -141,7 +110,7 @@ export function OrgsContainer() {
       {/* Header */}
       <PageHeader
         title="Orgs Management"
-        description={`Manage orgs and vendors on your platform (${filteredOrgs.length} ${filteredOrgs.length === 1 ? "org" : "orgs"})`}
+        description={`Manage orgs and vendors on your platform (${pagination.total} ${pagination.total === 1 ? "org" : "orgs"})`}
         actions={
           <>
             <Button
@@ -183,6 +152,7 @@ export function OrgsContainer() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by name, code, email, city..."
+                className="flex-1"
               />
               <Button
                 variant="default"
@@ -197,8 +167,12 @@ export function OrgsContainer() {
 
           {/* Status Filter */}
           <Select
-            value={statusFilter}
-            onChange={(e) => handleStatusFilterChange(e.target.value)}
+            value={filters.status}
+            onChange={(e) =>
+              handleStatusFilterChange(
+                e.target.value as OrgListFilters["status"],
+              )
+            }
           >
             <option value="all">All Status</option>
             <option value="active">Active Only</option>
@@ -214,32 +188,17 @@ export function OrgsContainer() {
         </div>
       )}
 
-      {/* Empty State */}
-      {!loading && filteredOrgs.length === 0 && (
-        <div className="text-center py-12 bg-card rounded-lg border border-border">
-          <p className="text-muted-foreground">
-            {searchTerm || statusFilter !== "all"
-              ? "No organisations found matching your filters"
-              : "No organisations yet. Add your first one to get started."}
-          </p>
-        </div>
-      )}
-
-      {/* Table */}
-      {filteredOrgs.length > 0 && (
-        <OrgsTable
-          orgs={paginatedOrgs as OrgWithStats[]}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredOrgs.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          isLoading={loading}
-          onPageChange={setCurrentPage}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
+      {/* Table — rendered even when empty, so the filters that emptied it stay usable */}
+      <OrgsTable
+        orgs={orgs}
+        pagination={pagination}
+        isLoading={loading}
+        onPageChange={(page) => setFilters({ ...filters, page })}
+        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
+        onView={handleView}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
       {/* Modal */}
       <AddOrgModal

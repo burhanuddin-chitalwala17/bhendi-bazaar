@@ -10,7 +10,7 @@ import { loadPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
-import { PUBLIC_PRODUCT_WHERE } from "@server/catalog/product-visibility";
+import { ARCHIVED, FROM_ACTIVE_ORG, ON_SALE } from "@server/catalog/product.visibility";
 
 export const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
@@ -35,10 +35,8 @@ export const PRODUCT_INCLUDE = {
 
 /**
  * One product with everything a storefront render needs, as the database returns it.
- *
- * Derived from `PRODUCT_INCLUDE` rather than restated: the mapper in
- * `src/data-access-layer/products.dal.ts` took `any` before this existed, which is what
- * let the include tree change shape without the mapper noticing.
+ * Derived from `PRODUCT_INCLUDE` rather than restated — the DAL mapper took `any`
+ * before this existed, which let the include tree change shape unnoticed.
  */
 export type ProductWithRelations = Prisma.ProductGetPayload<{
   include: typeof PRODUCT_INCLUDE;
@@ -78,6 +76,9 @@ async function offerFilter() {
  */
 export type ProductStockDb = Pick<typeof prisma, "productStock">;
 
+/** Enough of the client to read products — `prisma`, or a `$transaction` tx. */
+export type ProductDb = Pick<typeof prisma, "product">;
+
 export class ProductsRepository {
 
   /**
@@ -86,7 +87,9 @@ export class ProductsRepository {
    */
   async listingFacts(productId: string, orgId: string) {
     return await prisma.product.findFirst({
-      where: { id: productId, orgId },
+      // An archived product cannot be listed for bidding either: bidding is a way of
+      // selling, and this row is not for sale (ADR-0029).
+      where: { id: productId, orgId, ...ON_SALE },
       select: { id: true, name: true, price: true, sizes: true, colors: true },
     });
   }
@@ -149,6 +152,21 @@ export class ProductsRepository {
     return taken.count === 1;
   }
 
+  /**
+   * Which of these products are withdrawn from sale, by name (ADR-0029).
+   *
+   * Names rather than ids because the only caller shows them to a buyer. Authoritative
+   * when handed a `tx`; `product.sale-gate.ts` is what turns it into a refusal.
+   */
+  async archivedAmong(productIds: string[], db: ProductDb = prisma): Promise<string[]> {
+    if (productIds.length === 0) return [];
+    const rows = await db.product.findMany({
+      where: { id: { in: productIds }, ...ARCHIVED },
+      select: { name: true },
+    });
+    return rows.map((row) => row.name);
+  }
+
   /** How many of these products belong to someone else — the org-scoping guard. */
   async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
     if (productIds.length === 0) return 0;
@@ -178,6 +196,8 @@ export class ProductsRepository {
     limit = 30,
   }: { orgId?: string; search?: string; ids?: string[]; limit?: number } = {}) {
     const where = {
+      // An offer cannot be pointed at something that is not for sale.
+      ...ON_SALE,
       ...(orgId ? { orgId } : {}),
       ...(search ? { name: { contains: search, mode: "insensitive" as const } } : {}),
       // Already-selected products are always included, so a picker never hides a
@@ -212,10 +232,7 @@ export class ProductsRepository {
    * loading the whole join tree and pricing every row to emit a path.
    */
   async listSlugs(): Promise<Array<{ slug: string }>> {
-    return await prisma.product.findMany({
-      where: { ...PUBLIC_PRODUCT_WHERE },
-      select: { slug: true },
-    });
+    return await prisma.product.findMany({ where: { ...ON_SALE, ...FROM_ACTIVE_ORG, ...FROM_ACTIVE_ORG }, select: { slug: true } });
   }
 
   // Nothing a storefront listing renders needs the whole catalogue at once. When the
@@ -231,8 +248,7 @@ export class ProductsRepository {
         relationLoadStrategy: "join",
         // categoryIds (a resolved subtree) wins over a bare slug, which matches
         // only the category's own products.
-        where: {
-          ...PUBLIC_PRODUCT_WHERE,
+        where: { ...ON_SALE,
           ...(categoryIds
             ? { categoryId: { in: categoryIds } }
             : { category: { slug: categorySlug } }),
@@ -256,11 +272,9 @@ export class ProductsRepository {
 
   async getProductById(id: string) {
     try {
-      // findFirst, not findUnique: a relation filter cannot ride along with a unique
-      // selector (ADR-0026). The primary key still serves the lookup.
       const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { id, ...PUBLIC_PRODUCT_WHERE },
+        where: { id, ...ON_SALE, ...FROM_ACTIVE_ORG },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -273,10 +287,9 @@ export class ProductsRepository {
 
   async getProductBySlug(slug: string) {
     try {
-      // findFirst, not findUnique — see getProductById.
       const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { slug, ...PUBLIC_PRODUCT_WHERE },
+        where: { slug, ...ON_SALE, ...FROM_ACTIVE_ORG },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -291,7 +304,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { slug: { not: slug }, ...PUBLIC_PRODUCT_WHERE },
+        where: { slug: { not: slug }, ...ON_SALE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: count,
         include: {
@@ -308,7 +321,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { flags: { has: "HERO" }, ...PUBLIC_PRODUCT_WHERE },
+        where: { flags: { has: "HERO" }, ...ON_SALE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -325,7 +338,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { ...(await offerFilter()), ...PUBLIC_PRODUCT_WHERE },
+        where: { ...(await offerFilter()), ...ON_SALE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -344,7 +357,7 @@ export class ProductsRepository {
       // and price, so the full include tree here was several queries per keystroke
       // buying data the response never carried.
       const products = await prisma.product.findMany({
-        where: { name: { contains: query, mode: "insensitive" }, ...PUBLIC_PRODUCT_WHERE },
+        where: { name: { contains: query, mode: "insensitive" }, ...ON_SALE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: limit,
         select: {
@@ -352,8 +365,10 @@ export class ProductsRepository {
           slug: true,
           name: true,
           thumbnail: true,
-          currency: true,
           price: true,
+          // Not rendered: the offer resolver keys on them (ADR-0018).
+          orgId: true,
+          categoryId: true,
         },
       });
       return products;

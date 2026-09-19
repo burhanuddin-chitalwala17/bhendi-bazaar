@@ -1,10 +1,13 @@
+// One declaration, server-side, re-exported here so the two sides cannot drift.
+export type { Pagination } from "@server/shared/pagination";
+export {
+  PAGE_SIZE_OPTIONS,
+  DEFAULT_PAGE_SIZE,
+  resolvePageSize,
+  resolvePageNumber,
+  type PageSize,
+} from "@server/shared/pagination";
 
-export interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
 export enum ProductFlag {
   FEATURED = "FEATURED",
   HERO = "HERO",

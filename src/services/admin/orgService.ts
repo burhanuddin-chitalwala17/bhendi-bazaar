@@ -2,13 +2,31 @@
 
 import type { OrgWithStats, Org } from "@/domain/org";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
+import type { Pagination } from "@/types/shared";
+
+export interface OrgListFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "all" | "active" | "inactive";
+}
+
+export interface OrgListResult {
+  orgs: OrgWithStats[];
+  pagination: Pagination;
+}
 
 export class OrgService {
   private baseUrl = "/api/admin/orgs";
 
-  async getOrgs(includeStats = false): Promise<OrgWithStats[]> {
-    const url = includeStats ? `${this.baseUrl}?includeStats=true` : this.baseUrl;
-    const response = await fetch(url);
+  async getOrgs(filters: OrgListFilters = {}): Promise<OrgListResult> {
+    const params = new URLSearchParams();
+    if (filters.page) params.set("page", String(filters.page));
+    if (filters.limit) params.set("limit", String(filters.limit));
+    if (filters.search) params.set("search", filters.search);
+    if (filters.status && filters.status !== "all") params.set("status", filters.status);
+
+    const response = await fetch(`${this.baseUrl}?${params.toString()}`);
     
     if (!response.ok) {
       // ⭐ Check if response has content before parsing

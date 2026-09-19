@@ -40,6 +40,23 @@ export class ConflictError extends DomainError {
   }
 }
 
+/**
+ * Stock ran out during the order transaction. A `ConflictError` with the products
+ * named, so a caller can do something about it rather than only report it —
+ * checkout-abandonment D4 releases abandoned holds on exactly these products and
+ * retries, which is what stops one closed payment window from taking an item off
+ * sale.
+ */
+export class OutOfStockError extends ConflictError {
+  readonly productIds: readonly string[];
+
+  constructor(message: string, productIds: readonly string[]) {
+    super(message);
+    this.name = "OutOfStockError";
+    this.productIds = productIds;
+  }
+}
+
 /** Nobody is signed in. 401 — distinct from 403, which means signed in but not allowed. */
 export class UnauthorizedError extends DomainError {
   constructor(message = "You need to be signed in to do that") {

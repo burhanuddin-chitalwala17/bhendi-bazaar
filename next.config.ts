@@ -16,8 +16,29 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // A year, matching the `immutable, max-age=31536000` that object-store.ts writes.
+    // buildImagePath timestamps every stored path, so a URL's bytes never change and
+    // there is nothing a shorter TTL could protect against — while a shorter one costs
+    // real money: a transformation is billed per cache MISS, and Hobby includes only
+    // 5,000 a month. At 30 days the whole catalogue re-transformed monthly for nothing.
+    minimumCacheTTL: 31536000,
     remotePatterns: [
+      // The object store, read from the environment rather than pinned here: the bucket
+      // is r2.dev while developing and a custom domain in production (ADR-0028), and a
+      // host missing from this list makes every image 404 at the optimizer with no
+      // error anywhere.
+      ...(process.env.R2_PUBLIC_BASE_URL
+        ? [
+            {
+              protocol: "https" as const,
+              hostname: new URL(process.env.R2_PUBLIC_BASE_URL).hostname,
+            },
+          ]
+        : []),
       {
+        // The retired Vercel Blob store. Kept until every row has been repointed, so
+        // that a partially migrated catalogue still renders; remove it after
+        // `migrate-blob-store.ts check` reports zero.
         protocol: "https",
         hostname: "o42adyjkazl35sk2.public.blob.vercel-storage.com",
       },
@@ -30,6 +51,13 @@ const nextConfig: NextConfig = {
         // (ADR-0017). Without this entry next/image refuses to render them.
         protocol: "https",
         hostname: "i.ytimg.com",
+      },
+      {
+        // The carrier's own logo, set by the register_shiprocket_provider data
+        // migration. Not ours to host or to optimize — rendered unoptimized for the
+        // same reason as the YouTube posters above.
+        protocol: "https",
+        hostname: "shiprocket.in",
       },
     ],
   },

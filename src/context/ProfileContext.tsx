@@ -99,8 +99,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     } else {
       setData(null);
       setError(null);
+      // A settled guest has nothing to load; without this the profile page never
+      // leaves its skeleton to show the sign-in prompt.
+      if (status === "guest") setLoading(false);
     }
-  }, [isAuthenticated, fetchProfile]);
+  }, [isAuthenticated, status, fetchProfile]);
 
   // Generic update function
   const updateProfile = useCallback(

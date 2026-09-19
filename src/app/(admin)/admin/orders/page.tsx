@@ -17,14 +17,15 @@ import type { OrderListFilters } from "@/domain/admin";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 export default function AdminOrdersPage() {
   const [filters, setFilters] = useState<OrderListFilters>({
     page: 1,
-    limit: 20,
+    limit: DEFAULT_PAGE_SIZE,
   });
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -176,6 +177,7 @@ export default function AdminOrdersPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 placeholder="Search by order code, customer..."
+                className="flex-1"
               />
               <Button
                 variant="default"
@@ -234,7 +236,9 @@ export default function AdminOrdersPage() {
         totalPages={totalPages}
         currentPage={filters.page || 1}
         totalItems={data?.total || 0}
+        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
         onPageChange={(page) => setFilters({ ...filters, page })}
+        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onSort={(key, order) =>
           setFilters({ ...filters, sortBy: key as any, sortOrder: order })
         }

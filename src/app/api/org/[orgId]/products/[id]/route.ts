@@ -35,10 +35,19 @@ export const PATCH = withOrg<{ orgId: string; id: string }>(
   }
 );
 
+/**
+ * One control, two outcomes (ADR-0029): a product no record depends on is deleted,
+ * and anything an order, promotion or bidding event refers to is archived instead.
+ * The outcome travels in the response so the client can say which happened without
+ * asking again.
+ */
 export const DELETE = withOrg<{ orgId: string; id: string }>(
   async (_request, scope, params) => {
     await assertOwnedByOrg(params.id, scope.orgId);
-    await productsService.deleteProduct(params.id);
-    return NextResponse.json({ success: true });
+    const result = await productsService.deleteProduct(params.id, {
+      orgId: scope.orgId,
+      userId: scope.userId,
+    });
+    return NextResponse.json(result);
   }
 );

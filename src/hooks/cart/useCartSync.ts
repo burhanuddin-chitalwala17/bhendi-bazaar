@@ -29,14 +29,16 @@ export function useCartSync() {
   // that was already written.
   const lastWrittenRef = useRef<string | null>(null);
 
-  const syncCart = useCallback(async () => {
-    if (!session?.user?.id) return;
+  /** Resolves true when the merge changed what this device holds. */
+  const syncCart = useCallback(async (): Promise<boolean> => {
+    if (!session?.user?.id) return false;
     setIsSyncing(true);
     setSyncError(null);
     justSyncedRef.current = true; // 👈 Mark that sync is happening
     
     try {
       const merged = await cartApiClient.syncCart(items);
+      const changed = !sameLines(items, merged.items);
       setItems(merged.items);
       versionRef.current = merged.version;
       lastWrittenRef.current = JSON.stringify(merged.items);
@@ -48,10 +50,12 @@ export function useCartSync() {
       setTimeout(() => {
         justSyncedRef.current = false;
       }, 1000); // 1 second guard
+      return changed;
     } catch (error) {
       console.error("[useCartSync] syncCart failed:", error);
       setSyncError("Failed to sync cart");
       justSyncedRef.current = false;
+      return false;
     } finally {
       setIsSyncing(false);
     }
@@ -76,9 +80,10 @@ export function useCartSync() {
     } catch (error) {
       // 409: another tab or device wrote first. Re-sync merges both carts instead
       // of either overwriting the other (inventory-reservation R7).
+      // An order this tab just placed bumps the version too, and merges to exactly
+      // what the tab holds — so only a merge that changed something is announced.
       if (error instanceof ApiError && error.status === 409) {
-        toast.info("Your cart was updated in another tab — merging.");
-        await syncCart();
+        if (await syncCart()) toast.info("Your cart was updated in another tab — merged.");
         return;
       }
       console.error("[useCartSync] Background sync failed:", error);
@@ -122,6 +127,18 @@ export function useCartSync() {
     isSyncing,
     syncError,
   };
+}
+
+function sameLines(
+  a: Array<{ productId: string; quantity: number; size?: string; color?: string }>,
+  b: Array<{ productId: string; quantity: number; size?: string; color?: string }>
+): boolean {
+  const key = (lines: typeof a) =>
+    lines
+      .map((l) => `${l.productId}::${l.size || ""}::${l.color || ""}::${l.quantity}`)
+      .sort()
+      .join("|");
+  return key(a) === key(b);
 }
 
 /**

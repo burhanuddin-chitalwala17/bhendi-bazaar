@@ -33,3 +33,12 @@ export const confirmFreeOrderSchema = z.object({
 
 export type VerifyPaymentInput = z.infer<typeof verifyPaymentSchema>;
 
+
+/**
+ * The abandonment trigger (checkout-abandonment D2). Carries an order reference and
+ * nothing else — deliberately: the browser is reporting that it gave up, not
+ * asserting what happened to the money. The server asks the gateway that.
+ */
+export const abandonPaymentSchema = z.object({
+  localOrderId: z.string().min(1, 'Order reference required'),
+});

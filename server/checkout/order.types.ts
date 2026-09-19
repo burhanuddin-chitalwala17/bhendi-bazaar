@@ -8,6 +8,45 @@
 import { Order } from "@prisma/client";
 import { DeliveryAddress } from "@server/identity/profile.types";
 
+// ============================================
+// Order status — the closed set, declared once
+// ============================================
+
+/**
+ * Every value `Order.status` may hold. It was a bare `String` with a schema comment
+ * naming three values the code never wrote; visibility now turns on one of them
+ * (checkout-abandonment D7), so the set is declared here and read from here.
+ */
+export const ORDER_STATUS = {
+  /** Created, stock reserved, nothing paid yet. */
+  PENDING_PAYMENT: "pending_payment",
+  /** Paid, and — once fulfilment has run — booked with a carrier. */
+  CONFIRMED: "confirmed",
+  PROCESSING: "processing",
+  PACKED: "packed",
+  SHIPPED: "shipped",
+  DELIVERED: "delivered",
+  /** Paid, but the carrier booking failed for some or all parcels. */
+  PARTIALLY_FULFILLED: "partially_fulfilled",
+  FULFILLMENT_FAILED: "fulfillment_failed",
+  /** A payment attempt failed. Not terminal: the buyer may still retry. */
+  FAILED: "failed",
+  /** Abandoned or expired: the reservation has been released (checkout-abandonment). */
+  EXPIRED: "expired",
+} as const;
+
+export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
+
+/**
+ * An abandoned checkout is kept in full and shown to nobody (checkout-abandonment
+ * R4–R7). Applied inside the repositories, never at a call site: a predicate that
+ * must be remembered is one the next query forgets (D6). The sweep's worklists are
+ * the deliberate exemptions.
+ */
+export const VISIBLE_ORDER_WHERE = {
+  status: { not: ORDER_STATUS.EXPIRED },
+} as const;
+
 export interface OrderItem {
   productId: string;
   productName: string;

@@ -23,6 +23,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 
 | Feature | Requirement | Phase | Domain | Status |
 |---|---|---|---|---|
+| [product-archive](product-archive/spec.md) | An org takes a product off sale and back without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
 | [bulk-catalog-upload](bulk-catalog-upload/spec.md) | Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories | 6 | catalog | Implemented |
 | [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
 | [payment-confirmation](payment-confirmation/) | An order is paid when the gateway says so, for the right amount | 2 | payments, checkout | ✅ Implemented — PR-39 |
@@ -38,6 +39,10 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [bidding](bidding/) | An organisation puts one product up for timed bidding and shares a link; the platform sells it directly and records what it fetched | 8 | bidding, catalog, checkout, payouts | ✅ Implemented — PR-89 |
 | [international-phone](international-phone/) | Every phone field accepts a number from any country, and one number has one spelling | — | identity, catalog, checkout, bidding | ✅ Implemented — PR-102 |
 | [shared-phone-numbers](shared-phone-numbers/) | One phone number backs any number of accounts; email alone identifies one | — | identity | ✅ Implemented — PR-103 |
+| [checkout-abandonment](checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | 2 | checkout, payments | ✅ Implemented — PR-104 |
+| [image-delivery](image-delivery/) | Images are stored small and served at the size the screen uses | 2 | catalog | ✅ Implemented — PR-105 |
+| [contact-us](contact-us/) | Anyone can reach the store from any page — by WhatsApp, or by a message emailed to its inbox | — | notifications | ✅ Implemented — PR-107 |
+| [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, cart, checkout | ✅ Implemented — PR-111 |
 | [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog | 📝 Draft — **parent of 7 subfeatures** |
 | [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain | 📝 Draft |
 

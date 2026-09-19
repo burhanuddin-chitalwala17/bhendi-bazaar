@@ -24,8 +24,17 @@ const markdownOf = (
 class ProductsDAL {
   // ✅ React cache - deduplicates requests in same render
   getProducts = cache(async (filters: ProductFilters): Promise<{ products: ProductForTable[]; pagination: Pagination }> => {
+    // "Wishlisted only" decides which page comes back, so it has to be resolved before
+    // the catalog query rather than merged in after it like the demand column. The
+    // wishlist domain answers in ids and catalog filters on them, so neither learns to
+    // read the other's table (ADR-0012).
+    const { wishlistedOnly, ...catalogFilters } = filters;
+    const productIds = wishlistedOnly
+      ? await wishlistService.listSavedProductIds(filters.orgId)
+      : undefined;
+
     const [{ products, pagination }, context] = await Promise.all([
-      productsService.getProducts(filters),
+      productsService.getProducts({ ...catalogFilters, productIds }),
       loadPriceContext(),
     ]);
     // Second round trip, not a join: saves live in the wishlist domain and are read
@@ -46,6 +55,7 @@ class ProductsDAL {
         lowStockThreshold: product.lowStockThreshold,
         thumbnail: product.thumbnail,
         wishlistCount: saves.get(product.id) ?? 0,
+        archivedAt: product.archivedAt,
         createdAt: product.createdAt,
         category: product.category,
         org: product.org,
@@ -58,6 +68,7 @@ class ProductsDAL {
     const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
+      withdrawnProducts: stats.withdrawnProducts,
       lowStockProducts: stats.lowStockProducts,
       outOfStockProducts: stats.outOfStockProducts,
       featuredProducts: stats.featuredProducts,

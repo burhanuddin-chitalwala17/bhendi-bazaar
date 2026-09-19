@@ -104,3 +104,17 @@ export const PRODUCT_FORM_FIELDS = [
   "orgId", "categoryId", "tags", "flags", "media",
   "weight", "sizes", "colors", "stockLocations", "sku", "lowStockThreshold",
 ] as const;
+
+/**
+ * Taking a product off sale, or putting it back (ADR-0029).
+ *
+ * A parsed body rather than two verbs, so the intent is explicit and idempotent: a
+ * client that means "on sale" says so, instead of a POST whose meaning depends on the
+ * current state. `archivedAt` itself is never accepted — the server sets the clock
+ * (Invariant 4).
+ */
+export const productArchiveSchema = z.object({
+  archived: z.boolean({ message: "Say whether the product should be off sale" }),
+});
+
+export type ProductArchiveInput = z.infer<typeof productArchiveSchema>;

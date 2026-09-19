@@ -4,7 +4,7 @@
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-15
-- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D3–D3e, [ADR-0025](../../../adr/0025-org-storefronts-are-scoped-projections-on-one-domain.md), [Invariant 4](../../../../CLAUDE.md)
+- **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D3–D3e, [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [Invariant 4](../../../../CLAUDE.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 

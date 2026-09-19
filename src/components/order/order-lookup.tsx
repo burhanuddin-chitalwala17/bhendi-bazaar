@@ -46,7 +46,7 @@ export function OrderLookup() {
             Order ID
           </label>
           <Input
-            placeholder="e.g. BB-1001"
+            placeholder="e.g. BB-7KQ4MNZP"
             value={code}
             onChange={(e) => setCode(e.target.value.trim())}
             autoCapitalize="characters"

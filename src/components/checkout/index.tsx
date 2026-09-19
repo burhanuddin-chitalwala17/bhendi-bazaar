@@ -1,6 +1,6 @@
 // src/components/checkout/checkoutContainer/index.tsx
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Package } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useMultiShippingRates } from "@/hooks/shipping/useMultiShippingRates";
@@ -10,13 +10,15 @@ import { CouponField } from "./components/CouponField";
 import { useCheckoutOffers } from "./hooks/useCheckoutOffers";
 import { MultiShippingSection } from "./components/MultiShippingSection";
 import { CheckoutActions } from "./components/CheckoutActions";
-import { EmptyState } from "@/components/shared/states/EmptyState";
+import { EmptyState } from "../../components/shared/states/EmptyState";
 import { CartItem } from "@/domain/cart";
 import { useAddressManager } from "@/hooks/useAddressManager";
 import { AuthenticatedAddress } from "./components/AuthenticatedAddress";
 import { GuestAddress } from "./components/GuestAddress";
 import { useAuth } from "@/lib/auth";
+import { useAuthSheet } from "@/context/AuthSheetContext";
 import { DeliveryAddress } from "@/domain/profile";
+import { Button } from "@/components/ui/button";
 
 interface CheckoutContainerProps {
   buyNowProduct?: CartItem;
@@ -25,6 +27,7 @@ interface CheckoutContainerProps {
 export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   // check if user is authenticated
   const { user } = useAuth();
+  const { open: openAuthSheet } = useAuthSheet();
 
   const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
 
@@ -43,7 +46,17 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
     addAddress,
     updateAddress,
     selectAddress,
+    clearSelection,
   } = useAddressManager({ autoFetch: !!user });
+
+  // Signing in here swaps the guest form for saved addresses (seamless-sign-in D10).
+  // The guest's address has no account id, so it cannot stay selected.
+  const previousUserId = useRef(user?.id ?? null);
+  useEffect(() => {
+    const wasGuest = previousUserId.current === null;
+    previousUserId.current = user?.id ?? null;
+    if (wasGuest && user?.id) clearSelection();
+  }, [user?.id, clearSelection]);
 
   // Payment hook
   const {
@@ -94,7 +107,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
     validationErrors.length === 0 && !isProcessing && !isShippingLoading;
 
   // What every live offer does to this basket, priced by the server.
-  const offers = useCheckoutOffers(checkoutItems);
+  const offers = useCheckoutOffers(checkoutItems, user?.id ?? null);
 
   const totals = useMemo(() => {
     // List prices, exactly as the server totals them — the reduction is its own
@@ -139,6 +152,8 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
     }
   };
 
+  // A snapshot, taken once: the sign-in cart merge updates the store, never this
+  // checkout's items (seamless-sign-in D11, R15).
   useEffect(() => {
     const loadItems = async () => {
       if (buyNowProduct) {
@@ -174,7 +189,20 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
             addresses={addresses}
           />
         ) : (
-          <GuestAddress onAddressChange={handleGuestAddress} />
+          <div className="space-y-3">
+            <p className="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
+              Already have an account?
+              <Button
+                variant="link"
+                type="button"
+                onClick={() => openAuthSheet()}
+                className="min-h-10 items-center font-semibold text-foreground underline underline-offset-4"
+              >
+                Sign in
+              </Button>
+            </p>
+            <GuestAddress onAddressChange={handleGuestAddress} />
+          </div>
         )}
 
         {/* Multi-Shipping Section */}

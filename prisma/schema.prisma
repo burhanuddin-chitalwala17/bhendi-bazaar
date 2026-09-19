@@ -92,12 +92,26 @@ model Product {
   updatedAt DateTime @updatedAt
   reviews   Review[]
 
+  /// When the org took this product off sale ([ADR-0029](../docs/adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md)).
+  /// Null means on sale. Nothing else changes: the row, its media, its reviews and
+  /// every order it appears on are untouched, and a restore clears this column.
+  ///
+  /// A timestamp rather than a status enum because there is no third lifecycle state
+  /// to model, and "since when" is worth having for free. It is server-owned and
+  /// never accepted from a request body (Invariant 4).
+  archivedAt DateTime?
+
   // A SKU is the org's own identifier; two orgs may legitimately use the same one.
+  // It stays taken while the product is archived — a restore must find its own code
+  // still free, so uniqueness cannot be conditional on `archivedAt`.
   @@unique([orgId, sku])
   @@index([slug])
   @@index([categoryId])
   @@index([createdAt])
   @@index([orgId])
+  // The org portal's default list is "this org, on sale", and it is the one query
+  // this column adds to a hot path.
+  @@index([orgId, archivedAt])
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -392,8 +406,10 @@ model Order {
   paymentId      String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
   gatewayOrderId String? // the gateway order this order was charged through; created with amount = grandTotal
 
-  // Overall order status (derived from shipments)
-  status String @default("processing") // processing, partially_shipped, completed
+  // Overall order status. The values live in ORDER_STATUS
+  // (server/checkout/order.types.ts) — "expired" means an abandoned checkout whose
+  // reservation has been released, kept for follow-up and hidden from every panel.
+  status String @default("processing")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

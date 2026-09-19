@@ -1,4 +1,4 @@
-# ADR-0025: An org storefront is a scoped projection of the marketplace, on one domain
+# ADR-0030: An org storefront is a scoped projection of the marketplace, on one domain
 
 - **Date:** 2026-09-15
 - **Status:** Accepted

@@ -7,7 +7,11 @@ import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageLightbox } from "@/components/shared/image-lightbox";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
-import { youtubePosterUrl } from "@server/catalog/media";
+import {
+  MAX_ZOOM_SCALE,
+  youtubePosterUrl,
+  ZOOMABLE_IMAGE_SIZES,
+} from "@server/catalog/media";
 
 export function ProductGallery(product: Product) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -77,7 +81,7 @@ export function ProductGallery(product: Product) {
 
       const newScale = Math.max(
         1,
-        Math.min(3, scale * (distance / touchStart)),
+        Math.min(MAX_ZOOM_SCALE, scale * (distance / touchStart)),
       );
       setScale(newScale);
       setTouchStart(distance);
@@ -234,8 +238,14 @@ export function ProductGallery(product: Product) {
                       fill
                       className="object-cover select-none"
                       loading={index === 0 ? "eager" : "lazy"}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      unoptimized
+                      // The active slide pinches and hover-zooms, so its slot is larger
+                      // than its box (ADR-0027). Only the active one: the off-screen
+                      // slides are not being inspected.
+                      sizes={
+                        index === activeIndex
+                          ? ZOOMABLE_IMAGE_SIZES
+                          : "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      }
                       draggable={false}
                     />
                   </div>
@@ -330,7 +340,6 @@ export function ProductGallery(product: Product) {
                 fill
                 className="object-cover"
                 sizes="80px"
-                unoptimized
               />
               {/* A video is identifiable before it is opened, without hover (R4). */}
               {item.kind === "YOUTUBE" && (

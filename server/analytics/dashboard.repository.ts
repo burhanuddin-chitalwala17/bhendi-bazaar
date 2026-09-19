@@ -4,6 +4,8 @@
  */
 
 import { prisma } from "@server/shared/prisma";
+import { ON_SALE } from "@server/catalog/product.visibility";
+import { VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   DashboardStats,
   RecentActivity,
@@ -33,7 +35,9 @@ export class AdminDashboardRepository {
     // counts for what one GROUP BY answers (billed-operations work, PR-72).
     const revenueWindow = (gte: Date) =>
       prisma.order.aggregate({
-        where: { createdAt: { gte } },
+        // Abandoned checkouts are not business and are not counted here
+        // (checkout-abandonment R4).
+        where: { ...VISIBLE_ORDER_WHERE, createdAt: { gte } },
         _sum: { grandTotal: true },
         _count: true,
       });
@@ -54,8 +58,11 @@ export class AdminDashboardRepository {
       revenueWindow(startOfWeek),
       revenueWindow(startOfMonth),
       revenueWindow(startOfYear),
-      prisma.order.groupBy({ by: ["status"], _count: true }),
+      prisma.order.groupBy({ by: ["status"], where: VISIBLE_ORDER_WHERE, _count: true }),
       prisma.product.findMany({
+        // Sellable inventory only (ADR-0029 D12); the order and revenue aggregates
+        // beside this one are history and keep withdrawn products.
+        where: ON_SALE,
         select: {
           stockLocations: { select: { quantity: true } },
           lowStockThreshold: true,
@@ -115,6 +122,7 @@ export class AdminDashboardRepository {
     // Get recent orders
     const recentOrders = await prisma.order.findMany({
       relationLoadStrategy: "join",
+      where: VISIBLE_ORDER_WHERE,
       take: limit,
       orderBy: { createdAt: "desc" },
       include: {
@@ -185,7 +193,7 @@ export class AdminDashboardRepository {
     // This would require order item parsing from JSON
     // For now, return featured products as placeholder
     const products = await prisma.product.findMany({
-      where: { flags: { has: ProductFlag.FEATURED } },
+      where: { flags: { has: ProductFlag.FEATURED }, ...ON_SALE },
       take: limit,
       orderBy: { reviewsCount: "desc" },
       select: {
@@ -214,6 +222,7 @@ export class AdminDashboardRepository {
 
     const orders = await prisma.order.findMany({
       where: {
+        ...VISIBLE_ORDER_WHERE,
         createdAt: {
           gte: startDate,
         },

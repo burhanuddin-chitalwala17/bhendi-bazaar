@@ -2,7 +2,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { Org } from "@prisma/client";
-import { OrgRole } from "@prisma/client";
+import { OrgRole, Prisma } from "@prisma/client";
 import type { CreateOrgInput } from "@server/catalog/org.types";
 
 export class OrgRepository {
@@ -43,6 +43,66 @@ export class OrgRepository {
       products: undefined,
       _count: undefined,
     }));
+  }
+
+  /**
+   * One page of orgs with their stats, filtered server-side.
+   *
+   * Separate from `findAllWithStats` because search and paging must happen in the
+   * same query as the count — filtering a page that was already sliced reports a
+   * total for rows the caller never asked about.
+   */
+  async findPageWithStats(filters: {
+    page: number;
+    limit: number;
+    search?: string;
+    isActive?: boolean;
+  }) {
+    const search = filters.search?.trim();
+    const where: Prisma.OrgWhereInput = {
+      ...(filters.isActive === undefined ? {} : { isActive: filters.isActive }),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: "insensitive" as const } },
+              { code: { contains: search, mode: "insensitive" as const } },
+              { email: { contains: search, mode: "insensitive" as const } },
+              { businessName: { contains: search, mode: "insensitive" as const } },
+              { gstNumber: { contains: search, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [orgs, total] = await Promise.all([
+      prisma.org.findMany({
+        where,
+        relationLoadStrategy: "join",
+        include: {
+          _count: { select: { products: true } },
+          products: { select: { stockLocations: { select: { quantity: true } } } },
+        },
+        orderBy: [{ isActive: "desc" }, { name: "asc" }],
+        skip: (filters.page - 1) * filters.limit,
+        take: filters.limit,
+      }),
+      prisma.org.count({ where }),
+    ]);
+
+    return {
+      orgs: orgs.map((org) => ({
+        ...org,
+        productCount: org._count?.products || 0,
+        totalStock:
+          org.products?.reduce(
+            (sum, p) => sum + p.stockLocations.reduce((s, row) => s + row.quantity, 0),
+            0
+          ) || 0,
+        products: undefined,
+        _count: undefined,
+      })),
+      total,
+    };
   }
 
   /**
@@ -225,7 +285,12 @@ export class OrgRepository {
   }
 
   /**
-   * Count products for a org
+   * Count products for a org.
+   *
+   * Withdrawn products are counted too, deliberately (ADR-0029): this guards org
+   * deletion, and `Product.orgId` is `onDelete: Restrict`, so an archived product
+   * blocks the delete exactly as an on-sale one does. Filtering here would let the
+   * guard pass and leave the database to refuse.
    */
   async countProducts(orgId: string): Promise<number> {
     return await prisma.product.count({

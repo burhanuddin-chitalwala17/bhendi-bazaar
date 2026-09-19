@@ -1,26 +1,42 @@
 /**
  * Reading database constraint violations out of Prisma errors.
  *
- * The shape differs by driver: without a driver adapter Prisma sets `meta.target`,
- * but under `@prisma/adapter-pg` that is undefined and the columns appear at
- * `meta.driverAdapterError.cause.constraint.fields`. Checking only one shape
- * silently disables whatever depends on it.
+ * The shape differs by driver: without a driver adapter Prisma sets `meta.target`
+ * (or `meta.field_name` for a foreign key), but under `@prisma/adapter-pg` those are
+ * undefined and the constraint appears at `meta.driverAdapterError.cause.constraint`
+ * — as `fields` for a unique violation and as `index` (the constraint's name) for a
+ * foreign key. Checking only one shape silently disables whatever depends on it.
  */
+
+type AdapterCause = {
+  originalMessage?: unknown;
+  constraint?: { fields?: unknown; index?: unknown };
+};
 
 type PrismaishError = {
   code?: string;
   meta?: {
     target?: unknown;
-    driverAdapterError?: { cause?: { constraint?: { fields?: unknown } } };
+    /** The model the failed operation ran against — "Product" for `product.delete`. */
+    modelName?: unknown;
+    field_name?: unknown;
+    column?: unknown;
+    driverAdapterError?: { cause?: AdapterCause };
   };
 };
+
+const cause = (e: PrismaishError): AdapterCause | undefined =>
+  e.meta?.driverAdapterError?.cause;
+
+const asStrings = (raw: unknown): string[] =>
+  Array.isArray(raw) ? raw.map(String) : typeof raw === "string" && raw ? [raw] : [];
 
 /** Columns named by a unique-constraint violation, or null if it isn't one. */
 export function uniqueViolationFields(error: unknown): string[] | null {
   const e = error as PrismaishError;
   if (e?.code !== "P2002") return null;
 
-  const fields = e.meta?.driverAdapterError?.cause?.constraint?.fields;
+  const fields = cause(e)?.constraint?.fields;
   if (Array.isArray(fields) && fields.length) return fields.map(String);
 
   const target = e.meta?.target;
@@ -42,38 +58,76 @@ export function isNotFoundViolation(error: unknown): boolean {
   return (error as PrismaishError)?.code === "P2025";
 }
 
+export type ConstraintFailure =
+  /** A value pointing at a parent row that is not there. The caller picked wrong. */
+  | { kind: "foreignKey"; fields: string[] }
+  /**
+   * The same error code from the other direction: rows elsewhere still reference the
+   * row being deleted, and an `onDelete: Restrict` refused. Nothing the caller typed
+   * is wrong, so no field is attributed.
+   */
+  | { kind: "restricted"; fields: []; referencingTable: string | null }
+  | { kind: "tooLong"; fields: string[] }
+  | { kind: "nullConstraint"; fields: string[] };
+
+/** `OrderItem_productId_fkey` -> table `OrderItem`, column `productId`. */
+function parseForeignKeyName(name: string) {
+  // Some engine versions append " (index)" to the constraint name.
+  const clean = name.replace(/\s*\(index\)\s*$/, "");
+  const match = /^([A-Za-z][A-Za-z0-9]*)_(.+)_fkey$/.exec(clean);
+  return match ? { table: match[1], column: match[2] } : null;
+}
+
 /**
- * Other constraint failures that still name a column, so a form can highlight it:
- * a foreign key pointing at a deleted row, a value too long, a missing required
- * value. Uniqueness is handled separately by `uniqueViolationFields`.
+ * Which side of the foreign key failed. Postgres says so in its own wording, which is
+ * the only signal that does not depend on guessing from names; the constraint's table
+ * is the fallback, since a violation on *another* table's key can only mean rows there
+ * still point at this one.
  */
-export function constraintFields(
-  error: unknown
-): { kind: "foreignKey" | "tooLong" | "nullConstraint"; fields: string[] } | null {
+function isReferencedFromElsewhere(
+  e: PrismaishError,
+  parsed: { table: string } | null
+): boolean {
+  const message = cause(e)?.originalMessage;
+  if (typeof message === "string") {
+    if (message.startsWith("update or delete on table")) return true;
+    if (message.startsWith("insert or update on table")) return false;
+  }
+  const model = e.meta?.modelName;
+  return typeof model === "string" && !!parsed && parsed.table !== model;
+}
+
+/**
+ * Constraint failures other than uniqueness that still name a column, so a form can
+ * highlight it: a foreign key pointing at a deleted row, a value too long, a missing
+ * required value. Uniqueness is handled separately by `uniqueViolationFields`.
+ */
+export function constraintFields(error: unknown): ConstraintFailure | null {
   const e = error as PrismaishError;
-  const kind =
-    e?.code === "P2003" ? "foreignKey" as const
-    : e?.code === "P2000" ? "tooLong" as const
-    : e?.code === "P2011" ? "nullConstraint" as const
-    : null;
-  if (!kind) return null;
+  const code = e?.code;
+  if (code !== "P2003" && code !== "P2000" && code !== "P2011") return null;
 
   const meta = e.meta as Record<string, unknown> | undefined;
   // Prisma names the column differently per code: `field_name` for a foreign key,
   // `column` for a length overflow, `target` for a null violation.
-  const raw = meta?.field_name ?? meta?.column ?? meta?.target;
-  const fields = Array.isArray(raw)
-    ? raw.map(String)
-    : typeof raw === "string" && raw
-      ? [raw]
-      : [];
+  const engineFields = asStrings(meta?.field_name ?? meta?.column ?? meta?.target);
+  const adapterConstraint = cause(e)?.constraint;
+  const adapterIndex =
+    typeof adapterConstraint?.index === "string" ? adapterConstraint.index : null;
+  const adapterFields = asStrings(adapterConstraint?.fields);
 
-  // A foreign key reports the constraint name (`Product_categoryId_fkey`); recover
-  // the column from it so the error can be attributed to a field.
-  const cleaned = fields.map((f) => {
-    const m = /^[A-Za-z]+_(.+)_fkey$/.exec(f);
-    return m ? m[1] : f;
-  });
+  if (code === "P2003") {
+    // A foreign key reports its constraint name; recover the column from it so the
+    // error can be attributed to a field.
+    const parsed = parseForeignKeyName(adapterIndex ?? engineFields[0] ?? "");
+    if (isReferencedFromElsewhere(e, parsed)) {
+      return { kind: "restricted", fields: [], referencingTable: parsed?.table ?? null };
+    }
+    return { kind: "foreignKey", fields: parsed ? [parsed.column] : engineFields };
+  }
 
-  return { kind, fields: cleaned };
+  const fields = engineFields.length ? engineFields : adapterFields;
+  return code === "P2000"
+    ? { kind: "tooLong", fields }
+    : { kind: "nullConstraint", fields };
 }

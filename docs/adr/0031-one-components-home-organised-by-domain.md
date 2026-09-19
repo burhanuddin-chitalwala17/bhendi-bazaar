@@ -1,4 +1,4 @@
-# ADR-0027: One components home, organised by domain, with controls through the primitives
+# ADR-0031: One components home, organised by domain, with controls through the primitives
 
 - **Date:** 2026-09-19
 - **Status:** Accepted

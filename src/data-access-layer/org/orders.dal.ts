@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 import { adminOrderRepository } from "@server/checkout/admin.order.repository";
 import type { OrderAddress } from "@/domain/order";
 import type { ShipmentItem } from "@server/checkout/order.types";
@@ -98,8 +99,12 @@ export function toOrgOrderView(order: OrderRow, orgId: string): OrgOrderView {
 }
 
 class OrgOrdersDAL {
-  getOrders = cache(async (orgId: string, page = 1) => {
-    const { orders, total, limit } = await adminOrderRepository.getOrdersForOrg(orgId, page);
+  getOrders = cache(async (orgId: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) => {
+    const { orders, total, limit } = await adminOrderRepository.getOrdersForOrg(
+      orgId,
+      page,
+      pageSize
+    );
     return {
       orders: orders.map((o) => toOrgOrderView(o, orgId)),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },

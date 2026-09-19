@@ -8,6 +8,7 @@
  */
 
 import { orderRepository } from "@server/checkout/order.repository";
+import { generateOrderCode } from "@server/checkout/order-code";
 import { prisma, toJsonColumn } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
@@ -15,15 +16,30 @@ import type {
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
 } from "@server/checkout/order.types";
-import { Order } from "@prisma/client";
+import { Order, Prisma } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { isValidPhone, PHONE_MESSAGE } from "@server/shared/phone";
 import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
 import { promotionService } from "@server/promotions/promotion.service";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
 import { assertNotUnderBidding } from "@server/bidding/bidding-lock";
+import { assertNotArchived } from "@server/catalog/product.sale-gate";
+import { cartService } from "@server/cart/cart.service";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
-import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+import { ConflictError, OutOfStockError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+
+/**
+ * A `code` collision, which is the only reason to retry a whole order. With 30^8
+ * possibilities this should never be seen; if it becomes common, the randomness is
+ * broken and a silent retry loop would be the thing hiding it.
+ */
+function isDuplicateOrderCode(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    String(error.meta?.target ?? "").includes("code")
+  );
+}
 
 export class OrderService {
   /**
@@ -188,15 +204,16 @@ export class OrderService {
    * via fulfillOrder() method
    */
   async createOrderWithShipments(
-    input: CreateOrderWithShipmentsInput
+    input: CreateOrderWithShipmentsInput,
+    /** Internal: one retry is spent on a code collision (ADR-0025), never on anything else. */
+    retriesLeft = 1
   ): Promise<ServerOrderWithShipments> {
     // Validate input
     this.validateCreateOrderWithShipmentsInput(input);
 
     try {
+      const orderCode = generateOrderCode();
       const result = await prisma.$transaction(async (tx) => {
-        // Generate unique order code
-        const orderCode = await this.generateOrderCode();
 
         // Price everything from the catalogue, inside this transaction, so the price
         // used for the total is the price checked against the catalogue (Invariant 1,
@@ -360,8 +377,11 @@ export class OrderService {
           });
           if (reserved.count === 0) {
             const name = productNames.get(productId) ?? "An item in your order";
-            throw new ConflictError(
-              `"${name}" just sold at its location while you were checking out. Please try again.`
+            // Named rather than merely reported: the caller retries once after
+            // releasing abandoned holds on this product (checkout-abandonment D4).
+            throw new OutOfStockError(
+              `"${name}" just sold at its location while you were checking out. Please try again.`,
+              [productId]
             );
           }
         }
@@ -377,10 +397,19 @@ export class OrderService {
         // is under auction.
         await assertNotUnderBidding(productIds, now, tx);
 
-        // R6: the bought items leave the cart in the same transaction, so a closed
-        // tab cannot leave a cart that has already been purchased.
+        // Nothing withdrawn from sale may be bought (ADR-0029, product-archive R4).
+        //
+        // Here for the same reason as the check above, and behind the same lock: a
+        // listing filter cannot stop a cart filled before the withdrawal, a page
+        // rendered a minute ago, or a request typed by hand. This is the only point
+        // that can refuse, because it is the only one inside the write.
+        await assertNotArchived(productIds, tx);
+
+        // R6: the bought lines leave the cart in the same transaction, so a closed
+        // tab cannot leave a cart that has already been purchased. Only those lines —
+        // Buy Now and a mid-checkout sign-in both leave others there (seamless-sign-in D12).
         if (input.userId) {
-          await tx.cart.deleteMany({ where: { userId: input.userId } });
+          await cartService.removeBoughtLinesIn(tx, input.userId, requestedLines);
         }
 
         // 1. Create the main order (pending payment)
@@ -535,6 +564,11 @@ export class OrderService {
 
       return result;
     } catch (error) {
+      if (isDuplicateOrderCode(error) && retriesLeft > 0) {
+        // A fresh code, and the whole order again — nothing from the rolled-back
+        // transaction survives to be reused.
+        return this.createOrderWithShipments(input, retriesLeft - 1);
+      }
       console.error("Failed to create order with shipments:", error);
       throw error;
     }
@@ -669,27 +703,6 @@ export class OrderService {
         console.error(`   - ${f.code}: ${f.error}`);
       });
     }
-  }
-
-  /**
-   * Generate a unique order code
-   */
-  private async generateOrderCode(): Promise<string> {
-    // Format: BB-NNNN (e.g., BB-1001)
-    const latestOrder = await prisma.order.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { code: true },
-    });
-
-    let nextNumber = 1001;
-    if (latestOrder && latestOrder.code) {
-      const match = latestOrder.code.match(/BB-(\d+)/);
-      if (match) {
-        nextNumber = parseInt(match[1], 10) + 1;
-      }
-    }
-
-    return `BB-${nextNumber}`;
   }
 
   /**

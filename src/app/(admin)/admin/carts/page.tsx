@@ -8,6 +8,7 @@
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { ShoppingCart, Mail, Eye, RefreshCw } from "lucide-react";
@@ -17,12 +18,13 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/format";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 import { Select } from "@/components/ui/select";
 
 export default function AdminAbandonedCartsPage() {
   const [filters, setFilters] = useState<AbandonedCartFilters>({
     page: 1,
-    limit: 20,
+    limit: DEFAULT_PAGE_SIZE,
     minDays: 1,
   });
 
@@ -209,7 +211,9 @@ export default function AdminAbandonedCartsPage() {
         totalPages={data?.totalPages || 1}
         currentPage={filters.page || 1}
         totalItems={data?.total || 0}
+        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
         onPageChange={(page) => setFilters({ ...filters, page })}
+        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onSort={(key, order) =>
           setFilters({ ...filters, sortBy: key as any, sortOrder: order })
         }
@@ -266,9 +270,12 @@ export default function AdminAbandonedCartsPage() {
                       key={index}
                       className="flex items-center gap-3 p-3 bg-background rounded-lg"
                     >
-                      <img
+                      <Image
                         src={item.thumbnail}
                         alt={item.name}
+                        width={64}
+                        height={85}
+                        sizes="64px"
                         className="w-16 aspect-[3/4] object-cover rounded"
                       />
                       <div className="flex-1">

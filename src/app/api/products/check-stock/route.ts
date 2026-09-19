@@ -27,7 +27,10 @@ export async function POST(request: NextRequest) {
     const [products, stockRows] = await Promise.all([
       prisma.product.findMany({
         where: { id: { in: ids } },
-        select: { id: true, name: true },
+        // `archivedAt` rather than an ON_SALE filter: a withdrawn product must come
+        // back unavailable *by name*, so the cart can say which line is the problem.
+        // Filtering it out here would report it as an unknown product (ADR-0029 D6).
+        select: { id: true, name: true, archivedAt: true },
       }),
       prisma.productStock.findMany({
         where: { productId: { in: ids }, orgAddress: { isActive: true } },
@@ -44,6 +47,12 @@ export async function POST(request: NextRequest) {
       const stock = totals.get(item.productId) ?? 0;
       if (!product) {
         return { productId: item.productId, name: "Unknown product", available: false, stock: 0 };
+      }
+      // A withdrawn product is never available, whatever is on the shelf: its stock
+      // is real but not for sale (product-archive R5). The cart already renders this
+      // state, so withdrawal reuses it rather than adding a second one.
+      if (product.archivedAt) {
+        return { productId: item.productId, name: product.name, available: false, stock: 0 };
       }
       return {
         productId: item.productId,

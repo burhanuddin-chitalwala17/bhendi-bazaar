@@ -32,6 +32,7 @@ export function ProductAddContainer({
 
   const handleCancel = () => {
     router.push(productsBasePath);
+    router.refresh();
   };
 
   return (

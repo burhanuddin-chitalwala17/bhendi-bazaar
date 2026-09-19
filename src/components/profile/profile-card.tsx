@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Camera, Edit3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,9 +102,12 @@ export function ProfileCard({
             {/* Profile Picture with Edit Button */}
             <div className="relative">
               {profilePic ? (
-                <img
+                <Image
                   src={profilePic}
                   alt={name || "Profile"}
+                  width={56}
+                  height={56}
+                  sizes="56px"
                   className="h-14 w-14 rounded-full object-cover"
                 />
               ) : (

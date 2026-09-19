@@ -41,7 +41,7 @@ export default async function OrgIndexPage() {
             <Link
               prefetch={false}
               href="/"
-              className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted/60"
+              className="text-sm font-medium hover:bg-muted/60"
             >
               Back to Store
             </Link>

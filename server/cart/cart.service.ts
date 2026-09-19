@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { cartRepository } from "@server/cart/cart.repository";
 import { mergeCartLines } from "@server/cart/cart.merge";
 import type { CartItem, CartLineInput } from "@server/cart/cart.types";
@@ -76,6 +77,15 @@ export class CartService {
 
   async clearCart(userId: string): Promise<void> {
     await cartRepository.clear(userId);
+  }
+
+  /** The checkout's entry point: drop what an order bought, inside its transaction. */
+  async removeBoughtLinesIn(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    lines: Array<Pick<CartLineInput, "productId" | "size" | "color">>
+  ): Promise<void> {
+    await cartRepository.removeLinesIn(tx, userId, lines);
   }
 
   private validateCartLines(lines: CartLineInput[]): void {

@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Home, Receipt, ShoppingBag, User } from "lucide-react";
+import { Headset, Home, Receipt, ShoppingBag, User } from "lucide-react";
 
 import { useCartStore } from "@/store/cartStore";
 import { cn } from "@/lib/utils";
+import { ContactLauncher } from "@/components/support/contact-launcher";
+import { useAuthSheet } from "@/context/AuthSheetContext";
+import { Button } from "@/components/ui/button";
 
 // The phone's primary navigation (ADR-0016). It exists so the four things a shopper
 // does are one thumb-reach apart instead of behind a header dropdown, and so the app
@@ -28,7 +31,7 @@ export function MobileTabBar() {
   const items = useCartStore((state) => state.items);
   const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const accountHref = session?.user ? "/profile" : "/signin";
+  const { open: openAuthSheet } = useAuthSheet();
 
   return (
     <nav
@@ -36,14 +39,11 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 pb-safe backdrop-blur md:hidden"
     >
       <div className="mx-auto flex h-tabbar max-w-6xl items-stretch">
-        <Link
-          href="/"
-          className={cn(TAB_CLASSES, tabTone(pathname === "/"))}
-          prefetch={false}
-        >
-          <Home className="size-5" />
-          Home
-        </Link>
+        {/* Contact first and Home centred; Contact opens a sheet, so it is never "active". */}
+        <ContactLauncher className={cn(TAB_CLASSES, tabTone(false))}>
+          <Headset className="size-5" />
+          Contact
+        </ContactLauncher>
 
         <Link
           prefetch={false}
@@ -62,6 +62,15 @@ export function MobileTabBar() {
         </Link>
 
         <Link
+          href="/"
+          className={cn(TAB_CLASSES, tabTone(pathname === "/"))}
+          prefetch={false}
+        >
+          <Home className="size-5" />
+          Home
+        </Link>
+
+        <Link
           prefetch={false}
           href="/orders"
           className={cn(TAB_CLASSES, tabTone(pathname.startsWith("/order")))}
@@ -70,17 +79,27 @@ export function MobileTabBar() {
           Orders
         </Link>
 
-        <Link
-          prefetch={false}
-          href={accountHref}
-          className={cn(
-            TAB_CLASSES,
-            tabTone(pathname === "/profile" || pathname === "/signin"),
-          )}
-        >
-          <User className="size-5" />
-          {session?.user ? "Account" : "Login"}
-        </Link>
+        {session?.user ? (
+          <Link
+            prefetch={false}
+            href="/profile"
+            className={cn(TAB_CLASSES, tabTone(pathname === "/profile"))}
+          >
+            <User className="size-5" />
+            Account
+          </Link>
+        ) : (
+          // Opens the sheet over this page, so like Contact it is never "active".
+          <Button
+            variant="ghost"
+            type="button"
+            onClick={() => openAuthSheet()}
+            className={cn(TAB_CLASSES, tabTone(pathname === "/signin"))}
+          >
+            <User className="size-5" />
+            Login
+          </Button>
+        )}
       </div>
     </nav>
   );

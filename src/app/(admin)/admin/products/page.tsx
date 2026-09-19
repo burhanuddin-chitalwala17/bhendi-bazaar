@@ -6,6 +6,7 @@ import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductsContainer } from "@/components/product/console/productsList";
 import { ProductsTableSkeleton } from "@/components/product/console/productsList/components/ProductsTableSkeleton";
 import type { Metadata } from "next";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 // ⚡ ISR - Revalidate every 5 minutes
 export const revalidate = 300;
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
 interface ProductsPageProps {
   searchParams: Promise<{
     page?: string;
+    limit?: string;
     search?: string;
     category?: string;
     org?: string;
@@ -28,6 +30,7 @@ interface ProductsPageProps {
     order?: "asc" | "desc";
     lowStock?: string;
     outOfStock?: string;
+    wishlisted?: string;
   }>;
 }
 
@@ -60,8 +63,8 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
 
   // Parse filters from URL
   const filters = {
-    page: Number(params.page) || 1,
-    limit: 10,
+    page: resolvePageNumber(params.page),
+    limit: resolvePageSize(params.limit),
     search: params.search,
     categoryId: params.category,
     orgId: params.org,
@@ -75,6 +78,7 @@ async function ProductsData({ searchParams }: ProductsPageProps) {
     sortOrder: params.order,
     lowStock: params.lowStock === "true" ? true : undefined,
     outOfStock: params.outOfStock === "true" ? true : undefined,
+    wishlistedOnly: params.wishlisted === "true" ? true : undefined,
   };
 
   // ⚡ Parallel data fetching

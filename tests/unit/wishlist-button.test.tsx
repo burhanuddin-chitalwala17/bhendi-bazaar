@@ -1,8 +1,9 @@
 /**
  * The heart, and the rule that there is no guest wishlist.
  *
- * A signed-out visitor is told to sign in and nothing is stored — no localStorage, no
- * anonymous row, so no sign-in merge to get wrong later. For everyone else the heart
+ * A signed-out visitor is offered the sign-in sheet carrying a save intent, and nothing
+ * is stored until they sign in — no localStorage, no anonymous row, so no sign-in merge
+ * to get wrong later (seamless-sign-in D6). For everyone else the heart
  * fills under the finger and only reverts if the write actually failed.
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
@@ -23,6 +24,11 @@ vi.mock("@/lib/auth", () => ({
   useAuth: () => ({ status: authStatus, user: null }),
 }));
 
+const openAuthSheet = vi.fn();
+vi.mock("@/context/AuthSheetContext", () => ({
+  useAuthSheet: () => ({ open: openAuthSheet }),
+}));
+
 const fetchMock = vi.fn();
 
 beforeEach(() => {
@@ -40,13 +46,19 @@ const renderHeart = (saved: string[] = [], productId = "prod-1") =>
   );
 
 describe("the heart, signed out", () => {
-  it("asks the visitor to sign in and stores nothing", async () => {
+  it("opens the sign-in sheet with a save intent, and stores nothing yet", async () => {
     authStatus = "guest";
     renderHeart();
 
     fireEvent.click(screen.getByRole("button", { name: "Add to wishlist" }));
 
-    await waitFor(() => expect(toast).toHaveBeenCalledWith("Sign in to add to wishlist"));
+    await waitFor(() =>
+      expect(openAuthSheet).toHaveBeenCalledWith({
+        reason: "Sign in to save this",
+        // A save, never the toggle: finishing it can only ever fill the heart (R12).
+        intent: { kind: "wishlist.save", productId: "prod-1" },
+      })
+    );
     expect(fetchMock).not.toHaveBeenCalled();
     // Still hollow: nothing was saved, so nothing may look saved.
     expect(screen.getByRole("button")).toHaveAttribute("aria-pressed", "false");
@@ -61,7 +73,7 @@ describe("the heart, session still loading", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add to wishlist" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    expect(toast).not.toHaveBeenCalledWith("Sign in to add to wishlist");
+    expect(openAuthSheet).not.toHaveBeenCalled();
   });
 });
 

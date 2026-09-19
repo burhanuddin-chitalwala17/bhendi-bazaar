@@ -32,6 +32,44 @@ export interface ProductMediaDto {
 /** R14 — a page-weight limit before it is a storage one. */
 export const MAX_MEDIA_PER_PRODUCT = 10;
 
+/**
+ * How far a photograph can be magnified on the surfaces that allow it — the gallery's
+ * pinch and hover zoom, and the lightbox. Declared here because the stored ceiling below
+ * is derived from it: the two cannot be chosen independently without the zoom going soft.
+ */
+export const MAX_ZOOM_SCALE = 3;
+
+/**
+ * The longest edge of a stored photograph, and the quality it is encoded at.
+ *
+ * Here rather than in image-upload.ts because two paths must agree on it: the server
+ * route normalises with sharp, and the bulk wizard — which uploads browser-to-Blob to
+ * dodge the 4.5MB function body cap, so no server code sees the file — normalises on a
+ * canvas. A budget one path enforced and the other did not would be no budget at all
+ * (ADR-0026).
+ *
+ * 2048 rather than the 1600 first shipped: a 3:4 photograph in a 1440x900 lightbox
+ * displays ~675px wide, and MAX_ZOOM_SCALE asks for three times that. 1600 could not
+ * supply it and measured twice the error of 2000 at full zoom, on the one surface where
+ * a buyer is inspecting weave and stonework. The extra ~70KB per image is the cheapest
+ * part of this whole exercise (ADR-0027).
+ */
+export const MAX_IMAGE_EDGE = 2048;
+export const IMAGE_QUALITY = 0.82;
+
+/**
+ * What to declare in `sizes` on a surface that can be magnified.
+ *
+ * Deliberately larger than the CSS box, which ADR-0026 otherwise treats as a defect:
+ * a zoomable element's real slot is its box times the zoom, because the browser scales
+ * the image it already downloaded rather than fetching a sharper one. Stated as a
+ * multiple of MAX_ZOOM_SCALE so raising the zoom cannot silently outrun the pixels.
+ *
+ * Applied only to the two inspect surfaces. The listing tile does not zoom and must
+ * stay honest — overstating there is what cost the transfer allowance (ADR-0027).
+ */
+export const ZOOMABLE_IMAGE_SIZES = `${Math.min(MAX_ZOOM_SCALE, 2) * 100}vw`;
+
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 
 /**

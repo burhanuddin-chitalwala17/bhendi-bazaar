@@ -207,7 +207,7 @@ export function CommercialTerms({
                 { categoryId: event.target.value, percent: "" },
               ])
             }
-            className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            className="mt-1 h-10 w-full rounded-md bg-background text-sm"
             aria-label="Add a category rate"
           >
             <option value="">＋ Add a category rate…</option>

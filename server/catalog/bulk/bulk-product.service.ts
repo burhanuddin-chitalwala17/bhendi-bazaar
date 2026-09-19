@@ -60,10 +60,16 @@ export async function validateProductRows(
   const taken = skus.length
     ? await prisma.product.findMany({
         where: { orgId, sku: { in: skus.map((s) => s.sku) } },
-        select: { sku: true, name: true },
+        // Withdrawn products are included deliberately: they still hold their SKU, so
+        // a row claiming one is refused rather than silently restoring the product an
+        // import must never put back on sale (ADR-0029, product-archive Q1).
+        select: { sku: true, name: true, archivedAt: true },
       })
     : [];
   const takenBy = new Map(taken.map((p) => [p.sku as string, p.name]));
+  const withdrawnSkus = new Set(
+    taken.filter((p) => p.archivedAt).map((p) => p.sku as string)
+  );
   const seenInSheet = new Map<string, number>();
 
   for (const { row, rowNumber } of rows) {
@@ -91,7 +97,9 @@ export async function validateProductRows(
         errors.push({
           row: rowNumber,
           field: "sku",
-          message: `SKU "${row.sku}" is already used by "${conflictName}".`,
+          message: withdrawnSkus.has(row.sku)
+            ? `SKU "${row.sku}" is still held by "${conflictName}", which is off sale. Restore that product to edit it, or use a different code.`
+            : `SKU "${row.sku}" is already used by "${conflictName}".`,
         });
       }
       const firstRow = seenInSheet.get(row.sku);
@@ -136,6 +144,8 @@ export async function validateProductRows(
  */
 async function assignSlugs(rows: RowWithNumber<BulkProductCreateRow>[]): Promise<string[]> {
   const existing = new Set(
+    // Every slug, withdrawn included (ADR-0029): an archived product keeps its slug so
+    // a restore finds its own URL free, so an import must not reuse it.
     (await prisma.product.findMany({ select: { slug: true } })).map((p) => p.slug)
   );
   return rows.map(({ row }) => {

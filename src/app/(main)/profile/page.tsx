@@ -8,7 +8,7 @@ import { ProfileCard } from "@/components/profile/profile-card";
 import { AddressesSection } from "@/components/profile/addresses-section";
 import { RecentOrdersSection } from "@/components/profile/recent-orders-section";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { SignInButton } from "@/components/auth/sign-in-button";
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { ErrorState } from "@/components/shared/states/ErrorState";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
@@ -79,12 +79,9 @@ export default function ProfilePage() {
               Your profile hosts your saved addresses and recent orders once
               you&apos;re signed in.
             </p>
-            <Button
-              asChild
-              className="mt-1 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow"
-            >
-              <a href="/signin">Go to login</a>
-            </Button>
+            <SignInButton className="mt-1 h-10 rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow">
+              Sign in
+            </SignInButton>
           </CardContent>
         </Card>
       </div>

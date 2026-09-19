@@ -83,22 +83,57 @@ export function useProducts(options?: UseProductsOptions) {
     }
   }
 
+  /**
+   * Remove a product. The server deletes it outright when nothing depends on it and
+   * takes it off sale otherwise (ADR-0029), so the confirmation says both may happen
+   * and the toast reports which one did.
+   */
   const deleteProduct = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) {
+    if (
+      !confirm(
+        "Remove this product?\n\nIf it has never been ordered it is deleted permanently. If it appears on an order, a promotion or a bidding event it is taken off sale instead, so those records stay intact — you can restore it later."
+      )
+    ) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
-      await productsApiClient.deleteProduct(id);
-      toast.success("Product deleted successfully");
-      
+      const { outcome } = await productsApiClient.deleteProduct(id);
+      toast.success(
+        outcome === "archived"
+          ? "Product taken off sale. Past orders keep it; restore it from the Withdrawn filter."
+          : "Product deleted"
+      );
+
       // ⚡ Trigger server refresh
       router.refresh();
       options?.onSuccess?.();
     } catch (error) {
       // ApiError extends Error, so this is the server's own message when there is one.
-      toast.error(error instanceof Error ? error.message : "Could not delete the product");
+      toast.error(error instanceof Error ? error.message : "Could not remove the product");
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /** Take a product off sale, or put it back, without touching what it was part of. */
+  const setProductArchived = async (id: string, archived: boolean) => {
+    setIsLoading(true);
+    try {
+      await productsApiClient.setArchived(id, archived);
+      toast.success(archived ? "Product taken off sale" : "Product back on sale");
+      router.refresh();
+      options?.onSuccess?.();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : archived
+            ? "Could not take the product off sale"
+            : "Could not put the product back on sale"
+      );
       throw error;
     } finally {
       setIsLoading(false);
@@ -109,6 +144,7 @@ export function useProducts(options?: UseProductsOptions) {
     // Mutations
     createProduct,
     deleteProduct,
+    setProductArchived,
     updateProduct,
     // State
     isLoading,

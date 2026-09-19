@@ -5,14 +5,19 @@ import type { OrgSummary } from "@/domain/org";
 // cannot drift again (CONTRACTS.md — weight was collected and never written).
 export type { ProductFormInput } from "@server/catalog/admin.product.types";
 import type { ProductMediaDto } from "@server/catalog/media";
+import type { ProductShelf } from "@server/catalog/product.visibility";
 
 export interface ProductFilters {
+  /** Which shelf to list. Defaults to on-sale; withdrawn products are asked for. */
+  shelf?: ProductShelf;
   search?: string; // Search by name, SKU, tags
   categoryId?: string;
   orgId?: string;
   flags?: ProductFlag[]; // Filter by any flags
   lowStock?: boolean; // Products below lowStockThreshold
   outOfStock?: boolean; // Stock = 0
+  /** Only products at least one person has saved. Resolved to ids in the DAL. */
+  wishlistedOnly?: boolean;
   minPrice?: number;
   maxPrice?: number;
   page?: number;
@@ -40,6 +45,8 @@ export interface ProductForTable {
   thumbnail: string;
   /** How many users have this saved. Demand, read-only — never sorted or filtered on. */
   wishlistCount: number;
+  /** Set when the product is off sale (ADR-0029); null while it is for sale. */
+  archivedAt: Date | null;
   createdAt: Date;
   category: { id: string; name: string };
   org: { id: string; name: string; code: string };
@@ -71,7 +78,10 @@ export interface ProductDetails {
 }
 
 export interface ProductStats {
+  /** On sale. Withdrawn products are counted separately, never folded in here. */
   totalProducts: number;
+  /** Off sale but intact (ADR-0029) — excluded from every other figure here. */
+  withdrawnProducts: number;
   lowStockProducts: number;
   outOfStockProducts: number;
   featuredProducts: number;
