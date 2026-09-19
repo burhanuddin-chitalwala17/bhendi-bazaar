@@ -10,6 +10,38 @@
 
 ## Entries
 
+## [PR-111] 2026-09-19 — [CONTRACT] Rows-per-page on every table, server-side
+
+Every paginated table in both portals showed ten rows and offered no way to change it. All nine now carry a rows-per-page control (10 / 25 / 50 / 100), and in every case the choice is a new server query — nothing is fetched and then sliced.
+
+**One declaration of the page sizes.** `PAGE_SIZE_OPTIONS`, `DEFAULT_PAGE_SIZE`, `resolvePageSize` and `resolvePageNumber` live in `server/shared/pagination.ts`, alongside the `Pagination` shape that was previously declared there *and* in `src/types/shared.ts` — two declarations of the same concept, which is the drift Rule 1 exists to stop. `src/types/shared.ts` now re-exports.
+
+**`limit` is parsed, not coerced.** Six route handlers read it as `parseInt(searchParams.get("limit") || "20")`, which happily accepts `limit=1000000` — an unbounded `take` any caller could ask for. Every handler now resolves against the closed set, and `page` through `resolvePageNumber` so a negative page cannot become a negative `skip`. This is Invariant 4 at a read boundary: the payload is untrusted whether or not the caller is an admin.
+
+**The admin orgs listing was not paginated at all.** It fetched every organisation with its product count and per-location stock, then searched, filtered and sliced in the browser — the page's cost grew with the platform, and `Showing 1 to 10 of N` counted rows already downloaded. `orgRepository.findPageWithStats` now filters, orders, pages and counts in one query pair; search and status are query parameters. `GET /api/admin/orgs` therefore returns `{ orgs, pagination }` rather than a bare array, and `includeStats` is gone — stats were the only caller. `adminOrgService.getAllOrgs` was left with no callers and is deleted.
+
+**The pagination bar no longer unmounts.** `DataTable` returned early on both loading and empty results, so the whole card — controls included — vanished on every page change, and a filter that emptied the table took away the control needed to widen it. Header and footer now stay mounted; only the body swaps. Its prev/next and sort controls are `ui/button` rather than raw `<button>`, and prev/next disable correctly at both ends (`currentPage >= totalPages`, previously `=== totalPages`, so the next button stayed live past the last page whenever a filter shrank the result set mid-session).
+
+Default page size is now **10 everywhere**. Users, orders, reviews and carts previously defaulted to 20 and categories to 50; neither is in the offered set, and a one-click selector makes the cheapest first load the right default.
+
+Surfaces changed: org products, org orders, admin products, admin users, admin orders, admin reviews, admin abandoned carts, admin categories, admin orgs.
+
+Not included: the org reviews page and the offer and bidding lists are card lists, not tables — the reviews DAL already returns `pagination` and renders no control for it, which is a pre-existing gap rather than one this PR introduces.
+
+## [PR-111] 2026-09-18 — Sign in without leaving the page, and finish what prompted it
+
+Signing in, creating an account and asking for a password reset now happen in a panel over the current page — a bottom sheet on a phone, a right-hand panel from `md` — opened by **Login** in the header and the tab bar. On success it closes, the shopper is where they were, and the chrome, cart, hearts and page content update without a reload. Spec and TRD: [seamless-sign-in](specs/seamless-sign-in/).
+
+**One form per flow.** `SignInForm`, `SignUpForm`, `ForgotPasswordForm` and `GoogleSignInButton` in `src/components/auth/` own their fields, schema and submit; the `(auth)` pages and the sheet are a heading plus the form, so a message cannot differ between them. The pages became server components that pass `callbackUrl` through `safeCallbackUrl` — a same-origin path or `/` — and return the shopper there instead of the home page. A signed-out visit to a portal still goes to the sign-in page and comes back.
+
+**A prompt to sign in finishes its action.** The heart, for a guest, opens the sheet ("Sign in to save this") with a `wishlist.save` intent, which runs after a password sign-in, a new account, or the Google round trip, where it rides in `sessionStorage` for at most ten minutes and is removed before it runs. It is a save, never the toggle, so it cannot unsave. Closing the sheet discards it, and so does coming back from Google signed out. The wishlist page shows a guest a sign-in prompt instead of redirecting, and the profile page's prompt opens the sheet — that prompt was unreachable before, because `ProfileProvider` never left its loading state for a guest.
+
+**Checkout.** A guest sees **Already have an account? Sign in** above the delivery form. After signing in, the guest's address is cleared for the account's saved ones, offers are re-quoted for the buyer (the quote key now includes the user), and the items being checked out stay as snapshotted — whatever the sign-in merge brought into the cart stays in the cart.
+
+**An order removes only what it bought.** The order transaction used to delete the whole cart row, Buy Now included. It now calls `cartService.removeBoughtLinesIn(tx, …)`, which deletes the lines matching the order's `(productId, size, color)` and bumps `version`, and the client drops the same lines with `removeLines` instead of `clear()` — on the free-order path too, which previously cleared nothing locally. The order service no longer touches `tx.cart` directly (ADR-0003). [inventory-reservation](specs/inventory-reservation/) R6 is reworded to match. A 409 on the next cart write now only announces "updated in another tab" when the merge actually changed something, since an order this tab placed produces one.
+
+Tests: `auth-forms`, `auth-sheet`, `auth-intent`, `safe-callback-url`, `checkout-sign-in`, `order-removes-bought-lines`; `wishlist-button` and the removal-rule check in `wishlist.test.ts` updated. No schema, no migration, no DTO change. The 6 failures already on `develop` (design-tokens ×2, image-delivery ×2, rate-limit-detached, admin-audit-trail) reproduce unchanged.
+
 ## [PR-110] 2026-09-18 — Review fixes for the R2 switch: two blockers the tests did not catch
 
 Pre-merge review of [PR-108] found two defects that would have surfaced during testing, and one control with no coverage at all.

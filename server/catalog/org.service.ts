@@ -6,15 +6,29 @@ import type { CreateOrgInput as CreateOrgSchemaInput } from "@/lib/validation/sc
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 import { orgCodeCandidates } from "@server/catalog/org.code";
 import { isUniqueViolation } from "@server/shared/constraint";
+import { DEFAULT_PAGE_SIZE, type Pagination } from "@server/shared/pagination";
 
 export class AdminOrgService {
-  /**
-   * Get all orgs with optional stats
-   */
-  async getAllOrgs(includeStats = false) {
-    return includeStats
-      ? await orgRepository.findAllWithStats()
-      : await orgRepository.findAll();
+  /** One page of orgs for the admin listing — search, status and paging all server-side. */
+  async listOrgs(filters: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+  }): Promise<{ orgs: Awaited<ReturnType<typeof orgRepository.findPageWithStats>>["orgs"]; pagination: Pagination }> {
+    const page = filters.page ?? 1;
+    const limit = filters.limit ?? DEFAULT_PAGE_SIZE;
+    const { orgs, total } = await orgRepository.findPageWithStats({
+      page,
+      limit,
+      search: filters.search,
+      isActive: filters.isActive,
+    });
+
+    return {
+      orgs,
+      pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    };
   }
 
   /**

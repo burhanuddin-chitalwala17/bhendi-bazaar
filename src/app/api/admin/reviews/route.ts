@@ -8,6 +8,7 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminReviewService } from "@server/catalog/review.service";
 import type { ReviewListFilters } from "@server/catalog/review.types";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,8 +36,8 @@ export async function GET(request: NextRequest) {
       maxRating: searchParams.get("maxRating")
         ? parseInt(searchParams.get("maxRating")!)
         : undefined,
-      page: parseInt(searchParams.get("page") || "1"),
-      limit: parseInt(searchParams.get("limit") || "20"),
+      page: resolvePageNumber(searchParams.get("page")),
+      limit: resolvePageSize(searchParams.get("limit")),
       sortBy: (searchParams.get("sortBy") as any) || "createdAt",
       sortOrder: (searchParams.get("sortOrder") as any) || "desc",
     };

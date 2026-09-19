@@ -3,7 +3,7 @@
 - **Status:** ✅ Implemented — PR-40
 - **Domain:** checkout, catalog
 - **Phase:** 2 — Transaction integrity
-- **Verified:** 2026-08-03
+- **Verified:** 2026-09-18
 - **References:** [trd.md](trd.md), [ADR-0007](../../adr/0007-conditional-stock-decrement.md)
 
 > Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
@@ -22,7 +22,7 @@ The reverse failure matters too. Stock held by checkouts that were never complet
 - **R3** — When stock is insufficient, no order is created and the customer is told which item is unavailable.
 - **R4** — Stock held by an order that fails or is abandoned returns to available.
 - **R5** — Stock never goes negative.
-- **R6** — A completed checkout clears the customer's cart as part of the same step, so a closed tab cannot leave a cart that has already been bought.
+- **R6** — A completed checkout removes the lines it bought from the customer's cart as part of the same step, so a closed tab cannot leave a cart that has already been bought. Lines it did not buy stay ([seamless-sign-in](../seamless-sign-in/) R16).
 - **R7** — Concurrent edits to one customer's cart from two places do not silently discard one of them.
 
 ## Product acceptance

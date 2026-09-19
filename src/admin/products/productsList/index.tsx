@@ -119,6 +119,7 @@ export function ProductsContainer({
         products={data.products}
         pagination={data.pagination}
         onPageChange={(page) => updateFilters({ page })}
+        onPageSizeChange={(limit) => updateFilters({ limit })}
         onSort={(sortBy: string, sortOrder: "asc" | "desc") => updateFilters({ sortBy: sortBy as "name"|"createdAt"|"price"|"stock", sortOrder })}
         onDelete={handleDelete}
         readOnly={readOnly}

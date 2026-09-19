@@ -1,29 +1,47 @@
 // src/components/admin/orgsContainer/hooks/useOrgs.ts
 
 import { useState, useEffect, useCallback } from "react";
-import { orgService } from "@/services/admin/orgService";
+import { orgService, type OrgListFilters } from "@/services/admin/orgService";
 import type { OrgWithStats } from "@/domain/org";
+import type { Pagination } from "@/types/shared";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 import { toast } from "sonner";
+import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
-export function useOrgs() {
+const EMPTY_PAGINATION: Pagination = {
+  page: 1,
+  limit: DEFAULT_PAGE_SIZE,
+  total: 0,
+  totalPages: 1,
+};
+
+/**
+ * The listing is a server page, so every mutation refetches rather than patching the
+ * local array — a create or delete changes which rows belong on this page, and only
+ * the server knows that.
+ */
+export function useOrgs(filters: OrgListFilters) {
   const [orgs, setOrgs] = useState<OrgWithStats[]>([]);
+  const [pagination, setPagination] = useState<Pagination>(EMPTY_PAGINATION);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { page, limit, search, status } = filters;
 
   const loadOrgs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await orgService.getOrgs(true); // with stats
-      setOrgs(data);
+      const data = await orgService.getOrgs({ page, limit, search, status });
+      setOrgs(data.orgs);
+      setPagination(data.pagination);
     } catch (err: any) {
       setError(err.message);
       toast.error(err.message || "Failed to load orgs");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit, search, status]);
 
   useEffect(() => {
     loadOrgs();
@@ -31,9 +49,9 @@ export function useOrgs() {
 
   const createOrg = async (data: OrgFormInput) => {
     try {
-      const newOrg = await orgService.createOrg(data);
+      await orgService.createOrg(data);
       toast.success("Organisation created successfully");
-      setOrgs([...orgs, newOrg as OrgWithStats]);
+      await loadOrgs();
     } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.
       throw err;
@@ -42,16 +60,9 @@ export function useOrgs() {
 
   const updateOrg = async (id: string, data: Partial<OrgFormInput>) => {
     try {
-      const newOrg = (await orgService.updateOrg(
-        id,
-        data
-      )) as OrgWithStats;
+      await orgService.updateOrg(id, data);
       toast.success("Organisation updated successfully");
-      setOrgs(
-        orgs.map((org: OrgWithStats) =>
-          org.id === id ? newOrg : org
-        )
-      );
+      await loadOrgs();
     } catch (err) {
       // Presentation belongs to useServerForm; rethrow so field details survive.
       throw err;
@@ -62,7 +73,7 @@ export function useOrgs() {
     try {
       await orgService.deleteOrg(id);
       toast.success("Organisation deleted successfully");
-      setOrgs(orgs.filter((org: OrgWithStats) => org.id !== id));
+      await loadOrgs();
     } catch (err: any) {
       toast.error(err.message || "Failed to delete org");
       throw err;
@@ -71,6 +82,7 @@ export function useOrgs() {
 
   return {
     orgs,
+    pagination,
     loading,
     error,
     createOrg,
