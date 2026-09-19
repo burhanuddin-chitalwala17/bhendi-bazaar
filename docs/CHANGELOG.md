@@ -28,6 +28,19 @@ Surfaces changed: org products, org orders, admin products, admin users, admin o
 
 Not included: the org reviews page and the offer and bidding lists are card lists, not tables — the reviews DAL already returns `pagination` and renders no control for it, which is a pre-existing gap rather than one this PR introduces.
 
+## [PR-111] 2026-09-18 — Sign in without leaving the page, and finish what prompted it
+
+Signing in, creating an account and asking for a password reset now happen in a panel over the current page — a bottom sheet on a phone, a right-hand panel from `md` — opened by **Login** in the header and the tab bar. On success it closes, the shopper is where they were, and the chrome, cart, hearts and page content update without a reload. Spec and TRD: [seamless-sign-in](specs/seamless-sign-in/).
+
+**One form per flow.** `SignInForm`, `SignUpForm`, `ForgotPasswordForm` and `GoogleSignInButton` in `src/components/auth/` own their fields, schema and submit; the `(auth)` pages and the sheet are a heading plus the form, so a message cannot differ between them. The pages became server components that pass `callbackUrl` through `safeCallbackUrl` — a same-origin path or `/` — and return the shopper there instead of the home page. A signed-out visit to a portal still goes to the sign-in page and comes back.
+
+**A prompt to sign in finishes its action.** The heart, for a guest, opens the sheet ("Sign in to save this") with a `wishlist.save` intent, which runs after a password sign-in, a new account, or the Google round trip, where it rides in `sessionStorage` for at most ten minutes and is removed before it runs. It is a save, never the toggle, so it cannot unsave. Closing the sheet discards it, and so does coming back from Google signed out. The wishlist page shows a guest a sign-in prompt instead of redirecting, and the profile page's prompt opens the sheet — that prompt was unreachable before, because `ProfileProvider` never left its loading state for a guest.
+
+**Checkout.** A guest sees **Already have an account? Sign in** above the delivery form. After signing in, the guest's address is cleared for the account's saved ones, offers are re-quoted for the buyer (the quote key now includes the user), and the items being checked out stay as snapshotted — whatever the sign-in merge brought into the cart stays in the cart.
+
+**An order removes only what it bought.** The order transaction used to delete the whole cart row, Buy Now included. It now calls `cartService.removeBoughtLinesIn(tx, …)`, which deletes the lines matching the order's `(productId, size, color)` and bumps `version`, and the client drops the same lines with `removeLines` instead of `clear()` — on the free-order path too, which previously cleared nothing locally. The order service no longer touches `tx.cart` directly (ADR-0003). [inventory-reservation](specs/inventory-reservation/) R6 is reworded to match. A 409 on the next cart write now only announces "updated in another tab" when the merge actually changed something, since an order this tab placed produces one.
+
+Tests: `auth-forms`, `auth-sheet`, `auth-intent`, `safe-callback-url`, `checkout-sign-in`, `order-removes-bought-lines`; `wishlist-button` and the removal-rule check in `wishlist.test.ts` updated. No schema, no migration, no DTO change. The 6 failures already on `develop` (design-tokens ×2, image-delivery ×2, rate-limit-detached, admin-audit-trail) reproduce unchanged.
 
 ## [PR-110] 2026-09-18 — Review fixes for the R2 switch: two blockers the tests did not catch
 

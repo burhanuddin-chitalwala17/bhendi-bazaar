@@ -30,6 +30,7 @@ type UseAddressManagerReturn = {
     updateAddress: (id: string, address: Partial<DeliveryAddress>) => Promise<void>;
     deleteAddress: (id: string) => Promise<void>;
     selectAddress: (address: DeliveryAddress) => void;
+    clearSelection: () => void;
 
     // Helpers
     resetError: () => void;
@@ -131,6 +132,8 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         optionsRef.current?.onAddressSelect?.(address);
     }, []);
 
+    const clearSelection = useCallback(() => setSelectedAddress(null), []);
+
     // No default address by decision (addresses-as-entities D3) — selection is
     // always explicit. Kept as null so consumers must handle "nothing chosen".
     const defaultAddress = null;
@@ -164,6 +167,7 @@ export function useAddressManager(options?: UseAddressManagerOptions): UseAddres
         updateAddress,
         deleteAddress,
         selectAddress,
+        clearSelection,
         resetError,
         getAddressById,
     };

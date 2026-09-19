@@ -135,6 +135,7 @@ export function useCheckoutPayment() {
       // performs the transition itself; the browser asserts nothing.
       if (amountInMinorUnit <= 0) {
         await paymentGatewayService.confirmFreeOrder(order.id);
+        useCartStore.getState().removeLines(allItems);
         router.push(`/order/${order.id}`);
         return order;
       }
@@ -174,11 +175,10 @@ export function useCheckoutPayment() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-            // The server cleared the persisted cart inside the order transaction
-            // (inventory-reservation R6); only the local store remains to clear.
-            if (!orderData.isBuyNow) {
-              useCartStore.getState().clear();
-            }
+            // The server removed the bought lines inside the order transaction
+            // (inventory-reservation R6); the local store drops the same ones. Buy Now
+            // included — anything else in the cart stays (seamless-sign-in D12).
+            useCartStore.getState().removeLines(allItems);
 
             // Step 7: Redirect to order page
             console.log('🎉 Redirecting to order page...');

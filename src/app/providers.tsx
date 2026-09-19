@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { useCartSync } from "@/hooks/cart/useCartSync";
 import { Session } from "next-auth";
+import { AuthSheetProvider } from "@/context/AuthSheetContext";
 function CartSyncProvider({ children }: { children: React.ReactNode }) {
   useCartSync(); // ← Initialize cart sync globally
   return <>{children}</>;
@@ -18,7 +19,8 @@ export function Providers({ children, session }: { children: React.ReactNode, se
     <SessionProvider session={session}>
       <CartSyncProvider>
         <Toaster position="top-right" richColors />
-        {children}
+        {/* Inside the session, so a sign-in here is seen by useCartSync's merge. */}
+        <AuthSheetProvider>{children}</AuthSheetProvider>
       </CartSyncProvider>
     </SessionProvider>
   );

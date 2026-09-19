@@ -23,6 +23,7 @@ import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checko
 import { promotionService } from "@server/promotions/promotion.service";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
 import { assertNotUnderBidding } from "@server/bidding/bidding-lock";
+import { cartService } from "@server/cart/cart.service";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, OutOfStockError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 
@@ -395,10 +396,11 @@ export class OrderService {
         // is under auction.
         await assertNotUnderBidding(productIds, now, tx);
 
-        // R6: the bought items leave the cart in the same transaction, so a closed
-        // tab cannot leave a cart that has already been purchased.
+        // R6: the bought lines leave the cart in the same transaction, so a closed
+        // tab cannot leave a cart that has already been purchased. Only those lines —
+        // Buy Now and a mid-checkout sign-in both leave others there (seamless-sign-in D12).
         if (input.userId) {
-          await tx.cart.deleteMany({ where: { userId: input.userId } });
+          await cartService.removeBoughtLinesIn(tx, input.userId, requestedLines);
         }
 
         // 1. Create the main order (pending payment)
