@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-116] 2026-09-19 — The product gallery uploads browser-to-store
+
+Editing a product's photographs on a phone returned `FUNCTION_PAYLOAD_TOO_LARGE` before any of our code ran. The gallery posted the picked files as multipart to `/api/org/[orgId]/upload`, and a Vercel function's request body is capped at 4.5MB — one phone photograph clears that alone, and a multi-file selection clears it easily, since the cap is on the whole request rather than per file. The guard, the Zod parse and sharp's downscaling all sat downstream of a limit that rejected the request at the edge, so the server-side normalisation that exists precisely to keep stored images small never saw the bytes it was meant to shrink.
+
+**Nothing new was decided here.** ADR-0028 and bulk-catalog-upload D10 already answer this — the bulk wizard has uploaded browser-to-store against a presigned PUT since it shipped. The single-product editor was simply never converted. It is now: `downscaleImage` re-encodes in the browser to the same `MAX_IMAGE_EDGE`/`IMAGE_QUALITY` budget the server path uses, then `uploadDirect` asks `/api/org/[orgId]/upload/token` to sign one PUT per file. Bytes never pass through a function, so the source file's size stops mattering; `MAX_IMAGE_BYTES` is now measured against what will actually be stored.
+
+**The naming rules had to become client-safe.** `buildImagePath` and friends moved out of `image-upload.ts`, which imports sharp, into `server/catalog/image-paths.ts` — the browser now builds the path, and it must be the path the server would have built or the presign route's prefix check refuses it. The two sides reach that prefix by different functions (`sanitizeIdentifier` vs `toLowerCase`), so `tests/unit/image-upload.test.ts` pins their agreement across generated org codes rather than leaving it to coincidence.
+
+**A batch is validated whole and uploaded per file.** Every file is downscaled and checked before any of it is sent, so a bad selection is refused outright as before. Uploads then run three at a time with a visible count. A network failure part-way through keeps what landed and names what did not — there is no undo for an object already written, and discarding nine good photographs to keep the old all-or-nothing promise would be the worse trade.
+
+The multipart route stays: the storefront's mark and banners and promotion art still use it, on desktop-picked art that has not hit the cap. They need the same conversion when they do.
+
 ## [PR-115] 2026-09-19 — Every organisation gets a storefront of its own [MIGRATION] [CONTRACT]
 
 An org now has a public address it can print on a card. `/store/<handle>` is its landing page, `/store/<handle>/about` its story, `/store` the directory of every shop trading. Spec and TRD: [org-storefront](specs/org-storefront/) — seven subfeatures; decision and rejected alternatives: [ADR-0030](adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md).

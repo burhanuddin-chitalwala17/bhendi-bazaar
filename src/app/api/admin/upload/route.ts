@@ -7,7 +7,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { uploadImages, type ImageFolder } from "@server/catalog/image-upload";
+import { uploadImages } from "@server/catalog/image-upload";
+import type { ImageFolder } from "@server/catalog/image-paths";
 import { orgRepository } from "@server/catalog/org.repository";
 import { DomainError } from "@server/shared/domain-error";
 

@@ -41,8 +41,11 @@ interface ProductFormProps {
   onCancel: () => void;
   isSubmitting?: boolean;
   readOnly?: boolean;
-  /** Where image uploads go — the org portal passes its member-guarded route. */
-  uploadEndpoint?: string;
+  /**
+   * The presign route for image uploads — the org portal passes its member-guarded one.
+   * The bytes go browser-to-store, so this route only signs (ADR-0028).
+   */
+  uploadTokenEndpoint?: string;
 }
 
 export function ProductForm({
@@ -54,7 +57,7 @@ export function ProductForm({
   onCancel,
   isSubmitting,
   readOnly = false,
-  uploadEndpoint,
+  uploadTokenEndpoint,
 }: ProductFormProps) {
   const isEdit = !!product;
 
@@ -197,8 +200,9 @@ export function ProductForm({
         readOnly={readOnly}
       />
 
-      {/* Gallery — photographs and video, in the org's order, one photo as cover */}
-      {!readOnly && (
+      {/* Gallery — photographs and video, in the org's order, one photo as cover.
+          Needs the presign route: without one there is no upload to offer. */}
+      {!readOnly && !!uploadTokenEndpoint && (
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-lg font-semibold text-foreground mb-4">
@@ -212,9 +216,12 @@ export function ProductForm({
                 <ProductMediaManager
                   value={field.value as ProductMediaInput[]}
                   onChange={field.onChange}
-                  endpoint={uploadEndpoint}
+                  tokenEndpoint={uploadTokenEndpoint}
                   identifier={watch("name")}
-                  orgId={watch("orgId")}
+                  // The code, not the id: it is the folder the presign route signs under.
+                  orgCode={
+                    orgs?.find((org) => org.id === watch("orgId"))?.code
+                  }
                 />
               )}
             />

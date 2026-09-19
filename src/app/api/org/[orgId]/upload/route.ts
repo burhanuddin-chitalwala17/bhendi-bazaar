@@ -1,7 +1,13 @@
 /**
- * Org-member image uploads — product images only; categories are platform-owned.
- * POST /api/org/[orgId]/upload — multipart `files`, returns Blob URLs.
- * Any member of the org may upload: the images belong to the org's own products.
+ * Org-member image uploads that still come through a function: the storefront's mark and
+ * banners, and promotion art. POST multipart `files`, returns stored URLs.
+ *
+ * Not the product gallery — that uploads browser-to-store via ./token, because a
+ * function request body is capped at 4.5MB and a phone photograph clears it on its own
+ * (ADR-0028). These surfaces take desktop-picked art and have not hit it; the same
+ * conversion is what they need when they do.
+ *
+ * Any member of the org may upload: the images belong to the org.
  */
 
 import { NextResponse } from "next/server";

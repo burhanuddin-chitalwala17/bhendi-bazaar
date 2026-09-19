@@ -15,6 +15,16 @@ import { Product } from "@/domain/product";
  * Used by the marketplace home page and by a shop's own storefront, which passes its
  * own offers — the strip does not know or care which.
  */
+/**
+ * How many offers the strip shows.
+ *
+ * Declared here and imported by the pages that feed it, so the number the strip
+ * renders and the number its callers fetch cannot disagree — a caller that fetched
+ * four while the strip drew three would silently hide one and never offer a way to it.
+ * Callers read one more than this, which is how they know whether to show the link.
+ */
+export const OFFERS_IN_STRIP = 3;
+
 export async function OffersStrip({
   offers,
   viewAll,
@@ -41,7 +51,7 @@ export async function OffersStrip({
         {/* A rail, not a wrap: four offers wrapping on a phone push the rest of the
             page down by three rows for a strip nobody reads top-to-bottom. */}
         <div className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 no-scrollbar sm:mx-0 sm:flex-1 sm:flex-wrap sm:gap-4 sm:overflow-visible sm:px-0">
-          {offers.slice(0, 4).map((offer) => (
+          {offers.slice(0, OFFERS_IN_STRIP).map((offer) => (
             <Link
               prefetch={false}
               key={offer.id}

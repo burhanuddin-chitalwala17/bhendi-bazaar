@@ -336,6 +336,12 @@ export class ProductsRepository {
         include: {
           ...PRODUCT_INCLUDE,
         },
+        // Pagination needs a total order or it is not pagination: Postgres promises
+        // nothing about row order without ORDER BY, so `LIMIT 12 OFFSET 12` can hand
+        // back rows page one already showed and skip others entirely. `id` is the
+        // tiebreak — two products created in the same millisecond would otherwise be
+        // free to swap places between requests.
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         ...(offset ? { skip: offset } : {}),
         take: limit ?? ProductsRepository.MAX_LIST_ROWS,
       });

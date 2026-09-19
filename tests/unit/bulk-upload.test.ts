@@ -6,7 +6,7 @@
 import { describe, it, expect } from "vitest";
 import { parseBulkProductRow } from "@/lib/validation/schemas/bulk-product.schema";
 import { parseBulkCategoryRow } from "@/lib/validation/schemas/bulk-category.schema";
-import { buildImagePath, sanitizeIdentifier } from "@server/catalog/image-upload";
+import { buildImagePath, sanitizeIdentifier } from "@server/catalog/image-paths";
 import type { RawSheetRow } from "@server/catalog/bulk/sheet";
 
 const raw = (cells: Record<string, string>, rowNumber = 2): RawSheetRow => ({ rowNumber, cells });

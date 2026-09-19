@@ -15,15 +15,15 @@ interface ProductAddContainerProps {
   categories: { id: string; name: string }[];
   orgs: OrgSummary[];
   locations: LocationOption[];
-  /** Where image uploads go; the org portal passes its member-guarded route. */
-  uploadEndpoint?: string;
+  /** The presign route for image uploads; the org portal passes its member-guarded one. */
+  uploadTokenEndpoint?: string;
 }
 
 export function ProductAddContainer({
   categories,
   orgs,
   locations,
-  uploadEndpoint,
+  uploadTokenEndpoint,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -65,7 +65,7 @@ export function ProductAddContainer({
         onCancel={handleCancel}
         isSubmitting={isLoading}
         readOnly={false}
-        uploadEndpoint={uploadEndpoint}
+        uploadTokenEndpoint={uploadTokenEndpoint}
       />
     </div>
   );
