@@ -9,6 +9,9 @@
 
 import { cache } from "react";
 import { orgRepository } from "@server/catalog/org.repository";
+import { productsRepository } from "@server/catalog/product.repository";
+import { orgBannerRepository } from "@server/catalog/org-banner.repository";
+import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { holdCutoff } from "@server/catalog/org.handle";
 
 /** One shop, as a visitor sees it. */
@@ -71,6 +74,29 @@ export const storefrontDAL = {
       retired,
       holdCutoff(),
     );
+  }),
+
+  /**
+   * The categories this shop actually sells in (storefront-browse R2).
+   *
+   * Intersected with the platform tree rather than read from it: the taxonomy is
+   * platform-owned and most of it is empty for any one shop, so a bar built from the
+   * tree would offer a shopper categories with nothing behind them.
+   */
+  categoriesFor: cache(async (orgId: string) => {
+    const [ids, all] = await Promise.all([
+      productsRepository.categoryIdsForOrg(orgId),
+      categoriesDAL.getCategories(),
+    ]);
+    const owned = new Set(ids);
+    return all
+      .filter((category) => owned.has(category.id))
+      .map((category) => ({ slug: category.slug, name: category.name }));
+  }),
+
+  /** The banners this shop is running, in its chosen order. Live ones only. */
+  bannersFor: cache(async (orgId: string) => {
+    return await orgBannerRepository.listActiveForOrg(orgId);
   }),
 
   /** Every shop open for business and with something to sell. */

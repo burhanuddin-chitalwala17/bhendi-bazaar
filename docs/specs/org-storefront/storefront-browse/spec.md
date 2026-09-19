@@ -1,9 +1,9 @@
 # Spec — storefront-browse
 
-- **Status:** Draft
+- **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
-- **Verified:** 2026-09-15
+- **Verified:** 2026-09-19
 - **References:** [../spec.md](../spec.md) (programme), [../trd.md](../trd.md) D6/D7/D11, [storefront-pages](../storefront-pages/), [promotions](../../promotions/)
 
 > Requirements and product approach only. Technical approach lives in trd.md.

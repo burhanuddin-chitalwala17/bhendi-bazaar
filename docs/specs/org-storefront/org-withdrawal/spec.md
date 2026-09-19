@@ -1,6 +1,6 @@
 # Spec — org-withdrawal
 
-- **Status:** Draft
+- **Status:** ✅ Implemented
 - **Domain:** catalog, reaching into cart, checkout, bidding, promotions
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19

@@ -1,6 +1,6 @@
 # TRD — org-storefront (programme)
 
-- **Status:** Draft
+- **Status:** ✅ Implemented
 - **Domain:** catalog, with cross-domain reads
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19

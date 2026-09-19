@@ -167,6 +167,21 @@ export class ProductsRepository {
   }
 
   /**
+   * The categories one org actually sells in (storefront-browse R2).
+   *
+   * Grouped rather than joined from the category side: the question is about this
+   * org's catalogue, so it is asked of the products. Carries the same visibility the
+   * listings do, or a shop's bar would offer a category whose every item is hidden.
+   */
+  async categoryIdsForOrg(orgId: string): Promise<string[]> {
+    const rows = await prisma.product.groupBy({
+      by: ["categoryId"],
+      where: { orgId, ...ON_SALE, ...FROM_ACTIVE_ORG },
+    });
+    return rows.map((row) => row.categoryId);
+  }
+
+  /**
    * Which of these products belong to a withdrawn organisation, by name.
    *
    * The org-level twin of `archivedAmong`: `FROM_ACTIVE_ORG` stops a withdrawn shop's

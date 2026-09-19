@@ -20,7 +20,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 | **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
 | **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-97 |
-| **9** — Seller storefronts | Every selling organisation gets a public storefront of its own, at a link it can promote | catalog | ⏳ Not started — programme + 6 subfeatures drafted |
+| **9** — Seller storefronts | Every selling organisation gets a public storefront of its own, at a link it can promote | catalog | ✅ **Done** — 7 subfeatures |
 | **10** — Discoverability | The store is findable: every public page describes itself, every product is machine-readable, every URL answers honestly | catalog, *(cross-domain)* | ⏳ Not started — 1 spec drafted (seo) |
 
 ---
@@ -126,7 +126,7 @@ A new phase, added 2026-09-15. Phases 1–8 built a marketplace; this is the fir
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [org-storefront](specs/org-storefront/) | Every organisation has a storefront at a link it can promote: its own landing and about pages, its own goods, its own search | 📝 Draft — **parent of 7 subfeatures** |
+| [org-storefront](specs/org-storefront/) | Every organisation has a storefront at a link it can promote: its own landing and about pages, its own goods, its own search | ✅ Implemented — **7 subfeatures** |
 
 Depends on Phase 3's [multi-vendor-marketplace](specs/multi-vendor-marketplace/), which built the organisation this phase makes public — and **reverses one of its recorded out-of-scope lines** (*"per-organisation branding, domains, or storefronts"*). That reversal needs an ADR before the first PR; it is a change of direction, not an oversight being corrected.
 

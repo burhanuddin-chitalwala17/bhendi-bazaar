@@ -220,6 +220,80 @@ export class OrgRepository {
     });
   }
 
+  /**
+   * Move an org to a new handle, in one transaction (ADR-0030 decision 4).
+   *
+   * Three writes that must stand or fall together:
+   *  - the handle being **taken** loses its history rows, or the old address would
+   *    redirect away from the shop now living at it — the revert loop (D3e). Rule is
+   *    unconditional rather than a revert-only branch, so no later path reopens it.
+   *  - the handle being **left** gains one, which is what makes it both redirect and
+   *    stay unavailable for the length of the window.
+   *  - the org points at the new one.
+   *
+   * Uniqueness is settled by the constraint, not by a prior existence check: the
+   * caller retries on a violation, the way every generated identifier here already
+   * does. A held handle belonging to someone else is the one case the constraint
+   * cannot see, so the service checks that before calling.
+   */
+  async changeHandle(orgId: string, current: string, next: string) {
+    return await prisma.$transaction(async (tx) => {
+      await tx.orgHandleHistory.deleteMany({ where: { handle: next } });
+      await tx.orgHandleHistory.create({ data: { handle: current, orgId } });
+      return await tx.org.update({
+        where: { id: orgId },
+        data: { handle: next },
+        select: { id: true, handle: true },
+      });
+    });
+  }
+
+  /**
+   * Whether another org is holding this handle — the one thing the unique constraint
+   * cannot answer, because a held handle lives in the history table, not on `Org`.
+   */
+  async isHandleHeldByAnother(handle: string, orgId: string, cutoff: Date) {
+    const held = await prisma.orgHandleHistory.findFirst({
+      where: { handle, retiredAt: { gt: cutoff }, orgId: { not: orgId } },
+      select: { id: true },
+    });
+    return held !== null;
+  }
+
+  /** This org's storefront presentation, for its own editor. */
+  async findStorefrontSettings(orgId: string) {
+    return await prisma.org.findUnique({
+      where: { id: orgId },
+      select: {
+        handle: true,
+        name: true,
+        tagline: true,
+        description: true,
+        logoUrl: true,
+        heroUrl: true,
+        accent: true,
+        deliveryPolicy: true,
+        returnsPolicy: true,
+      },
+    });
+  }
+
+  /** Save what an org composed. Whitelisted: `handle` is never in here (Invariant 4). */
+  async updateStorefront(
+    orgId: string,
+    data: {
+      tagline: string | null;
+      description: string | null;
+      logoUrl: string | null;
+      heroUrl: string | null;
+      accent: string | null;
+      deliveryPolicy: string | null;
+      returnsPolicy: string | null;
+    }
+  ) {
+    return await prisma.org.update({ where: { id: orgId }, data, select: { id: true } });
+  }
+
   /** Set what the platform charges this org. Platform-owned; never org input. */
   async updateCommercialTerms(
     id: string,

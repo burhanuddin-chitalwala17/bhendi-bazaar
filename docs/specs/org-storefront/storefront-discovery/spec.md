@@ -1,6 +1,6 @@
 # Spec — storefront-discovery
 
-- **Status:** Draft
+- **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19

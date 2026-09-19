@@ -1,6 +1,6 @@
 # Spec — org-storefront
 
-- **Status:** Draft — programme overview; each subfeature carries its own spec and TRD
+- **Status:** ✅ Implemented — all seven subfeatures; each carries its own spec
 - **Domain:** catalog, with cross-domain reads
 - **Phase:** 9 — Seller storefronts
 - **Verified:** 2026-09-19

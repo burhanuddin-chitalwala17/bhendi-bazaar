@@ -7,6 +7,7 @@ import {
   Package,
   ShoppingCart,
   Star,
+  Store,
   Tag,
   Wallet,
 } from "lucide-react";
@@ -27,6 +28,7 @@ export function OrgSidebar({
       header={<OrgSwitcher orgs={orgs} currentOrgId={orgId} />}
       items={[
         { title: "Dashboard", href: base, icon: LayoutDashboard, exact: true },
+        { title: "Storefront", href: `${base}/storefront`, icon: Store },
         { title: "Products", href: `${base}/products`, icon: Package },
         { title: "Orders", href: `${base}/orders`, icon: ShoppingCart },
         { title: "Offers", href: `${base}/promotions`, icon: Tag },
