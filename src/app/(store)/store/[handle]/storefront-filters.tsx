@@ -1,47 +1,36 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
-import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-export interface ShopCategory {
-  slug: string;
-  name: string;
-}
-
 /**
- * Search, categories and filters that see one shop and nothing else
- * (storefront-browse R1–R4, R9).
+ * Sorting over one shop's catalogue (storefront-browse R3, R4, R9).
+ *
+ * No "on offer" toggle: what is reduced right now is shown as the offers strip above,
+ * which names the actual products rather than asking a shopper to filter and find out.
+ * A toggle and a strip of the same thing is two controls for one question. The category rail
+ * is `CategoryLanes` above this — the same tiles the marketplace uses, so a shop's
+ * categories look like categories rather than like a second idea.
+ *
+ * No search box: the header's search is the only one, by decision (2026-09-19). It is
+ * marketplace-wide, so searching from a shop leaves it — browsing by category is what
+ * stays inside. Scoping the header to the current shop would give back a shop-search
+ * without a second control, and is the obvious follow-up if this proves wrong.
  *
  * The whole view lives in the query string, so a filtered shop can be shared and
  * reopened (R4) — and because it does, nothing here holds state the URL does not.
  *
  * Scope is not among the parameters: the org comes from the path and is resolved
- * server-side, so no amount of editing this form can widen the search past this shop
- * (R7). Mobile-first — the search row and the category bar each have a phone form
- * rather than a desktop one hidden below a breakpoint (R9).
+ * server-side, so no amount of editing this URL can widen a listing past this shop
+ * (R7). Mobile-first — the controls wrap rather than hiding below a breakpoint (R9).
  */
-export function StorefrontFilters({
-  handle,
-  categories,
-}: {
-  handle: string;
-  categories: ShopCategory[];
-}) {
+export function StorefrontFilters({ handle }: { handle: string }) {
   const router = useRouter();
   const params = useSearchParams();
-  const [term, setTerm] = useState(params.get("q") ?? "");
 
-  const current = {
-    category: params.get("category") ?? "",
-    sort: params.get("sort") ?? "",
-    offers: params.get("offers") === "1",
-  };
+  const current = { sort: params.get("sort") ?? "" };
 
   const go = (next: Record<string, string | null>) => {
     const query = new URLSearchParams(params.toString());
@@ -54,59 +43,7 @@ export function StorefrontFilters({
 
   return (
     <div className="space-y-3">
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          go({ q: term.trim() || null });
-        }}
-        className="flex gap-2"
-      >
-        <Input
-          value={term}
-          onChange={(event) => setTerm(event.target.value)}
-          placeholder="Search this shop"
-          aria-label="Search this shop"
-          className="flex-1"
-        />
-        <Button type="submit" size="icon" aria-label="Search">
-          <Search />
-        </Button>
-      </form>
-
-      {categories.length > 0 && (
-        // A horizontal rail on a phone: chips stay tappable and the row scrolls rather
-        // than wrapping into a wall of them.
-        <div className="-mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          <Button
-            variant={current.category ? "outline" : "default"}
-            size="sm"
-            className="shrink-0"
-            onClick={() => go({ category: null })}
-          >
-            Everything
-          </Button>
-          {categories.map((category) => (
-            <Button
-              key={category.slug}
-              variant={current.category === category.slug ? "default" : "outline"}
-              size="sm"
-              className="shrink-0"
-              onClick={() => go({ category: category.slug })}
-            >
-              {category.name}
-            </Button>
-          ))}
-        </div>
-      )}
-
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant={current.offers ? "default" : "outline"}
-          size="sm"
-          onClick={() => go({ offers: current.offers ? null : "1" })}
-        >
-          On offer
-        </Button>
         <Select
           value={current.sort}
           aria-label="Sort"

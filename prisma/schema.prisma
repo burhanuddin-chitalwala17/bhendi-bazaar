@@ -326,10 +326,12 @@ model Org {
   // ── Storefront presentation (org-storefront/storefront-branding) ──
   /// One line under the name. Not the introduction; a shelf label, not a paragraph.
   tagline        String?
-  /// The shop's cover image — it sits behind the name and logo at the top of the
-  /// storefront. Distinct from `OrgBanner`, which is a rotating promotion: calling
-  /// both of them "banner" is what confused the editor before. Through the same object
-  /// store and optimizer as every other image (ADR-0026, ADR-0028).
+  /// The shop's cover image, shown at the top of its **about** page — not on the
+  /// storefront itself, where the promotions hold that slot (decided 2026-09-19). A
+  /// visitor reaching the about page has chosen to read about the shop, which is where
+  /// a large picture earns its place. Distinct from `OrgBanner`, a rotating promotion:
+  /// calling both of them "banner" is what confused the editor before. Through the same
+  /// object store and optimizer as every other image (ADR-0026, ADR-0028).
   heroUrl        String?
   /// A token name from the palette in globals.css — never a colour literal, so a
   /// storefront cannot express a colour the design system does not own (ADR-0022).

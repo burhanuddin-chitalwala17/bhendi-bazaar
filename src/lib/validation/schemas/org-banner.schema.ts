@@ -3,31 +3,51 @@ import { z } from "zod";
 /**
  * What an org may put on its own banner.
  *
- * The `href` rule is the interesting one (storefront-branding R2c): a banner is a
+ * The `href` rule is the interesting one (storefront-branding R2c): a promotion is a
  * shop's own signage, not advertising space. It may point at this shop's own pages or
- * at a product — never off the platform, and never at another shop. Checked as a shape
- * here and as ownership in the service, because only the service knows whose product
- * a slug names.
+ * at one of its products — never off the platform, and never at another shop.
+ *
+ * Two halves in two places. Here: is it link-shaped at all, absolute or relative. In
+ * the service: does it name *this* shop, once the absolute form has been reduced to a
+ * path — only the service knows the app's own origin and whose product a slug is.
  */
 
 const TITLE_MAX = 80;
 const DESCRIPTION_MAX = 200;
 
-/** `/store/<handle>` and anything beneath it, or `/product/<slug>`. Nothing else. */
-export const BANNER_HREF_PATTERN =
-  /^\/(?:store\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9-]+)*(?:\?[^\s]*)?|product\/[a-z0-9][a-z0-9-]*)$/;
+/**
+ * The path part of a destination: `/store/<handle>` and anything beneath it, or
+ * `/product/<slug>`. Nothing else.
+ *
+ * Only ever matched against a **path**. An org pastes the link out of its address bar,
+ * so what arrives is usually absolute — the service reduces that to a path first and
+ * stores the path, because a stored `http://localhost:3000/...` is a link that works
+ * on one machine and nowhere else (CLAUDE.md: never hardcode our own origin).
+ */
+export const BANNER_PATH_PATTERN =
+  /^\/(?:store\/[a-z0-9][a-z0-9-]*(?:\/[a-z0-9-]+)*|product\/[a-z0-9][a-z0-9-]*)$/;
+
+/** Either shape is acceptable to type; the service decides whose shop it names. */
+const ABSOLUTE = /^https?:\/\/\S+$/i;
 
 export const orgBannerSchema = z.object({
   title: z.string().trim().min(1, "A banner needs a title.").max(TITLE_MAX),
-  description: z.string().trim().max(DESCRIPTION_MAX).or(z.literal("")).nullish(),
+  description: z
+    .string()
+    .trim()
+    .max(DESCRIPTION_MAX)
+    .or(z.literal(""))
+    .nullish(),
   imageUrl: z.string().url().or(z.literal("")).nullish(),
   imageAlt: z.string().trim().max(TITLE_MAX).or(z.literal("")).nullish(),
   href: z
     .string()
     .trim()
-    .regex(
-      BANNER_HREF_PATTERN,
-      "A banner can only point at your own shop or one of your products."
+    // Shape only. Whether it is *this* shop is an ownership question the client
+    // cannot answer, so the service settles it and returns the error on this field.
+    .refine(
+      (value) => ABSOLUTE.test(value) || BANNER_PATH_PATTERN.test(value),
+      "Paste the link to your shop or one of your products.",
     )
     .or(z.literal(""))
     .nullish(),

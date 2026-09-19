@@ -121,6 +121,9 @@ export function StorefrontEditor({
       </Card>
 
       <form onSubmit={onSubmit} className="space-y-6">
+        <p className="text-2xs text-muted-foreground">
+          Everything below is saved together by the button at the end.
+        </p>
         {formError && (
           <p className="rounded-field bg-destructive/10 p-3 text-sm text-destructive">
             {formError}
@@ -141,7 +144,7 @@ export function StorefrontEditor({
             />
 
             <ImageUpload
-              label="Cover image — sits behind your name at the top of your shop"
+              label="Cover image — the picture at the top of your About page"
               value={heroUrl ? [heroUrl] : []}
               onChange={(urls) => setHeroUrl(urls[0] ?? "")}
               maxImages={1}
