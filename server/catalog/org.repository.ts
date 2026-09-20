@@ -446,9 +446,9 @@ export class OrgRepository {
   /**
    * Count products for a org.
    *
-   * Withdrawn products are counted too, deliberately (ADR-0029): this guards org
+   * Archived products are counted too, deliberately (ADR-0029): this guards org
    * deletion, and `Product.orgId` is `onDelete: Restrict`, so an archived product
-   * blocks the delete exactly as an on-sale one does. Filtering here would let the
+   * blocks the delete exactly as an available one does. Filtering here would let the
    * guard pass and leave the database to refuse.
    */
   async countProducts(orgId: string): Promise<number> {

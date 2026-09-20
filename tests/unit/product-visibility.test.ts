@@ -2,19 +2,19 @@
  * A product leaves sale by archiving (ADR-0029), and the rule has to hold at every
  * place that reads a product — roughly thirty-five of them across a dozen files.
  *
- * Some must exclude withdrawn products and some must keep them: an order's own lines,
+ * Some must exclude archived products and some must keep them: an order's own lines,
  * the slug pool an import checks against, and the count guarding org deletion are all
- * wrong if they forget a withdrawn product exists. A rule enforced by memory at that
+ * wrong if they forget an archived product exists. A rule enforced by memory at that
  * many call sites is missed at one, so this file pins the census. Adding a product
  * query fails it until the new site is classified here — which is the point: the
- * decision is cheap, and forgetting it leaks a withdrawn product onto the storefront.
+ * decision is cheap, and forgetting it leaks an archived product onto the storefront.
  *
  * Same approach as `vocabulary.test.ts` and `design-tokens.test.ts`: read the source.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { ARCHIVED, ON_SALE, shelfFilter } from "@server/catalog/product.visibility";
+import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
 
 const ROOTS = ["server", "src"];
 const SKIP_DIRS = new Set(["node_modules", ".next", "migrations"]);
@@ -23,21 +23,21 @@ const READ_CALL = /\b(?:prisma|tx|db)\.product\.(?:findMany|findFirst|findUnique
 /**
  * Every file holding a product read, with how many it holds and why.
  *
- * `filtered` — spreads the on-sale fragment (or the org's chosen shelf).
- * `deliberate` — reads withdrawn products on purpose; the reason is the note.
+ * `filtered` — spreads the AVAILABLE fragment (or the org's chosen shelf).
+ * `deliberate` — reads archived products on purpose; the reason is the note.
  */
 const CENSUS: Record<string, { reads: number; note: string }> = {
   "server/catalog/product.repository.ts": {
     reads: 17,
-    note: "filtered — the storefront's own reads carry ON_SALE and FROM_ACTIVE_ORG together, categoryIdsForOrg included, plus archivedAmong and fromWithdrawnOrgAmong (which back the two sale gates and must therefore see the rows they refuse) and two ownership/pricing lookups that must see every row",
+    note: "filtered — the storefront's own reads carry AVAILABLE and FROM_ACTIVE_ORG together, categoryIdsForOrg included, plus archivedAmong and fromWithdrawnOrgAmong (which back the two sale gates and must therefore see the rows they refuse) and two ownership/pricing lookups that must see every row",
   },
   "server/catalog/admin.product.repository.ts": {
     reads: 9,
-    note: "the org portal: the list takes a shelf, the detail read sees withdrawn products so they can be restored, and the stats split the two figures",
+    note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, and the stats split the two figures",
   },
   "server/catalog/bulk/bulk-product.service.ts": {
     reads: 2,
-    note: "deliberate — an import checks SKUs and slugs against every row, withdrawn included, so it cannot reuse a reserved code or silently restore a product",
+    note: "deliberate — an import checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product",
   },
   "server/analytics/dashboard.repository.ts": {
     reads: 2,
@@ -49,7 +49,7 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
   },
   "src/app/api/products/check-stock/route.ts": {
     reads: 1,
-    note: "deliberate — selects archivedAt so a withdrawn product comes back unavailable by name, which is what lets the cart say which line is the problem",
+    note: "deliberate — selects archivedAt so an archived product comes back unavailable by name, which is what lets the cart say which line is the problem",
   },
   "src/app/api/checkout/allocate/route.ts": {
     reads: 1,
@@ -57,7 +57,7 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
   },
   "server/wishlist/wishlist.service.ts": {
     reads: 1,
-    note: "filtered — a withdrawn product cannot be newly saved; wishes already saved are left alone so a restore brings them back",
+    note: "filtered — an archived product cannot be newly saved; wishes already saved are left alone so a restore brings them back",
   },
   "server/checkout/order.service.ts": {
     reads: 1,
@@ -65,7 +65,7 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
   },
   "server/catalog/org.repository.ts": {
     reads: 1,
-    note: "deliberate — guards org deletion, and Product.orgId is Restrict, so a withdrawn product blocks it exactly as an on-sale one does",
+    note: "deliberate — guards org deletion, and Product.orgId is Restrict, so an archived product blocks it exactly as an on-sale one does",
   },
   "server/cart/cart.repository.ts": {
     reads: 1,
@@ -102,7 +102,7 @@ describe("every product read is classified (ADR-0029)", () => {
     const unknown = Object.keys(found).filter((file) => !(file in CENSUS));
     expect(
       unknown,
-      "A new file reads products. Decide whether it is buyer-facing — if so spread ON_SALE " +
+      "A new file reads products. Decide whether it is buyer-facing — if so spread AVAILABLE " +
         "from server/catalog/product.visibility.ts — then add it to CENSUS with the reason."
     ).toEqual([]);
   });
@@ -114,7 +114,7 @@ describe("every product read is classified (ADR-0029)", () => {
     expect(
       drifted,
       "A product read was added or removed. If added, decide whether it must exclude " +
-        "withdrawn products, then update its CENSUS count and note."
+        "archived products, then update its CENSUS count and note."
     ).toEqual([]);
   });
 
@@ -127,16 +127,16 @@ describe("every product read is classified (ADR-0029)", () => {
 
 describe("the visibility fragments", () => {
   it("treats absence of a timestamp as on sale", () => {
-    expect(ON_SALE).toEqual({ archivedAt: null });
+    expect(AVAILABLE).toEqual({ archivedAt: null });
   });
 
-  it("asks for a present timestamp when listing withdrawn products", () => {
+  it("asks for a present timestamp when listing archived products", () => {
     expect(ARCHIVED).toEqual({ archivedAt: { not: null } });
   });
 
-  it("defaults the org's shelf to on sale, so withdrawn products are opt-in", () => {
-    expect(shelfFilter()).toEqual(ON_SALE);
-    expect(shelfFilter("on-sale")).toEqual(ON_SALE);
+  it("defaults the org's shelf to available, so archived products are opt-in", () => {
+    expect(shelfFilter()).toEqual(AVAILABLE);
+    expect(shelfFilter("available")).toEqual(AVAILABLE);
   });
 
   it("spreads nothing for `all`, so neither shelf is excluded", () => {
@@ -144,7 +144,7 @@ describe("the visibility fragments", () => {
   });
 
   it("is a plain object, so spreading it cannot drop a caller's other conditions", () => {
-    const combined = { categoryId: "c1", ...ON_SALE };
+    const combined = { categoryId: "c1", ...AVAILABLE };
     expect(combined).toEqual({ categoryId: "c1", archivedAt: null });
   });
 });

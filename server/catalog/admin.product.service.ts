@@ -67,7 +67,7 @@ export function describeDeleteBlockers(counts: DeleteBlockers): string | null {
       : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
   const total = BLOCKER_NOUNS.reduce((sum, [key]) => sum + counts[key], 0);
   const [verb, record] = total === 1 ? ["refers", "that record"] : ["refer", "those records"];
-  return `This product cannot be deleted — ${list} still ${verb} to it, and deleting it would break ${record}.`;
+  return `This product cannot be deleted — ${list} still ${verb} to it, and deleting it would break ${record}. Archive it instead to take it off the storefront.`;
 }
 
 export class ProductsService {
@@ -80,45 +80,45 @@ export class ProductsService {
   }
 
   /**
-   * One control, two outcomes (ADR-0029 decision 2, product-archive R8).
+   * Delete, and only for a product no record depends on (ADR-0029 decision 2).
    *
-   * A product no record depends on is deleted outright — its media, cart lines,
-   * wishlist entries and stock rows cascade with it, which is right for a listing
-   * created by mistake. Anything an order line, promotion target or bidding event
-   * refers to is archived instead, because deleting it would falsify those records.
+   * Its media, cart lines, wishlist entries and stock rows cascade with it, which is
+   * right for a listing created by mistake and right for nothing else. An order line,
+   * promotion target or bidding event makes the product permanent, and the refusal
+   * names what holds it and points at Archive.
    *
-   * The org is told which happened rather than being asked to know why. The blocker
-   * count decides; the foreign keys remain the enforcement, so an order placed between
-   * the count and the delete still loses to the constraint and surfaces through the
-   * `restricted` branch of `toErrorResponse`.
+   * It used to archive in that case instead. That degrade existed because Archive had
+   * no control of its own, so Delete was the only button in the row; now that Archive
+   * is its own action the degrade only made one button do two things, and the label
+   * was wrong for whichever one it did.
+   *
+   * The count decides the message; the foreign keys remain the enforcement, so an
+   * order placed between the count and the delete still loses to the constraint and
+   * surfaces through the `restricted` branch of `toErrorResponse`.
    */
-  async deleteProduct(
-    id: string,
-    scope: ProductActor
-  ): Promise<{ outcome: "deleted" | "archived" }> {
+  async deleteProduct(id: string): Promise<void> {
     const blockers = await adminProductsRepository.countDeleteBlockers(id);
     if (!blockers) {
       throw new NotFoundError("Product not found");
     }
 
-    if (describeDeleteBlockers(blockers)) {
-      await this.archiveProduct(id, scope);
-      return { outcome: "archived" };
+    const refusal = describeDeleteBlockers(blockers);
+    if (refusal) {
+      throw new ConflictError(refusal);
     }
 
     await adminProductsRepository.deleteProduct(id);
-    return { outcome: "deleted" };
   }
 
   /**
-   * Take a product off sale, reversibly (product-archive R1).
+   * Archive a product, reversibly (product-archive R1).
    *
    * Available for any product, including one never sold — an org curating its shelf
    * should not have to sell something first to be allowed to withdraw it.
    */
   async archiveProduct(id: string, scope: ProductActor) {
     const product = await this.ownedByOrg(id, scope.orgId);
-    // Idempotent: withdrawing something already withdrawn is the state the caller
+    // Idempotent: archiving something already archived is the state the caller
     // asked for, not a conflict.
     if (product.archivedAt) return product;
 
@@ -127,7 +127,7 @@ export class ProductsService {
     //
     // Checked inside the write, behind the stock lock, because opening an event takes
     // that same lock: asked beforehand, an event could open in the gap between the
-    // question and the answer and the product would go off sale under live bids.
+    // question and the answer and the product would be archived under live bids.
     return await adminProductsRepository.setArchived(
       id,
       new Date(),
@@ -136,14 +136,14 @@ export class ProductsService {
         const locked = await lockedAmong([id], new Date(), tx);
         if (locked.has(id)) {
           throw new ConflictError(
-            "This product has a live bidding event. Cancel the event, or let it finish, before taking it off sale."
+            "This product has a live bidding event. Cancel the event, or let it finish, before archiving it."
           );
         }
       }
     );
   }
 
-  /** Put it back on sale, at the same URL it had (product-archive R6). */
+  /** Restore it, at the same URL it had (product-archive R6). */
   async restoreProduct(id: string, scope: ProductActor) {
     const product = await this.ownedByOrg(id, scope.orgId);
     if (!product.archivedAt) return product;
@@ -155,7 +155,7 @@ export class ProductsService {
    *
    * Reported as not-found rather than forbidden: whether another org owns that id is
    * not this caller's business. Reads through the org-facing query deliberately, which
-   * sees withdrawn products — restoring one requires finding it first.
+   * sees archived products — restoring one requires finding it first.
    */
   private async ownedByOrg(id: string, orgId: string) {
     const product = await adminProductsRepository.getProductById(id);

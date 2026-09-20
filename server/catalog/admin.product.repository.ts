@@ -13,7 +13,7 @@ import { Prisma } from "@prisma/client";
 import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
-import { ARCHIVED, ON_SALE, shelfFilter } from "@server/catalog/product.visibility";
+import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
 import { productsRepository } from "@server/catalog/product.repository";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type ProductMediaInput } from "@server/catalog/media";
@@ -57,9 +57,9 @@ const PRODUCT_LIST_SELECT = {
     thumbnail: true,
     weight: true,
     createdAt: true,
-    // The org sees its own withdrawn products and can restore them, so this travels
+    // The org sees its own archived products and can restore them, so this travels
     // on the org-facing shape (ADR-0029). The buyer-facing DTO never carries it —
-    // a buyer is never handed a withdrawn product at all.
+    // a buyer is never handed an archived product at all.
     archivedAt: true,
     category: {
         select: { id: true, name: true },
@@ -108,7 +108,7 @@ export class AdminProductsRepository {
         const {
             page = 1,
             limit = 20,
-            shelf = "on-sale",
+            shelf = "available",
             search,
             categoryId,
             orgId,
@@ -224,14 +224,14 @@ export class AdminProductsRepository {
                   select: { name: true, archivedAt: true },
               })
             : null;
-        // A withdrawn product still holds its SKU, so the clash is with something the
+        // An archived product still holds its SKU, so the clash is with something the
         // org cannot see in its default list. Saying so is the whole mitigation
         // (ADR-0029 D8) — "already in use" would send them hunting for a product that
         // is not there.
         const message = !taken
             ? `SKU "${sku}" is already used by another product in this organisation`
             : taken.archivedAt
-              ? `SKU "${sku}" is still held by "${taken.name}", which is off sale. A withdrawn product keeps its SKU so it can be restored — reuse the code by restoring and editing that product, or choose another.`
+              ? `SKU "${sku}" is still held by "${taken.name}", which is archived. An archived product keeps its SKU so it can be restored — reuse the code by restoring and editing that product, or choose another.`
               : `SKU "${sku}" is already used by "${taken.name}"`;
         return new ConflictError(message, { field: "sku" });
     }
@@ -318,7 +318,7 @@ export class AdminProductsRepository {
     }
 
     /**
-     * Take a product off sale, or put it back (ADR-0029). `archivedAt` is server-owned
+     * Archive a product, or restore it (ADR-0029). `archivedAt` is server-owned
      * and never arrives from a request body (Invariant 4), so it is set here from a
      * clock rather than passed through.
      *
@@ -399,15 +399,15 @@ export class AdminProductsRepository {
 
         // Stock is an aggregate (D3): load the scope's products with their rows and
         // sum in memory — measured fine at this catalogue size.
-        // Every figure below is about what is on sale (ADR-0029): a withdrawn
+        // Every figure below is about what is available (ADR-0029): an archived
         // product's stock is real but not sellable, and a low-stock alert on something
-        // deliberately off sale is noise. Withdrawn is reported as its own count
+        // deliberately archived is noise. Archived is reported as its own count
         // rather than folded in, so no figure is silently ambiguous.
-        const [totalProducts, withdrawnProducts, scopedProducts] = await Promise.all([
-            prisma.product.count({ where: { ...scope, ...ON_SALE } }),
+        const [totalProducts, archivedProducts, scopedProducts] = await Promise.all([
+            prisma.product.count({ where: { ...scope, ...AVAILABLE } }),
             prisma.product.count({ where: { ...scope, ...ARCHIVED } }),
             prisma.product.findMany({
-                where: { ...scope, ...ON_SALE },
+                where: { ...scope, ...AVAILABLE },
                 select: {
                     price: true,
                     stockLocations: { select: { quantity: true } },
@@ -433,7 +433,7 @@ export class AdminProductsRepository {
 
         return {
             totalProducts,
-            withdrawnProducts,
+            archivedProducts,
             lowStockProducts,
             outOfStockProducts,
             featuredProducts,

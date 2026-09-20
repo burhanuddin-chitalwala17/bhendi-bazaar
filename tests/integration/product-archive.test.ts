@@ -2,7 +2,7 @@
  * Archiving, against a real database (ADR-0029, docs/specs/product-archive/).
  *
  * The claims worth testing here are claims about what Postgres returns and refuses:
- * that a withdrawn product vanishes from every buyer-facing query, that the order
+ * that an archived product vanishes from every buyer-facing query, that the order
  * transaction refuses it even though a listing filter would already have hidden it,
  * that an order which already names it is untouched, and that a restore undoes all of
  * it. A stubbed repository would "prove" any of that regardless of whether the filters
@@ -86,7 +86,7 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
     await prisma.$disconnect();
   });
 
-  it("removes a withdrawn product from every buyer-facing read, and a restore puts it back", async () => {
+  it("removes an archived product from every buyer-facing read, and a restore puts it back", async () => {
     const { productsRepository } = await import("@server/catalog/product.repository");
     const { productsService } = await import("@server/catalog/admin.product.service");
     const product = await makeProduct();
@@ -133,7 +133,7 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
 
     await productsService.archiveProduct(product.id, actor);
 
-    // Withdrawn: refused by name, which is what the buyer is shown.
+    // Archived: refused by name, which is what the buyer is shown.
     await expect(assertNotArchived([product.id])).rejects.toThrow(/no longer available/i);
     await expect(assertNotArchived([product.id])).rejects.toThrow(product.name);
   });
@@ -151,15 +151,15 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
     const onSale = await adminProductsRepository.getProducts({ orgId: product.orgId, limit: 500 });
     expect(onSale.products.some((p) => p.id === product.id)).toBe(false);
 
-    const withdrawn = await adminProductsRepository.getProducts({
+    const archivedShelf = await adminProductsRepository.getProducts({
       orgId: product.orgId,
       shelf: "archived",
       limit: 500,
     });
-    expect(withdrawn.products.some((p) => p.id === product.id)).toBe(true);
+    expect(archivedShelf.products.some((p) => p.id === product.id)).toBe(true);
   });
 
-  it("reports a withdrawn product as unavailable rather than unknown, keeping its name", async () => {
+  it("reports an archived product as unavailable rather than unknown, keeping its name", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { productsService } = await import("@server/catalog/admin.product.service");
     const product = await makeProduct();
@@ -176,17 +176,18 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
     expect(row?.archivedAt).toBeInstanceOf(Date);
   });
 
-  it("deletes a product nothing depends on, and archives one an order needs", async () => {
+  it("deletes a product nothing depends on, and refuses one an order needs", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { productsService } = await import("@server/catalog/admin.product.service");
 
     // Never ordered: deleted outright.
     const unsold = await makeProduct();
     const actor = await actorFor(unsold.orgId);
-    expect(await productsService.deleteProduct(unsold.id, actor)).toEqual({ outcome: "deleted" });
+    await productsService.deleteProduct(unsold.id);
     expect(await prisma.product.findUnique({ where: { id: unsold.id } })).toBeNull();
 
-    // Ordered: archived instead, and the order still names it at the price paid.
+    // Ordered: refused by name, and pointed at Archive. It used to archive silently;
+    // now that Archive is its own control, one button doing two things was the bug.
     const sold = await makeProduct();
     const order = await prisma.order.create({
       data: {
@@ -208,13 +209,18 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
     });
     created.orders.push(order.id);
 
-    expect(await productsService.deleteProduct(sold.id, actor)).toEqual({ outcome: "archived" });
+    await expect(productsService.deleteProduct(sold.id)).rejects.toThrow(/1 order/);
+    await expect(productsService.deleteProduct(sold.id)).rejects.toThrow(/Archive it instead/);
 
+    // Refused means refused: the product is untouched, not quietly archived.
     const after = await prisma.product.findUnique({
       where: { id: sold.id },
       select: { archivedAt: true },
     });
-    expect(after?.archivedAt).toBeInstanceOf(Date);
+    expect(after?.archivedAt).toBeNull();
+
+    // And Archive, the action the refusal names, does work on it.
+    await productsService.archiveProduct(sold.id, actor);
 
     const line = await prisma.orderItem.findFirst({
       where: { orderId: order.id },
@@ -226,7 +232,7 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
     expect(line?.product.archivedAt).toBeInstanceOf(Date);
   });
 
-  it("keeps the SKU reserved while withdrawn, and says so", async () => {
+  it("keeps the SKU reserved while archived, and says so", async () => {
     const { productsService } = await import("@server/catalog/admin.product.service");
     const sku = `ARCH-${Date.now()}`;
     const product = await makeProduct({ sku });
@@ -246,10 +252,10 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
         media: [{ kind: "IMAGE", ref: "https://placehold.co/600x600", isThumbnail: true }],
         stockLocations: [{ orgAddressId: location.id, quantity: 1 }],
       })
-    ).rejects.toThrow(/off sale/i);
+    ).rejects.toThrow(/archived/i);
   });
 
-  it("records who withdrew it, in the same transaction as the withdrawal", async () => {
+  it("records who archived it, in the same transaction as the archiving", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { productsService } = await import("@server/catalog/admin.product.service");
     const product = await makeProduct();
@@ -270,7 +276,7 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
     expect(trail.every((entry) => entry.adminId === actor.userId)).toBe(true);
   });
 
-  it("is idempotent, so a repeated withdrawal is the asked-for state rather than an error", async () => {
+  it("is idempotent, so a repeated archive is the asked-for state rather than an error", async () => {
     const { productsService } = await import("@server/catalog/admin.product.service");
     const product = await makeProduct();
     const actor = await actorFor(product.orgId);
@@ -280,7 +286,7 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
     expect(second.archivedAt).toEqual(first.archivedAt);
   });
 
-  it("refuses to withdraw a product with a live bidding event", async () => {
+  it("refuses to archive a product with a live bidding event", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { productsService } = await import("@server/catalog/admin.product.service");
     const product = await makeProduct();

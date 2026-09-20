@@ -57,7 +57,7 @@ export interface ProductListResult {
 
 export interface ProductStats {
   totalProducts: number;
-  withdrawnProducts: number;
+  archivedProducts: number;
   lowStockProducts: number;
   outOfStockProducts: number;
   featuredProducts: number;

@@ -35,6 +35,9 @@ export default async function OrgLayout({
   // they are — both fetched here once, server-side, for everything beneath.
   const session = await requireSession();
   const orgs = await orgMemberRepository.listOrgsForUser(session.user.id);
+  // The header's Storefront link points at this org's own shop, not the marketplace
+  // root — the handle rides along on the switcher's list rather than a second query.
+  const handle = orgs.find((org) => org.id === orgId)?.handle;
 
   return (
     <div className="flex min-h-screen">
@@ -44,6 +47,7 @@ export default async function OrgLayout({
           name={session.user.name}
           email={session.user.email}
           label="Org Portal"
+          storefrontHref={handle ? `/store/${handle}` : undefined}
         />
         <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
       </div>

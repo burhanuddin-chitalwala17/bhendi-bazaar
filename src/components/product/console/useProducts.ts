@@ -83,27 +83,17 @@ export function useProducts(options?: UseProductsOptions) {
   };
 
   /**
-   * Remove a product. The server deletes it outright when nothing depends on it and
-   * takes it off sale otherwise (ADR-0029), so the confirmation says both may happen
-   * and the toast reports which one did.
+   * Delete a product permanently (ADR-0029). Refused, with the reason, when a record
+   * depends on it — the caller shows that message and Archive is the way through.
+   *
+   * No `confirm()` here: the dialog that offers this action is the confirmation, and
+   * it can say what deletion means in prose a native alert cannot format.
    */
   const deleteProduct = async (id: string) => {
-    if (
-      !confirm(
-        "Remove this product?\n\nIf it has never been ordered it is deleted permanently. If it appears on an order, a promotion or a bidding event it is taken off sale instead, so those records stay intact — you can restore it later.",
-      )
-    ) {
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const { outcome } = await productsApiClient.deleteProduct(id);
-      toast.success(
-        outcome === "archived"
-          ? "Product taken off sale. Past orders keep it; restore it from the Withdrawn filter."
-          : "Product deleted",
-      );
+      await productsApiClient.deleteProduct(id);
+      toast.success("Product deleted");
 
       // ⚡ Trigger server refresh
       router.refresh();
@@ -111,7 +101,7 @@ export function useProducts(options?: UseProductsOptions) {
     } catch (error) {
       // ApiError extends Error, so this is the server's own message when there is one.
       toast.error(
-        error instanceof Error ? error.message : "Could not remove the product",
+        error instanceof Error ? error.message : "Could not delete the product",
       );
       throw error;
     } finally {
@@ -119,13 +109,13 @@ export function useProducts(options?: UseProductsOptions) {
     }
   };
 
-  /** Take a product off sale, or put it back, without touching what it was part of. */
+  /** Archive a product, or restore it, without touching what it was part of. */
   const setProductArchived = async (id: string, archived: boolean) => {
     setIsLoading(true);
     try {
       await productsApiClient.setArchived(id, archived);
       toast.success(
-        archived ? "Product taken off sale" : "Product back on sale",
+        archived ? "Product archived" : "Product restored",
       );
       router.refresh();
       options?.onSuccess?.();
@@ -134,8 +124,8 @@ export function useProducts(options?: UseProductsOptions) {
         error instanceof Error
           ? error.message
           : archived
-            ? "Could not take the product off sale"
-            : "Could not put the product back on sale",
+            ? "Could not archive the product"
+            : "Could not restore the product",
       );
       throw error;
     } finally {

@@ -23,7 +23,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 
 | Feature | Requirement | Phase | Domain | Status |
 |---|---|---|---|---|
-| [product-archive](product-archive/spec.md) | An org takes a product off sale and back without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
+| [product-archive](product-archive/spec.md) | An org archives a product and restores it without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
 | [bulk-catalog-upload](bulk-catalog-upload/spec.md) | Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories | 6 | catalog | Implemented |
 | [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
 | [payment-confirmation](payment-confirmation/) | An order is paid when the gateway says so, for the right amount | 2 | payments, checkout | ✅ Implemented — PR-39 |

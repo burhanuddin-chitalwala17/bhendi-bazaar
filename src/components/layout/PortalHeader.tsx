@@ -2,18 +2,24 @@ import Link from "next/link";
 import { SignOutButton } from "./SignOutButton";
 
 /**
- * Who is signed in, and the two exits — shared by the org portal and the platform
+ * Who is signed in, and the exits — shared by the org portal and the platform
  * admin, so the two panels cannot drift apart on something this basic. Server-rendered:
  * the only interactivity is the sign-out leaf.
+ *
+ * `storefrontHref` is the shop this panel speaks for: an org's own `/store/<handle>`.
+ * The platform admin passes none — it speaks for no single shop, and a link to the
+ * marketplace root was just a second way out of the panel.
  */
 export function PortalHeader({
   name,
   email,
   label,
+  storefrontHref,
 }: {
   name?: string | null;
   email?: string | null;
   label: string;
+  storefrontHref?: string;
 }) {
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 md:px-6">
@@ -37,13 +43,17 @@ export function PortalHeader({
           {name?.charAt(0)?.toUpperCase() ?? "U"}
         </span>
         <div className="flex items-center border-l border-border pl-2 sm:pl-4">
-          <Link
-            prefetch={false}
-            href="/"
-            className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            Storefront
-          </Link>
+          {storefrontHref && (
+            <Link
+              prefetch={false}
+              href={storefrontHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Storefront
+            </Link>
+          )}
           <SignOutButton />
         </div>
       </div>

@@ -1,8 +1,8 @@
 /**
  * PATCH /api/org/[orgId]/products/[id]/archive
  *
- * Takes a product off sale or puts it back (ADR-0029). Separate from PATCH on the
- * product itself: withdrawing is not an edit to the product's content, and must stay
+ * Archives a product or restores it (ADR-0029). Separate from PATCH on the
+ * product itself: archiving is not an edit to the product's content, and must stay
  * available for a product whose form would not currently validate.
  */
 

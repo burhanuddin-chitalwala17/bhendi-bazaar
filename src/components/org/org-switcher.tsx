@@ -11,6 +11,8 @@ export interface SwitcherOrg {
   id: string;
   name: string;
   code: string;
+  /** Its public shop address, `/store/<handle>` — the portal header links there. */
+  handle: string;
   role: string;
 }
 

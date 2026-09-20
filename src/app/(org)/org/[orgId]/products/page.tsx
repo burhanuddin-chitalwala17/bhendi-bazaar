@@ -33,11 +33,11 @@ interface PageProps {
 
 /**
  * A query string is caller-controlled, so the shelf is matched against the closed set
- * rather than cast into it — an unknown value falls back to on sale (Invariant 4).
+ * rather than cast into it — an unknown value falls back to available (Invariant 4).
  */
-const SHELVES: ProductShelf[] = ["on-sale", "archived", "all"];
+const SHELVES: ProductShelf[] = ["available", "archived", "all"];
 const shelfFrom = (value: string | undefined): ProductShelf =>
-  SHELVES.find((shelf) => shelf === value) ?? "on-sale";
+  SHELVES.find((shelf) => shelf === value) ?? "available";
 
 export default async function OrgProductsPage({
   params,

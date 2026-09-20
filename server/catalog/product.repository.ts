@@ -13,7 +13,7 @@ import { NotFoundError } from "@server/shared/domain-error";
 import {
   ARCHIVED,
   FROM_ACTIVE_ORG,
-  ON_SALE,
+  AVAILABLE,
 } from "@server/catalog/product.visibility";
 
 export const PRODUCT_INCLUDE = {
@@ -100,7 +100,7 @@ export class ProductsRepository {
     return await prisma.product.findFirst({
       // An archived product cannot be listed for bidding either: bidding is a way of
       // selling, and this row is not for sale (ADR-0029).
-      where: { id: productId, orgId, ...ON_SALE },
+      where: { id: productId, orgId, ...AVAILABLE },
       select: { id: true, name: true, price: true, sizes: true, colors: true },
     });
   }
@@ -176,7 +176,7 @@ export class ProductsRepository {
   async categoryIdsForOrg(orgId: string): Promise<string[]> {
     const rows = await prisma.product.groupBy({
       by: ["categoryId"],
-      where: { orgId, ...ON_SALE, ...FROM_ACTIVE_ORG },
+      where: { orgId, ...AVAILABLE, ...FROM_ACTIVE_ORG },
     });
     return rows.map((row) => row.categoryId);
   }
@@ -202,7 +202,7 @@ export class ProductsRepository {
   }
 
   /**
-   * Which of these products are withdrawn from sale, by name (ADR-0029).
+   * Which of these products are archived, by name (ADR-0029).
    *
    * Names rather than ids because the only caller shows them to a buyer. Authoritative
    * when handed a `tx`; `product.sale-gate.ts` is what turns it into a refusal.
@@ -251,7 +251,7 @@ export class ProductsRepository {
   }: { orgId?: string; search?: string; ids?: string[]; limit?: number } = {}) {
     const where = {
       // An offer cannot be pointed at something that is not for sale.
-      ...ON_SALE,
+      ...AVAILABLE,
       ...(orgId ? { orgId } : {}),
       ...(search
         ? { name: { contains: search, mode: "insensitive" as const } }
@@ -289,7 +289,7 @@ export class ProductsRepository {
    */
   async listSlugs(): Promise<Array<{ slug: string }>> {
     return await prisma.product.findMany({
-      where: { ...ON_SALE, ...FROM_ACTIVE_ORG, ...FROM_ACTIVE_ORG },
+      where: { ...AVAILABLE, ...FROM_ACTIVE_ORG, ...FROM_ACTIVE_ORG },
       select: { slug: true },
     });
   }
@@ -319,7 +319,7 @@ export class ProductsRepository {
         // categoryIds (a resolved subtree) wins over a bare slug, which matches
         // only the category's own products.
         where: {
-          ...ON_SALE,
+          ...AVAILABLE,
           ...FROM_ACTIVE_ORG,
           // Scoped to one shop when a storefront asks; resolved server-side from the
           // handle, so no query parameter can widen it (ADR-0030 decision 6).
@@ -355,7 +355,7 @@ export class ProductsRepository {
     try {
       const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { id, ...ON_SALE, ...FROM_ACTIVE_ORG },
+        where: { id, ...AVAILABLE, ...FROM_ACTIVE_ORG },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -370,7 +370,7 @@ export class ProductsRepository {
     try {
       const product = await prisma.product.findFirst({
         relationLoadStrategy: "join",
-        where: { slug, ...ON_SALE, ...FROM_ACTIVE_ORG },
+        where: { slug, ...AVAILABLE, ...FROM_ACTIVE_ORG },
         include: {
           ...PRODUCT_INCLUDE,
         },
@@ -385,7 +385,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { slug: { not: slug }, ...ON_SALE, ...FROM_ACTIVE_ORG },
+        where: { slug: { not: slug }, ...AVAILABLE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: count,
         include: {
@@ -402,7 +402,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { flags: { has: "HERO" }, ...ON_SALE, ...FROM_ACTIVE_ORG },
+        where: { flags: { has: "HERO" }, ...AVAILABLE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -419,7 +419,7 @@ export class ProductsRepository {
     try {
       const products = await prisma.product.findMany({
         relationLoadStrategy: "join",
-        where: { ...(await offerFilter()), ...ON_SALE, ...FROM_ACTIVE_ORG },
+        where: { ...(await offerFilter()), ...AVAILABLE, ...FROM_ACTIVE_ORG },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: {
@@ -440,7 +440,7 @@ export class ProductsRepository {
       const products = await prisma.product.findMany({
         where: {
           name: { contains: query, mode: "insensitive" },
-          ...ON_SALE,
+          ...AVAILABLE,
           ...FROM_ACTIVE_ORG,
         },
         orderBy: { createdAt: "desc" },

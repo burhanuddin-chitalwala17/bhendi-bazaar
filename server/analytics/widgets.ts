@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { ON_SALE } from "@server/catalog/product.visibility";
+import { AVAILABLE } from "@server/catalog/product.visibility";
 import { prisma } from "@server/shared/prisma";
 
 /**
@@ -48,10 +48,10 @@ const orgScope = (ctx: WidgetContext) => (ctx.audience === "org" ? { orgId: ctx.
  */
 const productStockRows = cache(async (orgId: string | null) =>
   prisma.product.findMany({
-    // Inventory and low-stock are about what can be sold, so withdrawn products are
+    // Inventory and low-stock are about what can be sold, so archived products are
     // out (ADR-0029 D12). Revenue and order aggregates below are about what happened
     // and deliberately keep them.
-    where: { ...(orgId === null ? {} : { orgId }), ...ON_SALE },
+    where: { ...(orgId === null ? {} : { orgId }), ...AVAILABLE },
     select: { lowStockThreshold: true, stockLocations: { select: { quantity: true } } },
   })
 );

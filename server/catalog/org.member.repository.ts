@@ -29,7 +29,15 @@ export class OrgMemberRepository {
       where: { userId },
       select: {
         role: true,
-        org: { select: { id: true, code: true, name: true, isActive: true } },
+        org: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            handle: true,
+            isActive: true,
+          },
+        },
       },
       orderBy: { org: { name: "asc" } },
     });

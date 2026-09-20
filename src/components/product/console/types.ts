@@ -8,7 +8,7 @@ import type { ProductMediaDto } from "@server/catalog/media";
 import type { ProductShelf } from "@server/catalog/product.visibility";
 
 export interface ProductFilters {
-  /** Which shelf to list. Defaults to on-sale; withdrawn products are asked for. */
+  /** Which shelf to list. Defaults to available; archived products are asked for. */
   shelf?: ProductShelf;
   search?: string; // Search by name, SKU, tags
   categoryId?: string;
@@ -45,7 +45,7 @@ export interface ProductForTable {
   thumbnail: string;
   /** How many users have this saved. Demand, read-only — never sorted or filtered on. */
   wishlistCount: number;
-  /** Set when the product is off sale (ADR-0029); null while it is for sale. */
+  /** Set when the org archived the product (ADR-0029); null while it is available. */
   archivedAt: Date | null;
   createdAt: Date;
   category: { id: string; name: string };
@@ -82,10 +82,10 @@ export interface ProductDetails {
 }
 
 export interface ProductStats {
-  /** On sale. Withdrawn products are counted separately, never folded in here. */
+  /** Available. Archived products are counted separately, never folded in here. */
   totalProducts: number;
-  /** Off sale but intact (ADR-0029) — excluded from every other figure here. */
-  withdrawnProducts: number;
+  /** Archived but intact (ADR-0029) — excluded from every other figure here. */
+  archivedProducts: number;
   lowStockProducts: number;
   outOfStockProducts: number;
   featuredProducts: number;

@@ -27,8 +27,8 @@ const URL_PARAM_FOR: Partial<Record<keyof ProductFilters, string>> = {
   wishlistedOnly: "wishlisted",
 };
 
-/** The default shelf is on-sale, so it stays out of the URL. */
-const DEFAULT_SHELF = "on-sale";
+/** The default shelf is available, so it stays out of the URL. */
+const DEFAULT_SHELF = "available";
 
 export function ProductsContainer({
   initialData,
@@ -80,7 +80,7 @@ export function ProductsContainer({
     });
   };
   // ⚡ Optimistic delete. The row leaves the list either way: a delete removes it, and
-  // an archive takes it off the on-sale shelf this list is showing.
+  // an archive takes it off the available shelf this list is showing.
   const handleDelete = async (id: string) => {
     // Optimistic UI update
     setData((prev) => ({

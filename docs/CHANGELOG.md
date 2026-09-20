@@ -10,6 +10,38 @@
 
 ## Entries
 
+## [PR-115] 2026-09-20 — Delete stops pretending, and moves out of the way
+
+Deleting a product now deletes it, or refuses and says what is holding it. It no longer archives silently. The control moves off the row into an overflow dialog, since it is the only irreversible thing there.
+
+**The degrade was a workaround for a button that no longer exists alone.** When archiving shipped it had no control of its own — Delete was the only button in the row, so degrading it (delete when nothing depends on the product, archive otherwise) was the only way the common case could work at all. PR-113 gave Archive its own button in every row, and at that point the degrade only meant one control did two jobs and its label was wrong for whichever one it did. An org pressing *Delete* on a sold product got an archive, which is a different act with a different remedy.
+
+**So Delete refuses, and the refusal is now actionable.** `This product cannot be deleted — 1 order still refers to it, and deleting it would break that record. Archive it instead to take it off the storefront.` That sentence was a dead end when Delete was the only control, which is exactly why it was replaced by the degrade; with Archive sitting beside it, it is a signpost. The message is the same one PR-112 built, plus the remedy.
+
+**Delete still has a job Archive cannot do.** An archived product keeps its SKU and its slug forever, because a restore has to find its own code and URL free (R6, R9). That is right for a product that was really sold and wrong for a typo: mistype a SKU, archive it, and that code is burned until someone restores the junk row to edit it. Archive retires something real; Delete discards something that never was. Removing Delete entirely would have made every bad import row and every fat-fingered SKU permanent, which is why it stays.
+
+**It moves behind the row's `…` button.** Delete sat one `gap-2` from Archive, a control an org uses routinely — flagged as a mis-tap risk in this feature's own review and left standing at the time. It now opens a `Dialog` that says what deletion means and names Archive as the alternative, in prose a native `confirm()` cannot format and an icon tooltip cannot say at all. That dialog is the confirmation, so the `confirm()` on the path is gone. A dialog rather than a dropdown menu: `Dialog` is already a dependency and brings focus handling and Escape with it, a dropdown would have meant adding `@radix-ui/react-dropdown-menu` for one item, and a hand-rolled menu would have meant reimplementing focus and outside-click badly.
+
+**Contract:** `DELETE /api/org/[orgId]/products/[id]` answers `{ success: true }` again, not `{ outcome }` — with the two acts separated there is nothing to discriminate. [CONTRACTS.md](CONTRACTS.md) and the product-archive spec (R8, R8a, A5) and TRD (D9, UI) move with it; no schema change, no new dependency.
+
+`tsc --noEmit` clean, lint clean. 983 tests pass. The integration test now asserts the refusal *and* that the product is genuinely untouched by it — a refusal that quietly archived anyway would have passed a test that only checked for a throw.
+
+## [PR-114] 2026-09-20 — "Off sale" becomes "Archived", because sale means a discount here
+
+The product console's archive control now reads **Archive** / **Restore**, its filter reads **Available / Archived / All**, and its catalogue figure is labelled **Available**. Nothing about the behaviour changes.
+
+**"On sale" already means something else in this store, and it means it in code.** `promotionService` has a method called "put one product on sale, or take it off" — that is a markdown, a reduced price. `ProductPricingFields` hints "leave empty if not on sale". So a control reading *Take off sale* invited exactly the wrong reading: an org looking at it could reasonably think it ended a discount rather than removed the product from the storefront. The word was wrong on a control whose real effect is not reversible by guessing.
+
+**"Withdrawn" had become ambiguous too, which is the part that mattered more.** Since org-withdrawal landed, `assertOrgNotWithdrawn`, `fromWithdrawnOrgAmong` and `FROM_ACTIVE_ORG` use *withdrawn* for a shop the platform has withdrawn from the marketplace. A product being off the storefront and a shop being off the marketplace are different acts with different owners and different remedies, and both were called "withdrawn" — the doc comment on `FROM_ACTIVE_ORG` had to spell out which one it meant. That is the state a vocabulary test exists to prevent, and it arrived through two features meeting rather than through anyone choosing it. Products are now *archived*; only orgs are *withdrawn*.
+
+**Renamed with the labels, so the two cannot drift apart:** `ON_SALE` → `AVAILABLE`, the `ProductShelf` union `"on-sale"` → `"available"` (so the URL reads `?shelf=archived` or nothing), and `ProductStats.withdrawnProducts` → `archivedProducts`. Comments, error messages and the product-archive spec and TRD moved with them. The buyer-facing refusal drops its trailing "and has been removed from sale" — *archived* is the org's word for its own shelf, and a buyer only needs to know the item is no longer available.
+
+`[CONTRACT]`-adjacent but **not** flagged: `ProductStats` is an internal admin shape rather than a DTO in [CONTRACTS.md](CONTRACTS.md); the two sentences there that named the old labels were corrected in place, as was the `ProductShelf` union it documents. No wire shape changes meaning, only the spelling of one enum value — and that value is read from a query string the console itself writes.
+
+**Left alone deliberately:** `product.sale-gate.ts` keeps its name, paired with upstream's `org.sale-gate.ts` — "the gate on selling this" is accurate, internal, and breaking the pair to chase a UI word would cost more than it buys. [ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md) keeps its title and prose: ADRs are immutable, the decision it records is unchanged, and "a product leaves sale by archiving" is still a true sentence about it.
+
+`tsc --noEmit` clean, lint clean, 843 tests pass. No behaviour changed, so no test was added — the existing archive tests assert the new strings, which is what caught the SKU-clash message still saying "off sale".
+
 ## [PR-116] 2026-09-19 — The product gallery uploads browser-to-store
 
 Editing a product's photographs on a phone returned `FUNCTION_PAYLOAD_TOO_LARGE` before any of our code ran. The gallery posted the picked files as multipart to `/api/org/[orgId]/upload`, and a Vercel function's request body is capped at 4.5MB — one phone photograph clears that alone, and a multi-file selection clears it easily, since the cap is on the whole request rather than per file. The guard, the Zod parse and sharp's downscaling all sat downstream of a limit that rejected the request at the edge, so the server-side normalisation that exists precisely to keep stored images small never saw the bytes it was meant to shrink.

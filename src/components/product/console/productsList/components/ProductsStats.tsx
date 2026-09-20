@@ -25,13 +25,13 @@ export function ProductsStats({ stats }: ProductsStatsProps) {
     bgColor: string;
   }> = [
     {
-      // "On Sale", not "Total": every figure on this row excludes withdrawn products
+      // "Available", not "Total": every figure on this row excludes archived products
       // (ADR-0029 D12), and a label that did not say so would be the ambiguous one.
-      label: "On Sale",
+      label: "Available",
       value: stats.totalProducts.toLocaleString(),
       note:
-        stats.withdrawnProducts > 0
-          ? `+ ${stats.withdrawnProducts.toLocaleString()} withdrawn`
+        stats.archivedProducts > 0
+          ? `+ ${stats.archivedProducts.toLocaleString()} archived`
           : undefined,
       icon: Package,
       color: "text-info",

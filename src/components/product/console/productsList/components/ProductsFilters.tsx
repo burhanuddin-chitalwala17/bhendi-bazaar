@@ -87,20 +87,20 @@ export function ProductsFilters({
           ))}
         </Select>
 
-        {/* Shelf filter — on sale, withdrawn, or both (ADR-0029). Full width at base
+        {/* Shelf filter — available, archived, or both (ADR-0029). Full width at base
             so it stacks on a phone rather than crowding the row. */}
         <Select
-          value={filters.shelf || "on-sale"}
+          value={filters.shelf || "available"}
           onChange={(e) =>
             onFilterChange({ shelf: e.target.value as ProductShelf, page: 1 })
           }
           disabled={isPending}
-          aria-label="Filter by whether the product is on sale"
+          aria-label="Filter by whether the product is archived"
           className="w-full disabled:opacity-50 sm:w-auto"
         >
-          <option value="on-sale">On Sale</option>
-          <option value="archived">Withdrawn</option>
-          <option value="all">All Products</option>
+          <option value="available">Available</option>
+          <option value="archived">Archived</option>
+          <option value="all">All</option>
         </Select>
 
         {/* Stock Filter */}

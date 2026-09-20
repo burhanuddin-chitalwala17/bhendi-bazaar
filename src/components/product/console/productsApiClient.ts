@@ -34,24 +34,18 @@ export class ProductsApiClient {
     return response.json() as Promise<ProductDetails | null>;
   }
   /**
-   * Delete product — or archive it, if any record depends on it (ADR-0029).
-   *
-   * The server decides which, and says so in the response, so the caller can report
-   * what happened without a second request.
+   * Delete a product outright. Refused, by name, if any record depends on it
+   * (ADR-0029) — archiving is the separate act, and `setArchived` is its call.
    */
-  async deleteProduct(
-    id: string,
-  ): Promise<{ outcome: "deleted" | "archived" }> {
+  async deleteProduct(id: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/${id}`, {
       method: "DELETE",
     });
 
     if (!response.ok) throw await readApiError(response);
-
-    return response.json() as Promise<{ outcome: "deleted" | "archived" }>;
   }
 
-  /** Take a product off sale, or put it back. */
+  /** Archive a product, or restore it. */
   async setArchived(id: string, archived: boolean): Promise<void> {
     const response = await fetch(`${this.baseUrl}/${id}/archive`, {
       method: "PATCH",

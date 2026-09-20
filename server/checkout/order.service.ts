@@ -398,7 +398,7 @@ export class OrderService {
         // is under auction.
         await assertNotUnderBidding(productIds, now, tx);
 
-        // Nothing withdrawn from sale may be bought (ADR-0029, product-archive R4).
+        // Nothing the org has archived may be bought (ADR-0029, product-archive R4).
         //
         // Here for the same reason as the check above, and behind the same lock: a
         // listing filter cannot stop a cart filled before the withdrawal, a page
