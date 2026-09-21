@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-116] 2026-09-21 — A spec for product reviews, and the decision that one shopper may review a product twice
+
+Adds [docs/specs/product-reviews/spec.md](specs/product-reviews/spec.md). Requirements only — no TRD, no schema, no code. The feature is not built; this states what must be true when it is.
+
+**Reviews are half-built, and the visible half is the wrong half.** Rows are stored, the admin portal moderates them and an org can read the ones on its products — but no buyer can read or write one, and [src/components/product/reviews.tsx](../src/components/product/reviews.tsx) says so in as many words. The costlier part is quieter: `Product.rating` and `Product.reviewsCount` are written by nothing. They are seeded to zero and never recomputed, so approving or deleting a review in admin moves no number anywhere, and every product on every tile, lane and search result advertises itself as unrated however many reviews it carries. Moderation today is cosmetic. R6 states the requirement the store currently fails.
+
+**The decision that needed making: a shopper may review the same product more than once (R8).** Amazon and Flipkart both enforce one review per customer per product, editable; Etsy attaches a review to a transaction instead. We take neither. A repeat buyer, or someone returning after six months of wear, has a genuinely new thing to say, and an edit would overwrite the earlier experience rather than add to it — for textiles, how a fabric lasts is among the most useful things a review can carry. R9 follows: each review is independently editable and deletable by its author, because there is no longer one canonical review to edit.
+
+**That opens a rating-manipulation path, so R10 closes it by capping influence rather than volume.** Unlimited repeat reviews plus `RATE_LIMITING_ENABLED = false` ([src/lib/rate-limit/index.ts](../src/lib/rate-limit/index.ts)) would let one account set a product's rating by repetition. All of a shopper's reviews display; the average counts their most recent. Nobody is blocked from writing and nothing is hidden, and the average stays a measure of how many people liked a piece rather than how many times one person said so.
+
+Two product calls are recorded as open rather than guessed: whether reviewing requires a purchase (assumed not — buying earns the badge, not the right), and whether reviews publish immediately (assumed yes, matching the schema's existing default, with hold-for-approval named as the fallback if spam becomes real). 79 readable lines against the 100-line cap of [ADR-0010](adr/0010-spec-convention.md). [docs/specs/README.md](specs/README.md) gains its index row. No dependency, no migration, no DTO — nothing to flag.
+
 ## [PR-115] 2026-09-20 — Delete stops pretending, and moves out of the way
 
 Deleting a product now deletes it, or refuses and says what is holding it. It no longer archives silently. The control moves off the row into an overflow dialog, since it is the only irreversible thing there.

@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-09-19
+- **Verified:** 2026-09-21
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -45,6 +45,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, cart, checkout | ✅ Implemented — PR-111 |
 | [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog | ✅ Implemented — **7 subfeatures** |
 | [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain | 📝 Draft |
+| [product-reviews](product-reviews/spec.md) | Buyers read and write reviews, and the rating every surface shows is the published average | — | catalog | 📝 Draft |
 
 ### Subfeatures
 
