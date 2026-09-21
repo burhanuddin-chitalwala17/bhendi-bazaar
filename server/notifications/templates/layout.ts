@@ -1,5 +1,5 @@
 import { baseEmailStyles } from "./styles/baseEmailStyles";
-
+import { APP_SUPPORT_EMAIL} from "../../../src/lib/config";
 /**
  * The one shell every transactional email renders into. A template supplies only what
  * differs — title, tagline, body — so a brand change is this file, not four files.
@@ -9,7 +9,7 @@ import { baseEmailStyles } from "./styles/baseEmailStyles";
 export const BRAND_NAME = "Bhendi Bazaar";
 export const BRAND_TAGLINE = "Royal Curation of Islamic Clothing";
 /** Where Contact us messages are delivered. Same duplication reason as `BRAND_NAME`. */
-export const SUPPORT_INBOX = "support@bhendibazaar.com";
+export const SUPPORT_INBOX = APP_SUPPORT_EMAIL;
 
 export interface EmailFooterLink {
   label: string;
