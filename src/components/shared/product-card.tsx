@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { PriceDisplay } from "./PriceDisplay";
 import { StockStatus } from "./StockStatus";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
+import { ReviewStars } from "@/components/product/review-stars";
 
 // The phone tile is 3-up at ~105px wide (ADR-0016), so everything here is sized for
 // that first and grows at `sm`. Anything that cannot survive 105px — the tracked-out
@@ -73,6 +74,17 @@ export function ProductCard(product: Product) {
           <h3 className="line-clamp-2 font-heading text-2xs font-semibold leading-snug tracking-tight sm:text-sm">
             {product.name}
           </h3>
+
+          {/* Only when there is something to show: a rating of 0.0 on a 105px tile is
+              a line of noise, and it is what every tile used to carry (R6, A1). */}
+          {product.reviewsCount > 0 && (
+            <ReviewStars
+              value={product.rating}
+              count={product.reviewsCount}
+              size="xs"
+              className="text-muted-foreground"
+            />
+          )}
 
           <PriceDisplay
             price={product.price}

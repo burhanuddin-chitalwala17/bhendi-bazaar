@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-09-19
+- **Verified:** 2026-09-22
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
 ## Purpose
@@ -143,6 +143,22 @@ same checks — the second request is as untrusted as the first.
 sees, `0` for sheet-level problems. Row shapes: `server/catalog/bulk/bulk.types.ts`,
 validated by `src/lib/validation/schemas/bulk-product.schema.ts` and
 `bulk-category.schema.ts`.
+
+### Reviews
+
+Since PR-117 a product's **`rating` and `reviewsCount` keep their place on the wire and change source**: the two columns behind them are dropped, and both numbers are computed from the published reviews on every read (`server/catalog/review-rating.ts`, [product-reviews](specs/product-reviews/) R6a). Same shape, different origin — the kind of change that passes review unnoticed, which is why it is written here, as the order line's `thumbnail` was in PR-63. They remain **read-only on the wire and never accepted**, as rule 7 already said. The admin product shape drops `rating` outright: nothing rendered it, and an aggregate nobody displays is a query nobody asked for.
+
+Three new shapes, declared once in `server/catalog/review.types.ts`:
+
+- **`ReviewDto`** — `{ id, rating, title, comment, authorName, isVerifiedPurchase, createdAt, isMine, media }`. **No `userId`**: a buyer-facing payload has no reason to carry who wrote a review beyond the display name the row froze (R11), and `isMine` is resolved server-side from the session so a client knows what it may edit without being handed anyone's id (R9). `createdAt` is an ISO string, per rule 3.
+- **`ReviewSummaryDto`** — `{ average, count, histogram }`. The average is **per shopper** (one voice however many reviews they wrote, R10) while `count` and `histogram` are **per review**, so the bars sum to the count and to the length of the list below them. Two different weightings in one object, deliberately.
+- **`ReviewMediaDto`** — `{ kind, ref }`, reusing `MediaKind`. `ref` is an object URL in our own bucket for `IMAGE` and a bare video id for `YOUTUBE`, the same two meanings `ProductMediaDto.ref` carries ([ADR-0017](adr/0017-video-is-embedded-not-hosted.md) decision 2).
+
+Inbound, one schema serves create and edit symmetrically (`src/lib/validation/schemas/review.schema.ts`): `{ rating, title?, comment?, photos?, video? }` and nothing else. `rating` is required; `photos` are URLs the browser already uploaded and the **service** — not the schema — refuses any that is not ours, because that test needs `R2_PUBLIC_BASE_URL` and this schema is also the form's client-side validation; `video` accepts any YouTube link shape and is stored as the bare id. `isVerified`, `isApproved`, `userName` and `createdAt` have no field on either path (rule 7). Moderation's own schema now carries **`{ isApproved }`** alone — `isVerified` was accepted there and is gone, since the store awards the badge from order history (R4).
+
+Handlers: `GET`/`POST /api/products/[id]/reviews`, `PATCH`/`DELETE /api/reviews/[id]`, and `POST /api/reviews/upload-token` answering `{ uploadUrl, publicUrl }` like the org and admin token routes. The first page of reviews is **not** fetched — it is a server read through `src/data-access-layer/reviews.dal.ts`.
+
+**One cross-domain call**, not a wire DTO but recorded here for the same reason: `orderService.hasPurchased(userId, productIds)` is how `catalog` asks `checkout` whether to award **Verified purchase**. Catalog never joins `OrderItem` itself.
 
 ## Adding a DTO to this file
 Record a shape when it crosses the boundary and either more than one route uses it, or getting it wrong would fail silently. A one-off response shape used by a single route does not need an entry — its Zod schema is its documentation.

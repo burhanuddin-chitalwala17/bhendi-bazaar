@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
-import { adminReviewService } from "@server/catalog/review.service";
+import { reviewService } from "@server/catalog/review.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { updateReviewSchema } from "@/lib/validation/schemas/admin.schemas";
 
@@ -20,7 +20,7 @@ export async function PATCH(
     const { id } = await params;
     const body = updateReviewSchema.parse(await request.json());
 
-    const review = await adminReviewService.updateReview(
+    const review = await reviewService.updateReview(
       id,
       session.user.id,
       body,
@@ -43,7 +43,7 @@ export async function DELETE(
   try {
     const session = await requirePlatformAdmin();
     const { id } = await params;
-    await adminReviewService.deleteReview(id, session.user.id);
+    await reviewService.deleteReview(id, session.user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -106,6 +106,29 @@ export class OrderRepository {
   }
 
   /**
+   * Which of these products this user has actually bought and paid for.
+   *
+   * The only question catalog asks of checkout (product-reviews R4, trd.md D8): the
+   * **Verified purchase** mark is awarded from order history, so a reviewer can neither
+   * claim it nor decline it. Paid only, and `VISIBLE_ORDER_WHERE` so an abandoned hold
+   * on the same product awards nothing. Batched by product id to keep the question off
+   * the per-row path. `"paid"` is the literal the rest of this domain uses for the
+   * column documented at `prisma/schema.prisma:432`.
+   */
+  async purchasedProductIds(userId: string, productIds: string[]): Promise<string[]> {
+    if (productIds.length === 0) return [];
+    const rows = await prisma.orderItem.findMany({
+      where: {
+        productId: { in: productIds },
+        order: { userId, paymentStatus: "paid", ...VISIBLE_ORDER_WHERE },
+      },
+      select: { productId: true },
+      distinct: ["productId"],
+    });
+    return rows.map((row) => row.productId);
+  }
+
+  /**
    * Find order by ID
    */
   async findById(orderId: string) {

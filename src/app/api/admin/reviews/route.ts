@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
-import { adminReviewService } from "@server/catalog/review.service";
+import { reviewService } from "@server/catalog/review.service";
 import type { ReviewListFilters } from "@server/catalog/review.types";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       sortOrder: (searchParams.get("sortOrder") as any) || "desc",
     };
 
-    const result = await adminReviewService.getReviews(filters);
+    const result = await reviewService.getReviews(filters);
     return NextResponse.json(result);
   } catch (error) {
     return toErrorResponse(error, "Could not fetch reviews:");

@@ -26,6 +26,8 @@ import { PageHeader } from "@/components/shared/page-shell";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { VideoIcon } from "lucide-react";
 export default function AdminReviewsPage() {
   const [filters, setFilters] = useState<ReviewListFilters>({
     page: 1,
@@ -50,7 +52,7 @@ export default function AdminReviewsPage() {
       data,
     }: {
       id: string;
-      data: { isApproved?: boolean; isVerified?: boolean };
+      data: { isApproved: boolean };
     }) => adminReviewApiClient.updateReview(id, data),
     {
       successMessage: "Review updated successfully!",
@@ -157,6 +159,35 @@ export default function AdminReviewsPage() {
               {review.comment}
             </p>
           )}
+          {/* Shown inline, at a size they can be judged at: a queue that lists only
+              words cannot moderate pictures, and withdrawing the whole review is the
+              only lever there is (review-media R11, R13). */}
+          {review.media.length > 0 && (
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              {review.media
+                .filter((item) => item.kind === "IMAGE")
+                .map((item, index) => (
+                  <span
+                    key={item.ref}
+                    className="relative size-12 overflow-hidden rounded-card"
+                  >
+                    <Image
+                      src={item.ref}
+                      alt={`Photo ${index + 1} on this review`}
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  </span>
+                ))}
+              {review.media.some((item) => item.kind === "YOUTUBE") && (
+                <span className="inline-flex items-center gap-1 text-3xs text-muted-foreground">
+                  <VideoIcon className="size-3" aria-hidden />
+                  Video attached
+                </span>
+              )}
+            </div>
+          )}
         </div>
       ),
     },
@@ -173,7 +204,7 @@ export default function AdminReviewsPage() {
               : "bg-destructive/15 text-destructive hover:bg-destructive/25"
           }`}
         >
-          {review.isApproved ? "Approved" : "Pending"}
+          {review.isApproved ? "Published" : "Withdrawn"}
         </Button>
       ),
     },
@@ -196,7 +227,7 @@ export default function AdminReviewsPage() {
                 ? "text-warning hover:bg-warning/10"
                 : "text-success hover:bg-success/10"
             }`}
-            title={review.isApproved ? "Unapprove" : "Approve"}
+            title={review.isApproved ? "Withdraw" : "Restore"}
           >
             {review.isApproved ? (
               <XCircle className="w-4 h-4" />
@@ -266,8 +297,8 @@ export default function AdminReviewsPage() {
               filters.isApproved === undefined
                 ? "all"
                 : filters.isApproved
-                  ? "approved"
-                  : "pending"
+                  ? "published"
+                  : "withdrawn"
             }
             onChange={(e) =>
               setFilters({
@@ -275,14 +306,14 @@ export default function AdminReviewsPage() {
                 isApproved:
                   e.target.value === "all"
                     ? undefined
-                    : e.target.value === "approved",
+                    : e.target.value === "published",
                 page: 1,
               })
             }
           >
             <option value="all">All Reviews</option>
-            <option value="approved">Approved</option>
-            <option value="pending">Pending</option>
+            <option value="published">Published</option>
+            <option value="withdrawn">Withdrawn</option>
           </Select>
 
           <Select

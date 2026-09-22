@@ -273,8 +273,6 @@ async function main() {
         categoryId: productData.categoryId,
         tags: productData.tags,
         flags: productData.flags,
-        rating: productData.rating,
-        reviewsCount: productData.reviewsCount,
         thumbnail: productData.thumbnail,
         media: { create: seedMediaRows(productData) },
         sizes: productData.sizes,
@@ -427,30 +425,9 @@ async function main() {
   }
   console.log(`✅ ${seedReviews.length} reviews seeded\n`);
 
-  // ====================
-  // UPDATE PRODUCT RATINGS
-  // ====================
-  console.log("📊 Calculating product ratings...");
-  for (const product of seedProducts) {
-    const reviews = seedReviews.filter((r) => r.productId === product.id);
-    if (reviews.length > 0) {
-      const avgRating =
-        reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-      await prisma.product.update({
-        where: { id: product.id },
-        data: {
-          rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
-          reviewsCount: reviews.length,
-        },
-      });
-      console.log(
-        `  ✓ ${product.name} - ${avgRating.toFixed(1)}⭐ (${
-          reviews.length
-        } reviews)`
-      );
-    }
-  }
-  console.log("✅ Product ratings updated\n");
+  // Nothing to write: a product's rating and review count are derived from its
+  // published reviews on every read (product-reviews R6a), so seeding the reviews
+  // above is seeding the ratings.
 
   // ====================
   // SEED ABANDONED CARTS

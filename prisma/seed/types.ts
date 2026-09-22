@@ -75,8 +75,6 @@ export interface SeedProduct {
   categoryId: string;
   tags: string[];
   flags: string[];
-  rating: number;
-  reviewsCount: number;
   images: string[];
   thumbnail: string;
   /** Optional YouTube id, appended to the gallery after the photographs (ADR-0017). */

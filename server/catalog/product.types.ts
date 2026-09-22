@@ -19,8 +19,6 @@ export interface ServerProduct {
   categorySlug: string;
   tags: string[];
   flags: ProductFlag[];
-  rating: number;
-  reviewsCount: number;
   media: ProductMediaDto[];
   thumbnail: string;
   sizes: string[];

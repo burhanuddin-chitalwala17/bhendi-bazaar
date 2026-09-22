@@ -60,8 +60,6 @@ model Product {
   flags String[] @default([])
   // `images String[]` was here until product-video; a gallery is `media` now.
 
-  rating       Float    @default(0)
-  reviewsCount Int      @default(0)
   /// Cache of the cover row's `ref` (product-video D4a/D4b), so every listing, search
   /// result, cart line and order line reads one table. Written only by the resolver,
   /// never from input; NOT NULL is the one database-level guarantee that a product has
@@ -166,11 +164,37 @@ model Review {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([productId])
+  media ReviewMedia[]
+
+  /// Serves both the product page's newest-first list and the rating projection
+  /// (product-reviews trd.md D4): one product, published only, newest first.
+  @@index([productId, isApproved, createdAt])
   @@index([userId])
-  @@index([rating])
   @@index([createdAt])
-  @@index([isApproved])
+}
+
+/// A photograph the buyer took, or a video they had already published elsewhere
+/// (review-media R1, R5).
+///
+/// Its own table rather than a `reviewId` on `ProductMedia`: every gallery, cover and
+/// thumbnail query reads that one, so a review's picture living there would be one
+/// forgotten `where` away from becoming the product's own (review-media trd.md D1).
+///
+/// Cascade is correct here — a review's media carries no money and no attribution, which
+/// is the case ADR-0020 leaves cascading, and R12 wants the rows gone with the review.
+/// The objects in R2 are deleted by the service, since a cascade cannot reach them.
+model ReviewMedia {
+  id       String     @id @default(cuid())
+  reviewId String
+  review   Review     @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  kind     MediaKind
+  /// An object URL in our own bucket for IMAGE, a bare video id for YOUTUBE — never a
+  /// provider URL (ADR-0017 decision 2).
+  ref      String
+  /// Array index. A list has an order; nothing outside the review reads it.
+  position Int        @default(0)
+
+  @@index([reviewId])
 }
 
 model Cart {

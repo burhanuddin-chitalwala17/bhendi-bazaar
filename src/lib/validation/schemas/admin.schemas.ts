@@ -21,7 +21,14 @@ export const updateOrderStatusSchema = z.object({
   notes: z.string().trim().max(2000).optional(),
 });
 
+/**
+ * Moderation changes one thing: whether a review is published (product-reviews R15).
+ *
+ * `isVerified` was accepted here and is deliberately gone — the store awards the
+ * **Verified purchase** mark from its own order history, so it is not an admin's to
+ * grant any more than it is a reviewer's to claim (R4). Required rather than optional,
+ * because a PATCH that changes nothing is a request with no meaning.
+ */
 export const updateReviewSchema = z.object({
-  isApproved: z.boolean().optional(),
-  isVerified: z.boolean().optional(),
+  isApproved: z.boolean(),
 });

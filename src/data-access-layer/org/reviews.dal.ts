@@ -1,10 +1,10 @@
 import { cache } from "react";
-import { adminReviewRepository } from "@server/catalog/review.repository";
+import { reviewRepository } from "@server/catalog/review.repository";
 
 /** Read-only: an org sees reviews on its products; moderation stays platform. */
 class OrgReviewsDAL {
   getReviews = cache(async (orgId: string, page = 1) => {
-    const { reviews, total, limit } = await adminReviewRepository.getReviewsForOrg(orgId, page);
+    const { reviews, total, limit } = await reviewRepository.getReviewsForOrg(orgId, page);
     return {
       reviews: reviews.map((r) => ({
         id: r.id,
