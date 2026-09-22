@@ -32,3 +32,30 @@ export function resolvePageNumber(value: unknown): number {
   const page = Number(value);
   return Number.isInteger(page) && page > 0 ? page : 1;
 }
+
+/**
+ * A sort column arrives from a query string and is spread straight into Prisma's
+ * `orderBy: { [sortBy]: sortOrder }`, so it is resolved against the closed set the
+ * caller declares rather than cast to it. `searchParams.get("sortBy") as any` compiled
+ * and typechecked while letting an arbitrary string reach the query builder — the
+ * compile-time fiction Invariant 4 is about, one layer along from a request body.
+ *
+ * The allowed set lives at the call site because it is per-listing, and it is the same
+ * union the filter type already declares — passing anything else stops compiling.
+ */
+export function resolveSortBy<const T extends readonly string[]>(
+  value: unknown,
+  allowed: T,
+  fallback: T[number]
+): T[number] {
+  return allowed.includes(value as T[number]) ? (value as T[number]) : fallback;
+}
+
+export const SORT_ORDERS = ["asc", "desc"] as const;
+
+export type SortOrder = (typeof SORT_ORDERS)[number];
+
+/** Same reasoning, and only ever two answers. */
+export function resolveSortOrder(value: unknown, fallback: SortOrder = "desc"): SortOrder {
+  return SORT_ORDERS.find((order) => order === value) ?? fallback;
+}

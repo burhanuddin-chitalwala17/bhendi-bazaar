@@ -11,7 +11,15 @@ import { adminUserService } from "@server/identity/admin.user.service";
 import type { UserListFilters } from "@server/identity/admin.user.types";
 import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import {
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+
+/** The columns this listing may be ordered by — the same set users filters declare. */
+const SORTABLE = ["createdAt", "lastActiveAt", "totalSpent"] as const;
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,8 +40,8 @@ export async function GET(request: NextRequest) {
             : undefined,
       page: resolvePageNumber(searchParams.get("page")),
       limit: resolvePageSize(searchParams.get("limit")),
-      sortBy: (searchParams.get("sortBy") as any) || "createdAt",
-      sortOrder: (searchParams.get("sortOrder") as any) || "desc",
+      sortBy: resolveSortBy(searchParams.get("sortBy"), SORTABLE, "createdAt"),
+      sortOrder: resolveSortOrder(searchParams.get("sortOrder"), "desc"),
     };
 
     const result = await adminUserService.getUsers(filters);

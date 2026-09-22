@@ -2,6 +2,7 @@ import { cache } from "react";
 import { bannerRepository } from "@server/catalog/banner.repository";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
 import type { AdminBanner } from "@server/catalog/banner.types";
+import { isRenderableImageUrl } from "@server/catalog/image-paths";
 
 /** Row to props. Null columns become absent keys — the banner treats "no eyebrow" and
  *  "empty eyebrow" the same, and only one of them should reach the component. */
@@ -9,9 +10,11 @@ export function toHeroBanner(banner: AdminBanner): HeroBannerContent {
   return {
     id: banner.id,
     eyebrow: banner.eyebrow ?? undefined,
-    title: banner.title,
+    title: banner.title ?? undefined,
     description: banner.description ?? undefined,
-    image: banner.imageUrl
+    // A URL on the retired store is the same as no image here, not a crash: next/image
+    // throws on a host it cannot serve and takes the page with it (OPERATIONS.md).
+    image: isRenderableImageUrl(banner.imageUrl)
       ? { src: banner.imageUrl, alt: banner.imageAlt ?? "" }
       : undefined,
     actions: banner.actions.map((action) => ({

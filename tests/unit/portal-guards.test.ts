@@ -34,19 +34,33 @@ describe("portal layouts own their guard", () => {
   });
 });
 
-describe("the edge gate names the portals explicitly", () => {
+describe("the edge gate reaches every portal path", () => {
   const source = readFileSync(MIDDLEWARE, "utf8");
   const matcher = source.slice(source.indexOf("matcher:"));
 
-  it("matches /admin and /org by name", () => {
-    for (const path of ["/admin", "/admin/:path*", "/org", "/org/:path*"]) {
-      expect(matcher).toContain(`"${path}"`);
-    }
-  });
+  /**
+   * The matcher was a list of portal names until the Content-Security-Policy moved into
+   * the middleware, which has to reach every document. The spelling was never the point —
+   * what matters is that no portal path slips past — so this applies the pattern rather
+   * than reading it.
+   */
+  const patterns = [...matcher.matchAll(/"([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((p) => p.startsWith("/"))
+    .map((p) => new RegExp("^" + p.replace(/:path\*/g, ".*").replace(/:\w+/g, "[^/]+") + "$"));
+  const gated = (path: string) => patterns.some((re) => re.test(path));
 
-  // The catch-all excluded `.*\..*` so a dot anywhere in the path skipped the gate.
-  it("does not gate a portal through a dot-excluding catch-all", () => {
-    expect(matcher).not.toContain("\\\\..*");
+  it.each([
+    "/admin",
+    "/admin/orders",
+    "/org",
+    "/org/abc/products",
+    // The dot cases. The conventional static-file exclusion skips any path containing a
+    // dot, which also let `/admin/orders/abc.def` through with no check at all.
+    "/admin/orders/abc.def",
+    "/org/abc/products/x.y",
+  ])("gates %s", (path) => {
+    expect(gated(path)).toBe(true);
   });
 
   // Scanned with comments stripped: the file explains in prose why these left, and

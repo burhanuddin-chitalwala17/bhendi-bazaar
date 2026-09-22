@@ -113,9 +113,11 @@ describe("every font utility resolves to a real family", () => {
     "semibold", "bold", "extrabold", "black",
   ]);
 
-  // `font-size` inside an inline SVG and `--font-heading-face` in next/font's config
-  // are the same characters as a utility class without being one.
+  // `font-size` inside an inline SVG, `--font-heading-face` in next/font's config, and
+  // the `font-src` directive in src/lib/security-headers.ts are the same characters as a
+  // utility class without being one. (`src` is also a real @font-face descriptor.)
   const CSS_PROPERTY = new Set([
+    "src",
     "size", "family", "weight", "style", "variant", "stretch", "feature-settings",
     "variation-settings", "kerning", "optical-sizing", "smoothing",
   ]);

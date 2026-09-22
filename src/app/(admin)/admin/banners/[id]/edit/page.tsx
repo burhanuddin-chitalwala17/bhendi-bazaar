@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { BannerForm } from "@/components/banners/BannerForm";
+import { bannerLabel } from "@/lib/banner-label";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { bannerRepository } from "@server/catalog/banner.repository";
 
@@ -20,7 +21,7 @@ export default async function EditBannerPage({
       <PageHeader
         back={{ href: "/admin/banners", label: "Back to banners" }}
         title="Edit banner"
-        description={banner.title}
+        description={bannerLabel(banner.title)}
       />
       <BannerForm
         action={`/api/admin/banners/${id}`}

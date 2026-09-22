@@ -10,7 +10,15 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminOrderService } from "@server/checkout/admin.order.service";
 import type { OrderListFilters } from "@server/checkout/admin.order.types";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import {
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+
+/** The columns this listing may be ordered by — the same set orders filters declare. */
+const SORTABLE = ["createdAt", "updatedAt", "total"] as const;
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,8 +39,8 @@ export async function GET(request: NextRequest) {
         : undefined,
       page: resolvePageNumber(searchParams.get("page")),
       limit: resolvePageSize(searchParams.get("limit")),
-      sortBy: (searchParams.get("sortBy") as any) || "createdAt",
-      sortOrder: (searchParams.get("sortOrder") as any) || "desc",
+      sortBy: resolveSortBy(searchParams.get("sortBy"), SORTABLE, "createdAt"),
+      sortOrder: resolveSortOrder(searchParams.get("sortOrder"), "desc"),
     };
 
     const result = await adminOrderService.getOrders(filters);

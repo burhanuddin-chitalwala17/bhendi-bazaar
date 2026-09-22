@@ -1,5 +1,8 @@
 # notifications — domain rules
 
+- **Verified:** 2026-09-21
+- **Covers:** `server/notifications/**`
+
 Transactional email. One provider (Resend, in `email.service.ts`), one shell, six templates.
 
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers

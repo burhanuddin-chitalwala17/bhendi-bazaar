@@ -85,7 +85,7 @@ data a developer wants and production must not have. `prisma/seed-guard.ts` refu
 deployed or CI environment before it consults anything else, so the seed cannot reach
 production even if someone sets the allowlist variable there.
 
-`src/lib/home-banners.ts` is deleted in the same change. Keeping it as a fallback would
+`src/components/home/home-hero.tsx` is deleted in the same change. Keeping it as a fallback would
 be two sources of truth for the same shelf, and would smuggle the same unapproved copy
 back in through code.
 

@@ -1,5 +1,8 @@
 # CLAUDE.md — payments domain
 
+- **Verified:** 2026-09-21
+- **Covers:** `server/payments/**`
+
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC and the seven Project Invariants. This file covers **payments** only.
 
 ## Purpose

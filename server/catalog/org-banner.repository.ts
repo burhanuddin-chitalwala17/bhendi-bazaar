@@ -9,7 +9,7 @@
 import { prisma } from "@server/shared/prisma";
 
 export interface OrgBannerInput {
-  title: string;
+  title: string | null;
   description: string | null;
   imageUrl: string | null;
   imageAlt: string | null;

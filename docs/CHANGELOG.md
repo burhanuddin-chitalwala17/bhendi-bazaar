@@ -10,6 +10,263 @@
 
 ## Entries
 
+## [PR-122] 2026-09-21 — A stored image URL we cannot serve reads as no image, not a crash
+
+A single `Banner` row still holding a Vercel Blob URL from before ADR-0028 was taking down
+two whole pages. `next/image` has no degradation path for a host missing from
+`remotePatterns` — it throws `Invalid src prop` during render — so one dead URL blanked the
+storefront homepage *and* `/admin/banners`, which is the page OPERATIONS.md tells you to
+re-upload the image on. The remedy was locked behind the failure it treats.
+
+`isRenderableImageUrl` (`server/catalog/image-paths.ts`) now answers whether a stored URL can
+be handed to the optimizer at all, and the three banner surfaces — `toHeroBanner`,
+`storefrontDAL.promotionsFor` and the admin list — route through it. A dead URL falls into the
+no-image branch each of them already had. It is a check for the one *retired* host rather than
+an allowlist of live ones, because the live host is `R2_PUBLIC_BASE_URL`, which is server-only
+configuration, and this has to answer in the browser too.
+
+A dead image and no image are no longer indistinguishable to whoever has to fix it: the admin
+row shows a struck-through icon and says *Image needs re-uploading*.
+
+**OPERATIONS.md was wrong about the symptom** — it said such a row "renders as a broken image".
+Corrected, along with the fact that the other seven columns it lists (`Category.heroImage`,
+`Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`, `Org.logoUrl`,
+`OrderItem.thumbnail`, `ShippingProvider.logoUrl`) are **not** guarded and will still take a
+page down. Dev currently has one affected row and it is in `Banner`; production is a separate
+database and has to be checked with the query in that runbook.
+
+## [PR-121] 2026-09-21 — A banner's heading is optional, and a wordless banner keeps its picture clean [CONTRACT] [MIGRATION]
+
+`title` was the one word on a banner that was still required, on both the platform hero and
+an org's own promotions. Artwork that already carries its own typography had a headline laid
+over it with nothing to say — and, worse, it carried the reading scrim with it.
+
+**The scrim is the real change.** It exists to make words legible over a photograph, and it
+fades out on hover from `md`. On a phone there is no hover, so it is simply always on: a
+banner with nothing to read was a permanently dimmed picture. `HeroBanner` now derives
+`hasWords` from eyebrow, title, description and actions together, and where there are none it
+does not render the scrim or the text column at all — not rendered, rather than faded, because
+fading is a desktop-only escape a phone does not have.
+
+Blank and absent are one value. `""` and whitespace normalise to `null` in both schemas, so
+the renderer has a single thing to branch on; an empty string would still read as text and
+would keep the dimming.
+
+Around it: `bannerLabel` (`src/lib/banner-label.ts`) names an untitled banner once for the
+admin list, its screen-reader labels, the delete confirmation and the edit page header, rather
+than six literals that drift. Both forms drop the required marker and say what leaving it
+blank does. `Banner.title` and `OrgBanner.title` drop NOT NULL; the migration also nulls any
+whitespace-only title that predates the rule. Widening only — every existing banner keeps its
+heading and every existing client still parses.
+
+`tests/unit/home-hero.test.tsx` pins the scrim's presence against each word that can bring it
+back; `tests/unit/home-banners.test.ts` and `tests/unit/storefront-service.test.ts` pin blank,
+absent and null landing on the same value.
+
+
+## [PR-120] 2026-09-21 — The documentation gate grows the two holes it had
+
+A sweep of every living doc against the tree after PR-117..119, and two new gates for the
+classes of drift the sweep caught by hand. Docs only; no behaviour change.
+
+**Two blind spots in the gate, both found the hard way.**
+
+*Environment variables.* `CSP_REPORT_ONLY` was added in PR-117 and never documented — the
+table in OPERATIONS.md read as complete while missing the switch that turns enforcement off.
+`ORG_HANDLE_HOLD_DAYS` and `PRISMA_LOG_QUERIES` had been missing longer. An undocumented
+variable is the worst shape of stale doc: a deployment built from the table is missing
+something nobody knows to look for. Gate 6 now asserts every `process.env.X` the code reads
+appears in that table, less the five the platform sets itself.
+
+*Directory references.* Gate 1 only matched paths with a file extension, so
+`server/repositories/**` — a tree ADR-0012 dissolved — sat in DEPENDENCIES.md untouched while
+every file reference around it was checked. Gate 7 now resolves backticked directory paths
+too, skipping `<placeholder>` and `*` forms.
+
+**DEPENDENCIES.md was breaking its own rule.** It says a removed package moves to `## Removed`
+with its date and reason, and is not deleted — and PR-118/119 deleted three rows. There was no
+`## Removed` section to move them to; there is now, holding `razorpay`, `@vercel/blob` and
+`baseline-browser-mapping`. Also corrected: Prisma pinned at `^7.1.0` where it is `^7.10.0`,
+with the note that CLI and client must move together and that the adapter decides the *shape*
+of a constraint error; `sharp` still said uploads reach "Blob"; `@vercel/analytics`,
+`@vercel/speed-insights` and `vite` had no rows at all.
+
+**TESTING.md claimed a rule the pipeline does not follow.** "`continue-on-error` on a lint,
+typecheck, or test step is forbidden" — while `.github/workflows/ci.yml` carries exactly that
+on lint. The section now states where each gate actually stands, including that lint is the
+one still non-blocking and why (56 `no-explicit-any`, down from 81, none of them in
+`src/app/api/` any more). It also gains a table of the guard suites — tests whose subject is
+the repository rather than a module — and the rule that a guard which has never been red is
+not yet a guard.
+
+**Also:** BACKLOG Phase 4 moves from "Not started" to "In progress" with what is and is not
+done, and gains a watch-list entry for the unauthenticated Shiprocket webhook — it verifies no
+signature, so a guessed tracking number can mark an order delivered. Nothing reads `delivered`
+for settlement, which is the only reason it is a watch-list entry. `server/checkout/CLAUDE.md`
+gains the batched-write rule from PR-119, including that returned ids are keyed by field and
+never by position.
+
+**Verification:** `tsc --noEmit` exit 0, 1067 tests pass, `next build` compiles,
+`npm run docs:check` 55/55 (was 40).
+
+
+## [PR-119] 2026-09-21 — Vercel Blob removed entirely, and the order transaction stops looping
+
+**The Blob store is gone, not retired.** Its own contents now answer `403` — the block
+ADR-0026 describes — so nothing could be recovered from it and nothing was left to keep it for.
+Removed: `@vercel/blob`, `scripts/migrate-blob-store.ts` (leaving `scripts/` empty), the
+hostname from `next.config.ts` `remotePatterns` and from the CSP's `img-src`, the
+`.blob-migration/` ignore rule, and the `BLOB_READ_WRITE_TOKEN` row. That also takes the
+`undici` HIGH advisory with it.
+
+Keeping the hostname allow-listed had been justified as "so a partially migrated catalogue
+still renders" — but with the bytes unreachable, allow-listing the host renders nothing. One
+active banner in the development database still holds such a URL and has been showing broken
+for some time; OPERATIONS.md now carries the query that finds any of the eight URL columns
+still pointing there, and the only remedy, which is to re-upload through the admin UI. Run it
+against production and development separately.
+
+**The order transaction issued one INSERT per row.** `createOrderWithShipments` looped
+`orderItem.create` per line, `orderDiscount.create` per attribution and `shipmentItem.create`
+per parcel line — every one a billed operation, and every one held inside the transaction that
+already holds the guarded stock decrement's row locks (ADR-0007), so the cost was checkout
+contention as well as money. Now `createManyAndReturn` and `createMany`. Measured on a
+six-line, one-parcel order: **28 statements before, 18 after**; `OrderItem` 6 inserts to 1,
+`ShipmentItem` 6 to 1. The saving grows with the basket.
+
+The ids are still needed, so they are read back — but keyed off **each returned row's own
+fields, never its position**, so nothing depends on the driver returning rows in the order they
+were sent. A parcel line that resolves to no order item now throws instead of writing a null
+`orderItemId`, which is how an allocation bug would otherwise have reached settlement.
+
+**Nothing covered this transaction.** It holds Invariants 1 and 6 and ADR-0019's attribution,
+and it had no test at all — which is why a batching change could not be made safely.
+`tests/integration/order-transaction.test.ts` now creates its own products and stock rather
+than reading seeded fixtures (the first draft did, and broke immediately on how the seed
+happens to be shaped), then asserts the linkage per line **by identity through the join**,
+with distinct prices and quantities so a mismatched pairing cannot hide. It was mutation-tested:
+mapping the ids positionally makes it fail. It also pins that the server prices every line from
+the catalogue and that totals stay integer paise.
+
+**Verification:** `tsc --noEmit` exit 0, 1052 tests pass across 96 files, `next build` compiles,
+`npm run docs:check` 40/40, `npm audit` 6 (unchanged — all Prisma-7 CLI transitives).
+
+
+## [PR-118] 2026-09-21 — Dependencies cleaned and upgraded, and `any` leaves the trust boundary
+
+Follows PR-117's audit. 49 advisories to 6; 23 `any` in route handlers to 0.
+
+**Two dead dependencies were carrying live advisories.** `razorpay` was never imported —
+`razorpay.repository.ts` calls the REST API with `fetch`, which DEPENDENCIES.md had flagged
+since 2026-08-03 — and it was the only thing pulling `axios` (HIGH: prototype-pollution
+credential theft). `baseline-browser-mapping` was a declared devDependency nothing referenced
+and the only package with no row in DEPENDENCIES.md. Both gone. `@vercel/blob` is also unused
+outside `scripts/migrate-blob-store.ts` and carries the `undici` HIGH, but it stays until the
+production store is confirmed empty — the local database has zero old-store URLs, and that is
+a different database.
+
+**`next` 16.0.10 → 16.3.5** clears a CRITICAL set that is all reachable from a public
+storefront: a DoS through the Image Optimizer's `remotePatterns` handling, HTTP request
+smuggling in rewrites, unbounded `next/image` disk-cache growth. **`sharp` 0.34.5 → 0.35.4**
+clears inherited libvips and libheif CVEs, which matter here because `normalizeImage` parses
+buyer- and org-supplied uploads server-side. The remaining 6 advisories are Prisma 7's own CLI
+transitives (`mysql2`, `deepmerge-ts`) and an `exceljs` → `uuid` path; npm's only offered fix
+is a downgrade to Prisma 6, so they are accepted rather than taken.
+
+**`npm audit fix` bumped the Prisma CLI to 7.10.0 and left `@prisma/client` at 7.1.0**, which
+produced `Cannot find module './query_compiler_fast_bg.js'` on every query. Both, plus
+`@prisma/adapter-pg`, are now pinned together.
+
+**That bump also silently broke every friendly uniqueness message.** Under
+`@prisma/adapter-pg`, Prisma 7.10 reports a P2002 as
+`meta.driverAdapterError.cause.constraint.index` — the constraint's *name* — where 7.1
+reported `.fields`, the columns. `uniqueViolationFields` read only `.fields`, so it returned
+its unattributed `[]` fallback, every `isUniqueViolation(error, field)` answered false, and a
+duplicate SKU surfaced as a raw `Unique constraint failed on the constraint` instead of "that
+SKU belongs to an archived product". Nothing threw and nothing logged. The helper now parses
+`<Model>_<field>…_key`, and `tests/unit/constraint-shapes.test.ts` pins all three shapes
+against fixtures captured from real errors. The two hand-written partial indexes
+(`ProductMedia_one_thumbnail_per_product`, `BiddingEvent_one_open_per_product`) correctly stay
+unattributed — neither names a field a form could highlight.
+
+**`any` is gone from every route handler.** The two patterns behind 22 of the 23:
+`(session.user as any).id` in six handlers that hand-rolled their own session check —
+now `requireSession()`, which also gives them the ADR-0013 envelope — and
+`searchParams.get("sortBy") as any` in five admin listings, which laundered an
+attacker-controlled string into `orderBy: { [sortBy]: sortOrder }`. Each filter type already
+declared its closed set; `resolveSortBy`/`resolveSortOrder` in `server/shared/pagination.ts`
+now resolve against it the way `resolvePageSize` always has. Admin-gated, so the exposure was
+limited to error-based disclosure — but it is the compile-time fiction Invariant 4 is about,
+one layer along from a request body. 56 `any` remain, none in `src/app/api/`.
+
+**No handler returns a raw `error.message` any more** — `orders`, `orders/lookup`, `profile`,
+`products/check-stock` and the Razorpay webhook were the last five. The webhook keeps its
+deliberate non-2xx on an unmatched payload (D5); `toErrorResponse` preserves a `DomainError`'s
+status.
+
+**Verification:** `tsc --noEmit` exit 0, 1049 tests pass across 95 files, `next build`
+compiles 86 routes, `npm run docs:check` 40/40.
+
+
+## [PR-117] 2026-09-21 — Docs that cannot go quietly stale, and a CSP
+
+A project-wide audit of documentation, security and cost, plus the two controls the audit
+said were missing. No behaviour changes on any buyer-facing path.
+
+**`Verified:` was an honour-system header, and it did not hold.** ADR-0001 and ADR-0009 both
+claim `/bb-review` flags a doc older than the last structural change to the code it
+describes. Nothing implemented that — the skill's line 196 asks a reader to notice, which is
+not a control. The state it left behind: `ARCHITECTURE.md` carried a three-day-old date while
+asserting Vercel Blob (retired by ADR-0028), `src/containers/**` (dissolved by ADR-0031), 86
+api handlers (93), 518 tests (983), 38 models (40), 44 migrations (46) and a
+`verifyAdminSession()` that does not exist. Thirty-six code-path references across seventeen
+docs pointed at files that had moved. `OPERATIONS.md` told an operator that rate limiting was
+required, configured and failing open — it has been detached since PR-55 and allows
+everything. Six `CLAUDE.md` files carried no `Verified:` line at all, against the project's
+own Golden Rule 5.
+
+**So the date became a gate.** Each living doc now declares `Covers:` — globs of the code
+whose *shape* it asserts — and `tests/unit/docs-integrity.test.ts` fails when a file matching
+them was added, deleted or renamed after the date. Structural changes only: gating on every
+edit inside a covered file is noise, and a noisy check gets deleted. Four more gates ride
+along: a broken path reference in a living doc, a path in an ADR or spec that the repository
+*never held* (checked against `git log`, since an immutable ADR legitimately names files that
+are gone — this is what caught the home-banners spec asserting `src/lib/home-banners.ts`, a
+file that never existed), a fenced code block outside ADR-0009's exceptions, and every count
+in `ARCHITECTURE.md` against the tree. CI checks out with `fetch-depth: 0` for it.
+
+**Razorpay: the forgery paths were already closed; the scripting path was not.** Re-verified
+end to end — `createPaymentOrderSchema` has no `amount` field, so the charge is read from the
+persisted order; the browser return is an HMAC over `order_id|payment_id` compared with
+`timingSafeEqual`; `decideConfirmation` refuses a signal whose `gatewayOrderId` is not the one
+persisted at creation, so a signature from a cheap order cannot be replayed onto an expensive
+one; the webhook HMACs the raw body, not the parsed JSON; `partial_payment` is never set, so
+a gateway order cannot be part-paid; `RAZORPAY_KEY_SECRET` is server-only and no
+`NEXT_PUBLIC_*` but the app origin exists. None of that is reachable from a browser.
+
+What *was* reachable was everything else, because the app sent no security headers at all.
+`src/lib/security-headers.ts` now holds a nonce-based CSP built per request in
+`src/middleware.ts` — `script-src` with no `'unsafe-inline'`, so an injected `<script>` does
+not execute — plus HSTS, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy` and
+`Permissions-Policy` in `next.config.ts`, where they also reach static assets. Verified
+against a running server: all 51 inline and 25 external script tags carry the nonce, and the
+portal gate and the 410 permalink rule still behave. `CSP_REPORT_ONLY=1` downgrades
+enforcement without a code change.
+
+**The middleware matcher is now a catch-all**, because a CSP has to reach every document. It
+still does not exclude paths containing a dot — the conventional static-file exclusion is
+what once let `/admin/orders/abc.def` past the gate entirely. `tests/unit/portal-guards.test.ts`
+now applies the matcher to real paths instead of reading its spelling.
+
+**Also corrected:** `wishlist` was a bounded context under `server/` with no row in
+CLAUDE.md's domain table (a gate now asserts the two agree); `INTEGRATIONS.md` documented
+Vercel Blob and not the Cloudflare R2 that replaced it; `docs/README.md` said eight domains
+and listed three domain docs, against thirteen and five.
+
+**Verification:** `tsc --noEmit` exit 0, 1040 tests pass across 94 files, `npm run docs:check`
+40/40, security headers confirmed on a live server.
+
+
 ## [PR-115] 2026-09-20 — Delete stops pretending, and moves out of the way
 
 Deleting a product now deletes it, or refuses and says what is holding it. It no longer archives silently. The control moves off the row into an overflow dialog, since it is the only irreversible thing there.

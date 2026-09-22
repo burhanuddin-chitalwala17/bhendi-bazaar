@@ -1,6 +1,7 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-08-17
+- **Verified:** 2026-09-21
+- **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
 What the services we depend on actually do — the behaviour that is not derivable from our code and not obvious from their documentation. Payment, courier, and platform quirks belong to no single domain and outlive any one call site, so they live here rather than in a comment.
@@ -55,11 +56,39 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **Environment variables are per-environment** and require a redeploy to take effect. `vercel env pull` brings them locally.
 - **Upstash provisioned through Vercel's integration is named `KV_REST_API_URL` / `KV_REST_API_TOKEN`** — *not* the `UPSTASH_REDIS_REST_*` names in Upstash's own documentation. See [OPERATIONS.md](OPERATIONS.md) for why this specific mismatch is unusually costly.
 
-## Vercel Blob (storage)
+## Cloudflare R2 (storage)
 
-- **`addRandomSuffix` controls whether an upload can overwrite an existing path.** With it disabled, a caller who controls the filename controls the stored path, and a predictable path can be overwritten.
-- **Allowed hostnames must be listed in `next.config.ts`** under `images.remotePatterns`, or `next/image` refuses to render them.
-- The store's blob hostname is configured there.
+The current image store ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). One seam,
+`server/catalog/object-store.ts`, owns every write, delete and URL derivation; reads never pass
+through our code, so there is no metered egress path to exhaust.
+
+- **R2 has no egress meter**, which is the whole reason for the move. Class A/B operation counts
+  and stored bytes are what to watch, not transfer.
+- **The public base URL is configuration, not derivation.** `R2_PUBLIC_BASE_URL` is a separate
+  variable from the credentialed S3 endpoint — an `r2.dev` subdomain while developing, a custom
+  domain in production. Deriving the public URL from the S3 endpoint produces URLs that need
+  credentials to read.
+- **`next.config.ts` reads that variable for `images.remotePatterns`.** A host missing there makes
+  every image 404 *at the optimizer*, with no error in the app logs and no error in R2's — the
+  failure is silent on both sides.
+- **A browser gets a presigned PUT, never a token.** `presignUpload` signs the path *and* the
+  `content-type`, so a presigned URL cannot be replayed to write a different object or a different
+  media type. Objects are written `immutable` with a one-year `max-age`, which is only safe because
+  every stored pathname carries a timestamp or random suffix — a caller-controlled, predictable
+  path would let an upload overwrite an existing object.
+- **`aws4fetch` signs the requests**, not the AWS SDK — one file against two verbs
+  ([DEPENDENCIES.md](DEPENDENCIES.md)).
+
+## Vercel Blob (gone)
+
+The previous store. The package, the migration script and the hostname's entries in
+`next.config.ts` and the CSP were all removed once the store began answering `403` to its own
+contents — at that point nothing could be recovered from it, so nothing was left to keep it for.
+
+Its lesson outlives it, and applies to any metered store: Blob meters **data transfer out**, and on
+the free tier an overrun *blocks* rather than bills — every product image goes blank, including your
+own ability to read the store, which is what makes exporting after the fact impossible. A row may
+still hold one of those dead URLs; [OPERATIONS.md](OPERATIONS.md) has the query and the remedy.
 
 ## YouTube (product video)
 
@@ -83,7 +112,7 @@ Embedding only — nothing is uploaded and no video file is ever served by us ([
 ## Prisma 7
 
 - **The seed command lives in `prisma.config.ts`** (`migrations.seed`), not in `package.json`'s `prisma.seed` key as in earlier versions. A missing `package.json` key does not mean seeding is unconfigured.
-- **A driver adapter is required.** Constructing `new PrismaClient()` with no adapter and no datasource `url` throws. Any standalone script must build the client the way `src/lib/prisma.ts` does.
+- **A driver adapter is required.** Constructing `new PrismaClient()` with no adapter and no datasource `url` throws. Any standalone script must build the client the way `server/shared/prisma.ts` does.
 - **Default transaction isolation is READ COMMITTED with no row locking**, so a read followed by a write inside `$transaction` does not prevent concurrent callers from both passing the read ([ADR-0007](adr/0007-conditional-stock-decrement.md)).
 - **`contains` compiles to `LIKE '%term%'`.** A leading wildcard cannot use a btree index, so no amount of indexing makes the current product search fast — it needs `pg_trgm` or a `tsvector` column.
 - **A column-to-column comparison** (for example `stock <= lowStockThreshold`) is not expressible in the Prisma query API and needs raw SQL.

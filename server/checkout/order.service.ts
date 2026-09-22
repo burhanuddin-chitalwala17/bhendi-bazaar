@@ -477,12 +477,23 @@ export class OrderService {
         // must not change what a completed order looks like. `pricedLines` already
         // carries it from the catalogue precisely so a client-sent one cannot become
         // history — this persists that value instead of re-deriving it on every read.
-        const orderItemIdByKey = new Map<string, string>();
-        for (const line of pricedLines) {
-          const key = `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`;
-          const share = discountByKey.get(key);
-          const created = await tx.orderItem.create({
-            data: {
+        // Written in one statement rather than one per line. Every statement here is a
+        // billed operation AND is held inside the transaction that already holds the
+        // guarded stock decrement's row locks (ADR-0007), so the loop cost checkout
+        // throughput as well as money. Measured on a six-line, one-parcel order: 28
+        // statements before, 18 after — `OrderItem` 6 inserts to 1, `ShipmentItem` 6 to 1.
+        // The saving grows with the basket; the lock is held for all of it.
+        //
+        // `createManyAndReturn` because the ids ARE needed below — but keyed off each
+        // returned row's own fields, never its position, so nothing depends on the
+        // driver returning rows in the order they were sent.
+        const lineKey = (line: { productId: string; size?: string | null; color?: string | null }) =>
+          `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`;
+
+        const createdItems = await tx.orderItem.createManyAndReturn({
+          data: pricedLines.map((line) => {
+            const share = discountByKey.get(lineKey(line));
+            return {
               orderId: order.id,
               productId: line.productId,
               quantity: line.quantity,
@@ -496,17 +507,21 @@ export class OrderService {
               // (ADR-0019, org-payouts D4c).
               discountPaise: share?.buyerDiscountPaise ?? 0,
               orgFundedPaise: share?.orgFundedPaise ?? 0,
-            },
-          });
-          orderItemIdByKey.set(key, created.id);
-        }
+            };
+          }),
+          select: { id: true, productId: true, size: true, color: true },
+        });
+
+        const orderItemIdByKey = new Map(
+          createdItems.map((item) => [lineKey(item), item.id])
+        );
 
         // One attribution row per offer per organisation, carrying who funded what.
         // A database check asserts the two halves sum to the buyer's discount, so no
         // settlement can later be computed from a split that does not reconcile.
-        for (const attribution of discounts.attributions) {
-          await tx.orderDiscount.create({
-            data: {
+        if (discounts.attributions.length) {
+          await tx.orderDiscount.createMany({
+            data: discounts.attributions.map((attribution) => ({
               orderId: order.id,
               promotionId: attribution.promotionId,
               orgId: attribution.orgId,
@@ -515,21 +530,25 @@ export class OrderService {
               buyerDiscountPaise: attribution.buyerDiscountPaise,
               orgFundedPaise: attribution.orgFundedPaise,
               platformFundedPaise: attribution.platformFundedPaise,
-            },
+            })),
           });
         }
-        for (const { shipment, lines } of createdShipments) {
-          for (const line of lines) {
-            await tx.shipmentItem.create({
-              data: {
-                shipmentId: shipment.id,
-                orderItemId: orderItemIdByKey.get(
-                  `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`
-                ) as string,
-                quantity: line.quantity,
-              },
-            });
-          }
+
+        const shipmentItems = createdShipments.flatMap(({ shipment, lines }) =>
+          lines.map((line) => ({
+            shipmentId: shipment.id,
+            // An absent id would mean a parcel referencing a line this order never
+            // priced — an allocation bug, and silently writing null is how it would
+            // reach settlement unnoticed.
+            orderItemId: orderItemIdByKey.get(lineKey(line)) as string,
+            quantity: line.quantity,
+          }))
+        );
+        if (shipmentItems.some((item) => !item.orderItemId)) {
+          throw new Error("Allocated a parcel line that has no priced order item");
+        }
+        if (shipmentItems.length) {
+          await tx.shipmentItem.createMany({ data: shipmentItems });
         }
 
         // Return order with shipments in the expected format. Line shape matches

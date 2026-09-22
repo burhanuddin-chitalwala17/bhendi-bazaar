@@ -249,6 +249,28 @@ describe("the payload the editor actually sends", () => {
     expect(parsed.isActive).toBe(false);
     expect(parsed).not.toHaveProperty("orgId");
   });
+
+  // A promotion may be the artwork alone — no title, no line underneath, no link.
+  // The service stores the blank as null, which is what the shop's hero branches on
+  // when it decides whether to put a scrim over the picture.
+  it("accepts a promotion with no words at all", async () => {
+    const { orgBannerSchema } = await import(
+      "@/lib/validation/schemas/org-banner.schema"
+    );
+    expect(
+      orgBannerSchema.safeParse({ imageUrl: "https://cdn.test/eid.webp" })
+        .success,
+    ).toBe(true);
+
+    await storefrontService.addBanner("org-1", {
+      title: "   ",
+      imageUrl: "https://cdn.test/eid.webp",
+    });
+    expect(bannerCreate).toHaveBeenCalledWith(
+      "org-1",
+      expect.objectContaining({ title: null }),
+    );
+  });
 });
 
 describe("a rejected value says which box is wrong", () => {

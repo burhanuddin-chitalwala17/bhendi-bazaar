@@ -20,7 +20,7 @@ import {
 import { BannerImageField } from "./BannerImageField";
 
 const EMPTY: BannerFormSchemaInput = {
-  title: "",
+  title: null,
   eyebrow: null,
   description: null,
   imageUrl: null,
@@ -83,7 +83,11 @@ export function BannerForm({
         <Input {...form.register("eyebrow")} placeholder="The Abaya Edit" />
       </FormField>
 
-      <FormField label="Headline" required error={errors.title?.message}>
+      <FormField
+        label="Headline"
+        error={errors.title?.message}
+        hint="Leave it blank for artwork that already carries its own words — the banner then shows the picture alone, with no shading over it."
+      >
         <Input
           {...form.register("title")}
           placeholder="Cut for the everyday…"

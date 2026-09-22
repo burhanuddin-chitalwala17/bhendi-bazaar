@@ -50,7 +50,10 @@ export function sanitizeIdentifier(name: string | null | undefined): string {
 }
 
 /** The stored name for a normalized file — same base, new extension. */
-export function normalizedName(originalName: string, extension: string): string {
+export function normalizedName(
+  originalName: string,
+  extension: string,
+): string {
   return `${originalName.replace(/\.[^.]*$/, "")}.${extension}`;
 }
 
@@ -70,12 +73,54 @@ export function buildImagePath(
   originalName: string,
   identifier?: string | null,
   orgCode?: string | null,
-  now: number = Date.now()
+  now: number = Date.now(),
 ): string {
   const id = sanitizeIdentifier(identifier);
   const dot = originalName.lastIndexOf(".");
-  const base = sanitizeIdentifier(dot > 0 ? originalName.slice(0, dot) : originalName);
+  const base = sanitizeIdentifier(
+    dot > 0 ? originalName.slice(0, dot) : originalName,
+  );
   const extension = dot > 0 ? originalName.slice(dot + 1).toLowerCase() : "bin";
-  const orgSegment = folder === "products" ? `${sanitizeIdentifier(orgCode)}/` : "";
+  const orgSegment =
+    folder === "products" ? `${sanitizeIdentifier(orgCode)}/` : "";
   return `${folder}/${orgSegment}${id}/${base}-${now}.${extension}`;
+}
+
+/**
+ * The hostname of the retired Vercel Blob store (ADR-0028, OPERATIONS.md "Images left
+ * behind on the retired store"). Rows still hold URLs on it; the bytes answer `403`
+ * and the host is deliberately absent from `next.config.ts` `remotePatterns`.
+ */
+const RETIRED_STORE_HOST = ".blob.vercel-storage.com";
+
+/**
+ * Whether this stored URL can actually be rendered.
+ *
+ * `next/image` does not degrade on a host it has no `remotePatterns` entry for — it
+ * **throws** `Invalid src prop`, which unmounts the whole page rather than the one
+ * picture. That turned a single leftover row into a blank `/admin/banners`, and
+ * `/admin/banners` is where the documented remedy — re-upload the image — has to
+ * happen. A dead URL must read as "no image", never as a crash.
+ *
+ * Deliberately a check for the one *retired* host rather than an allowlist of live
+ * ones: the live host is `R2_PUBLIC_BASE_URL`, which is server-only configuration, and
+ * this has to answer in the browser too.
+ */
+export function isRenderableImageUrl(
+  url: string | null | undefined,
+): url is string {
+  if (!url) return false;
+  if (
+    url.startsWith("/") ||
+    url.startsWith("data:") ||
+    url.startsWith("blob:")
+  ) {
+    return true;
+  }
+  try {
+    return !new URL(url).hostname.endsWith(RETIRED_STORE_HOST);
+  } catch {
+    // Not a URL at all. Whatever it is, next/image will not take it.
+    return false;
+  }
 }

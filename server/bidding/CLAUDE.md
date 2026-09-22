@@ -1,5 +1,8 @@
 # CLAUDE.md — bidding domain
 
+- **Verified:** 2026-09-21
+- **Covers:** `server/bidding/**`
+
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC and the Project Invariants. This file covers **bidding** only. Requirements are in [docs/specs/bidding/](../../docs/specs/bidding/).
 
 ## Purpose

@@ -1,6 +1,7 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-09-18
+- **Verified:** 2026-09-21
+- **Covers:** `src/app/*/`, `server/*/`, `prisma/schema.prisma`, `src/lib/rate-limit/**`
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
 
@@ -10,16 +11,16 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 
 ```
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
-            ├── (main)  storefront    11 pages     ──▶ Vercel Blob     (images only — ADR-0017)
-            ├── (admin) console       24 pages     ──▶ Razorpay        (payments)
-            ├── (org)   seller portal              ──▶ Shiprocket      (shipping rates)
-            ├── (auth)  sign-in flow   ~4 pages    ──▶ Resend          (email)
-            └── api/                   86 handlers ──▶ YouTube         (product video, embedded)
+            ├── (main)  storefront    12 pages     ──▶ Cloudflare R2   (images only — ADR-0028)
+            ├── (admin) console       24 pages     ──▶ Razorpay         (payments)
+            ├── (org)   seller portal 19 pages     ──▶ Shiprocket       (shipping rates)
+            ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
+            └── api/                  93 handlers  ──▶ YouTube          (product video, embedded)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
 
-Images are the one asset class with a delivery layer of its own: uploads are downscaled and re-encoded before they reach Blob (`server/catalog/image-upload.ts` server-side, `src/lib/image/downscale.ts` for the browser-direct bulk path), and every render goes through `next/image` so the bytes served match the slot. Both ceilings exist because Blob's transfer allowance is withdrawn rather than billed ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)).
+Images are the one asset class with a delivery layer of its own: uploads are downscaled and re-encoded before they reach the object store (`server/catalog/image-upload.ts` server-side, `src/lib/image/downscale.ts` for the browser-direct bulk path), and every render goes through `next/image` so the bytes served match the slot. Every write, delete and URL derivation goes through one seam, `server/catalog/object-store.ts`, so reads never pass through our code ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). Both ceilings predate R2 and were set because Vercel Blob's transfer allowance was withdrawn rather than billed ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)).
 
 ## Layers
 
@@ -27,7 +28,7 @@ Images are the one asset class with a delivery layer of its own: uploads are dow
 
 | Layer | Lives in | Responsibility |
 |---|---|---|
-| Pages / components | `src/app/**`, `src/components/**`, `src/containers/**` | Rendering, user interaction |
+| Pages / components | `src/app/**`, `src/components/<domain>/**` | Rendering, user interaction ([ADR-0031](adr/0031-one-components-home-organised-by-domain.md)) |
 | Client services | `src/services/**` | `fetch()` wrappers over own API routes |
 | Server data access | `src/data-access-layer/**` | Server-component reads, called directly from pages |
 | Route handlers | `src/app/api/**` | HTTP boundary: parse, authorize, delegate |
@@ -39,20 +40,21 @@ Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `
 
 `bidding` is the newest and the only domain whose stored state deliberately answers less than the question asked of it: an event's status records whether it was cancelled or settled, and *when* it is — scheduled, running, finished — is derived from its timestamps against the clock on every read. Nothing in the feature runs on a schedule as a result, and no read can be stale, because nothing was cached to go stale. See [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md).
 
-`server/` is imported through the `@server/*` alias; deep relative paths are not used. Four type-only imports still run inward from `server/` to `src/domain/` — the residue of DTOs declared on both sides, tracked in [CONTRACTS.md](CONTRACTS.md). Five route handlers use Prisma directly rather than going through a domain.
+`server/` is imported through the `@server/*` alias; deep relative paths are not used. Four type-only imports still run inward, from `server/` to `src/lib/validation/schemas/` — the residue of DTOs declared on both sides, tracked in [CONTRACTS.md](CONTRACTS.md). Six route handlers use Prisma directly rather than going through a domain: `api/admin/shipments/[id]/tracking`, `api/auth/signup`, `api/checkout/allocate`, `api/products/check-stock`, `api/profile/upload-picture`, `api/webhooks/shipping/shiprocket`.
 
 ## Cross-cutting
 
-- **Auth** — NextAuth v4, JWT session strategy, credentials + Google OAuth. `src/lib/auth-config.ts` defines providers and callbacks, including a `signIn` callback that links a Google login to a pre-existing email-matched user by inserting an `Account` row — behaviour `PrismaAdapter` does not provide under a JWT strategy. `src/lib/admin-auth.ts` exposes `verifyAdminSession()`, called by every admin handler. Signing in on the storefront happens in one sheet mounted by `AuthSheetProvider` (`src/context/AuthSheetContext.tsx`) and opened with `useAuthSheet().open({ view, reason, intent })`. It renders the same form components (`src/components/auth/`) as the `(auth)` pages, stays on the page, and finishes a named intent afterwards — carried through the Google round trip in `sessionStorage` (`src/lib/auth-intent.ts`). The pages honour `callbackUrl` only as a same-origin path (`src/lib/safe-callback-url.ts`). `src/middleware.ts` guards admin *pages*; its matcher excludes `/api`, so API authorization is in-handler.
-- **Validation and errors** — Zod schemas in `src/lib/validation/schemas/` are the single definition of an accepted payload: a route parses with one, and the matching form uses the same one as its resolver. Failures return the envelope in [CONTRACTS.md](CONTRACTS.md) via `toErrorResponse`, and `useServerForm` routes field-attributed errors onto their inputs ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)). Coverage is partial — the product path is converted; the remaining handlers and forms are tracked in [BACKLOG.md](BACKLOG.md).
+- **Auth** — NextAuth v4, JWT session strategy, credentials + Google OAuth. `src/lib/auth-config.ts` defines providers and callbacks, including a `signIn` callback that links a Google login to a pre-existing email-matched user by inserting an `Account` row — behaviour `PrismaAdapter` does not provide under a JWT strategy. `src/lib/admin-auth.ts` exposes `requireSession()` and `requirePlatformAdmin()`; `src/lib/org-auth.ts` exposes `requireOrgMember()` for server components and the `withOrg()` wrapper that every `/api/org/[orgId]/*` handler is built from, so being authorised and being scoped to one org are the same act. Signing in on the storefront happens in one sheet mounted by `AuthSheetProvider` (`src/context/AuthSheetContext.tsx`) and opened with `useAuthSheet().open({ view, reason, intent })`. It renders the same form components (`src/components/auth/`) as the `(auth)` pages, stays on the page, and finishes a named intent afterwards — carried through the Google round trip in `sessionStorage` (`src/lib/auth-intent.ts`). The pages honour `callbackUrl` only as a same-origin path (`src/lib/safe-callback-url.ts`). `src/middleware.ts` guards admin *pages*; its matcher excludes `/api`, so API authorization is in-handler.
+- **Validation and errors** — Zod schemas in `src/lib/validation/schemas/` are the single definition of an accepted payload: a route parses with one, and the matching form uses the same one as its resolver. Failures return the envelope in [CONTRACTS.md](CONTRACTS.md) via `toErrorResponse`, and `useServerForm` routes field-attributed errors onto their inputs ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)). Every route handler now returns failures through `toErrorResponse`; none hands a raw `error.message` to a client. Form-side conversion to `useServerForm` is still partial and tracked in [BACKLOG.md](BACKLOG.md).
 - **Cart state** — Zustand store (`src/store/cartStore.ts`) with localStorage persistence, synced to the `Cart` table for signed-in users via `src/hooks/cart/useCartSync.ts`, which must be mounted exactly once above the router. On sign-in the local cart wins on quantity conflicts, items whose product no longer exists are dropped, and price and thumbnail are refreshed from the database.
 - **Rate limiting** — **detached, and says so.** `src/lib/rate-limit/` is one seam that allows everything and reports `RATE_LIMITING_ENABLED === false`; the Upstash and in-memory implementations sit beside it unimported, because no cache is wired. `tests/unit/rate-limit-detached.test.ts` fails the moment the live path grows a cache dependency again, so this cannot quietly become half-true. Nothing may be designed on the assumption that a limiter is protecting it — see [rate-limiting](specs/rate-limiting/) and the watch-list entry in [BACKLOG.md](BACKLOG.md).
+- **Response security headers** — `src/lib/security-headers.ts` holds both halves: a per-request Content-Security-Policy built in `src/middleware.ts` around a fresh nonce, and the invariant set (HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) applied in `next.config.ts` so it reaches static assets too. `script-src` carries no `'unsafe-inline'` — Next stamps the nonce onto its own inline scripts — and the gateway is admitted by name on `script-src`, `frame-src`, `form-action` and `connect-src`. `CSP_REPORT_ONLY=1` downgrades enforcement to reporting without a code change. `tests/unit/security-headers.test.ts` asserts the properties rather than the string.
 - **Encryption** — AES-256-GCM, per-message random IV, PBKDF2 key derivation (`server/shipping/utils/encryption.ts`). Used for stored shipping-provider credentials.
 - **Email** — Resend, templates under `server/notifications/templates/`. One of them goes to the store rather than a buyer: Contact us emails a subject and message to the support inbox with the sender as Reply-To, and stores nothing ([contact-us](specs/contact-us/)). The other Contact us option, WhatsApp, is a `wa.me` link with no server side.
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 44 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 38 models, 12 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the remaining `Float` columns are weights and ratings, which are not money. The Prisma client is a dev-mode global singleton in `src/lib/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 47 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 40 models, 12 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the remaining `Float` columns are weights and ratings, which are not money. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
 
 **Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
 
@@ -66,8 +68,8 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-44 Vitest unit files, 518 tests, run with `npm run test:run`. Strategy and per-layer targets are in [TESTING.md](TESTING.md); making CI gates block is still outstanding ([BACKLOG.md](BACKLOG.md) Phase 4).
+96 Vitest files (88 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 56 errors, all `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 
-No caching layer (no `unstable_cache`, no Redis response cache). No background job runner — retries are in-process via `server/shared/retry.ts`. No search index; product search is a `contains` match, which no btree index can serve. No structured logging or error tracking. No feature flags. No multi-currency, no i18n.
+No caching layer (no `unstable_cache`, no Redis response cache); the three `export const revalidate` declarations — `src/app/sitemap.ts`, `src/app/(admin)/admin/products/page.tsx`, `src/app/(main)/bid/[slug]/opengraph-image.tsx` — are the whole of it, and none sits on a price-bearing read ([ADR-0018](adr/0018-one-effective-price-function.md)). No background job runner — retries are in-process via `server/shared/retry.ts`. No search index; product search is a `contains` match, which no btree index can serve. No structured logging or error tracking. No feature flags. No multi-currency, no i18n.

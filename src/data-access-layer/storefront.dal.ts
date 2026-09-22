@@ -12,6 +12,7 @@ import { orgRepository } from "@server/catalog/org.repository";
 import { productsRepository } from "@server/catalog/product.repository";
 import { orgBannerRepository } from "@server/catalog/org-banner.repository";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
+import { isRenderableImageUrl } from "@server/catalog/image-paths";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import type { Category } from "@/domain/category";
 import { holdCutoff } from "@server/catalog/org.handle";
@@ -108,10 +109,10 @@ export const storefrontDAL = {
     const rows = await orgBannerRepository.listActiveForOrg(orgId);
     return rows.map((row) => ({
       id: row.id,
-      title: row.title,
+      title: row.title ?? undefined,
       description: row.description ?? undefined,
-      image: row.imageUrl
-        ? { src: row.imageUrl, alt: row.imageAlt ?? row.title }
+      image: isRenderableImageUrl(row.imageUrl)
+        ? { src: row.imageUrl, alt: row.imageAlt ?? row.title ?? "" }
         : undefined,
       // One action, labelled generically: an org sets where a promotion points, not
       // the words on the button, so there is one less field to get wrong.

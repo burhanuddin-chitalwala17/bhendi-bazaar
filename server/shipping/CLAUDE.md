@@ -1,5 +1,8 @@
 # CLAUDE.md — shipping domain
 
+- **Verified:** 2026-09-21
+- **Covers:** `server/shipping/**`
+
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC, the seven Project Invariants, and the conventions index. This file covers what applies only to the **shipping** domain.
 
 ## Purpose

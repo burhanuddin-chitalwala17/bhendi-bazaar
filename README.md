@@ -106,8 +106,8 @@
 - **ORM**: [Prisma 7](https://www.prisma.io/)
 - **Authentication**: [NextAuth.js](https://next-auth.js.org/)
 - **Password Hashing**: [bcryptjs](https://www.npmjs.com/package/bcryptjs)
-- **File Storage**: [Vercel Blob](https://vercel.com/docs/storage/vercel-blob)
-- **Rate Limiting**: [Upstash Redis](https://upstash.com/)
+- **File Storage**: [Cloudflare R2](https://developers.cloudflare.com/r2/)
+- **Rate Limiting**: Upstash Redis — *currently detached; every endpoint is unthrottled* (see [OPERATIONS.md](docs/OPERATIONS.md))
 
 ### Integrations
 - **Payment Gateway**: [Razorpay](https://razorpay.com/)
@@ -172,12 +172,17 @@ RAZORPAY_KEY_ID="rzp_test_xxxxx"
 RAZORPAY_KEY_SECRET="your_secret_key"
 RAZORPAY_WEBHOOK_SECRET="your_webhook_secret"
 
-# Vercel Blob Storage
-BLOB_READ_WRITE_TOKEN="vercel_blob_rw_xxxxx"
+# Cloudflare R2 (object storage)
+R2_PUBLIC_BASE_URL="https://images.example.com"
+R2_ENDPOINT="https://<account-id>.r2.cloudflarestorage.com"
+R2_BUCKET="bhendi-bazaar"
+R2_ACCESS_KEY_ID="..."
+R2_SECRET_ACCESS_KEY="..."
 
-# Upstash Redis (Rate Limiting)
-UPSTASH_REDIS_REST_URL="your-upstash-url"
-UPSTASH_REDIS_REST_TOKEN="your-upstash-token"
+# Upstash Redis — read by nothing while rate limiting is detached.
+# Note the names: KV_REST_API_*, not UPSTASH_REDIS_REST_*.
+KV_REST_API_URL="your-upstash-url"
+KV_REST_API_TOKEN="your-upstash-token"
 
 # Resend (Email)
 RESEND_API_KEY="re_xxxxx"
