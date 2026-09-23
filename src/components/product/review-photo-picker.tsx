@@ -81,17 +81,22 @@ export function ReviewPhotoPicker({
               sizes="72px"
               className="rounded-card object-cover"
             />
-            {/* size-9 is the floor a control gets on a phone (ADR-0015), so it sits
-                proud of the corner rather than shrinking to fit inside it. */}
+            {/* The target and the badge are deliberately different sizes. ADR-0015 wants
+                at least size-9 under a thumb, but drawn at size-9 the control covered a
+                quarter of a 72px thumbnail and read as part of the picture. So the
+                button keeps its 36px hit area and paints nothing; the visible badge is
+                the 20px circle inside it, ringed so it holds against a dark photo. */}
             <Button
               type="button"
-              variant="destructive"
+              variant="ghost"
               size="icon"
               aria-label="Remove this photo"
-              className="absolute -right-1.5 -top-1.5 rounded-full"
+              className="absolute -right-2 -top-2 rounded-full bg-transparent p-0 hover:bg-transparent"
               onClick={() => onChange(photos.filter((kept) => kept !== photo))}
             >
-              <X className="size-4" />
+              <span className="flex size-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground ring-2 ring-background shadow-raised transition-transform hover:scale-110">
+                <X className="size-3" />
+              </span>
             </Button>
           </div>
         ))}

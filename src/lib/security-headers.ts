@@ -40,6 +40,28 @@ function imageHosts(): string[] {
   return hosts;
 }
 
+/**
+ * The host a browser PUTs to during a direct upload (ADR-0028, bulk-catalog-upload D10).
+ *
+ * **Not the same host as `imageHosts()`.** Reads come from the public bucket domain;
+ * writes go to the credentialed S3 endpoint, and allowing one says nothing about the
+ * other. Missing here, every browser-to-store upload — the product gallery, the bulk
+ * wizard, a profile picture, a review photograph — fails with a bare `Failed to fetch`,
+ * because a CSP-blocked `fetch` rejects rather than answering. The signature, the bucket
+ * policy and the route are all uninvolved and all look correct while it happens.
+ */
+function uploadHosts(): string[] {
+  const endpoint = process.env.R2_ENDPOINT;
+  if (!endpoint) return [];
+  try {
+    return [`https://${new URL(endpoint).hostname}`];
+  } catch {
+    // A malformed endpoint already breaks every upload at the signing step; it must not
+    // also break every response.
+    return [];
+  }
+}
+
 export function contentSecurityPolicy(nonce: string, isDev: boolean): string {
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
@@ -63,6 +85,9 @@ export function contentSecurityPolicy(nonce: string, isDev: boolean): string {
       RAZORPAY,
       "https://lumberjack.razorpay.com",
       "https://vitals.vercel-insights.com",
+      // Where the bytes of a direct upload actually go. See `uploadHosts()` for why
+      // this is a different host from the one images are read back from.
+      ...uploadHosts(),
       ...(isDev ? ["ws:", "http://localhost:*"] : []),
     ],
 
