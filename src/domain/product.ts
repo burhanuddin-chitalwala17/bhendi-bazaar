@@ -23,6 +23,11 @@ export interface Product {
   categorySlug: string;
   tags: string[];
   flags?: ProductFlag[];
+  /**
+   * Derived from the published reviews on every read, never a stored column
+   * (product-reviews R6a). Same shape as before the columns were dropped, different
+   * source — the kind of change CONTRACTS.md records because it passes review unseen.
+   */
   rating: number;
   reviewsCount: number;
   /** The gallery in the org's order; exactly one item is the cover (product-video R15). */

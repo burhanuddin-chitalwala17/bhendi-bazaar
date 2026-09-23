@@ -29,7 +29,6 @@ const product = (id: string, wishlistCount: number): ProductForTable => ({
   sku: `SKU-${id}`,
   price: 129900,
   currency: "INR",
-  rating: 0,
   stock: 5,
   lowStockThreshold: 2,
   thumbnail: "/cover.jpg",

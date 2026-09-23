@@ -155,7 +155,7 @@ raises `Invalid src prop` during render, which unmounts the page rather than the
 One leftover `Banner.imageUrl` blanked both the storefront homepage and `/admin/banners` —
 the page the remedy below has to be carried out on. Since PR-121 the banner surfaces route
 their stored URL through `isRenderableImageUrl` (`server/catalog/image-paths.ts`), so a dead
-one reads as "no image" and the admin row says *Image needs re-uploading*. Since PR-124
+one reads as "no image" and the admin row says *Image needs re-uploading*. Since PR-127
 `Product.thumbnail` and `ProductMedia.ref` are guarded where products are mapped for display
 (`src/data-access-layer/products.dal.ts` and its org-portal counterpart): a dead thumbnail
 becomes the brand mark and a dead photo is dropped from the gallery, so saving the product's

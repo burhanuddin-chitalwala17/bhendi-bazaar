@@ -27,12 +27,18 @@ import {
   loadBiddingLockContext,
   type BiddingLockContext,
 } from "@server/bidding/bidding-lock";
+import {
+  loadRatingContext,
+  ratingFor,
+  type RatingContext,
+} from "@server/catalog/review-rating";
 export { NotFoundError };
 
 const mapProduct = (
   product: ProductWithRelations,
   context: PriceContext,
   locks: BiddingLockContext,
+  ratings: RatingContext,
 ): Product => {
   // The customer sees one availability figure: the total across active locations
   // (stock-locations R4/R11). The indicative origin for serviceability is the
@@ -58,8 +64,11 @@ const mapProduct = (
     categorySlug: product.category.slug,
     tags: product.tags,
     flags: toProductFlags(product.flags),
-    rating: product.rating,
-    reviewsCount: product.reviewsCount,
+    // Derived from the published reviews, never a column (R6a, trd.md D3). One query
+    // for the whole page, so every tile on it reads the same computation as the
+    // product page does.
+    rating: ratingFor(ratings, product.id).average,
+    reviewsCount: ratingFor(ratings, product.id).count,
     // A URL left on the retired store throws inside next/image and takes the whole
     // page down (OPERATIONS.md "Images left behind"), so it reads as no image here.
     media: renderableMedia(product.media ?? []),
@@ -103,6 +112,17 @@ const offerPrice = (
   return offerPricePaise < pricePaise ? offerPricePaise : undefined;
 };
 
+/**
+ * Ratings for exactly the products about to be mapped.
+ *
+ * A second round trip, not a join: reviews are their own aggregate and reached through
+ * their own repository (Invariant 5), the same shape the admin list uses for wishlist
+ * saves. Bounded by the rows in hand — which on a price-sorted listing is the
+ * repository's row cap rather than one page, the ceiling trd.md D5 names.
+ */
+const ratingsFor = (products: ProductWithRelations[]): Promise<RatingContext> =>
+  loadRatingContext(products.map((product) => product.id));
+
 export const productsDAL = {
   getProducts: async (filter: ProductFilter): Promise<Product[]> => {
     try {
@@ -112,9 +132,9 @@ export const productsDAL = {
         loadPriceContext(),
         loadBiddingLockContext(),
       ]);
-      return products
-        .filter((p) => p !== null)
-        .map((product) => mapProduct(product, context, locks));
+      const rows = products.filter((p) => p !== null);
+      const ratings = await ratingsFor(rows);
+      return rows.map((product) => mapProduct(product, context, locks, ratings));
     } catch (error) {
       throw new Error("Failed to fetch products", { cause: error });
     }
@@ -130,7 +150,7 @@ export const productsDAL = {
       if (!product) {
         throw new NotFoundError(`No product with id ${JSON.stringify(id)}`);
       }
-      return mapProduct(product, context, locks);
+      return mapProduct(product, context, locks, await ratingsFor([product]));
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw new Error("Failed to fetch product", { cause: error });
@@ -148,7 +168,7 @@ export const productsDAL = {
       if (!product) {
         throw new NotFoundError(`No product with slug ${JSON.stringify(slug)}`);
       }
-      return mapProduct(product, context, locks);
+      return mapProduct(product, context, locks, await ratingsFor([product]));
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw new Error("Failed to fetch product", { cause: error });
@@ -164,9 +184,9 @@ export const productsDAL = {
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);
-    return products
-      .filter((p) => p !== null)
-      .map((product) => mapProduct(product, context, locks));
+    const rows = products.filter((p) => p !== null);
+    const ratings = await ratingsFor(rows);
+    return rows.map((product) => mapProduct(product, context, locks, ratings));
   },
 
   getHeroProducts: async (limit: number): Promise<Product[]> => {
@@ -175,9 +195,9 @@ export const productsDAL = {
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);
-    return products
-      .filter((p) => p !== null)
-      .map((product) => mapProduct(product, context, locks));
+    const rows = products.filter((p) => p !== null);
+    const ratings = await ratingsFor(rows);
+    return rows.map((product) => mapProduct(product, context, locks, ratings));
   },
 
   getOfferProducts: async (limit: number): Promise<Product[]> => {
@@ -186,9 +206,9 @@ export const productsDAL = {
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);
-    return products
-      .filter((p) => p !== null)
-      .map((product) => mapProduct(product, context, locks));
+    const rows = products.filter((p) => p !== null);
+    const ratings = await ratingsFor(rows);
+    return rows.map((product) => mapProduct(product, context, locks, ratings));
   },
 
   /**

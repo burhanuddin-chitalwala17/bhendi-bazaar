@@ -1,42 +1,87 @@
 /**
- * Admin Reviews Page
- * Moderate and manage product reviews
+ * The moderation queue (product-reviews R15, R16).
+ *
+ * Two jobs the old table could not do. It could not *show* a review — the comment was
+ * clamped to two lines with no way to open one, so moderating meant judging words you
+ * could not read; a row now opens a detail panel with the whole review and its
+ * photographs at a size they can be judged at. And it could not tell the three states
+ * apart, because there was one boolean: a review is published, withdrawn by the
+ * platform, or retracted by its author, and only the first two are ours to change
+ * (ADR-0032).
  */
 
 "use client";
 
-import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { useMutation } from "@/hooks/core/useMutation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Search, CheckCircle, XCircle, Star, RefreshCw } from "lucide-react";
+
+import { ReviewMedia } from "@/components/product/review-media";
+
+import { useAsyncData } from "@/hooks/core/useAsyncData";
+import { useMutation } from "@/hooks/core/useMutation";
 import { DataTable, Column } from "@/components/shared/data-table";
-import {
-  Search,
-  CheckCircle,
-  XCircle,
-  Trash2,
-  Star,
-  RefreshCw,
-} from "lucide-react";
 import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
 import type { AdminReview, ReviewListFilters } from "@/domain/admin";
 import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+
+/** The one place the three states are named, so the table and the panel cannot disagree. */
+function stateOf(review: AdminReview) {
+  if (review.deletedAt) {
+    return {
+      label: "Deleted by author",
+      variant: "outline" as const,
+      // The author's own act. Restoring it would republish words someone took back.
+      moderable: false,
+    };
+  }
+  if (review.withdrawnAt) {
+    return { label: "Withdrawn", variant: "destructive" as const, moderable: true };
+  }
+  return { label: "Published", variant: "secondary" as const, moderable: true };
+}
+
+const Stars = ({ rating }: { rating: number }) => (
+  <span className="flex items-center gap-0.5" aria-label={`${rating} out of 5`}>
+    {[1, 2, 3, 4, 5].map((star) => (
+      <Star
+        key={star}
+        aria-hidden
+        className={
+          star <= rating
+            ? "size-4 fill-warning text-warning"
+            : "size-4 text-muted-foreground/50"
+        }
+      />
+    ))}
+  </span>
+);
+
 export default function AdminReviewsPage() {
   const [filters, setFilters] = useState<ReviewListFilters>({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [opened, setOpened] = useState<AdminReview | null>(null);
 
   const {
     data,
     loading: isLoading,
-    error,
     refetch,
   } = useAsyncData(() => adminReviewApiClient.getReviews(filters), {
     refetchDependencies: [filters],
@@ -44,71 +89,24 @@ export default function AdminReviewsPage() {
 
   const { reviews = [], totalPages = 1 } = data || {};
 
-  const { mutate: updateReview, isLoading: isUpdating } = useMutation(
-    ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: { isApproved?: boolean; isVerified?: boolean };
-    }) => adminReviewApiClient.updateReview(id, data),
+  const { mutate: setWithdrawn } = useMutation(
+    ({ id, withdrawn }: { id: string; withdrawn: boolean }) =>
+      adminReviewApiClient.updateReview(id, { withdrawn }),
     {
-      successMessage: "Review updated successfully!",
-      onSuccess: () => refetch(),
-    },
-  );
-
-  const { mutate: deleteReview, isLoading: isDeleting } = useMutation(
-    adminReviewApiClient.deleteReview,
-    {
-      successMessage: "Review deleted successfully!",
-      onSuccess: () => refetch(),
+      successMessage: "Review updated",
+      onSuccess: () => {
+        setOpened(null);
+        refetch();
+      },
     },
   );
 
   const handleRefresh = () => {
-    toast.info("Refreshing reviews...");
-    refetch().then(() => toast.success("Reviews refreshed successfully!"));
+    refetch().then(() => toast.success("Reviews refreshed"));
   };
 
   const handleSearch = () => {
-    setFilters({ ...filters, search: searchTerm, page: 1 });
-  };
-
-  const handleToggleApprove = (reviewId: string, isApproved: boolean) => {
-    updateReview({ id: reviewId, data: { isApproved: !isApproved } }).then(() =>
-      toast.success("Review updated successfully!"),
-    );
-  };
-
-  const handleDelete = async (reviewId: string, userName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete review by "${userName}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-    deleteReview(reviewId).then(() =>
-      toast.success("Review deleted successfully!"),
-    );
-  };
-
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`w-4 h-4 ${
-              star <= rating
-                ? "fill-warning text-warning"
-                : "text-muted-foreground/50"
-            }`}
-          />
-        ))}
-      </div>
-    );
+    setFilters({ ...filters, search: searchTerm || undefined, page: 1 });
   };
 
   const columns: Column<AdminReview>[] = [
@@ -116,9 +114,7 @@ export default function AdminReviewsPage() {
       key: "productName",
       label: "Product",
       render: (review) => (
-        <div>
-          <p className="font-medium text-sm">{review.productName}</p>
-        </div>
+        <p className="text-sm font-medium">{review.productName}</p>
       ),
     },
     {
@@ -128,7 +124,7 @@ export default function AdminReviewsPage() {
         <div>
           <p className="font-medium">{review.userName}</p>
           {review.isVerified && (
-            <span className="text-xs text-success">✓ Verified Purchase</span>
+            <span className="text-xs text-success">✓ Verified purchase</span>
           )}
         </div>
       ),
@@ -137,84 +133,79 @@ export default function AdminReviewsPage() {
       key: "rating",
       label: "Rating",
       sortable: true,
-      render: (review) => (
-        <div className="flex items-center gap-2">
-          {renderStars(review.rating)}
-          <span className="text-sm font-semibold">{review.rating}.0</span>
-        </div>
-      ),
+      render: (review) => <Stars rating={review.rating} />,
     },
     {
       key: "review",
       label: "Review",
       render: (review) => (
-        <div className="max-w-md">
+        <div className="max-w-md space-y-1">
           {review.title && (
-            <p className="font-medium text-sm mb-1">{review.title}</p>
+            <p className="text-sm font-medium">{review.title}</p>
           )}
           {review.comment && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
+            <p className="line-clamp-2 text-sm text-muted-foreground">
               {review.comment}
             </p>
           )}
+          {/* The same viewer the buyer gets: a moderator deciding whether a picture
+              may stay has to be able to look at it properly. */}
+          <ReviewMedia
+            media={review.media}
+            authorName={review.userName}
+            size="sm"
+          />
+          {/* The clamp above is a preview, not the review. This is how you read it. */}
+          <Button
+            variant="ghost"
+            className="h-auto p-0 text-xs underline"
+            onClick={() => setOpened(review)}
+          >
+            Open review
+          </Button>
         </div>
       ),
     },
     {
-      key: "isApproved",
+      key: "state",
       label: "Status",
-      render: (review) => (
-        <Button
-          variant="ghost"
-          onClick={() => handleToggleApprove(review.id, review.isApproved)}
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            review.isApproved
-              ? "bg-success/15 text-success hover:bg-success/25"
-              : "bg-destructive/15 text-destructive hover:bg-destructive/25"
-          }`}
-        >
-          {review.isApproved ? "Approved" : "Pending"}
-        </Button>
-      ),
+      render: (review) => {
+        const state = stateOf(review);
+        return <Badge variant={state.variant}>{state.label}</Badge>;
+      },
     },
     {
       key: "createdAt",
       label: "Date",
       sortable: true,
-      render: (review) => new Date(review.createdAt).toLocaleDateString(),
+      render: (review) => new Date(review.createdAt).toLocaleDateString("en-IN"),
     },
     {
       key: "actions",
       label: "Actions",
-      render: (review) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => handleToggleApprove(review.id, review.isApproved)}
-            className={`p-2 rounded-lg transition-colors ${
-              review.isApproved
-                ? "text-warning hover:bg-warning/10"
-                : "text-success hover:bg-success/10"
-            }`}
-            title={review.isApproved ? "Unapprove" : "Approve"}
-          >
-            {review.isApproved ? (
-              <XCircle className="w-4 h-4" />
-            ) : (
-              <CheckCircle className="w-4 h-4" />
-            )}
-          </Button>
+      render: (review) => {
+        const state = stateOf(review);
+        if (!state.moderable) {
+          // Nothing to offer: the author retracted it, and that is not ours to undo.
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
+        const withdrawn = review.withdrawnAt !== null;
+        return (
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => handleDelete(review.id, review.userName)}
-            className="text-destructive hover:bg-destructive/10"
-            title="Delete review"
+            title={withdrawn ? "Restore" : "Withdraw"}
+            className={withdrawn ? "text-success" : "text-warning"}
+            onClick={() => setWithdrawn({ id: review.id, withdrawn: !withdrawn })}
           >
-            <Trash2 className="w-4 h-4" />
+            {withdrawn ? (
+              <CheckCircle className="size-4" />
+            ) : (
+              <XCircle className="size-4" />
+            )}
           </Button>
-        </div>
-      ),
+        );
+      },
     },
   ];
 
@@ -222,7 +213,7 @@ export default function AdminReviewsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Reviews"
-        description="Moderate and manage customer reviews"
+        description="Read, withdraw and restore customer reviews. Nothing here is deleted."
         actions={
           <Button
             variant="default"
@@ -230,16 +221,13 @@ export default function AdminReviewsPage() {
             disabled={isLoading}
             className="flex items-center gap-2"
           >
-            <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-            />
-            {isLoading ? "Refreshing..." : "Refresh"}
+            <RefreshCw className={isLoading ? "size-4 animate-spin" : "size-4"} />
+            {isLoading ? "Refreshing…" : "Refresh"}
           </Button>
         }
       />
 
-      {/* Filters */}
-      <div className="bg-card rounded-lg border border-border p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <div className="flex flex-wrap gap-4">
           <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
             <div className="flex gap-2">
@@ -248,41 +236,36 @@ export default function AdminReviewsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search by product, customer, or review..."
+                placeholder="Search by product, customer, or review…"
               />
               <Button
                 variant="default"
                 onClick={handleSearch}
                 className="flex items-center gap-2"
               >
-                <Search className="w-4 h-4" />
+                <Search className="size-4" />
                 Search
               </Button>
             </div>
           </div>
 
           <Select
-            value={
-              filters.isApproved === undefined
-                ? "all"
-                : filters.isApproved
-                  ? "approved"
-                  : "pending"
-            }
+            value={filters.state ?? "all"}
             onChange={(e) =>
               setFilters({
                 ...filters,
-                isApproved:
+                state:
                   e.target.value === "all"
                     ? undefined
-                    : e.target.value === "approved",
+                    : (e.target.value as ReviewListFilters["state"]),
                 page: 1,
               })
             }
           >
-            <option value="all">All Reviews</option>
-            <option value="approved">Approved</option>
-            <option value="pending">Pending</option>
+            <option value="all">All reviews</option>
+            <option value="published">Published</option>
+            <option value="withdrawn">Withdrawn</option>
+            <option value="deleted">Deleted by author</option>
           </Select>
 
           <Select
@@ -304,9 +287,9 @@ export default function AdminReviewsPage() {
               })
             }
           >
-            <option value="all">All Types</option>
-            <option value="verified">Verified Purchase</option>
-            <option value="unverified">Not Verified</option>
+            <option value="all">All types</option>
+            <option value="verified">Verified purchase</option>
+            <option value="unverified">Not verified</option>
           </Select>
 
           <Select
@@ -322,17 +305,16 @@ export default function AdminReviewsPage() {
               })
             }
           >
-            <option value="all">All Ratings</option>
-            <option value="5">5 Stars</option>
-            <option value="4">4+ Stars</option>
-            <option value="3">3+ Stars</option>
-            <option value="2">2+ Stars</option>
-            <option value="1">1+ Stars</option>
+            <option value="all">All ratings</option>
+            <option value="5">5 stars</option>
+            <option value="4">4+ stars</option>
+            <option value="3">3+ stars</option>
+            <option value="2">2+ stars</option>
+            <option value="1">1+ stars</option>
           </Select>
         </div>
       </div>
 
-      {/* Reviews Table */}
       <DataTable
         data={reviews}
         columns={columns}
@@ -343,10 +325,87 @@ export default function AdminReviewsPage() {
         onPageChange={(page) => setFilters({ ...filters, page })}
         onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onSort={(key, order) =>
-          setFilters({ ...filters, sortBy: key as any, sortOrder: order })
+          setFilters({
+            ...filters,
+            sortBy: key === "rating" ? "rating" : "createdAt",
+            sortOrder: order,
+          })
         }
         isLoading={isLoading}
       />
+
+      {/* The review itself, in full. A queue that cannot show one cannot moderate. */}
+      <Dialog
+        open={opened !== null}
+        onOpenChange={(open) => !open && setOpened(null)}
+      >
+        <DialogContent className="max-h-overlay overflow-y-auto">
+          {opened && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{opened.title || "Review"}</DialogTitle>
+                <DialogDescription>
+                  {opened.userName} on {opened.productName} ·{" "}
+                  {new Date(opened.createdAt).toLocaleDateString("en-IN")}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Stars rating={opened.rating} />
+                  <Badge variant={stateOf(opened).variant}>
+                    {stateOf(opened).label}
+                  </Badge>
+                  {opened.isVerified && (
+                    <Badge variant="secondary">Verified purchase</Badge>
+                  )}
+                </div>
+
+                <p className="whitespace-pre-wrap text-sm">
+                  {opened.comment || (
+                    <span className="text-muted-foreground">
+                      No words — a rating only.
+                    </span>
+                  )}
+                </p>
+
+                <ReviewMedia
+                  media={opened.media}
+                  authorName={opened.userName}
+                  size="lg"
+                />
+
+                {opened.deletedAt && (
+                  <p className="text-xs text-muted-foreground">
+                    The author deleted this on{" "}
+                    {new Date(opened.deletedAt).toLocaleDateString("en-IN")}. It
+                    is kept here and shown to nobody else.
+                  </p>
+                )}
+              </div>
+
+              <DialogFooter>
+                {stateOf(opened).moderable && (
+                  <Button
+                    variant={opened.withdrawnAt ? "default" : "destructive"}
+                    onClick={() =>
+                      setWithdrawn({
+                        id: opened.id,
+                        withdrawn: opened.withdrawnAt === null,
+                      })
+                    }
+                  >
+                    {opened.withdrawnAt ? "Restore review" : "Withdraw review"}
+                  </Button>
+                )}
+                <Button variant="ghost" onClick={() => setOpened(null)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -22,6 +22,10 @@
         "name": "next"
       }
     ],
+    // Declared for `tsconfig-paths`, which the Prisma seed runner loads and which cannot
+    // resolve `paths` without it. A no-op for `tsc` itself: every mapping below is
+    // already written relative to this file.
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"

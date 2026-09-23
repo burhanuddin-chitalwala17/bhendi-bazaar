@@ -46,6 +46,33 @@ describe("content security policy", () => {
     }
   });
 
+  it("lets the browser write to the object store it uploads through", () => {
+    // Regression: `connect-src` listed the payment gateway and nothing else, while every
+    // image upload goes browser-to-R2 (ADR-0028). A CSP-blocked `fetch` rejects rather
+    // than answering, so this surfaced as `Failed to fetch` with a valid signature, a
+    // correct bucket policy and a working route — three layers that all had to be
+    // cleared by hand before the policy was suspected.
+    const endpoint = process.env.R2_ENDPOINT;
+    if (!endpoint) return; // nothing to assert without the variable this derives from
+    const host = `https://${new URL(endpoint).hostname}`;
+    expect(directive(prod, "connect-src")).toContain(host);
+  });
+
+  it("keeps the upload host and the image host as separate questions", () => {
+    // Reads come from the public bucket domain, writes go to the credentialed S3
+    // endpoint. Allowing one must never be mistaken for allowing the other.
+    const base = process.env.R2_PUBLIC_BASE_URL;
+    const endpoint = process.env.R2_ENDPOINT;
+    if (!base || !endpoint) return;
+    const readHost = `https://${new URL(base).hostname}`;
+    const writeHost = `https://${new URL(endpoint).hostname}`;
+    expect(readHost).not.toBe(writeHost);
+    expect(directive(prod, "img-src")).toContain(readHost);
+    expect(directive(prod, "connect-src")).toContain(writeHost);
+    // The credentialed endpoint is not something the page should be loading images from.
+    expect(directive(prod, "img-src")).not.toContain(writeHost);
+  });
+
   it("refuses to be framed, and pins the base URI", () => {
     expect(directive(prod, "frame-ancestors")).toBe("frame-ancestors 'none'");
     // An injected <base> silently retargets every relative URL on the page, form posts

@@ -54,7 +54,6 @@ class ProductsDAL {
         price: product.price,
         salePrice: markdownOf(product, context),
         currency: product.currency,
-        rating: product.rating,
         stock: product.stock,
         lowStockThreshold: product.lowStockThreshold,
         // A dead store URL would throw in next/image and blank the whole list.

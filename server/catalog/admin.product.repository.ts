@@ -49,7 +49,6 @@ const PRODUCT_LIST_SELECT = {
     sku: true,
     price: true,
     currency: true,
-    rating: true,
     // Admin truth: every row, active or not (R9) — summed into `stock` on the way out.
     stockLocations: { select: { quantity: true } },
     lowStockThreshold: true,

@@ -53,6 +53,7 @@
 | `tw-animate-css` | `^1.4.0` | Animation utilities for shadcn |
 | `dotenv` | `^17.2.3` | Loads `.env` for `prisma.config.ts` and scripts |
 | `ts-node` | `^10.9.2` | Runs `prisma/seed.ts` |
+| `tsconfig-paths` | `^3.15.0` | Resolves the `@server/*` alias for that seed run. Was present transitively and relied on by accident until PR-125; the seed reaches aliased modules through `org.handle`, and without it `db seed` dies on the first one. Needs `baseUrl` in `tsconfig.json`, which is why that field exists. |
 | `@types/*` | — | Type definitions |
 | `vite` | `^7.3.0` | Not imported — declared to satisfy the `overrides` entry that pins Vitest's transitive copy onto one patched version |
 

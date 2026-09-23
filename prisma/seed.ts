@@ -106,6 +106,11 @@ async function main() {
   await prisma.cartItem.deleteMany();
   await prisma.cart.deleteMany();
   await prisma.review.deleteMany();
+  // Bidding holds Restrict keys on Product, Org and User, so its rows have to go before
+  // any of the three. Missing entirely until PR-125, which made `db seed` fail outright
+  // on any database that had ever held a bidding event.
+  await prisma.bid.deleteMany(); // before bidding events and users
+  await prisma.biddingEvent.deleteMany(); // before products, orgs and users
   await prisma.productStock.deleteMany(); // before products and org addresses
   await prisma.productMedia.deleteMany();
   await prisma.product.deleteMany();
@@ -273,8 +278,6 @@ async function main() {
         categoryId: productData.categoryId,
         tags: productData.tags,
         flags: productData.flags,
-        rating: productData.rating,
-        reviewsCount: productData.reviewsCount,
         thumbnail: productData.thumbnail,
         media: { create: seedMediaRows(productData) },
         sizes: productData.sizes,
@@ -417,40 +420,32 @@ async function main() {
         comment: reviewData.comment,
         userName: reviewData.userName,
         isVerified: reviewData.isVerified,
-        isApproved: reviewData.isApproved,
+        withdrawnAt: reviewData.withdrawnAt,
+        deletedAt: reviewData.deletedAt,
         createdAt: reviewData.createdAt,
+        media: {
+          create: reviewData.media.map((ref, position) => ({
+            kind: "IMAGE" as const,
+            ref,
+            position,
+          })),
+        },
       },
     });
+    const state = reviewData.deletedAt
+      ? "deleted by author"
+      : reviewData.withdrawnAt
+        ? "withdrawn"
+        : "published";
     console.log(
-      `  ✓ ${review.userName} - ${review.rating}⭐ on product ${reviewData.productId}`
+      `  ✓ ${review.userName} - ${review.rating}⭐ on ${reviewData.productId} (${state})`
     );
   }
   console.log(`✅ ${seedReviews.length} reviews seeded\n`);
 
-  // ====================
-  // UPDATE PRODUCT RATINGS
-  // ====================
-  console.log("📊 Calculating product ratings...");
-  for (const product of seedProducts) {
-    const reviews = seedReviews.filter((r) => r.productId === product.id);
-    if (reviews.length > 0) {
-      const avgRating =
-        reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-      await prisma.product.update({
-        where: { id: product.id },
-        data: {
-          rating: Math.round(avgRating * 10) / 10, // Round to 1 decimal
-          reviewsCount: reviews.length,
-        },
-      });
-      console.log(
-        `  ✓ ${product.name} - ${avgRating.toFixed(1)}⭐ (${
-          reviews.length
-        } reviews)`
-      );
-    }
-  }
-  console.log("✅ Product ratings updated\n");
+  // Nothing to write: a product's rating and review count are derived from its
+  // published reviews on every read (product-reviews R6a), so seeding the reviews
+  // above is seeding the ratings.
 
   // ====================
   // SEED ABANDONED CARTS
