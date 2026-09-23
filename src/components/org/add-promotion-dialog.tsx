@@ -105,7 +105,7 @@ export function AddPromotionDialog({
 
         <form onSubmit={onSubmit} className="space-y-4">
           <FormInput
-            label="Title"
+            label="Title (optional)"
             placeholder="Eid collection"
             {...register("title")}
             error={errors.title?.message}
@@ -129,6 +129,10 @@ export function AddPromotionDialog({
             Paste the link to your shop or to one of your products — straight
             from the address bar is fine. Leave it blank for a promotion that is
             not a link.
+          </p>
+          <p className="text-2xs text-muted-foreground">
+            A promotion with no words at all shows the picture on its own, with
+            nothing laid over it.
           </p>
 
           <ImageUpload

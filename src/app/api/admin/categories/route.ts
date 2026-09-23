@@ -12,8 +12,16 @@ import type {
   CreateCategoryInput,
 } from "@server/catalog/admin.category.types";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import {
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
 import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
+
+/** The columns this listing may be ordered by — the same set categories filters declare. */
+const SORTABLE = ["order", "name", "createdAt"] as const;
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,8 +32,8 @@ export async function GET(request: NextRequest) {
       search: searchParams.get("search") || undefined,
       page: resolvePageNumber(searchParams.get("page")),
       limit: resolvePageSize(searchParams.get("limit")),
-      sortBy: (searchParams.get("sortBy") as any) || "order",
-      sortOrder: (searchParams.get("sortOrder") as any) || "asc",
+      sortBy: resolveSortBy(searchParams.get("sortBy"), SORTABLE, "order"),
+      sortOrder: resolveSortOrder(searchParams.get("sortOrder"), "asc"),
     };
 
     const result = await adminCategoryService.getCategories(filters);

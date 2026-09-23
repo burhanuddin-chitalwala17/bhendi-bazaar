@@ -31,13 +31,39 @@ const cause = (e: PrismaishError): AdapterCause | undefined =>
 const asStrings = (raw: unknown): string[] =>
   Array.isArray(raw) ? raw.map(String) : typeof raw === "string" && raw ? [raw] : [];
 
+/**
+ * `Product_orgId_sku_key` -> `["orgId", "sku"]`.
+ *
+ * Prisma names a unique index `<Model>_<field>…_key`, so the columns are recoverable
+ * from the name alone. The two hand-written partial indexes — `ProductMedia_one_thumbnail_per_product`
+ * and `BiddingEvent_one_open_per_product` — deliberately do not match, and fall through
+ * to the unattributed case below, which is right: neither is a field a form can highlight.
+ */
+function parseUniqueConstraintName(name: string): string[] {
+  // Some engine versions append " (index)" to the constraint name.
+  const match = /^([A-Za-z][A-Za-z0-9]*)_(.+)_key$/.exec(name.replace(/\s*\(index\)\s*$/, ""));
+  return match ? match[2].split("_") : [];
+}
+
 /** Columns named by a unique-constraint violation, or null if it isn't one. */
 export function uniqueViolationFields(error: unknown): string[] | null {
   const e = error as PrismaishError;
   if (e?.code !== "P2002") return null;
 
-  const fields = cause(e)?.constraint?.fields;
+  const constraint = cause(e)?.constraint;
+
+  const fields = constraint?.fields;
   if (Array.isArray(fields) && fields.length) return fields.map(String);
+
+  // Prisma 7.10 reports the constraint's NAME here where 7.1 reported its columns, and
+  // the two are indistinguishable to a caller asking "was it the sku?". Reading only
+  // `fields` did not fail — it returned the unattributed `[]` below, so every
+  // `isUniqueViolation(error, field)` quietly answered false and a duplicate SKU
+  // surfaced as a raw Prisma error instead of "that SKU belongs to an archived product".
+  if (typeof constraint?.index === "string") {
+    const parsed = parseUniqueConstraintName(constraint.index);
+    if (parsed.length) return parsed;
+  }
 
   const target = e.meta?.target;
   if (Array.isArray(target) && target.length) return target.map(String);

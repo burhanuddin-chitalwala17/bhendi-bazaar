@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
+import { requireSession } from "@/lib/admin-auth";
 import { prisma } from "@server/shared/prisma";
 import { normalizeImage } from "@server/catalog/image-upload";
 import { deleteObject, putObject } from "@server/catalog/object-store";
@@ -12,12 +11,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export async function POST(request: Request) {
   try {
     // 1. Authenticate
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userId = (session.user as any).id as string;
+    const userId = (await requireSession()).user.id;
 
     // 2. Parse form data
     const formData = await request.formData();
@@ -98,12 +92,7 @@ export async function POST(request: Request) {
 // Optional: DELETE endpoint to remove profile picture
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || !(session.user as any).id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userId = (session.user as any).id as string;
+    const userId = (await requireSession()).user.id;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

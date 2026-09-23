@@ -41,7 +41,3 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
-
-# Blob store migration manifest (scripts/migrate-blob-store.ts) — a local resume log,
-# and it contains store hostnames.
-.blob-migration/

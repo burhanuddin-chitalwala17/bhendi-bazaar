@@ -32,7 +32,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [product-weight-and-rates](product-weight-and-rates/) | A product's weight is recorded and prices its shipping | 3 | catalog, shipping | 📝 Draft |
 | [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | 📝 Draft — **parent of 9 subfeatures** |
 | [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |
-| [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in production, and an environment that can't enforce says so at deploy time | 4 | cross-domain | 📝 Draft |
+| [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time | 4 | cross-domain | 📝 Draft |
 | [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
 | [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions, catalog, checkout | 🔨 In progress — PR-67 |
 | [org-payouts](org-payouts/) | What each organisation has earned, what the platform kept, and what is still owed | 7 | payouts, checkout | 🔨 In progress — PR-67 |
@@ -45,7 +45,10 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, cart, checkout | ✅ Implemented — PR-111 |
 | [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog | ✅ Implemented — **7 subfeatures** |
 | [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain | 📝 Draft |
-| [product-reviews](product-reviews/) | Buyers read and write reviews, photographs included, and the rating every surface shows is derived from the published ones | — | catalog | ✅ Implemented — PR-117, **1 subfeature** |
+| [product-reviews](product-reviews/) | Buyers read and write reviews, photographs included, and the rating every surface shows is derived from the published ones | — | catalog | ✅ Implemented — PR-124, **1 subfeature** |
+| [supply-chain-integrity](supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, established by the pipeline | 4 | cross-domain | 📝 Draft |
+| [error-tracking](error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 5 | cross-domain | 📝 Draft |
+| [read-caching](read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 5 | catalog | 📝 Draft |
 
 ### Subfeatures
 

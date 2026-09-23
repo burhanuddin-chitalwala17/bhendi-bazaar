@@ -1,6 +1,7 @@
 # Documentation
 
-- **Verified:** 2026-08-04
+- **Verified:** 2026-09-21
+- **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
 
@@ -22,17 +23,19 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [DEPENDENCIES.md](DEPENDENCIES.md) | Why each package is here | A package is added, bumped, or removed |
 | [TESTING.md](TESTING.md) | Test strategy and coverage targets | The strategy changes |
 | [OPERATIONS.md](OPERATIONS.md) | Env vars, deploy, runbook | The deployment or an external service changes |
-| [INTEGRATIONS.md](INTEGRATIONS.md) | How Razorpay, Shiprocket, Resend, Vercel and Prisma actually behave | A spike or an incident teaches something durable |
+| [INTEGRATIONS.md](INTEGRATIONS.md) | How Razorpay, Shiprocket, Resend, Cloudflare R2, Vercel and Prisma actually behave | A spike or an incident teaches something durable |
 
-**Domain-level docs co-locate with their code**, not here. They load lazily — only when a file in that directory is read — so they cost no context until relevant. The eight domains are listed in [../CLAUDE.md](../CLAUDE.md); those with docs so far:
+**Domain-level docs co-locate with their code**, not here. They load lazily — only when a file in that directory is read — so they cost no context until relevant. The thirteen domains are listed in [../CLAUDE.md](../CLAUDE.md); those with docs so far:
 
 | Domain doc | Covers |
 |---|---|
 | [server/shipping/CLAUDE.md](../server/shipping/CLAUDE.md) + [ARCHITECTURE.md](../server/shipping/ARCHITECTURE.md) + [adr/](../server/shipping/adr/) | Shipping — the one domain with a real provider abstraction, so the one with its own ADR sequence |
 | [server/checkout/CLAUDE.md](../server/checkout/CLAUDE.md) | Checkout — orders and their lifecycle; the orchestrating domain |
 | [server/payments/CLAUDE.md](../server/payments/CLAUDE.md) | Payments — the gateway conversation and the single-writer rule |
+| [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) | Bidding — timed auctions, and the sale gate that suspends an item from normal sale |
+| [server/notifications/CLAUDE.md](../server/notifications/CLAUDE.md) | Notifications — transactional email |
 
-The remaining domains (`catalog`, `cart`, `identity`, `notifications`, `analytics`, `shared`) have directories but no `CLAUDE.md` yet — one is added when work first touches the domain, per [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md) decision 8.
+The remaining domains (`catalog`, `cart`, `identity`, `analytics`, `promotions`, `payouts`, `wishlist`, `shared`) have directories but no `CLAUDE.md` yet — one is added when work first touches the domain, per [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md) decision 8.
 
 ## Where to look
 

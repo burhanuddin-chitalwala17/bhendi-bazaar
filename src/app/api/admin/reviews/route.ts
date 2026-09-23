@@ -8,7 +8,15 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { reviewService } from "@server/catalog/review.service";
 import type { ReviewListFilters } from "@server/catalog/review.types";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import {
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+
+/** The columns this listing may be ordered by — the same set reviews filters declare. */
+const SORTABLE = ["createdAt", "rating"] as const;
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,8 +46,8 @@ export async function GET(request: NextRequest) {
         : undefined,
       page: resolvePageNumber(searchParams.get("page")),
       limit: resolvePageSize(searchParams.get("limit")),
-      sortBy: (searchParams.get("sortBy") as any) || "createdAt",
-      sortOrder: (searchParams.get("sortOrder") as any) || "desc",
+      sortBy: resolveSortBy(searchParams.get("sortBy"), SORTABLE, "createdAt"),
+      sortOrder: resolveSortOrder(searchParams.get("sortOrder"), "desc"),
     };
 
     const result = await reviewService.getReviews(filters);

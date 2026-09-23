@@ -1,5 +1,8 @@
 # CLAUDE.md — checkout domain
 
+- **Verified:** 2026-09-21
+- **Covers:** `server/checkout/**`
+
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC and the seven Project Invariants. This file covers **checkout** only.
 
 ## Purpose
@@ -22,6 +25,7 @@ Checkout owns an order's existence and lifecycle — placement, state transition
 - **Order lookup returns a projection.** An order carries a customer's name, phone, email, and full address; a lookup reachable without authentication must not return them.
 - **One creation path.** Two paths with different behaviour is how one of them silently becomes the weaker one.
 - **A check and a write that must be atomic are one statement.** Read-then-write is not a check, even inside `$transaction` ([ADR-0007](../../docs/adr/0007-conditional-stock-decrement.md)).
+- **Write the rows of a set in one statement, not one per row.** Every statement inside the order transaction is a billed operation *and* is held while the guarded stock decrement's row locks are, so a `for` loop of `create` calls costs checkout contention as well as money — a six-line order was 28 statements and is 18. `createManyAndReturn` where the ids are needed, `createMany` where they are not. **Key the returned ids off each row's own fields, never its position:** nothing may depend on the driver returning rows in the order they were sent, and a parcel line that resolves to no order item throws rather than writing a null foreign key. `tests/integration/order-transaction.test.ts` asserts the linkage per line by identity.
 - **Side effects belong to the transition that earns them.** A confirmation email fires from the state change, not from whichever route happened to trigger it.
 - **Throw `DomainError` for anything a user should see**, `NotFoundError` / `ConflictError` as appropriate. A bare `throw new Error(...)` is treated as an internal fault and reported generically — correct for a config or code failure, wrong for "insufficient stock" ([ADR-0013](../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
 - **No `any` in this tree** — it sits on the money path ([`/CLAUDE.md`](../../CLAUDE.md) Invariant 4).

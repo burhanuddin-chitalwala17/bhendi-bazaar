@@ -1,6 +1,7 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-16
+- **Verified:** 2026-09-21
+- **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
 Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test mode for development).
@@ -32,14 +33,16 @@ npm run dev                 # http://localhost:3000
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
 | `R2_BUCKET` | ✅ | Bucket name |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | ✅ | R2 API token with read+write on that bucket |
-| `BLOB_READ_WRITE_TOKEN` | ○ | The retired Vercel Blob store. Only `scripts/*-blob-*.ts` still read it; delete once the migration is verified |
-| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ✅ | Upstash Redis for rate limiting — see the naming trap below |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
 | `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
 | `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
+| `CSP_REPORT_ONLY` | ○ | `1` downgrades the Content-Security-Policy to `Content-Security-Policy-Report-Only`, so violations are reported and nothing is blocked (`src/lib/security-headers.ts`). The escape hatch if a policy change breaks a page in production — it needs no code change and no rebuild. **Leave unset normally**: report-only enforces nothing |
+| `ORG_HANDLE_HOLD_DAYS` | ○ | How long a retired org handle is held before returning to the pool — redirecting and unavailable to others until then, 404 after ([ADR-0030](adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md)). Defaults to 180 |
+| `PRISMA_LOG_QUERIES` | ○ | `1` prints every SQL statement, so you can count the billed operations a page costs. **Development only** — never set in a deployment. It is also the instrument `tests/integration/db-ops-budget.test.ts` measures through |
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 
 `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
@@ -140,34 +143,62 @@ Every origin that uploads must be listed — add Vercel preview URLs if you uplo
 
 **6. Smoke-test before trusting it.** Upload one image through the admin UI. That exercises the whole path — presign, PUT, public URL, optimizer — and is where a wrong endpoint or a missing CORS rule shows up. Then check the image renders on the storefront, which proves `remotePatterns` too.
 
-### Moving to a different Blob store
-`scripts/migrate-blob-store.ts` copies every blob from one store to another and repoints all eight URL columns (`Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`, `Org.logoUrl`, `OrderItem.thumbnail`, `ShippingProvider.logoUrl`, `Banner.imageUrl`). Two phases, each resumable, dry-run by default:
+### Images left behind on the retired store
+The Vercel Blob store is gone: the package, its migration script, the hostname in
+`next.config.ts` `remotePatterns` and its entry in the CSP's `img-src` were all removed once the
+store began answering `403` to its own contents — at which point allow-listing it protected
+nothing, because the bytes were unreachable either way.
+
+A row can still *hold* one of those dead URLs. **It does not render as a broken image — it
+throws.** `next/image` has no degradation path for a host missing from `remotePatterns`: it
+raises `Invalid src prop` during render, which unmounts the page rather than the one picture.
+One leftover `Banner.imageUrl` blanked both the storefront homepage and `/admin/banners` —
+the page the remedy below has to be carried out on. Since PR-121 the banner surfaces route
+their stored URL through `isRenderableImageUrl` (`server/catalog/image-paths.ts`), so a dead
+one reads as "no image" and the admin row says *Image needs re-uploading*. **The other seven
+columns are not yet guarded** and will still take a page down. Eight columns can hold one: `Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`,
+`Org.logoUrl`, `OrderItem.thumbnail`, `ShippingProvider.logoUrl`, `Banner.imageUrl`. To find them:
 
 ```
-OLD_BLOB_READ_WRITE_TOKEN=… npx tsx scripts/migrate-blob-store.ts copy            # what would move
-OLD_BLOB_READ_WRITE_TOKEN=… npx tsx scripts/migrate-blob-store.ts copy --apply
-npx tsx scripts/migrate-blob-store.ts rewrite --apply
-npx tsx scripts/migrate-blob-store.ts check                                        # nothing left behind
+SELECT 'Banner' AS t, id, "imageUrl" AS url FROM "Banner" WHERE "imageUrl" LIKE '%blob.vercel-storage.com%'
+UNION ALL SELECT 'Category', id, "heroImage" FROM "Category" WHERE "heroImage" LIKE '%blob.vercel-storage.com%'
+UNION ALL SELECT 'Product', id, thumbnail FROM "Product" WHERE thumbnail LIKE '%blob.vercel-storage.com%'
+UNION ALL SELECT 'ProductMedia', id, ref FROM "ProductMedia" WHERE ref LIKE '%blob.vercel-storage.com%'
+UNION ALL SELECT 'Profile', id, "profilePic" FROM "Profile" WHERE "profilePic" LIKE '%blob.vercel-storage.com%'
+UNION ALL SELECT 'Org', id, "logoUrl" FROM "Org" WHERE "logoUrl" LIKE '%blob.vercel-storage.com%'
+UNION ALL SELECT 'OrderItem', id, thumbnail FROM "OrderItem" WHERE thumbnail LIKE '%blob.vercel-storage.com%'
+UNION ALL SELECT 'ShippingProvider', id, "logoUrl" FROM "ShippingProvider" WHERE "logoUrl" LIKE '%blob.vercel-storage.com%';
 ```
 
-`BLOB_READ_WRITE_TOKEN` is the **destination** — the same variable the app reads, so a finished migration leaves the app already pointed at the new store. Pathnames are preserved, so only the hostname changes; the new host must be added to `next.config.ts` `remotePatterns` or every image 404s at the optimizer.
-
-**The copy phase downloads everything, which is Data Transfer on the *old* store.** If that store is already over its allowance the downloads return `403` and the export cannot run at all — `list()` keeps working, so the blobs are visible but unreadable. Progress is written to `.blob-migration/manifest.jsonl` as it goes, so a re-run resumes.
-
-**A new store in the same Vercel account does not get a new allowance.** Vercel's pricing page is explicit that storage, operations and transfer "aren't affected by how many stores you create" — the included usage belongs to the plan, not the store. Migrating is only worth doing to reach a *different account* or a different provider.
+The remedy is to re-upload the image through the admin UI, which writes an R2 URL. There is no
+recovery path through the old store — its contents cannot be read, which is the whole reason for
+ADR-0028. Run this against **production and development separately**; they are different databases.
 
 ### ⚠️ Why the Vercel Blob store is retired (historical)
 Vercel Blob meters **Data Transfer** — bytes served *out* of the store — against a monthly allowance (10 GB on the free tier; Vercel documents the wait after an overrun as 30 days, so treat the reset as a rolling window rather than a calendar month). On the free tier, exceeding it does not bill: it **blocks further transfer** with `403`, so every product image on the storefront goes blank — and so does your own ability to read the store's contents, which is what makes exporting after the fact impossible. It was exhausted pre-launch in September 2026; [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) has the causes and the fix.
 
-Images now live in Cloudflare R2, which has no egress meter at all ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)), so this failure mode is gone rather than managed. Kept here because the store still holds the pre-migration originals, and because the reasoning transfers: two things moved that meter, and both still apply to whatever store you are on.
+Images now live in Cloudflare R2, which has no egress meter at all ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)), so this failure mode is gone rather than managed. Kept because the reasoning transfers: two things moved that meter, and both still apply to whatever store you are on.
 
 - **A delivery regression.** Anything serving an original instead of an optimized derivative — a raw `<img>`, an `unoptimized`, a `fill` with no `sizes`. `tests/unit/image-delivery.test.ts` fails the build on all three, so a jump with that suite green means something outside `src/` is fetching.
 - **Your own dev traffic.** `localhost` reads the same Blob URLs as production, so image-heavy local work and repeated bulk-upload runs draw on the same meter.
 
 Image *optimization* is a separate quota with its own limit. If images break again and Blob transfer looks healthy, look there next.
 
-### ⚠️ The Upstash naming trap
-The rate limiter reads **`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`, and using those names produces **two different failures from the same missing config**: `src/lib/rate-limit.ts` asserts non-null at module load, so `signup` and `forgot-password` throw at import (fail closed), while `src/middleware.ts` catches the absence and disables limiting with only a logged warning (fail open). Use the names in the table.
+### ⚠️ Rate limiting is detached — every endpoint is unthrottled
+`src/lib/rate-limit/index.ts` exports limiters that allow every request and a
+`RATE_LIMITING_ENABLED === false` flag. Call sites that read `apiRateLimit`, `authRateLimit`,
+`paymentRateLimit` or `withRateLimit` still compile and still *look* like protection in the
+handler source; none of them rejects anything. Nothing imports `@upstash/*`. This is deliberate —
+the previous arrangement failed open silently and keyed on a caller-supplied header — but it means
+**signup, password reset, verification resend, order lookup, payment-order creation, bid placement,
+shipping-rate quoting and stock checks are all unthrottled in production.** Treat that as a live
+exposure, not a backlog item; `tests/unit/rate-limit-detached.test.ts` asserts the state so it
+cannot quietly become half-true. Reconnecting is [rate-limiting](specs/rate-limiting/).
+
+**When you reconnect it — the Upstash naming trap.** Wire `./upstash`, which reads
+**`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration
+provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`; using those
+names leaves the limiter unconfigured. Use the names in the table.
 
 ### Two origin variables, two jobs
 `NEXTAUTH_URL` is **NextAuth's own** configuration — it builds OAuth callback URLs and nothing else should read it. `NEXT_PUBLIC_APP_URL` is the app's public origin, used for links that leave the server. They hold the same value locally and *must* diverge on Vercel previews, so keep the responsibilities separate.
@@ -246,18 +277,18 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 | Domain | **GoDaddy** (registrar) | `bhendi-bazaar.com`; DNS points at Vercel |
 | Database | **Prisma Postgres** (`db.prisma.io`) | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
-| Redis (rate limiting) | **Upstash** | Via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*` |
-| File storage | **Vercel Blob** | `BLOB_READ_WRITE_TOKEN`; hostname allow-listed in `next.config.ts`. **Data Transfer is a capped monthly meter that withdraws access on the free tier** — see above |
+| Redis (rate limiting) | **Upstash** — *not currently wired* | Intended provider, via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*`. No live code reads it |
+| File storage | **Cloudflare R2** | `R2_*` variables; `R2_PUBLIC_BASE_URL` is read by `next.config.ts` at build time for `remotePatterns`. No egress meter ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)) |
 | Payments | **Razorpay** | Test keys locally (`rzp_test_*`) |
 | Email | **Resend** | |
 | Shipping | **Shiprocket** | Rates live; booking see [ARCHITECTURE.md](ARCHITECTURE.md) |
 | OAuth | **Google Cloud** | Redirect URI per environment |
 
 ### Accelerate is provisioned but bypassed
-`PRISMA_DATABASE_URL` holds a `prisma+postgres://accelerate.prisma-data.net/…` URL, but **nothing reads it** — `src/lib/prisma.ts`'s replacement, `server/shared/prisma.ts`, connects via `DATABASE_URL` directly. Accelerate exists to pool connections and cache queries, which is exactly the pressure a serverless deployment puts on a single Postgres instance. Worth revisiting: routing through it would address per-instance connection limits more thoroughly than tuning `max` on the local pool.
+`PRISMA_DATABASE_URL` holds a `prisma+postgres://accelerate.prisma-data.net/…` URL, but **nothing reads it** — `server/shared/prisma.ts` connects via `DATABASE_URL` directly. Accelerate exists to pool connections and cache queries, which is exactly the pressure a serverless deployment puts on a single Postgres instance. Worth revisiting: routing through it would address per-instance connection limits more thoroughly than tuning `max` on the local pool.
 
 ### Unused environment variables
-The code reads only `DATABASE_URL` and `KV_REST_API_URL` from the connection-string set. `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, and `PRISMA_DATABASE_URL` are read by nothing — leftovers from provisioning. Keeping several live connection strings in one `.env` is the hazard behind the seed guard ([Invariant 7](../CLAUDE.md)); prune them.
+The code reads only `DATABASE_URL` from the connection-string set — `KV_REST_API_URL` included, now that the limiter is detached. `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, and `PRISMA_DATABASE_URL` are read by nothing — leftovers from provisioning. Keeping several live connection strings in one `.env` is the hazard behind the seed guard ([Invariant 7](../CLAUDE.md)); prune them.
 
 ## Deploy
 
@@ -271,7 +302,7 @@ Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 - `vercel env pull` before running migrations locally against a deployed database.
 - **Migrations run in the build** ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)): `vercel.json`'s `buildCommand` is `npx prisma migrate deploy && next build`, so every Vercel build applies pending migrations to that environment's `DATABASE_URL` before compiling. A merge to `main` **is** a prod schema change; preview builds migrate whatever database the Preview environment points at — so if Preview has no database of its own, a push to `develop` migrates production. `migrate deploy` only applies pending migrations in order — never resets or drops. Manual `migrate deploy` remains only for local runs against a deployed database (`vercel env pull` first).
 - Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/shiprocket`. Local webhook testing needs a tunnel.
-- Use a pooled connection string (pgbouncer / Neon) in production: `src/lib/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
+- Use a pooled connection string (pgbouncer / Neon) in production: `server/shared/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
 
 ## Troubleshooting
 
@@ -279,8 +310,8 @@ Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 |---|---|
 | `Can't reach database server` | Postgres not running (`pg_isready`), or a malformed `DATABASE_URL`. For Docker, check the container is up |
 | `@prisma/client did not initialize yet` | `npx prisma generate` |
-| `PrismaClientOptions` error in a script | Prisma 7 needs the `pg` adapter — construct the client the way `src/lib/prisma.ts` does, not bare |
+| `PrismaClientOptions` error in a script | Prisma 7 needs the `pg` adapter — construct the client the way `server/shared/prisma.ts` does, not bare |
 | Port 3000 in use | `lsof -ti:3000 \| xargs kill` or `npm run dev -- -p 3001` |
-| Rate limiting not applying | `KV_REST_API_*` missing or misnamed — see the naming trap above. Since PR-55 the limiter fails open with a one-time console warning rather than throwing; check the logs for `[rate-limit]`. The [rate-limiting](specs/rate-limiting/) spec closes this properly |
+| Rate limiting not applying | Expected: it is detached and allows everything, whatever `KV_REST_API_*` holds. Confirm with `RATE_LIMITING_ENABLED` in `src/lib/rate-limit/index.ts`. The [rate-limiting](specs/rate-limiting/) spec closes this properly |
 | Stale types or unexplained build errors | `rm -rf .next && npx prisma generate` |
 | Webhook not arriving locally | No tunnel, or the secret is unset. Check the gateway dashboard's delivery log first — it records attempts and responses |

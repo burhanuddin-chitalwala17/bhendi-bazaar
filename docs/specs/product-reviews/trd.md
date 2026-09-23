@@ -1,6 +1,6 @@
 # TRD — product-reviews
 
-- **Status:** ✅ Implemented — PR-117
+- **Status:** ✅ Implemented — PR-124
 - **Domain:** catalog (one read into checkout for the badge)
 - **Phase:** —
 - **Verified:** 2026-09-22

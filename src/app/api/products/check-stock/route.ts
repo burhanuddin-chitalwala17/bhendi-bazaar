@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { toErrorResponse } from "@/lib/api-error-response";
 import { prisma } from "@server/shared/prisma";
 import { validateRequest } from "@/lib/validation";
 import { stockCheckSchema } from "@/lib/validation/schemas/cart.schemas";
@@ -84,12 +85,6 @@ export async function POST(request: NextRequest) {
       items: stockStatus,
     });
   } catch (error) {
-    console.error("Stock check failed:", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Failed to check stock",
-      },
-      { status: 500 },
-    );
+    return toErrorResponse(error, "Could not check stock");
   }
 }

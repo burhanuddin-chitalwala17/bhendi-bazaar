@@ -800,7 +800,8 @@ model OrgBanner {
   orgId String
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
-  title       String
+  /// Optional: a promotion can be the picture alone.
+  title       String?
   description String?
   /// Through the optimizer, like every other image (ADR-0026).
   imageUrl    String?
@@ -1259,7 +1260,9 @@ model Settlement {
 /// products is what offers are for.
 model Banner {
   id          String         @id @default(cuid())
-  title       String
+  /// Optional like every other word on a banner: artwork that carries its own
+  /// typography needs no headline laid over it.
+  title       String?
   eyebrow     String?
   description String?
   /// Blob URL. Null renders the brand gradient scene rather than a blank box.

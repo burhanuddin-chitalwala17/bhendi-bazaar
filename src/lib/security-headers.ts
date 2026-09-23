@@ -1,0 +1,110 @@
+/**
+ * Response security headers, and the Content-Security-Policy in particular.
+ *
+ * **What this does and does not protect.** Faking a payment is already impossible without
+ * the gateway key secret: the charged amount is read from the persisted order and never
+ * from a request body ([ADR-0002](../../docs/adr/0002-server-holds-pricing-authority.md)),
+ * and `paymentStatus: "paid"` is written only after an HMAC over `order_id|payment_id`
+ * verifies against the order the gateway id was persisted against
+ * ([ADR-0005](../../docs/adr/0005-payment-state-server-only.md)). No amount of scripting in
+ * the browser reaches either. What scripting *does* reach is everything around the
+ * payment — the session, the address book, the basket — so the residual risk was never
+ * "forge a confirmation", it was "run any script at all on our origin". This closes that.
+ *
+ * **Nonce, not `unsafe-inline`.** Every inline script must carry the per-request nonce
+ * issued in `src/middleware.ts`, so an injected `<script>` — however it got into the
+ * markup — does not execute. `unsafe-inline` would make the whole policy decorative,
+ * which is the usual way a CSP ends up present and worthless.
+ *
+ * `strict-dynamic` is deliberately *not* used: it would discard the host allowlist below
+ * in supporting browsers, and Razorpay's checkout script is appended at runtime by
+ * `src/services/paymentGatewayService.ts` rather than rendered with a nonce. The explicit
+ * allowlist covers that case and fails visibly rather than silently.
+ */
+
+/** Razorpay serves checkout from one apex and phones home to several subdomains. */
+const RAZORPAY = "https://*.razorpay.com";
+
+/** Hosts `next/image` is allowed to render from — kept beside `next.config.ts`'s list. */
+function imageHosts(): string[] {
+  const hosts = ["https://i.ytimg.com", "https://placehold.co", "https://shiprocket.in"];
+  const base = process.env.R2_PUBLIC_BASE_URL;
+  if (base) {
+    try {
+      hosts.push(`https://${new URL(base).hostname}`);
+    } catch {
+      // A malformed R2_PUBLIC_BASE_URL already breaks image rendering at the optimizer
+      // (next.config.ts reads the same variable); it must not also break every response.
+    }
+  }
+  return hosts;
+}
+
+export function contentSecurityPolicy(nonce: string, isDev: boolean): string {
+  const directives: Record<string, string[]> = {
+    "default-src": ["'self'"],
+
+    // No 'unsafe-inline'. React's dev build compiles with eval, the production build
+    // does not — so the exception is scoped to dev rather than shipped.
+    "script-src": ["'self'", `'nonce-${nonce}'`, RAZORPAY, ...(isDev ? ["'unsafe-eval'"] : [])],
+
+    // Next inlines critical CSS and Tailwind emits style attributes; a nonce cannot reach
+    // either. Style injection is a defacement vector, not an execution one, so this is the
+    // one relaxation the policy makes.
+    "style-src": ["'self'", "'unsafe-inline'"],
+
+    // `blob:` and `data:` are the local preview of an image a user has just picked, before
+    // it is uploaded — the one case ADR-0026 lets skip the optimizer.
+    "img-src": ["'self'", "data:", "blob:", ...imageHosts()],
+    "font-src": ["'self'", "data:"], // next/font/google self-hosts at build time
+
+    "connect-src": [
+      "'self'",
+      RAZORPAY,
+      "https://lumberjack.razorpay.com",
+      "https://vitals.vercel-insights.com",
+      ...(isDev ? ["ws:", "http://localhost:*"] : []),
+    ],
+
+    // The Razorpay checkout modal is an iframe on their origin.
+    "frame-src": ["'self'", RAZORPAY],
+    // Razorpay's bank/UPI redirect posts back through a form.
+    "form-action": ["'self'", RAZORPAY],
+
+    // Clickjacking: nothing may frame this site. `X-Frame-Options` below says the same
+    // thing to browsers that predate this directive.
+    "frame-ancestors": ["'none'"],
+    "base-uri": ["'self'"], // an injected <base> retargets every relative URL on the page
+    "object-src": ["'none'"],
+    "worker-src": ["'self'", "blob:"],
+    "manifest-src": ["'self'"],
+    ...(isDev ? {} : { "upgrade-insecure-requests": [] }),
+  };
+
+  return Object.entries(directives)
+    .map(([name, values]) => (values.length ? `${name} ${values.join(" ")}` : name))
+    .join("; ");
+}
+
+/**
+ * Headers that do not vary per request. Applied in `next.config.ts` so they reach static
+ * assets too, which never run middleware.
+ */
+export const STATIC_SECURITY_HEADERS: Array<{ key: string; value: string }> = [
+  // Two years, preloadable. Only ever sent over HTTPS, so local http development is
+  // unaffected — but note that a browser that has seen this header will refuse plain
+  // http to this host until it expires.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  // Stops a browser second-guessing a Content-Type, which is how an uploaded image
+  // becomes an executed script.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Legacy companion to `frame-ancestors 'none'`.
+  { key: "X-Frame-Options", value: "DENY" },
+  // A full URL leaks order codes and search terms to every third party an outbound link
+  // reaches; the origin alone is enough for their analytics.
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Nothing here needs a camera, a microphone or a location, so nothing may ask. `payment`
+  // stays open to us and to the gateway — Razorpay checkout uses the Payment Request API
+  // for card and UPI flows, and denying it fails as a silently unavailable payment method.
+  { key: "Permissions-Policy", value: 'camera=(), microphone=(), geolocation=(), usb=(), payment=(self "https://checkout.razorpay.com" "https://api.razorpay.com")' },
+];

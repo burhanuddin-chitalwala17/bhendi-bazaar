@@ -6,7 +6,12 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { HomeHero } from "@/components/home/home-hero";
+import { HeroBanner } from "@/components/home/hero-banner";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
+
+/** The reading scrim, by the gradient that makes it. */
+const scrimIn = (root: HTMLElement) =>
+  root.querySelector('[class*="from-scrim/85"]');
 
 const banner = (id: string): HeroBannerContent => ({
   id,
@@ -33,5 +38,46 @@ describe("HomeHero", () => {
     rerender(<HomeHero banners={[banner("a"), banner("b")]} />);
     expect(screen.getAllByRole("group")).toHaveLength(2);
     expect(screen.getByLabelText("Go to banner 2")).toBeInTheDocument();
+  });
+});
+
+/**
+ * Artwork on its own. Every word on a banner is optional, headline included, and a
+ * banner with none is the picture — so the scrim that exists to make words legible
+ * must not be there. On a phone it has no hover to hide behind, which is where a
+ * permanently dimmed image was showing up.
+ */
+describe("HeroBanner with no words", () => {
+  const image = { src: "/eid.webp", alt: "Ridas on a rail" };
+
+  it("renders the picture with no scrim over it", () => {
+    const { container } = render(
+      <HeroBanner banner={{ id: "a", image }} />,
+    );
+    expect(container.querySelector("img")).toBeInTheDocument();
+    expect(scrimIn(container)).toBeNull();
+  });
+
+  it("keeps the scrim as soon as there is something to read", () => {
+    for (const words of [
+      { title: "Eid picks" },
+      { eyebrow: "The Abaya Edit" },
+      { description: "New ridas, in store now" },
+      { actions: [{ label: "Shop", href: "/category/abayas" }] },
+    ]) {
+      const { container, unmount } = render(
+        <HeroBanner banner={{ id: "a", image, ...words }} />,
+      );
+      expect(scrimIn(container)).not.toBeNull();
+      unmount();
+    }
+  });
+
+  it("drops the headline rather than rendering an empty one", () => {
+    const { container } = render(
+      <HeroBanner banner={{ id: "a", image, eyebrow: "The Abaya Edit" }} />,
+    );
+    expect(container.querySelector("h2")).toBeNull();
+    expect(screen.getByText("The Abaya Edit")).toBeInTheDocument();
   });
 });

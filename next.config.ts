@@ -1,19 +1,23 @@
 import type { NextConfig } from "next";
 // Relative import: next.config loads before tsconfig path aliases exist.
 import { crawlersBlocked } from "./src/lib/crawl-block";
+import { STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
 
 const nextConfig: NextConfig = {
   async headers() {
+    // The per-request Content-Security-Policy is set in src/middleware.ts, which is where
+    // the nonce is generated. These are the ones that never vary, applied here so they
+    // reach static assets too — middleware does not run for those.
+    const headers = [...STATIC_SECURITY_HEADERS];
+
     // Pre-launch crawl block (src/lib/crawl-block.ts): noindex for bots that
     // skip robots.txt but honour the header. Read once per build, which is when
     // the deployment's env is fixed anyway.
-    if (!crawlersBlocked()) return [];
-    return [
-      {
-        source: "/:path*",
-        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
-      },
-    ];
+    if (crawlersBlocked()) {
+      headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow" });
+    }
+
+    return [{ source: "/:path*", headers }];
   },
   images: {
     // A year, matching the `immutable, max-age=31536000` that object-store.ts writes.
@@ -35,13 +39,6 @@ const nextConfig: NextConfig = {
             },
           ]
         : []),
-      {
-        // The retired Vercel Blob store. Kept until every row has been repointed, so
-        // that a partially migrated catalogue still renders; remove it after
-        // `migrate-blob-store.ts check` reports zero.
-        protocol: "https",
-        hostname: "o42adyjkazl35sk2.public.blob.vercel-storage.com",
-      },
       {
         protocol: "https",
         hostname: "placehold.co", // ← Add this for placeholder images

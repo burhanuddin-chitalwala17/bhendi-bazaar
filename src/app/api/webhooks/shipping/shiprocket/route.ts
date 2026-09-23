@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { shippingOrchestrator } from "@server/shipping";
 import { prisma } from "@server/shared/prisma";
 
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update shipment status
-    const updateData: any = {
+    const updateData: Prisma.ShipmentUpdateInput = {
       status: webhookEvent.status.status,
       updatedAt: new Date(),
     };

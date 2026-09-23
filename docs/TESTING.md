@@ -1,6 +1,7 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-09-09
+- **Verified:** 2026-09-21
+- **Covers:** `tests/*/`, `.github/workflows/ci.yml`, `vitest.config.ts`
 
 ## Stack
 
@@ -14,7 +15,7 @@ Harness configuration lives in `vitest.config.ts`. It aliases both `@` → `./sr
 
 | Component | Target | Why |
 |---|---|---|
-| **Pricing and total computation** | **100%, every branch** | [ADR-0002](adr/0002-server-holds-pricing-authority.md). A gap here is money. Must cover: a client-supplied price is ignored; a recomputed total that differs is rejected |
+| **Pricing and total computation** | **100%, every branch** | [ADR-0002](adr/0002-server-holds-pricing-authority.md). A gap here is money. Must cover: a client-supplied price is ignored; a recomputed total that differs is rejected. `order-transaction.test.ts` covers the creation path end to end — it had none until 2026-09-21, which is why batching its writes could not be done safely before |
 | **Payment state transitions** | **100%** | [ADR-0005](adr/0005-payment-state-server-only.md). Must cover: an unauthenticated state change is refused; `paymentStatus` in a create body is ignored; a signature mismatch rejects; a replayed confirmation is idempotent |
 | **Stock reservation under concurrency** | **100%** | [ADR-0007](adr/0007-conditional-stock-decrement.md). Must cover: N concurrent orders against one unit yield exactly one success |
 | **Ownership / authorization** | **100%** | Every route taking a resource id: owner passes, non-owner refused, anonymous refused, and the guest-order case asserted explicitly rather than left implicit |
@@ -40,7 +41,7 @@ Harness configuration lives in `vitest.config.ts`. It aliases both `@` → `./sr
 
 ## Layout
 
-Mirror the source path: `server/checkout/order.service.ts` → `tests/services/orderService.test.ts`.
+Mirror the source path: `server/checkout/order.service.ts` → `tests/unit/order-pricing.test.ts`.
 
 ```
 tests/
@@ -60,9 +61,28 @@ tests/
 
 The consequence to keep in mind: **they are green by absence anywhere else.** In CI, and on any machine whose `DATABASE_URL` points elsewhere, they report as skipped and the pipeline stays green having verified none of it. A CI run passing is therefore not evidence that a constraint holds; running the suite locally, against a seeded dev database, is. Some of them also expect the seed to have run (`bulk-upload`, `db-ops-budget`, `join-equivalence`) and fail loudly rather than silently if it has not.
 
+`order-transaction.test.ts` is the exception and the pattern to copy: it **creates its own products and stock** instead of reading seeded fixtures. Its first draft did read them and broke immediately — only two unpromoted products existed at any one location, which is a fact about the seed, not about the code under test. Owning its fixtures also means it needs nothing but a migrated schema, which is what any of these would need to run in CI, since the seed guard refuses to run under `CI` by design ([Invariant 7](../CLAUDE.md)).
+
 This matters because **the project deliberately pushes rules into the database**: Invariant 6's conditional decrement, bidding's partial unique index and `@@unique([eventId, amountPaise])` ([ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md)), `onDelete: Restrict` protecting order history ([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). `bidding-concurrency.test.ts` is the pattern to copy for a new one — contention expressed as concurrent transactions against one row, asserting the affected-row count is the verdict. A stub would happily prove a design that double-accepts in production.
 
 **What is still missing is CI, not the tests.** Closing the rest means a disposable Postgres in the pipeline — a container, or a schema-per-run — plus `prisma migrate deploy` in the test setup, at which point the `skipIf` guards can widen to include it. Until then a PR whose behaviour is a constraint says so in its CHANGELOG entry, and says whether the database-backed suite was actually run.
+
+### Guard suites: tests whose subject is the repository, not a function
+
+A handful of suites assert a property of the codebase rather than the behaviour of one
+module. They are cheap, they fail on the exact line that broke, and each exists because the
+thing it guards had already gone wrong silently:
+
+| Suite | Guards |
+|---|---|
+| `docs-integrity` | Documentation against the tree — broken and fabricated path references, directory references, `Verified:` dates against the last structural change to the code a doc declares it `Covers:`, pasted code, `ARCHITECTURE.md`'s counts, the domain table, and that every `process.env` variable is in `OPERATIONS.md` |
+| `security-headers` | That `script-src` never gains `'unsafe-inline'`, that the nonce is carried, and that the gateway stays admitted on every channel its checkout uses |
+| `constraint-shapes` | That a Prisma unique-violation is still readable after a version bump. 7.10 changed the reported shape and every friendly "that SKU is taken" message silently became a raw Prisma error |
+| `design-tokens`, `ui-primitives`, `image-delivery` | [ADR-0022](adr/0022-design-decisions-go-through-tokens.md), [ADR-0031](adr/0031-one-components-home-organised-by-domain.md), [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) |
+| `portal-guards`, `rate-limit-detached`, `seed-guard` | The edge gate reaches every portal path; no cache dependency creeps back into the request path; the seed's allowlist |
+
+A guard that has never been red is not yet a guard. `order-transaction` was mutation-tested
+before being trusted — mapping its order-item ids positionally makes it fail.
 
 ### `critical/` is empty, and the Invariant tests are in `unit/`
 
@@ -87,13 +107,15 @@ npx vitest run --coverage
 
 ## CI gates
 
-**Every quality step blocks the pipeline.** `continue-on-error` on a lint, typecheck, or test step is forbidden — a gate that cannot fail is worse than no gate, because it manufactures confidence. This is not a preference: the suite was once removed as collateral in an unrelated change and the pipeline reported success for months.
+**A quality step should block the pipeline.** A gate that cannot fail is worse than no gate, because it manufactures confidence: the suite was once removed as collateral in an unrelated change and the pipeline reported success for months.
 
-**Adopt it in stages**, because a gate that is noisy with no path to quiet gets suppressed, and suppression is the original failure:
+**Adopted in stages**, because a gate that is noisy with no path to quiet gets suppressed, and suppression is the original failure. Where `.github/workflows/ci.yml` stands today:
 
-1. **Typecheck blocks immediately** — it already passes clean.
-2. **Tests block as soon as a suite exists.**
-3. **Lint blocks on `error` severity only.** Warnings stay non-blocking. Clear the `no-explicit-any` errors in scoped PRs, trust-boundary code first — route handlers, auth, payment. Turning on all of it at once would make `main` red on day one and invite exactly the suppression this rule exists to prevent.
+1. **Typecheck blocks.** ✅ `npx tsc --noEmit`, no `continue-on-error`.
+2. **Tests block.** ✅ `npm test -- --run`. That now includes `tests/unit/docs-integrity.test.ts`, which is why the job checks out with `fetch-depth: 0` — it compares a doc's `Verified:` date against the last commit that changed the shape of the code it covers, and a depth-1 clone cannot answer that.
+3. **Lint does NOT block yet.** ⚠️ The step still carries `continue-on-error: true`. The remaining errors are all `no-explicit-any`: 81 as of 2026-09-20, **56** now that `src/app/api/**` is at zero — which was the priority, since that is where CLAUDE.md calls `any` a defect. What is left is in admin pages, hooks and the shipping provider layer. Clear those in scoped PRs, then delete the flag; the rule is only real once the flag is gone.
+
+Warnings stay non-blocking throughout (109 `no-unused-vars`, 6 `exhaustive-deps`).
 
 **The harness comes first** (see above) — recovery stalls on the first file otherwise.
 

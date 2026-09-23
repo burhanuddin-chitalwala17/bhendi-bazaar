@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { ImageIcon, ImageOff, Loader2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/shared/forms/FormField";
 import { BANNER_IMAGE } from "@/lib/config";
 import { readApiError } from "@/lib/api-error";
+import { isRenderableImageUrl } from "@server/catalog/image-paths";
 import { BANNER_IMAGE_HINT, checkBannerImage } from "./banner-image-check";
 
 /**
@@ -68,7 +69,7 @@ export function BannerImageField({
       error={error ?? undefined}
     >
       <div className="space-y-2">
-        {value ? (
+        {isRenderableImageUrl(value) ? (
           <div className="relative overflow-hidden rounded-field border border-border">
             {/* The uploaded file at its own shape — not the storefront's, which varies
                 by breakpoint. What the hero keeps of it is the hint's job to explain. */}
@@ -98,12 +99,37 @@ export function BannerImageField({
           </div>
         ) : (
           <div className="flex aspect-banner-source w-full items-center justify-center rounded-field border border-dashed border-border bg-muted/50">
-            <div className="flex flex-col items-center gap-1 text-muted-foreground">
-              <ImageIcon className="size-6" />
-              <p className="text-2xs uppercase tracking-eyebrow">
-                {BANNER_IMAGE.width}×{BANNER_IMAGE.height}
-              </p>
-            </div>
+            {/* A stored URL we cannot serve is not an empty field: the artwork is gone
+                for good, so say so and let the admin clear it rather than saving a
+                dead URL back untouched (OPERATIONS.md, retired store). */}
+            {value ? (
+              <div className="flex flex-col items-center gap-2 px-4 text-center text-warning">
+                <ImageOff className="size-6" />
+                <p className="text-2xs">
+                  This image is on the retired store and cannot be recovered.
+                  Upload a replacement, or remove it.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={disabled || uploading}
+                  onClick={() => {
+                    onChange(null);
+                    setError(null);
+                  }}
+                >
+                  Remove image
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                <ImageIcon className="size-6" />
+                <p className="text-2xs uppercase tracking-eyebrow">
+                  {BANNER_IMAGE.width}×{BANNER_IMAGE.height}
+                </p>
+              </div>
+            )}
           </div>
         )}
 

@@ -1,5 +1,8 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
+- **Verified:** 2026-09-21
+- **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
+
 
 ## Purpose
 Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-commerce store.
@@ -53,6 +56,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | payouts | `server/payouts/` | What each org earned, what the platform kept, what is still owed |
 | bidding | `server/bidding/` | Timed auctions on a single item, and the gate that suspends it from normal sale |
 | analytics | `server/analytics/` | Aggregating read-model for the admin dashboard. **Read-only**, and the one documented exception to the no-cross-domain-reads rule |
+| wishlist | `server/wishlist/` | Saved products, and the demand signal an org reads off them |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry. Only what genuinely spans domains — not a dumping ground |
 
 **There is no `admin` domain.** Admin and storefront read the same tables, so an admin listing is a query on `catalog` or `checkout`, kept as `admin.*` files inside that domain. Admin *pages* are grouped by audience in `src/app/(admin)/`, which is a UI concern.
@@ -171,6 +175,8 @@ Canonical index of *how we work*. Each line points; detail lives in the ADR so i
 - **A zoomable surface declares the size it zooms to, and the stored ceiling clears it** — a zoom scales bytes already downloaded rather than fetching sharper ones, so the gallery's active slide and the lightbox use `ZOOMABLE_IMAGE_SIZES` (the one sanctioned overstatement of ADR-0026's honest-`sizes` rule) and `MAX_IMAGE_EDGE` is derived from `MAX_ZOOM_SCALE`, declared once in `server/catalog/media.ts`. Measured: a 1600px ceiling against a 3× zoom had twice the error of 2000px on the surface where a buyer inspects weave and stonework. ([ADR-0027](docs/adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md))
 - **The audit trail records an action; it never decides whether it happened** — services go through `recordAdminAction` (after a committed mutation, never throws) or `recordAdminActionIn(tx, …)` (inside the mutation's transaction, throws with it), never `adminLogRepository.createLog`. An admin id used as a foreign key is re-read, not taken from the JWT claim. ([ADR-0021](docs/adr/0021-audit-trail-never-fails-the-action.md))
 - **An org storefront is a scoped projection of the marketplace, on one domain** — the same catalogue, price resolver, basket and checkout read through an org filter at `/store/<handle>`. `/store` is public and crawled, `/org` stays the gated seller portal, `/product/<slug>` stays canonical, and a storefront query never selects a commercial column. A storefront is live from org creation — no verification, approval or publish flag — and `Org.isActive` is the one withdrawal switch, which must hide that org's products **platform-wide**, not just its storefront. Handles are generated then owner-changeable: a retired handle is *held* for a configurable window (currently 180 days), redirecting and unavailable to others, then *released* to the pool answering 404; resuming one must delete the redirect pointing away from it. The switch is `FROM_ACTIVE_ORG` in `server/catalog/product.visibility.ts`, spread beside `ON_SALE` by every read a buyer reaches — same seam as archiving, second dimension. ([ADR-0030](docs/adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [org-storefront spec](docs/specs/org-storefront/spec.md))
+- **A doc's `Verified:` date is a gate, not a promise** — every living doc declares `Covers:` (globs of the code whose *shape* it asserts), and `tests/unit/docs-integrity.test.ts` fails the build when a covered file was added, deleted or renamed after that date. It also refuses a broken path reference in a living doc, a path in an ADR or spec that the repository *never* held (intent written as fact), a fenced code block outside ADR-0009's exceptions, a count in `ARCHITECTURE.md` that does not match the tree, and a `server/<domain>/` with no row in the domain table above. CI checks out with `fetch-depth: 0` for it; run it alone with `npm run docs:check`. ADR-0009 D5 specified this in 2026-08 and nothing implemented it, which is how `ARCHITECTURE.md` came to carry a three-day-old date beside a retired object store, a dissolved directory and four wrong counts. ([ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md))
+- **Every response carries a nonce-based CSP, and no inline script runs without it** — `src/lib/security-headers.ts` holds the policy, `src/middleware.ts` mints a nonce per request, `next.config.ts` adds the headers that never vary. `script-src` must never gain `'unsafe-inline'`; that one token turns the whole policy into decoration. Faking a payment was already impossible (Invariants 1 and 2 — the amount comes from the persisted order and the paid transition needs an HMAC the browser cannot compute), so this closes the surface that was actually open: running any script at all on our origin. `tests/unit/security-headers.test.ts` asserts the properties.
 - **One components home, by domain, and every control through its primitive** — all components live in `src/components/<domain>/` (`ui/`, `shared/` and `layout/` aside); `src/admin`, `src/org`, `src/containers` and `src/components/admin` are dissolved and stay so. Placement follows the domain served, never the audience calling (ADR-0012's rule, one layer up). No raw `<button>`, `<select>` or text `<input>` outside `src/components/ui` — only `type="file"` and `type="hidden"` stay raw — and appearance comes from a variant, not a className. `tests/unit/ui-primitives.test.ts` enforces it. ([ADR-0031](docs/adr/0031-one-components-home-organised-by-domain.md))
 
 ---
@@ -196,3 +202,13 @@ Canonical index of *how we work*. Each line points; detail lives in the ADR so i
 | `/bb-brainstorm <topic>` | Before a TRD. Research only, no code. |
 | `/bb-sdlc <sub>` | `spec-start <feature>`, `adr-new <title>`, `pr-finish`. |
 | `/bb-review` | Before any PR is considered done. Checks the Invariants above. |
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

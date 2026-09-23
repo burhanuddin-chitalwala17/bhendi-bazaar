@@ -18,8 +18,8 @@ const requiredEnvVars = [
   "GOOGLE_CLIENT_SECRET",
   "RAZORPAY_KEY_ID",
   "RAZORPAY_KEY_SECRET",
-  // Object storage (ADR-0028). Replaced BLOB_READ_WRITE_TOKEN, which the app no longer
-  // reads — only the retired scripts/migrate-blob-store.ts does.
+  // Object storage (ADR-0028). Replaced BLOB_READ_WRITE_TOKEN, which nothing reads any
+  // more — the Blob store, its package and its migration script are all gone.
   "R2_ENDPOINT",
   "R2_BUCKET",
   "R2_ACCESS_KEY_ID",

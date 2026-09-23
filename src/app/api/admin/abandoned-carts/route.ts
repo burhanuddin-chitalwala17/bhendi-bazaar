@@ -8,7 +8,15 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCartService } from "@server/cart/admin.cart.service";
 import type { AbandonedCartFilters } from "@server/cart/admin.cart.types";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import {
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+
+/** The columns this listing may be ordered by — the same set abandoned-carts filters declare. */
+const SORTABLE = ["updatedAt", "totalValue"] as const;
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,8 +32,8 @@ export async function GET(request: NextRequest) {
         : 1,
       page: resolvePageNumber(searchParams.get("page")),
       limit: resolvePageSize(searchParams.get("limit")),
-      sortBy: (searchParams.get("sortBy") as any) || "updatedAt",
-      sortOrder: (searchParams.get("sortOrder") as any) || "desc",
+      sortBy: resolveSortBy(searchParams.get("sortBy"), SORTABLE, "updatedAt"),
+      sortOrder: resolveSortOrder(searchParams.get("sortOrder"), "desc"),
     };
 
     const result = await adminCartService.getAbandonedCarts(filters);

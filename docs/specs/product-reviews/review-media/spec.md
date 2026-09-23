@@ -1,6 +1,6 @@
 # Spec — review-media
 
-- **Status:** ✅ Implemented — PR-117
+- **Status:** ✅ Implemented — PR-124
 - **Domain:** catalog
 - **Phase:** —
 - **Verified:** 2026-09-22

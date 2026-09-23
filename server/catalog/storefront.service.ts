@@ -39,7 +39,7 @@ export interface StorefrontSettingsInput {
 }
 
 export interface BannerInput {
-  title: string;
+  title?: string | null;
   description?: string | null;
   imageUrl?: string | null;
   imageAlt?: string | null;
@@ -53,7 +53,7 @@ const orNull = (value: string | null | undefined) => value?.trim() || null;
 /** Whitelisted field by field — the payload is never spread into a write. */
 function normaliseBanner(input: BannerInput): OrgBannerInput {
   return {
-    title: input.title.trim(),
+    title: orNull(input.title),
     description: orNull(input.description),
     imageUrl: orNull(input.imageUrl),
     imageAlt: orNull(input.imageAlt),

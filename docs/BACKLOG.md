@@ -1,6 +1,7 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-19
+- **Verified:** 2026-09-21
+- **Covers:** `docs/specs/*/`
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -15,8 +16,8 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **1** — Storefront & admin | Browse, cart, checkout UI, admin console for products/orders/users/reviews/sellers | catalog, cart, admin, identity | ✅ **Done** |
 | **2** — Transaction integrity | The server is authoritative over price, payment state, and stock; money is exact | checkout, payments | ✅ **Done** — PR-37..40 |
 | **3** — Fulfilment & marketplace | A confirmed order becomes a real booked shipment from a real location, and the store serves multiple vendors | shipping, catalog, identity | ⏳ Not started — 2 specs + a 9-subfeature programme drafted |
-| **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started — 1 spec drafted (rate-limiting) |
-| **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
+| **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | 🔨 In progress — typecheck and tests block; documentation, security headers and Prisma error shapes are now guard suites (PR-117..119). Outstanding: lint still `continue-on-error`, rate limiting still detached, database-backed tests still skip in CI |
+| **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started — 2 specs drafted (error-tracking, read-caching) |
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 | **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
 | **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-97 |
@@ -61,19 +62,27 @@ Making Phase 2 and 3 stick rather than landing once. Mostly process, governed by
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [rate-limiting](specs/rate-limiting/) | Sensitive endpoints are rate limited in production; an environment that can't enforce says so at deploy time, not silently at request time | 📝 Draft — closes PR-55's fail-open stopgap |
+| [rate-limiting](specs/rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time, not silently at request time | 📝 Draft — closes PR-55's fail-open stopgap and PR-81's detachment |
+| [supply-chain-integrity](specs/supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, and the pipeline is what establishes it | 📝 Draft |
 
 - Restore the test suite, prioritised by the Invariants ([TESTING.md](TESTING.md) sets the targets)
 - Quality gates block the pipeline
 - ~~`prisma migrate deploy` in the pipeline~~ ✅ Done — PR-57 put it in the Vercel build ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md))
-- `validateEnv()` called at boot, covering `ENCRYPTION_KEY` and the webhook secret
+- `validateEnv()` called at boot, covering `ENCRYPTION_KEY` and the webhook secret — now owned by [rate-limiting](specs/rate-limiting/) D2, which needs it to make "silently unlimited" unreachable
 - `/bb-review` in use before every PR
 
 ## Phase 5 — Scale & operability
 
-Not started, deliberately not detailed. Nothing here begins before Phase 2 closes.
+Two of this phase's strands are now specified; the rest stays deliberately undetailed.
 
-Product search an index can serve (`pg_trgm` or `tsvector`) · pagination on storefront queries · database-side aggregation for admin dashboards · index review on `Order` · order cancellation and refunds · structured logging and error tracking · response caching.
+| Spec | Requirement | Status |
+|---|---|---|
+| [error-tracking](specs/error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 📝 Draft |
+| [read-caching](specs/read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 📝 Draft |
+
+Both were pulled forward out of "not started" for the same reason: Phase 9 shipped a URL designed to be *shared*, so the storefront now attracts the one traffic shape that uncached reads handle worst, and the store's growing set of deliberately fail-open controls — the limiter, the reconciliation sweep, the ledger backfill — each record a failure and notify nobody.
+
+Still unspecified: product search an index can serve (`pg_trgm` or `tsvector`) · pagination on storefront queries · database-side aggregation for admin dashboards · index review on `Order` · order cancellation and refunds · structured logging as a project-wide convention.
 
 ## Phase 6 — Catalogue richness
 
@@ -176,6 +185,9 @@ Not a phase, but tracked:
 
   Once those reads are cached, revisit prefetch rather than leaving it off permanently: a `loading.tsx` boundary plus a non-zero `experimental.staleTimes.dynamic` (it defaults to `0`, which is why the prefetches were discarded) would make it pay off on a page that no longer costs a database round trip.
 
+- **Security response headers exist as of PR-117** — a nonce-based CSP built per request in `src/middleware.ts` from `src/lib/security-headers.ts`, plus HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy` and `Permissions-Policy`. `script-src` carries no `'unsafe-inline'`. `CSP_REPORT_ONLY=1` downgrades enforcement without a code change — the escape hatch if a policy change breaks a page, not a place to leave things.
+- **Lint still does not block** — `.github/workflows/ci.yml` keeps `continue-on-error: true` on the lint step. 56 `no-explicit-any` errors remain, down from 81; **`src/app/api/` is at zero**, which was the priority since that is the trust boundary. The rest are in admin pages, hooks and the shipping provider layer. The flag comes off when they do ([TESTING.md](TESTING.md)).
+- **The Shiprocket webhook is unauthenticated** — `POST /api/webhooks/shipping/shiprocket` verifies no signature and no shared secret, so anyone who can guess a tracking number can mark a shipment, and hence an order, delivered. It also answers 200 on every failure, the opposite of the "fail loudly on an unmatched payload" that [INTEGRATIONS.md](INTEGRATIONS.md) prescribes for exactly this case. No money moves on `delivered` today — settlement does not read it — which is the only reason this is a watch-list entry rather than a stop-everything. Needs a shared-secret header or a hard-to-guess path, and knowing which of those Shiprocket's dashboard can actually send.
 - **Rate limiting is detached, and says so** — PR-81 replaced three fail-open implementations with one seam in `src/lib/rate-limit/` that allows everything and reports `RATE_LIMITING_ENABLED === false`. No live module imports `@upstash/*`, so the request path carries no cache dependency; both implementations are parked beside the seam, unimported. **Unthrottled until the cache is wired:** `POST /api/auth/signup`, `/api/auth/forgot-password`, `/api/payments/create-order`, `/api/orders*`, `/api/cart*` — and `reset-password`, `resend-verification`, `verify-email`, which never had limits. Reconnecting is an edit to one file; the correctness fixes it needs first are in the parked file's header. Spec: [rate-limiting](specs/rate-limiting/), Phase 4.
 - **This domain served a WordPress site before this one, and search engines still hold its index** — the archive has 4,682 URLs for `bhendi-bazaar.com`. Genuine Bhendi Bazaar posts from 2019–2020 (`explore-bhendi-bazaar`, `ashara-ohbat-1442`), then from March 2021 a turn into Indonesian gambling spam (`situs-judi-slot-gacor`, `apakah-legal-bermain-di-kasino-online`), scraped filler, and adult posts — still serving 200s as late as September 2025. The two shapes share one permalink structure, which reads as a compromised WordPress install rather than a resale, though that cannot be established from outside. Bing is still crawling it: two such requests arrived 0.74s apart on 2026-08-30.
 
