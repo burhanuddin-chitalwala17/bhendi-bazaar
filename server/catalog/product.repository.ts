@@ -351,6 +351,19 @@ export class ProductsRepository {
     }
   }
 
+  /**
+   * Whether a buyer can reach this product at all — the check a review write needs
+   * (product-reviews R7), without loading a gallery to answer it. Spreads the same two
+   * fragments every buyer-facing read does, so an archived product and a withdrawn
+   * shop's product are equally unreviewable.
+   */
+  async isOnSale(id: string): Promise<boolean> {
+    const count = await prisma.product.count({
+      where: { id, ...AVAILABLE, ...FROM_ACTIVE_ORG },
+    });
+    return count > 0;
+  }
+
   async getProductById(id: string) {
     try {
       const product = await prisma.product.findFirst({

@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-22
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -45,15 +45,18 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, cart, checkout | ✅ Implemented — PR-111 |
 | [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog | ✅ Implemented — **7 subfeatures** |
 | [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain | 📝 Draft |
+| [product-reviews](product-reviews/) | Buyers read and write reviews, photographs included, and the rating every surface shows is derived from the published ones | — | catalog | ✅ Implemented — PR-124, **1 subfeature** |
 | [supply-chain-integrity](supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, established by the pipeline | 4 | cross-domain | 📝 Draft |
 | [error-tracking](error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 5 | cross-domain | 📝 Draft |
 | [read-caching](read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 5 | catalog | 📝 Draft |
 
 ### Subfeatures
 
-Two parent folders here. [multi-vendor-marketplace](multi-vendor-marketplace/) grew out of a single question about shipping origin and turned into nine subfeatures, because the data-model work and the portal work are the same change seen from two sides. [org-storefront](org-storefront/) is seven subfeatures for the same reason in reverse: giving one organisation a public face touches its identity, the product page, the catalogue query, the seller portal and the crawl rules, and none of those is reviewable inside the others.
+Three parent folders here. [multi-vendor-marketplace](multi-vendor-marketplace/) grew out of a single question about shipping origin and turned into nine subfeatures, because the data-model work and the portal work are the same change seen from two sides. [org-storefront](org-storefront/) is seven subfeatures for the same reason in reverse: giving one organisation a public face touches its identity, the product page, the catalogue query, the seller portal and the crawl rules, and none of those is reviewable inside the others.
 
-In both, `spec.md` is the programme overview and each subfeature carries its own `spec.md`; a subfeature's `trd.md` is written when that subfeature is picked up rather than all of them up front. `org-storefront` also carries a parent `trd.md`, because the decisions its subfeatures inherit — where a storefront lives, what stays canonical, what a public query may select — are settled once for the programme rather than re-argued six times.
+[product-reviews](product-reviews/) has one: buyer-submitted photographs are a separate slice with their own upload path, storage budget and moderation hazard, and the words are worth shipping without waiting for them.
+
+In the first two, `spec.md` is the programme overview and each subfeature carries its own `spec.md`; in `product-reviews` the parent stays a full spec with one slice lifted out of it to stay inside the cap. In all three, a subfeature's `trd.md` is written when that subfeature is picked up rather than all of them up front. `org-storefront` also carries a parent `trd.md`, because the decisions its subfeatures inherit — where a storefront lives, what stays canonical, what a public query may select — are settled once for the programme rather than re-argued six times.
 
 ### Sequencing
 

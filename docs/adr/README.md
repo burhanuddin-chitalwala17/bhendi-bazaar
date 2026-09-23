@@ -68,3 +68,4 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0029](0029-a-product-leaves-sale-by-archiving-not-deletion.md) | A product leaves sale by archiving, not deletion | Accepted | 2026-09-16 |
 | [0030](0030-org-storefronts-are-scoped-projections-on-one-domain.md) | An org storefront is a scoped projection of the marketplace, on one domain | Accepted | 2026-09-15 |
 | [0031](0031-one-components-home-organised-by-domain.md) | One components home, organised by domain, with controls through the primitives | Accepted | 2026-09-19 |
+| [0032](0032-records-people-authored-are-retired-not-deleted.md) | A record a person authored is retired, never deleted | Accepted | 2026-09-23 |

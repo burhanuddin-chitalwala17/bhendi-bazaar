@@ -12,6 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+/** Placeholder proportions for the first paint, before the image reports its own. */
+const FALLBACK_EDGE = 1600;
+
 const MIN_SCALE = 1;
 const MAX_SCALE = MAX_ZOOM_SCALE;
 
@@ -30,6 +33,12 @@ interface ImageLightboxProps {
  * scroll-wheel to zoom, drag to pan when zoomed, minimap showing the visible
  * region. Controlled: index and open state live with the caller so an inline
  * gallery stays in sync with it.
+ *
+ * Edge to edge, but the *photograph* is not: it is inset so it reads as something being
+ * shown rather than something that has replaced the page, and the scrim stays partly
+ * transparent for the same reason — a viewer you can see the page through is obviously
+ * a layer you can dismiss. Top inset clears the close button by construction (its offset
+ * plus its height), so the two cannot collide however the safe area moves.
  */
 export function ImageLightbox({
   images,
@@ -40,6 +49,18 @@ export function ImageLightbox({
   onIndexChange,
 }: ImageLightboxProps) {
   const [scale, setScale] = useState(1);
+  /**
+   * The active image's own pixel dimensions, learned when it loads.
+   *
+   * Keyed by `src` and read back only for that same `src`, so moving to the next
+   * photograph falls back to the square hint for one paint rather than briefly drawing
+   * the new image at the previous one's proportions.
+   */
+  const [measured, setMeasured] = useState<{
+    src: string;
+    width: number;
+    height: number;
+  } | null>(null);
   // Pan offset as a fraction of the container size, so transforms and the
   // minimap rect need no pixel measurements at render time.
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -179,6 +200,9 @@ export function ImageLightbox({
     onOpenChange(nextOpen);
   };
 
+  const source = images[activeIndex];
+  const measurement = measured?.src === source ? measured : null;
+
   // Visible region of the image in content-fraction coordinates, for the minimap.
   const viewportRect = {
     left: (0.5 - offset.x / scale - 0.5 / scale) * 100,
@@ -191,7 +215,7 @@ export function ImageLightbox({
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="h-dvh max-h-none w-screen max-w-none sm:max-w-none rounded-none border-0 bg-scrim/95 p-0 gap-0 flex flex-col overflow-hidden"
+        className="fixed inset-0 top-0 left-0 z-50 h-auto w-auto max-h-none max-w-none translate-x-0 translate-y-0 sm:max-w-none flex flex-col gap-0 overflow-hidden rounded-none border-0 bg-scrim/75 p-0 shadow-none"
       >
         <DialogTitle className="sr-only">{alt} — image gallery</DialogTitle>
 
@@ -200,7 +224,7 @@ export function ImageLightbox({
             type="button"
             variant="ghost"
             size="icon-lg"
-            className="absolute top-3 right-3 z-30 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
+            className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-30 bg-scrim/80 hover:bg-hero/90 border border-primary/30 rounded-full backdrop-blur-sm"
             aria-label="Close full view"
           >
             <X className="size-5 text-hero-foreground" />
@@ -209,7 +233,7 @@ export function ImageLightbox({
 
         {/* Minimap: where the visible region sits on the full image */}
         {scale > 1.01 && (
-          <div className="absolute top-16 right-3 z-30 w-20 aspect-[3/4] rounded-md overflow-hidden border border-primary/40 bg-scrim/80 pointer-events-none">
+          <div className="absolute top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] right-3 z-30 w-20 aspect-[3/4] rounded-md overflow-hidden border border-primary/40 bg-scrim/80 pointer-events-none">
             <Image
               src={images[activeIndex]}
               alt=""
@@ -232,7 +256,7 @@ export function ImageLightbox({
         {/* Main image area */}
         <div
           ref={containerRef}
-          className={`relative flex-1 min-h-0 touch-none select-none ${
+          className={`relative flex-1 min-h-0 touch-none select-none px-4 pb-6 pt-[calc(3.5rem+env(safe-area-inset-top))] sm:px-10 sm:pb-8 ${
             scale > 1 ? "cursor-grab" : ""
           }`}
           onTouchStart={handleTouchStart}
@@ -245,21 +269,36 @@ export function ImageLightbox({
           onWheel={handleWheel}
         >
           <div
-            className="relative h-full w-full"
+            className="flex h-full w-full items-center justify-center"
             style={{
               transform: `translate(${offset.x * 100}%, ${
                 offset.y * 100
               }%) scale(${scale})`,
             }}
           >
-            {/* sizes overstates the box on purpose (ADR-0027): this element zooms to
+            {/* Sized from the image rather than filling the viewer, so the element's
+                corners *are* the picture's corners and a radius is visible. Under
+                `fill` this element was the whole area and `object-contain` letterboxed
+                the picture inside it, so a radius rounded transparent space instead.
+
+                sizes overstates the box on purpose (ADR-0027): this element zooms to
                 MAX_ZOOM_SCALE, and a zoom scales the bytes already downloaded rather
                 than fetching sharper ones. Paid only when someone opens the lightbox. */}
             <Image
-              src={images[activeIndex]}
+              src={source}
               alt={`${alt} - Image ${activeIndex + 1}`}
-              fill
-              className="object-contain select-none"
+              width={measurement?.width ?? FALLBACK_EDGE}
+              height={measurement?.height ?? FALLBACK_EDGE}
+              // Both axes auto, so the loaded image's own proportions decide the box and
+              // the hint above only reserves space for the first paint.
+              className="h-auto max-h-full w-auto max-w-full rounded-card object-contain select-none"
+              onLoad={(event) =>
+                setMeasured({
+                  src: source,
+                  width: event.currentTarget.naturalWidth,
+                  height: event.currentTarget.naturalHeight,
+                })
+              }
               sizes={ZOOMABLE_IMAGE_SIZES}
               quality={88}
               draggable={false}
@@ -269,7 +308,7 @@ export function ImageLightbox({
 
         {/* Thumbnail strip */}
         {images.length > 1 && (
-          <div className="flex gap-1.5 overflow-x-auto p-2 justify-start sm:justify-center">
+          <div className="flex shrink-0 gap-1.5 overflow-x-auto px-3 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] justify-start sm:justify-center">
             {images.map((image, index) => (
               <Button
                 key={index}

@@ -10,6 +10,7 @@ import { ProductActions } from "@/components/shared/button-groups/ProductActions
 import { ShareButton } from "@/components/shared/ShareButton";
 import { WishlistButton } from "@/components/wishlist/wishlist-button";
 import { useProductActions } from "@/hooks/product/useProductActions";
+import { ReviewStars } from "@/components/product/review-stars";
 
 export function ProductDetails(product: Product) {
   const {
@@ -47,9 +48,27 @@ export function ProductDetails(product: Product) {
           />
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <span>
-            {product.rating.toFixed(1)} · {product.reviewsCount} reviews
-          </span>
+          {/* Was `0.0 · 0 reviews` on every product in the catalogue, because the
+              columns behind it were never written (product-reviews R6a). Both numbers
+              are derived now, and with none to show the line asks instead of lying. */}
+          {product.reviewsCount > 0 ? (
+            <Link href="#reviews" className="inline-flex items-center gap-1.5">
+              <ReviewStars
+                value={product.rating}
+                count={product.reviewsCount}
+                size="xs"
+              />
+              <span className="underline-offset-2 hover:underline">
+                {product.reviewsCount === 1
+                  ? "1 review"
+                  : `${product.reviewsCount} reviews`}
+              </span>
+            </Link>
+          ) : (
+            <Link href="#reviews" className="underline-offset-2 hover:underline">
+              No reviews yet — write the first
+            </Link>
+          )}
           {/* Who sells this, and the way through to everything else they sell
               (org-storefront R5). Above the fold on a phone: someone deciding whether to
               spend money wants to know who is on the other end, and this is also the

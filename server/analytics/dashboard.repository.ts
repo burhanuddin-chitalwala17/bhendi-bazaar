@@ -195,7 +195,10 @@ export class AdminDashboardRepository {
     const products = await prisma.product.findMany({
       where: { flags: { has: ProductFlag.FEATURED }, ...AVAILABLE },
       take: limit,
-      orderBy: { reviewsCount: "desc" },
+      // Was `reviewsCount: "desc"` — a column nothing ever wrote, so this ordered
+      // twelve featured products by twelve zeroes. Newest first is at least true while
+      // this stays the placeholder its own comment admits to.
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         name: true,

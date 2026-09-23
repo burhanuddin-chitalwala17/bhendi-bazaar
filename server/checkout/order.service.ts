@@ -54,6 +54,17 @@ export class OrderService {
    * Get a single order by ID
    * Validates that the order belongs to the user (if userId provided)
    */
+  /**
+   * Which of these products this user has bought — checkout's answer to catalog's one
+   * question (product-reviews R4, trd.md D8).
+   *
+   * Exported here rather than letting catalog join `OrderItem` itself: analytics is the
+   * documented exception to no-cross-domain-reads, and this is not analytics.
+   */
+  async hasPurchased(userId: string, productIds: string[]): Promise<Set<string>> {
+    return new Set(await orderRepository.purchasedProductIds(userId, productIds));
+  }
+
   async getOrderById(
     orderId: string,
     userId?: string

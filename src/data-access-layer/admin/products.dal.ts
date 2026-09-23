@@ -50,7 +50,6 @@ class ProductsDAL {
         price: product.price,
         salePrice: markdownOf(product, context),
         currency: product.currency,
-        rating: product.rating,
         stock: product.stock,
         lowStockThreshold: product.lowStockThreshold,
         thumbnail: product.thumbnail,

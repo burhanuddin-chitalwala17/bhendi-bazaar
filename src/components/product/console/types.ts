@@ -39,7 +39,6 @@ export interface ProductForTable {
   price: number;
   salePrice?: number;
   currency: string;
-  rating: number;
   stock: number;
   lowStockThreshold: number;
   thumbnail: string;

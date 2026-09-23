@@ -1,6 +1,8 @@
 /**
- * Admin Review Service (Client-side)
- * Handles API calls for review management
+ * The moderation queue's client (product-reviews R15, R16).
+ *
+ * There is no `deleteReview`. A review carries attribution and is never destroyed — the
+ * platform withdraws it and keeps it readable here (ADR-0032).
  */
 
 import type {
@@ -8,18 +10,16 @@ import type {
   ReviewListFilters,
   ReviewListResult,
 } from "@/domain/admin";
+import { readApiError } from "@/lib/api-error";
 
 class AdminReviewService {
-  /**
-   * Get paginated list of reviews
-   */
+  /** One page of the queue, in whichever state the filter asks for. */
   async getReviews(filters: ReviewListFilters = {}): Promise<ReviewListResult> {
     const params = new URLSearchParams();
 
     if (filters.search) params.append("search", filters.search);
     if (filters.productId) params.append("productId", filters.productId);
-    if (filters.isApproved !== undefined)
-      params.append("isApproved", String(filters.isApproved));
+    if (filters.state) params.append("state", filters.state);
     if (filters.isVerified !== undefined)
       params.append("isVerified", String(filters.isVerified));
     if (filters.minRating) params.append("minRating", String(filters.minRating));
@@ -30,22 +30,21 @@ class AdminReviewService {
     if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
 
     const response = await fetch(`/api/admin/reviews?${params.toString()}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch reviews");
-    }
-
+    if (!response.ok) throw await readApiError(response);
     return response.json();
   }
 
+  /** One review in full, for the detail panel. */
+  async getReview(id: string): Promise<AdminReview> {
+    const response = await fetch(`/api/admin/reviews/${id}`);
+    if (!response.ok) throw await readApiError(response);
+    return response.json();
+  }
 
-  /**
-   * Update review (approve/unapprove)
-   */
+  /** Withdraw a review, or restore one. The only state moderation may write. */
   async updateReview(
     id: string,
-    data: { isApproved?: boolean; isVerified?: boolean }
+    data: { withdrawn: boolean },
   ): Promise<AdminReview> {
     const response = await fetch(`/api/admin/reviews/${id}`, {
       method: "PATCH",
@@ -53,28 +52,9 @@ class AdminReviewService {
       body: JSON.stringify(data),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to update review");
-    }
-
+    if (!response.ok) throw await readApiError(response);
     return response.json();
-  }
-
-  /**
-   * Delete review
-   */
-  async deleteReview(id: string): Promise<void> {
-    const response = await fetch(`/api/admin/reviews/${id}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to delete review");
-    }
   }
 }
 
 export const adminReviewApiClient = new AdminReviewService();
-
