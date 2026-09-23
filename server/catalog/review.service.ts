@@ -16,13 +16,12 @@ import {
   type ProductRating,
 } from "@server/catalog/review-rating";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
-import { deleteObject, isOwnObjectUrl } from "@server/catalog/object-store";
+import { deleteObject, isOwnObjectUrl, pathnameFor } from "@server/catalog/object-store";
 import { MAX_REVIEW_PHOTOS } from "@server/catalog/media";
 import type {
   ReviewListFilters,
   ReviewListResult,
   UpdateReviewInput,
-  ReviewStats,
   AdminReview,
   ReviewDto,
   ReviewPageDto,
@@ -38,49 +37,68 @@ export interface ReviewSubmission {
   rating: number;
   title?: string | null;
   comment?: string | null;
-  /** Object URLs the browser already uploaded (review-media R1). */
+  /** Object URLs the browser already uploaded, under this author's own folder (R1). */
   photos?: string[];
-  /** A bare video id, already parsed out of whatever was pasted (ADR-0017). */
-  video?: string | null;
+}
+
+/** Where this reviewer's uploads live, and the only prefix their review may cite. */
+const folderFor = (userId: string) => `reviews/${userId}/`;
+
+/**
+ * Is this URL an object *this* reviewer uploaded (review-media trd.md D8)?
+ *
+ * Bucket membership alone is not ownership, and treating it as such was a hole with
+ * teeth: every product photograph, every other shopper's review photograph and every
+ * org logo is "one of ours". A reviewer could cite a product's own image — hotlinking it
+ * onto their review — and then, because an edit deletes the refs it drops, remove that
+ * image from the store by editing it back out. The presign route already signs only
+ * under `reviews/<caller>/`; this is the same rule enforced on the way back in.
+ *
+ * Here rather than in the Zod schema because it needs `R2_PUBLIC_BASE_URL`, and that
+ * schema is also the form's client-side validation (ADR-0013).
+ */
+function isOwnReviewPhoto(url: string, userId: string): boolean {
+  if (!isOwnObjectUrl(url)) return false;
+  const pathname = pathnameFor(url);
+  return pathname !== null && pathname.startsWith(folderFor(userId));
 }
 
 /**
- * The media rows a submission asks for (review-media trd.md D8).
- *
- * The ownership test is here rather than in the Zod schema because it needs
- * `R2_PUBLIC_BASE_URL`, and that schema is also the form's client-side validation. A
- * photograph on somebody else's host would make the product page a hotlink to something
- * we can neither moderate nor delete.
+ * The media rows a submission asks for, having established the author may cite them.
  */
-function mediaFrom(input: ReviewSubmission): ReviewMediaDto[] {
+function mediaFrom(input: ReviewSubmission, userId: string): ReviewMediaDto[] {
   const photos = input.photos ?? [];
   if (photos.length > MAX_REVIEW_PHOTOS) {
     throw new DomainError(`A review can carry ${MAX_REVIEW_PHOTOS} photos.`);
   }
   for (const photo of photos) {
-    if (!isOwnObjectUrl(photo)) {
-      throw new DomainError("That photo is not one of ours.");
+    if (!isOwnReviewPhoto(photo, userId)) {
+      throw new DomainError("That photo is not one you uploaded.");
     }
   }
-  const media: ReviewMediaDto[] = photos.map((ref) => ({ kind: "IMAGE", ref }));
-  if (input.video) media.push({ kind: "YOUTUBE", ref: input.video });
-  return media;
+  return photos.map((ref) => ({ kind: "IMAGE", ref }));
 }
 
 /**
- * Remove the objects a deleted review held, after its rows are gone.
+ * Remove the objects an edit dropped, once the replacement has committed.
+ *
+ * Scoped to the author's own folder a second time. `mediaFrom` has already refused
+ * anything else on the way in, but this function *deletes*, and a delete that trusts its
+ * caller is one upstream mistake away from removing a product's photograph — which is
+ * exactly the shape of the bug this pair of checks closes.
  *
  * Best-effort and never throws: an object left behind is an unreferenced file, which the
  * catalogue already lives with, while a failure that propagated would leave an author
- * unable to delete their own review (review-media trd.md D6).
+ * unable to edit their own review (review-media trd.md D6).
  */
-async function forgetImages(refs: string[]): Promise<void> {
+async function forgetImages(refs: string[], userId: string): Promise<void> {
   await Promise.all(
     refs.map(async (ref) => {
+      if (!isOwnReviewPhoto(ref, userId)) return;
       try {
         await deleteObject(ref);
       } catch {
-        // The row is already gone; the file is now nobody's. Nothing to tell the user.
+        // The row no longer cites it; the file is now nobody's. Nothing to tell the user.
       }
     })
   );
@@ -94,8 +112,7 @@ const toDto = (row: ReviewRow, viewerId: string | null): ReviewDto => ({
   authorName: row.userName,
   isVerifiedPurchase: row.isVerified,
   createdAt: row.createdAt.toISOString(),
-  // An anonymous row belongs to nobody, so `null === null` must not make it mine.
-  isMine: viewerId !== null && row.userId === viewerId,
+  isMine: row.userId === viewerId,
   media: row.media,
 });
 
@@ -162,7 +179,7 @@ export class ReviewService {
       title: input.title?.trim() || null,
       comment: input.comment?.trim() || null,
       isVerified: purchased.has(productId),
-      media: mediaFrom(input),
+      media: mediaFrom(input, userId),
     });
 
     return toDto(row, userId);
@@ -180,7 +197,7 @@ export class ReviewService {
       rating: input.rating,
       title: input.title?.trim() || null,
       comment: input.comment?.trim() || null,
-      media: mediaFrom(input),
+      media: mediaFrom(input, userId),
     };
     // What the edit drops is deleted from the store afterwards, so an author who removes
     // a photo removes the file too (R12) — read before the replacement, deleted after.
@@ -188,16 +205,20 @@ export class ReviewService {
     const changed = await reviewRepository.updateOwn(id, userId, data);
     if (changed === 0) throw new NotFoundError("Review not found.");
     const kept = new Set(data.media.map((item) => item.ref));
-    await forgetImages(before.filter((ref) => !kept.has(ref)));
+    await forgetImages(before.filter((ref) => !kept.has(ref)), userId);
   }
 
-  /** An author deleting one of their own reviews. Their others are untouched (R9). */
+  /**
+   * An author retracting one of their own reviews. Their others are untouched (R9).
+   *
+   * The buyer's control says *Delete* and what they get is what that word promises: it
+   * leaves the product page, the list, the count and the average at once. The row is
+   * kept for the platform (ADR-0032), and so are its photographs — nothing is
+   * unreferenced, so there is nothing to collect from the store.
+   */
   async remove(id: string, userId: string): Promise<void> {
-    // Collected before the delete, because the cascade takes the rows with it.
-    const refs = await reviewRepository.imageRefsFor(id);
-    const deleted = await reviewRepository.deleteOwn(id, userId);
+    const deleted = await reviewRepository.softDeleteOwn(id, userId);
     if (deleted === 0) throw new NotFoundError("Review not found.");
-    await forgetImages(refs);
   }
 
   /**
@@ -242,7 +263,7 @@ export class ReviewService {
     if (review) {
       await recordAdminAction({
         adminId,
-        action: data.isApproved ? "REVIEW_RESTORED" : "REVIEW_WITHDRAWN",
+        action: data.withdrawn ? "REVIEW_WITHDRAWN" : "REVIEW_RESTORED",
         resource: "Review",
         resourceId: id,
         metadata: {
@@ -256,39 +277,6 @@ export class ReviewService {
     return review;
   }
 
-  /**
-   * Delete review
-   */
-  async deleteReview(id: string, adminId: string): Promise<void> {
-    const review = await reviewRepository.getReviewById(id);
-
-    if (!review) {
-      throw new NotFoundError("Review not found");
-    }
-
-    const refs = await reviewRepository.imageRefsFor(id);
-    await reviewRepository.deleteReview(id);
-    await forgetImages(refs);
-
-    await recordAdminAction({
-      adminId,
-      action: "REVIEW_DELETED",
-      resource: "Review",
-      resourceId: id,
-      metadata: {
-        productName: review.productName,
-        userName: review.userName,
-        rating: review.rating,
-      },
-    });
-  }
-
-  /**
-   * Get review statistics
-   */
-  async getReviewStats(): Promise<ReviewStats> {
-    return await reviewRepository.getReviewStats();
-  }
 }
 
 export const reviewService = new ReviewService();

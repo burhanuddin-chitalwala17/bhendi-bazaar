@@ -6,7 +6,13 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    seed: 'ts-node --compiler-options {"module":"CommonJS"} prisma/seed.ts',
+    /**
+     * `-r tsconfig-paths/register` so the seed can follow the `@server/*` alias the
+     * rest of the repo uses. Without it the seed dies on the first aliased import it
+     * reaches transitively (`org.handle` -> `@server/shared/slug`), which is a runner
+     * gap rather than anything wrong with the code it is loading.
+     */
+    seed: 'ts-node -r tsconfig-paths/register --compiler-options {"module":"CommonJS"} prisma/seed.ts',
   },
   datasource: {
     /**

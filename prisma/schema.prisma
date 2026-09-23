@@ -150,25 +150,44 @@ enum MediaKind {
 }
 
 model Review {
-  id         String   @id @default(cuid())
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  rating     Int // 1-5
-  title      String?
-  comment    String?  @db.Text
-  userName   String // Store name in case user is deleted
-  isVerified Boolean  @default(false) // Verified purchase
-  isApproved Boolean  @default(true) // Admin can moderate reviews
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Required, and Restrict: a review is attribution, so it never loses its author
+  /// and its author can never be deleted out from under it (ADR-0032, ADR-0020).
+  /// Was nullable with SetNull until PR-125, which cost three branches of defensive
+  /// code for a state the platform does not allow.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  rating  Int // 1-5
+  title   String?
+  comment String? @db.Text
+
+  /// Frozen at write time, never joined from `user` (product-reviews R11): a review is
+  /// what someone said at a moment, so renaming an account must not rewrite it.
+  userName   String
+  isVerified Boolean @default(false) // Verified purchase, awarded from order history (R4)
+
+  /// The platform took it down (R15). Null is published; restoring sets it back to null,
+  /// the same shape `Product.archivedAt` uses. Replaced `isApproved`, which said
+  /// "approved" about a review nothing ever approves.
+  withdrawnAt DateTime?
+
+  /// The author retracted it (R9). A separate act from withdrawal, by a different
+  /// person, with a different remedy — one boolean could not tell them apart (ADR-0032).
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   media ReviewMedia[]
 
   /// Serves both the product page's newest-first list and the rating projection
-  /// (product-reviews trd.md D4): one product, published only, newest first.
-  @@index([productId, isApproved, createdAt])
+  /// (product-reviews trd.md D4): one product, visible only, newest first. Both
+  /// state columns are in it because `VISIBLE_REVIEW_WHERE` tests both together.
+  @@index([productId, withdrawnAt, deletedAt, createdAt])
   @@index([userId])
   @@index([createdAt])
 }
@@ -278,7 +297,12 @@ model User {
   mobile          String?
   passwordHash    String?
   platformRole    PlatformRole @default(USER)
+  /// The platform shut them out. Punitive, admin-reversible, and not the same thing as
+  /// `deactivatedAt` below — a banned account and a closed one need different answers.
   isBlocked       Boolean      @default(false)
+  /// The account is retired. A user is never deleted (ADR-0032), so this is what
+  /// "delete my account" does; rows that attribute to them keep pointing at them.
+  deactivatedAt   DateTime?
   lastActiveAt    DateTime     @default(now())
   profile         Profile?
   cart            Cart?

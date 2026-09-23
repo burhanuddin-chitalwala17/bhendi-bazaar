@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 
-import { YouTubeEmbed } from "@/components/product/youtube-embed";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,7 +14,7 @@ import {
 import type { ReviewMediaDto } from "@server/catalog/review.types";
 
 /**
- * A review's own photographs and video (review-media R5, R7, R8).
+ * A review's own photographs (review-media R5a, R7, R8).
  *
  * Plainly the reviewer's: it renders inside their review, it is announced as theirs, and
  * it never reaches the product's gallery, cover or tile — the product's representation
@@ -24,6 +23,10 @@ import type { ReviewMediaDto } from "@server/catalog/review.types";
  * `sizes` is honest at every step (ADR-0026). A thumbnail is a 72px square and the tapped
  * view is a dialog at most a phone wide; neither zooms, so neither may claim
  * `ZOOMABLE_IMAGE_SIZES`, which belongs to the gallery and the lightbox (ADR-0027).
+ *
+ * Photographs only. A review carries no video — see `reviewSubmissionSchema` for why a
+ * link to content the platform cannot see or take down is a cost it accepts from its own
+ * orgs and not from strangers.
  */
 export function ReviewMedia({
   media,
@@ -36,7 +39,6 @@ export function ReviewMedia({
   if (media.length === 0) return null;
 
   const photos = media.filter((item) => item.kind === "IMAGE");
-  const video = media.find((item) => item.kind === "YOUTUBE");
 
   return (
     <div className="space-y-2">
@@ -63,18 +65,6 @@ export function ReviewMedia({
             </li>
           ))}
         </ul>
-      )}
-
-      {video && (
-        <div className="relative aspect-video max-w-sm overflow-hidden rounded-card">
-          {/* Click-to-play against a poster, with the unavailable state a third party's
-              video needs — the same component the product gallery uses (ADR-0017). */}
-          <YouTubeEmbed
-            ref_={video.ref}
-            description={`Video from ${authorName}'s review`}
-            productName={`${authorName}'s review`}
-          />
-        </div>
       )}
 
       <Dialog

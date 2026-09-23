@@ -1,17 +1,16 @@
 # Spec — review-media
 
-- **Status:** ✅ Implemented — PR-124
+- **Status:** ✅ Implemented — PR-124, revised PR-125
 - **Domain:** catalog
 - **Phase:** —
-- **Verified:** 2026-09-22
-- **References:** [../spec.md](../spec.md) (parent) R18, [../trd.md](../trd.md), [product-video](../../product-video/), [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md)
+- **Verified:** 2026-09-23
+- **References:** [../spec.md](../spec.md) (parent) R18, [../trd.md](../trd.md), [product-video](../../product-video/), [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md), [ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
 
 ## What this feature is
 
-A review can show the piece as it arrived: a few photographs taken by the buyer, and
-optionally a link to a video they have already published elsewhere.
+A review can show the piece as it arrived: a few photographs taken by the buyer.
 
 ## Why
 
@@ -25,9 +24,12 @@ supply that the seller structurally cannot. It is also the thing buyers already 
 unprompted on every marketplace they use, which is why arriving at a review form with
 nowhere to put a photo reads as the store not wanting to hear it.
 
-Video is included because [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md)
-decision 4 already settled the terms — a reference to somebody else's host, never a file
-of ours — so allowing it costs a link field, and refusing it would be a rule with no
+Video was included on the same terms [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md)
+decision 4 settled for products, and **withdrawn in PR-125** (R5a). The terms were about
+storage, and storage was never the objection: a link field costs nothing to keep. What it
+costs is moderation, which the original reasoning did not weigh — see R5a. The rest of
+this paragraph is kept as the record of the argument that was made and lost: it would be a
+rule with no
 reason behind it. Photographs are the part that will actually be used.
 
 ## Requirements
@@ -44,17 +46,25 @@ reason behind it. Photographs are the part that will actually be used.
   spend the catalogue's image budget ([ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md),
   [ADR-0028](../../../adr/0028-images-live-in-cloudflare-r2.md)). Four per review is a
   page-weight and storage limit before it is an editorial one.
-- R5 — A review's video is a link to one the reviewer has already published on a host the
-  store supports. No video file is ever uploaded to us. It renders as a still, plays on
-  tap, and says it is unavailable in place if the video has since been deleted or made
-  private ([product-video](../../product-video/) R13).
-- R6 — A review carries at most one video.
+- R5a — **A review carries no video.** Photographs only. Not storage —
+  [ADR-0017](../../../adr/0017-video-is-embedded-not-hosted.md) meant nothing was ever
+  hosted — but moderation: a link to somebody else's host is content the platform cannot
+  see, cannot take down, and which can be changed *after* a moderator has looked at it.
+  That risk is acceptable from an org on its own product page, where the org is known and
+  accountable, and not from any signed-in stranger on someone else's. Supersedes the
+  former R5 and R6. `MediaKind` keeps `YOUTUBE`, so this is a field to re-add rather than
+  a schema to migrate if the judgement changes.
 - R7 — Media is plainly the reviewer's, not the seller's: it sits inside that review,
   attributed to its author, and opens full-size on tap.
 - R8 — A review's media never becomes the product's: not in its gallery, not its cover,
   not its listing tile, not a search result, not a link preview. What represents a
   product stays the selling organisation's choice ([product-video](../../product-video/)
   R3, R12).
+- R9a — A photograph on a review is one that review's author uploaded, established by
+  where it is stored rather than by whether the store happens to hold it. Any object in
+  our bucket passing that test would let a reviewer put a product's own photograph on
+  their review — and then delete it from storage by editing it back out, since an edit
+  removes what it drops.
 - R9 — The reviewer writes no separate description for a photograph. Their review is the
   description, and a photograph is announced as theirs — asking a buyer for alt text is a
   field they will skip or fill with a word that helps nobody.
@@ -63,8 +73,13 @@ reason behind it. Photographs are the part that will actually be used.
 - R11 — Withdrawing the whole review is the only lever. The platform never edits someone
   else's review down to the parts it liked, and there is no removing one photograph from
   a review that is otherwise fine.
-- R12 — A review's photographs live exactly as long as the review does. Deleting the
-  review, by its author or the platform, deletes them.
+- R12 — A review's photographs live exactly as long as the review's own media rows do.
+  Dropping a photograph from a review by editing it out deletes the object. **Retiring a
+  review does not**: neither the author's delete nor the platform's withdrawal destroys
+  anything now, so the rows stay, nothing is unreferenced, and there is nothing to
+  collect ([ADR-0032](../../../adr/0032-records-people-authored-are-retired-not-deleted.md)).
+  Accepted cost, recorded rather than hidden: the object stays reachable at its URL after
+  the review has left every surface. There is no reaping job.
 - R13 — An admin moderating reviews sees the photographs at a size they can be judged at,
   without opening each review in turn. A moderation queue that shows only text cannot
   moderate pictures.
@@ -82,15 +97,17 @@ reason behind it. Photographs are the part that will actually be used.
   what is stored is the reduced version, not the original.
 - A5 — An upload cancelled or failed mid-way leaves the typed review and the other
   photographs intact.
-- A6 — A review's video link renders as a still that plays on tap; one since made
-  private says it is unavailable rather than showing a broken frame, and the photographs
-  around it still render.
+- A6 — A review form offers no video field, and a video link sent directly to the write
+  route is ignored rather than stored (R5a).
+- A6a — A photograph URL naming a product's image, or another shopper's, is refused on
+  both create and edit; editing one out of a review never deletes the object (R9a).
 - A7 — An admin withdraws a review carrying photographs: they leave the product page with
   the words, and both remain readable in the admin portal.
-- A8 — A reviewer deletes one of their two reviews; its photographs go with it and the
-  other review keeps its own.
-- A9 — An admin scanning the review queue can see every attached photograph without
-  opening each review.
+- A8 — A reviewer deletes one of their two reviews: it leaves every buyer-facing surface
+  and the org portal, the other keeps its own photographs, and an admin can still read
+  both.
+- A9 — An admin scanning the review queue sees every attached photograph without opening
+  each review, and can open one to read it in full at a larger size.
 
 ## Hazards this feature must answer
 

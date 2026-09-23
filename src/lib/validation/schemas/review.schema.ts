@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { MAX_REVIEW_PHOTOS, parseYoutubeRef } from "@server/catalog/media";
+import { MAX_REVIEW_PHOTOS } from "@server/catalog/media";
 
 /**
  * What a shopper may send about a review (product-reviews R7, Invariant 4).
@@ -29,12 +29,11 @@ const optionalText = (max: number, tooLong: string) =>
 /**
  * Photographs the browser has already uploaded, by URL (review-media R1, trd.md D8).
  *
- * Shape only. That each URL is an object *we* hold is enforced in the service, not here:
- * the test needs the bucket's public base URL, which is server configuration, and this
- * schema is also the form's client-side validation (ADR-0013). Splitting it that way
- * keeps one schema for both sides and still refuses a picture on somebody else's host —
- * which would otherwise make the product page a hotlink to content we cannot moderate or
- * delete, defeating R10 and R12 with one field.
+ * Shape only. That each URL is an object *this author* uploaded is enforced in the
+ * service, not here: the test needs the bucket's public base URL, which is server
+ * configuration, and this schema is also the form's client-side validation (ADR-0013).
+ * Bucket membership is not ownership — see `isOwnReviewPhoto` for why citing any URL in
+ * our own bucket was a way to delete a product's photograph.
  */
 const photosField = z
   .array(z.string().trim().url("That photo did not upload properly."))
@@ -43,30 +42,19 @@ const photosField = z
   .transform((value) => value ?? []);
 
 /**
- * Whatever was pasted, stored as the bare video id (ADR-0017 decision 2).
+ * A review carries photographs and nothing else (review-media R5a).
  *
- * Accepts the link shapes YouTube hands out, because copying from the app gives a
- * different one than copying from the address bar. No file is ever accepted.
+ * There is deliberately no `video` field. A link to somebody else's host is content the
+ * platform can neither see nor take down, and it can change after moderation has looked
+ * at it — a cost the product gallery accepts from its own orgs and a review should
+ * not accept from strangers. `MediaKind` keeps `YOUTUBE`, so this is a field to add
+ * back rather than a schema to migrate if that judgement changes.
  */
-const videoField = z
-  .string()
-  .trim()
-  .nullish()
-  // Absent, empty and null all mean "no video" — the form sends "" for an untouched
-  // field, and a client resubmitting a review it read back sends the null it was given.
-  .transform((value) => (value ? value : null))
-  .refine(
-    (value) => value === null || parseYoutubeRef(value) !== null,
-    "That does not look like a YouTube link.",
-  )
-  .transform((value) => (value === null ? null : parseYoutubeRef(value)));
-
 export const reviewSubmissionSchema = z.object({
   rating: ratingField,
   title: optionalText(120, "Keep the headline under 120 characters."),
   comment: optionalText(2000, "Keep the review under 2000 characters."),
   photos: photosField,
-  video: videoField,
 });
 
 export type ReviewSubmissionInput = z.infer<typeof reviewSubmissionSchema>;

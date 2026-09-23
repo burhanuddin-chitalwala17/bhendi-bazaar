@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-09-22
+- **Verified:** 2026-09-23
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -160,6 +160,10 @@ Three new shapes, declared once in `server/catalog/review.types.ts`:
 Inbound, one schema serves create and edit symmetrically (`src/lib/validation/schemas/review.schema.ts`): `{ rating, title?, comment?, photos?, video? }` and nothing else. `rating` is required; `photos` are URLs the browser already uploaded and the **service** — not the schema — refuses any that is not ours, because that test needs `R2_PUBLIC_BASE_URL` and this schema is also the form's client-side validation; `video` accepts any YouTube link shape and is stored as the bare id. `isVerified`, `isApproved`, `userName` and `createdAt` have no field on either path (rule 7). Moderation's own schema now carries **`{ isApproved }`** alone — `isVerified` was accepted there and is gone, since the store awards the badge from order history (R4).
 
 Handlers: `GET`/`POST /api/products/[id]/reviews`, `PATCH`/`DELETE /api/reviews/[id]`, and `POST /api/reviews/upload-token` answering `{ uploadUrl, publicUrl }` like the org and admin token routes. The first page of reviews is **not** fetched — it is a server read through `src/data-access-layer/reviews.dal.ts`.
+
+Since PR-125 the review shapes change again, and the inbound one loses a field. **`reviewSubmissionSchema` no longer accepts `video`** — a review carries photographs only, which is a moderation decision rather than a storage one ([review-media](specs/product-reviews/review-media/spec.md) R5a); `ReviewMediaDto.kind` keeps `YOUTUBE` so re-adding it is a field, not a migration. `photos` are still URLs the browser uploaded, but the service now requires each to sit under `reviews/<the author's own id>/` rather than merely inside our bucket: bucket membership is not ownership, and accepting any object in it let a reviewer cite — and, by editing it back out, **delete** — a product's own photograph.
+
+**`AdminReview` replaces `isApproved: boolean` with two nullable timestamps**, `withdrawnAt` (the platform took it down) and `deletedAt` (the author retracted it), and its `userId` is no longer nullable ([ADR-0032](adr/0032-records-people-authored-are-retired-not-deleted.md)). Moderation's inbound schema takes **`{ withdrawn: boolean }`** where it took `{ isApproved }`, and the queue's query string is parsed by `reviewQuerySchema` with **`state: "published" | "withdrawn" | "deleted"`** replacing `isApproved` — `sortBy`/`sortOrder` were `as any` off `searchParams` and reached Prisma's `orderBy` as keys. `GET /api/admin/reviews/[id]` is new and answers one `AdminReview`; **`DELETE /api/admin/reviews/[id]` is gone**, because a review is withdrawn and kept, never destroyed. `ReviewDto` is unchanged — a buyer never sees either timestamp, since a review they cannot see is a review they are not sent.
 
 **One cross-domain call**, not a wire DTO but recorded here for the same reason: `orderService.hasPurchased(userId, productIds)` is how `catalog` asks `checkout` whether to award **Verified purchase**. Catalog never joins `OrderItem` itself.
 

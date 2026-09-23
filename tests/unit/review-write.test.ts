@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const repository = {
   create: vi.fn(),
   updateOwn: vi.fn(),
-  deleteOwn: vi.fn(),
+  softDeleteOwn: vi.fn(),
   listPublished: vi.fn(),
   // The media a review holds, read so the service can delete the files an edit or a
   // delete drops (review-media R12). Empty here: media is tested in its own file.
@@ -110,7 +110,8 @@ describe("writing a review", () => {
 
   it("never passes a publication flag — the column default publishes it (R15)", async () => {
     await reviewService.create("buyer-1", "p1", { rating: 5 });
-    expect(repository.create.mock.calls[0][0]).not.toHaveProperty("isApproved");
+    expect(repository.create.mock.calls[0][0]).not.toHaveProperty("withdrawnAt");
+    expect(repository.create.mock.calls[0][0]).not.toHaveProperty("deletedAt");
     expect(repository.create.mock.calls[0][0]).not.toHaveProperty("isVerified", true);
   });
 
@@ -145,14 +146,14 @@ describe("editing and deleting your own review (R9)", () => {
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it("scopes the delete the same way", async () => {
-    repository.deleteOwn.mockResolvedValue(1);
+  it("scopes the retraction the same way", async () => {
+    repository.softDeleteOwn.mockResolvedValue(1);
     await reviewService.remove("rev-1", "buyer-1");
-    expect(repository.deleteOwn).toHaveBeenCalledWith("rev-1", "buyer-1");
+    expect(repository.softDeleteOwn).toHaveBeenCalledWith("rev-1", "buyer-1");
   });
 
-  it("refuses a delete of somebody else's review", async () => {
-    repository.deleteOwn.mockResolvedValue(0);
+  it("refuses a retraction of somebody else's review", async () => {
+    repository.softDeleteOwn.mockResolvedValue(0);
     await expect(reviewService.remove("rev-1", "stranger")).rejects.toBeInstanceOf(
       NotFoundError,
     );
@@ -171,15 +172,16 @@ describe("the submission schema", () => {
   it("drops every server-owned field a caller sends", () => {
     const parsed = reviewSubmissionSchema.parse({
       rating: 5,
-      isApproved: true,
+      withdrawnAt: null,
+      deletedAt: null,
       isVerified: true,
       userName: "Administrator",
       createdAt: "2020-01-01",
       productId: "another-product",
     });
-    // `photos` and `video` are the review's own fields and always present after a parse;
+    // `photos` is the review's own field and always present after a parse;
     // nothing the caller invented survives.
-    expect(Object.keys(parsed).sort()).toEqual(["photos", "rating", "video"]);
+    expect(Object.keys(parsed).sort()).toEqual(["photos", "rating"]);
   });
 
   it("accepts the same fields on a create and an edit", () => {
@@ -188,14 +190,14 @@ describe("the submission schema", () => {
     const fields = Object.keys(
       reviewSubmissionSchema.parse({ rating: 5, title: "t", comment: "c" }),
     ).sort();
-    expect(fields).toEqual(["comment", "photos", "rating", "title", "video"]);
+    expect(fields).toEqual(["comment", "photos", "rating", "title"]);
   });
 });
 
 describe("the moderation schema", () => {
-  it("changes publication and nothing else (R15)", () => {
-    const parsed = updateReviewSchema.parse({ isApproved: false, isVerified: true });
-    expect(parsed).toEqual({ isApproved: false });
+  it("changes withdrawal and nothing else (R15)", () => {
+    const parsed = updateReviewSchema.parse({ withdrawn: true, isVerified: true });
+    expect(parsed).toEqual({ withdrawn: true });
   });
 
   it("will not take an empty PATCH", () => {

@@ -65,7 +65,6 @@ describe("POST /api/products/[id]/reviews", () => {
     expect(service.create).toHaveBeenCalledWith("buyer-1", "p1", {
       rating: 5,
       photos: [],
-      video: null,
     });
   });
 
@@ -127,7 +126,6 @@ describe("PATCH and DELETE /api/reviews/[id]", () => {
     expect(service.edit).toHaveBeenCalledWith("rev-1", "buyer-1", {
       rating: 2,
       photos: [],
-      video: null,
     });
   });
 

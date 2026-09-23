@@ -42,7 +42,7 @@ export interface ReviewMediaDto {
 /** A published review as the database holds it, before it is shaped for a buyer. */
 export interface ReviewRow {
   id: string;
-  userId: string | null;
+  userId: string;
   userName: string;
   rating: number;
   title: string | null;
@@ -124,13 +124,16 @@ export interface AdminReview {
   id: string;
   productId: string;
   productName?: string;
-  userId: string | null;
+  userId: string;
   userName: string;
   rating: number;
   title: string | null;
   comment: string | null;
   isVerified: boolean;
-  isApproved: boolean;
+  /** Set when the platform took it down (R15); null is published. */
+  withdrawnAt: Date | null;
+  /** Set when the author retracted it (R9). A different act, so a different column. */
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   /**
@@ -142,10 +145,20 @@ export interface AdminReview {
   media: ReviewMediaDto[];
 }
 
+/** What the moderation queue is looking at. Every review is exactly one of these. */
+export type ReviewState = "published" | "withdrawn" | "deleted";
+
+export const REVIEW_STATES: readonly ReviewState[] = [
+  "published",
+  "withdrawn",
+  "deleted",
+] as const;
+
 export interface ReviewListFilters {
   search?: string; // Search by product name, user name, comment
   productId?: string;
-  isApproved?: boolean;
+  /** Absent means every state, including what authors retracted (R16, ADR-0032). */
+  state?: ReviewState;
   isVerified?: boolean;
   minRating?: number;
   maxRating?: number;
@@ -168,14 +181,9 @@ export interface ReviewListResult {
  *
  * `isVerified` was here and is deliberately gone: the store awards the badge from its
  * own order history, so a reviewer cannot claim it and an admin cannot grant it (R4).
+ * An author's own retraction is not reachable from here either — different actor,
+ * different column (ADR-0032).
  */
 export interface UpdateReviewInput {
-  isApproved: boolean;
-}
-
-export interface ReviewStats {
-  totalReviews: number;
-  /** Withdrawn by the platform. Reviews publish on write, so nothing is ever pending. */
-  withdrawnReviews: number;
-  averageRating: number;
+  withdrawn: boolean;
 }

@@ -1,27 +1,31 @@
 /**
- * What a review may carry, and what it may not (review-media R1, R5, R6, R12).
+ * What a review may carry, and what it may not (review-media R1, R5a, R6, R12).
  *
- * The cap and the host test are the whole of this feature's exposure: reviewing needs no
- * purchase and reviews publish immediately, so the fields here are the only thing between
- * an arbitrary account and a picture on an org's product page.
+ * The cap and the ownership test are the whole of this feature's exposure: reviewing
+ * needs no purchase and reviews publish immediately, so the fields here are the only
+ * thing between an arbitrary account and a picture on an org's product page.
  *
- * A photograph on somebody else's host is the case worth pinning. It would make the
- * product page a hotlink to content we can neither moderate nor delete — R10 and R12
- * defeated by one field — which is why the service tests it even though the shared schema
- * cannot (trd.md D8).
+ * The case worth pinning hardest is a photograph that *is* in our bucket but is not the
+ * author's. Bucket membership was once the whole test, which let a reviewer cite a
+ * product's own image — hotlinking it onto their review, and then deleting it from the
+ * store by editing it back out, because an edit removes the refs it drops. Both
+ * directions are pinned below.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 process.env.R2_PUBLIC_BASE_URL ??= "https://images.example.com";
 const own = (name: string) => `${process.env.R2_PUBLIC_BASE_URL}/reviews/u1/${name}`;
 
+const base = process.env.R2_PUBLIC_BASE_URL;
+/** In our bucket, but not this author's: a product image, or another shopper's photo. */
+const someoneElses = (path: string) => `${base}/${path}`;
+
 const repository = {
   create: vi.fn(),
   updateOwn: vi.fn(),
-  deleteOwn: vi.fn(),
+  softDeleteOwn: vi.fn(),
   imageRefsFor: vi.fn(),
   getReviewById: vi.fn(),
-  deleteReview: vi.fn(),
 };
 const deleted: string[] = [];
 
@@ -79,7 +83,7 @@ beforeEach(() => {
   });
   repository.imageRefsFor.mockResolvedValue([]);
   repository.updateOwn.mockResolvedValue(1);
-  repository.deleteOwn.mockResolvedValue(1);
+  repository.softDeleteOwn.mockResolvedValue(1);
 });
 
 describe("the submission schema", () => {
@@ -102,60 +106,38 @@ describe("the submission schema", () => {
     expect(reviewSubmissionSchema.parse({ rating: 5 }).photos).toEqual([]);
   });
 
-  it("stores a pasted video link as the bare id, whichever shape it was", () => {
-    const shapes = [
-      "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      "https://youtu.be/dQw4w9WgXcQ",
-      "https://www.youtube.com/shorts/dQw4w9WgXcQ",
-      "dQw4w9WgXcQ",
-    ];
-    for (const shape of shapes) {
-      expect(reviewSubmissionSchema.parse({ rating: 5, video: shape }).video).toBe(
-        "dQw4w9WgXcQ",
-      );
-    }
-  });
-
-  it("refuses something that is not a video link", () => {
-    expect(
-      reviewSubmissionSchema.safeParse({ rating: 5, video: "https://example.com/clip.mp4" })
-        .success,
-    ).toBe(false);
-  });
-
-  it("has no field for a video file, on any plan (ADR-0017)", () => {
+  it("has no field for a video, of any kind (review-media R5a)", () => {
     const parsed = reviewSubmissionSchema.parse({
       rating: 5,
+      video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       videoFile: "data:video/mp4;base64,AAAA",
     });
+    expect(parsed).not.toHaveProperty("video");
     expect(parsed).not.toHaveProperty("videoFile");
   });
 
-  it("accepts photos and video identically on a create and an edit", () => {
+  it("accepts the same fields on a create and an edit", () => {
     const fields = Object.keys(
       reviewSubmissionSchema.parse({
         rating: 5,
         title: "t",
         comment: "c",
         photos: [own("a.webp")],
-        video: null,
       }),
     ).sort();
-    expect(fields).toEqual(["comment", "photos", "rating", "title", "video"]);
+    expect(fields).toEqual(["comment", "photos", "rating", "title"]);
   });
 });
 
 describe("what the service does with media", () => {
-  it("stores photographs as IMAGE rows and the video as a YOUTUBE row", async () => {
+  it("stores photographs as IMAGE rows", async () => {
     await reviewService.create("u1", "p1", {
       rating: 5,
       photos: [own("a.webp"), own("b.webp")],
-      video: "dQw4w9WgXcQ",
     });
     expect(repository.create.mock.calls[0][0].media).toEqual([
       { kind: "IMAGE", ref: own("a.webp") },
       { kind: "IMAGE", ref: own("b.webp") },
-      { kind: "YOUTUBE", ref: "dQw4w9WgXcQ" },
     ]);
   });
 
@@ -169,6 +151,30 @@ describe("what the service does with media", () => {
     expect(repository.create).not.toHaveBeenCalled();
   });
 
+  it("refuses an object in our bucket that this author did not upload", async () => {
+    // A product's own photograph, and another shopper's review photograph. Both are
+    // "ours"; neither is theirs to cite.
+    for (const ref of [
+      someoneElses("products/prod-1/cover.webp"),
+      someoneElses("reviews/u2/theirs.webp"),
+    ]) {
+      repository.create.mockClear();
+      await expect(
+        reviewService.create("u1", "p1", { rating: 5, photos: [ref] }),
+      ).rejects.toBeInstanceOf(DomainError);
+      expect(repository.create).not.toHaveBeenCalled();
+    }
+  });
+
+  it("refuses a path that only looks like the author's folder", async () => {
+    await expect(
+      reviewService.create("u1", "p1", {
+        rating: 5,
+        photos: [someoneElses("reviews/u10/theirs.webp")],
+      }),
+    ).rejects.toBeInstanceOf(DomainError);
+  });
+
   it("refuses more photographs than the cap even if the schema was bypassed", async () => {
     await expect(
       reviewService.create("u1", "p1", {
@@ -176,19 +182,6 @@ describe("what the service does with media", () => {
         photos: Array.from({ length: MAX_REVIEW_PHOTOS + 1 }, (_, i) => own(`${i}.webp`)),
       }),
     ).rejects.toBeInstanceOf(DomainError);
-  });
-
-  it("deletes the files when the author deletes the review (R12)", async () => {
-    repository.imageRefsFor.mockResolvedValue([own("a.webp"), own("b.webp")]);
-    await reviewService.remove("rev-1", "u1");
-    expect(deleted).toEqual([own("a.webp"), own("b.webp")]);
-  });
-
-  it("keeps the files when the delete was not theirs", async () => {
-    repository.imageRefsFor.mockResolvedValue([own("a.webp")]);
-    repository.deleteOwn.mockResolvedValue(0);
-    await expect(reviewService.remove("rev-1", "stranger")).rejects.toThrow();
-    expect(deleted).toEqual([]);
   });
 
   it("deletes only the files an edit dropped", async () => {
@@ -200,15 +193,27 @@ describe("what the service does with media", () => {
     expect(deleted).toEqual([own("drop.webp")]);
   });
 
-  it("deletes the files when the platform deletes the review", async () => {
-    repository.getReviewById.mockResolvedValue({
-      id: "rev-1",
-      productName: "Rida",
-      userName: "Fatima",
-      rating: 5,
-    });
-    repository.imageRefsFor.mockResolvedValue([own("a.webp")]);
-    await reviewService.deleteReview("rev-1", "admin-1");
-    expect(deleted).toEqual([own("a.webp")]);
+  it("never deletes an object outside the author's own folder", async () => {
+    // The guard that matters: even with a stored ref that should not be there, the
+    // delete path refuses it rather than removing a product's photograph.
+    repository.imageRefsFor.mockResolvedValue([
+      someoneElses("products/prod-1/cover.webp"),
+      own("drop.webp"),
+    ]);
+    await reviewService.edit("rev-1", "u1", { rating: 4, photos: [] });
+    expect(deleted).toEqual([own("drop.webp")]);
+  });
+
+  it("keeps a review's files when its author retracts it (ADR-0032)", async () => {
+    // The row is kept, so its media rows are kept, so nothing is unreferenced.
+    repository.imageRefsFor.mockResolvedValue([own("a.webp"), own("b.webp")]);
+    await reviewService.remove("rev-1", "u1");
+    expect(deleted).toEqual([]);
+  });
+
+  it("refuses a retraction that was not theirs", async () => {
+    repository.softDeleteOwn.mockResolvedValue(0);
+    await expect(reviewService.remove("rev-1", "stranger")).rejects.toThrow();
+    expect(deleted).toEqual([]);
   });
 });

@@ -19,7 +19,6 @@ import {
 } from "@/lib/validation/schemas/review.schema";
 import { reviewApiClient } from "@/services/reviewApiClient";
 import { STAR_VALUES } from "@server/catalog/review.types";
-import { youtubeWatchUrl } from "@server/catalog/media";
 import type { ReviewDto } from "@server/catalog/review.types";
 
 /**
@@ -63,11 +62,6 @@ export function ReviewForm({
       title: editing?.title ?? "",
       comment: editing?.comment ?? "",
       photos: editing?.media.filter((item) => item.kind === "IMAGE").map((item) => item.ref) ?? [],
-      // Back as a watch link, because that is what a reviewer pasted and would recognise;
-      // it is parsed to an id again on the way in (ADR-0017 decision 2).
-      video: editing?.media.find((item) => item.kind === "YOUTUBE")
-        ? youtubeWatchUrl(editing.media.find((item) => item.kind === "YOUTUBE")!.ref)
-        : "",
     },
     submit: async (data) => {
       if (editing) return reviewApiClient.update(editing.id, data);
@@ -76,13 +70,7 @@ export function ReviewForm({
     successMessage: editing ? "Your review is updated" : "Thanks — your review is live",
     onSuccess: () => {
       clearDraft();
-      form.reset({
-        rating: 0,
-        title: "",
-        comment: "",
-        photos: [],
-        video: "",
-      });
+      form.reset({ rating: 0, title: "", comment: "", photos: [] });
       // The list, the count, the bars and the tile all have to move together, so the
       // server re-renders rather than this component splicing a row into its own copy.
       router.refresh();
@@ -116,7 +104,6 @@ export function ReviewForm({
         // The photographs were already uploaded before the sign-in, so their URLs come
         // back with the words rather than needing to be chosen again.
         photos: Array.isArray(draft.photos) ? draft.photos : [],
-        video: draft.video ?? "",
       });
     } catch {
       // A blocked or corrupt store costs the draft, never the form.
@@ -226,22 +213,6 @@ export function ReviewForm({
         {form.formState.errors.photos && (
           <p className="text-3xs text-destructive sm:text-2xs">
             {form.formState.errors.photos.message}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-1">
-        <Label htmlFor="review-video">Video link (optional)</Label>
-        <Input
-          id="review-video"
-          placeholder="A YouTube link, if you filmed it"
-          {...form.register("video")}
-        />
-        {/* ADR-0017: a reference to a video on somebody else's host, never a file of
-            ours — so the field takes a link and the store holds only the id. */}
-        {form.formState.errors.video && (
-          <p className="text-3xs text-destructive sm:text-2xs">
-            {form.formState.errors.video.message}
           </p>
         )}
       </div>

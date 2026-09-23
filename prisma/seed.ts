@@ -106,6 +106,11 @@ async function main() {
   await prisma.cartItem.deleteMany();
   await prisma.cart.deleteMany();
   await prisma.review.deleteMany();
+  // Bidding holds Restrict keys on Product, Org and User, so its rows have to go before
+  // any of the three. Missing entirely until PR-125, which made `db seed` fail outright
+  // on any database that had ever held a bidding event.
+  await prisma.bid.deleteMany(); // before bidding events and users
+  await prisma.biddingEvent.deleteMany(); // before products, orgs and users
   await prisma.productStock.deleteMany(); // before products and org addresses
   await prisma.productMedia.deleteMany();
   await prisma.product.deleteMany();
@@ -415,12 +420,25 @@ async function main() {
         comment: reviewData.comment,
         userName: reviewData.userName,
         isVerified: reviewData.isVerified,
-        isApproved: reviewData.isApproved,
+        withdrawnAt: reviewData.withdrawnAt,
+        deletedAt: reviewData.deletedAt,
         createdAt: reviewData.createdAt,
+        media: {
+          create: reviewData.media.map((ref, position) => ({
+            kind: "IMAGE" as const,
+            ref,
+            position,
+          })),
+        },
       },
     });
+    const state = reviewData.deletedAt
+      ? "deleted by author"
+      : reviewData.withdrawnAt
+        ? "withdrawn"
+        : "published";
     console.log(
-      `  ✓ ${review.userName} - ${review.rating}⭐ on product ${reviewData.productId}`
+      `  ✓ ${review.userName} - ${review.rating}⭐ on ${reviewData.productId} (${state})`
     );
   }
   console.log(`✅ ${seedReviews.length} reviews seeded\n`);

@@ -22,13 +22,40 @@ export const updateOrderStatusSchema = z.object({
 });
 
 /**
- * Moderation changes one thing: whether a review is published (product-reviews R15).
+ * Moderation changes one thing: whether the platform has withdrawn a review (R15).
  *
  * `isVerified` was accepted here and is deliberately gone — the store awards the
  * **Verified purchase** mark from its own order history, so it is not an admin's to
  * grant any more than it is a reviewer's to claim (R4). Required rather than optional,
  * because a PATCH that changes nothing is a request with no meaning.
+ *
+ * An author's retraction has no field here either: it is a different act by a different
+ * person, and an admin restoring a withdrawal must not be able to un-retract someone's
+ * words as a side effect (ADR-0032).
  */
 export const updateReviewSchema = z.object({
-  isApproved: z.boolean(),
+  withdrawn: z.boolean(),
+});
+
+/**
+ * The moderation queue's own query string (Invariant 4).
+ *
+ * Parsed rather than cast: `sortBy` and `sortOrder` reach Prisma's `orderBy` as keys, and
+ * these arrived as `as any` off `searchParams` until PR-125 — `any` at a trust boundary,
+ * which CLAUDE.md calls a defect and which here meant an arbitrary string naming a column.
+ * `.catch()` on the paging and sort fields so a junk value is a default rather than a 400;
+ * a filter the console did not write is not worth an error page.
+ */
+export const reviewQuerySchema = z.object({
+  search: z.string().trim().min(1).max(200).optional(),
+  productId: z.string().trim().min(1).max(64).optional(),
+  state: z.enum(["published", "withdrawn", "deleted"]).optional(),
+  isVerified: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === "true")),
+  minRating: z.coerce.number().int().min(1).max(5).optional(),
+  maxRating: z.coerce.number().int().min(1).max(5).optional(),
+  sortBy: z.enum(["createdAt", "rating"]).catch("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).catch("desc"),
 });
