@@ -23,7 +23,7 @@ Copy is a **read that seeds a form**, not a write. The new-product page accepts 
 `@radix-ui/react-dropdown-menu`. Keyboard navigation, typeahead, focus return and collision-aware positioning are what a hand-rolled menu gets wrong. It belongs to the Radix family already behind `dialog`, `separator`, `slot` and `switch`. See [DEPENDENCIES.md](../../DEPENDENCIES.md).
 
 ## UI approach
-Phone first. The product table's actions column is a single ⋯ icon button opening a right-aligned menu: View, Edit, Copy product, Archive/Restore, separator, Delete… (destructive). The platform's read-only list keeps its lone View link. On the new-product page, "Copy from product" sits in `PageHeader`'s actions slot and wraps below the title at 360px. Its menu lists the org's products (name, SKU), plus "Start blank instead" while copying. A copied form shows an info banner naming the source and what is left to fill.
+Phone first. The product table's actions column is a single ⋯ icon button opening a right-aligned menu: View, Edit, Copy product, Archive/Restore, separator, Delete… (destructive). The platform's read-only list keeps its lone View link. On the new-product page, "Copy from product" sits in `PageHeader`'s actions slot and wraps below the title at 360px. Its menu opens with focus in a search box, sticky above the list, that filters by name or SKU on the client (the list is already on the page, so no request). The menu lists the org's products (name, SKU), plus "Start blank instead" while copying. Radix hands focus to a hovered item and a focused item takes keystrokes for typeahead, so the picker's items decline pointer focus and the item variant carries a hover highlight. ArrowDown steps from the box into the results. A copied form shows an info banner naming the source and what is left to fill.
 
 ## Data model
 None.
@@ -32,7 +32,7 @@ None.
 None. No route handler or DTO in CONTRACTS.md changes. The create request is unchanged.
 
 ## Test plan
-`tests/unit/product-copy.test.ts` covers the copied field set, not-found for another org's or an unknown id, the DAL's blank-form fallback, and picker scoping. `tests/unit/product-visibility.test.ts` census covers the new read.
+`tests/unit/product-copy.test.ts` covers the copied field set, not-found for another org's or an unknown id, the DAL's blank-form fallback, picker scoping, and the search match (name or SKU, case-insensitive, blank matches all). `tests/unit/product-visibility.test.ts` census covers the new read.
 
 ## Delivery (PRs)
 One PR (PR-126). It is behaviour-changing, and only on the org portal.

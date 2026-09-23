@@ -86,3 +86,25 @@ describe("the page's read", () => {
     expect(listCopyOptions).toHaveBeenCalledWith("org-1");
   });
 });
+
+describe("the picker's search", async () => {
+  const { matchesCopyQuery } = await import(
+    "@/components/product/console/productAdd/CopyFromPicker"
+  );
+  const kurta = { id: "p-1", name: "Velvet Embroidered Kurta", sku: "VEK-001" };
+  const attar = { id: "p-2", name: "Royal Oud Attar", sku: null };
+
+  it("matches the name case-insensitively, anywhere in it", () => {
+    expect(matchesCopyQuery(kurta, "EMBROID")).toBe(true);
+    expect(matchesCopyQuery(attar, "oud")).toBe(true);
+  });
+
+  it("matches the SKU, and a product without one never matches on SKU", () => {
+    expect(matchesCopyQuery(kurta, "vek-0")).toBe(true);
+    expect(matchesCopyQuery(attar, "vek")).toBe(false);
+  });
+
+  it("treats a blank or whitespace query as no filter", () => {
+    expect(matchesCopyQuery(attar, "   ")).toBe(true);
+  });
+});

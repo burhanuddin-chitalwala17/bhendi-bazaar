@@ -43,8 +43,12 @@ function DropdownMenuContent({
 }
 
 const ITEM_VARIANTS = {
-  default: "focus:bg-accent focus:text-accent-foreground",
-  destructive: "text-destructive focus:bg-destructive/10 focus:text-destructive",
+  // hover as well as focus: a menu that keeps focus elsewhere (a search box) still
+  // needs the row under the pointer to read as the one a click will choose.
+  default:
+    "focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground",
+  destructive:
+    "text-destructive focus:bg-destructive/10 focus:text-destructive hover:bg-destructive/10",
 } as const;
 
 // min-h-10: a menu item is a touch target, and ADR-0015 puts the floor at 40px.

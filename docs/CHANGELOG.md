@@ -34,7 +34,7 @@ and stock do not, because those make a duplicate rather than a sibling ([copy-pr
 
 Two entry points, one mechanism. The product list's actions column is now a single ⋯ menu
 (View, Edit, Copy product, Archive/Restore, Delete…), and the new-product page has a
-"Copy from product" picker over the org's on-sale products. Both navigate to
+"Copy from product" picker over the org's on-sale products, searchable by name or SKU. Both navigate to
 `/org/<orgId>/products/new?copyFrom=<id>`; the page reads the source on the server through
 `productsService.getCopySource`, which scopes it with the existing `ownedByOrg`, so another
 org's id opens a blank form rather than that product. No route handler, no DTO change.
