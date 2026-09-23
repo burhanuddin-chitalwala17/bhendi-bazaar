@@ -7,6 +7,10 @@ import type { Pagination } from "@/types/shared";
 import { ProductFlag } from "@/types/shared";
 import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-context";
 import { wishlistService } from "@server/wishlist/wishlist.service";
+import { isRenderableImageUrl, renderableMedia } from "@server/catalog/image-paths";
+import { LOGO } from "@/lib/config";
+import { NotFoundError } from "@server/shared/domain-error";
+import type { ProductCopyOption, ProductCopySource } from "@server/catalog/admin.product.types";
 
 /**
  * A product's sale price, read from its markdown offer rather than a column
@@ -53,7 +57,8 @@ class ProductsDAL {
         rating: product.rating,
         stock: product.stock,
         lowStockThreshold: product.lowStockThreshold,
-        thumbnail: product.thumbnail,
+        // A dead store URL would throw in next/image and blank the whole list.
+        thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,
         wishlistCount: saves.get(product.id) ?? 0,
         archivedAt: product.archivedAt,
         createdAt: product.createdAt,
@@ -103,8 +108,10 @@ class ProductsDAL {
       ),
       lowStockThreshold: product.lowStockThreshold,
       weight: product.weight ?? 0,
-      media: product.media ?? [],
-      thumbnail: product.thumbnail,
+      // Dead photos are dropped rather than shown: they cannot render, and saving the
+      // edit form is then what clears them from the row — the re-upload remedy.
+      media: renderableMedia(product.media ?? []),
+      thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,
       sizes: product.sizes,
       colors: product.colors,
       org: {
@@ -123,6 +130,23 @@ class ProductsDAL {
       createdAt: product.createdAt,
     };
   });
+
+  /**
+   * `null` when the id is unknown or another org's: `copyFrom` is a query string anyone
+   * can edit, and a stale link should open a blank form rather than an error page.
+   */
+  getCopySource = cache(async (id: string, orgId: string): Promise<ProductCopySource | null> => {
+    try {
+      return await productsService.getCopySource(id, orgId);
+    } catch (error) {
+      if (error instanceof NotFoundError) return null;
+      throw error;
+    }
+  });
+
+  getCopyOptions = cache(async (orgId: string): Promise<ProductCopyOption[]> =>
+    productsService.listCopyOptions(orgId)
+  );
 }
 
 export const adminProductsDAL = new ProductsDAL();

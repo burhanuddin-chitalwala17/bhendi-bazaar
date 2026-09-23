@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-23
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -23,6 +23,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 
 | Feature | Requirement | Phase | Domain | Status |
 |---|---|---|---|---|
+| [copy-product](copy-product/spec.md) | An org starts a new product from one of its own, carrying the descriptive fields | 6 | catalog | ✅ Implemented — PR-123 |
 | [product-archive](product-archive/spec.md) | An org archives a product and restores it without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
 | [bulk-catalog-upload](bulk-catalog-upload/spec.md) | Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories | 6 | catalog | Implemented |
 | [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
