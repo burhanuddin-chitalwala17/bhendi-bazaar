@@ -317,6 +317,9 @@ export class ReviewRepository {
           createdAt: true,
           userName: true,
           product: { select: { id: true, name: true, slug: true, thumbnail: true } },
+          // An org seeing "3 reviews" with no sight of the photographs posted against
+          // its own product cannot tell what a buyer is actually looking at.
+          media: MEDIA_SELECT,
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 
 import { orgReviewsDAL } from "@/data-access-layer/org/reviews.dal";
+import { ReviewMedia } from "@/components/product/review-media";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,6 +68,14 @@ export default async function OrgReviewsPage({
                         {review.comment}
                       </p>
                     )}
+                    {/* The buyer's own photographs of your piece, in the same viewer a
+                        buyer uses. Read-only like the rest of this page. */}
+                    <div className="mt-2">
+                      <ReviewMedia
+                        media={review.media}
+                        authorName={review.reviewerName}
+                      />
+                    </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <p className="text-xs text-muted-foreground">
                         {review.reviewerName} ·{" "}

@@ -14,8 +14,9 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import Image from "next/image";
 import { Search, CheckCircle, XCircle, Star, RefreshCw } from "lucide-react";
+
+import { ReviewMedia } from "@/components/product/review-media";
 
 import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { useMutation } from "@/hooks/core/useMutation";
@@ -69,30 +70,6 @@ const Stars = ({ rating }: { rating: number }) => (
     ))}
   </span>
 );
-
-const Photos = ({ review, size }: { review: AdminReview; size: number }) => {
-  const photos = review.media.filter((item) => item.kind === "IMAGE");
-  if (photos.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1">
-      {photos.map((item, index) => (
-        <span
-          key={item.ref}
-          className="relative overflow-hidden rounded-card"
-          style={{ width: size, height: size }}
-        >
-          <Image
-            src={item.ref}
-            alt={`Photo ${index + 1} on ${review.userName}'s review`}
-            fill
-            sizes={`${size}px`}
-            className="object-cover"
-          />
-        </span>
-      ))}
-    </div>
-  );
-};
 
 export default function AdminReviewsPage() {
   const [filters, setFilters] = useState<ReviewListFilters>({
@@ -171,7 +148,13 @@ export default function AdminReviewsPage() {
               {review.comment}
             </p>
           )}
-          <Photos review={review} size={48} />
+          {/* The same viewer the buyer gets: a moderator deciding whether a picture
+              may stay has to be able to look at it properly. */}
+          <ReviewMedia
+            media={review.media}
+            authorName={review.userName}
+            size="sm"
+          />
           {/* The clamp above is a preview, not the review. This is how you read it. */}
           <Button
             variant="ghost"
@@ -386,7 +369,11 @@ export default function AdminReviewsPage() {
                   )}
                 </p>
 
-                <Photos review={opened} size={112} />
+                <ReviewMedia
+                  media={opened.media}
+                  authorName={opened.userName}
+                  size="lg"
+                />
 
                 {opened.deletedAt && (
                   <p className="text-xs text-muted-foreground">

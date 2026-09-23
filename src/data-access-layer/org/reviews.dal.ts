@@ -24,6 +24,7 @@ class OrgReviewsDAL {
         isVerified: r.isVerified,
         createdAt: r.createdAt.toISOString(),
         product: r.product,
+        media: r.media,
         // The name frozen onto the review, not the account's name today (R11).
         reviewerName: r.userName,
       })),
