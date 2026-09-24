@@ -62,26 +62,8 @@ export interface CreateOrderWithShipmentsInput {
 
 class OrderService {
   /**
-   * Get all orders for the authenticated user
-   */
-  async getOrders(): Promise<Order[]> {
-    const response = await fetch("/api/orders", {
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error("Unauthorized - please sign in");
-      }
-      throw new Error("Failed to fetch orders");
-    }
-
-    return response.json();
-  }
-
-
-  /**
-   * Lookup order by code (for guest orders)
+   * No `getOrders`. The profile screen was its only caller and reads through `ordersDAL` on
+   * the server now ([ADR-0034]); what is left here is what a browser genuinely initiates.
    */
   async lookupOrderByCode(code: string): Promise<Order> {
     const response = await fetch("/api/orders/lookup", {

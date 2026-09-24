@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { AlertCircle, CheckCircle } from "lucide-react";
@@ -13,27 +13,28 @@ import {
   CategoryStylingFields,
   CategoryImageField,
 } from "@/components/shared/forms/category";
-import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
 import type { AdminCategory, CreateCategoryInput } from "@/domain/admin";
 
 import { PageHeader } from "@/components/shared/page-shell";
 interface CategoryFormProps {
   category?: AdminCategory;
   isEdit?: boolean;
+  /**
+   * Every category, for the parent picker — read by the page on the server rather than
+   * fetched here on mount ([ADR-0034]). The subtree exclusion below is presentation, so it
+   * stays; the read is not.
+   */
+  parentOptions: AdminCategory[];
 }
 
-export function CategoryForm({ category, isEdit = false }: CategoryFormProps) {
+export function CategoryForm({
+  category,
+  isEdit = false,
+  parentOptions: allCategories,
+}: CategoryFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
-
-  const [allCategories, setAllCategories] = useState<AdminCategory[]>([]);
-  useEffect(() => {
-    adminCategoryApiClient
-      .getCategories({ limit: 100 })
-      .then((result) => setAllCategories(result.categories))
-      .catch(() => setAllCategories([])); // options are a convenience; the server re-checks
-  }, []);
 
   // A category cannot be its own parent, nor sit under its own subtree — offering
   // those options would invite the exact write the server refuses (TRD D2).

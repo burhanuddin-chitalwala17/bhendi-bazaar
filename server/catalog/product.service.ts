@@ -111,6 +111,39 @@ export class ProductService {
   }
 
   /**
+   * One org's products, as a picker offers them — id, name and enough to recognise a row.
+   *
+   * On the service rather than reachable through the repository because `bidding` asks it when
+   * an org chooses what to auction, and a domain is reached through its service
+   * ([ADR-0033](../../docs/adr/0033-a-domain-is-reached-through-its-public-surface.md)).
+   */
+  async listForPicker(args: { orgId: string; search?: string; ids?: string[]; limit?: number }) {
+    return await productsRepository.listForPicker(args);
+  }
+
+  /**
+   * What another domain needs to know before listing a product as something to sell: it exists,
+   * it belongs to this org, and it is available. Returns null when any of those fails, so the
+   * caller refuses rather than deciding for itself which of the three went wrong.
+   *
+   * Carries catalog's availability rule, which is the point of asking catalog: an archived
+   * product cannot be auctioned either, because bidding is a way of selling and that row is not
+   * for sale ([ADR-0029](../../docs/adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md)).
+   */
+  async listingFacts(productId: string, orgId: string) {
+    return await productsRepository.listingFacts(productId, orgId);
+  }
+
+  /**
+   * How many of these products belong to someone other than this org — zero is the only
+   * acceptable answer when an org is naming its own products. Asked by `promotions` before it
+   * targets an offer, so one shop cannot discount another's goods.
+   */
+  async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
+    return await productsRepository.countOutsideOrg(productIds, orgId);
+  }
+
+  /**
    * A suggestion row, priced through the one resolver checkout also uses
    * (ADR-0018). Kept pure and separate from the read so the dropdown's price
    * cannot drift from the product page's without a test failing.

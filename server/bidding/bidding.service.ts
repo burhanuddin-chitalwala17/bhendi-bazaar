@@ -14,8 +14,6 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "@server/shared/prisma";
 import { rupeesToPaise } from "@server/shared/money";
-import { productsRepository } from "@server/catalog/product.repository";
-import { orgMemberRepository } from "@server/catalog/org.member.repository";
 import { biddingRepository } from "@server/bidding/bidding.repository";
 import { allowedBidRangePaise, biddingPhase } from "@server/bidding/bidding-window";
 import {
@@ -30,6 +28,9 @@ import type {
   PublicBiddingView,
 } from "@server/bidding/bidding.types";
 import type { BiddingFormInput } from "@/lib/validation/schemas/bidding.schema";
+import { stockService } from "@server/catalog/stock.service";
+import { productService } from "@server/catalog/product.service";
+import { adminOrgService } from "@server/catalog/org.service";
 
 /**
  * No 0/O/1/I/l: a bidding link gets read aloud and retyped, and an ambiguous
@@ -57,7 +58,7 @@ export class BiddingService {
    */
   async pickableProducts(orgId: string, search?: string) {
     const [{ products, total }, locked] = await Promise.all([
-      productsRepository.listForPicker({ orgId, search, limit: 30 }),
+      productService.listForPicker({ orgId, search, limit: 30 }),
       biddingRepository.lockedProducts(new Date()),
     ]);
     const lockedIds = new Set(locked.map((lock) => lock.productId));
@@ -70,9 +71,9 @@ export class BiddingService {
    * bid against (spec R3), and the options one of which the event must name (spec R1a).
    */
   async productFacts(orgId: string, productId: string) {
-    const facts = await productsRepository.listingFacts(productId, orgId);
+    const facts = await productService.listingFacts(productId, orgId);
     if (!facts) throw new NotFoundError("Product not found");
-    const stock = await productsRepository.stockByLocation(productId);
+    const stock = await stockService.stockByLocation(productId);
     return {
       id: facts.id,
       name: facts.name,
@@ -116,9 +117,9 @@ export class BiddingService {
         // count below — or waits behind us and then finds the event already open. The
         // order path takes the same lock when it reserves, which is what makes the two
         // decisions serial rather than merely close together.
-        await productsRepository.lockStock(input.productId, tx);
+        await stockService.lock(input.productId, tx);
 
-        const stock = await productsRepository.stockByLocation(input.productId, tx);
+        const stock = await stockService.stockByLocation(input.productId, tx);
         const unitsOnHand = stock.reduce((sum, row) => sum + row.quantity, 0);
         if (unitsOnHand < 1) {
           throw new DomainError(
@@ -260,11 +261,8 @@ export class BiddingService {
     }
 
     if (params.bidder.kind === "user") {
-      const membership = await orgMemberRepository.findMembership(
-        params.bidder.userId,
-        row.orgId
-      );
-      if (membership) {
+      const ownsTheItem = await adminOrgService.isMember(params.bidder.userId, row.orgId);
+      if (ownsTheItem) {
         throw new ForbiddenError("You cannot bid on your own organisation's item");
       }
     }

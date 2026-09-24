@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-09-23
+- **Verified:** 2026-09-24
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -164,6 +164,14 @@ Handlers: `GET`/`POST /api/products/[id]/reviews`, `PATCH`/`DELETE /api/reviews/
 Since PR-125 the review shapes change again, and the inbound one loses a field. **`reviewSubmissionSchema` no longer accepts `video`** — a review carries photographs only, which is a moderation decision rather than a storage one ([review-media](specs/product-reviews/review-media/spec.md) R5a); `ReviewMediaDto.kind` keeps `YOUTUBE` so re-adding it is a field, not a migration. `photos` are still URLs the browser uploaded, but the service now requires each to sit under `reviews/<the author's own id>/` rather than merely inside our bucket: bucket membership is not ownership, and accepting any object in it let a reviewer cite — and, by editing it back out, **delete** — a product's own photograph.
 
 **`AdminReview` replaces `isApproved: boolean` with two nullable timestamps**, `withdrawnAt` (the platform took it down) and `deletedAt` (the author retracted it), and its `userId` is no longer nullable ([ADR-0032](adr/0032-records-people-authored-are-retired-not-deleted.md)). Moderation's inbound schema takes **`{ withdrawn: boolean }`** where it took `{ isApproved }`, and the queue's query string is parsed by `reviewQuerySchema` with **`state: "published" | "withdrawn" | "deleted"`** replacing `isApproved` — `sortBy`/`sortOrder` were `as any` off `searchParams` and reached Prisma's `orderBy` as keys. `GET /api/admin/reviews/[id]` is new and answers one `AdminReview`; **`DELETE /api/admin/reviews/[id]` is gone**, because a review is withdrawn and kept, never destroyed. `ReviewDto` is unchanged — a buyer never sees either timestamp, since a review they cannot see is a review they are not sent.
+
+Since PR-144 **the moderation queue does not cross the boundary at all.** The page is a server
+component reading through `src/data-access-layer/admin/reviews.dal.ts`, so `GET /api/admin/reviews`
+and `GET /api/admin/reviews/[id]` are gone with the client methods that called them — the detail
+panel renders from the row the list already carries. `PATCH /api/admin/reviews/[id]` is the one
+handler left, and `{ withdrawn: boolean }` is unchanged. The same applies to the users, orders,
+categories and abandoned-carts consoles: their listings are server reads, and the only shapes
+still crossing for those screens are the writes.
 
 **One cross-domain call**, not a wire DTO but recorded here for the same reason: `orderService.hasPurchased(userId, productIds)` is how `catalog` asks `checkout` whether to award **Verified purchase**. Catalog never joins `OrderItem` itself.
 

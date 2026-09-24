@@ -12,7 +12,8 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:rate-limit": "npx tsx tests/rate-limit.manual.ts",
-    "docs:check": "vitest run tests/unit/docs-integrity.test.ts"
+    "docs:check": "vitest run tests/unit/docs-integrity.test.ts",
+    "lint:boundary": "eslint src/app/api server/checkout server/payments src/lib --quiet"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

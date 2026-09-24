@@ -1,160 +1,134 @@
 /**
- * Status Normalizer Utility
- * 
- * Normalizes shipping statuses from different providers to a common format.
- * Each provider has different status codes/names - this maps them to our standard.
+ * One courier vocabulary per table, all mapping into ours
+ * ([shipment-lifecycle](../../../docs/specs/shipment-lifecycle/spec.md)).
+ *
+ * This is the adapter that makes a second and third courier a table rather than a rewrite. Its
+ * one rule: **an unmapped status is reported, never guessed.** The previous version inferred one
+ * from substrings and fell back to `pending`, which is how a lost parcel looks healthy for a
+ * week — a wrong status is worse than an unknown one, because only the unknown one gets looked
+ * at.
  */
 
-import type { ShipmentStatus } from "../domain/shipping.types";
+import { SHIPMENT_STATUS, type ShipmentStatus } from "../domain/shipping.types";
+
+const { PACKING, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERY_FAILED, DELIVERED,
+        RTO_IN_TRANSIT, RTO_DELIVERED, CANCELLED, LOST, DAMAGED } = SHIPMENT_STATUS;
 
 /**
- * Status mapping for different providers
+ * Courier status → ours. Keys are matched case-insensitively and with separators normalised, so
+ * `Out For Delivery`, `out_for_delivery` and `OUT-FOR-DELIVERY` are one entry rather than three.
  */
 const STATUS_MAPPINGS: Record<string, Record<string, ShipmentStatus>> = {
-  // Shiprocket status mappings
   shiprocket: {
-    "pending": "pending",
-    "awaiting_pickup": "created",
-    "pickup_scheduled": "created",
-    "pickup_complete": "picked_up",
-    "in_transit": "in_transit",
-    "out_for_delivery": "out_for_delivery",
-    "delivered": "delivered",
-    "cancelled": "cancelled",
-    "rto": "returned",
-    "lost": "failed",
-    "damaged": "failed",
+    "pending": PACKING,
+    "awaiting pickup": PACKING,
+    "pickup scheduled": PACKING,
+    "pickup complete": PICKED_UP,
+    "pickup generated": PACKING,
+    "in transit": IN_TRANSIT,
+    "shipped": IN_TRANSIT,
+    "out for delivery": OUT_FOR_DELIVERY,
+    "delivered": DELIVERED,
+    // A courier attempt that failed. Shiprocket raises a non-delivery report between attempts;
+    // both mean the same thing to us, and neither is terminal.
+    "undelivered": DELIVERY_FAILED,
+    "ndr": DELIVERY_FAILED,
+    "cancelled": CANCELLED,
+    "canceled": CANCELLED,
+    // The return leg. Shiprocket reports it in detail; we keep only "coming back" and "back",
+    // and the raw wording stays on the row.
+    "rto initiated": RTO_IN_TRANSIT,
+    "rto in transit": RTO_IN_TRANSIT,
+    "rto ofd": RTO_IN_TRANSIT,
+    "rto ndr": RTO_IN_TRANSIT,
+    "rto": RTO_IN_TRANSIT,
+    "rto delivered": RTO_DELIVERED,
+    "rto acknowledged": RTO_DELIVERED,
+    "lost": LOST,
+    "damaged": DAMAGED,
   },
 
-  // Delhivery status mappings
   delhivery: {
-    "Pending": "pending",
-    "Pickup Scheduled": "created",
-    "Manifested": "created",
-    "Dispatched": "picked_up",
-    "In Transit": "in_transit",
-    "Out For Delivery": "out_for_delivery",
-    "Delivered": "delivered",
-    "Cancelled": "cancelled",
-    "RTO": "returned",
-    "Lost": "failed",
+    "pending": PACKING,
+    "manifested": PACKING,
+    "pickup scheduled": PACKING,
+    "not picked": PACKING,
+    "dispatched": PICKED_UP,
+    "in transit": IN_TRANSIT,
+    "out for delivery": OUT_FOR_DELIVERY,
+    "delivered": DELIVERED,
+    "undelivered": DELIVERY_FAILED,
+    "cancelled": CANCELLED,
+    "canceled": CANCELLED,
+    "rto": RTO_IN_TRANSIT,
+    "rto in transit": RTO_IN_TRANSIT,
+    "rto delivered": RTO_DELIVERED,
+    "lost": LOST,
+    "damaged": DAMAGED,
   },
 
-  // BlueDart status mappings
-  bluedart: {
-    "Booked": "created",
-    "Picked Up": "picked_up",
-    "In Transit": "in_transit",
-    "Out for Delivery": "out_for_delivery",
-    "Delivered": "delivered",
-    "Returned": "returned",
-    "Cancelled": "cancelled",
+  // Not connected yet. The table is written because the point of an adapter is that adding a
+  // courier is a table, and an empty one would not prove that.
+  maruti: {
+    "booked": PACKING,
+    "pickup pending": PACKING,
+    "picked up": PICKED_UP,
+    "in transit": IN_TRANSIT,
+    "reached destination": IN_TRANSIT,
+    "out for delivery": OUT_FOR_DELIVERY,
+    "delivered": DELIVERED,
+    "delivery attempted": DELIVERY_FAILED,
+    "cancelled": CANCELLED,
+    "return in transit": RTO_IN_TRANSIT,
+    "returned to origin": RTO_DELIVERED,
+    "lost": LOST,
+    "damaged": DAMAGED,
   },
 };
 
-/**
- * Normalize provider status to common format
- */
-export function normalizeShipmentStatus(
-  provider: string,
-  providerStatus: string
-): ShipmentStatus {
-  const providerMappings = STATUS_MAPPINGS[provider.toLowerCase()];
-  
-  if (!providerMappings) {
-    console.warn(
-      `No status mapping found for provider: ${provider}. Using default.`
-    );
-    return inferStatusFromString(providerStatus);
-  }
+/** `Out For Delivery`, `out_for_delivery` and `OUT-FOR-DELIVERY` are the same key. */
+const normaliseKey = (value: string) => value.trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
 
-  const normalized = providerMappings[providerStatus];
-  
-  if (!normalized) {
-    console.warn(
-      `Unknown status '${providerStatus}' for provider '${provider}'. Inferring from string.`
-    );
-    return inferStatusFromString(providerStatus);
-  }
-
-  return normalized;
+export interface NormalisedStatus {
+  /** Our status, or null when this courier said something nobody has mapped. */
+  status: ShipmentStatus | null;
+  /** The courier's own wording, always kept — it is the evidence for adding a mapping. */
+  raw: string;
+  provider: string;
 }
 
 /**
- * Infer status from string (fallback method)
+ * Map a courier's status to ours, or report that we cannot.
+ *
+ * Returns `null` rather than a guess (spec R8, trd D9): the caller leaves the shipment where it
+ * is, keeps the raw wording, and surfaces it. An unmapped status is a table entry somebody needs
+ * to add, and it can only become one if it is visible.
  */
-function inferStatusFromString(status: string): ShipmentStatus {
-  const lowerStatus = status.toLowerCase();
-
-  if (lowerStatus.includes("deliver")) return "delivered";
-  if (lowerStatus.includes("out for")) return "out_for_delivery";
-  if (lowerStatus.includes("transit")) return "in_transit";
-  if (lowerStatus.includes("pick")) return "picked_up";
-  if (lowerStatus.includes("cancel")) return "cancelled";
-  if (lowerStatus.includes("return") || lowerStatus.includes("rto")) return "returned";
-  if (lowerStatus.includes("fail") || lowerStatus.includes("lost")) return "failed";
-  if (lowerStatus.includes("pending") || lowerStatus.includes("await")) return "pending";
-  
-  // Default to pending if can't determine
-  return "pending";
+export function normalizeShipmentStatus(provider: string, providerStatus: string): NormalisedStatus {
+  const table = STATUS_MAPPINGS[provider.trim().toLowerCase()];
+  return {
+    status: table?.[normaliseKey(providerStatus)] ?? null,
+    raw: providerStatus,
+    provider,
+  };
 }
 
-/**
- * Get human-readable status label
- */
+/** Which couriers this adapter knows, for the admin console and for tests. */
+export const MAPPED_PROVIDERS = Object.keys(STATUS_MAPPINGS);
+
 export function getStatusLabel(status: ShipmentStatus): string {
   const labels: Record<ShipmentStatus, string> = {
-    pending: "Pending",
-    created: "Label Created",
+    packing: "Packing",
     picked_up: "Picked Up",
     in_transit: "In Transit",
     out_for_delivery: "Out for Delivery",
+    delivery_failed: "Delivery Attempted",
     delivered: "Delivered",
-    failed: "Delivery Failed",
-    returned: "Returned to Sender",
+    rto_in_transit: "Returning to Shop",
+    rto_delivered: "Returned to Shop",
     cancelled: "Cancelled",
+    lost: "Lost in Transit",
+    damaged: "Damaged in Transit",
   };
-
-  return labels[status] || status;
+  return labels[status] ?? status;
 }
-
-/**
- * Get status color for UI (Tailwind classes)
- */
-export function getStatusColor(status: ShipmentStatus): string {
-  const colors: Record<ShipmentStatus, string> = {
-    pending: "yellow",
-    created: "blue",
-    picked_up: "blue",
-    in_transit: "purple",
-    out_for_delivery: "indigo",
-    delivered: "green",
-    failed: "red",
-    returned: "orange",
-    cancelled: "gray",
-  };
-
-  return colors[status] || "gray";
-}
-
-/**
- * Check if status is terminal (final state)
- */
-export function isTerminalStatus(status: ShipmentStatus): boolean {
-  return ["delivered", "failed", "returned", "cancelled"].includes(status);
-}
-
-/**
- * Check if status indicates success
- */
-export function isSuccessStatus(status: ShipmentStatus): boolean {
-  return status === "delivered";
-}
-
-/**
- * Check if status indicates failure
- */
-export function isFailureStatus(status: ShipmentStatus): boolean {
-  return ["failed", "cancelled"].includes(status);
-}
-

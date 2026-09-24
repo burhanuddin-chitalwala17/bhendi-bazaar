@@ -16,8 +16,27 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    # A throwaway Postgres so the query-budget suite can run. Every SQL statement is a
+    # billed operation on Prisma Postgres, and tests/integration/db-ops-budget.test.ts is
+    # the only thing that catches a regression in how many a page costs — it was
+    # local-only until 2026-09-24, which meant it caught them only by luck.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bhendi_bazaar_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/bhendi_bazaar_ci"
 
     strategy:
       matrix:
@@ -41,9 +60,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Advisory: 55 `no-explicit-any` remain in admin pages, hooks and the shipping provider
+      # layer. The flag comes off when they do (docs/TESTING.md).
       - name: Run linter
         run: npm run lint
         continue-on-error: true
+
+      # Blocking, and scoped to the trees that are already clean. `any` is a defect at a trust
+      # boundary (CLAUDE.md), route handlers reached zero in PR-128, and a rule that only holds
+      # until someone adds one line is not a rule. The scope grows as trees are cleared; it
+      # never shrinks.
+      - name: Lint the trust boundary
+        run: npm run lint:boundary
+
+      # The budget suite needs the schema; the seed deliberately cannot run here
+      # (Invariant 7), and does not need to — every budget is structural.
+      - name: Apply migrations to the CI database
+        run: npx prisma migrate deploy
 
       # Blocking gates — never add `continue-on-error` here (docs/TESTING.md).
       - name: Run type check

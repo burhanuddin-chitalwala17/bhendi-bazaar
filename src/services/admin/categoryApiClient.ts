@@ -1,50 +1,18 @@
 /**
- * Admin Category Service (Client-side)
- * Handles API calls for category management
+ * What the categories console asks the browser to do.
+ *
+ * There is no `getCategories`: the listing is read by a server component through
+ * `adminCategoriesDAL` ([ADR-0034]). What remains is the form's reads and writes.
  */
 
 import { readApiError } from "@/lib/api-error";
 import type {
   AdminCategory,
-  CategoryListFilters,
-  CategoryListResult,
   CreateCategoryInput,
   UpdateCategoryInput,
 } from "@/domain/admin";
 
 class AdminCategoryService {
-  /**
-   * Get paginated list of categories
-   */
-  async getCategories(
-    filters: CategoryListFilters = {}
-  ): Promise<CategoryListResult> {
-    const params = new URLSearchParams();
-
-    if (filters.search) params.append("search", filters.search);
-    if (filters.page) params.append("page", String(filters.page));
-    if (filters.limit) params.append("limit", String(filters.limit));
-    if (filters.sortBy) params.append("sortBy", filters.sortBy);
-    if (filters.sortOrder) params.append("sortOrder", filters.sortOrder);
-
-    const response = await fetch(`/api/admin/categories?${params.toString()}`);
-
-    if (!response.ok) throw await readApiError(response);
-
-    return response.json();
-  }
-
-  /**
-   * Get single category by ID
-   */
-  async getCategoryById(id: string): Promise<AdminCategory> {
-    const response = await fetch(`/api/admin/categories/${id}`);
-
-    if (!response.ok) throw await readApiError(response);
-
-    return response.json();
-  }
-
   /**
    * Create new category
    */

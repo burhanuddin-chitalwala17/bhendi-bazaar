@@ -9,18 +9,10 @@
  */
 import "dotenv/config";
 import { describe, it, expect } from "vitest";
+import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 
-const dbUrl = process.env.DATABASE_URL ?? "";
-const isLocalDb = (() => {
-  try {
-    const url = new URL(dbUrl);
-    return url.hostname === "localhost" && url.pathname.includes("bhendi_bazaar_dev");
-  } catch {
-    return false;
-  }
-})();
 
-describe.runIf(isLocalDb)("an org promotion survives the round trip", () => {
+describe.runIf(isDisposableDb)("an org promotion survives the round trip", () => {
   it("is created, read back, and reaches the storefront", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { storefrontService } = await import("@server/catalog/storefront.service");
@@ -28,9 +20,8 @@ describe.runIf(isLocalDb)("an org promotion survives the round trip", () => {
       "@/lib/validation/schemas/org-banner.schema"
     );
 
-    const org = await prisma.org.findFirst({ where: { isActive: true } });
-    expect(org, "seeded database has an active org").toBeTruthy();
-    if (!org) return;
+    const { orgId } = await ensureFixtures();
+    const org = await prisma.org.findUniqueOrThrow({ where: { id: orgId } });
 
     // Exactly what the editor posts.
     const body = orgBannerSchema.parse({

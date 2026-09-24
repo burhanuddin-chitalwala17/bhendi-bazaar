@@ -66,7 +66,9 @@ describe("changing a handle", () => {
   it.each([["naaz couture"], ["naaz_couture"], ["Naaz/Couture"], ["-naaz"]])(
     "refuses %s, which could not survive a route param",
     async (bad) => {
-      await expect(storefrontService.changeHandle("org-1", bad)).rejects.toThrow();
+      // The message, not merely "something threw": a bare matcher is satisfied by a TypeError
+      // from the test's own setup, which is the shape a real regression here would also take.
+      await expect(storefrontService.changeHandle("org-1", bad)).rejects.toThrow(/handle/i);
       expect(changeHandle).not.toHaveBeenCalled();
     }
   );

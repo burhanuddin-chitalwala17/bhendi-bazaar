@@ -1,248 +1,67 @@
 /**
- * Admin Orders Page
- * List and manage orders with filters
+ * Admin Orders Page — a server component ([ADR-0034]).
+ *
+ * Filters live in the URL, so the server answers the question the URL asks. Two client leaves
+ * remain: the filter bar, and the status control on each row.
  */
-
-"use client";
-
-import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { useMutation } from "@/hooks/core/useMutation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { DataTable, Column } from "@/components/shared/data-table";
-import { Search, Filter, RefreshCw } from "lucide-react";
-import { adminOrderApiClient } from "@/services/admin/orderApiClient";
-import type { Order } from "@/domain/order";
-import type { OrderListFilters } from "@/domain/admin";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
-import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { adminOrdersDAL } from "@/data-access-layer/admin/orders.dal";
+import { OrdersFilters } from "@/components/order/console/OrdersFilters";
+import { OrdersTable } from "@/components/order/console/OrdersTable";
+import {
+  DEFAULT_PAGE_SIZE,
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 
-export default function AdminOrdersPage() {
-  const [filters, setFilters] = useState<OrderListFilters>({
-    page: 1,
-    limit: DEFAULT_PAGE_SIZE,
+/** The columns this listing may be ordered by — the same set `OrderListFilters` declares. */
+const SORTABLE = ["createdAt", "updatedAt", "total"] as const;
+
+/** A filter value is only honoured if it names a real state (Invariant 4). */
+const oneOf = <T extends string>(set: readonly T[], value?: string) =>
+  set.includes(value as T) ? (value as T) : undefined;
+
+export default async function AdminOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const one = (key: string) => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+
+  const page = resolvePageNumber(one("page"));
+  const limit = resolvePageSize(one("limit"), DEFAULT_PAGE_SIZE);
+
+  const { orders, total, totalPages } = await adminOrdersDAL.list({
+    search: one("search") || undefined,
+    status: oneOf(Object.values(ORDER_STATUS), one("status")),
+    paymentStatus: oneOf(Object.values(PAYMENT_STATUS), one("paymentStatus")),
+    page,
+    limit,
+    sortBy: resolveSortBy(one("sortBy"), SORTABLE, "createdAt"),
+    sortOrder: resolveSortOrder(one("sortOrder")),
   });
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Use new hooks for data fetching
-  const {
-    data,
-    loading: isLoading,
-    error,
-    refetch,
-  } = useAsyncData(() => adminOrderApiClient.getOrders(filters), {
-    refetchDependencies: [filters],
-  });
-
-  // Use mutation for status updates
-  const { mutate: updateStatus, isLoading: isUpdatingStatus } = useMutation(
-    ({ orderId, status }: { orderId: string; status: string }) =>
-      adminOrderApiClient.updateOrderStatus(orderId, { status }),
-    {
-      successMessage: "Order status updated!",
-      onSuccess: () => refetch(),
-    },
-  );
-
-  // Extract data with fallbacks
-  const orders = data?.orders || [];
-  const totalPages = data?.totalPages || 1;
-
-  const handleSearch = () => {
-    setFilters({ ...filters, search: searchTerm, page: 1 });
-  };
-
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
-    await updateStatus({ orderId, status: newStatus });
-  };
-
-  const handleRefresh = () => {
-    toast.info("Refreshing orders...");
-    refetch().then(() => toast.success("Orders refreshed!"));
-  };
-
-  const columns: Column<Order>[] = [
-    {
-      key: "code",
-      label: "Order Code",
-      sortable: true,
-      render: (order) => (
-        <a
-          href={`/admin/orders/${order.id}`}
-          className="font-mono font-semibold text-primary hover:text-primary hover:underline"
-        >
-          {order.code}
-        </a>
-      ),
-    },
-    {
-      key: "userName",
-      label: "Customer",
-      render: (order) => (
-        <div>
-          <p className="font-medium">{order.address?.fullName || "Guest"}</p>
-          <p className="text-sm text-muted-foreground">
-            {order.address?.email}
-          </p>
-        </div>
-      ),
-    },
-    {
-      key: "grandTotal",
-      label: "Total",
-      render: (order) => (
-        <span className="font-semibold">
-          {formatCurrency(order.grandTotal || 0)}
-        </span>
-      ),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (order) => (
-        <Select
-          value={order.status}
-          onChange={(e) => handleStatusChange(order.id, e.target.value)}
-          disabled={isUpdatingStatus}
-          className={cn(
-            "px-3 py-1 rounded-full text-sm font-medium",
-            order.status === "processing" && "bg-warning/15 text-warning",
-            order.status === "packed" && "bg-info/15 text-info",
-            order.status === "shipped" && "bg-accent/40 text-accent-foreground",
-            order.status === "delivered" && "bg-success/15 text-success",
-          )}
-        >
-          <option value="processing">Processing</option>
-          <option value="packed">Packed</option>
-          <option value="shipped">Shipped</option>
-          <option value="delivered">Delivered</option>
-        </Select>
-      ),
-    },
-    {
-      key: "paymentStatus",
-      label: "Payment",
-      render: (order) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            order.paymentStatus === "paid"
-              ? "bg-success/15 text-success"
-              : order.paymentStatus === "failed"
-                ? "bg-destructive/15 text-destructive"
-                : "bg-warning/15 text-warning"
-          }`}
-        >
-          {order.paymentStatus || "pending"}
-        </span>
-      ),
-    },
-    {
-      key: "createdAt",
-      label: "Date",
-      sortable: true,
-      render: (order) => new Date(order.createdAt).toLocaleDateString(),
-    },
-  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <SectionHeader overline="Orders" title="Orders" />
-        </div>
-        <Button
-          variant="default"
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          {isLoading ? "Refreshing..." : "Refresh"}
-        </Button>
+      <SectionHeader overline="Orders" title="Orders" />
+
+      <div className="rounded-lg border border-border bg-card p-4">
+        <OrdersFilters />
       </div>
 
-      {/* Filters */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search by order code, customer..."
-                className="flex-1"
-              />
-              <Button
-                variant="default"
-                onClick={handleSearch}
-                className="flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search
-              </Button>
-            </div>
-          </div>
-
-          <Select
-            value={filters.status || ""}
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                status: e.target.value || undefined,
-                page: 1,
-              })
-            }
-          >
-            <option value="">All Statuses</option>
-            <option value="pending_payment">Pending Payment</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="processing">Processing</option>
-            <option value="packed">Packed</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="partially_fulfilled">Partially Fulfilled</option>
-            <option value="fulfillment_failed">Fulfillment Failed</option>
-          </Select>
-
-          <Select
-            value={filters.paymentStatus || ""}
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                paymentStatus: e.target.value || undefined,
-                page: 1,
-              })
-            }
-          >
-            <option value="">All Payments</option>
-            <option value="pending">Pending</option>
-            <option value="paid">Paid</option>
-            <option value="failed">Failed</option>
-          </Select>
-        </div>
-      </div>
-
-      {/* Orders Table */}
-      <DataTable
-        data={orders as unknown as Order[]}
-        columns={columns}
+      <OrdersTable
+        orders={orders}
+        page={page}
+        pageSize={limit}
         totalPages={totalPages}
-        currentPage={filters.page || 1}
-        totalItems={data?.total || 0}
-        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
-        onPageChange={(page) => setFilters({ ...filters, page })}
-        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
-        onSort={(key, order) =>
-          setFilters({ ...filters, sortBy: key as any, sortOrder: order })
-        }
-        isLoading={isLoading}
+        total={total}
       />
     </div>
   );

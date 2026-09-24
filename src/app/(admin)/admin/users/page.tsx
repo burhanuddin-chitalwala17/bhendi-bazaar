@@ -1,252 +1,66 @@
 /**
- * Admin Users Page
- * Manage users with filters and blocking
+ * Admin Users Page — a server component ([ADR-0034]).
+ *
+ * The filters live in the URL, so the server can answer the question the URL asks. That is
+ * what lets the list be rendered rather than fetched: the previous version was
+ * `"use client"`, held filters in `useState`, and could only reach the database through
+ * `GET /api/admin/users`. Two client leaves remain, for the two things that genuinely need
+ * the browser — typing in the filter bar and blocking a user.
  */
-
-"use client";
-
-import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { useMutation } from "@/hooks/core/useMutation";
-import { useState } from "react";
-import { toast } from "sonner";
-import { DataTable, Column } from "@/components/shared/data-table";
-import { Search, RefreshCw } from "lucide-react";
-import { adminUserApiClient } from "@/services/admin/userApiClient";
-import type { AdminUser, UserListFilters } from "@/domain/admin";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
-import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
-import { formatPhone } from "@server/shared/phone";
-import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
-
 import { PageHeader } from "@/components/shared/page-shell";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-export default function AdminUsersPage() {
-  const [filters, setFilters] = useState<UserListFilters>({
-    page: 1,
-    limit: DEFAULT_PAGE_SIZE,
+import { adminUsersDAL } from "@/data-access-layer/admin/users.dal";
+import { UsersFilters } from "@/components/profile/console/UsersFilters";
+import { UsersTable } from "@/components/profile/console/UsersTable";
+import { platformRoleSchema } from "@/lib/validation/schemas/common.schemas";
+import {
+  DEFAULT_PAGE_SIZE,
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+
+/** The columns this listing may be ordered by — the same set `UserListFilters` declares. */
+const SORTABLE = ["createdAt", "lastActiveAt"] as const;
+
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const one = (key: string) => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+
+  // The query string is untrusted input like any other: every value is resolved against a
+  // closed set rather than cast into one (Invariant 4).
+  const isBlocked = one("isBlocked");
+  const { users, total, totalPages } = await adminUsersDAL.list({
+    search: one("search") || undefined,
+    platformRole: platformRoleSchema.safeParse(one("platformRole")).data,
+    isBlocked: isBlocked === "blocked" ? true : isBlocked === "active" ? false : undefined,
+    page: resolvePageNumber(one("page")),
+    limit: resolvePageSize(one("limit")),
+    sortBy: resolveSortBy(one("sortBy"), SORTABLE, "createdAt"),
+    sortOrder: resolveSortOrder(one("sortOrder")),
   });
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const {
-    data,
-    loading: isLoading,
-    error,
-    refetch,
-  } = useAsyncData(() => adminUserApiClient.getUsers(filters), {
-    refetchDependencies: [filters],
-  });
-  const { users = [], totalPages = 1 } = data || {};
-
-  const { mutate: toggleBlock, isLoading: isTogglingBlock } = useMutation(
-    ({ id, isBlocked }: { id: string; isBlocked: boolean }) =>
-      adminUserApiClient.toggleBlockUser(id, isBlocked),
-    {
-      successMessage: "User status updated successfully!",
-      onSuccess: () => refetch(),
-    },
-  );
-  const { mutate: updateUser, isLoading: updatingUser } = useMutation(
-    ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: { name?: string; platformRole?: string; isBlocked?: boolean };
-    }) => adminUserApiClient.updateUser(id, data),
-    {
-      successMessage: "User updated successfully!",
-      onSuccess: () => refetch(),
-    },
-  );
-
-  const handleRefresh = () => {
-    toast.info("Refreshing users...");
-    refetch().then(() => toast.success("Users refreshed successfully!"));
-  };
-
-  const handleSearch = () => {
-    setFilters({ ...filters, search: searchTerm, page: 1 });
-  };
-
-  const handleToggleBlock = (userId: string, isBlocked: boolean) => {
-    toggleBlock({ id: userId, isBlocked: !isBlocked }).then(() =>
-      toast.success("User status updated successfully!"),
-    );
-  };
-
-  const columns: Column<AdminUser>[] = [
-    {
-      key: "name",
-      label: "User",
-      render: (user) => (
-        <div>
-          <p className="font-medium">{user.name || "N/A"}</p>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
-          {user.mobile && (
-            <p className="text-sm text-muted-foreground">
-              {formatPhone(user.mobile)}
-            </p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "platformRole",
-      label: "Role",
-      render: (user) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            user.platformRole === "ADMIN"
-              ? "bg-accent/40 text-accent-foreground"
-              : "bg-muted text-foreground"
-          }`}
-        >
-          {user.platformRole}
-        </span>
-      ),
-    },
-    {
-      key: "ordersCount",
-      label: "Orders",
-      render: (user) => user.ordersCount || 0,
-    },
-    {
-      key: "totalSpent",
-      label: "Total Spent",
-      render: (user) => formatCurrency(user.totalSpent || 0),
-    },
-    {
-      key: "createdAt",
-      label: "Joined",
-      sortable: true,
-      render: (user) => new Date(user.createdAt).toLocaleDateString(),
-    },
-    {
-      key: "isBlocked",
-      label: "Status",
-      render: (user) => (
-        <Button
-          variant="ghost"
-          onClick={() => handleToggleBlock(user.id, user.isBlocked)}
-          disabled={isTogglingBlock}
-          className={cn(
-            "px-3 py-1 rounded-full text-xs font-medium",
-            user.isBlocked
-              ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
-              : "bg-success/15 text-success hover:bg-success/25",
-            isTogglingBlock && "opacity-50 cursor-not-allowed",
-          )}
-        >
-          {user.isBlocked ? "Blocked" : "Active"}
-        </Button>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Users"
-        description="Manage platform users"
-        actions={
-          <Button
-            variant="ghost"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all",
-              isLoading && "opacity-50 cursor-not-allowed",
-            )}
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-            />
-            {isLoading ? "Refreshing..." : "Refresh"}
-          </Button>
-        }
-      />
+      <PageHeader title="Users" description="Manage platform users" />
 
-      {/* Filters */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search by name, email, mobile..."
-              />
-              <Button
-                variant="default"
-                onClick={handleSearch}
-                className="flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search
-              </Button>
-            </div>
-          </div>
-
-          <Select
-            value={filters.platformRole || ""}
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                platformRole: platformRoleSchema.safeParse(e.target.value).data,
-                page: 1,
-              })
-            }
-          >
-            <option value="">All Roles</option>
-            <option value="USER">User</option>
-            <option value="ADMIN">Admin</option>
-          </Select>
-
-          <Select
-            value={
-              filters.isBlocked === undefined
-                ? ""
-                : filters.isBlocked
-                  ? "blocked"
-                  : "active"
-            }
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                isBlocked:
-                  e.target.value === ""
-                    ? undefined
-                    : e.target.value === "blocked",
-                page: 1,
-              })
-            }
-          >
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="blocked">Blocked</option>
-          </Select>
-        </div>
+      <div className="rounded-lg border border-border bg-card p-4">
+        <UsersFilters />
       </div>
 
-      {/* Users Table */}
-      <DataTable
-        data={users}
-        columns={columns}
+      <UsersTable
+        users={users}
+        page={resolvePageNumber(one("page"))}
+        pageSize={resolvePageSize(one("limit"), DEFAULT_PAGE_SIZE)}
         totalPages={totalPages}
-        currentPage={filters.page || 1}
-        totalItems={data?.total || 0}
-        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
-        onPageChange={(page) => setFilters({ ...filters, page })}
-        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
-        onSort={(key, order) =>
-          setFilters({ ...filters, sortBy: key as any, sortOrder: order })
-        }
-        isLoading={isLoading}
+        total={total}
       />
     </div>
   );

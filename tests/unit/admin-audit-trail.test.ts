@@ -157,6 +157,12 @@ function sources(dir: string): string[] {
 }
 
 describe("the convention holds across every domain", () => {
+  it("the scan reaches the files it claims to check", () => {
+    // An empty offender list and an empty scan look identical from the outside.
+    expect(sources("server").length).toBeGreaterThan(50);
+    expect(sources("server").some((f) => f.includes("audit/audit."))).toBe(true);
+  });
+
   it("no service writes the trail directly — that is how the decision gets lost", () => {
     const offenders = sources("server")
       .filter((f) => !f.includes("audit/audit."))

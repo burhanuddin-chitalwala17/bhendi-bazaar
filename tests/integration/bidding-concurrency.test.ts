@@ -13,31 +13,16 @@
  */
 import "dotenv/config";
 import { afterAll, describe, expect, it } from "vitest";
+import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 
-const dbUrl = process.env.DATABASE_URL ?? "";
-const isLocalDb = (() => {
-  try {
-    const url = new URL(dbUrl);
-    return (
-      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) &&
-      url.pathname === "/bhendi_bazaar_dev"
-    );
-  } catch {
-    return false;
-  }
-})();
 
 const created = { events: [] as string[], products: [] as string[] };
 
-describe.skipIf(!isLocalDb)("bidding concurrency (local db)", () => {
-  /** A throwaway product with one unit, hung off whatever the seed already has. */
+describe.skipIf(!isDisposableDb)("bidding concurrency (local db)", () => {
+  /** A throwaway product with one unit, hung off the shared fixture world. */
   async function makeProduct() {
     const { prisma } = await import("@server/shared/prisma");
-    const location = await prisma.orgAddress.findFirst({
-      select: { id: true, orgId: true },
-    });
-    const category = await prisma.category.findFirst({ select: { id: true } });
-    if (!location || !category) throw new Error("Seed the local database first");
+    const { orgId, orgAddressId, categoryId } = await ensureFixtures();
 
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const product = await prisma.product.create({
@@ -46,15 +31,15 @@ describe.skipIf(!isLocalDb)("bidding concurrency (local db)", () => {
         name: `Bidding test ${suffix}`,
         description: "Created by tests/integration/bidding-concurrency.test.ts",
         price: 200_000,
-        categoryId: category.id,
-        orgId: location.orgId,
+        categoryId,
+        orgId,
         thumbnail: "https://placehold.co/600x600",
-        stockLocations: { create: { orgAddressId: location.id, quantity: 1 } },
+        stockLocations: { create: { orgAddressId, quantity: 1 } },
       },
       select: { id: true, orgId: true },
     });
     created.products.push(product.id);
-    return { ...product, orgAddressId: location.id };
+    return { ...product, orgAddressId };
   }
 
   async function makeEvent(
@@ -63,15 +48,14 @@ describe.skipIf(!isLocalDb)("bidding concurrency (local db)", () => {
     window: { startAt: Date; endAt: Date }
   ) {
     const { prisma } = await import("@server/shared/prisma");
-    const admin = await prisma.user.findFirst({ select: { id: true } });
-    if (!admin) throw new Error("Seed the local database first");
+    const { userId: adminId } = await ensureFixtures();
 
     const event = await prisma.biddingEvent.create({
       data: {
         slug: `t-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         productId,
         orgId,
-        createdById: admin.id,
+        createdById: adminId,
         startAt: window.startAt,
         endAt: window.endAt,
         startingBidPaise: 200_000,
@@ -287,7 +271,7 @@ describe.skipIf(!isLocalDb)("bidding concurrency (local db)", () => {
 });
 
 afterAll(async () => {
-  if (!isLocalDb) return;
+  if (!isDisposableDb) return;
   const { prisma } = await import("@server/shared/prisma");
   // FK-safe order: bids restrict their event, and events restrict their product.
   if (created.events.length > 0) {

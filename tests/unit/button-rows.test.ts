@@ -142,6 +142,13 @@ const isRowShaped = (body: string) =>
   2;
 
 describe("a Button shaped as a row says so", () => {
+  it("the scan reaches the files it claims to check", () => {
+    // Every assertion below is "this list of offenders is empty". A scan that finds no files
+    // produces an empty list too, and passes — which is how a broken glob becomes a green
+    // guard. The floor makes the two outcomes distinguishable.
+    expect(ROOTS.flatMap((root) => tsxFiles(root)).length).toBeGreaterThan(100);
+  });
+
   const offenders: string[] = [];
 
   for (const root of ROOTS) {

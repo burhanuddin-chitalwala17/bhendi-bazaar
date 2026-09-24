@@ -32,6 +32,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [product-weight-and-rates](product-weight-and-rates/) | A product's weight is recorded and prices its shipping | 3 | catalog, shipping | 📝 Draft |
 | [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | 📝 Draft — **parent of 9 subfeatures** |
 | [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |
+| [shipment-lifecycle](shipment-lifecycle/) | One status vocabulary every courier maps into, and what each state means for stock, refunds and settlement | 3 | shipping, checkout | 📝 Draft — **one open question** |
 | [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time | 4 | cross-domain | 📝 Draft |
 | [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
 | [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions, catalog, checkout | 🔨 In progress — PR-67 |

@@ -15,19 +15,9 @@
 import "dotenv/config";
 import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import type { CreateOrderWithShipmentsInput } from "@server/checkout/order.types";
+import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
+import { OutOfStockError } from "@server/shared/domain-error";
 
-const dbUrl = process.env.DATABASE_URL ?? "";
-const isLocalDb = (() => {
-  try {
-    const url = new URL(dbUrl);
-    return (
-      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) &&
-      url.pathname === "/bhendi_bazaar_dev"
-    );
-  } catch {
-    return false;
-  }
-})();
 
 const TEST_MOBILE = "9000000031";
 
@@ -43,7 +33,7 @@ const address = {
   country: "India",
 };
 
-describe.skipIf(!isLocalDb)("createOrderWithShipments (local seeded db)", () => {
+describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", () => {
   let orderService: typeof import("@server/checkout/order.service").orderService;
   let prisma: typeof import("@server/shared/prisma").prisma;
   const createdOrderIds: string[] = [];
@@ -77,12 +67,15 @@ describe.skipIf(!isLocalDb)("createOrderWithShipments (local seeded db)", () => 
    * were free of a promotion. Owning the fixtures also means the test can run anywhere
    * there is a schema, which is what it would need to run in CI.
    */
-  async function buildInput(): Promise<{
+  async function buildInput(
+    options: { specs?: Array<{ suffix: string; price: number; quantity: number }>; stock?: number } = {},
+  ): Promise<{
     input: CreateOrderWithShipmentsInput;
     lines: Array<{ productId: string; quantity: number }>;
   }> {
-    const location = await prisma.orgAddress.findFirstOrThrow({
-      where: { isActive: true },
+    const fixtures = await ensureFixtures();
+    const location = await prisma.orgAddress.findUniqueOrThrow({
+      where: { id: fixtures.orgAddressId },
       select: {
         id: true,
         orgId: true,
@@ -90,14 +83,15 @@ describe.skipIf(!isLocalDb)("createOrderWithShipments (local seeded db)", () => 
         address: { select: { pincode: true, city: true, state: true } },
       },
     });
-    const category = await prisma.category.findFirstOrThrow({ select: { id: true } });
-    const provider = await prisma.shippingProvider.findFirstOrThrow({
+    const category = { id: fixtures.categoryId };
+    const provider = await prisma.shippingProvider.findUniqueOrThrow({
+      where: { id: fixtures.shippingProviderId },
       select: { id: true, name: true },
     });
 
     // Distinct prices and quantities: a mapping that pairs line A's row with line B's
     // would be invisible if every line carried the same numbers.
-    const specs = [
+    const specs = options.specs ?? [
       { suffix: "a", price: 11_100, quantity: 1 },
       { suffix: "b", price: 22_200, quantity: 2 },
       { suffix: "c", price: 33_300, quantity: 3 },
@@ -115,7 +109,7 @@ describe.skipIf(!isLocalDb)("createOrderWithShipments (local seeded db)", () => 
           weight: 0.5,
           categoryId: category.id,
           orgId: location.orgId,
-          stockLocations: { create: { orgAddressId: location.id, quantity: 100 } },
+          stockLocations: { create: { orgAddressId: location.id, quantity: options.stock ?? 100 } },
         },
         select: { id: true },
       });
@@ -271,5 +265,44 @@ describe.skipIf(!isLocalDb)("createOrderWithShipments (local seeded db)", () => 
     expect(items).toBe(3);
     expect(shipments).toBe(1);
     expect(shipmentItems).toBe(3);
+  });
+  it("two checkouts racing for the last unit: exactly one wins (Invariant 6)", async () => {
+    // The oversell ADR-0007 exists to stop. Both orders are built against the same product
+    // stocked at one, then submitted together: the guarded `updateMany` is what decides, so
+    // the loser gets `count === 0` and rolls back rather than shipping a unit that is gone.
+    //
+    // A sequential version of this passes with the condition deleted, which is how the race
+    // survived unguarded — the two must overlap. `tests/unit/conditional-stock.test.ts` holds
+    // the same rule at the level of the write's shape.
+    const { input, lines } = await buildInput({
+      specs: [{ suffix: `race-${Date.now()}`, price: 15_000, quantity: 1 }],
+      stock: 1,
+    });
+    const productId = lines[0].productId;
+
+    // One product, one unit, two checkouts — the same input submitted twice, because two
+    // fixtures would be two products and no race at all.
+    const results = await Promise.allSettled([
+      createOrder(structuredClone(input)),
+      createOrder(structuredClone(input)),
+    ]);
+
+    const won = results.filter((r) => r.status === "fulfilled");
+    const lost = results.filter((r) => r.status === "rejected");
+
+    expect(
+      won.length,
+      `Both checkouts succeeded for one unit — that is the oversell. ${JSON.stringify(
+        results.map((r) => r.status),
+      )}`,
+    ).toBe(1);
+    expect(lost.length).toBe(1);
+    expect((lost[0] as PromiseRejectedResult).reason).toBeInstanceOf(OutOfStockError);
+
+    const left = await prisma.productStock.findFirstOrThrow({
+      where: { productId },
+      select: { quantity: true },
+    });
+    expect(left.quantity, "the winner took the unit and the loser took nothing").toBe(0);
   });
 });

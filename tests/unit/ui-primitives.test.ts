@@ -55,6 +55,13 @@ describe("one components home", () => {
 });
 
 describe("controls go through the primitives", () => {
+  it("the scan reaches the files it claims to check", () => {
+    // Every assertion below is "this list of offenders is empty". A scan that finds no files
+    // produces an empty list too, and passes — which is how a broken glob becomes a green
+    // guard. The floor makes the two outcomes distinguishable.
+    expect(consumers.length).toBeGreaterThan(100);
+  });
+
   it("has no raw <button>", () => {
     const offenders = consumers.filter((file) =>
       /<button\b/.test(readFileSync(file, "utf8"))

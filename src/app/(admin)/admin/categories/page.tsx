@@ -1,227 +1,48 @@
 /**
- * Admin Categories Page
- * Manage categories with CRUD operations
+ * Admin Categories — a server component ([ADR-0034]).
+ *
+ * The search lives in the URL so the server can answer it. Client leaves: the search box, and
+ * the table with its reorder and delete controls.
  */
-
-"use client";
-
-import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { useMutation } from "@/hooks/core/useMutation";
-import { useState } from "react";
-import { DataTable, Column } from "@/components/shared/data-table";
-import {
-  Search,
-  Plus,
-  Upload,
-  Edit,
-  Trash2,
-  MoveUp,
-  MoveDown,
-} from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
-import type { AdminCategory, CategoryListFilters } from "@/domain/admin";
-import { cn } from "@/lib/utils";
-import { CATEGORY_ACCENTS } from "@/lib/category-accent";
-import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
+import { Plus, Upload } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-shell";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-export default function AdminCategoriesPage() {
-  const [filters, setFilters] = useState<CategoryListFilters>({
-    page: 1,
-    limit: DEFAULT_PAGE_SIZE,
-    sortBy: "order",
-    sortOrder: "asc",
+import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { CategoriesFilters } from "@/components/category/console/CategoriesFilters";
+import { CategoriesTable } from "@/components/category/console/CategoriesTable";
+import {
+  DEFAULT_PAGE_SIZE,
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+
+/** The columns this listing may be ordered by — the same set `CategoryListFilters` declares. */
+const SORTABLE = ["order", "name", "createdAt"] as const;
+
+export default async function AdminCategoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const one = (key: string) => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+
+  const page = resolvePageNumber(one("page"));
+  const limit = resolvePageSize(one("limit"), DEFAULT_PAGE_SIZE);
+
+  const { categories, total, totalPages } = await adminCategoriesDAL.list({
+    search: one("search") || undefined,
+    page,
+    limit,
+    sortBy: resolveSortBy(one("sortBy"), SORTABLE, "order"),
+    sortOrder: resolveSortOrder(one("sortOrder"), "asc"),
   });
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Use new hooks
-  const {
-    data,
-    loading: isLoading,
-    error,
-    refetch,
-  } = useAsyncData(() => adminCategoryApiClient.getCategories(filters), {
-    refetchDependencies: [filters],
-  });
-
-  // Mutations
-  const { mutate: deleteCategory, isLoading: isDeleting } = useMutation(
-    adminCategoryApiClient.deleteCategory,
-    {
-      successMessage: "Category deleted successfully!",
-      onSuccess: () => refetch(),
-    },
-  );
-
-  const { mutate: updateCategory, isLoading: isUpdating } = useMutation(
-    ({ id, order }: { id: string; order: number }) =>
-      adminCategoryApiClient.updateCategory(id, { order }),
-    {
-      successMessage: "Category reordered successfully!",
-      onSuccess: () => refetch(),
-    },
-  );
-
-  // Extract data
-  const categories = data?.categories || [];
-  const totalPages = data?.totalPages || 1;
-
-  const handleSearch = () => {
-    setFilters({ ...filters, search: searchTerm, page: 1 });
-  };
-
-  const handleDelete = (categoryId: string, categoryName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${categoryName}"? This will also affect products in this category.`,
-      )
-    ) {
-      return;
-    }
-    // useMutation toasts both outcomes and rethrows; catching keeps a failed delete
-    // from also becoming an unhandled rejection.
-    void deleteCategory(categoryId).catch(() => {});
-  };
-
-  const handleReorder = (
-    categoryId: string,
-    currentOrder: number,
-    direction: "up" | "down",
-  ) => {
-    const newOrder = direction === "up" ? currentOrder - 1 : currentOrder + 1;
-    void updateCategory({ id: categoryId, order: newOrder }).catch(() => {});
-  };
-
-  const columns: Column<AdminCategory>[] = [
-    {
-      key: "order",
-      label: "Order",
-      sortable: true,
-      render: (category) => (
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm text-muted-foreground">
-            {category.order}
-          </span>
-          <div className="flex flex-col gap-1">
-            <Button
-              variant="ghost"
-              onClick={() => handleReorder(category.id, category.order, "up")}
-              disabled={category.order === 0 || isUpdating}
-              className={cn(
-                "p-0.5 text-muted-foreground/70 hover:text-foreground",
-                isUpdating && "opacity-50 cursor-not-allowed",
-              )}
-              title="Move up"
-            >
-              <MoveUp className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => handleReorder(category.id, category.order, "down")}
-              disabled={isUpdating}
-              className={cn(
-                "p-0.5 text-muted-foreground/70 hover:text-foreground",
-                isUpdating && "opacity-50 cursor-not-allowed",
-              )}
-              title="Move down"
-            >
-              <MoveDown className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "name",
-      label: "Category",
-      sortable: true,
-      render: (category) => (
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-12 h-12 rounded-lg ${CATEGORY_ACCENTS[category.accent].swatch} border border-border flex items-center justify-center`}
-          >
-            <span className="text-xs font-medium text-foreground/80">
-              {category.name.substring(0, 2).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <p className="font-medium">{category.name}</p>
-            <p className="text-sm text-muted-foreground">/{category.slug}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "description",
-      label: "Description",
-      render: (category) => (
-        <p className="text-sm text-muted-foreground max-w-md truncate">
-          {category.description}
-        </p>
-      ),
-    },
-    {
-      key: "productsCount",
-      label: "Products",
-      render: (category) => (
-        <span className="font-semibold text-foreground">
-          {category.productsCount || 0}
-        </span>
-      ),
-    },
-    {
-      key: "heroImage",
-      label: "Hero Image",
-      render: (category) => (
-        <Image
-          src={category.heroImage}
-          alt={category.name}
-          width={64}
-          height={40}
-          sizes="64px"
-          className="w-16 h-10 object-cover rounded"
-        />
-      ),
-    },
-    {
-      key: "createdAt",
-      label: "Created",
-      sortable: true,
-      render: (category) => new Date(category.createdAt).toLocaleDateString(),
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (category) => (
-        <div className="flex items-center gap-2">
-          <Link
-            prefetch={false}
-            href={`/admin/categories/${category.id}/edit`}
-            className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
-            title="Edit category"
-          >
-            <Edit className="w-4 h-4" />
-          </Link>
-          <Button
-            variant="ghost"
-            onClick={() => handleDelete(category.id, category.name)}
-            disabled={isDeleting}
-            className={cn(
-              "p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors",
-              isDeleting && "opacity-50 cursor-not-allowed",
-            )}
-            title="Delete category"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -233,63 +54,33 @@ export default function AdminCategoriesPage() {
             <Link
               prefetch={false}
               href="/admin/categories/bulk"
-              className="px-4 py-2 border border-border rounded-lg hover:bg-muted flex items-center gap-2"
+              className="flex items-center gap-2 rounded-field border border-border px-4 py-2 hover:bg-muted"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="size-4" />
               <span className="hidden sm:inline">Bulk upload</span>
             </Link>
             <Link
               prefetch={false}
               href="/admin/categories/new"
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2"
+              className="flex items-center gap-2 rounded-field bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="size-4" />
               Add Category
             </Link>
           </>
         }
       />
 
-      {/* Search */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="w-full min-w-0 grow sm:w-auto">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search categories..."
-                className="flex-1"
-              />
-              <Button
-                variant="default"
-                onClick={handleSearch}
-                className="flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search
-              </Button>
-            </div>
-          </div>
-        </div>
+      <div className="rounded-card border border-border bg-card p-4">
+        <CategoriesFilters />
       </div>
 
-      {/* Categories Table */}
-      <DataTable
-        data={categories}
-        columns={columns}
+      <CategoriesTable
+        categories={categories}
+        page={page}
+        pageSize={limit}
         totalPages={totalPages}
-        currentPage={filters.page || 1}
-        totalItems={data?.total || 0}
-        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
-        onPageChange={(page) => setFilters({ ...filters, page })}
-        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
-        onSort={(key, order) =>
-          setFilters({ ...filters, sortBy: key as any, sortOrder: order })
-        }
-        isLoading={isLoading}
+        total={total}
       />
     </div>
   );

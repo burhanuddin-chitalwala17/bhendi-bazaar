@@ -1,46 +1,31 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { orderApiClient } from "@/services/orderApiClient";
-import { formatCurrency } from "@/lib/format";
+import type { Order } from "@/domain/order";
 import { Input } from "@/components/ui/input";
-import { LoadingSpinner } from "../shared/states/LoadingSpinner";
-import { ErrorState } from "../shared/states/ErrorState";
 import Link from "next/link";
 import { ChevronRight, Package } from "lucide-react";
 import { EmptyState } from "../shared/states/EmptyState";
 import { SectionHeader } from "../shared/SectionHeader";
 import { PriceDisplay } from "../shared/PriceDisplay";
 
-export function OrdersClient() {
+/**
+ * The search box, and the list it filters. Orders arrive as props from the server
+ * component above — this client component exists for the filter and nothing else, so
+ * there is no fetch, no loading state and no error state to render ([ADR-0034]).
+ */
+export function OrdersClient({ orders }: { orders: Order[] }) {
   const [query, setQuery] = useState("");
-  const {
-    data: orders,
-    loading: isLoading,
-    error,
-    refetch,
-  } = useAsyncData(() => orderApiClient.getOrders(), {
-    refetchDependencies: [],
-  });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return orders;
-    return orders?.filter(
+    return orders.filter(
       (order) =>
         order.code.toLowerCase().includes(q) ||
         order.address.fullName.toLowerCase().includes(q),
     );
   }, [orders, query]);
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
-    return <ErrorState message={error} retry={refetch} />;
-  }
 
   return (
     <div className="space-y-4">
@@ -58,7 +43,7 @@ export function OrdersClient() {
           />
         </div>
       </div>
-      {filtered?.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState
           icon={Package}
           title="No Orders Yet"
@@ -70,7 +55,7 @@ export function OrdersClient() {
         />
       ) : (
         <div className="space-y-3">
-          {filtered?.map((order) => {
+          {filtered.map((order) => {
             const totalItems = order.shipments.reduce(
               (sum, shipment) => sum + shipment.items.length,
               0,

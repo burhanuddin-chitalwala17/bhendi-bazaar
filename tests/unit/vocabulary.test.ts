@@ -29,6 +29,13 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("retired vocabulary does not come back", () => {
+  it("the scan reaches the files it claims to check", () => {
+    // Every assertion below is "this list of offenders is empty". A scan that finds no files
+    // produces an empty list too, and passes — which is how a broken glob becomes a green
+    // guard. The floor makes the two outcomes distinguishable.
+    expect(ROOTS.flatMap((root) => sourceFiles(root)).length).toBeGreaterThan(200);
+  });
+
   for (const [retired, replacement] of Object.entries(RETIRED)) {
     it(`"${retired}" appears nowhere in source — use "${replacement}"`, () => {
       const offenders: string[] = [];

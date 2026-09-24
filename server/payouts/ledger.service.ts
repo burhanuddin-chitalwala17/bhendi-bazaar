@@ -6,7 +6,6 @@
  * domains' tables and writes nothing.
  */
 
-import { promotionRepository } from "@server/promotions/promotion.repository";
 import {
   buyerPaidPaise,
   computeLedgerEntry,
@@ -15,10 +14,13 @@ import {
   type LedgerLineInput,
 } from "@server/payouts/commission";
 import { ledgerRepository, type PayoutDb } from "@server/payouts/ledger.repository";
-import { orgRepository } from "@server/catalog/org.repository";
-import { categoryRepository } from "@server/catalog/category.repository";
 import type { CommercialTermsInput } from "@/lib/validation/schemas/commercial-terms.schema";
 import { prisma } from "@server/shared/prisma";
+import { orderService } from "@server/checkout/order.service";
+import { promotionService } from "@server/promotions/promotion.service";
+import { commercialTermsService } from "@server/catalog/commercial-terms.service";
+import { categoryService } from "@server/catalog/category.service";
+import { isUniqueViolation } from "@server/shared/constraint";
 
 export class LedgerService {
   /**
@@ -45,7 +47,7 @@ export class LedgerService {
     input: { orgId: string; categoryId: string; amountPaise: number; note: string },
     db: PayoutDb = prisma
   ) {
-    const parents = await promotionRepository.categoryParents(prisma);
+    const parents = await promotionService.categoryParents(prisma);
     const { defaultBps, rules } = await ledgerRepository.ratesFor(input.orgId, db);
 
     const computation = computeLedgerEntry({
@@ -75,7 +77,7 @@ export class LedgerService {
     const lines = await ledgerRepository.orderLines(orderId, db);
     if (lines.length === 0) return 0;
 
-    const parents = await promotionRepository.categoryParents(prisma);
+    const parents = await promotionService.categoryParents(prisma);
 
     // One entry per organisation: a multi-org order is partitioned, with nothing
     // shared and nothing counted twice.
@@ -114,6 +116,38 @@ export class LedgerService {
   }
 
   /**
+   * Undo what an order earned, because the goods came back.
+   *
+   * The org is credited at **payment**, not at delivery (`recordSale` runs from
+   * `payment-confirmed.ts`), and settlement is a manual claim over whatever is unsettled —
+   * so between a return and a payout there is a real window in which an entry for returned
+   * goods is sitting claimable. Reversing writes the mirror entry; it does not edit or delete
+   * the sale ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)).
+   *
+   * Safe to call twice: the unique key on `(orderId, orgId, kind)` refuses the second write, and
+   * a refusal here means the reversal already exists, which is the outcome the caller wanted.
+   *
+   * **It does not refund the buyer.** That stays a human decision (owner, 2026-09-24): a gateway
+   * refund is irreversible, so the entitlement is recorded and someone presses the button.
+   */
+  async reverseSale(orderId: string, reason: string, db: PayoutDb = prisma): Promise<number> {
+    const lines = await ledgerRepository.orderLines(orderId, db);
+    const orgIds = [...new Set(lines.map((line) => line.orgId))];
+
+    let reversed = 0;
+    for (const orgId of orgIds) {
+      try {
+        const entry = await ledgerRepository.createReversal({ orgId, orderId, note: reason }, db);
+        if (entry) reversed += 1;
+      } catch (error) {
+        // A unique-constraint refusal is this method already having run. Anything else is real.
+        if (!isUniqueViolation(error, "kind")) throw error;
+      }
+    }
+    return reversed;
+  }
+
+  /**
    * Write the entries that should exist and do not.
    *
    * The backstop for a ledger write that failed after payment (D5). Safe to run at
@@ -121,7 +155,7 @@ export class LedgerService {
    * the query returns nothing once the ledger is whole.
    */
   async backfillMissing(limit = 200): Promise<{ scanned: number; written: number }> {
-    const orderIds = await ledgerRepository.paidOrdersMissingEntries(limit);
+    const orderIds = await orderService.paidOrdersMissingLedgerEntries(limit);
     let written = 0;
     for (const orderId of orderIds) {
       try {
@@ -135,7 +169,7 @@ export class LedgerService {
 
   /** How much is owed but unrecorded — zero unless a write failed (D5). */
   async unrecordedCount(): Promise<number> {
-    return await ledgerRepository.countPaidOrdersMissingEntries();
+    return await orderService.countPaidOrdersMissingLedgerEntries();
   }
 
   /**
@@ -147,7 +181,7 @@ export class LedgerService {
    * and offer forms use.
    */
   async setCommercialTerms(orgId: string, input: CommercialTermsInput) {
-    await orgRepository.updateCommercialTerms(orgId, {
+    await commercialTermsService.update(orgId, {
       commissionBps: Math.round(input.commissionPercent * 100),
       maxDiscountBps: Math.round(input.maxDiscountPercent * 100),
     });
@@ -170,7 +204,7 @@ export class LedgerService {
   async overview() {
     const [orgs, { unclaimedByOrg, owedByOrg }, { entryCountByOrg, negativeMarginByOrg }, unrecorded] =
       await Promise.all([
-        orgRepository.listCommercialTerms(),
+        commercialTermsService.list(),
         ledgerRepository.balancesByOrg(),
         ledgerRepository.entryCountsByOrg(),
         this.unrecordedCount(),
@@ -188,11 +222,11 @@ export class LedgerService {
   /** One organisation's ledger, plus who they are and what has been settled. */
   async platformViewWithContext(orgId: string, page = 1) {
     const [org, view, settlements, categoryRules, categories] = await Promise.all([
-      orgRepository.findCommercialTerms(orgId),
+      commercialTermsService.find(orgId),
       this.platformView(orgId, page),
       ledgerRepository.listSettlements(orgId),
       ledgerRepository.commissionRulesWithIds(orgId),
-      categoryRepository.listForPicker(),
+      categoryService.listForPicker(),
     ]);
     return { org, ...view, settlements, categoryRules, categories };
   }
@@ -201,7 +235,7 @@ export class LedgerService {
   async orgViewWithContext(orgId: string, page = 1) {
     const [earnings, org, categoryRates, settlements] = await Promise.all([
       this.orgView(orgId, page),
-      orgRepository.findCommercialTerms(orgId),
+      commercialTermsService.find(orgId),
       ledgerRepository.commissionRules(orgId),
       ledgerRepository.listSettlements(orgId),
     ]);

@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminUserService } from "@server/identity/admin.user.service";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { blockUserSchema } from "@/lib/validation/schemas/admin.schemas";
 
 export async function POST(
   request: NextRequest,
@@ -15,8 +16,7 @@ export async function POST(
   try {
     const session = await requirePlatformAdmin();
     const { id } = await params;
-    const body = await request.json();
-    const isBlocked = body.isBlocked === true;
+    const { isBlocked } = blockUserSchema.parse(await request.json());
 
     const user = await adminUserService.toggleBlockUser(
       id,

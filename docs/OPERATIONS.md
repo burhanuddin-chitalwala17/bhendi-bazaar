@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-23
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -22,11 +22,12 @@ npm run dev                 # http://localhost:3000
 | Variable | Required | Purpose |
 |---|---|---|
 | `DATABASE_URL` | ✅ | Postgres connection string |
+| `MIGRATE_DATABASE_URL` | ○ | The **direct** connection string (`db.prisma.io`, no `pooled.`), read by `prisma.config.ts` for migrations only. Prisma Migrate takes a session-scoped advisory lock and a transaction pooler gives each statement a different backend session, so the lock can never be acquired and `migrate deploy` dies on a 10s timeout with P1002. Unset locally, where `DATABASE_URL` is already direct |
 | `NEXTAUTH_SECRET` | ✅ | JWT signing key. Generate: `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | ✅ | Canonical app URL. `http://localhost:3000` locally; the deployed origin in production |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ✅ | Google OAuth. Redirect URI: `<NEXTAUTH_URL>/api/auth/callback/google` |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
-| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ✅ | The same key **id**, exposed to the browser checkout widget. Never expose the secret |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ➖ | **Read by nothing.** Marked required here until 2026-09-23; no `process.env` reference exists. The checkout widget is handed the key id in the server's response (`server/payments/providers/razorpay/razorpay.repository.ts`), so setting it changes nothing and leaving it unset breaks nothing |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
 | `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
 | `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — the bucket's custom domain in production, its `r2.dev` URL locally. **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
@@ -38,6 +39,7 @@ npm run dev                 # http://localhost:3000
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
+| `PROD_ADMIN_EMAIL` / `PROD_ADMIN_PASSWORD` | ○ | Read by `prisma/seed/prod.ts`, the one-off bootstrap that grants platform ADMIN where an environment has none. Set them for that single run and unset them afterwards. Until 2026-09-23 that script hashed the literal `'STRONG_RANDOM_PASSWORD'`, so anyone who could read the repository knew the admin password — CLAUDE.md Invariant 7's "no credential literal lives in a seed", broken in the one script that may legitimately be pointed at production. It now refuses a placeholder value, refuses to run without both variables, and will **not** reset the password of an account that already exists |
 | `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
 | `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
 | `CSP_REPORT_ONLY` | ○ | `1` downgrades the Content-Security-Policy to `Content-Security-Policy-Report-Only`, so violations are reported and nothing is blocked (`src/lib/security-headers.ts`). The escape hatch if a policy change breaks a page in production — it needs no code change and no rebuild. **Leave unset normally**: report-only enforces nothing |
@@ -45,7 +47,7 @@ npm run dev                 # http://localhost:3000
 | `PRISMA_LOG_QUERIES` | ○ | `1` prints every SQL statement, so you can count the billed operations a page costs. **Development only** — never set in a deployment. It is also the instrument `tests/integration/db-ops-budget.test.ts` measures through |
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 
-`src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
+`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
 
 ### Local development database
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
