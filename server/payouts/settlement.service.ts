@@ -17,6 +17,7 @@ import { adminLogRepository } from "@server/shared/audit/audit.repository";
 import { recordAdminAction, recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { ledgerRepository } from "@server/payouts/ledger.repository";
 import { prisma } from "@server/shared/prisma";
+import { adminOrgService } from "@server/catalog/org.service";
 
 /** What may be corrected on an entry. Figures only — never its order or organisation. */
 export interface EntryEdit {
@@ -241,8 +242,7 @@ export class SettlementService {
     reference: string | null;
     paidAt: Date | null;
   }): Promise<void> {
-    const { orgRepository } = await import("@server/catalog/org.repository");
-    const org = await orgRepository.findEmailContact(settlement.orgId);
+    const org = await adminOrgService.findEmailContact(settlement.orgId);
     if (!org?.email) return;
 
     const { emailService } = await import("@server/notifications/email.service");

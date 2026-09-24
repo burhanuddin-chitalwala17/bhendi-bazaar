@@ -14,7 +14,8 @@ export type HeroAction = {
 export type HeroBannerContent = {
   id: string;
   eyebrow?: string;
-  title: string;
+  /** Optional: artwork that carries its own typography needs no headline over it. */
+  title?: string;
   description?: string;
   /** Optional. Without one the banner falls back to the brand gradient scene. */
   image?: { src: string; alt: string };
@@ -38,6 +39,11 @@ export function HeroBanner({
   className?: string;
 }) {
   const { eyebrow, title, description, image, actions } = banner;
+  // A banner with nothing to read is the artwork and nothing else: no scrim to darken
+  // it, no hover that dims it, and no empty text column holding the layout open.
+  const hasWords = Boolean(
+    eyebrow || title || description || (actions && actions.length > 0),
+  );
 
   return (
     // A phone shows one screenful at a time; a full-height brand hero spends it on
@@ -60,13 +66,17 @@ export function HeroBanner({
             className="-z-10 object-cover"
           />
           {/* Reading happens on the left, so the scrim is heaviest there rather than
-              flat across — a flat dim costs the photograph more than it needs to. */}
-          <div
-            className={cn(
-              "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-scrim/85 via-scrim/55 to-scrim/20",
-              "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
-            )}
-          />
+              flat across — a flat dim costs the photograph more than it needs to.
+              With no words there is nothing to make legible, so it is not rendered at
+              all rather than faded: on a phone it has no hover to hide behind. */}
+          {hasWords && (
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-scrim/85 via-scrim/55 to-scrim/20",
+                "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
+              )}
+            />
+          )}
         </>
       ) : (
         <>
@@ -75,48 +85,54 @@ export function HeroBanner({
         </>
       )}
 
-      <div
-        className={cn(
-          "relative max-w-xl space-y-2 sm:space-y-4",
-          image &&
-            "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
-        )}
-      >
-        {eyebrow && (
-          <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-hero-foreground/70 sm:text-2xs sm:tracking-display">
-            {eyebrow}
-          </p>
-        )}
-        <h2 className="line-clamp-2 font-heading text-xl font-semibold leading-tight tracking-tight sm:text-4xl">
-          {title}
-        </h2>
-        {description && (
-          <p className="line-clamp-2 text-xs leading-snug text-hero-foreground/80 sm:line-clamp-3 sm:text-base sm:leading-normal">
-            {description}
-          </p>
-        )}
-        {actions && actions.length > 0 && (
-          <div className="flex flex-wrap gap-3 pt-2">
-            {actions.map((action) => (
-              <Button
-                key={action.href}
-                asChild
-                variant={action.variant === "secondary" ? "outline" : "default"}
-                className={cn(
-                  "rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow",
-                  action.variant === "secondary"
-                    ? "border-primary/20 bg-transparent text-hero-foreground hover:bg-hero/40"
-                    : "bg-primary text-hero hover:bg-primary/80",
-                )}
-              >
-                <Link href={action.href} prefetch={false}>
-                  {action.label}
-                </Link>
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
+      {hasWords && (
+        <div
+          className={cn(
+            "relative max-w-xl space-y-2 sm:space-y-4",
+            image &&
+              "transition-opacity duration-300 motion-reduce:transition-none md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
+          )}
+        >
+          {eyebrow && (
+            <p className="text-4xs font-semibold uppercase tracking-eyebrow-wide text-hero-foreground/70 sm:text-2xs sm:tracking-display">
+              {eyebrow}
+            </p>
+          )}
+          {title && (
+            <h2 className="line-clamp-2 font-heading text-xl font-semibold leading-tight tracking-tight sm:text-4xl">
+              {title}
+            </h2>
+          )}
+          {description && (
+            <p className="line-clamp-2 text-xs leading-snug text-hero-foreground/80 sm:line-clamp-3 sm:text-base sm:leading-normal">
+              {description}
+            </p>
+          )}
+          {actions && actions.length > 0 && (
+            <div className="flex flex-wrap gap-3 pt-2">
+              {actions.map((action) => (
+                <Button
+                  key={action.href}
+                  asChild
+                  variant={
+                    action.variant === "secondary" ? "outline" : "default"
+                  }
+                  className={cn(
+                    "rounded-full px-6 text-xs font-semibold uppercase tracking-eyebrow",
+                    action.variant === "secondary"
+                      ? "border-primary/20 bg-transparent text-hero-foreground hover:bg-hero/40"
+                      : "bg-primary text-hero hover:bg-primary/80",
+                  )}
+                >
+                  <Link href={action.href} prefetch={false}>
+                    {action.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

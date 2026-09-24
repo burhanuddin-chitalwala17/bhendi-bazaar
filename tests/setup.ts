@@ -1,5 +1,5 @@
 // Global setup, loaded before every test file. Keep minimal — fixtures go in
-// tests/utils/ (docs/TESTING.md).
+// (docs/TESTING.md).
 import "@testing-library/jest-dom/vitest";
 import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";

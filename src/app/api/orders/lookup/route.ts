@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { toErrorResponse } from "@/lib/api-error-response";
 import { orderService } from "@server/checkout/order.service";
 import {
   apiRateLimit,
@@ -58,13 +59,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(order);
   } catch (error) {
-    console.error("Failed to lookup order:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to lookup order",
-      },
-      { status: 500 },
-    );
+    return toErrorResponse(error, "Could not look up that order");
   }
 }

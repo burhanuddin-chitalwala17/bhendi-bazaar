@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { toErrorResponse } from "@/lib/api-error-response";
 import { prisma } from "@server/shared/prisma";
 import { validateRequest } from "@/lib/validation";
 import { stockCheckSchema } from "@/lib/validation/schemas/cart.schemas";
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     const [products, stockRows] = await Promise.all([
       prisma.product.findMany({
         where: { id: { in: ids } },
-        // `archivedAt` rather than an ON_SALE filter: a withdrawn product must come
+        // `archivedAt` rather than an AVAILABLE filter: an archived product must come
         // back unavailable *by name*, so the cart can say which line is the problem.
         // Filtering it out here would report it as an unknown product (ADR-0029 D6).
         select: { id: true, name: true, archivedAt: true },
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
           stock: 0,
         };
       }
-      // A withdrawn product is never available, whatever is on the shelf: its stock
+      // An archived product is never available, whatever is on the shelf: its stock
       // is real but not for sale (product-archive R5). The cart already renders this
       // state, so withdrawal reuses it rather than adding a second one.
       if (product.archivedAt) {
@@ -84,12 +85,6 @@ export async function POST(request: NextRequest) {
       items: stockStatus,
     });
   } catch (error) {
-    console.error("Stock check failed:", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Failed to check stock",
-      },
-      { status: 500 },
-    );
+    return toErrorResponse(error, "Could not check stock");
   }
 }

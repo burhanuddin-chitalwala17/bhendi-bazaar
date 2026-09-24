@@ -50,7 +50,6 @@ class ProductsDAL {
         price: product.price,
         salePrice: markdownOf(product, context),
         currency: product.currency,
-        rating: product.rating,
         stock: product.stock,
         lowStockThreshold: product.lowStockThreshold,
         thumbnail: product.thumbnail,
@@ -68,7 +67,7 @@ class ProductsDAL {
     const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
-      withdrawnProducts: stats.withdrawnProducts,
+      archivedProducts: stats.archivedProducts,
       lowStockProducts: stats.lowStockProducts,
       outOfStockProducts: stats.outOfStockProducts,
       featuredProducts: stats.featuredProducts,

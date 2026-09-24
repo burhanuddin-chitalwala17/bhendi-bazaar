@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { contentSecurityPolicy } from "@/lib/security-headers";
 
 /**
  * Edge gate for the two portals.
@@ -42,6 +43,25 @@ const DEAD_PERMALINK = /^\/\d{4}\/\d{1,2}\/\d{1,2}\//;
 /** Exported so the rule is tested against real paths, not against this file's text. */
 export const isDeadPermalink = (pathname: string) => DEAD_PERMALINK.test(pathname);
 
+/**
+ * A fresh nonce per response, carried both ways: on the *request* so Next stamps it onto
+ * the inline scripts it renders, and on the response so the browser enforces it. Reusing
+ * one across responses would make it guessable and therefore no better than
+ * `unsafe-inline` (src/lib/security-headers.ts).
+ */
+function withCsp(request: NextRequest, response: NextResponse): NextResponse {
+  const nonce = crypto.randomUUID().replace(/-/g, "");
+  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const header = process.env.CSP_REPORT_ONLY === "1"
+    ? "Content-Security-Policy-Report-Only"
+    : "Content-Security-Policy";
+
+  request.headers.set("x-nonce", nonce);
+  request.headers.set("Content-Security-Policy", policy);
+  response.headers.set(header, policy);
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -49,8 +69,12 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 410 });
   }
 
+  // Rebuilt with the mutated headers so the nonce reaches the render, not just the client.
+  const proceed = () =>
+    withCsp(request, NextResponse.next({ request: { headers: request.headers } }));
+
   const guarded = pathname.startsWith("/admin") || pathname.startsWith("/org");
-  if (!guarded) return NextResponse.next();
+  if (!guarded) return proceed();
 
   try {
     const token = await signedIn(request);
@@ -66,19 +90,18 @@ export async function middleware(request: NextRequest) {
     return toSignIn(request, pathname);
   }
 
-  return NextResponse.next();
+  return proceed();
 }
 
 export const config = {
   // The portals are matched by name rather than left to the catch-all below. That
   // pattern excludes any path containing a dot — meant for static files, but it also
   // let `/admin/orders/abc.def` through with no check at all.
-  matcher: [
-    "/admin",
-    "/admin/:path*",
-    "/org",
-    "/org/:path*",
-    // The previous site's permalinks, answered with 410 above.
-    "/:year(\\d{4})/:month(\\d{1,2})/:day(\\d{1,2})/:slug*",
-  ],
+  // Everything except build output and the files a browser fetches by fixed name. The
+  // portals were matched by name when the gate was all this did; the CSP has to reach
+  // every document, so the catch-all is now the matcher and `startsWith` in the handler
+  // does the routing. Note what is NOT excluded: paths containing a dot. The conventional
+  // `(?!.*\\.)` exclusion is meant for static files, but it also let
+  // `/admin/orders/abc.def` through with no check at all.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)"],
 };

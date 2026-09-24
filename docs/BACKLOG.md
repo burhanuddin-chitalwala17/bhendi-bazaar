@@ -1,6 +1,7 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-19
+- **Verified:** 2026-09-24
+- **Covers:** `docs/specs/*/`
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
 
@@ -15,8 +16,8 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **1** — Storefront & admin | Browse, cart, checkout UI, admin console for products/orders/users/reviews/sellers | catalog, cart, admin, identity | ✅ **Done** |
 | **2** — Transaction integrity | The server is authoritative over price, payment state, and stock; money is exact | checkout, payments | ✅ **Done** — PR-37..40 |
 | **3** — Fulfilment & marketplace | A confirmed order becomes a real booked shipment from a real location, and the store serves multiple vendors | shipping, catalog, identity | ⏳ Not started — 2 specs + a 9-subfeature programme drafted |
-| **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | ⏳ Not started — 1 spec drafted (rate-limiting) |
-| **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started |
+| **4** — Enforcement | Automated checks that hold the Invariants; blocking CI | *(cross-domain)* | 🔨 In progress — typecheck and tests block; documentation, security headers and Prisma error shapes are now guard suites (PR-117..119). Outstanding: lint still `continue-on-error`, rate limiting still detached, database-backed tests still skip in CI |
+| **5** — Scale & operability | Indexed search, pagination, caching, error tracking | catalog, *(cross-domain)* | ⏳ Not started — 2 specs drafted (error-tracking, read-caching) |
 | **6** — Catalogue richness | What a product page can show about a product, beyond a price and a photograph | catalog, checkout | ⏳ Not started — 1 spec drafted (product-video) |
 | **7** — Promotions & settlement | Offers the platform and its organisations can run, and a record of what each is owed | promotions, payouts, checkout | 🔨 In progress — engines, checkout, ledger and APIs landed (PR-67); screens outstanding |
 | **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-97 |
@@ -61,19 +62,27 @@ Making Phase 2 and 3 stick rather than landing once. Mostly process, governed by
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [rate-limiting](specs/rate-limiting/) | Sensitive endpoints are rate limited in production; an environment that can't enforce says so at deploy time, not silently at request time | 📝 Draft — closes PR-55's fail-open stopgap |
+| [rate-limiting](specs/rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time, not silently at request time | 📝 Draft — closes PR-55's fail-open stopgap and PR-81's detachment |
+| [supply-chain-integrity](specs/supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, and the pipeline is what establishes it | 📝 Draft |
 
 - Restore the test suite, prioritised by the Invariants ([TESTING.md](TESTING.md) sets the targets)
 - Quality gates block the pipeline
 - ~~`prisma migrate deploy` in the pipeline~~ ✅ Done — PR-57 put it in the Vercel build ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md))
-- `validateEnv()` called at boot, covering `ENCRYPTION_KEY` and the webhook secret
+- `validateEnv()` called at boot, covering `ENCRYPTION_KEY` and the webhook secret — now owned by [rate-limiting](specs/rate-limiting/) D2, which needs it to make "silently unlimited" unreachable
 - `/bb-review` in use before every PR
 
 ## Phase 5 — Scale & operability
 
-Not started, deliberately not detailed. Nothing here begins before Phase 2 closes.
+Two of this phase's strands are now specified; the rest stays deliberately undetailed.
 
-Product search an index can serve (`pg_trgm` or `tsvector`) · pagination on storefront queries · database-side aggregation for admin dashboards · index review on `Order` · order cancellation and refunds · structured logging and error tracking · response caching.
+| Spec | Requirement | Status |
+|---|---|---|
+| [error-tracking](specs/error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 📝 Draft |
+| [read-caching](specs/read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 📝 Draft |
+
+Both were pulled forward out of "not started" for the same reason: Phase 9 shipped a URL designed to be *shared*, so the storefront now attracts the one traffic shape that uncached reads handle worst, and the store's growing set of deliberately fail-open controls — the limiter, the reconciliation sweep, the ledger backfill — each record a failure and notify nobody.
+
+Still unspecified: product search an index can serve (`pg_trgm` or `tsvector`) · pagination on storefront queries · database-side aggregation for admin dashboards · index review on `Order` · order cancellation and refunds · structured logging as a project-wide convention.
 
 ## Phase 6 — Catalogue richness
 
@@ -83,7 +92,7 @@ A new phase, added 2026-08-13. Phase 1 built the storefront and closed; this is 
 |---|---|---|
 | [product-video](specs/product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 📝 Draft — all questions closed 2026-08-13 |
 | [bulk-catalog-upload](specs/bulk-catalog-upload/) | An org sets up its catalogue from one spreadsheet plus local photos; admins likewise for categories. Corrects SKU uniqueness to org scope | ✅ Implemented — 2026-08-21 (PR-73) |
-| [product-archive](specs/product-archive/) | An org takes a product off sale and back, without destroying the orders, payouts or ledger entries it appears on | ✅ Implemented — 2026-09-16 (PR-113) |
+| [product-archive](specs/product-archive/) | An org archives a product and restores it, without destroying the orders, payouts or ledger entries it appears on | ✅ Implemented — 2026-09-16 (PR-113) |
 
 `product-archive` is catalogue *lifecycle* rather than page capability, and lands here because it is the phase that owns the catalogue; it needs nothing from the rest of the phase and nothing in the phase needs it.
 
@@ -167,7 +176,7 @@ Not a phase, but tracked:
 - **PIN code validation** — consolidated to one rule in PR-09 (eleven declarations → one). Remaining: query existing `Address` rows for PIN codes with a leading zero, which the tightened rule rejects on update.
 - **Error swallowing in the data layer** — PR-13 fixed `products.dal.ts`; the same catch-and-relabel pattern remains in the other DAL modules and in `server/catalog/product.repository.ts`, where a query failure is reported as `"Product not found"`. Preserve `cause`; keep absence distinguishable from failure.
 - **Sale price is read two different ways** — `src/components/shared/PriceDisplay.tsx` treats a sale price as an offer only when it is positive and below the regular price, matching `effectiveUnitPrice` in `server/checkout/pricing.ts`. Eight other sites — the cart line, the checkout summary, the shipping-rate hook, both order detail pages, the org parcel value — simply fall back with `??`, so a sale price of zero or one above the regular price renders differently depending on where the buyer is looking. [promotions](specs/promotions/) PR 3 consolidates them onto the one function; until then it is a display inconsistency on the money path.
-- ~~**A sold product cannot be withdrawn from sale**~~ ✅ Closed — PR-112 made the refusal honest and PR-113 made it avoidable: a product leaves sale by archiving ([ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [product-archive](specs/product-archive/)). Hard delete survives only for a product no record depends on.
+- ~~**A sold product cannot be taken off the storefront**~~ ✅ Closed — PR-112 made the refusal honest and PR-113 made it avoidable: a product leaves sale by archiving ([ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [product-archive](specs/product-archive/)). Hard delete survives only for a product no record depends on.
 - **Soft 404 on a missing product** — a slug that does not resolve returns HTTP 200 with an error page rather than a real 404. `notFound()` on `NotFoundError` fixes it; matters for search-engine handling. Now owned by [seo](specs/seo/) R7, Phase 10 — it needs the `not-found.tsx`/`error.tsx` boundaries that do not exist yet, so it is not the one-line change this entry assumed.
 - **Route the database through Prisma Accelerate** — it is already provisioned (`PRISMA_DATABASE_URL`) and read by nothing. Pooling and caching at the proxy addresses serverless connection pressure more thoroughly than tuning `max` on the local pool. See [OPERATIONS.md](OPERATIONS.md) § Infrastructure.
 - **Storefront reads are uncached, and page-level ISR cannot fix it** — PR-82 and PR-83 turned prefetch off at all 61 link sites (storefront, then the portals), which removed the speculative load but not the per-request cost: a category page is still roughly three sequential round trips, and it renders identical HTML for every visitor. Nothing under `src/app/(main)` reads `cookies()`, `headers()` or the session on the server — the auth-aware chrome is all `"use client"` on `useSession()` — so there is nothing per-user in the render to justify repeating it.
@@ -176,6 +185,14 @@ Not a phase, but tracked:
 
   Once those reads are cached, revisit prefetch rather than leaving it off permanently: a `loading.tsx` boundary plus a non-zero `experimental.staleTimes.dynamic` (it defaults to `0`, which is why the prefetches were discarded) would make it pay off on a page that no longer costs a database round trip.
 
+- **`Shipment.status` has three vocabularies, and the fix is specced** — the type declares nine values, the schema comment four different ones, and the code writes a third mix (`api/admin/shipments/[id]/tracking` writes `"shipped"`, which the type does not contain). A courier reporting *in transit* already stores a value no admin badge matches, so the row renders unstyled. [shipment-lifecycle](specs/shipment-lifecycle/) designs the canonical set, the return leg, and what each state means for stock, refunds and settlement. **One open question blocks it:** whether `LOST` restocks.
+- **Server-by-default is done** ([ADR-0034](adr/0034-render-on-the-server-by-default.md)) — `tests/unit/rendering-strategy.test.ts` refuses a new client `page.tsx` or `layout.tsx`, and **both allowlists are empty**: not one page or layout in the tree opts its subtree out. Ten did when the gate landed. What the conversions left behind is the next entry.
+
+- **One pair of handlers needs a screen rather than a deletion** — `tests/unit/route-reachability.test.ts` resolves every `/api/...` string in the app against every route file, and its `UNREACHABLE` list is down to `PATCH`/`DELETE /api/admin/payouts/entries/[id]`: correcting and removing an unsettled ledger entry, built and never given a control. That is a decision, not a deletion — the console gets the control, or the handlers go. The nine `GET`s the server-component conversions orphaned are gone, with the two client modules that called them.
+- **Domain decoupling is enforced, with 13 cross-domain repository imports allowlisted** ([ADR-0033](adr/0033-a-domain-is-reached-through-its-public-surface.md)) — each entry in `tests/unit/module-boundaries.test.ts` names the service method the owning domain needs to grow. `payouts` → `checkout/order.repository` is the one worth doing first: settlement reading order rows directly is how `VISIBLE_ORDER_WHERE` could silently stop applying.
+- **Security response headers exist as of PR-117** — a nonce-based CSP built per request in `src/middleware.ts` from `src/lib/security-headers.ts`, plus HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy` and `Permissions-Policy`. `script-src` carries no `'unsafe-inline'`. `CSP_REPORT_ONLY=1` downgrades enforcement without a code change — the escape hatch if a policy change breaks a page, not a place to leave things.
+- **Lint still does not block** — `.github/workflows/ci.yml` keeps `continue-on-error: true` on the lint step. 40 `no-explicit-any` errors remain, down from 81; **`src/app/api/` is at zero**, which was the priority since that is the trust boundary. The rest are in admin pages, hooks and the shipping provider layer. The flag comes off when they do ([TESTING.md](TESTING.md)).
+- **The Shiprocket webhook is unauthenticated** — `POST /api/webhooks/shipping/shiprocket` verifies no signature and no shared secret, so anyone who can guess a tracking number can mark a shipment, and hence an order, delivered. It also answers 200 on every failure, the opposite of the "fail loudly on an unmatched payload" that [INTEGRATIONS.md](INTEGRATIONS.md) prescribes for exactly this case. No money moves on `delivered` today — settlement does not read it — which is the only reason this is a watch-list entry rather than a stop-everything. Needs a shared-secret header or a hard-to-guess path, and knowing which of those Shiprocket's dashboard can actually send.
 - **Rate limiting is detached, and says so** — PR-81 replaced three fail-open implementations with one seam in `src/lib/rate-limit/` that allows everything and reports `RATE_LIMITING_ENABLED === false`. No live module imports `@upstash/*`, so the request path carries no cache dependency; both implementations are parked beside the seam, unimported. **Unthrottled until the cache is wired:** `POST /api/auth/signup`, `/api/auth/forgot-password`, `/api/payments/create-order`, `/api/orders*`, `/api/cart*` — and `reset-password`, `resend-verification`, `verify-email`, which never had limits. Reconnecting is an edit to one file; the correctness fixes it needs first are in the parked file's header. Spec: [rate-limiting](specs/rate-limiting/), Phase 4.
 - **This domain served a WordPress site before this one, and search engines still hold its index** — the archive has 4,682 URLs for `bhendi-bazaar.com`. Genuine Bhendi Bazaar posts from 2019–2020 (`explore-bhendi-bazaar`, `ashara-ohbat-1442`), then from March 2021 a turn into Indonesian gambling spam (`situs-judi-slot-gacor`, `apakah-legal-bermain-di-kasino-online`), scraped filler, and adult posts — still serving 200s as late as September 2025. The two shapes share one permalink structure, which reads as a compromised WordPress install rather than a resale, though that cannot be established from outside. Bing is still crawling it: two such requests arrived 0.74s apart on 2026-08-30.
 

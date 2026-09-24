@@ -4,8 +4,8 @@ import type { ProductMediaInput } from "@server/catalog/media";
 
 export interface ProductFilters {
   /**
-   * Which shelf the org is asking about (ADR-0029). Defaults to `on-sale`: a
-   * withdrawn product is absent from the working list unless asked for, which is
+   * Which shelf the org is asking about (ADR-0029). Defaults to `available`: an
+   * archived product is absent from the working list unless asked for, which is
    * what makes withdrawal feel like removal without being one.
    */
   shelf?: ProductShelf;

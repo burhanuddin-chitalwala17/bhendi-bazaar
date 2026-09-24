@@ -14,6 +14,7 @@ import { describeBannerImageProblem } from "@/components/banners/banner-image-ch
 import { isCompleteReorder, nextBannerOrder } from "@server/catalog/banner.order";
 import { readFileSync } from "node:fs";
 import { toHeroBanner } from "@/data-access-layer/banners.dal";
+import { isRenderableImageUrl } from "@server/catalog/image-paths";
 import { BANNER_IMAGE } from "@/lib/config";
 import type { AdminBanner } from "@server/catalog/banner.types";
 
@@ -37,6 +38,15 @@ describe("bannerFormSchema", () => {
 
   it("rejects a title that is too short", () => {
     expect(bannerFormSchema.safeParse({ title: "a" }).success).toBe(false);
+  });
+
+  // The headline is optional like every other word on the banner. Blank and absent
+  // must land on the same value: the renderer drops the scrim on null, and an ""
+  // slipping through would keep it over artwork that needs none.
+  it("accepts a banner with no title, blank or absent", () => {
+    expect(bannerFormSchema.parse({}).title).toBeNull();
+    expect(bannerFormSchema.parse({ title: "   " }).title).toBeNull();
+    expect(bannerFormSchema.parse({ title: null }).title).toBeNull();
   });
 
   // `order` is server-owned. Accepting it — even optionally — is how the field a form
@@ -226,5 +236,43 @@ describe("banner aspect ratio", () => {
     const declared = css.match(/--aspect-banner-source:\s*(\d+)\s*\/\s*(\d+)/);
     expect(declared, "--aspect-banner-source is not defined").not.toBeNull();
     expect(Number(declared![1]) / Number(declared![2])).toBe(BANNER_IMAGE.ratio);
+  });
+});
+
+/**
+ * A row can still hold a URL on the retired Vercel Blob store (ADR-0028). The bytes
+ * answer 403 and the host is deliberately absent from `next.config.ts`
+ * `remotePatterns` — and `next/image` does not degrade on an unconfigured host, it
+ * **throws** and unmounts the page. One leftover row blanked `/admin/banners`, which
+ * is where the documented remedy (re-upload) has to happen, and the storefront
+ * homepage with it. A dead URL must read as "no image".
+ */
+describe("a URL we cannot render", () => {
+  const DEAD =
+    "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/banners/x.jpeg";
+
+  it("refuses the retired store and accepts what we serve now", () => {
+    expect(isRenderableImageUrl(DEAD)).toBe(false);
+    expect(isRenderableImageUrl("https://cdn.bhendi-bazaar.com/a.webp")).toBe(
+      true,
+    );
+    expect(isRenderableImageUrl("/local.png")).toBe(true);
+    expect(isRenderableImageUrl(null)).toBe(false);
+    expect(isRenderableImageUrl("not a url")).toBe(false);
+  });
+
+  it("drops the image from the hero rather than handing it to next/image", () => {
+    const row: AdminBanner = {
+      id: "b1",
+      title: "Royal silhouettes",
+      eyebrow: null,
+      description: null,
+      imageUrl: DEAD,
+      imageAlt: null,
+      order: 0,
+      isActive: true,
+      actions: [],
+    };
+    expect(toHeroBanner(row).image).toBeUndefined();
   });
 });

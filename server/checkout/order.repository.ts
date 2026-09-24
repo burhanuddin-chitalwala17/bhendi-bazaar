@@ -6,7 +6,7 @@
  */
 
 import { prisma, toJsonColumn } from "@server/shared/prisma";
-import { ORDER_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
+import { ORDER_STATUS, VISIBLE_ORDER_WHERE, PAYMENT_STATUS } from "@server/checkout/order.types";
 import type { ShipmentItem } from "@server/checkout/order.types";
 import { Order } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
@@ -106,6 +106,29 @@ export class OrderRepository {
   }
 
   /**
+   * Which of these products this user has actually bought and paid for.
+   *
+   * The only question catalog asks of checkout (product-reviews R4, trd.md D8): the
+   * **Verified purchase** mark is awarded from order history, so a reviewer can neither
+   * claim it nor decline it. Paid only, and `VISIBLE_ORDER_WHERE` so an abandoned hold
+   * on the same product awards nothing. Batched by product id to keep the question off
+   * the per-row path. `"paid"` is the literal the rest of this domain uses for the
+   * column documented at `prisma/schema.prisma:432`.
+   */
+  async purchasedProductIds(userId: string, productIds: string[]): Promise<string[]> {
+    if (productIds.length === 0) return [];
+    const rows = await prisma.orderItem.findMany({
+      where: {
+        productId: { in: productIds },
+        order: { userId, paymentStatus: PAYMENT_STATUS.PAID, ...VISIBLE_ORDER_WHERE },
+      },
+      select: { productId: true },
+      distinct: ["productId"],
+    });
+    return rows.map((row) => row.productId);
+  }
+
+  /**
    * Find order by ID
    */
   async findById(orderId: string) {
@@ -175,7 +198,7 @@ export class OrderRepository {
   }
 
   /**
-   * The single write path to `paymentStatus: "paid"` (ADR-0005). A conditional
+   * The single write path to `paymentStatus: PAYMENT_STATUS.PAID` (ADR-0005). A conditional
    * update, not read-then-write: two confirmations racing (webhook and browser
    * return) resolve at the database — exactly one wins, the other sees count 0 and
    * re-reads to find out why.
@@ -185,9 +208,9 @@ export class OrderRepository {
       // Not paid, and not expired: an expired order's stock is already released, so
       // a late capture is refused here and refunded manually rather than confirming
       // an order the store may no longer be able to fulfil.
-      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: ORDER_STATUS.EXPIRED }] },
+      where: { id: orderId, NOT: [{ paymentStatus: PAYMENT_STATUS.PAID }, { status: ORDER_STATUS.EXPIRED }] },
       data: {
-        paymentStatus: "paid",
+        paymentStatus: PAYMENT_STATUS.PAID,
         status: ORDER_STATUS.CONFIRMED,
         paymentId,
       },
@@ -234,7 +257,7 @@ export class OrderRepository {
     return prisma.order.findMany({
       where: {
         status: { in: [ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.FAILED] },
-        NOT: { paymentStatus: "paid" },
+        NOT: { paymentStatus: PAYMENT_STATUS.PAID },
         createdAt: { lt: olderThan },
         items: { some: { productId: { in: [...productIds] } } },
       },
@@ -260,7 +283,7 @@ export class OrderRepository {
         where: {
           id: orderId,
           status: { in: [ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.FAILED] },
-          NOT: { paymentStatus: "paid" },
+          NOT: { paymentStatus: PAYMENT_STATUS.PAID },
         },
         data: { status: ORDER_STATUS.EXPIRED },
       });
@@ -322,7 +345,7 @@ export class OrderRepository {
    */
   async findPaidWithoutLedgerEntries(limit = 200): Promise<string[]> {
     const orders = await prisma.order.findMany({
-      where: { paymentStatus: "paid", ledgerEntries: { none: {} } },
+      where: { paymentStatus: PAYMENT_STATUS.PAID, ledgerEntries: { none: {} } },
       select: { id: true },
       orderBy: { createdAt: "asc" },
       take: limit,
@@ -333,7 +356,7 @@ export class OrderRepository {
   /** The same question as a count — an unbounded list would be loaded to be measured. */
   async countPaidWithoutLedgerEntries(): Promise<number> {
     return await prisma.order.count({
-      where: { paymentStatus: "paid", ledgerEntries: { none: {} } },
+      where: { paymentStatus: PAYMENT_STATUS.PAID, ledgerEntries: { none: {} } },
     });
   }
 
@@ -351,8 +374,8 @@ export class OrderRepository {
    */
   async markPaymentFailed(orderId: string): Promise<boolean> {
     const result = await prisma.order.updateMany({
-      where: { id: orderId, NOT: [{ paymentStatus: "paid" }, { status: ORDER_STATUS.EXPIRED }] },
-      data: { paymentStatus: "failed" },
+      where: { id: orderId, NOT: [{ paymentStatus: PAYMENT_STATUS.PAID }, { status: ORDER_STATUS.EXPIRED }] },
+      data: { paymentStatus: PAYMENT_STATUS.FAILED },
     });
     return result.count === 1;
   }

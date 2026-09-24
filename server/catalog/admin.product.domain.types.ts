@@ -34,8 +34,6 @@ export interface AdminProduct {
   categoryName?: string;
   tags: string[];
   flags: ProductFlag[];
-  rating: number;
-  reviewsCount: number;
   media: ProductMediaDto[];
   thumbnail: string;
   sizes: string[];
@@ -57,7 +55,7 @@ export interface ProductListResult {
 
 export interface ProductStats {
   totalProducts: number;
-  withdrawnProducts: number;
+  archivedProducts: number;
   lowStockProducts: number;
   outOfStockProducts: number;
   featuredProducts: number;

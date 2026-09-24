@@ -9,10 +9,10 @@
 
 import { rupeesToPaise } from "@server/shared/money";
 import { promotionRepository } from "@server/promotions/promotion.repository";
-import { orgRepository } from "@server/catalog/org.repository";
-import { productsRepository } from "@server/catalog/product.repository";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import type { PromotionFormInput } from "@/lib/validation/schemas/promotion.schema";
+import { productService } from "@server/catalog/product.service";
+import { commercialTermsService } from "@server/catalog/commercial-terms.service";
 
 /** Who is creating the offer, and therefore who funds it. */
 export type PromotionOwner = { scope: "PLATFORM" } | { scope: "ORG"; orgId: string };
@@ -61,7 +61,7 @@ export class AdminPromotionService {
    * the platform's commission proportionally and can never drive it negative.
    */
   private async assertWithinOrgCeiling(input: PromotionFormInput, orgId: string) {
-    const org = await orgRepository.findCommercialTerms(orgId);
+    const org = await commercialTermsService.find(orgId);
     if (!org) throw new NotFoundError("Organisation not found");
 
     const bps =
@@ -85,7 +85,7 @@ export class AdminPromotionService {
    */
   private async assertCodePrefixed(input: PromotionFormInput, orgId: string) {
     if (input.trigger !== "CODE" || !input.code) return;
-    const org = await orgRepository.findCommercialTerms(orgId);
+    const org = await commercialTermsService.find(orgId);
     if (!org) throw new NotFoundError("Organisation not found");
     const prefix = `${org.code}-`;
     if (!input.code.startsWith(prefix)) {
@@ -98,7 +98,7 @@ export class AdminPromotionService {
   /** An organisation's offer may only name its own goods (spec R1, R20). */
   private async assertProductsBelongToOrg(input: PromotionFormInput, orgId: string) {
     if (input.productIds.length === 0) return;
-    const foreign = await productsRepository.countOutsideOrg(input.productIds, orgId);
+    const foreign = await productService.countOutsideOrg(input.productIds, orgId);
     if (foreign > 0) {
       throw new DomainError("An offer can only cover your own products", { field: "productIds" });
     }

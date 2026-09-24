@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
+import { requireSession } from "@/lib/admin-auth";
 import { passwordService } from "@server/identity/password.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { changePasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await requireSession();
+
     const { currentPassword, newPassword, confirmPassword } =
       changePasswordSchema.parse(await request.json());
 
@@ -25,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Change password
     const result = await passwordService.changePassword(
-      (session.user as any).id,
+      session.user.id,
       currentPassword,
       newPassword,
     );

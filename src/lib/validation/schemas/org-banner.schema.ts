@@ -31,7 +31,9 @@ export const BANNER_PATH_PATTERN =
 const ABSOLUTE = /^https?:\/\/\S+$/i;
 
 export const orgBannerSchema = z.object({
-  title: z.string().trim().min(1, "A banner needs a title.").max(TITLE_MAX),
+  // Optional, like the picture and the link: a promotion may be artwork alone, and
+  // the service stores a blank one as null so the shop's hero knows it has no words.
+  title: z.string().trim().max(TITLE_MAX).or(z.literal("")).nullish(),
   description: z
     .string()
     .trim()

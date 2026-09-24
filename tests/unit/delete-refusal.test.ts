@@ -133,4 +133,13 @@ describe("describeDeleteBlockers", () => {
     expect(describeDeleteBlockers({ ...none, promotionTargets: 1 })).toContain("1 promotion");
     expect(describeDeleteBlockers({ ...none, biddingEvents: 1 })).toContain("1 bidding event");
   });
+
+  it("names Archive as the way through, since the refusal is otherwise a dead end", () => {
+    // Delete used to archive silently in this case. It no longer does, so the message
+    // has to carry the org to the control that does work — it is the whole reason the
+    // refusal is acceptable now that Archive is its own button.
+    expect(describeDeleteBlockers({ ...none, orderItems: 1 })).toContain(
+      "Archive it instead to take it off the storefront."
+    );
+  });
 });

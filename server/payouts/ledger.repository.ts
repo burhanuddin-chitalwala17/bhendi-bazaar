@@ -8,7 +8,6 @@
 import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
 import type { ComputedLedgerLine, LedgerEntryComputation } from "@server/payouts/commission";
-import { orderRepository } from "@server/checkout/order.repository";
 
 export type PayoutDb = Pick<
   typeof prisma,
@@ -112,6 +111,57 @@ export class LedgerRepository {
             basePaise: line.basePaise,
             rateBps: line.rateBps,
             commissionPaise: line.commissionPaise,
+          })),
+        },
+      },
+      ...ENTRY_WITH_LINES,
+    });
+  }
+
+  /**
+   * Undo one organisation's sale entry by writing its mirror, never by editing it.
+   *
+   * Every figure is negated, so the two sum to nothing and the history of both survives —
+   * [ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)'s rule that a
+   * money-bearing row is cancelled rather than deleted, applied to a row that has to change
+   * sign rather than disappear.
+   *
+   * Idempotent on the database rather than by checking first: `orderId_orgId_kind` is unique,
+   * so a second reversal for the same order and org cannot be written even if two courier
+   * events race. The caller treats the conflict as success.
+   */
+  async createReversal(
+    input: { orgId: string; orderId: string; note: string },
+    db: PayoutDb = prisma
+  ) {
+    const sale = await db.orgLedgerEntry.findUnique({
+      where: { orderId_orgId_kind: { orderId: input.orderId, orgId: input.orgId, kind: "SALE" } },
+      include: { lines: true },
+    });
+    if (!sale) return null;
+
+    return await db.orgLedgerEntry.create({
+      data: {
+        orgId: input.orgId,
+        orderId: input.orderId,
+        kind: "REVERSAL",
+        state: "DRAFT",
+        grossItemsPaise: -sale.grossItemsPaise,
+        orgFundedDiscountPaise: -sale.orgFundedDiscountPaise,
+        platformFundedDiscountPaise: -sale.platformFundedDiscountPaise,
+        commissionBasePaise: -sale.commissionBasePaise,
+        commissionPaise: -sale.commissionPaise,
+        payablePaise: -sale.payablePaise,
+        // A negated payable is not a negative *margin* — that flag describes a sale whose
+        // commission exceeded what the org earned, which a reversal is not.
+        isNegativeMargin: false,
+        note: input.note,
+        lines: {
+          create: sale.lines.map((line) => ({
+            orderItemId: line.orderItemId,
+            basePaise: -line.basePaise,
+            rateBps: line.rateBps,
+            commissionPaise: -line.commissionPaise,
           })),
         },
       },
@@ -281,25 +331,6 @@ export class LedgerRepository {
     return await db.orgLedgerEntry.findUnique({ where: { id }, ...ENTRY_WITH_LINES });
   }
 
-  /**
-   * Paid orders that produced no ledger entry.
-   *
-   * The recording of an entry deliberately cannot fail a payment — the gateway has
-   * already taken the money, so refusing to confirm an order over a bookkeeping row
-   * would be the worse outcome. What that leaves is a gap, and a gap that exists only
-   * in a log line is a gap nobody finds: an organisation simply is not credited.
-   *
-   * So the gap is a **query**, the same shape as the stuck-payment sweep that already
-   * runs nightly. Anything this returns is money owed and unrecorded.
-   */
-  async paidOrdersMissingEntries(limit = 200): Promise<string[]> {
-    return await orderRepository.findPaidWithoutLedgerEntries(limit);
-  }
-
-  /** How many, without fetching them — a capped list would report its own cap. */
-  async countPaidOrdersMissingEntries(): Promise<number> {
-    return await orderRepository.countPaidWithoutLedgerEntries();
-  }
   // ── Maintenance ───────────────────────────────────────────────────────────
 
   /** An entry with the settlement status that decides whether it may be edited. */

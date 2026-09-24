@@ -9,6 +9,7 @@ import {
   updateOrgLocationSchema,
 } from "@/lib/validation/schemas/location.schema";
 import { toOrgLocation } from "@server/catalog/org.address.repository";
+import { ZodError } from "zod";
 
 const valid = {
   name: "Bhendi Bazaar shop",
@@ -26,12 +27,12 @@ describe("orgLocationSchema", () => {
   });
 
   it("requires a courier-collectable address — street, city, state, valid pincode", () => {
-    expect(() => orgLocationSchema.parse({ ...valid, addressLine1: "" })).toThrow();
-    expect(() => orgLocationSchema.parse({ ...valid, pincode: "40000" })).toThrow();
+    expect(() => orgLocationSchema.parse({ ...valid, addressLine1: "" })).toThrow(ZodError);
+    expect(() => orgLocationSchema.parse({ ...valid, pincode: "40000" })).toThrow(ZodError);
   });
 
   it("requires a pickup contact with a real mobile", () => {
-    expect(() => orgLocationSchema.parse({ ...valid, contactPhone: "12345" })).toThrow();
+    expect(() => orgLocationSchema.parse({ ...valid, contactPhone: "12345" })).toThrow(ZodError);
   });
 
   it("PATCH fires no defaults — unmentioned fields stay unmentioned", () => {

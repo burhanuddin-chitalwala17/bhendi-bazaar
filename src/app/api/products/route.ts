@@ -11,7 +11,7 @@
  *
  * **A shop is named by handle, never by id.** The handle is public and resolves here to
  * an org; an `orgId` accepted from a caller is exactly how a storefront listing would
- * stop being scoped to its own shop (ADR-0030 decision 6). Visibility — `ON_SALE`,
+ * stop being scoped to its own shop (ADR-0030 decision 6). Visibility — `AVAILABLE`,
  * `FROM_ACTIVE_ORG` — rides inside `getProducts`, so page two of a withdrawn shop is as
  * empty as page one.
  */

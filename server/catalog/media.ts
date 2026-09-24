@@ -33,6 +33,18 @@ export interface ProductMediaDto {
 export const MAX_MEDIA_PER_PRODUCT = 10;
 
 /**
+ * What one review may carry (review-media R1, R6, trd.md D4).
+ *
+ * Here beside the product's budget rather than in the review module: two paths enforce
+ * every image limit in this store — the server route with sharp, and the browser wizard
+ * on a canvas — and a budget one of them did not know about would be no budget at all.
+ * Four photographs is page weight and storage before it is editorial; one video, because
+ * a review is one person's account of one purchase.
+ */
+export const MAX_REVIEW_PHOTOS = 4;
+export const MAX_REVIEW_VIDEOS = 1;
+
+/**
  * How far a photograph can be magnified on the surfaces that allow it — the gallery's
  * pinch and hover zoom, and the lightbox. Declared here because the stored ceiling below
  * is derived from it: the two cannot be chosen independently without the zoom going soft.

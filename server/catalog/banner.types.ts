@@ -8,7 +8,7 @@ export type BannerActionInput = {
 
 /** What a write path accepts. `order` is absent on purpose — it is server-owned. */
 export type BannerInput = {
-  title: string;
+  title: string | null;
   eyebrow: string | null;
   description: string | null;
   imageUrl: string | null;
@@ -19,7 +19,7 @@ export type BannerInput = {
 
 export type AdminBanner = {
   id: string;
-  title: string;
+  title: string | null;
   eyebrow: string | null;
   description: string | null;
   imageUrl: string | null;

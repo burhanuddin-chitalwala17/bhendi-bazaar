@@ -1,6 +1,7 @@
 import { appUrl } from "@server/shared/app-url";
 import { formatPhone } from "@server/shared/phone";
 import { formatDate, formatPaise } from "../formatters";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
 import {
   button,
   closingNote,
@@ -199,7 +200,7 @@ function renderItemRows(items: OrderEmailLineItem[]): string {
 }
 
 function renderOrderSummary(order: OrderEmailView): string {
-  const paid = order.paymentStatus === "paid";
+  const paid = order.paymentStatus === PAYMENT_STATUS.PAID;
   const delivery = order.shipments[0]?.estimatedDelivery;
 
   return `

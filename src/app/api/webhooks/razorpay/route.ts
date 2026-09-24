@@ -9,7 +9,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { paymentService } from "@server/payments/payment.service";
-import { isDomainError } from "@server/shared/domain-error";
+import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,14 +50,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true, ignored: event.eventType });
     }
   } catch (error) {
+    // Non-2xx on an unmatched payload is deliberate (D5): the gateway retries and
+    // records the failure. `toErrorResponse` preserves a DomainError's status and
+    // keeps internal error text out of the response body.
     console.error("Webhook processing failed:", error);
-    const status = isDomainError(error) ? error.status : 500;
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Webhook processing failed",
-      },
-      { status },
-    );
+    return toErrorResponse(error, "Webhook processing failed");
   }
 }

@@ -3,6 +3,7 @@
  * Handles database operations for admin activity logging
  */
 
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 import type {
   AdminLogEntry,
@@ -29,7 +30,9 @@ export class AdminLogRepository {
         action: data.action,
         resource: data.resource,
         resourceId: data.resourceId,
-        metadata: data.metadata || {},
+        // The one place the domain's `Record<string, unknown>` meets Prisma's
+        // `InputJsonValue`, which demands an index signature no declared interface has.
+        metadata: (data.metadata ?? {}) as Prisma.InputJsonValue,
       },
     });
   }
@@ -60,16 +63,17 @@ export class AdminLogRepository {
 
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.AdminLogWhereInput = {};
 
     if (adminId) where.adminId = adminId;
     if (resource) where.resource = resource;
     if (action) where.action = action;
 
     if (dateFrom || dateTo) {
-      where.createdAt = {};
-      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
-      if (dateTo) where.createdAt.lte = new Date(dateTo);
+      where.createdAt = {
+        ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+        ...(dateTo ? { lte: new Date(dateTo) } : {}),
+      };
     }
 
     const [logs, total] = await Promise.all([

@@ -19,3 +19,16 @@ export function formatCurrency(paise: number, currency: "INR" = "INR") {
     maximumFractionDigits: wholeRupees ? 0 : 2,
   }).format(paise / 100);
 }
+
+/**
+ * `pending_payment` → `Pending Payment`. For rendering a declared status in a picker, so the
+ * option list can be derived from the set rather than retyped beside it — eleven literals in the
+ * admin order filter were how a filter came to offer statuses the domain no longer used.
+ */
+export function titleCase(value: string): string {
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}

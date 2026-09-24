@@ -2,6 +2,17 @@
  * Admin Activity Log Domain Types
  */
 
+import type { Prisma } from "@prisma/client";
+
+/**
+ * What an action records about itself. `Record<string, unknown>` rather than Prisma's
+ * `InputJsonValue`: that type requires an index signature, so every caller passing a
+ * declared interface (`UpdateCategoryInput`, say) would have to widen it or cast. The
+ * one cast lives in `audit.repository.ts` at the Prisma call instead, which keeps the
+ * `any` out of the domain type and out of every call site.
+ */
+export type AuditMetadata = Record<string, unknown>;
+
 export interface AdminLogEntry {
   id: string;
   adminId: string;
@@ -9,7 +20,7 @@ export interface AdminLogEntry {
   action: string;
   resource: string;
   resourceId: string;
-  metadata: any;
+  metadata: Prisma.JsonValue;
   createdAt: Date;
 }
 
@@ -18,7 +29,7 @@ export interface CreateLogInput {
   action: string;
   resource: string;
   resourceId: string;
-  metadata?: any;
+  metadata?: AuditMetadata;
 }
 
 export interface LogFilters {

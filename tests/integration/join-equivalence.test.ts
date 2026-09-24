@@ -8,30 +8,28 @@
  * semantics (ordering, filtered nested includes, enum serialisation) fails
  * here, not in production.
  *
- * Needs the seeded local database; skips anywhere else.
+ * **Every case asserts it compared something.** Three did not, and passed against CI's empty
+ * schema by comparing `[]` to `[]` — a strategy-equivalence test over no rows equates nothing.
+ *
+ * Needs a populated catalogue, so it runs where one exists and says why when it does not. The
+ * seed is destructive and refuses to run in CI (Invariant 7), so this suite is dev-only by
+ * construction rather than by accident; `tests/unit/test-integrity.test.ts` holds the list of
+ * suites allowed to be data-dependent and lets it shrink only.
  */
 import "dotenv/config";
 import { describe, it, expect } from "vitest";
+import { hasCatalogueData, isDisposableDb } from "../helpers/test-db";
 
-const dbUrl = process.env.DATABASE_URL ?? "";
-const isLocalDb = (() => {
-  try {
-    const url = new URL(dbUrl);
-    return (
-      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) &&
-      url.pathname === "/bhendi_bazaar_dev"
-    );
-  } catch {
-    return false;
-  }
-})();
 
 async function bothStrategies(run: (strategy: "join" | "query") => Promise<unknown>) {
   const [joined, queried] = await Promise.all([run("join"), run("query")]);
   return { joined: JSON.parse(JSON.stringify(joined)), queried: JSON.parse(JSON.stringify(queried)) };
 }
 
-describe.skipIf(!isLocalDb)("join/query strategy equivalence (local seeded db)", () => {
+/** Resolved once, at module scope: a skip decision cannot be made inside `describe`. */
+const populated = isDisposableDb && (await hasCatalogueData());
+
+describe.skipIf(!populated)("join/query strategy equivalence (needs a populated catalogue)", () => {
   it("products with the full storefront include tree", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { joined, queried } = await bothStrategies((relationLoadStrategy) =>
@@ -94,6 +92,7 @@ describe.skipIf(!isLocalDb)("join/query strategy equivalence (local seeded db)",
         include: { targets: true },
       })
     );
+    expect(joined.length).toBeGreaterThan(0);
     expect(joined).toEqual(queried);
   });
 
@@ -106,6 +105,7 @@ describe.skipIf(!isLocalDb)("join/query strategy equivalence (local seeded db)",
         include: { product: { select: { name: true } } },
       })
     );
+    expect(joined.length).toBeGreaterThan(0);
     expect(joined).toEqual(queried);
   });
 
@@ -159,6 +159,7 @@ describe.skipIf(!isLocalDb)("join/query strategy equivalence (local seeded db)",
         include: { items: { orderBy: { id: "asc" as const } } },
       })
     );
+    expect(joined.length).toBeGreaterThan(0);
     expect(joined).toEqual(queried);
   });
 });

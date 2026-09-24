@@ -4,7 +4,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ImageIcon, Pencil, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ImageIcon,
+  ImageOff,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +28,9 @@ import {
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { readApiError } from "@/lib/api-error";
+import { bannerLabel } from "@/lib/banner-label";
 import type { AdminBanner } from "@server/catalog/banner.types";
+import { isRenderableImageUrl } from "@server/catalog/image-paths";
 
 /** Order as written, and membership regardless of order. */
 const sequenceOf = (list: AdminBanner[]) => list.map((b) => b.id).join("|");
@@ -127,7 +136,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <Button
                     variant="outline"
                     size="icon"
-                    aria-label={`Move ${banner.title} up`}
+                    aria-label={`Move ${bannerLabel(banner.title)} up`}
                     disabled={index === 0 || frozen}
                     onClick={() => move(index, index - 1)}
                     className={TAP}
@@ -137,7 +146,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   <Button
                     variant="outline"
                     size="icon"
-                    aria-label={`Move ${banner.title} down`}
+                    aria-label={`Move ${bannerLabel(banner.title)} down`}
                     disabled={index === rows.length - 1 || frozen}
                     onClick={() => move(index, index + 1)}
                     className={TAP}
@@ -146,7 +155,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                   </Button>
                 </div>
 
-                {banner.imageUrl ? (
+                {isRenderableImageUrl(banner.imageUrl) ? (
                   <div className="relative aspect-banner-source w-24 shrink-0 overflow-hidden rounded-field">
                     <Image
                       src={banner.imageUrl}
@@ -157,8 +166,16 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     />
                   </div>
                 ) : (
-                  <div className="flex aspect-banner-source w-24 shrink-0 items-center justify-center rounded-field bg-muted text-muted-foreground">
-                    <ImageIcon className="size-4" />
+                  <div
+                    className={`flex aspect-banner-source w-24 shrink-0 items-center justify-center rounded-field bg-muted ${
+                      banner.imageUrl ? "text-warning" : "text-muted-foreground"
+                    }`}
+                  >
+                    {banner.imageUrl ? (
+                      <ImageOff className="size-4" />
+                    ) : (
+                      <ImageIcon className="size-4" />
+                    )}
                   </div>
                 )}
 
@@ -168,13 +185,23 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                       {banner.eyebrow}
                     </p>
                   )}
-                  <p className="truncate font-medium">{banner.title}</p>
+                  <p
+                    className={`truncate font-medium${banner.title ? "" : " italic text-muted-foreground"}`}
+                  >
+                    {bannerLabel(banner.title)}
+                  </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
                     <StatusBadge
                       status={banner.isActive ? "inStock" : "outOfStock"}
                     >
                       {banner.isActive ? "Live" : "Down"}
                     </StatusBadge>
+                    {banner.imageUrl &&
+                      !isRenderableImageUrl(banner.imageUrl) && (
+                        <span className="text-2xs text-warning">
+                          Image needs re-uploading
+                        </span>
+                      )}
                     <span className="text-2xs text-muted-foreground">
                       {banner.actions.length} button
                       {banner.actions.length === 1 ? "" : "s"}
@@ -185,7 +212,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={banner.isActive}
-                    aria-label={`${banner.isActive ? "Take down" : "Publish"} ${banner.title}`}
+                    aria-label={`${banner.isActive ? "Take down" : "Publish"} ${bannerLabel(banner.title)}`}
                     disabled={frozen}
                     onCheckedChange={(on) => setActive(banner, on)}
                   />
@@ -193,7 +220,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     asChild
                     variant="outline"
                     size="icon"
-                    aria-label={`Edit ${banner.title}`}
+                    aria-label={`Edit ${bannerLabel(banner.title)}`}
                     className={TAP}
                   >
                     <Link
@@ -210,7 +237,7 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`Delete ${banner.title}`}
+                      aria-label={`Delete ${bannerLabel(banner.title)}`}
                       disabled={frozen}
                       onClick={() => setConfirming(banner)}
                       className={`${TAP} text-muted-foreground hover:bg-destructive/10 hover:text-destructive`}
@@ -233,8 +260,9 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
           <DialogHeader>
             <DialogTitle>Delete this banner?</DialogTitle>
             <DialogDescription>
-              “{confirming?.title}” and its buttons are removed for good. Taking
-              it down with the switch keeps the copy and artwork for next time.
+              “{bannerLabel(confirming?.title)}” and its buttons are removed for
+              good. Taking it down with the switch keeps the copy and artwork
+              for next time.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">

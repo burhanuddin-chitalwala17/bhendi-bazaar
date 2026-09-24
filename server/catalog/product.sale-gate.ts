@@ -1,5 +1,5 @@
 /**
- * Refusing a purchase of something withdrawn from sale (ADR-0029 decision 4).
+ * Refusing a purchase of something the org has archived (ADR-0029 decision 4).
  *
  * The same three-part shape bidding uses — pure rules in `product.visibility.ts`, the
  * query in the repository, the gate here — so nothing but a repository reads the
@@ -10,7 +10,7 @@ import { productsRepository, type ProductDb } from "@server/catalog/product.repo
 import { ConflictError } from "@server/shared/domain-error";
 
 /**
- * Refuse a purchase of anything withdrawn from sale.
+ * Refuse a purchase of anything the org has archived.
  *
  * Throws rather than returning a flag: every caller's correct response is to abandon
  * the write, and inside a transaction that is what a throw does — the same shape, and
@@ -29,7 +29,7 @@ export async function assertNotArchived(
   if (archived.length === 0) return;
   throw new ConflictError(
     archived.length === 1
-      ? `${archived[0]} is no longer available and has been removed from sale.`
+      ? `${archived[0]} is no longer available.`
       : `${archived.length} items in your order are no longer available: ${archived.join(", ")}.`
   );
 }

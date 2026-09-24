@@ -30,13 +30,34 @@ export async function uploadDirect(
   // Content-Type must match what was signed, or the signature does not verify. Size is
   // not signed (ADR-0028) — it cannot be — so the route's check on the declared size is
   // what bounds it, and that holds only because the uploader is authenticated.
-  const written = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "content-type": file.type },
-    body: file,
-  });
+  let written: Response;
+  try {
+    written = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "content-type": file.type },
+      body: file,
+    });
+  } catch (cause) {
+    // A rejected `fetch` here is never "the server said no" — the request did not
+    // complete. In practice that is CORS on the bucket, an extension blocking the
+    // request, or the connection dropping mid-file. Saying which it *cannot* be is
+    // what stops the next hour going into the signature, which was never involved.
+    throw new Error(
+      `Could not reach the image store to upload ${pathname}. The request never ` +
+        `completed, so this is the network or the bucket's CORS rules rather than ` +
+        `the upload permission. (${cause instanceof Error ? cause.message : String(cause)})`,
+      { cause },
+    );
+  }
+
   if (!written.ok) {
-    throw new Error(`Upload failed for ${pathname} (${written.status})`);
+    // The store answers XML with a real error code (SignatureDoesNotMatch,
+    // AccessDenied, EntityTooLarge). Dropping it left a bare status number to guess from.
+    const detail = await written.text().catch(() => "");
+    const code = detail.match(/<Code>([^<]+)<\/Code>/)?.[1];
+    throw new Error(
+      `Upload failed for ${pathname} (${written.status}${code ? ` ${code}` : ""})`,
+    );
   }
   return publicUrl;
 }

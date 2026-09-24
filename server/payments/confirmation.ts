@@ -6,6 +6,8 @@
  * trusted at all: these checks are what confer trust, not the caller.
  */
 
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
+
 export interface OrderPaymentState {
   paymentStatus: string | null;
   /** The confirmed payment id, if any — the idempotency key (trd.md D2). */
@@ -32,7 +34,7 @@ export function decideConfirmation(
 ): ConfirmationDecision {
   // A retry of the SAME payment is success with nothing to do; a DIFFERENT payment
   // against a paid order is an incident, not idempotency (D2 distinguishes the two).
-  if (order.paymentStatus === "paid") {
+  if (order.paymentStatus === PAYMENT_STATUS.PAID) {
     return order.paymentId === incoming.paymentId
       ? { kind: "already-confirmed" }
       : { kind: "reject", reason: "Order is already paid by a different payment" };

@@ -8,6 +8,7 @@ import { orgCodeCandidates } from "@server/catalog/org.code";
 import { handleCandidates } from "@server/catalog/org.handle";
 import { isUniqueViolation } from "@server/shared/constraint";
 import { DEFAULT_PAGE_SIZE, type Pagination } from "@server/shared/pagination";
+import { orgMemberRepository } from "@server/catalog/org.member.repository";
 
 export class AdminOrgService {
   /** One page of orgs for the admin listing — search, status and paging all server-side. */
@@ -101,6 +102,26 @@ export class AdminOrgService {
   /**
    * Update org with validation
    */
+  /**
+   * Whether this person belongs to this organisation.
+   *
+   * A boolean rather than the membership row, because that is the whole question the callers
+   * ask: `bidding` refuses a bid on your own org's item. Anything needing the *role* is making
+   * an authorisation decision and belongs in `src/lib/org-auth.ts`, where being authorised and
+   * being scoped are one act.
+   */
+  async isMember(userId: string, orgId: string): Promise<boolean> {
+    return Boolean(await orgMemberRepository.findMembership(userId, orgId));
+  }
+
+  /**
+   * Who to write to about this organisation — the name and address a payout or settlement
+   * email is sent to. On the service because `payouts` asks it (ADR-0033).
+   */
+  async findEmailContact(id: string) {
+    return await orgRepository.findEmailContact(id);
+  }
+
   async updateOrg(id: string, data: Partial<CreateOrgInput>) {
     // Update org
     return await orgRepository.update(id, data);

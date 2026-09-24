@@ -75,8 +75,6 @@ export interface SeedProduct {
   categoryId: string;
   tags: string[];
   flags: string[];
-  rating: number;
-  reviewsCount: number;
   images: string[];
   thumbnail: string;
   /** Optional YouTube id, appended to the gallery after the photographs (ADR-0017). */
@@ -141,13 +139,19 @@ export interface OrderItem {
 export interface SeedReview {
   id: string;
   productId: string;
-  userId: string | null;
+  /** Required: a review always has an author (ADR-0032). */
+  userId: string;
   rating: number;
   title: string;
   comment: string;
   userName: string;
   isVerified: boolean;
-  isApproved: boolean;
+  /** The platform took it down. Null is published. */
+  withdrawnAt: Date | null;
+  /** The author retracted it. */
+  deletedAt: Date | null;
+  /** Object URLs for the reviewer's own photographs; empty for most rows. */
+  media: string[];
   createdAt: Date;
 }
 

@@ -1,6 +1,7 @@
 import { cache } from "react";
-import { ON_SALE } from "@server/catalog/product.visibility";
+import { AVAILABLE } from "@server/catalog/product.visibility";
 import { prisma } from "@server/shared/prisma";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
 
 /**
  * The dashboard, as declarations (dashboard-widgets R1–R4).
@@ -48,17 +49,17 @@ const orgScope = (ctx: WidgetContext) => (ctx.audience === "org" ? { orgId: ctx.
  */
 const productStockRows = cache(async (orgId: string | null) =>
   prisma.product.findMany({
-    // Inventory and low-stock are about what can be sold, so withdrawn products are
+    // Inventory and low-stock are about what can be sold, so archived products are
     // out (ADR-0029 D12). Revenue and order aggregates below are about what happened
     // and deliberately keep them.
-    where: { ...(orgId === null ? {} : { orgId }), ...ON_SALE },
+    where: { ...(orgId === null ? {} : { orgId }), ...AVAILABLE },
     select: { lowStockThreshold: true, stockLocations: { select: { quantity: true } } },
   })
 );
 
 const paidOrderTotals = cache(async () =>
   prisma.order.aggregate({
-    where: { paymentStatus: "paid" },
+    where: { paymentStatus: PAYMENT_STATUS.PAID },
     _sum: { grandTotal: true },
     _count: true,
   })
@@ -106,7 +107,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
         where: {
           ...orgScope(ctx),
           status: { in: ["pending", "processing"] },
-          order: { paymentStatus: "paid" },
+          order: { paymentStatus: PAYMENT_STATUS.PAID },
         },
       }),
       caption: "paid, not yet shipped",
@@ -123,7 +124,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
       kind: "count",
       value: await prisma.order.count({
         where: {
-          paymentStatus: "paid",
+          paymentStatus: PAYMENT_STATUS.PAID,
           ...(ctx.audience === "org" ? { shipments: { some: { orgId: ctx.orgId } } } : {}),
         },
       }),
@@ -144,7 +145,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
       // at the unit price actually paid. Shipping deliberately excluded (TRD D5).
       const lines = await prisma.shipmentItem.findMany({
         where: {
-          shipment: { orgId: ctx.orgId, order: { paymentStatus: "paid" } },
+          shipment: { orgId: ctx.orgId, order: { paymentStatus: PAYMENT_STATUS.PAID } },
         },
         select: { quantity: true, orderItem: { select: { unitPrice: true } } },
       });

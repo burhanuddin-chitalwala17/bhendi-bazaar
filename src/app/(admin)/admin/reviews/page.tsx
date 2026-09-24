@@ -1,351 +1,80 @@
 /**
- * Admin Reviews Page
- * Moderate and manage product reviews
+ * The moderation queue (product-reviews R15, R16) — a server component ([ADR-0034]).
+ *
+ * Two jobs the old table could not do. It could not *show* a review — the comment was clamped to
+ * two lines with no way to open one, so moderating meant judging words you could not read; a row
+ * now opens a detail panel with the whole review and its photographs at a size they can be judged
+ * at. And it could not tell the three states apart, because there was one boolean: a review is
+ * published, withdrawn by the platform, or retracted by its author, and only the first two are
+ * ours to change (ADR-0032).
+ *
+ * Filters live in the URL so the server can answer them; the client leaves are the filter bar and
+ * the table with its dialog and withdraw action.
  */
-
-"use client";
-
-import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { useMutation } from "@/hooks/core/useMutation";
-import { useState } from "react";
-import { toast } from "sonner";
-import { DataTable, Column } from "@/components/shared/data-table";
-import {
-  Search,
-  CheckCircle,
-  XCircle,
-  Trash2,
-  Star,
-  RefreshCw,
-} from "lucide-react";
-import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
-import type { AdminReview, ReviewListFilters } from "@/domain/admin";
-import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
-
 import { PageHeader } from "@/components/shared/page-shell";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-export default function AdminReviewsPage() {
-  const [filters, setFilters] = useState<ReviewListFilters>({
-    page: 1,
-    limit: DEFAULT_PAGE_SIZE,
+import { adminReviewsDAL } from "@/data-access-layer/admin/reviews.dal";
+import { ReviewsFilters } from "@/components/product/console/reviews/ReviewsFilters";
+import { ReviewsTable } from "@/components/product/console/reviews/ReviewsTable";
+import { REVIEW_STATES, STAR_VALUES } from "@server/catalog/review.types";
+import {
+  DEFAULT_PAGE_SIZE,
+  resolvePageNumber,
+  resolvePageSize,
+  resolveSortBy,
+  resolveSortOrder,
+} from "@server/shared/pagination";
+
+/** The columns this listing may be ordered by — the same set `ReviewListFilters` declares. */
+const SORTABLE = ["createdAt", "rating"] as const;
+
+export default async function AdminReviewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const one = (key: string) => {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+  };
+
+  const page = resolvePageNumber(one("page"));
+  const limit = resolvePageSize(one("limit"), DEFAULT_PAGE_SIZE);
+
+  // Every value from the query string is resolved against a closed set rather than cast into
+  // one (Invariant 4) — including the rating, which is a star value or nothing.
+  const state = REVIEW_STATES.find((candidate) => candidate === one("state"));
+  const isVerified = one("isVerified");
+  const minRating = STAR_VALUES.find((star) => String(star) === one("minRating"));
+
+  const { reviews, total, totalPages } = await adminReviewsDAL.list({
+    search: one("search") || undefined,
+    state,
+    isVerified: isVerified === "true" ? true : isVerified === "false" ? false : undefined,
+    minRating,
+    page,
+    limit,
+    sortBy: resolveSortBy(one("sortBy"), SORTABLE, "createdAt"),
+    sortOrder: resolveSortOrder(one("sortOrder")),
   });
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const {
-    data,
-    loading: isLoading,
-    error,
-    refetch,
-  } = useAsyncData(() => adminReviewApiClient.getReviews(filters), {
-    refetchDependencies: [filters],
-  });
-
-  const { reviews = [], totalPages = 1 } = data || {};
-
-  const { mutate: updateReview, isLoading: isUpdating } = useMutation(
-    ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: { isApproved?: boolean; isVerified?: boolean };
-    }) => adminReviewApiClient.updateReview(id, data),
-    {
-      successMessage: "Review updated successfully!",
-      onSuccess: () => refetch(),
-    },
-  );
-
-  const { mutate: deleteReview, isLoading: isDeleting } = useMutation(
-    adminReviewApiClient.deleteReview,
-    {
-      successMessage: "Review deleted successfully!",
-      onSuccess: () => refetch(),
-    },
-  );
-
-  const handleRefresh = () => {
-    toast.info("Refreshing reviews...");
-    refetch().then(() => toast.success("Reviews refreshed successfully!"));
-  };
-
-  const handleSearch = () => {
-    setFilters({ ...filters, search: searchTerm, page: 1 });
-  };
-
-  const handleToggleApprove = (reviewId: string, isApproved: boolean) => {
-    updateReview({ id: reviewId, data: { isApproved: !isApproved } }).then(() =>
-      toast.success("Review updated successfully!"),
-    );
-  };
-
-  const handleDelete = async (reviewId: string, userName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete review by "${userName}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-    deleteReview(reviewId).then(() =>
-      toast.success("Review deleted successfully!"),
-    );
-  };
-
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`w-4 h-4 ${
-              star <= rating
-                ? "fill-warning text-warning"
-                : "text-muted-foreground/50"
-            }`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  const columns: Column<AdminReview>[] = [
-    {
-      key: "productName",
-      label: "Product",
-      render: (review) => (
-        <div>
-          <p className="font-medium text-sm">{review.productName}</p>
-        </div>
-      ),
-    },
-    {
-      key: "userName",
-      label: "Customer",
-      render: (review) => (
-        <div>
-          <p className="font-medium">{review.userName}</p>
-          {review.isVerified && (
-            <span className="text-xs text-success">✓ Verified Purchase</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "rating",
-      label: "Rating",
-      sortable: true,
-      render: (review) => (
-        <div className="flex items-center gap-2">
-          {renderStars(review.rating)}
-          <span className="text-sm font-semibold">{review.rating}.0</span>
-        </div>
-      ),
-    },
-    {
-      key: "review",
-      label: "Review",
-      render: (review) => (
-        <div className="max-w-md">
-          {review.title && (
-            <p className="font-medium text-sm mb-1">{review.title}</p>
-          )}
-          {review.comment && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {review.comment}
-            </p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "isApproved",
-      label: "Status",
-      render: (review) => (
-        <Button
-          variant="ghost"
-          onClick={() => handleToggleApprove(review.id, review.isApproved)}
-          className={`px-3 py-1 rounded-full text-xs font-medium ${
-            review.isApproved
-              ? "bg-success/15 text-success hover:bg-success/25"
-              : "bg-destructive/15 text-destructive hover:bg-destructive/25"
-          }`}
-        >
-          {review.isApproved ? "Approved" : "Pending"}
-        </Button>
-      ),
-    },
-    {
-      key: "createdAt",
-      label: "Date",
-      sortable: true,
-      render: (review) => new Date(review.createdAt).toLocaleDateString(),
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (review) => (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => handleToggleApprove(review.id, review.isApproved)}
-            className={`p-2 rounded-lg transition-colors ${
-              review.isApproved
-                ? "text-warning hover:bg-warning/10"
-                : "text-success hover:bg-success/10"
-            }`}
-            title={review.isApproved ? "Unapprove" : "Approve"}
-          >
-            {review.isApproved ? (
-              <XCircle className="w-4 h-4" />
-            ) : (
-              <CheckCircle className="w-4 h-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleDelete(review.id, review.userName)}
-            className="text-destructive hover:bg-destructive/10"
-            title="Delete review"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Reviews"
-        description="Moderate and manage customer reviews"
-        actions={
-          <Button
-            variant="default"
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-            />
-            {isLoading ? "Refreshing..." : "Refresh"}
-          </Button>
-        }
+        description="Read, withdraw and restore customer reviews. Nothing here is deleted."
       />
 
-      {/* Filters */}
-      <div className="bg-card rounded-lg border border-border p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="w-full min-w-0 grow sm:w-auto sm:min-w-64">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search by product, customer, or review..."
-              />
-              <Button
-                variant="default"
-                onClick={handleSearch}
-                className="flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search
-              </Button>
-            </div>
-          </div>
-
-          <Select
-            value={
-              filters.isApproved === undefined
-                ? "all"
-                : filters.isApproved
-                  ? "approved"
-                  : "pending"
-            }
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                isApproved:
-                  e.target.value === "all"
-                    ? undefined
-                    : e.target.value === "approved",
-                page: 1,
-              })
-            }
-          >
-            <option value="all">All Reviews</option>
-            <option value="approved">Approved</option>
-            <option value="pending">Pending</option>
-          </Select>
-
-          <Select
-            value={
-              filters.isVerified === undefined
-                ? "all"
-                : filters.isVerified
-                  ? "verified"
-                  : "unverified"
-            }
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                isVerified:
-                  e.target.value === "all"
-                    ? undefined
-                    : e.target.value === "verified",
-                page: 1,
-              })
-            }
-          >
-            <option value="all">All Types</option>
-            <option value="verified">Verified Purchase</option>
-            <option value="unverified">Not Verified</option>
-          </Select>
-
-          <Select
-            value={filters.minRating || "all"}
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                minRating:
-                  e.target.value === "all"
-                    ? undefined
-                    : parseInt(e.target.value),
-                page: 1,
-              })
-            }
-          >
-            <option value="all">All Ratings</option>
-            <option value="5">5 Stars</option>
-            <option value="4">4+ Stars</option>
-            <option value="3">3+ Stars</option>
-            <option value="2">2+ Stars</option>
-            <option value="1">1+ Stars</option>
-          </Select>
-        </div>
+      <div className="rounded-card border border-border bg-card p-4">
+        <ReviewsFilters />
       </div>
 
-      {/* Reviews Table */}
-      <DataTable
-        data={reviews}
-        columns={columns}
+      <ReviewsTable
+        reviews={reviews}
+        page={page}
+        pageSize={limit}
         totalPages={totalPages}
-        currentPage={filters.page || 1}
-        totalItems={data?.total || 0}
-        pageSize={filters.limit ?? DEFAULT_PAGE_SIZE}
-        onPageChange={(page) => setFilters({ ...filters, page })}
-        onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
-        onSort={(key, order) =>
-          setFilters({ ...filters, sortBy: key as any, sortOrder: order })
-        }
-        isLoading={isLoading}
+        total={total}
       />
     </div>
   );

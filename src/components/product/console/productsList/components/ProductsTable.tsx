@@ -3,20 +3,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Archive,
-  ArchiveRestore,
-  Edit,
-  Eye,
-  Heart,
-  Trash2,
-} from "lucide-react";
+import { Archive, ArchiveRestore, Edit, Eye, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockBadge } from "@/components/shared/badges/StatusBadge";
 import { ProductFlag } from "@/types/product";
 import { ProductForTable } from "../../types";
+import { ProductRowMenu } from "./ProductRowMenu";
 import { Pagination } from "@/types/shared";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
 
@@ -26,7 +20,7 @@ interface ProductsTableProps {
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
   onDelete: (id: string, name: string) => void;
-  /** Take a product off sale, or put it back (ADR-0029). */
+  /** Archive a product, or restore it (ADR-0029). */
   onSetArchived: (id: string, archived: boolean, name: string) => void;
   onEdit: (id: string) => void;
   onView: (id: string) => void;
@@ -59,7 +53,7 @@ export function ProductsTable({
           <Image
             src={product.thumbnail}
             alt={product.name}
-            // A withdrawn product is dimmed rather than hidden: the org asked to see
+            // An archived product is dimmed rather than hidden: the org asked to see
             // it, and the state has to be legible at a glance on a phone.
             className={`w-12 h-12 object-cover rounded${product.archivedAt ? " opacity-50" : ""}`}
             width={48}
@@ -75,7 +69,7 @@ export function ProductsTable({
               </p>
               {product.archivedAt && (
                 <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded">
-                  Withdrawn
+                  Archived
                 </span>
               )}
             </div>
@@ -211,7 +205,7 @@ export function ProductsTable({
                 onSetArchived(product.id, !product.archivedAt, product.name)
               }
               disabled={isPending}
-              title={product.archivedAt ? "Put back on sale" : "Take off sale"}
+              title={product.archivedAt ? "Restore" : "Archive"}
             >
               {product.archivedAt ? (
                 <ArchiveRestore className="w-4 h-4 text-success" />
@@ -219,21 +213,16 @@ export function ProductsTable({
                 <Archive className="w-4 h-4 text-muted-foreground" />
               )}
               <span className="sr-only">
-                {product.archivedAt ? "Put back on sale" : "Take off sale"}
+                {product.archivedAt ? "Restore product" : "Archive product"}
               </span>
             </Button>
           )}
           {!readOnly && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(product.id, product.name)}
+            <ProductRowMenu
+              product={product}
+              onDelete={onDelete}
               disabled={isPending}
-              className="text-destructive hover:bg-destructive/10"
-              title="Delete product"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            />
           )}
         </div>
       ),

@@ -6,7 +6,7 @@
  */
 
 import { razorpayRepository } from "@server/payments/providers/razorpay/razorpay.repository";
-import { ORDER_STATUS } from "@server/checkout/order.types";
+import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 import type {
   ReleaseOutcome,
   ServerPaymentOrder,
@@ -41,7 +41,7 @@ export class PaymentService {
     // order's grandTotal was itself computed from the catalogue inside the creation
     // transaction (ADR-0002). checkout is called through its public surface.
     const order = await orderService.getOrderById(input.localOrderId); // throws NotFound itself
-    if (order.paymentStatus === "paid") {
+    if (order.paymentStatus === PAYMENT_STATUS.PAID) {
       throw new ConflictError("This order is already paid");
     }
 
@@ -108,15 +108,15 @@ export class PaymentService {
       throw new ConflictError(decision.reason);
     }
     if (decision.kind === "already-confirmed") {
-      return { orderId: order.id, paymentStatus: "paid" as const, alreadyConfirmed: true };
+      return { orderId: order.id, paymentStatus: PAYMENT_STATUS.PAID, alreadyConfirmed: true };
     }
 
     const transitioned = await orderRepository.confirmPaid(order.id, input.paymentId);
     if (!transitioned) {
       // Lost the race to the other trigger. Re-read: the same payment is success.
       const now = await orderService.getOrderById(input.localOrderId);
-      if (now.paymentStatus === "paid" && now.paymentId === input.paymentId) {
-        return { orderId: order.id, paymentStatus: "paid" as const, alreadyConfirmed: true };
+      if (now.paymentStatus === PAYMENT_STATUS.PAID && now.paymentId === input.paymentId) {
+        return { orderId: order.id, paymentStatus: PAYMENT_STATUS.PAID, alreadyConfirmed: true };
       }
       throw new ConflictError("Order is already paid by a different payment");
     }
@@ -125,7 +125,7 @@ export class PaymentService {
     // this line is reached exactly once per order.
     await orderService.onPaymentConfirmed(order.id);
 
-    return { orderId: order.id, paymentStatus: "paid" as const, alreadyConfirmed: false };
+    return { orderId: order.id, paymentStatus: PAYMENT_STATUS.PAID, alreadyConfirmed: false };
   }
 
   /**
@@ -180,15 +180,15 @@ export class PaymentService {
     if (order.grandTotal !== 0) {
       throw new ConflictError("This order has an amount due and needs payment");
     }
-    if (order.paymentStatus === "paid") {
-      return { orderId: order.id, paymentStatus: "paid" as const, alreadyConfirmed: true };
+    if (order.paymentStatus === PAYMENT_STATUS.PAID) {
+      return { orderId: order.id, paymentStatus: PAYMENT_STATUS.PAID, alreadyConfirmed: true };
     }
 
     const transitioned = await orderRepository.confirmPaid(order.id, "free-order");
     if (transitioned) {
       await orderService.onPaymentConfirmed(order.id);
     }
-    return { orderId: order.id, paymentStatus: "paid" as const, alreadyConfirmed: !transitioned };
+    return { orderId: order.id, paymentStatus: PAYMENT_STATUS.PAID, alreadyConfirmed: !transitioned };
   }
 
   /**
@@ -210,7 +210,7 @@ export class PaymentService {
       throw new NotFoundError("Order not found");
     }
 
-    if (order.paymentStatus === "paid") {
+    if (order.paymentStatus === PAYMENT_STATUS.PAID) {
       return { orderId: order.id, outcome: "already-paid" };
     }
     if (order.status === ORDER_STATUS.EXPIRED) {

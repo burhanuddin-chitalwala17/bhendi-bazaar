@@ -39,11 +39,16 @@ const action = z.object({
 });
 
 export const bannerFormSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(2, "Title must be at least 2 characters")
-    .max(120),
+  // Optional, like every other word on the banner. A blank one is null rather than
+  // "", so the renderer has a single thing to branch on when it decides whether the
+  // banner carries any words at all — an empty string would still read as text and
+  // would keep the scrim over artwork that needs none.
+  title: blankToNull(120)
+    .default(null)
+    .refine(
+      (value) => value === null || value.length >= 2,
+      "Title must be at least 2 characters",
+    ),
   eyebrow: blankToNull(60).default(null),
   description: blankToNull(400).default(null),
   imageUrl: blankToNull(2048).default(null),

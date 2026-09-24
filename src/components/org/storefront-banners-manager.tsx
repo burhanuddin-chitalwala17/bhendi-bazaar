@@ -10,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { readApiError } from "@/lib/api-error";
+import { bannerLabel } from "@/lib/banner-label";
 import { AddPromotionDialog } from "@/components/org/add-promotion-dialog";
 
 export interface ManagedBanner {
   id: string;
-  title: string;
+  title: string | null;
   description: string | null;
   imageUrl: string | null;
   imageAlt: string | null;
@@ -122,7 +123,11 @@ export function StorefrontBannersManager({
                 className="flex items-center gap-3 rounded-field border border-border p-3"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{banner.title}</p>
+                  <p
+                    className={`truncate text-sm font-medium${banner.title ? "" : " italic text-muted-foreground"}`}
+                  >
+                    {bannerLabel(banner.title)}
+                  </p>
                   {banner.href && (
                     <p className="truncate text-2xs text-muted-foreground">
                       {banner.href}
@@ -136,7 +141,7 @@ export function StorefrontBannersManager({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Move up"
+                    aria-label={`Move ${bannerLabel(banner.title)} up`}
                     disabled={busy || index === 0}
                     onClick={() => move(index, -1)}
                   >
@@ -145,7 +150,7 @@ export function StorefrontBannersManager({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Move down"
+                    aria-label={`Move ${bannerLabel(banner.title)} down`}
                     disabled={busy || index === banners.length - 1}
                     onClick={() => move(index, 1)}
                   >
@@ -159,7 +164,7 @@ export function StorefrontBannersManager({
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Delete promotion"
+                    aria-label={`Delete ${bannerLabel(banner.title)}`}
                     className="text-destructive"
                     disabled={busy}
                     onClick={() => remove(banner)}

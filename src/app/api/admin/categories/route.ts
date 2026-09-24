@@ -1,39 +1,17 @@
 /**
- * Admin Categories API Routes
- * GET /api/admin/categories - List categories
- * POST /api/admin/categories - Create new category
+ * POST /api/admin/categories — create a category.
+ *
+ * There is no `GET`. The listing and the parent picker are both read by server components
+ * through `adminCategoriesDAL`, so a route answering the same question was a round trip for
+ * data the page already had ([ADR-0034]).
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCategoryService } from "@server/catalog/admin.category.service";
-import type {
-  CategoryListFilters,
-  CreateCategoryInput,
-} from "@server/catalog/admin.category.types";
+import type { CreateCategoryInput } from "@server/catalog/admin.category.types";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
 import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
-
-export async function GET(request: NextRequest) {
-  try {
-    const session = await requirePlatformAdmin();
-    const { searchParams } = new URL(request.url);
-
-    const filters: CategoryListFilters = {
-      search: searchParams.get("search") || undefined,
-      page: resolvePageNumber(searchParams.get("page")),
-      limit: resolvePageSize(searchParams.get("limit")),
-      sortBy: (searchParams.get("sortBy") as any) || "order",
-      sortOrder: (searchParams.get("sortOrder") as any) || "asc",
-    };
-
-    const result = await adminCategoryService.getCategories(filters);
-    return NextResponse.json(result);
-  } catch (error) {
-    return toErrorResponse(error, "Could not fetch categories");
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {

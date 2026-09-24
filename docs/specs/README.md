@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-09-19
+- **Verified:** 2026-09-22
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -23,7 +23,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 
 | Feature | Requirement | Phase | Domain | Status |
 |---|---|---|---|---|
-| [product-archive](product-archive/spec.md) | An org takes a product off sale and back without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
+| [product-archive](product-archive/spec.md) | An org archives a product and restores it without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
 | [bulk-catalog-upload](bulk-catalog-upload/spec.md) | Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories | 6 | catalog | Implemented |
 | [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
 | [payment-confirmation](payment-confirmation/) | An order is paid when the gateway says so, for the right amount | 2 | payments, checkout | ✅ Implemented — PR-39 |
@@ -32,7 +32,8 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [product-weight-and-rates](product-weight-and-rates/) | A product's weight is recorded and prices its shipping | 3 | catalog, shipping | 📝 Draft |
 | [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | 📝 Draft — **parent of 9 subfeatures** |
 | [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |
-| [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in production, and an environment that can't enforce says so at deploy time | 4 | cross-domain | 📝 Draft |
+| [shipment-lifecycle](shipment-lifecycle/) | One status vocabulary every courier maps into, and what each state means for stock, refunds and settlement | 3 | shipping, checkout | 📝 Draft — **one open question** |
+| [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time | 4 | cross-domain | 📝 Draft |
 | [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
 | [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions, catalog, checkout | 🔨 In progress — PR-67 |
 | [org-payouts](org-payouts/) | What each organisation has earned, what the platform kept, and what is still owed | 7 | payouts, checkout | 🔨 In progress — PR-67 |
@@ -45,12 +46,18 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, cart, checkout | ✅ Implemented — PR-111 |
 | [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog | ✅ Implemented — **7 subfeatures** |
 | [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain | 📝 Draft |
+| [product-reviews](product-reviews/) | Buyers read and write reviews, photographs included, and the rating every surface shows is derived from the published ones | — | catalog | ✅ Implemented — PR-124, **1 subfeature** |
+| [supply-chain-integrity](supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, established by the pipeline | 4 | cross-domain | 📝 Draft |
+| [error-tracking](error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 5 | cross-domain | 📝 Draft |
+| [read-caching](read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 5 | catalog | 📝 Draft |
 
 ### Subfeatures
 
-Two parent folders here. [multi-vendor-marketplace](multi-vendor-marketplace/) grew out of a single question about shipping origin and turned into nine subfeatures, because the data-model work and the portal work are the same change seen from two sides. [org-storefront](org-storefront/) is seven subfeatures for the same reason in reverse: giving one organisation a public face touches its identity, the product page, the catalogue query, the seller portal and the crawl rules, and none of those is reviewable inside the others.
+Three parent folders here. [multi-vendor-marketplace](multi-vendor-marketplace/) grew out of a single question about shipping origin and turned into nine subfeatures, because the data-model work and the portal work are the same change seen from two sides. [org-storefront](org-storefront/) is seven subfeatures for the same reason in reverse: giving one organisation a public face touches its identity, the product page, the catalogue query, the seller portal and the crawl rules, and none of those is reviewable inside the others.
 
-In both, `spec.md` is the programme overview and each subfeature carries its own `spec.md`; a subfeature's `trd.md` is written when that subfeature is picked up rather than all of them up front. `org-storefront` also carries a parent `trd.md`, because the decisions its subfeatures inherit — where a storefront lives, what stays canonical, what a public query may select — are settled once for the programme rather than re-argued six times.
+[product-reviews](product-reviews/) has one: buyer-submitted photographs are a separate slice with their own upload path, storage budget and moderation hazard, and the words are worth shipping without waiting for them.
+
+In the first two, `spec.md` is the programme overview and each subfeature carries its own `spec.md`; in `product-reviews` the parent stays a full spec with one slice lifted out of it to stay inside the cap. In all three, a subfeature's `trd.md` is written when that subfeature is picked up rather than all of them up front. `org-storefront` also carries a parent `trd.md`, because the decisions its subfeatures inherit — where a storefront lives, what stays canonical, what a public query may select — are settled once for the programme rather than re-argued six times.
 
 ### Sequencing
 

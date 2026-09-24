@@ -1,10 +1,10 @@
 # Home banners
 
-**Verified:** 2026-08-30
+**Verified:** 2026-09-21
 
 ## Problem
 
-The storefront hero is three banners hard-coded in `src/lib/home-banners.ts`. Changing a
+The storefront hero is three banners hard-coded in `src/components/home/home-hero.tsx`. Changing a
 campaign — new artwork, new copy, a different order, taking one down for Eid — is a code
 edit and a deploy. The platform owner cannot do it, and the person who can is not the
 person who decides what the shop is selling this week.
@@ -16,8 +16,8 @@ own shelf space, and an org's promotion of its own products is what offers alrea
 
 ## What they can do
 
-- **Create a banner** with a headline, an optional eyebrow and description, and an
-  optional background image.
+- **Create a banner** with an optional headline, eyebrow and description, and an
+  optional background image. Every one of them may be left out.
 - **Upload the image and be told what size to bring.** The required dimensions are stated
   on the field before the file picker opens, and a file that is too small or the wrong
   shape is refused with the number it should have been.
@@ -37,7 +37,13 @@ own shelf space, and an org's promotion of its own products is what offers alrea
 
 ## Rules
 
-- A banner needs a title. Everything else may be empty.
+- Every field may be empty, headline included: a banner may be artwork and nothing else.
+- **A banner with no words carries no scrim.** The dark wash exists to make words legible
+  over a photograph and it fades on hover from `md` — but a phone has no hover, so on a
+  wordless banner it was simply a permanently dimmed picture. With nothing to read it is
+  not rendered at all. This is the hazard in the feature: the scrim is decided by the
+  presence of *any* word, not by the image, so a change that adds a word must bring it
+  back and a change that removes the last one must take it away.
 - With no image, the banner renders the brand gradient scene rather than a blank box.
 - **Every banner is the same box on screen**, whatever its copy — height is fixed and the
   text is clamped, because a rail that changes height as it advances reads as broken.

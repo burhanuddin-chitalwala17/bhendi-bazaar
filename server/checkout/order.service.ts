@@ -20,14 +20,12 @@ import { Order, Prisma } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { isValidPhone, PHONE_MESSAGE } from "@server/shared/phone";
 import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
-import { promotionService } from "@server/promotions/promotion.service";
+import { applyOffersToBasket, lineKey } from "@server/checkout/basket-discounts";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
-import { assertNotUnderBidding } from "@server/bidding/bidding-lock";
-import { assertNotArchived } from "@server/catalog/product.sale-gate";
-import { assertOrgNotWithdrawn } from "@server/catalog/org.sale-gate";
+import { assertLinesAreSaleable } from "@server/checkout/sale-gates";
 import { cartService } from "@server/cart/cart.service";
-import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
 import { ConflictError, OutOfStockError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
 
 /**
  * A `code` collision, which is the only reason to retry a whole order. With 30^8
@@ -54,6 +52,17 @@ export class OrderService {
    * Get a single order by ID
    * Validates that the order belongs to the user (if userId provided)
    */
+  /**
+   * Which of these products this user has bought — checkout's answer to catalog's one
+   * question (product-reviews R4, trd.md D8).
+   *
+   * Exported here rather than letting catalog join `OrderItem` itself: analytics is the
+   * documented exception to no-cross-domain-reads, and this is not analytics.
+   */
+  async hasPurchased(userId: string, productIds: string[]): Promise<Set<string>> {
+    return new Set(await orderRepository.purchasedProductIds(userId, productIds));
+  }
+
   async getOrderById(
     orderId: string,
     userId?: string
@@ -86,103 +95,34 @@ export class OrderService {
 
 
   /**
-   * Side effects of an order becoming paid — reached exactly once per order, because
-   * the caller is the conditional transition (payment-confirmation D3). The
-   * confirmation email moves here from updateOrder, where it fired on whoever
-   * happened to write the status. Fulfilment is deliberately NOT triggered here:
-   * booking is a placeholder until shipping-fulfilment, and a failed booking must
-   * never look like a failed payment.
+   * Paid orders that produced no ledger entry, and how many there are (org-payouts D5).
+   *
+   * Exposed on the service because `payouts` needs to ask it and a repository is never another
+   * domain's to call ([ADR-0033](../../docs/adr/0033-a-domain-is-reached-through-its-public-surface.md)).
+   * The query lives in checkout because checkout owns `prisma.order` ([ADR-0003]) — the join to
+   * `OrgLedgerEntry` does not make it a payouts query, it makes it a question payouts asks.
+   *
+   * Deliberately **not** filtered by `VISIBLE_ORDER_WHERE`: this is a sweep worklist, the
+   * documented exemption in `order.types.ts`. It is also moot — `confirmPaid` refuses an expired
+   * order and the release path refuses a paid one, so paid and expired are mutually exclusive by
+   * construction.
+   */
+  async paidOrdersMissingLedgerEntries(limit = 200): Promise<string[]> {
+    return await orderRepository.findPaidWithoutLedgerEntries(limit);
+  }
+
+  async countPaidOrdersMissingLedgerEntries(): Promise<number> {
+    return await orderRepository.countPaidWithoutLedgerEntries();
+  }
+
+  /**
+   * Side effects of an order becoming paid. The work lives in `payment-confirmed.ts`, which is
+   * where the ledger, identity and notifications meet — three reasons to change that do not
+   * belong to the order service.
    */
   async onPaymentConfirmed(orderId: string): Promise<void> {
-    const order = await orderRepository.findById(orderId);
-    if (!order) return;
-
-    // What each organisation earned, recorded now that the money is real
-    // (org-payouts D5). Idempotent per (order, org), so a replayed confirmation
-    // cannot pay an organisation twice.
-    //
-    // A failure here must not unwind a confirmed payment — the gateway has already
-    // taken the money, so refusing to confirm an order over a bookkeeping row is the
-    // worse outcome. It therefore does not throw.
-    //
-    // What that leaves is a gap, and a gap living only in a log line is one nobody
-    // finds. So the omission is queryable: `paidOrdersMissingEntries` returns exactly
-    // these orders, the nightly reconcile sweep writes them, and the payout console
-    // shows the count. The log is a breadcrumb, not the safety net.
-    try {
-      const { ledgerService } = await import("@server/payouts/ledger.service");
-      await ledgerService.recordSale(orderId);
-    } catch (error) {
-      console.error(
-        `[onPaymentConfirmed] ledger entry not written for order ${orderId} — the reconcile sweep will pick it up`,
-        error
-      );
-    }
-
-    // Deliberately nothing here for the wishlist: a purchase does not clear a wish.
-    // Only the heart removes a saved product, so someone who bought one as a gift
-    // still has theirs saved, and a cancelled order needs nothing put back.
-
-    const deliveryAddress = order.address as OrderEmailView["address"] | null;
-    // The address book's email is per-address and usually left blank (it isn't asked
-    // for at checkout, only when adding an address). Falling back to the account's
-    // login email is why a signed-in buyer gets this at all — without it, this branch
-    // was reached almost never, only for guests, who fill email in explicitly.
-    let recipientEmail = deliveryAddress?.email ?? null;
-    if (!recipientEmail && order.userId) {
-      const { profileRepository } = await import("@server/identity/profile.repository");
-      recipientEmail = await profileRepository.findEmailById(order.userId);
-    }
-
-    if (deliveryAddress && recipientEmail) {
-      const lineItems: OrderEmailView["items"] = [];
-      for (const shipment of order.shipments) {
-        for (const item of shipment.items) {
-          lineItems.push({
-            name: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            totalPrice: item.price * item.quantity,
-            size: item.size,
-            color: item.color,
-          });
-        }
-      }
-
-      const { emailService } = await import("@server/notifications/email.service");
-      emailService
-        .sendPurchaseConfirmationEmail(
-          {
-            id: order.id,
-            code: order.code,
-            status: order.status,
-            paymentStatus: order.paymentStatus,
-            createdAt: order.createdAt,
-            notes: order.notes,
-            items: lineItems,
-            itemsTotal: order.itemsTotal,
-            discount: order.discount,
-            grandTotal: order.grandTotal,
-            address: deliveryAddress,
-            shipments: order.shipments.map((s) => ({
-              estimatedDelivery: s.estimatedDelivery?.toISOString(),
-            })),
-          },
-          recipientEmail
-        )
-        .catch((error) => {
-          console.error("Failed to send purchase confirmation email:", error);
-          // Email failure must not unwind a confirmed payment.
-        });
-    } else if (!recipientEmail) {
-      // Order creation requires an email for guests and falls back to the account
-      // email for logged-in buyers, so this should be unreachable in practice — if
-      // it fires, something upstream (e.g. an account with no email) let an order
-      // through with no way to notify the buyer.
-      console.error(
-        `[onPaymentConfirmed] order ${order.code} has no resolvable email — confirmation not sent`
-      );
-    }
+    const { onPaymentConfirmed } = await import("@server/checkout/payment-confirmed");
+    return onPaymentConfirmed(orderId);
   }
 
   /**
@@ -254,28 +194,16 @@ export class OrderService {
         // (ADR-0018). The request contributed a coupon *code* and nothing else: the
         // amount is computed here (Invariant 1, ADR-0002).
         const now = new Date();
-        const discountableLines = pricedLines.map((line) => {
-          const product = products.get(line.productId) as NonNullable<ReturnType<typeof products.get>>;
-          return {
-            key: `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`,
-            productId: line.productId,
-            orgId: product.orgId,
-            categoryId: product.categoryId,
-            unitPrice: line.unitPrice,
-            quantity: line.quantity,
-          };
-        });
-        // Also claims any coupon use with a conditional write, so a limited coupon
-        // cannot be oversold by concurrent checkouts (promotions D11, ADR-0007).
-        const discounts = await promotionService.applyToOrder(discountableLines, {
-          code: input.couponCode,
-          // A per-buyer limit needs an identity to count against; a guest order has
-          // none, and the engine refuses such a code rather than exempting it.
+        // `basket-discounts.ts` owns the shape translation and the coupon claim; see its header
+        // for why both belong inside this transaction.
+        const { discounts, discountByKey } = await applyOffersToBasket({
+          pricedLines,
+          products,
+          couponCode: input.couponCode,
           userId: input.userId ?? null,
           now,
           tx,
         });
-        const discountByKey = new Map(discounts.lines.map((line) => [line.key, line]));
 
         // Where the stock actually is (active locations only): the same pure
         // allocation the checkout preview ran, now against the rows this transaction
@@ -387,27 +315,10 @@ export class OrderService {
           }
         }
 
-        // Nothing up for bidding may be bought directly (bidding spec R31).
-        //
-        // Deliberately **after** the reservation above, not before. The reservation is
-        // what takes the row lock on this product's stock, and opening a bidding event
-        // takes the same lock — so checking afterwards means an event committed by
-        // another transaction is either already visible here (and refused) or still
-        // blocked behind our lock (and will see the stock we just took). Checking
-        // first would leave a window where both succeed and an item is sold while it
-        // is under auction.
-        await assertNotUnderBidding(productIds, now, tx);
-
-        // Nothing withdrawn from sale may be bought (ADR-0029, product-archive R4).
-        //
-        // Here for the same reason as the check above, and behind the same lock: a
-        // listing filter cannot stop a cart filled before the withdrawal, a page
-        // rendered a minute ago, or a request typed by hand. This is the only point
-        // that can refuse, because it is the only one inside the write.
-        await assertNotArchived(productIds, tx);
-        // Same point, same reason: a withdrawn shop's goods are refused here rather
-        // than merely hidden from the listing (org-withdrawal R5).
-        await assertOrgNotWithdrawn(productIds, tx);
+        // Deliberately **after** the reservation above — `sale-gates.ts` explains why the
+        // lock ordering makes this the only race-safe point, and the only one that can
+        // refuse at all.
+        await assertLinesAreSaleable(productIds, now, tx);
 
         // R6: the bought lines leave the cart in the same transaction, so a closed
         // tab cannot leave a cart that has already been purchased. Only those lines —
@@ -429,7 +340,7 @@ export class OrderService {
             grandTotal: totals.grandTotal,
             paymentMethod: input.paymentMethod,
             // Never from the request: payment state has exactly one writer (Invariant 2).
-            paymentStatus: "pending",
+            paymentStatus: PAYMENT_STATUS.PENDING,
             status: "pending_payment", // Order is pending until payment
           },
         });
@@ -477,12 +388,20 @@ export class OrderService {
         // must not change what a completed order looks like. `pricedLines` already
         // carries it from the catalogue precisely so a client-sent one cannot become
         // history — this persists that value instead of re-deriving it on every read.
-        const orderItemIdByKey = new Map<string, string>();
-        for (const line of pricedLines) {
-          const key = `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`;
-          const share = discountByKey.get(key);
-          const created = await tx.orderItem.create({
-            data: {
+        // Written in one statement rather than one per line. Every statement here is a
+        // billed operation AND is held inside the transaction that already holds the
+        // guarded stock decrement's row locks (ADR-0007), so the loop cost checkout
+        // throughput as well as money. Measured on a six-line, one-parcel order: 28
+        // statements before, 18 after — `OrderItem` 6 inserts to 1, `ShipmentItem` 6 to 1.
+        // The saving grows with the basket; the lock is held for all of it.
+        //
+        // `createManyAndReturn` because the ids ARE needed below — but keyed off each
+        // returned row's own fields, never its position, so nothing depends on the
+        // driver returning rows in the order they were sent.
+        const createdItems = await tx.orderItem.createManyAndReturn({
+          data: pricedLines.map((line) => {
+            const share = discountByKey.get(lineKey(line));
+            return {
               orderId: order.id,
               productId: line.productId,
               quantity: line.quantity,
@@ -496,17 +415,21 @@ export class OrderService {
               // (ADR-0019, org-payouts D4c).
               discountPaise: share?.buyerDiscountPaise ?? 0,
               orgFundedPaise: share?.orgFundedPaise ?? 0,
-            },
-          });
-          orderItemIdByKey.set(key, created.id);
-        }
+            };
+          }),
+          select: { id: true, productId: true, size: true, color: true },
+        });
+
+        const orderItemIdByKey = new Map(
+          createdItems.map((item) => [lineKey(item), item.id])
+        );
 
         // One attribution row per offer per organisation, carrying who funded what.
         // A database check asserts the two halves sum to the buyer's discount, so no
         // settlement can later be computed from a split that does not reconcile.
-        for (const attribution of discounts.attributions) {
-          await tx.orderDiscount.create({
-            data: {
+        if (discounts.attributions.length) {
+          await tx.orderDiscount.createMany({
+            data: discounts.attributions.map((attribution) => ({
               orderId: order.id,
               promotionId: attribution.promotionId,
               orgId: attribution.orgId,
@@ -515,21 +438,25 @@ export class OrderService {
               buyerDiscountPaise: attribution.buyerDiscountPaise,
               orgFundedPaise: attribution.orgFundedPaise,
               platformFundedPaise: attribution.platformFundedPaise,
-            },
+            })),
           });
         }
-        for (const { shipment, lines } of createdShipments) {
-          for (const line of lines) {
-            await tx.shipmentItem.create({
-              data: {
-                shipmentId: shipment.id,
-                orderItemId: orderItemIdByKey.get(
-                  `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`
-                ) as string,
-                quantity: line.quantity,
-              },
-            });
-          }
+
+        const shipmentItems = createdShipments.flatMap(({ shipment, lines }) =>
+          lines.map((line) => ({
+            shipmentId: shipment.id,
+            // An absent id would mean a parcel referencing a line this order never
+            // priced — an allocation bug, and silently writing null is how it would
+            // reach settlement unnoticed.
+            orderItemId: orderItemIdByKey.get(lineKey(line)) as string,
+            quantity: line.quantity,
+          }))
+        );
+        if (shipmentItems.some((item) => !item.orderItemId)) {
+          throw new Error("Allocated a parcel line that has no priced order item");
+        }
+        if (shipmentItems.length) {
+          await tx.shipmentItem.createMany({ data: shipmentItems });
         }
 
         // Return order with shipments in the expected format. Line shape matches
@@ -602,7 +529,7 @@ export class OrderService {
     }
 
     // Verify payment is confirmed
-    if (order.paymentStatus !== "paid") {
+    if (order.paymentStatus !== PAYMENT_STATUS.PAID) {
       throw new NonRetryableError(
         `Cannot fulfill order ${order.code}: Payment not confirmed (status: ${order.paymentStatus})`
       );

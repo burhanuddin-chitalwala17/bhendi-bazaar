@@ -12,6 +12,8 @@ import { prisma } from "@server/shared/prisma";
 import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
+import { applyStatus } from "@server/shipping/shipment-status.service";
+import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 const updateTrackingSchema = z.object({
   trackingNumber: z.string().min(5, "AWB/Tracking number is required"),
   courierName: z.string().min(2, "Courier name is required"),
@@ -67,14 +69,13 @@ export async function PATCH(
     // Update shipment with tracking details
     const updatedShipment = await prisma.shipment.update({
       where: { id: shipmentId },
-      data: {
-        trackingNumber,
-        courierName,
-        trackingUrl,
-        status: "shipped", // Mark as shipped once tracking is added
-        updatedAt: new Date(),
-      },
+      data: { trackingNumber, courierName, trackingUrl, updatedAt: new Date() },
     });
+
+    // An AWB means the courier has it. The status moves through the one writer that owns the
+    // column, so the transition table decides whether the move is legal — it used to be the
+    // literal `"shipped"`, a value `ShipmentStatus` did not contain (shipment-lifecycle D12).
+    await applyStatus(shipmentId, SHIPMENT_STATUS.PICKED_UP);
 
     // Log the update
     console.log(`✅ Tracking updated for shipment ${shipment.code}`);

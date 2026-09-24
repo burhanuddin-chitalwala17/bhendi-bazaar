@@ -6,12 +6,21 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { shippingOrchestrator } from "@server/shipping";
 import { prisma } from "@server/shared/prisma";
+import { applyProviderStatus } from "@server/shipping/shipment-status.service";
+import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
+import { ORDER_STATUS } from "@server/checkout/order.types";
+import { shiprocketWebhookSchema } from "@/lib/validation/schemas/webhook.schema";
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json();
+    // Parsed before anything reads it (Invariant 4). The adapter behind this used `as` on the
+    // body and dereferenced `awb` and `shipment_status` off whatever arrived; with no signature
+    // check on this route yet, that made an unauthenticated stranger's JSON the input to a
+    // shipment transition.
+    const payload = shiprocketWebhookSchema.parse(await request.json());
 
     console.log("Shiprocket webhook received:", payload);
 
@@ -52,35 +61,29 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Update shipment status
-    const updateData: any = {
-      status: webhookEvent.status.status,
-      updatedAt: new Date(),
-    };
+    // One writer owns the column (shipment-lifecycle D12): it maps the courier's wording, refuses
+    // a move the transition table does not allow — a retried or late webhook naming a state we
+    // have passed is the common case, not a fault — and keeps the raw wording either way.
+    const outcome = await applyProviderStatus(
+      shipment.id,
+      provider.code,
+      webhookEvent.status.providerStatus ?? webhookEvent.status.status,
+    );
 
-    // If delivered, mark as delivered
-    if (webhookEvent.status.status === "delivered") {
-      updateData.deliveredAt = webhookEvent.status.timestamp;
-    }
-
-    await prisma.shipment.update({
-      where: { id: shipment.id },
-      data: updateData,
-    });
-
-    // Check if all shipments for this order are delivered
-    const allShipments = await prisma.shipment.findMany({
-      where: { orderId: shipment.orderId },
-    });
-
-    const allDelivered = allShipments.every((s) => s.status === "delivered");
-
-    // If all shipments delivered, update order status
-    if (allDelivered) {
-      await prisma.order.update({
-        where: { id: shipment.orderId },
-        data: { status: "delivered" },
+    // Derived, never written beside the parcels (D10): an order is delivered when every parcel
+    // is. Recomputed from the rows rather than inferred from this one event, so a webhook
+    // arriving out of order cannot conclude it alone.
+    if (outcome.kind === "moved" && outcome.to === SHIPMENT_STATUS.DELIVERED) {
+      const siblings = await prisma.shipment.findMany({
+        where: { orderId: shipment.orderId },
+        select: { status: true },
       });
+      if (siblings.every((s) => s.status === SHIPMENT_STATUS.DELIVERED)) {
+        await prisma.order.update({
+          where: { id: shipment.orderId },
+          data: { status: ORDER_STATUS.DELIVERED },
+        });
+      }
     }
 
     // Log webhook event
@@ -100,7 +103,7 @@ export async function POST(request: NextRequest) {
         response: payload,
         metadata: {
           trackingNumber: webhookEvent.trackingNumber,
-          status: webhookEvent.status.status,
+          status: outcome.kind,
           providerStatus: webhookEvent.status.providerStatus,
         },
       },
