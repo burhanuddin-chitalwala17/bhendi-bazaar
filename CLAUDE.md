@@ -184,8 +184,9 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **A zoomable surface declares the size it zooms to; the stored ceiling clears it.** [ADR-0027](docs/adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)
 - **Video is embedded, never uploaded to our own storage.** [ADR-0017](docs/adr/0017-video-is-embedded-not-hosted.md)
 - **Every response carries a nonce-based CSP** — `script-src` never gains `'unsafe-inline'`. [ADR-0035](docs/adr/0035-every-response-carries-a-nonce-based-csp.md)
-- **A guard is mutation-tested before it is trusted, and the tests are audited like the code** — break the rule in the source and watch it go red, or it is decoration. Invariants 4 and 6 had no guard at all and the suite stayed green when they were violated; six integration suites had never run in CI. `tests/unit/test-integrity.test.ts` holds the class: one definition of a throwaway database, the integration layer required to run in CI, no `.only`, no bare `.toThrow()`, no test without an assertion, and every scanning guard states a floor so an empty scan cannot read as a pass. ([docs/TESTING.md](docs/TESTING.md))
-- **Every route handler has a caller, and the caller is in this repository or named** — a route's only caller is a string in another file, so nothing in the build notices when a screen becomes a server component and leaves its handler routed, gated and answering to nobody. `tests/unit/route-reachability.test.ts` resolves the `/api/...` strings the app mentions against every route file; a handler with no caller is deleted, and one reached from outside (a gateway webhook, a link in an email) is named in `EXTERNALLY_CALLED` with who calls it.
+- **A guard is mutation-tested before it is trusted** — break the rule in the source and watch it go red, or it is decoration. Two Invariants had no guard at all and nothing noticed. ([docs/TESTING.md](docs/TESTING.md))
+- **The tests are audited like the code** — a suite that cannot run, or passes over an empty scan, is not a passing suite. `tests/unit/test-integrity.test.ts`
+- **Every route handler has a caller, named in the repository or declared as external** — no compiler follows a string. `tests/unit/route-reachability.test.ts`
 
 ## Development Principles
 
