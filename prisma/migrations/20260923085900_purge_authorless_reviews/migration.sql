@@ -1,0 +1,20 @@
+-- Remove the reviews that have no author, so `reviews_soft_state` can make `userId` required.
+--
+-- That migration refuses rather than guessing (ADR-0032), and on 2026-09-24 it refused in
+-- production over 10 rows. `Review.userId` has been nullable since the table was created in
+-- 20251222093446, so these predate the rule; they were judged never-real, which is the one case
+-- ADR-0029's carve-out permits destroying a row for.
+--
+-- **Dated one minute before the migration it unblocks.** Order is by directory name and
+-- `migrate deploy` applies only what is pending, so on production — where `reviews_soft_state`
+-- is being retried — this runs first, and where that migration already succeeded this runs late
+-- and deletes nothing. Both are correct because the delete is idempotent.
+--
+-- **This migration keeps no copy, and cannot.** A `RAISE NOTICE` carrying the rows was tried
+-- first and is worthless: `prisma migrate deploy` does not surface Postgres notices, so the
+-- archive would have existed only inside the transaction that destroyed the rows. An archive
+-- *table* would survive but would then sit in the schema unreferenced for ever, and register as
+-- drift on the next `migrate dev`. So the copy is the operator's, taken before the deploy —
+-- `docs/OPERATIONS.md` § Recovering a failed migration has the command. Deleting without it is
+-- a decision, not an accident.
+DELETE FROM "Review" WHERE "userId" IS NULL;

@@ -306,6 +306,41 @@ Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 - Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/shiprocket`. Local webhook testing needs a tunnel.
 - Use a pooled connection string (pgbouncer / Neon) in production: `server/shared/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
 
+## Recovering a failed migration
+
+A migration that raises leaves the deploy dead in a specific way, and the second symptom is
+worse than the first. `vercel.json` runs `npx prisma migrate deploy && next build`, so the
+failure is recorded in `_prisma_migrations` and **every later deploy stops with P3009 before it
+compiles anything** — the branch is un-shippable until the record is cleared, not just this
+build. Migrations run in a transaction unless they say otherwise, so the schema itself is
+untouched; it is the bookkeeping that blocks.
+
+This happened on 2026-09-24: `20260923090000_reviews_soft_state` refused to make `Review.userId`
+required over 10 authorless rows (ADR-0032 — it will not guess an author). Dev had none of those
+rows and CI's database is empty, so nothing before production could have raised it.
+
+1. **Read the rows before deciding anything.** The refusal names a count, never the rows.
+2. **Take the copy yourself.** No migration can keep one for you: `prisma migrate deploy` does
+   not surface `RAISE NOTICE`, so a copy raised inside the migration dies with the transaction
+   that deleted the rows.
+   ```
+   psql "$MIGRATE_DATABASE_URL" -c "\copy (SELECT * FROM \"Review\" WHERE \"userId\" IS NULL) TO 'orphans.csv' CSV HEADER"
+   ```
+3. **Write the resolution as a migration**, dated *just before* the one that refused, so
+   `migrate deploy` applies it first on the environment that is retrying and harmlessly late
+   anywhere the refusal never happened. Never edit the migration that failed — it is already
+   applied elsewhere, and Prisma checksums it.
+4. **Clear the failed record**, or the new migration will not be reached:
+   ```
+   npx prisma migrate resolve --rolled-back 20260923090000_reviews_soft_state
+   ```
+5. **Redeploy.** The fix applies, then the retry.
+
+**Rehearse it against a scratch database first.** The whole sequence above was run on a throwaway
+copy before production: plant the offending rows, watch `migrate deploy` fail with the same
+P3018, confirm the rollback left the schema alone, then run the recovery and check the end state.
+That rehearsal is what caught the `RAISE NOTICE` archive being invisible.
+
 ## Troubleshooting
 
 | Symptom | Cause / fix |
