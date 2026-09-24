@@ -6,25 +6,14 @@
  */
 import "dotenv/config";
 import { describe, it, expect, afterAll } from "vitest";
+import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 
-const dbUrl = process.env.DATABASE_URL ?? "";
-const isLocalDb = (() => {
-  try {
-    const url = new URL(dbUrl);
-    return (
-      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) &&
-      url.pathname === "/bhendi_bazaar_dev"
-    );
-  } catch {
-    return false;
-  }
-})();
 
 const TEST_SKU = "BULK-TEST-SKU-001";
 const TEST_PREFIX = "bulk-test-";
 const BLOB = "https://test.public.blob.vercel-storage.com/products/x/y/z.jpg";
 
-describe.skipIf(!isLocalDb)("bulk upload (local seeded db)", () => {
+describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
   afterAll(async () => {
     const { prisma } = await import("@server/shared/prisma");
     await prisma.product.deleteMany({ where: { name: { startsWith: TEST_PREFIX } } });
@@ -32,11 +21,12 @@ describe.skipIf(!isLocalDb)("bulk upload (local seeded db)", () => {
 
   it("the same SKU is legal in two orgs and refused within one (R4)", async () => {
     const { prisma } = await import("@server/shared/prisma");
-    const orgs = await prisma.org.findMany({ take: 2, select: { id: true } });
-    expect(orgs.length).toBe(2);
-    const template = await prisma.product.findFirstOrThrow({
-      select: { categoryId: true, thumbnail: true },
-    });
+    const { orgId, otherOrgId, categoryId } = await ensureFixtures();
+    const orgs = [{ id: orgId }, { id: otherOrgId }];
+    // The whole claim is "two orgs". If the fixture ever handed back one org twice, both
+    // creates below would hit the same uniqueness scope and the test would quietly invert.
+    expect(orgId).not.toBe(otherOrgId);
+    const template = { categoryId, thumbnail: "https://example.invalid/x.webp" };
     const base = {
       name: `${TEST_PREFIX}same-sku`,
       description: "t",
@@ -104,8 +94,9 @@ describe.skipIf(!isLocalDb)("bulk upload (local seeded db)", () => {
   it("two products may each have their own front.jpg, named by folder (R2)", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { validateProductRows } = await import("@server/catalog/bulk/bulk-product.service");
-    const org = await prisma.org.findFirstOrThrow({ select: { id: true } });
-    const category = await prisma.category.findFirstOrThrow({ select: { slug: true } });
+    const { orgId: org0, categorySlug } = await ensureFixtures();
+    const org = { id: org0 };
+    const category = { slug: categorySlug };
     const row = (name: string, images: string[]) => ({
       name,
       description: "d",
@@ -152,11 +143,13 @@ describe.skipIf(!isLocalDb)("bulk upload (local seeded db)", () => {
     const { createProducts } = await import("@server/catalog/bulk/bulk-product.service");
     // An org that actually has a pickup location — picked explicitly, because
     // "whichever org came back first" is how a test starts failing on Tuesdays.
-    const location = await prisma.orgAddress.findFirstOrThrow({
+    const fixtures = await ensureFixtures();
+    const location = await prisma.orgAddress.findUniqueOrThrow({
+      where: { id: fixtures.orgAddressId },
       select: { name: true, orgId: true },
     });
-    const category = await prisma.category.findFirstOrThrow({ select: { slug: true, id: true } });
-    const template = await prisma.product.findFirstOrThrow({ select: { thumbnail: true } });
+    const category = { slug: fixtures.categorySlug, id: fixtures.categoryId };
+    const template = { thumbnail: "https://example.invalid/x.webp" };
     const doomedSku = "BULK-TEST-DOOMED";
     await prisma.product.create({
       data: {
@@ -202,7 +195,9 @@ describe.skipIf(!isLocalDb)("bulk upload (local seeded db)", () => {
   it("a clean sheet creates products with media, stock and paise prices", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { createProducts } = await import("@server/catalog/bulk/bulk-product.service");
-    const location = await prisma.orgAddress.findFirstOrThrow({
+    const fixtures = await ensureFixtures();
+    const location = await prisma.orgAddress.findUniqueOrThrow({
+      where: { id: fixtures.orgAddressId },
       select: { name: true, orgId: true },
     });
     const category = await prisma.category.findFirstOrThrow({ select: { slug: true } });

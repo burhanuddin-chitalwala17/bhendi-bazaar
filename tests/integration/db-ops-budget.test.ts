@@ -20,21 +20,10 @@
  */
 import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll, vi, type MockInstance } from "vitest";
+import { isDisposableDb } from "../helpers/test-db";
 
 process.env.PRISMA_LOG_QUERIES = "1";
 
-const dbUrl = process.env.DATABASE_URL ?? "";
-const isLocalDb = (() => {
-  try {
-    const url = new URL(dbUrl);
-    return (
-      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) &&
-      url.pathname === "/bhendi_bazaar_dev"
-    );
-  } catch {
-    return false;
-  }
-})();
 
 // Statements counted since the last reset — one prisma:query line each.
 let queryCount = 0;
@@ -46,7 +35,7 @@ async function countQueries(run: () => Promise<unknown>): Promise<number> {
   return queryCount;
 }
 
-describe.skipIf(!isLocalDb)("db ops budgets (local seeded db)", () => {
+describe.skipIf(!isDisposableDb)("db ops budgets", () => {
   let productsRepository: typeof import("@server/catalog/product.repository").productsRepository;
   let categoryRepository: typeof import("@server/catalog/category.repository").categoryRepository;
   let promotionRepository: typeof import("@server/promotions/promotion.repository").promotionRepository;

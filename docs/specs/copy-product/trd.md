@@ -1,6 +1,6 @@
 # TRD — copy-product
 
-- **Status:** Implemented — PR-126
+- **Status:** Implemented — PR-147
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-09-23
@@ -35,7 +35,7 @@ None. No route handler or DTO in CONTRACTS.md changes. The create request is unc
 `tests/unit/product-copy.test.ts` covers the copied field set, not-found for another org's or an unknown id, the DAL's blank-form fallback, picker scoping, and the search match (name or SKU, case-insensitive, blank matches all). `tests/unit/product-visibility.test.ts` census covers the new read.
 
 ## Delivery (PRs)
-One PR (PR-126). It is behaviour-changing, and only on the org portal.
+One PR (PR-147). It is behaviour-changing, and only on the org portal.
 
 ## Open questions
 None.

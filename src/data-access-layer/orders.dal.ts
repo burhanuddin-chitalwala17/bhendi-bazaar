@@ -1,10 +1,57 @@
 // src/data-access-layer/orders.dal.ts
 
+import { getServerSession } from "next-auth";
+import { unstable_rethrow } from "next/navigation";
+import { authOptions } from "@/lib/auth-config";
 import { orderService } from "@server/checkout/order.service";
 import { Order, Shipment } from "@/domain/order";
 import { OrderAddress } from "@/domain/order";
 
+/** One row → the client-facing shape, shared by both reads below. */
+function toOrder(row: Awaited<ReturnType<typeof orderService.getOrderById>>): Order {
+  return {
+    id: row.id,
+    code: row.code,
+    itemsTotal: row.itemsTotal,
+    shippingTotal: row.shippingTotal,
+    discount: row.discount,
+    grandTotal: row.grandTotal,
+    status: row.status,
+    address: row.address as unknown as OrderAddress,
+    notes: row.notes as string,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    paymentMethod: row.paymentMethod as string,
+    paymentStatus: row.paymentStatus as string,
+    paymentId: row.paymentId as string,
+    shipments: row.shipments as unknown as Shipment[],
+  };
+}
+
 export const ordersDAL = {
+  /**
+   * The signed-in viewer's orders, read on the server.
+   *
+   * Session is read here rather than by the page, matching `wishlist.dal.ts`: the
+   * question is "what has *this* viewer bought", so plumbing a user id through the page
+   * would only move the same read. A guest has no order history by design and gets an
+   * empty list — the page decides that means the lookup-by-code form.
+   */
+  listForViewer: async (): Promise<Order[]> => {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session?.user?.id) return [];
+      const rows = await orderService.getOrdersByUserId(session.user.id);
+      return rows.map((row) => toOrder(row as Parameters<typeof toOrder>[0]));
+    } catch (error) {
+      // Reading the session marks the route dynamic by throwing; that is Next's control
+      // flow, not a failure.
+      unstable_rethrow(error);
+      console.error("Failed to fetch orders:", error);
+      return [];
+    }
+  },
+
   getOrderById: async (id: string, viewerUserId?: string): Promise<Order | null> => {
     try {
       // viewerUserId enforces ownership for registered-user orders: the service throws
@@ -16,23 +63,7 @@ export const ordersDAL = {
       if (!order) {
         return null;
       }
-      return {
-        id: order.id,
-        code: order.code,
-        itemsTotal: order.itemsTotal,
-        shippingTotal: order.shippingTotal,
-        discount: order.discount,
-        grandTotal: order.grandTotal,
-        status: order.status,
-        address: order.address as unknown as OrderAddress,
-        notes: order.notes as string,
-        createdAt: order.createdAt,
-        updatedAt: order.updatedAt,
-        paymentMethod: order.paymentMethod as string,
-        paymentStatus: order.paymentStatus as string,
-        paymentId: order.paymentId as string,
-        shipments: order.shipments as unknown as Shipment[],
-      }
+      return toOrder(order);
     } catch (error) {
       console.error("Failed to fetch order:", error);
       return null;

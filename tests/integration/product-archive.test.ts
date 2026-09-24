@@ -12,30 +12,20 @@
  */
 import "dotenv/config";
 import { afterAll, describe, expect, it } from "vitest";
+import { ensureFixtures, ensureOrgMember, isDisposableDb } from "../helpers/test-db";
 
-const dbUrl = process.env.DATABASE_URL ?? "";
-const isLocalDb = (() => {
-  try {
-    const url = new URL(dbUrl);
-    return (
-      ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname) &&
-      url.pathname === "/bhendi_bazaar_dev"
-    );
-  } catch {
-    return false;
-  }
-})();
 
 const created = { products: [] as string[], orders: [] as string[] };
 
-describe.skipIf(!isLocalDb)("product archive (local db)", () => {
+describe.skipIf(!isDisposableDb)("product archive (local db)", () => {
   async function seedFacts() {
-    const { prisma } = await import("@server/shared/prisma");
-    const location = await prisma.orgAddress.findFirst({ select: { id: true, orgId: true } });
-    const category = await prisma.category.findFirst({ select: { id: true, slug: true } });
-    const member = await prisma.orgMember.findFirst({ select: { userId: true, orgId: true } });
-    if (!location || !category || !member) throw new Error("Seed the local database first");
-    return { location, category, member };
+    const fixtures = await ensureFixtures();
+    const member = await ensureOrgMember(fixtures.orgId, fixtures.userId);
+    return {
+      location: { id: fixtures.orgAddressId, orgId: fixtures.orgId },
+      category: { id: fixtures.categoryId, slug: fixtures.categorySlug },
+      member,
+    };
   }
 
   async function makeProduct(overrides: { sku?: string } = {}) {
@@ -63,12 +53,8 @@ describe.skipIf(!isLocalDb)("product archive (local db)", () => {
 
   /** An actor for the org portal, as `resolveOrgScope` would produce one. */
   async function actorFor(orgId: string) {
-    const { prisma } = await import("@server/shared/prisma");
-    const member = await prisma.orgMember.findFirst({
-      where: { orgId },
-      select: { userId: true },
-    });
-    if (!member) throw new Error(`No member for org ${orgId}`);
+    const { userId } = await ensureFixtures();
+    const member = await ensureOrgMember(orgId, userId);
     return { orgId, userId: member.userId };
   }
 

@@ -12,6 +12,7 @@
  * directions are pinned below.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { NotFoundError } from "@server/shared/domain-error";
 
 process.env.R2_PUBLIC_BASE_URL ??= "https://images.example.com";
 const own = (name: string) => `${process.env.R2_PUBLIC_BASE_URL}/reviews/u1/${name}`;
@@ -213,7 +214,9 @@ describe("what the service does with media", () => {
 
   it("refuses a retraction that was not theirs", async () => {
     repository.softDeleteOwn.mockResolvedValue(0);
-    await expect(reviewService.remove("rev-1", "stranger")).rejects.toThrow();
+    // Named, not bare: a bare `.toThrow()` is satisfied by a TypeError from the test's own
+    // setup, so an authorisation hole and a typo would look the same.
+    await expect(reviewService.remove("rev-1", "stranger")).rejects.toThrow(NotFoundError);
     expect(deleted).toEqual([]);
   });
 });

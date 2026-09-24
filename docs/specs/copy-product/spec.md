@@ -1,6 +1,6 @@
 # Spec — copy-product
 
-- **Status:** Implemented — PR-126
+- **Status:** Implemented — PR-147
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
 - **Verified:** 2026-09-23

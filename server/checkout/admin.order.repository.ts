@@ -10,12 +10,58 @@ import {
   withWireItems,
 } from "@server/checkout/order.repository";
 import { Prisma } from "@prisma/client";
-import { ORDER_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
+import { ORDER_STATUS, PAYMENT_STATUS, VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
+  AdminOrderDetail,
+  OrderAddressSnapshot,
   OrderListFilters,
   UpdateOrderStatusInput,
   OrderStats,
 } from "@server/checkout/admin.order.types";
+import type { ShipmentStatus } from "@server/shipping/domain/shipping.types";
+
+/**
+ * The sort keys the API offers, mapped to the columns they actually name.
+ *
+ * `total` is the one that differs, and it threw: `OrderListFilters` has declared it since
+ * 2026-08-04 while the column is `grandTotal`, so `?sortBy=total` reached Prisma as an unknown
+ * argument. It survived because the route cast the query string with `as any` and nothing ever
+ * asked for that sort in a test — the cast made an invalid key look like a valid one all the way
+ * down. A map rather than a rename, because the API's vocabulary need not be the column's.
+ */
+const SORT_COLUMNS: Record<string, string> = {
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  total: "grandTotal",
+};
+
+/**
+ * Read the address a `Json` column holds.
+ *
+ * A cast would not make it a shape — the column is whatever was written to it, including from
+ * releases that wrote a different one. Every field is read defensively and a non-object becomes
+ * `null`, so a malformed snapshot renders blanks instead of throwing on `.city` mid-page.
+ */
+function toAddressSnapshot(value: unknown): OrderAddressSnapshot | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  const text = (key: string) => (typeof row[key] === "string" ? (row[key] as string) : "");
+  const optional = (key: string) =>
+    typeof row[key] === "string" && row[key] ? (row[key] as string) : undefined;
+
+  return {
+    fullName: text("fullName"),
+    mobile: text("mobile"),
+    email: optional("email"),
+    addressLine1: text("addressLine1"),
+    addressLine2: optional("addressLine2"),
+    landmark: optional("landmark"),
+    city: text("city"),
+    state: text("state"),
+    pincode: text("pincode"),
+    country: text("country"),
+  };
+}
 
 export class AdminOrderRepository {
   /**
@@ -74,7 +120,7 @@ export class AdminOrderRepository {
         where,
         skip,
         take: limit,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: { [SORT_COLUMNS[sortBy]]: sortOrder },
         include: {
           user: {
             select: {
@@ -108,17 +154,11 @@ export class AdminOrderRepository {
   /**
    * Get single order by ID
    */
-  async getOrderById(id: string) {
+  async getOrderById(id: string): Promise<AdminOrderDetail | null> {
     const order = await prisma.order.findFirst({
       relationLoadStrategy: "join",
       where: { id, ...VISIBLE_ORDER_WHERE },
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
         shipments: {
           orderBy: { createdAt: 'asc' },
           include: SHIPMENT_LINES_INCLUDE,
@@ -128,7 +168,33 @@ export class AdminOrderRepository {
 
     if (!order) return null;
 
-    return withWireItems(order);
+    return {
+      id: order.id,
+      code: order.code,
+      status: order.status,
+      paymentStatus: order.paymentStatus ?? PAYMENT_STATUS.PENDING,
+      paymentMethod: order.paymentMethod,
+      paymentId: order.paymentId,
+      address: toAddressSnapshot(order.address),
+      itemsTotal: order.itemsTotal,
+      shippingTotal: order.shippingTotal,
+      discount: order.discount,
+      grandTotal: order.grandTotal,
+      createdAt: order.createdAt,
+      shipments: order.shipments.map((shipment) => ({
+        id: shipment.id,
+        code: shipment.code,
+        status: shipment.status as ShipmentStatus,
+        fromCity: shipment.fromCity,
+        fromState: shipment.fromState,
+        packageWeight: shipment.packageWeight,
+        shippingCost: shipment.shippingCost,
+        courierName: shipment.courierName,
+        trackingNumber: shipment.trackingNumber,
+        trackingUrl: shipment.trackingUrl,
+        items: toWireShipmentItems(shipment.items),
+      })),
+    };
   }
 
   /**

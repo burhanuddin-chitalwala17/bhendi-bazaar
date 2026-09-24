@@ -30,13 +30,118 @@ const RAW_SHADOW = /\bshadow-(?:xs|sm|md|lg|xl|2xl)\b/g;
 /** A page container invented per page rather than taken from PageShell. */
 const ADHOC_CONTAINER = /\bmx-auto\s+max-w-(?:xs|sm|md|lg|xl|\dxl)\b|\bmax-w-(?:xs|sm|md|lg|xl|\dxl)\s+mx-auto\b/g;
 
-const RULES = [
+/** Shape is a token axis too: `rounded-card` / `rounded-field`, not Tailwind's radius scale. */
+const RAW_RADIUS = /\brounded-(sm|md|lg|xl|2xl|3xl)\b/g;
+
+/**
+ * Files still on Tailwind's radius scale.
+ *
+ * One shared reason rather than 78 individual ones: `--radius-card` and `--radius-field` were
+ * added after most of this UI was written, so every entry here predates the tokens. Converting is
+ * mechanical and touches 78 files, which is a change of its own rather than a line in someone
+ * else's. **New files may not join this list** — that is the whole point of writing it down.
+ *
+ * `rounded-full` and `rounded-none` are absent deliberately: a pill and a square corner are not
+ * points on the radius scale, so no token replaces them.
+ */
+const SHAPE_LEGACY = new Set([
+  "src/app/(admin)/admin/carts/page.tsx",
+  "src/app/(admin)/admin/orders/page.tsx",
+  "src/app/(admin)/admin/payouts/page.tsx",
+  "src/app/(admin)/admin/shipping/providers/page.tsx",
+  "src/app/(admin)/admin/users/page.tsx",
+  "src/app/(auth)/layout.tsx",
+  "src/app/(org)/org/[orgId]/earnings/page.tsx",
+  "src/app/(org)/org/[orgId]/reviews/page.tsx",
+  "src/app/(org)/org/page.tsx",
+  "src/components/bidding/BiddingForm.tsx",
+  "src/components/bulk-upload/BulkCategoryWizard.tsx",
+  "src/components/bulk-upload/BulkProductWizard.tsx",
+  "src/components/cart/CartItem.tsx",
+  "src/components/cart/cart-summary.tsx",
+  "src/components/cart/console/CartsTable.tsx",
+  "src/components/category/category-form.tsx",
+  "src/components/category/category-hero.tsx",
+  "src/components/checkout/components/CouponField.tsx",
+  "src/components/checkout/components/GuestAddress.tsx",
+  "src/components/checkout/components/MultiShippingSection.tsx",
+  "src/components/checkout/components/checkout-summary.tsx",
+  "src/components/checkout/index.tsx",
+  "src/components/dashboard/dashboard-live.tsx",
+  "src/components/home/hero-banner.tsx",
+  "src/components/home/offers-strip.tsx",
+  "src/components/layout/PortalHeader.tsx",
+  "src/components/layout/PortalSidebar.tsx",
+  "src/components/layout/navbar/NavbarSearch.tsx",
+  "src/components/layout/navbar/ProfileMenu.tsx",
+  "src/components/order/order-lookup.tsx",
+  "src/components/order/order-summary.tsx",
+  "src/components/order/orders-client.tsx",
+  "src/components/org/console/index.tsx",
+  "src/components/org/locations-manager.tsx",
+  "src/components/org/org-switcher.tsx",
+  "src/components/payouts/CommercialTerms.tsx",
+  "src/components/payouts/SettleEntries.tsx",
+  "src/components/payouts/SettlementList.tsx",
+  "src/components/product/console/productAdd/index.tsx",
+  "src/components/product/console/productEdit/index.tsx",
+  "src/components/product/console/productsList/components/ProductsFilters.tsx",
+  "src/components/product/console/productsList/components/ProductsTable.tsx",
+  "src/components/product/product-gallery.tsx",
+  "src/components/product/product-media-manager.tsx",
+  "src/components/product/reviews.tsx",
+  "src/components/profile/address-modal.tsx",
+  "src/components/profile/addresses-section.tsx",
+  "src/components/profile/change-password-modal.tsx",
+  "src/components/profile/profile-pic-upload.tsx",
+  "src/components/profile/recent-orders-section.tsx",
+  "src/components/promotions/OfferForm.tsx",
+  "src/components/promotions/ProductPicker.tsx",
+  "src/components/shared/ShareDialog.tsx",
+  "src/components/shared/data-table.tsx",
+  "src/components/shared/forms/category/CategoryBasicFields.tsx",
+  "src/components/shared/forms/category/CategoryImageField.tsx",
+  "src/components/shared/forms/category/CategoryStylingFields.tsx",
+  "src/components/shared/forms/orgs/index.tsx",
+  "src/components/shared/forms/product/ProductAttributeFields.tsx",
+  "src/components/shared/forms/product/ProductBasicFields.tsx",
+  "src/components/shared/forms/product/ProductFlagsFields.tsx",
+  "src/components/shared/forms/product/ProductInventoryFields.tsx",
+  "src/components/shared/forms/product/ProductOrgShippingFields.tsx",
+  "src/components/shared/forms/product/ProductPricingFields.tsx",
+  "src/components/shared/forms/product/index.tsx",
+  "src/components/shared/image-lightbox.tsx",
+  "src/components/shared/image-upload.tsx",
+  "src/components/shared/product-card.tsx",
+  "src/components/shared/states/LoadingSkeleton.tsx",
+  "src/components/shared/stats-card.tsx",
+  "src/components/shipping/ShipmentTrackingForm.tsx",
+  "src/components/shipping/providers-console/component/ConnectProviderModal.tsx",
+  "src/components/ui/skeleton.tsx",
+  "src/components/wishlist/wishlist-grid.tsx",
+]);
+
+/** A rule, and optionally the files that predate the token it enforces. */
+interface TokenRule {
+  name: string;
+  pattern: RegExp;
+  fix: string;
+  legacy?: ReadonlySet<string>;
+}
+
+const RULES: TokenRule[] = [
   { name: "raw colour palette classes", pattern: RAW_PALETTE, fix: "use a semantic colour token" },
   { name: "arbitrary font sizes", pattern: ARBITRARY_TEXT, fix: "use a step on the type scale (text-4xs … text-3xl)" },
   { name: "arbitrary letter-spacing", pattern: ARBITRARY_TRACKING, fix: "use tracking-label / -eyebrow / -eyebrow-wide / -display" },
   { name: "hardcoded hex colours", pattern: RAW_HEX, fix: "use a token, or add it to the one module that owns that palette" },
   { name: "raw Tailwind shadows", pattern: RAW_SHADOW, fix: "use shadow-raised / -lifted / -overlay / -inset-field" },
   { name: "ad-hoc page containers", pattern: ADHOC_CONTAINER, fix: "use <PageShell width=…>" },
+  {
+    name: "raw radius scale",
+    pattern: RAW_RADIUS,
+    fix: "use rounded-card (surfaces) or rounded-field (inputs and controls)",
+    legacy: SHAPE_LEGACY,
+  },
 ] as const;
 
 // file -> the rules it is excused from, and why.
@@ -66,14 +171,35 @@ function sourceFiles(dir: string): string[] {
 const FILES = sourceFiles("src");
 
 describe("design decisions go through tokens", () => {
-  it.each(RULES)("uses no $name outside the allowlist", ({ name, pattern, fix }) => {
+  it.each(RULES)("uses no $name outside the allowlist", ({ name, pattern, fix, legacy }) => {
     const offenders: string[] = [];
     for (const file of FILES) {
       if (ALLOWLIST[file]?.rules.includes(name)) continue;
+      // A rule carrying a `legacy` set is a ratchet: what predates the token is listed, and a
+      // file not on the list must use it. New code cannot join the backlog.
+      if (legacy?.has(file)) continue;
       const matches = readFileSync(file, "utf8").match(pattern);
       if (matches) offenders.push(`${file} — ${[...new Set(matches)].join(", ")} — ${fix}`);
     }
-    expect(offenders).toEqual([]);
+    expect(
+      offenders,
+      offenders.length ? `\n    ${offenders.join("\n    ")}` : "",
+    ).toEqual([]);
+  });
+
+  it("the shape backlog only shrinks", () => {
+    // An entry that no longer uses the raw scale has been converted; removing it is what makes
+    // the list a backlog rather than a permanent exemption.
+    // A fresh, non-global copy: `RAW_RADIUS` carries the `g` flag, and `.test()` on a global
+    // regex advances `lastIndex` between calls, so reusing it here skips every other file.
+    const hasRawRadius = (source: string) => new RegExp(RAW_RADIUS.source).test(source);
+    const stale = [...SHAPE_LEGACY].filter(
+      (file) => !FILES.includes(file) || !hasRawRadius(readFileSync(file, "utf8")),
+    );
+    expect(
+      stale,
+      "Converted to rounded-card / rounded-field — remove from SHAPE_LEGACY:\n    " + stale.join("\n    "),
+    ).toEqual([]);
   });
 
   it("keeps the allowlist honest: entries must still contain what they excuse", () => {

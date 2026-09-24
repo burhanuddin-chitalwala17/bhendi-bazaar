@@ -16,6 +16,14 @@ export class CategoryService {
   /**
    * Get all categories
    */
+  /**
+   * The flat category list a picker renders, parents resolved. Exposed because `payouts` builds
+   * its per-category commission view from it (ADR-0033).
+   */
+  async listForPicker() {
+    return await categoryRepository.listForPicker();
+  }
+
   async getCategories(): Promise<ServerCategory[]> {
     return await categoryRepository.list();
   }

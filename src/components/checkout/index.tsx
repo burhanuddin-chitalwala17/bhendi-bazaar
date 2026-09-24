@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/auth";
 import { useAuthSheet } from "@/context/AuthSheetContext";
 import { DeliveryAddress } from "@/domain/profile";
 import { Button } from "@/components/ui/button";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
 
 interface CheckoutContainerProps {
   buyNowProduct?: CartItem;
@@ -142,7 +143,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
         address: selectedAddress,
         notes: undefined,
         paymentMethod: "razorpay",
-        paymentStatus: "pending",
+        paymentStatus: PAYMENT_STATUS.PENDING,
         couponCode: offers.appliedCode ?? undefined,
         isBuyNow: !!buyNowProduct,
       });

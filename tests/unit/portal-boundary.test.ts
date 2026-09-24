@@ -19,6 +19,14 @@ function files(dir: string, name?: string): string[] {
 }
 
 describe("portal boundaries", () => {
+  it("the scan reaches the files it claims to check", () => {
+    // Every assertion below is "this list of offenders is empty". A scan that finds no files
+    // produces an empty list too, and passes — which is how a broken glob becomes a green
+    // guard. The floor makes the two outcomes distinguishable.
+    expect(files("src/app/api/admin", "route.ts").length).toBeGreaterThan(10);
+    expect(files("src/app/api/org", "route.ts").length).toBeGreaterThan(5);
+  });
+
   it("every /api/admin handler requires a platform admin", () => {
     const offenders = files("src/app/api/admin", "route.ts").filter(
       (f) => !readFileSync(f, "utf8").includes("requirePlatformAdmin")

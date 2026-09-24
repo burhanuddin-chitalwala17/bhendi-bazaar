@@ -73,25 +73,26 @@ export class AdminCartRepository {
 
     const abandonedCarts: AbandonedCart[] = carts
       .map((cart) => {
-        const items = cart.items.map((line) => ({
-          productId: line.productId,
-          productName: line.product.name,
-          productSlug: line.product.slug,
-          thumbnail: line.product.thumbnail,
-          price: line.product.price,
-          salePrice: offerPriceOf(line.product, context),
-          quantity: line.quantity,
-          size: line.size ?? undefined,
-          color: line.color ?? undefined,
-        }));
+        const items = cart.items.map((line) => {
+          const price = line.product.price;
+          const salePrice = offerPriceOf(line.product, context);
+          return {
+            productId: line.productId,
+            productName: line.product.name,
+            productSlug: line.product.slug,
+            thumbnail: line.product.thumbnail,
+            price,
+            salePrice,
+            // Decided once, here, so the total below and anything rendering a line agree.
+            effectivePrice: salePrice && salePrice > 0 && salePrice < price ? salePrice : price,
+            quantity: line.quantity,
+            size: line.size ?? undefined,
+            color: line.color ?? undefined,
+          };
+        });
         const itemsCount = items.length;
         const totalValue = items.reduce(
-          (sum, item) =>
-            sum +
-            (item.salePrice && item.salePrice > 0 && item.salePrice < item.price
-              ? item.salePrice
-              : item.price) *
-              item.quantity,
+          (sum, item) => sum + item.effectivePrice * item.quantity,
           0
         );
 

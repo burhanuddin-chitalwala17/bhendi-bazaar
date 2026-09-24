@@ -37,25 +37,14 @@ export const updateReviewSchema = z.object({
   withdrawn: z.boolean(),
 });
 
+
 /**
- * The moderation queue's own query string (Invariant 4).
+ * Blocking or unblocking a user (Invariant 4).
  *
- * Parsed rather than cast: `sortBy` and `sortOrder` reach Prisma's `orderBy` as keys, and
- * these arrived as `as any` off `searchParams` until PR-125 — `any` at a trust boundary,
- * which CLAUDE.md calls a defect and which here meant an arbitrary string naming a column.
- * `.catch()` on the paging and sort fields so a junk value is a default rather than a 400;
- * a filter the console did not write is not worth an error page.
+ * The handler read `body.isBlocked === true` off an unparsed body, so a malformed payload —
+ * `{}`, a string, a typo'd key — silently meant *unblock*. An admin action with two outcomes
+ * must not default to one of them because the caller sent nothing recognisable.
  */
-export const reviewQuerySchema = z.object({
-  search: z.string().trim().min(1).max(200).optional(),
-  productId: z.string().trim().min(1).max(64).optional(),
-  state: z.enum(["published", "withdrawn", "deleted"]).optional(),
-  isVerified: z
-    .enum(["true", "false"])
-    .optional()
-    .transform((value) => (value === undefined ? undefined : value === "true")),
-  minRating: z.coerce.number().int().min(1).max(5).optional(),
-  maxRating: z.coerce.number().int().min(1).max(5).optional(),
-  sortBy: z.enum(["createdAt", "rating"]).catch("createdAt"),
-  sortOrder: z.enum(["asc", "desc"]).catch("desc"),
+export const blockUserSchema = z.object({
+  isBlocked: z.boolean(),
 });

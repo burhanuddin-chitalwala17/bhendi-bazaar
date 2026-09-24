@@ -15,7 +15,6 @@
 import { prisma } from "@server/shared/prisma";
 import { biddingRepository } from "@server/bidding/bidding.repository";
 import { biddingPhase } from "@server/bidding/bidding-window";
-import { productsRepository } from "@server/catalog/product.repository";
 import { ledgerService } from "@server/payouts/ledger.service";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
@@ -24,6 +23,7 @@ import type {
   ConfirmSaleInput,
   OrgBiddingSummary,
 } from "@server/bidding/bidding.types";
+import { stockService } from "@server/catalog/stock.service";
 
 export class AdminBiddingService {
   async list(): Promise<(OrgBiddingSummary & { orgName: string })[]> {
@@ -73,7 +73,7 @@ export class AdminBiddingService {
   async stockLocations(eventId: string) {
     const row = await biddingRepository.detailForAdmin(eventId);
     if (!row) throw new NotFoundError("Bidding event not found");
-    return await productsRepository.stockByLocation(row.productId);
+    return await stockService.stockByLocation(row.productId);
   }
 
   /**
@@ -128,7 +128,7 @@ export class AdminBiddingService {
       // Conditional, in the same transaction (Invariant 6, ADR-0007): recording a sale
       // of something no longer there would leave the ledger owing money for stock the
       // organisation still holds.
-      const taken = await productsRepository.takeOneFromLocation(
+      const taken = await stockService.takeOneFromLocation(
         event.productId,
         input.orgAddressId,
         tx

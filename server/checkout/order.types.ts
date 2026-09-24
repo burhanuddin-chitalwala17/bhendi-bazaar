@@ -38,6 +38,29 @@ export const ORDER_STATUS = {
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 /**
+ * Every value `Order.paymentStatus` may hold.
+ *
+ * Declared late: this is the set [Invariant 2](../../CLAUDE.md) is entirely about, and until
+ * 2026-09-23 it existed only as a schema comment (`// pending, paid, failed`) and 34 copies of
+ * the literal `"paid"` spread across thirteen files. A literal comparison does not fail when
+ * the set changes — it silently stops matching, which is the failure mode with no symptom.
+ *
+ * `REFUNDED` is written by nothing yet; it is named here because the admin console already
+ * renders it, and a value the UI knows but the domain does not is how the two drift.
+ */
+export const PAYMENT_STATUS = {
+  /** No verified gateway signal yet. The default, and the only state an order is created in. */
+  PENDING: "pending",
+  /** Written in exactly one place, after a verified signature and a matched amount (ADR-0005). */
+  PAID: "paid",
+  /** A gateway attempt failed. Not terminal — the buyer may retry against the same order. */
+  FAILED: "failed",
+  REFUNDED: "refunded",
+} as const;
+
+export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];
+
+/**
  * An abandoned checkout is kept in full and shown to nobody (checkout-abandonment
  * R4–R7). Applied inside the repositories, never at a call site: a predicate that
  * must be remembered is one the next query forgets (D6). The sweep's worklists are

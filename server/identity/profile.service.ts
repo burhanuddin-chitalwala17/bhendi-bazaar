@@ -18,6 +18,18 @@ export class ProfileService {
   /**
    * Get profile for a user
    */
+  /**
+   * The account's login email, for when a delivery address carries none.
+   *
+   * On the service because `checkout` asks it to address a confirmation
+   * ([ADR-0033](../../docs/adr/0033-a-domain-is-reached-through-its-public-surface.md)), and
+   * because it is the reason a signed-in buyer gets that email at all — the address book's
+   * email is per-address and is not asked for at checkout.
+   */
+  async findLoginEmail(userId: string): Promise<string | null> {
+    return await profileRepository.findEmailById(userId);
+  }
+
   async getProfile(userId: string): Promise<ServerProfileData> {
     const profile = await profileRepository.getByUserId(userId);
 

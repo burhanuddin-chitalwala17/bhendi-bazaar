@@ -3,6 +3,7 @@ import { SectionHeader } from "../shared/SectionHeader";
 import { PriceDisplay } from "../shared/PriceDisplay";
 import { ShareButton } from "../shared/ShareButton";
 import { DownloadBillButton } from "./download-bill-button";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
 
 interface OrderSummaryProps {
   order: Order;
@@ -13,9 +14,9 @@ export function OrderSummary({ order, showShare = false }: OrderSummaryProps) {
   const paymentLabel =
     order.paymentMethod && order.paymentStatus
       ? `${order.paymentMethod === "razorpay" ? "Razorpay" : "Stripe"} · ${
-          order.paymentStatus === "paid"
+          order.paymentStatus === PAYMENT_STATUS.PAID
             ? "Paid"
-            : order.paymentStatus === "failed"
+            : order.paymentStatus === PAYMENT_STATUS.FAILED
               ? "Failed"
               : "Pending"
         }`

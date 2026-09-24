@@ -26,6 +26,16 @@ export class PromotionService {
    * The instant is an argument rather than read here, so a preview and the
    * transaction that follows can be priced at the same moment (ADR-0018).
    */
+  /**
+   * Every category's parent, as a map — the ancestry a commission rate is resolved through
+   * ([ADR-0019](../../docs/adr/0019-discount-is-one-winning-offer.md)). Exposed because
+   * `payouts` walks the same tree to find which rule applies to a sold line, and reaching
+   * `promotion.repository` from another domain is what ADR-0033 forbids.
+   */
+  async categoryParents(db?: Parameters<typeof promotionRepository.categoryParents>[0]) {
+    return await promotionRepository.categoryParents(db);
+  }
+
   async quote(
     lines: readonly DiscountableLine[],
     options: { code?: string | null; userId?: string | null; now?: Date; db?: Db } = {}

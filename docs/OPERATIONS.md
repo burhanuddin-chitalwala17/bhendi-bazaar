@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-24
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -22,11 +22,12 @@ npm run dev                 # http://localhost:3000
 | Variable | Required | Purpose |
 |---|---|---|
 | `DATABASE_URL` | ✅ | Postgres connection string |
+| `MIGRATE_DATABASE_URL` | ○ | The **direct** connection string (`db.prisma.io`, no `pooled.`), read by `prisma.config.ts` for migrations only. Prisma Migrate takes a session-scoped advisory lock and a transaction pooler gives each statement a different backend session, so the lock can never be acquired and `migrate deploy` dies on a 10s timeout with P1002. Unset locally, where `DATABASE_URL` is already direct |
 | `NEXTAUTH_SECRET` | ✅ | JWT signing key. Generate: `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | ✅ | Canonical app URL. `http://localhost:3000` locally; the deployed origin in production |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | ✅ | Google OAuth. Redirect URI: `<NEXTAUTH_URL>/api/auth/callback/google` |
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
-| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ✅ | The same key **id**, exposed to the browser checkout widget. Never expose the secret |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ➖ | **Read by nothing.** Marked required here until 2026-09-23; no `process.env` reference exists. The checkout widget is handed the key id in the server's response (`server/payments/providers/razorpay/razorpay.repository.ts`), so setting it changes nothing and leaving it unset breaks nothing |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
 | `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
 | `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — the bucket's custom domain in production, its `r2.dev` URL locally. **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
@@ -38,6 +39,7 @@ npm run dev                 # http://localhost:3000
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
+| `PROD_ADMIN_EMAIL` / `PROD_ADMIN_PASSWORD` | ○ | Read by `prisma/seed/prod.ts`, the one-off bootstrap that grants platform ADMIN where an environment has none. Set them for that single run and unset them afterwards. Until 2026-09-23 that script hashed the literal `'STRONG_RANDOM_PASSWORD'`, so anyone who could read the repository knew the admin password — CLAUDE.md Invariant 7's "no credential literal lives in a seed", broken in the one script that may legitimately be pointed at production. It now refuses a placeholder value, refuses to run without both variables, and will **not** reset the password of an account that already exists |
 | `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
 | `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
 | `CSP_REPORT_ONLY` | ○ | `1` downgrades the Content-Security-Policy to `Content-Security-Policy-Report-Only`, so violations are reported and nothing is blocked (`src/lib/security-headers.ts`). The escape hatch if a policy change breaks a page in production — it needs no code change and no rebuild. **Leave unset normally**: report-only enforces nothing |
@@ -45,7 +47,7 @@ npm run dev                 # http://localhost:3000
 | `PRISMA_LOG_QUERIES` | ○ | `1` prints every SQL statement, so you can count the billed operations a page costs. **Development only** — never set in a deployment. It is also the instrument `tests/integration/db-ops-budget.test.ts` measures through |
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 
-`src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
+`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
 
 ### Local development database
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
@@ -155,7 +157,7 @@ raises `Invalid src prop` during render, which unmounts the page rather than the
 One leftover `Banner.imageUrl` blanked both the storefront homepage and `/admin/banners` —
 the page the remedy below has to be carried out on. Since PR-121 the banner surfaces route
 their stored URL through `isRenderableImageUrl` (`server/catalog/image-paths.ts`), so a dead
-one reads as "no image" and the admin row says *Image needs re-uploading*. Since PR-127
+one reads as "no image" and the admin row says *Image needs re-uploading*. Since PR-148
 `Product.thumbnail` and `ProductMedia.ref` are guarded where products are mapped for display
 (`src/data-access-layer/products.dal.ts` and its org-portal counterpart): a dead thumbnail
 becomes the brand mark and a dead photo is dropped from the gallery, so saving the product's
@@ -308,6 +310,48 @@ Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 - **Migrations run in the build** ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)): `vercel.json`'s `buildCommand` is `npx prisma migrate deploy && next build`, so every Vercel build applies pending migrations to that environment's `DATABASE_URL` before compiling. A merge to `main` **is** a prod schema change; preview builds migrate whatever database the Preview environment points at — so if Preview has no database of its own, a push to `develop` migrates production. `migrate deploy` only applies pending migrations in order — never resets or drops. Manual `migrate deploy` remains only for local runs against a deployed database (`vercel env pull` first).
 - Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/shiprocket`. Local webhook testing needs a tunnel.
 - Use a pooled connection string (pgbouncer / Neon) in production: `server/shared/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
+
+## Recovering a failed migration
+
+A migration that raises leaves the deploy dead in a specific way, and the second symptom is
+worse than the first. `vercel.json` runs `npx prisma migrate deploy && next build`, so the
+failure is recorded in `_prisma_migrations` and **every later deploy stops with P3009 before it
+compiles anything** — the branch is un-shippable until the record is cleared, not just this
+build. Migrations run in a transaction unless they say otherwise, so the schema itself is
+untouched; it is the bookkeeping that blocks.
+
+This happened on 2026-09-24: `20260923090000_reviews_soft_state` refused to make `Review.userId`
+required over 10 authorless rows (ADR-0032 — it will not guess an author). Dev had none of those
+rows and CI's database is empty, so nothing before production could have raised it.
+
+1. **Read the rows before deciding anything.** The refusal names a count, never the rows.
+2. **Take the copy yourself.** No migration can keep one for you: `prisma migrate deploy` does
+   not surface `RAISE NOTICE`, so a copy raised inside the migration dies with the transaction
+   that deleted the rows.
+   ```
+   psql "$MIGRATE_DATABASE_URL" -c "\copy (SELECT * FROM \"Review\" WHERE \"userId\" IS NULL) TO 'orphans.csv' CSV HEADER"
+   ```
+3. **Write the resolution as a migration**, dated *just before* the one that refused, so
+   `migrate deploy` applies it first on the environment that is retrying and harmlessly late
+   anywhere the refusal never happened. Never edit the migration that failed — it is already
+   applied elsewhere, and Prisma checksums it.
+4. **Clear the failed record**, or the new migration will not be reached:
+   ```
+   MIGRATE_DATABASE_URL="<direct prod URL>" npx prisma migrate resolve --rolled-back 20260923090000_reviews_soft_state
+   ```
+   **Pass `MIGRATE_DATABASE_URL` inline, always — and confirm the target first.**
+   `prisma.config.ts` resolves `process.env.MIGRATE_DATABASE_URL || env("DATABASE_URL")`, and
+   that `env()` reads the `.env` *file* rather than the environment. So `DATABASE_URL=… npx
+   prisma …` is **silently ignored** and the command hits your dev database instead — which on a
+   `resolve --rolled-back` means un-applying a migration that was fine, and leaving dev broken
+   the same way production is. `npx prisma migrate status` prints the host it will use; run that
+   first, every time.
+5. **Redeploy.** The fix applies, then the retry.
+
+**Rehearse it against a scratch database first.** The whole sequence above was run on a throwaway
+copy before production: plant the offending rows, watch `migrate deploy` fail with the same
+P3018, confirm the rollback left the schema alone, then run the recovery and check the end state.
+That rehearsal is what caught the `RAISE NOTICE` archive being invisible.
 
 ## Troubleshooting
 

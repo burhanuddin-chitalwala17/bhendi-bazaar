@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 import type { DeliveryAddress } from "@/domain/profile";
 import { CartItem } from "@/domain/cart";
+import { PAYMENT_STATUS } from "@server/checkout/order.types";
 
 interface UseCheckoutProps {
   items: CartItem[];
@@ -137,7 +138,7 @@ export function useCheckout({
           address: selectedAddress,
           notes: notes || "",
           paymentMethod,
-          paymentStatus: "pending" as const,
+          paymentStatus: PAYMENT_STATUS.PENDING,
           isBuyNow,
         };
 

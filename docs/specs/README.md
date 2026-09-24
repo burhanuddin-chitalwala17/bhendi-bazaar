@@ -23,7 +23,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 
 | Feature | Requirement | Phase | Domain | Status |
 |---|---|---|---|---|
-| [copy-product](copy-product/spec.md) | An org starts a new product from one of its own, carrying the descriptive fields | 6 | catalog | ✅ Implemented — PR-126 |
+| [copy-product](copy-product/spec.md) | An org starts a new product from one of its own, carrying the descriptive fields | 6 | catalog | ✅ Implemented — PR-147 |
 | [product-archive](product-archive/spec.md) | An org archives a product and restores it without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
 | [bulk-catalog-upload](bulk-catalog-upload/spec.md) | Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories | 6 | catalog | Implemented |
 | [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
@@ -33,6 +33,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [product-weight-and-rates](product-weight-and-rates/) | A product's weight is recorded and prices its shipping | 3 | catalog, shipping | 📝 Draft |
 | [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | 📝 Draft — **parent of 9 subfeatures** |
 | [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |
+| [shipment-lifecycle](shipment-lifecycle/) | One status vocabulary every courier maps into, and what each state means for stock, refunds and settlement | 3 | shipping, checkout | 📝 Draft — **one open question** |
 | [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time | 4 | cross-domain | 📝 Draft |
 | [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
 | [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions, catalog, checkout | 🔨 In progress — PR-67 |

@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-127] 2026-09-23 — A product photo left on the retired store reads as no image, not a crash
+## [PR-148] 2026-09-23 — A product photo left on the retired store reads as no image, not a crash
 
 Two local products still held thumbnail and gallery URLs on the retired Vercel Blob host, and
 the homepage offers strip handed one to `next/image`, which throws on a host missing from
@@ -25,7 +25,7 @@ form clears it from the row, which is the runbook's re-upload remedy. Video refs
 ids and are never checked. Search suggestions, wishlist, cart, bidding and order lines read the
 thumbnail by other paths and remain unguarded; OPERATIONS.md says so.
 
-## [PR-126] 2026-09-23 — An org copies a product into a new one, and row actions move behind one menu
+## [PR-147] 2026-09-23 — An org copies a product into a new one, and row actions move behind one menu
 
 Most of an org's catalogue is families — one design in several fabrics or sizes — and every
 member was typed from scratch. An org can now start a new product from one of its own: the
@@ -46,6 +46,820 @@ mount. Delete keeps its confirmation dialog, now opened from the menu.
 Adds `@radix-ui/react-dropdown-menu` behind a new `src/components/ui/dropdown-menu.tsx`
 primitive. Tests: `tests/unit/product-copy.test.ts`; the product-visibility census gains the
 picker's read (available shelf only).
+
+## [PR-146] 2026-09-24 — The tests are audited, and two Invariants turn out to have had no guard
+
+The nine unreachable handlers from PR-144/145 are deleted, along with `ProfileContext`,
+`adminCartApiClient` and `reviewQuerySchema`. The docs gate caught two stale claims on the way
+out — the handler count and two path references in BACKLOG.md — which is what it is for.
+
+Then the harder question: are the guards themselves worth anything? Each Invariant was **mutated
+in the source** to find out.
+
+**Invariant 6 had no guard.** Deleting `quantity: { gte: n }` from the stock decrement — the
+whole of [ADR-0007](adr/0007-conditional-stock-decrement.md), the difference between a reservation
+and a read-then-write race — left all 1233 tests green. Two now cover it, and both were
+mutation-tested: `tests/unit/conditional-stock.test.ts` on the shape of the write (the condition
+is present, and its `count === 0` is actually read), and a concurrent-checkout case in
+`order-transaction` that submits the same order twice for the last unit and requires exactly one
+winner. The sequential version of that test passes with the condition deleted, which is how the
+race survived unguarded; the two overlap on purpose.
+
+**Invariant 4 had no guard either.** Swapping a handler's `schema.parse(await request.json())`
+for `(await request.json()) as T` changed nothing in the suite.
+`tests/unit/request-body-parsing.test.ts` refuses the cast, refuses a handler that reads a body
+and validates nothing, and refuses a body spread into a Prisma `data`. It found two handlers
+validating nothing: `POST /api/admin/users/[id]/block`, which read `body.isBlocked === true` off
+an unparsed body so a malformed payload silently meant *unblock*; and the Shiprocket webhook,
+which handed the raw body to an adapter that cast it and read `awb` and `shipment_status` off
+whatever arrived. Nothing authenticates that route yet, so its parse was the only check standing.
+Both are parsed now.
+
+Invariants 1, 2 and 7 came through clean — eight tests fire when the charged price drifts from
+the catalogue, one when an expired order becomes payable, two when the seed stops refusing a
+deployed environment.
+
+**Six integration suites had never run in CI.** They gated on
+`url.pathname === "/bhendi_bazaar_dev"` while CI runs `bhendi_bazaar_ci`, so vitest printed
+`↓ skipped` and the run read green: **43 of 51 integration tests**, `order-transaction` — the
+guard on Invariants 1, 3 and 6 — among them. Nine suites had each written their own version of
+that predicate and three of the spellings disagreed. There is one now, in
+`tests/helpers/test-db.ts`, and fixtures come from `ensureFixtures`, which builds the world
+instead of reading it out of the seed. **44 of 51 run in CI today, up from 8.** The seventh,
+`join-equivalence`, needs a populated catalogue and declares it — and three of its cases had been
+*passing* on the empty schema by comparing `[]` to `[]`, which a strategy-equivalence test over
+no rows will always do. Every case asserts it compared something now.
+
+`tests/unit/test-integrity.test.ts` holds the whole class: one definition of a throwaway
+database, no suite writing its own, the integration layer required to run in CI, no `.only`, no
+bare `.toThrow()` (satisfied by a TypeError from the test's own setup, so an authorisation hole
+and a typo look identical), no test without an assertion, and a declared shrink-only list of
+suites allowed to skip. `docs-integrity` now refuses to skip in CI rather than reporting nothing
+if git history is missing.
+
+**Seven scanning guards could pass having scanned nothing** — an empty offender list and an empty
+scan are indistinguishable from outside, which had already bitten `module-boundaries` once. Each
+states a floor now, and the floor was mutation-tested by pointing a scanner at a smaller tree.
+
+## [PR-145] 2026-09-24 — No page in the tree is a client component any more [CONTRACT]
+
+The last three: `(auth)/reset-password`, `admin/orders/[orderId]`, and `(main)/profile` with its
+layout. **Both allowlists in `tests/unit/rendering-strategy.test.ts` are now empty** — when the
+gate landed there were ten client pages and one client layout. The guard was mutation-tested at
+zero, because an empty allowlist proves nothing on its own: it now also counts the pages and
+layouts it scanned and the client components it recognised, so a scan that finds nothing fails
+instead of passing.
+
+**`reset-password`** read its token from `useSearchParams`, which is what made it a client page;
+it reads `searchParams` on the server now and a link with no token never reaches the form. The
+form itself moved to `src/components/auth/reset-password-form.tsx` and stopped hand-rolling
+`AuthField`, `PasswordInput` and the primary button that the other three auth forms share.
+
+**`admin/orders/[orderId]`** was the worst of them: 378 lines with eleven `as any` casts, all
+downstream of one mistake — it typed `GET /api/admin/orders/[id]` as the storefront's `Order`,
+which has no `shipments[].packageWeight`, no `fromCity`, and a differently-shaped address. Two of
+the casts read a `Json` column as a typed object with nothing parsing it. `AdminOrderDetail` is
+declared in `server/checkout/admin.order.types.ts` and built in the repository, where
+`toAddressSnapshot` reads the address field by field and returns `null` for a malformed one
+rather than throwing on `.city` halfway down the page. The screen is a server page, a read-only
+aside and one client leaf for the tracking form.
+
+While there: the shipment badge compared `shipment.status` against `ORDER_STATUS`, which shares
+no values with the eleven-state vocabulary shipments have carried since PR-141 — every badge
+rendered unstyled. `SHIPMENT_STATUS_LABELS` is a `Record<ShipmentStatus, string>`, so a twelfth
+state cannot be added without the compiler asking what to call it, and the badge's tone is read
+from `SHIPMENT_STATUS_EFFECTS.refundOwed` rather than a second list of status names — describe
+what a state costs and it gets the right colour for free.
+
+**`(main)/profile`** replaces `ProfileContext` (249 lines) with a server read. The provider was
+mounted by the route's layout, fetched `/api/profile` on mount, held the answer in state and
+applied optimistic updates to it; the page now reads the profile and the orders on the server and
+`ProfileSections` posts and calls `router.refresh()`. There is one copy of the truth again. The
+layout stopped being a `"use client"` wrapper around the provider and became what the route
+actually needed a layout for: the heading both the signed-in and signed-out views were
+duplicating.
+
+Dead by the same conversions, and removed: `GET /api/admin/orders/[id]`,
+`GET /api/admin/categories/[id]`, `adminOrderApiClient.getOrderById`,
+`adminCategoryApiClient.getCategoryById`, `orderApiClient.getOrders`. Orphaned and awaiting
+deletion, tracked in the reachability gate: `GET /api/orders`, `src/context/ProfileContext.tsx`.
+
+`no-explicit-any` is down to **40 errors**, from 55 at the start of the day and 81 when it was
+first counted.
+
+## [PR-144] 2026-09-24 — The moderation queue renders on the server, and nine routes turn out to answer to nobody [CONTRACT]
+
+Fifth and sixth of the seven admin screens — reviews, and the two category form pages. **Two
+client pages remain, down from ten**: the profile editor and the order detail screen.
+
+Reviews follows the shape the other four set: filters into the URL, page becomes a server
+component, client leaves for the filter bar and for the table with its dialog and withdraw
+action. The categories `new` and `[id]/edit` pages went with it, because the form under them
+fetched all 100 categories on mount to populate its parent picker — a read the page could do,
+and now does, handing them down as props. `getCategoryById` on the DAL returns `null` instead of
+throwing, so a missing category is a `notFound()` rather than a 500 behind a hand-rolled panel.
+
+**What the conversion exposed is the larger half of this entry.** A route handler's only caller
+is a string in another file, and no compiler follows a string. Each of the five conversions so
+far quietly orphaned the handler its screen used to read through — still routed, still
+`requirePlatformAdmin`-gated, answering to nobody. `tests/unit/route-reachability.test.ts` now
+resolves every `/api/...` string the app mentions (`${...}` as one segment, `baseUrl`-style
+prefixes joined onto their suffixes) against every route file, and found nine:
+
+- `GET /api/admin/{users, orders, reviews, abandoned-carts}` — orphaned by their conversions.
+- `PATCH /api/admin/users/[id]` — could set `platformRole`, had no screen, and never has.
+- `GET /api/admin/payouts/orgs`, `GET /api/admin/payouts/orgs/[orgId]`, `GET /api/org/[orgId]/earnings` — those screens already read through `payoutsDAL`.
+- `PATCH`/`DELETE /api/admin/payouts/entries/[id]` — correcting and removing an unsettled ledger entry, built and never given a control. Different problem, same symptom: authority nobody can see.
+
+The two handlers that share a file with a live one are gone (`GET /api/admin/categories`,
+`GET /api/admin/reviews/[id]`); the rest are named in the gate's `UNREACHABLE` list, which may
+shrink and must never grow. Mutation-tested: misspelling the one `fetch` that reaches
+`/api/admin/settlements` makes it report that route and nothing else.
+
+**The abandoned-cart reminder is gone, because it never existed.** The button reported "Reminder
+sent successfully!" over a client method whose entire body was a `console.log` and a
+`Promise.resolve()` — no route, no template, no send. An operator who believes a cart was chased
+stops chasing it, so a control that lies is worse than an absent one. Reinstating it means an
+actual reminder in `server/notifications/`.
+
+Client surface removed with all of it: `adminReviewApiClient` is down to its one write,
+`adminUserApiClient` to one, `adminCartApiClient` to nothing at all. Three of those files still
+used the pre-ADR-0013 `error.error || "Failed to…"` pattern and now read the envelope, since
+touching them is what the rule asks for.
+
+`ReviewsFilters` derives its state options from `REVIEW_STATES` keyed by the union rather than
+restating the list, so a fourth state cannot be added without the compiler asking what to call
+it — the same reason the sort vocabulary is resolved against a declared set instead of cast.
+
+## [PR-143] 2026-09-24 — `admin/categories` renders on the server
+
+Fourth of the seven admin screens. **Five client pages remain, down from ten.**
+
+The usual shape: search into the URL, page becomes a server component, client leaves for the
+search box and for the table's reorder and delete controls. `sortBy: key as any` is gone with it,
+resolved against the declared set like the others.
+
+One thing this one needed that the earlier three did not: `categories.dal.ts` already had a
+`getCategories` that fetches a flat 100 for pickers and forms. The console wants one filtered,
+sorted page, so `list` is a second method rather than a parameter on the first — a picker wants
+every category and a console wants a page of them, and one method serving both ends up doing
+neither well.
+
+Converted its markup to the shape tokens while there, so the page came straight off the
+`SHAPE_LEGACY` backlog — **77 files left**. The ratchet noticed and demanded the list be
+tightened, which is what makes it a backlog rather than an exemption.
+
+**A tsc error slipped through earlier in the session and is fixed here.** Adding the `legacy`
+field to the token rules made the `RULES` array's inferred union inconsistent; I verified that
+change with vitest and `docs:check` but not `tsc`, so it went unnoticed until the next typecheck.
+`RULES` is now explicitly typed as `TokenRule[]`. Vitest does not typecheck — running it is not
+running `tsc`.
+
+**Verification:** `tsc --noEmit` exit 0, 1213 tests pass across 108 files, `next build` compiles,
+`npm run lint:boundary` exit 0, and the DAL exercised directly for search, sort and paging.
+
+
+## [PR-142] 2026-09-24 — Two enforcement gaps closed: shape tokens, and a lint gate that blocks
+
+Prompted by the right question — are the strategies we keep applying actually enforced going
+forward? Auditing that found two places where the answer was no.
+
+**Shape was a documented token axis with no gate.** CLAUDE.md lists `rounded-card` /
+`rounded-field` alongside colour, type, tracking and elevation, and `design-tokens.test.ts`
+enforced every axis except that one. **78 files** still use Tailwind's raw radius scale. The
+tokens are real — `--radius-card` and `--radius-field` are defined and used — so this was
+under-enforcement rather than a missing token, which is what a first grep suggested and a second
+disproved.
+
+Added as a ratchet with the 78 files listed under one shared reason: they predate the tokens, and
+converting them is a change of its own rather than a line in someone else's. **A new file cannot
+join the list** — mutation-tested with a fresh component using `rounded-lg`, which fails. A
+companion assertion removes an entry once it is converted, so the list is a backlog rather than a
+permanent exemption. `rounded-full` and `rounded-none` are deliberately outside the rule: a pill
+and a square corner are not points on the radius scale.
+
+**Lint enforced nothing at all.** It carries `continue-on-error: true`, so every rule in it —
+including `no-explicit-any`, which CLAUDE.md calls a defect at a trust boundary — was advice. The
+55 remaining errors are all in admin pages, hooks and the shipping provider layer, so the flag
+cannot come off yet. But four trees are already at zero: `src/app/api`, `server/checkout`,
+`server/payments` and `src/lib`.
+
+`npm run lint:boundary` lints exactly those, `--quiet`, and is a **blocking** CI step. Route
+handlers reached zero `any` in PR-128 and nothing was stopping the next one; now something is.
+Mutation-tested by reintroducing `(await request.json()) as any` in a route, which fails it. The
+scope grows as trees are cleared and never shrinks.
+
+**One bug in my own guard, worth recording.** The shape ratchet's "backlog only shrinks"
+assertion used `RAW_RADIUS.test()` — a regex carrying the `g` flag, whose `lastIndex` advances
+between calls, so it skipped every other file and reported converted files that were not. Fixed
+with a fresh non-global copy.
+
+**Verification:** `tsc --noEmit` exit 0, full suite green, `npm run lint:boundary` exit 0, both
+new gates mutation-tested.
+
+
+## [PR-141] 2026-09-24 — `admin/carts` renders on the server, and two bugs an `as any[]` was hiding
+
+Third of the seven admin screens. Six client pages remain, down from ten.
+
+The conversion is the usual shape — filters into the URL, page becomes a server component, client
+leaves for the filter selects and the table with its detail dialog. What made this one worth the
+time is what fell out of it.
+
+**The cart detail dialog has been rendering blank product names.** It mapped
+`(selectedCart.items as any[])` and read `item.name`; the field is `productName`. Typing the
+array — it was already typed, the cast was gratuitous — turned that into three compiler errors
+immediately. An `as any[]` on a value that already had a type bought nothing and hid a
+user-visible defect.
+
+**The dialog's line totals did not sum to the total printed beneath them.** Each line rendered
+`price × quantity` — the list price — while `totalValue` was computed from the offer price where
+one applied. So a cart with any discounted item showed lines that did not add up. Rather than
+repeat the "offer if lower" rule in the UI, `AbandonedCartItem` now carries `effectivePrice`,
+decided once in the repository where the total is computed from the same field
+([ADR-0018](adr/0018-one-effective-price-function.md)). Verified against the dev database: lines
+and totals now agree on every seeded cart.
+
+Also: the Cart Value column no longer claims to be sortable. It was marked `sortable: true` while
+the server cannot order by it (PR-140) — the UI offered a sort the database refuses.
+
+**Verification:** `tsc --noEmit` exit 0, 1211 tests pass across 108 files, `next build` compiles,
+and the DAL exercised directly to confirm line sums match totals.
+
+
+## [PR-140] 2026-09-24 — A guard for sort vocabularies, and the third broken one it found
+
+PR-139 found two sort keys that had been throwing since 2026-08-04, by running them rather than
+reading them. Five more listings had the same shape and nothing had ever asked them either, so
+this asks all of them.
+
+`tests/integration/sort-vocabularies.test.ts` calls every listing with every key it declares, in
+both directions, against a real database. **It found a third: `?sortBy=totalValue` on abandoned
+carts** — a cart's value is summed in JavaScript from its items, so no `orderBy` can serve it,
+exactly like `totalSpent` on users. Removed rather than mapped; sorting a page of already-fetched
+rows would order the page rather than the result. Serving either properly needs a denormalised
+column, and neither is wanted today.
+
+The guard is worth having because **no compiler sees both ends**: the mismatch is between a
+TypeScript union and a Postgres column, and the route's `as any` used to carry an invalid key all
+the way to the query builder looking valid. A declared vocabulary nothing exercises is a promise
+nobody checked.
+
+It also earns its keep by distinguishing real handling from breakage. `?sortBy=stock` on products
+looks broken — `Product.stock` is not a column — and passes, because
+`admin.product.repository.ts` handles that case on a separate path. A grep would have "fixed"
+a working feature; running it did not.
+
+A second assertion counts the `sortBy?:` declarations in `server/` against the rows here, so a
+listing added without a row fails rather than quietly escaping the guard.
+
+Mutation-tested: reverting the `total → grandTotal` map from PR-139 turns it red.
+
+**Verification:** `tsc --noEmit` exit 0, 1211 tests pass across 108 files, `npm run docs:check`
+clean.
+
+
+## [PR-139] 2026-09-24 — `admin/orders` renders on the server, and two sorts that always threw
+
+Second of the seven admin screens, following the `admin/users` template. Seven client pages
+remain, down from ten.
+
+Filters move into the URL, the page becomes a server component reading through
+`src/data-access-layer/admin/orders.dal.ts`, and two client leaves remain — the filter bar and
+the per-row status control. The filter's eleven hardcoded status options are now derived from
+`ORDER_STATUS` and `PAYMENT_STATUS`; a retyped option list is how a filter comes to offer a
+status the domain has stopped using.
+
+**Two sort keys have been throwing since 2026-08-04, and the conversion is what found them.**
+Not by reasoning about the code — by running every declared sort against the database, which is
+a thing worth doing to any list endpoint:
+
+- **`?sortBy=total` on orders** reached Prisma as an unknown argument. `OrderListFilters` has
+  declared `total` for seven weeks; the column is `grandTotal`. It survived because the route
+  cast the query string with `as any`, which made an invalid key look valid all the way down to
+  the query builder. Fixed with a `SORT_COLUMNS` map rather than a rename — the API's vocabulary
+  need not be the column's.
+- **`?sortBy=totalSpent` on users** is worse, because no mapping can fix it: `totalSpent` is
+  summed in JavaScript from each user's orders, so no `orderBy` can serve it, and sorting a page
+  of already-fetched rows would order the page rather than the result. Removed from the
+  sortable set; offering a sort that throws is worse than not offering it. Serving it properly
+  needs a denormalised column or a raw aggregate.
+
+The second one also shows the value of the `resolveSortBy` change in PR-128: with the declared
+set now enforced at the boundary, removing the key from the union made the compiler point at the
+one remaining caller that still offered it.
+
+**Verification:** `tsc --noEmit` exit 0, 1209 tests pass across 107 files, `next build`
+compiles, and every declared sort key on both listings exercised against the database.
+
+
+## [PR-138] 2026-09-24 — Proving the owed figure actually drops
+
+A follow-up to PR-137 with no production change: the assertion that was missing.
+
+PR-137 wrote the reversal entry and reasoned that it would reduce what the platform owes,
+because `balancesFor` sums `payablePaise` without filtering by kind. Reasoning is not evidence,
+and the figure an operator pays against is not a detail to infer. `shipment-effects.test.ts` now
+asserts it directly — record a sale, return the parcel, and both `owedPaise` and
+`unclaimedPaise` come back to exactly where they started.
+
+Mutation-tested: switching `rto_delivered` from `reverse` to `unchanged` leaves ₹255 owed where
+zero is correct.
+
+**The return-window framing is dropped from the spec.** Settlement here is bookkeeping — the
+platform records what it owes, pays outside the system, marks it settled. There is no window to
+wait for and none is wanted; the rule is simply that a return reduces the owed figure.
+
+**Verification:** `tsc --noEmit` exit 0, 1209 tests pass across 107 files, `next build` compiles.
+
+
+## [PR-137] 2026-09-24 — A returned parcel puts its stock back, and un-owes the money
+
+Completes [shipment-lifecycle](specs/shipment-lifecycle/). PR-135 declared what each status
+*means*; nothing read it. The gap was live: the Shiprocket webhook can produce `rto_delivered`
+today, and when it did, **the units stayed decremented** — inventory the shop physically had and
+could not sell.
+
+**Restock is conditional and idempotent, in the same shape as the reservation that took the
+units.** `restockedAt` is claimed with a guarded `updateMany`
+([ADR-0007](adr/0007-conditional-stock-decrement.md)) inside the same transaction as the status
+change, because a parcel recorded as returned while its stock stayed out is the failure this
+exists to prevent. **`LOST` and `DAMAGED` still do not restock** — the owner's decision: those
+units are gone and crediting them invents inventory.
+
+**The ledger needed reversing after all, for a reason nobody had written down.** The design
+assumption was that settlement waits for the return window, so there would be nothing to reverse.
+Checking the code found otherwise: `recordSale` runs from `payment-confirmed.ts` — at *payment*,
+not delivery — `Org.returnsPolicy` is free text rather than a duration, so no window exists in
+code at all, and settlement is a manual claim over whatever is unsettled. Between a return and a
+payout there is a real window where an entry for returned goods is sitting claimable.
+`reverseSale` closes it by writing the mirror entry: every figure negated, the original
+untouched, so the two sum to nothing and both survive
+([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). The `REVERSAL` kind already
+existed in the schema and had never been written.
+
+**No refund is executed.** Recorded as an entitlement only, by decision: a gateway refund is
+irreversible, so a human presses the button.
+
+**A test of mine passed for the wrong reason, and the mutation check caught it.** "Does not
+restock twice" was green because a repeated terminal event is answered as `same-status` *before*
+restocking is reached — the transition table refuses it, not `restockedAt`. Deleting the
+`restockedAt` guard changed nothing, which is the definition of an unasserted mechanism. The test
+now reaches the restock path a second time deliberately, and deleting the guard fails it
+(`expected 13 to be 10`).
+
+**Verification:** `tsc --noEmit` exit 0, 1208 tests pass across 107 files, `next build` compiles,
+`npm run docs:check` 55/55, both new guards mutation-tested.
+
+
+## [PR-136] 2026-09-24 — The order service goes from eight domains to two
+
+Finishes the decomposition started in PR-130. `server/checkout/order.service.ts` was the largest
+and most-changed file in the repo — 826 lines, 26 commits in three months — because eight other
+domains each had a standing reason to edit it. It now has two.
+
+Two more extractions, each a concept rather than a slice of lines:
+
+**`basket-discounts.ts`** — the bridge between a priced basket and the offer engine. Checkout
+knows lines; promotions needs each line's org and category to decide which offer reaches it
+([ADR-0019](adr/0019-discount-is-one-winning-offer.md)). That translation was eleven lines in the
+middle of the transaction, and it was the only reason checkout imported the promotion engine at
+all. It also carries the reason both halves must stay inside the transaction: offers are decided
+from persisted rows at one instant, and `applyToOrder` *claims* a limited coupon with a
+conditional write, so one with three uses left cannot be spent four times by concurrent
+checkouts.
+
+**`payment-confirmed.ts`** — what happens once the money is real. Three domains meet here by
+definition: the ledger records what each org earned, identity supplies a recipient when the
+delivery address has none, and notifications sends the confirmation. That convergence is the
+module's purpose, so it is a recorded exception in `file-cohesion` with the reason — and it took
+three domains off the order service in one move.
+
+**`order.service.ts` is no longer a recorded exception at all.** It reaches `cart` (emptying the
+bought lines inside the transaction) and `shipping` (booking parcels in `fulfillOrder`), which is
+within the free limit. 826 lines to 722.
+
+The gate drove every step: it failed on "a recorded set that has shrunk is narrowed here" after
+each extraction until the record was tightened, and refused `payment-confirmed.ts` until its
+three domains were justified in writing.
+
+**Verification:** `tsc --noEmit` exit 0, 1203 tests pass across 106 files, `next build` compiles,
+`npm run docs:check` clean.
+
+
+## [PR-135] 2026-09-24 — One shipment vocabulary, and the transition table is the guard
+
+Builds the vocabulary half of [shipment-lifecycle](specs/shipment-lifecycle/). `Shipment.status`
+held three vocabularies at once — a type declaring nine values, a schema comment naming four
+others, and code writing `"shipped"`, which the type did not contain.
+
+**Eleven states, declared once, with what each one costs.** `SHIPMENT_STATUS` replaces the bare
+type union, and `SHIPMENT_STATUS_EFFECTS` sits beside it saying for every state whether it
+restocks, whether a refund is owed, and what the org's ledger should show. That table is next to
+the declaration because "what does this status cost" must not be answerable only by reading four
+call sites. **`LOST` and `DAMAGED` deliberately do not restock** — decided 2026-09-24: the units
+are gone, and crediting them back invents inventory.
+
+**The return leg is two states, not a mirror of the forward one.** Couriers report RTO in detail
+(`rto_ofd`, `rto_ndr`, `rto_acknowledged`); the only distinction that changes what we do is *has
+it arrived*, because that is when stock returns and the refund is owed. The finer wording stays
+verbatim on the row. `DELIVERY_FAILED` is non-terminal, because three attempts before a
+non-delivery report is the Indian norm rather than an exception.
+
+**`SHIPMENT_TRANSITIONS` is the guard, not a diagram.** One table gives "cancel only before
+pickup" and "never move backwards" — and makes a retried or late webhook a **no-op rather than a
+corruption**, which matters because couriers retry and occasionally deliver events out of order.
+
+**The adapter now refuses to guess.** `normalizeShipmentStatus` returned a substring-matched
+guess and fell back to `pending`, which is how a lost parcel looks healthy for a week. It now
+returns `null` for anything unmapped; the caller leaves the shipment where it is, keeps the
+courier's wording, and logs it — an unmapped status is a table entry somebody needs to add, and
+it can only become one if it is visible. Tables for Delhivery and Maruti are written now rather
+than later, because the point of an adapter is that a new courier is a table, and an empty one
+would not prove that.
+
+**`Shipment.status` has one writer.** Two route handlers wrote it directly with literals; both
+now go through `server/shipping/shipment-status.service.ts`, which is what makes the transition
+table, the raw-wording capture and the effects lookup unavoidable. The Shiprocket webhook also
+stops concluding "the order is delivered" from a single event — order status is recomputed from
+all its parcels ([shipment-lifecycle](specs/shipment-lifecycle/trd.md) D10).
+
+**Migration:** `pending`/`processing`/`packed`/`created` → `packing`, `shipped` → `in_transit`,
+`returned` → `rto_in_transit`, `failed` → `lost`, and the column default stops naming a state
+nothing recognised. `shipped` → `in_transit` was the judgement call, taken on the grounds that
+the next courier event corrects it within hours and over-reporting progress to a buyer is worse
+than under-reporting it. A data migration, not a seed ([Invariant 7](../CLAUDE.md)).
+
+**Not built, deliberately:** nothing yet *acts* on the effects table — restocking, refund
+entitlement and settlement reversal each touch money and get their own change. D5's `direction`
+column for customer returns is absent because no customer-return flow writes it, and a column
+nothing writes is a guess about an unspecified feature.
+
+**Verification:** `tsc --noEmit` exit 0, 1203 tests pass across 106 files (30 new), `next build`
+compiles, migration applied and verified against the dev database.
+
+
+## [PR-134] 2026-09-24 — Spec: one shipment vocabulary, and what each state costs
+
+Research and design only, no code. [shipment-lifecycle](specs/shipment-lifecycle/) answers the
+`Shipment.status` conflict recorded in PR-131, and answers it for three couriers rather than one.
+
+**The adapter was never the problem.** `server/shipping/utils/statusNormalizer.ts` already maps
+per courier into one internal set and already carries tables for Shiprocket, Delhivery and
+BlueDart. The architecture anticipated the second courier correctly. What it maps *into* was
+never designed, which is why the type, the schema comment and the code each say something
+different.
+
+**The design turns on one observation: a parcel has two journeys, not one.** It goes out, and
+when that fails it comes back. Status lists that model only the forward leg end up bolting the
+return on as peers of `delivered` — `rto`, `rto_ofd`, `rto_ndr` — which is how "cancelled" comes
+to mean four things. Three operations get separated instead:
+
+- **Cancel** — only before the courier collects it. Nothing has moved.
+- **RTO** — after collection, the only way back, and a journey of its own that can also fail.
+- **Customer return** — after delivery, a *new shipment* in the other direction on the same
+  order. The original parcel really was delivered; rewriting its status would falsify that.
+
+Eleven states, and a table beside the declaration saying what each means for **stock, refund and
+settlement** — because "what does this state mean for the money" must not be answerable only by
+reading four call sites. `LOST` deliberately does not restock: those units are gone, and
+crediting them invents inventory.
+
+`DELIVERY_FAILED` is non-terminal, because in India three attempts before an NDR is the normal
+case, not an exception — a model without it either loses the fact or misreports it as a return.
+Transitions are a declared table that *is* the guard, which gives "cancel only before pickup" and
+"never move backwards" from one mechanism, and makes a late or duplicated webhook a no-op rather
+than a corruption.
+
+**One open question is recorded rather than guessed:** whether `LOST` restocks depends on whether
+the org writes those units off against the courier claim or expects the count kept whole. It
+needs the org's answer before that row is built, not after.
+
+**Verification:** docs-only. `npm run docs:check` 55/55, full suite unchanged at 1173.
+
+
+## [PR-133] 2026-09-24 — The query-budget suite runs in CI
+
+`tests/integration/db-ops-budget.test.ts` is the only thing that catches a regression in how
+many SQL statements a page costs, and on Prisma Postgres every statement is a billed operation
+against a 100k monthly allowance. It has never run in CI. It ran when somebody happened to have
+a seeded local database and remembered to run the suite.
+
+**The guard was wrong, not the test.** `skipIf(!isLocalDb)` conflated two different things:
+*do not run against a metered database* — correct — with *needs the seed* — which was never
+true. Every budget here is structural: `getHeroProducts` issues one LATERAL JOIN whether it
+returns six rows or none. Verified by pointing it at a freshly migrated, completely empty
+schema: **all eight budgets hold.**
+
+So the predicate is now `isDisposableDb` and accepts CI's throwaway database as well as the
+local dev one, and the test job gained a Postgres service plus `prisma migrate deploy`.
+
+**Scoped deliberately to the one suite that qualifies.** Every other integration suite was
+pointed at the empty schema too, and they all failed — `product-archive`, `order-transaction`,
+`bulk-upload`, `bidding-concurrency` and `join-equivalence` genuinely need seeded orgs,
+categories, addresses and a carrier row, and the seed refuses to run under CI by design
+([Invariant 7](../CLAUDE.md)). They stay local-only. The two ways to bring them in — own their
+fixtures like `order-transaction.test.ts`, or ship the reference rows as a data migration — are
+recorded in [TESTING.md](TESTING.md) rather than guessed at here.
+
+**Verification:** `tsc --noEmit` exit 0, 1173 tests pass across 105 files, the budget suite
+passes against both a seeded and an empty database, `next build` compiles.
+
+
+## [PR-132] 2026-09-24 — Domains stop reaching into each other's repositories: 13 violations to 1
+
+[ADR-0033](adr/0033-a-domain-is-reached-through-its-public-surface.md) landed with thirteen
+allowlisted cross-domain repository imports and the note that each names the service method the
+owning domain needs to grow. Twelve of those methods now exist.
+
+**Stock is a concept, so it got a service.** `stockByLocation`, `lockStock` and
+`takeOneFromLocation` were reached directly by `bidding` from `catalog/product.repository`.
+Inventory lives in catalog but is *moved* by whoever is selling — checkout reserves it in the
+order transaction, bidding locks it while an event opens and takes a unit when one is won.
+`server/catalog/stock.service.ts` is that surface, and every operation takes the caller's
+transaction, because a reservation that commits separately from the order it belongs to is the
+bug [ADR-0007](adr/0007-conditional-stock-decrement.md) exists to prevent.
+
+**Commercial terms likewise.** `findCommercialTerms`, `listCommercialTerms` and
+`updateCommercialTerms` were read out of `catalog/org.repository` by both `payouts` and
+`promotions`. The rate lives on the `Org` row that catalog owns, but nothing in catalog uses it.
+`server/catalog/commercial-terms.service.ts` names it — a module rather than three more methods
+on `org.service`, because it has a life beyond the row: a base rate, per-category overrides in
+`OrgCommissionRule`, and the ceiling on what an offer may give away. `org.service` answers *what
+is this organisation*; this answers *what does it cost to sell here*, and keeping them apart is
+what stops the first becoming the home for anything attached to an `Org`.
+
+**The rest were single reads that simply belonged on a service:** `listForPicker`,
+`listingFacts` and `countOutsideOrg` on `product.service`; `findEmailContact` and a new
+`isMember` on `org.service`; `listForPicker` on `category.service`; `categoryParents` on
+`promotion.service`; `findLoginEmail` on `profile.service`. `isMember` returns a boolean rather
+than the membership row, because that is the whole question bidding asks — anything needing the
+*role* is making an authorisation decision and belongs in `src/lib/org-auth.ts`.
+
+**One violation remains, and it is the genuinely hard one.**
+`payments/payment.service.ts -> checkout/order.repository`: the paid transition is a conditional
+write that must stay a single statement ([ADR-0005](adr/0005-payment-state-server-only.md),
+ADR-0007). Routing it through a service method would either leak the condition into the caller
+or reintroduce a read-then-write. It needs checkout to expose a `confirmPaid` *command*, which
+is a design decision rather than a move.
+
+Two dead fragments surfaced while rerouting: a `settlement.service.ts` dynamic import of
+`org.repository` left behind by its own replacement, and an unused `productsRepository` import in
+`admin.bidding.service.ts`. Both removed.
+
+**Verification:** `tsc --noEmit` exit 0, 1173 tests pass across 105 files, `next build`
+compiles, `npm run docs:check` clean.
+
+
+## [PR-131] 2026-09-24 — Both coupling gates were blind to `await import(...)`
+
+**Correction to [PR-130], which claimed `order.service.ts` went from six domains to four.** It
+went from **eight to six**. The measurement was taken with a gate that could not see dynamic
+imports, and `order.service.ts` reaches `payouts` and `identity` through
+`await import("@server/…")` inside `onPaymentConfirmed`. The extraction was real; the number
+was not.
+
+**The hole was in both gates, and it hid two violations as well as two dependencies.**
+`file-cohesion` and `module-boundaries` matched only `from "@server/x"`. Once they also match
+`import("@server/x")`, two cross-domain repository calls appear that had never been counted:
+`checkout/order.service.ts -> identity/profile.repository` (reading the buyer's account email
+when the address carries none) and `payouts/settlement.service.ts -> catalog/org.repository`
+(addressing the payout email). Both are now allowlisted with what each needs.
+
+A deferred import is still a reason to change. Deferring it changes when the module loads, not
+who depends on whom — which is exactly what these gates measure.
+
+**The seam that prompted it.** `payouts/ledger.repository.ts` reached into
+`checkout/order.repository` for two questions — which paid orders have no ledger entry, and how
+many. Both were pure pass-throughs that existed only to cross the boundary. They now sit on
+`orderService`, `ledgerService` asks them directly, and the two wrappers are deleted. The query
+stays in checkout because checkout owns `prisma.order` ([ADR-0003](adr/0003-one-repository-per-aggregate.md)):
+the join to `OrgLedgerEntry` does not make it a payouts query, it makes it a question payouts
+asks. Twelve allowlisted repository violations remain, down from thirteen.
+
+Worth recording while it was checked: neither query spreads `VISIBLE_ORDER_WHERE`, and that is
+correct — a sweep worklist is the documented exemption, and it is moot anyway, because
+`confirmPaid` refuses an expired order and the release path refuses a paid one, so the two
+states are mutually exclusive by construction.
+
+**`ledger.service.ts` is now a recorded exception at three domains**, and the gate was right to
+ask. Settlement genuinely sums across what was ordered, the category and terms that set the
+rate, and the promotion behind an attribution. Gaining `checkout` there is still an improvement
+— it replaced the same coupling one layer lower, past the service that owns the rules. The
+durable fix is for checkout to *push* a settlement view rather than payouts pulling four ways,
+which is an events change rather than a rename.
+
+**Verification:** `tsc --noEmit` exit 0, 1173 tests pass across 105 files, `next build`
+compiles, `npm run docs:check` clean.
+
+
+## [PR-130] 2026-09-24 — The order transaction stops importing two domains to ask one question
+
+First cut at `server/checkout/order.service.ts`, the largest and most-changed file in the repo.
+Its reach drops from **six other domains to four**.
+
+**The three sale gates were one concept wearing three imports.** Bidding
+([ADR-0023](adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md)), archiving
+([ADR-0029](adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md)) and org withdrawal
+([ADR-0030](adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md)) each arrived
+separately, and each was added to the transaction where the previous one sat — the exact
+pattern [ADR-0036](adr/0036-a-files-reasons-to-change-are-a-decision.md) describes. They ask one
+question: *is this line still saleable at the instant we take the money.*
+`server/checkout/sale-gates.ts` asks it once. `bidding` and `catalog` leave the order service
+with them, and the next reason to refuse a sale has an obvious home instead of becoming a fourth
+`await` in a 400-line method.
+
+A pure move — same calls, same order, same place in the transaction, after the stock reservation
+where the lock ordering makes it race-safe. That reasoning moved into the new file's header,
+where it is next to the code it constrains.
+
+**Verified as a move, not a rewrite.** Each of the three gates was deleted in turn and the full
+suite re-run: every removal is caught. Worth recording how that nearly went wrong — an earlier
+probe ran only `product-archive` and `order-transaction`, saw nothing fail, and briefly looked
+like a coverage hole in the assertion ADR-0029 calls *the* enforcement point. It was an
+under-run, not a gap. A mutation test proves nothing unless the whole suite runs.
+
+**The ratchet demanded the tightening rather than accepting it.** `file-cohesion` failed on "a
+recorded set that has shrunk is narrowed here" until `order.service.ts` was re-recorded at four
+domains. `sale-gates.ts` itself is *not* recorded: it reaches two, which is within the free
+limit, and the record list means exceptions — a compliant file's rationale belongs in its own
+header.
+
+**Verification:** `tsc --noEmit` exit 0, 1173 tests pass across 105 files, `next build`
+compiles, `npm run docs:check` clean.
+
+
+## [PR-129] 2026-09-23 — `admin/users` renders on the server, and the upload ceiling gets a gate
+
+**The console's user list is a server component.** Filters moved from `useState` into the URL,
+which is what lets the server answer the question the URL asks — and is the better answer
+anyway: a filtered view is now shareable, bookmarkable and survives the back button. Two client
+leaves remain for the two things that genuinely need a browser: typing in the filter bar
+(`UsersFilters`) and blocking a user (`UsersTable`). `router.refresh()` after a mutation re-runs
+the server read, so there is no client cache to invalidate and no second source of truth for
+what the table shows. Eight client pages remain, down from ten.
+
+The query string is parsed the way a request body is (Invariant 4): `resolveSortBy`,
+`resolveSortOrder`, `resolvePageSize` and `platformRoleSchema.safeParse` resolve every value
+against a closed set. That also removed the last `sortBy: key as any` on this screen.
+
+**A count-based ratchet was removed, for the second time today.** The client-*component* ceiling
+failed this conversion: turning one client page into a server page plus two leaves is a strict
+improvement and *raises* the file count, because pushing `"use client"` down to the leaves is
+what creates leaves. A tally that punishes the refactor it exists to encourage is noise.
+[ADR-0034](adr/0034-render-on-the-server-by-default.md) now says so, and the boundary rule —
+no client `page.tsx` or `layout.tsx` — carries the weight alone. Same lesson as the line budget
+discarded in PR-128: measure the boundary, not the tally.
+
+**Monthly-allowance audit, both meters.** The image pipeline holds: `MAX_IMAGE_EDGE` and
+`IMAGE_QUALITY` come from one budget in `server/catalog/media.ts`, both upload paths re-encode
+to WebP, and the presign schema signs the content type *and* the exact byte count, so a
+presigned URL is a limit rather than a claim. What was missing was enforcement on the caller:
+a presigned PUT writes whatever bytes the browser hands it, so only the caller can downscale,
+and all four did by habit rather than by rule. `tests/unit/image-delivery.test.ts` now fails a
+`uploadDirect` caller that skips `downscaleImage` — mutation-tested. An original upload costs
+storage for ever and makes the optimizer transform a huge source on first request, which is
+both meters at once.
+
+**Still open on the DB meter:** `tests/integration/db-ops-budget.test.ts` still only runs
+against a local seeded database, so no query-count regression is caught automatically. Making it
+own its fixtures the way `order-transaction.test.ts` now does is what would let it run in CI.
+
+**Verification:** `tsc --noEmit` exit 0, 1173 tests pass across 105 files, `next build`
+compiles, `npm run docs:check` 55/55.
+
+
+## [PR-128] 2026-09-23 — A file's reasons to change become a decision, and payment state gets a name
+
+Two changes, one idea: make the thing that produced the debt harder to do than the right thing.
+
+**Diagnosis first, measured across the whole tree.** `server/checkout/order.service.ts` is 825
+lines and the most-changed file in the repo — 26 commits in three months — with
+`createOrderWithShipments` about 400 of them on its own. **No individual change to it was
+wrong.** Promotions needed a discount written at order time, bidding a suspension check inside
+the transaction, the ledger a hook on confirmation; each went where the order was already being
+written, which was locally correct every time. Review does not catch that, because every diff
+is small and sensible.
+
+**The first gate measured the wrong thing, and was discarded before it shipped.** It budgeted
+file *length*. Length is a symptom: a 200-line file that quietly acquires five unrelated
+dependencies passes a line budget, and a long file of small cohesive functions fails it. The ADR
+for it was written, superseded within the hour, then deleted outright rather than left as a
+tombstone — it was never committed, so "superseding" it would have recorded a decision the
+project never actually made.
+
+**What replaced it — [ADR-0036](adr/0036-a-files-reasons-to-change-are-a-decision.md).** The
+cause is coupling, and it is measurable: `order.service.ts` reaches into **six other domains**,
+so six unrelated feature areas each have a standing reason to edit it. The moment of drift is
+also precise — **it is the import.** Adding `from "@server/bidding/…"` to a checkout file gives
+that file a new master, in one line that looks harmless in review.
+
+`tests/unit/file-cohesion.test.ts` fires exactly there, on every file, **at any size**. The
+threshold is the tree's own: 445 files reach no other domain, 168 reach one, 12 reach two, five
+reach more. Two is free; beyond that the exact domain set and the reason are recorded, and a
+recorded file may not quietly gain a seventh. Mutation-tested — adding two cross-domain imports
+to `cart.service.ts` makes it red.
+
+Change-coupling from git says what the reach costs: `order.service.ts`, `order.types.ts`,
+`order.repository.ts`, `order.schemas.ts` and `useCheckoutPayment.ts` change together in 71–100%
+of the commits touching any of them. One concept, five files that must agree.
+
+**`paymentStatus` had no declared set at all** — the one closed set
+[Invariant 2](../CLAUDE.md) is entirely about. It existed as a schema comment
+(`// pending, paid, failed`) and 34 copies of the literal `"paid"` across thirteen files, while
+`ORDER_STATUS` sat two declarations away in the same file. A literal comparison does not fail
+when a set changes; it silently stops matching. `PAYMENT_STATUS` is now declared beside it,
+including `REFUNDED`, which nothing writes yet but the admin console already renders — a value
+the UI knows and the domain does not is how the two drift. Every literal in `server/` is
+replaced; `src/` is the next slice.
+
+**Verification:** `tsc --noEmit` exit 0, full suite green, `next build` compiles,
+`npm run docs:check` clean.
+
+## [PR-127] 2026-09-23 — `/orders` renders on the server, as the worked example
+
+The first conversion under [ADR-0034](adr/0034-render-on-the-server-by-default.md), chosen
+because it is the smallest honest one: the whole page was a client component so that a search
+box could filter a list.
+
+**Before:** `page.tsx` was `"use client"`, read `useAuth()`, and rendered `OrdersClient`, which
+called `useAsyncData(() => orderApiClient.getOrders())` → `GET /api/orders` →
+`orderService.getOrdersByUserId`. Five hops, a loading spinner and an error state, for data the
+server had before it rendered anything.
+
+**After:** the page is a server component. It reads the session, and either renders
+`OrderLookup` for a guest or passes `await ordersDAL.listForViewer()` into `OrdersClient` as a
+prop. `OrdersClient` keeps its `useState` for the query and its `useMemo` for the filter, and
+loses the fetch, the spinner and the error branch — there is nothing left to fail.
+`ordersDAL.listForViewer()` reads the session itself, matching `wishlist.dal.ts`: the question
+is "what has *this* viewer bought", so plumbing a user id through the page would only move the
+same read. Both DAL reads now share one row→DTO mapper instead of two copies.
+
+`GET /api/orders` stays — `(main)/profile` is still a client page and still calls it. It goes
+when that one converts, which is the point of counting route handlers that exist only to feed a
+client component.
+
+**The ratchet tightened in the same change**: the page came off the `CLIENT_PAGES` allowlist, so
+`tests/unit/rendering-strategy.test.ts` will now fail if it ever goes back. Nine remain, each
+with the conversion it needs written beside it.
+
+**Verification:** `tsc --noEmit` exit 0, 1165 tests pass across 104 files, `next build`
+compiles, and `GET /orders` answers 200 with server-rendered markup and no `api/orders`
+reference in the delivered HTML.
+
+
+## [PR-126] 2026-09-23 — The rules that were only written down are now enforced
+
+CLAUDE.md is 32% smaller and three architectural rules stopped being advice. No behaviour
+change; two new guard suites and three ADRs.
+
+**CLAUDE.md was 215 lines against its own 200-line limit, and 46% of it was one section.**
+The conventions index is specified as "each line points; detail lives in the ADR so it cannot
+drift" — its bullets had grown to a 460-character mean, restating the ADRs they point at. Two
+rules were stated *twice in two wordings*, in Conventions and again in Development Principles,
+which is exactly what [ADR-0009](adr/0009-docs-reference-code-never-copy-it.md) D6 forbids.
+Trimmed to a 145-character mean: **~7,524 → ~4,950 tokens, paid on every session before any
+work starts.** Invariant 7 lost 1,300 characters to `prisma/seed-guard.ts`, whose header
+already carried the reasoning. Nothing was deleted — 29 ADRs are lazy-loaded and cost nothing
+until read; the index summarising all of them was the expense.
+
+**Three conventions had no ADR to point at.** One was the CSP, added in PR-117 with its only
+wording in the always-loaded rules file — the thing the index exists to avoid. Recorded now as
+[ADR-0035](adr/0035-every-response-carries-a-nonce-based-csp.md), alongside two new ones.
+
+**Domain decoupling — [ADR-0033](adr/0033-a-domain-is-reached-through-its-public-surface.md).**
+"A domain calls another domain's public surface, never its internals" has been in CLAUDE.md
+since ADR-0012 and was never checked; **13 cross-domain repository imports** accumulated under
+it. The rule was unfollowable as written, because nothing said what a *surface* was:
+`catalog/product.visibility` is meant to be shared (ADR-0029 requires every buyer-facing read
+to spread it) while `catalog/product.repository` is not, and both are just a file in a
+directory. Each domain now declares its surface as data, and
+`tests/unit/module-boundaries.test.ts` also holds the layering rules that were equally
+unchecked: no component imports Prisma or a repository, no page reaches a repository instead
+of the DAL, `server/` never value-imports from `src/`.
+
+**Server-by-default — [ADR-0034](adr/0034-render-on-the-server-by-default.md).** This is the
+answer to why a change touches thirty files. **106 of 173 components under `src/components`
+are `"use client"`, ten `page.tsx` are, and so is one `layout.tsx`.** A client page cannot
+reach the database, so every read it needs travels page → hook → client service → route
+handler → schema → domain: six or seven files where a server component needs two. It is also
+why several of the 93 route handlers exist at all. `tests/unit/rendering-strategy.test.ts`
+refuses a client page or layout and ratchets the component count down.
+
+**Both gates are ratchets, and that is deliberate.** Each landed on a tree that already
+violated it. Failing on day one would have got them suppressed — which is what happened to
+lint here. So each allowlists what exists *with the reason it survives*, asserts that reason
+is longer than a shrug, and fails when an entry no longer matches a real violation. The list
+can only shrink, and it is the backlog in the one place that cannot go stale.
+
+**Two of my own gates were wrong on the first run, which is the argument for writing them.**
+`module-boundaries` collected only `.ts`, so it scanned zero pages and two assertions passed
+vacuously; both scan-based suites now assert they found files before asserting anything about
+them. And the client-component figure first quoted as "121 of 173" conflated all of `src/`
+with `src/components` — 106 of 173 is the real number, corrected in the ADR.
+
+**Verification:** `tsc --noEmit` exit 0, 1165 tests pass across 104 files, `npm run docs:check`
+55/55, `next build` compiles.
 
 ## [PR-125] 2026-09-23 — Nothing a buyer wrote is deleted, and a review photograph has to be the reviewer's `[CONTRACT]` `[MIGRATION]`
 
@@ -80,6 +894,10 @@ Review of [PR-124](specs/product-reviews/) found one bug with teeth and a set of
 The trap is that the store has **two hosts and they are not interchangeable**. `img-src` already allowed the public bucket domain images are *read* from; writes go to the credentialed S3 endpoint in `R2_ENDPOINT`, which nothing allowed. `uploadHosts()` now derives it the way `imageHosts()` derives the read host, and `tests/unit/security-headers.test.ts` asserts both that the write host is in `connect-src` and that it is *not* in `img-src` — they answer different questions and must not drift into one. This is two features meeting rather than either being wrong: the CSP landed in PR-117 and browser-direct R2 uploads in PR-119, on separate branches that had not met until this merge.
 
 **A failed browser-to-store upload now says what failed.** `uploadDirect` threw `Upload failed for <path> (<status>)` and discarded the store's own answer, and a `fetch` that never completed surfaced as a bare `Failed to fetch`. Both are now distinguished at the point they differ: a rejected `fetch` reports that the request never completed — so it is the network or the bucket's CORS rules, and *not* the signature or the permission — while a completed non-OK response carries R2's XML `<Code>` (`SignatureDoesNotMatch`, `AccessDenied`, `EntityTooLarge`). The first message it produced pointed at the right layer within seconds, after the signed URL, the CORS preflight and a hand-made PUT had all been checked by hand and all passed.
+
+**A production seed no longer carries an admin password in clear.** `prisma/seed/prod.ts` hashed the literal string `'STRONG_RANDOM_PASSWORD'` onto a platform ADMIN account on a real address — a placeholder that reads as advice and behaves as a credential, so anyone who could read the repository could sign in as an administrator wherever it had been run. CLAUDE.md Invariant 7 already said it: no credential literal lives in a seed, and this was the one script that may legitimately be pointed at production. It now takes `PROD_ADMIN_EMAIL` and `PROD_ADMIN_PASSWORD` from the environment, refuses a placeholder value, refuses to run without both, is idempotent, and **will not reset an existing account's password** — re-running a bootstrap must not be a route to taking over an administrator's login. Its Shiprocket block is gone too: a carrier's catalogue row is reference data that already ships as the `register_shiprocket_provider` data migration, so the script was a second writer for a row that arrives on its own. The file had also never invoked `main()`, so none of it had ever run.
+
+**Environment files are now a committed shape rather than folklore.** `.env.example` and `.env.production.example` carry every variable the code actually reads, with sample values and no credentials; `.gitignore` admits exactly those two out of `.env*`, which previously hid them along with the real ones. Verified mechanically that no value from the live `.env` appears in either. Two errors in `OPERATIONS.md`'s table were corrected while mirroring it: `NEXT_PUBLIC_RAZORPAY_KEY_ID` was marked required and is read by nothing (the checkout widget is handed the key id in the server's response), and `MIGRATE_DATABASE_URL` was absent despite `prisma.config.ts` reading it for every migration.
 
 **Accepted and written down rather than hidden:** reviews and their photographs now accumulate for ever. No reaping job, and a retired review's objects stay reachable at their URLs. [ADR-0032](adr/0032-records-people-authored-are-retired-not-deleted.md) records that as the cost of keeping the record; a media-only purge stays available later.
 

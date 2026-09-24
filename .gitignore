@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...except the samples, which are the point: they carry no secret and are how a
+# new machine learns what has to be set. `.env*` above would otherwise hide them.
+!.env.example
+!.env.production.example
 
 # vercel
 .vercel
