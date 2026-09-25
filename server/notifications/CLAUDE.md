@@ -1,9 +1,11 @@
 # notifications — domain rules
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-25
 - **Covers:** `server/notifications/**`
 
-Transactional email. One provider (Resend, in `email.service.ts`), one shell, six templates.
+Transactional email and in-app notifications ([in-app-notifications](../../docs/specs/in-app-notifications/spec.md)).
+- Email: One provider (Resend, in `email.service.ts`), one shell, six templates.
+- In-App: `in-app.repository.ts`, `in-app.service.ts`, `in-app.types.ts`. Stores `InAppNotification` records per user with unread status tracking.
 
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
 a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route

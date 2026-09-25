@@ -79,6 +79,7 @@ Two of this phase's strands are now specified; the rest stays deliberately undet
 |---|---|---|
 | [error-tracking](specs/error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 📝 Draft |
 | [read-caching](specs/read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 📝 Draft |
+| [in-app-notifications](specs/in-app-notifications/spec.md) | Signed-in users receive real-time and polled in-app alerts with unread badge counter and drawer/popover panel | ✅ Implemented — PR-147 |
 
 Both were pulled forward out of "not started" for the same reason: Phase 9 shipped a URL designed to be *shared*, so the storefront now attracts the one traffic shape that uncached reads handle worst, and the store's growing set of deliberately fail-open controls — the limiter, the reconciliation sweep, the ledger backfill — each record a failure and notify nobody.
 

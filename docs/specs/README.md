@@ -50,6 +50,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [supply-chain-integrity](supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, established by the pipeline | 4 | cross-domain | 📝 Draft |
 | [error-tracking](error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 5 | cross-domain | 📝 Draft |
 | [read-caching](read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 5 | catalog | 📝 Draft |
+| [in-app-notifications](in-app-notifications/spec.md) | Signed-in users receive real-time and polled in-app alerts with unread badge counter and drawer/popover panel | 5 | notifications, cross-domain | ✅ Implemented — PR-147 |
 
 ### Subfeatures
 

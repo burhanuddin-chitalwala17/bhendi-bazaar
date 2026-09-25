@@ -10,6 +10,17 @@
 
 ## Entries
 
+## [PR-147] 2026-09-24 — [MIGRATION] [CONTRACT] In-app notification system
+
+In-app notification system delivering real-time and polled alerts (order status updates, outbid alerts, promotions, and system notifications) with unread badge counters, status tracking (read/unread), and mobile-first drawer/popover panels.
+
+- **Data model**: `InAppNotification` model and `NotificationType` enum added to `prisma/schema.prisma` with compound indexes `@@index([userId, isRead, createdAt])` and `@@index([userId, createdAt])`.
+- **Domain & API**: Domain repository, service, types in `server/notifications/`, Zod schemas in `src/lib/validation/schemas/notifications.ts`, and route handlers `GET/POST /api/notifications` and `PATCH/POST /api/notifications/read`.
+- **Automatic Triggers**: Integrated in-app notifications into `server/checkout/payment-confirmed.ts` on order payment confirmation and into `server/bidding/bidding.service.ts` on outbid events.
+- **UI & Chrome**: Built `NotificationBell` with SWR/polling, unread badge counter, and Radix Sheet mobile drawer, integrated into `Navbar.tsx`.
+- **Spec & TRD**: `docs/specs/in-app-notifications/spec.md` and `docs/specs/in-app-notifications/trd.md`.
+- **Tests**: 12 unit tests in `tests/unit/in-app-notification.test.ts`.
+
 ## [PR-146] 2026-09-24 — The tests are audited, and two Invariants turn out to have had no guard
 
 The nine unreachable handlers from PR-144/145 are deleted, along with `ProfileContext`,

@@ -199,3 +199,35 @@ describe("a browser upload is downscaled before it is stored", () => {
     ).toBe(true);
   });
 });
+
+/**
+ * The upload side of the same allowance.
+ *
+ * A presigned PUT is permission to write bytes directly to R2 ([ADR-0028]), so the browser —
+ * not the server — decides what those bytes are. The route signs the path, the content type
+ * and the exact size, but it cannot make a 12MP phone photo smaller. Only the caller can, by
+ * running `downscaleImage` first ([ADR-0026]).
+ *
+ * All four callers do today. Nothing stopped a fifth from not doing, which is how the stored
+ * ceiling gets quietly reopened: an original upload costs storage for ever and forces the
+ * optimizer to transform a huge source on first request.
+ */
+describe("a browser upload is downscaled before it is stored", () => {
+  const DIRECT_UPLOADERS = FILES.filter((f) => /\buploadDirect\b/.test(readFileSync(f, "utf8")))
+    .filter((f) => !f.endsWith("upload-direct.ts")); // the helper itself
+
+  it("finds the callers it means to check", () => {
+    // If this scan ever finds nothing, the assertion below is vacuous rather than passing.
+    expect(DIRECT_UPLOADERS.length, "no uploadDirect callers found").toBeGreaterThan(2);
+  });
+
+  it.each(DIRECT_UPLOADERS)("%s downscales first", (file) => {
+    const source = readFileSync(file, "utf8");
+    expect(
+      /downscaleImage/.test(source),
+      `${file} uploads straight to the object store without calling downscaleImage. A presigned ` +
+        "PUT writes whatever the browser hands it, so the original — often 10MB from a phone — " +
+        "is what gets stored and what the optimizer then has to transform (ADR-0026).",
+    ).toBe(true);
+  });
+});

@@ -325,6 +325,8 @@ model User {
   biddingEventsCreated BiddingEvent[] @relation("BiddingCreatedBy")
   biddingEventsSettled BiddingEvent[] @relation("BiddingSettledBy")
 
+  inAppNotifications   InAppNotification[]
+
   @@index([platformRole])
   @@index([isBlocked])
   @@index([lastActiveAt])
@@ -1455,4 +1457,32 @@ model Bid {
   @@unique([eventId, amountPaise])
   @@index([eventId, amountPaise(sort: Desc)])
   @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// IN-APP NOTIFICATIONS
+// (docs/specs/in-app-notifications/)
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum NotificationType {
+  ORDER_UPDATE
+  BID_OUTBID
+  PROMOTION
+  SYSTEM
+}
+
+model InAppNotification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String           @db.Text
+  type      NotificationType @default(SYSTEM)
+  link      String?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@index([userId, createdAt])
 }

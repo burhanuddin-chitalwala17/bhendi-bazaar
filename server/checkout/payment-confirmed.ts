@@ -50,6 +50,19 @@ export async function onPaymentConfirmed(orderId: string): Promise<void> {
   // Only the heart removes a saved product, so someone who bought one as a gift
   // still has theirs saved, and a cancelled order needs nothing put back.
 
+  if (order.userId) {
+    const { inAppNotificationService } = await import("@server/notifications/in-app.service");
+    inAppNotificationService
+      .notifyUser({
+        userId: order.userId,
+        title: "Order Confirmed!",
+        message: `Your order #${order.code} has been placed successfully.`,
+        type: "ORDER_UPDATE",
+        link: `/order/${order.id}`,
+      })
+      .catch((err) => console.error("[onPaymentConfirmed] failed in-app notification:", err));
+  }
+
   const deliveryAddress = order.address as OrderEmailView["address"] | null;
   // The address book's email is per-address and usually left blank (it isn't asked
   // for at checkout, only when adding an address). Falling back to the account's

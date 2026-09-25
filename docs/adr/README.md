@@ -73,3 +73,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0034](0034-render-on-the-server-by-default.md) | Render on the server by default; a page is never `"use client"` | Accepted | 2026-09-23 |
 | [0035](0035-every-response-carries-a-nonce-based-csp.md) | Every response carries a nonce-based Content-Security-Policy | Accepted | 2026-09-21 |
 | [0036](0036-a-files-reasons-to-change-are-a-decision.md) | A file's reasons to change are a decision, not a drift | Accepted | 2026-09-23 |
+| [0033](0033-a-domain-is-reached-through-its-public-surface.md) | A domain is reached through its declared public surface | Accepted | 2026-09-23 |
+| [0034](0034-render-on-the-server-by-default.md) | Render on the server by default; a page is never `"use client"` | Accepted | 2026-09-23 |
+| [0035](0035-every-response-carries-a-nonce-based-csp.md) | Every response carries a nonce-based Content-Security-Policy | Accepted | 2026-09-21 |
+| [0036](0036-a-files-reasons-to-change-are-a-decision.md) | A file's reasons to change are a decision, not a drift | Accepted | 2026-09-23 |

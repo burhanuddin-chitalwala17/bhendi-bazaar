@@ -8,6 +8,7 @@ import { useCartStore } from "@/store/cartStore";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { NavbarSearch } from "./NavbarSearch";
 import { ProfileMenu } from "./ProfileMenu";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { ContactLauncher } from "@/components/support/contact-launcher";
 import Image from "next/image";
 import { APP_NAME, LOGO } from "@/lib/config";
@@ -48,6 +49,7 @@ export function Navbar() {
         <NavbarSearch />
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {user && <NotificationBell />}
           {user ? (
             <ProfileMenu />
           ) : (
