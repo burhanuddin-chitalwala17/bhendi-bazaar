@@ -10,6 +10,13 @@
 
 ## Entries
 
+## [PR-153] 2026-09-26 — The worker loads the env file
+
+`npm run worker` failed with "DATABASE_URL is not set" on a laptop whose `.env` had it: a plain
+script does not get Next.js's env loading, and every local run so far had exported the variable
+in the shell. `worker/main.ts` now starts with `dotenv/config`, as `prisma/seed.ts` and the
+backfill script do. Harmless in the container, where compose supplies the environment.
+
 ## [PR-152] 2026-09-26 — The worker's image, machine script and deploy, ahead of the machine
 
 worker-foundation PR 2 of 3, the half that needs no machine (trd D7–D9). `infra/worker/Dockerfile`

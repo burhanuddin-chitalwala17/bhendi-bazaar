@@ -5,6 +5,9 @@
  * (ADR-0036) — because its whole job is to register each domain's handlers and start the
  * queue. It holds no logic of its own; a handler lives in the domain that owns the work.
  */
+// A script, not the Next.js runtime: the env file is loaded here, as the seed does. In the
+// container there is none and the environment comes from compose; that is fine.
+import "dotenv/config";
 import { PgBoss } from "pg-boss";
 import { appEnv } from "@server/shared/app-env";
 import { resolveJob, registeredJobTypes } from "@server/shared/jobs/jobs.registry";
