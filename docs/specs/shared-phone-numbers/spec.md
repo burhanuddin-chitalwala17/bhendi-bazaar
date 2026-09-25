@@ -1,5 +1,6 @@
 # Spec — shared-phone-numbers
 
+- **Summary:** One phone number backs any number of accounts; email alone identifies one
 - **Status:** Implemented
 - **Domain:** identity
 - **Phase:** — (cross-cutting)

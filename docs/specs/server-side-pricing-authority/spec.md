@@ -1,5 +1,6 @@
 # Spec — server-side pricing authority
 
+- **Summary:** The charged amount is determined by the store from its own catalogue
 - **Status:** ✅ Implemented — PR-38
 - **Domain:** checkout, payments
 - **Phase:** 2 — Transaction integrity

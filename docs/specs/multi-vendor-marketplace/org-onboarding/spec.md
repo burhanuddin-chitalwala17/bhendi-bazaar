@@ -1,5 +1,6 @@
 # Spec — org onboarding
 
+- **Summary:** Someone with no organisation starts one from the store and arrives in a working portal as its first owner
 - **Status:** ✅ Implemented — PR-28
 - **Domain:** catalog, identity
 - **Phase:** 3 — Fulfilment

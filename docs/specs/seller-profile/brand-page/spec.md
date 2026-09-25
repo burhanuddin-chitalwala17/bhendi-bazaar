@@ -1,6 +1,7 @@
 # Spec — brand-page
 
-- **Status:** 📝 Draft
+- **Summary:** The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line
+- **Status:** ✅ Accepted — 2026-09-26
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

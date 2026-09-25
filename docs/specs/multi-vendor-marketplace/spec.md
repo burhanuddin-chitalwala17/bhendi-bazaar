@@ -1,5 +1,6 @@
 # Spec — multi-vendor marketplace
 
+- **Summary:** Three audiences — buyers, selling organisations, platform owners — each with their own portal
 - **Status:** Draft — programme overview; each subfeature carries its own spec and TRD
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment, reaching back into Phase 2

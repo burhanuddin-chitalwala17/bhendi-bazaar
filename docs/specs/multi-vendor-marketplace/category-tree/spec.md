@@ -1,5 +1,6 @@
 # Spec — category tree
 
+- **Summary:** Categories nest to any depth, and the taxonomy belongs to the platform
 - **Status:** ✅ Implemented (PR-42)
 - **Domain:** catalog
 - **Phase:** 3 — Fulfilment

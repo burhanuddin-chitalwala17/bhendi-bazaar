@@ -1,6 +1,7 @@
 # Spec — renditions
 
-- **Status:** 📝 Draft
+- **Summary:** Every surface that needs its own size or shape gets a derived image made once from a declared recipe, and the source never changes
+- **Status:** ✅ Accepted — 2026-09-26
 - **Domain:** content, reading catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

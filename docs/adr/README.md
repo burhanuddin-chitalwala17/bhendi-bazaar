@@ -30,7 +30,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 
 ## How to add one
 1. Create `NNNN-<slug>.md`; the new number is the highest existing + 1.
-2. Add a row to the index below.
+2. Run `npm run docs:index` — the index below is generated from each file's header, and `docs:check` fails while it is stale.
 3. If it sets a standing convention, add a pointer line to `CLAUDE.md`'s conventions index.
 4. Never edit a past ADR's Context, Decision, or Alternatives.
 
@@ -38,6 +38,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 
 ## Index
 
+<!-- generated:adr-index:start -->
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
 | [0001](0001-monorepo-doc-structure.md) | Monorepo docs split by volatility; domain docs co-located with code | Accepted | 2026-08-03 |
@@ -50,9 +51,9 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0010](0010-spec-convention.md) | Spec layout — feature folders, spec/TRD split, ≤100 readable lines | Accepted | 2026-08-03 |
 | [0012](0012-modules-are-vertical-slices-by-domain.md) | `server/` modules are vertical slices by domain | Accepted | 2026-08-03 |
 | [0013](0013-one-error-envelope-and-useserverform.md) | Errors travel in one envelope; forms consume it through `useServerForm` | Accepted | 2026-08-05 |
-| [0014](0014-deploys-run-their-own-migrations.md) | Deploys run their own migrations — `migrate deploy` in the Vercel build | Accepted | 2026-08-09 |
+| [0014](0014-deploys-run-their-own-migrations.md) | Deploys run their own migrations | Accepted | 2026-08-09 |
 | [0015](0015-mobile-first-design.md) | The UI is designed mobile-first; desktop is the enhancement | Accepted | 2026-08-09 |
-| [0016](0016-mobile-app-shell.md) | The phone storefront is an app shell — bottom tab bar, dense grids, docked chrome | Accepted | 2026-08-11 |
+| [0016](0016-mobile-app-shell.md) | The phone storefront is an app shell — bottom tab bar, dense grids, page-level chrome | Accepted | 2026-08-11 |
 | [0017](0017-video-is-embedded-not-hosted.md) | Video is embedded from a third-party host, never stored in our own object storage | Accepted | 2026-08-13 |
 | [0018](0018-one-effective-price-function.md) | One effective-price function serves display and charge | Accepted | 2026-08-16 |
 | [0019](0019-discount-is-one-winning-offer.md) | A discount is one winning offer, allocated to lines, with its funding recorded | Accepted | 2026-08-16 |
@@ -62,16 +63,17 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0023](0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) | Bidding status stores only what the clock cannot decide | Accepted | 2026-09-09 |
 | [0024](0024-phone-is-contact-data-not-an-identity-key.md) | A phone number is contact data, not an identity key | Accepted | 2026-09-12 |
 | [0025](0025-order-codes-are-random-not-sequential.md) | Order codes are random, not sequential | Accepted | 2026-09-16 |
-| [0026](0026-images-are-delivered-through-the-optimizer.md) | Images are stored small and delivered through the optimizer | Accepted | 2026-09-16 |
-| [0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) | A zoomable surface declares the size it zooms to; the stored ceiling clears it | Accepted | 2026-09-17 |
+| [0026](0026-images-are-delivered-through-the-optimizer.md) | Images are stored small and delivered through the optimizer | Accepted — decisions 3 and 4 amended by [ADR-0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) (stored ceiling is 2048px, and a zoomable surface deliberately overstates `sizes`) | 2026-09-16 |
+| [0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) | A zoomable surface declares the size it zooms to, and the stored ceiling clears it | Accepted | 2026-09-17 |
 | [0028](0028-images-live-in-cloudflare-r2.md) | Images live in Cloudflare R2, reached through one seam | Accepted | 2026-09-17 |
 | [0029](0029-a-product-leaves-sale-by-archiving-not-deletion.md) | A product leaves sale by archiving, not deletion | Accepted | 2026-09-16 |
 | [0030](0030-org-storefronts-are-scoped-projections-on-one-domain.md) | An org storefront is a scoped projection of the marketplace, on one domain | Accepted | 2026-09-15 |
 | [0031](0031-one-components-home-organised-by-domain.md) | One components home, organised by domain, with controls through the primitives | Accepted | 2026-09-19 |
-| [0032](0032-records-people-authored-are-retired-not-deleted.md) | A record a person authored is retired, never deleted | Accepted | 2026-09-23 |
+| [0032](0032-records-people-authored-are-retired-not-deleted.md) | 0032-records-people-authored-are-retired-not-deleted.md | Accepted | 2026-09-23 |
 | [0033](0033-a-domain-is-reached-through-its-public-surface.md) | A domain is reached through its declared public surface | Accepted | 2026-09-23 |
-| [0034](0034-render-on-the-server-by-default.md) | Render on the server by default; a page is never `"use client"` | Accepted | 2026-09-23 |
+| [0034](0034-render-on-the-server-by-default.md) | Render on the server by default, and never mark a page `"use client"` | Accepted | 2026-09-23 |
 | [0035](0035-every-response-carries-a-nonce-based-csp.md) | Every response carries a nonce-based Content-Security-Policy | Accepted | 2026-09-21 |
 | [0036](0036-a-files-reasons-to-change-are-a-decision.md) | A file's reasons to change are a decision, not a drift | Accepted | 2026-09-23 |
 | [0037](0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) | The host is a deployment fact, not an architectural input | Accepted | 2026-09-25 |
 | [0038](0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) | Background work runs on an owned worker against a Postgres job queue | Accepted | 2026-09-25 |
+<!-- generated:adr-index:end -->

@@ -1,6 +1,6 @@
 # TRD — brand-page
 
-- **Status:** 📝 Draft
+- **Status:** ✅ Accepted — 2026-09-26
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25
@@ -51,6 +51,4 @@ This is PR 4 of seller-profile, split in three: (a) DTO, sections and reuse of t
 
 ## Open questions
 
-- Orders fulfilled: paid orders, or delivered ones? Proposed paid, since delivery is manual and lags.
-- Do the landing page and the brand page share one cover image, or may the brand page have its own? Proposed shared, until a seller asks.
-- Floor values for rating count and orders: set once the first sellers have data, declared as constants either way.
+None. Closed 2026-09-26 by the owner with the proposed defaults: "orders fulfilled" counts paid orders (D2); the landing page and the brand page share one cover image (D6); a rating shows from three reviews and an orders figure from ten, both declared constants (D3).

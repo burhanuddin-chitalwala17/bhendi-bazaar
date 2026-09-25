@@ -1,5 +1,6 @@
 # Spec — contact-us
 
+- **Summary:** Anyone can reach the store from any page — by WhatsApp, or by a message emailed to its inbox
 - **Status:** Implemented — PR-107
 - **Domain:** notifications
 - **Phase:** —

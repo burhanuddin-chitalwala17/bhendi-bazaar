@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-26
 - **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
 
 
@@ -189,6 +189,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **A guard is mutation-tested before it is trusted** — break the rule in the source and watch it go red, or it is decoration. Two Invariants had no guard at all and nothing noticed. ([docs/TESTING.md](docs/TESTING.md))
 - **The tests are audited like the code** — a suite that cannot run, or passes over an empty scan, is not a passing suite. `tests/unit/test-integrity.test.ts`
 - **Every route handler has a caller, named in the repository or declared as external** — no compiler follows a string. `tests/unit/route-reachability.test.ts`
+- **Index tables are generated from the files they index, never typed** — `npm run docs:index`; a stale table fails `docs:check`. `tests/unit/docs-integrity.test.ts`
 
 ## Development Principles
 

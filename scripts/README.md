@@ -1,8 +1,8 @@
 # Scripts
 
-Empty, deliberately.
+- **`docs-index.mjs`** — renders the index tables in `docs/adr/README.md` and `docs/specs/README.md` from the files they index; `npm run docs:index` rewrites, `--check` reports. `tests/unit/docs-integrity.test.ts` runs the check as a gate, so a hand-edited row cannot survive CI.
 
-## Why there is nothing here
+## Why there is nothing else here
 
 Images live in Cloudflare R2 ([ADR-0028](../docs/adr/0028-images-live-in-cloudflare-r2.md)), reached
 only through `server/catalog/object-store.ts`. Four scripts written against the retired Vercel Blob

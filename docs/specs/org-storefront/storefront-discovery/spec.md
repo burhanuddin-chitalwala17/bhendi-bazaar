@@ -1,5 +1,6 @@
 # Spec — storefront-discovery
 
+- **Summary:** A correct link preview, a place in search results, and a directory so a shop can be found
 - **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts

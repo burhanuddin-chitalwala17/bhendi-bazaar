@@ -1,6 +1,7 @@
 # Spec — media-library
 
-- **Status:** 📝 Draft
+- **Summary:** Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone
+- **Status:** ✅ Accepted — 2026-09-26
 - **Domain:** catalog (assets, slots), content (renditions, capture checks)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

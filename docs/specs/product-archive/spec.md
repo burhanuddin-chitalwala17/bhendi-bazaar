@@ -1,5 +1,6 @@
 # Spec — product-archive
 
+- **Summary:** An org archives a product and restores it without destroying what it was part of
 - **Status:** Implemented — PR-113
 - **Domain:** catalog (enforcement point in checkout)
 - **Phase:** 6 — Catalogue richness

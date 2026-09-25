@@ -14,49 +14,75 @@ This is the home for per-feature detail. The phased status map is [../BACKLOG.md
 - **≤100 readable lines** each. *Readable content* = body prose (sentences, bullets); **excludes** front-matter, headings, tables, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures, each with its own `spec.md`, plus a short overview in the parent.
 - **Supporting artifacts** live in the folder, named for their purpose (`rate-comparison.md`, `weight-audit.md`); never named `spec` or `trd`; not line-capped.
 - **Cross-reference by relative path and feature name.** Numbering is never used.
-- **Header on each:** `Status · Domain · Phase · Verified · References`.
+- **Header on each:** `Summary · Status · Domain · Phase · Verified · References`. `Summary` is one line and is the row the tables below are generated from — `npm run docs:index`; the tables are never typed by hand and `docs:check` fails while they are stale.
 - Scaffold with `/bb-sdlc spec-start <feature-name>`.
 
 A spec describes a **requirement** — what must be true. It is not a defect report: a known defect either becomes a spec (because meeting the requirement needs design) or a PR (because an ADR already states the rule). Nothing in here is a bug list, and nothing here should need deleting once the work lands — the requirement remains true afterwards, and `Status` moves to Implemented.
 
 ## Features
 
-| Feature | Requirement | Phase | Domain | Status |
+<!-- generated:specs-index:start -->
+| Feature | Summary | Phase | Domain | Status |
 |---|---|---|---|---|
-| [product-archive](product-archive/spec.md) | An org archives a product and restores it without destroying what it was part of | 6 | catalog, checkout | ✅ Implemented — PR-113 |
-| [bulk-catalog-upload](bulk-catalog-upload/spec.md) | Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories | 6 | catalog | Implemented |
-| [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
-| [payment-confirmation](payment-confirmation/) | An order is paid when the gateway says so, for the right amount | 2 | payments, checkout | ✅ Implemented — PR-39 |
+| [checkout-abandonment](checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | 2 | checkout, payments | ✅ Implemented — PR-104 |
+| [image-delivery](image-delivery/) | Images are stored small and served at the size the screen uses | 2 | catalog (identity for avatars) | ✅ Implemented — PR-105 |
 | [inventory-reservation](inventory-reservation/) | Stock counts mean something; the last unit sells once | 2 | checkout, catalog | ✅ Implemented — PR-40 |
 | [money-as-paise](money-as-paise/) | Every amount displayed, stored, charged, and reported is exact | 2 | cross-domain | ✅ Implemented — PR-37 |
-| [product-weight-and-rates](product-weight-and-rates/) | A product's weight is recorded and prices its shipping | 3 | catalog, shipping | 📝 Draft |
-| [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | 📝 Draft — **parent of 9 subfeatures** |
-| [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | 📝 Draft — **blocked on a product decision** |
-| [shipment-lifecycle](shipment-lifecycle/) | One status vocabulary every courier maps into, and what each state means for stock, refunds and settlement | 3 | shipping, checkout | 📝 Draft — **one open question** |
-| [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time | 4 | cross-domain | 📝 Draft |
-| [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft — no open questions |
-| [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions, catalog, checkout | 🔨 In progress — PR-67 |
-| [org-payouts](org-payouts/) | What each organisation has earned, what the platform kept, and what is still owed | 7 | payouts, checkout | 🔨 In progress — PR-67 |
-| [bidding](bidding/) | An organisation puts one product up for timed bidding and shares a link; the platform sells it directly and records what it fetched | 8 | bidding, catalog, checkout, payouts | ✅ Implemented — PR-89 |
-| [international-phone](international-phone/) | Every phone field accepts a number from any country, and one number has one spelling | — | identity, catalog, checkout, bidding | ✅ Implemented — PR-102 |
-| [shared-phone-numbers](shared-phone-numbers/) | One phone number backs any number of accounts; email alone identifies one | — | identity | ✅ Implemented — PR-103 |
-| [checkout-abandonment](checkout-abandonment/) | An unpaid checkout releases its goods within minutes and is shown to nobody | 2 | checkout, payments | ✅ Implemented — PR-104 |
-| [image-delivery](image-delivery/) | Images are stored small and served at the size the screen uses | 2 | catalog | ✅ Implemented — PR-105 |
-| [contact-us](contact-us/) | Anyone can reach the store from any page — by WhatsApp, or by a message emailed to its inbox | — | notifications | ✅ Implemented — PR-107 |
-| [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, cart, checkout | ✅ Implemented — PR-111 |
-| [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog | ✅ Implemented — **7 subfeatures** |
-| [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain | 📝 Draft |
-| [product-reviews](product-reviews/) | Buyers read and write reviews, photographs included, and the rating every surface shows is derived from the published ones | — | catalog | ✅ Implemented — PR-124, **1 subfeature** |
-| [supply-chain-integrity](supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, established by the pipeline | 4 | cross-domain | 📝 Draft |
-| [error-tracking](error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 5 | cross-domain | 📝 Draft |
-| [read-caching](read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 5 | catalog | 📝 Draft |
-| [worker-foundation](worker-foundation/) | The place where slow work goes: a queue in our Postgres, a worker we own, health in admin, a machine rebuilt by a script | 11 | cross-domain | 📝 Draft |
-| [seller-profile](seller-profile/) | An organisation's profile has a private face for what listing needs and a public face for what a buyer may see, and nothing is demanded before it is needed | 11 | catalog | 📝 Draft |
-| [media-library](media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 11 | catalog, content | 📝 Draft |
-| [seller-profile/brand-page](seller-profile/brand-page/) | The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line | 11 | catalog | 📝 Draft |
-| [media-library/renditions](media-library/renditions/) | Every surface that needs its own size or shape gets a derived image made once from a declared recipe, and the source never changes | 11 | content | 📝 Draft |
+| [payment-confirmation](payment-confirmation/) | An order is paid when the gateway says so, for the right amount | 2 | payments, checkout | ✅ Implemented — PR-39 (R7's refund flow remains Phase 5, as scoped) |
+| [server-side-pricing-authority](server-side-pricing-authority/) | The charged amount is determined by the store from its own catalogue | 2 | checkout, payments | ✅ Implemented — PR-38 |
+| [multi-vendor-marketplace](multi-vendor-marketplace/) | Three audiences — buyers, selling organisations, platform owners — each with their own portal | 3 | cross-domain | Draft — programme overview; each subfeature carries its own spec and TRD |
+| [product-weight-and-rates](product-weight-and-rates/) | A product's weight is recorded and prices its shipping | 3 | catalog, shipping | ✅ Implemented — R1/A1 in PR-22; R2/R3 fell out of the allocation cutover (PR-48); the billing rule, R7, and the remainder closed in PR-53 |
+| [shipment-lifecycle](shipment-lifecycle/) | One status vocabulary every courier maps into, and what each state means for stock, refunds and settlement | 3 | shipping (consequences in checkout, catalog, payments) | Implemented — PR-135 (vocabulary, adapter, transition guard, migration), PR-137 (restock and ledger reversal). Refund execution stays manual by decision; the customer-return direction is unbuilt until that flow is specified |
+| [shipping-fulfilment](shipping-fulfilment/) | A paid order becomes a real, trackable parcel | 3 | shipping | Draft — deferred by decision (2026-08-10, see Open decision) |
+| [rate-limiting](rate-limiting/) | Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time | 4 | cross-domain (guards identity, payments, checkout, cart, bidding handlers) | Draft |
+| [supply-chain-integrity](supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, established by the pipeline | 4 | cross-domain | Draft |
+| [error-tracking](error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 5 | cross-domain | Draft |
+| [read-caching](read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 5 | catalog, with cross-domain reads | Draft |
+| [bulk-catalog-upload](bulk-catalog-upload/) | Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories | 6 | catalog | Implemented |
+| [product-archive](product-archive/) | An org archives a product and restores it without destroying what it was part of | 6 | catalog (enforcement point in checkout) | Implemented — PR-113 |
+| [product-video](product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 6 | catalog, checkout | 📝 Draft |
+| [org-payouts](org-payouts/) | What each organisation has earned, what the platform kept, and what is still owed | 7 | payouts *(new)*, checkout | 🔨 In progress — ledger, settlement and org-facing API landed (PR-67); console screens outstanding |
+| [promotions](promotions/) | The platform and each organisation can run time-boxed offers, applied automatically or by coupon code | 7 | promotions *(new)*, catalog, checkout | 🔨 In progress — engine, checkout, offers API and salePrice retirement landed (PR-67); admin/org screens outstanding |
+| [bidding](bidding/) | An organisation puts one product up for timed bidding and shares a link; the platform sells it directly and records what it fetched | 8 | bidding *(new)*, catalog, checkout, payouts | ✅ Implemented — PR-89 |
+| [org-storefront](org-storefront/) | Every selling organisation gets a storefront of its own at a link it can promote | 9 | catalog, with cross-domain reads | ✅ Implemented — all seven subfeatures; each carries its own spec |
+| [seo](seo/) | The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly | 10 | cross-domain (catalog leads) | Draft |
+| [media-library](media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 11 | catalog (assets, slots), content (renditions, capture checks) | ✅ Accepted — 2026-09-26 |
+| [seller-profile](seller-profile/) | An organisation's profile has a private face for what listing needs and a public face for what a buyer may see, and nothing is demanded before it is needed | 11 | catalog | ✅ Accepted — 2026-09-26 |
+| [worker-foundation](worker-foundation/) | The place where slow work goes: a queue in our Postgres, a worker we own, health in admin, a machine rebuilt by a script | 11 | cross-domain (`server/shared/jobs/`, `worker/`) | ✅ Accepted — 2026-09-26 |
+| [contact-us](contact-us/) | Anyone can reach the store from any page — by WhatsApp, or by a message emailed to its inbox | — | notifications | Implemented — PR-107 |
+| [home-banners](home-banners/) | The home page hero is a set of platform-owned banners the owner orders, replaces and takes down without a deploy | — | catalog | ✅ Implemented |
+| [international-phone](international-phone/) | Every phone field accepts a number from any country, and one number has one spelling | — | cross-domain (identity, catalog, checkout) | Implemented |
+| [product-reviews](product-reviews/) | Buyers read and write reviews, photographs included, and the rating every surface shows is derived from the published ones | — | catalog, reading from checkout for the verified badge | ✅ Implemented — PR-124, revised PR-125 |
+| [seamless-sign-in](seamless-sign-in/) | Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included | — | identity, with UI in the storefront chrome, wishlist and checkout; cart | Implemented — PR-111 |
+| [shared-phone-numbers](shared-phone-numbers/) | One phone number backs any number of accounts; email alone identifies one | — | identity | Implemented |
+<!-- generated:specs-index:end -->
 
 ### Subfeatures
+
+<!-- generated:subfeatures-index:start -->
+| Feature | Summary | Phase | Domain | Status |
+|---|---|---|---|---|
+| [multi-vendor-marketplace/addresses-as-entities](multi-vendor-marketplace/addresses-as-entities/) | An address is a record with columns, not a field inside a JSON blob | 3 | identity, catalog | ✅ Implemented — PR-41; requirements below were held to (R5's no-preselection per the 2026-08-08 decision) |
+| [multi-vendor-marketplace/category-tree](multi-vendor-marketplace/category-tree/) | Categories nest to any depth, and the taxonomy belongs to the platform | 3 | catalog | ✅ Implemented (PR-42) |
+| [multi-vendor-marketplace/dashboard-widgets](multi-vendor-marketplace/dashboard-widgets/) | One dashboard assembled from widgets, each declaring which audience it is for | 3 | analytics, cross-domain | ✅ Implemented (PR-50) |
+| [multi-vendor-marketplace/order-and-cart-lines](multi-vendor-marketplace/order-and-cart-lines/) | What a customer bought is a relation to the product, not an id inside a blob | 3 | checkout, catalog | ✅ Implemented (PR-43, PR-44) |
+| [multi-vendor-marketplace/org-onboarding](multi-vendor-marketplace/org-onboarding/) | Someone with no organisation starts one from the store and arrives in a working portal as its first owner | 3 | catalog, identity | ✅ Implemented — PR-28 |
+| [multi-vendor-marketplace/org-portal-chrome](multi-vendor-marketplace/org-portal-chrome/) | Inside the portal you always see which organisation you act for and who you are, can switch, and can leave | 3 | cross-domain | ✅ Implemented — PR-31, corrected in PR-32 |
+| [multi-vendor-marketplace/org-team](multi-vendor-marketplace/org-team/) | An organisation's people can be listed, added, given a role, and removed | 3 | catalog, identity | Not drafted — scope agreed, requirements provisional, no TRD yet |
+| [multi-vendor-marketplace/organisations-and-membership](multi-vendor-marketplace/organisations-and-membership/) | A vendor is an organisation with people in it; a person may belong to several | 3 | catalog, identity | ✅ Implemented — PR-23 (rename) and PR-24 (membership) |
+| [multi-vendor-marketplace/portal-separation](multi-vendor-marketplace/portal-separation/) | Three route groups for three audiences, and one authorization model that tells them apart | 3 | cross-domain | ✅ Implemented — see trd.md; requirements below were held to |
+| [multi-vendor-marketplace/stock-locations-and-allocation](multi-vendor-marketplace/stock-locations-and-allocation/) | Stock is known per pickup location, and an order ships from wherever its stock actually is | 3 | catalog, shipping, checkout | ✅ Implemented (PR-45..49; rename PR-24..28 and reservation PR-40 as prerequisites) |
+| [org-storefront/org-handle](org-storefront/org-handle/) | Every organisation gets a short, readable name that can appear in a URL | 9 | catalog | ✅ Implemented |
+| [org-storefront/org-withdrawal](org-storefront/org-withdrawal/) | One switch takes an organisation and all its goods off the platform, and one puts it back | 9 | catalog, reaching into cart, checkout, bidding, promotions | ✅ Implemented |
+| [org-storefront/seller-identity](org-storefront/seller-identity/) | A product says which organisation sells it, and that name leads to everything else it sells | 9 | catalog | ✅ Implemented |
+| [org-storefront/storefront-branding](org-storefront/storefront-branding/) | The organisation composes its own storefront from the portal: mark, hero, introduction, policies, banners | 9 | catalog | ✅ Implemented |
+| [org-storefront/storefront-browse](org-storefront/storefront-browse/) | Search, category navigation and filters that see one organisation's catalogue and nothing else | 9 | catalog | ✅ Implemented |
+| [org-storefront/storefront-discovery](org-storefront/storefront-discovery/) | A correct link preview, a place in search results, and a directory so a shop can be found | 9 | catalog | ✅ Implemented |
+| [org-storefront/storefront-pages](org-storefront/storefront-pages/) | A landing page, an about page and a grid of goods for one organisation, at a link it can hand out | 9 | catalog | ✅ Implemented |
+| [media-library/renditions](media-library/renditions/) | Every surface that needs its own size or shape gets a derived image made once from a declared recipe, and the source never changes | 11 | content, reading catalog | ✅ Accepted — 2026-09-26 |
+| [seller-profile/brand-page](seller-profile/brand-page/) | The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line | 11 | catalog | ✅ Accepted — 2026-09-26 |
+| [product-reviews/review-media](product-reviews/review-media/) | A review can show the piece as it arrived: a few photographs taken by the buyer | — | catalog | ✅ Implemented — PR-124, revised PR-125 |
+<!-- generated:subfeatures-index:end -->
 
 Three parent folders here. [multi-vendor-marketplace](multi-vendor-marketplace/) grew out of a single question about shipping origin and turned into nine subfeatures, because the data-model work and the portal work are the same change seen from two sides. [org-storefront](org-storefront/) is seven subfeatures for the same reason in reverse: giving one organisation a public face touches its identity, the product page, the catalogue query, the seller portal and the crawl rules, and none of those is reviewable inside the others.
 

@@ -1,5 +1,6 @@
 # Spec — portal separation
 
+- **Summary:** Three route groups for three audiences, and one authorization model that tells them apart
 - **Status:** ✅ Implemented — see trd.md; requirements below were held to
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment

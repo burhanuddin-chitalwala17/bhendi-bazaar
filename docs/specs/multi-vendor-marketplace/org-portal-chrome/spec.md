@@ -1,5 +1,6 @@
 # Spec — org portal chrome
 
+- **Summary:** Inside the portal you always see which organisation you act for and who you are, can switch, and can leave
 - **Status:** ✅ Implemented — PR-31, corrected in PR-32
 - **Domain:** cross-domain
 - **Phase:** 3 — Fulfilment

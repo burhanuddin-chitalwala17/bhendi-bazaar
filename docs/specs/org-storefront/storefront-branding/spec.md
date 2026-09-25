@@ -1,5 +1,6 @@
 # Spec — storefront-branding
 
+- **Summary:** The organisation composes its own storefront from the portal: mark, hero, introduction, policies, banners
 - **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts

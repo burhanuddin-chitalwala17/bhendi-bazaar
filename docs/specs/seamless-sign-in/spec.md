@@ -1,5 +1,6 @@
 # Spec — seamless-sign-in
 
+- **Summary:** Signing in happens over the current page, keeps the shopper's place, and finishes what prompted it — checkout included
 - **Status:** Implemented — PR-111
 - **Domain:** identity, with UI in the storefront chrome, wishlist and checkout; cart
 - **Phase:** —

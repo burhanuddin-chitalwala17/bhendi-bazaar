@@ -1,5 +1,6 @@
 # Spec — review-media
 
+- **Summary:** A review can show the piece as it arrived: a few photographs taken by the buyer
 - **Status:** ✅ Implemented — PR-124, revised PR-125
 - **Domain:** catalog
 - **Phase:** —

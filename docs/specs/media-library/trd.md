@@ -1,6 +1,6 @@
 # TRD — media-library
 
-- **Status:** 📝 Draft
+- **Status:** ✅ Accepted — 2026-09-26
 - **Domain:** catalog (assets, slots), content (renditions, capture checks)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

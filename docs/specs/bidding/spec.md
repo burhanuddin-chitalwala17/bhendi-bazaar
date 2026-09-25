@@ -1,5 +1,6 @@
 # Spec — bidding
 
+- **Summary:** An organisation puts one product up for timed bidding and shares a link; the platform sells it directly and records what it fetched
 - **Status:** ✅ Implemented — PR-89
 - **Domain:** bidding *(new)*, catalog, checkout, payouts
 - **Phase:** 8 — Bidding

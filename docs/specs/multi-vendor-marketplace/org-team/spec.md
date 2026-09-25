@@ -1,5 +1,6 @@
 # Spec — org team
 
+- **Summary:** An organisation's people can be listed, added, given a role, and removed
 - **Status:** Not drafted — scope agreed, requirements provisional, no TRD yet
 - **Domain:** catalog, identity
 - **Phase:** 3 — Fulfilment

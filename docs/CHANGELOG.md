@@ -10,6 +10,21 @@
 
 ## Entries
 
+## [PR-147] 2026-09-26 — Index tables are generated, and five specs are accepted
+
+The tables in `docs/adr/README.md` and `docs/specs/README.md` were hand-copied headers with
+nothing checking them — 35 ADR rows and 32 spec rows, one folder away from the files they
+described, and missing `home-banners` entirely. `scripts/docs-index.mjs` now renders them from
+each file's own header, `npm run docs:index` rewrites them, and `docs:check` gains a gate that
+fails while a committed table differs. Every `spec.md` gained a one-line `Summary` header, which
+is the row; the 19 subfeatures get their own generated table for the first time. The skill and
+the ADR README say "run the generator" where they said "add a row". `CLAUDE.md` records the
+convention.
+
+Also here, by the owner's decision on 2026-09-26: `worker-foundation`, `seller-profile` with
+`brand-page`, and `media-library` with `renditions` move from Draft to Accepted, with brand-page's
+three open questions closed on their proposed defaults. BACKLOG's Phase 11 rows follow.
+
 ## [PR-146] 2026-09-24 — The tests are audited, and two Invariants turn out to have had no guard
 
 The nine unreachable handlers from PR-144/145 are deleted, along with `ProfileContext`,

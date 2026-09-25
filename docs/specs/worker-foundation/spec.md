@@ -1,6 +1,7 @@
 # Spec — worker-foundation
 
-- **Status:** 📝 Draft
+- **Summary:** The place where slow work goes: a queue in our Postgres, a worker we own, health in admin, a machine rebuilt by a script
+- **Status:** ✅ Accepted — 2026-09-26
 - **Domain:** cross-domain (`server/shared/jobs/`, `worker/`)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

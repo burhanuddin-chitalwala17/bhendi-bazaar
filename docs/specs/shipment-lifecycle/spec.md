@@ -1,5 +1,6 @@
 # Spec — shipment-lifecycle
 
+- **Summary:** One status vocabulary every courier maps into, and what each state means for stock, refunds and settlement
 - **Status:** Implemented — PR-135 (vocabulary, adapter, transition guard, migration), PR-137 (restock and ledger reversal). Refund execution stays manual by decision; the customer-return direction is unbuilt until that flow is specified
 - **Domain:** shipping (consequences in checkout, catalog, payments)
 - **Phase:** 3 — Fulfilment & marketplace

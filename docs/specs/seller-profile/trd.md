@@ -1,6 +1,6 @@
 # TRD — seller-profile
 
-- **Status:** 📝 Draft
+- **Status:** ✅ Accepted — 2026-09-26
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

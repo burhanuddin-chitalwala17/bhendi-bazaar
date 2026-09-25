@@ -1,5 +1,6 @@
 # Spec — addresses as entities
 
+- **Summary:** An address is a record with columns, not a field inside a JSON blob
 - **Status:** ✅ Implemented — PR-41; requirements below were held to (R5's no-preselection per the 2026-08-08 decision)
 - **Domain:** identity, catalog
 - **Phase:** 3 — Fulfilment

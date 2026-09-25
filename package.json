@@ -13,6 +13,7 @@
     "test:run": "vitest run",
     "test:rate-limit": "npx tsx tests/rate-limit.manual.ts",
     "docs:check": "vitest run tests/unit/docs-integrity.test.ts",
+    "docs:index": "node scripts/docs-index.mjs",
     "lint:boundary": "eslint src/app/api server/checkout server/payments src/lib --quiet"
   },
   "dependencies": {
