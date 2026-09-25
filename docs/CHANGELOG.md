@@ -10,6 +10,15 @@
 
 ## Entries
 
+## [PR-154] 2026-09-26 — The quota runbook names the quotas Oracle actually enforces
+
+Creating the first machine was refused with "compartment quotas were exceeded" naming
+`standard-a1-core-regional-count` and `standard-a1-memory-regional-count`: region-scoped variants
+that a wildcard `zero` covers but the documented `set` lines did not reopen. OPERATIONS.md adds a
+`set` for each, and records that the micro shape has no regional variant because Oracle rejects that
+name. The machine was then created, and `infra/worker/provision.sh` ran clean on its first real
+Ubuntu 24.04 the first time.
+
 ## [PR-153] 2026-09-26 — The worker loads the env file
 
 `npm run worker` failed with "DATABASE_URL is not set" on a laptop whose `.env` had it: a plain

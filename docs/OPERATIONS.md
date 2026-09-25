@@ -320,13 +320,20 @@ That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not
    ```text
    zero compute-core quotas /*/ in tenancy
    set compute-core quota standard-a1-core-count to 2 in tenancy
+   set compute-core quota standard-a1-core-regional-count to 2 in tenancy
    set compute-core quota standard-e2-micro-core-count to 2 in tenancy
    zero compute-memory quotas /*/ in tenancy
    set compute-memory quota standard-a1-memory-count to 12 in tenancy
+   set compute-memory quota standard-a1-memory-regional-count to 12 in tenancy
    zero block-storage quotas /*/ in tenancy
    set block-storage quota total-storage-gb to 200 in tenancy
    zero database quotas /*/ in tenancy
    ```
+
+   The two `-regional-count` names are the ones Oracle actually checked when the first instance was
+   created on 2026-09-26: a wildcard `zero` covers them too, so each needs its own `set`, or the
+   create fails with "compartment quotas were exceeded" naming them. The micro shape has no
+   regional variant; Oracle rejects that name.
 3. **The idle rule.** Oracle reclaims Always Free instances that stay under 20% CPU, network and
    memory for seven days. The Pay As You Go account is the commonly reported protection; the
    provisioning script is the fallback — a reclaimed machine is a ten-minute rebuild.
