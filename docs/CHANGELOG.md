@@ -12,15 +12,15 @@
 
 ## [PR-149] 2026-09-24 — [MIGRATION] [CONTRACT] In-app notification system
 
-In-app notification system delivering real-time and polled alerts (order status updates, outbid alerts, promotions, and system notifications) with unread badge counters, status tracking (read/unread), and mobile-first drawer/popover panels.
+In-app notification system delivering real-time and polled alerts (order status updates, outbid alerts, promotions, and system notifications) with unread badge counters, status tracking (read/unread), a read history, and mobile-first drawer/popover panels.
 
 - **Data model**: `InAppNotification` model and `NotificationType` enum added to `prisma/schema.prisma` with compound indexes `@@index([userId, isRead, createdAt])` and `@@index([userId, createdAt])`.
-- **Domain & API**: Domain repository, service, types in `server/notifications/`, Zod schemas in `src/lib/validation/schemas/notifications.ts`, and route handlers `GET/POST /api/notifications` and `PATCH/POST /api/notifications/read`.
+- **Domain & API**: Domain repository, service, types in `server/notifications/`, Zod schemas in `src/lib/validation/schemas/notifications.ts`, and route handlers `GET/POST /api/notifications` (`GET` takes `view=inbox|history`) and `PATCH/POST /api/notifications/read`.
 - **Automatic Triggers**: Integrated in-app notifications into `server/checkout/payment-confirmed.ts` on order payment confirmation and into `server/bidding/bidding.service.ts` on outbid events.
-- **UI & Chrome**: Built `NotificationBell` with SWR/polling, unread badge counter, and Radix Sheet mobile drawer, integrated into `Navbar.tsx`.
+- **UI & Chrome**: `NotificationBell` polls for the unread badge and opens a Radix Sheet drawer, integrated into `Navbar.tsx`. The drawer has Inbox (unread) and History (read, paged) views, and each notification has a View action that opens it in a dialog and marks it read; the dialog's Open only follows a same-site link. Data lives in `src/hooks/notifications/` (one hook per view), presentation in `NotificationItem` and `NotificationDialog`, on design tokens and the `Button` primitive.
 - **Spec & TRD**: `docs/specs/in-app-notifications/spec.md` and `docs/specs/in-app-notifications/trd.md`.
 - **Closed set**: `NOTIFICATION_TYPE` in `server/notifications/in-app.types.ts` is the one declaration the Zod schema, the bell and every caller read; a `satisfies` against the Prisma enum fails the build if they drift.
-- **Tests**: 12 unit tests in `tests/unit/in-app-notification.test.ts`; `tests/unit/outbid-notification.test.ts` covers the outbid notice, whose recipient `leaderBefore` now returns alongside the ladder entry.
+- **Tests**: 12 unit tests in `tests/unit/in-app-notification.test.ts`; `tests/unit/notification-history.test.ts` covers the inbox/history split and the on-site link rule; `tests/unit/outbid-notification.test.ts` covers the outbid notice, whose recipient `leaderBefore` now returns alongside the ladder entry.
 
 ## [PR-148] 2026-09-23 — A product photo left on the retired store reads as no image, not a crash
 

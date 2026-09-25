@@ -1,6 +1,7 @@
 import { prisma } from "@server/shared/prisma";
 import {
   NOTIFICATION_TYPE,
+  NOTIFICATION_VIEW,
   type CreateInAppNotificationInput,
   GetNotificationsQuery,
   InAppNotificationDTO,
@@ -32,13 +33,10 @@ export const inAppNotificationRepository = {
   }> {
     const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
 
-    const where = {
-      userId: query.userId,
-      ...(query.onlyUnread ? { isRead: false } : {}),
-    };
+    const history = query.view === NOTIFICATION_VIEW.HISTORY;
 
     const items = await prisma.inAppNotification.findMany({
-      where,
+      where: { userId: query.userId, isRead: history },
       take: limit + 1,
       ...(query.cursor
         ? {
@@ -46,7 +44,10 @@ export const inAppNotificationRepository = {
             skip: 1,
           }
         : {}),
-      orderBy: { createdAt: "desc" },
+      // History reads in the order things were dealt with; id breaks ties so the cursor is stable.
+      orderBy: history
+        ? [{ readAt: "desc" }, { id: "desc" }]
+        : [{ createdAt: "desc" }, { id: "desc" }],
     });
 
     let nextCursor: string | undefined = undefined;

@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
+import { NOTIFICATION_TYPE, NOTIFICATION_VIEW } from "@server/notifications/in-app.types";
 import { safeTextSchema } from "./common.schemas";
 
 export const getNotificationsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(50).default(20),
   cursor: z.string().optional(),
-  onlyUnread: z.preprocess((v) => v === "true" || v === true, z.boolean()).optional(),
+  view: z.enum(NOTIFICATION_VIEW).default(NOTIFICATION_VIEW.INBOX),
 });
 
 export const markNotificationReadSchema = z.object({

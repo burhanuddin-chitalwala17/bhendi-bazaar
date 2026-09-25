@@ -3,7 +3,7 @@
 - **Status:** ✅ Implemented — PR-149
 - **Domain:** notifications, cross-domain
 - **Phase:** 5 — Scale & operability
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-25
 - **References:** [spec.md](spec.md), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md), [ADR-0012](../../adr/0012-modules-are-vertical-slices-by-domain.md), [ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../../adr/0016-mobile-app-shell.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -22,6 +22,8 @@ In-app notifications are stored in a new Prisma model `InAppNotification` linked
 - **D4 — Route Handlers.** `/api/notifications` (`GET` for listing & unread count, `POST` for internal creation) and `/api/notifications/read` (`PATCH`/`POST` to mark item or all as read). Inputs parsed with Zod schemas in `src/lib/validation/schemas/notifications.ts` ([ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md)).
 - **D5 — Authentication & Authorization.** `getServerSession` enforces user identity on route handlers. A user can only fetch, read, or update their own notifications.
 - **D6 — Client Polling Strategy.** Mobile and desktop UI header components poll `/api/notifications` periodically (e.g. 30 seconds) and on window focus. Avoids WebSocket complexity and stateful server memory overhead.
+- **D7 — Inbox and history are one table split on `isRead`.** `GET /api/notifications` takes `view` (`NOTIFICATION_VIEW` in `server/notifications/in-app.types.ts`): `inbox` is unread by `createdAt`, `history` is read by `readAt`, both tie-broken on `id` so the cursor is stable. No archive table — `readAt` is already the history's timestamp, and the existing `[userId, isRead, createdAt]` index serves both halves at this volume.
+- **D8 — Links stay on-site.** The dialog offers **Open** only for a same-site path (`internalLink` in `src/components/notifications/notification-meta.tsx`), so a stored link cannot send a user off the store.
 
 ## Packages
 
@@ -41,7 +43,7 @@ Mobile-first ([ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0016](../.
 ## API / contract changes
 
 Adds endpoints:
-- `GET /api/notifications` (Response: `{ notifications: InAppNotificationDTO[], unreadCount: number, hasMore: boolean }`)
+- `GET /api/notifications?view=inbox|history&cursor=` (Response: `{ notifications: InAppNotificationDTO[], unreadCount: number, hasMore: boolean }`)
 - `POST /api/notifications` (Internal/Server creation)
 - `PATCH /api/notifications/read` (Payload: `{ notificationId?: string, markAll?: boolean }`)
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { inAppNotificationService } from "@server/notifications/in-app.service";
+import { NOTIFICATION_VIEW } from "@server/notifications/in-app.types";
 import {
   getNotificationsQuerySchema,
   markNotificationReadSchema,
@@ -84,10 +85,12 @@ describe("notification Zod validation schemas", () => {
   it("parses getNotifications query parameters correctly", () => {
     const parsed = getNotificationsQuerySchema.parse({
       limit: "15",
-      onlyUnread: "true",
+      view: "history",
     });
     expect(parsed.limit).toBe(15);
-    expect(parsed.onlyUnread).toBe(true);
+    expect(parsed.view).toBe(NOTIFICATION_VIEW.HISTORY);
+    expect(getNotificationsQuerySchema.parse({}).view).toBe(NOTIFICATION_VIEW.INBOX);
+    expect(() => getNotificationsQuerySchema.parse({ view: "everything" })).toThrow(/view/);
   });
 
   it("parses markNotificationRead body correctly", () => {
@@ -118,7 +121,7 @@ describe("notification Zod validation schemas", () => {
         title: "Test",
         message: "Test",
       })
-    ).toThrow();
+    ).toThrow(/userId is required/);
   });
 });
 

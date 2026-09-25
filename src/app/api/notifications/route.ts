@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       userId: session.user.id,
       limit: validation.data.limit,
       cursor: validation.data.cursor,
-      onlyUnread: validation.data.onlyUnread,
+      view: validation.data.view,
     });
 
     return NextResponse.json(data, { status: 200 });

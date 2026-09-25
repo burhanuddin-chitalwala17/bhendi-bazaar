@@ -10,6 +10,14 @@ export const NOTIFICATION_TYPE = {
 
 export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
 
+/** Which half of a user's notifications a list shows: still unread, or already read. */
+export const NOTIFICATION_VIEW = {
+  INBOX: "inbox",
+  HISTORY: "history",
+} as const;
+
+export type NotificationView = (typeof NOTIFICATION_VIEW)[keyof typeof NOTIFICATION_VIEW];
+
 export interface InAppNotificationDTO {
   id: string;
   userId: string;
@@ -34,7 +42,7 @@ export interface GetNotificationsQuery {
   userId: string;
   limit?: number;
   cursor?: string;
-  onlyUnread?: boolean;
+  view?: NotificationView;
 }
 
 export interface MarkReadInput {
