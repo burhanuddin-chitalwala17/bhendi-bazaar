@@ -10,6 +10,15 @@
 
 ## Entries
 
+## [PR-151] 2026-09-26 — The seed's two `any` casts are gone
+
+`prisma/seed.ts` cast an order's address and a shipping provider's row to `any`, the two lint
+errors the file had carried since before this phase. The address now goes through `toJsonColumn`,
+which moved from `server/shared/prisma.ts` to `server/shared/json.ts` so a script can use it
+without opening a connection pool (the old path re-exports it); the provider rows are typed as
+`SeedShippingProvider[]`, whose three fields Prisma defaults became optional to match the data.
+An unused `cart` binding went with them. No behaviour change.
+
 ## [PR-150] 2026-09-26 — Every stored image becomes a record [MIGRATION] [CONTRACT]
 
 media-library PR 1 of 6 ([spec](specs/media-library/spec.md), trd D1–D3). `MediaAsset` is the one
