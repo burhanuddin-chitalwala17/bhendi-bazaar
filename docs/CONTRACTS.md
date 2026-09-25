@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-26
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -103,6 +103,12 @@ Order creation gains an optional **`couponCode`** — a string, normalised to up
 Two further shapes worth naming. Action `href` must be **relative** — the hero is the storefront's most prominent surface and an absolute URL sends a shopper off it — and `actions` is capped at two, which is what the banner lays out before a phone wraps a third onto its own line. Null and `""` are the same intent for every optional text column, and the schema normalises to `null` so only one of them reaches the database.
 
 The read side does not cross this boundary: the storefront hero is a server component reading `bannersDAL.getActiveBanners()`, so there is no storefront route handler and no wire shape to keep in step.
+
+### Seller profile
+
+The storefront's public organisation shape is `Storefront` in `src/data-access-layer/storefront.dal.ts` — identity (`id`, `handle`, `name`) plus the public face (`about`, `tagline`, `logoUrl`, `heroUrl`, `accent`, `deliveryPolicy`, `returnsPolicy`). Since [seller-profile](specs/seller-profile/) PR 1 it is built from `OrgProfile` through `PUBLIC_PROFILE_SELECT` and `PUBLIC_ORG_IDENTITY_SELECT` in `server/catalog/org-profile.repository.ts`, and `tests/unit/storefront-public-dto.test.ts` holds both selects to an allowlist: a column added to `Org` cannot reach a buyer. The shape itself did not change in that PR, so the entry carries no `[CONTRACT]`.
+
+The editor's shape is `StorefrontSettingsInput` in `src/lib/validation/schemas/storefront.schema.ts`, parsed by the settings route and rendered by `useServerForm`; it too now reads and writes the profile. `BrandDto` and the listing-defaults shape arrive with PR 2 of the same spec, when the portal gains its listing-context screen.
 
 ### Addresses
 The address-book wire shape (`DeliveryAddress`) is flat and stable, but since PR-41 its `id` is the **UserAddress** relationship id (server-generated — clients no longer mint ids), `metadata` is gone (label and notes are top-level), and `fullName`, `mobile`, `state` are required. Storage is two tables: `Address` (postal fact, written only by `server/shared/address.repository.ts`) and `UserAddress` (the person's relationship). `Order.address` remains an embedded snapshot, deliberately.

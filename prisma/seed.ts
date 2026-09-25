@@ -227,8 +227,9 @@ async function main() {
         panNumber: orgData.panNumber,
         isActive: orgData.isActive,
         isVerified: orgData.isVerified,
-        description: orgData.description,
-        logoUrl: orgData.logoUrl,
+        // The public face is its own row (org-profile spec trd D1), born with the org.
+        profile: { create: { description: orgData.description, logoUrl: orgData.logoUrl } },
+        listingDefaults: { create: {} },
       },
     });
     console.log(`  ✓ ${org.name} (${org.code})`);

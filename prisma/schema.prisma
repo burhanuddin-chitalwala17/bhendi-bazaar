@@ -378,28 +378,11 @@ model Org {
   isActive   Boolean @default(true)
   isVerified Boolean @default(false) // KYC verification
 
-  // Metadata
-  /// Doubles as the storefront's introduction — the long-form "who we are".
-  description String? @db.Text
-  logoUrl     String?
-
-  // ── Storefront presentation (org-storefront/storefront-branding) ──
-  /// One line under the name. Not the introduction; a shelf label, not a paragraph.
-  tagline        String?
-  /// The shop's cover image, shown at the top of its **about** page — not on the
-  /// storefront itself, where the promotions hold that slot (decided 2026-09-19). A
-  /// visitor reaching the about page has chosen to read about the shop, which is where
-  /// a large picture earns its place. Distinct from `OrgBanner`, a rotating promotion:
-  /// calling both of them "banner" is what confused the editor before. Through the same
-  /// object store and optimizer as every other image (ADR-0026, ADR-0028).
-  heroUrl        String?
-  /// A token name from the palette in globals.css — never a colour literal, so a
-  /// storefront cannot express a colour the design system does not own (ADR-0022).
-  accent         String?
-  /// What this shop promises about delivery and returns. The platform's own terms
-  /// stand in where these are null; payment and fraud are never the shop's to disclaim.
-  deliveryPolicy String? @db.Text
-  returnsPolicy  String? @db.Text
+  // Everything a buyer may see lives on the profile; everything else stays here
+  // (org-profile spec R1/R2, trd D1). A leak now needs a join nobody wrote.
+  profile         OrgProfile?
+  listingDefaults OrgListingDefaults?
+  brands          Brand[]
 
   /// The platform's cut, in basis points — 1500 = 15%. Set per org by design; rates
   /// differ between orgs (org-payouts spec R12). Category overrides live in
@@ -435,6 +418,79 @@ model Org {
   @@index([isActive])
   @@index([code])
   @@index([handle])
+}
+
+/// The public face of an organisation: what a storefront or an advertisement may show, and
+/// nothing else (org-profile spec R1, trd D1). One row per org, created with it. The storefront
+/// reads this table only, so a private column on `Org` cannot reach a buyer by accident.
+model OrgProfile {
+  orgId String @id
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// One line under the name. Not the introduction; a shelf label, not a paragraph.
+  tagline     String?
+  /// The storefront's introduction — the long-form "who we are". Plain text, rendered as
+  /// text (ADR-0030 D9).
+  description String? @db.Text
+  logoUrl     String?
+  /// The shop's cover image, shown at the top of its about page — not on the storefront
+  /// itself, where the promotions hold that slot (decided 2026-09-19). Distinct from
+  /// `OrgBanner`, a rotating promotion. Through the same object store and optimizer as every
+  /// other image (ADR-0026, ADR-0028).
+  heroUrl     String?
+  /// A token name from the palette in globals.css — never a colour literal (ADR-0022).
+  accent      String?
+  /// What this shop promises about delivery and returns. The platform's own terms stand in
+  /// where these are null; payment and fraud are never the shop's to disclaim.
+  deliveryPolicy String? @db.Text
+  returnsPolicy  String? @db.Text
+
+  /// The longer story, the location as the shop chooses to state it, and handles on known
+  /// networks. All optional; nothing here is required to open a shop (org-profile spec R5).
+  story    String? @db.Text
+  location String?
+  social   Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// The private listing context that does not belong to a brand (org-profile spec R4): what a
+/// product inherits when neither it nor its family nor its brand says otherwise. Pre-fills,
+/// never validates. The tax rate is basis points, never a float.
+model OrgListingDefaults {
+  orgId String @id
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  countryOfOrigin   String?
+  taxRateBps        Int?
+  /// Tax code per category id the org sells in.
+  taxCodeByCategory Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// A brand an organisation sells, with the facts that belong to the brand rather than the
+/// shop: who makes it, who packs or imports it, where it comes from (org-profile spec R3). A
+/// manufacturer has one; a shop carrying others' brands has many. Retired, never deleted (R9, ADR-0032).
+model Brand {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  name             String
+  manufacturer     String?
+  packerOrImporter String?
+  countryOfOrigin  String?
+  isDefault        Boolean @default(false)
+
+  retiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([orgId, name])
+  @@index([orgId])
 }
 
 model Account {

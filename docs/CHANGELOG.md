@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-149] 2026-09-26 — An organisation's public face becomes its own table [MIGRATION]
+
+seller-profile PR 1 of 4 ([spec](specs/seller-profile/spec.md), trd D1–D4). The seven storefront
+columns on `Org` — tagline, introduction, logo, hero, accent, delivery and returns terms — move to
+`OrgProfile`, one row per organisation, created with it. `OrgListingDefaults` (origin, tax rate in
+basis points, tax code per category) and `Brand` (name, manufacturer, packer or importer, origin,
+retired-never-deleted) arrive as empty tables with their repositories; the portal screens that
+fill them are PR 2. The migration is hand-ordered — create, copy every org's values, then drop —
+because the generated script dropped first. Proven on a throwaway database: an org inserted with
+the old columns comes out the other side with its profile row populated and the old columns gone.
+
+The storefront reads the profile table only, taking identity alone from `Org`, through two
+exported selects that `tests/unit/storefront-public-dto.test.ts` holds to an allowlist, so a
+private column can no longer reach a buyer by being added to the row (seller-identity R5 made
+structural). The about page's DTO is unchanged and pinned by the same test (spec A6). Admin's org
+list keeps description and logo through the relation; the seed creates the profile beside the org.
+No wire shape changed, so no `[CONTRACT]`; CONTRACTS.md gains a section naming the shapes and
+their new source.
+
 ## [PR-148] 2026-09-26 — The job queue and the worker, with nothing in them yet [MIGRATION]
 
 worker-foundation PR 1 of 3 ([spec](specs/worker-foundation/spec.md), [ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)).
