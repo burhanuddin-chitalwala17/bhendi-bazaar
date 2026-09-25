@@ -10,6 +10,34 @@
 
 ## Entries
 
+## [PR-148] 2026-09-26 — The job queue and the worker, with nothing in them yet [MIGRATION]
+
+worker-foundation PR 1 of 3 ([spec](specs/worker-foundation/spec.md), [ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)).
+The queue is pg-boss's tables in our own Postgres, applied as a Prisma migration from the
+library's exported construction plan, so the library never migrates at runtime and a deploy
+runs one migration tool. One seam, `server/shared/jobs/`, is the only importer of pg-boss: a
+typed `enqueue` that takes the caller's Prisma transaction, so a job commits or rolls back with
+the row it concerns and the notify that wakes the worker fires only on commit; a registry that
+parses every payload against its type's Zod schema before a handler sees it; and a status read
+for admin. `worker/main.ts` is the second entrypoint — a composition root that registers each
+domain's handlers and works one queue, with per-organisation concurrency through pg-boss groups.
+The only job is `ping`, the smoke test that stays.
+
+Every pg-boss timer is declared once in `jobs.config.ts`, in minutes, and `tests/unit/jobs-config.test.ts`
+reads that same object: it asserts every interval the library exposes is named (an omitted one
+takes the two-second default), none is under a minute, and the modelled idle total clears a
+declared daily ceiling. The database bills every poll; this is ADR-0038 D8 made a gate.
+
+Admin gains a worker card on the dashboard: last seen, waiting, running, failed, red past ten
+minutes or if never seen, with a re-run action for the failed queue that writes an audit entry
+(`POST /api/admin/jobs/redrive`). `APP_ENV` names the environment the heartbeat keys on
+([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2).
+
+Database-backed suite run locally against a migrated throwaway database: enqueue commits with the
+transaction, rolls back with it, refuses a bad payload before touching the queue, and Prisma
+Migrate reports no drift with the `pgboss` schema present — the ADR's one open consequence,
+closed. No machine yet; that is PR 2.
+
 ## [PR-147] 2026-09-26 — Index tables are generated, and five specs are accepted
 
 The tables in `docs/adr/README.md` and `docs/specs/README.md` were hand-copied headers with

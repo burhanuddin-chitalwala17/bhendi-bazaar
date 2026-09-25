@@ -2,6 +2,14 @@
 
 - **`docs-index.mjs`** — renders the index tables in `docs/adr/README.md` and `docs/specs/README.md` from the files they index; `npm run docs:index` rewrites, `--check` reports. `tests/unit/docs-integrity.test.ts` runs the check as a gate, so a hand-edited row cannot survive CI.
 
+## Exporting pg-boss's schema
+
+The queue's schema is a Prisma migration, not something the library applies at runtime
+([ADR-0038](../docs/adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) D1). It was produced by calling pg-boss's exported `getConstructionPlans("pgboss")` once
+and writing the result into `prisma/migrations/20260926100000_worker_foundation/migration.sql`.
+Upgrading pg-boss: call `getMigrationPlans("pgboss", <current version>)` the same way and put the
+output in a new migration. No script is kept for a step that runs once per library upgrade.
+
 ## Why there is nothing else here
 
 Images live in Cloudflare R2 ([ADR-0028](../docs/adr/0028-images-live-in-cloudflare-r2.md)), reached

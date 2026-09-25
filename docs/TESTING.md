@@ -1,6 +1,6 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-26
 - **Covers:** `tests/*/`, `.github/workflows/ci.yml`, `vitest.config.ts`
 
 ## Stack
@@ -97,6 +97,7 @@ thing it guards had already gone wrong silently:
 | `test-integrity` | The tests themselves — one definition of a throwaway database, the integration layer actually running in CI, no `.only`, no bare `.toThrow()`, no test without an assertion, and a declared, shrink-only list of suites allowed to skip |
 | `conditional-stock` | Invariant 6 at the level of the write: a stock decrement names the floor it must clear and its `count === 0` is read. Deleting the condition passed all 1233 tests before this existed |
 | `request-body-parsing` | Invariant 4: no handler casts `await request.json()`, every handler that reads a body validates it, and no body is spread into a Prisma `data`. It found two handlers validating nothing, one of them the unauthenticated carrier webhook |
+| `jobs-config` | The worker's idle chatter: every pg-boss interval is named, none is under a minute, and the modelled daily total clears a declared ceiling. The database bills every poll, and the library's default is two seconds ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) D8) |
 | `route-reachability` | That every route handler has a caller. A route's only caller is a string in another file, so nothing in the build notices when a page converts to a server component and leaves its handler routed, gated and answering to nobody — nine did, one of them a `PATCH` that could set `platformRole` |
 | `design-tokens`, `ui-primitives`, `image-delivery` | [ADR-0022](adr/0022-design-decisions-go-through-tokens.md), [ADR-0031](adr/0031-one-components-home-organised-by-domain.md), [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) |
 | `portal-guards`, `rate-limit-detached`, `seed-guard` | The edge gate reaches every portal path; no cache dependency creeps back into the request path; the seed's allowlist |

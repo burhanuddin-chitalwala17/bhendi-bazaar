@@ -1,6 +1,6 @@
 # TRD — worker-foundation
 
-- **Status:** ✅ Accepted — 2026-09-26
+- **Status:** 🔨 In progress — PR-148 (1 of 3)
 - **Domain:** cross-domain (`server/shared/jobs/`, `worker/`)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

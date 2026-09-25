@@ -1,5 +1,6 @@
 import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
 import { AdminDashboardLive } from "@/components/dashboard/dashboard-live";
+import { WorkerStatusCard } from "@/components/dashboard/worker-status-card";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 
 /**
@@ -16,6 +17,8 @@ export default function AdminDashboardPage() {
       />
 
       <DashboardWidgets ctx={{ audience: "platform" }} basePath="/admin" />
+
+      <WorkerStatusCard />
 
       <AdminDashboardLive />
     </div>

@@ -16,6 +16,18 @@ datasource db {
   provider = "postgresql"
 }
 
+/// One row per worker environment, upserted by the worker on a fixed cadence so admin can
+/// say when it was last seen rather than guess (worker-foundation R5). Counts are copied from
+/// the queue at the same moment; they are a snapshot, not a source of truth.
+model WorkerHeartbeat {
+  environment String   @id
+  version     String
+  lastSeenAt  DateTime
+  waiting     Int
+  active      Int
+  failed      Int
+}
+
 model Category {
   id          String         @id @default(cuid())
   slug        String         @unique

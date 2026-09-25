@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-26
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -29,6 +29,8 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ➖ | **Read by nothing.** Marked required here until 2026-09-23; no `process.env` reference exists. The checkout widget is handed the key id in the server's response (`server/payments/providers/razorpay/razorpay.repository.ts`), so setting it changes nothing and leaving it unset breaks nothing |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
+| `APP_ENV` | ○ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). Defaults to `local` outside a production build; a production build without it refuses to start. The worker keys its heartbeat on it |
+| `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
 | `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
 | `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — the bucket's custom domain in production, its `r2.dev` URL locally. **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
@@ -241,6 +243,7 @@ Then `DATABASE_URL="postgresql://postgres:password@localhost:5432/bhendi_bazaar?
 
 ```bash
 npm run dev            # dev server
+npm run worker         # the job worker, against the same DATABASE_URL (worker-foundation)
 npm run build          # production build
 npm start              # serve the build
 npx tsc --noEmit       # typecheck
@@ -268,6 +271,25 @@ npx prisma migrate dev # create + apply a migration
 4. Only configured providers can be enabled; changes take effect immediately.
 
 This makes **rate quoting** live. Shipment booking currently uses a mock implementation — see [ARCHITECTURE.md](ARCHITECTURE.md) and [shipping-fulfilment](specs/shipping-fulfilment/).
+
+## The worker
+
+The job queue is a set of tables in the application's own Postgres, in the `pgboss` schema, and
+the worker is a second process that runs them ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [worker-foundation](specs/worker-foundation/)).
+
+- **Locally:** `npm run worker` beside `npm run dev`, same `DATABASE_URL`. It logs the job types it
+  knows and writes a heartbeat row the admin dashboard reads. Send it a no-op with a `ping` job from
+  any transaction (`server/shared/jobs/ping.job.ts`).
+- **The schema is ours to migrate.** `prisma/migrations/20260926100000_worker_foundation/` holds
+  pg-boss's construction plan verbatim. Upgrading pg-boss means exporting its migration plan into a
+  new Prisma migration; the library's own runtime migration is switched off and must stay off.
+- **Every timer is set in `server/shared/jobs/jobs.config.ts`**, and `tests/unit/jobs-config.test.ts`
+  fails if one is shortened or left to a default: the database bills every poll.
+- **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
+  count and re-runs them; each re-run is an audit entry.
+- **Direct connections.** The worker needs the direct connection string (notify is session-bound);
+  it takes three pooled connections plus one listener of the five the plan allows. The machine it
+  runs on, and its deploy, arrive with PR 2 of the spec.
 
 ## Infrastructure
 

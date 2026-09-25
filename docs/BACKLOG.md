@@ -169,7 +169,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | ✅ Accepted — 2026-09-26 |
+| [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | 🔨 In progress — PR-148 (1 of 3) |
 | [seller-profile](specs/seller-profile/) | A private face for what listing needs (brands, manufacturers, origin, tax codes) and a public face for what a buyer may see; nothing demanded before it is needed | ✅ Accepted — 2026-09-26 |
 | [media-library](specs/media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | ✅ Accepted — 2026-09-26 |
 | [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | ✅ Accepted — 2026-09-26 |
