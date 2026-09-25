@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-25
 - **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
 
 
@@ -184,6 +184,8 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **A zoomable surface declares the size it zooms to; the stored ceiling clears it.** [ADR-0027](docs/adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)
 - **Video is embedded, never uploaded to our own storage.** [ADR-0017](docs/adr/0017-video-is-embedded-not-hosted.md)
 - **Every response carries a nonce-based CSP** — `script-src` never gains `'unsafe-inline'`. [ADR-0035](docs/adr/0035-every-response-carries-a-nonce-based-csp.md)
+- **The host is a deployment fact, not an architectural input** — seams, app-named environment, no vendor names in config; a free tier is used, never depended on. [ADR-0037](docs/adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
+- **Background work runs on an owned worker against a Postgres job queue** — enqueued in the business transaction, handlers idempotent on job id, no HTTP between queue and code. [ADR-0038](docs/adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 - **A guard is mutation-tested before it is trusted** — break the rule in the source and watch it go red, or it is decoration. Two Invariants had no guard at all and nothing noticed. ([docs/TESTING.md](docs/TESTING.md))
 - **The tests are audited like the code** — a suite that cannot run, or passes over an empty scan, is not a passing suite. `tests/unit/test-integrity.test.ts`
 - **Every route handler has a caller, named in the repository or declared as external** — no compiler follows a string. `tests/unit/route-reachability.test.ts`

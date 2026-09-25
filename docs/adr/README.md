@@ -73,3 +73,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0034](0034-render-on-the-server-by-default.md) | Render on the server by default; a page is never `"use client"` | Accepted | 2026-09-23 |
 | [0035](0035-every-response-carries-a-nonce-based-csp.md) | Every response carries a nonce-based Content-Security-Policy | Accepted | 2026-09-21 |
 | [0036](0036-a-files-reasons-to-change-are-a-decision.md) | A file's reasons to change are a decision, not a drift | Accepted | 2026-09-23 |
+| [0037](0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) | The host is a deployment fact, not an architectural input | Accepted | 2026-09-25 |
+| [0038](0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) | Background work runs on an owned worker against a Postgres job queue | Accepted | 2026-09-25 |

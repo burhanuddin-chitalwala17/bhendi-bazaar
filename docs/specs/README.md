@@ -1,6 +1,6 @@
 # Specs
 
-- **Verified:** 2026-09-22
+- **Verified:** 2026-09-25
 
 Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
 
@@ -50,6 +50,11 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [supply-chain-integrity](supply-chain-integrity/) | What the store ships carries no published vulnerability and no committed secret, established by the pipeline | 4 | cross-domain | 📝 Draft |
 | [error-tracking](error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 5 | cross-domain | 📝 Draft |
 | [read-caching](read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 5 | catalog | 📝 Draft |
+| [worker-foundation](worker-foundation/) | The place where slow work goes: a queue in our Postgres, a worker we own, health in admin, a machine rebuilt by a script | 11 | cross-domain | 📝 Draft |
+| [seller-profile](seller-profile/) | An organisation's profile has a private face for what listing needs and a public face for what a buyer may see, and nothing is demanded before it is needed | 11 | catalog | 📝 Draft |
+| [media-library](media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 11 | catalog, content | 📝 Draft |
+| [seller-profile/brand-page](seller-profile/brand-page/) | The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line | 11 | catalog | 📝 Draft |
+| [media-library/renditions](media-library/renditions/) | Every surface that needs its own size or shape gets a derived image made once from a declared recipe, and the source never changes | 11 | content | 📝 Draft |
 
 ### Subfeatures
 

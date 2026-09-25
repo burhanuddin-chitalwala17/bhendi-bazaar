@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-25
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -277,7 +277,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 |---|---|---|
 | Hosting | **Vercel** | Project `bhendi-bazaar`; deployed from GitHub Actions, not the Git integration — see [Deploy](#deploy) |
 | Domain | **GoDaddy** (registrar) | `bhendi-bazaar.com`; DNS points at Vercel |
-| Database | **Prisma Postgres** (`db.prisma.io`) | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story |
+| Database | **Prisma Postgres** (`db.prisma.io`), **Mumbai region** | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story. Anything that talks to it constantly — the worker of [worker-foundation](specs/worker-foundation/) — is placed in the same region |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
 | Redis (rate limiting) | **Upstash** — *not currently wired* | Intended provider, via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*`. No live code reads it |
 | File storage | **Cloudflare R2** | `R2_*` variables; `R2_PUBLIC_BASE_URL` is read by `next.config.ts` at build time for `remotePatterns`. No egress meter ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)) |
