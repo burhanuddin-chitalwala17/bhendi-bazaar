@@ -1,4 +1,14 @@
-export type NotificationType = "ORDER_UPDATE" | "BID_OUTBID" | "PROMOTION" | "SYSTEM";
+import type { NotificationType as DbNotificationType } from "@prisma/client";
+
+// The `satisfies` fails to compile if this drifts from the schema enum in either direction.
+export const NOTIFICATION_TYPE = {
+  ORDER_UPDATE: "ORDER_UPDATE",
+  BID_OUTBID: "BID_OUTBID",
+  PROMOTION: "PROMOTION",
+  SYSTEM: "SYSTEM",
+} as const satisfies { [K in DbNotificationType]: K };
+
+export type NotificationType = (typeof NOTIFICATION_TYPE)[keyof typeof NOTIFICATION_TYPE];
 
 export interface InAppNotificationDTO {
   id: string;

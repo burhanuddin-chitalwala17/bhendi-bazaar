@@ -245,14 +245,15 @@ export class BiddingRepository {
     eventId: string,
     newBidId: string,
     db: Db = prisma
-  ): Promise<BidLadderEntry | null> {
+  ): Promise<(BidLadderEntry & { userId: string | null }) | null> {
     const row = await db.bid.findFirst({
       relationLoadStrategy: "join",
       where: { eventId, id: { not: newBidId } },
       select: LADDER_SELECT,
       orderBy: { amountPaise: "desc" },
     });
-    return row ? toLadderEntry(row) : null;
+    // userId stays off BidLadderEntry: that shape reaches admin screens, this one only the notifier.
+    return row ? { ...toLadderEntry(row), userId: row.userId } : null;
   }
 
   async create(

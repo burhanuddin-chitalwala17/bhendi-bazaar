@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
 import { safeTextSchema } from "./common.schemas";
 
 export const getNotificationsQuerySchema = z.object({
@@ -16,6 +17,6 @@ export const createInAppNotificationSchema = z.object({
   userId: z.string().min(1, "userId is required"),
   title: safeTextSchema,
   message: safeTextSchema,
-  type: z.enum(["ORDER_UPDATE", "BID_OUTBID", "PROMOTION", "SYSTEM"]).default("SYSTEM"),
+  type: z.enum(NOTIFICATION_TYPE).default(NOTIFICATION_TYPE.SYSTEM),
   link: z.string().max(2048).optional(),
 });

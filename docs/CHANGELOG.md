@@ -19,7 +19,8 @@ In-app notification system delivering real-time and polled alerts (order status 
 - **Automatic Triggers**: Integrated in-app notifications into `server/checkout/payment-confirmed.ts` on order payment confirmation and into `server/bidding/bidding.service.ts` on outbid events.
 - **UI & Chrome**: Built `NotificationBell` with SWR/polling, unread badge counter, and Radix Sheet mobile drawer, integrated into `Navbar.tsx`.
 - **Spec & TRD**: `docs/specs/in-app-notifications/spec.md` and `docs/specs/in-app-notifications/trd.md`.
-- **Tests**: 12 unit tests in `tests/unit/in-app-notification.test.ts`.
+- **Closed set**: `NOTIFICATION_TYPE` in `server/notifications/in-app.types.ts` is the one declaration the Zod schema, the bell and every caller read; a `satisfies` against the Prisma enum fails the build if they drift.
+- **Tests**: 12 unit tests in `tests/unit/in-app-notification.test.ts`; `tests/unit/outbid-notification.test.ts` covers the outbid notice, whose recipient `leaderBefore` now returns alongside the ladder entry.
 
 ## [PR-148] 2026-09-23 — A product photo left on the retired store reads as no image, not a crash
 

@@ -31,6 +31,7 @@ import type { BiddingFormInput } from "@/lib/validation/schemas/bidding.schema";
 import { stockService } from "@server/catalog/stock.service";
 import { productService } from "@server/catalog/product.service";
 import { adminOrgService } from "@server/catalog/org.service";
+import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
 
 /**
  * No 0/O/1/I/l: a bidding link gets read aloud and retyped, and an ambiguous
@@ -343,7 +344,7 @@ export class BiddingService {
             userId: previous.userId,
             title: "You've been outbid!",
             message: `Someone placed a higher bid on ${view.product.name}.`,
-            type: "BID_OUTBID",
+            type: NOTIFICATION_TYPE.BID_OUTBID,
             link: `/bid/${slug}`,
           })
           .catch((err) => console.error("Failed to send outbid in-app notification:", err));

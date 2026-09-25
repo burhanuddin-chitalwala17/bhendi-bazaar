@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NOTIFICATION_TYPE, type NotificationType } from "@server/notifications/in-app.types";
 
 interface InAppNotificationDTO {
   id: string;
   userId: string;
   title: string;
   message: string;
-  type: "ORDER_UPDATE" | "BID_OUTBID" | "PROMOTION" | "SYSTEM";
+  type: NotificationType;
   link?: string | null;
   isRead: boolean;
   readAt?: string | null;
@@ -21,13 +22,13 @@ interface InAppNotificationDTO {
 
 function getTypeIcon(type: InAppNotificationDTO["type"]) {
   switch (type) {
-    case "ORDER_UPDATE":
+    case NOTIFICATION_TYPE.ORDER_UPDATE:
       return <Package className="h-4 w-4 text-blue-500" />;
-    case "BID_OUTBID":
+    case NOTIFICATION_TYPE.BID_OUTBID:
       return <Gavel className="h-4 w-4 text-amber-500" />;
-    case "PROMOTION":
+    case NOTIFICATION_TYPE.PROMOTION:
       return <Tag className="h-4 w-4 text-emerald-500" />;
-    case "SYSTEM":
+    case NOTIFICATION_TYPE.SYSTEM:
     default:
       return <Info className="h-4 w-4 text-foreground/70" />;
   }

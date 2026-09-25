@@ -1,5 +1,6 @@
 import { orderRepository } from "@server/checkout/order.repository";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
+import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
 
 /**
  * What happens once an order's money is real.
@@ -57,7 +58,7 @@ export async function onPaymentConfirmed(orderId: string): Promise<void> {
         userId: order.userId,
         title: "Order Confirmed!",
         message: `Your order #${order.code} has been placed successfully.`,
-        type: "ORDER_UPDATE",
+        type: NOTIFICATION_TYPE.ORDER_UPDATE,
         link: `/order/${order.id}`,
       })
       .catch((err) => console.error("[onPaymentConfirmed] failed in-app notification:", err));

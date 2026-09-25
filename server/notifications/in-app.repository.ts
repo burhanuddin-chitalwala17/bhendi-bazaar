@@ -1,6 +1,7 @@
 import { prisma } from "@server/shared/prisma";
-import type {
-  CreateInAppNotificationInput,
+import {
+  NOTIFICATION_TYPE,
+  type CreateInAppNotificationInput,
   GetNotificationsQuery,
   InAppNotificationDTO,
   MarkReadInput,
@@ -16,7 +17,7 @@ export const inAppNotificationRepository = {
         userId: input.userId,
         title: input.title,
         message: input.message,
-        type: input.type ?? "SYSTEM",
+        type: input.type ?? NOTIFICATION_TYPE.SYSTEM,
         link: input.link ?? null,
       },
     });
