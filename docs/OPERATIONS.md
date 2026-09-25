@@ -288,8 +288,87 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
 - **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
   count and re-runs them; each re-run is an audit entry.
 - **Direct connections.** The worker needs the direct connection string (notify is session-bound);
-  it takes three pooled connections plus one listener of the five the plan allows. The machine it
-  runs on, and its deploy, arrive with PR 2 of the spec.
+  it takes three pooled connections plus one listener of the five the plan allows.
+
+### The worker's image
+
+`infra/worker/Dockerfile` builds it: dependencies from the lockfile, the Prisma client generated,
+then only `server/`, `worker/` and `prisma/` on a Node 22 base, run with `node --import tsx`. The
+`deploy-worker` job in `.github/workflows/ci.yml` builds it for arm64 and amd64 on every push and
+pushes `ghcr.io/<owner>/bhendi-bazaar-worker:<sha>` and `:<branch>`. Build it yourself with
+`docker build -f infra/worker/Dockerfile .`; run it anywhere with the env file below. It is about
+1.1 GB because it carries the whole lockfile's dependencies; trimming to the worker's own set is
+worth doing once a second job type exists.
+
+### The worker's machine
+
+An Ubuntu 24.04 virtual machine the project administers, provisioned and rebuilt by
+`infra/worker/provision.sh` (worker-foundation R7, trd D8). The current machine is an Oracle Cloud
+Always Free instance in **India West (Mumbai)**, the database's region, on a Pay As You Go account.
+That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)); nothing in the repository knows it.
+
+**Account setup, once.** After the Pay As You Go upgrade completes:
+
+1. **Budget alert.** Billing → Budgets → a monthly budget of 1 USD with an alert rule at 100% to your
+   email. Budgets alert; they do not stop spending.
+2. **Quotas are the brake.** Governance → Quotas → a quota policy on the tenancy that forbids anything
+   the free tier does not cover. Oracle refuses a request over quota rather than billing it. The
+   Always Free allowance is 2 Ampere OCPUs with 12 GB, or the two AMD micro instances, and 200 GB of
+   block storage; set the quotas to exactly that, so a rebuild is delete-then-create and two machines
+   can never coexist and bill:
+
+   ```text
+   zero compute-core quotas /*/ in tenancy
+   set compute-core quota standard-a1-core-count to 2 in tenancy
+   set compute-core quota standard-e2-micro-core-count to 2 in tenancy
+   zero compute-memory quotas /*/ in tenancy
+   set compute-memory quota standard-a1-memory-count to 12 in tenancy
+   zero block-storage quotas /*/ in tenancy
+   set block-storage quota total-storage-gb to 200 in tenancy
+   zero database quotas /*/ in tenancy
+   ```
+3. **The idle rule.** Oracle reclaims Always Free instances that stay under 20% CPU, network and
+   memory for seven days. The Pay As You Go account is the commonly reported protection; the
+   provisioning script is the fallback — a reclaimed machine is a ten-minute rebuild.
+
+**The machine, once (and again after a loss).**
+
+1. Networking → Virtual Cloud Networks → wizard, "Create VCN with Internet Connectivity". In the
+   public subnet's security list keep inbound to SSH (22) only.
+2. Compute → Instances → Create: image Ubuntu 24.04 (Always Free eligible); shape
+   `VM.Standard.A1.Flex`, 2 OCPUs, 12 GB — if Mumbai has no capacity, `VM.Standard.E2.1.Micro`;
+   public IPv4 assigned; your SSH public key pasted; 50 GB boot volume.
+3. Networking → IP Management → Reserved Public IPs: reserve the address, so a rebuilt machine keeps
+   it and no secret changes.
+4. From a terminal, as `ubuntu`: copy `infra/worker/` to the machine and run `sudo ./provision.sh`.
+   It is idempotent; re-run it after any change to the script.
+
+**GitHub repository secrets the deploy needs.**
+
+| Secret | Holds |
+|---|---|
+| `WORKER_HOST` | The reserved public IP |
+| `WORKER_SSH_USER` | `ubuntu` on that image |
+| `WORKER_SSH_KEY` | A private key whose public half is in the machine's `authorized_keys`. Generate one for the pipeline alone; never reuse a personal key |
+| `WORKER_ENV_FILE` | The whole env file, from `.env.worker.example` with values — `DATABASE_URL` is the **direct** string of the production database |
+| `GHCR_PULL_USER` / `GHCR_PULL_TOKEN` | A GitHub user and a personal access token with `read:packages`, so the machine can pull the private image |
+
+**Deploy.** A push to `main` builds the image, then over SSH writes the env file, copies
+`compose.yml`, pulls the commit's image and restarts the stack. The heartbeat on the admin dashboard
+goes green within five minutes. A rollback is re-running the job on an older commit. Until
+`WORKER_HOST` exists the job builds and pushes and skips the machine.
+
+**Staging.** Same image, different env file, started by hand while someone is testing (spec R6):
+
+```bash
+mkdir -p ~/worker-staging && cp infra/worker/compose.yml ~/worker-staging/ && cd ~/worker-staging
+# .env from .env.worker.example with the dev database and APP_ENV=preview
+WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p worker-staging up -d
+docker compose -p worker-staging down   # when done: an idle worker still bills polls
+```
+
+**Rebuild after a loss.** Create the instance again with the reserved IP, run `provision.sh`, re-run
+the last `main` pipeline. Nothing was on the machine that is not in Postgres or the object store.
 
 ## The media library backfill
 

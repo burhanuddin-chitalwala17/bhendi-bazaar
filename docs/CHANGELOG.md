@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-152] 2026-09-26 — The worker's image, machine script and deploy, ahead of the machine
+
+worker-foundation PR 2 of 3, the half that needs no machine (trd D7–D9). `infra/worker/Dockerfile`
+builds the worker from the lockfile with the Prisma client generated and only `server/`, `worker/`
+and `prisma/` on a Node 22 base, run as `node --import tsx`; built locally, run against the local
+database, it came up, wrote its heartbeat with the stamped version, and drained cleanly on SIGTERM
+with exit code 0. `infra/worker/compose.yml` runs it restart-always from an env file the deploy
+writes; `infra/worker/provision.sh` turns a fresh Ubuntu 24.04 into the machine — security updates,
+firewall to SSH only, keys-only SSH, Docker, the stack as a boot service, weekly image prune — and is
+idempotent, so it is also the rebuild. The `deploy-worker` job in CI builds the image for arm64 and
+amd64 on every push, pushes it to the repository's container registry, and on `main` restarts the
+stack over SSH; until `WORKER_HOST` exists it builds and skips.
+
+OPERATIONS.md gains the runbook: the budget alert, the quota policy that makes paid shapes
+impossible rather than merely noticed, the machine steps, the six repository secrets, the staging
+worker by hand, and the rebuild. `.env.worker.example` names what the worker reads. The docs gate
+now also checks path references under `infra/` and `worker/`. The image is 1.1 GB because it
+carries the whole lockfile; trimming waits for a second job type.
+
 ## [PR-151] 2026-09-26 — The seed's two `any` casts are gone
 
 `prisma/seed.ts` cast an order's address and a shipping provider's row to `any`, the two lint
