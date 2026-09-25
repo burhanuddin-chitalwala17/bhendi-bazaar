@@ -8,17 +8,17 @@
  * approved them.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { requirePlatformAdminId } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { DomainError } from "@server/shared/domain-error";
-import { presignUpload } from "@server/catalog/object-store";
+import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { presignUploadSchema } from "@/lib/validation/schemas/upload.schema";
 
 const PREFIX = "categories/";
 
 export async function POST(request: NextRequest) {
   try {
-    await requirePlatformAdmin();
+    const uploaderId = await requirePlatformAdminId();
     const { pathname, contentType, size } = presignUploadSchema.parse(
       await request.json(),
     );
@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
     if (!pathname.startsWith(PREFIX)) {
       throw new DomainError(`Uploads must live under ${PREFIX}`);
     }
-    return NextResponse.json(await presignUpload(pathname, contentType, size));
+    // Platform-owned: category art has no org. Registered before signing (media-library R1).
+    return NextResponse.json(
+      await mediaAssetService.beginUpload({ orgId: null, uploaderId, pathname, contentType, size }),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not authorise the upload");
   }

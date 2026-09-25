@@ -110,6 +110,10 @@ The storefront's public organisation shape is `Storefront` in `src/data-access-l
 
 The editor's shape is `StorefrontSettingsInput` in `src/lib/validation/schemas/storefront.schema.ts`, parsed by the settings route and rendered by `useServerForm`; it too now reads and writes the profile. `BrandDto` and the listing-defaults shape arrive with PR 2 of the same spec, when the portal gains its listing-context screen.
 
+### Media uploads
+
+A browser-direct upload talks to two routes, named as a pair in `src/lib/image/upload-endpoints.ts` and driven by `uploadDirect` in `src/lib/image/upload-direct.ts` ([media-library](specs/media-library/) trd D2). The token response — `PresignedUpload` in `server/catalog/object-store.ts` plus `assetId` — now carries the id of the asset record registered before signing; a route that registers nothing (review photographs) omits it and the client skips the confirm. The confirm body is `confirmUploadSchema` in `src/lib/validation/schemas/upload.schema.ts`: the asset id and, when the browser could read them, the dimensions; the server reads the object itself otherwise. Additive on the wire, so `[CONTRACT]` marks the change without breaking a client that ignores the new field.
+
 ### Addresses
 The address-book wire shape (`DeliveryAddress`) is flat and stable, but since PR-41 its `id` is the **UserAddress** relationship id (server-generated — clients no longer mint ids), `metadata` is gone (label and notes are top-level), and `fullName`, `mobile`, `state` are required. Storage is two tables: `Address` (postal fact, written only by `server/shared/address.repository.ts`) and `UserAddress` (the person's relationship). `Order.address` remains an embedded snapshot, deliberately.
 

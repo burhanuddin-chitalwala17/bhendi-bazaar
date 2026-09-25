@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-150] 2026-09-26 — Every stored image becomes a record [MIGRATION] [CONTRACT]
+
+media-library PR 1 of 6 ([spec](specs/media-library/spec.md), trd D1–D3). `MediaAsset` is the one
+record behind every image URL the schema holds: dimensions, bytes, format, owner, uploader, source,
+what it was derived from, and a state. Every referencing column — gallery rows, category heroes,
+profile logo and hero, both banner tables — gains a nullable asset reference that refuses deletion
+while it points at one (R7).
+
+Uploads register before they move (R1, D2): the two presign routes create a pending row and return
+its id with the signed URL; `uploadDirect` PUTs the bytes and then calls a new confirm route, which
+asks the store what it actually holds and takes the dimensions from the browser's canvas or, failing
+that, from the object itself, so a ready asset always has them. A failed confirm is a failed upload.
+Callers now pass an endpoint pair from `src/lib/image/upload-endpoints.ts`; the review photograph
+path registers nothing and is untouched. The server-side upload path records its assets ready,
+with dimensions from the same sharp pass that normalises them.
+
+Gallery rows link to their asset by URL on every product write, admin and bulk alike, so nothing
+in the form or the wire shape changed for that. Images already stored are brought under the record
+by `npm run media:backfill`, idempotent and dry-run by default, which also records video references
+as embed assets ([OPERATIONS.md](OPERATIONS.md) says when to run it). A sweep for uploads that never
+confirmed exists as a service and waits for the worker's first schedule to be wired.
+
+Database-backed suite run locally: pending to ready exactly once, only ready assets link, a
+referenced pending row survives the sweep, and the backfill creates each asset once with dimensions
+read from the bytes.
+
 ## [PR-149] 2026-09-26 — An organisation's public face becomes its own table [MIGRATION]
 
 seller-profile PR 1 of 4 ([spec](specs/seller-profile/spec.md), trd D1–D4). The seven storefront

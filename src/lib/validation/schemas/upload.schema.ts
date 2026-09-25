@@ -35,3 +35,12 @@ export const presignUploadSchema = z.object({
 });
 
 export type PresignUploadInput = z.infer<typeof presignUploadSchema>;
+
+/** What the browser sends once the bytes have landed (media-library trd D2). Dimensions are optional: the server reads the object when the browser could not. */
+export const confirmUploadSchema = z.object({
+  assetId: z.string().trim().min(1).max(64),
+  width: z.number().int().positive().max(20_000).optional(),
+  height: z.number().int().positive().max(20_000).optional(),
+});
+
+export type ConfirmUploadInput = z.infer<typeof confirmUploadSchema>;

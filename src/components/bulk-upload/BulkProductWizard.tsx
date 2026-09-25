@@ -18,6 +18,7 @@ import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { imagesOnly, relativePath, sanitizePath } from "./files";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
+import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 
 interface ValidateResponse {
   ok: boolean;
@@ -97,7 +98,7 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           const url = await uploadDirect(
             `products/${report.orgCode!.toLowerCase()}/bulk/${storedPathFor(sanitizePath(path), downscaled)}`,
             downscaled,
-            `/api/org/${orgId}/upload/token`,
+            orgUploadEndpoints(orgId),
           );
           urls.set(reference, url);
           done += 1;

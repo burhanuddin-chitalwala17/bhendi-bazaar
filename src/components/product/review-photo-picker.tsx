@@ -52,7 +52,8 @@ export function ReviewPhotoPicker({
             // is not the browser's to choose, and answers with the URL it actually signed.
             storedPathFor(file.name, reduced),
             reduced,
-            "/api/reviews/upload-token",
+            // Reviews register no asset yet (media-library out of scope), so no confirm route.
+            { token: "/api/reviews/upload-token" },
           ),
         );
       } catch (error) {

@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { requirePlatformAdminId } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { uploadImages } from "@server/catalog/image-upload";
 import type { ImageFolder } from "@server/catalog/image-paths";
@@ -20,7 +20,7 @@ const UPLOAD_TYPES: Record<string, ImageFolder> = {
 
 export async function POST(request: NextRequest) {
   try {
-    await requirePlatformAdmin();
+    const uploaderId = await requirePlatformAdminId();
 
     const { searchParams } = new URL(request.url);
     const requestedType = searchParams.get("type") || "products";
@@ -42,7 +42,11 @@ export async function POST(request: NextRequest) {
         ? await orgRepository.findById(orgId)
         : null;
 
-    const urls = await uploadImages(files, folder, identifier, org?.code);
+    // Owned by the org when uploading on its behalf, by the platform otherwise (media-library R1).
+    const urls = await uploadImages(files, folder, identifier, org?.code, {
+      orgId: org?.id ?? null,
+      uploaderId,
+    });
 
     return NextResponse.json({
       success: true,

@@ -2,6 +2,7 @@
 
 "use client";
 
+import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { ProductForm } from "@/components/shared/forms/product";
@@ -16,14 +17,14 @@ interface ProductAddContainerProps {
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
-  uploadTokenEndpoint?: string;
+  uploadEndpoints?: UploadEndpoints;
 }
 
 export function ProductAddContainer({
   categories,
   orgs,
   locations,
-  uploadTokenEndpoint,
+  uploadEndpoints,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -65,7 +66,7 @@ export function ProductAddContainer({
         onCancel={handleCancel}
         isSubmitting={isLoading}
         readOnly={false}
-        uploadTokenEndpoint={uploadTokenEndpoint}
+        uploadEndpoints={uploadEndpoints}
       />
     </div>
   );

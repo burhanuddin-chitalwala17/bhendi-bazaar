@@ -291,6 +291,17 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
   it takes three pooled connections plus one listener of the five the plan allows. The machine it
   runs on, and its deploy, arrive with PR 2 of the spec.
 
+## The media library backfill
+
+Every image the store holds has a record in `MediaAsset` from [media-library](specs/media-library/) PR 1 onward — uploads register one before the bytes move. Images stored before that are brought under the record by a one-off, idempotent script rather than a migration, because it needs the object store to read each image's dimensions (trd D3):
+
+```bash
+npm run media:backfill            # report what would be created and linked
+npm run media:backfill -- --write # create the assets and link the rows
+```
+
+Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
+
 ## Infrastructure
 
 Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and which variables the code actually reads.

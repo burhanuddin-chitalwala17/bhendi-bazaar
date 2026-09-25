@@ -1,3 +1,4 @@
+import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductAddContainer } from "@/components/product/console/productAdd";
@@ -49,7 +50,7 @@ export default async function OrgNewProductPage({
       categories={categories}
       orgs={orgs}
       locations={locations}
-      uploadTokenEndpoint={`/api/org/${orgId}/upload/token`}
+      uploadEndpoints={orgUploadEndpoints(orgId)}
     />
   );
 }

@@ -15,7 +15,7 @@ Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (P
             ├── (admin) console       24 pages     ──▶ Razorpay         (payments)
             ├── (org)   seller portal 19 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
-            └── api/                  88 handlers  ──▶ YouTube          (product and review video, embedded)
+            └── api/                  90 handlers  ──▶ YouTube          (product and review video, embedded)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
@@ -58,7 +58,7 @@ Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 55 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 45 models, 12 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 56 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 46 models, 15 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
 
 **Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
 
@@ -72,7 +72,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-117 Vitest files (105 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, all `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+120 Vitest files (107 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, all `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 

@@ -1,5 +1,6 @@
 # Scripts
 
+- **`backfill-media-assets.ts`** — brings every image already stored under the media library's record (`server/catalog/media-backfill.ts` does the work; the script is the CLI). Dry run by default, `--write` to apply; idempotent. [OPERATIONS.md](../docs/OPERATIONS.md) has when to run it.
 - **`docs-index.mjs`** — renders the index tables in `docs/adr/README.md` and `docs/specs/README.md` from the files they index; `npm run docs:index` rewrites, `--check` reports. `tests/unit/docs-integrity.test.ts` runs the check as a gate, so a hand-edited row cannot survive CI.
 
 ## Exporting pg-boss's schema

@@ -15,6 +15,7 @@ import { isUniqueViolation } from "@server/shared/constraint";
 import { rupeesToPaise } from "@server/shared/money";
 import { ConflictError } from "@server/shared/domain-error";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
+import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import {
   BULK_MAX_ROWS,
   type BulkProductRow,
@@ -172,6 +173,7 @@ export async function createProducts(
     productId: string;
     kind: "IMAGE" | "YOUTUBE";
     ref: string;
+    assetId?: string | null;
     position: number;
     isThumbnail: boolean;
   }[] = [];
@@ -228,6 +230,12 @@ export async function createProducts(
       });
     }
   });
+
+  // Link each image row to the asset its upload registered (media-library trd D1).
+  const assetIds = await mediaAssetRepository.idsByRefs(
+    media.filter((row) => row.kind === "IMAGE").map((row) => row.ref),
+  );
+  for (const row of media) row.assetId = assetIds.get(row.ref) ?? null;
 
   try {
     await prisma.$transaction(async (tx) => {

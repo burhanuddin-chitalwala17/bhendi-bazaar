@@ -104,6 +104,30 @@ export async function putObject(
 }
 
 /** Remove an object. A URL that is not ours is ignored rather than guessed at. */
+/** What the store holds at a pathname, or null when nothing does. Used to confirm an upload. */
+export async function headObject(
+  pathname: string
+): Promise<{ contentLength: number; contentType: string } | null> {
+  const response = await client().client.fetch(objectUrl(pathname), { method: "HEAD" });
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Could not inspect ${pathname}: ${response.status}`);
+  }
+  return {
+    contentLength: Number(response.headers.get("content-length") ?? 0),
+    contentType: response.headers.get("content-type") ?? "application/octet-stream",
+  };
+}
+
+/** The bytes at a pathname — for reading dimensions the browser could not send, never for serving. */
+export async function getObject(pathname: string): Promise<Buffer> {
+  const response = await client().client.fetch(objectUrl(pathname), { method: "GET" });
+  if (!response.ok) {
+    throw new Error(`Could not read ${pathname}: ${response.status}`);
+  }
+  return Buffer.from(await response.arrayBuffer());
+}
+
 export async function deleteObject(url: string): Promise<void> {
   const pathname = pathnameFor(url);
   if (!pathname) return;
