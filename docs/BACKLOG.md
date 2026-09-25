@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-25
 - **Covers:** `docs/specs/*/`
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
@@ -93,6 +93,7 @@ A new phase, added 2026-08-13. Phase 1 built the storefront and closed; this is 
 | [product-video](specs/product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 📝 Draft — all questions closed 2026-08-13 |
 | [bulk-catalog-upload](specs/bulk-catalog-upload/) | An org sets up its catalogue from one spreadsheet plus local photos; admins likewise for categories. Corrects SKU uniqueness to org scope | ✅ Implemented — 2026-08-21 (PR-73) |
 | [product-archive](specs/product-archive/) | An org archives a product and restores it, without destroying the orders, payouts or ledger entries it appears on | ✅ Implemented — 2026-09-16 (PR-113) |
+| [copy-product](specs/copy-product/) | An org starts a new product from one of its own — description, category, attributes and flags carried, identity and price left behind | ✅ Implemented — 2026-09-23 (PR-147) |
 
 `product-archive` is catalogue *lifecycle* rather than page capability, and lands here because it is the phase that owns the catalogue; it needs nothing from the rest of the phase and nothing in the phase needs it.
 

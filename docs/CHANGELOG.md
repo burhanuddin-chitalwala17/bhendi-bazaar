@@ -10,6 +10,43 @@
 
 ## Entries
 
+## [PR-148] 2026-09-23 — A product photo left on the retired store reads as no image, not a crash
+
+Two local products still held thumbnail and gallery URLs on the retired Vercel Blob host, and
+the homepage offers strip handed one to `next/image`, which throws on a host missing from
+`remotePatterns` and blanks the whole page. PR-122 closed this for banners; products were the
+next of the eight columns OPERATIONS.md lists.
+
+Both product mappings — the storefront DAL (`src/data-access-layer/products.dal.ts`), which feeds
+the homepage, listings, product page and cart, and the org portal's — now route through
+`isRenderableImageUrl`. A dead thumbnail becomes the brand mark; a dead photo is dropped from
+the gallery by the new `renderableMedia` (`server/catalog/image-paths.ts`), so saving the edit
+form clears it from the row, which is the runbook's re-upload remedy. Video refs are provider
+ids and are never checked. Search suggestions, wishlist, cart, bidding and order lines read the
+thumbnail by other paths and remain unguarded; OPERATIONS.md says so.
+
+## [PR-147] 2026-09-23 — An org copies a product into a new one, and row actions move behind one menu
+
+Most of an org's catalogue is families — one design in several fabrics or sizes — and every
+member was typed from scratch. An org can now start a new product from one of its own: the
+description, category, sizes, colours, tags and flags come across; name, price, SKU, photos
+and stock do not, because those make a duplicate rather than a sibling ([copy-product](specs/copy-product/spec.md)).
+
+Two entry points, one mechanism. The product list's actions column is now a single ⋯ menu
+(View, Edit, Copy product, Archive/Restore, Delete…), and the new-product page has a
+"Copy from product" picker over the org's on-sale products, searchable by name or SKU. Both navigate to
+`/org/<orgId>/products/new?copyFrom=<id>`; the page reads the source on the server through
+`productsService.getCopySource`, which scopes it with the existing `ownedByOrg`, so another
+org's id opens a blank form rather than that product. No route handler, no DTO change.
+
+The form is keyed on the source so a second pick replaces the first, and draft persistence
+steps aside while copying — a restored draft would otherwise overwrite the copied fields on
+mount. Delete keeps its confirmation dialog, now opened from the menu.
+
+Adds `@radix-ui/react-dropdown-menu` behind a new `src/components/ui/dropdown-menu.tsx`
+primitive. Tests: `tests/unit/product-copy.test.ts`; the product-visibility census gains the
+picker's read (available shelf only).
+
 ## [PR-146] 2026-09-24 — The tests are audited, and two Invariants turn out to have had no guard
 
 The nine unreachable handlers from PR-144/145 are deleted, along with `ProfileContext`,
@@ -823,7 +860,6 @@ with `src/components` — 106 of 173 is the real number, corrected in the ADR.
 
 **Verification:** `tsc --noEmit` exit 0, 1165 tests pass across 104 files, `npm run docs:check`
 55/55, `next build` compiles.
-
 
 ## [PR-125] 2026-09-23 — Nothing a buyer wrote is deleted, and a review photograph has to be the reviewer's `[CONTRACT]` `[MIGRATION]`
 

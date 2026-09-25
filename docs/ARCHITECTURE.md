@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-25
 - **Covers:** `src/app/*/`, `server/*/`, `prisma/schema.prisma`, `src/lib/rate-limit/**`
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
@@ -70,7 +70,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-112 Vitest files (102 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, all `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+113 Vitest files (103 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, 38 of them `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 
