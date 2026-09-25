@@ -53,3 +53,18 @@ export interface ProductFormInput {
   lowStockThreshold?: number;
   weight: number;
 }
+/**
+ * What "copy product" carries onto a new product's form — the descriptive fields only.
+ * Name, price, SKU, media and stock are left behind: each identifies or values one
+ * specific item, so copying them makes a duplicate rather than a sibling (copy-product R2).
+ */
+export type ProductCopySource = Required<
+  Pick<ProductFormInput, "description" | "categoryId" | "tags" | "flags" | "sizes" | "colors">
+> & { id: string; name: string };
+
+/** One entry in the new-product page's "Copy from" picker. */
+export interface ProductCopyOption {
+  id: string;
+  name: string;
+  sku: string | null;
+}

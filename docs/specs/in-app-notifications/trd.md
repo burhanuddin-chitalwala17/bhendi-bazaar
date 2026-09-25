@@ -1,6 +1,6 @@
 # TRD — in-app-notifications
 
-- **Status:** ✅ Implemented — PR-147
+- **Status:** ✅ Implemented — PR-149
 - **Domain:** notifications, cross-domain
 - **Phase:** 5 — Scale & operability
 - **Verified:** 2026-09-24

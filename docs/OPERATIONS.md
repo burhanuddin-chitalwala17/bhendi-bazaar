@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-23
+- **Verified:** 2026-09-24
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -157,8 +157,13 @@ raises `Invalid src prop` during render, which unmounts the page rather than the
 One leftover `Banner.imageUrl` blanked both the storefront homepage and `/admin/banners` —
 the page the remedy below has to be carried out on. Since PR-121 the banner surfaces route
 their stored URL through `isRenderableImageUrl` (`server/catalog/image-paths.ts`), so a dead
-one reads as "no image" and the admin row says *Image needs re-uploading*. **The other seven
-columns are not yet guarded** and will still take a page down. Eight columns can hold one: `Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`,
+one reads as "no image" and the admin row says *Image needs re-uploading*. Since PR-148
+`Product.thumbnail` and `ProductMedia.ref` are guarded where products are mapped for display
+(`src/data-access-layer/products.dal.ts` and its org-portal counterpart): a dead thumbnail
+becomes the brand mark and a dead photo is dropped from the gallery, so saving the product's
+edit form clears it from the row. Search suggestions, wishlist, cart, bidding and order lines
+carry the thumbnail by other paths and **are not yet guarded**, and neither are the other five
+columns — any of them will still take a page down. Eight columns can hold one: `Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`,
 `Org.logoUrl`, `OrderItem.thumbnail`, `ShippingProvider.logoUrl`, `Banner.imageUrl`. To find them:
 
 ```
@@ -332,8 +337,15 @@ rows and CI's database is empty, so nothing before production could have raised 
    applied elsewhere, and Prisma checksums it.
 4. **Clear the failed record**, or the new migration will not be reached:
    ```
-   npx prisma migrate resolve --rolled-back 20260923090000_reviews_soft_state
+   MIGRATE_DATABASE_URL="<direct prod URL>" npx prisma migrate resolve --rolled-back 20260923090000_reviews_soft_state
    ```
+   **Pass `MIGRATE_DATABASE_URL` inline, always — and confirm the target first.**
+   `prisma.config.ts` resolves `process.env.MIGRATE_DATABASE_URL || env("DATABASE_URL")`, and
+   that `env()` reads the `.env` *file* rather than the environment. So `DATABASE_URL=… npx
+   prisma …` is **silently ignored** and the command hits your dev database instead — which on a
+   `resolve --rolled-back` means un-applying a migration that was fine, and leaving dev broken
+   the same way production is. `npx prisma migrate status` prints the host it will use; run that
+   first, every time.
 5. **Redeploy.** The fix applies, then the retry.
 
 **Rehearse it against a scratch database first.** The whole sequence above was run on a throwaway

@@ -29,8 +29,11 @@ import {
   type ProductMediaInput,
 } from "@server/catalog/media";
 import type { OrgSummary } from "@/domain/org";
+import type { ProductCopySource } from "@server/catalog/admin.product.types";
 interface ProductFormProps {
   product?: ProductDetails;
+  /** Create only: another of the org's products whose descriptive fields seed this one. */
+  copySource?: ProductCopySource | null;
   categories?: { id: string; name: string }[];
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
@@ -50,6 +53,7 @@ interface ProductFormProps {
 
 export function ProductForm({
   product,
+  copySource,
   categories,
   orgs,
   locations = [],
@@ -60,6 +64,10 @@ export function ProductForm({
   uploadTokenEndpoint,
 }: ProductFormProps) {
   const isEdit = !!product;
+  const copy = isEdit ? null : (copySource ?? null);
+  // A restored draft would overwrite the copied fields on mount, so a copy is not
+  // draft-persisted — and must not clear a blank-form draft the org left behind.
+  const persistDraft = !isEdit && !copy;
 
   // One row per offered location, prefilled from the product's existing rows. A
   // location the product never stocked shows 0; zero rows are dropped on write.
@@ -81,10 +89,12 @@ export function ProductForm({
     submit: onSubmit,
     // Deferred: clearSaved is declared below. Without this the saved draft
     // prefills the next "new product" with the one just created.
-    onSuccess: () => clearSaved(),
+    onSuccess: () => {
+      if (persistDraft) clearSaved();
+    },
     defaultValues: {
       name: product?.name || "",
-      description: product?.description || "",
+      description: product?.description || copy?.description || "",
       // Stored paise → rupee inputs; the service converts back on submit.
       price: product ? paiseToRupees(product.price) : 0,
       salePrice:
@@ -92,10 +102,10 @@ export function ProductForm({
           ? paiseToRupees(product.salePrice)
           : undefined,
       currency: product?.currency || "INR",
-      categoryId: product?.category?.id || "",
+      categoryId: product?.category?.id || copy?.categoryId || "",
       orgId: product?.org?.id || "",
-      tags: product?.tags || [],
-      flags: product?.flags || [],
+      tags: product?.tags || copy?.tags || [],
+      flags: product?.flags || copy?.flags || [],
       // No cover is pre-selected on create (D17a). On edit the saved flag comes back
       // with the rows, so an existing product keeps the cover its org chose.
       media:
@@ -106,8 +116,8 @@ export function ProductForm({
           isThumbnail: item.isThumbnail,
         })) || [],
       weight: product?.weight || 0,
-      sizes: product?.sizes || [],
-      colors: product?.colors || [],
+      sizes: product?.sizes || copy?.sizes || [],
+      colors: product?.colors || copy?.colors || [],
       stockLocations: defaultStockRows,
       sku: product?.sku || "",
       lowStockThreshold: product?.lowStockThreshold || 10,
@@ -130,13 +140,13 @@ export function ProductForm({
   // orgAddressId can then fail validation invisibly (the submit "does nothing").
   const { clearSaved } = useFormPersist("product-creation-form-draft", form, {
     excludeFields: ["stockLocations"],
-    enabled: !isEdit,
+    enabled: persistDraft,
   });
 
   // Cancelling a create abandons it: the next "new product" starts blank.
   // Reset first — it fires watch — then clear, which cancels that queued save.
   const handleCancel = () => {
-    if (!isEdit) {
+    if (persistDraft) {
       form.reset();
       clearSaved();
     }
