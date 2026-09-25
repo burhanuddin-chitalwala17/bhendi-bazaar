@@ -31,6 +31,7 @@ import type { BiddingFormInput } from "@/lib/validation/schemas/bidding.schema";
 import { stockService } from "@server/catalog/stock.service";
 import { productService } from "@server/catalog/product.service";
 import { adminOrgService } from "@server/catalog/org.service";
+import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
 
 /**
  * No 0/O/1/I/l: a bidding link gets read aloud and retyped, and an ambiguous
@@ -333,8 +334,23 @@ export class BiddingService {
   private async notifyOutbid(eventId: string, newBidId: string, slug: string) {
     try {
       const previous = await biddingRepository.leaderBefore(eventId, newBidId);
-      if (!previous?.bidderEmail) return;
+      if (!previous) return;
       const view = await this.publicView(slug);
+
+      if (previous.userId) {
+        const { inAppNotificationService } = await import("@server/notifications/in-app.service");
+        inAppNotificationService
+          .notifyUser({
+            userId: previous.userId,
+            title: "You've been outbid!",
+            message: `Someone placed a higher bid on ${view.product.name}.`,
+            type: NOTIFICATION_TYPE.BID_OUTBID,
+            link: `/bid/${slug}`,
+          })
+          .catch((err) => console.error("Failed to send outbid in-app notification:", err));
+      }
+
+      if (!previous.bidderEmail) return;
       const { emailService } = await import("@server/notifications/email.service");
       await emailService.sendOutbidEmail(previous.bidderEmail, {
         bidderName: previous.bidderName,
@@ -345,8 +361,8 @@ export class BiddingService {
         slug,
       });
     } catch (error) {
-      console.error("Failed to send outbid email:", error);
-      // A mail failure must not unwind an accepted bid (spec R28).
+      console.error("Failed to send outbid notification:", error);
+      // A notification failure must not unwind an accepted bid (spec R28).
     }
   }
 }

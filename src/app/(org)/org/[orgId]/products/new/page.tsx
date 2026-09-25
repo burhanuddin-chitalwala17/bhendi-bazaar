@@ -2,24 +2,33 @@ import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
+import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import type { AdminCategory } from "@/domain/admin";
 
 export default async function OrgNewProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgId: string }>;
+  searchParams: Promise<{ copyFrom?: string | string[] }>;
 }) {
   const { orgId } = await params;
+  const { copyFrom } = await searchParams;
+  // A repeated param arrives as an array; only a single id is a request to copy.
+  const copyFromId = typeof copyFrom === "string" ? copyFrom : undefined;
 
-  // Three independent reads, fetched together. One org, not a list: in this portal there
+  // Independent reads, fetched together. One org, not a list: in this portal there
   // is nothing to choose between, and offering the choice would be offering a product
   // owned by somebody else — read that org by id rather than loading every platform org.
-  const [categoriesResult, org, allLocations] = await Promise.all([
-    adminCategoriesDAL.getCategories(),
-    orgsDAL.getOrgSummary(orgId),
-    orgAddressService.listLocations(orgId),
-  ]);
+  const [categoriesResult, org, allLocations, copyOptions, copySource] =
+    await Promise.all([
+      adminCategoriesDAL.getCategories(),
+      orgsDAL.getOrgSummary(orgId),
+      orgAddressService.listLocations(orgId),
+      adminProductsDAL.getCopyOptions(orgId),
+      copyFromId ? adminProductsDAL.getCopySource(copyFromId, orgId) : null,
+    ]);
 
   if (!org) notFound();
 
@@ -49,6 +58,8 @@ export default async function OrgNewProductPage({
       categories={categories}
       orgs={orgs}
       locations={locations}
+      copySource={copySource}
+      copyOptions={copyOptions}
       uploadTokenEndpoint={`/api/org/${orgId}/upload/token`}
     />
   );

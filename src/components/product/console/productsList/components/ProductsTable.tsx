@@ -3,8 +3,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Archive, ArchiveRestore, Edit, Eye, Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Eye, Heart } from "lucide-react";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockBadge } from "@/components/shared/badges/StatusBadge";
@@ -175,57 +174,26 @@ export function ProductsTable({
     {
       key: "actions",
       label: "Actions",
-      // Prefetch off: two links per row, so a listing puts ~20 admin page fetches in
-      // view — each one an auth re-read plus the product tree, all of it discarded.
-      render: (product) => (
-        <div className="flex items-center gap-2">
+      // The platform list is read-only, so it keeps the one action it has inline.
+      render: (product) =>
+        readOnly ? (
           <Link
             prefetch={false}
             href={`${productsBasePath}/${product.id}`}
-            className="p-2 text-muted-foreground hover:bg-muted/60 rounded-lg transition-colors"
+            className="inline-flex size-10 items-center justify-center text-muted-foreground hover:bg-muted/60 rounded-lg transition-colors"
             title="View product"
           >
             <Eye className="w-4 h-4" />
           </Link>
-          {!readOnly && (
-            <Link
-              prefetch={false}
-              href={`${productsBasePath}/${product.id}/edit`}
-              className="p-2 text-info hover:bg-info/10 rounded-lg transition-colors"
-              title="Edit product"
-            >
-              <Edit className="w-4 h-4" />
-            </Link>
-          )}
-          {!readOnly && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                onSetArchived(product.id, !product.archivedAt, product.name)
-              }
-              disabled={isPending}
-              title={product.archivedAt ? "Restore" : "Archive"}
-            >
-              {product.archivedAt ? (
-                <ArchiveRestore className="w-4 h-4 text-success" />
-              ) : (
-                <Archive className="w-4 h-4 text-muted-foreground" />
-              )}
-              <span className="sr-only">
-                {product.archivedAt ? "Restore product" : "Archive product"}
-              </span>
-            </Button>
-          )}
-          {!readOnly && (
-            <ProductRowMenu
-              product={product}
-              onDelete={onDelete}
-              disabled={isPending}
-            />
-          )}
-        </div>
-      ),
+        ) : (
+          <ProductRowMenu
+            product={product}
+            productsBasePath={productsBasePath}
+            onSetArchived={onSetArchived}
+            onDelete={onDelete}
+            disabled={isPending}
+          />
+        ),
     },
   ];
 

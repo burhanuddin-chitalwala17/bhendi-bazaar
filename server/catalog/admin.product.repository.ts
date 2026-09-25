@@ -307,6 +307,15 @@ export class AdminProductsRepository {
         });
     }
 
+    /** The copy picker's list: the org's available products, names only (copy-product D3). */
+    async listCopyOptions(orgId: string) {
+        return await prisma.product.findMany({
+            where: { orgId, ...AVAILABLE },
+            select: { id: true, name: true, sku: true },
+            orderBy: { name: "asc" },
+        });
+    }
+
     /**
      * Delete product
      */

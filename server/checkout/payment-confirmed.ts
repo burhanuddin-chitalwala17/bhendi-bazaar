@@ -1,5 +1,6 @@
 import { orderRepository } from "@server/checkout/order.repository";
 import type { OrderEmailView } from "@server/notifications/templates/purchaseConfirmationEmail";
+import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
 
 /**
  * What happens once an order's money is real.
@@ -49,6 +50,19 @@ export async function onPaymentConfirmed(orderId: string): Promise<void> {
   // Deliberately nothing here for the wishlist: a purchase does not clear a wish.
   // Only the heart removes a saved product, so someone who bought one as a gift
   // still has theirs saved, and a cancelled order needs nothing put back.
+
+  if (order.userId) {
+    const { inAppNotificationService } = await import("@server/notifications/in-app.service");
+    inAppNotificationService
+      .notifyUser({
+        userId: order.userId,
+        title: "Order Confirmed!",
+        message: `Your order #${order.code} has been placed successfully.`,
+        type: NOTIFICATION_TYPE.ORDER_UPDATE,
+        link: `/order/${order.id}`,
+      })
+      .catch((err) => console.error("[onPaymentConfirmed] failed in-app notification:", err));
+  }
 
   const deliveryAddress = order.address as OrderEmailView["address"] | null;
   // The address book's email is per-address and usually left blank (it isn't asked
