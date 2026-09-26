@@ -31,6 +31,7 @@ import {
 import type { SeedProduct } from "./seed/types";
 import { assertSeedTargetIsAllowed } from "./seed-guard";
 import { handleCandidates } from "../server/catalog/org.handle";
+import { toJsonColumn } from "../server/shared/json";
 
 /** Per-unit markdown on a seeded line, or zero — the same guard the engine applies. */
 function markdownOf(item: { price: number; salePrice?: number }): number {
@@ -227,8 +228,9 @@ async function main() {
         panNumber: orgData.panNumber,
         isActive: orgData.isActive,
         isVerified: orgData.isVerified,
-        description: orgData.description,
-        logoUrl: orgData.logoUrl,
+        // The public face is its own row (org-profile spec trd D1), born with the org.
+        profile: { create: { description: orgData.description, logoUrl: orgData.logoUrl } },
+        listingDefaults: { create: {} },
       },
     });
     console.log(`  ✓ ${org.name} (${org.code})`);
@@ -332,7 +334,7 @@ async function main() {
         id: orderData.id,
         code: orderData.code,
         userId: orderData.userId,
-        address: orderData.address as any,
+        address: toJsonColumn(orderData.address),
         notes: orderData.notes,
         itemsTotal: orderData.itemsTotal,
         shippingTotal: orderData.shippingTotal,
@@ -452,7 +454,7 @@ async function main() {
   // ====================
   console.log("🛒 Seeding abandoned carts...");
   for (const cartData of seedCarts) {
-    const cart = await prisma.cart.create({
+    await prisma.cart.create({
       data: {
         id: cartData.id,
         userId: cartData.userId,
@@ -482,7 +484,7 @@ async function main() {
   console.log("🚚 Seeding shipping providers...");
   for (const shippingProviderData of seedShippingProviders) {
     const shippingProvider = await prisma.shippingProvider.create({
-      data: shippingProviderData as any,
+      data: shippingProviderData,
     });
     console.log(`  ✓ ${shippingProvider.name}`);
   }

@@ -1,5 +1,6 @@
 # Spec — org-storefront
 
+- **Summary:** Every selling organisation gets a storefront of its own at a link it can promote
 - **Status:** ✅ Implemented — all seven subfeatures; each carries its own spec
 - **Domain:** catalog, with cross-domain reads
 - **Phase:** 9 — Seller storefronts

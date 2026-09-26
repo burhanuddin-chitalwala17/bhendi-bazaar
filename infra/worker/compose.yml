@@ -1,0 +1,26 @@
+# The worker's compose stack: one service, restarted always, configured only by an env file the
+# deploy writes (worker-foundation trd D7, D9). Runs unchanged on any Linux host with Docker.
+#
+#   WORKER_IMAGE  the image reference to run, set by the deploy (defaults to a local build)
+#   .env          DATABASE_URL, APP_ENV, and the R2 variables; never committed
+services:
+  worker:
+    image: ${WORKER_IMAGE:-bhendi-bazaar-worker:local}
+    build:
+      context: ../..
+      dockerfile: infra/worker/Dockerfile
+    env_file: .env
+    restart: always
+    init: true
+    stop_grace_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    healthcheck:
+      # Alive means the process is up; the real health is the heartbeat row admin reads.
+      test: ["CMD", "sh", "-c", "kill -0 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3

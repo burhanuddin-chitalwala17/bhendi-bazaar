@@ -1,5 +1,6 @@
 # Spec — copy-product
 
+- **Summary:** An org starts a new product from one of its own, carrying the descriptive fields
 - **Status:** Implemented — PR-147
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness

@@ -2,6 +2,7 @@
 
 "use client";
 
+import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle, Copy } from "lucide-react";
 import { ProductForm } from "@/components/shared/forms/product";
@@ -25,7 +26,7 @@ interface ProductAddContainerProps {
   /** The org's products offered in the "Copy from" picker. */
   copyOptions?: ProductCopyOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
-  uploadTokenEndpoint?: string;
+  uploadEndpoints?: UploadEndpoints;
 }
 
 export function ProductAddContainer({
@@ -34,7 +35,7 @@ export function ProductAddContainer({
   locations,
   copySource,
   copyOptions = [],
-  uploadTokenEndpoint,
+  uploadEndpoints,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -98,7 +99,7 @@ export function ProductAddContainer({
         onCancel={handleCancel}
         isSubmitting={isLoading}
         readOnly={false}
-        uploadTokenEndpoint={uploadTokenEndpoint}
+        uploadEndpoints={uploadEndpoints}
       />
     </div>
   );

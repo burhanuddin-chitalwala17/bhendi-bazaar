@@ -12,7 +12,7 @@ import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { DomainError } from "@server/shared/domain-error";
-import { presignUpload } from "@server/catalog/object-store";
+import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { orgRepository } from "@server/catalog/org.repository";
 import { presignUploadSchema } from "@/lib/validation/schemas/upload.schema";
 
@@ -31,7 +31,16 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     if (!pathname.startsWith(prefix)) {
       throw new DomainError(`Uploads must live under ${prefix}`);
     }
-    return NextResponse.json(await presignUpload(pathname, contentType, size));
+    // Register before signing: the record exists before the bytes move (media-library R1).
+    return NextResponse.json(
+      await mediaAssetService.beginUpload({
+        orgId: scope.orgId,
+        uploaderId: scope.userId,
+        pathname,
+        contentType,
+        size,
+      }),
+    );
   } catch (error) {
     return toErrorResponse(error, "Could not authorise the upload");
   }

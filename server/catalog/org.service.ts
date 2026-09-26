@@ -1,6 +1,7 @@
 // src/server/services/admin/org.service.ts
 
 import { orgRepository } from "@server/catalog/org.repository";
+import { orgProfileRepository } from "@server/catalog/org-profile.repository";
 import type { CreateOrgInput } from "@server/catalog/org.types";
 import type { CreateOrgInput as CreateOrgSchemaInput } from "@/lib/validation/schemas/org.schema";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
@@ -123,8 +124,12 @@ export class AdminOrgService {
   }
 
   async updateOrg(id: string, data: Partial<CreateOrgInput>) {
-    // Update org
-    return await orgRepository.update(id, data);
+    const { description, ...org } = data;
+    // Two repositories, two tables: the introduction is public face and lives on the profile.
+    if (description !== undefined) {
+      await orgProfileRepository.updateDescription(id, description || null);
+    }
+    return await orgRepository.update(id, org);
   }
 
   /**

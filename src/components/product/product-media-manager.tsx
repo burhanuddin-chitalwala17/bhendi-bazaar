@@ -43,6 +43,7 @@ import {
 import { buildImagePath, imageFileProblem } from "@server/catalog/image-paths";
 import { downscaleImage } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
+import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 
 /** Bounded, not a stampede: a phone's radio and the presign route both prefer it. */
 const UPLOAD_CONCURRENCY = 3;
@@ -50,8 +51,8 @@ const UPLOAD_CONCURRENCY = 3;
 interface ProductMediaManagerProps {
   value: ProductMediaInput[];
   onChange: (media: ProductMediaInput[]) => void;
-  /** The presign route — the caller knows whose guard applies. Bytes never reach it. */
-  tokenEndpoint: string;
+  /** The register-and-sign and confirm routes — the caller knows whose guard applies. Bytes never reach them. */
+  endpoints: UploadEndpoints;
   /**
    * The owning org's code. It is the folder the presign route will sign a path under,
    * so without it there is nothing to ask permission for.
@@ -64,7 +65,7 @@ interface ProductMediaManagerProps {
 export function ProductMediaManager({
   value,
   onChange,
-  tokenEndpoint,
+  endpoints,
   orgCode,
   identifier,
 }: ProductMediaManagerProps) {
@@ -123,7 +124,7 @@ export function ProductMediaManager({
             uploadedUrls[job.index] = await uploadDirect(
               buildImagePath("products", job.file.name, identifier, orgCode),
               job.file,
-              tokenEndpoint,
+              endpoints,
             );
           } catch (error) {
             // A network failure part-way through cannot be undone without deleting what

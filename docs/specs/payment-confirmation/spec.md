@@ -1,5 +1,6 @@
 # Spec — payment confirmation
 
+- **Summary:** An order is paid when the gateway says so, for the right amount
 - **Status:** ✅ Implemented — PR-39 (R7's refund flow remains Phase 5, as scoped)
 - **Domain:** payments, checkout
 - **Phase:** 2 — Transaction integrity

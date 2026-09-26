@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-149] 2026-09-24 — [MIGRATION] [CONTRACT] In-app notification system
+## [PR-159] 2026-09-26 — In-app notification system [MIGRATION] [CONTRACT]
 
 In-app notification system delivering real-time and polled alerts (order status updates, outbid alerts, promotions, and system notifications) with unread badge counters, status tracking (read/unread), a read history, and mobile-first drawer/popover panels.
 
@@ -22,6 +22,156 @@ In-app notification system delivering real-time and polled alerts (order status 
 - **Closed set**: `NOTIFICATION_TYPE` in `server/notifications/in-app.types.ts` is the one declaration the Zod schema, the bell and every caller read; a `satisfies` against the Prisma enum fails the build if they drift.
 - **Tests**: 12 unit tests in `tests/unit/in-app-notification.test.ts`; `tests/unit/notification-history.test.ts` covers the inbox/history split and the on-site link rule; `tests/unit/outbid-notification.test.ts` covers the outbid notice, whose recipient `leaderBefore` now returns alongside the ladder entry.
 
+## [PR-158] 2026-09-26 — The worker card fails alone, and APP_ENV is required in deployments
+
+The first preview deploy of the dashboard's worker card returned a 500 for the whole admin page:
+the preview environment had no `APP_ENV`, the environment lookup refuses to guess in a production
+build, and the card let the throw reach the page. The card now catches and renders "status
+unavailable" with the cause in the server log, the way every other dashboard widget fails alone
+(dashboard-widgets R5), with a component test for both faces. OPERATIONS.md marks `APP_ENV`
+required and says to set it in Vercel for Preview and Production.
+
+## [PR-157] 2026-09-26 — The video player is admitted by the Content-Security-Policy
+
+Every product video on the live store rendered as Chrome's "This content is blocked" while the
+poster beside it loaded. ADR-0035's `frame-src` admitted the payment gateway and nothing else; the
+YouTube poster host had been added to `img-src`, but the player iframe on `youtube-nocookie.com`
+(ADR-0017) had no entry, and the header test asserted only what the ADR listed. `frame-src` now
+names the embed origin, and `tests/unit/security-headers.test.ts` derives the embed and poster
+hosts from the functions in `server/catalog/media.ts` that emit them, so the policy fails the
+suite rather than the storefront if either moves.
+
+## [PR-156] 2026-09-26 — The quota runbook names the quotas Oracle actually enforces
+
+Creating the first machine was refused with "compartment quotas were exceeded" naming
+`standard-a1-core-regional-count` and `standard-a1-memory-regional-count`: region-scoped variants
+that a wildcard `zero` covers but the documented `set` lines did not reopen. OPERATIONS.md adds a
+`set` for each, and records that the micro shape has no regional variant because Oracle rejects that
+name. The machine was then created, and `infra/worker/provision.sh` ran clean on its first real
+Ubuntu 24.04 the first time.
+
+## [PR-155] 2026-09-26 — The worker loads the env file
+
+`npm run worker` failed with "DATABASE_URL is not set" on a laptop whose `.env` had it: a plain
+script does not get Next.js's env loading, and every local run so far had exported the variable
+in the shell. `worker/main.ts` now starts with `dotenv/config`, as `prisma/seed.ts` and the
+backfill script do. Harmless in the container, where compose supplies the environment.
+
+## [PR-154] 2026-09-26 — The worker's image, machine script and deploy, ahead of the machine
+
+worker-foundation PR 2 of 3, the half that needs no machine (trd D7–D9). `infra/worker/Dockerfile`
+builds the worker from the lockfile with the Prisma client generated and only `server/`, `worker/`
+and `prisma/` on a Node 22 base, run as `node --import tsx`; built locally, run against the local
+database, it came up, wrote its heartbeat with the stamped version, and drained cleanly on SIGTERM
+with exit code 0. `infra/worker/compose.yml` runs it restart-always from an env file the deploy
+writes; `infra/worker/provision.sh` turns a fresh Ubuntu 24.04 into the machine — security updates,
+firewall to SSH only, keys-only SSH, Docker, the stack as a boot service, weekly image prune — and is
+idempotent, so it is also the rebuild. The `deploy-worker` job in CI builds the image for arm64 and
+amd64 on every push, pushes it to the repository's container registry, and on `main` restarts the
+stack over SSH; until `WORKER_HOST` exists it builds and skips.
+
+OPERATIONS.md gains the runbook: the budget alert, the quota policy that makes paid shapes
+impossible rather than merely noticed, the machine steps, the six repository secrets, the staging
+worker by hand, and the rebuild. `.env.worker.example` names what the worker reads. The docs gate
+now also checks path references under `infra/` and `worker/`. The image is 1.1 GB because it
+carries the whole lockfile; trimming waits for a second job type.
+
+## [PR-153] 2026-09-26 — The seed's two `any` casts are gone
+
+`prisma/seed.ts` cast an order's address and a shipping provider's row to `any`, the two lint
+errors the file had carried since before this phase. The address now goes through `toJsonColumn`,
+which moved from `server/shared/prisma.ts` to `server/shared/json.ts` so a script can use it
+without opening a connection pool (the old path re-exports it); the provider rows are typed as
+`SeedShippingProvider[]`, whose three fields Prisma defaults became optional to match the data.
+An unused `cart` binding went with them. No behaviour change.
+
+## [PR-152] 2026-09-26 — Every stored image becomes a record [MIGRATION] [CONTRACT]
+
+media-library PR 1 of 6 ([spec](specs/media-library/spec.md), trd D1–D3). `MediaAsset` is the one
+record behind every image URL the schema holds: dimensions, bytes, format, owner, uploader, source,
+what it was derived from, and a state. Every referencing column — gallery rows, category heroes,
+profile logo and hero, both banner tables — gains a nullable asset reference that refuses deletion
+while it points at one (R7).
+
+Uploads register before they move (R1, D2): the two presign routes create a pending row and return
+its id with the signed URL; `uploadDirect` PUTs the bytes and then calls a new confirm route, which
+asks the store what it actually holds and takes the dimensions from the browser's canvas or, failing
+that, from the object itself, so a ready asset always has them. A failed confirm is a failed upload.
+Callers now pass an endpoint pair from `src/lib/image/upload-endpoints.ts`; the review photograph
+path registers nothing and is untouched. The server-side upload path records its assets ready,
+with dimensions from the same sharp pass that normalises them.
+
+Gallery rows link to their asset by URL on every product write, admin and bulk alike, so nothing
+in the form or the wire shape changed for that. Images already stored are brought under the record
+by `npm run media:backfill`, idempotent and dry-run by default, which also records video references
+as embed assets ([OPERATIONS.md](OPERATIONS.md) says when to run it). A sweep for uploads that never
+confirmed exists as a service and waits for the worker's first schedule to be wired.
+
+Database-backed suite run locally: pending to ready exactly once, only ready assets link, a
+referenced pending row survives the sweep, and the backfill creates each asset once with dimensions
+read from the bytes.
+
+## [PR-151] 2026-09-26 — An organisation's public face becomes its own table [MIGRATION]
+
+seller-profile PR 1 of 4 ([spec](specs/seller-profile/spec.md), trd D1–D4). The seven storefront
+columns on `Org` — tagline, introduction, logo, hero, accent, delivery and returns terms — move to
+`OrgProfile`, one row per organisation, created with it. `OrgListingDefaults` (origin, tax rate in
+basis points, tax code per category) and `Brand` (name, manufacturer, packer or importer, origin,
+retired-never-deleted) arrive as empty tables with their repositories; the portal screens that
+fill them are PR 2. The migration is hand-ordered — create, copy every org's values, then drop —
+because the generated script dropped first. Proven on a throwaway database: an org inserted with
+the old columns comes out the other side with its profile row populated and the old columns gone.
+
+The storefront reads the profile table only, taking identity alone from `Org`, through two
+exported selects that `tests/unit/storefront-public-dto.test.ts` holds to an allowlist, so a
+private column can no longer reach a buyer by being added to the row (seller-identity R5 made
+structural). The about page's DTO is unchanged and pinned by the same test (spec A6). Admin's org
+list keeps description and logo through the relation; the seed creates the profile beside the org.
+No wire shape changed, so no `[CONTRACT]`; CONTRACTS.md gains a section naming the shapes and
+their new source.
+
+## [PR-150] 2026-09-26 — The job queue and the worker, with nothing in them yet [MIGRATION]
+
+worker-foundation PR 1 of 3 ([spec](specs/worker-foundation/spec.md), [ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)).
+The queue is pg-boss's tables in our own Postgres, applied as a Prisma migration from the
+library's exported construction plan, so the library never migrates at runtime and a deploy
+runs one migration tool. One seam, `server/shared/jobs/`, is the only importer of pg-boss: a
+typed `enqueue` that takes the caller's Prisma transaction, so a job commits or rolls back with
+the row it concerns and the notify that wakes the worker fires only on commit; a registry that
+parses every payload against its type's Zod schema before a handler sees it; and a status read
+for admin. `worker/main.ts` is the second entrypoint — a composition root that registers each
+domain's handlers and works one queue, with per-organisation concurrency through pg-boss groups.
+The only job is `ping`, the smoke test that stays.
+
+Every pg-boss timer is declared once in `jobs.config.ts`, in minutes, and `tests/unit/jobs-config.test.ts`
+reads that same object: it asserts every interval the library exposes is named (an omitted one
+takes the two-second default), none is under a minute, and the modelled idle total clears a
+declared daily ceiling. The database bills every poll; this is ADR-0038 D8 made a gate.
+
+Admin gains a worker card on the dashboard: last seen, waiting, running, failed, red past ten
+minutes or if never seen, with a re-run action for the failed queue that writes an audit entry
+(`POST /api/admin/jobs/redrive`). `APP_ENV` names the environment the heartbeat keys on
+([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2).
+
+Database-backed suite run locally against a migrated throwaway database: enqueue commits with the
+transaction, rolls back with it, refuses a bad payload before touching the queue, and Prisma
+Migrate reports no drift with the `pgboss` schema present — the ADR's one open consequence,
+closed. No machine yet; that is PR 2.
+
+## [PR-149] 2026-09-26 — Index tables are generated, and five specs are accepted
+
+The tables in `docs/adr/README.md` and `docs/specs/README.md` were hand-copied headers with
+nothing checking them — 35 ADR rows and 32 spec rows, one folder away from the files they
+described, and missing `home-banners` entirely. `scripts/docs-index.mjs` now renders them from
+each file's own header, `npm run docs:index` rewrites them, and `docs:check` gains a gate that
+fails while a committed table differs. Every `spec.md` gained a one-line `Summary` header, which
+is the row; the 19 subfeatures get their own generated table for the first time. The skill and
+the ADR README say "run the generator" where they said "add a row". `CLAUDE.md` records the
+convention.
+
+Also here, by the owner's decision on 2026-09-26: `worker-foundation`, `seller-profile` with
+`brand-page`, and `media-library` with `renditions` move from Draft to Accepted, with brand-page's
+three open questions closed on their proposed defaults. BACKLOG's Phase 11 rows follow.
 ## [PR-148] 2026-09-23 — A product photo left on the retired store reads as no image, not a crash
 
 Two local products still held thumbnail and gallery URLs on the retired Vercel Blob host, and

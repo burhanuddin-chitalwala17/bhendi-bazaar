@@ -1,5 +1,6 @@
 # Spec — shipping fulfilment
 
+- **Summary:** A paid order becomes a real, trackable parcel
 - **Status:** Draft — deferred by decision (2026-08-10, see Open decision)
 - **Domain:** shipping
 - **Phase:** 3 — Fulfilment

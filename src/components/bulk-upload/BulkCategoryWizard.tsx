@@ -15,6 +15,7 @@ import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { imagesOnly, relativePath, sanitizePath } from "./files";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
+import { ADMIN_UPLOAD_ENDPOINTS } from "@/lib/image/upload-endpoints";
 
 interface ValidateResponse {
   ok: boolean;
@@ -78,7 +79,7 @@ export function BulkCategoryWizard() {
         const url = await uploadDirect(
           `categories/bulk/${storedPathFor(sanitizePath(path), hero)}`,
           hero,
-          "/api/admin/upload/token",
+          ADMIN_UPLOAD_ENDPOINTS,
         );
         urls.set(row.image, url);
       }

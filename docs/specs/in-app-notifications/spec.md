@@ -1,6 +1,7 @@
 # Spec — in-app-notifications
 
-- **Status:** ✅ Implemented — PR-149
+- **Summary:** Signed-in users receive real-time and polled in-app alerts with unread badge counter and drawer/popover panel
+- **Status:** ✅ Implemented — PR-159
 - **Domain:** notifications, cross-domain
 - **Phase:** 5 — Scale & operability
 - **Verified:** 2026-09-25

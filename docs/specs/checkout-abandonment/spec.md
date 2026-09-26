@@ -1,5 +1,6 @@
 # Spec — checkout abandonment
 
+- **Summary:** An unpaid checkout releases its goods within minutes and is shown to nobody
 - **Status:** ✅ Implemented — PR-104
 - **Domain:** checkout, payments
 - **Phase:** 2 — Transaction integrity

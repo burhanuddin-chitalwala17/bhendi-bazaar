@@ -1,5 +1,6 @@
 # Spec — international-phone
 
+- **Summary:** Every phone field accepts a number from any country, and one number has one spelling
 - **Status:** Implemented
 - **Domain:** cross-domain (identity, catalog, checkout)
 - **Phase:** — (cross-cutting)

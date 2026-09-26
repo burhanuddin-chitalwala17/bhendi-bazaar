@@ -1,5 +1,6 @@
 # Spec — inventory reservation
 
+- **Summary:** Stock counts mean something; the last unit sells once
 - **Status:** ✅ Implemented — PR-40
 - **Domain:** checkout, catalog
 - **Phase:** 2 — Transaction integrity

@@ -1,5 +1,6 @@
 # Spec — storefront-browse
 
+- **Summary:** Search, category navigation and filters that see one organisation's catalogue and nothing else
 - **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts

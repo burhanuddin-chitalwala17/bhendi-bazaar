@@ -1,5 +1,6 @@
 # Spec — error-tracking
 
+- **Summary:** When something fails, somebody finds out — in minutes, with enough detail to act
 - **Status:** Draft
 - **Domain:** cross-domain
 - **Phase:** 5 — Scale & operability

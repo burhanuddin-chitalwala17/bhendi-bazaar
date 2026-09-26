@@ -9,6 +9,7 @@
 
 import { toInternalPath } from "@server/shared/internal-href";
 import { orgRepository } from "@server/catalog/org.repository";
+import { orgProfileRepository } from "@server/catalog/org-profile.repository";
 import {
   orgBannerRepository,
   type OrgBannerInput,
@@ -65,7 +66,7 @@ function normaliseBanner(input: BannerInput): OrgBannerInput {
 export const storefrontService = {
   /** This org's storefront as it stands, for its own editor. */
   async getSettings(orgId: string) {
-    const settings = await orgRepository.findStorefrontSettings(orgId);
+    const settings = await orgProfileRepository.findSettings(orgId);
     if (!settings) throw new NotFoundError("Organisation not found");
     return settings;
   },
@@ -77,7 +78,7 @@ export const storefrontService = {
    * so a `handle` or a `commissionBps` arriving here reaches nothing (Invariant 4).
    */
   async saveSettings(orgId: string, input: StorefrontSettingsInput) {
-    await orgRepository.updateStorefront(orgId, {
+    await orgProfileRepository.updateSettings(orgId, {
       tagline: orNull(input.tagline),
       description: orNull(input.description),
       logoUrl: orNull(input.logoUrl),
@@ -114,7 +115,7 @@ export const storefrontService = {
    * "is it free?" is stale the instant it is answered.
    */
   async changeHandle(orgId: string, requested: string) {
-    const settings = await orgRepository.findStorefrontSettings(orgId);
+    const settings = await orgProfileRepository.findSettings(orgId);
     if (!settings) throw new NotFoundError("Organisation not found");
 
     const next = requested.trim().toLowerCase();
@@ -206,7 +207,7 @@ export const storefrontService = {
     const raw = href?.trim();
     if (!raw) return null;
 
-    const settings = await orgRepository.findStorefrontSettings(orgId);
+    const settings = await orgProfileRepository.findSettings(orgId);
     if (!settings) throw new NotFoundError("Organisation not found");
 
     const refuse = () => {

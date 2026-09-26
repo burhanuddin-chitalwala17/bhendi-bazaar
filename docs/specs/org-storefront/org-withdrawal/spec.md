@@ -1,5 +1,6 @@
 # Spec — org-withdrawal
 
+- **Summary:** One switch takes an organisation and all its goods off the platform, and one puts it back
 - **Status:** ✅ Implemented
 - **Domain:** catalog, reaching into cart, checkout, bidding, promotions
 - **Phase:** 9 — Seller storefronts

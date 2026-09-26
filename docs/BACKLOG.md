@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-26
 - **Covers:** `docs/specs/*/`
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
@@ -23,6 +23,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-97 |
 | **9** — Seller storefronts | Every selling organisation gets a public storefront of its own, at a link it can promote | catalog | ✅ **Done** — 7 subfeatures |
 | **10** — Discoverability | The store is findable: every public page describes itself, every product is machine-readable, every URL answers honestly | catalog, *(cross-domain)* | ⏳ Not started — 1 spec drafted (seo) |
+| **11** — Listing: one entry, every channel | A product is described once, from its photographs, and is ready for the store, Amazon, Flipkart and Instagram from that one entry | catalog, content, listing, social, *(cross-domain)* | 🔨 In progress — 3 of 9 specs accepted (worker-foundation, seller-profile, media-library) plus 2 subfeatures; ADR-0037, ADR-0038 |
 
 ---
 
@@ -79,7 +80,7 @@ Two of this phase's strands are now specified; the rest stays deliberately undet
 |---|---|---|
 | [error-tracking](specs/error-tracking/) | When something fails, somebody finds out — in minutes, with enough detail to act | 📝 Draft |
 | [read-caching](specs/read-caching/) | A page that renders the same for everyone is built once, and no price on it is ever stale | 📝 Draft |
-| [in-app-notifications](specs/in-app-notifications/spec.md) | Signed-in users receive real-time and polled in-app alerts with unread badge counter and drawer/popover panel | ✅ Implemented — PR-149 |
+| [in-app-notifications](specs/in-app-notifications/spec.md) | Signed-in users receive real-time and polled in-app alerts with unread badge counter and drawer/popover panel | ✅ Implemented — PR-159 |
 
 Both were pulled forward out of "not started" for the same reason: Phase 9 shipped a URL designed to be *shared*, so the storefront now attracts the one traffic shape that uncached reads handle worst, and the store's growing set of deliberately fail-open controls — the limiter, the reconciliation sweep, the ledger backfill — each record a failure and notify nobody.
 
@@ -163,6 +164,27 @@ Two of this phase's constraints come from earlier decisions rather than from sea
 
 It also closes the **soft 404** entry on the watch list below, which has been open since it was recorded: the fix is one of four PRs here rather than a standalone commit, because the missing `not-found.tsx` and `error.tsx` boundaries are what make 404 and 500 separable at all.
 
+
+## Phase 11 — Listing: one entry, every channel
+
+A new phase, added 2026-09-25. The seller's real cost is not the storefront; it is describing the same product four times — Amazon, Flipkart, Meesho, the store — and photographing it badly once. The wedge is one entry that is ready for every channel, with the photographs as the primary evidence of what the product is and a phone photo turned marketplace-grade in one tap. Marketplace publishing itself comes later; this phase builds what it needs and measures itself against the seller's current 5–10 minutes per Amazon listing.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | 🔨 In progress — PR-150, PR-154 (2 of 3; machine pending) |
+| [seller-profile](specs/seller-profile/) | A private face for what listing needs (brands, manufacturers, origin, tax codes) and a public face for what a buyer may see; nothing demanded before it is needed | 🔨 In progress — PR-151 (1 of 4) |
+| [media-library](specs/media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 🔨 In progress — PR-152 (1 of 6) |
+| [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | ✅ Accepted — 2026-09-26 |
+| [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Accepted — 2026-09-26 |
+| image-enhancement | Cutout to white background and to a generated backdrop, as derived images, with a per-org usage ledger and quota; a dark or blurred warning at upload offers "improve this photo" as its way out; the first work on the owned worker | planned |
+| listing-schema | A canonical vocabulary, per-channel mappings held as data, product families, one effective-attribute resolver, per-value provenance, and readiness per channel | planned |
+| product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | planned |
+| instagram-post | A post draft generated only on explicit intent, replaceable, regenerable, skippable; manual share first | planned |
+| channel-files | Export a valid marketplace flat-file row; import an existing Seller Central catalogue at onboarding | planned |
+| instagram-publish | Automatic publishing through the Graph API, on the worker | planned |
+
+Sequenced so that the three foundations run in parallel and the demo lands next: worker-foundation, seller-profile and media-library touch different tables and start together — the worker was pulled forward on 2026-09-25 because the library's sweep, pre-rendering and video transcoding are its first jobs; image-enhancement needs the library and the worker ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)); listing-schema needs brands and the marketplace templates; everything after needs listing-schema. Two rules from earlier phases bind the whole of it: the server stays the sole authority on money ([Invariant 1](../CLAUDE.md)) whatever a channel says a price is, and the host constrains operations, never design ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)).
+
 ---
 
 ## Cross-cutting watch list
@@ -174,6 +196,7 @@ Not a phase, but tracked:
 - **Error-envelope adoption** ([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)) — every handler under `/api/admin` now returns through `toErrorResponse` (PR-21, PR-25). Remaining: the signup, forgot-password, reset-password and provider-connect **forms**, the bidding panel's guest details (`BidPanel` — its phone field moved to `PhoneInput` in PR-102 without the conversion, which would rewrite the bid submit flow), and the non-admin handlers they post to. Decision 7 makes conversion obligatory when a file is touched, so this shrinks as work happens rather than needing a dedicated sweep.
 - **Duplicate declarations** ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — runtime symbol names resolved in PR-08 (14 → 2). Two remain, both deliberate: `formatCurrency` is behaviourally identical, and `isValidPincode` needs the decision below. The 26 remaining *type* duplicates are the [CONTRACTS.md](CONTRACTS.md) work.
 - **Phone-based sign-in and recovery are blocked, not merely unbuilt** ([ADR-0024](adr/0024-phone-is-contact-data-not-an-identity-key.md)) — since PR-103 a phone number may back any number of accounts, so OTP login, "recover my account by phone" and any dedupe-by-number all lose the assumption they rest on. Each needs a way to disambiguate *which* account before it can be built, and that is its own ADR. Phone is also no longer any signal against throwaway accounts.
+- **A guided shoot needs a native camera.** [media-library](specs/media-library/) checks photos after they are chosen because a web page's camera button opens the phone's camera app and hands back a file; an in-browser viewfinder would give live framing and a shot sequence but forfeits the phone's own image processing and fails inside in-app browsers. If a native app is ever built, the guided shoot — front, back, label, one tap each — is its first feature.
 - **Courier phone format** — every phone has been E.164 since [international-phone](specs/international-phone/) (PR-102), and may be non-Indian. What Shiprocket accepts for a pickup or delivery phone is unverified, and must be known before [shipping-fulfilment](specs/shipping-fulfilment/) books real parcels.
 - **PIN code validation** — consolidated to one rule in PR-09 (eleven declarations → one). Remaining: query existing `Address` rows for PIN codes with a leading zero, which the tightened rule rejects on update.
 - **Error swallowing in the data layer** — PR-13 fixed `products.dal.ts`; the same catch-and-relabel pattern remains in the other DAL modules and in `server/catalog/product.repository.ts`, where a query failure is reported as `"Product not found"`. Preserve `cause`; keep absence distinguishable from failure.

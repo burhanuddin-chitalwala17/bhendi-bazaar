@@ -1,5 +1,6 @@
 # Spec — org payouts
 
+- **Summary:** What each organisation has earned, what the platform kept, and what is still owed
 - **Status:** 🔨 In progress — ledger, settlement and org-facing API landed (PR-67); console screens outstanding
 - **Domain:** payouts *(new)*, checkout
 - **Phase:** 7 — Promotions & settlement

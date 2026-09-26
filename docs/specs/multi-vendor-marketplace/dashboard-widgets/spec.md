@@ -1,5 +1,6 @@
 # Spec — dashboard widgets
 
+- **Summary:** One dashboard assembled from widgets, each declaring which audience it is for
 - **Status:** ✅ Implemented (PR-50)
 - **Domain:** analytics, cross-domain
 - **Phase:** 3 — Fulfilment

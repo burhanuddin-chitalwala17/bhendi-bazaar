@@ -30,6 +30,7 @@ Scaffolds a feature folder under `docs/specs/`. Convention: [ADR-0010](../../../
 ```markdown
 # Spec — <feature>
 
+- **Summary:** <one line, in product terms — this is the row in the specs index>
 - **Status:** Draft
 - **Domain:** <bounded context from CLAUDE.md, or cross-domain>
 - **Phase:** <phase from BACKLOG.md>
@@ -100,7 +101,7 @@ Must be closed before Draft → Accepted.
 ```
 
 6. **Enforce the cap.** ≤100 **readable** lines each — prose only, excluding front-matter, headings, table rows, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures. Count it; don't estimate.
-7. **Add a row** to `docs/specs/README.md`, and to `docs/BACKLOG.md` under its phase.
+7. **Index it.** Give the spec header a one-line `Summary`, run `npm run docs:index` (the specs tables are generated from headers; never type a row), and add the row to `docs/BACKLOG.md` under its phase by hand.
 
 ---
 
@@ -126,7 +127,7 @@ Adds an immutable decision record. Format and rules: [docs/adr/README.md](../../
 - **Consequences:** ✅ what gets easier, ⚠️ what gets harder or riskier. Be honest about the costs; an ADR listing only benefits is advocacy.
 ```
 
-5. **Add a row** to that folder's `README.md` index.
+5. **Run `npm run docs:index`.** The index is generated from each ADR's header; a typed row fails `docs:check`.
 6. **To reverse a past decision:** write a new ADR, then edit **only** the old one's `Status` line to `Superseded by ADR-NNNN` and add a pointer. Never edit a past Context, Decision, or Alternatives.
 7. **If the decision sets a standing convention**, add a one-line pointer to the *Documentation & Process Conventions* index in the root `CLAUDE.md`. A rule that lives only in an ADR will not be followed — ADRs are not loaded into a session; `CLAUDE.md` is.
 

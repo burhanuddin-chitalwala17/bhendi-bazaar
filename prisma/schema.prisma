@@ -16,6 +16,85 @@ datasource db {
   provider = "postgresql"
 }
 
+/// One row per worker environment, upserted by the worker on a fixed cadence so admin can
+/// say when it was last seen rather than guess (worker-foundation R5). Counts are copied from
+/// the queue at the same moment; they are a snapshot, not a source of truth.
+model WorkerHeartbeat {
+  environment String   @id
+  version     String
+  lastSeenAt  DateTime
+  waiting     Int
+  active      Int
+  failed      Int
+}
+
+/// Every image the platform stores, as a record (media-library R1): what it is, how big, who
+/// owns it, where it came from, and what it was made from. `ref` follows `ProductMedia.ref` —
+/// a public URL for an image, a bare video id for an embed — so the two agree by construction.
+/// A derived image records its source and its transform and never alters the source (R3).
+/// Retired, never deleted, while anything references it (R7): every reference is `Restrict`.
+model MediaAsset {
+  id        String         @id @default(cuid())
+  kind      MediaAssetKind
+  ref       String
+  /// Our object's pathname when the image lives in our store; null for an external URL or an embed.
+  objectKey String?        @unique
+
+  width    Int?
+  height   Int?
+  bytes    Int?
+  mimeType String?
+
+  /// Null means platform-owned: category heroes, home banners.
+  orgId      String?
+  org        Org?    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  uploaderId String?
+  uploader   User?   @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  source        MediaAssetSource
+  derivedFromId String?
+  derivedFrom   MediaAsset?      @relation("Derivation", fields: [derivedFromId], references: [id], onDelete: Restrict)
+  derivatives   MediaAsset[]     @relation("Derivation")
+  /// How a derived asset was made from its source — a crop rectangle, a surface key, an operation.
+  transform     Json?
+
+  /// PENDING between the presign and the confirm; READY once the store has the bytes and the
+  /// record has the dimensions; RETIRED when nothing should use it any more (trd D2, D8).
+  state     MediaAssetState @default(PENDING)
+  retiredAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productMedia   ProductMedia[]
+  categoryHeroes Category[]     @relation("CategoryHero")
+  profileLogos   OrgProfile[]   @relation("ProfileLogo")
+  profileHeroes  OrgProfile[]   @relation("ProfileHero")
+  orgBanners     OrgBanner[]    @relation("OrgBannerImage")
+  banners        Banner[]       @relation("BannerImage")
+
+  @@index([orgId, state])
+  @@index([ref])
+  @@index([derivedFromId])
+}
+
+enum MediaAssetKind {
+  IMAGE
+  VIDEO_EMBED
+}
+
+enum MediaAssetSource {
+  UPLOAD
+  DERIVED
+  EMBED
+}
+
+enum MediaAssetState {
+  PENDING
+  READY
+  RETIRED
+}
+
 model Category {
   id          String         @id @default(cuid())
   slug        String         @unique
@@ -27,6 +106,8 @@ model Category {
   children    Category[]     @relation("CategoryTree")
   description String         @db.Text
   heroImage   String // URL to hero image
+  heroAssetId String?
+  heroAsset   MediaAsset?    @relation("CategoryHero", fields: [heroAssetId], references: [id], onDelete: Restrict)
   accent      CategoryAccent @default(EMERALD)
   order       Int            @default(0)
   createdAt   DateTime       @default(now())
@@ -130,6 +211,11 @@ model ProductMedia {
   /// A blob URL for IMAGE, a bare video id for YOUTUBE — never a provider URL, so the
   /// host stays swappable by backfill rather than by migration (ADR-0017 decision 2).
   ref  String
+
+  /// The library record behind an IMAGE row, linked by `ref` on write and by the backfill.
+  /// Nullable through the transition; a video reference has none (media-library trd D1).
+  assetId String?
+  asset   MediaAsset? @relation(fields: [assetId], references: [id], onDelete: Restrict)
 
   position    Int
   /// Per-item alt text. Nullable because the backfill has none to give: pre-existing
@@ -316,6 +402,7 @@ model User {
   accounts       Account[]
   sessions       Session[]
   orgMemberships OrgMember[]
+  mediaAssets    MediaAsset[]
   addresses      UserAddress[]
 
   settlementsCreated Settlement[] @relation("SettlementCreatedBy")
@@ -368,28 +455,12 @@ model Org {
   isActive   Boolean @default(true)
   isVerified Boolean @default(false) // KYC verification
 
-  // Metadata
-  /// Doubles as the storefront's introduction — the long-form "who we are".
-  description String? @db.Text
-  logoUrl     String?
-
-  // ── Storefront presentation (org-storefront/storefront-branding) ──
-  /// One line under the name. Not the introduction; a shelf label, not a paragraph.
-  tagline        String?
-  /// The shop's cover image, shown at the top of its **about** page — not on the
-  /// storefront itself, where the promotions hold that slot (decided 2026-09-19). A
-  /// visitor reaching the about page has chosen to read about the shop, which is where
-  /// a large picture earns its place. Distinct from `OrgBanner`, a rotating promotion:
-  /// calling both of them "banner" is what confused the editor before. Through the same
-  /// object store and optimizer as every other image (ADR-0026, ADR-0028).
-  heroUrl        String?
-  /// A token name from the palette in globals.css — never a colour literal, so a
-  /// storefront cannot express a colour the design system does not own (ADR-0022).
-  accent         String?
-  /// What this shop promises about delivery and returns. The platform's own terms
-  /// stand in where these are null; payment and fraud are never the shop's to disclaim.
-  deliveryPolicy String? @db.Text
-  returnsPolicy  String? @db.Text
+  // Everything a buyer may see lives on the profile; everything else stays here
+  // (org-profile spec R1/R2, trd D1). A leak now needs a join nobody wrote.
+  profile         OrgProfile?
+  listingDefaults OrgListingDefaults?
+  brands          Brand[]
+  mediaAssets     MediaAsset[]
 
   /// The platform's cut, in basis points — 1500 = 15%. Set per org by design; rates
   /// differ between orgs (org-payouts spec R12). Category overrides live in
@@ -425,6 +496,83 @@ model Org {
   @@index([isActive])
   @@index([code])
   @@index([handle])
+}
+
+/// The public face of an organisation: what a storefront or an advertisement may show, and
+/// nothing else (org-profile spec R1, trd D1). One row per org, created with it. The storefront
+/// reads this table only, so a private column on `Org` cannot reach a buyer by accident.
+model OrgProfile {
+  orgId String @id
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// One line under the name. Not the introduction; a shelf label, not a paragraph.
+  tagline        String?
+  /// The storefront's introduction — the long-form "who we are". Plain text, rendered as
+  /// text (ADR-0030 D9).
+  description    String?     @db.Text
+  logoUrl        String?
+  /// The shop's cover image, shown at the top of its about page — not on the storefront
+  /// itself, where the promotions hold that slot (decided 2026-09-19). Distinct from
+  /// `OrgBanner`, a rotating promotion. Through the same object store and optimizer as every
+  /// other image (ADR-0026, ADR-0028).
+  heroUrl        String?
+  logoAssetId    String?
+  logoAsset      MediaAsset? @relation("ProfileLogo", fields: [logoAssetId], references: [id], onDelete: Restrict)
+  heroAssetId    String?
+  heroAsset      MediaAsset? @relation("ProfileHero", fields: [heroAssetId], references: [id], onDelete: Restrict)
+  /// A token name from the palette in globals.css — never a colour literal (ADR-0022).
+  accent         String?
+  /// What this shop promises about delivery and returns. The platform's own terms stand in
+  /// where these are null; payment and fraud are never the shop's to disclaim.
+  deliveryPolicy String?     @db.Text
+  returnsPolicy  String?     @db.Text
+
+  /// The longer story, the location as the shop chooses to state it, and handles on known
+  /// networks. All optional; nothing here is required to open a shop (org-profile spec R5).
+  story    String? @db.Text
+  location String?
+  social   Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// The private listing context that does not belong to a brand (org-profile spec R4): what a
+/// product inherits when neither it nor its family nor its brand says otherwise. Pre-fills,
+/// never validates. The tax rate is basis points, never a float.
+model OrgListingDefaults {
+  orgId String @id
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  countryOfOrigin   String?
+  taxRateBps        Int?
+  /// Tax code per category id the org sells in.
+  taxCodeByCategory Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// A brand an organisation sells, with the facts that belong to the brand rather than the
+/// shop: who makes it, who packs or imports it, where it comes from (org-profile spec R3). A
+/// manufacturer has one; a shop carrying others' brands has many. Retired, never deleted (R9, ADR-0032).
+model Brand {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  name             String
+  manufacturer     String?
+  packerOrImporter String?
+  countryOfOrigin  String?
+  isDefault        Boolean @default(false)
+
+  retiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([orgId, name])
+  @@index([orgId])
 }
 
 model Account {
@@ -833,11 +981,13 @@ model OrgBanner {
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   /// Optional: a promotion can be the picture alone.
-  title       String?
-  description String?
+  title        String?
+  description  String?
   /// Through the optimizer, like every other image (ADR-0026).
-  imageUrl    String?
-  imageAlt    String?
+  imageUrl     String?
+  imageAssetId String?
+  imageAsset   MediaAsset? @relation("OrgBannerImage", fields: [imageAssetId], references: [id], onDelete: Restrict)
+  imageAlt     String?
 
   /// Where it points — always inside this org's own storefront (R2c), enforced in the
   /// schema that parses it rather than by the column's type.
@@ -1291,22 +1441,24 @@ model Settlement {
 /// The storefront's hero banners. Platform-owned shelf space: an org promoting its own
 /// products is what offers are for.
 model Banner {
-  id          String         @id @default(cuid())
+  id           String         @id @default(cuid())
   /// Optional like every other word on a banner: artwork that carries its own
   /// typography needs no headline laid over it.
-  title       String?
-  eyebrow     String?
-  description String?
+  title        String?
+  eyebrow      String?
+  description  String?
   /// Blob URL. Null renders the brand gradient scene rather than a blank box.
-  imageUrl    String?
-  imageAlt    String?
+  imageUrl     String?
+  imageAssetId String?
+  imageAsset   MediaAsset?    @relation("BannerImage", fields: [imageAssetId], references: [id], onDelete: Restrict)
+  imageAlt     String?
   /// Server-owned. A create appends to the end; only the reorder route rewrites it.
-  order       Int            @default(0)
+  order        Int            @default(0)
   /// Taken down, not deleted — the copy and artwork survive for the next run.
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  actions     BannerAction[]
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  actions      BannerAction[]
 
   @@index([isActive, order])
 }

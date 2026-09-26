@@ -1,5 +1,6 @@
 # Spec — rate-limiting
 
+- **Summary:** Sensitive endpoints are rate limited in every deployed environment; one that can't enforce is refused at deploy time
 - **Status:** Draft
 - **Domain:** cross-domain (guards identity, payments, checkout, cart, bidding handlers)
 - **Phase:** 4 — Enforcement

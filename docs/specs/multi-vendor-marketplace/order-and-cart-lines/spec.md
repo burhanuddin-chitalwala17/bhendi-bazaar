@@ -1,5 +1,6 @@
 # Spec — order and cart lines
 
+- **Summary:** What a customer bought is a relation to the product, not an id inside a blob
 - **Status:** ✅ Implemented (PR-43, PR-44)
 - **Domain:** checkout, catalog
 - **Phase:** 3 — Fulfilment

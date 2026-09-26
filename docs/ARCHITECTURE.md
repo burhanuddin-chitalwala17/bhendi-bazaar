@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-26
 - **Covers:** `src/app/*/`, `server/*/`, `prisma/schema.prisma`, `src/lib/rate-limit/**`
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
@@ -15,10 +15,12 @@ Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (P
             ├── (admin) console       24 pages     ──▶ Razorpay         (payments)
             ├── (org)   seller portal 19 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
-            └── api/                  89 handlers  ──▶ YouTube          (product and review video, embedded)
+            └── api/                  92 handlers  ──▶ YouTube          (product and review video, embedded)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
+
+A second entrypoint, `worker/main.ts`, runs the job queue: a pg-boss schema in the same Postgres, reached through one seam (`server/shared/jobs/`), worked by a long-running process that imports each domain's handlers and calls them as functions ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)). The site enqueues inside its own transactions; the worker writes a heartbeat the admin dashboard reads. Its image is `infra/worker/Dockerfile`, its machine is provisioned by `infra/worker/provision.sh`, and both are deployment facts recorded in [OPERATIONS.md](OPERATIONS.md), not in code ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)).
 
 Images are the one asset class with a delivery layer of its own: uploads are downscaled and re-encoded before they reach the object store (`server/catalog/image-upload.ts` server-side, `src/lib/image/downscale.ts` for the browser-direct bulk path), and every render goes through `next/image` so the bytes served match the slot. Every write, delete and URL derivation goes through one seam, `server/catalog/object-store.ts`, so reads never pass through our code ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). Both ceilings predate R2 and were set because Vercel Blob's transfer allowance was withdrawn rather than billed ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)).
 
@@ -56,7 +58,7 @@ Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 54 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 42 models, 13 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 57 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 47 models, 16 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
 
 **Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
 
@@ -70,7 +72,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-116 Vitest files (106 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, 38 of them `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+125 Vitest files (112 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, all `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 

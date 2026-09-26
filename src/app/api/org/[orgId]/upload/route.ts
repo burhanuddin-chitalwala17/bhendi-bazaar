@@ -23,7 +23,10 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
   const identifier = formData.get("identifier") as string | null;
 
   const org = await orgRepository.findById(scope.orgId);
-  const urls = await uploadImages(files, "products", identifier, org?.code);
+  const urls = await uploadImages(files, "products", identifier, org?.code, {
+    orgId: scope.orgId,
+    uploaderId: scope.userId,
+  });
 
   return NextResponse.json({
     success: true,

@@ -1,0 +1,8 @@
+/**
+ * The jobs seam (ADR-0038 D1). Domains import from here and nowhere else in `jobs/`;
+ * nothing outside this directory imports pg-boss.
+ */
+export { enqueue, type EnqueueTx } from "./jobs.enqueue";
+export { registerJob } from "./jobs.registry";
+export type { JobDefinition } from "./jobs.types";
+export { workerStatus, redriveFailedJobs, type WorkerStatus } from "./jobs.service";

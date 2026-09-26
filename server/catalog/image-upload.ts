@@ -8,6 +8,7 @@ import {
   type ImageFolder,
 } from "@server/catalog/image-paths";
 import { putObject } from "@server/catalog/object-store";
+import { mediaAssetService } from "@server/catalog/media-asset.service";
 
 /**
  * Server-side catalog image uploads: the bytes arrive in a request body, sharp
@@ -29,10 +30,10 @@ import { putObject } from "@server/catalog/object-store";
  */
 export async function normalizeImage(
   file: File
-): Promise<{ body: Buffer; extension: string; contentType: string }> {
+): Promise<{ body: Buffer; extension: string; contentType: string; width: number; height: number }> {
   const input = Buffer.from(await file.arrayBuffer());
   try {
-    const body = await sharp(input, { animated: true })
+    const { data: body, info } = await sharp(input, { animated: true })
       .rotate()
       .resize({
         width: MAX_IMAGE_EDGE,
@@ -41,8 +42,10 @@ export async function normalizeImage(
         withoutEnlargement: true,
       })
       .webp({ quality: Math.round(IMAGE_QUALITY * 100) })
-      .toBuffer();
-    return { body, extension: "webp", contentType: "image/webp" };
+      .toBuffer({ resolveWithObject: true });
+    // An animated image reports its stacked height; per-frame height is what a slot wants.
+    const height = info.pageHeight ?? info.height;
+    return { body, extension: "webp", contentType: "image/webp", width: info.width, height };
   } catch {
     // A declared image type that no decoder accepts is a bad upload, not a server fault.
     throw new DomainError(`Could not read image: ${file.name}`);
@@ -50,11 +53,18 @@ export async function normalizeImage(
 }
 
 /** Validates every file first — an upload is all-or-nothing, not a partial batch. */
+/** Who an upload belongs to, so its record is born owned (media-library R1). */
+export interface UploadOwner {
+  orgId: string | null;
+  uploaderId: string | null;
+}
+
 export async function uploadImages(
   files: File[],
   folder: ImageFolder,
   identifier?: string | null,
-  orgCode?: string | null
+  orgCode?: string | null,
+  owner?: UploadOwner
 ): Promise<string[]> {
   if (!files || files.length === 0) {
     throw new DomainError("No files provided");
@@ -66,7 +76,7 @@ export async function uploadImages(
 
   const urls: string[] = [];
   for (const file of files) {
-    const { body, extension, contentType } = await normalizeImage(file);
+    const { body, extension, contentType, width, height } = await normalizeImage(file);
     const path = buildImagePath(
       folder,
       normalizedName(file.name, extension),
@@ -74,6 +84,16 @@ export async function uploadImages(
       orgCode
     );
     urls.push(await putObject(path, body, contentType));
+    if (owner) {
+      await mediaAssetService.recordServerUpload({
+        ...owner,
+        pathname: path,
+        contentType,
+        bytes: body.byteLength,
+        width,
+        height,
+      });
+    }
   }
   return urls;
 }
