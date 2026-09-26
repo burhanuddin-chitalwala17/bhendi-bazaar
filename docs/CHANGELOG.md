@@ -10,6 +10,15 @@
 
 ## Entries
 
+## [PR-158] 2026-09-26 — The worker card fails alone, and APP_ENV is required in deployments
+
+The first preview deploy of the dashboard's worker card returned a 500 for the whole admin page:
+the preview environment had no `APP_ENV`, the environment lookup refuses to guess in a production
+build, and the card let the throw reach the page. The card now catches and renders "status
+unavailable" with the cause in the server log, the way every other dashboard widget fails alone
+(dashboard-widgets R5), with a component test for both faces. OPERATIONS.md marks `APP_ENV`
+required and says to set it in Vercel for Preview and Production.
+
 ## [PR-157] 2026-09-26 — The video player is admitted by the Content-Security-Policy
 
 Every product video on the live store rendered as Chrome's "This content is blocked" while the
