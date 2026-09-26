@@ -19,11 +19,12 @@ beforeEach(() => vi.clearAllMocks());
 describe("WorkerStatusCard", () => {
   it("renders the status when it can be read", async () => {
     workerStatus.mockResolvedValue({
-      environment: "production", lastSeenAt: new Date(), version: "abc123", waiting: 2, active: 1, failed: 0, stale: false,
+      environment: "production", lastSeenAt: new Date(), version: "6d650f74483254a579c0694ab458e941b60b7c18", waiting: 2, active: 1, failed: 0, stale: false,
     });
     render(await WorkerStatusCard());
     expect(screen.getByText(/last seen just now/)).toBeInTheDocument();
-    expect(screen.getByText(/2 waiting · 1 running · 0 failed · abc123/)).toBeInTheDocument();
+    // A commit hash is shown short; the full forty characters belong in a log.
+    expect(screen.getByText(/2 waiting · 1 running · 0 failed · 6d650f7$/)).toBeInTheDocument();
   });
 
   it("renders an unavailable card instead of throwing when the status cannot be read", async () => {

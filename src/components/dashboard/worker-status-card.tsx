@@ -3,6 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { workerStatus, type WorkerStatus } from "@server/shared/jobs";
 import { RedriveFailedJobsButton } from "./redrive-failed-jobs-button";
 
+/** A commit hash reads as seven characters; anything else, a tag or "dev", is shown whole. */
+function shortVersion(version: string): string {
+  return /^[0-9a-f]{40}$/.test(version) ? version.slice(0, 7) : version;
+}
+
 function ago(from: Date, now: Date): string {
   const minutes = Math.round((now.getTime() - from.getTime()) / 60_000);
   if (minutes < 1) return "just now";
@@ -58,7 +63,7 @@ export async function WorkerStatusCard() {
           </p>
           <p className="text-sm text-muted-foreground">
             {status.waiting} waiting · {status.active} running · {status.failed} failed
-            {status.version ? ` · ${status.version}` : ""}
+            {status.version ? ` · ${shortVersion(status.version)}` : ""}
           </p>
         </div>
         <RedriveFailedJobsButton failed={status.failed} />

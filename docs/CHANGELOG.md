@@ -10,6 +10,11 @@
 
 ## Entries
 
+## [PR-160] 2026-09-27 — The worker card shows a short commit hash
+
+The card printed the image's full forty-character commit as its version. A hash is shown as its
+first seven characters now; a version that is not a hash, such as `dev`, is shown whole.
+
 ## [PR-159] 2026-09-27 — The runbook says what a Vercel redeploy does and does not do
 
 The first dev deploy of the worker card was fixed twice over and still showed nothing, because a
