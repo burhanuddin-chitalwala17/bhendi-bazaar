@@ -19,7 +19,7 @@ vi.mock("@server/catalog/org.repository", () => ({
     changeHandle: (...a: unknown[]) => changeHandle(...a),
   },
 }));
-// The settings moved to the profile table (PR-149); the service reads them there.
+// The settings moved to the profile table (PR-151); the service reads them there.
 vi.mock("@server/catalog/org-profile.repository", () => ({
   orgProfileRepository: {
     findSettings: (...a: unknown[]) => findStorefrontSettings(...a),

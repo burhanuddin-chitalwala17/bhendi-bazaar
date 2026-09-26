@@ -1,6 +1,6 @@
 # TRD — media-library
 
-- **Status:** 🔨 In progress — PR-150 (1 of 6)
+- **Status:** 🔨 In progress — PR-152 (1 of 6)
 - **Domain:** catalog (assets, slots), content (renditions, capture checks)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25

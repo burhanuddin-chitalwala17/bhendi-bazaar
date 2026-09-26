@@ -34,7 +34,7 @@
 | `libphonenumber-js` | `^1.13.13` | Validates, normalises to E.164 and formats phone numbers for every country. Imported as `/max`: `min` metadata validates most countries by length alone and accepts numbers the Indian rule refused ([international-phone](specs/international-phone/trd.md) D1) | `server/shared/phone.ts` only | 2026-09-11 |
 | `resend` | `^6.6.0` | Transactional email | `server/notifications/email.service.ts` | 2026-08-03 |
 | `react-hook-form` + `@hookform/resolvers` | `^7.68.0` / `^5.2.2` | Admin form state with Zod resolvers | `src/components/shared/forms/**` | 2026-08-03 |
-| `@radix-ui/*` | various | Accessible primitives behind shadcn/ui: dialog, separator, slot, switch | `src/components/ui/**` | 2026-08-03 |
+| `@radix-ui/*` | various | Accessible primitives behind shadcn/ui: dialog, dropdown-menu, separator, slot, switch. `dropdown-menu` added for row actions and the copy picker ([copy-product](specs/copy-product/trd.md)) — keyboard navigation, typeahead and collision-aware positioning are what a hand-rolled menu gets wrong | `src/components/ui/**` | 2026-09-23 |
 | `lucide-react` | `^0.561.0` | Icons | Throughout UI | 2026-08-03 |
 | `@vercel/analytics` + `@vercel/speed-insights` | `^2.0.1` / `^2.0.0` | Page analytics and Core Web Vitals, mounted in `src/app/layout.tsx`. Both serve their script from our own origin, so the CSP needs no third-party `script-src` for them | `src/app/layout.tsx` | 2026-09-21 |
 | `sonner` | `^2.0.7` | Toast notifications | `src/app/providers.tsx` | 2026-08-03 |

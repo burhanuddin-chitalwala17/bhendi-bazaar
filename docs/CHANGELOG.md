@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-155] 2026-09-26 — The video player is admitted by the Content-Security-Policy
+## [PR-157] 2026-09-26 — The video player is admitted by the Content-Security-Policy
 
 Every product video on the live store rendered as Chrome's "This content is blocked" while the
 poster beside it loaded. ADR-0035's `frame-src` admitted the payment gateway and nothing else; the
@@ -20,7 +20,7 @@ names the embed origin, and `tests/unit/security-headers.test.ts` derives the em
 hosts from the functions in `server/catalog/media.ts` that emit them, so the policy fails the
 suite rather than the storefront if either moves.
 
-## [PR-154] 2026-09-26 — The quota runbook names the quotas Oracle actually enforces
+## [PR-156] 2026-09-26 — The quota runbook names the quotas Oracle actually enforces
 
 Creating the first machine was refused with "compartment quotas were exceeded" naming
 `standard-a1-core-regional-count` and `standard-a1-memory-regional-count`: region-scoped variants
@@ -29,14 +29,14 @@ that a wildcard `zero` covers but the documented `set` lines did not reopen. OPE
 name. The machine was then created, and `infra/worker/provision.sh` ran clean on its first real
 Ubuntu 24.04 the first time.
 
-## [PR-153] 2026-09-26 — The worker loads the env file
+## [PR-155] 2026-09-26 — The worker loads the env file
 
 `npm run worker` failed with "DATABASE_URL is not set" on a laptop whose `.env` had it: a plain
 script does not get Next.js's env loading, and every local run so far had exported the variable
 in the shell. `worker/main.ts` now starts with `dotenv/config`, as `prisma/seed.ts` and the
 backfill script do. Harmless in the container, where compose supplies the environment.
 
-## [PR-152] 2026-09-26 — The worker's image, machine script and deploy, ahead of the machine
+## [PR-154] 2026-09-26 — The worker's image, machine script and deploy, ahead of the machine
 
 worker-foundation PR 2 of 3, the half that needs no machine (trd D7–D9). `infra/worker/Dockerfile`
 builds the worker from the lockfile with the Prisma client generated and only `server/`, `worker/`
@@ -55,7 +55,7 @@ worker by hand, and the rebuild. `.env.worker.example` names what the worker rea
 now also checks path references under `infra/` and `worker/`. The image is 1.1 GB because it
 carries the whole lockfile; trimming waits for a second job type.
 
-## [PR-151] 2026-09-26 — The seed's two `any` casts are gone
+## [PR-153] 2026-09-26 — The seed's two `any` casts are gone
 
 `prisma/seed.ts` cast an order's address and a shipping provider's row to `any`, the two lint
 errors the file had carried since before this phase. The address now goes through `toJsonColumn`,
@@ -64,7 +64,7 @@ without opening a connection pool (the old path re-exports it); the provider row
 `SeedShippingProvider[]`, whose three fields Prisma defaults became optional to match the data.
 An unused `cart` binding went with them. No behaviour change.
 
-## [PR-150] 2026-09-26 — Every stored image becomes a record [MIGRATION] [CONTRACT]
+## [PR-152] 2026-09-26 — Every stored image becomes a record [MIGRATION] [CONTRACT]
 
 media-library PR 1 of 6 ([spec](specs/media-library/spec.md), trd D1–D3). `MediaAsset` is the one
 record behind every image URL the schema holds: dimensions, bytes, format, owner, uploader, source,
@@ -90,7 +90,7 @@ Database-backed suite run locally: pending to ready exactly once, only ready ass
 referenced pending row survives the sweep, and the backfill creates each asset once with dimensions
 read from the bytes.
 
-## [PR-149] 2026-09-26 — An organisation's public face becomes its own table [MIGRATION]
+## [PR-151] 2026-09-26 — An organisation's public face becomes its own table [MIGRATION]
 
 seller-profile PR 1 of 4 ([spec](specs/seller-profile/spec.md), trd D1–D4). The seven storefront
 columns on `Org` — tagline, introduction, logo, hero, accent, delivery and returns terms — move to
@@ -109,7 +109,7 @@ list keeps description and logo through the relation; the seed creates the profi
 No wire shape changed, so no `[CONTRACT]`; CONTRACTS.md gains a section naming the shapes and
 their new source.
 
-## [PR-148] 2026-09-26 — The job queue and the worker, with nothing in them yet [MIGRATION]
+## [PR-150] 2026-09-26 — The job queue and the worker, with nothing in them yet [MIGRATION]
 
 worker-foundation PR 1 of 3 ([spec](specs/worker-foundation/spec.md), [ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)).
 The queue is pg-boss's tables in our own Postgres, applied as a Prisma migration from the
@@ -137,7 +137,7 @@ transaction, rolls back with it, refuses a bad payload before touching the queue
 Migrate reports no drift with the `pgboss` schema present — the ADR's one open consequence,
 closed. No machine yet; that is PR 2.
 
-## [PR-147] 2026-09-26 — Index tables are generated, and five specs are accepted
+## [PR-149] 2026-09-26 — Index tables are generated, and five specs are accepted
 
 The tables in `docs/adr/README.md` and `docs/specs/README.md` were hand-copied headers with
 nothing checking them — 35 ADR rows and 32 spec rows, one folder away from the files they
@@ -151,6 +151,42 @@ convention.
 Also here, by the owner's decision on 2026-09-26: `worker-foundation`, `seller-profile` with
 `brand-page`, and `media-library` with `renditions` move from Draft to Accepted, with brand-page's
 three open questions closed on their proposed defaults. BACKLOG's Phase 11 rows follow.
+## [PR-148] 2026-09-23 — A product photo left on the retired store reads as no image, not a crash
+
+Two local products still held thumbnail and gallery URLs on the retired Vercel Blob host, and
+the homepage offers strip handed one to `next/image`, which throws on a host missing from
+`remotePatterns` and blanks the whole page. PR-122 closed this for banners; products were the
+next of the eight columns OPERATIONS.md lists.
+
+Both product mappings — the storefront DAL (`src/data-access-layer/products.dal.ts`), which feeds
+the homepage, listings, product page and cart, and the org portal's — now route through
+`isRenderableImageUrl`. A dead thumbnail becomes the brand mark; a dead photo is dropped from
+the gallery by the new `renderableMedia` (`server/catalog/image-paths.ts`), so saving the edit
+form clears it from the row, which is the runbook's re-upload remedy. Video refs are provider
+ids and are never checked. Search suggestions, wishlist, cart, bidding and order lines read the
+thumbnail by other paths and remain unguarded; OPERATIONS.md says so.
+
+## [PR-147] 2026-09-23 — An org copies a product into a new one, and row actions move behind one menu
+
+Most of an org's catalogue is families — one design in several fabrics or sizes — and every
+member was typed from scratch. An org can now start a new product from one of its own: the
+description, category, sizes, colours, tags and flags come across; name, price, SKU, photos
+and stock do not, because those make a duplicate rather than a sibling ([copy-product](specs/copy-product/spec.md)).
+
+Two entry points, one mechanism. The product list's actions column is now a single ⋯ menu
+(View, Edit, Copy product, Archive/Restore, Delete…), and the new-product page has a
+"Copy from product" picker over the org's on-sale products, searchable by name or SKU. Both navigate to
+`/org/<orgId>/products/new?copyFrom=<id>`; the page reads the source on the server through
+`productsService.getCopySource`, which scopes it with the existing `ownedByOrg`, so another
+org's id opens a blank form rather than that product. No route handler, no DTO change.
+
+The form is keyed on the source so a second pick replaces the first, and draft persistence
+steps aside while copying — a restored draft would otherwise overwrite the copied fields on
+mount. Delete keeps its confirmation dialog, now opened from the menu.
+
+Adds `@radix-ui/react-dropdown-menu` behind a new `src/components/ui/dropdown-menu.tsx`
+primitive. Tests: `tests/unit/product-copy.test.ts`; the product-visibility census gains the
+picker's read (available shelf only).
 
 ## [PR-146] 2026-09-24 — The tests are audited, and two Invariants turn out to have had no guard
 
@@ -965,7 +1001,6 @@ with `src/components` — 106 of 173 is the real number, corrected in the ADR.
 
 **Verification:** `tsc --noEmit` exit 0, 1165 tests pass across 104 files, `npm run docs:check`
 55/55, `next build` compiles.
-
 
 ## [PR-125] 2026-09-23 — Nothing a buyer wrote is deleted, and a review photograph has to be the reviewer's `[CONTRACT]` `[MIGRATION]`
 

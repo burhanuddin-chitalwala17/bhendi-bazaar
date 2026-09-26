@@ -94,6 +94,7 @@ A new phase, added 2026-08-13. Phase 1 built the storefront and closed; this is 
 | [product-video](specs/product-video/) | A product page shows video alongside its photographs, in an order the seller composes | 📝 Draft — all questions closed 2026-08-13 |
 | [bulk-catalog-upload](specs/bulk-catalog-upload/) | An org sets up its catalogue from one spreadsheet plus local photos; admins likewise for categories. Corrects SKU uniqueness to org scope | ✅ Implemented — 2026-08-21 (PR-73) |
 | [product-archive](specs/product-archive/) | An org archives a product and restores it, without destroying the orders, payouts or ledger entries it appears on | ✅ Implemented — 2026-09-16 (PR-113) |
+| [copy-product](specs/copy-product/) | An org starts a new product from one of its own — description, category, attributes and flags carried, identity and price left behind | ✅ Implemented — 2026-09-23 (PR-147) |
 
 `product-archive` is catalogue *lifecycle* rather than page capability, and lands here because it is the phase that owns the catalogue; it needs nothing from the rest of the phase and nothing in the phase needs it.
 
@@ -169,9 +170,9 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | 🔨 In progress — PR-148, PR-152 (2 of 3; machine pending) |
-| [seller-profile](specs/seller-profile/) | A private face for what listing needs (brands, manufacturers, origin, tax codes) and a public face for what a buyer may see; nothing demanded before it is needed | 🔨 In progress — PR-149 (1 of 4) |
-| [media-library](specs/media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 🔨 In progress — PR-150 (1 of 6) |
+| [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | 🔨 In progress — PR-150, PR-154 (2 of 3; machine pending) |
+| [seller-profile](specs/seller-profile/) | A private face for what listing needs (brands, manufacturers, origin, tax codes) and a public face for what a buyer may see; nothing demanded before it is needed | 🔨 In progress — PR-151 (1 of 4) |
+| [media-library](specs/media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 🔨 In progress — PR-152 (1 of 6) |
 | [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | ✅ Accepted — 2026-09-26 |
 | [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Accepted — 2026-09-26 |
 | image-enhancement | Cutout to white background and to a generated backdrop, as derived images, with a per-org usage ledger and quota; a dark or blurred warning at upload offers "improve this photo" as its way out; the first work on the owned worker | planned |
