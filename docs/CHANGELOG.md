@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-159] 2026-09-27 — The runbook says what a Vercel redeploy does and does not do
+
+The first dev deploy of the worker card was fixed twice over and still showed nothing, because a
+dashboard Redeploy rebuilt an older deployment's source and left `dev.bhendi-bazaar.com` pointing
+where it was. OPERATIONS.md now records that the domain moves only through the pipeline's alias
+step, that a redeploy rebuilds the clicked deployment rather than the branch, that a variable reaches
+only deployments created after it was saved, and that `NODE_ENV` is never ours to set.
+
 ## [PR-158] 2026-09-26 — The worker card fails alone, and APP_ENV is required in deployments
 
 The first preview deploy of the dashboard's worker card returned a 500 for the whole admin page:
