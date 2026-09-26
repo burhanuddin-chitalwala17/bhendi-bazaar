@@ -25,6 +25,9 @@
 /** Razorpay serves checkout from one apex and phones home to several subdomains. */
 const RAZORPAY = "https://*.razorpay.com";
 
+/** The product video player (ADR-0017). `youtubeEmbedUrl` in `server/catalog/media.ts` emits it. */
+const YOUTUBE_EMBED = "https://www.youtube-nocookie.com";
+
 /** Hosts `next/image` is allowed to render from — kept beside `next.config.ts`'s list. */
 function imageHosts(): string[] {
   const hosts = ["https://i.ytimg.com", "https://placehold.co", "https://shiprocket.in"];
@@ -91,8 +94,10 @@ export function contentSecurityPolicy(nonce: string, isDev: boolean): string {
       ...(isDev ? ["ws:", "http://localhost:*"] : []),
     ],
 
-    // The Razorpay checkout modal is an iframe on their origin.
-    "frame-src": ["'self'", RAZORPAY],
+    // The Razorpay checkout modal and the product video player are both iframes on
+    // someone else's origin. Chrome reports a refused frame as "This content is blocked",
+    // which is how a missing host here surfaced as a broken gallery, not a policy error.
+    "frame-src": ["'self'", RAZORPAY, YOUTUBE_EMBED],
     // Razorpay's bank/UPI redirect posts back through a form.
     "form-action": ["'self'", RAZORPAY],
 

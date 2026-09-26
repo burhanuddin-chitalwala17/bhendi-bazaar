@@ -1,5 +1,6 @@
 # Spec — supply-chain-integrity
 
+- **Summary:** What the store ships carries no published vulnerability and no committed secret, established by the pipeline
 - **Status:** Draft
 - **Domain:** cross-domain
 - **Phase:** 4 — Enforcement

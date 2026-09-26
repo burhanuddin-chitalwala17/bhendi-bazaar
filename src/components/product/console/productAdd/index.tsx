@@ -2,28 +2,40 @@
 
 "use client";
 
+import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Copy } from "lucide-react";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
 import type { OrgSummary } from "@/domain/org";
 import type { LocationOption } from "@/components/shared/forms/product/ProductOrgShippingFields";
+import type {
+  ProductCopyOption,
+  ProductCopySource,
+} from "@server/catalog/admin.product.types";
+import { CopyFromPicker } from "./CopyFromPicker";
 
 import { PageHeader } from "@/components/shared/page-shell";
 interface ProductAddContainerProps {
   categories: { id: string; name: string }[];
   orgs: OrgSummary[];
   locations: LocationOption[];
+  /** The product this one is being copied from, already scoped to the org. */
+  copySource?: ProductCopySource | null;
+  /** The org's products offered in the "Copy from" picker. */
+  copyOptions?: ProductCopyOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
-  uploadTokenEndpoint?: string;
+  uploadEndpoints?: UploadEndpoints;
 }
 
 export function ProductAddContainer({
   categories,
   orgs,
   locations,
-  uploadTokenEndpoint,
+  copySource,
+  copyOptions = [],
+  uploadEndpoints,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -41,7 +53,25 @@ export function ProductAddContainer({
         back={{ href: productsBasePath, label: "Back to products" }}
         title="Create New Product"
         description="Add a new product to your catalog"
+        actions={
+          <CopyFromPicker
+            options={copyOptions}
+            selectedId={copySource?.id}
+            newProductPath={`${productsBasePath}/new`}
+          />
+        }
       />
+
+      {copySource && (
+        <div className="bg-info/10 border border-info/30 text-info px-4 py-3 rounded-lg flex items-start gap-3">
+          <Copy className="w-5 h-5 shrink-0 mt-0.5" />
+          <p>
+            Copied from <strong>{copySource.name}</strong> — description,
+            category, attributes and flags. Add a name, price, photos and stock
+            for this product.
+          </p>
+        </div>
+      )}
 
       {/* Messages */}
       {error && (
@@ -57,7 +87,11 @@ export function ProductAddContainer({
         </div>
       )}
 
+      {/* Keyed on the source: defaults are read once, so picking another product
+          must remount the form rather than leave the previous copy in place. */}
       <ProductForm
+        key={copySource?.id ?? "blank"}
+        copySource={copySource}
         categories={categories}
         orgs={orgs}
         locations={locations}
@@ -65,7 +99,7 @@ export function ProductAddContainer({
         onCancel={handleCancel}
         isSubmitting={isLoading}
         readOnly={false}
-        uploadTokenEndpoint={uploadTokenEndpoint}
+        uploadEndpoints={uploadEndpoints}
       />
     </div>
   );

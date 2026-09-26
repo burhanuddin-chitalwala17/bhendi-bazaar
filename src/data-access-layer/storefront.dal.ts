@@ -9,6 +9,7 @@
 
 import { cache } from "react";
 import { orgRepository } from "@server/catalog/org.repository";
+import { orgProfileRepository } from "@server/catalog/org-profile.repository";
 import { productsRepository } from "@server/catalog/product.repository";
 import { orgBannerRepository } from "@server/catalog/org-banner.repository";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
@@ -50,19 +51,19 @@ export const storefrontDAL = {
    * identical queries on every storefront view.
    */
   getByHandle: cache(async (handle: string): Promise<Storefront | null> => {
-    const org = await orgRepository.findPublicByHandle(handle);
-    if (!org) return null;
+    const profile = await orgProfileRepository.findPublicByHandle(handle);
+    if (!profile) return null;
     return {
-      id: org.id,
-      handle: org.handle,
-      name: org.name,
-      about: org.description,
-      tagline: org.tagline,
-      logoUrl: org.logoUrl,
-      heroUrl: org.heroUrl,
-      accent: org.accent,
-      deliveryPolicy: org.deliveryPolicy,
-      returnsPolicy: org.returnsPolicy,
+      id: profile.org.id,
+      handle: profile.org.handle,
+      name: profile.org.name,
+      about: profile.description,
+      tagline: profile.tagline,
+      logoUrl: profile.logoUrl,
+      heroUrl: profile.heroUrl,
+      accent: profile.accent,
+      deliveryPolicy: profile.deliveryPolicy,
+      returnsPolicy: profile.returnsPolicy,
     };
   }),
 
@@ -122,6 +123,6 @@ export const storefrontDAL = {
 
   /** Every shop open for business and with something to sell. */
   listShops: cache(async (): Promise<ShopListing[]> => {
-    return await orgRepository.listPublicShops();
+    return await orgProfileRepository.listPublicShops();
   }),
 };

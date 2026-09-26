@@ -15,9 +15,15 @@ const bannerCreate = vi.fn();
 
 vi.mock("@server/catalog/org.repository", () => ({
   orgRepository: {
-    findStorefrontSettings: (...a: unknown[]) => findStorefrontSettings(...a),
     isHandleHeldByAnother: (...a: unknown[]) => isHandleHeldByAnother(...a),
     changeHandle: (...a: unknown[]) => changeHandle(...a),
+  },
+}));
+// The settings moved to the profile table (PR-151); the service reads them there.
+vi.mock("@server/catalog/org-profile.repository", () => ({
+  orgProfileRepository: {
+    findSettings: (...a: unknown[]) => findStorefrontSettings(...a),
+    updateSettings: vi.fn(),
   },
 }));
 vi.mock("@server/catalog/product.repository", () => ({

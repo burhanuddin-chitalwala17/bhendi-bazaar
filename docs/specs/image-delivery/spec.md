@@ -1,5 +1,6 @@
 # Spec — image delivery
 
+- **Summary:** Images are stored small and served at the size the screen uses
 - **Status:** ✅ Implemented — PR-105
 - **Domain:** catalog (identity for avatars)
 - **Phase:** 2 — Operability

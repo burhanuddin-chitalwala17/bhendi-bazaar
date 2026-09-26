@@ -16,7 +16,8 @@ import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
 import { productsRepository } from "@server/catalog/product.repository";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
-import { coverOf, type ProductMediaInput } from "@server/catalog/media";
+import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
+import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
 
 /**
  * Pure, exported for tests: media rows for a Prisma nested create, in submitted order, plus the `thumbnail` the
@@ -27,6 +28,18 @@ import { coverOf, type ProductMediaInput } from "@server/catalog/media";
  * no item is flagged rather than falling back to the first image — a fallback here is
  * how an unset cover becomes survivable instead of loud (D4a).
  */
+/**
+ * The asset behind each image row, found by URL (media-library trd D1). A ref with no ready
+ * asset links to nothing and the backfill catches it later; the write never waits on it.
+ */
+async function withAssetIds<T extends { kind: MediaKind; ref: string }>(rows: T[], db: MediaDb = prisma) {
+    const ids = await mediaAssetRepository.idsByRefs(
+        rows.filter((row) => row.kind === "IMAGE").map((row) => row.ref),
+        db,
+    );
+    return rows.map((row) => ({ ...row, assetId: ids.get(row.ref) ?? null }));
+}
+
 export function mediaWrite(media: ProductMediaInput[]) {
   return {
     thumbnail: coverOf(media).ref,
@@ -262,6 +275,7 @@ export class AdminProductsRepository {
         // are dropped ("not stocked here"), and origin comes from the locations.
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
         const media = mediaWrite(data.media);
+        const mediaRows = await withAssetIds(media.rows);
         const product = await prisma.product.create({
             data: {
                 slug,
@@ -274,7 +288,7 @@ export class AdminProductsRepository {
                 tags: data.tags || [],
                 flags: data.flags || [],
                 thumbnail: media.thumbnail,
-                media: { create: media.rows },
+                media: { create: mediaRows },
                 sizes: data.sizes || [],
                 colors: data.colors || [],
                 sku: blankToNull(data.sku),
@@ -304,6 +318,15 @@ export class AdminProductsRepository {
             where: { id },
             select: PRODUCT_DETAILS_SELECT,
             relationLoadStrategy: "join",
+        });
+    }
+
+    /** The copy picker's list: the org's available products, names only (copy-product D3). */
+    async listCopyOptions(orgId: string) {
+        return await prisma.product.findMany({
+            where: { orgId, ...AVAILABLE },
+            select: { id: true, name: true, sku: true },
+            orderBy: { name: "asc" },
         });
     }
 
@@ -459,6 +482,7 @@ export class AdminProductsRepository {
             product = await prisma.$transaction(async (tx) => {
             await tx.productStock.deleteMany({ where: { productId: id } });
             await tx.productMedia.deleteMany({ where: { productId: id } });
+            const mediaRows = await withAssetIds(media.rows, tx);
             return tx.product.update({
                 where: { id },
                 data: {
@@ -471,7 +495,7 @@ export class AdminProductsRepository {
                     tags: data.tags,
                     flags: data.flags,
                     thumbnail: media.thumbnail,
-                    media: { create: media.rows },
+                    media: { create: mediaRows },
                     sizes: data.sizes,
                     colors: data.colors,
                     sku: blankToNull(data.sku),

@@ -1,5 +1,6 @@
 # Spec — organisations and membership
 
+- **Summary:** A vendor is an organisation with people in it; a person may belong to several
 - **Status:** ✅ Implemented — PR-23 (rename) and PR-24 (membership)
 - **Domain:** catalog, identity
 - **Phase:** 3 — Fulfilment

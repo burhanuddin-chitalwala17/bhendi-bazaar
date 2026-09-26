@@ -13,6 +13,11 @@ import { toProductFlags } from "@/types/product";
 
 import { NotFoundError } from "@server/shared/domain-error";
 import {
+  isRenderableImageUrl,
+  renderableMedia,
+} from "@server/catalog/image-paths";
+import { LOGO } from "@/lib/config";
+import {
   loadPriceContext,
   resolveProductPrice,
   type PriceContext,
@@ -64,8 +69,12 @@ const mapProduct = (
     // product page does.
     rating: ratingFor(ratings, product.id).average,
     reviewsCount: ratingFor(ratings, product.id).count,
-    media: product.media ?? [],
-    thumbnail: product.thumbnail,
+    // A URL left on the retired store throws inside next/image and takes the whole
+    // page down (OPERATIONS.md "Images left behind"), so it reads as no image here.
+    media: renderableMedia(product.media ?? []),
+    thumbnail: isRenderableImageUrl(product.thumbnail)
+      ? product.thumbnail
+      : LOGO.ICON,
     weight: product.weight ?? 0,
     stock: totalStock,
     lowStockThreshold: product.lowStockThreshold,

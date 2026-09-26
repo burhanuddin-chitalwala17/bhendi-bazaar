@@ -1,5 +1,6 @@
 # Spec — seo
 
+- **Summary:** The store is findable: every public page describes itself, every product is machine-readable at the price it is sold for, and every URL answers honestly
 - **Status:** Draft
 - **Domain:** cross-domain (catalog leads)
 - **Phase:** 10 — Discoverability

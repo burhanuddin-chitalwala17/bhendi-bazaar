@@ -1,6 +1,10 @@
 # Home banners
 
-**Verified:** 2026-09-21
+- **Summary:** The home page hero is a set of platform-owned banners the owner orders, replaces and takes down without a deploy
+- **Status:** ✅ Implemented
+- **Domain:** catalog
+- **Phase:** —
+- **Verified:** 2026-09-21
 
 ## Problem
 

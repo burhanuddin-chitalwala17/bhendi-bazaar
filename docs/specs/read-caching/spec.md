@@ -1,5 +1,6 @@
 # Spec — read-caching
 
+- **Summary:** A page that renders the same for everyone is built once, and no price on it is ever stale
 - **Status:** Draft
 - **Domain:** catalog, with cross-domain reads
 - **Phase:** 5 — Scale & operability

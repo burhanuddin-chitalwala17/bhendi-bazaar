@@ -1,5 +1,6 @@
 # Spec — seller-identity
 
+- **Summary:** A product says which organisation sells it, and that name leads to everything else it sells
 - **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts

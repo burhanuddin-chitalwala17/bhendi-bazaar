@@ -1,5 +1,6 @@
 # Spec — storefront-pages
 
+- **Summary:** A landing page, an about page and a grid of goods for one organisation, at a link it can hand out
 - **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts

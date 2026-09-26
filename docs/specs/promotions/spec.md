@@ -1,5 +1,6 @@
 # Spec — promotions
 
+- **Summary:** The platform and each organisation can run time-boxed offers, applied automatically or by coupon code
 - **Status:** 🔨 In progress — engine, checkout, offers API and salePrice retirement landed (PR-67); admin/org screens outstanding
 - **Domain:** promotions *(new)*, catalog, checkout
 - **Phase:** 7 — Promotions & settlement

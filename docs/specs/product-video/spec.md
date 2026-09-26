@@ -1,5 +1,6 @@
 # Spec — product video
 
+- **Summary:** A product page shows video alongside its photographs, in an order the seller composes
 - **Status:** 📝 Draft
 - **Domain:** catalog, checkout
 - **Phase:** 6 — Catalogue richness

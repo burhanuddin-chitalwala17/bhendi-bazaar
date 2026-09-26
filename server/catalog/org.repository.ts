@@ -5,6 +5,25 @@ import type { Org } from "@prisma/client";
 import { OrgRole, Prisma } from "@prisma/client";
 import type { CreateOrgInput } from "@server/catalog/org.types";
 
+/**
+ * An org is born with its two one-to-one rows, so no read path ever meets an absent profile
+ * (org-profile spec trd D4). The introduction a creator types is public face and lands there.
+ */
+function orgCreateData(data: CreateOrgInput): Prisma.OrgCreateInput {
+  const { description, ...org } = data;
+  return {
+    ...org,
+    // Convert empty strings to null for optional fields
+    phone: data.phone || null,
+    contactPerson: data.contactPerson || null,
+    businessName: data.businessName || null,
+    gstNumber: data.gstNumber || null,
+    panNumber: data.panNumber || null,
+    profile: { create: { description: description || null } },
+    listingDefaults: { create: {} },
+  };
+}
+
 export class OrgRepository {
   /**
    * Get all orgs with optional stats
@@ -31,6 +50,7 @@ export class OrgRepository {
         products: {
           select: { stockLocations: { select: { quantity: true } } },
         },
+        profile: { select: { description: true, logoUrl: true } },
       },
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
     });
@@ -92,6 +112,7 @@ export class OrgRepository {
           products: {
             select: { stockLocations: { select: { quantity: true } } },
           },
+          profile: { select: { description: true, logoUrl: true } },
         },
         orderBy: [{ isActive: "desc" }, { name: "asc" }],
         skip: (filters.page - 1) * filters.limit,
@@ -131,6 +152,7 @@ export class OrgRepository {
         products: {
           select: { stockLocations: { select: { quantity: true } } },
         },
+        profile: { select: { description: true, logoUrl: true } },
       },
     });
     if (!org) return null;
@@ -160,31 +182,6 @@ export class OrgRepository {
    * `isActive` is in the where, not the select: a withdrawn shop is absent, not
    * present-and-hidden, so the caller's only option is `notFound()`.
    */
-  async findPublicByHandle(handle: string) {
-    return await prisma.org.findFirst({
-      where: { handle, isActive: true },
-      select: {
-        id: true,
-        handle: true,
-        name: true,
-        description: true,
-        tagline: true,
-        logoUrl: true,
-        heroUrl: true,
-        accent: true,
-        deliveryPolicy: true,
-        returnsPolicy: true,
-      },
-    });
-  }
-
-  /**
-   * A handle this org used to hold and still holds the lease on, for the redirect.
-   *
-   * Returns the org's *current* handle so the caller can send the visitor there. Only
-   * rows inside the window count — past it the handle answers 404 and may belong to
-   * somebody else later (ADR-0030 decision 4).
-   */
   async findCurrentHandleForRetired(handle: string, cutoff: Date) {
     const row = await prisma.orgHandleHistory.findFirst({
       where: { handle, retiredAt: { gt: cutoff }, org: { isActive: true } },
@@ -201,18 +198,6 @@ export class OrgRepository {
    * find somewhere to buy from, and an empty shop is a dead end. Its own URL still
    * works, so nothing an org shared is broken by being absent here.
    */
-  async listPublicShops() {
-    return await prisma.org.findMany({
-      where: {
-        isActive: true,
-        products: { some: { archivedAt: null } },
-      },
-      select: { handle: true, name: true, tagline: true, logoUrl: true },
-      orderBy: { name: "asc" },
-    });
-  }
-
-  /** Identity only — for a page that needs to name one org, not stat it. */
   async findSummary(id: string) {
     return await prisma.org.findUnique({
       where: { id },
@@ -261,40 +246,6 @@ export class OrgRepository {
   }
 
   /** This org's storefront presentation, for its own editor. */
-  async findStorefrontSettings(orgId: string) {
-    return await prisma.org.findUnique({
-      where: { id: orgId },
-      select: {
-        handle: true,
-        name: true,
-        tagline: true,
-        description: true,
-        logoUrl: true,
-        heroUrl: true,
-        accent: true,
-        deliveryPolicy: true,
-        returnsPolicy: true,
-      },
-    });
-  }
-
-  /** Save what an org composed. Whitelisted: `handle` is never in here (Invariant 4). */
-  async updateStorefront(
-    orgId: string,
-    data: {
-      tagline: string | null;
-      description: string | null;
-      logoUrl: string | null;
-      heroUrl: string | null;
-      accent: string | null;
-      deliveryPolicy: string | null;
-      returnsPolicy: string | null;
-    }
-  ) {
-    return await prisma.org.update({ where: { id: orgId }, data, select: { id: true } });
-  }
-
-  /** Set what the platform charges this org. Platform-owned; never org input. */
   async updateCommercialTerms(
     id: string,
     terms: { commissionBps: number; maxDiscountBps: number },
@@ -368,18 +319,7 @@ export class OrgRepository {
    * Create new org
    */
   async create(data: CreateOrgInput): Promise<Org> {
-    return await prisma.org.create({
-      data: {
-        ...data,
-        // Convert empty strings to null for optional fields
-        phone: data.phone || null,
-        contactPerson: data.contactPerson || null,
-        businessName: data.businessName || null,
-        gstNumber: data.gstNumber || null,
-        panNumber: data.panNumber || null,
-        description: data.description || null,
-      },
-    });
+    return await prisma.org.create({ data: orgCreateData(data) });
   }
 
   /**
@@ -392,17 +332,7 @@ export class OrgRepository {
    */
   async createWithOwner(data: CreateOrgInput, userId: string): Promise<Org> {
     return await prisma.$transaction(async (tx) => {
-      const org = await tx.org.create({
-        data: {
-          ...data,
-          phone: data.phone || null,
-          contactPerson: data.contactPerson || null,
-          businessName: data.businessName || null,
-          gstNumber: data.gstNumber || null,
-          panNumber: data.panNumber || null,
-          description: data.description || null,
-        },
-      });
+      const org = await tx.org.create({ data: orgCreateData(data) });
 
       await tx.orgMember.create({
         data: { userId, orgId: org.id, role: OrgRole.OWNER },
@@ -415,19 +345,19 @@ export class OrgRepository {
   /**
    * Update org
    */
-  async update(id: string, data: Partial<CreateOrgInput>) {
-    // after updating return the product count and stock
+  /** The introduction is public face and belongs to the profile repository; it is not written here. */
+  async update(id: string, data: Omit<Partial<CreateOrgInput>, "description">) {
+    const org = data;
     await prisma.org.update({
       where: { id },
       data: {
-        ...data,
+        ...org,
         // Convert empty strings to null for optional fields
         phone: data.phone || null,
         contactPerson: data.contactPerson || null,
         businessName: data.businessName || null,
         gstNumber: data.gstNumber || null,
         panNumber: data.panNumber || null,
-        description: data.description || null,
       },
     });
     const orgWithStats = await this.findById(id);

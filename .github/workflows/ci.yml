@@ -213,3 +213,92 @@ jobs:
               echo "- Stable preview: https://dev.bhendi-bazaar.com"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # The worker's image and its machine (worker-foundation trd D7). The image is built for both
+  # arm64 and amd64 so either free shape can run it, pushed to this repository's container
+  # registry on every push, and started on the machine only from main. The machine is reached
+  # over SSH with a key that lives in this repository's secrets; the env file the worker reads
+  # is written from a secret on each deploy and never lives in git or in the image.
+  deploy-worker:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/bhendi-bazaar-worker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for the arm64 build
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/worker/Dockerfile
+          platforms: linux/arm64,linux/amd64
+          push: true
+          build-args: WORKER_VERSION=${{ github.sha }}
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Production only. The staging worker is started by hand while someone is testing
+      # (spec R6), from the `develop` tag this job has just pushed.
+      - name: Start the production worker on its machine
+        if: github.ref_name == 'main'
+        env:
+          WORKER_HOST: ${{ secrets.WORKER_HOST }}
+          WORKER_SSH_USER: ${{ secrets.WORKER_SSH_USER }}
+          WORKER_SSH_KEY: ${{ secrets.WORKER_SSH_KEY }}
+          WORKER_ENV_FILE: ${{ secrets.WORKER_ENV_FILE }}
+          GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
+          GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$WORKER_HOST" || { echo "WORKER_HOST is not set; the machine does not exist yet, so there is nothing to start." ; exit 0; }
+          mkdir -p ~/.ssh
+          printf '%s\n' "$WORKER_SSH_KEY" > ~/.ssh/worker
+          chmod 600 ~/.ssh/worker
+          SSH="ssh -i ~/.ssh/worker -o StrictHostKeyChecking=accept-new $WORKER_SSH_USER@$WORKER_HOST"
+          # The env file and the compose file travel over the same connection; the image
+          # reference is fixed to this commit so a rollback is a redeploy of an older SHA.
+          printf '%s\n' "$WORKER_ENV_FILE" | $SSH 'umask 077 && cat > /opt/worker/.env'
+          scp -i ~/.ssh/worker -o StrictHostKeyChecking=accept-new infra/worker/compose.yml "$WORKER_SSH_USER@$WORKER_HOST:/opt/worker/compose.yml"
+          $SSH "echo '$GHCR_PULL_TOKEN' | docker login ghcr.io -u '$GHCR_PULL_USER' --password-stdin && \
+            cd /opt/worker && \
+            WORKER_IMAGE='${IMAGE}:${{ github.sha }}' docker compose pull && \
+            WORKER_IMAGE='${IMAGE}:${{ github.sha }}' docker compose up -d --remove-orphans && \
+            docker compose ps"
+          rm -f ~/.ssh/worker
+
+      - name: Worker summary
+        run: |
+          {
+            echo "### Worker image"
+            echo ""
+            echo "- Image: \`${{ env.IMAGE }}:${{ github.sha }}\` (also \`:${{ github.ref_name }}\`)"
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              echo "- Production worker restarted on its machine"
+            else
+              echo "- Not started anywhere: start a staging worker by hand from this tag"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

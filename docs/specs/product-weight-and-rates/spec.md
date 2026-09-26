@@ -1,5 +1,6 @@
 # Spec — product weight and rates
 
+- **Summary:** A product's weight is recorded and prices its shipping
 - **Status:** ✅ Implemented — R1/A1 in PR-22; R2/R3 fell out of the allocation cutover (PR-48); the billing rule, R7, and the remainder closed in PR-53
 - **Domain:** catalog, shipping
 - **Phase:** 3 — Fulfilment

@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-25
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -55,6 +55,10 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **Each warm instance holds its own database connections.** With default pool sizing, a modest number of concurrent instances can exhaust Postgres `max_connections`. Use a pooled connection string in production.
 - **Environment variables are per-environment** and require a redeploy to take effect. `vercel env pull` brings them locally.
 - **Upstash provisioned through Vercel's integration is named `KV_REST_API_URL` / `KV_REST_API_TOKEN`** — *not* the `UPSTASH_REDIS_REST_*` names in Upstash's own documentation. See [OPERATIONS.md](OPERATIONS.md) for why this specific mismatch is unusually costly.
+- **A function may run for 300 s on Hobby, and that is a hard cap under Fluid Compute.** Pro defaults to 300 s and allows 800 s, with 1800 s in beta per function. It is set per route with `export const maxDuration`; nothing in this app sets it, so every handler runs at the 300 s default. Checked against Vercel's duration docs 2026-09-25.
+- **Work deferred past the response (`after()` from `next/server`, or `waitUntil`) shares the function's deadline.** It is cancelled at `maxDuration`, not granted more time, so deferring work buys nothing against the limit. Only a queue does.
+- **A Hobby cron schedule more frequent than once a day fails the deployment**, rather than running at the plan's floor. Precision is roughly hourly. Pro allows once a minute. [OPERATIONS.md](OPERATIONS.md) has why the daily backstop is acceptable.
+- **Hobby is licensed for non-commercial use only.** Vercel's fair-use guidelines name "requesting or processing payment from visitors of the site" as commercial usage, which requires Pro or Enterprise. This store takes payments. Flagged 2026-09-25; not yet acted on.
 
 ## Cloudflare R2 (storage)
 
@@ -108,6 +112,17 @@ Embedding only — nothing is uploaded and no video file is ever served by us ([
 - **A separate redirect URI is needed per environment.** Local, preview, and production are three entries.
 - **NextAuth v4 does not link a Google login to an existing email-matched account by default** under a JWT session strategy — the adapter's linking behaviour does not apply. `src/lib/auth-config.ts` does it explicitly in its `signIn` callback. This is the least obvious behaviour in our auth setup and the easiest to break by "simplifying" that callback.
 - **NextAuth v4's default session token is an encrypted JWE**, not a signed HS256 JWT. Anything asserting otherwise is wrong.
+
+## Prisma Postgres (database)
+
+The hosted database at `db.prisma.io`. Checked against Prisma's docs 2026-09-25 for [ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md).
+
+- **Every query is a billed operation, and the allowance is a hard stop on the Free plan.** A read, a write, a joined query and a cached read each count once. Free includes 200k a month (raised from 100k at some point after 2026-08-21, when this store exhausted it and production was blocked until the month rolled over); Starter is $10 for 1M. Anything that asks the database on a timer — a poller, a heartbeat, a health monitor — is spending this allowance around the clock, so timers are set against it, never left at a library's default.
+- **Two connection strings, two behaviours.** The direct host is plain PostgreSQL 17 over TLS. The pooled host is a PgBouncer in transaction mode with a ten-minute query timeout and no session state, so `LISTEN`/`NOTIFY`, advisory locks and anything else session-bound need the direct string.
+- **Direct connections are scarce.** Free and Starter allow 10 direct connections, of which 5 are reserved for the platform, leaving 5 for everything of ours combined — the site's functions and any worker. Pro allows 50. A library that defaults its pool to 10 will exhaust this on its own; size pools explicitly.
+- **Pooled limits are stated inconsistently** — the docs page and the pricing page disagree by an order of magnitude — so treat the lower figure as the one to design for until Prisma resolves it.
+- **Idle pooled connections are closed after sixty minutes.** Whether the same applies to direct connections is not stated; a long-lived listener should expect to reconnect.
+- **Extensions are enabled with `CREATE EXTENSION` in a migration**, from a fixed list of about fifty (`pgcrypto`, `pg_trgm`, `vector`, `citext` among them). Whether the provisioned role may `CREATE SCHEMA` is not documented and must be tested before a second schema is relied upon.
 
 ## Prisma 7
 

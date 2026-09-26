@@ -124,3 +124,15 @@ export function isRenderableImageUrl(
     return false;
   }
 }
+
+/**
+ * A gallery with its dead photographs dropped, so each surface's empty-gallery branch
+ * handles them. Only `IMAGE` refs are URLs; a video ref is a provider id, never checked here.
+ */
+export function renderableMedia<M extends { kind: string; ref: string }>(
+  media: M[],
+): M[] {
+  return media.filter(
+    (item) => item.kind !== "IMAGE" || isRenderableImageUrl(item.ref),
+  );
+}

@@ -1,7 +1,13 @@
 // server/services/admin/productService.ts
 
 import { adminProductsRepository } from "@server/catalog/admin.product.repository";
-import { ProductFilters, ProductFormInput } from "@server/catalog/admin.product.types";
+import {
+  ProductCopyOption,
+  ProductCopySource,
+  ProductFilters,
+  ProductFormInput,
+} from "@server/catalog/admin.product.types";
+import { ProductFlag } from "@server/catalog/product.flags";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { rupeesToPaise } from "@server/shared/money";
 import { orgAddressRepository } from "@server/catalog/org.address.repository";
@@ -179,6 +185,29 @@ export class ProductsService {
       throw new NotFoundError("Product not found");
     }
     return product;
+  }
+
+  /**
+   * The fields a new product may take from one of the org's own. Scoped through
+   * `ownedByOrg`, so a `copyFrom` naming another org's product is a 404, not a leak.
+   * Archived products are copyable: the org can still see them on its Archived shelf.
+   */
+  async getCopySource(id: string, orgId: string): Promise<ProductCopySource> {
+    const product = await this.ownedByOrg(id, orgId);
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      categoryId: product.category.id,
+      tags: product.tags,
+      flags: product.flags as ProductFlag[],
+      sizes: product.sizes,
+      colors: product.colors,
+    };
+  }
+
+  async listCopyOptions(orgId: string): Promise<ProductCopyOption[]> {
+    return adminProductsRepository.listCopyOptions(orgId);
   }
 
   async updateProduct(id: string, data: ProductFormInput) {

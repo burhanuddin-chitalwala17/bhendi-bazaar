@@ -1,5 +1,6 @@
 # Spec — money as paise
 
+- **Summary:** Every amount displayed, stored, charged, and reported is exact
 - **Status:** ✅ Implemented — PR-37
 - **Domain:** cross-domain
 - **Phase:** 2 — Transaction integrity

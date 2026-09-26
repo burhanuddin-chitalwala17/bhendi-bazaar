@@ -7,6 +7,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { contentSecurityPolicy, STATIC_SECURITY_HEADERS } from "@/lib/security-headers";
+import { youtubeEmbedUrl, youtubePosterUrl } from "@server/catalog/media";
 
 const NONCE = "0123456789abcdef0123456789abcdef";
 
@@ -44,6 +45,18 @@ describe("content security policy", () => {
     for (const name of ["script-src", "frame-src", "form-action", "connect-src"]) {
       expect(directive(prod, name), `${name} must admit Razorpay`).toContain("razorpay.com");
     }
+  });
+
+  it("admits the video player on the channels its embed actually uses", () => {
+    // Regression: the policy inventoried the gateway's channels and the poster image host,
+    // and nothing else. The player iframe (ADR-0017) had no entry in `frame-src`, so every
+    // product video rendered as Chrome's "This content is blocked" while the poster beside
+    // it loaded fine. The hosts are derived from the functions that emit the URLs, so the
+    // embed cannot move without this going red.
+    const embedHost = new URL(youtubeEmbedUrl("dQw4w9WgXcQ")).origin;
+    const posterHost = new URL(youtubePosterUrl("dQw4w9WgXcQ")).origin;
+    expect(directive(prod, "frame-src")).toContain(embedHost);
+    expect(directive(prod, "img-src")).toContain(posterHost);
   });
 
   it("lets the browser write to the object store it uploads through", () => {

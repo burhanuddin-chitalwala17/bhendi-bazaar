@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-26
 - **Covers:** `package.json`
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
@@ -17,6 +17,7 @@
 
 | Package | Pinned | Why | Used by | Verified |
 |---|---|---|---|---|
+| `pg-boss` | `^12.34.0` | The job queue, as tables in our own Postgres ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)). Reached only through `server/shared/jobs/`; its schema is applied by our migrations, never by the library. One-person project, which is one reason it sits behind a seam | `server/shared/jobs/`, `worker/` | 2026-09-26 |
 | `next` | `16.3.5` | Framework: App Router, RSC, route handlers. Pinned exactly, not caretted — a framework minor arriving on a lockfile refresh is not something to leave to chance | Everything | 2026-09-21 |
 | `react` / `react-dom` | `19.2.1` | UI runtime | Everything | 2026-08-03 |
 | `@prisma/client` / `prisma` | `^7.10.0` | Type-safe DB access; migrations. **The two must be bumped together** — `npm audit fix` once moved the CLI alone and every query died with `Cannot find module './query_compiler_fast_bg.js'` | `server/<domain>/*.repository.ts` | 2026-09-21 |
@@ -33,7 +34,7 @@
 | `libphonenumber-js` | `^1.13.13` | Validates, normalises to E.164 and formats phone numbers for every country. Imported as `/max`: `min` metadata validates most countries by length alone and accepts numbers the Indian rule refused ([international-phone](specs/international-phone/trd.md) D1) | `server/shared/phone.ts` only | 2026-09-11 |
 | `resend` | `^6.6.0` | Transactional email | `server/notifications/email.service.ts` | 2026-08-03 |
 | `react-hook-form` + `@hookform/resolvers` | `^7.68.0` / `^5.2.2` | Admin form state with Zod resolvers | `src/components/shared/forms/**` | 2026-08-03 |
-| `@radix-ui/*` | various | Accessible primitives behind shadcn/ui: dialog, separator, slot, switch | `src/components/ui/**` | 2026-08-03 |
+| `@radix-ui/*` | various | Accessible primitives behind shadcn/ui: dialog, dropdown-menu, separator, slot, switch. `dropdown-menu` added for row actions and the copy picker ([copy-product](specs/copy-product/trd.md)) — keyboard navigation, typeahead and collision-aware positioning are what a hand-rolled menu gets wrong | `src/components/ui/**` | 2026-09-23 |
 | `lucide-react` | `^0.561.0` | Icons | Throughout UI | 2026-08-03 |
 | `@vercel/analytics` + `@vercel/speed-insights` | `^2.0.1` / `^2.0.0` | Page analytics and Core Web Vitals, mounted in `src/app/layout.tsx`. Both serve their script from our own origin, so the CSP needs no third-party `script-src` for them | `src/app/layout.tsx` | 2026-09-21 |
 | `sonner` | `^2.0.7` | Toast notifications | `src/app/providers.tsx` | 2026-08-03 |
@@ -52,6 +53,7 @@
 | `tailwindcss` + `@tailwindcss/postcss` | `^4` | Styling (Tailwind v4 via the PostCSS plugin) |
 | `tw-animate-css` | `^1.4.0` | Animation utilities for shadcn |
 | `dotenv` | `^17.2.3` | Loads `.env` for `prisma.config.ts` and scripts |
+| `tsx` | `^4.23.15` | Runs `worker/main.ts` locally (`npm run worker`): ESM-native, follows the `@server/*` alias, and loads pg-boss, which is ESM-only |
 | `ts-node` | `^10.9.2` | Runs `prisma/seed.ts` |
 | `tsconfig-paths` | `^3.15.0` | Resolves the `@server/*` alias for that seed run. Was present transitively and relied on by accident until PR-125; the seed reaches aliased modules through `org.handle`, and without it `db seed` dies on the first one. Needs `baseUrl` in `tsconfig.json`, which is why that field exists. |
 | `@types/*` | — | Type definitions |

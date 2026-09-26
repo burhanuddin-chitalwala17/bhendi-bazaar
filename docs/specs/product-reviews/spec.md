@@ -1,5 +1,6 @@
 # Spec — product-reviews
 
+- **Summary:** Buyers read and write reviews, photographs included, and the rating every surface shows is derived from the published ones
 - **Status:** ✅ Implemented — PR-124, revised PR-125
 - **Domain:** catalog, reading from checkout for the verified badge
 - **Phase:** —

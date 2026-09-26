@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-24
+- **Verified:** 2026-09-27
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -29,6 +29,8 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ➖ | **Read by nothing.** Marked required here until 2026-09-23; no `process.env` reference exists. The checkout widget is handed the key id in the server's response (`server/payments/providers/razorpay/razorpay.repository.ts`), so setting it changes nothing and leaving it unset breaks nothing |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
+| `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it. `NODE_ENV` is never set by us: Vercel and Next.js set it to `production` for every build, which is why `APP_ENV` is required there |
+| `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
 | `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
 | `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — the bucket's custom domain in production, its `r2.dev` URL locally. **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
@@ -157,8 +159,13 @@ raises `Invalid src prop` during render, which unmounts the page rather than the
 One leftover `Banner.imageUrl` blanked both the storefront homepage and `/admin/banners` —
 the page the remedy below has to be carried out on. Since PR-121 the banner surfaces route
 their stored URL through `isRenderableImageUrl` (`server/catalog/image-paths.ts`), so a dead
-one reads as "no image" and the admin row says *Image needs re-uploading*. **The other seven
-columns are not yet guarded** and will still take a page down. Eight columns can hold one: `Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`,
+one reads as "no image" and the admin row says *Image needs re-uploading*. Since PR-148
+`Product.thumbnail` and `ProductMedia.ref` are guarded where products are mapped for display
+(`src/data-access-layer/products.dal.ts` and its org-portal counterpart): a dead thumbnail
+becomes the brand mark and a dead photo is dropped from the gallery, so saving the product's
+edit form clears it from the row. Search suggestions, wishlist, cart, bidding and order lines
+carry the thumbnail by other paths and **are not yet guarded**, and neither are the other five
+columns — any of them will still take a page down. Eight columns can hold one: `Category.heroImage`, `Product.thumbnail`, `ProductMedia.ref`, `Profile.profilePic`,
 `Org.logoUrl`, `OrderItem.thumbnail`, `ShippingProvider.logoUrl`, `Banner.imageUrl`. To find them:
 
 ```
@@ -241,6 +248,7 @@ Then `DATABASE_URL="postgresql://postgres:password@localhost:5432/bhendi_bazaar?
 
 ```bash
 npm run dev            # dev server
+npm run worker         # the job worker, against the same DATABASE_URL (worker-foundation)
 npm run build          # production build
 npm start              # serve the build
 npx tsc --noEmit       # typecheck
@@ -269,6 +277,128 @@ npx prisma migrate dev # create + apply a migration
 
 This makes **rate quoting** live. Shipment booking currently uses a mock implementation — see [ARCHITECTURE.md](ARCHITECTURE.md) and [shipping-fulfilment](specs/shipping-fulfilment/).
 
+## The worker
+
+The job queue is a set of tables in the application's own Postgres, in the `pgboss` schema, and
+the worker is a second process that runs them ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [worker-foundation](specs/worker-foundation/)).
+
+- **Locally:** `npm run worker` beside `npm run dev`, same `DATABASE_URL`. It logs the job types it
+  knows and writes a heartbeat row the admin dashboard reads. Send it a no-op with a `ping` job from
+  any transaction (`server/shared/jobs/ping.job.ts`).
+- **The schema is ours to migrate.** `prisma/migrations/20260926100000_worker_foundation/` holds
+  pg-boss's construction plan verbatim. Upgrading pg-boss means exporting its migration plan into a
+  new Prisma migration; the library's own runtime migration is switched off and must stay off.
+- **Every timer is set in `server/shared/jobs/jobs.config.ts`**, and `tests/unit/jobs-config.test.ts`
+  fails if one is shortened or left to a default: the database bills every poll.
+- **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
+  count and re-runs them; each re-run is an audit entry.
+- **Direct connections.** The worker needs the direct connection string (notify is session-bound);
+  it takes three pooled connections plus one listener of the five the plan allows.
+
+### The worker's image
+
+`infra/worker/Dockerfile` builds it: dependencies from the lockfile, the Prisma client generated,
+then only `server/`, `worker/` and `prisma/` on a Node 22 base, run with `node --import tsx`. The
+`deploy-worker` job in `.github/workflows/ci.yml` builds it for arm64 and amd64 on every push and
+pushes `ghcr.io/<owner>/bhendi-bazaar-worker:<sha>` and `:<branch>`. Build it yourself with
+`docker build -f infra/worker/Dockerfile .`; run it anywhere with the env file below. It is about
+1.1 GB because it carries the whole lockfile's dependencies; trimming to the worker's own set is
+worth doing once a second job type exists.
+
+### The worker's machine
+
+An Ubuntu 24.04 virtual machine the project administers, provisioned and rebuilt by
+`infra/worker/provision.sh` (worker-foundation R7, trd D8). The current machine is an Oracle Cloud
+Always Free instance in **India West (Mumbai)**, the database's region, on a Pay As You Go account.
+That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)); nothing in the repository knows it.
+
+**Account setup, once.** After the Pay As You Go upgrade completes:
+
+1. **Budget alert.** Billing → Budgets → a monthly budget of 1 USD with an alert rule at 100% to your
+   email. Budgets alert; they do not stop spending.
+2. **Quotas are the brake.** Governance → Quotas → a quota policy on the tenancy that forbids anything
+   the free tier does not cover. Oracle refuses a request over quota rather than billing it. The
+   Always Free allowance is 2 Ampere OCPUs with 12 GB, or the two AMD micro instances, and 200 GB of
+   block storage; set the quotas to exactly that, so a rebuild is delete-then-create and two machines
+   can never coexist and bill:
+
+   ```text
+   zero compute-core quotas /*/ in tenancy
+   set compute-core quota standard-a1-core-count to 2 in tenancy
+   set compute-core quota standard-a1-core-regional-count to 2 in tenancy
+   set compute-core quota standard-e2-micro-core-count to 2 in tenancy
+   zero compute-memory quotas /*/ in tenancy
+   set compute-memory quota standard-a1-memory-count to 12 in tenancy
+   set compute-memory quota standard-a1-memory-regional-count to 12 in tenancy
+   zero block-storage quotas /*/ in tenancy
+   set block-storage quota total-storage-gb to 200 in tenancy
+   zero database quotas /*/ in tenancy
+   ```
+
+   The two `-regional-count` names are the ones Oracle actually checked when the first instance was
+   created on 2026-09-26: a wildcard `zero` covers them too, so each needs its own `set`, or the
+   create fails with "compartment quotas were exceeded" naming them. The micro shape has no
+   regional variant; Oracle rejects that name.
+3. **The idle rule.** Oracle reclaims Always Free instances that stay under 20% CPU, network and
+   memory for seven days. The Pay As You Go account is the commonly reported protection; the
+   provisioning script is the fallback — a reclaimed machine is a ten-minute rebuild.
+
+**The machine, once (and again after a loss).**
+
+1. Networking → Virtual Cloud Networks → wizard, "Create VCN with Internet Connectivity". In the
+   public subnet's security list keep inbound to SSH (22) only.
+2. Compute → Instances → Create: image Ubuntu 24.04 (Always Free eligible); shape
+   `VM.Standard.A1.Flex`, 2 OCPUs, 12 GB — if Mumbai has no capacity, `VM.Standard.E2.1.Micro`;
+   public IPv4 assigned; your SSH public key pasted; 50 GB boot volume.
+3. Networking → IP Management → Reserved Public IPs: reserve the address, so a rebuilt machine keeps
+   it and no secret changes.
+4. From a terminal, as `ubuntu`: copy `infra/worker/` to the machine and run `sudo ./provision.sh`.
+   It is idempotent; re-run it after any change to the script.
+
+**GitHub repository secrets the deploy needs.**
+
+| Secret | Holds |
+|---|---|
+| `WORKER_HOST` | The reserved public IP |
+| `WORKER_SSH_USER` | `ubuntu` on that image |
+| `WORKER_SSH_KEY` | A private key whose public half is in the machine's `authorized_keys`. Generate one for the pipeline alone; never reuse a personal key |
+| `WORKER_ENV_FILE` | The whole env file, from `.env.worker.example` with values — `DATABASE_URL` is the **direct** string of the production database |
+| `GHCR_PULL_USER` / `GHCR_PULL_TOKEN` | A GitHub user and a personal access token with `read:packages`, so the machine can pull the private image |
+
+**Redeploys and the dev domain.** `dev.bhendi-bazaar.com` is moved onto a deployment by the pipeline's
+alias step, and only by it. A Redeploy from the Vercel dashboard rebuilds the source of the deployment
+you clicked — not the branch's latest commit — and leaves the domain where it was. To get current
+`develop` code onto dev with current variables, push, or re-run the workflow from the Actions tab.
+A new or changed environment variable also reaches only deployments created after it was saved.
+
+**Deploy.** A push to `main` builds the image, then over SSH writes the env file, copies
+`compose.yml`, pulls the commit's image and restarts the stack. The heartbeat on the admin dashboard
+goes green within five minutes. A rollback is re-running the job on an older commit. Until
+`WORKER_HOST` exists the job builds and pushes and skips the machine.
+
+**Staging.** Same image, different env file, started by hand while someone is testing (spec R6):
+
+```bash
+mkdir -p ~/worker-staging && cp infra/worker/compose.yml ~/worker-staging/ && cd ~/worker-staging
+# .env from .env.worker.example with the dev database and APP_ENV=preview
+WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p worker-staging up -d
+docker compose -p worker-staging down   # when done: an idle worker still bills polls
+```
+
+**Rebuild after a loss.** Create the instance again with the reserved IP, run `provision.sh`, re-run
+the last `main` pipeline. Nothing was on the machine that is not in Postgres or the object store.
+
+## The media library backfill
+
+Every image the store holds has a record in `MediaAsset` from [media-library](specs/media-library/) PR 1 onward — uploads register one before the bytes move. Images stored before that are brought under the record by a one-off, idempotent script rather than a migration, because it needs the object store to read each image's dimensions (trd D3):
+
+```bash
+npm run media:backfill            # report what would be created and linked
+npm run media:backfill -- --write # create the assets and link the rows
+```
+
+Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
+
 ## Infrastructure
 
 Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and which variables the code actually reads.
@@ -277,7 +407,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 |---|---|---|
 | Hosting | **Vercel** | Project `bhendi-bazaar`; deployed from GitHub Actions, not the Git integration — see [Deploy](#deploy) |
 | Domain | **GoDaddy** (registrar) | `bhendi-bazaar.com`; DNS points at Vercel |
-| Database | **Prisma Postgres** (`db.prisma.io`) | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story |
+| Database | **Prisma Postgres** (`db.prisma.io`), **Mumbai region** | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story. Anything that talks to it constantly — the worker of [worker-foundation](specs/worker-foundation/) — is placed in the same region |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
 | Redis (rate limiting) | **Upstash** — *not currently wired* | Intended provider, via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*`. No live code reads it |
 | File storage | **Cloudflare R2** | `R2_*` variables; `R2_PUBLIC_BASE_URL` is read by `next.config.ts` at build time for `remotePatterns`. No egress meter ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)) |

@@ -1,5 +1,6 @@
 # Spec — bulk-catalog-upload
 
+- **Summary:** Org owners create their catalogue from a spreadsheet + local photos; admins likewise for categories
 - **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness

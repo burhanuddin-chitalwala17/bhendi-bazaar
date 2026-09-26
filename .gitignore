@@ -36,6 +36,7 @@ yarn-error.log*
 # new machine learns what has to be set. `.env*` above would otherwise hide them.
 !.env.example
 !.env.production.example
+!.env.worker.example
 
 # vercel
 .vercel

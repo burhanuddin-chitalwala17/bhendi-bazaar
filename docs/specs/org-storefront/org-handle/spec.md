@@ -1,5 +1,6 @@
 # Spec — org-handle
 
+- **Summary:** Every organisation gets a short, readable name that can appear in a URL
 - **Status:** ✅ Implemented
 - **Domain:** catalog
 - **Phase:** 9 — Seller storefronts

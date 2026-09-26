@@ -1,5 +1,6 @@
 # Spec — warehouses and stock allocation
 
+- **Summary:** Stock is known per pickup location, and an order ships from wherever its stock actually is
 - **Status:** ✅ Implemented (PR-45..49; rename PR-24..28 and reservation PR-40 as prerequisites)
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment

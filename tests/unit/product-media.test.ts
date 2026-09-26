@@ -16,6 +16,7 @@ import {
   type ProductMediaInput,
 } from "@server/catalog/media";
 import { mediaWrite } from "@server/catalog/admin.product.repository";
+import { renderableMedia } from "@server/catalog/image-paths";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 
 const A = "https://cdn.example.com/a.jpg";
@@ -193,5 +194,21 @@ describe("the product-media migration", () => {
     );
     expect(sql).not.toMatch(/DROP COLUMN[\s\S]*"images"/);
     expect(dropSql).toMatch(/DROP COLUMN IF EXISTS "images"/);
+  });
+});
+
+// A row can still hold a URL on the retired Blob store, and next/image throws on it
+// rather than degrading (OPERATIONS.md "Images left behind on the retired store").
+describe("renderableMedia", () => {
+  const DEAD = "https://o42adyjkazl35sk2.public.blob.vercel-storage.com/products/a.png";
+
+  it("drops a photograph left on the retired store and keeps the rest in order", () => {
+    const gallery = [image(A), image(DEAD, true), image(B)];
+    expect(renderableMedia(gallery).map((item) => item.ref)).toEqual([A, B]);
+  });
+
+  it("never checks a video ref, which is a provider id rather than a URL", () => {
+    const video = { kind: "YOUTUBE" as const, ref: VIDEO, isThumbnail: false };
+    expect(renderableMedia([video])).toEqual([video]);
   });
 });

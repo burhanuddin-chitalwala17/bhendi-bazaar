@@ -1,3 +1,4 @@
+import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
@@ -45,7 +46,7 @@ export default async function OrgEditProductPage({
           categories={categories}
           orgs={orgs}
           locations={locations}
-          uploadTokenEndpoint={`/api/org/${orgId}/upload/token`}
+          uploadEndpoints={orgUploadEndpoints(orgId)}
         />
       </Suspense>
     </PageShell>

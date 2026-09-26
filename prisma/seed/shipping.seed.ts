@@ -2,7 +2,7 @@
 
 import { SeedShippingProvider } from "./types";
 
-export const seedShippingProviders: any[] = [
+export const seedShippingProviders: SeedShippingProvider[] = [
   {
     id: "shiprocket_001",
     code: "shiprocket",

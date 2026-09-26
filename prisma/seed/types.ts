@@ -171,7 +171,7 @@ export interface SeedShippingProvider {
   priority: number; // Higher number = higher priority
 
   // Authentication & Connection Status
-  isConnected: boolean; // Is account connected?
+  isConnected?: boolean; // Is account connected? Prisma defaults it to false
   connectedAt?: Date; // When was it connected?
   connectedBy?: string; // Admin user ID who connected it
   connectionType: "email_password" | "api_key" | "oauth"; // [ 'email_password', 'api_key', 'oauth' ]
@@ -194,7 +194,6 @@ export interface SeedShippingProvider {
   logoUrl?: string; // Provider logo
   websiteUrl?: string; // Provider website
 
-  createdAt: Date;
-  updatedAt: Date;
-
+  createdAt?: Date;
+  updatedAt?: Date;
 }
