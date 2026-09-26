@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-155] 2026-09-26 — The video player is admitted by the Content-Security-Policy
+
+Every product video on the live store rendered as Chrome's "This content is blocked" while the
+poster beside it loaded. ADR-0035's `frame-src` admitted the payment gateway and nothing else; the
+YouTube poster host had been added to `img-src`, but the player iframe on `youtube-nocookie.com`
+(ADR-0017) had no entry, and the header test asserted only what the ADR listed. `frame-src` now
+names the embed origin, and `tests/unit/security-headers.test.ts` derives the embed and poster
+hosts from the functions in `server/catalog/media.ts` that emit them, so the policy fails the
+suite rather than the storefront if either moves.
+
 ## [PR-154] 2026-09-26 — The quota runbook names the quotas Oracle actually enforces
 
 Creating the first machine was refused with "compartment quotas were exceeded" naming
