@@ -127,13 +127,21 @@ export const TOOL_COPY: Record<EnhancementTool, { label: string; line: string }>
 
 /**
  * The states a run counts against the month in (trd D5): asked for, being made, awaiting a
- * decision, or kept. A discarded or failed run hands its slot back; its cost stays recorded.
+ * decision, kept — **or discarded**. The work is what costs, not the keeping of it: by the time a
+ * proposal is on the screen the service has been paid and the platform's day is that much shorter,
+ * so handing the slot back for a "no" would let one shop spend the platform's money without
+ * spending its own. The org member is told this before choosing a tool, never after (spec R3, R7).
+ *
+ * A failed run is the exception, and the only one: nothing was produced, so nothing is charged.
+ * Its cost, where a service was reached before the failure, stays recorded against the platform's
+ * day, because that money did leave.
  */
 export const USAGE_STATES = [
   ENHANCEMENT_STATE.REQUESTED,
   ENHANCEMENT_STATE.RUNNING,
   ENHANCEMENT_STATE.PROPOSED,
   ENHANCEMENT_STATE.ACCEPTED,
+  ENHANCEMENT_STATE.DISCARDED,
 ] as const;
 
 export interface TimeWindow {

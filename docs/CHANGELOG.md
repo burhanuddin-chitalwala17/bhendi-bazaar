@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-195] 2026-09-28 — A run counts when it runs, not when it is kept
+
+A discarded improvement handed its slot back. By the time a proposal is on the screen the service
+has been paid and the platform's day is that much shorter, so a shop could have spent the
+platform's money without spending any of its own — and a shop asking for ten scenes and keeping one
+would have shown as one. Use now counts every run but a failed one, which is the single case where
+nothing was produced. The sheet says so before a tool is chosen rather than after: "Each one you run
+counts, whether you keep it or not." The cost of a failure that had already reached a service stays
+recorded against the platform's day, because that money did leave.
+
 ## [PR-194] 2026-09-28 — One video, one item: what the first real upload showed
 
 Three faults, all visible in a single clip filmed on a phone.

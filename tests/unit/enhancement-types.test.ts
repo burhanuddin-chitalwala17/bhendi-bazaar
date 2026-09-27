@@ -171,15 +171,17 @@ describe("an allowance resolves through three layers", () => {
 });
 
 describe("the usage window", () => {
-  it("counts a run while it is asked for, running, proposed or kept — a discard or a failure gives the slot back", () => {
+  it("counts a run from the moment it is asked for, and a discard does not give the slot back", () => {
+    // The old rule handed a slot back on "no". By then the service had been paid and the
+    // platform's day was that much shorter, so a shop could spend the platform's money
+    // without spending its own.
     expect([...USAGE_STATES]).toEqual([
       ENHANCEMENT_STATE.REQUESTED,
       ENHANCEMENT_STATE.RUNNING,
       ENHANCEMENT_STATE.PROPOSED,
       ENHANCEMENT_STATE.ACCEPTED,
+      ENHANCEMENT_STATE.DISCARDED,
     ]);
-    expect(USAGE_STATES).not.toContain(ENHANCEMENT_STATE.DISCARDED);
-    expect(USAGE_STATES).not.toContain(ENHANCEMENT_STATE.FAILED);
   });
 
   it("is the UTC calendar month, whatever zone the browser was in", () => {
@@ -355,5 +357,24 @@ describe("naming the photo from either surface", () => {
     expect(library).toMatchObject({ sourceAssetId: "a1" });
     expect(library.sourceRef).toBeUndefined();
     expect(library.slot).toBeUndefined();
+  });
+});
+
+describe("what a month's use counts", () => {
+  it("counts a discarded run: the work is what costs, not the keeping of it", () => {
+    expect(USAGE_STATES).toContain(ENHANCEMENT_STATE.DISCARDED);
+    expect(USAGE_STATES).toContain(ENHANCEMENT_STATE.PROPOSED);
+    expect(USAGE_STATES).toContain(ENHANCEMENT_STATE.ACCEPTED);
+  });
+
+  it("does not count a failed run, the one case where nothing was produced", () => {
+    expect(USAGE_STATES).not.toContain(ENHANCEMENT_STATE.FAILED);
+  });
+
+  it("counts every state but that one, so a slot cannot be handed back by waiting", () => {
+    const uncounted = Object.values(ENHANCEMENT_STATE).filter(
+      (state) => !(USAGE_STATES as readonly string[]).includes(state),
+    );
+    expect(uncounted).toEqual([ENHANCEMENT_STATE.FAILED]);
   });
 });

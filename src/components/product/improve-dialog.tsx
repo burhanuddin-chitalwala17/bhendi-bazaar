@@ -265,7 +265,8 @@ export function ImproveDialog({
         </>
       )}
 
-      {usage && <UsageLine usage={usage} />}
+      {/* The warning belongs before the choice; once a run is under way the count already includes it. */}
+      {usage && <UsageLine usage={usage} beforeRunning={run.phase === "idle"} />}
     </TaskDialog>
   );
 }
@@ -294,13 +295,23 @@ function Frame({
   );
 }
 
-/** One line, never a modal (trd, UI approach): what the shop has used, or why it is paused. */
-function UsageLine({ usage }: { usage: EnhancementUsage }) {
+/**
+ * One line, never a modal (trd, UI approach): what the shop has used, or why it is paused — and,
+ * before a tool is chosen, that running one spends it whichever way the answer goes. The work is
+ * what costs, not the keeping of it, and that is said beforehand rather than discovered after.
+ */
+function UsageLine({ usage, beforeRunning = false }: { usage: EnhancementUsage; beforeRunning?: boolean }) {
+  if (usage.paused) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Enhancement is paused for your shop{usage.pauseReason ? `: ${usage.pauseReason}` : ""}.
+      </p>
+    );
+  }
   return (
     <p className="text-xs text-muted-foreground">
-      {usage.paused
-        ? `Enhancement is paused for your shop${usage.pauseReason ? `: ${usage.pauseReason}` : ""}.`
-        : `${usage.used} of ${usage.allowance} this month.`}
+      {usage.used} of {usage.allowance} this month.
+      {beforeRunning && " Each one you run counts, whether you keep it or not."}
     </p>
   );
 }
