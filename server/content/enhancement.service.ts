@@ -2,13 +2,17 @@ import { prisma } from "@server/shared/prisma";
 import { enqueue } from "@server/shared/jobs";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import { mediaAssetService } from "@server/catalog/media-asset.service";
+import { adminOrgService } from "@server/catalog/org.service";
 import { SHOT_ROLE } from "@server/catalog/shot-list";
 import { enhancementRepository } from "@server/content/enhancement.repository";
 import { enhancementPolicyRepository } from "@server/content/enhancement-policy.repository";
+import {
+  enhancementSettingsRepository,
+  type SaveEnhancementSettingsInput,
+} from "@server/content/enhancement-settings.repository";
 import { enhancementSpec } from "@server/content/enhancement.job";
 import { lightFix, type ToolResult } from "@server/content/tools/light";
 import {
-  ENHANCEMENT_DAILY_CAP_PAISE,
   ENHANCEMENT_STATE,
   ENHANCEMENT_TOOL,
   PROPOSAL_EXTENSION,
@@ -20,13 +24,19 @@ import {
   isAvailableTool,
   monthWindow,
   proposalKeyFor,
+  resolveAllowance,
+  resolveDailyCap,
   toEnhancementDto,
   type AvailableTool,
   type EnhancementDto,
   type EnhancementRow,
+  type EnhancementSettingsDto,
   type EnhancementTransform,
   type EnhancementUsage,
+  type OrgEnhancementPolicyView,
+  type OrgEnhancementUsage,
   type RequestEnhancementInput,
+  type SetOrgEnhancementPolicyInput,
 } from "@server/content/enhancement.types";
 
 /** Each available tool's pipeline (trd D2). Held complete against the available set by the compiler. */
@@ -37,6 +47,28 @@ const TOOLS: Record<AvailableTool, (input: Buffer) => Promise<ToolResult>> = {
 const toDto = (row: EnhancementRow): EnhancementDto => toEnhancementDto(row, mediaAssetService.publicUrlOf);
 
 /**
+ * Where one org stands, and what the platform allows today — the three layers resolved once
+ * (trd D5). The settings row is read once per call rather than once per question, and beside the
+ * two reads that do not depend on it, because a refusal must not cost three round trips.
+ */
+async function standing(orgId: string, now: Date): Promise<{ usage: EnhancementUsage; dailyCapPaise: number }> {
+  const [settings, policy, used] = await Promise.all([
+    enhancementSettingsRepository.read(),
+    enhancementPolicyRepository.policyFor(orgId),
+    enhancementRepository.countUsage(orgId, monthWindow(now)),
+  ]);
+  return {
+    dailyCapPaise: resolveDailyCap(settings?.dailyCapPaise ?? null),
+    usage: {
+      used,
+      allowance: resolveAllowance(policy.monthlyAllowance, settings?.defaultMonthlyAllowance ?? null),
+      paused: policy.pausedAt !== null,
+      pauseReason: policy.pauseReason,
+    },
+  };
+}
+
+/**
  * An enhancement is a row and a job (image-enhancement trd, approach): the request is refused or
  * recorded in the transaction that enqueues it, the worker runs one tool and proposes an object,
  * and the org member's decision either registers that object as a derived image or deletes it.
@@ -45,11 +77,7 @@ const toDto = (row: EnhancementRow): EnhancementDto => toEnhancementDto(row, med
 export const enhancementService = {
   /** The org's standing this month (spec R7): a count of rows in the states that count, never a counter (trd D5). */
   async usage(orgId: string, now: Date = new Date()): Promise<EnhancementUsage> {
-    const [policy, used] = await Promise.all([
-      enhancementPolicyRepository.policyFor(orgId),
-      enhancementRepository.countUsage(orgId, monthWindow(now)),
-    ]);
-    return { used, allowance: policy.monthlyAllowance, paused: policy.pausedAt !== null, pauseReason: policy.pauseReason };
+    return (await standing(orgId, now)).usage;
   },
 
   /**
@@ -72,14 +100,14 @@ export const enhancementService = {
       throw new DomainError("The label photo is evidence to be read later, so it is never enhanced");
     }
 
-    const usage = await this.usage(orgId, now);
+    const { usage, dailyCapPaise } = await standing(orgId, now);
     if (usage.paused) {
       throw new DomainError(`Enhancement is paused for your shop: ${usage.pauseReason ?? "ask the platform owner"}`);
     }
     if (usage.used >= usage.allowance) {
       throw new DomainError(`You have used all ${usage.allowance} enhancements for this month`);
     }
-    if ((await enhancementRepository.sumCostPaise(dayWindow(now))) >= ENHANCEMENT_DAILY_CAP_PAISE) {
+    if ((await enhancementRepository.sumCostPaise(dayWindow(now))) >= dailyCapPaise) {
       throw new DomainError("Enhancement has reached today's limit across the platform. Try again tomorrow.");
     }
 
@@ -192,5 +220,108 @@ export const enhancementService = {
     const moved = await enhancementRepository.markDiscarded(row.id, now);
     if (!moved) throw new ConflictError("This proposal was already decided");
     return toDto((await enhancementRepository.findForOrg(orgId, id)) ?? row);
+  },
+
+  // ── What the platform owner sets and reads (spec R7, trd D5) ──────────────────────────────
+
+  /** The platform's two numbers as they stand, and whether a row holds them or they are the fallbacks. */
+  async settings(): Promise<EnhancementSettingsDto> {
+    const row = await enhancementSettingsRepository.read();
+    return {
+      defaultMonthlyAllowance: resolveAllowance(null, row?.defaultMonthlyAllowance ?? null),
+      dailyCapPaise: resolveDailyCap(row?.dailyCapPaise ?? null),
+      configured: row !== null,
+    };
+  },
+
+  async saveSettings(input: SaveEnhancementSettingsInput): Promise<EnhancementSettingsDto> {
+    const row = await enhancementSettingsRepository.save(input);
+    return {
+      defaultMonthlyAllowance: row.defaultMonthlyAllowance,
+      dailyCapPaise: row.dailyCapPaise,
+      configured: true,
+    };
+  },
+
+  /** One org's standing, with its own number beside the resolved one, for the form that sets it. */
+  async policyFor(orgId: string): Promise<OrgEnhancementPolicyView> {
+    const [settings, policy] = await Promise.all([
+      enhancementSettingsRepository.read(),
+      enhancementPolicyRepository.policyFor(orgId),
+    ]);
+    return {
+      monthlyAllowance: resolveAllowance(policy.monthlyAllowance, settings?.defaultMonthlyAllowance ?? null),
+      monthlyAllowanceOverride: policy.monthlyAllowance,
+      paused: policy.pausedAt !== null,
+      pauseReason: policy.pauseReason,
+    };
+  },
+
+  /**
+   * Record what this org does differently, or stop recording anything (trd D5). A row that says
+   * neither "a different allowance" nor "paused" is a copy of the platform's number waiting to go
+   * stale, so it is deleted rather than written. The existing `pausedAt` is kept where there is
+   * one: editing an allowance is not a new pause, and the timestamp says when the pause began.
+   */
+  async setOrgPolicy(
+    orgId: string,
+    input: SetOrgEnhancementPolicyInput,
+    now: Date = new Date(),
+  ): Promise<OrgEnhancementPolicyView> {
+    if (input.monthlyAllowance === null && !input.paused) {
+      await enhancementPolicyRepository.remove(orgId);
+    } else {
+      const current = await enhancementPolicyRepository.policyFor(orgId);
+      await enhancementPolicyRepository.save(orgId, {
+        monthlyAllowance: input.monthlyAllowance,
+        pausedAt: input.paused ? (current.pausedAt ?? now) : null,
+        pauseReason: input.paused ? input.pauseReason : null,
+      });
+    }
+    return await this.policyFor(orgId);
+  },
+
+  /**
+   * Every org with something to show this month: one that enhanced, or one the owner has already
+   * said something about (spec R7). Three queries and never one per org — the grouped counts, the
+   * deviations, and then the names for the ids those two produced.
+   */
+  async listOrgUsage({ month = new Date() }: { month?: Date } = {}): Promise<OrgEnhancementUsage[]> {
+    const [settings, usage, policies] = await Promise.all([
+      enhancementSettingsRepository.read(),
+      enhancementRepository.usageByOrg(monthWindow(month)),
+      enhancementPolicyRepository.list(),
+    ]);
+
+    const ids = [...new Set([...usage.map((row) => row.orgId), ...policies.map((row) => row.orgId)])];
+    const orgs = await adminOrgService.summariesFor(ids);
+    const usageById = new Map(usage.map((row) => [row.orgId, row]));
+    const policyById = new Map(policies.map((row) => [row.orgId, row]));
+
+    return orgs
+      .map((org) => {
+        const policy = policyById.get(org.id);
+        const counted = usageById.get(org.id);
+        return {
+          orgId: org.id,
+          name: org.name,
+          code: org.code,
+          used: counted?.used ?? 0,
+          spentPaise: counted?.spentPaise ?? 0,
+          monthlyAllowance: resolveAllowance(
+            policy?.monthlyAllowance ?? null,
+            settings?.defaultMonthlyAllowance ?? null,
+          ),
+          monthlyAllowanceOverride: policy?.monthlyAllowance ?? null,
+          paused: policy?.pausedAt != null,
+          pauseReason: policy?.pauseReason ?? null,
+        };
+      })
+      .sort((a, b) => b.used - a.used || a.name.localeCompare(b.name));
+  },
+
+  /** What every org together has spent today, in paise — the number the cap is read against. */
+  async platformSpendToday(now: Date = new Date()): Promise<number> {
+    return await enhancementRepository.sumCostPaise(dayWindow(now));
   },
 };

@@ -7,7 +7,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
-import { DEFAULT_MONTHLY_ALLOWANCE, ENHANCEMENT_DAILY_CAP_PAISE, type EnhancementRow } from "@server/content/enhancement.types";
+import { FALLBACK_DAILY_CAP_PAISE, FALLBACK_MONTHLY_ALLOWANCE, type EnhancementRow } from "@server/content/enhancement.types";
 
 const repo = {
   create: vi.fn(),
@@ -17,8 +17,11 @@ const repo = {
   sumCostPaise: vi.fn(),
   markAccepted: vi.fn(),
   markDiscarded: vi.fn(),
+  usageByOrg: vi.fn(),
 };
-const policies = { policyFor: vi.fn() };
+const policies = { policyFor: vi.fn(), list: vi.fn(), save: vi.fn(), remove: vi.fn() };
+const settings = { read: vi.fn(), save: vi.fn() };
+const orgs = { summariesFor: vi.fn() };
 const media = {
   findReadyImage: vi.fn(),
   readImageBytes: vi.fn(),
@@ -33,6 +36,8 @@ const enqueue = vi.fn();
 
 vi.mock("@server/content/enhancement.repository", () => ({ enhancementRepository: repo }));
 vi.mock("@server/content/enhancement-policy.repository", () => ({ enhancementPolicyRepository: policies }));
+vi.mock("@server/content/enhancement-settings.repository", () => ({ enhancementSettingsRepository: settings }));
+vi.mock("@server/catalog/org.service", () => ({ adminOrgService: orgs }));
 vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media }));
 vi.mock("@server/shared/prisma", () => ({ prisma }));
 vi.mock("@server/shared/jobs", () => ({ enqueue: (...args: unknown[]) => enqueue(...args) }));
@@ -74,7 +79,9 @@ beforeEach(() => {
   // These two take once-values and rejections in the cases below, which `clearAllMocks` keeps.
   repo.findForOrg.mockReset();
   media.deleteLooseObject.mockReset().mockResolvedValue(undefined);
-  policies.policyFor.mockResolvedValue({ monthlyAllowance: DEFAULT_MONTHLY_ALLOWANCE, pausedAt: null, pauseReason: null });
+  // The ordinary shape of a fresh platform: no settings row, no org row — both layers deferring.
+  settings.read.mockResolvedValue(null);
+  policies.policyFor.mockResolvedValue({ monthlyAllowance: null, pausedAt: null, pauseReason: null });
   repo.countUsage.mockResolvedValue(3);
   repo.sumCostPaise.mockResolvedValue(0);
   media.findReadyImage.mockResolvedValue(source);
@@ -89,7 +96,7 @@ describe("usage", () => {
   it("is this month's count against the org's policy, the defaults when it has no row", async () => {
     await expect(enhancementService.usage("org-1", now)).resolves.toEqual({
       used: 3,
-      allowance: DEFAULT_MONTHLY_ALLOWANCE,
+      allowance: FALLBACK_MONTHLY_ALLOWANCE,
       paused: false,
       pauseReason: null,
     });
@@ -111,7 +118,7 @@ describe("request", () => {
     );
     expect(enqueue).toHaveBeenCalledWith(tx, expect.objectContaining({ type: "image.enhance" }), { enhancementId: "e1", orgId: "org-1" });
     expect(result.enhancement).toMatchObject({ id: "e1", state: "REQUESTED", sourceRef: source.ref, proposalUrl: null });
-    expect(result.usage).toEqual({ used: 4, allowance: DEFAULT_MONTHLY_ALLOWANCE, paused: false, pauseReason: null });
+    expect(result.usage).toEqual({ used: 4, allowance: FALLBACK_MONTHLY_ALLOWANCE, paused: false, pauseReason: null });
   });
 
   it("resolves the photo by the URL the row carries, scoped to the org", async () => {
@@ -120,23 +127,40 @@ describe("request", () => {
   });
 
   it("refuses a paused shop with the reason, before any write", async () => {
-    policies.policyFor.mockResolvedValue({ monthlyAllowance: 200, pausedAt: now, pauseReason: "Unpaid invoice" });
+    policies.policyFor.mockResolvedValue({ monthlyAllowance: null, pausedAt: now, pauseReason: "Unpaid invoice" });
     await expect(request()).rejects.toThrow("Enhancement is paused for your shop: Unpaid invoice");
     expect(prisma.$transaction).not.toHaveBeenCalled();
     expect(enqueue).not.toHaveBeenCalled();
   });
 
-  it("refuses an org at its allowance, naming the number", async () => {
-    repo.countUsage.mockResolvedValue(DEFAULT_MONTHLY_ALLOWANCE);
-    await expect(request()).rejects.toThrow(`You have used all ${DEFAULT_MONTHLY_ALLOWANCE} enhancements for this month`);
+  it("refuses an org at the allowance it resolved to, naming that number and not the constant", async () => {
+    settings.read.mockResolvedValue({ defaultMonthlyAllowance: 400, dailyCapPaise: 50_000, updatedAt: now });
+    policies.policyFor.mockResolvedValue({ monthlyAllowance: 25, pausedAt: null, pauseReason: null });
+    repo.countUsage.mockResolvedValue(25);
+    await expect(request()).rejects.toThrow("You have used all 25 enhancements for this month");
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
-  it("refuses everyone once today's platform spend has reached the cap", async () => {
-    repo.sumCostPaise.mockResolvedValue(ENHANCEMENT_DAILY_CAP_PAISE);
+  it("names the platform's default where the org has no number of its own", async () => {
+    settings.read.mockResolvedValue({ defaultMonthlyAllowance: 400, dailyCapPaise: 50_000, updatedAt: now });
+    repo.countUsage.mockResolvedValue(400);
+    await expect(request()).rejects.toThrow("You have used all 400 enhancements for this month");
+  });
+
+  it("refuses everyone once today's spend has reached the platform's cap, not the constant", async () => {
+    // 20,000 paise is a cap the owner set; the fallback is 50,000. Reading the constant here
+    // would let the platform spend ₹500 on a day the owner capped at ₹200.
+    settings.read.mockResolvedValue({ defaultMonthlyAllowance: 300, dailyCapPaise: 20_000, updatedAt: now });
+    repo.sumCostPaise.mockResolvedValue(20_000);
     await expect(request()).rejects.toThrow(/today's limit across the platform/);
     expect(repo.sumCostPaise).toHaveBeenCalledWith({ start: new Date("2026-09-27T00:00:00Z"), end: new Date("2026-09-28T00:00:00Z") });
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("lets a request through at a spend the constant would have refused", async () => {
+    settings.read.mockResolvedValue({ defaultMonthlyAllowance: 300, dailyCapPaise: 200_000, updatedAt: now });
+    repo.sumCostPaise.mockResolvedValue(FALLBACK_DAILY_CAP_PAISE);
+    await expect(request()).resolves.toMatchObject({ enhancement: { id: "e1" } });
   });
 
   it("refuses the label slot without reading anything", async () => {
@@ -248,5 +272,154 @@ describe("discard", () => {
     media.deleteLooseObject.mockRejectedValue(new Error("store refused the DELETE"));
     await expect(enhancementService.discard("org-1", "e1", now)).rejects.toThrow("store refused the DELETE");
     expect(repo.markDiscarded).not.toHaveBeenCalled();
+  });
+});
+
+describe("the platform's settings", () => {
+  it("answers the fallbacks, and says nothing has been configured, while there is no row", async () => {
+    await expect(enhancementService.settings()).resolves.toEqual({
+      defaultMonthlyAllowance: FALLBACK_MONTHLY_ALLOWANCE,
+      dailyCapPaise: FALLBACK_DAILY_CAP_PAISE,
+      configured: false,
+    });
+  });
+
+  it("answers the saved row once there is one", async () => {
+    settings.read.mockResolvedValue({ defaultMonthlyAllowance: 120, dailyCapPaise: 30_000, updatedAt: now });
+    await expect(enhancementService.settings()).resolves.toEqual({
+      defaultMonthlyAllowance: 120,
+      dailyCapPaise: 30_000,
+      configured: true,
+    });
+  });
+
+  it("saves through the one writer and reports what it now holds", async () => {
+    settings.save.mockResolvedValue({ defaultMonthlyAllowance: 120, dailyCapPaise: 30_000, updatedAt: now });
+    await expect(
+      enhancementService.saveSettings({ defaultMonthlyAllowance: 120, dailyCapPaise: 30_000 }),
+    ).resolves.toEqual({ defaultMonthlyAllowance: 120, dailyCapPaise: 30_000, configured: true });
+    expect(settings.save).toHaveBeenCalledWith({ defaultMonthlyAllowance: 120, dailyCapPaise: 30_000 });
+  });
+});
+
+describe("setOrgPolicy", () => {
+  it("deletes the row when it would record nothing — no number of its own and not paused", async () => {
+    await enhancementService.setOrgPolicy("org-1", { monthlyAllowance: null, paused: false, pauseReason: null }, now);
+    expect(policies.remove).toHaveBeenCalledWith("org-1");
+    expect(policies.save).not.toHaveBeenCalled();
+  });
+
+  it("writes a row for an allowance of the org's own", async () => {
+    await enhancementService.setOrgPolicy("org-1", { monthlyAllowance: 25, paused: false, pauseReason: null }, now);
+    expect(policies.save).toHaveBeenCalledWith("org-1", { monthlyAllowance: 25, pausedAt: null, pauseReason: null });
+    expect(policies.remove).not.toHaveBeenCalled();
+  });
+
+  it("writes a row for a pause even where the allowance defers to the platform", async () => {
+    await enhancementService.setOrgPolicy("org-1", { monthlyAllowance: null, paused: true, pauseReason: "Unpaid invoice" }, now);
+    expect(policies.save).toHaveBeenCalledWith("org-1", {
+      monthlyAllowance: null,
+      pausedAt: now,
+      pauseReason: "Unpaid invoice",
+    });
+  });
+
+  it("keeps the moment a pause began when something else about the org is edited", async () => {
+    const began = new Date("2026-09-01T09:00:00Z");
+    policies.policyFor.mockResolvedValue({ monthlyAllowance: null, pausedAt: began, pauseReason: "Unpaid invoice" });
+    await enhancementService.setOrgPolicy("org-1", { monthlyAllowance: 25, paused: true, pauseReason: "Unpaid invoice" }, now);
+    expect(policies.save).toHaveBeenCalledWith("org-1", {
+      monthlyAllowance: 25,
+      pausedAt: began,
+      pauseReason: "Unpaid invoice",
+    });
+  });
+
+  it("drops the reason with the pause, so it cannot resurface on the next one", async () => {
+    await enhancementService.setOrgPolicy("org-1", { monthlyAllowance: 25, paused: false, pauseReason: "Unpaid invoice" }, now);
+    expect(policies.save).toHaveBeenCalledWith("org-1", { monthlyAllowance: 25, pausedAt: null, pauseReason: null });
+  });
+});
+
+describe("listOrgUsage", () => {
+  it("resolves each org's allowance, counts the month, and asks for every name in one call", async () => {
+    settings.read.mockResolvedValue({ defaultMonthlyAllowance: 400, dailyCapPaise: 50_000, updatedAt: now });
+    repo.usageByOrg.mockResolvedValue([
+      { orgId: "org-1", used: 7, spentPaise: 1200 },
+      { orgId: "org-2", used: 2, spentPaise: 0 },
+    ]);
+    policies.list.mockResolvedValue([
+      { orgId: "org-2", monthlyAllowance: 25, pausedAt: null, pauseReason: null },
+      { orgId: "org-3", monthlyAllowance: null, pausedAt: now, pauseReason: "Unpaid invoice" },
+    ]);
+    orgs.summariesFor.mockResolvedValue([
+      { id: "org-1", name: "Anwar Cloth", code: "ORG-1" },
+      { id: "org-2", name: "Bohra Hardware", code: "ORG-2" },
+      { id: "org-3", name: "Crawford Spices", code: "ORG-3" },
+    ]);
+
+    const rows = await enhancementService.listOrgUsage({ month: now });
+
+    expect(repo.usageByOrg).toHaveBeenCalledWith({
+      start: new Date("2026-09-01T00:00:00Z"),
+      end: new Date("2026-10-01T00:00:00Z"),
+    });
+    // One call for every name, whatever the row count: a listing must not be a query per org.
+    expect(orgs.summariesFor).toHaveBeenCalledTimes(1);
+    expect(orgs.summariesFor).toHaveBeenCalledWith(["org-1", "org-2", "org-3"]);
+    expect(rows).toEqual([
+      {
+        orgId: "org-1",
+        name: "Anwar Cloth",
+        code: "ORG-1",
+        used: 7,
+        spentPaise: 1200,
+        monthlyAllowance: 400,
+        monthlyAllowanceOverride: null,
+        paused: false,
+        pauseReason: null,
+      },
+      {
+        orgId: "org-2",
+        name: "Bohra Hardware",
+        code: "ORG-2",
+        used: 2,
+        spentPaise: 0,
+        monthlyAllowance: 25,
+        monthlyAllowanceOverride: 25,
+        paused: false,
+        pauseReason: null,
+      },
+      {
+        orgId: "org-3",
+        name: "Crawford Spices",
+        code: "ORG-3",
+        used: 0,
+        spentPaise: 0,
+        monthlyAllowance: 400,
+        monthlyAllowanceOverride: null,
+        paused: true,
+        pauseReason: "Unpaid invoice",
+      },
+    ]);
+  });
+
+  it("is empty when nobody has enhanced anything and nobody has a rule of their own", async () => {
+    repo.usageByOrg.mockResolvedValue([]);
+    policies.list.mockResolvedValue([]);
+    orgs.summariesFor.mockResolvedValue([]);
+    await expect(enhancementService.listOrgUsage({ month: now })).resolves.toEqual([]);
+    expect(orgs.summariesFor).toHaveBeenCalledWith([]);
+  });
+});
+
+describe("platformSpendToday", () => {
+  it("sums the UTC day the cap is read against", async () => {
+    repo.sumCostPaise.mockResolvedValue(4200);
+    await expect(enhancementService.platformSpendToday(now)).resolves.toBe(4200);
+    expect(repo.sumCostPaise).toHaveBeenCalledWith({
+      start: new Date("2026-09-27T00:00:00Z"),
+      end: new Date("2026-09-28T00:00:00Z"),
+    });
   });
 });

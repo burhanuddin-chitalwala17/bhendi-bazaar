@@ -27,6 +27,13 @@ const ENHANCEMENT_SELECT = {
   resultAsset: { select: { ref: true } },
 } satisfies Prisma.EnhancementSelect;
 
+/** One org's month as the owner's table reads it, before the org's name is put beside it. */
+export interface OrgUsageRow {
+  orgId: string;
+  used: number;
+  spentPaise: number;
+}
+
 export interface CreateEnhancementInput {
   orgId: string;
   requesterId: string | null;
@@ -78,6 +85,30 @@ export class EnhancementRepository {
       where: { createdAt: { gte: window.start, lt: window.end } },
     });
     return result._sum.costPaise ?? 0;
+  }
+
+  /**
+   * Every org's use and spend in one window, in one grouped query (spec R7) — the platform owner's
+   * table is never a query per org. Grouped by state as well as by org because the two numbers
+   * count different rows: the month's use is the states that hold a slot, while the spend is every
+   * row, since a discarded or failed run still cost what it cost (trd D5, D6).
+   */
+  async usageByOrg(window: TimeWindow): Promise<OrgUsageRow[]> {
+    const groups = await prisma.enhancement.groupBy({
+      by: ["orgId", "state"],
+      where: { createdAt: { gte: window.start, lt: window.end } },
+      _count: { _all: true },
+      _sum: { costPaise: true },
+    });
+
+    const byOrg = new Map<string, OrgUsageRow>();
+    for (const group of groups) {
+      const row = byOrg.get(group.orgId) ?? { orgId: group.orgId, used: 0, spentPaise: 0 };
+      row.spentPaise += group._sum.costPaise ?? 0;
+      if ((USAGE_STATES as readonly string[]).includes(group.state)) row.used += group._count._all;
+      byOrg.set(group.orgId, row);
+    }
+    return [...byOrg.values()];
   }
 
   /**

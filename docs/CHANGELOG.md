@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-190] 2026-09-28 — The enhancement allowance and the daily cap are the platform owner's to set [CONTRACT] [MIGRATION]
+
+The two numbers deciding how much photo improvement the platform pays for were constants in a
+source file, so answering the first provider bill would have meant a release. They are settings
+now — edited on a new admin screen, in force on the next request — defaulting to 300 enhancements
+per shop a month and ₹500 a day across every shop.
+
+An allowance resolves through three declared layers: the shop's own number, the platform's setting,
+then a constant that exists only so an unconfigured database still answers. A shop's row records a
+*deviation* — a number of its own, or a pause — where it used to carry a copy of the platform's
+allowance that would go stale the day that changed. A shop at the default now carries no row at
+all, and setting one back to the default deletes its row rather than rewriting the same number.
+
+The screen shows today's spend against the cap and a card per shop: this month's use, what it cost,
+the allowance that applies, and a pause switch with the reason its members read. The cap is typed
+in rupees and travels as paise. Both routes are platform-admin only and audited. Admin was the last
+of the five planned PRs and is now the second, because the owner asked for it before the provider
+work rather than after.
+
 ## [PR-189] 2026-09-28 — Crop a photo already in the library, and stop calling lineage a use [CONTRACT]
 
 Three things the first real use of the library turned up.

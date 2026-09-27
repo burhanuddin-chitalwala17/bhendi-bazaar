@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-27
+- **Verified:** 2026-09-28
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -232,6 +232,16 @@ Then, for the duration of that session:
 4. Restart the dev server — `NEXT_PUBLIC_*` values are inlined at build time, so a change is not picked up by a running server.
 
 Tunnel URLs are ephemeral on free tiers; each restart means repeating steps 1–3. Revert `.env` afterwards, or the next non-tunnelled run mails links to a dead host.
+
+### Set in admin, not in the environment: the enhancement allowance and the daily cap
+How many photo enhancements a shop may run in a month, and what every shop together may spend in a
+day, are rows in the database and are edited at `/admin/enhancements` — not variables, because they
+are the answer to a provider bill and that answer should not wait for a deploy. **With no settings
+row the code falls back** to 300 a month and ₹500 a day (`FALLBACK_MONTHLY_ALLOWANCE` /
+`FALLBACK_DAILY_CAP_PAISE` in `server/content/enhancement.types.ts`), so a fresh database works and
+the first save on that screen is what makes the numbers the platform's. A shop with no row of its
+own follows the platform's number; one with a row has been given an allowance of its own or paused.
+Nothing here needs seeding.
 
 ### Env hygiene
 `.env*` is gitignored and has never been committed — keep it that way. Set `NODE_ENV` to a valid Node value (`development` / `production` / `test`); anything else silently changes behaviour in code that branches on it. Avoid keeping more than one live connection string in the file at a time — see [Seeding](#seeding) for why.

@@ -32,10 +32,27 @@ export type EnhancementState = (typeof ENHANCEMENT_STATE)[keyof typeof ENHANCEME
 export const ENHANCEMENT_PROVIDER = { SHARP: "sharp" } as const;
 export type EnhancementProvider = (typeof ENHANCEMENT_PROVIDER)[keyof typeof ENHANCEMENT_PROVIDER];
 
-/** The TRD's proposed numbers, declared once (trd D5, open questions). */
-export const DEFAULT_MONTHLY_ALLOWANCE = 200;
-/** ₹500 a day across every org, as paise (Invariant 3). */
-export const ENHANCEMENT_DAILY_CAP_PAISE = 50_000;
+/** The one row the platform's numbers live in, addressed by this id rather than by a search. */
+export const ENHANCEMENT_SETTINGS_ID = "platform";
+
+/**
+ * The last of three layers, not a policy. An allowance is the org's own number if it has one,
+ * else the platform's setting, else this — which exists only so a database nobody has configured
+ * yet still answers (trd D5). The platform owner changes the first two without a deploy.
+ */
+export const FALLBACK_MONTHLY_ALLOWANCE = 300;
+/** ₹500 a day across every org, as paise (Invariant 3), until the owner sets otherwise. */
+export const FALLBACK_DAILY_CAP_PAISE = 50_000;
+
+/** The three layers as one function, so the order is tested rather than retyped as `??` chains. */
+export function resolveAllowance(orgOverride: number | null, platformDefault: number | null): number {
+  return orgOverride ?? platformDefault ?? FALLBACK_MONTHLY_ALLOWANCE;
+}
+
+/** The daily cap has no per-org layer: one platform, one day, one number (trd D5). */
+export function resolveDailyCap(platform: number | null): number {
+  return platform ?? FALLBACK_DAILY_CAP_PAISE;
+}
 
 /**
  * The tools that have a pipeline. A tool not listed is refused as "not available yet" (trd D2): the
@@ -172,9 +189,45 @@ export interface EnhancementDto {
 /** The org's standing this month (spec R7, A5): what it used, what it may, and whether it is paused. */
 export interface EnhancementUsage {
   used: number;
+  /** Resolved, never a stored copy: the org's override where it has one, else the platform's. */
   allowance: number;
   paused: boolean;
   pauseReason: string | null;
+}
+
+/** The platform's two numbers as the admin page reads them (spec R7). Money is paise (Invariant 3). */
+export interface EnhancementSettingsDto {
+  defaultMonthlyAllowance: number;
+  dailyCapPaise: number;
+  /** False while these are the fallbacks above — nobody has saved a setting yet. */
+  configured: boolean;
+}
+
+/** One org's deviation from the platform's numbers, resolved for display beside it. */
+export interface OrgEnhancementPolicyView {
+  /** What the org may do this month, after the three layers. */
+  monthlyAllowance: number;
+  /** What its own row says, or null where it defers to the platform. */
+  monthlyAllowanceOverride: number | null;
+  paused: boolean;
+  pauseReason: string | null;
+}
+
+/** What the platform owner sets for one org: an allowance of its own, a pause, or neither. */
+export interface SetOrgEnhancementPolicyInput {
+  monthlyAllowance: number | null;
+  paused: boolean;
+  pauseReason: string | null;
+}
+
+/** One org's month, as the platform owner's table lists it (spec R7): use, spend and standing. */
+export interface OrgEnhancementUsage extends OrgEnhancementPolicyView {
+  orgId: string;
+  name: string;
+  code: string;
+  used: number;
+  /** What this org's runs cost the platform this month, in paise — a discarded run still cost. */
+  spentPaise: number;
 }
 
 export function toEnhancementDto(row: EnhancementRow, publicUrl: (key: string) => string): EnhancementDto {

@@ -9,10 +9,11 @@ import { describe, expect, it } from "vitest";
 import { EnhancementState as PrismaEnhancementState, EnhancementTool as PrismaEnhancementTool } from "@prisma/client";
 import {
   AVAILABLE_TOOLS,
-  DEFAULT_MONTHLY_ALLOWANCE,
-  ENHANCEMENT_DAILY_CAP_PAISE,
+  ENHANCEMENT_SETTINGS_ID,
   ENHANCEMENT_STATE,
   ENHANCEMENT_TOOL,
+  FALLBACK_DAILY_CAP_PAISE,
+  FALLBACK_MONTHLY_ALLOWANCE,
   TOOL_COPY,
   TOOL_COST_PAISE,
   TOOL_PROVIDER,
@@ -21,10 +22,16 @@ import {
   isAvailableTool,
   monthWindow,
   proposalKeyFor,
+  resolveAllowance,
+  resolveDailyCap,
   toEnhancementDto,
   type EnhancementRow,
 } from "@server/content/enhancement.types";
-import { requestEnhancementSchema } from "@/lib/validation/schemas/enhancement.schema";
+import {
+  enhancementSettingsSchema,
+  orgEnhancementPolicySchema,
+  requestEnhancementSchema,
+} from "@/lib/validation/schemas/enhancement.schema";
 
 const row = (over: Partial<EnhancementRow> = {}): EnhancementRow => ({
   id: "e1",
@@ -72,9 +79,42 @@ describe("the closed sets mirror the schema", () => {
     expect(Object.keys(TOOL_COPY).sort()).toEqual(Object.keys(ENHANCEMENT_TOOL).sort());
   });
 
-  it("declares the TRD's numbers once: 200 a month, ₹500 a day as paise", () => {
-    expect(DEFAULT_MONTHLY_ALLOWANCE).toBe(200);
-    expect(ENHANCEMENT_DAILY_CAP_PAISE).toBe(500 * 100);
+  it("declares the fallbacks once: 300 a month, ₹500 a day as paise", () => {
+    expect(FALLBACK_MONTHLY_ALLOWANCE).toBe(300);
+    expect(FALLBACK_DAILY_CAP_PAISE).toBe(500 * 100);
+    expect(Number.isInteger(FALLBACK_DAILY_CAP_PAISE)).toBe(true);
+  });
+
+  it("addresses the settings row by a constant, so a second row cannot be written by accident", () => {
+    expect(ENHANCEMENT_SETTINGS_ID).toBe("platform");
+  });
+});
+
+describe("an allowance resolves through three layers", () => {
+  it("prefers the org's own number", () => {
+    expect(resolveAllowance(50, 400)).toBe(50);
+    expect(resolveAllowance(50, null)).toBe(50);
+  });
+
+  it("falls to the platform's setting where the org defers", () => {
+    expect(resolveAllowance(null, 400)).toBe(400);
+  });
+
+  it("falls to the constant only where nobody has configured anything", () => {
+    expect(resolveAllowance(null, null)).toBe(FALLBACK_MONTHLY_ALLOWANCE);
+  });
+
+  it("treats zero as a number somebody meant, not as absence", () => {
+    // `||` here would read a deliberate zero as "unset" and hand back 300 — the whole reason
+    // this is one tested function rather than a `??` chain retyped at each call site.
+    expect(resolveAllowance(0, 400)).toBe(0);
+    expect(resolveAllowance(null, 0)).toBe(0);
+  });
+
+  it("has no per-org layer for the daily cap: one platform, one day, one number", () => {
+    expect(resolveDailyCap(20_000)).toBe(20_000);
+    expect(resolveDailyCap(null)).toBe(FALLBACK_DAILY_CAP_PAISE);
+    expect(resolveDailyCap(0)).toBe(0);
   });
 });
 
@@ -199,5 +239,44 @@ describe("requestEnhancementSchema", () => {
 
   it("refuses a tool that is not one of the six", () => {
     expect(requestEnhancementSchema.safeParse({ ...photo, tool: "POLISH" }).success).toBe(false);
+  });
+});
+
+describe("the two schemas the platform owner's forms send", () => {
+  const settings = { defaultMonthlyAllowance: 300, dailyCapPaise: 50_000 };
+
+  it("takes two positive whole numbers, and the cap in paise rather than rupees", () => {
+    expect(enhancementSettingsSchema.parse(settings)).toEqual(settings);
+    // ₹500 is 50,000 paise (Invariant 3). A form sending 500 would be a cap of ₹5 — a valid
+    // payload with the wrong meaning, which is why the field is named for its unit.
+    expect(enhancementSettingsSchema.parse({ ...settings, dailyCapPaise: 500 }).dailyCapPaise).toBe(500);
+  });
+
+  it("refuses zero, a negative, a fraction and a missing number", () => {
+    for (const bad of [0, -1, 12.5]) {
+      expect(enhancementSettingsSchema.safeParse({ ...settings, defaultMonthlyAllowance: bad }).success).toBe(false);
+      expect(enhancementSettingsSchema.safeParse({ ...settings, dailyCapPaise: bad }).success).toBe(false);
+    }
+    expect(enhancementSettingsSchema.safeParse({ defaultMonthlyAllowance: 300 }).success).toBe(false);
+  });
+
+  it("takes an org override, a pause and a reason — and a null override, which is how a row is dropped", () => {
+    expect(orgEnhancementPolicySchema.parse({ monthlyAllowance: 20, paused: true, pauseReason: "Unpaid invoice" })).toEqual({
+      monthlyAllowance: 20,
+      paused: true,
+      pauseReason: "Unpaid invoice",
+    });
+    expect(orgEnhancementPolicySchema.parse({ monthlyAllowance: null, paused: false, pauseReason: null })).toEqual({
+      monthlyAllowance: null,
+      paused: false,
+      pauseReason: null,
+    });
+  });
+
+  it("refuses an override that is not a positive whole number, and a pause that is not stated", () => {
+    expect(orgEnhancementPolicySchema.safeParse({ monthlyAllowance: 0, paused: false, pauseReason: null }).success).toBe(false);
+    expect(orgEnhancementPolicySchema.safeParse({ monthlyAllowance: 1.5, paused: false, pauseReason: null }).success).toBe(false);
+    expect(orgEnhancementPolicySchema.safeParse({ monthlyAllowance: null, pauseReason: null }).success).toBe(false);
+    expect(orgEnhancementPolicySchema.safeParse({ monthlyAllowance: null, paused: false, pauseReason: "" }).success).toBe(false);
   });
 });

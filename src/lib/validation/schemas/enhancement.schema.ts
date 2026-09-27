@@ -37,3 +37,29 @@ export const requestEnhancementSchema = z
   });
 
 export type RequestEnhancementBody = z.infer<typeof requestEnhancementSchema>;
+
+/** An allowance is a count of runs; the ceilings are sanity, not policy — the policy is the value. */
+const allowance = z.number().int().positive().max(100_000);
+
+/**
+ * The platform's two numbers, as the admin form sends them (image-enhancement spec R7, trd D5).
+ * The cap crosses in **paise** (Invariant 3) — the form shows rupees and converts before it sends,
+ * so the wire carries the unit the column stores and no division happens on the way in.
+ */
+export const enhancementSettingsSchema = z.object({
+  defaultMonthlyAllowance: allowance,
+  dailyCapPaise: z.number().int().positive().max(10_000_000),
+});
+export type EnhancementSettingsInput = z.infer<typeof enhancementSettingsSchema>;
+
+/**
+ * What one org does differently (spec R7, A5): an allowance of its own, a pause, or neither. A
+ * null allowance is not a missing field — it is the org saying it defers to the platform's number,
+ * which is what lets its row be deleted rather than kept holding a copy.
+ */
+export const orgEnhancementPolicySchema = z.object({
+  monthlyAllowance: allowance.nullable(),
+  paused: z.boolean(),
+  pauseReason: z.string().trim().min(1).max(200).nullable(),
+});
+export type OrgEnhancementPolicyInput = z.infer<typeof orgEnhancementPolicySchema>;

@@ -156,17 +156,33 @@ model Enhancement {
   @@index([sourceAssetId])
 }
 
-/// How much enhancement one org may do, and whether it may do any (image-enhancement trd D5):
-/// the allowance is a number, the pause a timestamp with its reason. Absent for an org means the
-/// defaults declared in `server/content/enhancement.types.ts`; use itself is a count of rows, never stored.
+/// How one org differs from the platform's numbers, and whether it may enhance at all
+/// (image-enhancement trd D5). A row exists only where there is a deviation to record; an org
+/// that is exactly the platform default carries none, and use itself is a count of rows, never stored.
 model OrgEnhancementPolicy {
   orgId            String    @id
   org              Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  monthlyAllowance Int
+  /// An allowance of this org's own. Null is "whatever the platform's default is" — a row records
+  /// a deviation, never a copy of the platform's number, which would go stale the day it changes.
+  monthlyAllowance Int?
   pausedAt         DateTime?
   pauseReason      String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+}
+
+/// The platform owner's two numbers, in one row the code addresses by a constant id
+/// (image-enhancement trd D5): how many enhancements an org may do in a month unless its own row
+/// says otherwise, and what every org together may spend in a day, in paise (Invariant 3). A
+/// settings row rather than a constant so the owner changes them without a deploy; no relation to
+/// anything, because they belong to the platform rather than to any row in the tree. Absent means
+/// the fallbacks declared in `server/content/enhancement.types.ts`.
+model EnhancementSettings {
+  id                      String   @id @default("platform")
+  defaultMonthlyAllowance Int
+  dailyCapPaise           Int
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 }
 
 enum EnhancementTool {

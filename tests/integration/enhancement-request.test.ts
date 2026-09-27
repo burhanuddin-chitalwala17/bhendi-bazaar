@@ -1,15 +1,14 @@
 /**
  * A request against the real schema and the real queue (image-enhancement trd D1, D5; ADR-0038
  * D2): the ledger row and its `image.enhance` job exist together after `request`, and neither after
- * a transaction that rolled back; an org with no policy row reads the declared defaults, and a
- * pause is honoured by the next request. The store is stubbed — no bucket is reached — and the
+ * a transaction that rolled back; an org with no policy row records no deviation, and a pause is
+ * honoured by the next request. The store is stubbed — no bucket is reached — and the
  * suite owns its fixtures.
  */
 import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 import { JOBS_QUEUE, JOBS_SCHEMA } from "@server/shared/jobs/jobs.config";
-import { DEFAULT_MONTHLY_ALLOWANCE } from "@server/content/enhancement.types";
 
 vi.mock("@server/catalog/object-store", () => ({
   headObject: vi.fn(),
@@ -84,7 +83,7 @@ describe.skipIf(!isDisposableDb)("an enhancement request writes its row and its 
     await prisma.mediaAsset.deleteMany({ where: { id: { in: assets } } });
     // The fixture org is shared with other suites: leave its policy exactly as it was found.
     if (!hadPolicy) await prisma.orgEnhancementPolicy.deleteMany({ where: { orgId } });
-    else await policies.resume(orgId);
+    else await service.setOrgPolicy(orgId, { monthlyAllowance: null, paused: false, pauseReason: null });
   });
 
   it("writes a REQUESTED row and one image.enhance job for it, from the URL the gallery row carries", async () => {
@@ -122,21 +121,21 @@ describe.skipIf(!isDisposableDb)("an enhancement request writes its row and its 
     expect(await jobsFor(id)).toBe(0);
   });
 
-  it("reads the declared defaults for an org with no policy row", async () => {
+  it("records no deviation for an org with no policy row", async () => {
     await expect(policies.policyFor(`no-such-org-${stamp}`)).resolves.toEqual({
-      monthlyAllowance: DEFAULT_MONTHLY_ALLOWANCE,
+      monthlyAllowance: null,
       pausedAt: null,
       pauseReason: null,
     });
   });
 
   it("honours a pause on the next request, and lifts it", async () => {
-    await policies.pause(orgId, "Unpaid invoice");
+    await service.setOrgPolicy(orgId, { monthlyAllowance: null, paused: true, pauseReason: "Unpaid invoice" });
     await expect(service.request(orgId, userId, { tool: "LIGHT", sourceRef })).rejects.toThrow(
       "Enhancement is paused for your shop: Unpaid invoice",
     );
 
-    await policies.resume(orgId);
+    await service.setOrgPolicy(orgId, { monthlyAllowance: null, paused: false, pauseReason: null });
     const { enhancement } = await service.request(orgId, userId, { tool: "LIGHT", sourceRef });
     enhancements.push(enhancement.id);
     expect(enhancement.state).toBe("REQUESTED");
