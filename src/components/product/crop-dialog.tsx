@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Cropper, {
   type Area,
   type MediaSize,
@@ -27,8 +27,12 @@ import {
 /** One photo waiting to be framed. The id is what tells two picks of the same file apart. */
 export interface CropCandidate {
   id: string;
-  /** Already reduced to what will be stored, so the rectangle is measured on the source (trd D6a). */
-  file: File;
+  /**
+   * The picture to show, already reduced to what will be stored, so the rectangle is measured on
+   * the source (trd D6a). The queue owns it: it is made when the photo joins and released when it
+   * leaves, which is the only lifetime a remount cannot cut short.
+   */
+  src: string;
 }
 
 interface CropDialogProps {
@@ -80,7 +84,7 @@ export function CropDialog({
       {photo && (
         <CropFrame
           key={photo.id}
-          file={photo.file}
+          src={photo.src}
           remaining={remaining}
           busy={busy}
           onUseAsIs={onUseAsIs}
@@ -93,18 +97,13 @@ export function CropDialog({
 }
 
 function CropFrame({
-  file,
+  src,
   remaining,
   busy,
   onUseAsIs,
   onUseCrop,
   onUseAllAsIs,
-}: Omit<CropDialogProps, "photo" | "onCancel"> & { file: File }) {
-  // One object URL for the life of this frame; the file is already in the page, so showing it
-  // costs no egress (ADR-0026).
-  const [src] = useState(() => URL.createObjectURL(file));
-  useEffect(() => () => URL.revokeObjectURL(src), [src]);
-
+}: Omit<CropDialogProps, "photo" | "onCancel"> & { src: string }) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState<CropRotation>(0);

@@ -10,6 +10,15 @@
 
 ## Entries
 
+## [PR-188] 2026-09-28 — The crop frame shows the picture: the preview belongs to the queue
+
+The frame was still empty after the stylesheet was imported, and this time it could not even be
+used: the picture never loaded at all. The frame made its own preview URL while rendering and
+released it in an effect's cleanup, which in development runs once before the second mount — so
+every frame was handed an address that had already been given up. The queue that holds the photo
+now makes the preview when the photo joins it and releases it when the photo leaves, which is the
+one lifetime a remount cannot cut short, and the frame is handed a picture rather than making one.
+
 ## [PR-187] 2026-09-27 — What the first local test of the crop frame and the improve sheet found
 
 The crop frame showed no picture and the dialog scrolled instead of fitting. Two causes. The crop

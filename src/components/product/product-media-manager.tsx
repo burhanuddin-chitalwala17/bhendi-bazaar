@@ -105,7 +105,18 @@ interface QueuedPhoto {
   picked: File;
   /** Reduced already, so the crop rectangle is measured on the picture that becomes the source (trd D6a). */
   ready: File;
+  /**
+   * What the frame shows. Made here, where the photo joins the queue, and released where it
+   * leaves — an object URL made during a render and released by an effect's cleanup does not
+   * survive a development remount, and the frame then has nothing to show.
+   */
+  previewUrl: string;
   slot: string | null;
+}
+
+/** Everything a queued photo holds that the browser will not collect on its own. */
+function releasePreviews(photos: readonly QueuedPhoto[]): void {
+  photos.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
 }
 
 const CAPACITY_NOTICE = `A product can have at most ${MAX_MEDIA_PER_PRODUCT} gallery items`;
@@ -364,12 +375,27 @@ export function ProductMediaManager({
     const queued: QueuedPhoto[] = [];
     for (const picked of files) {
       queuedIds.current += 1;
-      queued.push({ id: String(queuedIds.current), picked, ready: await downscaleImage(picked), slot: targetSlot });
+      const ready = await downscaleImage(picked);
+      queued.push({
+        id: String(queuedIds.current),
+        picked,
+        ready,
+        previewUrl: URL.createObjectURL(ready),
+        slot: targetSlot,
+      });
     }
     setQueue((current) => [...current, ...queued]);
   };
 
-  const dequeue = (ids: string[]) => setQueue((current) => current.filter((item) => !ids.includes(item.id)));
+  const dequeue = (ids: string[]) =>
+    setQueue((current) => {
+      const [leaving, staying] = [
+        current.filter((item) => ids.includes(item.id)),
+        current.filter((item) => !ids.includes(item.id)),
+      ];
+      releasePreviews(leaving);
+      return staying;
+    });
 
   const acceptAsIs = async () => {
     if (!current) return;
@@ -655,13 +681,18 @@ export function ProductMediaManager({
       {orgId && <ImproveDialog orgId={orgId} target={improving} onAccepted={replaceRef} onClose={() => setImproving(null)} />}
 
       <CropDialog
-        photo={current ? { id: current.id, file: current.ready } : null}
+        photo={current ? { id: current.id, src: current.previewUrl } : null}
         remaining={Math.max(0, queue.length - 1)}
         busy={isUploading}
         onUseAsIs={() => void acceptAsIs()}
         onUseCrop={(transform) => void acceptCrop(transform)}
         onUseAllAsIs={() => void acceptAllAsIs()}
-        onCancel={() => setQueue([])}
+        onCancel={() =>
+          setQueue((pending) => {
+            releasePreviews(pending);
+            return [];
+          })
+        }
       />
 
       <p className="text-xs text-muted-foreground">
