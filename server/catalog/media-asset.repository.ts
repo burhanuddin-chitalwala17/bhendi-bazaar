@@ -13,6 +13,8 @@ const REFERENCE_RELATIONS = [
   "orgBanners",
   "banners",
   "derivatives",
+  // A photograph chosen as a video's poster (spec R8) is in use as surely as one in a gallery.
+  "postersFor",
 ] as const;
 const REFERENCE_COUNTS = Object.fromEntries(REFERENCE_RELATIONS.map((relation) => [relation, true])) as Record<
   (typeof REFERENCE_RELATIONS)[number],
@@ -39,13 +41,20 @@ const LIBRARY_SELECT = {
   failureReason: true,
   createdAt: true,
   retiredAt: true,
-  // A hosted video's poster, so its tile has a picture (video-hosting D7). A crop's transform has
-  // no `kind`, so a photograph's derivatives never match.
+  // A hosted video's poster frame and renditions, so its tile has a picture and its sheet can play
+  // it (video-hosting D5, D7). A crop's transform has no `kind`, so a photograph's derivatives never match.
   derivatives: {
-    where: { state: MediaAssetState.READY, transform: { path: ["kind"], equals: VIDEO_TRANSFORM.POSTER } },
-    select: { ref: true },
-    take: 1,
+    where: {
+      state: MediaAssetState.READY,
+      OR: [
+        { transform: { path: ["kind"], equals: VIDEO_TRANSFORM.POSTER } },
+        { transform: { path: ["kind"], equals: VIDEO_TRANSFORM.RENDITION } },
+      ],
+    },
+    select: { ref: true, width: true, height: true, transform: true },
   },
+  // The photograph chosen over the frame (spec R8); its ref is what the tile shows when set.
+  posterAsset: { select: { ref: true } },
   _count: { select: REFERENCE_COUNTS },
 } satisfies Prisma.MediaAssetSelect;
 
@@ -398,6 +407,7 @@ export class MediaAssetRepository {
         orgBanners: { select: { id: true, title: true } },
         banners: { select: { id: true, title: true } },
         derivatives: { select: { id: true, source: true } },
+        postersFor: { select: { id: true } },
       },
     });
     if (!asset) return [];
@@ -409,7 +419,21 @@ export class MediaAssetRepository {
       ...asset.orgBanners.map((row) => ({ kind: "storefront-banner" as const, id: row.id, label: row.title ?? "Storefront banner", slot: null })),
       ...asset.banners.map((row) => ({ kind: "home-banner" as const, id: row.id, label: row.title ?? "Home banner", slot: null })),
       ...asset.derivatives.map((row) => ({ kind: "derived" as const, id: row.id, label: `${row.source.toLowerCase()} copy`, slot: null })),
+      ...asset.postersFor.map((row) => ({ kind: "video-poster" as const, id: row.id, label: "Video poster", slot: null })),
     ];
+  }
+
+  /**
+   * The photograph that stands in for a video, or null to go back to the worker's frame (spec R8),
+   * in one conditional statement: the row moves only if it is this org's hosted video. Whether the
+   * photograph may be chosen — this org's, ready, a photograph — is the service's check before this.
+   */
+  async setPoster(orgId: string, videoId: string, posterAssetId: string | null): Promise<boolean> {
+    const result = await prisma.mediaAsset.updateMany({
+      where: { id: videoId, orgId, kind: MediaAssetKind.VIDEO, state: { not: MediaAssetState.RETIRED } },
+      data: { posterAssetId },
+    });
+    return result.count === 1;
   }
 
   /**

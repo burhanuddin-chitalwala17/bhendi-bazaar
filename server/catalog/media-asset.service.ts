@@ -221,6 +221,25 @@ export const mediaAssetService = {
   },
 
   /**
+   * The photograph that stands in for a hosted video, or null for the worker's own frame
+   * (video-hosting spec R8). The photograph is checked before the write, and another org's — or
+   * one not ready, or not a photograph — is "not found" rather than a hint that it exists.
+   */
+  async replacePoster(orgId: string, videoId: string, posterAssetId: string | null): Promise<MediaAssetDto> {
+    if (posterAssetId !== null) {
+      const photo = await mediaAssetRepository.findForOrg(orgId, posterAssetId);
+      if (!photo || photo.kind !== MediaAssetKind.IMAGE || photo.state !== MediaAssetState.READY) {
+        throw new NotFoundError("Photo not found");
+      }
+    }
+    const moved = await mediaAssetRepository.setPoster(orgId, videoId, posterAssetId);
+    if (!moved) throw new NotFoundError("Video not found");
+    const after = await mediaAssetRepository.findForOrg(orgId, videoId);
+    if (!after) throw new NotFoundError("Video not found");
+    return toMediaAssetDto(after);
+  },
+
+  /**
    * Retire an image nothing uses (spec R7, A3). The state change is one conditional statement;
    * when it moves nothing, the uses are read only to say *why* — the refusal itself did not
    * depend on that read. A URL still written on a row that has no asset link counts as a use too.

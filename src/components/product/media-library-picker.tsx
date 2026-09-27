@@ -1,6 +1,6 @@
 import { useState } from "react";
 import NextImage from "next/image";
-import { Check, Film, Images, Youtube } from "lucide-react";
+import { Check, Film, Images, Youtube, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
@@ -18,9 +18,21 @@ interface MediaLibraryPickerProps {
   taken: ReadonlySet<string>;
   onPick: (asset: MediaAssetDto) => void;
   onUnpick: (asset: MediaAssetDto) => void;
+  /** The tabs offered, in order; all three unless the surface wants fewer — a video's poster is a photograph (spec R8). */
+  kinds?: readonly Kind[];
+  title?: string;
+  description?: string;
 }
 
 type Kind = MediaAssetDto["kind"];
+
+const ALL_KINDS: readonly Kind[] = ["IMAGE", "VIDEO", "VIDEO_EMBED"];
+
+const TABS: Record<Kind, { label: string; Icon: LucideIcon }> = {
+  IMAGE: { label: "Photos", Icon: Images },
+  VIDEO: { label: "Videos", Icon: Film },
+  VIDEO_EMBED: { label: "YouTube", Icon: Youtube },
+};
 
 /**
  * Reuse from the library (media-library spec R6): the org's ready photos and videos as the 3-up
@@ -28,24 +40,36 @@ type Kind = MediaAssetDto["kind"];
  * right seam. A tap adds the asset's ref to the gallery and a second tap removes it; the link to
  * the asset row is made by URL on save (trd D1).
  */
-export function MediaLibraryPicker({ orgId, open, onOpenChange, taken, onPick, onUnpick }: MediaLibraryPickerProps) {
-  const [kind, setKind] = useState<Kind>("IMAGE");
+export function MediaLibraryPicker({
+  orgId,
+  open,
+  onOpenChange,
+  taken,
+  onPick,
+  onUnpick,
+  kinds = ALL_KINDS,
+  title = "From your library",
+  description = "Tap to add to this gallery; tap again to take it out.",
+}: MediaLibraryPickerProps) {
+  const [kind, setKind] = useState<Kind>(kinds[0] ?? "IMAGE");
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="adaptive">
-        <SheetTitle>From your library</SheetTitle>
-        <SheetDescription>Tap to add to this gallery; tap again to take it out.</SheetDescription>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant={kind === "IMAGE" ? "default" : "outline"} onClick={() => setKind("IMAGE")}>
-            <Images className="mr-1 size-4" /> Photos
-          </Button>
-          <Button type="button" size="sm" variant={kind === "VIDEO" ? "default" : "outline"} onClick={() => setKind("VIDEO")}>
-            <Film className="mr-1 size-4" /> Videos
-          </Button>
-          <Button type="button" size="sm" variant={kind === "VIDEO_EMBED" ? "default" : "outline"} onClick={() => setKind("VIDEO_EMBED")}>
-            <Youtube className="mr-1 size-4" /> YouTube
-          </Button>
-        </div>
+        <SheetTitle>{title}</SheetTitle>
+        <SheetDescription>{description}</SheetDescription>
+        {/* One tab is no choice, so the row is left out rather than shown pressed. */}
+        {kinds.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            {kinds.map((tab) => {
+              const { label, Icon } = TABS[tab];
+              return (
+                <Button key={tab} type="button" size="sm" variant={kind === tab ? "default" : "outline"} onClick={() => setKind(tab)}>
+                  <Icon className="mr-1 size-4" /> {label}
+                </Button>
+              );
+            })}
+          </div>
+        )}
         {/* Mounted only while open, so nothing is fetched for a picker nobody has tapped. */}
         {open && <PickerPages key={kind} orgId={orgId} kind={kind} taken={taken} onPick={onPick} onUnpick={onUnpick} />}
       </SheetContent>

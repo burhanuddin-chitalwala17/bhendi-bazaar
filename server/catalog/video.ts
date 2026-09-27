@@ -35,6 +35,9 @@ export const VIDEO_POSTER_AT_MS = 1000;
 
 export const VIDEO_TRANSFORM = { RENDITION: "rendition", POSTER: "poster" } as const;
 
+/** What every rendition is encoded as (D3): the worker writes it, the player's `<source>` declares it. */
+export const VIDEO_RENDITION_MIME_TYPE = "video/mp4";
+
 export function describeDurationLimit(): string {
   return `at most ${Math.round(VIDEO_LIMITS.maxDurationMs / 1000)} seconds`;
 }

@@ -42,6 +42,7 @@ const counts = (overrides: Partial<Record<string, number>> = {}) => ({
   orgBanners: 0,
   banners: 0,
   derivatives: 0,
+  postersFor: 0,
   ...overrides,
 });
 
@@ -60,6 +61,7 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   createdAt: new Date("2026-09-27T08:00:00Z"),
   retiredAt: null,
   derivatives: [],
+  posterAsset: null,
   _count: counts(),
   ...overrides,
 });

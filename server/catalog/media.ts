@@ -68,8 +68,18 @@ export interface ProductMediaRow {
     state: MediaAssetState;
     durationMs: number | null;
     /** Ready derivatives only — the select filters them — with the transform that says what each is. */
-    derivatives: { ref: string; width: number | null; height: number | null; transform: unknown }[];
+    derivatives: VideoDerivativeRow[];
+    /** The photograph the org member chose over the derived frame (video-hosting spec R8), if any. */
+    posterAsset: { ref: string } | null;
   } | null;
+}
+
+/** A ready asset made from a video's source, as either select reads it. */
+export interface VideoDerivativeRow {
+  ref: string;
+  width: number | null;
+  height: number | null;
+  transform: unknown;
 }
 
 /**
@@ -96,6 +106,26 @@ function isPoster(transform: unknown): boolean {
 }
 
 /**
+ * What a video's derivatives amount to, for every read that shows one (video-hosting D3, D5, R8):
+ * the poster is the photograph the org member chose when there is one, else the frame the worker
+ * cut; the renditions are the playable files, largest first. Declared once so the product page and
+ * the library cannot resolve the same asset to two different pictures.
+ */
+export function resolveVideoDerivatives(
+  derivatives: readonly VideoDerivativeRow[],
+  chosenPoster: { ref: string } | null,
+): { poster: string | null; renditions: ProductMediaRendition[] } {
+  const renditions = derivatives.flatMap((derived) => {
+    const key = renditionKeyOf(derived.transform);
+    return key && derived.width && derived.height ? [{ key, url: derived.ref, width: derived.width, height: derived.height }] : [];
+  });
+  return {
+    poster: chosenPoster?.ref ?? derivatives.find((derived) => isPoster(derived.transform))?.ref ?? null,
+    renditions: renditions.sort((a, b) => b.height - a.height),
+  };
+}
+
+/**
  * One row to one DTO, for both product reads (video-hosting D1, D5). A photograph or a link
  * carries the video fields empty; a hosted video gets its poster, renditions and state from
  * the asset the row was linked to on write. A VIDEO row whose link is missing — the asset has
@@ -104,16 +134,12 @@ function isPoster(transform: unknown): boolean {
 export function toProductMediaDto(row: ProductMediaRow): ProductMediaDto {
   const { asset, ...item } = row;
   if (item.kind !== "VIDEO") return { ...item, poster: null, durationMs: null, renditions: [], state: null };
-  const derivatives = asset?.derivatives ?? [];
-  const renditions = derivatives.flatMap((derived) => {
-    const key = renditionKeyOf(derived.transform);
-    return key && derived.width && derived.height ? [{ key, url: derived.ref, width: derived.width, height: derived.height }] : [];
-  });
+  const { poster, renditions } = resolveVideoDerivatives(asset?.derivatives ?? [], asset?.posterAsset ?? null);
   return {
     ...item,
-    poster: derivatives.find((derived) => isPoster(derived.transform))?.ref ?? null,
+    poster,
     durationMs: asset?.durationMs ?? null,
-    renditions: renditions.sort((a, b) => b.height - a.height),
+    renditions,
     state: asset ? GALLERY_STATE[asset.state] : "processing",
   };
 }

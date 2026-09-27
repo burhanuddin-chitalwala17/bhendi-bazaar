@@ -10,6 +10,21 @@
 
 ## Entries
 
+## [PR-183] 2026-09-27 — Hosted video plays: the player, the poster you choose, and video into the library [CONTRACT] [MIGRATION]
+
+Video-hosting spec R1, R4, R8, R9, A3; trd D5, D7, D8. The product page's video slide plays: a
+native `<video>` behind the poster, mounted only on a tap, with no script from another host. A wide
+screen starts on 1080p and a phone on 720p, or on the largest the worker made, and a button group
+in the slide's corner switches rendition keeping the viewer's place; full screen is the browser's
+own control. A swiped-away slide goes back to its poster so nothing plays unseen; a failed video's
+slide says it is not available. The library sheet plays a ready video with the same player. An org
+member can choose any of their ready photographs as a video's poster: the library picker, restricted
+to photographs, sets it; "Use the video's own frame" clears it; one function resolves the chosen
+photograph over the worker's frame for the product page and the library alike. A photograph standing
+in for a video counts as in use, so its retirement is refused. The library's upload button accepts
+photos or a video together. `MediaAsset.posterAssetId` is added; `MediaAssetDto` carries the
+renditions so the sheet can play. The video-hosting subfeature is implemented.
+
 ## [PR-181] 2026-09-27 — Hosted video, part two: upload, transcode job and the poster [CONTRACT] [MIGRATION]
 
 Video-hosting trd D1, D2, D3, D6, D7. `MediaAssetKind` gains `VIDEO`, `MediaAssetState` gains

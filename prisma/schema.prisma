@@ -20,14 +20,14 @@ datasource db {
 /// say when it was last seen rather than guess (worker-foundation R5). Counts are copied from
 /// the queue at the same moment; they are a snapshot, not a source of truth.
 model WorkerHeartbeat {
-  environment String   @id
-  version     String
-  lastSeenAt  DateTime
-  waiting     Int
-  active      Int
-  failed      Int
+  environment  String   @id
+  version      String
+  lastSeenAt   DateTime
+  waiting      Int
+  active       Int
+  failed       Int
   /// Jobs finished in the 24 hours before the beat — the figure that says the worker is doing work, not just alive.
-  completedDay Int @default(0)
+  completedDay Int      @default(0)
 }
 
 /// Every image the platform stores, as a record (media-library R1): what it is, how big, who
@@ -42,12 +42,12 @@ model MediaAsset {
   /// Our object's pathname when the image lives in our store; null for an external URL or an embed.
   objectKey String?        @unique
 
-  width    Int?
-  height   Int?
-  bytes    Int?
-  mimeType String?
+  width       Int?
+  height      Int?
+  bytes       Int?
+  mimeType    String?
   /// Playing time of a hosted video; null for anything else (video-hosting D1).
-  durationMs Int?
+  durationMs  Int?
   /// SHA-256 of the stored bytes, hex. Within an org the same bytes are one asset, so a repeat
   /// upload is answered with the existing record rather than a second copy (media-library D11).
   contentHash String?
@@ -64,11 +64,15 @@ model MediaAsset {
   derivatives   MediaAsset[]     @relation("Derivation")
   /// How a derived asset was made from its source — a crop rectangle, a surface key, an operation.
   transform     Json?
+  /// The photograph an org member chose to stand in for this video instead of the derived frame (video-hosting spec R8).
+  posterAssetId String?
+  posterAsset   MediaAsset?      @relation("VideoPoster", fields: [posterAssetId], references: [id], onDelete: SetNull)
+  postersFor    MediaAsset[]     @relation("VideoPoster")
 
   /// PENDING between the presign and the confirm; READY once the store has the bytes and the
   /// record has the dimensions; RETIRED when nothing should use it any more (trd D2, D8).
-  state     MediaAssetState @default(PENDING)
-  retiredAt DateTime?
+  state         MediaAssetState @default(PENDING)
+  retiredAt     DateTime?
   /// Why a video could not be made playable, shown to the org member (video-hosting spec R7).
   failureReason String?
 
@@ -86,6 +90,7 @@ model MediaAsset {
   @@index([orgId, contentHash])
   @@index([ref])
   @@index([derivedFromId])
+  @@index([posterAssetId])
 }
 
 enum MediaAssetKind {

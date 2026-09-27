@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Film, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageLightbox } from "@/components/shared/image-lightbox";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
+import { VideoPlayer } from "@/components/product/video-player";
 import {
   MAX_ZOOM_SCALE,
   youtubePosterUrl,
@@ -175,6 +176,8 @@ export function ProductGallery(product: Product) {
     if (isLightboxOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // A focused player owns its arrow keys — they seek; flipping the slide would unmount it.
+      if (e.target instanceof Element && e.target.closest("video")) return;
       if (e.key === "ArrowLeft") handlePrevious();
       if (e.key === "ArrowRight") handleNext();
     };
@@ -221,26 +224,38 @@ export function ProductGallery(product: Product) {
                     productName={product.name}
                   />
                 ) : item.kind === "VIDEO" ? (
-                  // The poster, or a quiet placeholder while the worker is still at it (video-hosting
-                  // spec R3). The player is the next PR's; nothing here plays.
-                  <div className="relative size-full bg-muted">
-                    {item.poster ? (
-                      <Image
-                        src={item.poster}
-                        alt={item.description ?? `${product.name} - Video ${index + 1}`}
-                        fill
-                        className="object-cover select-none"
-                        loading="lazy"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        draggable={false}
-                      />
-                    ) : (
-                      <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Film className="size-10" aria-hidden />
-                        <span className="text-xs">Video is being prepared</span>
-                      </span>
-                    )}
-                  </div>
+                  item.state === "ready" && item.renditions.length > 0 ? (
+                    <VideoPlayer
+                      poster={item.poster}
+                      renditions={item.renditions}
+                      durationMs={item.durationMs}
+                      title={item.description ?? `${product.name} - Video ${index + 1}`}
+                      active={index === activeIndex}
+                    />
+                  ) : (
+                    // The poster with no play control, or a quiet placeholder, while the worker is
+                    // still at it or has given up (video-hosting spec R3, R7).
+                    <div className="relative size-full bg-muted">
+                      {item.poster ? (
+                        <Image
+                          src={item.poster}
+                          alt={item.description ?? `${product.name} - Video ${index + 1}`}
+                          fill
+                          className="object-cover select-none"
+                          loading="lazy"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                          <Film className="size-10" aria-hidden />
+                          <span className="text-xs">
+                            {item.state === "failed" ? "This video is not available" : "Video is being prepared"}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  )
                 ) : (
                   <div
                     className="relative w-full h-full transition-transform duration-200 ease-out"

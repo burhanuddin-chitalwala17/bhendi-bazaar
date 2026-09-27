@@ -6,6 +6,7 @@ import { DomainError } from "@server/shared/domain-error";
 import {
   VIDEO_LIMITS,
   VIDEO_POSTER_AT_MS,
+  VIDEO_RENDITION_MIME_TYPE,
   VIDEO_RENDITIONS,
   describeDurationLimit,
   type VideoRendition,
@@ -100,7 +101,7 @@ export async function transcodeVideo(sourcePath: string, outDir: string, probe: 
       path,
     ]);
     const made = await probeVideo(path);
-    renditions.push({ key: rendition.key, path, width: made.width, height: made.height, bytes: (await stat(path)).size, mimeType: "video/mp4" });
+    renditions.push({ key: rendition.key, path, width: made.width, height: made.height, bytes: (await stat(path)).size, mimeType: VIDEO_RENDITION_MIME_TYPE });
   }
 
   const posterPath = join(outDir, "poster.jpg");

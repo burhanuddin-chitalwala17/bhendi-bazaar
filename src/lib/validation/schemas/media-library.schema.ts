@@ -46,3 +46,14 @@ export function parseMediaLibraryFilters(
   }
   return mediaLibraryFilterSchema.parse(raw);
 }
+
+/**
+ * The poster an org member chooses for a hosted video (video-hosting spec R8): a photograph's asset
+ * id, or null to go back to the frame the worker cut. Whether the photograph is theirs and ready is
+ * the service's question, not the schema's.
+ */
+export const videoPosterSchema = z.object({
+  posterAssetId: z.string().trim().min(1).max(64).nullable(),
+});
+
+export type VideoPosterInput = z.infer<typeof videoPosterSchema>;

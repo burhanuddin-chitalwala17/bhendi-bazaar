@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Archive, ChevronDown, ChevronUp, Film, Images } from "lucide-react";
+import { Archive, ChevronDown, ChevronUp, Film, ImageIcon, Images, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,9 +13,12 @@ import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
 import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
 import { YouTubePoster } from "@/components/product/youtube-poster";
+import { VideoPlayer } from "@/components/product/video-player";
+import { MediaLibraryPicker } from "@/components/product/media-library-picker";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import { readApiError } from "@/lib/api-error";
+import { formatDuration } from "@/lib/format";
 import { describeUses, type MediaAssetDetailDto, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 
@@ -48,12 +51,6 @@ const STATE_BADGES: Partial<Record<MediaAssetDto["state"], { label: string; vari
 const formatBytes = (bytes: number | null) =>
   bytes === null ? "—" : bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
-/** "1:05" for a hosted video's playing time. */
-const formatDuration = (durationMs: number) => {
-  const seconds = Math.round(durationMs / 1000);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-};
-
 const isVideoKind = (kind: MediaAssetDto["kind"]) => kind !== "IMAGE";
 
 /**
@@ -69,6 +66,8 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   const [detail, setDetail] = useState<MediaAssetDetailDto | null>(null);
   const [isRetiring, setIsRetiring] = useState(false);
   const [showUses, setShowUses] = useState(false);
+  const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
+  const [isSavingPoster, setIsSavingPoster] = useState(false);
   const uses = detail?.uses ?? [];
 
   const show = async (asset: MediaAssetDto) => {
@@ -81,6 +80,29 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       return;
     }
     setDetail((await response.json()) as MediaAssetDetailDto);
+  };
+
+  // The photograph that stands in for a video, or null for the frame the worker cut (video-hosting
+  // spec R8). The sheet shows the answer at once; the page re-reads so the tile follows.
+  const savePoster = async (video: MediaAssetDto, posterAssetId: string | null) => {
+    setIsSavingPoster(true);
+    try {
+      const response = await fetch(`/api/org/${orgId}/media/${video.id}/poster`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ posterAssetId }),
+      });
+      if (!response.ok) {
+        toast.error((await readApiError(response)).message);
+        return;
+      }
+      setOpen((await response.json()) as MediaAssetDto);
+      setPosterPickerOpen(false);
+      toast.success(posterAssetId === null ? "The video shows its own frame again" : "Poster changed");
+      router.refresh();
+    } finally {
+      setIsSavingPoster(false);
+    }
   };
 
   // A refusal is said, not greyed out: a disabled button with no reason is a dead end (spec R7, A3).
@@ -173,10 +195,41 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               >
                 {open.kind === "VIDEO_EMBED" ? (
                   <YouTubeEmbed ref_={open.ref} description={null} productName="this library" />
+                ) : open.kind === "VIDEO" && open.state === "READY" && open.renditions.length > 0 ? (
+                  <VideoPlayer
+                    poster={open.poster}
+                    renditions={open.renditions}
+                    durationMs={open.durationMs}
+                    title="this video"
+                    sizes={LARGE_TILE_SIZES}
+                  />
                 ) : (
                   <MediaTile asset={open} large />
                 )}
               </div>
+              {open.kind === "VIDEO" && open.state !== "RETIRED" && (
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={() => setPosterPickerOpen(true)} disabled={isSavingPoster}>
+                    <ImageIcon className="mr-2 size-4" />
+                    Change poster
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={() => void savePoster(open, null)} disabled={isSavingPoster}>
+                    <RotateCcw className="mr-2 size-4" />
+                    Use the video&apos;s own frame
+                  </Button>
+                  <MediaLibraryPicker
+                    orgId={orgId}
+                    open={isPosterPickerOpen}
+                    onOpenChange={setPosterPickerOpen}
+                    kinds={["IMAGE"]}
+                    title="Choose a poster"
+                    description="The photograph that stands in for this video until it plays. Tap the current one to go back to the video's own frame."
+                    taken={new Set(open.poster ? [open.poster] : [])}
+                    onPick={(photo) => void savePoster(open, photo.id)}
+                    onUnpick={() => void savePoster(open, null)}
+                  />
+                </div>
+              )}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 <dt className="text-muted-foreground">Size</dt>
                 <dd>{open.width && open.height ? `${open.width} × ${open.height}` : "—"}</dd>
@@ -257,8 +310,11 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
  * has a poster only once the worker has made it (video-hosting D7); before that, and after a
  * failure, the tile is a film mark and the badge says which.
  */
+/** The sheet's preview: the panel's width from `md`, the phone's otherwise (ADR-0026). */
+const LARGE_TILE_SIZES = "(min-width: 768px) 384px, 100vw";
+
 function MediaTile({ asset, large = false }: { asset: MediaAssetDto; large?: boolean }) {
-  const sizes = large ? "(min-width: 768px) 384px, 100vw" : PRODUCT_TILE_SIZES;
+  const sizes = large ? LARGE_TILE_SIZES : PRODUCT_TILE_SIZES;
   if (asset.kind === "VIDEO_EMBED") {
     return <YouTubePoster ref_={asset.ref} sizes={sizes} />;
   }
@@ -284,6 +340,7 @@ function UseLine({ use }: { use: MediaUseDto }) {
     "storefront-banner": "Storefront banner",
     "home-banner": "Home banner",
     derived: "Derived",
+    "video-poster": "Video",
   };
   return (
     <span>

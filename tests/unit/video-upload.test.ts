@@ -140,6 +140,7 @@ describe("toProductMediaDto", () => {
         asset: {
           state: "READY",
           durationMs: 45_000,
+          posterAsset: null,
           derivatives: [
             { ref: "https://img.test/clip-720p.mp4", width: 1280, height: 720, transform: { kind: VIDEO_TRANSFORM.RENDITION, key: "720p" } },
             { ref: "https://img.test/clip-poster.jpg", width: 1920, height: 1080, transform: { kind: VIDEO_TRANSFORM.POSTER } },
@@ -161,7 +162,7 @@ describe("toProductMediaDto", () => {
 
   it("reads processing, failed and — with no link at all — processing", () => {
     const at = (state: ProductMediaRow["asset"] extends infer A ? (A extends { state: infer S } ? S : never) : never) =>
-      toProductMediaDto(row({ asset: { state, durationMs: null, derivatives: [] } })).state;
+      toProductMediaDto(row({ asset: { state, durationMs: null, derivatives: [], posterAsset: null } })).state;
     expect(at("PROCESSING")).toBe("processing");
     expect(at("PENDING")).toBe("processing");
     expect(at("FAILED")).toBe("failed");

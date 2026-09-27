@@ -1,4 +1,5 @@
 import type { MediaAssetKind, MediaAssetSource, MediaAssetState } from "@prisma/client";
+import { resolveVideoDerivatives, type ProductMediaRendition, type VideoDerivativeRow } from "@server/catalog/media";
 
 /** Tiles per page: eight rows of the 3-up phone grid (ADR-0016). */
 export const MEDIA_LIBRARY_PAGE_SIZE = 24;
@@ -21,9 +22,11 @@ export interface MediaAssetDto {
   uses: number;
   createdAt: string;
   retiredAt: string | null;
-  /** A hosted video's poster frame once the worker has made one; null for anything else (video-hosting D7). */
+  /** A hosted video's poster — the photograph the org member chose, else the worker's frame (video-hosting D7, R8); null for anything else. */
   poster: string | null;
   durationMs: number | null;
+  /** A hosted video's playable files, largest first (video-hosting D5); empty until the worker is done, and always for anything else. */
+  renditions: ProductMediaRendition[];
   /** Why a video is FAILED, in the org member's words (spec R7); null otherwise. */
   failureReason: string | null;
 }
@@ -36,6 +39,7 @@ export const MEDIA_USE_KINDS = [
   "storefront-banner",
   "home-banner",
   "derived",
+  "video-poster",
 ] as const;
 export type MediaUseKind = (typeof MEDIA_USE_KINDS)[number];
 
@@ -61,6 +65,8 @@ export interface ReferenceCounts {
   orgBanners: number;
   banners: number;
   derivatives: number;
+  /** The videos this photograph stands in for (spec R8): a poster in use is a photograph in use. */
+  postersFor: number;
 }
 
 export function totalReferences(counts: ReferenceCounts): number {
@@ -81,12 +87,14 @@ export interface MediaAssetRow {
   failureReason: string | null;
   createdAt: Date;
   retiredAt: Date | null;
-  /** The poster derivative, at most one, as the library select joins it. */
-  derivatives: { ref: string }[];
+  /** A video's ready poster frame and renditions, as the library select joins them; empty for a photograph. */
+  derivatives: VideoDerivativeRow[];
+  posterAsset: { ref: string } | null;
   _count: ReferenceCounts;
 }
 
 export function toMediaAssetDto(row: MediaAssetRow): MediaAssetDto {
+  const { poster, renditions } = resolveVideoDerivatives(row.derivatives, row.posterAsset);
   return {
     id: row.id,
     kind: row.kind,
@@ -100,8 +108,9 @@ export function toMediaAssetDto(row: MediaAssetRow): MediaAssetDto {
     uses: totalReferences(row._count),
     createdAt: row.createdAt.toISOString(),
     retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,
-    poster: row.derivatives[0]?.ref ?? null,
+    poster,
     durationMs: row.durationMs,
+    renditions,
     failureReason: row.failureReason,
   };
 }
@@ -114,6 +123,7 @@ const USE_NOUNS: Record<MediaUseKind, [singular: string, plural: string]> = {
   "storefront-banner": ["storefront banner", "storefront banners"],
   "home-banner": ["home banner", "home banners"],
   derived: ["derived image", "derived images"],
+  "video-poster": ["video poster", "video posters"],
 };
 
 /** "2 products and 1 storefront banner" — what a refused retirement names (spec A3). */

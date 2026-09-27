@@ -30,6 +30,8 @@ export const PRODUCT_MEDIA_ASSET_SELECT = {
       where: { state: MediaAssetState.READY },
       select: { ref: true, width: true, height: true, transform: true },
     },
+    // The photograph chosen over the worker's frame (video-hosting spec R8); null means the frame.
+    posterAsset: { select: { ref: true } },
   },
 } satisfies Prisma.ProductMedia$assetArgs;
 
