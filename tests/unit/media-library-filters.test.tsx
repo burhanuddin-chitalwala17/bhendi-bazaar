@@ -10,6 +10,12 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/org/org-1/library",
 }));
 
+vi.mock("@/components/shared/forms/date-range-field", () => ({
+  DateRangeField: ({ onChange }: { onChange: (range: { from?: string; to?: string }) => void }) => (
+    <button type="button" onClick={() => onChange({ from: "2026-09-01", to: "2026-09-27" })}>pick range</button>
+  ),
+}));
+
 const { MediaLibraryFilters, filterQueryFrom } = await import("@/components/org/media-library-filters");
 
 const kinds = [{ value: "IMAGE", label: "Photos" }, { value: "VIDEO_EMBED", label: "Videos" }];
@@ -20,7 +26,7 @@ beforeEach(() => replace.mockClear());
 
 describe("MediaLibraryFilters", () => {
   it("navigates on the client with the picked filters, leaving blanks and the default usage out", () => {
-    render(<MediaLibraryFilters filters={base} kinds={kinds} sources={sources} />);
+    render(<MediaLibraryFilters filters={base} range={{}} kinds={kinds} sources={sources} />);
     fireEvent.change(screen.getByLabelText("Kind"), { target: { value: "IMAGE" } });
     expect(replace).toHaveBeenCalledWith("/org/org-1/library?kind=IMAGE", { scroll: false });
     fireEvent.click(screen.getByRole("checkbox"));
@@ -28,9 +34,18 @@ describe("MediaLibraryFilters", () => {
   });
 
   it("clearing every filter navigates to the bare path", () => {
-    render(<MediaLibraryFilters filters={{ ...base, kind: "IMAGE" }} kinds={kinds} sources={sources} />);
+    render(<MediaLibraryFilters filters={{ ...base, kind: "IMAGE" }} range={{}} kinds={kinds} sources={sources} />);
     fireEvent.change(screen.getByLabelText("Kind"), { target: { value: "" } });
     expect(replace).toHaveBeenLastCalledWith("/org/org-1/library", { scroll: false });
+  });
+
+  it("a picked range replaces the form's own two keys in the query", () => {
+    render(<MediaLibraryFilters filters={base} range={{}} kinds={kinds} sources={sources} />);
+    fireEvent.click(screen.getByText("pick range"));
+    expect(replace).toHaveBeenLastCalledWith("/org/org-1/library?from=2026-09-01&to=2026-09-27", { scroll: false });
+    const form = document.createElement("form");
+    form.innerHTML = '<input name="from" value="2026-01-01"><input name="kind" value="IMAGE">';
+    expect(filterQueryFrom(form, { to: "2026-09-27" })).toBe("kind=IMAGE&to=2026-09-27");
   });
 
   it("reads a form into a query: blanks and the default usage left out, everything else carried", () => {

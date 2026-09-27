@@ -36,6 +36,7 @@
 | `react-hook-form` + `@hookform/resolvers` | `^7.68.0` / `^5.2.2` | Admin form state with Zod resolvers | `src/components/shared/forms/**` | 2026-08-03 |
 | `@radix-ui/*` | various | Accessible primitives behind shadcn/ui: dialog, dropdown-menu, separator, slot, switch. `dropdown-menu` added for row actions and the copy picker ([copy-product](specs/copy-product/trd.md)) — keyboard navigation, typeahead and collision-aware positioning are what a hand-rolled menu gets wrong | `src/components/ui/**` | 2026-09-23 |
 | `lucide-react` | `^0.561.0` | Icons | Throughout UI | 2026-08-03 |
+| `react-day-picker` | `^10.0.1` | The calendar behind the one date-range field ([media-library](specs/media-library/trd.md) UI approach): range selection, keyboard and screen-reader behaviour, month navigation — the parts of a calendar that go wrong when hand-rolled. Styled through our tokens via `classNames`, its own stylesheet unused. Brings `date-fns`, used nowhere else | `src/components/ui/calendar.tsx` | 2026-09-27 |
 | `@vercel/analytics` + `@vercel/speed-insights` | `^2.0.1` / `^2.0.0` | Page analytics and Core Web Vitals, mounted in `src/app/layout.tsx`. Both serve their script from our own origin, so the CSP needs no third-party `script-src` for them | `src/app/layout.tsx` | 2026-09-21 |
 | `sonner` | `^2.0.7` | Toast notifications | `src/app/providers.tsx` | 2026-08-03 |
 | `clsx` + `tailwind-merge` + `class-variance-authority` | — | The shadcn/ui `cn()` helper and variant definitions | `src/lib/utils.ts` | 2026-08-03 |

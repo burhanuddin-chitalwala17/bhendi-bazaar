@@ -10,6 +10,15 @@
 
 ## Entries
 
+## [PR-174] 2026-09-27 — One date-range field for the library, with a calendar
+
+Two native date inputs were too many taps and never showed the range. The library's date filter is
+one field: a button naming the range — "12 Sept – 27 Sept 2026", or "Any time" — opens a sheet with
+a two-month calendar in range mode, the picked range highlighted, and presets for the last seven
+and thirty days and this and last month. The range still travels as two day keys in the URL, so
+nothing on the server changed. `react-day-picker` is added for the calendar, styled through our
+tokens ([DEPENDENCIES.md](DEPENDENCIES.md)).
+
 ## [PR-173] 2026-09-27 — Library filters re-render the grid instead of reloading the page
 
 Picking a filter navigated the whole page — a plain form submission — which read as a flicker, and

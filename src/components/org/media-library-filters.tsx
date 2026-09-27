@@ -2,8 +2,9 @@
 
 import { useRef, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { DateRangeField } from "@/components/shared/forms/date-range-field";
+import type { DayRange } from "@/lib/date-range";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MEDIA_USAGE, type MediaLibraryFilters as Filters } from "@/lib/validation/schemas/media-library.schema";
 
@@ -14,6 +15,8 @@ export interface FilterOption {
 
 interface MediaLibraryFiltersProps {
   filters: Filters;
+  /** The range as the URL carries it, two day keys, so the field shows exactly what was picked. */
+  range: DayRange;
   /** The kinds and sources, named by the server so this component never imports the database's enums. */
   kinds: FilterOption[];
   sources: FilterOption[];
@@ -21,14 +24,19 @@ interface MediaLibraryFiltersProps {
 
 const USAGE_LABELS: Record<Filters["usage"], string> = { all: "Used or not", used: "In use", unused: "Not used" };
 
-const toDateInput = (value: Date | undefined) => (value ? value.toISOString().slice(0, 10) : "");
-
-/** The form's fields as the query string the page parses: blanks and the default usage left out. The form carries no page, so a new filter starts at the first. */
-export function filterQueryFrom(form: HTMLFormElement): string {
+/**
+ * The form's fields as the query string the page parses: blanks and the default usage left out.
+ * The form carries no page, so a new filter starts at the first. A range handed in replaces the
+ * form's own, for the moment the picker has chosen but the hidden inputs have not re-rendered.
+ */
+export function filterQueryFrom(form: HTMLFormElement, range?: DayRange): string {
   const query = new URLSearchParams();
   for (const [key, value] of new FormData(form)) {
+    if (range && (key === "from" || key === "to")) continue;
     if (typeof value === "string" && value !== "" && !(key === "usage" && value === "all")) query.set(key, value);
   }
+  if (range?.from) query.set("from", range.from);
+  if (range?.to) query.set("to", range.to);
   return query.toString();
 }
 
@@ -37,15 +45,15 @@ export function filterQueryFrom(form: HTMLFormElement): string {
  * can share — but a change navigates on the client, so only the grid re-renders. A plain GET
  * form did the same job with a full page load, which read as a flicker on every pick.
  */
-export function MediaLibraryFilters({ filters, kinds, sources }: MediaLibraryFiltersProps) {
+export function MediaLibraryFilters({ filters, range, kinds, sources }: MediaLibraryFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const form = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
 
-  const apply = () => {
+  const apply = (picked?: DayRange) => {
     if (!form.current) return;
-    const query = filterQueryFrom(form.current);
+    const query = filterQueryFrom(form.current, picked);
     startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
   };
 
@@ -53,7 +61,7 @@ export function MediaLibraryFilters({ filters, kinds, sources }: MediaLibraryFil
     <form
       ref={form}
       method="get"
-      onChange={apply}
+      onChange={() => apply()}
       onSubmit={(event) => {
         event.preventDefault();
         apply();
@@ -87,14 +95,10 @@ export function MediaLibraryFilters({ filters, kinds, sources }: MediaLibraryFil
           ))}
         </Select>
       </label>
-      <label className="flex-1 text-sm sm:max-w-40">
-        <span className="mb-1 block text-muted-foreground">From</span>
-        <Input type="date" name="from" defaultValue={toDateInput(filters.from)} />
-      </label>
-      <label className="flex-1 text-sm sm:max-w-40">
-        <span className="mb-1 block text-muted-foreground">To</span>
-        <Input type="date" name="to" defaultValue={toDateInput(filters.to)} />
-      </label>
+      <div className="flex-1 text-sm sm:max-w-64">
+        <span className="mb-1 block text-muted-foreground">When</span>
+        <DateRangeField value={range} onChange={apply} />
+      </div>
       {filters.productId && <input type="hidden" name="productId" value={filters.productId} />}
       {filters.slot && <input type="hidden" name="slot" value={filters.slot} />}
       <Checkbox name="retired" value="1" label="Show retired" defaultChecked={filters.retired} />
