@@ -37,6 +37,9 @@ npm run dev                 # http://localhost:3000
 | `FFMPEG_PATH` / `FFPROBE_PATH` | — | Worker only, optional. Where the transcoder's binaries are when they are not on `PATH` ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)); the image installs ffmpeg as an OS package, so neither is set there |
 | `R2_BUCKET` | ✅ | Bucket name |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | ✅ | R2 API token with read+write on that bucket |
+| `IMAGE_SEGMENT_PROVIDER` | ○ | Which service cuts a product out of its background for the `cut out`, `on white` and `studio` improvements: `zone` — the image host's own delivery transform on the custom images domain, free to 5,000 a month — or `model`, the hosted vision model. **Defaults to `zone`**, and whichever is asked for, the other runs when it is not set up. An unrecognised value is the default rather than an error: it is a preference, not a credential |
+| `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development |
+| `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
@@ -242,6 +245,26 @@ row the code falls back** to 300 a month and ₹500 a day (`FALLBACK_MONTHLY_ALL
 the first save on that screen is what makes the numbers the platform's. A shop with no row of its
 own follows the platform's number; one with a row has been given an allowance of its own or paused.
 Nothing here needs seeding.
+
+### Choosing a cut-out service: the bake-off
+Which service cuts a product out is the platform's choice and changes no screen
+([image-enhancement](specs/image-enhancement/) R8). To choose it on evidence rather than on claims,
+run the same real photographs through every service that is set up:
+
+```bash
+npm run enhance:bakeoff -- --org <orgId> --limit 20
+```
+
+It prints the shop's name and how many photographs it will use before it starts, then takes that
+shop's newest ready images, runs each available service over every one, and prints the URL of a page
+that lays them out side by side — the original, then each service's cut-out shown twice, on mid-grey
+and on white, with the service's key and how many milliseconds it took. Grey is where a halo and a
+missed edge show; white is what the result is actually for.
+
+It writes nothing to the database and creates no library image: everything lands under a
+`bakeoff/<runId>/` prefix in the object store, so cleaning up is deleting that prefix. It does spend
+real money on any service that bills per image, which is what `--limit` is for. Set
+`IMAGE_SEGMENT_PROVIDER` to the winner afterwards; nothing else changes.
 
 ### Env hygiene
 `.env*` is gitignored and has never been committed — keep it that way. Set `NODE_ENV` to a valid Node value (`development` / `production` / `test`); anything else silently changes behaviour in code that branches on it. Avoid keeping more than one live connection string in the file at a time — see [Seeding](#seeding) for why.

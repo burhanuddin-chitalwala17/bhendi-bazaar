@@ -124,9 +124,10 @@ export class EnhancementRepository {
     return result.count === 1;
   }
 
+  /** The provider is written here and not at creation: until the run happens, nothing has performed it. */
   async markProposed(
     id: string,
-    proposal: { proposalKey: string; costPaise: number; proposedAt: Date },
+    proposal: { proposalKey: string; provider: string; costPaise: number; proposedAt: Date },
   ): Promise<boolean> {
     const result = await prisma.enhancement.updateMany({
       where: { id, state: EnhancementState.RUNNING },

@@ -6,8 +6,13 @@
  * nothing is left behind. The catalog and the queue are mocked — this is the domain's own logic.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, NotFoundError } from "@server/shared/domain-error";
-import { FALLBACK_DAILY_CAP_PAISE, FALLBACK_MONTHLY_ALLOWANCE, type EnhancementRow } from "@server/content/enhancement.types";
+import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
+import {
+  FALLBACK_DAILY_CAP_PAISE,
+  FALLBACK_MONTHLY_ALLOWANCE,
+  type EnhancementRow,
+  type RequestEnhancementInput,
+} from "@server/content/enhancement.types";
 
 const repo = {
   create: vi.fn(),
@@ -29,7 +34,9 @@ const media = {
   deleteLooseObject: vi.fn(),
   registerDerivedObject: vi.fn(),
   publicUrlOf: (key: string) => `https://img.test/${key}`,
+  publicBaseUrl: () => "https://img.test",
 };
+const segmenterFor = vi.fn();
 const tx = { marker: "the transaction client" };
 const prisma = { $transaction: vi.fn(async (work: (client: typeof tx) => Promise<unknown>) => work(tx)) };
 const enqueue = vi.fn();
@@ -42,6 +49,10 @@ vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media
 vi.mock("@server/shared/prisma", () => ({ prisma }));
 vi.mock("@server/shared/jobs", () => ({ enqueue: (...args: unknown[]) => enqueue(...args) }));
 vi.mock("@server/content/tools/light", () => ({ lightFix: vi.fn() }));
+vi.mock("@server/content/tools/cutout", () => ({ cutOut: vi.fn() }));
+vi.mock("@server/content/tools/white", () => ({ onWhite: vi.fn() }));
+vi.mock("@server/content/tools/studio", () => ({ inStudio: vi.fn() }));
+vi.mock("@server/content/providers", () => ({ segmenterFor: (...args: unknown[]) => segmenterFor(...args) }));
 
 const { enhancementService } = await import("@server/content/enhancement.service");
 
@@ -71,7 +82,9 @@ const row = (over: Partial<EnhancementRow> = {}): EnhancementRow => ({
 });
 const proposed = () => row({ state: "PROPOSED", proposalKey: "proposals/e1.webp", proposedAt: now });
 
-const request = (input = { tool: "LIGHT" as const, sourceRef: source.ref, slot: "front", slotRole: "product" }) =>
+const request = (
+  input: RequestEnhancementInput = { tool: "LIGHT", sourceRef: source.ref, slot: "front", slotRole: "product" },
+) =>
   enhancementService.request("org-1", "u1", input, now);
 
 beforeEach(() => {
@@ -90,6 +103,7 @@ beforeEach(() => {
   repo.markAccepted.mockResolvedValue(true);
   repo.markDiscarded.mockResolvedValue(true);
   media.registerDerivedObject.mockResolvedValue({ id: "d1", ref: "https://img.test/products/o/a-light-e1.webp" });
+  segmenterFor.mockReturnValue({ key: "zone", isAvailable: () => true, cutOut: vi.fn() });
 });
 
 describe("usage", () => {
@@ -170,9 +184,30 @@ describe("request", () => {
   });
 
   it("refuses a tool that has no pipeline yet", async () => {
-    await expect(request({ tool: "WHITE" as never, sourceRef: source.ref, slot: "front", slotRole: "product" })).rejects.toThrow(
-      "On white is not available yet",
+    await expect(request({ tool: "SCENE" as never, sourceRef: source.ref, slot: "front", slotRole: "product" })).rejects.toThrow(
+      "In a scene is not available yet",
     );
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("records the service a cutting tool will ask for, so the ledger says who was expected to run it", async () => {
+    segmenterFor.mockReturnValue({ key: "model", isAvailable: () => true, cutOut: vi.fn() });
+    repo.create.mockResolvedValue(row({ tool: "WHITE", provider: "model" }));
+
+    await request({ tool: "WHITE", sourceRef: source.ref, slot: "front", slotRole: "product" });
+
+    expect(repo.create).toHaveBeenCalledWith(expect.objectContaining({ tool: "WHITE", provider: "model" }), tx);
+  });
+
+  it("refuses a cutting tool before a slot is spent where no service is set up for it", async () => {
+    segmenterFor.mockImplementation(() => {
+      throw new DomainError("Background removal is not set up yet");
+    });
+    await expect(request({ tool: "WHITE", sourceRef: source.ref, slot: "front", slotRole: "product" })).rejects.toThrow(
+      "Background removal is not set up yet",
+    );
+    // Before the quota is even read: a run nobody can perform must not cost the shop a slot.
+    expect(policies.policyFor).not.toHaveBeenCalled();
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 

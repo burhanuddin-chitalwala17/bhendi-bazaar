@@ -10,6 +10,48 @@
 
 ## Entries
 
+## [PR-191] 2026-09-28 — Cut out, on white, in a studio: the first improvements that need a provider
+
+Three of the six improvements are live, and they are the three a marketplace actually asks for. Cut
+out takes the product away from whatever it was photographed against. On plain white puts it on a
+square of pure 255,255,255 with an even margin, which is the shape Amazon and Flipkart check for. In
+a studio puts it on a soft neutral backdrop with a contact shadow under it, which is the shape an
+Instagram post wants. Each runs on its own, in the background, and comes back as a proposal to
+accept or discard like the brightening did.
+
+Cutting a product out is the first thing this store cannot do by itself, so it is also the first
+capability with a seam. One interface, two services behind it: the image host our own pictures are
+already served from, which does it as part of a delivery transform and is free for the first five
+thousand a month, and a hosted vision model that is better on hard edges and costs about a fifth of
+a paisa an image. Which one runs is one environment variable, it falls through to the other when the
+preferred one is not set up, and two files in the whole repository know that either vendor exists.
+Nothing an org member reads ever names one: a service that fails says the background could not be
+removed just now, in their words, and the run fails where they asked for it rather than retrying
+forever. Every call out is bounded at thirty seconds so one bad afternoon at a provider cannot stall
+the queue.
+
+The ledger now prices a run by the tool *and* the service that performed it, and records the service
+that actually ran rather than the one the request planned for. A request for a cutting tool is
+refused up front where no service is configured at all, before a shop spends a slot on a run nobody
+could have performed.
+
+The promise that matters is the one about the product. A backdrop is painted around it and never
+over it: the cut-out is placed unresized, and every opaque pixel of it is compared to the composite
+before anything is encoded, with no tolerance at all. A run whose product changed fails rather than
+proposing it. The comparison happens before the WebP because WebP is lossy, and a check that had to
+allow for the encoder would have to allow for a quietly redrawn logo too. The test moves one channel
+of one pixel by one and expects red.
+
+Choosing between the two services is a script rather than an argument. It takes a shop's newest
+photographs, runs every service that is set up over each of them, and writes a plain page laying the
+results side by side, on mid-grey where a halo shows and on white where it will be used, with how
+long each took. It records nothing and creates no library image; the whole run lives under one
+prefix in the object store that can be deleted afterwards.
+
+One smaller thing, dropped out of the above: a proposal's format is no longer assumed to be WebP. A
+cut-out is transparency, and flattening it would have thrown away the entire result, so each tool
+now declares what it writes and the proposal's key carries that extension.
+
 ## [PR-190] 2026-09-28 — The enhancement allowance and the daily cap are the platform owner's to set [CONTRACT] [MIGRATION]
 
 The two numbers deciding how much photo improvement the platform pays for were constants in a

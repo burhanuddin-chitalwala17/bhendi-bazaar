@@ -28,8 +28,12 @@ export const ENHANCEMENT_STATE = {
 } as const satisfies Record<PrismaEnhancementState, PrismaEnhancementState>;
 export type EnhancementState = (typeof ENHANCEMENT_STATE)[keyof typeof ENHANCEMENT_STATE];
 
-/** Which service performed a run (spec R8, trd D3). Only sharp so far; each provider lands with its tools. */
-export const ENHANCEMENT_PROVIDER = { SHARP: "sharp" } as const;
+/**
+ * Which service performed a run (spec R8, trd D3), named for what it is to us rather than for the
+ * company behind it (ADR-0037): `sharp` is our own CPU, `zone` the image host our pictures are
+ * already served from, `model` a hosted vision model. Nothing outside `providers/` knows more.
+ */
+export const ENHANCEMENT_PROVIDER = { SHARP: "sharp", ZONE: "zone", MODEL: "model" } as const;
 export type EnhancementProvider = (typeof ENHANCEMENT_PROVIDER)[keyof typeof ENHANCEMENT_PROVIDER];
 
 /** The one row the platform's numbers live in, addressed by this id rather than by a search. */
@@ -59,23 +63,54 @@ export function resolveDailyCap(platform: number | null): number {
  * six are declared up front so the ledger and the sheet know the whole set, and each joins this
  * list in the PR that builds it.
  */
-export const AVAILABLE_TOOLS = [ENHANCEMENT_TOOL.LIGHT] as const;
+export const AVAILABLE_TOOLS = [
+  ENHANCEMENT_TOOL.WHITE,
+  ENHANCEMENT_TOOL.STUDIO,
+  ENHANCEMENT_TOOL.CUTOUT,
+  ENHANCEMENT_TOOL.LIGHT,
+] as const;
 export type AvailableTool = (typeof AVAILABLE_TOOLS)[number];
 
 export function isAvailableTool(tool: EnhancementTool): tool is AvailableTool {
   return (AVAILABLE_TOOLS as readonly EnhancementTool[]).includes(tool);
 }
 
-/** Provider × tool, in paise, read at the moment the run is recorded (trd D6). sharp costs nothing. */
-export const TOOL_COST_PAISE: Record<AvailableTool, number> = { [ENHANCEMENT_TOOL.LIGHT]: 0 };
-export const TOOL_PROVIDER: Record<AvailableTool, EnhancementProvider> = {
-  [ENHANCEMENT_TOOL.LIGHT]: ENHANCEMENT_PROVIDER.SHARP,
+/** ≈$0.002 an image at the hosted model's price (trd D3), rounded up to the whole paisa. */
+export const MODEL_SEGMENT_PAISE = 18;
+
+/**
+ * What one run costs the platform, in paise, by the tool and the service that performed it
+ * (spec R9, trd D6). Read at the moment the run is recorded, so changing which service performs a
+ * tool changes what the ledger says and nothing else moves. Our own CPU is free, and so are the
+ * image host's first 5,000 cut-outs a month; only the hosted model is billed.
+ */
+export const TOOL_COST_PAISE: Record<AvailableTool, Record<EnhancementProvider, number>> = {
+  [ENHANCEMENT_TOOL.WHITE]: {
+    [ENHANCEMENT_PROVIDER.SHARP]: 0,
+    [ENHANCEMENT_PROVIDER.ZONE]: 0,
+    [ENHANCEMENT_PROVIDER.MODEL]: MODEL_SEGMENT_PAISE,
+  },
+  [ENHANCEMENT_TOOL.STUDIO]: {
+    [ENHANCEMENT_PROVIDER.SHARP]: 0,
+    [ENHANCEMENT_PROVIDER.ZONE]: 0,
+    [ENHANCEMENT_PROVIDER.MODEL]: MODEL_SEGMENT_PAISE,
+  },
+  [ENHANCEMENT_TOOL.CUTOUT]: {
+    [ENHANCEMENT_PROVIDER.SHARP]: 0,
+    [ENHANCEMENT_PROVIDER.ZONE]: 0,
+    [ENHANCEMENT_PROVIDER.MODEL]: MODEL_SEGMENT_PAISE,
+  },
+  [ENHANCEMENT_TOOL.LIGHT]: {
+    [ENHANCEMENT_PROVIDER.SHARP]: 0,
+    [ENHANCEMENT_PROVIDER.ZONE]: 0,
+    [ENHANCEMENT_PROVIDER.MODEL]: 0,
+  },
 };
 
 /** One line per tool, as the sheet lists them (spec R1). */
 export const TOOL_COPY: Record<EnhancementTool, { label: string; line: string }> = {
   [ENHANCEMENT_TOOL.CUTOUT]: { label: "Cut out", line: "The product alone, on nothing" },
-  [ENHANCEMENT_TOOL.WHITE]: { label: "On white", line: "On pure white, padded to a square" },
+  [ENHANCEMENT_TOOL.WHITE]: { label: "On plain white", line: "What Amazon and Flipkart ask for" },
   [ENHANCEMENT_TOOL.STUDIO]: { label: "Studio", line: "On a plain backdrop with a soft shadow" },
   [ENHANCEMENT_TOOL.SCENE]: { label: "In a scene", line: "Placed in a real-looking setting" },
   [ENHANCEMENT_TOOL.LIGHT]: { label: "Fix the light", line: "Brighter, sharper, nothing else changed" },
@@ -115,12 +150,32 @@ export function dayWindow(now: Date): TimeWindow {
 
 /** Where a proposal waits (trd D1): a prefix no library lists, one object per run. */
 export const PROPOSAL_PREFIX = "proposals/";
-/** Every tool so far writes WebP; a tool that needs alpha adds the format axis when it lands. */
-export const PROPOSAL_MIME_TYPE = "image/webp";
-export const PROPOSAL_EXTENSION = "webp";
 
-export function proposalKeyFor(enhancementId: string): string {
-  return `${PROPOSAL_PREFIX}${enhancementId}.${PROPOSAL_EXTENSION}`;
+/** The two formats a proposal is ever written in, and the extension each key carries. */
+export const PROPOSAL_MIME = { WEBP: "image/webp", PNG: "image/png" } as const;
+export type ProposalMimeType = (typeof PROPOSAL_MIME)[keyof typeof PROPOSAL_MIME];
+export const PROPOSAL_EXTENSION: Record<ProposalMimeType, string> = {
+  [PROPOSAL_MIME.WEBP]: "webp",
+  [PROPOSAL_MIME.PNG]: "png",
+};
+
+/**
+ * What each tool writes. A cut-out is the one result whose transparency *is* the product, so it is
+ * PNG and is never flattened into WebP; everything else is WebP at the stored quality (ADR-0026).
+ * Keyed by every tool rather than the available ones, so a decided row can still be read back.
+ */
+export const TOOL_MIME_TYPE: Record<EnhancementTool, ProposalMimeType> = {
+  [ENHANCEMENT_TOOL.CUTOUT]: PROPOSAL_MIME.PNG,
+  [ENHANCEMENT_TOOL.WHITE]: PROPOSAL_MIME.WEBP,
+  [ENHANCEMENT_TOOL.STUDIO]: PROPOSAL_MIME.WEBP,
+  [ENHANCEMENT_TOOL.SCENE]: PROPOSAL_MIME.WEBP,
+  [ENHANCEMENT_TOOL.LIGHT]: PROPOSAL_MIME.WEBP,
+  [ENHANCEMENT_TOOL.ENLARGE]: PROPOSAL_MIME.WEBP,
+};
+
+/** One run, one key, fixed by the tool — which is what lets a resumed run write the same object. */
+export function proposalKeyFor(enhancementId: string, tool: EnhancementTool): string {
+  return `${PROPOSAL_PREFIX}${enhancementId}.${PROPOSAL_EXTENSION[TOOL_MIME_TYPE[tool]]}`;
 }
 
 /** How a result names its making: `MediaAsset.transform` on the DERIVED image (trd, data model). */

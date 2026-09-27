@@ -16,6 +16,7 @@
     "docs:index": "node scripts/docs-index.mjs",
     "worker": "tsx worker/main.ts",
     "media:backfill": "tsx scripts/backfill-media-assets.ts",
+    "enhance:bakeoff": "tsx scripts/segment-bakeoff.ts",
     "lint:boundary": "eslint src/app/api server/checkout server/payments src/lib --quiet"
   },
   "dependencies": {

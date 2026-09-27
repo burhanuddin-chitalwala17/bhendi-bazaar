@@ -11,15 +11,21 @@ import {
   type SaveEnhancementSettingsInput,
 } from "@server/content/enhancement-settings.repository";
 import { enhancementSpec } from "@server/content/enhancement.job";
-import { lightFix, type ToolResult } from "@server/content/tools/light";
+import { segmenterFor } from "@server/content/providers";
+import type { Segmenter } from "@server/content/providers/segment";
+import { lightFix } from "@server/content/tools/light";
+import { cutOut } from "@server/content/tools/cutout";
+import { onWhite } from "@server/content/tools/white";
+import { inStudio } from "@server/content/tools/studio";
+import type { ToolInput, ToolResult } from "@server/content/tools/tool";
 import {
+  ENHANCEMENT_PROVIDER,
   ENHANCEMENT_STATE,
   ENHANCEMENT_TOOL,
   PROPOSAL_EXTENSION,
-  PROPOSAL_MIME_TYPE,
   TOOL_COPY,
   TOOL_COST_PAISE,
-  TOOL_PROVIDER,
+  TOOL_MIME_TYPE,
   dayWindow,
   isAvailableTool,
   monthWindow,
@@ -29,6 +35,7 @@ import {
   toEnhancementDto,
   type AvailableTool,
   type EnhancementDto,
+  type EnhancementProvider,
   type EnhancementRow,
   type EnhancementSettingsDto,
   type EnhancementTransform,
@@ -39,10 +46,40 @@ import {
   type SetOrgEnhancementPolicyInput,
 } from "@server/content/enhancement.types";
 
-/** Each available tool's pipeline (trd D2). Held complete against the available set by the compiler. */
-const TOOLS: Record<AvailableTool, (input: Buffer) => Promise<ToolResult>> = {
-  [ENHANCEMENT_TOOL.LIGHT]: lightFix,
+/** What a tool needs from a provider (trd D3). A tool that needs nothing runs on sharp alone. */
+const NEEDS = { NOTHING: "nothing", SEGMENT: "segment" } as const;
+
+/**
+ * Each available tool's pipeline (trd D2), and what it asks a provider for. Held complete against
+ * the available set by the compiler, and discriminated so a tool that needs something cut out
+ * cannot be run without a segmenter to cut it.
+ */
+type ToolPipeline =
+  | { needs: typeof NEEDS.NOTHING; run: (input: ToolInput) => Promise<ToolResult> }
+  | { needs: typeof NEEDS.SEGMENT; run: (input: ToolInput, segmenter: Segmenter) => Promise<ToolResult> };
+
+const TOOLS: Record<AvailableTool, ToolPipeline> = {
+  [ENHANCEMENT_TOOL.WHITE]: { needs: NEEDS.SEGMENT, run: onWhite },
+  [ENHANCEMENT_TOOL.STUDIO]: { needs: NEEDS.SEGMENT, run: inStudio },
+  [ENHANCEMENT_TOOL.CUTOUT]: { needs: NEEDS.SEGMENT, run: cutOut },
+  [ENHANCEMENT_TOOL.LIGHT]: { needs: NEEDS.NOTHING, run: (input) => lightFix(input.bytes) },
 };
+
+/**
+ * The tool with its service already chosen, and the ledger's name for that service (spec R9).
+ * Resolved before any bytes are read, so a tool whose service is not configured is refused before a
+ * slot is spent and before the store is touched. What the row ends up recording is what actually
+ * ran, which may differ from what the request planned if the platform's choice changed in between.
+ */
+function prepareTool(tool: AvailableTool): {
+  provider: EnhancementProvider;
+  run: (input: ToolInput) => Promise<ToolResult>;
+} {
+  const pipeline = TOOLS[tool];
+  if (pipeline.needs === NEEDS.NOTHING) return { provider: ENHANCEMENT_PROVIDER.SHARP, run: pipeline.run };
+  const segmenter = segmenterFor();
+  return { provider: segmenter.key, run: (input) => pipeline.run(input, segmenter) };
+}
 
 const toDto = (row: EnhancementRow): EnhancementDto => toEnhancementDto(row, mediaAssetService.publicUrlOf);
 
@@ -99,6 +136,8 @@ export const enhancementService = {
     if (input.slotRole === SHOT_ROLE.LABEL) {
       throw new DomainError("The label photo is evidence to be read later, so it is never enhanced");
     }
+    // Cheap and local: a tool whose service is not set up is refused before a slot is spent.
+    const planned = prepareTool(tool).provider;
 
     const { usage, dailyCapPaise } = await standing(orgId, now);
     if (usage.paused) {
@@ -123,7 +162,7 @@ export const enhancementService = {
           sourceAssetId: source.id,
           tool,
           preset: input.preset ?? null,
-          provider: TOOL_PROVIDER[tool],
+          provider: planned,
           slot: input.slot ?? null,
         },
         tx,
@@ -157,11 +196,17 @@ export const enhancementService = {
 
     try {
       if (!isAvailableTool(row.tool)) throw new DomainError(`${TOOL_COPY[row.tool].label} is not available yet`);
+      const { provider, run } = prepareTool(row.tool);
       const source = await mediaAssetService.readImageBytes(row.sourceAssetId);
-      const result = await TOOLS[row.tool](source.bytes);
-      const proposalKey = proposalKeyFor(row.id);
+      const result = await run(source);
+      const proposalKey = proposalKeyFor(row.id, row.tool);
       await mediaAssetService.putLooseObject(proposalKey, result.output, result.mimeType);
-      await enhancementRepository.markProposed(row.id, { proposalKey, costPaise: TOOL_COST_PAISE[row.tool], proposedAt: now });
+      await enhancementRepository.markProposed(row.id, {
+        proposalKey,
+        provider,
+        costPaise: TOOL_COST_PAISE[row.tool][provider],
+        proposedAt: now,
+      });
       console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} proposed (${row.tool}, ${result.width}x${result.height})`);
     } catch (error) {
       if (error instanceof DomainError) {
@@ -193,8 +238,8 @@ export const enhancementService = {
       uploaderId: row.requesterId,
       sourceAssetId: row.sourceAssetId,
       fromKey: row.proposalKey,
-      fileSuffix: `${row.tool.toLowerCase()}-${row.id}.${PROPOSAL_EXTENSION}`,
-      contentType: PROPOSAL_MIME_TYPE,
+      fileSuffix: `${row.tool.toLowerCase()}-${row.id}.${PROPOSAL_EXTENSION[TOOL_MIME_TYPE[row.tool]]}`,
+      contentType: TOOL_MIME_TYPE[row.tool],
       transform,
     });
     const moved = await enhancementRepository.markAccepted(row.id, { resultAssetId: result.id, decidedAt: now });

@@ -3,7 +3,7 @@ import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@serv
 import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 import { enqueue } from "@server/shared/jobs";
-import { deleteObject, getObject, headObject, presignUpload, publicUrlFor, putObject } from "@server/catalog/object-store";
+import { deleteObject, getObject, headObject, presignUpload, publicBaseUrl, publicUrlFor, putObject } from "@server/catalog/object-store";
 import { sha256Hex } from "@server/shared/hash";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import { isVideoContentType } from "@server/catalog/video";
@@ -300,13 +300,17 @@ export const mediaAssetService = {
     return await mediaAssetRepository.findReadyImage(orgId, source);
   },
 
-  /** The stored bytes of one photograph, for a worker deriving from it — never for serving (ADR-0026). */
-  async readImageBytes(assetId: string): Promise<{ bytes: Buffer; mimeType: string | null }> {
+  /**
+   * The stored bytes of one photograph, for a worker deriving from it — never for serving
+   * (ADR-0026). The key comes back beside them because a service asked to work on the picture may
+   * want to fetch it for itself rather than be handed an upload (image-enhancement trd D3).
+   */
+  async readImageBytes(assetId: string): Promise<{ bytes: Buffer; objectKey: string; mimeType: string | null }> {
     const asset = await mediaAssetRepository.findById(assetId);
     if (!asset || asset.kind !== MediaAssetKind.IMAGE || asset.state !== MediaAssetState.READY || !asset.objectKey) {
       throw new NotFoundError("Photo not found");
     }
-    return { bytes: await getObject(asset.objectKey), mimeType: asset.mimeType };
+    return { bytes: await getObject(asset.objectKey), objectKey: asset.objectKey, mimeType: asset.mimeType };
   },
 
   /**
@@ -325,6 +329,15 @@ export const mediaAssetService = {
   /** Where the browser fetches a stored key from; the one spelling of that outside this domain. */
   publicUrlOf(key: string): string {
     return publicUrlFor(key);
+  },
+
+  /**
+   * Where stored objects are publicly readable from, with no key. Another domain needs it only to
+   * ask *what kind of host* that is — an image host that can transform a picture on delivery is not
+   * the same as a bare bucket — which is a question about the store and so is answered here.
+   */
+  publicBaseUrl(): string {
+    return publicBaseUrl();
   },
 
   /**

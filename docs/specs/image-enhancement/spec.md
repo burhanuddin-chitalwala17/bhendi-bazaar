@@ -1,7 +1,7 @@
 # Spec — image-enhancement
 
 - **Summary:** A phone photo becomes a marketplace-grade image on demand — cut out, on white, on a studio backdrop, in a scene, brightened, or enlarged — each a tool applied alone, each result a proposal the org accepts or discards
-- **Status:** 🔨 In progress — PR-185, PR-190 (2 of 5)
+- **Status:** 🔨 In progress — PR-185, PR-190, PR-191 (3 of 5)
 - **Domain:** content (enhancement), reading catalog (assets); runs on the worker
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-28

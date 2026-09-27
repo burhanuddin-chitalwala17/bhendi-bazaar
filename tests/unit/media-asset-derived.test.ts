@@ -73,7 +73,13 @@ describe("findReadyImage and readImageBytes", () => {
   });
 
   it("hands a worker the stored bytes of a ready photograph, and nothing for anything else", async () => {
-    await expect(mediaAssetService.readImageBytes("a1")).resolves.toEqual({ bytes: proposal, mimeType: "image/webp" });
+    await expect(mediaAssetService.readImageBytes("a1")).resolves.toEqual({
+      bytes: proposal,
+      // The key travels with the bytes: a service asked to work on the picture may want to fetch
+      // it for itself rather than be handed an upload (image-enhancement trd D3).
+      objectKey: source.objectKey,
+      mimeType: "image/webp",
+    });
     expect(store.getObject).toHaveBeenCalledWith(source.objectKey);
 
     repo.findById.mockResolvedValue({ ...source, kind: "VIDEO" });

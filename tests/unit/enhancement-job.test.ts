@@ -18,8 +18,11 @@ const media = {
   readImageBytes: vi.fn(),
   putLooseObject: vi.fn(),
   publicUrlOf: (key: string) => `https://img.test/${key}`,
+  publicBaseUrl: () => "https://img.test",
 };
 const lightFix = vi.fn();
+const cutOut = vi.fn();
+const segmenterFor = vi.fn();
 
 vi.mock("@server/content/enhancement.repository", () => ({ enhancementRepository: repo }));
 vi.mock("@server/content/enhancement-policy.repository", () => ({ enhancementPolicyRepository: {} }));
@@ -30,6 +33,10 @@ vi.mock("@server/shared/jobs", () => ({
   registerJob: <T,>(definition: T) => definition,
 }));
 vi.mock("@server/content/tools/light", () => ({ lightFix: (...args: unknown[]) => lightFix(...args) }));
+vi.mock("@server/content/tools/cutout", () => ({ cutOut: (...args: unknown[]) => cutOut(...args) }));
+vi.mock("@server/content/tools/white", () => ({ onWhite: vi.fn() }));
+vi.mock("@server/content/tools/studio", () => ({ inStudio: vi.fn() }));
+vi.mock("@server/content/providers", () => ({ segmenterFor: (...args: unknown[]) => segmenterFor(...args) }));
 
 const { imageEnhanceJob } = await import("@server/content/enhancement.jobs");
 
@@ -64,9 +71,15 @@ beforeEach(() => {
   repo.markRunning.mockResolvedValue(true);
   repo.markProposed.mockResolvedValue(true);
   repo.markFailed.mockResolvedValue(true);
-  media.readImageBytes.mockResolvedValue({ bytes: Buffer.from("source bytes"), mimeType: "image/webp" });
+  media.readImageBytes.mockResolvedValue({
+    bytes: Buffer.from("source bytes"),
+    objectKey: "products/org-1/a.webp",
+    mimeType: "image/webp",
+  });
   media.putLooseObject.mockResolvedValue("https://img.test/proposals/e1.webp");
   lightFix.mockResolvedValue({ output, mimeType: "image/webp", width: 1600, height: 1200 });
+  cutOut.mockResolvedValue({ output, mimeType: "image/png", width: 900, height: 900 });
+  segmenterFor.mockReturnValue({ key: "model", isAvailable: () => true, cutOut: vi.fn() });
 });
 
 describe("image.enhance", () => {
@@ -82,7 +95,14 @@ describe("image.enhance", () => {
     expect(media.readImageBytes).toHaveBeenCalledWith("a1");
     expect(lightFix).toHaveBeenCalledWith(Buffer.from("source bytes"));
     expect(media.putLooseObject).toHaveBeenCalledWith("proposals/e1.webp", output, "image/webp");
-    expect(repo.markProposed).toHaveBeenCalledWith("e1", { proposalKey: "proposals/e1.webp", costPaise: 0, proposedAt: expect.any(Date) });
+    expect(repo.markProposed).toHaveBeenCalledWith("e1", {
+      proposalKey: "proposals/e1.webp",
+      provider: "sharp",
+      costPaise: 0,
+      proposedAt: expect.any(Date),
+    });
+    // A tool that asks no service for anything never goes looking for one.
+    expect(segmenterFor).not.toHaveBeenCalled();
     expect(repo.markFailed).not.toHaveBeenCalled();
     // The order is the guard: the row is taken before any bytes move, and proposed only after they have.
     expect(repo.markRunning.mock.invocationCallOrder[0]).toBeLessThan(media.readImageBytes.mock.invocationCallOrder[0]);
@@ -125,6 +145,35 @@ describe("image.enhance", () => {
     repo.findById.mockResolvedValue({ ...requested, tool: "SCENE" });
     await run();
     expect(repo.markFailed).toHaveBeenCalledWith("e1", "In a scene is not available yet");
+    expect(media.readImageBytes).not.toHaveBeenCalled();
+  });
+
+  it("records the service that actually cut the product out, and what it charged", async () => {
+    repo.findById.mockResolvedValue({ ...requested, tool: "CUTOUT", provider: "zone" });
+    await run();
+
+    expect(cutOut).toHaveBeenCalledWith(
+      { bytes: Buffer.from("source bytes"), objectKey: "products/org-1/a.webp", mimeType: "image/webp" },
+      expect.objectContaining({ key: "model" }),
+    );
+    // The key carries the format the tool writes, and the ledger the service that ran — which is
+    // the one the worker found, not the one the request planned for.
+    expect(media.putLooseObject).toHaveBeenCalledWith("proposals/e1.png", output, "image/png");
+    expect(repo.markProposed).toHaveBeenCalledWith("e1", {
+      proposalKey: "proposals/e1.png",
+      provider: "model",
+      costPaise: 18,
+      proposedAt: expect.any(Date),
+    });
+  });
+
+  it("fails the row, and reads no bytes, where no service is set up to cut anything out", async () => {
+    repo.findById.mockResolvedValue({ ...requested, tool: "CUTOUT" });
+    segmenterFor.mockImplementation(() => {
+      throw new DomainError("Background removal is not set up yet");
+    });
+    await run();
+    expect(repo.markFailed).toHaveBeenCalledWith("e1", "Background removal is not set up yet");
     expect(media.readImageBytes).not.toHaveBeenCalled();
   });
 

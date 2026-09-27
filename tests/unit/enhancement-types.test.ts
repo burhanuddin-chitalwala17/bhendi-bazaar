@@ -9,14 +9,16 @@ import { describe, expect, it } from "vitest";
 import { EnhancementState as PrismaEnhancementState, EnhancementTool as PrismaEnhancementTool } from "@prisma/client";
 import {
   AVAILABLE_TOOLS,
+  ENHANCEMENT_PROVIDER,
   ENHANCEMENT_SETTINGS_ID,
   ENHANCEMENT_STATE,
   ENHANCEMENT_TOOL,
   FALLBACK_DAILY_CAP_PAISE,
   FALLBACK_MONTHLY_ALLOWANCE,
+  MODEL_SEGMENT_PAISE,
   TOOL_COPY,
   TOOL_COST_PAISE,
-  TOOL_PROVIDER,
+  TOOL_MIME_TYPE,
   USAGE_STATES,
   dayWindow,
   isAvailableTool,
@@ -62,21 +64,59 @@ describe("the closed sets mirror the schema", () => {
   });
 
   it("offers only a tool with a pipeline, and prices every one it offers in whole paise", () => {
-    expect([...AVAILABLE_TOOLS]).toEqual([ENHANCEMENT_TOOL.LIGHT]);
-    expect(isAvailableTool(ENHANCEMENT_TOOL.LIGHT)).toBe(true);
-    for (const tool of [ENHANCEMENT_TOOL.CUTOUT, ENHANCEMENT_TOOL.WHITE, ENHANCEMENT_TOOL.STUDIO, ENHANCEMENT_TOOL.SCENE, ENHANCEMENT_TOOL.ENLARGE]) {
+    expect([...AVAILABLE_TOOLS].sort()).toEqual(
+      [ENHANCEMENT_TOOL.CUTOUT, ENHANCEMENT_TOOL.LIGHT, ENHANCEMENT_TOOL.STUDIO, ENHANCEMENT_TOOL.WHITE].sort(),
+    );
+    for (const tool of AVAILABLE_TOOLS) expect(isAvailableTool(tool)).toBe(true);
+    for (const tool of [ENHANCEMENT_TOOL.SCENE, ENHANCEMENT_TOOL.ENLARGE]) {
       expect(isAvailableTool(tool)).toBe(false);
     }
     expect(Object.keys(TOOL_COST_PAISE).sort()).toEqual([...AVAILABLE_TOOLS].sort());
-    expect(Object.keys(TOOL_PROVIDER).sort()).toEqual([...AVAILABLE_TOOLS].sort());
-    for (const cost of Object.values(TOOL_COST_PAISE)) {
-      expect(Number.isInteger(cost)).toBe(true);
-      expect(cost).toBeGreaterThanOrEqual(0);
+    for (const byProvider of Object.values(TOOL_COST_PAISE)) {
+      expect(Object.keys(byProvider).sort()).toEqual(Object.values(ENHANCEMENT_PROVIDER).sort());
+      for (const cost of Object.values(byProvider)) {
+        expect(Number.isInteger(cost)).toBe(true);
+        expect(cost).toBeGreaterThanOrEqual(0);
+      }
     }
+  });
+
+  it("prices a run by the tool and the service that performed it, not by the tool alone", () => {
+    // Our own CPU and the image host's free tier are both nothing; only the hosted model is billed,
+    // which is the whole reason the table has two keys rather than one (trd D6).
+    for (const tool of AVAILABLE_TOOLS) {
+      expect(TOOL_COST_PAISE[tool][ENHANCEMENT_PROVIDER.SHARP]).toBe(0);
+      expect(TOOL_COST_PAISE[tool][ENHANCEMENT_PROVIDER.ZONE]).toBe(0);
+    }
+    expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.CUTOUT][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
+    expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.WHITE][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
+    expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.STUDIO][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
+    // `light` never asks a service for anything, so no service can make it cost.
+    expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.LIGHT][ENHANCEMENT_PROVIDER.MODEL]).toBe(0);
+    expect(MODEL_SEGMENT_PAISE).toBe(18);
+  });
+
+  it("names a service for what it is to us, never for the company behind it", () => {
+    expect(Object.values(ENHANCEMENT_PROVIDER).sort()).toEqual(["model", "sharp", "zone"]);
   });
 
   it("has a line for all six tools, so the sheet can list any that becomes available", () => {
     expect(Object.keys(TOOL_COPY).sort()).toEqual(Object.keys(ENHANCEMENT_TOOL).sort());
+  });
+
+  it("says what each tool writes, with the cut-out the one that keeps its transparency", () => {
+    expect(Object.keys(TOOL_MIME_TYPE).sort()).toEqual(Object.keys(ENHANCEMENT_TOOL).sort());
+    expect(TOOL_MIME_TYPE[ENHANCEMENT_TOOL.CUTOUT]).toBe("image/png");
+    for (const tool of [ENHANCEMENT_TOOL.WHITE, ENHANCEMENT_TOOL.STUDIO, ENHANCEMENT_TOOL.LIGHT]) {
+      expect(TOOL_MIME_TYPE[tool]).toBe("image/webp");
+    }
+  });
+
+  it("keeps the em dash out of what the sheet shows, and every line short enough for a phone", () => {
+    for (const { label, line } of Object.values(TOOL_COPY)) {
+      expect(`${label} ${line}`).not.toMatch(/[\u2014\u2013]/);
+      expect(line.length, `"${line}" is long for 360px`).toBeLessThanOrEqual(48);
+    }
   });
 
   it("declares the fallbacks once: 300 a month, ₹500 a day as paise", () => {
@@ -151,8 +191,10 @@ describe("the usage window", () => {
 });
 
 describe("the proposal's place and the DTO", () => {
-  it("keys a proposal under its own prefix by run id", () => {
-    expect(proposalKeyFor("e1")).toBe("proposals/e1.webp");
+  it("keys a proposal under its own prefix by run id, in the format its tool writes", () => {
+    expect(proposalKeyFor("e1", ENHANCEMENT_TOOL.LIGHT)).toBe("proposals/e1.webp");
+    // A cut-out is PNG: flattening it into WebP would throw away the transparency that is the result.
+    expect(proposalKeyFor("e1", ENHANCEMENT_TOOL.CUTOUT)).toBe("proposals/e1.png");
   });
 
   it("shows the proposal only while there is one to compare, and the result only once kept", () => {
