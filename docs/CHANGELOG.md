@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-202] 2026-09-28 — A shortfall is the same refusal wherever it is noticed
+
+Two places can find that the units are not there: the allocation's availability read, before the
+order transaction commits anything, and the guarded decrement inside it. Only the second named the
+products, and naming them is what makes the caller release abandoned holds and retry
+([checkout-abandonment](specs/checkout-abandonment/) D4) instead of turning the buyer away. So a
+buyer meeting a unit held by a closed payment window got the retry or did not depending on which
+check happened to fire, which is to say depending on who committed first.
+
+Both now raise the same error with the product named. Nothing about the answer to the browser
+changes — it was a 409 before and it is a 409 now — but the case the retry exists for is no longer
+decided by a race. The concurrency test that caught this asserted the invariant correctly and
+passed on a laptop while failing on CI, for exactly this reason; the comment beside it now says so.
+
 ## [PR-201] 2026-09-28 — Enhancement runs on the worker, and the worker's env file never said so
 
 The tools that rework a photograph run as queue jobs, so their configuration has to reach the
