@@ -10,6 +10,17 @@
 
 ## Entries
 
+## [PR-192] 2026-09-28 — Improve a photograph from the library, beside Crop
+
+Image-enhancement spec R2, R3. The tools were reachable only from a gallery slot, which is where a
+photograph is used but not where a shop keeps its photographs. The library sheet now offers Improve
+beside Crop for any ready picture. A request names its photograph by the asset when the caller knows
+it, as the library does, and by the URL its row carries when that is all there is, as the editor has;
+never both. Accepting in a gallery hands the slot the result, as before. Accepting in the library
+adds the improved picture beside the one it came from and the grid re-reads, because there is no row
+to hand it to — which keeps the one rule the feature rests on: an improvement is a new picture, never
+an edit of an old one.
+
 ## [PR-191] 2026-09-28 — Cut out, on white, in a studio: the first improvements that need a provider
 
 Three of the six improvements are live, and they are the three a marketplace actually asks for. Cut

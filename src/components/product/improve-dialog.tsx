@@ -15,18 +15,27 @@ import {
 import type { ShotRole } from "@server/catalog/shot-list";
 import { useEnhancementRun } from "@/hooks/product/useEnhancementRun";
 
-/** The photo on the table: the URL its row carries, the slot it fills and that slot's role. */
+/**
+ * The photo on the table. A gallery row knows only the URL it carries and the slot it fills; the
+ * library knows the asset itself and no slot. Either names the photo — the boundary takes one or
+ * the other, never both.
+ */
 export interface ImproveTarget {
   ref: string;
-  slot: string | null;
-  slotRole: ShotRole | null;
+  assetId?: string | null;
+  slot?: string | null;
+  slotRole?: ShotRole | null;
 }
 
 interface ImproveDialogProps {
   orgId: string;
   /** Null closes the sheet. */
   target: ImproveTarget | null;
-  /** The proposal was kept: the row that carried `sourceRef` takes the result over. */
+  /**
+   * The proposal was kept. In a gallery the row that carried `ref` takes the result over; in the
+   * library there is no row to take it, so the caller simply re-reads — the improved picture is a
+   * new image beside the one it came from either way (spec R3).
+   */
   onAccepted: (sourceRef: string, result: EnhancementDto) => void;
   onClose: () => void;
 }
@@ -64,9 +73,10 @@ export function ImproveDialog({
     setShowing("after");
     void request({
       tool: chosen,
-      sourceRef: target.ref,
-      slot: target.slot,
-      slotRole: target.slotRole,
+      // The asset when the caller knows it, else the URL its row carries. Naming both is refused.
+      ...(target.assetId ? { sourceAssetId: target.assetId } : { sourceRef: target.ref }),
+      slot: target.slot ?? null,
+      slotRole: target.slotRole ?? null,
     });
   };
 

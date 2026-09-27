@@ -322,3 +322,26 @@ describe("the two schemas the platform owner's forms send", () => {
     expect(orgEnhancementPolicySchema.safeParse({ monthlyAllowance: null, paused: false, pauseReason: "" }).success).toBe(false);
   });
 });
+
+describe("naming the photo from either surface", () => {
+  it("a gallery row names it by the URL it carries; the library by the asset itself", () => {
+    const gallery = requestEnhancementSchema.parse({
+      tool: ENHANCEMENT_TOOL.WHITE,
+      sourceRef: "https://img.test/a.webp",
+      slot: "front",
+      slotRole: "product",
+    });
+    expect(gallery).toMatchObject({ sourceRef: "https://img.test/a.webp", slot: "front" });
+    expect(gallery.sourceAssetId).toBeUndefined();
+
+    const library = requestEnhancementSchema.parse({
+      tool: ENHANCEMENT_TOOL.WHITE,
+      sourceAssetId: "a1",
+      slot: null,
+      slotRole: null,
+    });
+    expect(library).toMatchObject({ sourceAssetId: "a1" });
+    expect(library.sourceRef).toBeUndefined();
+    expect(library.slot).toBeUndefined();
+  });
+});

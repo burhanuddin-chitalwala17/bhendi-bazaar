@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Archive, ChevronDown, ChevronUp, Crop, Film, ImageIcon, Images, RotateCcw } from "lucide-react";
+import { Archive, ChevronDown, ChevronUp, Crop, Film, ImageIcon, Images, RotateCcw, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import { readApiError } from "@/lib/api-error";
 import { CropDialog } from "@/components/product/crop-dialog";
+import { ImproveDialog } from "@/components/product/improve-dialog";
 import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDuration } from "@/lib/format";
 import { describeUses, type MediaAssetDetailDto, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
@@ -70,6 +71,8 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   /** The photograph being reframed, if any. The one it came from stays exactly as it is (spec R8a). */
   const [reframing, setReframing] = useState<MediaAssetDto | null>(null);
   const [isCropping, setIsCropping] = useState(false);
+  /** The photograph being improved (image-enhancement spec R2). No slot here: the library has none. */
+  const [improving, setImproving] = useState<MediaAssetDto | null>(null);
   const [showUses, setShowUses] = useState(false);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
   const [isSavingPoster, setIsSavingPoster] = useState(false);
@@ -336,10 +339,16 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               {open.state !== "RETIRED" && (
                 <div className="flex flex-col gap-2 sm:flex-row">
                   {open.kind === "IMAGE" && (
-                    <Button type="button" variant="outline" onClick={() => setReframing(open)}>
-                      <Crop className="mr-2 size-4" />
-                      Crop
-                    </Button>
+                    <>
+                      <Button type="button" variant="outline" onClick={() => setImproving(open)}>
+                        <Sparkles className="mr-2 size-4" />
+                        Improve
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setReframing(open)}>
+                        <Crop className="mr-2 size-4" />
+                        Crop
+                      </Button>
+                    </>
                   )}
                   <Button type="button" variant="outline" onClick={() => retire(open)} disabled={isRetiring}>
                     <Archive className="mr-2 size-4" />
@@ -351,6 +360,19 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Accepting adds the improved picture beside the one it came from; there is no row here to
+          take it over, so the grid simply re-reads (spec R3). */}
+      <ImproveDialog
+        orgId={orgId}
+        target={improving ? { ref: improving.ref, assetId: improving.id } : null}
+        onAccepted={() => {
+          setImproving(null);
+          setOpen(null);
+          router.refresh();
+        }}
+        onClose={() => setImproving(null)}
+      />
 
       <CropDialog
         photo={reframing ? { id: reframing.id, src: reframing.ref } : null}
