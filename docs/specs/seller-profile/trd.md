@@ -1,9 +1,9 @@
 # TRD — seller-profile
 
-- **Status:** 🔨 In progress — PR-151 (1 of 4)
+- **Status:** 🔨 In progress — PR-151, PR-162 (2 of 4)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-27
 - **References:** [spec.md](spec.md), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0033](../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [org-storefront trd](../org-storefront/trd.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.

@@ -10,6 +10,19 @@
 
 ## Entries
 
+## [PR-162] 2026-09-27 — An org describes what it sells: brands and listing defaults [CONTRACT]
+
+seller-profile PR 2 of 4 ([spec](specs/seller-profile/spec.md), trd D7–D8). The org portal gains
+"What you sell", onboarding's third step: the brands the org carries — name, maker, packer or
+importer, origin, one default — as cards with an add-and-edit sheet, and the org-wide defaults
+beneath: origin, tax rate, and a tax code for each category it has products in. Only a brand's name
+is asked for; nothing is marked required, and a blank saves (R5). A duplicate name within an org is
+a conflict the form shows on the field; another org's brand id is not found. Retiring a brand hides
+it and keeps it (ADR-0032). The `brand.service` and `org-listing-defaults.service` are the write
+seam the product form will call; the "what would this change" previews of D7 wait for the product
+link that listing-schema brings, since the count they would return has nothing to count yet. The
+defaults repository could not clear its tax-code map — `null` read as "leave alone" — and now can.
+
 ## [PR-161] 2026-09-27 — Galleries fill named slots from a per-category shot list [CONTRACT] [MIGRATION]
 
 Media-library PR 2 of 6. A category may carry a `shotList` — an ordered list of named slots, each

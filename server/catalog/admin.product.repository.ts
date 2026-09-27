@@ -523,6 +523,17 @@ export class AdminProductsRepository {
         return product;
     }
 
+
+  /** The categories this org has products on sale in — what its listing defaults are keyed by. */
+  async listCategoriesSoldBy(orgId: string): Promise<Array<{ id: string; name: string }>> {
+    const rows = await prisma.product.findMany({
+      where: { orgId, archivedAt: null },
+      distinct: ["categoryId"],
+      select: { category: { select: { id: true, name: true } } },
+      orderBy: { category: { name: "asc" } },
+    });
+    return rows.map((row) => row.category);
+  }
 }
 
 export const adminProductsRepository = new AdminProductsRepository();

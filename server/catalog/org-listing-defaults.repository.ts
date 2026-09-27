@@ -1,5 +1,5 @@
 import { prisma } from "@server/shared/prisma";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export interface ListingDefaultsData {
   countryOfOrigin: string | null;
@@ -18,7 +18,8 @@ export class OrgListingDefaultsRepository {
   }
 
   async upsert(orgId: string, data: ListingDefaultsData) {
-    const taxCodeByCategory = data.taxCodeByCategory ?? undefined;
+    // `null` clears the map; the JSON column needs Prisma's sentinel to say so.
+    const taxCodeByCategory = data.taxCodeByCategory ?? Prisma.JsonNull;
     return await prisma.orgListingDefaults.upsert({
       where: { orgId },
       create: { orgId, countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },

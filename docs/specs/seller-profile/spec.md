@@ -1,10 +1,10 @@
 # Spec — seller-profile
 
 - **Summary:** An organisation's profile has a private face for what listing needs and a public face for what a buyer may see, and nothing is demanded before it is needed
-- **Status:** 🔨 In progress — PR-151 (1 of 4)
+- **Status:** 🔨 In progress — PR-151, PR-162 (2 of 4)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-27
 - **References:** [trd.md](trd.md), [brand-page](brand-page/) (subfeature), [org-storefront](../org-storefront/) (seller-identity R5, storefront-branding, storefront-pages R3), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.

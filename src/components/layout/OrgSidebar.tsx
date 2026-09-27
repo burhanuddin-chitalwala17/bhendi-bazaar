@@ -10,6 +10,7 @@ import {
   Store,
   Tag,
   Wallet,
+  Tags,
 } from "lucide-react";
 import { PortalSidebar } from "@/components/layout/PortalSidebar";
 import { OrgSwitcher, type SwitcherOrg } from "@/components/org/org-switcher";
@@ -30,6 +31,7 @@ export function OrgSidebar({
         { title: "Dashboard", href: base, icon: LayoutDashboard, exact: true },
         { title: "Storefront", href: `${base}/storefront`, icon: Store },
         { title: "Products", href: `${base}/products`, icon: Package },
+        { title: "What you sell", href: `${base}/listing`, icon: Tags },
         { title: "Orders", href: `${base}/orders`, icon: ShoppingCart },
         { title: "Offers", href: `${base}/promotions`, icon: Tag },
         { title: "Bidding", href: `${base}/bidding`, icon: Gavel },

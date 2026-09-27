@@ -209,6 +209,10 @@ export class ProductsService {
     };
   }
 
+  async listCategoriesSoldBy(orgId: string): Promise<Array<{ id: string; name: string }>> {
+    return adminProductsRepository.listCategoriesSoldBy(orgId);
+  }
+
   async listCopyOptions(orgId: string): Promise<ProductCopyOption[]> {
     return adminProductsRepository.listCopyOptions(orgId);
   }
