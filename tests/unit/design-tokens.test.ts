@@ -87,7 +87,6 @@ const SHAPE_LEGACY = new Set([
   "src/components/product/console/productsList/components/ProductsFilters.tsx",
   "src/components/product/console/productsList/components/ProductsTable.tsx",
   "src/components/product/product-gallery.tsx",
-  "src/components/product/product-media-manager.tsx",
   "src/components/product/reviews.tsx",
   "src/components/profile/address-modal.tsx",
   "src/components/profile/addresses-section.tsx",

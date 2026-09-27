@@ -10,6 +10,17 @@
 
 ## Entries
 
+## [PR-177] 2026-09-27 — The gallery is a list of named slots, and a photo is checked before it is kept
+
+Media-library R4 and R8, trd D4 and D6. The product editor's gallery was a strip of slot badges
+with a select per photograph; it is now a vertical list of the category's slots. An empty slot
+shows its name, its framing hint and a silhouette of the shot it wants, with one tap for the
+phone's camera or a file and one for the library; a filled slot shows the photo with cover,
+move-to-extra and remove. Extras and video sit beneath in their own order, and the saved order is
+always the slots then the extras. Every uploaded photo is judged on a small canvas — dark, blurred,
+or smaller than any marketplace accepts, by the slot's role — and a warning is a banner with
+Remove and Keep anyway, never a refusal. Rotate-and-crop follows as its own unit.
+
 ## [PR-176] 2026-09-27 — Video will be hosted on our own store: ADR-0039 and the video-hosting spec
 
 Documentation only. The owner decided on the 27th that short product videos are stored in our

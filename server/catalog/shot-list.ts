@@ -8,7 +8,8 @@ import { z } from "zod";
  * creative choice and is checked for size only. Pure and Prisma-free so the editor and the
  * server resolve a category's list with the same function.
  */
-export const SHOT_ROLES = ["product", "label", "lifestyle"] as const;
+export const SHOT_ROLE = { PRODUCT: "product", LABEL: "label", LIFESTYLE: "lifestyle" } as const;
+export const SHOT_ROLES = [SHOT_ROLE.PRODUCT, SHOT_ROLE.LABEL, SHOT_ROLE.LIFESTYLE] as const;
 export type ShotRole = (typeof SHOT_ROLES)[number];
 
 export const shotSlotSchema = z.object({
