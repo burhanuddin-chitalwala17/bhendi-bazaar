@@ -1,6 +1,6 @@
 # TRD — seller-profile
 
-- **Status:** 🔨 In progress — PR-151, PR-162, PR-175 (3 of 4)
+- **Status:** 🔨 In progress — PR-151, PR-162, PR-175, PR-182 (4a of 4)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-27

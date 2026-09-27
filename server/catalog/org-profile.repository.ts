@@ -22,11 +22,15 @@ export const PUBLIC_PROFILE_SELECT = {
   social: true,
 } as const satisfies Prisma.OrgProfileSelect;
 
-/** What the org contributes to a public page: who it is, never what it owes or is owed. */
+/**
+ * What the org contributes to a public page: who it is and since when, never what it owes
+ * or is owed. `joinedAt` is the brand page's "since" (brand-page R4) — a date, not a term.
+ */
 export const PUBLIC_ORG_IDENTITY_SELECT = {
   id: true,
   handle: true,
   name: true,
+  joinedAt: true,
 } as const satisfies Prisma.OrgSelect;
 
 export interface StorefrontSettingsData {

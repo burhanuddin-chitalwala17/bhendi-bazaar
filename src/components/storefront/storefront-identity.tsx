@@ -14,7 +14,11 @@ import type { Storefront } from "@/data-access-layer/storefront.dal";
  * grow at `sm:`. Every value comes from a token — the accent is a palette name the
  * org chose, never a colour it supplied (ADR-0022).
  */
-export function StorefrontIdentity({ shop }: { shop: Storefront }) {
+export function StorefrontIdentity({
+  shop,
+}: {
+  shop: Pick<Storefront, "name" | "tagline" | "logoUrl">;
+}) {
   return (
     <div className="flex items-start gap-3 sm:gap-4">
       {shop.logoUrl && (

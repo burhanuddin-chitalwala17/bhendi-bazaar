@@ -10,6 +10,21 @@
 
 ## Entries
 
+## [PR-182] 2026-09-27 — The shop's about page becomes a brand page, drawn from what the platform knows [CONTRACT]
+
+Brand-page spec R1–R3, R6–R11; TRD D1, D4, D5, D7, D8, D10 — part (a) of seller-profile PR 4,
+reading only what exists today. `/store/<handle>/about` is a fixed sequence of sections the platform
+orders and each shop fills: a hero (cover, mark, name, tagline, location and since-when, with the
+call to shop docked above the tab bar on a phone), the story, what they sell as the storefront's
+category rail, the brands they carry as names only and only when there are two or more, their six
+newest goods as the marketplace's own tiles, their terms in a collapsed disclosure, and the ways to
+follow them. A section with nothing to show is absent rather than blank — the goods alone show the
+storefront's honest empty state — so a shop with only a name has a page with no placeholder sentence
+on it. Ways to follow are handles on four known networks; the platform composes every address and a
+pasted URL yields no link. `BrandPageDto` is added and held to a literal allowlist; the proof strip
+is a seam that draws nothing until part (c); the owner, pillars, social editor and section toggles
+are part (b), with the migration.
+
 ## [PR-180] 2026-09-27 — Hosted video, part one: the limits and the transcoder
 
 Video-hosting trd D3, D4. The declared limits — ninety seconds, two hundred megabytes, 1080p and

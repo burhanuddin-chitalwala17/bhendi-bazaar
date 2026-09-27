@@ -15,6 +15,8 @@ import {
   type OrgBannerInput,
 } from "@server/catalog/org-banner.repository";
 import { productsRepository } from "@server/catalog/product.repository";
+import { brandService } from "@server/catalog/brand.service";
+import { toBrandPageDto, type BrandPageDto } from "@server/catalog/storefront.types";
 import {
   handleCandidates,
   holdCutoff,
@@ -64,6 +66,21 @@ function normaliseBanner(input: BannerInput): OrgBannerInput {
 }
 
 export const storefrontService = {
+  /**
+   * The brand page of the shop at this handle, or null (brand-page D1).
+   *
+   * Built from the profile's public read and the brand aggregate's names, in this domain.
+   * The goods and category tiles are not here: a product as a buyer sees it is priced in
+   * `src/data-access-layer/products.dal.ts` (ADR-0018), and pricing it twice is what spec
+   * R6 forbids, so the data-access layer adds those two slices beside this one.
+   */
+  async brandPage(handle: string): Promise<BrandPageDto | null> {
+    const profile = await orgProfileRepository.findPublicByHandle(handle);
+    if (!profile) return null;
+    const brands = await brandService.list(profile.org.id);
+    return toBrandPageDto(profile, brands);
+  },
+
   /** This org's storefront as it stands, for its own editor. */
   async getSettings(orgId: string) {
     const settings = await orgProfileRepository.findSettings(orgId);

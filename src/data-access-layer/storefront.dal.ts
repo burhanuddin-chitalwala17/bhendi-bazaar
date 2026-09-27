@@ -12,10 +12,14 @@ import { orgRepository } from "@server/catalog/org.repository";
 import { orgProfileRepository } from "@server/catalog/org-profile.repository";
 import { productsRepository } from "@server/catalog/product.repository";
 import { orgBannerRepository } from "@server/catalog/org-banner.repository";
+import { storefrontService } from "@server/catalog/storefront.service";
+import type { BrandPageDto } from "@server/catalog/storefront.types";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
 import { isRenderableImageUrl } from "@server/catalog/image-paths";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
+import { productsDAL } from "@/data-access-layer/products.dal";
 import type { Category } from "@/domain/category";
+import type { Product } from "@/domain/product";
 import { holdCutoff } from "@server/catalog/org.handle";
 
 /** One shop, as a visitor sees it. */
@@ -33,6 +37,21 @@ export interface Storefront {
   deliveryPolicy: string | null;
   returnsPolicy: string | null;
 }
+
+/**
+ * The brand page as its sections read it: the profile's public face (brand-page D1) plus
+ * the marketplace's own tiles (D5). The tiles are the landing page's reads, so a price, an
+ * offer and a bidding suspension on this page are the ones the storefront shows (R6).
+ */
+export interface BrandPage extends BrandPageDto {
+  /** The categories this shop sells in — empty for a shop with nothing listed. */
+  categories: Category[];
+  /** The newest goods, newest first, capped at `NEWEST_GOODS_ON_BRAND_PAGE`. */
+  newest: Product[];
+}
+
+/** Two rows of the 3-up phone grid (ADR-0016): a taste, with "see all" for the rest. */
+export const NEWEST_GOODS_ON_BRAND_PAGE = 6;
 
 /** A row in the shop directory. */
 export interface ShopListing {
@@ -65,6 +84,22 @@ export const storefrontDAL = {
       deliveryPolicy: profile.deliveryPolicy,
       returnsPolicy: profile.returnsPolicy,
     };
+  }),
+
+  /**
+   * The shop's brand page, or null. Memoised for the same reason as `getByHandle`: the
+   * route's metadata and its page both read it in one request.
+   */
+  getBrandPage: cache(async (handle: string): Promise<BrandPage | null> => {
+    const dto = await storefrontService.brandPage(handle);
+    if (!dto) return null;
+    const [categories, newest] = await Promise.all([
+      storefrontDAL.categoriesFor(dto.id),
+      // Scoped by the id resolved from the handle, never by anything in the URL
+      // (ADR-0030 decision 6). Newest first is the listing's default order.
+      productsDAL.getProducts({ orgId: dto.id, limit: NEWEST_GOODS_ON_BRAND_PAGE }),
+    ]);
+    return { ...dto, categories, newest };
   }),
 
   /**
