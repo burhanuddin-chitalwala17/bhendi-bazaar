@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
 import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
+import { YouTubePoster } from "@/components/product/youtube-poster";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import type { MediaAssetDto } from "@server/catalog/media-library.types";
@@ -95,9 +96,7 @@ function PickerPages({
                   </span>
                 )}
                 {asset.kind === "VIDEO_EMBED" ? (
-                  <span className="flex size-full items-center justify-center">
-                    <Youtube className="size-6 text-muted-foreground" aria-hidden />
-                  </span>
+                  <YouTubePoster ref_={asset.ref} sizes={PRODUCT_TILE_SIZES} />
                 ) : (
                   <NextImage src={asset.ref} alt="" fill sizes={PRODUCT_TILE_SIZES} className="object-cover" />
                 )}

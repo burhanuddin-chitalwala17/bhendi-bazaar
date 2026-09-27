@@ -10,6 +10,13 @@
 
 ## Entries
 
+## [PR-168] 2026-09-27 — A video in the library shows its poster and plays in the sheet
+
+Library and picker tiles for a video showed a bare mark; they show the video's own poster now,
+through one small component that carries the one image-optimizer bypass for it. The library's
+detail sheet plays the video with the same tap-to-play embed the product page uses. Videos are in
+the library by design (media-library R5a): a reference to reuse, never a file we host (ADR-0017).
+
 ## [PR-167] 2026-09-27 — Photos go into the library directly
 
 The library page gains "Upload photos": several at once, downscaled and hashed in the browser,

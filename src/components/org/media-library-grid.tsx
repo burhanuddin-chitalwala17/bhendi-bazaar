@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Archive, Images, Youtube } from "lucide-react";
+import { Archive, Images } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
 import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
+import { YouTubeEmbed } from "@/components/product/youtube-embed";
+import { YouTubePoster } from "@/components/product/youtube-poster";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import { readApiError } from "@/lib/api-error";
@@ -132,8 +134,16 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
             <>
               <SheetTitle>{open.kind === "VIDEO_EMBED" ? "Video" : "Photo"}</SheetTitle>
               <SheetDescription>{SOURCE_LABELS[open.source]}</SheetDescription>
-              <div className="relative aspect-square w-full overflow-hidden rounded-card bg-muted">
-                <MediaTile asset={open} large />
+              <div
+                className={`relative w-full overflow-hidden rounded-card bg-muted ${
+                  open.kind === "VIDEO_EMBED" ? "aspect-video" : "aspect-square"
+                }`}
+              >
+                {open.kind === "VIDEO_EMBED" ? (
+                  <YouTubeEmbed ref_={open.ref} description={null} productName="this library" />
+                ) : (
+                  <MediaTile asset={open} large />
+                )}
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                 <dt className="text-muted-foreground">Size</dt>
@@ -179,14 +189,10 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   );
 }
 
-/** A photo through the optimizer; a video as its mark, since its poster is not ours to size. */
+/** A photo through the optimizer; a video as its poster, marked so it reads as one. */
 function MediaTile({ asset, large = false }: { asset: MediaAssetDto; large?: boolean }) {
   if (asset.kind === "VIDEO_EMBED") {
-    return (
-      <span className="flex size-full items-center justify-center">
-        <Youtube className={large ? "size-12 text-muted-foreground" : "size-6 text-muted-foreground"} aria-hidden />
-      </span>
-    );
+    return <YouTubePoster ref_={asset.ref} sizes={large ? "(min-width: 768px) 384px, 100vw" : PRODUCT_TILE_SIZES} />;
   }
   return (
     <NextImage

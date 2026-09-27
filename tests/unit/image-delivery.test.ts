@@ -57,6 +57,11 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     reason:
       "A carrier's own logo, hotlinked from shiprocket.in by a data migration. Already sized at 32px and not our asset: optimizing spends a transformation to save bytes we do not pay for.",
   },
+  "src/components/product/youtube-poster.tsx": {
+    rules: ["optimization bypasses"],
+    reason:
+      "The library and picker tiles for a video: the same i.ytimg.com poster as youtube-embed.tsx, which is not our egress and is already sized.",
+  },
   "src/components/product/youtube-embed.tsx": {
     rules: ["optimization bypasses"],
     reason:
