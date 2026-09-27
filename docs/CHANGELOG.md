@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-171] 2026-09-27 — The worker card opens into the jobs behind its counts
+
+Worker-foundation R5, trd D11. A count says a job is stuck or failed; the list says which one and
+why. The card gains "Show recent jobs", closed by default: on a tap it fetches the newest twenty on
+both queues through an admin route and shows each job's type, state, timing, attempt and, for a
+failed one, the reason pg-boss recorded. Nothing is stored and the dashboard itself pays nothing
+until the list is opened.
+
 ## [PR-170] 2026-09-27 — A video's uses are counted, "used by" is a summary, and filters apply as picked
 
 A video carried by two galleries read "unused" in the library and offered Retire: product writes

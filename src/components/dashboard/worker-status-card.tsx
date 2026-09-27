@@ -2,6 +2,7 @@ import { Activity, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { workerStatus, type WorkerStatus } from "@server/shared/jobs";
 import { RedriveFailedJobsButton } from "./redrive-failed-jobs-button";
+import { WorkerJobsList } from "./worker-jobs-list";
 
 /** A commit hash reads as seven characters; anything else, a tag or "dev", is shown whole. */
 function shortVersion(version: string): string {
@@ -68,6 +69,7 @@ export async function WorkerStatusCard() {
           </p>
         </div>
         <RedriveFailedJobsButton failed={status.failed} />
+        <WorkerJobsList />
       </CardContent>
     </Card>
   );

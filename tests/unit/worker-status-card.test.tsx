@@ -11,6 +11,7 @@ vi.mock("@server/shared/jobs", () => ({ workerStatus: (...a: unknown[]) => worke
 vi.mock("@/components/dashboard/redrive-failed-jobs-button", () => ({
   RedriveFailedJobsButton: ({ failed }: { failed: number }) => <button>redrive {failed}</button>,
 }));
+vi.mock("@/components/dashboard/worker-jobs-list", () => ({ WorkerJobsList: () => <div>jobs list</div> }));
 
 const { WorkerStatusCard } = await import("@/components/dashboard/worker-status-card");
 
