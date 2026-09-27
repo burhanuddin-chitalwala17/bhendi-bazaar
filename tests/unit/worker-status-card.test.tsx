@@ -19,12 +19,12 @@ beforeEach(() => vi.clearAllMocks());
 describe("WorkerStatusCard", () => {
   it("renders the status when it can be read", async () => {
     workerStatus.mockResolvedValue({
-      environment: "production", lastSeenAt: new Date(), version: "6d650f74483254a579c0694ab458e941b60b7c18", waiting: 2, active: 1, failed: 0, stale: false,
+      environment: "production", lastSeenAt: new Date(), version: "6d650f74483254a579c0694ab458e941b60b7c18", waiting: 2, active: 1, failed: 0, completedDay: 3, stale: false,
     });
     render(await WorkerStatusCard());
     expect(screen.getByText(/last seen just now/)).toBeInTheDocument();
     // A commit hash is shown short; the full forty characters belong in a log.
-    expect(screen.getByText(/2 waiting · 1 running · 0 failed · 6d650f7$/)).toBeInTheDocument();
+    expect(screen.getByText(/2 waiting · 1 running · 0 failed · 3 done in 24h · 6d650f7$/)).toBeInTheDocument();
   });
 
   it("renders an unavailable card instead of throwing when the status cannot be read", async () => {
@@ -39,7 +39,7 @@ describe("WorkerStatusCard", () => {
 
   it("calls the worker stale when the status says so", async () => {
     workerStatus.mockResolvedValue({
-      environment: "production", lastSeenAt: null, version: null, waiting: 0, active: 0, failed: 3, stale: true,
+      environment: "production", lastSeenAt: null, version: null, waiting: 0, active: 0, failed: 3, completedDay: 0, stale: true,
     });
     render(await WorkerStatusCard());
     expect(screen.getByText(/never seen/)).toBeInTheDocument();

@@ -62,7 +62,8 @@ export async function WorkerStatusCard() {
             </span>
           </p>
           <p className="text-sm text-muted-foreground">
-            {status.waiting} waiting · {status.active} running · {status.failed} failed
+            {status.waiting} waiting · {status.active} running · {status.failed} failed ·{" "}
+            {status.completedDay} done in 24h
             {status.version ? ` · ${shortVersion(status.version)}` : ""}
           </p>
         </div>

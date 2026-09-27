@@ -14,17 +14,21 @@ export interface HeartbeatInput {
 export const heartbeatRepository = {
   async beat(input: HeartbeatInput): Promise<void> {
     await prisma.$executeRawUnsafe(
-      `INSERT INTO "WorkerHeartbeat" ("environment", "version", "lastSeenAt", "waiting", "active", "failed")
+      // pg-boss keeps a completed job in the job table for its retention period, which is longer
+      // than the day counted here, so one table answers.
+      `INSERT INTO "WorkerHeartbeat" ("environment", "version", "lastSeenAt", "waiting", "active", "failed", "completedDay")
        SELECT $1, $2, now(),
          (SELECT count(*)::int FROM ${JOBS_SCHEMA}.job WHERE name = $3 AND state IN ($5, $6)),
          (SELECT count(*)::int FROM ${JOBS_SCHEMA}.job WHERE name = $3 AND state = $7),
-         (SELECT count(*)::int FROM ${JOBS_SCHEMA}.job WHERE name = $4 AND state IN ($5, $6))
+         (SELECT count(*)::int FROM ${JOBS_SCHEMA}.job WHERE name = $4 AND state IN ($5, $6)),
+         (SELECT count(*)::int FROM ${JOBS_SCHEMA}.job WHERE name = $3 AND state = $8 AND completed_on > now() - interval '24 hours')
        ON CONFLICT ("environment") DO UPDATE SET
          "version" = EXCLUDED."version",
          "lastSeenAt" = EXCLUDED."lastSeenAt",
          "waiting" = EXCLUDED."waiting",
          "active" = EXCLUDED."active",
-         "failed" = EXCLUDED."failed"`,
+         "failed" = EXCLUDED."failed",
+         "completedDay" = EXCLUDED."completedDay"`,
       input.environment,
       input.version,
       JOBS_QUEUE,
@@ -32,6 +36,7 @@ export const heartbeatRepository = {
       states.created,
       states.retry,
       states.active,
+      states.completed,
     );
   },
   async read(environment: string) {

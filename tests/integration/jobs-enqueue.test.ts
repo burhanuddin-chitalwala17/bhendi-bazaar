@@ -72,6 +72,20 @@ describe.skipIf(!isDisposableDb)("enqueue inside a transaction (local db)", () =
     expect(await countMarked()).toBe(before);
   });
 
+  it("a beat records how much finished in the last day", async () => {
+    const { heartbeatRepository } = await import("@server/shared/jobs/heartbeat.repository");
+    const environment = `test-${Date.now().toString(36)}`;
+    try {
+      await heartbeatRepository.beat({ environment, version: "test" });
+      const row = await heartbeatRepository.read(environment);
+      expect(row).toMatchObject({ environment, version: "test" });
+      expect(row?.completedDay).toBeGreaterThanOrEqual(0);
+      expect(Number.isInteger(row?.completedDay)).toBe(true);
+    } finally {
+      await prisma.workerHeartbeat.deleteMany({ where: { environment } });
+    }
+  });
+
   it("is invisible to Prisma Migrate: the pgboss schema causes no drift", () => {
     // Exit code 0 means "no difference" between the live database and the datamodel.
     const status = (() => {

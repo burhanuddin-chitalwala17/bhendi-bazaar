@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-169] 2026-09-27 — The worker card says how much got done [MIGRATION]
+
+The card showed waiting, running and failed, so a worker that had just run three jobs read
+"0 · 0 · 0" and looked idle. The heartbeat now also counts what finished in the last 24 hours,
+in the same single statement, and the card shows it as
+"N done in 24h". `WorkerHeartbeat.completedDay` is added with a default, so an older worker's
+beat still lands until the image is rebuilt.
+
 ## [PR-168] 2026-09-27 — A video in the library shows its poster and plays in the sheet
 
 Library and picker tiles for a video showed a bare mark; they show the video's own poster now,

@@ -11,6 +11,8 @@ export interface WorkerStatus {
   waiting: number;
   active: number;
   failed: number;
+  /** Finished in the 24 hours before the last beat. Completed jobs leave the queue, so this is how work shows. */
+  completedDay: number;
   /** Stale means not seen within the declared window, or never (spec A5). */
   stale: boolean;
 }
@@ -27,6 +29,7 @@ export async function workerStatus(now: Date = new Date()): Promise<WorkerStatus
     waiting: row?.waiting ?? 0,
     active: row?.active ?? 0,
     failed: row?.failed ?? 0,
+    completedDay: row?.completedDay ?? 0,
     stale,
   };
 }

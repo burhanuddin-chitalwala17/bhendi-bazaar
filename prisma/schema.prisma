@@ -26,6 +26,8 @@ model WorkerHeartbeat {
   waiting     Int
   active      Int
   failed      Int
+  /// Jobs finished in the 24 hours before the beat — the figure that says the worker is doing work, not just alive.
+  completedDay Int @default(0)
 }
 
 /// Every image the platform stores, as a record (media-library R1): what it is, how big, who
