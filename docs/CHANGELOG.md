@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-199] 2026-09-28 — A video would not play, and the policy said nothing
+
+A hosted video mounted its player, took the poster, and then sat at nought. Every link in the chain
+checked out: the file was in the bucket, it served `video/mp4` over a range request, the rendition
+probed as valid, and the row that fed the player was complete. What was missing was a
+Content-Security-Policy directive. A `<video>` draws its bytes under `media-src`, and the policy had
+no `media-src` at all, so it fell back to `default-src 'self'` and the bucket domain was refused.
+
+The poster beside it loaded throughout, because a poster is an image through the optimizer on our
+own origin, which is why nothing about the surface suggested a policy problem. `media-src` now names
+the bucket and nothing else: the hosts allowed to serve a thumbnail have no business streaming bytes
+into a player, and an embedded video is an iframe under `frame-src`, which is a separate question
+already answered. `tests/unit/security-headers.test.ts` fails if the directive goes missing again.
+
 ## [PR-197] 2026-09-28 — A stored file is filed under who owns it, not what it was for
 
 Everything an organisation uploaded landed under `products/<org-code>/`, which was true while every
