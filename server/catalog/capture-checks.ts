@@ -1,4 +1,5 @@
 import { SHOT_ROLE, type ShotRole } from "@server/catalog/shot-list";
+import { ENHANCEMENT_TOOL, type AvailableTool } from "@server/content/enhancement.types";
 
 /**
  * The three capture checks a photo gets before it is kept (media-library R8, D6): darkness by
@@ -29,6 +30,29 @@ const MESSAGES: Record<CaptureCheck, string> = {
   [CAPTURE_CHECK.BLUR]: "Looks blurred — hold still and tap the product to focus",
   [CAPTURE_CHECK.SMALL]: `Smaller than ${CAPTURE_THRESHOLDS.minLongEdgePx}px on its long side — marketplaces may reject it`,
 };
+
+/**
+ * The improvement that answers a warning, where one exists (image-enhancement spec R6, and the
+ * media-library R8 rule that a warning offers the fix rather than only the diagnosis). Declared
+ * here, beside the checks, so the banner and any later surface read one map.
+ *
+ * Blur has none on purpose. No tool un-blurs a photograph, and offering one would be a lie the
+ * org member pays a slot to find out about — the honest answer is to take the picture again.
+ */
+export const FIX_FOR_CHECK: Record<CaptureCheck, AvailableTool | null> = {
+  [CAPTURE_CHECK.DARK]: ENHANCEMENT_TOOL.LIGHT,
+  [CAPTURE_CHECK.BLUR]: null,
+  [CAPTURE_CHECK.SMALL]: ENHANCEMENT_TOOL.ENLARGE,
+};
+
+/** The first warning with a fix, in the order they were raised; null where none of them has one. */
+export function fixForWarnings(warnings: readonly CaptureWarning[]): AvailableTool | null {
+  for (const warning of warnings) {
+    const fix = FIX_FOR_CHECK[warning.check];
+    if (fix) return fix;
+  }
+  return null;
+}
 
 /** One grey byte per pixel, row-major, as the browser reads it off a canvas or a test builds it. */
 export type GrayFrame = Uint8ClampedArray | readonly number[];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
 import { Check, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   type AvailableTool,
   type EnhancementDto,
   type EnhancementUsage,
+  type RequestEnhancementInput,
 } from "@server/content/enhancement.types";
 import type { ShotRole } from "@server/catalog/shot-list";
 import { useEnhancementRun } from "@/hooks/product/useEnhancementRun";
@@ -32,6 +33,12 @@ interface ImproveDialogProps {
   /** Null closes the sheet. */
   target: ImproveTarget | null;
   /**
+   * Start on this tool instead of listing them (image-enhancement spec R6): a capture warning
+   * already named what is wrong and which improvement answers it, so asking again is a question
+   * whose answer the sheet was handed.
+   */
+  preselect?: AvailableTool | null;
+  /**
    * The proposal was kept. In a gallery the row that carried `ref` takes the result over; in the
    * library there is no row to take it, so the caller simply re-reads — the improved picture is a
    * new image beside the one it came from either way (spec R3).
@@ -39,6 +46,17 @@ interface ImproveDialogProps {
   onAccepted: (sourceRef: string, result: EnhancementDto) => void;
   onClose: () => void;
 }
+
+/**
+ * What the boundary is asked for one run: the asset when the caller knows it, else the URL its row
+ * carries. Naming both is refused, so the list and the preselected start build it the one way.
+ */
+const askFor = (target: ImproveTarget, tool: AvailableTool): RequestEnhancementInput => ({
+  tool,
+  ...(target.assetId ? { sourceAssetId: target.assetId } : { sourceRef: target.ref }),
+  slot: target.slot ?? null,
+  slotRole: target.slotRole ?? null,
+});
 
 /** The compare view's slot: the sheet is full width on a phone and a 36rem panel from md. */
 const COMPARE_SIZES = "(min-width: 768px) 36rem, 100vw";
@@ -52,33 +70,44 @@ const COMPARE_SIZES = "(min-width: 768px) 36rem, 100vw";
 export function ImproveDialog({
   orgId,
   target,
+  preselect = null,
   onAccepted,
   onClose,
 }: ImproveDialogProps) {
   const { run, usage, request, accept, discard, reset } =
     useEnhancementRun(orgId);
-  const [tool, setTool] = useState<AvailableTool | null>(null);
+  const [picked, setPicked] = useState<AvailableTool | null>(null);
+  /** What is running: the tool chosen from the list, else the one the warning already named. */
+  const tool = picked ?? preselect;
   const [showing, setShowing] = useState<"before" | "after">("after");
   const busy = run.phase === "requesting" || run.phase === "deciding";
 
   const close = () => {
     reset();
-    setTool(null);
+    setPicked(null);
     onClose();
   };
 
   const start = (chosen: AvailableTool) => {
     if (!target) return;
-    setTool(chosen);
+    setPicked(chosen);
     setShowing("after");
-    void request({
-      tool: chosen,
-      // The asset when the caller knows it, else the URL its row carries. Naming both is refused.
-      ...(target.assetId ? { sourceAssetId: target.assetId } : { sourceRef: target.ref }),
-      slot: target.slot ?? null,
-      slotRole: target.slotRole ?? null,
-    });
+    void request(askFor(target, chosen));
   };
+
+  // The sheet is opened by a tap in another component, so the run that tap asked for can only
+  // start here. Once per opening, held by a ref rather than by the phase: discarding a proposal
+  // returns the run to idle, and reading that as "nothing has started" would spend a second slot.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!target) {
+      autoStarted.current = false;
+      return;
+    }
+    if (!preselect || autoStarted.current) return;
+    autoStarted.current = true;
+    void request(askFor(target, preselect));
+  }, [preselect, request, target]);
 
   const keep = async () => {
     if (!target) return;
@@ -102,7 +131,7 @@ export function ImproveDialog({
       title="Improve this photo"
       description="One change at a time. You see before and after, and nothing is kept until you say so."
     >
-      {target && run.phase === "idle" && (
+      {target && run.phase === "idle" && !preselect && (
         <ul
           className="min-h-0 flex-1 space-y-2 overflow-y-auto"
           aria-label="Improvements"

@@ -68,6 +68,7 @@ export const AVAILABLE_TOOLS = [
   ENHANCEMENT_TOOL.STUDIO,
   ENHANCEMENT_TOOL.CUTOUT,
   ENHANCEMENT_TOOL.LIGHT,
+  ENHANCEMENT_TOOL.ENLARGE,
 ] as const;
 export type AvailableTool = (typeof AVAILABLE_TOOLS)[number];
 
@@ -105,6 +106,13 @@ export const TOOL_COST_PAISE: Record<AvailableTool, Record<EnhancementProvider, 
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
     [ENHANCEMENT_PROVIDER.MODEL]: 0,
   },
+  // A plain resize on our own CPU, never a service: an upscaler that reconstructs detail would
+  // change the product's own pixels, which is refused on fidelity rather than on price (trd D2).
+  [ENHANCEMENT_TOOL.ENLARGE]: {
+    [ENHANCEMENT_PROVIDER.SHARP]: 0,
+    [ENHANCEMENT_PROVIDER.ZONE]: 0,
+    [ENHANCEMENT_PROVIDER.MODEL]: 0,
+  },
 };
 
 /** One line per tool, as the sheet lists them (spec R1). */
@@ -114,7 +122,7 @@ export const TOOL_COPY: Record<EnhancementTool, { label: string; line: string }>
   [ENHANCEMENT_TOOL.STUDIO]: { label: "Studio", line: "On a plain backdrop with a soft shadow" },
   [ENHANCEMENT_TOOL.SCENE]: { label: "In a scene", line: "Placed in a real-looking setting" },
   [ENHANCEMENT_TOOL.LIGHT]: { label: "Fix the light", line: "Brighter, sharper, nothing else changed" },
-  [ENHANCEMENT_TOOL.ENLARGE]: { label: "Enlarge", line: "Large enough for any marketplace" },
+  [ENHANCEMENT_TOOL.ENLARGE]: { label: "Make it bigger", line: "Large enough for a marketplace to accept" },
 };
 
 /**

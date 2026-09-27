@@ -11,12 +11,14 @@ import {
   type SaveEnhancementSettingsInput,
 } from "@server/content/enhancement-settings.repository";
 import { enhancementSpec } from "@server/content/enhancement.job";
+import { ENLARGE_TARGET_LONG_EDGE } from "@server/content/channel-rules";
 import { segmenterFor } from "@server/content/providers";
 import type { Segmenter } from "@server/content/providers/segment";
 import { lightFix } from "@server/content/tools/light";
 import { cutOut } from "@server/content/tools/cutout";
 import { onWhite } from "@server/content/tools/white";
 import { inStudio } from "@server/content/tools/studio";
+import { enlarge } from "@server/content/tools/enlarge";
 import type { ToolInput, ToolResult } from "@server/content/tools/tool";
 import {
   ENHANCEMENT_PROVIDER,
@@ -63,6 +65,11 @@ const TOOLS: Record<AvailableTool, ToolPipeline> = {
   [ENHANCEMENT_TOOL.STUDIO]: { needs: NEEDS.SEGMENT, run: inStudio },
   [ENHANCEMENT_TOOL.CUTOUT]: { needs: NEEDS.SEGMENT, run: cutOut },
   [ENHANCEMENT_TOOL.LIGHT]: { needs: NEEDS.NOTHING, run: (input) => lightFix(input.bytes) },
+  // One target for every marketplace, read off the channel rules rather than chosen here.
+  [ENHANCEMENT_TOOL.ENLARGE]: {
+    needs: NEEDS.NOTHING,
+    run: (input) => enlarge({ bytes: input.bytes, targetLongEdge: ENLARGE_TARGET_LONG_EDGE }),
+  },
 };
 
 /**

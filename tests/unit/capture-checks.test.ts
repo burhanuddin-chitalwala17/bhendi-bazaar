@@ -6,14 +6,18 @@ import { describe, expect, it } from "vitest";
 import {
   CAPTURE_CHECK,
   CAPTURE_THRESHOLDS,
+  FIX_FOR_CHECK,
   checksForRole,
+  fixForWarnings,
   judgeCapture,
   laplacianVariance,
   meanLuminance,
   warningsForRole,
+  type CaptureCheck,
   type CaptureWarning,
 } from "@server/catalog/capture-checks";
 import { SHOT_ROLE } from "@server/catalog/shot-list";
+import { AVAILABLE_TOOLS, ENHANCEMENT_TOOL } from "@server/content/enhancement.types";
 
 const SIDE = 16;
 const BIG = 1600;
@@ -141,5 +145,42 @@ describe("the thresholds are declared once, as numbers", () => {
   it("the size message names the threshold rather than a second copy of the number", () => {
     const [small] = judgeCapture({ ...frame(checkerboard(), TINY), role: SHOT_ROLE.PRODUCT });
     expect(small.message).toContain(`${CAPTURE_THRESHOLDS.minLongEdgePx}px`);
+  });
+});
+
+describe("a warning offers the improvement that answers it", () => {
+  it("brightens a dark photo and enlarges a small one, and offers nothing for a blurred one", () => {
+    expect(FIX_FOR_CHECK[CAPTURE_CHECK.DARK]).toBe(ENHANCEMENT_TOOL.LIGHT);
+    expect(FIX_FOR_CHECK[CAPTURE_CHECK.SMALL]).toBe(ENHANCEMENT_TOOL.ENLARGE);
+    // Nothing un-blurs a photograph. Offering a tool anyway would cost the org member a slot to
+    // learn that, which is worse than the warning saying only what it knows.
+    expect(FIX_FOR_CHECK[CAPTURE_CHECK.BLUR]).toBeNull();
+  });
+
+  it("names an answer for every check, and only tools that exist", () => {
+    expect(Object.keys(FIX_FOR_CHECK).sort()).toEqual(Object.values(CAPTURE_CHECK).sort());
+    for (const fix of Object.values(FIX_FOR_CHECK)) {
+      if (fix) expect(AVAILABLE_TOOLS, `${fix} is offered but has no pipeline`).toContain(fix);
+    }
+  });
+
+  it("takes the first warning that has a fix, and none where nothing does", () => {
+    const warning = (check: CaptureCheck): CaptureWarning => ({ check, message: "" });
+    expect(fixForWarnings([])).toBeNull();
+    expect(fixForWarnings([warning(CAPTURE_CHECK.BLUR)])).toBeNull();
+    expect(fixForWarnings([warning(CAPTURE_CHECK.DARK)])).toBe(ENHANCEMENT_TOOL.LIGHT);
+    expect(fixForWarnings([warning(CAPTURE_CHECK.BLUR), warning(CAPTURE_CHECK.SMALL)])).toBe(
+      ENHANCEMENT_TOOL.ENLARGE,
+    );
+    expect(fixForWarnings([warning(CAPTURE_CHECK.DARK), warning(CAPTURE_CHECK.SMALL)])).toBe(
+      ENHANCEMENT_TOOL.LIGHT,
+    );
+  });
+
+  it("offers a fix on a real judgement, which is where the banner reads it", () => {
+    expect(fixForWarnings(judgeCapture({ ...frame(checkerboard(), TINY), role: SHOT_ROLE.PRODUCT }))).toBe(
+      ENHANCEMENT_TOOL.ENLARGE,
+    );
+    expect(fixForWarnings(judgeCapture({ ...frame(checkerboard(), BIG), role: SHOT_ROLE.PRODUCT }))).toBeNull();
   });
 });

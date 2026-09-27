@@ -65,12 +65,16 @@ describe("the closed sets mirror the schema", () => {
 
   it("offers only a tool with a pipeline, and prices every one it offers in whole paise", () => {
     expect([...AVAILABLE_TOOLS].sort()).toEqual(
-      [ENHANCEMENT_TOOL.CUTOUT, ENHANCEMENT_TOOL.LIGHT, ENHANCEMENT_TOOL.STUDIO, ENHANCEMENT_TOOL.WHITE].sort(),
+      [
+        ENHANCEMENT_TOOL.CUTOUT,
+        ENHANCEMENT_TOOL.ENLARGE,
+        ENHANCEMENT_TOOL.LIGHT,
+        ENHANCEMENT_TOOL.STUDIO,
+        ENHANCEMENT_TOOL.WHITE,
+      ].sort(),
     );
     for (const tool of AVAILABLE_TOOLS) expect(isAvailableTool(tool)).toBe(true);
-    for (const tool of [ENHANCEMENT_TOOL.SCENE, ENHANCEMENT_TOOL.ENLARGE]) {
-      expect(isAvailableTool(tool)).toBe(false);
-    }
+    expect(isAvailableTool(ENHANCEMENT_TOOL.SCENE)).toBe(false);
     expect(Object.keys(TOOL_COST_PAISE).sort()).toEqual([...AVAILABLE_TOOLS].sort());
     for (const byProvider of Object.values(TOOL_COST_PAISE)) {
       expect(Object.keys(byProvider).sort()).toEqual(Object.values(ENHANCEMENT_PROVIDER).sort());
@@ -91,8 +95,11 @@ describe("the closed sets mirror the schema", () => {
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.CUTOUT][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.WHITE][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.STUDIO][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
-    // `light` never asks a service for anything, so no service can make it cost.
+    // `light` never asks a service for anything, so no service can make it cost. Nor does
+    // `enlarge`: a plain resize runs on our own CPU, and an upscaler that would cost something
+    // is refused because it redraws the product, not because of the bill (trd D2).
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.LIGHT][ENHANCEMENT_PROVIDER.MODEL]).toBe(0);
+    expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.ENLARGE][ENHANCEMENT_PROVIDER.MODEL]).toBe(0);
     expect(MODEL_SEGMENT_PAISE).toBe(18);
   });
 
@@ -107,7 +114,12 @@ describe("the closed sets mirror the schema", () => {
   it("says what each tool writes, with the cut-out the one that keeps its transparency", () => {
     expect(Object.keys(TOOL_MIME_TYPE).sort()).toEqual(Object.keys(ENHANCEMENT_TOOL).sort());
     expect(TOOL_MIME_TYPE[ENHANCEMENT_TOOL.CUTOUT]).toBe("image/png");
-    for (const tool of [ENHANCEMENT_TOOL.WHITE, ENHANCEMENT_TOOL.STUDIO, ENHANCEMENT_TOOL.LIGHT]) {
+    for (const tool of [
+      ENHANCEMENT_TOOL.WHITE,
+      ENHANCEMENT_TOOL.STUDIO,
+      ENHANCEMENT_TOOL.LIGHT,
+      ENHANCEMENT_TOOL.ENLARGE,
+    ]) {
       expect(TOOL_MIME_TYPE[tool]).toBe("image/webp");
     }
   });

@@ -1,7 +1,7 @@
 # Spec — image-enhancement
 
 - **Summary:** A phone photo becomes a marketplace-grade image on demand — cut out, on white, on a studio backdrop, in a scene, brightened, or enlarged — each a tool applied alone, each result a proposal the org accepts or discards
-- **Status:** 🔨 In progress — PR-185, PR-190, PR-191 (3 of 5)
+- **Status:** 🔨 In progress — PR-185, PR-190, PR-191, PR-193 (4 of 5)
 - **Domain:** content (enhancement), reading catalog (assets); runs on the worker
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-28
@@ -24,7 +24,7 @@ Good photography is the small seller's largest handicap ([media-library](../medi
 - **R3** — A result is a proposal. The member sees before and after — a toggle, or a swipe on a phone — and accepts or discards. Only an accepted result enters the library, as a derived image pointing at its source ([media-library R3](../media-library/spec.md)). A discarded one leaves no trace.
 - **R4** — A scene is painted around the product, never over it. The product region of a scene result is the org's own cut-out, pixel for pixel; no service is trusted to keep a logo's letters or a bottle's shape.
 - **R5** — The label slot is never enhanced. It is evidence to be read later, and the capture checks' warnings on it stay advice.
-- **R6** — Nothing here blocks saving a product. A photograph below a channel's minimum size is blocked from *that channel* at the moment of use, with the tool that fixes it — enlarge, or white — offered right there. The store itself never blocks.
+- **R6** — Nothing here blocks saving a product. A photograph below a channel's minimum size is blocked from *that channel* at the moment of use, with the tool that fixes it — enlarge, or white — offered right there. The same offer is made earlier, from the capture warning on the photograph itself: a warning that only names the problem leaves the member with no next step, so the warning carries the improvement that answers it, and carries none where no tool does ([media-library R8](../media-library/spec.md)). The store itself never blocks.
 - **R7** — Every org has a monthly allowance of enhancements. The org sees its use; the platform owner sees every org's use and spend; a platform-wide daily spend cap stops all enhancement when reached; and the platform owner can pause enhancement for any one org, and lift the pause. **Both numbers are the platform owner's to change from the admin screen, without a deploy** — they are what the first provider bill will argue with, and waiting for a release to answer it is the wrong shape. An organisation records only a **deviation**: a different allowance, or a pause. An org that is exactly the platform's number holds nothing of its own, so changing the platform's number moves it too.
 - **R8** — Which service performs a tool is the platform's choice and can change without the org noticing. Before a service is chosen for a tool, the same real photographs go through each candidate and the outputs are compared side by side.
 - **R9** — Every run records its tool, its service and its cost. Cost is integer paise ([Invariant 3](../../../CLAUDE.md)).
@@ -46,6 +46,7 @@ Good photography is the small seller's largest handicap ([media-library](../medi
 ## Out of scope (this feature)
 
 - Photoroom and any service with a monthly floor — not at this stage.
+- An upscaler that reconstructs detail. **Enlarge** is a plain resize and always will be: a service that invents pixels the camera never saw changes the product's own appearance, which is the one thing this feature promises it will not do (R4). Refused on fidelity, not deferred on cost.
 - Automatic enhancement of every upload, and batch enhancement of a catalogue.
 - Free-text scene prompts for orgs.
 - Reading the label — [listing-schema](../listing-schema/) and [product-form](../product-form/).

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import type { CaptureWarning } from "@server/catalog/capture-checks";
+import { fixForWarnings, type CaptureWarning } from "@server/catalog/capture-checks";
+import type { AvailableTool } from "@server/content/enhancement.types";
 import type { ProductMediaInput, ProductMediaState } from "@server/catalog/media";
 import type { ShotList, ShotSlot } from "@server/catalog/shot-list";
 import { SlotSilhouette } from "@/components/product/slot-silhouette";
@@ -22,16 +23,24 @@ import { SlotSilhouette } from "@/components/product/slot-silhouette";
 /**
  * A photo failed a capture check. Advisory, not a refusal (spec R8): the photo is already in the
  * gallery and saving is never blocked, so the banner offers to take it out or to keep it and hush.
+ *
+ * And, where a tool actually fixes what was found, to improve it right here (image-enhancement
+ * spec R6) — a warning that only diagnoses leaves the org member with a problem and no next step.
+ * A blurred photo offers nothing, because nothing un-blurs one.
  */
 export function CaptureBanner({
   warnings,
   onRemove,
   onKeep,
+  onImprove,
 }: {
   warnings: CaptureWarning[];
   onRemove: () => void;
   onKeep: () => void;
+  /** Opens the improve sheet on the tool that answers the warning. Absent where none is offered. */
+  onImprove?: (tool: AvailableTool) => void;
 }) {
+  const fix = fixForWarnings(warnings);
   return (
     <Alert className="border-warning/40 [&>svg]:text-warning">
       <TriangleAlert aria-hidden />
@@ -43,6 +52,11 @@ export function CaptureBanner({
           ))}
         </ul>
         <div className="mt-3 flex flex-wrap gap-2">
+          {fix && onImprove && (
+            <Button type="button" size="lg" onClick={() => onImprove(fix)}>
+              <Sparkles /> Improve
+            </Button>
+          )}
           <Button type="button" variant="outline" size="lg" onClick={onRemove}>
             <X /> Remove
           </Button>
@@ -74,8 +88,11 @@ interface SlotRowProps {
   onMoveToExtra: () => void;
   onRemove: () => void;
   onKeepAnyway: () => void;
-  /** Opens the improve sheet. Absent on the label slot, which is never enhanced (image-enhancement R5). */
-  onImprove?: () => void;
+  /**
+   * Opens the improve sheet, on a named tool when the warning offered one (spec R6). Absent on
+   * the label slot, which is never enhanced (image-enhancement R5).
+   */
+  onImprove?: (preselect?: AvailableTool) => void;
 }
 
 export function SlotRow({
@@ -169,7 +186,7 @@ export function SlotRow({
           </Button>
         )}
         {onImprove && (
-          <Button type="button" variant="outline" size="lg" onClick={onImprove}>
+          <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
             <Sparkles /> Improve…
           </Button>
         )}
@@ -186,7 +203,9 @@ export function SlotRow({
           <X />
         </Button>
       </div>
-      {warnings.length > 0 && <CaptureBanner warnings={warnings} onRemove={onRemove} onKeep={onKeepAnyway} />}
+      {warnings.length > 0 && (
+        <CaptureBanner warnings={warnings} onRemove={onRemove} onKeep={onKeepAnyway} onImprove={onImprove} />
+      )}
     </li>
   );
 }
@@ -207,8 +226,8 @@ interface ExtraRowProps {
   onAssignSlot: (slotKey: string) => void;
   onRemove: () => void;
   onKeepAnyway: () => void;
-  /** Opens the improve sheet; a photograph only, since a video has no still to improve. */
-  onImprove?: () => void;
+  /** Opens the improve sheet, optionally on a tool; a photograph only, since a video has no still to improve. */
+  onImprove?: (preselect?: AvailableTool) => void;
 }
 
 export function ExtraRow({
@@ -304,7 +323,7 @@ export function ExtraRow({
           </Button>
         )}
         {!isVideo && onImprove && (
-          <Button type="button" variant="outline" size="lg" onClick={onImprove}>
+          <Button type="button" variant="outline" size="lg" onClick={() => onImprove()}>
             <Sparkles /> Improve…
           </Button>
         )}
@@ -312,7 +331,9 @@ export function ExtraRow({
           <X />
         </Button>
       </div>
-      {warnings.length > 0 && <CaptureBanner warnings={warnings} onRemove={onRemove} onKeep={onKeepAnyway} />}
+      {warnings.length > 0 && (
+        <CaptureBanner warnings={warnings} onRemove={onRemove} onKeep={onKeepAnyway} onImprove={onImprove} />
+      )}
     </li>
   );
 }

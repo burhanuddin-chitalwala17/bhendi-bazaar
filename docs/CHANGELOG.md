@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-193] 2026-09-28 — Make it big enough, and say which channel is asking
+
+Image-enhancement spec R1, R6, A4. The fifth improvement is live: make it bigger. A phone photograph
+that a marketplace calls too small is now something a shop can fix in one tap, and the result is a
+proposal to compare and accept like every other improvement.
+
+It is a plain resize on our own machines, with no service behind it and nothing to pay. That is a
+promise about the product before it is a saving. An AI upscaler does not enlarge a photograph, it
+reimagines one: it invents detail the camera never saw, which is precisely the redrawing this feature
+refuses to let any service do to a product. A resize cannot change what the thing looks like. It only
+makes the file large enough for a marketplace to take it. So a reconstructing upscaler is not deferred
+until it is cheap enough, it is out, and the spec now says so. The picture grows by whole steps to the
+smallest size that clears what the channels ask, never past what we store, and a photograph that is
+already big enough is refused rather than proposed back unchanged, since a proposal that changes
+nothing still costs a shop one of its monthly runs.
+
+What the channels ask is now written down in one place, each number beside where it comes from:
+Amazon's thousand pixels and the sixteen hundred that turns its zoom on, Flipkart's thousand,
+Instagram's ten-eighty square. Our own store is in that list with no rule at all, and that is the
+point of the list. The store takes what the shop has. A marketplace's minimum is asked at the moment
+a picture is put to that marketplace, never when a product is saved, never on a page a buyer reads,
+and there is now a test that reads the source and fails if that question turns up in the storefront,
+in the product write path or in the server-side reads. A size rule that starts at the moment of use
+and creeps inwards is how a shop with a real photograph of a real thing ends up unable to list it.
+
+The warning a photograph already gets now offers the fix instead of only naming the fault. A dark one
+offers to brighten it, a small one offers to make it bigger, and the sheet goes straight to work
+rather than asking again which improvement was meant. A blurred one offers nothing, because nothing
+un-blurs a photograph and pretending otherwise would cost a shop a run to find out.
+
 ## [PR-192] 2026-09-28 — Improve a photograph from the library, beside Crop
 
 Image-enhancement spec R2, R3. The tools were reachable only from a gallery slot, which is where a

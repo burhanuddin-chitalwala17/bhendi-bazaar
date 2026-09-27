@@ -67,7 +67,7 @@ import {
 import { ExtraRow, SlotRow } from "@/components/product/gallery-rows";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog, type ImproveTarget } from "@/components/product/improve-dialog";
-import type { EnhancementDto } from "@server/content/enhancement.types";
+import type { AvailableTool, EnhancementDto } from "@server/content/enhancement.types";
 
 interface ProductMediaManagerProps {
   value: ProductMediaInput[];
@@ -146,6 +146,8 @@ export function ProductMediaManager({
   const queuedIds = useRef(0);
   /** The photo the improve sheet is open on (image-enhancement spec R2); null when it is closed. */
   const [improving, setImproving] = useState<ImproveTarget | null>(null);
+  /** The tool the sheet starts on, when a capture warning already named it (spec R6); else null. */
+  const [preselect, setPreselect] = useState<AvailableTool | null>(null);
   // Every uploaded photograph's full judgement, keyed by ref; narrowed to its slot's role at
   // render, so a photo moved from a lifestyle slot to a product one shows what it now owes
   // without a second look at the pixels. A dismissal is also by ref, and is for good.
@@ -526,13 +528,24 @@ export function ProductMediaManager({
 
   const keep = (ref: string) => setKept((current) => new Set(current).add(ref));
 
+  /** Open the sheet on a photo, on the tool a capture warning named where it named one (spec R6). */
+  const openImprove = (target: ImproveTarget, tool?: AvailableTool) => {
+    setImproving(target);
+    setPreselect(tool ?? null);
+  };
+
+  const closeImprove = () => {
+    setImproving(null);
+    setPreselect(null);
+  };
+
   /**
    * An accepted improvement takes its row over — same slot, same cover, same description — so the
    * slot shows the improved photo and the library holds both, the new pointing at the old (spec A1).
    * The old ref's capture verdict does not follow: the new photo is judged as itself, if at all.
    */
   const replaceRef = (sourceRef: string, result: EnhancementDto) => {
-    setImproving(null);
+    closeImprove();
     if (!result.resultRef) return;
     commit(media.map((item) => (item.ref === sourceRef ? { ...item, ref: result.resultRef ?? item.ref } : item)));
   };
@@ -561,7 +574,7 @@ export function ProductMediaManager({
               onKeepAnyway={() => item && keep(item.ref)}
               onImprove={
                 item && orgId && slot.role !== SHOT_ROLE.LABEL
-                  ? () => setImproving({ ref: item.ref, slot: slot.key, slotRole: slot.role })
+                  ? (tool) => openImprove({ ref: item.ref, slot: slot.key, slotRole: slot.role }, tool)
                   : undefined
               }
             />
@@ -597,7 +610,11 @@ export function ProductMediaManager({
                 onAssignSlot={(slot) => assignSlot(item.ref, slot)}
                 onRemove={() => remove(item.ref)}
                 onKeepAnyway={() => keep(item.ref)}
-                onImprove={orgId && item.kind === "IMAGE" ? () => setImproving({ ref: item.ref, slot: null, slotRole: null }) : undefined}
+                onImprove={
+                  orgId && item.kind === "IMAGE"
+                    ? (tool) => openImprove({ ref: item.ref, slot: null, slotRole: null }, tool)
+                    : undefined
+                }
               />
             ))}
           </ul>
@@ -678,7 +695,15 @@ export function ProductMediaManager({
         />
       )}
 
-      {orgId && <ImproveDialog orgId={orgId} target={improving} onAccepted={replaceRef} onClose={() => setImproving(null)} />}
+      {orgId && (
+        <ImproveDialog
+          orgId={orgId}
+          target={improving}
+          preselect={preselect}
+          onAccepted={replaceRef}
+          onClose={closeImprove}
+        />
+      )}
 
       <CropDialog
         photo={current ? { id: current.id, src: current.previewUrl } : null}
