@@ -19,7 +19,13 @@ export interface MediaAssetDto {
   mimeType: string | null;
   source: MediaAssetSource;
   state: MediaAssetState;
+  /** How many places show it. Zero is the ordinary state of a library and is reported as nothing. */
   uses: number;
+  /**
+   * How many pictures were made from it — a crop, a rendition, an improvement. Not a use: none of
+   * them stops working when this one leaves the library, but its bytes are kept while they exist.
+   */
+  derivedCount: number;
   createdAt: string;
   retiredAt: string | null;
   /** A hosted video's poster — the photograph the org member chose, else the worker's frame (video-hosting D7, R8); null for anything else. */
@@ -38,7 +44,6 @@ export const MEDIA_USE_KINDS = [
   "storefront-hero",
   "storefront-banner",
   "home-banner",
-  "derived",
   "video-poster",
 ] as const;
 export type MediaUseKind = (typeof MEDIA_USE_KINDS)[number];
@@ -64,13 +69,15 @@ export interface ReferenceCounts {
   profileHeroes: number;
   orgBanners: number;
   banners: number;
-  derivatives: number;
   /** The videos this photograph stands in for (spec R8): a poster in use is a photograph in use. */
   postersFor: number;
+  /** Pictures made from this one. Counted, never added to the uses — see `MediaAssetDto.derivedCount`. */
+  derivatives: number;
 }
 
-export function totalReferences(counts: ReferenceCounts): number {
-  return Object.values(counts).reduce((sum, count) => sum + count, 0);
+/** Everywhere it is shown. A derivative is lineage, not a use, so it is not one of these. */
+export function totalUses({ derivatives: _lineage, ...shown }: ReferenceCounts): number {
+  return Object.values(shown).reduce((sum, count) => sum + count, 0);
 }
 
 export interface MediaAssetRow {
@@ -105,7 +112,8 @@ export function toMediaAssetDto(row: MediaAssetRow): MediaAssetDto {
     mimeType: row.mimeType,
     source: row.source,
     state: row.state,
-    uses: totalReferences(row._count),
+    uses: totalUses(row._count),
+    derivedCount: row._count.derivatives,
     createdAt: row.createdAt.toISOString(),
     retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,
     poster,
@@ -122,7 +130,6 @@ const USE_NOUNS: Record<MediaUseKind, [singular: string, plural: string]> = {
   "storefront-hero": ["storefront hero", "storefront heroes"],
   "storefront-banner": ["storefront banner", "storefront banners"],
   "home-banner": ["home banner", "home banners"],
-  derived: ["derived image", "derived images"],
   "video-poster": ["video poster", "video posters"],
 };
 

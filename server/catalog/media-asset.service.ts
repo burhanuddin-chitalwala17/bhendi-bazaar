@@ -7,6 +7,7 @@ import { deleteObject, getObject, headObject, presignUpload, publicUrlFor, putOb
 import { sha256Hex } from "@server/shared/hash";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import { isVideoContentType } from "@server/catalog/video";
+import { IMAGE_QUALITY, MAX_IMAGE_EDGE } from "@server/catalog/media";
 import { videoTranscodeSpec } from "@server/catalog/video.job";
 import {
   MEDIA_LIBRARY_PAGE_SIZE,
@@ -62,6 +63,17 @@ export interface ConfirmUploadResult {
 
 function validDimension(value: number | undefined): value is number {
   return Number.isInteger(value) && (value as number) > 0 && (value as number) <= MAX_DIMENSION;
+}
+
+/** A picture may only be derived from one of this org's own stored photographs. */
+async function assertDerivableSource(orgId: string, sourceAssetId: string) {
+  const source = await mediaAssetRepository.findById(sourceAssetId);
+  if (!source || source.orgId !== orgId || source.kind !== MediaAssetKind.IMAGE || !source.objectKey) {
+    throw new NotFoundError("Source image not found");
+  }
+  // Narrowed for the caller that names the derivative beside it: the check above is what makes
+  // this true, and the type should say so rather than each caller asserting it again.
+  return { ...source, objectKey: source.objectKey };
 }
 
 export const mediaAssetService = {
@@ -332,11 +344,27 @@ export const mediaAssetService = {
     contentType: string;
     transform: Prisma.InputJsonValue;
   }): Promise<{ id: string; ref: string }> {
-    const source = await mediaAssetRepository.findById(input.sourceAssetId);
-    if (!source || source.orgId !== input.orgId || source.kind !== MediaAssetKind.IMAGE || !source.objectKey) {
-      throw new NotFoundError("Source image not found");
-    }
-    const bytes = await getObject(input.fromKey);
+    // Whose source it is decides before any bytes move: fetching first would spend a read on a
+    // request that was never going to be allowed.
+    await assertDerivableSource(input.orgId, input.sourceAssetId);
+    return await this.registerDerivedBytes({ ...input, bytes: await getObject(input.fromKey) });
+  },
+
+  /**
+   * The same adoption for bytes already in hand — a crop made here rather than proposed elsewhere.
+   * One tail for both, so a derived image is measured, hashed and recorded exactly one way.
+   */
+  async registerDerivedBytes(input: {
+    orgId: string;
+    uploaderId: string | null;
+    sourceAssetId: string;
+    bytes: Buffer;
+    fileSuffix: string;
+    contentType: string;
+    transform: Prisma.InputJsonValue;
+  }): Promise<{ id: string; ref: string }> {
+    const source = await assertDerivableSource(input.orgId, input.sourceAssetId);
+    const { bytes } = input;
     const contentHash = sha256Hex(bytes);
     const existing = await mediaAssetRepository.findReadyByHash(input.orgId, contentHash);
     if (existing) return { id: existing.id, ref: existing.ref };
@@ -359,6 +387,55 @@ export const mediaAssetService = {
       derivedFromId: source.id,
       transform: input.transform,
     });
+  },
+
+  /**
+   * Reframe a photograph the org already has (media-library R8a, trd D6a): the source is turned
+   * and cut here, where its bytes already are, and the result is a derived image beside it. The
+   * source is never altered — a crop is a second picture, not an edit — so a surface that later
+   * needs the pixels this one discarded can still reach back to it.
+   */
+  async cropAsset(
+    orgId: string,
+    uploaderId: string | null,
+    assetId: string,
+    transform: { rotation: number; crop: { x: number; y: number; width: number; height: number } },
+  ): Promise<MediaAssetDto> {
+    const source = await mediaAssetRepository.findForOrg(orgId, assetId);
+    if (!source || source.kind !== MediaAssetKind.IMAGE || source.state !== MediaAssetState.READY) {
+      throw new NotFoundError("Photo not found");
+    }
+    const row = await mediaAssetRepository.findById(assetId);
+    if (!row?.objectKey) throw new NotFoundError("Photo not found");
+
+    const { crop, rotation } = transform;
+    let cut;
+    try {
+      // Turn first, then cut: the rectangle was measured on the turned picture, which is what the
+      // org member was looking at. Capped at the stored ceiling, never enlarged (ADR-0026).
+      cut = await sharp(await getObject(row.objectKey))
+        .rotate(rotation)
+        .extract({ left: crop.x, top: crop.y, width: crop.width, height: crop.height })
+        .resize({ width: MAX_IMAGE_EDGE, height: MAX_IMAGE_EDGE, fit: "inside", withoutEnlargement: true })
+        .webp({ quality: IMAGE_QUALITY })
+        .toBuffer();
+    } catch {
+      // The rectangle was measured against a report of the picture; the picture itself decides.
+      throw new DomainError("That frame falls outside the photo. Try again.");
+    }
+
+    const derived = await this.registerDerivedBytes({
+      orgId,
+      uploaderId,
+      sourceAssetId: assetId,
+      bytes: cut,
+      fileSuffix: `crop-${Date.now().toString(36)}.webp`,
+      contentType: "image/webp",
+      transform: { rotation, crop },
+    });
+    const made = await mediaAssetRepository.findForOrg(orgId, derived.id);
+    if (!made) throw new NotFoundError("Photo not found");
+    return toMediaAssetDto(made);
   },
 
   /** Both sweeps, as the worker runs them (media.jobs.ts). */

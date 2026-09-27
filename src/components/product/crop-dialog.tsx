@@ -42,6 +42,12 @@ interface CropDialogProps {
   remaining: number;
   /** An upload is in flight for this photo: the actions wait, and the sheet cannot be dismissed. */
   busy: boolean;
+  /**
+   * False when the picture is already stored and this is a reframe: keeping it as it is means
+   * doing nothing, so the two "as is" actions are absent and an untouched frame simply cannot be
+   * applied (media-library R8a).
+   */
+  canUseAsIs?: boolean;
   onUseAsIs: () => void;
   onUseCrop: (transform: CropTransform) => void;
   onUseAllAsIs: () => void;
@@ -61,6 +67,7 @@ export function CropDialog({
   photo,
   remaining,
   busy,
+  canUseAsIs = true,
   onUseAsIs,
   onUseCrop,
   onUseAllAsIs,
@@ -74,9 +81,11 @@ export function CropDialog({
       }}
       title="Frame this photo"
       description={
-        remaining > 0
-          ? `${remaining} more after this one. Turn and frame it, or use it as it is.`
-          : "Turn and frame it, or use it as it is. Colours are never changed."
+        !canUseAsIs
+          ? "Turn and frame it. The photo you started from is kept as it is."
+          : remaining > 0
+            ? `${remaining} more after this one. Turn and frame it, or use it as it is.`
+            : "Turn and frame it, or use it as it is. Colours are never changed."
       }
     >
       {/* Keyed by the candidate so each photo starts unframed: a turn chosen for one is rarely
@@ -87,6 +96,7 @@ export function CropDialog({
           src={photo.src}
           remaining={remaining}
           busy={busy}
+          canUseAsIs={canUseAsIs}
           onUseAsIs={onUseAsIs}
           onUseCrop={onUseCrop}
           onUseAllAsIs={onUseAllAsIs}
@@ -100,6 +110,7 @@ function CropFrame({
   src,
   remaining,
   busy,
+  canUseAsIs = true,
   onUseAsIs,
   onUseCrop,
   onUseAllAsIs,
@@ -118,23 +129,19 @@ function CropFrame({
     : null;
   const ratio = aspectRatioOf(aspect) ?? (own ? own.width / own.height : 1);
 
+  const transform =
+    area && natural
+      ? normaliseTransform(area, rotation, natural.naturalWidth, natural.naturalHeight)
+      : null;
+  // The whole picture, unturned, is not a crop. On an upload it means the original is used; on a
+  // reframe it means nothing to do, so the action waits until the frame has actually moved.
+  const isUntouched = Boolean(
+    transform && natural && isIdentityTransform(transform, natural.naturalWidth, natural.naturalHeight),
+  );
+
   const applyCrop = () => {
-    if (!area || !natural) return;
-    const transform = normaliseTransform(
-      area,
-      rotation,
-      natural.naturalWidth,
-      natural.naturalHeight,
-    );
-    // The whole picture, unturned, is not a crop: nothing is derived, the original is used.
-    if (
-      isIdentityTransform(
-        transform,
-        natural.naturalWidth,
-        natural.naturalHeight,
-      )
-    )
-      onUseAsIs();
+    if (!transform) return;
+    if (isUntouched && canUseAsIs) onUseAsIs();
     else onUseCrop(transform);
   };
 
@@ -206,7 +213,7 @@ function CropFrame({
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:justify-end">
-        {remaining > 0 && (
+        {canUseAsIs && remaining > 0 && (
           <Button
             type="button"
             variant="ghost"
@@ -217,20 +224,22 @@ function CropFrame({
             Use all as is
           </Button>
         )}
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          onClick={onUseAsIs}
-          disabled={busy}
-        >
-          Use as is
-        </Button>
+        {canUseAsIs && (
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={onUseAsIs}
+            disabled={busy}
+          >
+            Use as is
+          </Button>
+        )}
         <Button
           type="button"
           size="lg"
           onClick={applyCrop}
-          disabled={busy || !area || !natural}
+          disabled={busy || !transform || (isUntouched && !canUseAsIs)}
         >
           {busy ? <Loader2 className="animate-spin" /> : <Check />}
           Use this crop

@@ -10,6 +10,28 @@
 
 ## Entries
 
+## [PR-189] 2026-09-28 — Crop a photo already in the library, and stop calling lineage a use [CONTRACT]
+
+Three things the first real use of the library turned up.
+
+A photograph already stored can be reframed: the library sheet gains Crop, the same frame opens on
+it, and the cut is made on the server where its bytes already are rather than fetched back into the
+browser. The result is a derived picture beside the one it came from, which is left exactly as it
+was — so a reframe can be done again, from the original, as many times as it takes.
+
+A picture made from another was being counted as a use of it, which read as though a product were
+showing it and refused its retirement. It is lineage, not a use: nothing on a screen breaks when the
+source leaves the library. Uses are now only the places an asset is *shown* — a gallery row, a
+category hero, a shop's mark or cover, a banner, a video's poster — and a separate line says how
+many pictures were made from it. The source's file is still kept for as long as any of them exists,
+because that is what a rendition falls back to, so the promise the spec made is not quietly dropped:
+the sweep leaves a retired source's object alone while it has children.
+
+A library is mostly images used nowhere yet, so the "unused" tag said nothing on nearly every tile.
+A tile carries a count when there is one and nothing when there is not; the Usage filter is how the
+unused are found. The editor's row thumbnail also stopped centre-cropping: it contains the picture
+now, so "use as is" looks like what was actually stored.
+
 ## [PR-188] 2026-09-28 — The crop frame shows the picture: the preview belongs to the queue
 
 The frame was still empty after the stylesheet was imported, and this time it could not even be

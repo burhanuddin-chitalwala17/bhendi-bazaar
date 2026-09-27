@@ -723,11 +723,13 @@ function MediaThumb({ item, preview, poster = null }: { item: ProductMediaInput;
   }
   return (
     <div className="relative size-16 shrink-0 overflow-hidden rounded-field bg-muted">
+      {/* Contained, not covered: this thumbnail is the org member's proof of what was stored, and a
+          square box that centre-crops a tall photo is how "use as is" came to look like a crop. */}
       {item.kind === "IMAGE" && preview ? (
         /* Just uploaded, so the file is still in the page — fetching the stored copy back
            would be egress for nothing (ADR-0026). */
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={preview} alt="" className="size-full object-cover" />
+        <img src={preview} alt="" className="size-full object-contain" />
       ) : (
         <NextImage
           src={item.kind === "YOUTUBE" ? youtubePosterUrl(item.ref) : item.ref}
@@ -735,7 +737,7 @@ function MediaThumb({ item, preview, poster = null }: { item: ProductMediaInput;
           fill
           sizes="64px"
           unoptimized={item.kind === "YOUTUBE"}
-          className="object-cover"
+          className={item.kind === "YOUTUBE" ? "object-cover" : "object-contain"}
         />
       )}
       {item.kind === "YOUTUBE" && (

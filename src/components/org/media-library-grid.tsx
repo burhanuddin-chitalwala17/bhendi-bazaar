@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Archive, ChevronDown, ChevronUp, Film, ImageIcon, Images, RotateCcw } from "lucide-react";
+import { Archive, ChevronDown, ChevronUp, Crop, Film, ImageIcon, Images, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,8 @@ import { MediaLibraryPicker } from "@/components/product/media-library-picker";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import { readApiError } from "@/lib/api-error";
+import { CropDialog } from "@/components/product/crop-dialog";
+import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDuration } from "@/lib/format";
 import { describeUses, type MediaAssetDetailDto, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
@@ -65,6 +67,9 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   const [open, setOpen] = useState<MediaAssetDto | null>(null);
   const [detail, setDetail] = useState<MediaAssetDetailDto | null>(null);
   const [isRetiring, setIsRetiring] = useState(false);
+  /** The photograph being reframed, if any. The one it came from stays exactly as it is (spec R8a). */
+  const [reframing, setReframing] = useState<MediaAssetDto | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
   const [showUses, setShowUses] = useState(false);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
   const [isSavingPoster, setIsSavingPoster] = useState(false);
@@ -106,6 +111,29 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   };
 
   // A refusal is said, not greyed out: a disabled button with no reason is a dead end (spec R7, A3).
+  // A crop of something already stored is cut where its bytes already are, and arrives as its own
+  // picture beside the one it came from (trd D6a).
+  const reframe = async (asset: MediaAssetDto, transform: CropTransform) => {
+    setIsCropping(true);
+    try {
+      const response = await fetch(`/api/org/${orgId}/media/${asset.id}/crop`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(transform),
+      });
+      if (!response.ok) {
+        toast.error((await readApiError(response)).message);
+        return;
+      }
+      toast.success("Cropped. The photo you started from is untouched.");
+      setReframing(null);
+      setOpen(null);
+      router.refresh();
+    } finally {
+      setIsCropping(false);
+    }
+  };
+
   const retire = async (asset: MediaAssetDto) => {
     if (detail === null) {
       toast.error("Still checking where this image is used. Try again in a moment.");
@@ -162,9 +190,13 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               aria-label={isVideoKind(asset.kind) ? KIND_LABELS[asset.kind] : `Photo ${asset.width ?? "?"} by ${asset.height ?? "?"}`}
             >
               <MediaTile asset={asset} />
-              <Badge className="absolute right-1 top-1" variant={asset.uses > 0 ? "default" : "outline"}>
-                {asset.uses > 0 ? `${asset.uses} use${asset.uses === 1 ? "" : "s"}` : "unused"}
-              </Badge>
+              {/* Only a count, and only where there is one: most of a library is used nowhere yet,
+                  and a badge on all of it says nothing. The Usage filter is how they are found. */}
+              {asset.uses > 0 && (
+                <Badge className="absolute right-1 top-1">
+                  {asset.uses} use{asset.uses === 1 ? "" : "s"}
+                </Badge>
+              )}
               {STATE_BADGES[asset.state] && (
                 <Badge className="absolute left-1 top-1" variant={STATE_BADGES[asset.state]?.variant}>
                   {STATE_BADGES[asset.state]?.label}
@@ -265,7 +297,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 {detail === null ? (
                   <p className="text-sm text-muted-foreground">Looking…</p>
                 ) : uses.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nothing. This can be retired.</p>
+                  <p className="text-sm text-muted-foreground">Nowhere. This can be retired.</p>
                 ) : (
                   <>
                     <Button
@@ -291,16 +323,45 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   </>
                 )}
               </div>
+
+              {/* Lineage, not a use (trd D6a): nothing on a screen breaks when this one leaves,
+                  but its file is kept while a picture made from it exists. */}
+              {open.derivedCount > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {open.derivedCount} picture{open.derivedCount === 1 ? " was" : "s were"} made from this one.
+                  {" "}It stays in storage for them even after it leaves the library.
+                </p>
+              )}
+
               {open.state !== "RETIRED" && (
-                <Button type="button" variant="outline" onClick={() => retire(open)} disabled={isRetiring}>
-                  <Archive className="mr-2 size-4" />
-                  {isRetiring ? "Retiring…" : "Retire"}
-                </Button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {open.kind === "IMAGE" && (
+                    <Button type="button" variant="outline" onClick={() => setReframing(open)}>
+                      <Crop className="mr-2 size-4" />
+                      Crop
+                    </Button>
+                  )}
+                  <Button type="button" variant="outline" onClick={() => retire(open)} disabled={isRetiring}>
+                    <Archive className="mr-2 size-4" />
+                    {isRetiring ? "Retiring…" : "Retire"}
+                  </Button>
+                </div>
               )}
             </>
           )}
         </SheetContent>
       </Sheet>
+
+      <CropDialog
+        photo={reframing ? { id: reframing.id, src: reframing.ref } : null}
+        remaining={0}
+        busy={isCropping}
+        canUseAsIs={false}
+        onUseAsIs={() => setReframing(null)}
+        onUseCrop={(transform) => void (reframing && reframe(reframing, transform))}
+        onUseAllAsIs={() => setReframing(null)}
+        onCancel={() => setReframing(null)}
+      />
     </div>
   );
 }
@@ -339,7 +400,6 @@ function UseLine({ use }: { use: MediaUseDto }) {
     "storefront-hero": "Storefront",
     "storefront-banner": "Storefront banner",
     "home-banner": "Home banner",
-    derived: "Derived",
     "video-poster": "Video",
   };
   return (

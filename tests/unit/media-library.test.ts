@@ -17,6 +17,9 @@ const repo = {
   clearObject: vi.fn(),
   findStalePending: vi.fn(),
   deletePending: vi.fn(),
+  findById: vi.fn(),
+  findReadyByHash: vi.fn(),
+  createReady: vi.fn(),
 };
 const store = {
   deleteObject: vi.fn(),
@@ -24,13 +27,14 @@ const store = {
   presignUpload: vi.fn(),
   headObject: vi.fn(),
   getObject: vi.fn(),
+  putObject: vi.fn(),
 };
 vi.mock("@server/catalog/media-asset.repository", () => ({ mediaAssetRepository: repo }));
 vi.mock("@server/catalog/object-store", () => store);
 
 const { mediaAssetService, RETIRED_OBJECT_GRACE_MS } = await import("@server/catalog/media-asset.service");
 const { mediaLibraryFilterSchema, parseMediaLibraryFilters } = await import("@/lib/validation/schemas/media-library.schema");
-const { MEDIA_LIBRARY_PAGE_SIZE, describeUses, toMediaAssetDto, totalReferences } = await import(
+const { MEDIA_LIBRARY_PAGE_SIZE, describeUses, toMediaAssetDto, totalUses } = await import(
   "@server/catalog/media-library.types"
 );
 
@@ -104,7 +108,10 @@ describe("toMediaAssetDto", () => {
     expect(dto.uses).toBe(3);
     expect(dto.createdAt).toBe("2026-09-27T08:00:00.000Z");
     expect(dto.retiredAt).toBe("2026-09-28T00:00:00.000Z");
-    expect(totalReferences(counts())).toBe(0);
+    expect(totalUses(counts())).toBe(0);
+    // Lineage is not a use: a crop of this photograph does not make the photograph "in use".
+    expect(totalUses(counts({ derivatives: 3 }))).toBe(0);
+    expect(toMediaAssetDto(row({ _count: counts({ derivatives: 3 }) })).derivedCount).toBe(3);
   });
 });
 
@@ -205,5 +212,25 @@ describe("sweepRetiredObjects", () => {
     repo.findStalePending.mockResolvedValue([]);
     repo.findStaleRetired.mockResolvedValue([]);
     expect(await mediaAssetService.sweep()).toEqual({ pending: { removed: 0, kept: 0 }, retired: { deleted: 0, kept: 0 } });
+  });
+});
+
+describe("a crop of something already stored", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  it("is refused when the photo is not this org's ready image", async () => {
+    repo.findForOrg.mockResolvedValue(null);
+    await expect(
+      mediaAssetService.cropAsset("org-2", "u1", "a1", { rotation: 0, crop: { x: 0, y: 0, width: 10, height: 10 } }),
+    ).rejects.toMatchObject({ name: "NotFoundError" });
+  });
+
+  it("refuses a frame the picture cannot give, rather than storing a broken one", async () => {
+    repo.findForOrg.mockResolvedValue(row());
+    repo.findById.mockResolvedValue({ ...row(), objectKey: "products/o/a.webp", orgId: "org-1" });
+    store.getObject.mockResolvedValue(Buffer.from("not an image"));
+    await expect(
+      mediaAssetService.cropAsset("org-1", "u1", "a1", { rotation: 0, crop: { x: 0, y: 0, width: 10, height: 10 } }),
+    ).rejects.toThrow(/falls outside the photo/);
   });
 });

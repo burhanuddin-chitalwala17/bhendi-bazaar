@@ -4,27 +4,39 @@ import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library
 import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaUseDto } from "@server/catalog/media-library.types";
 import { VIDEO_TRANSFORM } from "@server/catalog/video";
 
-/** Every relation that can point at an asset. "Used" is `some` on any; "unused" is `none` on all. */
-const REFERENCE_RELATIONS = [
+/**
+ * Where an asset is *shown*: a gallery row, a category's hero, a shop's mark or cover, a banner,
+ * or as a video's poster (spec R8). These are its uses, and a use is what retirement is refused
+ * over — the picture would vanish from a page somebody is looking at.
+ */
+const USE_RELATIONS = [
   "productMedia",
   "categoryHeroes",
   "profileLogos",
   "profileHeroes",
   "orgBanners",
   "banners",
-  "derivatives",
-  // A photograph chosen as a video's poster (spec R8) is in use as surely as one in a gallery.
   "postersFor",
 ] as const;
-const REFERENCE_COUNTS = Object.fromEntries(REFERENCE_RELATIONS.map((relation) => [relation, true])) as Record<
-  (typeof REFERENCE_RELATIONS)[number],
-  true
->;
-const UNREFERENCED: Prisma.MediaAssetWhereInput = Object.fromEntries(
-  REFERENCE_RELATIONS.map((relation) => [relation, { none: {} }]),
+
+/**
+ * A derivative is not a use. A crop, a rendition, an enhanced copy is its own file shown on its
+ * own; nothing breaks on a screen when its source leaves the library. What it does mean is that
+ * the source's *bytes* must stay — a rendition falls back to them for pixels the crop discarded
+ * and a reframe starts from them again (trd D6a). So a source with children may be retired, and
+ * the sweep leaves its object alone until the children are gone.
+ */
+const LINEAGE_RELATIONS = ["derivatives"] as const;
+
+const REFERENCE_COUNTS = Object.fromEntries(
+  [...USE_RELATIONS, ...LINEAGE_RELATIONS].map((relation) => [relation, true]),
+) as Record<(typeof USE_RELATIONS)[number] | (typeof LINEAGE_RELATIONS)[number], true>;
+
+const UNUSED: Prisma.MediaAssetWhereInput = Object.fromEntries(
+  USE_RELATIONS.map((relation) => [relation, { none: {} }]),
 );
-const REFERENCED: Prisma.MediaAssetWhereInput = {
-  OR: REFERENCE_RELATIONS.map((relation) => ({ [relation]: { some: {} } })),
+const USED: Prisma.MediaAssetWhereInput = {
+  OR: USE_RELATIONS.map((relation) => ({ [relation]: { some: {} } })),
 };
 
 const LIBRARY_SELECT = {
@@ -74,7 +86,7 @@ function libraryWhere(orgId: string, filters: MediaLibraryFilters): Prisma.Media
     ...(filters.source ? { source: filters.source } : {}),
     ...(filters.from || filters.to ? { createdAt: { gte: filters.from, lte: filters.to } } : {}),
     ...(inProduct ? { productMedia: { some: inProduct } } : {}),
-    ...(filters.usage === "used" ? REFERENCED : filters.usage === "unused" ? UNREFERENCED : {}),
+    ...(filters.usage === "used" ? USED : filters.usage === "unused" ? UNUSED : {}),
   };
 }
 
@@ -441,7 +453,6 @@ export class MediaAssetRepository {
       ...asset.profileHeroes.map((row) => ({ kind: "storefront-hero" as const, id: row.orgId, label: "Storefront hero", slot: null })),
       ...asset.orgBanners.map((row) => ({ kind: "storefront-banner" as const, id: row.id, label: row.title ?? "Storefront banner", slot: null })),
       ...asset.banners.map((row) => ({ kind: "home-banner" as const, id: row.id, label: row.title ?? "Home banner", slot: null })),
-      ...asset.derivatives.map((row) => ({ kind: "derived" as const, id: row.id, label: `${row.source.toLowerCase()} copy`, slot: null })),
       ...asset.postersFor.map((row) => ({ kind: "video-poster" as const, id: row.id, label: "Video poster", slot: null })),
     ];
   }
@@ -466,7 +477,7 @@ export class MediaAssetRepository {
   async retireUnused(orgId: string, id: string, now: Date = new Date()): Promise<boolean> {
     const result = await prisma.mediaAsset.updateMany({
       // A failed video is retired the same way (spec R7): it is in the library, and this is how it leaves.
-      where: { id, orgId, state: { in: [MediaAssetState.READY, MediaAssetState.FAILED] }, ...UNREFERENCED },
+      where: { id, orgId, state: { in: [MediaAssetState.READY, MediaAssetState.FAILED] }, ...UNUSED },
       data: { state: MediaAssetState.RETIRED, retiredAt: now },
     });
     return result.count === 1;
@@ -475,7 +486,14 @@ export class MediaAssetRepository {
   /** Retired before the cutoff and still holding an object: candidates for deletion (R7's grace period). */
   async findStaleRetired(before: Date) {
     return await prisma.mediaAsset.findMany({
-      where: { state: MediaAssetState.RETIRED, retiredAt: { lt: before }, objectKey: { not: null } },
+      // A source with children keeps its bytes: they are what a rendition falls back to and what a
+      // reframe starts from, and the children outlive the source's place in the library (D6a).
+      where: {
+        state: MediaAssetState.RETIRED,
+        retiredAt: { lt: before },
+        objectKey: { not: null },
+        derivatives: { none: {} },
+      },
       select: { id: true, ref: true, objectKey: true },
     });
   }
