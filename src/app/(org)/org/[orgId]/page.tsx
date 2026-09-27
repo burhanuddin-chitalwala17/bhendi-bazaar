@@ -1,12 +1,27 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
+import { OnboardingCard } from "@/components/org/onboarding-card";
+import { orgOnboardingService } from "@server/catalog/org-onboarding.service";
+import type { OnboardingStatus } from "@server/catalog/org-onboarding.types";
 
 export const metadata = { robots: { index: false, follow: false } };
+
+/** Like every widget below it, the card fails alone: a status read that throws costs the card, never the page. */
+async function readOnboarding(orgId: string): Promise<OnboardingStatus | null> {
+  try {
+    return await orgOnboardingService.status(orgId);
+  } catch (error) {
+    console.error("[OrgDashboard] onboarding status failed:", error);
+    return null;
+  }
+}
 
 /**
  * The org dashboard: the widget registry rendered with an org scope. Which figures
  * appear here — and how each is narrowed to this org — is declared per widget in
  * server/analytics/widgets.ts, not decided by this page (dashboard-widgets R1–R4).
+ * Above the grid, onboarding shows the three steps and the store's readiness
+ * (org-profile spec R7).
  */
 export default async function OrgDashboard({
   params,
@@ -15,6 +30,7 @@ export default async function OrgDashboard({
 }) {
   const { orgId } = await params;
   const scope = await requireOrgMember(orgId);
+  const onboarding = await readOnboarding(scope.orgId);
 
   return (
     <div className="space-y-6">
@@ -24,6 +40,8 @@ export default async function OrgDashboard({
           An overview of your organisation
         </p>
       </div>
+
+      {onboarding && <OnboardingCard status={onboarding} orgId={scope.orgId} />}
 
       <DashboardWidgets
         ctx={{ audience: "org", orgId: scope.orgId }}

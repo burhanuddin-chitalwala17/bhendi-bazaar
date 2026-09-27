@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-175] 2026-09-27 — Onboarding shows its three steps, and the store's readiness
+
+The three onboarding screens existed but nothing put them in sequence, so a new org landed on a
+dashboard of zeros with no sense of what to do next. The org dashboard now opens with a card that
+shows the three steps — open your shop, describe it, say what you sell — with each one's done state
+and a link into the page where it is done. Beneath them sits per-channel readiness: the store's is
+computed now, from an active pickup location and a product on sale, and names what is still missing
+as a thing to do; Amazon, Flipkart and Instagram report unknown through the same seam until the
+listing rules compute them, shown as one muted line rather than a placeholder each. Once every step is
+done and the store is ready the card collapses to a single line. The rules are pure and unit-tested;
+the card fails alone, like every widget below it.
+
 ## [PR-174] 2026-09-27 — One date-range field for the library, with a calendar
 
 Two native date inputs were too many taps and never showed the range. The library's date filter is
