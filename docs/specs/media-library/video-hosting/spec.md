@@ -1,7 +1,7 @@
 # Spec — video-hosting
 
 - **Summary:** A seller uploads a short video from the phone as they would a photograph; the platform stores it, makes it playable everywhere, and treats it as an image is treated
-- **Status:** Draft — defaults (length, size, renditions) pending the owner
+- **Status:** 🔨 In progress — PR-180 (1 of 2); accepted 2026-09-27 with the defaults 90 s, 200 MB, 1080p and 720p
 - **Domain:** catalog (assets), content (renditions)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-27

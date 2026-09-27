@@ -60,6 +60,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The worker image carries ffmpeg (ADR-0039); the transcode test runs against the real
+      # binary and refuses to skip here, so the job installs it rather than the test guessing.
+      - name: Install ffmpeg for the transcode test
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
       # Advisory: 55 `no-explicit-any` remain in admin pages, hooks and the shipping provider
       # layer. The flag comes off when they do (docs/TESTING.md).
       - name: Run linter

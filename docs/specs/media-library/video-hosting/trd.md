@@ -1,6 +1,6 @@
 # TRD — video-hosting
 
-- **Status:** Draft — defaults pending the owner (see spec)
+- **Status:** 🔨 In progress — PR-180 (1 of 2); accepted 2026-09-27 with the defaults 90 s, 200 MB, 1080p and 720p
 - **Domain:** catalog (assets), content (renditions)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-27
@@ -49,4 +49,4 @@ Per [TESTING.md](../../../TESTING.md): unit — limit declarations read by presi
 
 ## Open questions
 
-- Owner to confirm the defaults: 90 seconds, 200 MB, 1080p and 720p. Instagram Reels allow 90 seconds; Amazon accepts far longer, but a product clip past ninety seconds is a different kind of content.
+None. The owner confirmed the defaults on 2026-09-27: 90 seconds (Instagram Reels' ceiling; a product clip past it is a different kind of content), 200 MB, 1080p and 720p.

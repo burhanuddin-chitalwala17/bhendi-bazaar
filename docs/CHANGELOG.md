@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-180] 2026-09-27 — Hosted video, part one: the limits and the transcoder
+
+Video-hosting trd D3, D4. The declared limits — ninety seconds, two hundred megabytes, 1080p and
+720p, a poster a second in — live in one module; the transcode module probes a clip, refuses one
+past the limit with the limit named, makes the fitting renditions as H.264 MP4 with the index up
+front, takes the poster, and runs one encode at a time. ffmpeg joins the worker image as a Debian
+package and the CI test job, and the transcode test runs the real binary against a generated clip
+rather than a stub. Nothing reaches a screen yet: the upload path, the job and the player follow.
+
+## [PR-179] 2026-09-27 — The image-enhancement spec, and video-hosting accepted
+
+Documentation only. The image-enhancement spec and TRD are drafted from the brainstorm the owner
+closed today: six tools applied one at a time, on demand only, each result a before-and-after the
+org accepts or discards; a scene painted around the org's own cut-out, never over it; the label slot
+never touched; a warning that never blocks a save but blocks a channel at the moment of use; a
+monthly allowance per org, a daily platform cap, and a per-org pause for the platform owner; one
+provider seam with a bake-off before a provider is chosen; Photoroom out of scope. The video-hosting
+defaults are accepted.
+
 ## [PR-178] 2026-09-27 — Rotate and crop at upload, kept as a derived image [CONTRACT]
 
 Media-library R8a and A2a, trd D6a. Picking a photo for a slot or as an extra now opens a sheet

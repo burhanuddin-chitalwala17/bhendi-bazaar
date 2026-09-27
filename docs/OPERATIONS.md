@@ -34,6 +34,7 @@ npm run dev                 # http://localhost:3000
 | `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
 | `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — the bucket's custom domain in production, its `r2.dev` URL locally. **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
+| `FFMPEG_PATH` / `FFPROBE_PATH` | — | Worker only, optional. Where the transcoder's binaries are when they are not on `PATH` ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)); the image installs ffmpeg as an OS package, so neither is set there |
 | `R2_BUCKET` | ✅ | Bucket name |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | ✅ | R2 API token with read+write on that bucket |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
@@ -290,6 +291,7 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
   new Prisma migration; the library's own runtime migration is switched off and must stay off.
 - **Every timer is set in `server/shared/jobs/jobs.config.ts`**, and `tests/unit/jobs-config.test.ts`
   fails if one is shortened or left to a default: the database bills every poll.
+- **ffmpeg is in the image** for hosted video ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)): a Debian package, pinned by the base image's release. Transcodes run one at a time — the free machine has the CPU for one — and `tests/unit/video-transcode.test.ts` runs the real binary, so a laptop without ffmpeg (`brew install ffmpeg`) skips that one suite while CI never does.
 - **Schedules are in-process timers that enqueue a job** (`server/shared/jobs/jobs.schedule.ts`),
   never pg-boss's cron: the floor is one tick an hour and the count is budgeted in the idle estimate.
   The worker logs them at start. The first is `media.sweep`, every six hours: uploads that never
