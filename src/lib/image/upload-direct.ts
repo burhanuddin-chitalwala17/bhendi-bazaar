@@ -1,10 +1,19 @@
 import { readApiError } from "@/lib/api-error";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
+import type { DerivedFromInput } from "@/lib/validation/schemas/upload.schema";
 import { sha256HexOf } from "@/lib/image/hash";
 
 export interface UploadDirectOptions {
-  /** Called instead of uploading when the org already holds these bytes; the existing URL is returned. */
-  onDuplicate?: (ref: string) => void;
+  /** These bytes are a crop of an asset the caller owns; the record is registered as derived from it (trd D6a). */
+  derivedFrom?: DerivedFromInput;
+}
+
+export interface UploadDirectResult {
+  url: string;
+  /** The asset registered for these bytes; null where the route registers none (review photographs). */
+  assetId: string | null;
+  /** The org already held these bytes: nothing was uploaded and `url` is the existing asset's (D11). */
+  reused: boolean;
 }
 
 /** The browser can usually read a picture's size itself; when it cannot, the server reads the object. */
@@ -33,20 +42,25 @@ export async function uploadDirect(
   file: File,
   endpoints: UploadEndpoints,
   options: UploadDirectOptions = {},
-): Promise<string> {
+): Promise<UploadDirectResult> {
   const contentHash = endpoints.confirm ? await sha256HexOf(file) : null;
   const permission = await fetch(endpoints.token, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ pathname, contentType: file.type, size: file.size, ...(contentHash ? { contentHash } : {}) }),
+    body: JSON.stringify({
+      pathname,
+      contentType: file.type,
+      size: file.size,
+      ...(contentHash ? { contentHash } : {}),
+      ...(options.derivedFrom ? { derivedFrom: options.derivedFrom } : {}),
+    }),
   });
   if (!permission.ok) throw await readApiError(permission);
   const granted = (await permission.json()) as
     | { uploadUrl: string; publicUrl: string; assetId?: string; duplicate?: undefined }
-    | { duplicate: { ref: string } };
+    | { duplicate: { assetId: string; ref: string } };
   if (granted.duplicate) {
-    options.onDuplicate?.(granted.duplicate.ref);
-    return granted.duplicate.ref;
+    return { url: granted.duplicate.ref, assetId: granted.duplicate.assetId, reused: true };
   }
   const { uploadUrl, publicUrl, assetId } = granted;
 
@@ -83,5 +97,5 @@ export async function uploadDirect(
     });
     if (!confirmed.ok) throw await readApiError(confirmed);
   }
-  return publicUrl;
+  return { url: publicUrl, assetId: assetId ?? null, reused: false };
 }

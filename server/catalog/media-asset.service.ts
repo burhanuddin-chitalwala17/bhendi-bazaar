@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
-import { MediaAssetState } from "@prisma/client";
+import { MediaAssetSource, MediaAssetState } from "@prisma/client";
 import { deleteObject, getObject, headObject, presignUpload, publicUrlFor } from "@server/catalog/object-store";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import {
@@ -11,6 +11,7 @@ import {
   type MediaAssetDto,
 } from "@server/catalog/media-library.types";
 import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
+import type { DerivedFromInput } from "@/lib/validation/schemas/upload.schema";
 import type { Pagination } from "@server/shared/pagination";
 
 /** Older than this, a pending row is an upload that never confirmed (trd D2). */
@@ -28,6 +29,8 @@ export interface BeginUploadInput {
   size: number;
   /** SHA-256 hex of the bytes about to be sent, when the browser could compute it. */
   contentHash?: string | null;
+  /** These bytes are a crop of an asset the caller owns; the record is DERIVED from it (trd D6a). */
+  derivedFrom?: DerivedFromInput | null;
 }
 
 /** The token route's answer: permission to upload, or the asset that already holds these bytes. */
@@ -54,6 +57,15 @@ export const mediaAssetService = {
    * when this org already holds these exact bytes, that asset instead of a second copy (D11).
    */
   async beginUpload(input: BeginUploadInput): Promise<BeginUploadResult> {
+    // A derivation names its source before anything else (trd D6a): it must be this owner's and
+    // ready, or there is nothing to derive from. Another org's image is "not found", not a hint.
+    const source = input.derivedFrom
+      ? await mediaAssetRepository.findReadySource(input.orgId, input.derivedFrom.assetId)
+      : null;
+    if (input.derivedFrom && !source) throw new NotFoundError("Source image not found");
+
+    // D11 applies to the bytes being sent, so a crop is matched against earlier crops, never its
+    // source — the bytes differ.
     const contentHash = input.contentHash ?? null;
     if (contentHash) {
       const existing = await mediaAssetRepository.findReadyByHash(input.orgId, contentHash);
@@ -70,6 +82,9 @@ export const mediaAssetService = {
       mimeType: input.contentType,
       bytes: input.size,
       contentHash,
+      ...(source && input.derivedFrom
+        ? { source: MediaAssetSource.DERIVED, derivedFromId: source.id, transform: input.derivedFrom.transform }
+        : {}),
     });
     return { ...signed, assetId: asset.id };
   },

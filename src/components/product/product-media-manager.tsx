@@ -11,6 +11,11 @@
  * (ADR-0026). Every uploaded photograph is also judged on a small canvas — dark, blurred,
  * small — and the verdict is a banner, never a refusal (spec R8, trd D6).
  *
+ * A picked photo is framed before it is spent (spec R8a, trd D6a): the crop sheet offers a turn
+ * and a rectangle, or the photo as it is. A crop is two uploads — the untouched source, then the
+ * crop registered as derived from it — and the crop's URL is what the row carries. Library
+ * picks and videos never pass through the sheet.
+ *
  * Why video is a link and not an upload: [ADR-0017](../../docs/adr/0017-video-is-embedded-not-hosted.md).
  * Why the cover is chosen rather than derived, and why nothing here pre-selects one:
  * docs/specs/product-video/trd.md D17/D17a.
@@ -36,6 +41,9 @@ import {
 } from "@server/catalog/media";
 import { buildImagePath } from "@server/catalog/image-paths";
 import { uploadBatch } from "@/lib/image/upload-batch";
+import { downscaleImage } from "@/lib/image/downscale";
+import { renderCrop } from "@/lib/image/render-crop";
+import type { CropTransform } from "@/lib/image/crop-transform";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { unknownSlots, type ShotList, type ShotRole } from "@server/catalog/shot-list";
 import { judgeCapture, warningsForRole, type CaptureWarning } from "@server/catalog/capture-checks";
@@ -50,6 +58,7 @@ import {
   splitGallery,
 } from "@/components/product/gallery-order";
 import { ExtraRow, SlotRow } from "@/components/product/gallery-rows";
+import { CropSheet } from "@/components/product/crop-sheet";
 
 interface ProductMediaManagerProps {
   value: ProductMediaInput[];
@@ -67,6 +76,15 @@ interface ProductMediaManagerProps {
   shotList: ShotList;
   /** The owning org's id, which is what the library picker is scoped by. Without it there is no library to pick from. */
   orgId?: string;
+}
+
+/** A photo waiting in the crop sheet: what was picked, what will be stored, and where it goes. */
+interface QueuedPhoto {
+  id: string;
+  picked: File;
+  /** Reduced already, so the crop rectangle is measured on the picture that becomes the source (trd D6a). */
+  ready: File;
+  slot: string | null;
 }
 
 const CAPACITY_NOTICE = `A product can have at most ${MAX_MEDIA_PER_PRODUCT} gallery items`;
@@ -90,6 +108,9 @@ export function ProductMediaManager({
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   /** The slot a library pick lands in; null when the picker was opened from the extras. */
   const [pickerSlot, setPickerSlot] = useState<string | null>(null);
+  /** Photos picked and not yet decided on; the sheet shows the first (spec R8a). */
+  const [queue, setQueue] = useState<QueuedPhoto[]>([]);
+  const queuedIds = useRef(0);
   // Every uploaded photograph's full judgement, keyed by ref; narrowed to its slot's role at
   // render, so a photo moved from a lifestyle slot to a product one shows what it now owes
   // without a second look at the pixels. A dismissal is also by ref, and is for good.
@@ -102,6 +123,7 @@ export function ProductMediaManager({
   const atCapacity = media.length >= MAX_MEDIA_PER_PRODUCT;
   const photographCount = media.filter((item) => item.kind === "IMAGE").length;
   const { filled, extras } = splitGallery(media, shotList);
+  const current = queue[0] ?? null;
 
   const roleOf = (slot: string | null | undefined): ShotRole | null =>
     shotList.find((candidate) => candidate.key === slot)?.role ?? null;
@@ -140,16 +162,46 @@ export function ProductMediaManager({
     );
   };
 
-  const upload = async (files: File[], targetSlot: string | null) => {
-    if (files.length === 0) return;
-    if (media.length + files.length > MAX_MEDIA_PER_PRODUCT) {
+  const pathFor = (file: File) => buildImagePath("products", file.name, identifier, orgCode);
+
+  const canAdd = (count: number): boolean => {
+    if (media.length + count > MAX_MEDIA_PER_PRODUCT) {
       setNotice(CAPACITY_NOTICE);
-      return;
+      return false;
     }
     if (!orgCode) {
       setNotice("Choose the selling organisation before uploading photographs");
-      return;
+      return false;
     }
+    return true;
+  };
+
+  /**
+   * Stored URLs into the gallery. `previews` are the pictures the rows show and `judged` the
+   * ones the checks read, both index-aligned with `urls`: for a plain upload both are the file
+   * picked, for a crop the row shows the crop while the checks still read the original (D6).
+   */
+  const place = (urls: string[], previews: File[], judged: File[], targetSlot: string | null) => {
+    remember(previews, urls);
+    // A repeat upload is answered with the org's existing image (D11), which may already sit
+    // in this gallery; one item per ref keeps the slot and warning bookkeeping honest.
+    const fresh = urls.filter(
+      (url, index) => urls.indexOf(url) === index && !media.some((item) => item.ref === url),
+    );
+    // Deliberately does not designate a cover, even for the very first upload: a
+    // default that stands in for a missing choice is what makes its absence
+    // invisible (D17a). The org taps "Cover".
+    let next: ProductMediaInput[] = [
+      ...media,
+      ...fresh.map((url) => ({ kind: "IMAGE" as const, ref: url, isThumbnail: false, slot: null })),
+    ];
+    if (targetSlot && fresh[0]) next = assignSlotTo(next, fresh[0], targetSlot);
+    commit(next);
+    void judge(judged, urls);
+  };
+
+  const upload = async (files: File[], targetSlot: string | null, judged: File[] = files) => {
+    if (files.length === 0 || !canAdd(files.length)) return;
 
     setIsUploading(true);
     setUploadingSlot(targetSlot);
@@ -158,36 +210,20 @@ export function ProductMediaManager({
     try {
       const { urls: uploadedUrls, failed, firstError, reused } = await uploadBatch(files, {
         endpoints,
-        pathFor: (file) => buildImagePath("products", file.name, identifier, orgCode),
+        pathFor,
         onProgress: (done, total) => setProgress({ done, total }),
       });
 
       // Index-aligned with the originals, which is what useLocalPreviews pairs on — and
       // the original is the right preview: it is the picture the org member picked.
-      const localFiles: File[] = [];
+      const landed: File[] = [];
       const urls: string[] = [];
       uploadedUrls.forEach((url, index) => {
         if (!url) return;
-        localFiles.push(files[index]);
+        landed.push(judged[index]);
         urls.push(url);
       });
-      remember(localFiles, urls);
-
-      // A repeat upload is answered with the org's existing image (D11), which may already sit
-      // in this gallery; one item per ref keeps the slot and warning bookkeeping honest.
-      const fresh = urls.filter(
-        (url, index) => urls.indexOf(url) === index && !media.some((item) => item.ref === url),
-      );
-      // Deliberately does not designate a cover, even for the very first upload: a
-      // default that stands in for a missing choice is what makes its absence
-      // invisible (D17a). The org taps "Cover".
-      let next: ProductMediaInput[] = [
-        ...media,
-        ...fresh.map((url) => ({ kind: "IMAGE" as const, ref: url, isThumbnail: false, slot: null })),
-      ];
-      if (targetSlot && fresh[0]) next = assignSlotTo(next, fresh[0], targetSlot);
-      commit(next);
-      void judge(localFiles, urls);
+      place(urls, landed, landed, targetSlot);
 
       if (failed.length > 0) {
         setNotice(
@@ -208,12 +244,91 @@ export function ProductMediaManager({
       setIsUploading(false);
       setUploadingSlot(null);
       setProgress({ done: 0, total: 0 });
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
+  /**
+   * A crop is two objects (trd D6a): the untouched picture goes first and becomes the source;
+   * the crop follows, registered as derived from it, and is what fills the row. A later surface
+   * that needs pixels the crop discarded reaches back to the source; re-cropping costs nothing.
+   */
+  const uploadCropped = async ({ picked, ready, slot }: QueuedPhoto, transform: CropTransform) => {
+    if (!canAdd(1)) return;
+
+    setIsUploading(true);
+    setUploadingSlot(slot);
+    setNotice(null);
+    setProgress({ done: 0, total: 2 });
+    try {
+      const source = await uploadBatch([ready], { endpoints, pathFor });
+      const sourceUrl = source.urls[0];
+      if (!sourceUrl) throw new Error(source.firstError ?? "Upload failed");
+      setProgress({ done: 1, total: 2 });
+
+      const cropFile = await renderCrop(ready, transform);
+      const sourceAssetId = source.assetIds[0];
+      const derived = await uploadBatch([cropFile], {
+        endpoints,
+        pathFor,
+        derivedFrom: sourceAssetId ? { assetId: sourceAssetId, transform } : undefined,
+      });
+      const cropUrl = derived.urls[0];
+      if (!cropUrl) throw new Error(derived.firstError ?? "Upload failed");
+
+      place([cropUrl], [cropFile], [picked], slot);
+      if (derived.reused) setNotice("That crop was already in your library and was added from there.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to upload images");
+    } finally {
+      setIsUploading(false);
+      setUploadingSlot(null);
+      setProgress({ done: 0, total: 0 });
+    }
+  };
+
+  /**
+   * A pick opens the crop sheet rather than uploading (spec R8a). Each photo is reduced first,
+   * one at a time, so the rectangle is measured on the picture that will be stored as the source.
+   */
+  const queueForCrop = async (files: File[], targetSlot: string | null) => {
+    if (files.length === 0 || !canAdd(files.length)) return;
+    setNotice(null);
+    const queued: QueuedPhoto[] = [];
+    for (const picked of files) {
+      queuedIds.current += 1;
+      queued.push({ id: String(queuedIds.current), picked, ready: await downscaleImage(picked), slot: targetSlot });
+    }
+    setQueue((current) => [...current, ...queued]);
+  };
+
+  const dequeue = (ids: string[]) => setQueue((current) => current.filter((item) => !ids.includes(item.id)));
+
+  const acceptAsIs = async () => {
+    if (!current) return;
+    await upload([current.ready], current.slot, [current.picked]);
+    dequeue([current.id]);
+  };
+
+  const acceptCrop = async (transform: CropTransform) => {
+    if (!current) return;
+    await uploadCropped(current, transform);
+    dequeue([current.id]);
+  };
+
+  // Only ever offered from a multi-file pick, which the extras input alone allows: every queued
+  // photo is an extra.
+  const acceptAllAsIs = async () => {
+    const rest = queue;
+    if (rest.length === 0) return;
+    await upload(rest.map((item) => item.ready), null, rest.map((item) => item.picked));
+    dequeue(rest.map((item) => item.id));
+  };
+
   const handleExtrasFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    void upload(Array.from(event.target.files || []), null);
+    const files = Array.from(event.target.files || []);
+    // Cleared at once so picking the same file again still fires a change.
+    event.target.value = "";
+    void queueForCrop(files, null);
   };
 
   const addVideo = () => {
@@ -328,7 +443,7 @@ export function ProductMediaManager({
               uploading={isUploading && uploadingSlot === slot.key}
               disabled={isUploading || atCapacity}
               canPickFromLibrary={!!orgId}
-              onFiles={(files) => void upload(files, slot.key)}
+              onFiles={(files) => void queueForCrop(files, slot.key)}
               onPickFromLibrary={() => openPicker(slot.key)}
               onDescribe={(description) => item && describe(item.ref, description)}
               onCover={() => item && setCover(item.ref)}
@@ -446,6 +561,16 @@ export function ProductMediaManager({
           onUnpick={unpickFromLibrary}
         />
       )}
+
+      <CropSheet
+        photo={current ? { id: current.id, file: current.ready } : null}
+        remaining={Math.max(0, queue.length - 1)}
+        busy={isUploading}
+        onUseAsIs={() => void acceptAsIs()}
+        onUseCrop={(transform) => void acceptCrop(transform)}
+        onUseAllAsIs={() => void acceptAllAsIs()}
+        onCancel={() => setQueue([])}
+      />
 
       <p className="text-xs text-muted-foreground">
         {photographCount === 0

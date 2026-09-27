@@ -10,6 +10,19 @@
 
 ## Entries
 
+## [PR-178] 2026-09-27 — Rotate and crop at upload, kept as a derived image [CONTRACT]
+
+Media-library R8a and A2a, trd D6a. Picking a photo for a slot or as an extra now opens a sheet
+before anything uploads: the picture in a touch crop widget with 1:1, 4:5, 3:4 and free presets,
+quarter turns left and right, pinch or scroll zoom, and no colour control, since a filter
+misrepresents a product on a marketplace. "Use as is" uploads the untouched photo exactly as
+before. "Use this crop" uploads the untouched photo as the source and the crop as a second object,
+registered as derived from it with the rotation and rectangle recorded, and the crop's URL is what
+the gallery row carries; a multi-file pick is framed one photo at a time, with "Use all as is" to
+skip the rest. The upload token request may carry `derivedFrom`, accepted only for a ready source
+the caller owns, and `uploadDirect` now returns the asset id beside the URL. `react-easy-crop` is
+the one package added, for the gesture handling a hand-rolled crop gets wrong on a phone.
+
 ## [PR-177] 2026-09-27 — The gallery is a list of named slots, and a photo is checked before it is kept
 
 Media-library R4 and R8, trd D4 and D6. The product editor's gallery was a strip of slot badges

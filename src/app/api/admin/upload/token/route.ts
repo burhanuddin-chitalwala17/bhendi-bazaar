@@ -19,7 +19,7 @@ const PREFIX = "categories/";
 export async function POST(request: NextRequest) {
   try {
     const uploaderId = await requirePlatformAdminId();
-    const { pathname, contentType, size, contentHash } = presignUploadSchema.parse(
+    const { pathname, contentType, size, contentHash, derivedFrom } = presignUploadSchema.parse(
       await request.json(),
     );
     // The schema rejected traversal segments, so a prefix test is containment here.
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
     // Platform-owned: category art has no org. Registered before signing (media-library R1).
     return NextResponse.json(
-      await mediaAssetService.beginUpload({ orgId: null, uploaderId, pathname, contentType, size, contentHash }),
+      await mediaAssetService.beginUpload({ orgId: null, uploaderId, pathname, contentType, size, contentHash, derivedFrom }),
     );
   } catch (error) {
     return toErrorResponse(error, "Could not authorise the upload");

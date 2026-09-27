@@ -67,6 +67,10 @@ export interface PendingAssetInput {
   mimeType: string;
   bytes: number;
   contentHash?: string | null;
+  /** UPLOAD unless these bytes were made from another asset, which the next two then name (trd D6a). */
+  source?: MediaAssetSource;
+  derivedFromId?: string | null;
+  transform?: Prisma.InputJsonValue | null;
 }
 
 /** A ready record: what is known about bytes the store already holds, or a URL we do not host. */
@@ -97,14 +101,30 @@ export interface ConfirmedDimensions {
  */
 export class MediaAssetRepository {
   async createPending(input: PendingAssetInput, db: MediaDb = prisma) {
+    const { source = MediaAssetSource.UPLOAD, derivedFromId = null, transform = null, ...asset } = input;
     return await db.mediaAsset.create({
       data: {
         kind: MediaAssetKind.IMAGE,
-        source: MediaAssetSource.UPLOAD,
+        source,
         state: MediaAssetState.PENDING,
-        ...input,
+        derivedFromId,
+        // A JSON column takes Prisma's own null, not JavaScript's; leaving it out stores NULL.
+        ...(transform === null ? {} : { transform }),
+        ...asset,
       },
       select: { id: true, ref: true },
+    });
+  }
+
+  /**
+   * An image of this owner's that a crop may be made from (trd D6a). Ready, not merely present:
+   * a pending source can still be swept, and a derivative pointing at it would block the sweep.
+   * A null org is the platform's own collection.
+   */
+  async findReadySource(orgId: string | null, id: string, db: MediaDb = prisma) {
+    return await db.mediaAsset.findFirst({
+      where: { id, orgId, kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY },
+      select: { id: true, width: true, height: true },
     });
   }
 

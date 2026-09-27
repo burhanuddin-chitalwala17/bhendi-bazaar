@@ -76,7 +76,7 @@ export function BulkCategoryWizard() {
         if (!file) throw new Error(`Missing file "${row.image}"`);
         // As in BulkProductWizard: a browser-direct upload is past the server's reach.
         const hero = await downscaleImage(file);
-        const url = await uploadDirect(
+        const { url } = await uploadDirect(
           `categories/bulk/${storedPathFor(sanitizePath(path), hero)}`,
           hero,
           ADMIN_UPLOAD_ENDPOINTS,

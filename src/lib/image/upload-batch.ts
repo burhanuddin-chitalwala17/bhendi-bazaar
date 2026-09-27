@@ -2,6 +2,7 @@ import { downscaleImage } from "@/lib/image/downscale";
 import { imageFileProblem } from "@server/catalog/image-paths";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
+import type { DerivedFromInput } from "@/lib/validation/schemas/upload.schema";
 
 /** Bounded, not a stampede: a phone's radio and the presign route both prefer it. */
 export const UPLOAD_CONCURRENCY = 3;
@@ -12,11 +13,15 @@ export interface UploadBatchOptions {
   pathFor: (file: File) => string;
   onProgress?: (done: number, total: number) => void;
   concurrency?: number;
+  /** Every file here is a crop of that asset, registered as derived from it (media-library trd D6a). */
+  derivedFrom?: DerivedFromInput;
 }
 
 export interface UploadBatchResult {
   /** Index-aligned with the files given: the stored URL, or undefined where that file failed. */
   urls: (string | undefined)[];
+  /** Index-aligned with `urls`: the asset behind each, or null where it failed or the route registers none. */
+  assetIds: (string | null)[];
   /** The names of the files that did not land. */
   failed: string[];
   firstError: string | null;
@@ -43,6 +48,7 @@ export async function uploadBatch(files: File[], options: UploadBatchOptions): P
   }
 
   const urls: (string | undefined)[] = new Array(prepared.length);
+  const assetIds: (string | null)[] = new Array<string | null>(prepared.length).fill(null);
   const failed: string[] = [];
   let firstError: string | null = null;
   let reused = 0;
@@ -51,9 +57,12 @@ export async function uploadBatch(files: File[], options: UploadBatchOptions): P
   const worker = async () => {
     for (let job = queue.shift(); job; job = queue.shift()) {
       try {
-        urls[job.index] = await uploadDirect(options.pathFor(job.file), job.file, options.endpoints, {
-          onDuplicate: () => (reused += 1),
+        const result = await uploadDirect(options.pathFor(job.file), job.file, options.endpoints, {
+          derivedFrom: options.derivedFrom,
         });
+        urls[job.index] = result.url;
+        assetIds[job.index] = result.assetId;
+        if (result.reused) reused += 1;
       } catch (error) {
         failed.push(files[job.index].name);
         firstError ??= error instanceof Error ? error.message : "Upload failed";
@@ -63,5 +72,5 @@ export async function uploadBatch(files: File[], options: UploadBatchOptions): P
     }
   };
   await Promise.all(Array.from({ length: Math.min(concurrency, prepared.length) }, worker));
-  return { urls, failed, firstError, reused };
+  return { urls, assetIds, failed, firstError, reused };
 }
