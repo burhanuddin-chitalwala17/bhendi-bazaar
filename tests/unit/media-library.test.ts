@@ -215,6 +215,13 @@ describe("sweepRetiredObjects", () => {
   });
 });
 
+describe("what the sheet may offer", () => {
+  it("says a poster was chosen only when a photograph stands in — there is nothing else to undo", () => {
+    expect(toMediaAssetDto(row()).posterChosen).toBe(false);
+    expect(toMediaAssetDto(row({ posterAsset: { ref: "https://img.test/chosen.webp" } })).posterChosen).toBe(true);
+  });
+});
+
 describe("a crop of something already stored", () => {
   beforeEach(() => vi.resetAllMocks());
 

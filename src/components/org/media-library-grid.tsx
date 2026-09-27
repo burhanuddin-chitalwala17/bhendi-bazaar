@@ -248,10 +248,14 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                     <ImageIcon className="mr-2 size-4" />
                     Change poster
                   </Button>
-                  <Button type="button" variant="ghost" onClick={() => void savePoster(open, null)} disabled={isSavingPoster}>
-                    <RotateCcw className="mr-2 size-4" />
-                    Use the video&apos;s own frame
-                  </Button>
+                  {/* Only where there is a choice to undo: with no photograph standing in, this
+                      would put back the frame that is already showing. */}
+                  {open.posterChosen && (
+                    <Button type="button" variant="ghost" onClick={() => void savePoster(open, null)} disabled={isSavingPoster}>
+                      <RotateCcw className="mr-2 size-4" />
+                      Use the video&apos;s own frame
+                    </Button>
+                  )}
                   <MediaLibraryPicker
                     orgId={orgId}
                     open={isPosterPickerOpen}
@@ -327,9 +331,11 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 )}
               </div>
 
-              {/* Lineage, not a use (trd D6a): nothing on a screen breaks when this one leaves,
-                  but its file is kept while a picture made from it exists. */}
-              {open.derivedCount > 0 && (
+              {/* Lineage, not a use (trd D6a): nothing on a screen breaks when this one leaves, but
+                  its file is kept while a picture made from it exists. A video's own derivatives are
+                  its playable copies and its poster — machinery the library hides — so saying a
+                  number here would expose the plumbing and read as something the shop had made. */}
+              {open.kind !== "VIDEO" && open.derivedCount > 0 && (
                 <p className="text-sm text-muted-foreground">
                   {open.derivedCount} picture{open.derivedCount === 1 ? " was" : "s were"} made from this one.
                   {" "}It stays in storage for them even after it leaves the library.

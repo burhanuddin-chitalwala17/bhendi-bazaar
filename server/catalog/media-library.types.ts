@@ -30,6 +30,8 @@ export interface MediaAssetDto {
   retiredAt: string | null;
   /** A hosted video's poster — the photograph the org member chose, else the worker's frame (video-hosting D7, R8); null for anything else. */
   poster: string | null;
+  /** Whether that poster is a photograph somebody chose. Only then is there a choice to undo. */
+  posterChosen: boolean;
   durationMs: number | null;
   /** A hosted video's playable files, largest first (video-hosting D5); empty until the worker is done, and always for anything else. */
   renditions: ProductMediaRendition[];
@@ -117,6 +119,7 @@ export function toMediaAssetDto(row: MediaAssetRow): MediaAssetDto {
     createdAt: row.createdAt.toISOString(),
     retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,
     poster,
+    posterChosen: row.posterAsset !== null,
     durationMs: row.durationMs,
     renditions,
     failureReason: row.failureReason,

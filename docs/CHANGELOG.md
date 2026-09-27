@@ -10,6 +10,17 @@
 
 ## Entries
 
+## [PR-196] 2026-09-28 — Two lines in the library sheet that should not have been there
+
+"Use the video's own frame" was offered on every video, including the ones showing exactly that
+frame, where pressing it did nothing. It appears only where a photograph is standing in and there
+is a choice to undo, which the asset now says.
+
+"N pictures were made from this one" is true of a photograph, whose derivatives are the crops and
+improvements somebody made deliberately. A video's derivatives are its playable copies and its
+poster — machinery the library already hides from the grid — so the line said the plumbing out loud
+and read as though the shop had made something. A video does not carry it.
+
 ## [PR-195] 2026-09-28 — A run counts when it runs, not when it is kept
 
 A discarded improvement handed its slot back. By the time a proposal is on the screen the service
