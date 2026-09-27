@@ -1,9 +1,10 @@
 import sharp from "sharp";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
-import { MediaAssetKind, MediaAssetSource, MediaAssetState } from "@prisma/client";
+import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 import { enqueue } from "@server/shared/jobs";
-import { deleteObject, getObject, headObject, presignUpload, publicUrlFor } from "@server/catalog/object-store";
+import { deleteObject, getObject, headObject, presignUpload, publicUrlFor, putObject } from "@server/catalog/object-store";
+import { sha256Hex } from "@server/shared/hash";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import { isVideoContentType } from "@server/catalog/video";
 import { videoTranscodeSpec } from "@server/catalog/video.job";
@@ -276,6 +277,88 @@ export const mediaAssetService = {
       deleted += 1;
     }
     return { deleted, kept: stale.length - deleted };
+  },
+
+  /**
+   * A ready photograph of this org's that another domain may work from — by its id, or by the URL
+   * its gallery row carries (image-enhancement trd D1). Another org's, or one not ready, is null
+   * rather than a hint that it exists.
+   */
+  async findReadyImage(orgId: string, source: { assetId?: string | null; ref?: string | null }) {
+    return await mediaAssetRepository.findReadyImage(orgId, source);
+  },
+
+  /** The stored bytes of one photograph, for a worker deriving from it — never for serving (ADR-0026). */
+  async readImageBytes(assetId: string): Promise<{ bytes: Buffer; mimeType: string | null }> {
+    const asset = await mediaAssetRepository.findById(assetId);
+    if (!asset || asset.kind !== MediaAssetKind.IMAGE || asset.state !== MediaAssetState.READY || !asset.objectKey) {
+      throw new NotFoundError("Photo not found");
+    }
+    return { bytes: await getObject(asset.objectKey), mimeType: asset.mimeType };
+  },
+
+  /**
+   * Bytes nobody owns yet — a proposal awaiting a decision — at a key the caller names, with no
+   * record: the record comes only if the proposal is kept (image-enhancement trd D1). Returns the
+   * public URL, which is how a compare view shows it.
+   */
+  async putLooseObject(key: string, bytes: Buffer, contentType: string): Promise<string> {
+    return await putObject(key, bytes, contentType);
+  },
+
+  async deleteLooseObject(key: string): Promise<void> {
+    await deleteObject(publicUrlFor(key));
+  },
+
+  /** Where the browser fetches a stored key from; the one spelling of that outside this domain. */
+  publicUrlOf(key: string): string {
+    return publicUrlFor(key);
+  },
+
+  /**
+   * Adopt bytes made from one of the org's photographs (image-enhancement trd D1): the object at
+   * `fromKey` is copied beside its source under `fileSuffix`, measured and hashed, and recorded as
+   * a READY DERIVED image carrying the transform that made it. The source is never altered
+   * (media-library R3). The same bytes already held by this org are answered with that asset (D11),
+   * which is also what makes a repeated acceptance harmless.
+   */
+  async registerDerivedObject(input: {
+    orgId: string;
+    uploaderId: string | null;
+    sourceAssetId: string;
+    fromKey: string;
+    /** `<tool>-<id>.webp` — appended to the source's path, minus its extension. */
+    fileSuffix: string;
+    contentType: string;
+    transform: Prisma.InputJsonValue;
+  }): Promise<{ id: string; ref: string }> {
+    const source = await mediaAssetRepository.findById(input.sourceAssetId);
+    if (!source || source.orgId !== input.orgId || source.kind !== MediaAssetKind.IMAGE || !source.objectKey) {
+      throw new NotFoundError("Source image not found");
+    }
+    const bytes = await getObject(input.fromKey);
+    const contentHash = sha256Hex(bytes);
+    const existing = await mediaAssetRepository.findReadyByHash(input.orgId, contentHash);
+    if (existing) return { id: existing.id, ref: existing.ref };
+
+    const meta = await sharp(bytes).metadata();
+    if (!meta.width || !meta.height) throw new DomainError("Could not read the image's dimensions");
+    const pathname = `${source.objectKey.replace(/\.[^./]+$/, "")}-${input.fileSuffix}`;
+    const ref = await putObject(pathname, bytes, input.contentType);
+    return await mediaAssetRepository.createReady({
+      orgId: input.orgId,
+      uploaderId: input.uploaderId,
+      ref,
+      objectKey: pathname,
+      mimeType: input.contentType,
+      bytes: bytes.byteLength,
+      width: meta.width,
+      height: meta.height,
+      contentHash,
+      source: MediaAssetSource.DERIVED,
+      derivedFromId: source.id,
+      transform: input.transform,
+    });
   },
 
   /** Both sweeps, as the worker runs them (media.jobs.ts). */

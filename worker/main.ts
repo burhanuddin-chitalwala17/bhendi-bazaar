@@ -28,6 +28,7 @@ import { registeredSchedules, startSchedules } from "@server/shared/jobs/jobs.sc
 import "@server/shared/jobs/ping.job";
 import "@server/catalog/media.jobs";
 import "@server/catalog/video.jobs";
+import "@server/content/enhancement.jobs";
 
 const VERSION = process.env.WORKER_VERSION ?? "dev";
 

@@ -79,12 +79,15 @@ model MediaAsset {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  productMedia   ProductMedia[]
-  categoryHeroes Category[]     @relation("CategoryHero")
-  profileLogos   OrgProfile[]   @relation("ProfileLogo")
-  profileHeroes  OrgProfile[]   @relation("ProfileHero")
-  orgBanners     OrgBanner[]    @relation("OrgBannerImage")
-  banners        Banner[]       @relation("BannerImage")
+  productMedia     ProductMedia[]
+  categoryHeroes   Category[]     @relation("CategoryHero")
+  profileLogos     OrgProfile[]   @relation("ProfileLogo")
+  profileHeroes    OrgProfile[]   @relation("ProfileHero")
+  orgBanners       OrgBanner[]    @relation("OrgBannerImage")
+  banners          Banner[]       @relation("BannerImage")
+  /// The enhancements asked of this photograph, and the one this photograph was accepted from (image-enhancement trd D1).
+  enhancementsFrom Enhancement[]  @relation("EnhancementSource")
+  enhancementOf    Enhancement[]  @relation("EnhancementResult")
 
   @@index([orgId, state])
   @@index([orgId, contentHash])
@@ -114,6 +117,74 @@ enum MediaAssetState {
   /// A video no decoder read or that broke a limit; `failureReason` says which (spec R7).
   FAILED
   RETIRED
+}
+
+/// One requested improvement of one photograph (image-enhancement trd D1): the ledger row the
+/// worker acts on and the quota counts. The proposal is an object under `proposals/`, never an
+/// asset, until it is accepted — then `resultAssetId` names the DERIVED image made from it. Cost is
+/// integer paise (Invariant 3), recorded per run (spec R9). Money-bearing, so nothing cascades.
+model Enhancement {
+  id            String           @id @default(cuid())
+  orgId         String
+  org           Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  requesterId   String?
+  requester     User?            @relation(fields: [requesterId], references: [id], onDelete: SetNull)
+  sourceAssetId String
+  sourceAsset   MediaAsset       @relation("EnhancementSource", fields: [sourceAssetId], references: [id], onDelete: Restrict)
+  tool          EnhancementTool
+  /// A scene's setting, or any tool's named variant; null for a tool with none.
+  preset        String?
+  /// Which service performed the run — the platform's choice, recorded so a bake-off can be read back (spec R8).
+  provider      String
+  state         EnhancementState @default(REQUESTED)
+  /// The gallery slot the request came from, for the record; the label slot is refused before a row exists (spec R5).
+  slot          String?
+  /// Where the proposal sits in the store while nobody has decided on it (trd D1).
+  proposalKey   String?
+  resultAssetId String?
+  resultAsset   MediaAsset?      @relation("EnhancementResult", fields: [resultAssetId], references: [id], onDelete: SetNull)
+  costPaise     Int              @default(0)
+  /// Why a run failed, in the org member's words (spec R10).
+  error         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  proposedAt    DateTime?
+  decidedAt     DateTime?
+
+  @@index([orgId, createdAt])
+  @@index([orgId, state])
+  @@index([sourceAssetId])
+}
+
+/// How much enhancement one org may do, and whether it may do any (image-enhancement trd D5):
+/// the allowance is a number, the pause a timestamp with its reason. Absent for an org means the
+/// defaults declared in `server/content/enhancement.types.ts`; use itself is a count of rows, never stored.
+model OrgEnhancementPolicy {
+  orgId            String    @id
+  org              Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  monthlyAllowance Int
+  pausedAt         DateTime?
+  pauseReason      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+enum EnhancementTool {
+  CUTOUT
+  WHITE
+  STUDIO
+  SCENE
+  LIGHT
+  ENLARGE
+}
+
+enum EnhancementState {
+  REQUESTED
+  RUNNING
+  PROPOSED
+  ACCEPTED
+  DISCARDED
+  FAILED
 }
 
 model Category {
@@ -428,11 +499,12 @@ model User {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  accounts       Account[]
-  sessions       Session[]
-  orgMemberships OrgMember[]
-  mediaAssets    MediaAsset[]
-  addresses      UserAddress[]
+  accounts              Account[]
+  sessions              Session[]
+  orgMemberships        OrgMember[]
+  mediaAssets           MediaAsset[]
+  addresses             UserAddress[]
+  enhancementsRequested Enhancement[]
 
   settlementsCreated Settlement[] @relation("SettlementCreatedBy")
   settlementsUpdated Settlement[] @relation("SettlementUpdatedBy")
@@ -484,10 +556,12 @@ model Org {
 
   // Everything a buyer may see lives on the profile; everything else stays here
   // (org-profile spec R1/R2, trd D1). A leak now needs a join nobody wrote.
-  profile         OrgProfile?
-  listingDefaults OrgListingDefaults?
-  brands          Brand[]
-  mediaAssets     MediaAsset[]
+  profile           OrgProfile?
+  listingDefaults   OrgListingDefaults?
+  brands            Brand[]
+  mediaAssets       MediaAsset[]
+  enhancements      Enhancement[]
+  enhancementPolicy OrgEnhancementPolicy?
 
   /// The platform's cut, in basis points — 1500 = 15%. Set per org by design; rates
   /// differ between orgs (org-payouts spec R12). Category overrides live in

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type ChangeEvent, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, Camera, Images, Loader2, Star, TriangleAlert, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Camera, Images, Loader2, Sparkles, Star, TriangleAlert, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,8 @@ interface SlotRowProps {
   onMoveToExtra: () => void;
   onRemove: () => void;
   onKeepAnyway: () => void;
+  /** Opens the improve sheet. Absent on the label slot, which is never enhanced (image-enhancement R5). */
+  onImprove?: () => void;
 }
 
 export function SlotRow({
@@ -91,6 +93,7 @@ export function SlotRow({
   onMoveToExtra,
   onRemove,
   onKeepAnyway,
+  onImprove,
 }: SlotRowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -165,6 +168,11 @@ export function SlotRow({
             <Star /> Cover
           </Button>
         )}
+        {onImprove && (
+          <Button type="button" variant="outline" size="lg" onClick={onImprove}>
+            <Sparkles /> Improve…
+          </Button>
+        )}
         <Button type="button" variant="outline" size="lg" onClick={onMoveToExtra}>
           Move to extra
         </Button>
@@ -199,6 +207,8 @@ interface ExtraRowProps {
   onAssignSlot: (slotKey: string) => void;
   onRemove: () => void;
   onKeepAnyway: () => void;
+  /** Opens the improve sheet; a photograph only, since a video has no still to improve. */
+  onImprove?: () => void;
 }
 
 export function ExtraRow({
@@ -215,6 +225,7 @@ export function ExtraRow({
   onAssignSlot,
   onRemove,
   onKeepAnyway,
+  onImprove,
 }: ExtraRowProps) {
   const isVideo = item.kind !== "IMAGE";
   const label = `${isVideo ? "video" : "extra photo"} ${index + 1}`;
@@ -290,6 +301,11 @@ export function ExtraRow({
         {!isVideo && !item.isThumbnail && (
           <Button type="button" variant="outline" size="lg" onClick={onCover}>
             <Star /> Cover
+          </Button>
+        )}
+        {!isVideo && onImprove && (
+          <Button type="button" variant="outline" size="lg" onClick={onImprove}>
+            <Sparkles /> Improve…
           </Button>
         )}
         <Button type="button" variant="outline" size="icon-lg" onClick={onRemove} aria-label={`Remove ${label}`}>

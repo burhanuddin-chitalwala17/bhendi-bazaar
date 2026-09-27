@@ -1,0 +1,133 @@
+import { EnhancementState, type EnhancementTool, type Prisma } from "@prisma/client";
+import { prisma } from "@server/shared/prisma";
+import { USAGE_STATES, type EnhancementRow, type TimeWindow } from "@server/content/enhancement.types";
+
+/** A Prisma client or the transaction client a caller is already inside. */
+export type EnhancementDb = Pick<typeof prisma, "enhancement">;
+
+const ENHANCEMENT_SELECT = {
+  id: true,
+  orgId: true,
+  requesterId: true,
+  sourceAssetId: true,
+  tool: true,
+  preset: true,
+  provider: true,
+  state: true,
+  slot: true,
+  proposalKey: true,
+  resultAssetId: true,
+  costPaise: true,
+  error: true,
+  createdAt: true,
+  proposedAt: true,
+  decidedAt: true,
+  // The two URLs the portal needs beside the row: what was improved, and what came of it.
+  sourceAsset: { select: { ref: true } },
+  resultAsset: { select: { ref: true } },
+} satisfies Prisma.EnhancementSelect;
+
+export interface CreateEnhancementInput {
+  orgId: string;
+  requesterId: string | null;
+  sourceAssetId: string;
+  tool: EnhancementTool;
+  preset: string | null;
+  provider: string;
+  slot: string | null;
+}
+
+/**
+ * The one reader and writer of `Enhancement` (ADR-0003, image-enhancement trd D1). Every state
+ * change is one conditional statement from the state it may leave, so a redelivered job or a
+ * double-tapped button moves nothing the second time (ADR-0038 D4) and reports so. Nothing here
+ * deletes: a run that was asked for is a fact the quota and the spend report both count.
+ */
+export class EnhancementRepository {
+  async create(input: CreateEnhancementInput, db: EnhancementDb = prisma): Promise<EnhancementRow> {
+    return await db.enhancement.create({
+      data: { ...input, state: EnhancementState.REQUESTED },
+      select: ENHANCEMENT_SELECT,
+    });
+  }
+
+  async findForOrg(orgId: string, id: string): Promise<EnhancementRow | null> {
+    return await prisma.enhancement.findFirst({ where: { id, orgId }, select: ENHANCEMENT_SELECT });
+  }
+
+  /** For the worker, which is handed an id and no org. */
+  async findById(id: string): Promise<EnhancementRow | null> {
+    return await prisma.enhancement.findUnique({ where: { id }, select: ENHANCEMENT_SELECT });
+  }
+
+  /** Use is a count, never a counter (trd D5): the org's rows in the window, in the states that count. */
+  async countUsage(orgId: string, window: TimeWindow): Promise<number> {
+    return await prisma.enhancement.count({
+      where: { orgId, createdAt: { gte: window.start, lt: window.end }, state: { in: [...USAGE_STATES] } },
+    });
+  }
+
+  /**
+   * What every org together spent on runs asked for in the window, in paise (trd D5, D6). Keyed on
+   * the request time rather than the moment of spend: a run finishes within its minute, and the
+   * request is the act the cap exists to stop.
+   */
+  async sumCostPaise(window: TimeWindow): Promise<number> {
+    const result = await prisma.enhancement.aggregate({
+      _sum: { costPaise: true },
+      where: { createdAt: { gte: window.start, lt: window.end } },
+    });
+    return result._sum.costPaise ?? 0;
+  }
+
+  /**
+   * The worker takes the run. From REQUESTED, or from RUNNING: a worker that died mid-run leaves the
+   * row there, and the retried job must be able to pick it up — the tools are deterministic and the
+   * proposal's key fixed, so resuming writes the same object.
+   */
+  async markRunning(id: string): Promise<boolean> {
+    const result = await prisma.enhancement.updateMany({
+      where: { id, state: { in: [EnhancementState.REQUESTED, EnhancementState.RUNNING] } },
+      data: { state: EnhancementState.RUNNING },
+    });
+    return result.count === 1;
+  }
+
+  async markProposed(
+    id: string,
+    proposal: { proposalKey: string; costPaise: number; proposedAt: Date },
+  ): Promise<boolean> {
+    const result = await prisma.enhancement.updateMany({
+      where: { id, state: EnhancementState.RUNNING },
+      data: { state: EnhancementState.PROPOSED, ...proposal },
+    });
+    return result.count === 1;
+  }
+
+  /** A refusal the org member reads (spec R10); anything that might succeed on retry never lands here. */
+  async markFailed(id: string, error: string): Promise<boolean> {
+    const result = await prisma.enhancement.updateMany({
+      where: { id, state: { in: [EnhancementState.REQUESTED, EnhancementState.RUNNING] } },
+      data: { state: EnhancementState.FAILED, error },
+    });
+    return result.count === 1;
+  }
+
+  async markAccepted(id: string, decision: { resultAssetId: string; decidedAt: Date }): Promise<boolean> {
+    const result = await prisma.enhancement.updateMany({
+      where: { id, state: EnhancementState.PROPOSED },
+      data: { state: EnhancementState.ACCEPTED, ...decision },
+    });
+    return result.count === 1;
+  }
+
+  async markDiscarded(id: string, decidedAt: Date): Promise<boolean> {
+    const result = await prisma.enhancement.updateMany({
+      where: { id, state: EnhancementState.PROPOSED },
+      data: { state: EnhancementState.DISCARDED, decidedAt },
+    });
+    return result.count === 1;
+  }
+}
+
+export const enhancementRepository = new EnhancementRepository();

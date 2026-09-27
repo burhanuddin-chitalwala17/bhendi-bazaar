@@ -10,6 +10,26 @@
 
 ## Entries
 
+## [PR-185] 2026-09-27 — Image enhancement, part one: the ledger, the quota, and a dark photo fixed [CONTRACT] [MIGRATION]
+
+Image-enhancement spec R1–R3, R7, R9, R10, A1; trd D1, D2, D5, D6, D8, D9 — the first of five, and
+the one that needs no outside service. A `content` domain is added for what is made from an image:
+it reads catalog's assets through catalog's public surface and never its repositories. An
+enhancement is a row and a job. Asking for one is refused, in words the form shows, when the shop is
+paused by the platform owner, when it has used its month's allowance, when the platform has spent
+today's cap, when the photo is the label — evidence to be read later, never enhanced — or when the
+tool has no pipeline yet. Otherwise the row and the job are written in one transaction, so neither
+can exist without the other.
+
+The first tool is "fix the light": normalise, a gentle gamma and an unsharp mask, with sharp on the
+worker and no provider, so it costs nothing and is deterministic. The result is a proposal, not an
+image: it lives under a proposals key until the org member has seen it. The editor's "Improve…"
+opens a sheet that runs the tool, waits, and shows before and after; Accept copies the proposal to a
+final key and registers it as a derived image of the source, and the slot takes it with its cover
+flag and description intact; Discard deletes the object and leaves no trace. The original is never
+touched either way. `Enhancement` and `OrgEnhancementPolicy` arrive with the tools, the states, the
+month's allowance of two hundred and the platform's daily cap, all declared once.
+
 ## [PR-184] 2026-09-27 — The brand page shows its proof: rating, orders fulfilled, and what buyers say [CONTRACT]
 
 Part (c) of seller-profile PR 4 ([brand-page](specs/seller-profile/brand-page/) R1, R3, R4; trd D2,

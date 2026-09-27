@@ -171,6 +171,29 @@ export class MediaAssetRepository {
     });
   }
 
+  /**
+   * A ready photograph we host, for another domain to derive from (image-enhancement trd D1): by
+   * id, or by the URL a gallery row carries, since the editor knows only the URL. Scoped to the org,
+   * and only one with an object, because the caller wants its bytes.
+   */
+  async findReadyImage(
+    orgId: string,
+    source: { assetId?: string | null; ref?: string | null },
+    db: MediaDb = prisma,
+  ) {
+    if (!source.assetId && !source.ref) return null;
+    return await db.mediaAsset.findFirst({
+      where: {
+        orgId,
+        kind: MediaAssetKind.IMAGE,
+        state: MediaAssetState.READY,
+        objectKey: { not: null },
+        ...(source.assetId ? { id: source.assetId } : { ref: source.ref ?? undefined }),
+      },
+      select: { id: true, ref: true, width: true, height: true },
+    });
+  }
+
   /** Confirm only moves a PENDING row; a second confirm is a no-op reported as `false`. */
   async confirm(id: string, dims: ConfirmedDimensions, db: MediaDb = prisma) {
     const result = await db.mediaAsset.updateMany({

@@ -41,6 +41,9 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
     "media",
     "org.handle",
     "image-upload",
+    // media-library D4: the editor and the server resolve a category's slots with one function,
+    // and enhancement refuses the label slot by the same role constant (image-enhancement R5).
+    "shot-list",
   ],
   promotions: [
     // ADR-0018: every surface that needs a price calls this resolver.
@@ -62,6 +65,7 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   payouts: ["commission"],
   analytics: [],
   wishlist: [],
+  content: [],
 };
 
 /** Always public, in every domain. */

@@ -57,6 +57,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | bidding | `server/bidding/` | Timed auctions on a single item, and the gate that suspends it from normal sale |
 | analytics | `server/analytics/` | Aggregating read-model for the admin dashboard. **Read-only**, and the one documented exception to the no-cross-domain-reads rule |
 | wishlist | `server/wishlist/` | Saved products, and the demand signal an org reads off them |
+| content | `server/content/` | What is made from an image: enhancement proposals and their ledger, renditions, capture rules. Reads catalog's assets through catalog's public surface, never its repositories |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry. Only what genuinely spans domains — not a dumping ground |
 
 **There is no `admin` domain.** Admin and storefront read the same tables, so an admin listing is a query on `catalog` or `checkout`, kept as `admin.*` files inside that domain. Admin *pages* are grouped by audience in `src/app/(admin)/`, which is a UI concern.
