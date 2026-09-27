@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-167] 2026-09-27 — Photos go into the library directly
+
+The library page gains "Upload photos": several at once, downscaled and hashed in the browser,
+stored under the org's folder with no product yet, and shown at the top when the page re-reads. The
+gallery editor and the library now share one batch uploader (`src/lib/image/upload-batch.ts`), so
+the downscale, the check, the concurrency and the duplicate handling cannot drift between them.
+A photo the org already holds is reported, not stored again.
+
 ## [PR-166] 2026-09-27 — The same photograph is one image in an org's library [CONTRACT] [MIGRATION]
 
 Media-library R13, trd D11. The browser hashes each downscaled file before asking to upload and

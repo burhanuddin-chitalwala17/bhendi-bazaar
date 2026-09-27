@@ -3,6 +3,8 @@ import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { parseMediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
 import { MediaLibraryFilters } from "@/components/org/media-library-filters";
 import { MediaLibraryGrid } from "@/components/org/media-library-grid";
+import { MediaLibraryUpload } from "@/components/org/media-library-upload";
+import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 
 export const metadata = {
   title: "Library",
@@ -31,7 +33,10 @@ export default async function OrgLibraryPage({
   }
   const scope = await requireOrgMember(orgId);
   const filters = parseMediaLibraryFilters(raw);
-  const { assets, pagination } = await mediaAssetService.listLibrary(scope.orgId, { ...filters, page: 1 });
+  const [{ assets, pagination }, org] = await Promise.all([
+    mediaAssetService.listLibrary(scope.orgId, { ...filters, page: 1 }),
+    orgsDAL.getOrgSummary(scope.orgId),
+  ]);
 
   // The filters, minus the page, are what the grid asks for more with — and its key, so a
   // filter change starts the list over instead of appending under the old one.
@@ -41,11 +46,14 @@ export default async function OrgLibraryPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Library</h1>
-        <p className="text-muted-foreground">
-          Every photo and video your shop has, where each is used, and what can go.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Library</h1>
+          <p className="text-muted-foreground">
+            Every photo and video your shop has, where each is used, and what can go.
+          </p>
+        </div>
+        {org && <MediaLibraryUpload orgId={scope.orgId} orgCode={org.code} />}
       </div>
 
       <MediaLibraryFilters filters={filters} />

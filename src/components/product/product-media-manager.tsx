@@ -5,8 +5,9 @@
  * Photographs go browser-to-store against a presigned PUT, never through a function
  * (ADR-0028): a function request body is capped at 4.5MB, which one phone photograph
  * clears on its own and a multi-file selection clears easily — that cap was returning
- * FUNCTION_PAYLOAD_TOO_LARGE before any of our code ran. Downscaling therefore happens
- * here, since the server's sharp normalisation never sees these bytes (ADR-0026).
+ * FUNCTION_PAYLOAD_TOO_LARGE before any of our code ran. Downscaling therefore happens in
+ * the browser (`uploadBatch`), since the server's sharp normalisation never sees these bytes
+ * (ADR-0026).
  *
  * Why video is a link and not an upload: [ADR-0017](../../docs/adr/0017-video-is-embedded-not-hosted.md).
  * Why the cover is chosen rather than derived, and why nothing here pre-selects one:
@@ -42,16 +43,12 @@ import {
   youtubePosterUrl,
   type ProductMediaInput,
 } from "@server/catalog/media";
-import { buildImagePath, imageFileProblem } from "@server/catalog/image-paths";
-import { downscaleImage } from "@/lib/image/downscale";
-import { uploadDirect } from "@/lib/image/upload-direct";
+import { buildImagePath } from "@server/catalog/image-paths";
+import { uploadBatch } from "@/lib/image/upload-batch";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { unknownSlots, type ShotList } from "@server/catalog/shot-list";
 import { MediaLibraryPicker } from "@/components/product/media-library-picker";
 import type { MediaAssetDto } from "@server/catalog/media-library.types";
-
-/** Bounded, not a stampede: a phone's radio and the presign route both prefer it. */
-const UPLOAD_CONCURRENCY = 3;
 
 interface ProductMediaManagerProps {
   value: ProductMediaInput[];
@@ -128,46 +125,11 @@ export function ProductMediaManager({
     setNotice(null);
     setProgress({ done: 0, total: files.length });
     try {
-      // Downscale first, then check the size: the whole point is that what was picked
-      // may be far larger than what we are willing to store. Type is checked on the
-      // result too, since a file no decoder accepts comes back through unchanged.
-      // The whole selection is validated before any of it is uploaded — a batch refused
-      // outright is easier to explain than a half-done one.
-      const prepared: File[] = [];
-      for (const file of files) {
-        const ready = await downscaleImage(file);
-        const problem = imageFileProblem(ready);
-        if (problem) throw new Error(problem);
-        prepared.push(ready);
-      }
-
-      const uploadedUrls: (string | undefined)[] = new Array(prepared.length);
-      const failed: string[] = [];
-      let reused = 0;
-      let firstError: string | null = null;
-      const queue = prepared.map((file, index) => ({ file, index }));
-      let done = 0;
-      const worker = async () => {
-        for (let job = queue.shift(); job; job = queue.shift()) {
-          try {
-            uploadedUrls[job.index] = await uploadDirect(
-              buildImagePath("products", job.file.name, identifier, orgCode),
-              job.file,
-              endpoints,
-              { onDuplicate: () => (reused += 1) },
-            );
-          } catch (error) {
-            // A network failure part-way through cannot be undone without deleting what
-            // already landed, so the successes are kept and the rest are named.
-            failed.push(files[job.index].name);
-            firstError ??=
-              error instanceof Error ? error.message : "Upload failed";
-          }
-          done += 1;
-          setProgress({ done, total: prepared.length });
-        }
-      };
-      await Promise.all(Array.from({ length: UPLOAD_CONCURRENCY }, worker));
+      const { urls: uploadedUrls, failed, firstError, reused } = await uploadBatch(files, {
+        endpoints,
+        pathFor: (file) => buildImagePath("products", file.name, identifier, orgCode),
+        onProgress: (done, total) => setProgress({ done, total }),
+      });
 
       // Index-aligned with the originals, which is what useLocalPreviews pairs on — and
       // the original is the right preview: it is the picture the org member picked.

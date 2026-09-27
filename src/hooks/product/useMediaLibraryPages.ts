@@ -38,6 +38,15 @@ export function useMediaLibraryPages({ orgId, query, initial }: Options) {
     [orgId, query],
   );
 
+  // The server rendered a fresh first page — after an upload or a retire refreshed the route —
+  // so the list starts over from it. Client re-renders keep the same object, so this is quiet.
+  useEffect(() => {
+    if (!initial) return;
+    setAssets(initial.assets);
+    setPagination(initial.pagination);
+    setError(null);
+  }, [initial]);
+
   // No server page: fetch the first one. Callers remount on a query change (key on it), so a
   // change never reaches a mounted hook — that is what keeps this a fetch, not a diff.
   useEffect(() => {
