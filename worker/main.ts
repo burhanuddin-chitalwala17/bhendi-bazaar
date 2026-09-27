@@ -23,8 +23,10 @@ import {
   JOBS_SCHEMA,
   JOBS_SWITCHES,
 } from "@server/shared/jobs/jobs.config";
+import { registeredSchedules, startSchedules } from "@server/shared/jobs/jobs.schedule";
 // Job registrations. Each domain adds its `*.jobs.ts` here and nowhere else.
 import "@server/shared/jobs/ping.job";
+import "@server/catalog/media.jobs";
 
 const VERSION = process.env.WORKER_VERSION ?? "dev";
 
@@ -79,13 +81,19 @@ async function main() {
   await beat();
   const heartbeat = setInterval(beat, HEARTBEAT_INTERVAL_SECONDS * 1000);
 
+  // Recurring work is a timer here that enqueues; the queue runs it like any other job.
+  const stopSchedules = startSchedules(({ data, options }) => boss.send(JOBS_QUEUE, data, options));
+
   console.log(
-    `[worker] ${environment} ${VERSION} up; job types: ${registeredJobTypes().join(", ")}`,
+    `[worker] ${environment} ${VERSION} up; job types: ${registeredJobTypes().join(", ")}; schedules: ${
+      registeredSchedules().map((s) => `${s.definition.type} every ${s.everySeconds}s`).join(", ") || "none"
+    }`,
   );
 
   const shutdown = async (signal: string) => {
     console.log(`[worker] ${signal}, draining`);
     clearInterval(heartbeat);
+    stopSchedules();
     // Finish what is running, take nothing new; a job that outlives the grace period is
     // re-fetched after expiry, which is why every handler is idempotent (ADR-0038 D4).
     await boss.stop({ graceful: true, timeout: 30_000 });

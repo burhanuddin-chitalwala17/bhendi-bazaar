@@ -10,6 +10,23 @@
 
 ## Entries
 
+## [PR-163] 2026-09-27 — The library: browse, reuse, retire, and the first scheduled sweep [CONTRACT]
+
+Media-library PR 3 of 6 ([spec](specs/media-library/spec.md) R6, R7; trd D2, D7). The org portal
+gains "Library": every ready photo and video the org owns as the 3-up grid, paged as you scroll
+with a button as the fallback control, filtered from the URL by kind, usage, source and date. A
+tile opens a sheet with the asset's dimensions, size, format, date, and every place it is used —
+a query over the referencing relations at read time, never a counter. An image nothing uses can be
+retired; the state change is one conditional statement, so a reference landing between a check
+and a write cannot be lost, and a refusal names what still uses it. The product editor gains
+"From library", which adds an existing photo or video to a gallery without uploading anything.
+
+The worker gains its first schedule: an in-process timer that enqueues a singleton job, the shape
+`jobs.config.ts` reserved for it, with a floor of one tick an hour and a budgeted count that the
+idle estimate now carries. `media.sweep` runs every six hours: pending uploads past an hour go, and
+a retired image's stored object goes after thirty days unless a URL somewhere still shows it. The
+record stays either way (ADR-0032). `MediaAssetDto` and `MediaUseDto` are added for the portal.
+
 ## [PR-162] 2026-09-27 — An org describes what it sells: brands and listing defaults [CONTRACT]
 
 seller-profile PR 2 of 4 ([spec](specs/seller-profile/spec.md), trd D7–D8). The org portal gains

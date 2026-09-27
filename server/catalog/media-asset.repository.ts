@@ -1,5 +1,60 @@
 import { prisma } from "@server/shared/prisma";
 import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
+import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
+import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaUseDto } from "@server/catalog/media-library.types";
+
+/** Every relation that can point at an asset. "Used" is `some` on any; "unused" is `none` on all. */
+const REFERENCE_RELATIONS = [
+  "productMedia",
+  "categoryHeroes",
+  "profileLogos",
+  "profileHeroes",
+  "orgBanners",
+  "banners",
+  "derivatives",
+] as const;
+const REFERENCE_COUNTS = Object.fromEntries(REFERENCE_RELATIONS.map((relation) => [relation, true])) as Record<
+  (typeof REFERENCE_RELATIONS)[number],
+  true
+>;
+const UNREFERENCED: Prisma.MediaAssetWhereInput = Object.fromEntries(
+  REFERENCE_RELATIONS.map((relation) => [relation, { none: {} }]),
+);
+const REFERENCED: Prisma.MediaAssetWhereInput = {
+  OR: REFERENCE_RELATIONS.map((relation) => ({ [relation]: { some: {} } })),
+};
+
+const LIBRARY_SELECT = {
+  id: true,
+  kind: true,
+  ref: true,
+  width: true,
+  height: true,
+  bytes: true,
+  mimeType: true,
+  source: true,
+  state: true,
+  createdAt: true,
+  retiredAt: true,
+  _count: { select: REFERENCE_COUNTS },
+} satisfies Prisma.MediaAssetSelect;
+
+/** The library's filters as a Prisma `where`, scoped to one org and one state (spec R6). */
+function libraryWhere(orgId: string, filters: MediaLibraryFilters): Prisma.MediaAssetWhereInput {
+  const inProduct: Prisma.ProductMediaWhereInput | null =
+    filters.productId || filters.slot
+      ? { ...(filters.productId ? { productId: filters.productId } : {}), ...(filters.slot ? { slot: filters.slot } : {}) }
+      : null;
+  return {
+    orgId,
+    state: filters.retired ? MediaAssetState.RETIRED : MediaAssetState.READY,
+    ...(filters.kind ? { kind: filters.kind } : {}),
+    ...(filters.source ? { source: filters.source } : {}),
+    ...(filters.from || filters.to ? { createdAt: { gte: filters.from, lte: filters.to } } : {}),
+    ...(inProduct ? { productMedia: { some: inProduct } } : {}),
+    ...(filters.usage === "used" ? REFERENCED : filters.usage === "unused" ? UNREFERENCED : {}),
+  };
+}
 
 /** A Prisma client or the transaction client a caller is already inside. */
 export type MediaDb = Pick<typeof prisma, "mediaAsset">;
@@ -154,6 +209,77 @@ export class MediaAssetRepository {
     orgBanners.forEach((r) => r.imageUrl && used.add(r.imageUrl));
     banners.forEach((r) => r.imageUrl && used.add(r.imageUrl));
     return used;
+  }
+
+  /** One page of an org's library with each asset's reference count, newest first (spec R6, trd D7). */
+  async listForOrg(orgId: string, filters: MediaLibraryFilters): Promise<{ rows: MediaAssetRow[]; total: number }> {
+    const where = libraryWhere(orgId, filters);
+    const [rows, total] = await Promise.all([
+      prisma.mediaAsset.findMany({
+        where,
+        select: LIBRARY_SELECT,
+        orderBy: { createdAt: "desc" },
+        skip: (filters.page - 1) * MEDIA_LIBRARY_PAGE_SIZE,
+        take: MEDIA_LIBRARY_PAGE_SIZE,
+      }),
+      prisma.mediaAsset.count({ where }),
+    ]);
+    return { rows, total };
+  }
+
+  async findForOrg(orgId: string, id: string): Promise<MediaAssetRow | null> {
+    return await prisma.mediaAsset.findFirst({ where: { id, orgId }, select: LIBRARY_SELECT });
+  }
+
+  /** Where an asset is used, named for the org: a query over the referencing relations, never a counter (trd D7). */
+  async usesOf(id: string): Promise<MediaUseDto[]> {
+    const asset = await prisma.mediaAsset.findUnique({
+      where: { id },
+      select: {
+        productMedia: { select: { slot: true, product: { select: { id: true, name: true } } } },
+        categoryHeroes: { select: { id: true, name: true } },
+        profileLogos: { select: { orgId: true } },
+        profileHeroes: { select: { orgId: true } },
+        orgBanners: { select: { id: true, title: true } },
+        banners: { select: { id: true, title: true } },
+        derivatives: { select: { id: true, source: true } },
+      },
+    });
+    if (!asset) return [];
+    return [
+      ...asset.productMedia.map((row) => ({ kind: "product" as const, id: row.product.id, label: row.product.name, slot: row.slot })),
+      ...asset.categoryHeroes.map((row) => ({ kind: "category" as const, id: row.id, label: row.name, slot: null })),
+      ...asset.profileLogos.map((row) => ({ kind: "storefront-logo" as const, id: row.orgId, label: "Storefront logo", slot: null })),
+      ...asset.profileHeroes.map((row) => ({ kind: "storefront-hero" as const, id: row.orgId, label: "Storefront hero", slot: null })),
+      ...asset.orgBanners.map((row) => ({ kind: "storefront-banner" as const, id: row.id, label: row.title ?? "Storefront banner", slot: null })),
+      ...asset.banners.map((row) => ({ kind: "home-banner" as const, id: row.id, label: row.title ?? "Home banner", slot: null })),
+      ...asset.derivatives.map((row) => ({ kind: "derived" as const, id: row.id, label: `${row.source.toLowerCase()} copy`, slot: null })),
+    ];
+  }
+
+  /**
+   * Retire in one conditional statement (spec R7): the row moves only if it is this org's, ready,
+   * and nothing points at it. A read-then-write would let a reference land between the two.
+   */
+  async retireUnused(orgId: string, id: string, now: Date = new Date()): Promise<boolean> {
+    const result = await prisma.mediaAsset.updateMany({
+      where: { id, orgId, state: MediaAssetState.READY, ...UNREFERENCED },
+      data: { state: MediaAssetState.RETIRED, retiredAt: now },
+    });
+    return result.count === 1;
+  }
+
+  /** Retired before the cutoff and still holding an object: candidates for deletion (R7's grace period). */
+  async findStaleRetired(before: Date) {
+    return await prisma.mediaAsset.findMany({
+      where: { state: MediaAssetState.RETIRED, retiredAt: { lt: before }, objectKey: { not: null } },
+      select: { id: true, ref: true, objectKey: true },
+    });
+  }
+
+  /** The object is gone; the record stays, saying so (ADR-0032). */
+  async clearObject(id: string): Promise<void> {
+    await prisma.mediaAsset.update({ where: { id }, data: { objectKey: null } });
   }
 }
 

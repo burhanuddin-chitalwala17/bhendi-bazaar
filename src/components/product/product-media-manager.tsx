@@ -24,6 +24,7 @@ import NextImage from "next/image";
 import {
   ArrowDown,
   ArrowUp,
+  Images,
   Loader2,
   Star,
   Upload,
@@ -46,6 +47,8 @@ import { downscaleImage } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { unknownSlots, type ShotList } from "@server/catalog/shot-list";
+import { MediaLibraryPicker } from "@/components/product/media-library-picker";
+import type { MediaAssetDto } from "@server/catalog/media-library.types";
 
 /** Bounded, not a stampede: a phone's radio and the presign route both prefer it. */
 const UPLOAD_CONCURRENCY = 3;
@@ -64,6 +67,8 @@ interface ProductMediaManagerProps {
   identifier?: string;
   /** The named slots this product's category asks for, already resolved up the tree (media-library D4). */
   shotList: ShotList;
+  /** The owning org's id, which is what the library picker is scoped by. Without it there is no library to pick from. */
+  orgId?: string;
 }
 
 export function ProductMediaManager({
@@ -73,12 +78,14 @@ export function ProductMediaManager({
   orgCode,
   identifier,
   shotList,
+  orgId,
 }: ProductMediaManagerProps) {
   const media = value ?? [];
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [linkDraft, setLinkDraft] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { remember, localPreview } = useLocalPreviews();
 
@@ -217,6 +224,21 @@ export function ProductMediaManager({
     setNotice(null);
     setLinkDraft("");
     onChange([...media, { kind: "YOUTUBE", ref, isThumbnail: false }]);
+  };
+
+  // A library pick is a reference to bytes that already exist: nothing uploads, and the row is
+  // linked to its asset by URL on save (media-library trd D1).
+  const pickFromLibrary = (asset: MediaAssetDto) => {
+    if (atCapacity) {
+      setNotice(`A product can have at most ${MAX_MEDIA_PER_PRODUCT} gallery items`);
+      return;
+    }
+    if (media.some((item) => item.ref === asset.ref)) return;
+    setNotice(null);
+    onChange([
+      ...media,
+      { kind: asset.kind === "VIDEO_EMBED" ? "YOUTUBE" : "IMAGE", ref: asset.ref, isThumbnail: false },
+    ]);
   };
 
   const remove = (index: number) => {
@@ -426,7 +448,29 @@ export function ProductMediaManager({
               : "Uploading…"
             : "Upload photos"}
         </Button>
+        {orgId && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsPickerOpen(true)}
+            disabled={isUploading || atCapacity}
+            className="sm:w-auto"
+          >
+            <Images className="mr-2 size-4" />
+            From library
+          </Button>
+        )}
       </div>
+
+      {orgId && (
+        <MediaLibraryPicker
+          orgId={orgId}
+          open={isPickerOpen}
+          onOpenChange={setIsPickerOpen}
+          taken={new Set(media.map((item) => item.ref))}
+          onPick={pickFromLibrary}
+        />
+      )}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input

@@ -1,11 +1,22 @@
 import sharp from "sharp";
-import { DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 import { MediaAssetState } from "@prisma/client";
 import { deleteObject, getObject, headObject, presignUpload, publicUrlFor } from "@server/catalog/object-store";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
+import {
+  MEDIA_LIBRARY_PAGE_SIZE,
+  describeUses,
+  toMediaAssetDto,
+  type MediaAssetDetailDto,
+  type MediaAssetDto,
+} from "@server/catalog/media-library.types";
+import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
+import type { Pagination } from "@server/shared/pagination";
 
 /** Older than this, a pending row is an upload that never confirmed (trd D2). */
 export const PENDING_UPLOAD_TTL_MS = 60 * 60 * 1000;
+/** A retired image's object is kept this long, so a retirement in error costs nothing (spec R7). */
+export const RETIRED_OBJECT_GRACE_MS = 30 * 24 * 60 * 60 * 1000;
 /** Nothing we store is larger; a claimed dimension beyond it is a lie, not a picture. */
 const MAX_DIMENSION = 20_000;
 
@@ -119,5 +130,72 @@ export const mediaAssetService = {
     }
     const removed = await mediaAssetRepository.deletePending(doomed.map((row) => row.id));
     return { removed, kept: stale.length - doomed.length };
+  },
+
+  /** One page of an org's library, filtered (spec R6). */
+  async listLibrary(orgId: string, filters: MediaLibraryFilters): Promise<{ assets: MediaAssetDto[]; pagination: Pagination }> {
+    const { rows, total } = await mediaAssetRepository.listForOrg(orgId, filters);
+    return {
+      assets: rows.map(toMediaAssetDto),
+      pagination: {
+        page: filters.page,
+        limit: MEDIA_LIBRARY_PAGE_SIZE,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / MEDIA_LIBRARY_PAGE_SIZE)),
+      },
+    };
+  },
+
+  /** An asset and every place it is used, for the library's detail sheet (spec R6). */
+  async assetDetail(orgId: string, id: string): Promise<MediaAssetDetailDto> {
+    const row = await mediaAssetRepository.findForOrg(orgId, id);
+    if (!row) throw new NotFoundError("Image not found");
+    return { asset: toMediaAssetDto(row), uses: await mediaAssetRepository.usesOf(id) };
+  },
+
+  /**
+   * Retire an image nothing uses (spec R7, A3). The state change is one conditional statement;
+   * when it moves nothing, the uses are read only to say *why* — the refusal itself did not
+   * depend on that read. A URL still written on a row that has no asset link counts as a use too.
+   */
+  async retire(orgId: string, id: string, now: Date = new Date()): Promise<MediaAssetDto> {
+    const row = await mediaAssetRepository.findForOrg(orgId, id);
+    if (!row) throw new NotFoundError("Image not found");
+    if (row.state === MediaAssetState.RETIRED) return toMediaAssetDto(row);
+
+    const byUrl = await mediaAssetRepository.referencedRefs([row.ref]);
+    const retired = byUrl.has(row.ref) ? false : await mediaAssetRepository.retireUnused(orgId, id, now);
+    if (!retired) {
+      const uses = await mediaAssetRepository.usesOf(id);
+      const where = uses.length ? describeUses(uses) : "a page that still shows it";
+      throw new ConflictError(`This image is still used by ${where}. Remove it there first.`);
+    }
+    const after = await mediaAssetRepository.findForOrg(orgId, id);
+    return toMediaAssetDto(after ?? { ...row, state: MediaAssetState.RETIRED, retiredAt: now });
+  },
+
+  /**
+   * Retired past the grace period, the stored object goes and the record stays (R7, ADR-0032) —
+   * unless a URL somewhere still shows it, in which case the object is kept and the row waits.
+   */
+  async sweepRetiredObjects(now: Date = new Date()) {
+    const stale = await mediaAssetRepository.findStaleRetired(new Date(now.getTime() - RETIRED_OBJECT_GRACE_MS));
+    if (stale.length === 0) return { deleted: 0, kept: 0 };
+    const referenced = await mediaAssetRepository.referencedRefs(stale.map((row) => row.ref));
+    let deleted = 0;
+    for (const row of stale) {
+      if (referenced.has(row.ref) || !row.objectKey) continue;
+      await deleteObject(publicUrlFor(row.objectKey));
+      await mediaAssetRepository.clearObject(row.id);
+      deleted += 1;
+    }
+    return { deleted, kept: stale.length - deleted };
+  },
+
+  /** Both sweeps, as the worker runs them (media.jobs.ts). */
+  async sweep(now: Date = new Date()) {
+    const pending = await this.sweepPendingUploads(now);
+    const retired = await this.sweepRetiredObjects(now);
+    return { pending, retired };
   },
 };

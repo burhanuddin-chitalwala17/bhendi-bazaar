@@ -231,6 +231,7 @@ export function ProductForm({
                   onChange={field.onChange}
                   endpoints={uploadEndpoints}
                   shotList={resolveShotList(watch("categoryId"), categories ?? [])}
+                  orgId={watch("orgId") || undefined}
                   identifier={watch("name")}
                   // The code, not the id: it is the folder the presign route signs under.
                   orgCode={orgs?.find((org) => org.id === watch("orgId"))?.code}

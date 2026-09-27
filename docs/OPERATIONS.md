@@ -290,6 +290,10 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
   new Prisma migration; the library's own runtime migration is switched off and must stay off.
 - **Every timer is set in `server/shared/jobs/jobs.config.ts`**, and `tests/unit/jobs-config.test.ts`
   fails if one is shortened or left to a default: the database bills every poll.
+- **Schedules are in-process timers that enqueue a job** (`server/shared/jobs/jobs.schedule.ts`),
+  never pg-boss's cron: the floor is one tick an hour and the count is budgeted in the idle estimate.
+  The worker logs them at start. The first is `media.sweep`, every six hours: uploads that never
+  confirmed go after an hour, and a retired image's stored object goes after thirty days.
 - **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
   count and re-runs them; each re-run is an audit entry.
 - **Direct connections.** The worker needs the direct connection string (notify is session-bound);

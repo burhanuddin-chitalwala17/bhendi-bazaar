@@ -13,9 +13,9 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
             ├── (main)  storefront    12 pages     ──▶ Cloudflare R2   (images only — ADR-0028)
             ├── (admin) console       24 pages     ──▶ Razorpay         (payments)
-            ├── (org)   seller portal 20 pages     ──▶ Shiprocket       (shipping rates)
+            ├── (org)   seller portal 21 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
-            └── api/                  94 handlers  ──▶ YouTube          (product and review video, embedded)
+            └── api/                  97 handlers  ──▶ YouTube          (product and review video, embedded)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
@@ -72,7 +72,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-125 Vitest files (111 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, all `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+127 Vitest files (113 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 40 errors, all `no-explicit-any`. None is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 

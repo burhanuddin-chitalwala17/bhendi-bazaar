@@ -22,8 +22,8 @@ export const HEARTBEAT_STALE_AFTER_SECONDS = 600;
 /**
  * Every pg-boss timer, in seconds, in minutes wherever the library allows. Two are capped by
  * pg-boss — the clock monitor at ten minutes, the cron pair at 45 seconds. The cron pair is inert
- * while `schedule` is off, and its cap is why the first schedule (spec PR 3) will be an
- * in-process timer that enqueues a job rather than pg-boss's scheduler.
+ * while `schedule` is off, and its cap is why a schedule is an in-process timer that enqueues a
+ * job (`jobs.schedule.ts`) rather than pg-boss's scheduler.
  */
 export const JOBS_INTERVALS = {
   /** Base fetch poll, used while the notify channel is unavailable. */
@@ -64,6 +64,13 @@ export const JOBS_SWITCHES = {
   persistQueueStats: false,
 } as const;
 
+/**
+ * Schedules are in-process timers that enqueue a job (`jobs.schedule.ts`). A tick is a query, so
+ * the floor and the count are budgeted here and the idle estimate below carries them in full.
+ */
+export const JOBS_SCHEDULE_MIN_INTERVAL_SECONDS = 3600;
+export const JOBS_MAX_SCHEDULES = 4;
+
 /** Direct connections Prisma Postgres leaves us: five. The worker takes three plus notify. */
 export const JOBS_POOL_MAX = 3;
 
@@ -95,5 +102,6 @@ export function estimateIdleOperationsPerDay(): number {
   if (JOBS_SWITCHES.reindex) total += ticks(i.reindexIntervalSeconds);
   if (JOBS_SWITCHES.useListenNotify) total += ticks(JOBS_NOTIFY_HEARTBEAT_MS / 1000);
   total += ticks(HEARTBEAT_INTERVAL_SECONDS);
+  total += JOBS_MAX_SCHEDULES * ticks(JOBS_SCHEDULE_MIN_INTERVAL_SECONDS);
   return Math.ceil(total);
 }
