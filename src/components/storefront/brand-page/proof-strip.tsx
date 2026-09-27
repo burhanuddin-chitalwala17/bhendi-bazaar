@@ -1,42 +1,42 @@
+import { ReviewStars } from "@/components/product/review-stars";
 import type { BrandProof } from "@server/catalog/storefront.types";
 
 /**
- * Up to three compact stats under the tagline (brand-page R1, R4).
+ * The compact stats under the tagline (brand-page R1, R3, R4): the rating with its count and
+ * the orders fulfilled, each already cut off at its floor where the DTO was built
+ * (`server/catalog/brand-page-proof.ts`, D3), so this draws what it is given and decides
+ * nothing. Since-when stays on the hero's facts line, where a shop with no other proof
+ * still has it. With nothing to show the strip is absent — a hero without proof closes up.
  *
- * The seam part (c) of PR 4 fills: rating and count from published reviews, orders from
- * paid orders, each shown only above its declared floor (D3). Until then every page
- * carries null and this draws nothing — a hero with no proof closes up, never shows a gap.
+ * The rating is the product page's own `ReviewStars`, whose label already says "rated 4.6
+ * out of 5 from 23 reviews"; the visible count beside it is hidden from that reading so a
+ * screen reader hears one sentence, not two.
  */
 export function ProofStrip({ proof }: { proof: BrandProof | null }) {
   if (!proof) return null;
-
-  const stats: Array<{ label: string; value: string }> = [];
-  if (proof.rating) {
-    stats.push({
-      label: `${proof.rating.count} reviews`,
-      value: proof.rating.average.toFixed(1),
-    });
-  }
-  if (proof.ordersFulfilled != null) {
-    stats.push({ label: "orders fulfilled", value: String(proof.ordersFulfilled) });
-  }
-  if (!stats.length) return null;
+  const { rating, ordersFulfilled } = proof;
+  if (!rating && ordersFulfilled === null) return null;
 
   return (
-    <dl className="flex gap-2 sm:gap-3">
-      {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="flex-1 rounded-card border border-border bg-card px-3 py-2 text-center"
-        >
-          <dd className="font-heading text-lg font-semibold text-foreground">
-            {stat.value}
-          </dd>
-          <dt className="text-2xs uppercase tracking-eyebrow text-muted-foreground">
-            {stat.label}
-          </dt>
-        </div>
-      ))}
-    </dl>
+    <ul className="flex gap-2 sm:gap-3" aria-label="Why buyers trust this shop">
+      {rating && (
+        <li className="flex flex-1 flex-wrap items-center justify-center gap-x-1 gap-y-0.5 rounded-card border border-border bg-card px-3 py-2">
+          <ReviewStars value={rating.average} count={rating.count} />
+          <span aria-hidden className="text-2xs text-muted-foreground sm:text-xs">
+            {" "}· {rating.count} reviews
+          </span>
+        </li>
+      )}
+      {ordersFulfilled !== null && (
+        <li className="flex flex-1 items-center justify-center rounded-card border border-border bg-card px-3 py-2">
+          <p className="text-2xs text-muted-foreground sm:text-xs">
+            <span className="font-heading text-lg font-semibold text-foreground">
+              {ordersFulfilled.toLocaleString("en-IN")}
+            </span>{" "}
+            orders fulfilled
+          </p>
+        </li>
+      )}
+    </ul>
   );
 }

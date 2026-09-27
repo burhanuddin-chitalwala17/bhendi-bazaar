@@ -1,3 +1,4 @@
+import type { ShopReviewDto } from "@server/catalog/review.types";
 import { socialLinksFrom, type SocialLink } from "@server/catalog/social-networks";
 
 /**
@@ -33,10 +34,15 @@ export interface BrandPageDto {
   brands: string[] | null;
   social: SocialLink[] | null;
   /**
-   * Derived proof, never typed (R4). Part (c) of PR 4 fills it through the reviews and
-   * checkout services under the D3 floors; until then every page carries null.
+   * Derived proof, never typed (R4): rating and count from published reviews, orders from
+   * paid orders, each under the floors in `brand-page-proof.ts` (D3). Null when nothing cleared one.
    */
   proof: BrandProof | null;
+  /**
+   * The shop's newest published reviews (R1, A3a): `ReviewDto` fields and the product each is
+   * about, never a `userId`. Null under the rating's floor (D3).
+   */
+  buyersSay: ShopReviewDto[] | null;
 }
 
 export interface BrandProof {
@@ -70,9 +76,16 @@ export function brandNamesCarried(brands: ReadonlyArray<{ name: string }>): stri
   return brands.length > 1 ? brands.map((brand) => brand.name) : null;
 }
 
+/** What the service derived through other surfaces (D2); the profile row knows none of it. */
+export interface BrandPageDerived {
+  proof: BrandProof | null;
+  buyersSay: ShopReviewDto[] | null;
+}
+
 export function toBrandPageDto(
   row: PublicProfileRow,
   brands: ReadonlyArray<{ name: string }>,
+  derived: BrandPageDerived,
 ): BrandPageDto {
   return {
     id: row.org.id,
@@ -90,6 +103,7 @@ export function toBrandPageDto(
     returnsPolicy: text(row.returnsPolicy),
     brands: brandNamesCarried(brands),
     social: socialLinksFrom(row.social),
-    proof: null,
+    proof: derived.proof,
+    buyersSay: derived.buyersSay,
   };
 }

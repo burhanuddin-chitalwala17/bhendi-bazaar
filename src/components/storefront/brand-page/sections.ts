@@ -1,6 +1,7 @@
 import type { BrandPage } from "@/data-access-layer/storefront.dal";
 import type { Category } from "@/domain/category";
 import type { Product } from "@/domain/product";
+import type { ShopReviewDto } from "@server/catalog/review.types";
 import type { SocialLink } from "@server/catalog/social-networks";
 
 /**
@@ -11,14 +12,15 @@ import type { SocialLink } from "@server/catalog/social-networks";
  * the page never branches on how much an org has written (R2), and a section that shows
  * nothing is absent rather than blank.
  *
- * Pure, so it can be tested without rendering. Pillars, proof and buyers' reviews join
- * this list in parts (b) and (c) of PR 4.
+ * Pure, so it can be tested without rendering. The proof strip is part of the hero, not a
+ * section of its own (R3). Pillars join this list in part (b) of PR 4.
  */
 export const BRAND_PAGE_SECTION_ORDER = [
   "hero",
   "story",
   "categories",
   "brands",
+  "buyersSay",
   "newest",
   "policies",
   "social",
@@ -35,6 +37,10 @@ export interface StorySlice {
 export interface CategoriesSlice {
   handle: string;
   categories: Category[];
+}
+
+export interface BuyersSaySlice {
+  reviews: ShopReviewDto[];
 }
 
 export interface NewestSlice {
@@ -67,6 +73,10 @@ export const categoriesSlice = (page: BrandPage): CategoriesSlice | null =>
 export const brandsSlice = (page: BrandPage): string[] | null =>
   page.brands?.length ? page.brands : null;
 
+/** The floor was applied where the DTO was built (D3); null here is "too few to be convincing". */
+export const buyersSaySlice = (page: BrandPage): BuyersSaySlice | null =>
+  page.buyersSay?.length ? { reviews: page.buyersSay } : null;
+
 /**
  * Never null: a shop with nothing listed shows the honest "nothing here yet" state, which
  * is the storefront's first state and not a placeholder (brand-page A1, storefront-pages R7a).
@@ -94,6 +104,7 @@ const SLICES = {
   story: storySlice,
   categories: categoriesSlice,
   brands: brandsSlice,
+  buyersSay: buyersSaySlice,
   newest: newestSlice,
   policies: policiesSlice,
   social: socialSlice,

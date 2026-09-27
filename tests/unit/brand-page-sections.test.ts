@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   BRAND_PAGE_SECTION_ORDER,
   brandPageSections,
+  buyersSaySlice,
   newestSlice,
   storySlice,
 } from "@/components/storefront/brand-page/sections";
@@ -17,9 +18,19 @@ import { brandNamesCarried } from "@server/catalog/storefront.types";
 import type { BrandPage } from "@/data-access-layer/storefront.dal";
 import type { Category } from "@/domain/category";
 import type { Product } from "@/domain/product";
+import type { ShopReviewDto } from "@server/catalog/review.types";
 
 const category = { id: "c1", slug: "silks", name: "Silks" } as Category;
 const product = { id: "p1", slug: "saree", name: "Saree" } as Product;
+const review = (id: string): ShopReviewDto => ({
+  id,
+  rating: 5,
+  comment: "Lovely.",
+  authorName: "A buyer",
+  isVerifiedPurchase: true,
+  createdAt: "2026-09-01T00:00:00.000Z",
+  product: { name: "Saree", slug: "saree" },
+});
 
 /** A shop that has filled everything in. Overrides take it back towards a bare one. */
 const full = (overrides: Partial<BrandPage> = {}): BrandPage => ({
@@ -39,6 +50,7 @@ const full = (overrides: Partial<BrandPage> = {}): BrandPage => ({
   brands: ["Silks & Co", "Zari House"],
   social: [{ network: "instagram", label: "Instagram", handle: "silks", href: "https://www.instagram.com/silks/" }],
   proof: null,
+  buyersSay: [review("r1"), review("r2"), review("r3")],
   categories: [category],
   newest: [product],
   ...overrides,
@@ -57,6 +69,7 @@ const bare = (): BrandPage =>
     returnsPolicy: null,
     brands: null,
     social: null,
+    buyersSay: null,
     categories: [],
     newest: [],
   });
@@ -109,6 +122,19 @@ describe("brandPageSections", () => {
   it("omits the ways to follow when no handle survived the allowlist", () => {
     expect(brandPageSections(full({ social: null }))).not.toContain("social");
     expect(brandPageSections(full({ social: [] }))).not.toContain("social");
+  });
+
+  it("places what buyers say after the brands and before the newest goods (R1)", () => {
+    const order: readonly string[] = BRAND_PAGE_SECTION_ORDER;
+    expect(order.indexOf("buyersSay")).toBe(order.indexOf("brands") + 1);
+    expect(order.indexOf("newest")).toBe(order.indexOf("buyersSay") + 1);
+  });
+
+  it("omits what buyers say under the floor — the DTO carries null (D3) — and with nothing quoted", () => {
+    expect(brandPageSections(full({ buyersSay: null }))).not.toContain("buyersSay");
+    expect(brandPageSections(full({ buyersSay: [] }))).not.toContain("buyersSay");
+    expect(buyersSaySlice(full({ buyersSay: null }))).toBeNull();
+    expect(buyersSaySlice(full())).toEqual({ reviews: [review("r1"), review("r2"), review("r3")] });
   });
 
   it("never omits the newest goods: an empty shop shows its honest state, not a gap", () => {

@@ -29,7 +29,13 @@ describe("the visible-review predicate", () => {
 
   it("is what the buyer-facing reads use, rather than a hand-written filter", () => {
     const text = source(REPOSITORY);
-    for (const method of ["publishedRatingRows", "listPublished"]) {
+    // The brand page's two org-wide reads (brand-page A3a) are buyer-facing too.
+    for (const method of [
+      "publishedRatingRows",
+      "listPublished",
+      "publishedRatingRowsForOrg",
+      "listPublishedForOrg",
+    ]) {
       const start = text.indexOf(`async ${method}(`);
       expect(start, `${method} not found`).toBeGreaterThan(-1);
       const body = text.slice(start, start + 900);

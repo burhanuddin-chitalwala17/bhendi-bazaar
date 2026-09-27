@@ -16,6 +16,13 @@ import {
 } from "@server/catalog/org-banner.repository";
 import { productsRepository } from "@server/catalog/product.repository";
 import { brandService } from "@server/catalog/brand.service";
+import { reviewService } from "@server/catalog/review.service";
+import { orderService } from "@server/checkout/order.service";
+import {
+  BUYERS_SAY_COUNT,
+  buyersSayFrom,
+  proofFrom,
+} from "@server/catalog/brand-page-proof";
 import { toBrandPageDto, type BrandPageDto } from "@server/catalog/storefront.types";
 import {
   handleCandidates,
@@ -69,16 +76,32 @@ export const storefrontService = {
   /**
    * The brand page of the shop at this handle, or null (brand-page D1).
    *
-   * Built from the profile's public read and the brand aggregate's names, in this domain.
-   * The goods and category tiles are not here: a product as a buyer sees it is priced in
+   * Built from the profile's public read and the brand aggregate's names, in this domain,
+   * plus the proof other surfaces derive (D2): the reviews service's org aggregate and newest
+   * published reviews, and checkout's paid-order count — each asked of a service, never a
+   * repository (ADR-0033), and each cut off at its floor here (D3). The goods and category
+   * tiles are not here: a product as a buyer sees it is priced in
    * `src/data-access-layer/products.dal.ts` (ADR-0018), and pricing it twice is what spec
    * R6 forbids, so the data-access layer adds those two slices beside this one.
    */
   async brandPage(handle: string): Promise<BrandPageDto | null> {
     const profile = await orgProfileRepository.findPublicByHandle(handle);
     if (!profile) return null;
-    const brands = await brandService.list(profile.org.id);
-    return toBrandPageDto(profile, brands);
+    const orgId = profile.org.id;
+    const [brands, rating, recent, paidOrders] = await Promise.all([
+      brandService.list(orgId),
+      reviewService.ratingForOrg(orgId),
+      reviewService.recentForOrg(orgId, BUYERS_SAY_COUNT),
+      orderService.paidOrderCountForOrg(orgId),
+    ]);
+    return toBrandPageDto(profile, brands, {
+      proof: proofFrom({
+        ratingAverage: rating.average,
+        ratingCount: rating.count,
+        paidOrders,
+      }),
+      buyersSay: buyersSayFrom(recent, rating.count),
+    });
   },
 
   /** This org's storefront as it stands, for its own editor. */

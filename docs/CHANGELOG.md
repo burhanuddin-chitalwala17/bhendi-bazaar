@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-184] 2026-09-27 — The brand page shows its proof: rating, orders fulfilled, and what buyers say [CONTRACT]
+
+Part (c) of seller-profile PR 4 ([brand-page](specs/seller-profile/brand-page/) R1, R3, R4; trd D2,
+D3). The proof strip part (a) left as a seam now draws the shop's rating with its review count and
+its orders fulfilled, each only above a declared floor — three published reviews, ten paid orders —
+and is absent when neither clears one. A new section, "what buyers say", quotes the shop's three
+newest published reviews with stars, the frozen author name, the verified mark, a clamped line and
+the piece linked, between the brands and the newest goods; it shares the rating's floor. Every
+figure is derived through public surfaces: the review service's org-level rating and recent list
+under the visibility rule and the catalogue's available shelf, and the order service's paid-order
+count, orders not lines. The shop-level average applies the product rule per piece, so one shopper
+is one voice. `BrandPageDto.proof` is filled and the DTO gains `buyersSay`; `ShopReviewDto` is a pick
+of the review DTO plus the product's name and slug, never a `userId`.
+
 ## [PR-183] 2026-09-27 — Hosted video plays: the player, the poster you choose, and video into the library [CONTRACT] [MIGRATION]
 
 Video-hosting spec R1, R4, R8, R9, A3; trd D5, D7, D8. The product page's video slide plays: a

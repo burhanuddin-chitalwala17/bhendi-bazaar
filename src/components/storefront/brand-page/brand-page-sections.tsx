@@ -5,10 +5,12 @@ import { BrandCategories } from "./brand-categories";
 import { BrandHero } from "./brand-hero";
 import { BrandStory } from "./brand-story";
 import { BrandsCarried } from "./brands-carried";
+import { BuyersSay } from "./buyers-say";
 import { NewestGoods } from "./newest-goods";
 import {
   brandPageSections,
   brandsSlice,
+  buyersSaySlice,
   categoriesSlice,
   newestSlice,
   policiesSlice,
@@ -39,6 +41,10 @@ const RENDER: Record<BrandPageSection, (page: BrandPage) => ReactNode> = {
   brands: (page) => {
     const names = brandsSlice(page);
     return names && <BrandsCarried names={names} />;
+  },
+  buyersSay: (page) => {
+    const slice = buyersSaySlice(page);
+    return slice && <BuyersSay {...slice} />;
   },
   newest: (page) => <NewestGoods {...newestSlice(page)} />,
   policies: (page) => {

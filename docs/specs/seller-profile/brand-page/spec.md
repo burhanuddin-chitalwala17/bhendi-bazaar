@@ -1,7 +1,7 @@
 # Spec — brand-page
 
 - **Summary:** The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line
-- **Status:** 🔨 In progress — PR-182 (a of a–c)
+- **Status:** 🔨 In progress — PR-182, PR-184 (a and c of a–c)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-27
