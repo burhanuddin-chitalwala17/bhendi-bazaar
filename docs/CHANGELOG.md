@@ -10,6 +10,24 @@
 
 ## Entries
 
+## [PR-186] 2026-09-27 — An overlay's surface follows its content
+
+[ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md). The bottom sheet was the
+right answer for a phone and had quietly become the answer for everything: a country list, a date
+range, a crop canvas, a before-and-after, a grid of pictures to choose from. On a laptop each of
+those opened a narrow panel against the right edge — a two-month calendar cramped in it, a crop
+canvas unusable, a three-up grid showing one and a half tiles. The rule is now four cases, and each
+surface carries its own phone form so a component never chooses between screens: a value picked
+from a set opens against its field as a popover from the desktop breakpoint and a sheet below it;
+a task with a canvas is a dialog sized to its content and a full-screen sheet below; the details of
+a selected item stay a side panel; a short flow the page hands off to stays a sheet.
+
+`ResponsivePicker` and `TaskDialog` are the two pairs, and Radix's popover joins the dialog already
+here, dressed in our tokens. The country field and the date range become pickers; framing a photo,
+comparing a before and an after, and choosing from the library become canvas tasks — the first two
+renamed to say so. `tests/unit/overlay-surfaces.test.ts` fails a new sheet outside the four cases
+and keeps its allowlist honest, so the next overlay is a decision rather than a reflex.
+
 ## [PR-185] 2026-09-27 — Image enhancement, part one: the ledger, the quota, and a dark photo fixed [CONTRACT] [MIGRATION]
 
 Image-enhancement spec R1–R3, R7, R9, R10, A1; trd D1, D2, D5, D6, D8, D9 — the first of five, and

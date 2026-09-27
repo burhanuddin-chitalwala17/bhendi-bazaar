@@ -77,4 +77,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0037](0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) | The host is a deployment fact, not an architectural input | Accepted | 2026-09-25 |
 | [0038](0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) | Background work runs on an owned worker against a Postgres job queue | Accepted | 2026-09-25 |
 | [0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | Video is stored in our own object store and transcoded by the worker | Accepted | 2026-09-27 |
+| [0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md) | An overlay's surface is chosen by what it holds, not by what was easiest to reach for | Accepted | 2026-09-27 |
 <!-- generated:adr-index:end -->

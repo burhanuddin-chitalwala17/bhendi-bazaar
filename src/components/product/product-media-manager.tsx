@@ -65,8 +65,8 @@ import {
   splitGallery,
 } from "@/components/product/gallery-order";
 import { ExtraRow, SlotRow } from "@/components/product/gallery-rows";
-import { CropSheet } from "@/components/product/crop-sheet";
-import { ImproveSheet, type ImproveTarget } from "@/components/product/improve-sheet";
+import { CropDialog } from "@/components/product/crop-dialog";
+import { ImproveDialog, type ImproveTarget } from "@/components/product/improve-dialog";
 import type { EnhancementDto } from "@server/content/enhancement.types";
 
 interface ProductMediaManagerProps {
@@ -652,9 +652,9 @@ export function ProductMediaManager({
         />
       )}
 
-      {orgId && <ImproveSheet orgId={orgId} target={improving} onAccepted={replaceRef} onClose={() => setImproving(null)} />}
+      {orgId && <ImproveDialog orgId={orgId} target={improving} onAccepted={replaceRef} onClose={() => setImproving(null)} />}
 
-      <CropSheet
+      <CropDialog
         photo={current ? { id: current.id, file: current.ready } : null}
         remaining={Math.max(0, queue.length - 1)}
         busy={isUploading}

@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Cropper, { type Area, type MediaSize, type Point } from "react-easy-crop";
+import Cropper, {
+  type Area,
+  type MediaSize,
+  type Point,
+} from "react-easy-crop";
 import { Check, Loader2, RotateCcw, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import {
   CROP_ASPECTS,
   aspectRatioOf,
@@ -24,7 +28,7 @@ export interface CropCandidate {
   file: File;
 }
 
-interface CropSheetProps {
+interface CropDialogProps {
   /** The photo on the table; null closes the sheet. */
   photo: CropCandidate | null;
   /** How many wait behind it — a multi-file pick is framed one photo at a time. */
@@ -38,43 +42,50 @@ interface CropSheetProps {
 }
 
 const PRESETS = Object.values(CROP_ASPECTS);
-const labelOf = (aspect: CropAspect) => (aspect === CROP_ASPECTS.FREE ? "Free" : aspect);
+const labelOf = (aspect: CropAspect) =>
+  aspect === CROP_ASPECTS.FREE ? "Free" : aspect;
 
 /**
  * Rotate and crop before the upload is spent (media-library R8a): aspect presets, quarter turns,
  * pinch or scroll zoom, and nothing that touches colour — a filter misrepresents a product on a
  * marketplace. "Use as is" is the untouched photo, exactly what a pick did before this existed.
  */
-export function CropSheet({ photo, remaining, busy, onUseAsIs, onUseCrop, onUseAllAsIs, onCancel }: CropSheetProps) {
+export function CropDialog({
+  photo,
+  remaining,
+  busy,
+  onUseAsIs,
+  onUseCrop,
+  onUseAllAsIs,
+  onCancel,
+}: CropDialogProps) {
   return (
-    <Sheet
+    <TaskDialog
       open={photo !== null}
       onOpenChange={(open) => {
         if (!open && !busy) onCancel();
       }}
+      title="Frame this photo"
+      description={
+        remaining > 0
+          ? `${remaining} more after this one. Turn and frame it, or use it as it is.`
+          : "Turn and frame it, or use it as it is. Colours are never changed."
+      }
     >
-      <SheetContent side="adaptive" className="md:max-w-xl">
-        <SheetTitle>Frame this photo</SheetTitle>
-        <SheetDescription>
-          {remaining > 0
-            ? `${remaining} more after this one. Turn and frame it, or use it as it is.`
-            : "Turn and frame it, or use it as it is. Colours are never changed."}
-        </SheetDescription>
-        {/* Keyed by the candidate so each photo starts unframed: a turn chosen for one is rarely
+      {/* Keyed by the candidate so each photo starts unframed: a turn chosen for one is rarely
             right for the next, and a remount is how React resets that without effects. */}
-        {photo && (
-          <CropFrame
-            key={photo.id}
-            file={photo.file}
-            remaining={remaining}
-            busy={busy}
-            onUseAsIs={onUseAsIs}
-            onUseCrop={onUseCrop}
-            onUseAllAsIs={onUseAllAsIs}
-          />
-        )}
-      </SheetContent>
-    </Sheet>
+      {photo && (
+        <CropFrame
+          key={photo.id}
+          file={photo.file}
+          remaining={remaining}
+          busy={busy}
+          onUseAsIs={onUseAsIs}
+          onUseCrop={onUseCrop}
+          onUseAllAsIs={onUseAllAsIs}
+        />
+      )}
+    </TaskDialog>
   );
 }
 
@@ -85,7 +96,7 @@ function CropFrame({
   onUseAsIs,
   onUseCrop,
   onUseAllAsIs,
-}: Omit<CropSheetProps, "photo" | "onCancel"> & { file: File }) {
+}: Omit<CropDialogProps, "photo" | "onCancel"> & { file: File }) {
   // One object URL for the life of this frame; the file is already in the page, so showing it
   // costs no egress (ADR-0026).
   const [src] = useState(() => URL.createObjectURL(file));
@@ -100,14 +111,28 @@ function CropFrame({
 
   // Free is the picture's own shape, turned as it is turned: the box then fills the frame and
   // zoom alone decides what is kept.
-  const own = natural ? rotatedBounds(natural.naturalWidth, natural.naturalHeight, rotation) : null;
+  const own = natural
+    ? rotatedBounds(natural.naturalWidth, natural.naturalHeight, rotation)
+    : null;
   const ratio = aspectRatioOf(aspect) ?? (own ? own.width / own.height : 1);
 
   const applyCrop = () => {
     if (!area || !natural) return;
-    const transform = normaliseTransform(area, rotation, natural.naturalWidth, natural.naturalHeight);
+    const transform = normaliseTransform(
+      area,
+      rotation,
+      natural.naturalWidth,
+      natural.naturalHeight,
+    );
     // The whole picture, unturned, is not a crop: nothing is derived, the original is used.
-    if (isIdentityTransform(transform, natural.naturalWidth, natural.naturalHeight)) onUseAsIs();
+    if (
+      isIdentityTransform(
+        transform,
+        natural.naturalWidth,
+        natural.naturalHeight,
+      )
+    )
+      onUseAsIs();
     else onUseCrop(transform);
   };
 
@@ -167,19 +192,38 @@ function CropFrame({
             <RotateCw />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">Pinch or scroll to zoom, drag to move.</p>
+        <p className="text-xs text-muted-foreground">
+          Pinch or scroll to zoom, drag to move.
+        </p>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         {remaining > 0 && (
-          <Button type="button" variant="ghost" size="lg" onClick={onUseAllAsIs} disabled={busy}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="lg"
+            onClick={onUseAllAsIs}
+            disabled={busy}
+          >
             Use all as is
           </Button>
         )}
-        <Button type="button" variant="outline" size="lg" onClick={onUseAsIs} disabled={busy}>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={onUseAsIs}
+          disabled={busy}
+        >
           Use as is
         </Button>
-        <Button type="button" size="lg" onClick={applyCrop} disabled={busy || !area || !natural}>
+        <Button
+          type="button"
+          size="lg"
+          onClick={applyCrop}
+          disabled={busy || !area || !natural}
+        >
           {busy ? <Loader2 className="animate-spin" /> : <Check />}
           Use this crop
         </Button>

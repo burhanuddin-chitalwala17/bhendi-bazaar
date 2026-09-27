@@ -162,6 +162,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **`server/` is organised by domain, not by layer or caller** — no `admin/` tree. [ADR-0012](docs/adr/0012-modules-are-vertical-slices-by-domain.md)
 - **A domain is reached through its public surface** — `*.service`, `*.types` and the seams it declares. Never another domain's repository. [ADR-0033](docs/adr/0033-a-domain-is-reached-through-its-public-surface.md)
 - **One components home, by domain; every control through its primitive.** [ADR-0031](docs/adr/0031-one-components-home-organised-by-domain.md)
+- **An overlay's surface follows its content** — picker, canvas task, detail panel, handed-off flow; each carries its own phone form. [ADR-0040](docs/adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)
 - **The UI is mobile-first** — base = phone, breakpoints add. [ADR-0015](docs/adr/0015-mobile-first-design.md)
 - **The phone storefront is an app shell** — bottom tab bar, 3-up grids, docked actions. [ADR-0016](docs/adr/0016-mobile-app-shell.md)
 - **Every design axis goes through tokens** — colour, type, tracking, elevation, shape, width. [ADR-0022](docs/adr/0022-design-decisions-go-through-tokens.md)

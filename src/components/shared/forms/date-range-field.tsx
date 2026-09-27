@@ -5,7 +5,7 @@ import type { DateRange } from "react-day-picker";
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
 import { DAY_RANGE_PRESETS, formatDayRange, fromDayKey, toDayKey, type DayRange } from "@/lib/date-range";
 
 interface DateRangeFieldProps {
@@ -16,15 +16,17 @@ interface DateRangeFieldProps {
 }
 
 /**
- * One field for a range of days: a button that names the range, a sheet with a two-month
- * calendar where the picked range is highlighted, and the presets people reach for. Two native
- * date inputs took twice the taps and never showed the range together.
+ * One field for a range of days: the button names the range and the calendar opens against it —
+ * a popover on a wide screen, a sheet on a phone
+ * ([ADR-0040](../../../../docs/adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)). Two
+ * native date inputs took twice the taps and never showed the range together.
  */
 export function DateRangeField({ value, onChange, names = { from: "from", to: "to" } }: DateRangeFieldProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DateRange | undefined>();
   const today = new Date();
 
+  /** Opening seeds the draft from what the field carries, so a reopen shows the picked range. */
   const openWith = () => {
     setDraft({ from: fromDayKey(value.from), to: fromDayKey(value.to) });
     setOpen(true);
@@ -42,15 +44,20 @@ export function DateRangeField({ value, onChange, names = { from: "from", to: "t
     <>
       <input type="hidden" name={names.from} value={value.from ?? ""} />
       <input type="hidden" name={names.to} value={value.to ?? ""} />
-      <Button type="button" variant="outline" onClick={openWith} className="w-full justify-between font-normal" aria-haspopup="dialog">
-        <span className={value.from || value.to ? "" : "text-muted-foreground"}>{formatDayRange(value)}</span>
-        <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-      </Button>
-
-      <Sheet open={open} onOpenChange={(next) => (next ? setOpen(true) : setOpen(false))}>
-        <SheetContent side="adaptive" className="md:max-w-2xl">
-          <SheetTitle>When</SheetTitle>
-          <SheetDescription>Tap the first day, then the last. A preset picks both.</SheetDescription>
+      <ResponsivePicker
+        open={open}
+        onOpenChange={(next) => (next ? openWith() : setOpen(false))}
+        title="When"
+        description="Tap the first day, then the last. A preset picks both."
+        className="w-auto max-w-[calc(100vw-2rem)]"
+        trigger={
+          <Button type="button" variant="outline" className="w-full justify-between font-normal" aria-haspopup="dialog">
+            <span className={value.from || value.to ? "" : "text-muted-foreground"}>{formatDayRange(value)}</span>
+            <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          </Button>
+        }
+      >
+        <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
             {DAY_RANGE_PRESETS.map((preset) => (
               <Button key={preset.label} type="button" variant="outline" size="sm" onClick={() => apply(preset.range(today))}>
@@ -70,13 +77,17 @@ export function DateRangeField({ value, onChange, names = { from: "from", to: "t
             disabled={{ after: today }}
           />
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-muted-foreground">{draft?.from ? formatDayRange({ from: toDayKey(draft.from), to: draft.to ? toDayKey(draft.to) : undefined }) : "Nothing picked"}</p>
+            <p className="text-sm text-muted-foreground">
+              {draft?.from
+                ? formatDayRange({ from: toDayKey(draft.from), to: draft.to ? toDayKey(draft.to) : undefined })
+                : "Nothing picked"}
+            </p>
             <Button type="button" onClick={applyDraft} disabled={!draft?.from}>
               {draft?.from && !draft.to ? "Just this day" : "Apply"}
             </Button>
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </ResponsivePicker>
     </>
   );
 }
