@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-201] 2026-09-28 — Enhancement runs on the worker, and the worker's env file never said so
+
+The tools that rework a photograph run as queue jobs, so their configuration has to reach the
+worker as well as the web app. `.env.worker.example` listed the database, the environment and the
+image store, and nothing about the hosted model — which meant a deploy built from it produced a
+worker that refused every setting needing that model, while the same key sat correctly in Vercel.
+The three variables are in the template now, with the sentence that explains why they are needed in
+two places rather than one.
+
+The staging block also now says to run that worker on the machine rather than on a laptop. It
+publishes no port and mounts no named volume, so it sits beside the production stack for nothing,
+and it keeps running once the laptop that started it is shut — which is the whole point when the
+person testing is not the person who started it.
+
 ## [PR-200] 2026-09-28 — The three enhancement variables were documented everywhere but the file people copy
 
 `OPERATIONS.md` describes `IMAGE_SEGMENT_PROVIDER`, `IMAGE_MODEL_API_KEY` and `IMAGE_MODEL_ENDPOINT`

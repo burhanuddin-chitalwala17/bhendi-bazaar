@@ -448,6 +448,14 @@ WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p work
 docker compose -p worker-staging down   # when done: an idle worker still bills polls
 ```
 
+**Run it on the worker's own machine, not a laptop**, whenever somebody else is doing the testing.
+The stack publishes no port and mounts no named volume, so a second project beside the production
+one on the same host costs nothing and conflicts with nothing — and it keeps running when the
+laptop that started it is shut, which a tester three time zones or one sleep cycle away depends on.
+Its own directory is what keeps the two apart: the whole difference between staging and production
+is which `.env` sits next to the compose file, and one wrong `DATABASE_URL` there points a staging
+worker at the live database with nothing to notice it.
+
 **Rebuild after a loss.** Create the instance again with the reserved IP, run `provision.sh`, re-run
 the last `main` pipeline. Nothing was on the machine that is not in Postgres or the object store.
 
