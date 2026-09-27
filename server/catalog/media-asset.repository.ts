@@ -81,6 +81,10 @@ function libraryWhere(orgId: string, filters: MediaLibraryFilters): Prisma.Media
       : null;
   return {
     orgId,
+    // A video's renditions and its poster frame are its machinery, not pictures an org member
+    // would ever choose: one upload became three tiles until this. Anything derived from a
+    // photograph — a crop, an improvement — is a picture they made, and stays.
+    NOT: { derivedFrom: { kind: MediaAssetKind.VIDEO } },
     state: filters.retired ? MediaAssetState.RETIRED : { in: LIBRARY_STATES },
     ...(filters.kind ? { kind: filters.kind } : {}),
     ...(filters.source ? { source: filters.source } : {}),

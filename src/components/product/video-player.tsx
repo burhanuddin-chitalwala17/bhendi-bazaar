@@ -47,6 +47,8 @@ export function VideoPlayer({
   active = true,
 }: VideoPlayerProps) {
   const [current, setCurrent] = useState<ProductMediaRendition | null>(null);
+  /** Play is asked for once per mounted element; a switch remounts, and the viewer keeps control after. */
+  const started = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const resumeAt = useRef<number | null>(null);
 
@@ -59,6 +61,7 @@ export function VideoPlayer({
   const switchTo = (rendition: ProductMediaRendition) => {
     if (rendition.key === current?.key) return;
     resumeAt.current = videoRef.current?.currentTime ?? null;
+    started.current = false;
     setCurrent(rendition);
   };
 
@@ -71,15 +74,23 @@ export function VideoPlayer({
           key={current.key}
           ref={videoRef}
           controls
-          autoPlay
           playsInline
-          preload="none"
+          // The element exists only because somebody tapped play, so it should load. `preload="none"`
+          // told the browser the opposite and `autoPlay` then asked it to start what it had not
+          // fetched; between the two the video sat at nought. Starting is asked for explicitly
+          // below, and a browser that declines simply leaves its own play button.
+          preload="auto"
           poster={poster ?? undefined}
           className="h-full w-full object-contain"
           onLoadedMetadata={(event) => {
             if (resumeAt.current === null) return;
             event.currentTarget.currentTime = resumeAt.current;
             resumeAt.current = null;
+          }}
+          onCanPlay={(event) => {
+            if (started.current) return;
+            started.current = true;
+            void event.currentTarget.play().catch(() => undefined);
           }}
         >
           <source src={current.url} type={VIDEO_RENDITION_MIME_TYPE} />

@@ -10,6 +10,7 @@ import { promisify } from "node:util";
 import { VIDEO_LIMITS, VIDEO_RENDITIONS, describeDurationLimit, describeSizeLimit } from "@server/catalog/video";
 import {
   assertWithinLimits,
+  isQuarterTurned,
   hasTranscoder,
   probeVideo,
   renditionsFor,
@@ -96,5 +97,19 @@ describe("transcoding a real clip", async () => {
 
   it.skipIf(!available)("a file with no video stream is refused as unreadable", async () => {
     await expect(probeVideo(join(dir, "missing.mp4"))).rejects.toThrow(/No such file|ffprobe|Invalid data/);
+  });
+});
+
+describe("a turned clip", () => {
+  it("is measured as it will be shown, whether the turn is in the matrix or an old tag", () => {
+    expect(isQuarterTurned({ side_data_list: [{ rotation: -90 }] })).toBe(true);
+    expect(isQuarterTurned({ side_data_list: [{ rotation: 270 }] })).toBe(true);
+    expect(isQuarterTurned({ side_data_list: [{ rotation: 180 }] })).toBe(false);
+    expect(isQuarterTurned({ side_data_list: [{ rotation: 0 }] })).toBe(false);
+    expect(isQuarterTurned({ tags: { rotate: "90" } })).toBe(true);
+    expect(isQuarterTurned({ tags: { rotate: "180" } })).toBe(false);
+    expect(isQuarterTurned({})).toBe(false);
+    // A phone films landscape and says "turn this": the stream is 320x240 and the picture is 240x320.
+    expect(isQuarterTurned({ side_data_list: [{ rotation: -90 }], tags: { rotate: "0" } })).toBe(true);
   });
 });

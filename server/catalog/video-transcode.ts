@@ -35,21 +35,48 @@ export async function hasTranscoder(): Promise<boolean> {
   }
 }
 
+interface ProbeStream {
+  width?: number;
+  height?: number;
+  /** Newer ffmpeg reports the display matrix here; older files carry a `rotate` tag instead. */
+  side_data_list?: Array<{ rotation?: number }>;
+  tags?: { rotate?: string };
+}
+
+/**
+ * Whether the picture is turned a quarter of the way round. A phone films in landscape and writes
+ * a display matrix saying "turn this"; the stream's own width and height are the untuned ones, so
+ * a portrait clip reads as landscape unless this is asked.
+ */
+export function isQuarterTurned(stream: { side_data_list?: Array<{ rotation?: number }>; tags?: { rotate?: string } }): boolean {
+  const fromMatrix = stream.side_data_list?.find((entry) => typeof entry.rotation === "number")?.rotation;
+  const degrees = fromMatrix ?? Number(stream.tags?.rotate ?? 0);
+  if (!Number.isFinite(degrees)) return false;
+  return Math.abs(((degrees % 360) + 360) % 360 - 90) < 1 || Math.abs(((degrees % 360) + 360) % 360 - 270) < 1;
+}
+
 export async function probeVideo(path: string): Promise<VideoProbe> {
   const { stdout } = await run(FFPROBE, [
     "-v", "error",
     "-select_streams", "v:0",
-    "-show_entries", "stream=width,height:format=duration",
+    "-show_entries", "stream=width,height:stream_side_data=rotation:stream_tags=rotate:format=duration",
     "-of", "json",
     path,
   ]);
-  const parsed = JSON.parse(stdout) as { streams?: Array<{ width?: number; height?: number }>; format?: { duration?: string } };
+  const parsed = JSON.parse(stdout) as { streams?: ProbeStream[]; format?: { duration?: string } };
   const stream = parsed.streams?.[0];
   const seconds = Number(parsed.format?.duration);
   if (!stream?.width || !stream.height || !Number.isFinite(seconds)) {
     throw new DomainError("This file has no video we can read");
   }
-  return { durationMs: Math.round(seconds * 1000), width: stream.width, height: stream.height };
+  // Reported as the picture will be shown, which is what every later number is measured against:
+  // the renditions that fit, the poster's shape, and what the library says the video is.
+  const turned = isQuarterTurned(stream);
+  return {
+    durationMs: Math.round(seconds * 1000),
+    width: turned ? stream.height : stream.width,
+    height: turned ? stream.width : stream.height,
+  };
 }
 
 /** The worker's check: a clip past the limit is refused with the limit named (spec R2, R7). */

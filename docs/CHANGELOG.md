@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-194] 2026-09-28 — One video, one item: what the first real upload showed
+
+Three faults, all visible in a single clip filmed on a phone.
+
+The library listed the video's renditions and its poster frame as items of their own, so one upload
+became three tiles. Those are the video's machinery, not pictures anybody would choose; the library
+lists what an org member would use, so anything derived from a video is left out of it. A crop or an
+improvement made from a photograph is a picture they made deliberately and stays.
+
+A phone films landscape and writes an instruction to turn the picture, so a portrait clip's stream
+reports itself as landscape. The probe asked only for the stream's own width and height, so a
+240 by 320 video was recorded as 320 by 240 and every later number was measured against the wrong
+one. It reads the turn now, from the display matrix or from the older tag, and reports the picture
+as it will be shown.
+
+The player told the browser not to load anything and then asked it to play, and between the two the
+video sat at nought. The element exists only because somebody tapped play, so it loads, and starting
+is asked for explicitly — a browser that declines simply leaves its own play button.
+
 ## [PR-193] 2026-09-28 — Make it big enough, and say which channel is asking
 
 Image-enhancement spec R1, R6, A4. The fifth improvement is live: make it bigger. A phone photograph
