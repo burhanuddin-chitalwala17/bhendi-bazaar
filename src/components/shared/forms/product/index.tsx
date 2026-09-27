@@ -1,6 +1,7 @@
 // components/shared/forms/product/index.tsx
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
+import { resolveShotList } from "@server/catalog/shot-list";
 import React, { useEffect } from "react";
 import Image from "next/image";
 import { useServerForm } from "@/hooks/core/useServerForm";
@@ -35,7 +36,8 @@ interface ProductFormProps {
   product?: ProductDetails;
   /** Create only: another of the org's products whose descriptive fields seed this one. */
   copySource?: ProductCopySource | null;
-  categories?: { id: string; name: string }[];
+  /** Carrying `parentId` and `shotList` lets the gallery resolve its slots per category (media-library D4). */
+  categories?: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
@@ -228,6 +230,7 @@ export function ProductForm({
                   value={field.value as ProductMediaInput[]}
                   onChange={field.onChange}
                   endpoints={uploadEndpoints}
+                  shotList={resolveShotList(watch("categoryId"), categories ?? [])}
                   identifier={watch("name")}
                   // The code, not the id: it is the folder the presign route signs under.
                   orgCode={orgs?.find((org) => org.id === watch("orgId"))?.code}

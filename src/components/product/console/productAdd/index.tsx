@@ -18,7 +18,7 @@ import { CopyFromPicker } from "./CopyFromPicker";
 
 import { PageHeader } from "@/components/shared/page-shell";
 interface ProductAddContainerProps {
-  categories: { id: string; name: string }[];
+  categories: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The product this one is being copied from, already scoped to the org. */

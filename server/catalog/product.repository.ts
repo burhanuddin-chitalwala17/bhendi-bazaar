@@ -29,6 +29,7 @@ export const PRODUCT_INCLUDE = {
       ref: true,
       description: true,
       isThumbnail: true,
+      slot: true,
     },
     orderBy: { position: "asc" as const },
   },

@@ -19,7 +19,7 @@
 
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
 import {
   ArrowDown,
@@ -33,6 +33,7 @@ import {
 import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   MAX_MEDIA_PER_PRODUCT,
@@ -44,6 +45,7 @@ import { buildImagePath, imageFileProblem } from "@server/catalog/image-paths";
 import { downscaleImage } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
+import { unknownSlots, type ShotList } from "@server/catalog/shot-list";
 
 /** Bounded, not a stampede: a phone's radio and the presign route both prefer it. */
 const UPLOAD_CONCURRENCY = 3;
@@ -60,6 +62,8 @@ interface ProductMediaManagerProps {
   orgCode?: string;
   /** The product's name — names the stored path instead of the `unnamed-` fallback. */
   identifier?: string;
+  /** The named slots this product's category asks for, already resolved up the tree (media-library D4). */
+  shotList: ShotList;
 }
 
 export function ProductMediaManager({
@@ -68,6 +72,7 @@ export function ProductMediaManager({
   endpoints,
   orgCode,
   identifier,
+  shotList,
 }: ProductMediaManagerProps) {
   const media = value ?? [];
   const [isUploading, setIsUploading] = useState(false);
@@ -79,6 +84,22 @@ export function ProductMediaManager({
 
   const atCapacity = media.length >= MAX_MEDIA_PER_PRODUCT;
   const photographCount = media.filter((item) => item.kind === "IMAGE").length;
+  const filledSlots = new Set(media.map((item) => item.slot).filter(Boolean));
+
+  // A slot key is only meaningful against the category's list, and the server refuses one
+  // it does not declare (D4). Changing category therefore turns those photographs back into
+  // extras here, where the org member can see it, rather than at submit.
+  const slotKeys = shotList.map((slot) => slot.key).join(",");
+  useEffect(() => {
+    const stale = unknownSlots(media.map((item) => item.slot), shotList);
+    if (stale.length === 0) return;
+    onChange(
+      media.map((item) =>
+        item.slot && stale.includes(item.slot) ? { ...item, slot: null } : item,
+      ),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the list changes, not on every edit
+  }, [slotKeys]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -225,6 +246,17 @@ export function ProductMediaManager({
     onChange(media.map((item, i) => ({ ...item, isThumbnail: i === index })));
   };
 
+  // One photograph per slot: assigning it here takes it from whichever item held it.
+  const assignSlot = (index: number, slot: string) => {
+    setNotice(null);
+    onChange(
+      media.map((item, i) => {
+        if (i === index) return { ...item, slot: slot || null };
+        return item.slot === slot ? { ...item, slot: null } : item;
+      }),
+    );
+  };
+
   const describe = (index: number, description: string) => {
     onChange(
       media.map((item, i) => (i === index ? { ...item, description } : item)),
@@ -233,6 +265,19 @@ export function ProductMediaManager({
 
   return (
     <div className="space-y-4">
+      <ul className="flex flex-wrap gap-2" aria-label="Photo slots">
+        {shotList.map((slot) => (
+          <li key={slot.key}>
+            <Badge
+              variant={filledSlots.has(slot.key) ? "default" : "outline"}
+              title={slot.hint}
+            >
+              {slot.label}
+            </Badge>
+          </li>
+        ))}
+      </ul>
+
       <div className="space-y-3">
         {media.map((item, index) => (
           <div
@@ -282,6 +327,23 @@ export function ProductMediaManager({
                 </Badge>
                 {item.isThumbnail && <Badge>Cover</Badge>}
               </div>
+
+              {/* Only a photograph fills a slot; a video is always an extra (D4). */}
+              {item.kind === "IMAGE" && (
+                <Select
+                  value={item.slot ?? ""}
+                  onChange={(event) => assignSlot(index, event.target.value)}
+                  aria-label={`Slot for item ${index + 1}`}
+                >
+                  <option value="">Extra photo</option>
+                  {shotList.map((slot) => (
+                    <option key={slot.key} value={slot.key}>
+                      {slot.label}
+                      {slot.hint ? ` — ${slot.hint}` : ""}
+                    </option>
+                  ))}
+                </Select>
+              )}
 
               <Input
                 value={item.description ?? ""}
@@ -397,7 +459,7 @@ export function ProductMediaManager({
       <p className="text-xs text-muted-foreground">
         {photographCount === 0
           ? "At least one photograph is required. Video is optional."
-          : `${media.length} of ${MAX_MEDIA_PER_PRODUCT} items. Tap "Cover" on the photograph that should represent this product in listings.`}{" "}
+          : `${media.length} of ${MAX_MEDIA_PER_PRODUCT} items, ${filledSlots.size} of ${shotList.length} slots filled. Tap "Cover" on the photograph that should represent this product in listings.`}{" "}
         Photos are resized in your browser before upload, so large files are
         fine.
       </p>

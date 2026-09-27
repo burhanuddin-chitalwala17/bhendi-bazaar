@@ -1,9 +1,9 @@
 # TRD — media-library
 
-- **Status:** 🔨 In progress — PR-152 (1 of 6)
+- **Status:** 🔨 In progress — PR-152, PR-161 (2 of 6)
 - **Domain:** catalog (assets, slots), content (renditions, capture checks)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-27
 - **References:** [spec.md](spec.md), [image-delivery trd](../image-delivery/trd.md), [bulk-catalog-upload trd](../bulk-catalog-upload/trd.md) D10, [ADR-0003](../../adr/0003-one-repository-per-aggregate.md), [ADR-0014](../../adr/0014-deploys-run-their-own-migrations.md), [ADR-0027](../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.

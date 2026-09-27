@@ -109,6 +109,9 @@ model Category {
   heroAssetId String?
   heroAsset   MediaAsset?    @relation("CategoryHero", fields: [heroAssetId], references: [id], onDelete: Restrict)
   accent      CategoryAccent @default(EMERALD)
+  /// The named photo slots products in this category fill, inherited down the tree from the
+  /// nearest ancestor that sets one; null means the platform's generic list (media-library D4).
+  shotList    Json?
   order       Int            @default(0)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -218,6 +221,9 @@ model ProductMedia {
   asset   MediaAsset? @relation(fields: [assetId], references: [id], onDelete: Restrict)
 
   position    Int
+  /// Which of the category's named slots this item fills; null for an extra beyond the slots or
+  /// a video (media-library R4, D4). `position` still orders the gallery.
+  slot        String?
   /// Per-item alt text. Nullable because the backfill has none to give: pre-existing
   /// galleries only ever had positional alt text generated at render.
   description String?

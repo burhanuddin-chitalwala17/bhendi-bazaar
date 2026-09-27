@@ -39,6 +39,7 @@ export function ProductGallery(product: Product) {
             ref: product.thumbnail,
             description: null,
             isThumbnail: true,
+            slot: null,
           },
         ];
 

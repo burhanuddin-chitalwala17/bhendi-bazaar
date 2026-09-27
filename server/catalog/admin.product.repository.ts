@@ -48,6 +48,7 @@ export function mediaWrite(media: ProductMediaInput[]) {
       ref: item.ref,
       description: blankToNull(item.description),
       isThumbnail: item.isThumbnail,
+      slot: item.kind === "IMAGE" ? blankToNull(item.slot) : null,
       position: index,
     })),
   };
@@ -83,7 +84,7 @@ const PRODUCT_LIST_SELECT = {
 
 /** Gallery order is the only order media is ever read in (R16). */
 const MEDIA_SELECT = {
-    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true },
+    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true, slot: true },
     orderBy: { position: "asc" },
 } satisfies Prisma.Product$mediaArgs;
 

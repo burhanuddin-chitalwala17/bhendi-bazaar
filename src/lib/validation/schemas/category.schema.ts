@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CategoryAccent } from "@prisma/client";
 import { optionalNumber } from "./common.schemas";
+import { shotListSchema } from "@server/catalog/shot-list";
 
 /**
  * The accepted shape of an admin category payload.
@@ -38,6 +39,7 @@ export const categoryFormSchema = z.object({
   accent: rules.accent.default("EMERALD"),
   order: optionalNumber(rules.order),
   parentId: rules.parentId.default(null),
+  shotList: shotListSchema.nullable().optional(),
 });
 
 export type CategoryFormSchemaInput = z.infer<typeof categoryFormSchema>;
@@ -48,6 +50,7 @@ export const updateCategorySchema = z.object({
   description: rules.description.optional(),
   heroImage: rules.heroImage.optional(),
   accent: rules.accent.optional(),
+  shotList: shotListSchema.nullable().optional(),
   order: optionalNumber(rules.order),
   parentId: rules.parentId.optional(),
 });

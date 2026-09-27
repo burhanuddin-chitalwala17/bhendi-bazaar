@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-161] 2026-09-27 — Galleries fill named slots from a per-category shot list [CONTRACT] [MIGRATION]
+
+Media-library PR 2 of 6. A category may carry a `shotList` — an ordered list of named slots, each
+with a label, a framing hint and a role — inherited down the tree from the nearest ancestor that
+sets one, with the generic front/back/detail/label/scale list in code as the default (D4). A
+gallery photograph may name the slot it fills; a video never does, a slot holds one photograph,
+and a key the product's category does not declare is refused at the boundary. The product editor
+shows the category's slots as a strip and lets each photograph be assigned to one, clearing
+assignments that stop existing when the category changes. `ProductMediaDto` gains `slot` and the
+category shapes gain `shotList`, both additive. No category has a tailored list yet; tailored lists
+follow the marketplace templates.
+
 ## [PR-160] 2026-09-27 — The worker card shows a short commit hash
 
 The card printed the image's full forty-character commit as its version. A hash is shown as its

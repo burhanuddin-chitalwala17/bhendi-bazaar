@@ -55,6 +55,15 @@ describe("the cover is the flag, not the position", () => {
   });
 
   // A fallback here is how an unset cover becomes survivable instead of loud (D4a).
+  it("the slot travels with its photograph, and a video's is always null", () => {
+    const { rows } = mediaWrite([
+      { ...image(A, true), slot: "front" },
+      { ...image(B), slot: " " },
+      { ...video(), slot: "label" } as ProductMediaInput,
+    ]);
+    expect(rows.map((row) => row.slot)).toEqual(["front", null, null]);
+  });
+
   it("refuses to invent a cover when nothing is flagged", () => {
     expect(() => coverOf([image(A), image(B)])).toThrow(/no cover/i);
   });
@@ -109,6 +118,33 @@ describe("gallery rules at the boundary", () => {
       image(`${A}?${i}`, i === 0)
     );
     expect(errorsOf(many)).toMatch(/at most/i);
+  });
+
+  it("a slot sits only on a photograph — a video is always an extra (media-library D4)", () => {
+    const result = productFormSchema.shape.media.safeParse([
+      image(A, true),
+      { ...video(), slot: "front" },
+    ]);
+    expect(result.success).toBe(false);
+    expect(JSON.stringify(result.error?.issues)).toContain("a video is always an extra");
+  });
+
+  it("a slot holds one photograph", () => {
+    const result = productFormSchema.shape.media.safeParse([
+      { ...image(A, true), slot: "front" },
+      { ...image(B), slot: "front" },
+    ]);
+    expect(result.success).toBe(false);
+    expect(JSON.stringify(result.error?.issues)).toContain("one photograph");
+  });
+
+  it("a blank slot is no slot, and two extras do not collide", () => {
+    const result = productFormSchema.shape.media.safeParse([
+      { ...image(A, true), slot: "" },
+      { ...image(B), slot: undefined },
+    ]);
+    expect(result.success).toBe(true);
+    expect(result.data?.map((item) => item.slot)).toEqual([null, null]);
   });
 
   it("does not accept a thumbnail from the payload — it is server-owned", () => {

@@ -18,6 +18,8 @@ export interface ProductMediaInput {
   ref: string;
   description?: string;
   isThumbnail: boolean;
+  /** The category slot this photograph fills; absent for an extra or a video (media-library R4). */
+  slot?: string | null;
 }
 
 /** What a read path returns for one gallery item, in gallery order. */
@@ -27,6 +29,7 @@ export interface ProductMediaDto {
   ref: string;
   description: string | null;
   isThumbnail: boolean;
+  slot: string | null;
 }
 
 /** R14 — a page-weight limit before it is a storage one. */
