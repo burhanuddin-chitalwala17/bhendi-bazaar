@@ -40,3 +40,29 @@ export function countryOptions(): Array<{ code: CountryCode; name: string }> {
 export function asCountryCode(value: string | null | undefined): CountryCode | null {
   return value && isCountryCode(value) ? value : null;
 }
+
+const fold = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+/**
+ * The countries a typed query means: a name containing it, or its code exactly. Names that
+ * start with the query come first, so "in" offers India before Benin. Accents are ignored,
+ * so "cote" finds Côte d'Ivoire. An empty query is the whole list in its usual order.
+ */
+export function filterCountries(query: string): Array<{ code: CountryCode; name: string }> {
+  const needle = fold(query);
+  const options = countryOptions();
+  if (!needle) return options;
+  const starts: typeof options = [];
+  const contains: typeof options = [];
+  for (const option of options) {
+    const name = fold(option.name);
+    if (name.startsWith(needle) || option.code.toLowerCase() === needle) starts.push(option);
+    else if (name.includes(needle)) contains.push(option);
+  }
+  return [...starts, ...contains];
+}

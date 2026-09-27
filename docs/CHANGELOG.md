@@ -10,6 +10,13 @@
 
 ## Entries
 
+## [PR-165] 2026-09-27 — The country field is a searchable picker
+
+A native select of 249 countries is a long scroll on a phone. Both country-of-origin fields now
+open a sheet with a search box over the ISO list: names that start with the typed letters come
+first, accents are ignored, a code matches exactly, and Enter takes the first match. The code is
+still what is stored.
+
 ## [PR-164] 2026-09-27 — What the first local test of PR-161 to PR-163 found
 
 A photograph's slot was saved but reopened as an extra: the edit form's default values dropped it.

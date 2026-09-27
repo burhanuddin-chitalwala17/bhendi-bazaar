@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FormInput } from "@/components/shared/forms/FormField";
-import { CountrySelect } from "@/components/shared/forms/CountrySelect";
+import { FormController, FormInput } from "@/components/shared/forms/FormField";
+import { CountryPicker } from "@/components/shared/forms/CountryPicker";
 import { asCountryCode, countryName } from "@server/shared/countries";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { useServerForm } from "@/hooks/core/useServerForm";
@@ -159,6 +159,7 @@ function BrandForm({
 }) {
   const {
     register,
+    control,
     watch,
     setValue,
     onSubmit: handleFormSubmit,
@@ -226,11 +227,15 @@ function BrandForm({
         error={errors.packerOrImporter?.message}
         hint="When it differs from the maker"
       />
-      <CountrySelect
+      <FormController
+        name="countryOfOrigin"
+        control={control}
         label="Country of origin"
-        {...register("countryOfOrigin")}
-        error={errors.countryOfOrigin?.message}
         hint="Where this brand's products are made, unless a product says otherwise"
+        error={errors.countryOfOrigin?.message}
+        render={({ field }) => (
+          <CountryPicker value={typeof field.value === "string" ? field.value : null} onChange={field.onChange} />
+        )}
       />
       <Checkbox
         label="Default brand"

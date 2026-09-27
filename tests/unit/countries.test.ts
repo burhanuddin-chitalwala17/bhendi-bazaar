@@ -2,7 +2,7 @@
 // org types (docs/specs/seller-profile/ R3, R4): the list is complete, home comes first, and
 // the schemas accept a code or a blank and nothing else.
 import { describe, expect, it } from "vitest";
-import { COUNTRY_CODES, HOME_COUNTRY, countryName, countryOptions, isCountryCode } from "@server/shared/countries";
+import { COUNTRY_CODES, HOME_COUNTRY, countryName, countryOptions, filterCountries, isCountryCode } from "@server/shared/countries";
 import { brandSchema, updateBrandSchema } from "@/lib/validation/schemas/brand.schema";
 import { listingDefaultsSchema } from "@/lib/validation/schemas/listing-defaults.schema";
 
@@ -27,6 +27,21 @@ describe("the country list", () => {
     const names = options.slice(1).map((option) => option.name);
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, "en")));
     expect(options.length).toBe(COUNTRY_CODES.length);
+  });
+});
+
+describe("filterCountries", () => {
+  it("ranks names that start with the query before names that merely contain it", () => {
+    const names = filterCountries("in").map((option) => option.name);
+    expect(names[0]).toBe("India");
+    expect(names.indexOf("India")).toBeLessThan(names.indexOf("Benin"));
+  });
+
+  it("matches a code exactly and ignores accents", () => {
+    expect(filterCountries("ae")[0]).toMatchObject({ code: "AE" });
+    expect(filterCountries("cote").map((option) => option.code)).toContain("CI");
+    expect(filterCountries("")).toHaveLength(COUNTRY_CODES.length);
+    expect(filterCountries("zzzz")).toEqual([]);
   });
 });
 

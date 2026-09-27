@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { FormInput } from "@/components/shared/forms/FormField";
-import { CountrySelect } from "@/components/shared/forms/CountrySelect";
+import { FormController, FormInput } from "@/components/shared/forms/FormField";
+import { CountryPicker } from "@/components/shared/forms/CountryPicker";
 import { asCountryCode } from "@server/shared/countries";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { readApiError } from "@/lib/api-error";
@@ -30,6 +30,7 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
   const router = useRouter();
   const {
     register,
+    control,
     onSubmit: handleFormSubmit,
     formError,
     formState: { errors, isSubmitting },
@@ -63,11 +64,15 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
         </Alert>
       )}
 
-      <CountrySelect
+      <FormController
+        name="countryOfOrigin"
+        control={control}
         label="Country of origin"
-        {...register("countryOfOrigin")}
-        error={errors.countryOfOrigin?.message}
         hint="Where your products are made, unless a brand or a product says otherwise"
+        error={errors.countryOfOrigin?.message}
+        render={({ field }) => (
+          <CountryPicker value={typeof field.value === "string" ? field.value : null} onChange={field.onChange} />
+        )}
       />
       <FormInput
         label="Tax rate (%)"
