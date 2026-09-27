@@ -66,6 +66,7 @@ export function resolveDailyCap(platform: number | null): number {
 export const AVAILABLE_TOOLS = [
   ENHANCEMENT_TOOL.WHITE,
   ENHANCEMENT_TOOL.STUDIO,
+  ENHANCEMENT_TOOL.SCENE,
   ENHANCEMENT_TOOL.CUTOUT,
   ENHANCEMENT_TOOL.LIGHT,
   ENHANCEMENT_TOOL.ENLARGE,
@@ -78,6 +79,9 @@ export function isAvailableTool(tool: EnhancementTool): tool is AvailableTool {
 
 /** ≈$0.002 an image at the hosted model's price (trd D3), rounded up to the whole paisa. */
 export const MODEL_SEGMENT_PAISE = 18;
+
+/** ≈$0.04 a painted scene at the hosted model's price (trd D3), rounded up to the whole paisa. */
+export const SCENE_PAINT_PAISE = 350;
 
 /**
  * What one run costs the platform, in paise, by the tool and the service that performed it
@@ -101,6 +105,13 @@ export const TOOL_COST_PAISE: Record<AvailableTool, Record<EnhancementProvider, 
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
     [ENHANCEMENT_PROVIDER.MODEL]: MODEL_SEGMENT_PAISE,
   },
+  // Only the hosted model paints; the other two are priced at nothing because they cannot do it
+  // at all, which `scenePainterFor` refuses before a run rather than charging zero for.
+  [ENHANCEMENT_TOOL.SCENE]: {
+    [ENHANCEMENT_PROVIDER.SHARP]: 0,
+    [ENHANCEMENT_PROVIDER.ZONE]: 0,
+    [ENHANCEMENT_PROVIDER.MODEL]: SCENE_PAINT_PAISE,
+  },
   [ENHANCEMENT_TOOL.LIGHT]: {
     [ENHANCEMENT_PROVIDER.SHARP]: 0,
     [ENHANCEMENT_PROVIDER.ZONE]: 0,
@@ -114,6 +125,25 @@ export const TOOL_COST_PAISE: Record<AvailableTool, Record<EnhancementProvider, 
     [ENHANCEMENT_PROVIDER.MODEL]: 0,
   },
 };
+
+/** One thing one service did in the course of a run: what was asked of it, and which one did it. */
+export interface RunStep {
+  tool: AvailableTool;
+  provider: EnhancementProvider;
+}
+
+/**
+ * What a run cost the platform: the sum of every service it actually used (spec R9, trd D6).
+ *
+ * Most tools are one step and one price. A scene is two — the cut-out and the paint, which may be
+ * different services and are priced as what each of them did — so a single lookup would under-bill
+ * it by whatever the cut-out cost. **The run's total is what the row records and what the daily
+ * cap counts**; a second column for the breakdown would be a second thing to keep in step with
+ * this one, and nothing reads it.
+ */
+export function runCostPaise(steps: readonly RunStep[]): number {
+  return steps.reduce((total, step) => total + TOOL_COST_PAISE[step.tool][step.provider], 0);
+}
 
 /** One line per tool, as the sheet lists them (spec R1). */
 export const TOOL_COPY: Record<EnhancementTool, { label: string; line: string }> = {

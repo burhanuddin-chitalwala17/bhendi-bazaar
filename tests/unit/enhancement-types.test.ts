@@ -16,6 +16,7 @@ import {
   FALLBACK_DAILY_CAP_PAISE,
   FALLBACK_MONTHLY_ALLOWANCE,
   MODEL_SEGMENT_PAISE,
+  SCENE_PAINT_PAISE,
   TOOL_COPY,
   TOOL_COST_PAISE,
   TOOL_MIME_TYPE,
@@ -64,17 +65,10 @@ describe("the closed sets mirror the schema", () => {
   });
 
   it("offers only a tool with a pipeline, and prices every one it offers in whole paise", () => {
-    expect([...AVAILABLE_TOOLS].sort()).toEqual(
-      [
-        ENHANCEMENT_TOOL.CUTOUT,
-        ENHANCEMENT_TOOL.ENLARGE,
-        ENHANCEMENT_TOOL.LIGHT,
-        ENHANCEMENT_TOOL.STUDIO,
-        ENHANCEMENT_TOOL.WHITE,
-      ].sort(),
-    );
+    // All six have one now that `scene` has shipped, so the available set is the whole enum —
+    // which is a statement about today, not a reason to stop checking the two are the same list.
+    expect([...AVAILABLE_TOOLS].sort()).toEqual(Object.values(ENHANCEMENT_TOOL).sort());
     for (const tool of AVAILABLE_TOOLS) expect(isAvailableTool(tool)).toBe(true);
-    expect(isAvailableTool(ENHANCEMENT_TOOL.SCENE)).toBe(false);
     expect(Object.keys(TOOL_COST_PAISE).sort()).toEqual([...AVAILABLE_TOOLS].sort());
     for (const byProvider of Object.values(TOOL_COST_PAISE)) {
       expect(Object.keys(byProvider).sort()).toEqual(Object.values(ENHANCEMENT_PROVIDER).sort());
@@ -95,6 +89,10 @@ describe("the closed sets mirror the schema", () => {
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.CUTOUT][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.WHITE][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
     expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.STUDIO][ENHANCEMENT_PROVIDER.MODEL]).toBe(MODEL_SEGMENT_PAISE);
+    // A scene is priced per paint; what a whole scene run costs is that plus its cut-out, which
+    // `runCostPaise` sums and `tests/unit/enhancement-scene.test.ts` holds to each combination.
+    expect(TOOL_COST_PAISE[ENHANCEMENT_TOOL.SCENE][ENHANCEMENT_PROVIDER.MODEL]).toBe(SCENE_PAINT_PAISE);
+    expect(SCENE_PAINT_PAISE).toBe(350);
     // `light` never asks a service for anything, so no service can make it cost. Nor does
     // `enlarge`: a plain resize runs on our own CPU, and an upscaler that would cost something
     // is refused because it redraws the product, not because of the bill (trd D2).
@@ -117,6 +115,7 @@ describe("the closed sets mirror the schema", () => {
     for (const tool of [
       ENHANCEMENT_TOOL.WHITE,
       ENHANCEMENT_TOOL.STUDIO,
+      ENHANCEMENT_TOOL.SCENE,
       ENHANCEMENT_TOOL.LIGHT,
       ENHANCEMENT_TOOL.ENLARGE,
     ]) {

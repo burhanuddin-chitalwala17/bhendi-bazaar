@@ -1,7 +1,7 @@
 # Spec — image-enhancement
 
 - **Summary:** A phone photo becomes a marketplace-grade image on demand — cut out, on white, on a studio backdrop, in a scene, brightened, or enlarged — each a tool applied alone, each result a proposal the org accepts or discards
-- **Status:** 🔨 In progress — PR-185, PR-190, PR-191, PR-193 (4 of 5)
+- **Status:** ✅ Implemented — PR-185, PR-190, PR-191, PR-193, PR-198 (2026-09-28)
 - **Domain:** content (enhancement), reading catalog (assets); runs on the worker
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-28
@@ -29,7 +29,7 @@ Good photography is the small seller's largest handicap ([media-library](../medi
 - **R8** — Which service performs a tool is the platform's choice and can change without the org noticing. Before a service is chosen for a tool, the same real photographs go through each candidate and the outputs are compared side by side.
 - **R9** — Every run records its tool, its service and its cost. Cost is integer paise ([Invariant 3](../../../CLAUDE.md)).
 - **R10** — A run that fails says so where it was asked for, with the reason and a retry, and applies nothing partway.
-- **R11** — Scene settings are a fixed list — a wooden table by a window, a marble counter, a shop shelf, a fabric drape, plain studio colours — chosen by the platform owner. An org picks from the list and never types a description.
+- **R11** — Scene settings are a fixed list of **five**, chosen by the platform owner: a wooden table by a window, a marble counter, a shop shelf, a fabric drape, and a plain studio colour. An org picks one from the list and **never types a prompt or a description of any kind** — the words the service is given are the platform's, and a setting the list does not name cannot be asked for. Each setting carries the shape it is for: square where a marketplace listing wants one, tall where an Instagram post does, so the member chooses a picture rather than a geometry.
 - **R12** — Everything works on a ~360px phone: choosing a tool, waiting, comparing, accepting.
 
 ## Product acceptance

@@ -38,7 +38,7 @@ npm run dev                 # http://localhost:3000
 | `R2_BUCKET` | ✅ | Bucket name |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | ✅ | R2 API token with read+write on that bucket |
 | `IMAGE_SEGMENT_PROVIDER` | ○ | Which service cuts a product out of its background for the `cut out`, `on white` and `studio` improvements: `zone` — the image host's own delivery transform on the custom images domain, free to 5,000 a month — or `model`, the hosted vision model. **Defaults to `zone`**, and whichever is asked for, the other runs when it is not set up. An unrecognised value is the default rather than an error: it is a preference, not a credential |
-| `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development |
+| `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development. The same key buys the **scene** improvement, which has no free route at all — no key, no scenes anywhere, and the account behind it needs a *balance* as well as a key (see [A scene costs money](#a-scene-costs-money)) |
 | `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
@@ -265,6 +265,30 @@ It writes nothing to the database and creates no library image: everything lands
 `bakeoff/<runId>/` prefix in the object store, so cleaning up is deleting that prefix. It does spend
 real money on any service that bills per image, which is what `--limit` is for. Set
 `IMAGE_SEGMENT_PROVIDER` to the winner afterwards; nothing else changes.
+
+### A scene costs money
+
+Every other improvement is free or nearly so: `light` and `enlarge` run on our own CPU, and a
+cut-out is free to 5,000 a month on the image host. **A scene is not.** One run pays a hosted model
+about **₹3.50** to paint the setting (`SCENE_PAINT_PAISE`), plus about ₹0.18 for the cut-out when
+that came from the paid model rather than the image host's transform — so a scene run is roughly
+₹3.50 and the ledger records the two together, which is also what the platform's daily cap counts.
+At the default cap of ₹500 a day that is about 140 scenes across every shop.
+
+That money is a **balance on the image-model account**, and a key alone does not make one. With a
+key and no balance the request is accepted, the worker runs, the service refuses, and the run is
+marked failed — which costs the shop nothing (a failed run is the one state that does not count
+against its month) and shows the member one line in the improve sheet:
+
+```text
+The picture service is out of credit. Ask the platform owner to top it up.
+```
+
+That sentence is deliberate: it names something the platform owner can do rather than telling a
+shop to try again at a service that will refuse again. With **no key at all** the tools list still
+offers "In a scene", and choosing a setting is refused before anything is spent with
+`Scene backdrops are not set up yet`. Nothing else is affected either way — the other five
+improvements keep working.
 
 ### Env hygiene
 `.env*` is gitignored and has never been committed — keep it that way. Set `NODE_ENV` to a valid Node value (`development` / `production` / `test`); anything else silently changes behaviour in code that branches on it. Avoid keeping more than one live connection string in the file at a time — see [Seeding](#seeding) for why.

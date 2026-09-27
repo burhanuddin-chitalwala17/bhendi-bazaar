@@ -47,8 +47,23 @@ export function squareEdgeFor(width: number, height: number): number {
   return Math.min(MAX_IMAGE_EDGE, Math.ceil(Math.max(width, height) / CONTENT_RATIO));
 }
 
+export interface Box {
+  width: number;
+  height: number;
+}
+
+/** The box a product may occupy on a canvas of this size: the same margin, on both axes. */
+export function contentBox(canvas: Box): Box {
+  return { width: Math.floor(canvas.width * CONTENT_RATIO), height: Math.floor(canvas.height * CONTENT_RATIO) };
+}
+
+/** Centred on any canvas. A square is the case where the two edges are the same number. */
+export function centreIn(canvas: Box, width: number, height: number): Placement {
+  return { left: Math.round((canvas.width - width) / 2), top: Math.round((canvas.height - height) / 2) };
+}
+
 export function centreOn(edge: number, width: number, height: number): Placement {
-  return { left: Math.round((edge - width) / 2), top: Math.round((edge - height) / 2) };
+  return centreIn({ width: edge, height: edge }, width, height);
 }
 
 /**
@@ -56,13 +71,18 @@ export function centreOn(edge: number, width: number, height: number): Placement
  * during the composite, so what is compared is what was placed: a resize is a size we chose, while
  * a change during the composite is the product being redrawn (trd D4).
  */
-export async function fitForBackdrop(cutout: Buffer): Promise<{ bytes: Buffer; width: number; height: number }> {
-  const edge = contentEdge();
+export async function fitInto(cutout: Buffer, box: Box): Promise<{ bytes: Buffer; width: number; height: number }> {
   const { data, info } = await sharp(cutout)
-    .resize({ width: edge, height: edge, fit: "inside", withoutEnlargement: true })
+    .resize({ width: box.width, height: box.height, fit: "inside", withoutEnlargement: true })
     .png()
     .toBuffer({ resolveWithObject: true });
   return { bytes: data, width: info.width, height: info.height };
+}
+
+/** The square case: the content box of a canvas at the stored ceiling. */
+export async function fitForBackdrop(cutout: Buffer): Promise<{ bytes: Buffer; width: number; height: number }> {
+  const edge = contentEdge();
+  return await fitInto(cutout, { width: edge, height: edge });
 }
 
 /** The studio's backdrop as raw pixels: one linear ramp down the square, top stop to bottom stop. */

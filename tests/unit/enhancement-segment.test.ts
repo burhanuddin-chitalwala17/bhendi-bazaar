@@ -9,7 +9,8 @@ import { DomainError } from "@server/shared/domain-error";
 import { ENHANCEMENT_PROVIDER } from "@server/content/enhancement.types";
 import { SEGMENT_TIMEOUT_MS, type StoreUrls } from "@server/content/providers/segment";
 import { zoneCutOutUrl, zoneSegmenter } from "@server/content/providers/segment/zone";
-import { modelEndpoint, modelSegmenter } from "@server/content/providers/segment/model";
+import { modelEndpoint } from "@server/content/providers/model-host";
+import { modelSegmenter } from "@server/content/providers/segment/model";
 
 const media = { publicBaseUrl: vi.fn(), publicUrlOf: vi.fn() };
 vi.mock("@server/catalog/media-asset.service", () => ({ mediaAssetService: media }));

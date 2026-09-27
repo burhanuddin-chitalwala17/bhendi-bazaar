@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ENHANCEMENT_TOOL } from "@server/content/enhancement.types";
+import { SCENE_PRESET_KEYS } from "@server/content/scene-presets";
 import { SHOT_ROLES } from "@server/catalog/shot-list";
 
 const id = z.string().trim().min(1).max(64);
@@ -12,11 +13,16 @@ const id = z.string().trim().min(1).max(64);
  *
  * A photo that fills no slot sends `null`, not nothing: the editor knows it has no slot, which is
  * a different statement from having forgotten to say. Both are read as no slot.
+ *
+ * A setting is a key from the platform's own list and belongs to exactly one tool (spec R11): a
+ * scene without one cannot be run, and anything else carrying one is describing a choice that tool
+ * does not have. Both are refused here rather than shrugged off downstream, because a free-text
+ * scene is the thing the fixed list exists to make impossible.
  */
 export const requestEnhancementSchema = z
   .object({
     tool: z.enum(ENHANCEMENT_TOOL),
-    preset: z.string().trim().min(1).max(40).optional(),
+    preset: z.enum(SCENE_PRESET_KEYS).optional(),
     sourceAssetId: id.optional(),
     sourceRef: z.url().max(1024).optional(),
     slot: z
@@ -34,6 +40,14 @@ export const requestEnhancementSchema = z
   .refine((request) => (request.sourceAssetId ? 1 : 0) + (request.sourceRef ? 1 : 0) === 1, {
     message: "Name the photo by its asset id or its URL, not both",
     path: ["sourceAssetId"],
+  })
+  .refine((request) => request.tool !== ENHANCEMENT_TOOL.SCENE || request.preset !== undefined, {
+    message: "Choose one of the scene settings",
+    path: ["preset"],
+  })
+  .refine((request) => request.tool === ENHANCEMENT_TOOL.SCENE || request.preset === undefined, {
+    message: "Only a scene has a setting to choose",
+    path: ["preset"],
   });
 
 export type RequestEnhancementBody = z.infer<typeof requestEnhancementSchema>;

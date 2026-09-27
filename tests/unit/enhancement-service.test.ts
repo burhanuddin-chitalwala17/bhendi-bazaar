@@ -37,6 +37,7 @@ const media = {
   publicBaseUrl: () => "https://img.test",
 };
 const segmenterFor = vi.fn();
+const scenePainterFor = vi.fn();
 const tx = { marker: "the transaction client" };
 const prisma = { $transaction: vi.fn(async (work: (client: typeof tx) => Promise<unknown>) => work(tx)) };
 const enqueue = vi.fn();
@@ -52,7 +53,11 @@ vi.mock("@server/content/tools/light", () => ({ lightFix: vi.fn() }));
 vi.mock("@server/content/tools/cutout", () => ({ cutOut: vi.fn() }));
 vi.mock("@server/content/tools/white", () => ({ onWhite: vi.fn() }));
 vi.mock("@server/content/tools/studio", () => ({ inStudio: vi.fn() }));
-vi.mock("@server/content/providers", () => ({ segmenterFor: (...args: unknown[]) => segmenterFor(...args) }));
+vi.mock("@server/content/tools/scene", () => ({ inScene: vi.fn() }));
+vi.mock("@server/content/providers", () => ({
+  segmenterFor: (...args: unknown[]) => segmenterFor(...args),
+  scenePainterFor: (...args: unknown[]) => scenePainterFor(...args),
+}));
 
 const { enhancementService } = await import("@server/content/enhancement.service");
 
@@ -104,6 +109,7 @@ beforeEach(() => {
   repo.markDiscarded.mockResolvedValue(true);
   media.registerDerivedObject.mockResolvedValue({ id: "d1", ref: "https://img.test/products/o/a-light-e1.webp" });
   segmenterFor.mockReturnValue({ key: "zone", isAvailable: () => true, cutOut: vi.fn() });
+  scenePainterFor.mockReturnValue({ key: "model", isAvailable: () => true, paint: vi.fn() });
 });
 
 describe("usage", () => {
@@ -183,10 +189,41 @@ describe("request", () => {
     expect(media.findReadyImage).not.toHaveBeenCalled();
   });
 
-  it("refuses a tool that has no pipeline yet", async () => {
-    await expect(request({ tool: "SCENE" as never, sourceRef: source.ref, slot: "front", slotRole: "product" })).rejects.toThrow(
-      "In a scene is not available yet",
+  it("refuses a tool the list no longer offers, naming none of them", async () => {
+    await expect(request({ tool: "POLISH" as never, sourceRef: source.ref, slot: "front", slotRole: "product" })).rejects.toThrow(
+      "That improvement is not available yet",
     );
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("records the service that will paint a scene, and the setting it was asked for", async () => {
+    repo.create.mockResolvedValue(row({ tool: "SCENE", preset: "wooden-table", provider: "model" }));
+
+    await request({ tool: "SCENE", preset: "wooden-table", sourceRef: source.ref, slot: "front", slotRole: "product" });
+
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ tool: "SCENE", preset: "wooden-table", provider: "model" }),
+      tx,
+    );
+  });
+
+  it("refuses a scene before a slot is spent where nothing is set up to paint one", async () => {
+    scenePainterFor.mockImplementation(() => {
+      throw new DomainError("Scene backdrops are not set up yet");
+    });
+    await expect(
+      request({ tool: "SCENE", preset: "wooden-table", sourceRef: source.ref, slot: "front", slotRole: "product" }),
+    ).rejects.toThrow("Scene backdrops are not set up yet");
+    expect(policies.policyFor).not.toHaveBeenCalled();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("refuses a scene naming a setting that is not on the platform's list", async () => {
+    // The boundary schema refuses this first; the service refuses it again, because a row read
+    // back after a setting is retired is the same statement arriving by another road (spec R11).
+    await expect(
+      request({ tool: "SCENE", preset: "a beach in goa", sourceRef: source.ref, slot: "front", slotRole: "product" }),
+    ).rejects.toThrow("Choose one of the scene settings");
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 

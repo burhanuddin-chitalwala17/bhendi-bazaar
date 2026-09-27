@@ -12,12 +12,15 @@ import {
 } from "@server/content/enhancement-settings.repository";
 import { enhancementSpec } from "@server/content/enhancement.job";
 import { ENLARGE_TARGET_LONG_EDGE } from "@server/content/channel-rules";
-import { segmenterFor } from "@server/content/providers";
+import { scenePainterFor, segmenterFor } from "@server/content/providers";
 import type { Segmenter } from "@server/content/providers/segment";
+import type { ScenePainter } from "@server/content/providers/scene";
+import { scenePresetFor, type ScenePreset } from "@server/content/scene-presets";
 import { lightFix } from "@server/content/tools/light";
 import { cutOut } from "@server/content/tools/cutout";
 import { onWhite } from "@server/content/tools/white";
 import { inStudio } from "@server/content/tools/studio";
+import { inScene } from "@server/content/tools/scene";
 import { enlarge } from "@server/content/tools/enlarge";
 import type { ToolInput, ToolResult } from "@server/content/tools/tool";
 import {
@@ -25,8 +28,6 @@ import {
   ENHANCEMENT_STATE,
   ENHANCEMENT_TOOL,
   PROPOSAL_EXTENSION,
-  TOOL_COPY,
-  TOOL_COST_PAISE,
   TOOL_MIME_TYPE,
   dayWindow,
   isAvailableTool,
@@ -34,6 +35,7 @@ import {
   proposalKeyFor,
   resolveAllowance,
   resolveDailyCap,
+  runCostPaise,
   toEnhancementDto,
   type AvailableTool,
   type EnhancementDto,
@@ -48,8 +50,12 @@ import {
   type SetOrgEnhancementPolicyInput,
 } from "@server/content/enhancement.types";
 
-/** What a tool needs from a provider (trd D3). A tool that needs nothing runs on sharp alone. */
-const NEEDS = { NOTHING: "nothing", SEGMENT: "segment" } as const;
+/**
+ * What a tool needs from a provider (trd D3). A tool that needs nothing runs on sharp alone; a
+ * scene needs two services and a setting, which is a third case rather than a special one — the
+ * table says what each tool asks for and the compiler holds the pipelines to it.
+ */
+const NEEDS = { NOTHING: "nothing", SEGMENT: "segment", SCENE: "scene" } as const;
 
 /**
  * Each available tool's pipeline (trd D2), and what it asks a provider for. Held complete against
@@ -58,11 +64,21 @@ const NEEDS = { NOTHING: "nothing", SEGMENT: "segment" } as const;
  */
 type ToolPipeline =
   | { needs: typeof NEEDS.NOTHING; run: (input: ToolInput) => Promise<ToolResult> }
-  | { needs: typeof NEEDS.SEGMENT; run: (input: ToolInput, segmenter: Segmenter) => Promise<ToolResult> };
+  | { needs: typeof NEEDS.SEGMENT; run: (input: ToolInput, segmenter: Segmenter) => Promise<ToolResult> }
+  | {
+      needs: typeof NEEDS.SCENE;
+      run: (
+        input: ToolInput,
+        segmenter: Segmenter,
+        painter: ScenePainter,
+        preset: ScenePreset,
+      ) => Promise<ToolResult>;
+    };
 
 const TOOLS: Record<AvailableTool, ToolPipeline> = {
   [ENHANCEMENT_TOOL.WHITE]: { needs: NEEDS.SEGMENT, run: onWhite },
   [ENHANCEMENT_TOOL.STUDIO]: { needs: NEEDS.SEGMENT, run: inStudio },
+  [ENHANCEMENT_TOOL.SCENE]: { needs: NEEDS.SCENE, run: inScene },
   [ENHANCEMENT_TOOL.CUTOUT]: { needs: NEEDS.SEGMENT, run: cutOut },
   [ENHANCEMENT_TOOL.LIGHT]: { needs: NEEDS.NOTHING, run: (input) => lightFix(input.bytes) },
   // One target for every marketplace, read off the channel rules rather than chosen here.
@@ -73,19 +89,48 @@ const TOOLS: Record<AvailableTool, ToolPipeline> = {
 };
 
 /**
- * The tool with its service already chosen, and the ledger's name for that service (spec R9).
- * Resolved before any bytes are read, so a tool whose service is not configured is refused before a
- * slot is spent and before the store is touched. What the row ends up recording is what actually
- * ran, which may differ from what the request planned if the platform's choice changed in between.
+ * The tool with its services already chosen, the ledger's name for the one that did the work, and
+ * what the run will cost (spec R9). Resolved before any bytes are read, so a tool whose service is
+ * not configured — or a scene naming a setting the list no longer has — is refused before a slot is
+ * spent and before the store is touched. What the row ends up recording is what actually ran, which
+ * may differ from what the request planned if the platform's choice changed in between.
  */
-function prepareTool(tool: AvailableTool): {
+function prepareTool(
+  tool: AvailableTool,
+  preset: string | null,
+): {
   provider: EnhancementProvider;
+  costPaise: number;
   run: (input: ToolInput) => Promise<ToolResult>;
 } {
   const pipeline = TOOLS[tool];
-  if (pipeline.needs === NEEDS.NOTHING) return { provider: ENHANCEMENT_PROVIDER.SHARP, run: pipeline.run };
+  if (pipeline.needs === NEEDS.NOTHING) {
+    const provider = ENHANCEMENT_PROVIDER.SHARP;
+    return { provider, costPaise: runCostPaise([{ tool, provider }]), run: pipeline.run };
+  }
+
   const segmenter = segmenterFor();
-  return { provider: segmenter.key, run: (input) => pipeline.run(input, segmenter) };
+  if (pipeline.needs === NEEDS.SEGMENT) {
+    return {
+      provider: segmenter.key,
+      costPaise: runCostPaise([{ tool, provider: segmenter.key }]),
+      run: (input) => pipeline.run(input, segmenter),
+    };
+  }
+
+  // A scene buys two things: the cut-out we make ourselves and the setting painted around it. The
+  // row records the service that painted, and the cost of everything the run spent (trd D6).
+  const setting = scenePresetFor(preset);
+  if (!setting) throw new DomainError("Choose one of the scene settings", { field: "preset" });
+  const painter = scenePainterFor();
+  return {
+    provider: painter.key,
+    costPaise: runCostPaise([
+      { tool: ENHANCEMENT_TOOL.CUTOUT, provider: segmenter.key },
+      { tool: ENHANCEMENT_TOOL.SCENE, provider: painter.key },
+    ]),
+    run: (input) => pipeline.run(input, segmenter, painter, setting),
+  };
 }
 
 const toDto = (row: EnhancementRow): EnhancementDto => toEnhancementDto(row, mediaAssetService.publicUrlOf);
@@ -137,14 +182,15 @@ export const enhancementService = {
     now: Date = new Date(),
   ): Promise<{ enhancement: EnhancementDto; usage: EnhancementUsage }> {
     const { tool } = input;
-    if (!isAvailableTool(tool)) {
-      throw new DomainError(`${TOOL_COPY[tool].label} is not available yet`, { field: "tool" });
-    }
+    // Every one of the six has a pipeline now, so this is a guard against a tool withdrawn from
+    // the list later rather than one still being built — which is why it names none of them.
+    if (!isAvailableTool(tool)) throw new DomainError("That improvement is not available yet", { field: "tool" });
     if (input.slotRole === SHOT_ROLE.LABEL) {
       throw new DomainError("The label photo is evidence to be read later, so it is never enhanced");
     }
-    // Cheap and local: a tool whose service is not set up is refused before a slot is spent.
-    const planned = prepareTool(tool).provider;
+    // Cheap and local: a tool whose service is not set up, or a setting that is not on the list,
+    // is refused before a slot is spent.
+    const planned = prepareTool(tool, input.preset ?? null).provider;
 
     const { usage, dailyCapPaise } = await standing(orgId, now);
     if (usage.paused) {
@@ -202,18 +248,13 @@ export const enhancementService = {
     if (!(await enhancementRepository.markRunning(row.id))) return;
 
     try {
-      if (!isAvailableTool(row.tool)) throw new DomainError(`${TOOL_COPY[row.tool].label} is not available yet`);
-      const { provider, run } = prepareTool(row.tool);
+      if (!isAvailableTool(row.tool)) throw new DomainError("That improvement is not available yet");
+      const { provider, costPaise, run } = prepareTool(row.tool, row.preset);
       const source = await mediaAssetService.readImageBytes(row.sourceAssetId);
       const result = await run(source);
       const proposalKey = proposalKeyFor(row.id, row.tool);
       await mediaAssetService.putLooseObject(proposalKey, result.output, result.mimeType);
-      await enhancementRepository.markProposed(row.id, {
-        proposalKey,
-        provider,
-        costPaise: TOOL_COST_PAISE[row.tool][provider],
-        proposedAt: now,
-      });
+      await enhancementRepository.markProposed(row.id, { proposalKey, provider, costPaise, proposedAt: now });
       console.log(`[jobs] image.enhance ${jobId}: ${enhancementId} proposed (${row.tool}, ${result.width}x${result.height})`);
     } catch (error) {
       if (error instanceof DomainError) {
