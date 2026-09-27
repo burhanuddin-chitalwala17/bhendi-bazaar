@@ -1,7 +1,8 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { mediaAssetService } from "@server/catalog/media-asset.service";
 import { parseMediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
-import { MediaLibraryFilters } from "@/components/org/media-library-filters";
+import { MediaAssetKind, MediaAssetSource } from "@prisma/client";
+import { MediaLibraryFilters, type FilterOption } from "@/components/org/media-library-filters";
 import { MediaLibraryGrid } from "@/components/org/media-library-grid";
 import { MediaLibraryUpload } from "@/components/org/media-library-upload";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
@@ -12,6 +13,16 @@ export const metadata = {
 };
 
 type Search = Record<string, string | string[] | undefined>;
+
+const KIND_OPTIONS: FilterOption[] = [
+  { value: MediaAssetKind.IMAGE, label: "Photos" },
+  { value: MediaAssetKind.VIDEO_EMBED, label: "Videos" },
+];
+const SOURCE_OPTIONS: FilterOption[] = [
+  { value: MediaAssetSource.UPLOAD, label: "Uploaded" },
+  { value: MediaAssetSource.DERIVED, label: "Cropped or made" },
+  { value: MediaAssetSource.EMBED, label: "Video link" },
+];
 
 /** The filter keys, read by name: the awaited `searchParams` does not enumerate, so a spread sees nothing. */
 const FILTER_KEYS = ["kind", "usage", "source", "from", "to", "productId", "slot", "retired"] as const;
@@ -56,7 +67,7 @@ export default async function OrgLibraryPage({
         {org && <MediaLibraryUpload orgId={scope.orgId} orgCode={org.code} />}
       </div>
 
-      <MediaLibraryFilters filters={filters} />
+      <MediaLibraryFilters filters={filters} kinds={KIND_OPTIONS} sources={SOURCE_OPTIONS} />
 
       <MediaLibraryGrid key={filterQuery} orgId={scope.orgId} initial={{ assets, pagination }} query={filterQuery} />
     </div>

@@ -10,6 +10,12 @@
 
 ## Entries
 
+## [PR-173] 2026-09-27 — Library filters re-render the grid instead of reloading the page
+
+Picking a filter navigated the whole page — a plain form submission — which read as a flicker, and
+left a Filter button nobody needed. The filters now navigate on the client: the URL still carries
+them, so the page is still a link, but only the grid re-renders. The button is gone.
+
 ## [PR-172] 2026-09-27 — The specs catch up with the side fixes
 
 Documentation only. The seller-profile spec gains R11 (a change of default brand is announced, an

@@ -1,30 +1,72 @@
-import { MediaAssetKind, MediaAssetSource } from "@prisma/client";
-import { Button } from "@/components/ui/button";
-import { AutoSubmitForm } from "@/components/shared/forms/auto-submit-form";
+"use client";
+
+import { useRef, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MEDIA_USAGE, type MediaLibraryFilters as Filters } from "@/lib/validation/schemas/media-library.schema";
 
-const KIND_LABELS: Record<MediaAssetKind, string> = { IMAGE: "Photos", VIDEO_EMBED: "Videos" };
-const SOURCE_LABELS: Record<MediaAssetSource, string> = { UPLOAD: "Uploaded", DERIVED: "Cropped or made", EMBED: "Video link" };
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+interface MediaLibraryFiltersProps {
+  filters: Filters;
+  /** The kinds and sources, named by the server so this component never imports the database's enums. */
+  kinds: FilterOption[];
+  sources: FilterOption[];
+}
+
 const USAGE_LABELS: Record<Filters["usage"], string> = { all: "Used or not", used: "In use", unused: "Not used" };
 
 const toDateInput = (value: Date | undefined) => (value ? value.toISOString().slice(0, 10) : "");
 
+/** The form's fields as the query string the page parses: blanks and the default usage left out. The form carries no page, so a new filter starts at the first. */
+export function filterQueryFrom(form: HTMLFormElement): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of new FormData(form)) {
+    if (typeof value === "string" && value !== "" && !(key === "usage" && value === "all")) query.set(key, value);
+  }
+  return query.toString();
+}
+
 /**
- * A plain GET form (media-library spec R6): the filters live in the URL, so the page is a link
- * anyone in the org can share. It applies as a filter is picked; the button is the fallback.
+ * The filters live in the URL (media-library spec R6), so the page is a link anyone in the org
+ * can share — but a change navigates on the client, so only the grid re-renders. A plain GET
+ * form did the same job with a full page load, which read as a flicker on every pick.
  */
-export function MediaLibraryFilters({ filters }: { filters: Filters }) {
+export function MediaLibraryFilters({ filters, kinds, sources }: MediaLibraryFiltersProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const form = useRef<HTMLFormElement>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const apply = () => {
+    if (!form.current) return;
+    const query = filterQueryFrom(form.current);
+    startTransition(() => router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false }));
+  };
+
   return (
-    <AutoSubmitForm className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+    <form
+      ref={form}
+      method="get"
+      onChange={apply}
+      onSubmit={(event) => {
+        event.preventDefault();
+        apply();
+      }}
+      aria-busy={isPending}
+      className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end"
+    >
       <label className="flex-1 text-sm sm:max-w-40">
         <span className="mb-1 block text-muted-foreground">Kind</span>
         <Select name="kind" defaultValue={filters.kind ?? ""}>
           <option value="">Photos and videos</option>
-          {Object.values(MediaAssetKind).map((kind) => (
-            <option key={kind} value={kind}>{KIND_LABELS[kind]}</option>
+          {kinds.map((kind) => (
+            <option key={kind.value} value={kind.value}>{kind.label}</option>
           ))}
         </Select>
       </label>
@@ -40,8 +82,8 @@ export function MediaLibraryFilters({ filters }: { filters: Filters }) {
         <span className="mb-1 block text-muted-foreground">Came from</span>
         <Select name="source" defaultValue={filters.source ?? ""}>
           <option value="">Anywhere</option>
-          {Object.values(MediaAssetSource).map((source) => (
-            <option key={source} value={source}>{SOURCE_LABELS[source]}</option>
+          {sources.map((source) => (
+            <option key={source.value} value={source.value}>{source.label}</option>
           ))}
         </Select>
       </label>
@@ -56,9 +98,6 @@ export function MediaLibraryFilters({ filters }: { filters: Filters }) {
       {filters.productId && <input type="hidden" name="productId" value={filters.productId} />}
       {filters.slot && <input type="hidden" name="slot" value={filters.slot} />}
       <Checkbox name="retired" value="1" label="Show retired" defaultChecked={filters.retired} />
-      <Button type="submit" variant="outline" size="sm">
-        Filter
-      </Button>
-    </AutoSubmitForm>
+    </form>
   );
 }
