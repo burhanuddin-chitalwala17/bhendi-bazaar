@@ -66,6 +66,7 @@ export interface PendingAssetInput {
   objectKey: string;
   mimeType: string;
   bytes: number;
+  contentHash?: string | null;
 }
 
 /** A ready record: what is known about bytes the store already holds, or a URL we do not host. */
@@ -78,6 +79,7 @@ export interface ReadyAssetInput {
   bytes: number | null;
   width: number | null;
   height: number | null;
+  contentHash?: string | null;
 }
 
 export interface ConfirmedDimensions {
@@ -167,6 +169,32 @@ export class MediaAssetRepository {
       select: { id: true, ref: true },
     });
     return new Map(rows.map((row) => [row.ref, row.id]));
+  }
+
+  /**
+   * The ready asset already holding these bytes for this org, if any (media-library D11). Scoped by
+   * org on purpose: another org's identical file is not this org's asset.
+   */
+  async findReadyByHash(orgId: string | null, contentHash: string, db: MediaDb = prisma) {
+    return await db.mediaAsset.findFirst({
+      where: { orgId, contentHash, kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY },
+      select: { id: true, ref: true, width: true, height: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  /** Ready images the backfill still has to hash — those recorded before the column existed. */
+  async listWithoutHash(limit: number, db: MediaDb = prisma) {
+    return await db.mediaAsset.findMany({
+      where: { kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY, contentHash: null },
+      select: { id: true, ref: true },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+  }
+
+  async setHash(id: string, contentHash: string, db: MediaDb = prisma) {
+    await db.mediaAsset.update({ where: { id }, data: { contentHash } });
   }
 
   /** Pending rows older than the cutoff: candidates for the sweep, with what they were about to be. */

@@ -22,7 +22,7 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     if (!org) throw new DomainError("Organisation not found", { status: 404 });
     const prefix = `products/${org.code.toLowerCase()}/`;
 
-    const { pathname, contentType, size } = presignUploadSchema.parse(
+    const { pathname, contentType, size, contentHash } = presignUploadSchema.parse(
       await request.json(),
     );
     // A prefix test alone is not containment — `products/<org>/../other-org/x` starts
@@ -39,6 +39,7 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
         pathname,
         contentType,
         size,
+        contentHash,
       }),
     );
   } catch (error) {

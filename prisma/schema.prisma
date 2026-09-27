@@ -44,6 +44,9 @@ model MediaAsset {
   height   Int?
   bytes    Int?
   mimeType String?
+  /// SHA-256 of the stored bytes, hex. Within an org the same bytes are one asset, so a repeat
+  /// upload is answered with the existing record rather than a second copy (media-library D11).
+  contentHash String?
 
   /// Null means platform-owned: category heroes, home banners.
   orgId      String?
@@ -74,6 +77,7 @@ model MediaAsset {
   banners        Banner[]       @relation("BannerImage")
 
   @@index([orgId, state])
+  @@index([orgId, contentHash])
   @@index([ref])
   @@index([derivedFromId])
 }

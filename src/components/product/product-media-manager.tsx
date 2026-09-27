@@ -143,6 +143,7 @@ export function ProductMediaManager({
 
       const uploadedUrls: (string | undefined)[] = new Array(prepared.length);
       const failed: string[] = [];
+      let reused = 0;
       let firstError: string | null = null;
       const queue = prepared.map((file, index) => ({ file, index }));
       let done = 0;
@@ -153,6 +154,7 @@ export function ProductMediaManager({
               buildImagePath("products", job.file.name, identifier, orgCode),
               job.file,
               endpoints,
+              { onDuplicate: () => (reused += 1) },
             );
           } catch (error) {
             // A network failure part-way through cannot be undone without deleting what
@@ -192,6 +194,13 @@ export function ProductMediaManager({
         setNotice(
           `Could not upload ${failed.join(", ")} (${firstError}).` +
             (urls.length > 0 ? " The rest were added." : ""),
+        );
+      } else if (reused > 0) {
+        // Not an error: the org already had these bytes, so they were added from the library.
+        setNotice(
+          reused === 1
+            ? "One photo was already in your library and was added from there."
+            : `${reused} photos were already in your library and were added from there.`,
         );
       }
     } catch (error) {

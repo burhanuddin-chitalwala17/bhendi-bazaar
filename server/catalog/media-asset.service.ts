@@ -26,7 +26,14 @@ export interface BeginUploadInput {
   pathname: string;
   contentType: string;
   size: number;
+  /** SHA-256 hex of the bytes about to be sent, when the browser could compute it. */
+  contentHash?: string | null;
 }
+
+/** The token route's answer: permission to upload, or the asset that already holds these bytes. */
+export type BeginUploadResult =
+  | { uploadUrl: string; publicUrl: string; assetId: string; duplicate?: undefined }
+  | { duplicate: { assetId: string; ref: string; width: number | null; height: number | null } };
 
 export interface ConfirmUploadInput {
   assetId: string;
@@ -43,9 +50,17 @@ function validDimension(value: number | undefined): value is number {
 export const mediaAssetService = {
   /**
    * Register, then sign (media-library R1, trd D2): the row exists before the bytes move, so
-   * no image can be stored without a record. The browser gets the id back with the URL.
+   * no image can be stored without a record. The browser gets the id back with the URL — or,
+   * when this org already holds these exact bytes, that asset instead of a second copy (D11).
    */
-  async beginUpload(input: BeginUploadInput) {
+  async beginUpload(input: BeginUploadInput): Promise<BeginUploadResult> {
+    const contentHash = input.contentHash ?? null;
+    if (contentHash) {
+      const existing = await mediaAssetRepository.findReadyByHash(input.orgId, contentHash);
+      if (existing) {
+        return { duplicate: { assetId: existing.id, ref: existing.ref, width: existing.width, height: existing.height } };
+      }
+    }
     const signed = await presignUpload(input.pathname, input.contentType, input.size);
     const asset = await mediaAssetRepository.createPending({
       orgId: input.orgId,
@@ -54,6 +69,7 @@ export const mediaAssetService = {
       objectKey: input.pathname,
       mimeType: input.contentType,
       bytes: input.size,
+      contentHash,
     });
     return { ...signed, assetId: asset.id };
   },
@@ -102,6 +118,7 @@ export const mediaAssetService = {
     bytes: number;
     width: number;
     height: number;
+    contentHash?: string | null;
   }) {
     return await mediaAssetRepository.createReady({
       orgId: input.orgId,
@@ -112,6 +129,7 @@ export const mediaAssetService = {
       bytes: input.bytes,
       width: input.width,
       height: input.height,
+      contentHash: input.contentHash ?? null,
     });
   },
 

@@ -401,6 +401,10 @@ npm run media:backfill            # report what would be created and linked
 npm run media:backfill -- --write # create the assets and link the rows
 ```
 
+A write also hashes ready images recorded before the content-hash column existed (trd D11), up to two
+thousand per run — a larger library needs a second run, and the summary line's `hashed` count says when
+it is done. Until an image is hashed, uploading it again stores a second copy.
+
 Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
 
 ## Infrastructure

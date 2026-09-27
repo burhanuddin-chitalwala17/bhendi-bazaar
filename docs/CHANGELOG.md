@@ -10,6 +10,17 @@
 
 ## Entries
 
+## [PR-166] 2026-09-27 — The same photograph is one image in an org's library [CONTRACT] [MIGRATION]
+
+Media-library R13, trd D11. The browser hashes each downscaled file before asking to upload and
+sends the digest with the request; when the org already holds those bytes as a ready image, the
+token route answers with that asset instead of a signed URL, the client adds its URL, and nothing is
+stored twice. The gallery says how many photos were added from the library that way. Deduplication is
+within an org on purpose: ownership is the library's unit, and another org's identical file stays its
+own. `MediaAsset.contentHash` is added and indexed with the org; the server upload path records it
+from the bytes, and the backfill's write gains a pass that hashes images recorded before the column
+existed, so older duplicates are recognised after the next `npm run media:backfill -- --write`.
+
 ## [PR-165] 2026-09-27 — The country field is a searchable picker
 
 A native select of 249 countries is a long scroll on a phone. Both country-of-origin fields now

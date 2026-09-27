@@ -1,5 +1,11 @@
 import { readApiError } from "@/lib/api-error";
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
+import { sha256HexOf } from "@/lib/image/hash";
+
+export interface UploadDirectOptions {
+  /** Called instead of uploading when the org already holds these bytes; the existing URL is returned. */
+  onDuplicate?: (ref: string) => void;
+}
 
 /** The browser can usually read a picture's size itself; when it cannot, the server reads the object. */
 async function imageDimensions(file: File): Promise<{ width: number; height: number } | null> {
@@ -18,23 +24,31 @@ async function imageDimensions(file: File): Promise<{ width: number; height: num
  * Browser → store, with the record kept true around it (media-library trd D2): ask for
  * permission (which registers the asset), PUT the bytes, then confirm so the record gains its
  * dimensions and becomes usable. A failed confirm is a failed upload — the sweep reclaims it.
+ *
+ * The bytes are hashed first and the hash travels with the request, so a file the org already
+ * holds comes back as that asset's URL and nothing is uploaded twice (media-library D11).
  */
 export async function uploadDirect(
   pathname: string,
   file: File,
-  endpoints: UploadEndpoints
+  endpoints: UploadEndpoints,
+  options: UploadDirectOptions = {},
 ): Promise<string> {
+  const contentHash = endpoints.confirm ? await sha256HexOf(file) : null;
   const permission = await fetch(endpoints.token, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ pathname, contentType: file.type, size: file.size }),
+    body: JSON.stringify({ pathname, contentType: file.type, size: file.size, ...(contentHash ? { contentHash } : {}) }),
   });
   if (!permission.ok) throw await readApiError(permission);
-  const { uploadUrl, publicUrl, assetId } = (await permission.json()) as {
-    uploadUrl: string;
-    publicUrl: string;
-    assetId?: string;
-  };
+  const granted = (await permission.json()) as
+    | { uploadUrl: string; publicUrl: string; assetId?: string; duplicate?: undefined }
+    | { duplicate: { ref: string } };
+  if (granted.duplicate) {
+    options.onDuplicate?.(granted.duplicate.ref);
+    return granted.duplicate.ref;
+  }
+  const { uploadUrl, publicUrl, assetId } = granted;
 
   let written: Response;
   try {

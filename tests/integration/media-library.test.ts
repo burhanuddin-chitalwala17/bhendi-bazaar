@@ -151,3 +151,45 @@ describe.skipIf(!isDisposableDb)("media library — reads and retirement (local 
     await expect(service.retire(otherOrgId, assetId)).rejects.toMatchObject({ name: "NotFoundError" });
   });
 });
+
+describe.skipIf(!isDisposableDb)("media library — the same bytes within an org (local db)", () => {
+  let prisma: typeof import("@server/shared/prisma").prisma;
+  let repo: typeof import("@server/catalog/media-asset.repository").mediaAssetRepository;
+  const stamp = `hash-${Date.now().toString(36)}`;
+  const prefix = `https://media.test/${stamp}/`;
+  const hash = "b".repeat(64);
+  let orgId: string;
+  let otherOrgId: string;
+
+  beforeAll(async () => {
+    ({ prisma } = await import("@server/shared/prisma"));
+    ({ mediaAssetRepository: repo } = await import("@server/catalog/media-asset.repository"));
+    ({ orgId, otherOrgId } = await ensureFixtures());
+  });
+
+  afterAll(async () => {
+    await prisma.mediaAsset.deleteMany({ where: { ref: { startsWith: prefix } } });
+  });
+
+  it("finds this org's ready asset by hash, never another org's, never a retired one", async () => {
+    const ready = { uploaderId: null, objectKey: null, mimeType: "image/webp", bytes: 3, width: 1, height: 1, contentHash: hash };
+    const mine = await repo.createReady({ ...ready, orgId, ref: `${prefix}mine.webp` });
+    await repo.createReady({ ...ready, orgId: otherOrgId, ref: `${prefix}theirs.webp` });
+    expect(await repo.findReadyByHash(orgId, hash)).toMatchObject({ id: mine.id, ref: `${prefix}mine.webp` });
+    expect((await repo.findReadyByHash(otherOrgId, hash))?.ref).toBe(`${prefix}theirs.webp`);
+    expect(await repo.findReadyByHash(orgId, "c".repeat(64))).toBeNull();
+
+    await prisma.mediaAsset.update({ where: { id: mine.id }, data: { state: "RETIRED", retiredAt: new Date() } });
+    expect(await repo.findReadyByHash(orgId, hash)).toBeNull();
+  });
+
+  it("the backfill's hash pass fills what was recorded before the column existed", async () => {
+    const created = await repo.createReady({
+      orgId, uploaderId: null, ref: `${prefix}unhashed.png`, objectKey: null, mimeType: "image/png", bytes: 3, width: 1, height: 1,
+    });
+    const pending = await repo.listWithoutHash(500);
+    expect(pending.map((row) => row.id)).toContain(created.id);
+    await repo.setHash(created.id, hash);
+    expect((await repo.listWithoutHash(500)).map((row) => row.id)).not.toContain(created.id);
+  });
+});

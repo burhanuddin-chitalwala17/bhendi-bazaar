@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { sha256Hex } from "@server/shared/hash";
 import { MediaAssetKind } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
@@ -18,6 +19,8 @@ export interface BackfillReport {
   embedsCreated: number;
   rowsLinked: number;
   withoutDimensions: string[];
+  /** Ready images that gained a content hash on this run (D11); nothing on a dry run. */
+  hashed: number;
 }
 
 /**
@@ -27,10 +30,13 @@ export interface BackfillReport {
  * has an asset is linked rather than duplicated. Not a migration because it needs the object
  * store, and not the seed because it is production data. Run once per database.
  */
+/** One run hashes at most this many older assets; a bigger library takes a second run. */
+const HASH_PASS_LIMIT = 2000;
+
 export async function backfillMediaAssets(options: BackfillOptions): Promise<BackfillReport> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const log = options.log ?? (() => {});
-  const report: BackfillReport = { imagesSeen: 0, imagesCreated: 0, embedsCreated: 0, rowsLinked: 0, withoutDimensions: [] };
+  const report: BackfillReport = { imagesSeen: 0, imagesCreated: 0, embedsCreated: 0, rowsLinked: 0, withoutDimensions: [], hashed: 0 };
   const known = new Map<string, string>();
 
   const ownKey = (url: string): string | null => {
@@ -55,6 +61,7 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
     let height: number | null = null;
     let bytes: number | null = null;
     let mimeType: string | null = null;
+    let contentHash: string | null = null;
     try {
       const response = await fetchImpl(ref);
       if (response.ok) {
@@ -64,6 +71,7 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
         height = meta.pageHeight ?? meta.height ?? null;
         bytes = buffer.byteLength;
         mimeType = response.headers.get("content-type") ?? null;
+        contentHash = sha256Hex(buffer);
       }
     } catch {
       // Recorded below; a URL nobody can fetch is still a reference the catalogue holds.
@@ -83,6 +91,7 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
       bytes,
       width,
       height,
+      contentHash,
     });
     known.set(ref, created.id);
     report.imagesCreated += 1;
@@ -152,9 +161,24 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
     report.rowsLinked += 1;
   }
 
+  // Assets recorded before the hash column existed: download once, hash, remember. Only on a
+  // write, and only for what is still unhashed, so a re-run touches nothing (D11).
+  if (options.write) {
+    for (const row of await mediaAssetRepository.listWithoutHash(HASH_PASS_LIMIT)) {
+      try {
+        const response = await fetchImpl(row.ref);
+        if (!response.ok) continue;
+        await mediaAssetRepository.setHash(row.id, sha256Hex(Buffer.from(await response.arrayBuffer())));
+        report.hashed += 1;
+      } catch {
+        // Unreachable now; the next run tries again.
+      }
+    }
+  }
+
   log(
     `${options.write ? "Wrote" : "Would write"} ${report.imagesCreated} image assets and ${report.embedsCreated} video references; ` +
-      `linked ${report.rowsLinked} rows; ${report.withoutDimensions.length} without dimensions.`,
+      `linked ${report.rowsLinked} rows; ${report.withoutDimensions.length} without dimensions; hashed ${report.hashed}.`,
   );
   return report;
 }

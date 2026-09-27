@@ -35,6 +35,7 @@ Good photography is the small seller's largest handicap. Cleanup after the fact 
 - **R10** — The library exposes what a channel's image rules need to judge a picture — dimensions, format, aspect, and an estimate of whether the background is plain — and does not itself judge. Readiness belongs to [listing-schema](../listing-schema/).
 - **R11** — The whole of it works on a ~360px phone, camera included, and every image still passes through the one image seam ([ADR-0028](../../adr/0028-images-live-in-cloudflare-r2.md)).
 - **R12** — The platform owner sees every organisation's library read-only, filterable by organisation, with each image's provenance visible, and can retire an image for a policy breach with a reason that is recorded ([ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md)). The platform does not upload into or edit a seller's library. The platform's own images — category heroes, home banners — are its own collection in the same library.
+- **R13** — The same photograph is one image in an organisation's library, however many times it is chosen: a repeat upload is recognised by its bytes and answered with the existing image, so nothing is stored twice and every use of it shows one record. Another organisation's identical file is its own image; libraries never share.
 
 ## Product acceptance
 

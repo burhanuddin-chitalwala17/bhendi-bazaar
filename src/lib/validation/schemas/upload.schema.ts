@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@server/catalog/image-paths";
+import { SHA256_HEX } from "@server/shared/hash";
 
 /**
  * What a browser must send to be granted one upload (ADR-0028).
@@ -32,6 +33,8 @@ export const presignUploadSchema = z.object({
     .int("Size must be a whole number of bytes")
     .positive("Size must be greater than zero")
     .max(MAX_IMAGE_BYTES, `Each image must be ${MAX_IMAGE_BYTES / (1024 * 1024)}MB or smaller`),
+  /** SHA-256 hex of the bytes, when the browser could compute it — how a repeat upload is recognised. */
+  contentHash: z.string().regex(SHA256_HEX, "Not a SHA-256 hex digest").optional(),
 });
 
 export type PresignUploadInput = z.infer<typeof presignUploadSchema>;
