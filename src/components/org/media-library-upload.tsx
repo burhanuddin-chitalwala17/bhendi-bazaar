@@ -33,7 +33,7 @@ export function MediaLibraryUpload({ orgId, orgCode }: MediaLibraryUploadProps) 
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
     const endpoints = orgUploadEndpoints(orgId);
-    const pathFor = (file: File) => buildImagePath("products", file.name, "library", orgCode);
+    const pathFor = (file: File) => buildImagePath("org", file.name, "library", orgCode);
     const photos = files.filter((file) => !isVideoContentType(file.type));
     const refused: string[] = [];
     let firstError: string | null = null;

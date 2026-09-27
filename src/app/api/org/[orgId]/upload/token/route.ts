@@ -20,7 +20,7 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
   try {
     const org = await orgRepository.findById(scope.orgId);
     if (!org) throw new DomainError("Organisation not found", { status: 404 });
-    const prefix = `products/${org.code.toLowerCase()}/`;
+    const prefix = `org/${org.code.toLowerCase()}/`;
 
     const { pathname, contentType, size, contentHash, derivedFrom } = presignUploadSchema.parse(
       await request.json(),

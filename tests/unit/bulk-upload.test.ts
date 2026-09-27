@@ -99,9 +99,13 @@ describe("parseBulkCategoryRow", () => {
 });
 
 describe("buildImagePath", () => {
-  it("nests product images under org and product (D4)", () => {
-    expect(buildImagePath("products", "Front View.JPG", "Emerald Abaya", "SEL-001", 1000)).toBe(
-      "products/sel-001/emerald-abaya/front-view-1000.jpg"
+  it("nests an org's files under the org that owns them, then what they are for (D4)", () => {
+    expect(buildImagePath("org", "Front View.JPG", "Emerald Abaya", "SEL-001", 1000)).toBe(
+      "org/sel-001/emerald-abaya/front-view-1000.jpg"
+    );
+    // The same shape for a library upload, which belongs to no product at all.
+    expect(buildImagePath("org", "clip.mp4", "library", "SEL-001", 1000)).toBe(
+      "org/sel-001/library/clip-1000.mp4"
     );
   });
 
@@ -109,8 +113,8 @@ describe("buildImagePath", () => {
     expect(buildImagePath("categories", "hero.png", "Abayas", null, 1000)).toBe(
       "categories/abayas/hero-1000.png"
     );
-    expect(buildImagePath("products", "x.png", undefined, undefined, 1000)).toBe(
-      "products/unnamed/unnamed/x-1000.png"
+    expect(buildImagePath("org", "x.png", undefined, undefined, 1000)).toBe(
+      "org/unnamed/unnamed/x-1000.png"
     );
   });
 

@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
-- **Verified:** 2026-08-23
+- **Verified:** 2026-09-28
 - **References:** [spec.md](spec.md), [sheet-parsing-options.md](sheet-parsing-options.md), [ADR-0002](../../adr/0002-server-holds-pricing-authority.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -32,7 +32,7 @@ attempts leave no orphaned blobs.
   create/update paths (server/catalog/admin.product.repository.ts) also map the
   constraint violation to a DomainError naming the conflicting product, instead
   of today's raw P2002.
-- D4 — **Blob paths gain structure:** `products/<org-code>/<identifier>/<original-name>-<ts>.<ext>`,
+- D4 — **Stored paths gain structure:** `org/<org-code>/<identifier>/<original-name>-<ts>.<ext>` since [media-library](../media-library/) PR-197; `products/` until then, and files written under it keep their keys, because a key is opaque and rewriting every stored reference would be risk spent on tidiness. The top level names the **owner**, not the use: an organisation's library holds pictures belonging to no product, and a video is not a product at all,
   identifier = sanitized product name. The existing upload util
   (server/catalog/image-upload.ts) already accepts an identifier; the forms just
   never sent one — that gap closes here (goodbye `unnamed-`). Existing flat blobs

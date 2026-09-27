@@ -10,6 +10,19 @@
 
 ## Entries
 
+## [PR-197] 2026-09-28 — A stored file is filed under who owns it, not what it was for
+
+Everything an organisation uploaded landed under `products/<org-code>/`, which was true while every
+upload belonged to a product. A library that holds pictures belonging to no product, and videos that
+are not products at all, made it false: a library upload was filed under `products/…/library/` and a
+video beside it. An organisation's files are written under `org/<org-code>/` from now on, because an
+owner is the one thing about a file that never changes, and the presign route signs nothing outside
+the caller's own prefix exactly as before.
+
+Files already written keep their keys. A key is opaque, nothing reads meaning from one, and moving
+them would mean copying every object and rewriting every stored reference — risk spent on tidiness.
+The bucket will show both shapes for a while, and that is the cost of not taking the risk.
+
 ## [PR-196] 2026-09-28 — Two lines in the library sheet that should not have been there
 
 "Use the video's own frame" was offered on every video, including the ones showing exactly that

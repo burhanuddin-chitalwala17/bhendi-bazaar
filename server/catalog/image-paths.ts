@@ -23,7 +23,17 @@ export const ALLOWED_IMAGE_TYPES = [
  */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-export type ImageFolder = "products" | "categories" | "banners";
+/**
+ * The top level of a stored path says **who owns** the file, not what it is for. `org` is anything
+ * an organisation owns — a product's photographs, a library upload, a video, a crop, an improvement
+ * — and the two platform folders are the platform's own art. Naming the use was true while every
+ * upload belonged to a product; a library that holds pictures belonging to no product, and videos
+ * that are not products at all, made it false, and an owner is the one thing that never changes.
+ *
+ * Files written under the old `products/` top level keep their keys: a key is opaque, nothing reads
+ * meaning from it, and rewriting every stored reference would be risk spent on tidiness.
+ */
+export type ImageFolder = "org" | "categories" | "banners";
 
 /** A user-attributable reason this file cannot be accepted, or null if it can. */
 export function imageFileProblem(file: {
@@ -58,14 +68,14 @@ export function normalizedName(
 }
 
 /**
- * Where a catalog image lives in the object store (bulk-catalog-upload D4):
- * `products/<org-code>/<identifier>/<original-name>-<ts>.<ext>`, categories
- * without the org segment. Structured paths make the store browsable per org and
- * product, and keep the original filename — which is what makes a bulk upload's
- * matching debuggable. The timestamp prevents same-name overwrites.
+ * Where a stored file lives (bulk-catalog-upload D4, as amended): an org's is
+ * `org/<org-code>/<identifier>/<original-name>-<ts>.<ext>`; the platform's two folders carry no org
+ * segment. Structured paths make the store browsable per owner, and keeping the original filename
+ * is what makes a bulk upload's matching debuggable. The timestamp prevents same-name overwrites.
  *
  * The org segment is `sanitizeIdentifier(orgCode)`, which must stay equal to
- * `orgCode.toLowerCase()` — that is the prefix the presign routes check against.
+ * `orgCode.toLowerCase()` — that is the prefix the presign route checks against, and the reason one
+ * shop cannot be signed a path inside another's.
  * tests/unit/image-upload.test.ts pins the agreement for the generated code shape.
  */
 export function buildImagePath(
@@ -81,8 +91,7 @@ export function buildImagePath(
     dot > 0 ? originalName.slice(0, dot) : originalName,
   );
   const extension = dot > 0 ? originalName.slice(dot + 1).toLowerCase() : "bin";
-  const orgSegment =
-    folder === "products" ? `${sanitizeIdentifier(orgCode)}/` : "";
+  const orgSegment = folder === "org" ? `${sanitizeIdentifier(orgCode)}/` : "";
   return `${folder}/${orgSegment}${id}/${base}-${now}.${extension}`;
 }
 

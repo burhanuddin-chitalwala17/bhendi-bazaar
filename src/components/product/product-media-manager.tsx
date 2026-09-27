@@ -205,7 +205,7 @@ export function ProductMediaManager({
     );
   };
 
-  const pathFor = (file: File) => buildImagePath("products", file.name, identifier, orgCode);
+  const pathFor = (file: File) => buildImagePath("org", file.name, identifier, orgCode);
 
   const canAdd = (count: number): boolean => {
     if (media.length + count > MAX_MEDIA_PER_PRODUCT) {
