@@ -10,6 +10,55 @@
 
 ## Entries
 
+## [PR-200] 2026-09-28 — The three enhancement variables were documented everywhere but the file people copy
+
+`OPERATIONS.md` describes `IMAGE_SEGMENT_PROVIDER`, `IMAGE_MODEL_API_KEY` and `IMAGE_MODEL_ENDPOINT`
+in full, and `.env.example` — the file a new environment is actually built from — mentioned none of
+them. A local setup therefore came up with background removal quietly unavailable and nothing to
+suggest a variable was missing. They are listed now, in the optional section, each with the one fact
+that decides whether it is needed.
+
+The object store's comment also said the public base feeds `img-src`. It feeds `media-src` too, and
+that omission is what the previous entry was about.
+
+## [PR-198] 2026-09-28 — In a scene: the last improvement, and the one that must not redraw the product
+
+The sixth improvement is here, and it is the one the whole feature was careful about. A shop picks
+one of five settings — a wooden table by a window, a marble counter, a shop shelf, a fabric drape, a
+plain studio colour — and the photograph comes back with the product standing in it. The settings
+are the platform owner's list and nothing else: there is no box to type a description into, because
+a free prompt is a way to ask an account we pay for for a picture nobody has seen, and a fixed list
+is what makes the promise below checkable. Each setting carries the shape it is for, square where a
+marketplace wants one and tall where an Instagram post does, so the member chooses a picture rather
+than a geometry.
+
+The promise is that the product does not change. A service is asked for a **setting**, never for a
+result: whatever comes home is treated as a backdrop, our own cut-out goes back on top at a
+placement we chose, and the product's pixels are compared to the cut-out's with no tolerance before
+anything is encoded. If a service quietly re-rendered a logo, its version is covered by ours; if the
+product in the composite differs by one channel of one pixel, the run fails rather than putting a
+proposal in front of somebody. That check is the one `white` and `studio` already run, and it was
+written for this case.
+
+Painting sits behind its own interface with one implementation, which is a deliberate asymmetry: a
+cut-out has a free route and a bake-off to choose between two, and a scene has neither, because
+nothing we already pay for generates a picture. The seam exists so a second painter arrives as a
+file beside the first rather than as a rewrite of the tool that calls it. The key and the host both
+services buy from are now read in one place, since they are the same account.
+
+A scene is also the first improvement that costs real money — about ₹3.50 a run, and a little more
+when the cut-out came from the paid model too. The ledger records the sum of what one run actually
+spent rather than the price of its last step, because the platform's daily cap counts money and not
+steps. There is no second column for the breakdown: one number that is true beats two that can
+disagree.
+
+Which leaves the thing to know before trying it. The account has a key and no balance today, so a
+scene will fail until one is added, and it fails legibly: the member is told "The picture service is
+out of credit. Ask the platform owner to top it up.", the run is charged to nobody, and every other
+improvement carries on. Nothing here needed a balance to build or to test — every suite stubs the
+network, and the tool is exercised over generated pictures with both services stubbed, including the
+case where the painter returns a scene with its own idea of the product in the middle of it.
+
 ## [PR-199] 2026-09-28 — A video would not play, and the policy said nothing
 
 A hosted video mounted its player, took the poster, and then sat at nought. Every link in the chain
