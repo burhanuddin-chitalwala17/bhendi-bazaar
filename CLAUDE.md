@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-09-26
+- **Verified:** 2026-09-27
 - **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
 
 
@@ -182,7 +182,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **Images live in Cloudflare R2, behind one seam.** [ADR-0028](docs/adr/0028-images-live-in-cloudflare-r2.md)
 - **Images are stored small and delivered through the optimizer.** [ADR-0026](docs/adr/0026-images-are-delivered-through-the-optimizer.md)
 - **A zoomable surface declares the size it zooms to; the stored ceiling clears it.** [ADR-0027](docs/adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)
-- **Video is embedded, never uploaded to our own storage.** [ADR-0017](docs/adr/0017-video-is-embedded-not-hosted.md)
+- **Video is stored in our own object store and transcoded by the worker; a YouTube link stays an embed.** [ADR-0039](docs/adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)
 - **Every response carries a nonce-based CSP** — `script-src` never gains `'unsafe-inline'`. [ADR-0035](docs/adr/0035-every-response-carries-a-nonce-based-csp.md)
 - **The host is a deployment fact, not an architectural input** — seams, app-named environment, no vendor names in config; a free tier is used, never depended on. [ADR-0037](docs/adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
 - **Background work runs on an owned worker against a Postgres job queue** — enqueued in the business transaction, handlers idempotent on job id, no HTTP between queue and code. [ADR-0038](docs/adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)

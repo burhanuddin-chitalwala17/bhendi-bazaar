@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-176] 2026-09-27 — Video will be hosted on our own store: ADR-0039 and the video-hosting spec
+
+Documentation only. The owner decided on the 27th that short product videos are stored in our
+object store and transcoded by the worker, which is what the worker was pulled forward for.
+[ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) records it
+and supersedes ADR-0017's first and fourth decisions; YouTube links stay supported as embeds. The
+subfeature spec and TRD are drafted under media-library with the defaults — ninety seconds, two
+hundred megabytes, 1080p and 720p — left for the owner to confirm. The conventions index in
+CLAUDE.md points at the new decision.
+
 ## [PR-175] 2026-09-27 — Onboarding shows its three steps, and the store's readiness
 
 The three onboarding screens existed but nothing put them in sequence, so a new org landed on a

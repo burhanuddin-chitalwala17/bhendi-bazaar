@@ -81,6 +81,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [org-storefront/storefront-discovery](org-storefront/storefront-discovery/) | A correct link preview, a place in search results, and a directory so a shop can be found | 9 | catalog | ✅ Implemented |
 | [org-storefront/storefront-pages](org-storefront/storefront-pages/) | A landing page, an about page and a grid of goods for one organisation, at a link it can hand out | 9 | catalog | ✅ Implemented |
 | [media-library/renditions](media-library/renditions/) | Every surface that needs its own size or shape gets a derived image made once from a declared recipe, and the source never changes | 11 | content, reading catalog | ✅ Accepted — 2026-09-26 |
+| [media-library/video-hosting](media-library/video-hosting/) | A seller uploads a short video from the phone as they would a photograph; the platform stores it, makes it playable everywhere, and treats it as an image is treated | 11 | catalog (assets), content (renditions) | Draft — defaults (length, size, renditions) pending the owner |
 | [seller-profile/brand-page](seller-profile/brand-page/) | The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line | 11 | catalog | ✅ Accepted — 2026-09-26 |
 | [product-reviews/review-media](product-reviews/review-media/) | A review can show the piece as it arrived: a few photographs taken by the buyer | — | catalog | ✅ Implemented — PR-124, revised PR-125 |
 <!-- generated:subfeatures-index:end -->
