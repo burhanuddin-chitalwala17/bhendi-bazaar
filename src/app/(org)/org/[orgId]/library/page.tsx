@@ -11,6 +11,9 @@ export const metadata = {
 
 type Search = Record<string, string | string[] | undefined>;
 
+/** The filter keys, read by name: the awaited `searchParams` does not enumerate, so a spread sees nothing. */
+const FILTER_KEYS = ["kind", "usage", "source", "from", "to", "productId", "slot", "retired"] as const;
+
 /** The org's images and videos in one place, filtered from the URL (media-library spec R6). */
 export default async function OrgLibraryPage({
   params,
@@ -21,17 +24,19 @@ export default async function OrgLibraryPage({
 }) {
   const { orgId } = await params;
   const search = await searchParams;
+  const raw: Record<string, string | undefined> = {};
+  for (const key of FILTER_KEYS) {
+    const value = search[key];
+    raw[key] = Array.isArray(value) ? value[0] : value;
+  }
   const scope = await requireOrgMember(orgId);
-  const filters = parseMediaLibraryFilters(search);
+  const filters = parseMediaLibraryFilters(raw);
   const { assets, pagination } = await mediaAssetService.listLibrary(scope.orgId, { ...filters, page: 1 });
 
   // The filters, minus the page, are what the grid asks for more with — and its key, so a
   // filter change starts the list over instead of appending under the old one.
   const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(search)) {
-    const first = Array.isArray(value) ? value[0] : value;
-    if (first && key !== "page") query.set(key, first);
-  }
+  for (const key of FILTER_KEYS) if (raw[key]) query.set(key, raw[key]);
   const filterQuery = query.toString();
 
   return (

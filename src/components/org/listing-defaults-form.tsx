@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { FormInput } from "@/components/shared/forms/FormField";
+import { CountrySelect } from "@/components/shared/forms/CountrySelect";
+import { asCountryCode } from "@server/shared/countries";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { readApiError } from "@/lib/api-error";
 import {
@@ -44,7 +46,7 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
     successMessage: "Defaults saved",
     onSuccess: () => router.refresh(),
     defaultValues: {
-      countryOfOrigin: defaults.countryOfOrigin ?? "",
+      countryOfOrigin: asCountryCode(defaults.countryOfOrigin),
       taxRatePercent: defaults.taxRatePercent ?? undefined,
       taxCodes: categories.map((category) => ({
         categoryId: category.id,
@@ -61,9 +63,8 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
         </Alert>
       )}
 
-      <FormInput
+      <CountrySelect
         label="Country of origin"
-        placeholder="e.g. India"
         {...register("countryOfOrigin")}
         error={errors.countryOfOrigin?.message}
         hint="Where your products are made, unless a brand or a product says otherwise"

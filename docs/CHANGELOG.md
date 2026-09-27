@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-164] 2026-09-27 — What the first local test of PR-161 to PR-163 found
+
+A photograph's slot was saved but reopened as an extra: the edit form's default values dropped it.
+A "to" date on the library filters was read as the midnight that starts the day, so a range ending
+today excluded today's uploads. The library's Retire button was greyed out with no reason; it is
+always clickable now and a refusal says what still uses the image. A library pick can be undone by
+tapping the tile again. The org portal's product form no longer asks which organisation — there is
+one — and when the org has no pickup location yet it adds one from a dialog inside the form, the
+new location joining the stock rows without a reload. Making a brand the default says which brand
+stopped being it, and retiring the default brand warns first and says so after. A country of origin
+is picked from the ISO list, with names from the runtime's own locale data, and stored as its code.
+
 ## [PR-163] 2026-09-27 — The library: browse, reuse, retire, and the first scheduled sweep [CONTRACT]
 
 Media-library PR 3 of 6 ([spec](specs/media-library/spec.md) R6, R7; trd D2, D7). The org portal

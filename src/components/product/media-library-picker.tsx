@@ -1,6 +1,6 @@
 import { useState } from "react";
 import NextImage from "next/image";
-import { Images, Youtube } from "lucide-react";
+import { Check, Images, Youtube } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
@@ -13,9 +13,10 @@ interface MediaLibraryPickerProps {
   orgId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Refs already in the gallery, shown but not offered twice. */
+  /** Refs already in the gallery — marked, and a second tap takes them out again. */
   taken: ReadonlySet<string>;
   onPick: (asset: MediaAssetDto) => void;
+  onUnpick: (asset: MediaAssetDto) => void;
 }
 
 type Kind = MediaAssetDto["kind"];
@@ -23,16 +24,16 @@ type Kind = MediaAssetDto["kind"];
 /**
  * Reuse from the library (media-library spec R6): the org's ready photos and videos as the 3-up
  * grid, paged as you scroll, fetched when the sheet opens — a tap, so a route handler is the
- * right seam. Picking adds the asset's ref to the gallery; the link to the asset row is made by
- * URL on save (trd D1).
+ * right seam. A tap adds the asset's ref to the gallery and a second tap removes it; the link to
+ * the asset row is made by URL on save (trd D1).
  */
-export function MediaLibraryPicker({ orgId, open, onOpenChange, taken, onPick }: MediaLibraryPickerProps) {
+export function MediaLibraryPicker({ orgId, open, onOpenChange, taken, onPick, onUnpick }: MediaLibraryPickerProps) {
   const [kind, setKind] = useState<Kind>("IMAGE");
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="adaptive">
         <SheetTitle>From your library</SheetTitle>
-        <SheetDescription>Tap a photo or video to add it to this gallery.</SheetDescription>
+        <SheetDescription>Tap to add to this gallery; tap again to take it out.</SheetDescription>
         <div className="flex gap-2">
           <Button type="button" size="sm" variant={kind === "IMAGE" ? "default" : "outline"} onClick={() => setKind("IMAGE")}>
             <Images className="mr-1 size-4" /> Photos
@@ -42,7 +43,7 @@ export function MediaLibraryPicker({ orgId, open, onOpenChange, taken, onPick }:
           </Button>
         </div>
         {/* Mounted only while open, so nothing is fetched for a picker nobody has tapped. */}
-        {open && <PickerPages key={kind} orgId={orgId} kind={kind} taken={taken} onPick={onPick} />}
+        {open && <PickerPages key={kind} orgId={orgId} kind={kind} taken={taken} onPick={onPick} onUnpick={onUnpick} />}
       </SheetContent>
     </Sheet>
   );
@@ -53,11 +54,13 @@ function PickerPages({
   kind,
   taken,
   onPick,
+  onUnpick,
 }: {
   orgId: string;
   kind: Kind;
   taken: ReadonlySet<string>;
   onPick: (asset: MediaAssetDto) => void;
+  onUnpick: (asset: MediaAssetDto) => void;
 }) {
   const { assets, loading, done, error, loadMore } = useMediaLibraryPages({ orgId, query: `kind=${kind}` });
 
@@ -79,11 +82,18 @@ function PickerPages({
               <Button
                 type="button"
                 variant="ghost"
-                disabled={isTaken}
-                onClick={() => onPick(asset)}
-                className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0 disabled:opacity-40"
-                aria-label={isTaken ? "Already in this gallery" : asset.kind === "VIDEO_EMBED" ? "Add this video" : "Add this photo"}
+                aria-pressed={isTaken}
+                onClick={() => (isTaken ? onUnpick(asset) : onPick(asset))}
+                className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0"
+                aria-label={
+                  isTaken ? "In this gallery — tap to remove" : asset.kind === "VIDEO_EMBED" ? "Add this video" : "Add this photo"
+                }
               >
+                {isTaken && (
+                  <span className="absolute inset-0 z-10 flex items-center justify-center bg-scrim/40">
+                    <Check className="size-6 text-hero-foreground" aria-hidden />
+                  </span>
+                )}
                 {asset.kind === "VIDEO_EMBED" ? (
                   <span className="flex size-full items-center justify-center">
                     <Youtube className="size-6 text-muted-foreground" aria-hidden />

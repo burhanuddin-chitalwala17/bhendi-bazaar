@@ -241,6 +241,11 @@ export function ProductMediaManager({
     ]);
   };
 
+  const unpickFromLibrary = (asset: MediaAssetDto) => {
+    const index = media.findIndex((item) => item.ref === asset.ref);
+    if (index >= 0) remove(index);
+  };
+
   const remove = (index: number) => {
     // R15/A12: the cover cannot simply be dropped. Refusing here, where the org member is
     // looking, beats letting the payload fail validation on submit.
@@ -469,6 +474,7 @@ export function ProductMediaManager({
           onOpenChange={setIsPickerOpen}
           taken={new Set(media.map((item) => item.ref))}
           onPick={pickFromLibrary}
+          onUnpick={unpickFromLibrary}
         />
       )}
 

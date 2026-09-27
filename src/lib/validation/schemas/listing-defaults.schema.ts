@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { optionalNumber } from "./common.schemas";
+import { COUNTRY_CODES } from "@server/shared/countries";
+
+const trimmed = (value: unknown) => (typeof value === "string" ? value.trim() : value);
 
 /**
  * An org's listing defaults (org-profile spec R4): origin, tax rate as a percent, and a tax
@@ -8,9 +11,7 @@ import { optionalNumber } from "./common.schemas";
  */
 export const listingDefaultsSchema = z.object({
   countryOfOrigin: z
-    .string()
-    .trim()
-    .max(60)
+    .preprocess(trimmed, z.enum(COUNTRY_CODES).or(z.literal("")))
     .nullish()
     .transform((value) => value || null),
   taxRatePercent: optionalNumber(

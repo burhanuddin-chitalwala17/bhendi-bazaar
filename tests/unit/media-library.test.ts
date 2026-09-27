@@ -80,6 +80,12 @@ describe("mediaLibraryFilterSchema", () => {
     expect(parsed.from).toEqual(new Date("2026-09-01"));
   });
 
+  it("a 'to' date covers the whole of that day, so a range ending today includes today's uploads", () => {
+    const parsed = parseMediaLibraryFilters(new URLSearchParams("from=2026-09-01&to=2026-09-27"));
+    expect(parsed.from).toEqual(new Date("2026-09-01T00:00:00.000Z"));
+    expect(parsed.to).toEqual(new Date("2026-09-27T23:59:59.999Z"));
+  });
+
   it("refuses a kind, a source or a page Prisma would not accept", () => {
     expect(() => mediaLibraryFilterSchema.parse({ kind: "GIF" })).toThrow(ZodError);
     expect(() => mediaLibraryFilterSchema.parse({ source: "SCANNED" })).toThrow(ZodError);

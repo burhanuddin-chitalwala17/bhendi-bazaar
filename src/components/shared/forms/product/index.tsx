@@ -2,7 +2,7 @@
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { resolveShotList } from "@server/catalog/shot-list";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ export function ProductForm({
   copySource,
   categories,
   orgs,
-  locations = [],
+  locations: offeredLocations = [],
   onSubmit,
   onCancel,
   isSubmitting,
@@ -80,6 +80,12 @@ export function ProductForm({
       row.quantity,
     ]),
   );
+  // Locations can grow while the form is open: the org adds one from here rather than leaving
+  // a half-filled product to visit another page (stock-locations R1, org-profile R7).
+  const [locations, setLocations] = useState<LocationOption[]>(offeredLocations);
+  const addLocation = (location: LocationOption) =>
+    setLocations((current) => (current.some((l) => l.id === location.id) ? current : [...current, location]));
+
   const defaultStockRows = locations.map((location) => ({
     orgAddressId: location.id,
     quantity: stockByLocation.get(location.id) ?? 0,
@@ -106,7 +112,8 @@ export function ProductForm({
           : undefined,
       currency: product?.currency || "INR",
       categoryId: product?.category?.id || copy?.categoryId || "",
-      orgId: product?.org?.id || "",
+      // In the org portal there is one org to choose from, so it is chosen (nothing to pick).
+      orgId: product?.org?.id || (orgs?.length === 1 ? orgs[0].id : ""),
       tags: product?.tags || copy?.tags || [],
       flags: product?.flags || copy?.flags || [],
       // No cover is pre-selected on create (D17a). On edit the saved flag comes back
@@ -117,6 +124,7 @@ export function ProductForm({
           ref: item.ref,
           description: item.description ?? undefined,
           isThumbnail: item.isThumbnail,
+          slot: item.slot ?? null,
         })) || [],
       weight: product?.weight || 0,
       sizes: product?.sizes || copy?.sizes || [],
@@ -304,6 +312,7 @@ export function ProductForm({
         watch={watch}
         orgs={orgs}
         locations={locations}
+        onLocationAdded={addLocation}
         readOnly={readOnly}
       />
 

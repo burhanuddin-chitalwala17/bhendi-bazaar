@@ -14,7 +14,7 @@ import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
 import { readApiError } from "@/lib/api-error";
-import type { MediaAssetDetailDto, MediaAssetDto, MediaUseDto } from "@server/catalog/media-library.types";
+import { describeUses, type MediaAssetDetailDto, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 
 interface MediaLibraryGridProps {
@@ -46,6 +46,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   const [open, setOpen] = useState<MediaAssetDto | null>(null);
   const [detail, setDetail] = useState<MediaAssetDetailDto | null>(null);
   const [isRetiring, setIsRetiring] = useState(false);
+  const uses = detail?.uses ?? [];
 
   const show = async (asset: MediaAssetDto) => {
     setOpen(asset);
@@ -58,7 +59,16 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
     setDetail((await response.json()) as MediaAssetDetailDto);
   };
 
+  // A refusal is said, not greyed out: a disabled button with no reason is a dead end (spec R7, A3).
   const retire = async (asset: MediaAssetDto) => {
+    if (detail === null) {
+      toast.error("Still checking where this image is used. Try again in a moment.");
+      return;
+    }
+    if (uses.length > 0) {
+      toast.error(`This image is still used by ${describeUses(uses)}. Remove it there first.`);
+      return;
+    }
     if (!confirm("Retire this image? It leaves the library now and its file is deleted after thirty days.")) return;
     setIsRetiring(true);
     try {
@@ -89,8 +99,6 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       </Card>
     );
   }
-
-  const uses = detail?.uses ?? [];
 
   return (
     <div className="space-y-3">
@@ -158,13 +166,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 )}
               </div>
               {open.state !== "RETIRED" && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => retire(open)}
-                  disabled={isRetiring || detail === null || uses.length > 0}
-                  title={uses.length > 0 ? "Remove it from every use first" : undefined}
-                >
+                <Button type="button" variant="outline" onClick={() => retire(open)} disabled={isRetiring}>
                   <Archive className="mr-2 size-4" />
                   {isRetiring ? "Retiring…" : "Retire"}
                 </Button>
