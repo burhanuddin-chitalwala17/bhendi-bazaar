@@ -9,6 +9,9 @@ const id = z.string().trim().min(1).max(64);
  * asset id or by the URL its gallery row carries — the editor knows only the URL — never both. The
  * slot and its role travel with it so the label slot is refused before a row exists (trd D8);
  * whether the photo is this org's and ready is the service's question, not the schema's.
+ *
+ * A photo that fills no slot sends `null`, not nothing: the editor knows it has no slot, which is
+ * a different statement from having forgotten to say. Both are read as no slot.
  */
 export const requestEnhancementSchema = z
   .object({
@@ -16,8 +19,17 @@ export const requestEnhancementSchema = z
     preset: z.string().trim().min(1).max(40).optional(),
     sourceAssetId: id.optional(),
     sourceRef: z.url().max(1024).optional(),
-    slot: z.string().trim().min(1).max(40).optional(),
-    slotRole: z.enum(SHOT_ROLES).optional(),
+    slot: z
+      .string()
+      .trim()
+      .min(1)
+      .max(40)
+      .nullish()
+      .transform((value) => value ?? undefined),
+    slotRole: z
+      .enum(SHOT_ROLES)
+      .nullish()
+      .transform((value) => value ?? undefined),
   })
   .refine((request) => (request.sourceAssetId ? 1 : 0) + (request.sourceRef ? 1 : 0) === 1, {
     message: "Name the photo by its asset id or its URL, not both",

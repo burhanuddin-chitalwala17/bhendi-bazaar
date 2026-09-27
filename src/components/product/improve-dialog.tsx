@@ -93,7 +93,10 @@ export function ImproveDialog({
       description="One change at a time. You see before and after, and nothing is kept until you say so."
     >
       {target && run.phase === "idle" && (
-        <ul className="space-y-2" aria-label="Improvements">
+        <ul
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto"
+          aria-label="Improvements"
+        >
           {AVAILABLE_TOOLS.map((candidate) => (
             <li key={candidate}>
               <Button
@@ -133,7 +136,11 @@ export function ImproveDialog({
 
       {target && (run.phase === "proposed" || run.phase === "deciding") && (
         <>
-          <div className="flex gap-2" role="group" aria-label="Compare">
+          <div
+            className="flex shrink-0 gap-2"
+            role="group"
+            aria-label="Compare"
+          >
             <Button
               type="button"
               size="lg"
@@ -169,7 +176,7 @@ export function ImproveDialog({
                 : "Before the improvement"
             }
           />
-          <div className="sticky bottom-0 flex gap-2 bg-background pt-2">
+          <div className="flex shrink-0 gap-2 bg-background pt-2">
             <Button
               type="button"
               variant="outline"
@@ -235,7 +242,7 @@ function Frame({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-card bg-muted">
+    <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-card bg-muted">
       <NextImage
         src={src}
         alt={alt}

@@ -10,6 +10,21 @@
 
 ## Entries
 
+## [PR-187] 2026-09-27 — What the first local test of the crop frame and the improve sheet found
+
+The crop frame showed no picture and the dialog scrolled instead of fitting. Two causes. The crop
+library ships a stylesheet rather than injecting one, and nothing imported it, so the frame had no
+bounds and the picture was laid out by the page's own image reset — which is to say not shown at
+all; the dependency register said the opposite and now says what is true. And the frame asked for a
+square of its own inside a panel that then outgrew the screen: it takes the room the panel has left
+instead, the panel's height is settled before its content is laid out, and nothing inside a canvas
+task scrolls but the one part with more to see — the picker's tiles. On a wide screen the panel now
+stops short of the edges.
+
+Asking to improve an extra photo was refused with "please correct the highlighted fields": a photo
+that fills no slot sends `null`, and the schema accepted only an absent field. Saying "this has no
+slot" and saying nothing are both read as no slot now, and four cases pin the request's shape.
+
 ## [PR-186] 2026-09-27 — An overlay's surface follows its content
 
 [ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md). The bottom sheet was the

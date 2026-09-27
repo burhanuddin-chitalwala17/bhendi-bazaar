@@ -25,7 +25,8 @@ const MAY_USE_SHEET: Record<string, string> = {
     "Decision 3: the details of a selected item, beside a list that stays visible and whose selection moves.",
   "src/components/auth/auth-sheet.tsx":
     "Decision 4: a short flow the page hands off to. Signing in is a passage, not a place.",
-  "src/components/support/contact-sheet.tsx": "Decision 4: the same, for writing to support.",
+  "src/components/support/contact-sheet.tsx":
+    "Decision 4: the same, for writing to support.",
 };
 
 function tsxFiles(dir: string): string[] {
@@ -62,7 +63,10 @@ describe("an overlay's surface is chosen, not inherited", () => {
 
   it("keeps the list honest: an entry that no longer uses a sheet is removed", () => {
     const stale = Object.keys(MAY_USE_SHEET).filter(
-      (path) => !files.some((file) => file.path === path && /\bSheetContent\b/.test(file.code)),
+      (path) =>
+        !files.some(
+          (file) => file.path === path && /\bSheetContent\b/.test(file.code),
+        ),
     );
 
     expect(
@@ -72,8 +76,12 @@ describe("an overlay's surface is chosen, not inherited", () => {
   });
 
   it("each surface pair carries its own phone form, so a component never chooses between screens", () => {
-    const picker = files.find((f) => f.path === "src/components/shared/overlays/responsive-picker.tsx");
-    const dialog = files.find((f) => f.path === "src/components/shared/overlays/task-dialog.tsx");
+    const picker = files.find(
+      (f) => f.path === "src/components/shared/overlays/responsive-picker.tsx",
+    );
+    const dialog = files.find(
+      (f) => f.path === "src/components/shared/overlays/task-dialog.tsx",
+    );
 
     expect(picker, "the picker pair is missing").toBeDefined();
     expect(dialog, "the canvas pair is missing").toBeDefined();
@@ -82,7 +90,9 @@ describe("an overlay's surface is chosen, not inherited", () => {
     expect(picker?.code).toMatch(/PopoverContent/);
     expect(picker?.code).toMatch(/SheetContent/);
     expect(dialog?.code).toMatch(/h-dvh/);
-    expect(dialog?.code).toMatch(/md:max-h-overlay/);
+    expect(dialog?.code).toMatch(/md:h-\[min\(/);
+    // A canvas that scrolls is a canvas bigger than the screen, which is the one thing it must not be.
+    expect(dialog?.code).toMatch(/overflow-hidden/);
   });
 
   it("a popover is reached through the primitive, never from the package", () => {

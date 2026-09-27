@@ -172,3 +172,32 @@ describe("the request schema", () => {
     expect(requestEnhancementSchema.safeParse({ ...valid, sourceRef: "products/o/a.webp" }).success).toBe(false);
   });
 });
+
+describe("requestEnhancementSchema", () => {
+  const photo = { tool: ENHANCEMENT_TOOL.LIGHT, sourceRef: "https://img.test/a.webp" };
+
+  it("takes an extra photo, which says it has no slot rather than staying silent", () => {
+    const parsed = requestEnhancementSchema.parse({ ...photo, slot: null, slotRole: null });
+    expect(parsed).toMatchObject({ tool: ENHANCEMENT_TOOL.LIGHT, sourceRef: "https://img.test/a.webp" });
+    expect(parsed.slot).toBeUndefined();
+    expect(parsed.slotRole).toBeUndefined();
+  });
+
+  it("takes a photo in a slot, and the role travels with it so the label can be refused", () => {
+    const parsed = requestEnhancementSchema.parse({ ...photo, slot: "front", slotRole: "product" });
+    expect(parsed).toMatchObject({ slot: "front", slotRole: "product" });
+  });
+
+  it("names the photo one way or the other, never both and never neither", () => {
+    expect(requestEnhancementSchema.safeParse({ tool: ENHANCEMENT_TOOL.LIGHT }).success).toBe(false);
+    expect(
+      requestEnhancementSchema.safeParse({ ...photo, sourceAssetId: "a1" }).success,
+      "both an id and a URL is ambiguous, not generous",
+    ).toBe(false);
+    expect(requestEnhancementSchema.safeParse({ tool: ENHANCEMENT_TOOL.LIGHT, sourceAssetId: "a1" }).success).toBe(true);
+  });
+
+  it("refuses a tool that is not one of the six", () => {
+    expect(requestEnhancementSchema.safeParse({ ...photo, tool: "POLISH" }).success).toBe(false);
+  });
+});

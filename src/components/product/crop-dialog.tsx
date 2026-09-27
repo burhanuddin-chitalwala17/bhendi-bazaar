@@ -6,6 +6,9 @@ import Cropper, {
   type MediaSize,
   type Point,
 } from "react-easy-crop";
+// The library ships its stylesheet rather than injecting one: without it the frame has no bounds
+// and the picture is laid out by the page's own image reset, which is to say not shown at all.
+import "react-easy-crop/react-easy-crop.css";
 import { Check, Loader2, RotateCcw, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
@@ -138,7 +141,11 @@ function CropFrame({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Shape">
+      <div
+        className="flex shrink-0 flex-wrap gap-2"
+        role="group"
+        aria-label="Shape"
+      >
         {PRESETS.map((preset) => (
           <Button
             key={preset}
@@ -154,7 +161,9 @@ function CropFrame({
         ))}
       </div>
 
-      <div className="relative aspect-square w-full overflow-hidden rounded-card bg-muted">
+      {/* The frame takes the room the dialog has left rather than a shape of its own: a square
+          canvas on a wide picture is either a scrollbar or a letterbox, and it was the scrollbar. */}
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden rounded-card bg-muted">
         <Cropper
           image={src}
           crop={crop}
@@ -169,7 +178,7 @@ function CropFrame({
         />
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex shrink-0 items-center justify-between gap-2">
         <div className="flex gap-2">
           <Button
             type="button"
@@ -197,7 +206,7 @@ function CropFrame({
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:justify-end">
         {remaining > 0 && (
           <Button
             type="button"

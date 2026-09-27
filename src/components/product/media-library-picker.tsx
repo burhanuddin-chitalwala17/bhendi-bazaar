@@ -4,6 +4,7 @@ import { Check, Film, Images, Youtube, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import { PRODUCT_GRID_CLASSES } from "@/components/shared/product-grid";
+import { cn } from "@/lib/utils";
 import { PRODUCT_TILE_SIZES } from "@/components/shared/product-card";
 import { YouTubePoster } from "@/components/product/youtube-poster";
 import { LoadMore } from "@/components/shared/load-more";
@@ -62,7 +63,7 @@ export function MediaLibraryPicker({
     >
       {/* One tab is no choice, so the row is left out rather than shown pressed. */}
       {kinds.length > 1 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           {kinds.map((tab) => {
             const { label, Icon } = TABS[tab];
             return (
@@ -126,7 +127,10 @@ function PickerPages({
 
   return (
     <>
-      <ul className={PRODUCT_GRID_CLASSES}>
+      {/* The tiles scroll, the dialog does not: a grid is the only part of this with more to see. */}
+      <ul
+        className={cn(PRODUCT_GRID_CLASSES, "min-h-0 flex-1 overflow-y-auto")}
+      >
         {assets.map((asset) => {
           const isTaken = taken.has(asset.ref);
           return (
