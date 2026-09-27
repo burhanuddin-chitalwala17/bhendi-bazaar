@@ -1,5 +1,6 @@
 import { MediaAssetKind, MediaAssetSource } from "@prisma/client";
 import { Button } from "@/components/ui/button";
+import { AutoSubmitForm } from "@/components/shared/forms/auto-submit-form";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,11 +14,11 @@ const toDateInput = (value: Date | undefined) => (value ? value.toISOString().sl
 
 /**
  * A plain GET form (media-library spec R6): the filters live in the URL, so the page is a link
- * anyone in the org can share, and the browser needs no script to change them.
+ * anyone in the org can share. It applies as a filter is picked; the button is the fallback.
  */
 export function MediaLibraryFilters({ filters }: { filters: Filters }) {
   return (
-    <form method="get" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+    <AutoSubmitForm className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
       <label className="flex-1 text-sm sm:max-w-40">
         <span className="mb-1 block text-muted-foreground">Kind</span>
         <Select name="kind" defaultValue={filters.kind ?? ""}>
@@ -58,6 +59,6 @@ export function MediaLibraryFilters({ filters }: { filters: Filters }) {
       <Button type="submit" variant="outline" size="sm">
         Filter
       </Button>
-    </form>
+    </AutoSubmitForm>
   );
 }

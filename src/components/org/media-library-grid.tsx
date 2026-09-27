@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Archive, Images } from "lucide-react";
+import { Archive, ChevronDown, ChevronUp, Images } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -48,11 +48,13 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   const [open, setOpen] = useState<MediaAssetDto | null>(null);
   const [detail, setDetail] = useState<MediaAssetDetailDto | null>(null);
   const [isRetiring, setIsRetiring] = useState(false);
+  const [showUses, setShowUses] = useState(false);
   const uses = detail?.uses ?? [];
 
   const show = async (asset: MediaAssetDto) => {
     setOpen(asset);
     setDetail(null);
+    setShowUses(false);
     const response = await fetch(`/api/org/${orgId}/media/${asset.id}`);
     if (!response.ok) {
       toast.error((await readApiError(response)).message);
@@ -166,13 +168,28 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 ) : uses.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nothing. This can be retired.</p>
                 ) : (
-                  <ul className="space-y-1 text-sm">
-                    {uses.map((use) => (
-                      <li key={`${use.kind}-${use.id}-${use.slot ?? ""}`}>
-                        <UseLine use={use} />
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="-ml-2 h-auto px-2 py-1 font-normal"
+                      onClick={() => setShowUses((current) => !current)}
+                      aria-expanded={showUses}
+                    >
+                      <span className="capitalize">{describeUses(uses)}</span>
+                      {showUses ? <ChevronUp className="ml-1 size-4" aria-hidden /> : <ChevronDown className="ml-1 size-4" aria-hidden />}
+                    </Button>
+                    {showUses && (
+                      <ul className="space-y-1 pl-2 text-sm">
+                        {uses.map((use) => (
+                          <li key={`${use.kind}-${use.id}-${use.slot ?? ""}`}>
+                            <UseLine use={use} />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
                 )}
               </div>
               {open.state !== "RETIRED" && (

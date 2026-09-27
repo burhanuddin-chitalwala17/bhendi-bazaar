@@ -10,6 +10,16 @@
 
 ## Entries
 
+## [PR-170] 2026-09-27 — A video's uses are counted, "used by" is a summary, and filters apply as picked
+
+A video carried by two galleries read "unused" in the library and offered Retire: product writes
+linked only photographs to their asset rows, never videos. A write now links a video to the org's
+own reference and creates that reference when the library has not seen the video yet, so the
+count and the uses are true; the backfill's write links the rows written before this. The sheet's
+"Used by" is a one-line summary — "2 products and 1 storefront banner" — that expands to the list
+on a tap. The library's filters apply as each one is picked; the Filter button stays for a browser
+without script.
+
 ## [PR-169] 2026-09-27 — The worker card says how much got done [MIGRATION]
 
 The card showed waiting, running and failed, so a worker that had just run three jobs read

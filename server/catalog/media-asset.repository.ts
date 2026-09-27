@@ -197,6 +197,16 @@ export class MediaAssetRepository {
     await db.mediaAsset.update({ where: { id }, data: { contentHash } });
   }
 
+  /** The org's own video references behind a set of ids (spec R5a). Libraries never share, so the org scopes it. */
+  async embedIdsByRefs(orgId: string, refs: string[], db: MediaDb = prisma): Promise<Map<string, string>> {
+    if (refs.length === 0) return new Map();
+    const rows = await db.mediaAsset.findMany({
+      where: { orgId, kind: MediaAssetKind.VIDEO_EMBED, ref: { in: refs }, state: MediaAssetState.READY },
+      select: { id: true, ref: true },
+    });
+    return new Map(rows.map((row) => [row.ref, row.id]));
+  }
+
   /** Pending rows older than the cutoff: candidates for the sweep, with what they were about to be. */
   async findStalePending(before: Date, db: MediaDb = prisma) {
     return await db.mediaAsset.findMany({
