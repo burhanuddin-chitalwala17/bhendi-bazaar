@@ -2,7 +2,7 @@ import { fromPrisma } from "pg-boss";
 import type { Prisma } from "@prisma/client";
 import { JOBS_QUEUE } from "./jobs.config";
 import { jobsClient } from "./jobs.client";
-import type { JobDefinition, JobEnvelope } from "./jobs.types";
+import type { JobEnvelope, JobSpec } from "./jobs.types";
 
 /** The transaction client Prisma hands an interactive `$transaction` callback. */
 export type EnqueueTx = Prisma.TransactionClient;
@@ -16,7 +16,7 @@ export type EnqueueTx = Prisma.TransactionClient;
  */
 export async function enqueue<T>(
   tx: EnqueueTx,
-  definition: JobDefinition<T>,
+  definition: JobSpec<T>,
   payload: T,
 ): Promise<string> {
   const data: JobEnvelope = { type: definition.type, payload: definition.schema.parse(payload) };

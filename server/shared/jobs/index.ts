@@ -4,5 +4,5 @@
  */
 export { enqueue, type EnqueueTx } from "./jobs.enqueue";
 export { registerJob } from "./jobs.registry";
-export type { JobDefinition } from "./jobs.types";
+export type { JobDefinition, JobSpec } from "./jobs.types";
 export { workerStatus, redriveFailedJobs, recentJobs, type WorkerStatus, type JobSummary } from "./jobs.service";

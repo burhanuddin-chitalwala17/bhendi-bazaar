@@ -123,6 +123,9 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
     select: { id: true, kind: true, ref: true, product: { select: { orgId: true } } },
   });
   for (const row of media) {
+    // A hosted video is linked on write, from confirm on (video-hosting D1); one left unlinked
+    // was saved against a failed asset, and there is no image to make of it.
+    if (row.kind === "VIDEO") continue;
     const assetId =
       row.kind === "YOUTUBE"
         ? await assetForEmbed(row.ref, row.product.orgId)

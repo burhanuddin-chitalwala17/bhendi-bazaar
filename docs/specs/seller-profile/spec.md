@@ -32,6 +32,7 @@ Resellers are the reason the private face is built around brands rather than the
 - **R9** — A brand or a default that products depend on is retired, never deleted, and a retired brand's products keep their values ([ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)).
 - **R10** — Everything here is editable from a phone, by a member of that organisation only.
 - **R11** — Which brand is the default is never changed silently: making one the default says which brand stopped being it, and retiring the default warns first and says afterwards that none is set. A country of origin is chosen from a list, never typed.
+- **R12** — The org sees what its brand page shows and what one more fact would add — "a cover and a tagline would add the hero; two brands would add a brands strip" — each line naming the fact and where it is written. Never a percentage, never a score, never the word "required": completeness is shown as what a buyer would see, because that is the only reason to complete it.
 
 ## Product acceptance
 

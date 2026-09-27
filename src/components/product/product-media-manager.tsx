@@ -16,7 +16,10 @@
  * crop registered as derived from it — and the crop's URL is what the row carries. Library
  * picks and videos never pass through the sheet.
  *
- * Why video is a link and not an upload: [ADR-0017](../../docs/adr/0017-video-is-embedded-not-hosted.md).
+ * A video is uploaded as picked (video-hosting trd D2): nothing here downscales, crops or judges
+ * it, because the worker transcodes it into what a buyer gets. Whether that is done is not known
+ * here; the saved gallery tells the row its state, and a fresh upload is processing until then.
+ * A YouTube link stays a link ([ADR-0017](../../docs/adr/0017-video-is-embedded-not-hosted.md)).
  * Why the cover is chosen rather than derived, and why nothing here pre-selects one:
  * docs/specs/product-video/trd.md D17/D17a.
  *
@@ -29,7 +32,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import NextImage from "next/image";
-import { Images, Loader2, Upload, Youtube } from "lucide-react";
+import { Film, Images, Loader2, Upload, Youtube } from "lucide-react";
 import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,10 +40,14 @@ import {
   MAX_MEDIA_PER_PRODUCT,
   parseYoutubeRef,
   youtubePosterUrl,
+  type ProductMediaDto,
   type ProductMediaInput,
+  type ProductMediaState,
 } from "@server/catalog/media";
 import { buildImagePath } from "@server/catalog/image-paths";
+import { isVideoContentType } from "@server/catalog/video";
 import { uploadBatch } from "@/lib/image/upload-batch";
+import { uploadVideo } from "@/lib/image/upload-video";
 import { downscaleImage } from "@/lib/image/downscale";
 import { renderCrop } from "@/lib/image/render-crop";
 import type { CropTransform } from "@/lib/image/crop-transform";
@@ -76,6 +83,18 @@ interface ProductMediaManagerProps {
   shotList: ShotList;
   /** The owning org's id, which is what the library picker is scoped by. Without it there is no library to pick from. */
   orgId?: string;
+  /**
+   * The gallery as last saved, for what the editor cannot know on its own: a hosted video's
+   * poster and whether the worker is done with it (video-hosting spec R3, R7). A row not in
+   * here was uploaded in this session and is processing.
+   */
+  savedMedia?: ReadonlyArray<Pick<ProductMediaDto, "ref" | "poster" | "state">>;
+}
+
+/** What a hosted video's row shows about its readiness. */
+interface VideoStatus {
+  poster: string | null;
+  state: ProductMediaState;
 }
 
 /** A photo waiting in the crop sheet: what was picked, what will be stored, and where it goes. */
@@ -97,6 +116,7 @@ export function ProductMediaManager({
   identifier,
   shotList,
   orgId,
+  savedMedia = [],
 }: ProductMediaManagerProps) {
   const media = value ?? [];
   const [isUploading, setIsUploading] = useState(false);
@@ -124,6 +144,12 @@ export function ProductMediaManager({
   const photographCount = media.filter((item) => item.kind === "IMAGE").length;
   const { filled, extras } = splitGallery(media, shotList);
   const current = queue[0] ?? null;
+
+  const videoStatus = (item: ProductMediaInput): VideoStatus | null => {
+    if (item.kind !== "VIDEO") return null;
+    const saved = savedMedia.find((row) => row.ref === item.ref);
+    return { poster: saved?.poster ?? null, state: saved?.state ?? "processing" };
+  };
 
   const roleOf = (slot: string | null | undefined): ShotRole | null =>
     shotList.find((candidate) => candidate.key === slot)?.role ?? null;
@@ -287,6 +313,44 @@ export function ProductMediaManager({
   };
 
   /**
+   * Videos go up as picked, one after another (video-hosting trd D2): no sheet, no downscale, no
+   * judgement — the worker makes the playable sizes. Each row is added the moment its upload
+   * lands, marked processing, and the product can be saved meanwhile (spec R3).
+   */
+  const uploadVideos = async (files: File[]) => {
+    if (files.length === 0 || !canAdd(files.length)) return;
+    setIsUploading(true);
+    setUploadingSlot(null);
+    setNotice(null);
+    setProgress({ done: 0, total: files.length });
+    const landed: string[] = [];
+    const failed: string[] = [];
+    let firstError: string | null = null;
+    try {
+      for (const [index, file] of files.entries()) {
+        try {
+          const result = await uploadVideo(file, { endpoints, pathFor });
+          landed.push(result.url);
+        } catch (error) {
+          failed.push(file.name);
+          firstError ??= error instanceof Error ? error.message : "Upload failed";
+        }
+        setProgress({ done: index + 1, total: files.length });
+      }
+      const fresh = landed.filter((url, index) => landed.indexOf(url) === index && !media.some((item) => item.ref === url));
+      if (fresh.length > 0) {
+        commit([...media, ...fresh.map((url) => ({ kind: "VIDEO" as const, ref: url, isThumbnail: false, slot: null }))]);
+      }
+      if (failed.length > 0) {
+        setNotice(`Could not upload ${failed.join(", ")} (${firstError}).` + (fresh.length > 0 ? " The rest were added." : ""));
+      }
+    } finally {
+      setIsUploading(false);
+      setProgress({ done: 0, total: 0 });
+    }
+  };
+
+  /**
    * A pick opens the crop sheet rather than uploading (spec R8a). Each photo is reduced first,
    * one at a time, so the rectangle is measured on the picture that will be stored as the source.
    */
@@ -328,7 +392,11 @@ export function ProductMediaManager({
     const files = Array.from(event.target.files || []);
     // Cleared at once so picking the same file again still fires a change.
     event.target.value = "";
-    void queueForCrop(files, null);
+    // One input, two paths (video-hosting R1): a video is sent as it is, a photo is framed first.
+    const videos = files.filter((file) => isVideoContentType(file.type));
+    const photos = files.filter((file) => !isVideoContentType(file.type));
+    if (photos.length > 0) void queueForCrop(photos, null);
+    if (videos.length > 0) void uploadVideos(videos);
   };
 
   const addVideo = () => {
@@ -371,7 +439,7 @@ export function ProductMediaManager({
     if (media.some((item) => item.ref === asset.ref)) return;
     setNotice(null);
     const picked: ProductMediaInput = {
-      kind: asset.kind === "VIDEO_EMBED" ? "YOUTUBE" : "IMAGE",
+      kind: asset.kind === "VIDEO_EMBED" ? "YOUTUBE" : asset.kind === "VIDEO" ? "VIDEO" : "IMAGE",
       ref: asset.ref,
       isThumbnail: false,
       slot: null,
@@ -473,7 +541,8 @@ export function ProductMediaManager({
                 item={item}
                 index={index}
                 count={extras.length}
-                thumb={<MediaThumb item={item} preview={localPreview(item.ref)} />}
+                thumb={<MediaThumb item={item} preview={localPreview(item.ref)} poster={videoStatus(item)?.poster ?? null} />}
+                status={videoStatus(item)?.state ?? null}
                 shotList={shotList}
                 warnings={warningsFor(item)}
                 onDescribe={(description) => describe(item.ref, description)}
@@ -511,7 +580,7 @@ export function ProductMediaManager({
               ? progress.total > 1
                 ? `Uploading ${progress.done}/${progress.total}…`
                 : "Uploading…"
-              : "Upload photos"}
+              : "Upload photos or a video"}
           </Button>
           {orgId && (
             <Button
@@ -544,7 +613,7 @@ export function ProductMediaManager({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           multiple
           onChange={handleExtrasFileSelect}
           className="hidden"
@@ -576,14 +645,28 @@ export function ProductMediaManager({
         {photographCount === 0
           ? "At least one photograph is required. Video is optional."
           : `${media.length} of ${MAX_MEDIA_PER_PRODUCT} items · ${filled.size} of ${shotList.length} slots filled. Tap "Cover" on the photograph that should represent this product in listings.`}{" "}
-        Photos are resized in your browser before upload, so large files are fine.
+        Photos are resized in your browser before upload, so large files are fine. A video is sent as it is and made
+        playable in the background.
       </p>
     </div>
   );
 }
 
-/** The 64px thumbnail: a just-uploaded photo from the file still in the page, else the stored copy. */
-function MediaThumb({ item, preview }: { item: ProductMediaInput; preview: string | null }) {
+/**
+ * The 64px thumbnail: a just-uploaded photo from the file still in the page, else the stored copy.
+ * A hosted video shows its poster once the worker has made one, and a film mark until then.
+ */
+function MediaThumb({ item, preview, poster = null }: { item: ProductMediaInput; preview: string | null; poster?: string | null }) {
+  if (item.kind === "VIDEO") {
+    return (
+      <div className="relative size-16 shrink-0 overflow-hidden rounded-field bg-muted">
+        {poster && <NextImage src={poster} alt="" fill sizes="64px" className="object-cover" />}
+        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
+          <Film className="size-5 text-hero-foreground" aria-hidden />
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="relative size-16 shrink-0 overflow-hidden rounded-field bg-muted">
       {item.kind === "IMAGE" && preview ? (

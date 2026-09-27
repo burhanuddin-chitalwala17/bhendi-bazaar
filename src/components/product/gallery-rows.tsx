@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { CaptureWarning } from "@server/catalog/capture-checks";
-import type { ProductMediaInput } from "@server/catalog/media";
+import type { ProductMediaInput, ProductMediaState } from "@server/catalog/media";
 import type { ShotList, ShotSlot } from "@server/catalog/shot-list";
 import { SlotSilhouette } from "@/components/product/slot-silhouette";
 
@@ -189,6 +189,8 @@ interface ExtraRowProps {
   index: number;
   count: number;
   thumb: ReactNode;
+  /** A hosted video's readiness (video-hosting spec R3, R7); null for a photograph or a link. */
+  status?: ProductMediaState | null;
   shotList: ShotList;
   warnings: CaptureWarning[];
   onDescribe: (description: string) => void;
@@ -204,6 +206,7 @@ export function ExtraRow({
   index,
   count,
   thumb,
+  status = null,
   shotList,
   warnings,
   onDescribe,
@@ -213,7 +216,7 @@ export function ExtraRow({
   onRemove,
   onKeepAnyway,
 }: ExtraRowProps) {
-  const isVideo = item.kind === "YOUTUBE";
+  const isVideo = item.kind !== "IMAGE";
   const label = `${isVideo ? "video" : "extra photo"} ${index + 1}`;
 
   return (
@@ -224,7 +227,20 @@ export function ExtraRow({
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={isVideo ? "secondary" : "outline"}>{isVideo ? "Video" : "Extra photo"}</Badge>
             {item.isThumbnail && <Badge>Cover</Badge>}
+            {/* A hosted video says where it is (spec R3, R7): a badge on the row, never a modal. */}
+            {status === "processing" && <Badge variant="outline">Processing</Badge>}
+            {status === "failed" && <Badge variant="destructive">Failed</Badge>}
           </div>
+          {status === "processing" && (
+            <p className="text-xs text-muted-foreground">
+              Being made playable in the background. Save whenever you like; it plays on the product page once ready.
+            </p>
+          )}
+          {status === "failed" && (
+            <p className="text-xs text-muted-foreground">
+              Could not be made playable — the reason is on this video in your library. Remove it here.
+            </p>
+          )}
           {/* Only a photograph fills a slot; a video is always an extra (D4). */}
           {!isVideo && (
             <Select

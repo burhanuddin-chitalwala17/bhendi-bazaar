@@ -91,7 +91,7 @@ describe("confirmUpload", () => {
   it("records what the store holds and the dimensions the browser sent", async () => {
     repo.findById.mockResolvedValue(pending);
     const result = await mediaAssetService.confirmUpload({ assetId: "a1", orgId: "org-1", width: 800, height: 600 });
-    expect(result).toEqual({ assetId: "a1", ref: pending.ref, alreadyReady: false });
+    expect(result).toEqual({ assetId: "a1", ref: pending.ref, state: "READY", alreadyReady: false });
     expect(repo.confirm).toHaveBeenCalledWith("a1", { width: 800, height: 600, bytes: 1234, mimeType: "image/webp" });
     expect(store.getObject).not.toHaveBeenCalled();
   });

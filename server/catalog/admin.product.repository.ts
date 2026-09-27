@@ -14,7 +14,7 @@ import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
-import { productsRepository } from "@server/catalog/product.repository";
+import { PRODUCT_MEDIA_ASSET_SELECT, productsRepository } from "@server/catalog/product.repository";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
 import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
@@ -29,10 +29,11 @@ import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.
  * how an unset cover becomes survivable instead of loud (D4a).
  */
 /**
- * The asset behind each row (media-library trd D1). A photograph is found by URL; one with no
- * ready asset links to nothing and the backfill catches it later, so the write never waits on
- * it. A video is the org's own reference, created the moment a gallery first names it (R5a),
- * because nothing else ever will. Exported for tests.
+ * The asset behind each row (media-library trd D1). A stored file — a photograph or a hosted
+ * video — is found by URL; a photograph with no ready asset links to nothing and the backfill
+ * catches it later, so the write never waits on it. A YouTube video is the org's own reference,
+ * created the moment a gallery first names it (R5a), because nothing else ever will. Exported
+ * for tests.
  */
 export async function withAssetIds<T extends { kind: MediaKind; ref: string }>(
     rows: T[],
@@ -40,7 +41,7 @@ export async function withAssetIds<T extends { kind: MediaKind; ref: string }>(
     db: MediaDb = prisma,
 ) {
     const imageIds = await mediaAssetRepository.idsByRefs(
-        rows.filter((row) => row.kind === "IMAGE").map((row) => row.ref),
+        rows.filter((row) => row.kind !== "YOUTUBE").map((row) => row.ref),
         db,
     );
     const videoRefs = [...new Set(rows.filter((row) => row.kind === "YOUTUBE").map((row) => row.ref))];
@@ -52,7 +53,7 @@ export async function withAssetIds<T extends { kind: MediaKind; ref: string }>(
     }
     return rows.map((row) => ({
         ...row,
-        assetId: (row.kind === "IMAGE" ? imageIds : videoIds).get(row.ref) ?? null,
+        assetId: (row.kind === "YOUTUBE" ? videoIds : imageIds).get(row.ref) ?? null,
     }));
 }
 
@@ -98,9 +99,9 @@ const PRODUCT_LIST_SELECT = {
     },
 } satisfies Prisma.ProductSelect;
 
-/** Gallery order is the only order media is ever read in (R16). */
+/** Gallery order is the only order media is ever read in (R16). The asset join is what a VIDEO row's poster and state come from. */
 const MEDIA_SELECT = {
-    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true, slot: true },
+    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true, slot: true, asset: PRODUCT_MEDIA_ASSET_SELECT },
     orderBy: { position: "asc" },
 } satisfies Prisma.Product$mediaArgs;
 

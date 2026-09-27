@@ -46,6 +46,8 @@ model MediaAsset {
   height   Int?
   bytes    Int?
   mimeType String?
+  /// Playing time of a hosted video; null for anything else (video-hosting D1).
+  durationMs Int?
   /// SHA-256 of the stored bytes, hex. Within an org the same bytes are one asset, so a repeat
   /// upload is answered with the existing record rather than a second copy (media-library D11).
   contentHash String?
@@ -67,6 +69,8 @@ model MediaAsset {
   /// record has the dimensions; RETIRED when nothing should use it any more (trd D2, D8).
   state     MediaAssetState @default(PENDING)
   retiredAt DateTime?
+  /// Why a video could not be made playable, shown to the org member (video-hosting spec R7).
+  failureReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,6 +91,8 @@ model MediaAsset {
 enum MediaAssetKind {
   IMAGE
   VIDEO_EMBED
+  /// A video file we host: the upload is the source, its renditions and poster are DERIVED from it (video-hosting D1).
+  VIDEO
 }
 
 enum MediaAssetSource {
@@ -97,7 +103,11 @@ enum MediaAssetSource {
 
 enum MediaAssetState {
   PENDING
+  /// A confirmed video the worker is still making playable (video-hosting D1).
+  PROCESSING
   READY
+  /// A video no decoder read or that broke a limit; `failureReason` says which (spec R7).
+  FAILED
   RETIRED
 }
 
@@ -217,8 +227,8 @@ model ProductMedia {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   kind MediaKind
-  /// A blob URL for IMAGE, a bare video id for YOUTUBE — never a provider URL, so the
-  /// host stays swappable by backfill rather than by migration (ADR-0017 decision 2).
+  /// A stored URL for IMAGE and VIDEO, a bare video id for YOUTUBE — never a provider URL, so
+  /// the host stays swappable by backfill rather than by migration (ADR-0017 decision 2).
   ref  String
 
   /// The library record behind an IMAGE row, linked by `ref` on write and by the backfill.
@@ -245,6 +255,8 @@ model ProductMedia {
 enum MediaKind {
   IMAGE
   YOUTUBE
+  /// A video we host (video-hosting D1); `ref` is the source asset's URL.
+  VIDEO
 }
 
 model Review {

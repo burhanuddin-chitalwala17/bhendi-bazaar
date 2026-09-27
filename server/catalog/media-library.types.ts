@@ -21,6 +21,11 @@ export interface MediaAssetDto {
   uses: number;
   createdAt: string;
   retiredAt: string | null;
+  /** A hosted video's poster frame once the worker has made one; null for anything else (video-hosting D7). */
+  poster: string | null;
+  durationMs: number | null;
+  /** Why a video is FAILED, in the org member's words (spec R7); null otherwise. */
+  failureReason: string | null;
 }
 
 export const MEDIA_USE_KINDS = [
@@ -72,8 +77,12 @@ export interface MediaAssetRow {
   mimeType: string | null;
   source: MediaAssetSource;
   state: MediaAssetState;
+  durationMs: number | null;
+  failureReason: string | null;
   createdAt: Date;
   retiredAt: Date | null;
+  /** The poster derivative, at most one, as the library select joins it. */
+  derivatives: { ref: string }[];
   _count: ReferenceCounts;
 }
 
@@ -91,6 +100,9 @@ export function toMediaAssetDto(row: MediaAssetRow): MediaAssetDto {
     uses: totalReferences(row._count),
     createdAt: row.createdAt.toISOString(),
     retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,
+    poster: row.derivatives[0]?.ref ?? null,
+    durationMs: row.durationMs,
+    failureReason: row.failureReason,
   };
 }
 

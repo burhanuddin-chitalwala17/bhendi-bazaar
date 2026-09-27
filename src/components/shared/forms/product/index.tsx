@@ -4,6 +4,7 @@ import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { resolveShotList } from "@server/catalog/shot-list";
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { Film } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -243,6 +244,7 @@ export function ProductForm({
                   identifier={watch("name")}
                   // The code, not the id: it is the folder the presign route signs under.
                   orgCode={orgs?.find((org) => org.id === watch("orgId"))?.code}
+                  savedMedia={product?.media}
                 />
               )}
             />
@@ -266,23 +268,32 @@ export function ProductForm({
               {product.media.map((item) => (
                 <div
                   key={item.id}
-                  className="relative aspect-[3/4] rounded-lg overflow-hidden border"
+                  className="relative aspect-[3/4] rounded-lg overflow-hidden border bg-muted"
                 >
-                  <Image
-                    src={
-                      item.kind === "YOUTUBE"
-                        ? youtubePosterUrl(item.ref)
-                        : item.ref
-                    }
-                    alt={item.description ?? ""}
-                    fill
-                    sizes="(min-width: 768px) 25vw, 50vw"
-                    unoptimized={item.kind === "YOUTUBE"}
-                    className="object-cover"
-                  />
-                  {(item.kind === "YOUTUBE" || item.isThumbnail) && (
+                  {/* A hosted video has a poster once the worker is done; until then a film mark (video-hosting R3). */}
+                  {item.kind === "VIDEO" && !item.poster ? (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <Film className="size-8 text-muted-foreground" aria-hidden />
+                    </span>
+                  ) : (
+                    <Image
+                      src={
+                        item.kind === "YOUTUBE"
+                          ? youtubePosterUrl(item.ref)
+                          : item.kind === "VIDEO"
+                            ? (item.poster as string)
+                            : item.ref
+                      }
+                      alt={item.description ?? ""}
+                      fill
+                      sizes="(min-width: 768px) 25vw, 50vw"
+                      unoptimized={item.kind === "YOUTUBE"}
+                      className="object-cover"
+                    />
+                  )}
+                  {(item.kind !== "IMAGE" || item.isThumbnail) && (
                     <span className="absolute left-2 top-2 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">
-                      {item.isThumbnail ? "Cover" : "Video"}
+                      {item.isThumbnail ? "Cover" : item.kind === "VIDEO" && item.state !== "ready" ? `Video · ${item.state}` : "Video"}
                     </span>
                   )}
                 </div>

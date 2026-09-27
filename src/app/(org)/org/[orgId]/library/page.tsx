@@ -16,7 +16,8 @@ type Search = Record<string, string | string[] | undefined>;
 
 const KIND_OPTIONS: FilterOption[] = [
   { value: MediaAssetKind.IMAGE, label: "Photos" },
-  { value: MediaAssetKind.VIDEO_EMBED, label: "Videos" },
+  { value: MediaAssetKind.VIDEO, label: "Videos" },
+  { value: MediaAssetKind.VIDEO_EMBED, label: "YouTube links" },
 ];
 const SOURCE_OPTIONS: FilterOption[] = [
   { value: MediaAssetSource.UPLOAD, label: "Uploaded" },

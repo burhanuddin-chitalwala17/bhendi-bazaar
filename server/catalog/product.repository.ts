@@ -5,7 +5,7 @@
  */
 
 import { prisma } from "@server/shared/prisma";
-import type { Prisma } from "@prisma/client";
+import { MediaAssetState, type Prisma } from "@prisma/client";
 import { loadPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
@@ -15,6 +15,23 @@ import {
   FROM_ACTIVE_ORG,
   AVAILABLE,
 } from "@server/catalog/product.visibility";
+
+/**
+ * The join both product reads add to a gallery row (video-hosting D1): the asset behind a VIDEO
+ * row, with its ready derivatives, is what `toProductMediaDto` maps a poster, renditions and a
+ * state from. Declared here rather than in `media.ts`, which the browser loads and so cannot
+ * name a Prisma enum.
+ */
+export const PRODUCT_MEDIA_ASSET_SELECT = {
+  select: {
+    state: true,
+    durationMs: true,
+    derivatives: {
+      where: { state: MediaAssetState.READY },
+      select: { ref: true, width: true, height: true, transform: true },
+    },
+  },
+} satisfies Prisma.ProductMedia$assetArgs;
 
 export const PRODUCT_INCLUDE = {
   category: { select: { slug: true } },
@@ -30,6 +47,8 @@ export const PRODUCT_INCLUDE = {
       description: true,
       isThumbnail: true,
       slot: true,
+      // A hosted video's poster, renditions and state (video-hosting D1); null for anything else.
+      asset: PRODUCT_MEDIA_ASSET_SELECT,
     },
     orderBy: { position: "asc" as const },
   },

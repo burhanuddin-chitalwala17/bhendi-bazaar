@@ -27,6 +27,7 @@ import { registeredSchedules, startSchedules } from "@server/shared/jobs/jobs.sc
 // Job registrations. Each domain adds its `*.jobs.ts` here and nowhere else.
 import "@server/shared/jobs/ping.job";
 import "@server/catalog/media.jobs";
+import "@server/catalog/video.jobs";
 
 const VERSION = process.env.WORKER_VERSION ?? "dev";
 

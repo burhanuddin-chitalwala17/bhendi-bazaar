@@ -55,8 +55,11 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   mimeType: "image/webp",
   source: "UPLOAD" as const,
   state: "READY" as const,
+  durationMs: null,
+  failureReason: null,
   createdAt: new Date("2026-09-27T08:00:00Z"),
   retiredAt: null,
+  derivatives: [],
   _count: counts(),
   ...overrides,
 });

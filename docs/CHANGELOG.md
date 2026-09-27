@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-181] 2026-09-27 — Hosted video, part two: upload, transcode job and the poster [CONTRACT] [MIGRATION]
+
+Video-hosting trd D1, D2, D3, D6, D7. `MediaAssetKind` gains `VIDEO`, `MediaAssetState` gains
+`PROCESSING` and `FAILED`, `MediaAsset` gains `durationMs` and `failureReason`, and a gallery row's
+`MediaKind` gains `VIDEO`. The presign accepts `video/mp4`, `video/quicktime` and `video/webm` up
+to 200 MB, naming the limit when it refuses, and registers the pending row as a video; the confirm
+moves it to PROCESSING and enqueues `media.transcode` in the same transaction, so neither exists
+without the other. The web app enqueues from the job's spec — name, payload, group — while the
+handler is registered only where the worker imports it, so the web process runs no ffmpeg plumbing.
+The worker downloads the source, probes it, refuses a clip past the limit with the limit named and
+its bytes deleted, otherwise stores the fitting renditions and a poster beside the source as
+DERIVED assets and finishes the source READY; a re-run makes only what is missing, and any other
+failure is the queue's to retry and park, the source kept processing. The gallery editor's "Upload
+photos or a video" sends a video as picked — no downscale, crop or capture check; a video is never
+the cover and never fills a slot, and links to its asset from confirm on. The library lists
+processing and failed videos with a state badge, duration and the failure reason; the picker gains
+a Videos tab; the product page shows the poster, or a placeholder while processing, with no player
+yet. The media backfill skips VIDEO rows.
+
 ## [PR-182] 2026-09-27 — The shop's about page becomes a brand page, drawn from what the platform knows [CONTRACT]
 
 Brand-page spec R1–R3, R6–R11; TRD D1, D4, D5, D7, D8, D10 — part (a) of seller-profile PR 4,

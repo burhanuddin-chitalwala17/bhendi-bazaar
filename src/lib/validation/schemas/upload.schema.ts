@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@server/catalog/image-paths";
+import { VIDEO_CONTENT_TYPES, VIDEO_LIMITS, describeSizeLimit, isVideoContentType } from "@server/catalog/video";
 import { SHA256_HEX } from "@server/shared/hash";
 import { CROP_ROTATIONS } from "@/lib/image/crop-transform";
 
@@ -52,18 +53,28 @@ export const presignUploadSchema = z.object({
       (value) => !value.split("/").some((segment) => segment === "" || segment === "." || segment === ".."),
       "Pathname may not contain empty, . or .. segments"
     ),
-  contentType: z.enum(ALLOWED_IMAGE_TYPES, { message: "Not an allowed image type" }),
-  /** Signed into the URL, so it is a limit rather than a claim. */
-  size: z
-    .number()
-    .int("Size must be a whole number of bytes")
-    .positive("Size must be greater than zero")
-    .max(MAX_IMAGE_BYTES, `Each image must be ${MAX_IMAGE_BYTES / (1024 * 1024)}MB or smaller`),
+  contentType: z.enum([...ALLOWED_IMAGE_TYPES, ...VIDEO_CONTENT_TYPES], { message: "Not an allowed image or video type" }),
+  /** Bounded below by kind (the refinement), so it is a limit rather than a claim. */
+  size: z.number().int("Size must be a whole number of bytes").positive("Size must be greater than zero"),
   /** SHA-256 hex of the bytes, when the browser could compute it — how a repeat upload is recognised. */
   contentHash: z.string().regex(SHA256_HEX, "Not a SHA-256 hex digest").optional(),
   /** These bytes were made from an image the caller owns — a crop — and the record says so (trd D6a). */
   derivedFrom: derivedFromSchema.optional(),
-});
+})
+  // The ceiling depends on what is being sent (video-hosting D2, D4): a video gets the video
+  // limit, named from the same constant the worker and the copy read; everything else the image one.
+  .superRefine((upload, ctx) => {
+    const isVideo = isVideoContentType(upload.contentType);
+    const limit = isVideo ? VIDEO_LIMITS.maxUploadBytes : MAX_IMAGE_BYTES;
+    if (upload.size <= limit) return;
+    ctx.addIssue({
+      code: "custom",
+      path: ["size"],
+      message: isVideo
+        ? `A video must be ${describeSizeLimit()}`
+        : `Each image must be ${MAX_IMAGE_BYTES / (1024 * 1024)}MB or smaller`,
+    });
+  });
 
 export type PresignUploadInput = z.infer<typeof presignUploadSchema>;
 

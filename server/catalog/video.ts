@@ -12,6 +12,11 @@ export const VIDEO_LIMITS = {
 export const VIDEO_CONTENT_TYPES = ["video/mp4", "video/quicktime", "video/webm"] as const;
 export type VideoContentType = (typeof VIDEO_CONTENT_TYPES)[number];
 
+/** The one test the presign, the record and the browser share for "this upload is a video". */
+export function isVideoContentType(contentType: string): contentType is VideoContentType {
+  return (VIDEO_CONTENT_TYPES as readonly string[]).includes(contentType);
+}
+
 export interface VideoRendition {
   key: string;
   /** Output height; width follows the source's aspect, rounded to an even number for H.264. */

@@ -1,8 +1,12 @@
 import sharp from "sharp";
 import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
-import { MediaAssetSource, MediaAssetState } from "@prisma/client";
+import { MediaAssetKind, MediaAssetSource, MediaAssetState } from "@prisma/client";
+import { prisma } from "@server/shared/prisma";
+import { enqueue } from "@server/shared/jobs";
 import { deleteObject, getObject, headObject, presignUpload, publicUrlFor } from "@server/catalog/object-store";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
+import { isVideoContentType } from "@server/catalog/video";
+import { videoTranscodeSpec } from "@server/catalog/video.job";
 import {
   MEDIA_LIBRARY_PAGE_SIZE,
   describeUses,
@@ -46,6 +50,15 @@ export interface ConfirmUploadInput {
   height?: number;
 }
 
+/** The confirm route's answer: READY for a photograph, PROCESSING for a video until the worker is done. */
+export interface ConfirmUploadResult {
+  assetId: string;
+  ref: string;
+  state: MediaAssetState;
+  /** This confirm moved nothing: the asset had already left PENDING. */
+  alreadyReady: boolean;
+}
+
 function validDimension(value: number | undefined): value is number {
   return Number.isInteger(value) && (value as number) > 0 && (value as number) <= MAX_DIMENSION;
 }
@@ -81,6 +94,8 @@ export const mediaAssetService = {
       objectKey: input.pathname,
       mimeType: input.contentType,
       bytes: input.size,
+      // The schema has already bounded the size by kind; the record says which kind it was for.
+      kind: isVideoContentType(input.contentType) ? MediaAssetKind.VIDEO : MediaAssetKind.IMAGE,
       contentHash,
       ...(source && input.derivedFrom
         ? { source: MediaAssetSource.DERIVED, derivedFromId: source.id, transform: input.derivedFrom.transform }
@@ -93,18 +108,37 @@ export const mediaAssetService = {
    * The bytes landed; make the record true. The store is asked what it actually holds, and the
    * dimensions come from the browser's canvas or, failing that, from the object itself, so a
    * ready asset always has them (R1). A second confirm of a ready asset is a no-op.
+   *
+   * A video is different in one way (video-hosting trd D2): it becomes PROCESSING, and the
+   * transcode is enqueued in the same transaction as that state change, so neither can exist
+   * without the other. Its dimensions and duration are the worker's to read.
    */
-  async confirmUpload(input: ConfirmUploadInput) {
+  async confirmUpload(input: ConfirmUploadInput): Promise<ConfirmUploadResult> {
     const asset = await mediaAssetRepository.findById(input.assetId);
     if (!asset) throw new NotFoundError("Upload not found");
     if (asset.orgId !== input.orgId) throw new ForbiddenError("That upload belongs to someone else");
-    if (asset.state === MediaAssetState.READY) return { assetId: asset.id, ref: asset.ref, alreadyReady: true };
+    if (asset.state === MediaAssetState.READY || asset.state === MediaAssetState.PROCESSING) {
+      return { assetId: asset.id, ref: asset.ref, state: asset.state, alreadyReady: true };
+    }
     if (asset.state !== MediaAssetState.PENDING || !asset.objectKey) {
       throw new DomainError("This upload can no longer be confirmed");
     }
 
     const stored = await headObject(asset.objectKey);
-    if (!stored) throw new DomainError("The image has not reached the store yet. Try again in a moment.");
+    if (!stored) throw new DomainError("The file has not reached the store yet. Try again in a moment.");
+
+    if (asset.kind === MediaAssetKind.VIDEO) {
+      const started = await prisma.$transaction(async (tx) => {
+        const moved = await mediaAssetRepository.startProcessing(
+          asset.id,
+          { bytes: stored.contentLength, mimeType: stored.contentType },
+          tx,
+        );
+        if (moved) await enqueue(tx, videoTranscodeSpec, { assetId: asset.id, orgId: asset.orgId });
+        return moved;
+      });
+      return { assetId: asset.id, ref: asset.ref, state: MediaAssetState.PROCESSING, alreadyReady: !started };
+    }
 
     let { width, height } = input;
     if (!validDimension(width) || !validDimension(height)) {
@@ -121,7 +155,7 @@ export const mediaAssetService = {
       bytes: stored.contentLength,
       mimeType: stored.contentType,
     });
-    return { assetId: asset.id, ref: asset.ref, alreadyReady: !confirmed };
+    return { assetId: asset.id, ref: asset.ref, state: MediaAssetState.READY, alreadyReady: !confirmed };
   },
 
   /** The server-side path already has the bytes and their dimensions; the record is born ready. */

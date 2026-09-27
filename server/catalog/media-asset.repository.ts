@@ -2,6 +2,7 @@ import { prisma } from "@server/shared/prisma";
 import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
 import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
 import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaUseDto } from "@server/catalog/media-library.types";
+import { VIDEO_TRANSFORM } from "@server/catalog/video";
 
 /** Every relation that can point at an asset. "Used" is `some` on any; "unused" is `none` on all. */
 const REFERENCE_RELATIONS = [
@@ -34,10 +35,22 @@ const LIBRARY_SELECT = {
   mimeType: true,
   source: true,
   state: true,
+  durationMs: true,
+  failureReason: true,
   createdAt: true,
   retiredAt: true,
+  // A hosted video's poster, so its tile has a picture (video-hosting D7). A crop's transform has
+  // no `kind`, so a photograph's derivatives never match.
+  derivatives: {
+    where: { state: MediaAssetState.READY, transform: { path: ["kind"], equals: VIDEO_TRANSFORM.POSTER } },
+    select: { ref: true },
+    take: 1,
+  },
   _count: { select: REFERENCE_COUNTS },
 } satisfies Prisma.MediaAssetSelect;
+
+/** What the library shows: ready assets, and a video on its way there or fallen short (spec R7). A pending upload is nobody's yet. */
+const LIBRARY_STATES = [MediaAssetState.READY, MediaAssetState.PROCESSING, MediaAssetState.FAILED];
 
 /** The library's filters as a Prisma `where`, scoped to one org and one state (spec R6). */
 function libraryWhere(orgId: string, filters: MediaLibraryFilters): Prisma.MediaAssetWhereInput {
@@ -47,7 +60,7 @@ function libraryWhere(orgId: string, filters: MediaLibraryFilters): Prisma.Media
       : null;
   return {
     orgId,
-    state: filters.retired ? MediaAssetState.RETIRED : MediaAssetState.READY,
+    state: filters.retired ? MediaAssetState.RETIRED : { in: LIBRARY_STATES },
     ...(filters.kind ? { kind: filters.kind } : {}),
     ...(filters.source ? { source: filters.source } : {}),
     ...(filters.from || filters.to ? { createdAt: { gte: filters.from, lte: filters.to } } : {}),
@@ -66,6 +79,8 @@ export interface PendingAssetInput {
   objectKey: string;
   mimeType: string;
   bytes: number;
+  /** IMAGE unless the presign was for a video (video-hosting D1). */
+  kind?: MediaAssetKind;
   contentHash?: string | null;
   /** UPLOAD unless these bytes were made from another asset, which the next two then name (trd D6a). */
   source?: MediaAssetSource;
@@ -84,6 +99,13 @@ export interface ReadyAssetInput {
   width: number | null;
   height: number | null;
   contentHash?: string | null;
+  /** IMAGE unless said otherwise: the worker records a video's renditions as VIDEO (video-hosting D3). */
+  kind?: MediaAssetKind;
+  durationMs?: number | null;
+  /** UPLOAD unless these bytes were made from another asset, which the next two then name. */
+  source?: MediaAssetSource;
+  derivedFromId?: string | null;
+  transform?: Prisma.InputJsonValue | null;
 }
 
 export interface ConfirmedDimensions {
@@ -91,6 +113,18 @@ export interface ConfirmedDimensions {
   height: number;
   bytes: number;
   mimeType: string;
+}
+
+/** What the store holds for a video at confirm; its dimensions and duration wait for the worker. */
+export interface StoredBytes {
+  bytes: number;
+  mimeType: string;
+}
+
+export interface ProbedVideo {
+  width: number;
+  height: number;
+  durationMs: number;
 }
 
 /**
@@ -101,10 +135,10 @@ export interface ConfirmedDimensions {
  */
 export class MediaAssetRepository {
   async createPending(input: PendingAssetInput, db: MediaDb = prisma) {
-    const { source = MediaAssetSource.UPLOAD, derivedFromId = null, transform = null, ...asset } = input;
+    const { kind = MediaAssetKind.IMAGE, source = MediaAssetSource.UPLOAD, derivedFromId = null, transform = null, ...asset } = input;
     return await db.mediaAsset.create({
       data: {
-        kind: MediaAssetKind.IMAGE,
+        kind,
         source,
         state: MediaAssetState.PENDING,
         derivedFromId,
@@ -137,13 +171,66 @@ export class MediaAssetRepository {
     return result.count === 1;
   }
 
+  /**
+   * A video's confirm (video-hosting D1, D2): the bytes are in the store, so the row leaves PENDING,
+   * but it is not ready until the worker has made it playable. One conditional statement, so a
+   * second confirm moves nothing and enqueues nothing.
+   */
+  async startProcessing(id: string, stored: StoredBytes, db: MediaDb = prisma) {
+    const result = await db.mediaAsset.updateMany({
+      where: { id, state: MediaAssetState.PENDING },
+      data: { ...stored, state: MediaAssetState.PROCESSING },
+    });
+    return result.count === 1;
+  }
+
+  /** The worker is done: the source gains what ffprobe read and becomes READY (video-hosting D3). */
+  async finishProcessing(id: string, probe: ProbedVideo, db: MediaDb = prisma) {
+    const result = await db.mediaAsset.updateMany({
+      where: { id, state: MediaAssetState.PROCESSING },
+      data: { ...probe, state: MediaAssetState.READY },
+    });
+    return result.count === 1;
+  }
+
+  /**
+   * The worker could not make it playable (spec R7). The reason is what the org member reads;
+   * `dropObject` says the bytes are gone too, which is the case for a clip past a limit.
+   */
+  async failProcessing(id: string, failureReason: string, options: { dropObject: boolean }, db: MediaDb = prisma) {
+    const result = await db.mediaAsset.updateMany({
+      where: { id, state: MediaAssetState.PROCESSING },
+      data: { state: MediaAssetState.FAILED, failureReason, ...(options.dropObject ? { objectKey: null } : {}) },
+    });
+    return result.count === 1;
+  }
+
+  /** What has already been made from a source, so a re-run of the worker adds nothing (ADR-0038 D4). */
+  async findDerivatives(sourceId: string, db: MediaDb = prisma) {
+    return await db.mediaAsset.findMany({
+      where: { derivedFromId: sourceId, state: { not: MediaAssetState.RETIRED } },
+      select: { id: true, kind: true, ref: true, transform: true },
+    });
+  }
+
   async createReady(input: ReadyAssetInput, db: MediaDb = prisma) {
+    const {
+      kind = MediaAssetKind.IMAGE,
+      source = MediaAssetSource.UPLOAD,
+      derivedFromId = null,
+      transform = null,
+      durationMs = null,
+      ...asset
+    } = input;
     return await db.mediaAsset.create({
       data: {
-        kind: MediaAssetKind.IMAGE,
-        source: MediaAssetSource.UPLOAD,
+        kind,
+        source,
         state: MediaAssetState.READY,
-        ...input,
+        derivedFromId,
+        durationMs,
+        ...(transform === null ? {} : { transform }),
+        ...asset,
       },
       select: { id: true, ref: true },
     });
@@ -179,25 +266,35 @@ export class MediaAssetRepository {
   }
 
   /**
-   * The ids behind a set of image refs, for linking gallery rows on write (trd D1). Only ready
-   * assets link: a pending one has no confirmed object yet, and the backfill catches up later.
+   * The ids behind a set of stored-file refs, for linking gallery rows on write (trd D1). Only
+   * ready photographs link — a pending one has no confirmed object yet, and the backfill catches
+   * up later — while a video links from confirm on, so a gallery saved during the transcode
+   * still names its asset (video-hosting spec R3).
    */
   async idsByRefs(refs: string[], db: MediaDb = prisma): Promise<Map<string, string>> {
     if (refs.length === 0) return new Map();
     const rows = await db.mediaAsset.findMany({
-      where: { kind: MediaAssetKind.IMAGE, ref: { in: refs }, state: MediaAssetState.READY },
+      where: {
+        ref: { in: refs },
+        OR: [
+          { kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY },
+          { kind: MediaAssetKind.VIDEO, state: { in: [MediaAssetState.READY, MediaAssetState.PROCESSING] } },
+        ],
+      },
       select: { id: true, ref: true },
     });
     return new Map(rows.map((row) => [row.ref, row.id]));
   }
 
   /**
-   * The ready asset already holding these bytes for this org, if any (media-library D11). Scoped by
-   * org on purpose: another org's identical file is not this org's asset.
+   * The asset already holding these bytes for this org, if any (media-library D11). Scoped by
+   * org on purpose: another org's identical file is not this org's asset. A video still being
+   * transcoded counts — the same clip sent twice in a minute is one video (video-hosting D6) —
+   * while a failed one does not, so a retry after a failure gets a fresh attempt.
    */
   async findReadyByHash(orgId: string | null, contentHash: string, db: MediaDb = prisma) {
     return await db.mediaAsset.findFirst({
-      where: { orgId, contentHash, kind: MediaAssetKind.IMAGE, state: MediaAssetState.READY },
+      where: { orgId, contentHash, state: { in: [MediaAssetState.READY, MediaAssetState.PROCESSING] } },
       select: { id: true, ref: true, width: true, height: true },
       orderBy: { createdAt: "asc" },
     });
@@ -321,7 +418,8 @@ export class MediaAssetRepository {
    */
   async retireUnused(orgId: string, id: string, now: Date = new Date()): Promise<boolean> {
     const result = await prisma.mediaAsset.updateMany({
-      where: { id, orgId, state: MediaAssetState.READY, ...UNREFERENCED },
+      // A failed video is retired the same way (spec R7): it is in the library, and this is how it leaves.
+      where: { id, orgId, state: { in: [MediaAssetState.READY, MediaAssetState.FAILED] }, ...UNREFERENCED },
       data: { state: MediaAssetState.RETIRED, retiredAt: now },
     });
     return result.count === 1;

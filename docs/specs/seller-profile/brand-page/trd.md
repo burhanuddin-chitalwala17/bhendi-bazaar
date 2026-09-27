@@ -24,6 +24,7 @@ The page at `src/app/(store)/store/[handle]/about/page.tsx` stays a server compo
 - **D8 — Brands carried lists names only**, from the Brand aggregate ([../trd.md](../trd.md) D2), shown when the org has more than one active brand. Manufacturer and origin are private face and never join this query.
 - **D9 — The editor grows in place.** The existing storefront editor gains owner, pillars, social and section toggles, validated by the same Zod schema through `useServerForm` ([ADR-0013](../../../adr/0013-one-error-envelope-and-useserverform.md)), with the live preview [storefront-branding](../../org-storefront/storefront-branding/spec.md) R4 already requires.
 - **D10 — Metadata and link preview from the DTO.** `generateMetadata` already reads the storefront; it adds Open Graph image, title and description from cover, name and tagline. Structured data stays with [seo](../../seo/). As built: the description is the tagline, else the introduction's first line; the image is the cover, else the mark; the read is the same request-memoised `getBrandPage` the page uses.
+- **D11 — The "what your page shows" panel is the section extractors run against the org's own DTO.** The same `brandPageSections` that decides what a buyer sees lists, for the org, the sections showing and the ones one fact away, with the fact named and linked to the editor field; a section's unlock rule lives once, in its extractor. Rendered in the storefront editor and on the dashboard's onboarding card in part (b) (seller-profile spec R12).
 
 ## Packages
 

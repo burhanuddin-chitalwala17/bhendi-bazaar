@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { toast } from "sonner";
-import { Archive, ChevronDown, ChevronUp, Images } from "lucide-react";
+import { Archive, ChevronDown, ChevronUp, Film, Images } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,12 +29,32 @@ interface MediaLibraryGridProps {
 
 const SOURCE_LABELS: Record<MediaAssetDto["source"], string> = {
   UPLOAD: "Uploaded",
-  DERIVED: "Made from another image",
+  DERIVED: "Made from another item",
   EMBED: "Video link",
+};
+
+const KIND_LABELS: Record<MediaAssetDto["kind"], string> = {
+  IMAGE: "Photo",
+  VIDEO_EMBED: "Video link",
+  VIDEO: "Video",
+};
+
+/** A hosted video's readiness, as the tile says it (video-hosting D7); nothing for a state with nothing to say. */
+const STATE_BADGES: Partial<Record<MediaAssetDto["state"], { label: string; variant: "outline" | "destructive" }>> = {
+  PROCESSING: { label: "Processing", variant: "outline" },
+  FAILED: { label: "Failed", variant: "destructive" },
 };
 
 const formatBytes = (bytes: number | null) =>
   bytes === null ? "—" : bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+/** "1:05" for a hosted video's playing time. */
+const formatDuration = (durationMs: number) => {
+  const seconds = Math.round(durationMs / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+};
+
+const isVideoKind = (kind: MediaAssetDto["kind"]) => kind !== "IMAGE";
 
 /**
  * The org's library as the 3-up grid every listing uses (ADR-0016), paged as you scroll, each
@@ -117,12 +137,22 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
               variant="ghost"
               onClick={() => void show(asset)}
               className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0"
-              aria-label={asset.kind === "VIDEO_EMBED" ? "Video" : `Photo ${asset.width ?? "?"} by ${asset.height ?? "?"}`}
+              aria-label={isVideoKind(asset.kind) ? KIND_LABELS[asset.kind] : `Photo ${asset.width ?? "?"} by ${asset.height ?? "?"}`}
             >
               <MediaTile asset={asset} />
               <Badge className="absolute right-1 top-1" variant={asset.uses > 0 ? "default" : "outline"}>
                 {asset.uses > 0 ? `${asset.uses} use${asset.uses === 1 ? "" : "s"}` : "unused"}
               </Badge>
+              {STATE_BADGES[asset.state] && (
+                <Badge className="absolute left-1 top-1" variant={STATE_BADGES[asset.state]?.variant}>
+                  {STATE_BADGES[asset.state]?.label}
+                </Badge>
+              )}
+              {asset.durationMs !== null && (
+                <Badge className="absolute bottom-1 right-1" variant="secondary">
+                  {formatDuration(asset.durationMs)}
+                </Badge>
+              )}
             </Button>
           </li>
         ))}
@@ -134,11 +164,11 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
         <SheetContent side="adaptive">
           {open && (
             <>
-              <SheetTitle>{open.kind === "VIDEO_EMBED" ? "Video" : "Photo"}</SheetTitle>
+              <SheetTitle>{KIND_LABELS[open.kind]}</SheetTitle>
               <SheetDescription>{SOURCE_LABELS[open.source]}</SheetDescription>
               <div
                 className={`relative w-full overflow-hidden rounded-card bg-muted ${
-                  open.kind === "VIDEO_EMBED" ? "aspect-video" : "aspect-square"
+                  isVideoKind(open.kind) ? "aspect-video" : "aspect-square"
                 }`}
               >
                 {open.kind === "VIDEO_EMBED" ? (
@@ -151,7 +181,23 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                 <dt className="text-muted-foreground">Size</dt>
                 <dd>{open.width && open.height ? `${open.width} × ${open.height}` : "—"}</dd>
                 <dt className="text-muted-foreground">File</dt>
-                <dd>{formatBytes(open.bytes)}{open.mimeType ? ` · ${open.mimeType.replace("image/", "")}` : ""}</dd>
+                <dd>{formatBytes(open.bytes)}{open.mimeType ? ` · ${open.mimeType.replace(/^(image|video)\//, "")}` : ""}</dd>
+                {open.durationMs !== null && (
+                  <>
+                    <dt className="text-muted-foreground">Duration</dt>
+                    <dd>{formatDuration(open.durationMs)}</dd>
+                  </>
+                )}
+                {STATE_BADGES[open.state] && (
+                  <>
+                    <dt className="text-muted-foreground">Status</dt>
+                    <dd>
+                      {STATE_BADGES[open.state]?.label}
+                      {/* The reason is what the org member acts on (spec R7): a limit named, or a file no decoder read. */}
+                      {open.failureReason && <span className="block text-destructive">{open.failureReason}</span>}
+                    </dd>
+                  </>
+                )}
                 <dt className="text-muted-foreground">Added</dt>
                 <dd>{new Date(open.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</dd>
                 {open.retiredAt && (
@@ -206,20 +252,27 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   );
 }
 
-/** A photo through the optimizer; a video as its poster, marked so it reads as one. */
+/**
+ * A photo through the optimizer; a video as its poster, marked so it reads as one. A hosted video
+ * has a poster only once the worker has made it (video-hosting D7); before that, and after a
+ * failure, the tile is a film mark and the badge says which.
+ */
 function MediaTile({ asset, large = false }: { asset: MediaAssetDto; large?: boolean }) {
+  const sizes = large ? "(min-width: 768px) 384px, 100vw" : PRODUCT_TILE_SIZES;
   if (asset.kind === "VIDEO_EMBED") {
-    return <YouTubePoster ref_={asset.ref} sizes={large ? "(min-width: 768px) 384px, 100vw" : PRODUCT_TILE_SIZES} />;
+    return <YouTubePoster ref_={asset.ref} sizes={sizes} />;
   }
-  return (
-    <NextImage
-      src={asset.ref}
-      alt=""
-      fill
-      sizes={large ? "(min-width: 768px) 384px, 100vw" : PRODUCT_TILE_SIZES}
-      className="object-cover"
-    />
-  );
+  if (asset.kind === "VIDEO") {
+    return (
+      <>
+        {asset.poster && <NextImage src={asset.poster} alt="" fill sizes={sizes} className="object-cover" />}
+        <span className="absolute inset-0 flex items-center justify-center bg-scrim/40">
+          <Film className={`${large ? "size-10" : "size-6"} text-hero-foreground`} aria-hidden />
+        </span>
+      </>
+    );
+  }
+  return <NextImage src={asset.ref} alt="" fill sizes={sizes} className="object-cover" />;
 }
 
 function UseLine({ use }: { use: MediaUseDto }) {
