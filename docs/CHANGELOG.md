@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-172] 2026-09-27 — The specs catch up with the side fixes
+
+Documentation only. The seller-profile spec gains R11 (a change of default brand is announced, an
+origin is chosen from a list) and its TRD gains D9 (a country is an ISO 3166-1 alpha-2 code, named
+by the runtime, a table rejected) with the screen described as built. The stock-locations spec gains
+R12 (the portal's product form never asks which organisation, and adds a missing pickup location
+where it stands). From here every unit carries its spec and TRD changes in the same commit.
+
 ## [PR-171] 2026-09-27 — The worker card opens into the jobs behind its counts
 
 Worker-foundation R5, trd D11. A count says a job is stuck or failed; the list says which one and

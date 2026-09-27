@@ -4,7 +4,7 @@
 - **Status:** ✅ Implemented (PR-45..49; rename PR-24..28 and reservation PR-40 as prerequisites)
 - **Domain:** catalog, shipping, checkout
 - **Phase:** 3 — Fulfilment
-- **Verified:** 2026-08-10
+- **Verified:** 2026-09-27
 - **References:** [trd.md](trd.md), [data-model.md](../data-model.md), [consumer-inventory.md](../consumer-inventory.md), [inventory-reservation](../../inventory-reservation/), [shipping-fulfilment](../../shipping-fulfilment/), [product-weight-and-rates](../../product-weight-and-rates/)
 
 > Requirements and product approach only. Technical approach lives in [trd.md](trd.md).
@@ -31,6 +31,7 @@ There is a second reason to do it before the catalogue grows. A location's addre
 - **R9** — An admin can see, for any product, where its stock is and how much sits at each place, and can correct those quantities.
 - **R10** — A customer whose order will arrive as more than one parcel knows that before paying, and knows both when each parcel is expected and when the order will be complete.
 - **R11** — A customer sees one availability figure per product. Where that stock physically sits is never shown to them: which location an item ships from is an operational detail, and a customer asked to reason about it has been handed the store's problem.
+- **R12** — In an organisation's own portal the product form never asks which organisation; there is one. When that organisation has no pickup location yet, the form offers to add one where it stands, and the new location joins the stock rows without leaving the product.
 
 ## Product acceptance
 - **A1** — A product cannot be saved without choosing a location and a quantity for it.

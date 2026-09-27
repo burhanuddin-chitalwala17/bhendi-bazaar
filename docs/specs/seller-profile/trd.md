@@ -22,6 +22,7 @@ The organisation row today holds both faces in one table (`prisma/schema.prisma`
 - **D6 — Retirement, not deletion.** `Brand.retiredAt`; the brand repository's list excludes retired rows by default and a retired brand stays readable by id ([ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)). Deleting a brand is not offered.
 - **D7 — The brand and defaults services are the write seam the product flow will call, and they answer "what would this change" before they change it.** [product-form](../product-form/) asks for a fact at the point of need and writes it through `brand.service` or `org-listing-defaults.service`, never through its own repository ([ADR-0033](../../adr/0033-a-domain-is-reached-through-its-public-surface.md)). Each write path has a preview counterpart returning the target's name and the count of products it covers, so the form can show the spec R6 line before it commits; the product-only alternative is an override on the product, which is [listing-schema](../listing-schema/)'s resolver order at work.
 - **D8 — Onboarding reuses the storefront editor.** The existing branding editor under the org portal (`src/app/(org)/`) becomes step two; step one is the org's creation, step three is a new listing-context screen holding brands and defaults. Each step saves independently through the same validated forms ([ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md)).
+- **D9 — A country of origin is an ISO 3166-1 alpha-2 code, picked from a searchable list, named by the runtime.** The codes are the closed set in `server/shared/countries.ts`; names come from `Intl.DisplayNames`, so no list of names is kept and a code is what a marketplace asks for. A database table was rejected: the set is a universal standard that changes about once a decade, and a table is the answer for a business-defined set such as where the shop ships to, which would be keyed by this code.
 
 ## Packages
 
@@ -29,11 +30,11 @@ None.
 
 ## UI approach
 
-Phone first. Step three is a single column: a list of brands as cards, each showing name, manufacturer and origin with a tap-to-edit sheet; an add-brand action docked above the tab bar; a defaults section beneath with origin, tax rate and a per-category tax-code list. Nothing is marked required. Desktop adds a two-column layout with the brand list beside the editor. The storefront editor is unchanged. All controls through the primitives ([ADR-0031](../../adr/0031-one-components-home-organised-by-domain.md)).
+Phone first. Step three is a single column: a list of brands as cards, each showing name, maker and origin with a tap-to-edit sheet; an add-brand action; a defaults section beneath with origin, tax rate and a tax code per category the org has products in. Nothing is marked required. Origin is a searchable country sheet (D9). A change of which brand is the default is announced — the checkbox names the brand that would stop being it, and the save says which one did — and retiring the default warns first and says afterwards that none is set. Desktop adds a two-column layout with the brand list beside the editor. The storefront editor is unchanged. All controls through the primitives ([ADR-0031](../../adr/0031-one-components-home-organised-by-domain.md)).
 
 ## Data model
 
-[MIGRATION] New `OrgProfile`, `OrgListingDefaults`, `Brand`; columns `tagline`, `heroUrl`, `accent`, `description`, `logoUrl`, `deliveryPolicy`, `returnsPolicy` move from `Org` to `OrgProfile`. `OrgListingDefaults.taxCodeByCategory` is JSON keyed by category id.
+[MIGRATION] New `OrgProfile`, `OrgListingDefaults`, `Brand`; columns `tagline`, `heroUrl`, `accent`, `description`, `logoUrl`, `deliveryPolicy`, `returnsPolicy` move from `Org` to `OrgProfile`. `OrgListingDefaults.taxCodeByCategory` is JSON keyed by category id. `countryOfOrigin` on `Brand` and `OrgListingDefaults` holds the ISO code (D9).
 
 ## API / contract changes
 

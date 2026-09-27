@@ -31,6 +31,7 @@ Resellers are the reason the private face is built around brands rather than the
 - **R8** — The about page and the storefront read the public face and nothing else, and look exactly as they do today the day this ships.
 - **R9** — A brand or a default that products depend on is retired, never deleted, and a retired brand's products keep their values ([ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)).
 - **R10** — Everything here is editable from a phone, by a member of that organisation only.
+- **R11** — Which brand is the default is never changed silently: making one the default says which brand stopped being it, and retiring the default warns first and says afterwards that none is set. A country of origin is chosen from a list, never typed.
 
 ## Product acceptance
 
