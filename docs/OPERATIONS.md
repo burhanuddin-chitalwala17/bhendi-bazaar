@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -31,7 +31,7 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
 | `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it. `NODE_ENV` is never set by us: Vercel and Next.js set it to `production` for every build, which is why `APP_ENV` is required there |
 | `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
-| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
+| `CRON_SECRET` | ➖ | **Read by nothing since PR-210.** Reconciliation moved onto the worker, which calls the domain directly and needs no bearer token; the route it guarded is gone. Safe to remove from the deployment |
 | `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — a custom domain on the Cloudflare zone for each bucket, the production one and `dev.bhendi-bazaar.com` for the development bucket. An `r2.dev` URL also works and is the fallback before a domain is attached, but it can serve no image transformations, which is what background removal is (`IMAGE_SEGMENT_PROVIDER`). **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
 | `FFMPEG_PATH` / `FFPROBE_PATH` | — | Worker only, optional. Where the transcoder's binaries are when they are not on `PATH` ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)); the image installs ffmpeg as an OS package, so neither is set there |
@@ -340,6 +340,14 @@ This makes **rate quoting** live. Shipment booking currently uses a mock impleme
 The job queue is a set of tables in the application's own Postgres, in the `pgboss` schema, and
 the worker is a second process that runs them ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [worker-foundation](specs/worker-foundation/)).
 
+**What runs here.** Five job types, registered in `worker/main.ts` and owned by the domain each
+belongs to: a no-op `ping`, the media sweep, video transcoding, photo enhancement, and the payment
+reconciliation that used to be a Vercel cron. The video and enhancement ones decide what the
+machine needs. Transcoding wants ffmpeg, which the image carries as an OS package.
+Enhancement wants the same three `IMAGE_*` variables the web app has, because the web app only
+checks a tool is available and then queues it — set them in one place and not the other and every
+run fails on the half that is missing. Both are in `.env.worker.example`.
+
 - **Locally:** `npm run worker` beside `npm run dev`, same `DATABASE_URL`. It logs the job types it
   knows and writes a heartbeat row the admin dashboard reads. Send it a no-op with a `ping` job from
   any transaction (`server/shared/jobs/ping.job.ts`).
@@ -351,8 +359,13 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
 - **ffmpeg is in the image** for hosted video ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)): a Debian package, pinned by the base image's release. Transcodes run one at a time — the free machine has the CPU for one — and `tests/unit/video-transcode.test.ts` runs the real binary, so a laptop without ffmpeg (`brew install ffmpeg`) skips that one suite while CI never does.
 - **Schedules are in-process timers that enqueue a job** (`server/shared/jobs/jobs.schedule.ts`),
   never pg-boss's cron: the floor is one tick an hour and the count is budgeted in the idle estimate.
-  The worker logs them at start. The first is `media.sweep`, every six hours: uploads that never
-  confirmed go after an hour, and a retired image's stored object goes after thirty days.
+  The worker logs them at start. Two are registered. `media.sweep`, every six hours: uploads that
+  never confirmed go after an hour, and a retired image's stored object goes after thirty days.
+  `payment.reconcile`, hourly: every checkout stuck past the fifteen-minute hold window is put to
+  the gateway, so a payment whose webhook was lost is confirmed and a genuinely abandoned one
+  gives its stock back. It ran daily as a Vercel cron until PR-210, because the free plan allows
+  no more; an hour is the schedule floor here and the idle estimate has no room below it, so
+  going faster means raising that ceiling, which is a decision (ADR-0038 D8).
 - **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
   count and re-runs them; each re-run is an audit entry.
 - **Direct connections.** The worker needs the direct connection string (notify is session-bound);
@@ -365,8 +378,9 @@ then only `server/`, `worker/` and `prisma/` on a Node 22 base, run with `node -
 `deploy-worker` job in `.github/workflows/ci.yml` builds it for arm64 and amd64 on every push and
 pushes `ghcr.io/<owner>/bhendi-bazaar-worker:<sha>` and `:<branch>`. Build it yourself with
 `docker build -f infra/worker/Dockerfile .`; run it anywhere with the env file below. It is about
-1.1 GB because it carries the whole lockfile's dependencies; trimming to the worker's own set is
-worth doing once a second job type exists.
+1.1 GB because it carries the whole lockfile's dependencies; trimming to the worker's own set was
+left until a second job type existed, and four now do — ping, the media sweep, video transcoding
+and photo enhancement — so it is work that is owed rather than work that is waiting.
 
 ### The worker's machine
 
@@ -448,6 +462,14 @@ WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p work
 docker compose -p worker-staging down   # when done: an idle worker still bills polls
 ```
 
+**Or press the button.** `.github/workflows/staging-worker.yml` is a manually triggered workflow
+in the Actions tab with two choices: up or down, and how long before it stops itself. It reaches
+the same machine over the same connection, keeps its files in `/opt/worker-staging` beside the
+production stack, and schedules the shutdown **on the machine** — a job that slept for eight hours
+would spend eight hours of the Actions allowance doing nothing. Running it again extends the
+session rather than stacking a second timer. This is how somebody tests the dev site without a
+terminal, and it is why `WORKER_STAGING_ENV_FILE` exists.
+
 **Run it on the worker's own machine, not a laptop**, whenever somebody else is doing the testing.
 The stack publishes no port and mounts no named volume, so a second project beside the production
 one on the same host costs nothing and conflicts with nothing — and it keeps running when the
@@ -472,7 +494,19 @@ A write also hashes ready images recorded before the content-hash column existed
 thousand per run — a larger library needs a second run, and the summary line's `hashed` count says when
 it is done. Until an image is hashed, uploading it again stores a second copy.
 
-Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
+Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment.
+
+**Pointing it at a database is the whole risk.** The script loads `.env` by itself, so run bare it
+targets local development and says nothing about which database it reached. Pass the target's own
+file instead — `npx tsx --env-file=.env.production.reference scripts/backfill-media-assets.ts` — and
+note that a name the passed file omits still falls back to `.env`, silently. That is how a
+production database comes to be paired with a development bucket: every reference is then
+unrecognised, every asset is written with no object key, and because the run is idempotent on the
+reference a corrected re-run skips them all and the null is permanent. Crop, improve and the
+deletion sweep each need that key. A write therefore stops when nothing in the library belongs to
+the configured store, and the report warns about the same thing rather than printing a clean plan
+the write will decline; `--allow-foreign` is how a library of genuinely external URLs says so.
+Report first, without `--write`, and read the summary before committing to it. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
 
 ## Infrastructure
 

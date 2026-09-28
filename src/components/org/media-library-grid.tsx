@@ -21,7 +21,7 @@ import { readApiError } from "@/lib/api-error";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog } from "@/components/product/improve-dialog";
 import type { CropTransform } from "@/lib/image/crop-transform";
-import { formatDuration } from "@/lib/format";
+import { formatDay, formatDuration } from "@/lib/format";
 import { describeUses, type MediaAssetDetailDto, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 
@@ -291,14 +291,22 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
                   </>
                 )}
                 <dt className="text-muted-foreground">Added</dt>
-                <dd>{new Date(open.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</dd>
+                <dd>{formatDay(open.createdAt)}</dd>
                 {open.retiredAt && (
                   <>
                     <dt className="text-muted-foreground">Retired</dt>
-                    <dd>{new Date(open.retiredAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</dd>
+                    <dd>{formatDay(open.retiredAt)}</dd>
                   </>
                 )}
               </dl>
+              {/* A shop has to be able to read why its picture went without an admin to ask
+                  (spec R12): the reason is on the asset, not only in the audit trail. */}
+              {open.retiredBy === "PLATFORM" && (
+                <p className="rounded-field bg-destructive/10 p-3 text-sm text-destructive">
+                  Taken down by Bhendi Bazaar
+                  {open.retiredReason ? `: ${open.retiredReason}` : "."}
+                </p>
+              )}
               <div className="space-y-1">
                 <h3 className="text-sm font-medium">Used by</h3>
                 {detail === null ? (

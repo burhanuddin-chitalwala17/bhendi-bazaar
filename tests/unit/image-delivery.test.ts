@@ -160,6 +160,31 @@ describe("the stored ceiling covers what the zoom asks for", () => {
     expect(MAX_IMAGE_EDGE).toBeGreaterThanOrEqual(widestDisplayedEdge * MAX_ZOOM_SCALE);
   });
 
+  it("keeps every declared surface inside the stored ceiling", async () => {
+    // A surface asking for more than we keep would be an upscale of the original dressed up
+    // as a size (renditions R5, D1). The ceiling is what a stored picture is kept under, so it
+    // is also the largest honest thing any surface can ask for.
+    const { MEDIA_SURFACES, MEDIA_SURFACE_KEYS, MAX_IMAGE_EDGE } = await import(
+      "../../server/catalog/media"
+    );
+    expect(MEDIA_SURFACE_KEYS.length).toBeGreaterThan(0);
+    for (const key of MEDIA_SURFACE_KEYS) {
+      const surface = MEDIA_SURFACES[key];
+      expect(surface.width, `${key} is wider than the stored ceiling`).toBeLessThanOrEqual(MAX_IMAGE_EDGE);
+      expect(surface.height, `${key} is taller than the stored ceiling`).toBeLessThanOrEqual(MAX_IMAGE_EDGE);
+      expect(surface.quality, `${key} sets a whole-number quality`).toBeGreaterThan(0);
+      expect(surface.quality).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("gives the magnifying surface the pixels the zoom asks for", async () => {
+    // The gallery is the one surface that magnifies, so it is the one that must reach the
+    // ceiling rather than merely stay under it.
+    const { MEDIA_SURFACES, MAX_IMAGE_EDGE } = await import("../../server/catalog/media");
+    expect(MEDIA_SURFACES.gallery.width).toBe(MAX_IMAGE_EDGE);
+    expect(MEDIA_SURFACES.gallery.fit).toBe("inside");
+  });
+
   it("has no second spelling of the zoom cap in the components that zoom", () => {
     for (const file of [
       "src/components/shared/image-lightbox.tsx",

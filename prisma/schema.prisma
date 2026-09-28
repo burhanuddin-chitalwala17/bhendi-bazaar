@@ -73,6 +73,11 @@ model MediaAsset {
   /// record has the dimensions; RETIRED when nothing should use it any more (trd D2, D8).
   state         MediaAssetState @default(PENDING)
   retiredAt     DateTime?
+  /// Who took it out of the library, and why when the platform did (spec R12, trd D10). An
+  /// organisation retiring its own picture owes nobody a reason; the platform taking one down
+  /// over a breach does, and the organisation is shown both.
+  retiredBy     MediaRetiredBy?
+  retiredReason String?
   /// Why a video could not be made playable, shown to the org member (video-hosting spec R7).
   failureReason String?
 
@@ -83,6 +88,7 @@ model MediaAsset {
   categoryHeroes   Category[]     @relation("CategoryHero")
   profileLogos     OrgProfile[]   @relation("ProfileLogo")
   profileHeroes    OrgProfile[]   @relation("ProfileHero")
+  profileOwners    OrgProfile[]   @relation("ProfileOwnerPhoto")
   orgBanners       OrgBanner[]    @relation("OrgBannerImage")
   banners          Banner[]       @relation("BannerImage")
   /// The enhancements asked of this photograph, and the one this photograph was accepted from (image-enhancement trd D1).
@@ -107,6 +113,13 @@ enum MediaAssetSource {
   UPLOAD
   DERIVED
   EMBED
+}
+
+/// Who retired an image. A closed set rather than a flag, because "the platform did it" is a
+/// different fact from "an admin's id", and the organisation is told the first, never the second.
+enum MediaRetiredBy {
+  ORG
+  PLATFORM
 }
 
 enum MediaAssetState {
@@ -649,6 +662,21 @@ model OrgProfile {
   story    String? @db.Text
   location String?
   social   Json?
+
+  /// A real person behind the shop, invited and never required (brand-page R5, D6). All four
+  /// are independent: a name with no photograph is a story, a photograph with no name is not.
+  ownerName         String?
+  ownerRole         String?
+  ownerQuote        String?     @db.Text
+  ownerPhotoUrl     String?
+  ownerPhotoAssetId String?
+  ownerPhoto        MediaAsset? @relation("ProfileOwnerPhoto", fields: [ownerPhotoAssetId], references: [id], onDelete: Restrict)
+
+  /// At most three `{title, text}` blocks on how or why the shop works as it does, and the
+  /// keys of the optional sections the shop has chosen to hide (brand-page R7, D6). Both are
+  /// shapes the platform defines and validates on the way in, never free-form documents.
+  pillars        Json?
+  hiddenSections Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

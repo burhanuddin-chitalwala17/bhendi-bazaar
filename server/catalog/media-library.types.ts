@@ -1,5 +1,10 @@
-import type { MediaAssetKind, MediaAssetSource, MediaAssetState } from "@prisma/client";
-import { resolveVideoDerivatives, type ProductMediaRendition, type VideoDerivativeRow } from "@server/catalog/media";
+import type { MediaAssetKind, MediaAssetSource, MediaAssetState, MediaRetiredBy } from "@prisma/client";
+import {
+  resolveVideoDerivatives,
+  youtubePosterUrl,
+  type ProductMediaRendition,
+  type VideoDerivativeRow,
+} from "@server/catalog/media";
 
 /** Tiles per page: eight rows of the 3-up phone grid (ADR-0016). */
 export const MEDIA_LIBRARY_PAGE_SIZE = 24;
@@ -27,7 +32,12 @@ export interface MediaAssetDto {
    */
   derivedCount: number;
   createdAt: string;
+  /** Whose library this is; null is the platform's own collection (spec R12). */
+  orgId: string | null;
   retiredAt: string | null;
+  /** Who took it out, and why when the platform did. An org is never told which admin. */
+  retiredBy: MediaRetiredBy | null;
+  retiredReason: string | null;
   /** A hosted video's poster — the photograph the org member chose, else the worker's frame (video-hosting D7, R8); null for anything else. */
   poster: string | null;
   /** Whether that poster is a photograph somebody chose. Only then is there a choice to undo. */
@@ -95,7 +105,10 @@ export interface MediaAssetRow {
   durationMs: number | null;
   failureReason: string | null;
   createdAt: Date;
+  orgId: string | null;
   retiredAt: Date | null;
+  retiredBy: MediaRetiredBy | null;
+  retiredReason: string | null;
   /** A video's ready poster frame and renditions, as the library select joins them; empty for a photograph. */
   derivatives: VideoDerivativeRow[];
   posterAsset: { ref: string } | null;
@@ -117,7 +130,10 @@ export function toMediaAssetDto(row: MediaAssetRow): MediaAssetDto {
     uses: totalUses(row._count),
     derivedCount: row._count.derivatives,
     createdAt: row.createdAt.toISOString(),
+    orgId: row.orgId,
     retiredAt: row.retiredAt ? row.retiredAt.toISOString() : null,
+    retiredBy: row.retiredBy,
+    retiredReason: row.retiredReason,
     poster,
     posterChosen: row.posterAsset !== null,
     durationMs: row.durationMs,
@@ -146,4 +162,18 @@ export function describeUses(uses: readonly MediaUseDto[]): string {
   });
   if (parts.length <= 1) return parts[0] ?? "nothing";
   return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+}
+
+/**
+ * The picture that stands for an asset in a listing.
+ *
+ * A hosted video shows its poster, an embedded one the frame its host serves, and a
+ * photograph is itself. Declared once because two surfaces list assets — the org's library
+ * and the platform owner's — and a second spelling is how one of them starts showing a black
+ * square for videos while the other does not.
+ */
+export function previewUrlFor(asset: Pick<MediaAssetDto, "kind" | "ref" | "poster">): string | null {
+  if (asset.kind === "VIDEO_EMBED") return youtubePosterUrl(asset.ref);
+  if (asset.kind === "VIDEO") return asset.poster;
+  return asset.ref;
 }

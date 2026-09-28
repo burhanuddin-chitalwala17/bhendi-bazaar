@@ -1,5 +1,13 @@
 import type { ShopReviewDto } from "@server/catalog/review.types";
 import { socialLinksFrom, type SocialLink } from "@server/catalog/social-networks";
+import {
+  brandOwnerFrom,
+  hiddenSectionsFrom,
+  pillarsFrom,
+  type BrandOwner,
+  type BrandPillar,
+  type HideableBrandPageSection,
+} from "@server/catalog/brand-page-sections";
 
 /**
  * The brand page's payload (brand-page D1): the public face, and nothing that is not.
@@ -43,6 +51,16 @@ export interface BrandPageDto {
    * about, never a `userId`. Null under the rating's floor (D3).
    */
   buyersSay: ShopReviewDto[] | null;
+  /** The person behind the shop, when one is named (R5). Null is "the story stands alone". */
+  owner: BrandOwner | null;
+  /** Up to three blocks on how or why (R1). Null rather than an empty list, as every slice is. */
+  pillars: BrandPillar[] | null;
+  /**
+   * What the shop has chosen not to show (R7). The content of a hidden section is left out of
+   * this payload entirely, so a buyer's page cannot render it by mistake; the keys travel so
+   * the shop's own panel can say "hidden" rather than "one fact away".
+   */
+  hiddenSections: HideableBrandPageSection[];
 }
 
 export interface BrandProof {
@@ -62,6 +80,12 @@ export interface PublicProfileRow {
   deliveryPolicy: string | null;
   returnsPolicy: string | null;
   social: unknown;
+  ownerName: string | null;
+  ownerRole: string | null;
+  ownerQuote: string | null;
+  ownerPhotoUrl: string | null;
+  pillars: unknown;
+  hiddenSections: unknown;
   org: { id: string; handle: string; name: string; joinedAt: Date };
 }
 
@@ -82,11 +106,20 @@ export interface BrandPageDerived {
   buyersSay: ShopReviewDto[] | null;
 }
 
+/**
+ * Hiding is subtraction at the source, not a flag the page is trusted to honour (R7). A
+ * section the shop has hidden leaves this payload with nothing in it, so there is no version
+ * of the page — a cached one, a link preview, a future component — that can show it anyway.
+ */
 export function toBrandPageDto(
   row: PublicProfileRow,
   brands: ReadonlyArray<{ name: string }>,
   derived: BrandPageDerived,
 ): BrandPageDto {
+  const hiddenSections = hiddenSectionsFrom(row.hiddenSections);
+  const shown = <T>(section: HideableBrandPageSection, value: T): T | null =>
+    hiddenSections.includes(section) ? null : value;
+
   return {
     id: row.org.id,
     handle: row.org.handle,
@@ -97,13 +130,18 @@ export function toBrandPageDto(
     accent: row.accent,
     location: text(row.location),
     since: row.org.joinedAt.getFullYear(),
-    about: text(row.description),
-    story: text(row.story),
-    deliveryPolicy: text(row.deliveryPolicy),
-    returnsPolicy: text(row.returnsPolicy),
-    brands: brandNamesCarried(brands),
-    social: socialLinksFrom(row.social),
+    // The introduction and the longer story are one section, so hiding it hides both —
+    // and the person with them, since a name is part of the story rather than beside it.
+    about: shown("story", text(row.description)),
+    story: shown("story", text(row.story)),
+    deliveryPolicy: shown("policies", text(row.deliveryPolicy)),
+    returnsPolicy: shown("policies", text(row.returnsPolicy)),
+    brands: shown("brands", brandNamesCarried(brands)),
+    social: shown("social", socialLinksFrom(row.social)),
     proof: derived.proof,
     buyersSay: derived.buyersSay,
+    owner: shown("story", brandOwnerFrom(row)),
+    pillars: shown("pillars", pillarsFrom(row.pillars)),
+    hiddenSections,
   };
 }

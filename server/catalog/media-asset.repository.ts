@@ -1,5 +1,11 @@
 import { prisma } from "@server/shared/prisma";
-import { MediaAssetKind, MediaAssetSource, MediaAssetState, type Prisma } from "@prisma/client";
+import {
+  MediaAssetKind,
+  MediaAssetSource,
+  MediaAssetState,
+  MediaRetiredBy,
+  Prisma,
+} from "@prisma/client";
 import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
 import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaUseDto } from "@server/catalog/media-library.types";
 import { VIDEO_TRANSFORM } from "@server/catalog/video";
@@ -52,7 +58,10 @@ const LIBRARY_SELECT = {
   durationMs: true,
   failureReason: true,
   createdAt: true,
+  orgId: true,
   retiredAt: true,
+  retiredBy: true,
+  retiredReason: true,
   // A hosted video's poster frame and renditions, so its tile has a picture and its sheet can play
   // it (video-hosting D5, D7). A crop's transform has no `kind`, so a photograph's derivatives never match.
   derivatives: {
@@ -73,14 +82,25 @@ const LIBRARY_SELECT = {
 /** What the library shows: ready assets, and a video on its way there or fallen short (spec R7). A pending upload is nobody's yet. */
 const LIBRARY_STATES = [MediaAssetState.READY, MediaAssetState.PROCESSING, MediaAssetState.FAILED];
 
-/** The library's filters as a Prisma `where`, scoped to one org and one state (spec R6). */
-function libraryWhere(orgId: string, filters: MediaLibraryFilters): Prisma.MediaAssetWhereInput {
+/**
+ * The library's filters as a Prisma `where` (spec R6).
+ *
+ * `scope` is one org, or `null` for the platform's own collection — category heroes and home
+ * banners, which belong to nobody — or `undefined` for every library at once, which is what the
+ * platform owner's read-only view asks for (trd D10). The three are one query on purpose: an
+ * admin listing that drifted from the org's own is how the two come to disagree about what a
+ * library contains.
+ */
+function libraryWhere(
+  scope: string | null | undefined,
+  filters: MediaLibraryFilters,
+): Prisma.MediaAssetWhereInput {
   const inProduct: Prisma.ProductMediaWhereInput | null =
     filters.productId || filters.slot
       ? { ...(filters.productId ? { productId: filters.productId } : {}), ...(filters.slot ? { slot: filters.slot } : {}) }
       : null;
   return {
-    orgId,
+    ...(scope === undefined ? {} : { orgId: scope }),
     // A video's renditions and its poster frame are its machinery, not pictures an org member
     // would ever choose: one upload became three tiles until this. Anything derived from a
     // photograph — a crop, an improvement — is a picture they made, and stays.
@@ -416,7 +436,18 @@ export class MediaAssetRepository {
 
   /** One page of an org's library with each asset's reference count, newest first (spec R6, trd D7). */
   async listForOrg(orgId: string, filters: MediaLibraryFilters): Promise<{ rows: MediaAssetRow[]; total: number }> {
-    const where = libraryWhere(orgId, filters);
+    return await this.listIn(orgId, filters);
+  }
+
+  /**
+   * The same page, across every library or one chosen from them (trd D10). Pass `undefined`
+   * for all, an org id for one, `null` for the platform's own.
+   */
+  async listIn(
+    scope: string | null | undefined,
+    filters: MediaLibraryFilters,
+  ): Promise<{ rows: MediaAssetRow[]; total: number }> {
+    const where = libraryWhere(scope, filters);
     const [rows, total] = await Promise.all([
       prisma.mediaAsset.findMany({
         where,
@@ -482,9 +513,78 @@ export class MediaAssetRepository {
     const result = await prisma.mediaAsset.updateMany({
       // A failed video is retired the same way (spec R7): it is in the library, and this is how it leaves.
       where: { id, orgId, state: { in: [MediaAssetState.READY, MediaAssetState.FAILED] }, ...UNUSED },
-      data: { state: MediaAssetState.RETIRED, retiredAt: now },
+      data: { state: MediaAssetState.RETIRED, retiredAt: now, retiredBy: MediaRetiredBy.ORG },
     });
     return result.count === 1;
+  }
+
+  /**
+   * The platform taking an image down over a breach (spec R12, trd D10).
+   *
+   * Conditional like every other retirement, so two admins acting at once produce one
+   * retirement and one honest `false` — and deliberately not scoped to an org, because the
+   * whole point is that the platform reaches any library. Unlike an org's own retirement this
+   * does not wait for the image to be unused: a breach has to come down while it is on a page,
+   * and the sweep will find it once the pages stop pointing at it.
+   */
+  async retireByPlatform(
+    id: string,
+    reason: string,
+    now: Date = new Date(),
+  ): Promise<boolean> {
+    const result = await prisma.mediaAsset.updateMany({
+      where: { id, state: { in: [MediaAssetState.READY, MediaAssetState.PROCESSING, MediaAssetState.FAILED] } },
+      data: {
+        state: MediaAssetState.RETIRED,
+        retiredAt: now,
+        retiredBy: MediaRetiredBy.PLATFORM,
+        retiredReason: reason,
+      },
+    });
+    return result.count === 1;
+  }
+
+  /**
+   * The rendition of a source for one surface, or null (renditions D2, R2).
+   *
+   * The pair is what identifies it, so the second request for a surface finds the first
+   * result instead of rendering the same pixels again. A retired one does not count: it is on
+   * its way out, and handing it back would resurrect an image the sweep is about to delete.
+   */
+  async findRendition(sourceAssetId: string, surface: string) {
+    return await prisma.mediaAsset.findFirst({
+      where: {
+        derivedFromId: sourceAssetId,
+        state: MediaAssetState.READY,
+        transform: { path: ["surface"], equals: surface },
+      },
+      select: { id: true, ref: true, width: true, height: true },
+    });
+  }
+
+  /**
+   * Retire every rendition of a source, in one statement (renditions D5).
+   *
+   * A cascade by query rather than a database trigger: the rule is then readable in the code
+   * that owns it, and the sweep collects their objects on the same schedule as any other
+   * retired asset. Only renditions — a crop and an improvement are pictures the shop made and
+   * outlive the source they came from.
+   */
+  async retireRenditionsOf(sourceAssetId: string, now: Date = new Date()): Promise<number> {
+    const result = await prisma.mediaAsset.updateMany({
+      where: {
+        derivedFromId: sourceAssetId,
+        state: { in: [MediaAssetState.READY, MediaAssetState.FAILED] },
+        transform: { path: ["surface"], not: Prisma.DbNull },
+      },
+      data: { state: MediaAssetState.RETIRED, retiredAt: now, retiredBy: MediaRetiredBy.ORG },
+    });
+    return result.count;
+  }
+
+  /** One asset from any library, for the platform owner's read-only view. */
+  async findAnywhere(id: string): Promise<MediaAssetRow | null> {
+    return await prisma.mediaAsset.findUnique({ where: { id }, select: LIBRARY_SELECT });
   }
 
   /** Retired before the cutoff and still holding an object: candidates for deletion (R7's grace period). */

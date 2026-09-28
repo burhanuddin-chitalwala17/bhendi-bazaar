@@ -13,10 +13,17 @@ import {
   type OnboardingStatus,
   type OnboardingStep,
 } from "@server/catalog/org-onboarding.types";
+import {
+  brandPageShowing,
+  brandPageStanding,
+} from "@/components/storefront/brand-page/standing";
+import type { BrandPage } from "@/data-access-layer/storefront.dal";
 
 interface OnboardingCardProps {
   status: OnboardingStatus;
   orgId: string;
+  /** The shop's own page, when it has one, for the line about how much of it is live. */
+  page?: BrandPage | null;
 }
 
 interface StepCopy {
@@ -68,13 +75,18 @@ function joinNames(names: string[]): string {
  * done and where the next step lives, and it never asks for anything — a channel's readiness
  * says what is missing, and a step that is not done is simply not done yet.
  */
-export function OnboardingCard({ status, orgId }: OnboardingCardProps) {
+export function OnboardingCard({ status, orgId, page }: OnboardingCardProps) {
+  const pageLine = page ? <PageShowingLine page={page} orgId={orgId} /> : null;
+
   if (status.complete) {
     return (
       <Card className="py-4">
-        <CardContent className="flex items-center gap-3">
-          <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
-          <p className="text-sm font-medium">Your shop is set up</p>
+        <CardContent className="space-y-2">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
+            <p className="text-sm font-medium">Your shop is set up</p>
+          </div>
+          {pageLine}
         </CardContent>
       </Card>
     );
@@ -111,8 +123,38 @@ export function OnboardingCard({ status, orgId }: OnboardingCardProps) {
             </p>
           )}
         </div>
+
+        {pageLine && <div className="border-t pt-4">{pageLine}</div>}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * How much of the shop's page a buyer currently sees (brand-page D11).
+ *
+ * The count comes from the same extractors the page runs, so it cannot flatter: a section
+ * the shop has not filled in is not counted here either. The detail — which sections, and
+ * what each is waiting for — lives on the storefront screen, one tap away.
+ */
+function PageShowingLine({ page, orgId }: { page: BrandPage; orgId: string }) {
+  const { showing, total } = brandPageShowing(brandPageStanding(page, orgId));
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <p className="text-sm text-muted-foreground">
+        Your shop page shows{" "}
+        <span className="font-medium text-foreground tabular-nums">
+          {showing} of {total}
+        </span>{" "}
+        sections.
+      </p>
+      <Button asChild variant="ghost" size="sm">
+        <Link href={`/org/${orgId}/storefront`}>
+          {showing === total ? "Review it" : "Fill in the rest"}
+        </Link>
+      </Button>
+    </div>
   );
 }
 

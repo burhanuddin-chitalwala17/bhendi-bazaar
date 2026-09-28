@@ -10,6 +10,212 @@
 
 ## Entries
 
+## [PR-213] 2026-09-29 — The media backfill has been run against dev
+
+Recorded because the runbook asks for it, and to close the pair with the production run.
+
+27 asset records stand behind what dev holds: 26 images and one YouTube reference, with every
+product gallery, category hero, banner, org banner and org profile linked and nothing unlinked.
+Every image carries its dimensions and a content hash.
+
+Four carry an object key. The other 22 are the seed's `placehold.co` images, which belong to no
+store of ours and correctly have none — the same honest answer the store check is built around,
+and the reason four recognised URLs were enough for it to let the write proceed.
+
+## [PR-212] 2026-09-29 — A button that starts the dev worker, so a tester needs no terminal
+
+The worker serving the dev site runs only while somebody is testing, which until now meant
+somebody with an SSH key had to start it. That is fine when the tester is the owner and useless
+when it is anybody else. There is now a manually triggered workflow in the Actions tab: up or
+down, and how long before it stops itself.
+
+The shutdown timer runs on the machine rather than in the job, because a job that slept for eight
+hours would spend eight hours of the Actions allowance doing nothing. Running the workflow again
+cancels the previous timer before setting a new one, so asking a second time extends the session
+instead of leaving two timers to fight over the container.
+
+The whole hazard of a staging worker is which database its env file names, since that is the only
+thing distinguishing it from the production one. The workflow compares the two secrets and refuses
+to start if they name the same database, without either string reaching the log.
+
+Worth knowing for whoever is testing: only video and photo improvement need the worker at all.
+Everything else on the dev site works without it, so forgetting to press the button stalls two
+things rather than breaking the site.
+
+## [PR-211] 2026-09-29 — Every size this store makes an image in, declared once
+
+The last part of the media library. A surface asks a picture for a size and gets a URL; the first
+ask renders and records a derived image, and every later ask finds that one, because the pair of
+source and surface is what identifies it.
+
+Seven surfaces are declared in one table beside the stored ceiling, so no surface can ask for more
+pixels than we keep — which would be an upscale of the original wearing a size's name. Adding a
+channel is adding a row, and the guard that already held the zoom rule now holds every row to the
+ceiling too.
+
+The rule worth knowing is which picture a rendition is made from. A shop's own crop is used when
+it has the pixels, and when it does not — a portrait asked of a square crop — the rendition reaches
+back to the untouched original instead of enlarging what the shop cut. Losing the shop's framing is
+the lesser harm: a stretched picture is one nobody chose. The record still belongs to the crop that
+was asked, because that is the pair the next request looks up.
+
+The first caller is the link preview on a shop's brand page, which a social host fetches itself, so
+the optimizer never sees it and the full cover used to go over the wire on every share. It falls
+back to the cover if anything goes wrong: a large preview beats none, and a metadata function must
+not take a page down.
+
+Retiring a source now retires its renditions with it, by query rather than a trigger, so the rule
+is readable where it is owned and the sweep collects their objects on the usual schedule. A crop
+and an improvement are pictures the shop made and outlive the source they came from.
+
+## [PR-210] 2026-09-29 — The payment backstop moves onto the worker, and the cron is retired
+
+The sweep that catches a payment we were never told about now runs on our own worker, hourly. The
+Vercel cron and the route it called are gone, along with the last reader of `CRON_SECRET`.
+
+It ran every fifteen minutes when it was written and became daily because the host's free plan
+refuses a deployment whose cron fires more often — a property of where the schedule lived, not of
+the work. The cost was real: an abandoned checkout held stock out of sale for up to a day, a buyer
+whose webhook was lost waited as long to see their order confirmed, and only twenty orders were
+examined per run.
+
+It is hourly rather than back to fifteen minutes because the schedule floor is an hour and the
+idle worker's modelled day already stands at 1441 operations against a declared ceiling of 1500.
+Even a half-hourly floor models past it. Going faster is available and costs a raised ceiling,
+which is a decision rather than a constant (ADR-0038 D8). An hour bounds a stuck checkout at about
+seventy minutes instead of a day.
+
+Every run now reports, including the quiet ones. The handler this replaces logged only when it had
+recovered something, so a sweep that found nothing and a sweep that never ran produced identical
+silence — which is no way to watch a backstop, and would have made the observation this move was
+supposed to wait for impossible.
+
+Nothing about what the sweep decides has changed. It still asks the gateway before touching
+anything: captured confirms the order through the same routine every other trigger uses, in flight
+holds the goods, and only what the gateway says was never paid gives its stock back.
+
+## [PR-209] 2026-09-29 [CONTRACT] [MIGRATION] — The platform can see every library, and take one image down
+
+The platform owner's read-only view across every shop's media, filterable to one shop or to the
+platform's own collection, with the one write being a takedown carrying a reason.
+
+The listing is the shop's own query with its organisation filter widened, not a second query, so
+the two screens cannot come to disagree about what a library holds. The screen renders on the
+server and pages by link; the only browser-callable route behind it is the takedown, because the
+takedown is the only thing on it that writes.
+
+A takedown differs from a shop retiring its own picture in two ways, both deliberate. It is not
+refused while the image is still on a page — a breach comes down now, and the pages stop pointing
+at it afterwards — and the reason is stored on the asset rather than only in the audit trail,
+because the shop has to be able to read why without an admin to ask. The shop sees "Taken down by
+Bhendi Bazaar" and the words, never which admin wrote them.
+
+Two rules that were about to be spelled twice are now declared once: which picture stands for an
+asset in a listing, and how this store prints a plain day.
+
+## [PR-208] 2026-09-28 [CONTRACT] [MIGRATION] — The shop says who it is, and what to leave out
+
+The last part of the brand page. A shop can now name the person behind it, write up to three
+blocks on how it works, give its handles and its location, and switch off any of the parts it
+wrote itself.
+
+The person is invited, never required, and hangs on a name: a role, a photograph or a quoted line
+without one are kept in the column and not shown, because a face with no name is not an
+introduction and an unattributed line is copy. The person belongs to the story rather than sitting
+beside it, so a shop that has named somebody but written nothing still has a story section.
+
+Hiding is subtraction at the source. A hidden section's content never enters the payload, so there
+is no renderer — a cached page, a link preview, something written later — that can show it anyway.
+What a shop may hide is what it wrote. Reviews, orders filled and the goods are not on offer:
+proof is derived and never typed, and a page whose reviews disappear when they turn unflattering
+is not proof of anything. That reading of "any optional section" is the one judgement call in this
+change and it is the owner's to overturn.
+
+With no placeholders anywhere, a shop cannot tell a section it has not filled from one that is
+broken. So both the storefront screen and the dashboard now say what the page shows, computed by
+running the buyer's own extractors over the shop's own payload — never a second opinion — with the
+one fact each missing section is waiting for, and no link where no form would supply it.
+
+The checkbox primitive was fixed on the way past: its label was not associated with its input, so
+the tap target was the sixteen-pixel box alone in all nine places it is used.
+
+## [PR-207] 2026-09-28 — What the gate cannot see had drifted in every doc it does not check
+
+`npm run docs:check` guards `Verified:` dates, the generated indexes and a handful of counted
+things. Everything outside that had gone quietly wrong, and an audit of the last twenty-five
+commits found it in all six of the long-lived documents.
+
+The architecture diagram still said the object store held images only, four lines above a sentence
+about video playing from it; it called images the one asset class with a delivery layer of its own,
+which stopped being true when the worker started making renditions; it counted four inward
+type-only imports where there are seven, and forty lint errors all of one rule where there are
+thirty-seven of three. The contract for requesting an enhancement named `sourceAssetId` as though
+it were required and did not mention `sourceRef` at all, so a client written from it would have
+been refused by a schema that wants exactly one of the two. Dependencies carried a second
+`## Removed` heading declaring the populated one above it empty, and credited `sharp` to two
+callers when eleven import it — the material point being that it is now a worker dependency.
+
+Testing was the stalest, being the only one untouched by any of those commits. Its tree listed
+`utils/` as holding shared fixtures when it holds nothing, and omitted `helpers/`, which the same
+document depends on two paragraphs later. Seven of the ten directories under `tests/` are empty and
+now say so. Its guard table was missing the two guards added since. Operations described photo
+enhancement nowhere in the worker's own section, although the worker is what runs it, so a machine
+provisioned from that section alone would have failed every run; and it still offered to trim the
+image "once a second job type exists", with four of them running.
+
+One finding in the audit was wrong and is recorded here because a claim that a document lies is
+worth checking before repeating: there is no sentence saying the project has no background job
+runner. The statuses in the specs were otherwise sound, bar the parent of the brand page, which had
+not noticed its own child shipping a second part.
+
+## [PR-206] 2026-09-28 — The backlog said a finished feature was planned, twice
+
+`BACKLOG.md` is the one index nothing generates and nothing gates, and it had drifted in three
+places: image enhancement was still a draft after all five of its parts landed, the brand page was
+missing the part that shipped beside it, and the worker still waited on an account for a machine
+that has been answering its heartbeat for a day.
+
+Image enhancement also appeared twice — once as the spec it became and once as the plan entry it
+used to be, each carrying its own status. One of the two had to be wrong eventually, so the plan
+entry is gone and the spec row is the single answer. The worker's own spec carried the same stale
+sentence and now says what is actually left, which is moving the reconciliation schedule across.
+
+## [PR-205] 2026-09-28 — The media backfill has been run against production
+
+Recorded because the runbook asks for it. 336 asset records now stand behind what production
+holds: 281 images and 55 YouTube references, with every product gallery, category hero, banner,
+org banner and org profile linked and nothing left unlinked.
+
+280 of the 281 images carry dimensions, a content hash and an object key. The one that does not is
+a Vercel Blob URL on a test product, left from before the move to R2; it answers 403, so there are
+no bytes to measure, and it belongs to no store of ours, so it correctly has no key. It will be
+listed as without dimensions on every future run, which is the honest answer rather than a defect.
+
+Dev has not been run. It needs its own connection string and the dev bucket's public base, and the
+store check refuses the pairing if those two disagree.
+
+## [PR-204] 2026-09-28 — The rehearsal now says what the real run will refuse
+
+The store check added in the previous entry ran only on a write, so the report before it printed a
+confident plan — counts, links, one image without dimensions — against a store it had not
+recognised a single URL from. The first real use found exactly that: a production reference file
+whose `R2_PUBLIC_BASE_URL` was still the example placeholder, caught by the write and not by the
+report that preceded it. A report now carries the same finding as a warning.
+
+## [PR-203] 2026-09-28 — A backfill that recognises none of its own library stops
+
+The media backfill reads one database and one bucket, and nothing downstream noticed when they
+were not a pair. Dimensions arrive over plain HTTP from the stored URL, so a run against the wrong
+combination still wrote a full-looking record — missing only `objectKey`, which is the field crop,
+improve and the deletion sweep all read. The run is idempotent on the reference, so the corrected
+second run skipped every asset the first had made and the empty key was permanent.
+
+A write now samples the references it is about to record and stops when not one of them belongs to
+the configured store, which is the shape of a production database paired with a development
+bucket. A library of genuinely external URLs is a real state, so the refusal is overridable with
+`--allow-foreign` rather than being a rule. The runbook now also says how to aim the script at one
+database, and that a variable the passed file omits falls back to the local `.env` without a word.
+
 ## [PR-202] 2026-09-28 — A shortfall is the same refusal wherever it is noticed
 
 Two places can find that the units are not there: the allocation's availability read, before the

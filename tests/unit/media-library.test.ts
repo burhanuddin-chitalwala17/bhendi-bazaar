@@ -20,7 +20,14 @@ const repo = {
   findById: vi.fn(),
   findReadyByHash: vi.fn(),
   createReady: vi.fn(),
+  listIn: vi.fn(),
+  findAnywhere: vi.fn(),
+  retireByPlatform: vi.fn(),
+  retireRenditionsOf: vi.fn(),
+  findRendition: vi.fn(),
 };
+const audit = { recordAdminAction: vi.fn() };
+vi.mock("@server/shared/audit/audit.service", () => audit);
 const store = {
   deleteObject: vi.fn(),
   publicUrlFor: (key: string) => `https://img.test/${key}`,
@@ -63,7 +70,10 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   durationMs: null,
   failureReason: null,
   createdAt: new Date("2026-09-27T08:00:00Z"),
+  orgId: "org_1",
   retiredAt: null,
+  retiredBy: null,
+  retiredReason: null,
   derivatives: [],
   posterAsset: null,
   _count: counts(),
@@ -239,5 +249,84 @@ describe("a crop of something already stored", () => {
     await expect(
       mediaAssetService.cropAsset("org-1", "u1", "a1", { rotation: 0, crop: { x: 0, y: 0, width: 10, height: 10 } }),
     ).rejects.toThrow(/falls outside the photo/);
+  });
+});
+
+describe("the platform owner's view of every library (R12, trd D10)", () => {
+  beforeEach(() => {
+    audit.recordAdminAction.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("asks one query for every library, one library, or the platform's own", async () => {
+    repo.listIn.mockResolvedValue({ rows: [], total: 0 });
+    const filters = parseMediaLibraryFilters({});
+
+    await mediaAssetService.listAnywhere(undefined, filters);
+    await mediaAssetService.listAnywhere("org_1", filters);
+    await mediaAssetService.listAnywhere(null, filters);
+
+    // The scope is the only difference between the admin listing and the org's own. Two
+    // queries would be two answers about what a library holds.
+    expect(repo.listIn.mock.calls.map((call) => call[0])).toEqual([undefined, "org_1", null]);
+  });
+
+  it("takes an image down with its reason on the asset, not only in the trail", async () => {
+    const before = row({ id: "a9", state: "READY", orgId: "org_1" });
+    repo.findAnywhere.mockResolvedValueOnce(before).mockResolvedValueOnce(
+      row({ id: "a9", state: "RETIRED", orgId: "org_1", retiredBy: "PLATFORM", retiredReason: "Not their photograph" }),
+    );
+    repo.retireByPlatform.mockResolvedValue(true);
+
+    const dto = await mediaAssetService.retireAsPlatform("admin_1", "a9", "Not their photograph");
+
+    expect(repo.retireByPlatform).toHaveBeenCalledWith("a9", "Not their photograph", expect.any(Date));
+    // The shop reads this in its own library; an audit row it cannot see would not do.
+    expect(dto.retiredBy).toBe("PLATFORM");
+    expect(dto.retiredReason).toBe("Not their photograph");
+  });
+
+  it("does not wait for the image to be unused, unlike an org retiring its own", async () => {
+    // A breach comes down while it is on a page. `usesOf` is the org path's question.
+    repo.findAnywhere.mockResolvedValue(row({ id: "a9", state: "READY" }));
+    repo.retireByPlatform.mockResolvedValue(true);
+
+    await mediaAssetService.retireAsPlatform("admin_1", "a9", "Breaks the rules");
+
+    expect(repo.usesOf).not.toHaveBeenCalled();
+    expect(repo.retireUnused).not.toHaveBeenCalled();
+  });
+
+  it("records the action, naming the shop and the file", async () => {
+    repo.findAnywhere.mockResolvedValue(row({ id: "a9", state: "READY", orgId: "org_7" }));
+    repo.retireByPlatform.mockResolvedValue(true);
+
+    await mediaAssetService.retireAsPlatform("admin_1", "a9", "Breaks the rules");
+
+    expect(audit.recordAdminAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adminId: "admin_1",
+        action: "media.retire",
+        resourceId: "a9",
+        metadata: expect.objectContaining({ reason: "Breaks the rules", orgId: "org_7" }),
+      }),
+    );
+  });
+
+  it("is idempotent: taking down what is already down changes nothing and logs nothing", async () => {
+    repo.findAnywhere.mockResolvedValue(row({ id: "a9", state: "RETIRED", retiredBy: "PLATFORM" }));
+
+    await mediaAssetService.retireAsPlatform("admin_1", "a9", "Again");
+
+    expect(repo.retireByPlatform).not.toHaveBeenCalled();
+    expect(audit.recordAdminAction).not.toHaveBeenCalled();
+  });
+
+  it("refuses rather than reports success when the conditional write loses", async () => {
+    repo.findAnywhere.mockResolvedValue(row({ id: "a9", state: "READY" }));
+    repo.retireByPlatform.mockResolvedValue(false);
+
+    await expect(mediaAssetService.retireAsPlatform("admin_1", "a9", "Breaks the rules")).rejects.toThrow(
+      /already been taken down/,
+    );
   });
 });

@@ -22,6 +22,13 @@ import {
   type BrandPageDerived,
 } from "@server/catalog/storefront.types";
 import { PROOF_FLOORS } from "@server/catalog/brand-page-proof";
+import {
+  HIDEABLE_BRAND_PAGE_SECTIONS,
+  MAX_BRAND_PILLARS,
+  brandOwnerFrom,
+  hiddenSectionsFrom,
+  pillarsFrom,
+} from "@server/catalog/brand-page-sections";
 import type { ShopReviewDto } from "@server/catalog/review.types";
 
 /** Everything a seller would happily print on a shop sign, and nothing they would not. */
@@ -36,6 +43,12 @@ const PUBLIC_PROFILE_FIELDS = [
   "story",
   "location",
   "social",
+  "ownerName",
+  "ownerRole",
+  "ownerQuote",
+  "ownerPhotoUrl",
+  "pillars",
+  "hiddenSections",
 ].sort();
 const PUBLIC_IDENTITY_FIELDS = ["id", "handle", "name", "joinedAt"].sort();
 
@@ -74,6 +87,9 @@ const BRAND_PAGE_FIELDS = [
   "social",
   "proof",
   "buyersSay",
+  "owner",
+  "pillars",
+  "hiddenSections",
 ].sort();
 
 /** A quoted review's keys: `ReviewDto`'s buyer-facing fields and the product, never `userId`. */
@@ -111,6 +127,12 @@ const fixture = {
   story: "A longer story.",
   location: "Bhendi Bazaar, Mumbai",
   social: { instagram: "silks" },
+  ownerName: "Anisa Merchant",
+  ownerRole: "Second generation",
+  ownerQuote: "My father chose every bolt himself.",
+  ownerPhotoUrl: "https://img.example/anisa.webp",
+  pillars: [{ title: "Woven near by", text: "Every metre from three looms we visit." }],
+  hiddenSections: null,
   org: { id: "org_1", handle: "silks", name: "Silks & Co", joinedAt: new Date("2021-03-04") },
 };
 
@@ -414,5 +436,68 @@ describe("storefrontDAL.getBrandPage", () => {
   it("answers null for a shop that is not there", async () => {
     const { storefrontDAL } = await import("@/data-access-layer/storefront.dal");
     await expect(storefrontDAL.getBrandPage("nobody")).resolves.toBeNull();
+  });
+});
+
+describe("what a shop chose not to show", () => {
+  const dto = (hidden: unknown) =>
+    toBrandPageDto({ ...fixture, hiddenSections: hidden }, brands, NOTHING_DERIVED);
+
+  it("leaves the hidden section's content out of the payload, not merely unrendered", () => {
+    // Subtraction at the source (R7): a flag the page is trusted to honour is honoured by
+    // whichever renderer remembers to check it, and a link preview is a renderer too.
+    const page = dto(["story", "policies", "brands", "social", "pillars"]);
+    expect(page.story).toBeNull();
+    expect(page.owner).toBeNull();
+    expect(page.deliveryPolicy).toBeNull();
+    expect(page.returnsPolicy).toBeNull();
+    expect(page.brands).toBeNull();
+    expect(page.social).toBeNull();
+    expect(page.pillars).toBeNull();
+    expect(JSON.stringify(page)).not.toContain("Anisa Merchant");
+    expect(JSON.stringify(page)).not.toContain("Woven near by");
+  });
+
+  it("hides the introduction with the story, because they are one section", () => {
+    expect(dto(["story"]).about).toBeNull();
+  });
+
+  it("reports the keys so the shop's own panel can say hidden rather than missing", () => {
+    expect(dto(["brands"]).hiddenSections).toEqual(["brands"]);
+    expect(dto(null).hiddenSections).toEqual([]);
+  });
+
+  it("cannot hide what buyers said, the goods, or the proof", () => {
+    // Proof is derived and never typed (R4). A page whose reviews vanish when they turn
+    // unflattering is not proof, so those keys are not offered to the shop at all.
+    const offered: readonly string[] = HIDEABLE_BRAND_PAGE_SECTIONS;
+    for (const key of ["hero", "categories", "buyersSay", "newest"]) {
+      expect(offered, `${key} must not be hideable`).not.toContain(key);
+    }
+  });
+
+  it("drops a key no section answers to, rather than carrying it", () => {
+    expect(hiddenSectionsFrom(["story", "nonsense", 7, null])).toEqual(["story"]);
+    expect(hiddenSectionsFrom("story")).toEqual([]);
+    expect(hiddenSectionsFrom(["story", "story"])).toEqual(["story"]);
+  });
+});
+
+describe("the shapes the platform defined, read back from JSON", () => {
+  it("keeps only whole blocks, and never more than the limit", () => {
+    const many = Array.from({ length: 5 }, (_, i) => ({ title: `T${i}`, text: `X${i}` }));
+    expect(pillarsFrom(many)).toHaveLength(MAX_BRAND_PILLARS);
+    expect(pillarsFrom([{ title: "Only a heading", text: "  " }])).toBeNull();
+    expect(pillarsFrom([{ title: " ", text: "Only words" }])).toBeNull();
+    expect(pillarsFrom("not a list")).toBeNull();
+    expect(pillarsFrom([])).toBeNull();
+  });
+
+  it("hangs the person on a name, and keeps the rest optional", () => {
+    const row = { ownerName: "A", ownerRole: null, ownerQuote: null, ownerPhotoUrl: null };
+    expect(brandOwnerFrom(row)).toEqual({ name: "A", role: null, quote: null, photoUrl: null });
+    expect(brandOwnerFrom({ ...row, ownerName: "   " })).toBeNull();
+    // A quoted line with nobody behind it is copy, not a person.
+    expect(brandOwnerFrom({ ...row, ownerName: null, ownerQuote: "Trust us." })).toBeNull();
   });
 });
