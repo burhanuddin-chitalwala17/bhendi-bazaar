@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-213] 2026-09-29 — The media backfill has been run against dev
+
+Recorded because the runbook asks for it, and to close the pair with the production run.
+
+27 asset records stand behind what dev holds: 26 images and one YouTube reference, with every
+product gallery, category hero, banner, org banner and org profile linked and nothing unlinked.
+Every image carries its dimensions and a content hash.
+
+Four carry an object key. The other 22 are the seed's `placehold.co` images, which belong to no
+store of ours and correctly have none — the same honest answer the store check is built around,
+and the reason four recognised URLs were enough for it to let the write proceed.
+
 ## [PR-212] 2026-09-29 — A button that starts the dev worker, so a tester needs no terminal
 
 The worker serving the dev site runs only while somebody is testing, which until now meant
