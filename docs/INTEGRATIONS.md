@@ -119,6 +119,31 @@ different kinds of thing, and the difference decides the order they are worth bu
   the network as a seller participant speaking the Beckn protocol, or lists through one that
   already has. For this platform that is a question about the platform, not about pushing one
   product, and it belongs in its own decision.
+### What it takes to act for many sellers
+
+Checked 2026-09-29. The distinction that decides the cost is **acting for our own one account** versus
+**software many sellers each authorise against their own account**. The second is what a connector is,
+and it is a different licence class on every platform that has one.
+
+| Platform | Multi-seller | The gate |
+|---|---|---|
+| Google Merchant | Yes, two shapes | Self-serve. An OAuth verification review, 3–5 business days. Google names marketplaces as an eligible profile and recommends *account relationships with services*, a two-sided handshake where the merchant keeps their own account, over sub-account aggregation |
+| Flipkart | Yes, documented | A separate *Third Party Access* programme from the seller's own *Self Access*. Register at the partner portal, verification call within 72 hours. Sharing a seller's own credentials with a partner is a permanent ban |
+| Meta | Yes, the "tech provider" model | App Review plus Business Verification. Free, deterministic, rejection-prone. Until verified, other businesses cannot grant the permission at all |
+| Amazon | Yes, a *public* application | Solution Provider Portal registration: business registration number, government ID, a video identity call, a security questionnaire, and a **publicly reachable website describing the service**. Sellers must be on the **Professional** plan. Restricted roles touching buyer data add an architecture review and a security assessment measured in months |
+| Meesho | In practice only | No public API, no self-serve, no OAuth. An integrator is whitelisted by relationship, then each seller is enabled by email. A calendar dependency, not an engineering one |
+| Myntra | No programme found | Real public API docs, but per-seller shared secrets and no partner tier. Behind a curated brand approval of two to six weeks |
+| Ajio, Nykaa | No | No public developer programme. Per-seller username and password issued by the platform |
+
+The Amazon developer fee announced in November 2025 was **cancelled on 12 May 2026**; access is free
+again. Re-check before committing to a plan that depends on it.
+
+Two facts that shape the machinery rather than the paperwork. **Amazon pushes notifications only to an
+Amazon queue or event bus, never to a plain HTTP endpoint**, so consuming its order events means holding
+an AWS account and either polling that queue from our worker or bridging it back to an endpoint.
+**Flipkart posts to a URL we host**, signature-authenticated, but enabling it is a support ticket per
+seller that asks for a security test certificate for the receiving URL. Everything else polls.
+
 - **Myntra, Ajio and Nykaa** are invite-only partner programmes. Relevant to what this store
   sells, worth a name in the vocabulary, not worth chasing.
 
