@@ -1,6 +1,6 @@
 # CLAUDE.md — payments domain
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-09-29
 - **Covers:** `server/payments/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC and the seven Project Invariants. This file covers **payments** only.
@@ -22,7 +22,7 @@ Payments owns the conversation with the gateway and the single fact that follows
 - **Compare signatures with `crypto.timingSafeEqual`**, never `===`.
 - **The transition is idempotent**, keyed on the gateway payment id, so a retry does not resend a confirmation email.
 - **Fail loudly.** A webhook whose payload cannot be matched to an order logs an error and returns non-2xx, so the gateway retries and the failure is visible. **A silent 2xx is how a dead payment path stayed hidden for months** — this rule exists because of that, and it is the one most easily undone by someone "cleaning up" error handling.
-- **A reservation is released only after the gateway is asked, and never while a payment is in flight.** `releaseIfUnpaid` is the single routine; the browser, a blocked checkout and the cron are triggers that decide nothing. `confirmPaid` refuses an expired order, so an early release turns a real payment into a manual refund ([checkout-abandonment](../../docs/specs/checkout-abandonment/)).
+- **A reservation is released only after the gateway is asked, and never while a payment is in flight.** `releaseIfUnpaid` is the single routine; the browser, a blocked checkout and the worker's hourly sweep are triggers that decide nothing. `confirmPaid` refuses an expired order, so an early release turns a real payment into a manual refund ([checkout-abandonment](../../docs/specs/checkout-abandonment/)).
 - **Never accept `paymentStatus` from a request body**, at creation or update ([`/CLAUDE.md`](../../CLAUDE.md) Invariant 4).
 - **Throw `DomainError` for anything a user should see**, `NotFoundError` / `ConflictError` as appropriate. A bare `throw new Error(...)` is treated as an internal fault and reported generically — correct for a config or code failure, wrong for "insufficient stock" ([ADR-0013](../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
 - **No `any` in this tree.**

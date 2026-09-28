@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-210] 2026-09-29 — The payment backstop moves onto the worker, and the cron is retired
+
+The sweep that catches a payment we were never told about now runs on our own worker, hourly. The
+Vercel cron and the route it called are gone, along with the last reader of `CRON_SECRET`.
+
+It ran every fifteen minutes when it was written and became daily because the host's free plan
+refuses a deployment whose cron fires more often — a property of where the schedule lived, not of
+the work. The cost was real: an abandoned checkout held stock out of sale for up to a day, a buyer
+whose webhook was lost waited as long to see their order confirmed, and only twenty orders were
+examined per run.
+
+It is hourly rather than back to fifteen minutes because the schedule floor is an hour and the
+idle worker's modelled day already stands at 1441 operations against a declared ceiling of 1500.
+Even a half-hourly floor models past it. Going faster is available and costs a raised ceiling,
+which is a decision rather than a constant (ADR-0038 D8). An hour bounds a stuck checkout at about
+seventy minutes instead of a day.
+
+Every run now reports, including the quiet ones. The handler this replaces logged only when it had
+recovered something, so a sweep that found nothing and a sweep that never ran produced identical
+silence — which is no way to watch a backstop, and would have made the observation this move was
+supposed to wait for impossible.
+
+Nothing about what the sweep decides has changed. It still asks the gateway before touching
+anything: captured confirms the order through the same routine every other trigger uses, in flight
+holds the goods, and only what the gateway says was never paid gives its stock back.
+
 ## [PR-209] 2026-09-29 [CONTRACT] [MIGRATION] — The platform can see every library, and take one image down
 
 The platform owner's read-only view across every shop's media, filterable to one shop or to the

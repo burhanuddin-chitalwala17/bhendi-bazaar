@@ -1,10 +1,10 @@
 # Spec — worker-foundation
 
 - **Summary:** The place where slow work goes: a queue in our Postgres, a worker we own, health in admin, a machine rebuilt by a script
-- **Status:** 🔨 In progress — PR-150, PR-154 (2 of 3; the machine is live, the reconciliation move remains)
+- **Status:** ✅ Implemented — PR-150, PR-154, PR-210 (2026-09-29)
 - **Domain:** cross-domain (`server/shared/jobs/`, `worker/`)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **References:** [trd.md](trd.md), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md), [OPERATIONS.md](../../OPERATIONS.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.

@@ -9,6 +9,9 @@ import { z } from "zod";
 vi.mock("@server/catalog/media-asset.service", () => ({
   mediaAssetService: { sweep: vi.fn().mockResolvedValue({ pending: { removed: 1, kept: 0 }, retired: { deleted: 0, kept: 2 } }) },
 }));
+vi.mock("@server/payments/payment.service", () => ({
+  paymentService: { reconcileStuckOrders: vi.fn() },
+}));
 
 import { JOBS_MAX_SCHEDULES, JOBS_SCHEDULE_MIN_INTERVAL_SECONDS } from "@server/shared/jobs/jobs.config";
 import { registerJob, registeredJobTypes, resetJobRegistry, resolveJob } from "@server/shared/jobs/jobs.registry";
@@ -92,6 +95,51 @@ describe("the media sweep", () => {
     await definition.handler({ jobId: "j1", payload });
     expect(mediaAssetService.sweep).toHaveBeenCalledTimes(1);
     expect(log).toHaveBeenCalledWith(expect.stringContaining("pending removed 1"));
+    log.mockRestore();
+  });
+});
+
+describe("the payment reconciliation", () => {
+  // One test, because the job module registers itself on import and an import is cached: a
+  // second `resetJobRegistry` with a second import would leave the registry empty. The media
+  // sweep above is written the same way for the same reason.
+  it("is scheduled at the floor, and reports every run including the quiet ones", async () => {
+    resetJobRegistry();
+    resetSchedules();
+    const { PAYMENT_RECONCILE_INTERVAL_SECONDS } = await import("@server/payments/payment.jobs");
+    const { paymentService } = await import("@server/payments/payment.service");
+
+    expect(registeredJobTypes()).toContain("payment.reconcile");
+    expect(PAYMENT_RECONCILE_INTERVAL_SECONDS).toBeGreaterThanOrEqual(JOBS_SCHEDULE_MIN_INTERVAL_SECONDS);
+    expect(registeredSchedules().map((entry) => [entry.definition.type, entry.everySeconds])).toEqual([
+      ["payment.reconcile", PAYMENT_RECONCILE_INTERVAL_SECONDS],
+    ]);
+
+    const { definition, payload } = resolveJob({ type: "payment.reconcile", payload: {} });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    // A quiet run still reports. The handler this replaced logged only when it had recovered
+    // something, so a sweep that found nothing and a sweep that never ran looked alike.
+    vi.mocked(paymentService.reconcileStuckOrders).mockResolvedValue([]);
+    await definition.handler({ jobId: "j2", payload });
+    expect(log).toHaveBeenLastCalledWith(expect.stringContaining("examined 0"));
+
+    // Each outcome counted separately: a confirmation and a release are not one number.
+    vi.mocked(paymentService.reconcileStuckOrders).mockResolvedValue([
+      { orderId: "o1", outcome: "confirmed" },
+      { orderId: "o2", outcome: "released" },
+      { orderId: "o3", outcome: "released" },
+      { orderId: "o4", outcome: "in-flight" },
+      { orderId: "o5", outcome: "error" },
+    ] as Awaited<ReturnType<typeof paymentService.reconcileStuckOrders>>);
+    await definition.handler({ jobId: "j3", payload });
+
+    const line = log.mock.calls.at(-1)?.[0] as string;
+    expect(line).toContain("examined 5");
+    expect(line).toContain("confirmed 1");
+    expect(line).toContain("released 2");
+    expect(line).toContain("still in flight 1");
+    expect(line).toContain("errors 1");
     log.mockRestore();
   });
 });

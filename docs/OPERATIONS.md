@@ -31,7 +31,7 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
 | `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it. `NODE_ENV` is never set by us: Vercel and Next.js set it to `production` for every build, which is why `APP_ENV` is required there |
 | `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
-| `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
+| `CRON_SECRET` | ➖ | **Read by nothing since PR-210.** Reconciliation moved onto the worker, which calls the domain directly and needs no bearer token; the route it guarded is gone. Safe to remove from the deployment |
 | `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — a custom domain on the Cloudflare zone for each bucket, the production one and `dev.bhendi-bazaar.com` for the development bucket. An `r2.dev` URL also works and is the fallback before a domain is attached, but it can serve no image transformations, which is what background removal is (`IMAGE_SEGMENT_PROVIDER`). **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
 | `FFMPEG_PATH` / `FFPROBE_PATH` | — | Worker only, optional. Where the transcoder's binaries are when they are not on `PATH` ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)); the image installs ffmpeg as an OS package, so neither is set there |
@@ -340,9 +340,10 @@ This makes **rate quoting** live. Shipment booking currently uses a mock impleme
 The job queue is a set of tables in the application's own Postgres, in the `pgboss` schema, and
 the worker is a second process that runs them ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [worker-foundation](specs/worker-foundation/)).
 
-**What runs here.** Four job types, registered in `worker/main.ts` and owned by the domain each
-belongs to: a no-op `ping`, the media sweep, video transcoding, and photo enhancement. The last two
-decide what the machine needs. Transcoding wants ffmpeg, which the image carries as an OS package.
+**What runs here.** Five job types, registered in `worker/main.ts` and owned by the domain each
+belongs to: a no-op `ping`, the media sweep, video transcoding, photo enhancement, and the payment
+reconciliation that used to be a Vercel cron. The video and enhancement ones decide what the
+machine needs. Transcoding wants ffmpeg, which the image carries as an OS package.
 Enhancement wants the same three `IMAGE_*` variables the web app has, because the web app only
 checks a tool is available and then queues it — set them in one place and not the other and every
 run fails on the half that is missing. Both are in `.env.worker.example`.
@@ -358,8 +359,13 @@ run fails on the half that is missing. Both are in `.env.worker.example`.
 - **ffmpeg is in the image** for hosted video ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)): a Debian package, pinned by the base image's release. Transcodes run one at a time — the free machine has the CPU for one — and `tests/unit/video-transcode.test.ts` runs the real binary, so a laptop without ffmpeg (`brew install ffmpeg`) skips that one suite while CI never does.
 - **Schedules are in-process timers that enqueue a job** (`server/shared/jobs/jobs.schedule.ts`),
   never pg-boss's cron: the floor is one tick an hour and the count is budgeted in the idle estimate.
-  The worker logs them at start. The first is `media.sweep`, every six hours: uploads that never
-  confirmed go after an hour, and a retired image's stored object goes after thirty days.
+  The worker logs them at start. Two are registered. `media.sweep`, every six hours: uploads that
+  never confirmed go after an hour, and a retired image's stored object goes after thirty days.
+  `payment.reconcile`, hourly: every checkout stuck past the fifteen-minute hold window is put to
+  the gateway, so a payment whose webhook was lost is confirmed and a genuinely abandoned one
+  gives its stock back. It ran daily as a Vercel cron until PR-210, because the free plan allows
+  no more; an hour is the schedule floor here and the idle estimate has no room below it, so
+  going faster means raising that ceiling, which is a decision (ADR-0038 D8).
 - **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
   count and re-runs them; each re-run is an audit entry.
 - **Direct connections.** The worker needs the direct connection string (notify is session-bound);

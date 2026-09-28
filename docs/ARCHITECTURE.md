@@ -15,7 +15,7 @@ Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (P
             ├── (admin) console       26 pages     ──▶ Razorpay         (payments)
             ├── (org)   seller portal 21 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
-            └── api/                  107 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
+            └── api/                  106 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
