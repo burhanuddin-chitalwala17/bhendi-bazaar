@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-205] 2026-09-28 — The media backfill has been run against production
+
+Recorded because the runbook asks for it. 336 asset records now stand behind what production
+holds: 281 images and 55 YouTube references, with every product gallery, category hero, banner,
+org banner and org profile linked and nothing left unlinked.
+
+280 of the 281 images carry dimensions, a content hash and an object key. The one that does not is
+a Vercel Blob URL on a test product, left from before the move to R2; it answers 403, so there are
+no bytes to measure, and it belongs to no store of ours, so it correctly has no key. It will be
+listed as without dimensions on every future run, which is the honest answer rather than a defect.
+
+Dev has not been run. It needs its own connection string and the dev bucket's public base, and the
+store check refuses the pairing if those two disagree.
+
 ## [PR-204] 2026-09-28 — The rehearsal now says what the real run will refuse
 
 The store check added in the previous entry ran only on a write, so the report before it printed a
