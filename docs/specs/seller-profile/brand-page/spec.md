@@ -1,10 +1,10 @@
 # Spec — brand-page
 
 - **Summary:** The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line
-- **Status:** ✅ Accepted — 2026-09-26
+- **Status:** 🔨 In progress — PR-182, PR-184 (a and c of a–c)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-27
 - **References:** [../spec.md](../spec.md) (seller-profile), [trd.md](trd.md), [storefront-pages](../../org-storefront/storefront-pages/spec.md) R3, [storefront-branding](../../org-storefront/storefront-branding/spec.md), [seller-identity](../../org-storefront/seller-identity/spec.md) R5, [ADR-0015](../../../adr/0015-mobile-first-design.md), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0018](../../../adr/0018-one-effective-price-function.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.

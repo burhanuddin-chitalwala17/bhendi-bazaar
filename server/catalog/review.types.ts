@@ -73,6 +73,30 @@ export interface ReviewDto {
   media: ReviewMediaDto[];
 }
 
+/**
+ * A published review as a shop's brand page quotes it (brand-page R1, A3a): `ReviewDto`'s
+ * buyer-facing fields — a `Pick`, so nothing a buyer is not already sent can join — and the
+ * product it is about, for the link. No `isMine`: strangers read this page. No `userId`, as ever.
+ */
+export interface ShopReviewDto
+  extends Pick<
+    ReviewDto,
+    "id" | "rating" | "comment" | "authorName" | "isVerifiedPurchase" | "createdAt"
+  > {
+  product: { name: string; slug: string };
+}
+
+/** The repository's row behind `ShopReviewDto`, before the service shapes it. */
+export interface ShopReviewRow {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string | null;
+  isVerified: boolean;
+  createdAt: Date;
+  product: { name: string; slug: string };
+}
+
 /** The summary above the list: average, count, and the per-star bars (R2). */
 export type ReviewSummaryDto = ProductRating;
 

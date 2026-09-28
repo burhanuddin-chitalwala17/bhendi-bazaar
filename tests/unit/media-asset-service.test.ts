@@ -9,6 +9,7 @@ import sharp from "sharp";
 
 const repo = {
   createPending: vi.fn(),
+  findReadySource: vi.fn(),
   findById: vi.fn(),
   confirm: vi.fn(),
   createReady: vi.fn(),
@@ -43,6 +44,46 @@ describe("beginUpload", () => {
     const result = await mediaAssetService.beginUpload({ orgId: "org-1", uploaderId: "u1", pathname: "p/a.webp", contentType: "image/webp", size: 10 });
     expect(result).toEqual({ uploadUrl: "https://r2/put", publicUrl: "https://img.test/p/a.webp", assetId: "a9" });
     expect(repo.createPending).toHaveBeenCalledWith(expect.objectContaining({ orgId: "org-1", uploaderId: "u1", objectKey: "p/a.webp", bytes: 10 }));
+    // A plain upload names no source: the repository's default, UPLOAD, is what gets written.
+    const written = repo.createPending.mock.calls[0][0];
+    expect(written.source).toBeUndefined();
+    expect(written.derivedFromId).toBeUndefined();
+    expect(repo.findReadySource).not.toHaveBeenCalled();
+  });
+});
+
+// A crop is a second object registered as derived from the untouched source (media-library
+// R8a, trd D6a): the source must be this owner's and ready, the record carries the rotation and
+// rectangle, and D11's hash check is on the crop's own bytes, never its source.
+describe("beginUpload of a derived image", () => {
+  const transform = { rotation: 90 as const, crop: { x: 10, y: 20, width: 300, height: 300 } };
+  const input = { orgId: "org-1", uploaderId: "u1", pathname: "p/a-crop.webp", contentType: "image/webp", size: 10, derivedFrom: { assetId: "src-1", transform } };
+
+  it("refuses a source that is not this owner's, before signing anything", async () => {
+    repo.findReadySource.mockResolvedValue(null);
+    await expect(mediaAssetService.beginUpload(input)).rejects.toThrow(/Source image not found/);
+    expect(repo.findReadySource).toHaveBeenCalledWith("org-1", "src-1");
+    expect(store.presignUpload).not.toHaveBeenCalled();
+    expect(repo.createPending).not.toHaveBeenCalled();
+  });
+
+  it("registers the crop as DERIVED from its source, with the transform", async () => {
+    repo.findReadySource.mockResolvedValue({ id: "src-1", width: 2000, height: 1500 });
+    store.presignUpload.mockResolvedValue({ uploadUrl: "https://r2/put", publicUrl: "https://img.test/p/a-crop.webp" });
+    repo.createPending.mockResolvedValue({ id: "d1", ref: "https://img.test/p/a-crop.webp" });
+    const result = await mediaAssetService.beginUpload(input);
+    expect(result).toMatchObject({ assetId: "d1" });
+    expect(repo.createPending).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "DERIVED", derivedFromId: "src-1", transform, objectKey: "p/a-crop.webp" }),
+    );
+  });
+
+  it("looks the platform's own source up with a null org", async () => {
+    repo.findReadySource.mockResolvedValue({ id: "src-9", width: 10, height: 10 });
+    store.presignUpload.mockResolvedValue({ uploadUrl: "u", publicUrl: "p" });
+    repo.createPending.mockResolvedValue({ id: "d2", ref: "p" });
+    await mediaAssetService.beginUpload({ ...input, orgId: null });
+    expect(repo.findReadySource).toHaveBeenCalledWith(null, "src-1");
   });
 });
 
@@ -50,7 +91,7 @@ describe("confirmUpload", () => {
   it("records what the store holds and the dimensions the browser sent", async () => {
     repo.findById.mockResolvedValue(pending);
     const result = await mediaAssetService.confirmUpload({ assetId: "a1", orgId: "org-1", width: 800, height: 600 });
-    expect(result).toEqual({ assetId: "a1", ref: pending.ref, alreadyReady: false });
+    expect(result).toEqual({ assetId: "a1", ref: pending.ref, state: "READY", alreadyReady: false });
     expect(repo.confirm).toHaveBeenCalledWith("a1", { width: 800, height: 600, bytes: 1234, mimeType: "image/webp" });
     expect(store.getObject).not.toHaveBeenCalled();
   });

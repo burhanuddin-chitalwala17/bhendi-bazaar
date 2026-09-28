@@ -13,6 +13,9 @@ const productMediaSchema = z.object({
   ref: z.string().trim().min(1, "Every gallery item needs a source").max(2048),
   description: z.string().trim().max(500).optional(),
   isThumbnail: z.boolean(),
+  // A slot key from the category's shot list; membership is checked by the service, which
+  // knows the category (media-library D4). Blank means an extra photograph.
+  slot: z.string().trim().max(40).nullish().transform((value) => value || null),
 });
 
 /**
@@ -35,7 +38,17 @@ const productMediaListSchema = z
   })
   .refine((media) => media.every((item) => !item.isThumbnail || item.kind === "IMAGE"), {
     message: "The cover must be a photograph, not a video",
-  });
+  })
+  .refine((media) => media.every((item) => !item.slot || item.kind === "IMAGE"), {
+    message: "Only a photograph fills a slot; a video is always an extra",
+  })
+  .refine(
+    (media) => {
+      const slots = media.map((item) => item.slot).filter((slot): slot is string => !!slot);
+      return new Set(slots).size === slots.length;
+    },
+    { message: "Each slot holds one photograph" },
+  );
 
 /**
  * The accepted shape of an admin product payload.

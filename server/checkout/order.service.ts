@@ -63,6 +63,15 @@ export class OrderService {
     return new Set(await orderRepository.purchasedProductIds(userId, productIds));
   }
 
+  /**
+   * How many paid orders carried this org's goods — the brand page's "orders fulfilled"
+   * (brand-page D2). On the service for the same reason as `hasPurchased`: catalog asks
+   * checkout a question rather than joining `Order` itself (ADR-0033).
+   */
+  async paidOrderCountForOrg(orgId: string): Promise<number> {
+    return await orderRepository.countPaidForOrg(orgId);
+  }
+
   async getOrderById(
     orderId: string,
     userId?: string

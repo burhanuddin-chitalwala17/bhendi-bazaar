@@ -1,4 +1,5 @@
 import type { CategoryAccent } from "@prisma/client";
+import type { ShotList } from "@server/catalog/shot-list";
 /**
  * Admin Category Management Domain Types
  */
@@ -12,6 +13,8 @@ export interface AdminCategory {
   heroImage: string;
   accent: CategoryAccent;
   order: number;
+  /** This category's own list, null when it inherits (media-library D4). */
+  shotList: ShotList | null;
   createdAt: Date;
   updatedAt: Date;
   productsCount?: number;
@@ -41,6 +44,8 @@ export interface CreateCategoryInput {
   heroImage: string;
   accent: CategoryAccent;
   order?: number;
+  /** null clears to inheritance; absent leaves it alone. */
+  shotList?: ShotList | null;
 }
 
 export interface UpdateCategoryInput {
@@ -51,6 +56,7 @@ export interface UpdateCategoryInput {
   heroImage?: string;
   accent?: CategoryAccent;
   order?: number;
+  shotList?: ShotList | null;
 }
 
 

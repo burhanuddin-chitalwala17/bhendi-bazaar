@@ -109,7 +109,7 @@ describe("buildImagePath agrees with the presign route's prefix", () => {
    * reach the same segment, so a code shape that sanitizes differently from lowercasing
    * would refuse every upload from the page that was just converted to use it.
    */
-  const prefixFor = (orgCode: string) => `products/${orgCode.toLowerCase()}/`;
+  const prefixFor = (orgCode: string) => `org/${orgCode.toLowerCase()}/`;
 
   it("holds for generated org codes", () => {
     const codes = orgCodeCandidates();
@@ -117,14 +117,14 @@ describe("buildImagePath agrees with the presign route's prefix", () => {
       const code = codes.next().value as string;
       expect(code).toMatch(ORG_CODE_PATTERN);
       const prefix = prefixFor(code);
-      const path = buildImagePath("products", "front.webp", "Silk Abaya", code);
+      const path = buildImagePath("org", "front.webp", "Silk Abaya", code);
       expect(path.slice(0, prefix.length)).toBe(prefix);
     }
   });
 
   it("holds for the legacy SEL- codes the generator no longer issues", () => {
     const prefix = prefixFor("SEL-1234");
-    const path = buildImagePath("products", "front.webp", "Silk Abaya", "SEL-1234");
+    const path = buildImagePath("org", "front.webp", "Silk Abaya", "SEL-1234");
     expect(path.slice(0, prefix.length)).toBe(prefix);
   });
 });

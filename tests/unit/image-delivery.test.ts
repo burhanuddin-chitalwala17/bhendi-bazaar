@@ -57,6 +57,11 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     reason:
       "A carrier's own logo, hotlinked from shiprocket.in by a data migration. Already sized at 32px and not our asset: optimizing spends a transformation to save bytes we do not pay for.",
   },
+  "src/components/product/youtube-poster.tsx": {
+    rules: ["optimization bypasses"],
+    reason:
+      "The library and picker tiles for a video: the same i.ytimg.com poster as youtube-embed.tsx, which is not our egress and is already sized.",
+  },
   "src/components/product/youtube-embed.tsx": {
     rules: ["optimization bypasses"],
     reason:
@@ -181,12 +186,33 @@ describe("the stored ceiling covers what the zoom asks for", () => {
  * optimizer to transform a huge source on first request.
  */
 describe("a browser upload is downscaled before it is stored", () => {
+  /**
+   * Callers that send bytes which are not a picture, and so have nothing to downscale. The
+   * reason has to say what bounds them instead, or this is the reopening the gate exists for.
+   */
+  const NOT_A_PICTURE: Record<string, string> = {
+    "src/lib/image/upload-video.ts":
+      "A video has nothing to downscale in the browser: the worker transcodes it into the sizes a " +
+      "buyer gets (ADR-0039), and the presign bounds the upload by VIDEO_LIMITS.maxUploadBytes.",
+  };
+
   const DIRECT_UPLOADERS = FILES.filter((f) => /\buploadDirect\b/.test(readFileSync(f, "utf8")))
-    .filter((f) => !f.endsWith("upload-direct.ts")); // the helper itself
+    .filter((f) => !f.endsWith("upload-direct.ts")) // the helper itself
+    .filter((f) => !(f in NOT_A_PICTURE));
 
   it("finds the callers it means to check", () => {
     // If this scan ever finds nothing, the assertion below is vacuous rather than passing.
     expect(DIRECT_UPLOADERS.length, "no uploadDirect callers found").toBeGreaterThan(2);
+  });
+
+  it("keeps the not-a-picture list honest: each entry still uploads directly, still does not downscale, and says why", () => {
+    for (const [file, reason] of Object.entries(NOT_A_PICTURE)) {
+      const source = readFileSync(file, "utf8");
+      expect(reason.length).toBeGreaterThan(30);
+      expect(/\buploadDirect\b/.test(source), `${file} no longer calls uploadDirect`).toBe(true);
+      expect(/downscaleImage/.test(source), `${file} downscales now — remove its exemption`).toBe(false);
+      expect(/VIDEO_LIMITS|videoFileProblem/.test(source), `${file} must bound what it sends`).toBe(true);
+    }
   });
 
   it.each(DIRECT_UPLOADERS)("%s downscales first", (file) => {

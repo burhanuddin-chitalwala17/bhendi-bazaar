@@ -1,23 +1,42 @@
 /**
- * A product's gallery items: photographs we host, videos we embed.
+ * A product's gallery items: photographs we host, videos we host, videos we embed.
  *
  * One declaration for the closed set and the shapes around it, imported by the server,
  * the Zod schema, and the components — `ProductFlag` is declared twice and is the
  * reason this one is not (CONTRACTS.md).
  *
- * Why video is a reference rather than a file: ADR-0017.
+ * Why a YouTube video is a reference rather than a file: ADR-0017. Why a hosted one is a
+ * file after all: ADR-0039. This module is loaded in the browser, so nothing here may import
+ * the Prisma client as a value.
  */
 
-export const MEDIA_KINDS = ["IMAGE", "YOUTUBE"] as const;
+import type { MediaAssetState } from "@prisma/client";
+import { VIDEO_TRANSFORM } from "@server/catalog/video";
+
+export const MEDIA_KINDS = ["IMAGE", "YOUTUBE", "VIDEO"] as const;
 export type MediaKind = (typeof MEDIA_KINDS)[number];
 
 /** What a write path accepts for one gallery item. `position` is the array index. */
 export interface ProductMediaInput {
   kind: MediaKind;
-  /** A blob URL for IMAGE, a bare video id for YOUTUBE — never a provider URL. */
+  /** A stored URL for IMAGE and VIDEO, a bare video id for YOUTUBE — never a provider URL. */
   ref: string;
   description?: string;
   isThumbnail: boolean;
+  /** The category slot this photograph fills; absent for an extra or a video (media-library R4). */
+  slot?: string | null;
+}
+
+/** Where a hosted video is between upload and playable (video-hosting D1, R3, R7). */
+export const PRODUCT_MEDIA_STATES = ["processing", "ready", "failed"] as const;
+export type ProductMediaState = (typeof PRODUCT_MEDIA_STATES)[number];
+
+/** One playable file made from a hosted video, named by the rendition it is (video-hosting D3). */
+export interface ProductMediaRendition {
+  key: string;
+  url: string;
+  width: number;
+  height: number;
 }
 
 /** What a read path returns for one gallery item, in gallery order. */
@@ -27,6 +46,102 @@ export interface ProductMediaDto {
   ref: string;
   description: string | null;
   isThumbnail: boolean;
+  slot: string | null;
+  /** The still that stands in for a hosted video (video-hosting D5); null for a photograph or a link. */
+  poster: string | null;
+  durationMs: number | null;
+  /** Largest first, as declared; empty until the worker is done, and always for a photograph or a link. */
+  renditions: ProductMediaRendition[];
+  /** Null for a photograph or a link: only a hosted video has somewhere to be on the way to. */
+  state: ProductMediaState | null;
+}
+
+/** A gallery row as either product read selects it: the row, and the asset behind a VIDEO row. */
+export interface ProductMediaRow {
+  id: string;
+  kind: MediaKind;
+  ref: string;
+  description: string | null;
+  isThumbnail: boolean;
+  slot: string | null;
+  asset: {
+    state: MediaAssetState;
+    durationMs: number | null;
+    /** Ready derivatives only — the select filters them — with the transform that says what each is. */
+    derivatives: VideoDerivativeRow[];
+    /** The photograph the org member chose over the derived frame (video-hosting spec R8), if any. */
+    posterAsset: { ref: string } | null;
+  } | null;
+}
+
+/** A ready asset made from a video's source, as either select reads it. */
+export interface VideoDerivativeRow {
+  ref: string;
+  width: number | null;
+  height: number | null;
+  transform: unknown;
+}
+
+/**
+ * The asset's state as the gallery tells it. A lookup rather than a chain of comparisons, so
+ * the compiler holds it complete when the enum grows. RETIRED is unreachable for a row that
+ * still references the asset (media-library R7) and reads as failed rather than as nothing.
+ */
+const GALLERY_STATE: Record<MediaAssetState, ProductMediaState> = {
+  PENDING: "processing",
+  PROCESSING: "processing",
+  READY: "ready",
+  FAILED: "failed",
+  RETIRED: "failed",
+};
+
+function renditionKeyOf(transform: unknown): string | null {
+  if (!transform || typeof transform !== "object") return null;
+  const { kind, key } = transform as { kind?: unknown; key?: unknown };
+  return kind === VIDEO_TRANSFORM.RENDITION && typeof key === "string" ? key : null;
+}
+
+function isPoster(transform: unknown): boolean {
+  return !!transform && typeof transform === "object" && (transform as { kind?: unknown }).kind === VIDEO_TRANSFORM.POSTER;
+}
+
+/**
+ * What a video's derivatives amount to, for every read that shows one (video-hosting D3, D5, R8):
+ * the poster is the photograph the org member chose when there is one, else the frame the worker
+ * cut; the renditions are the playable files, largest first. Declared once so the product page and
+ * the library cannot resolve the same asset to two different pictures.
+ */
+export function resolveVideoDerivatives(
+  derivatives: readonly VideoDerivativeRow[],
+  chosenPoster: { ref: string } | null,
+): { poster: string | null; renditions: ProductMediaRendition[] } {
+  const renditions = derivatives.flatMap((derived) => {
+    const key = renditionKeyOf(derived.transform);
+    return key && derived.width && derived.height ? [{ key, url: derived.ref, width: derived.width, height: derived.height }] : [];
+  });
+  return {
+    poster: chosenPoster?.ref ?? derivatives.find((derived) => isPoster(derived.transform))?.ref ?? null,
+    renditions: renditions.sort((a, b) => b.height - a.height),
+  };
+}
+
+/**
+ * One row to one DTO, for both product reads (video-hosting D1, D5). A photograph or a link
+ * carries the video fields empty; a hosted video gets its poster, renditions and state from
+ * the asset the row was linked to on write. A VIDEO row whose link is missing — the asset has
+ * not confirmed, or the backfill has not reached it — reads as processing.
+ */
+export function toProductMediaDto(row: ProductMediaRow): ProductMediaDto {
+  const { asset, ...item } = row;
+  if (item.kind !== "VIDEO") return { ...item, poster: null, durationMs: null, renditions: [], state: null };
+  const { poster, renditions } = resolveVideoDerivatives(asset?.derivatives ?? [], asset?.posterAsset ?? null);
+  return {
+    ...item,
+    poster,
+    durationMs: asset?.durationMs ?? null,
+    renditions,
+    state: asset ? GALLERY_STATE[asset.state] : "processing",
+  };
 }
 
 /** R14 — a page-weight limit before it is a storage one. */

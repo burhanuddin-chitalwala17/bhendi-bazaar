@@ -35,6 +35,14 @@ export class BrandRepository {
     return result.count === 1;
   }
 
+  /** One default per org: setting it here clears it from every other brand in the same statement pair. */
+  async markDefault(orgId: string, id: string) {
+    await prisma.$transaction([
+      prisma.brand.updateMany({ where: { orgId, isDefault: true, NOT: { id } }, data: { isDefault: false } }),
+      prisma.brand.updateMany({ where: { id, orgId, retiredAt: null }, data: { isDefault: true } }),
+    ]);
+  }
+
   async retire(orgId: string, id: string, now: Date = new Date()) {
     const result = await prisma.brand.updateMany({
       where: { id, orgId, retiredAt: null },

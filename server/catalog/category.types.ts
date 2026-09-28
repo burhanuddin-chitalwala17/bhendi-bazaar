@@ -15,5 +15,7 @@ export interface ServerCategory {
   heroImage: string;
   accent: CategoryAccent;
   order: number;
+  /** Stored JSON; parse with `parseShotList` (media-library D4). */
+  shotList?: unknown;
 }
 

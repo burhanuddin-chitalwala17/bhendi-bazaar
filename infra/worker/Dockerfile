@@ -18,7 +18,9 @@ RUN npm ci --ignore-scripts && npx prisma generate
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+# ffmpeg transcodes hosted video (ADR-0039, video-hosting trd D3): an OS package, pinned by the
+# Debian release, not an npm dependency.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates ffmpeg && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json tsconfig.json prisma.config.ts ./
 COPY prisma ./prisma

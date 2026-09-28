@@ -20,6 +20,7 @@ import {
   Wallet,
   GalleryHorizontal,
   Gavel,
+  Sparkles,
 } from "lucide-react";
 
 const navItems = [
@@ -62,6 +63,11 @@ const navItems = [
     title: "Payouts",
     href: "/admin/payouts",
     icon: Wallet,
+  },
+  {
+    title: "Enhancements",
+    href: "/admin/enhancements",
+    icon: Sparkles,
   },
   {
     title: "Users",

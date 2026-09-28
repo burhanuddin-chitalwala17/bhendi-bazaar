@@ -1,8 +1,10 @@
 // components/shared/forms/product/index.tsx
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
-import React, { useEffect } from "react";
+import { resolveShotList } from "@server/catalog/shot-list";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import { Film } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,7 +37,8 @@ interface ProductFormProps {
   product?: ProductDetails;
   /** Create only: another of the org's products whose descriptive fields seed this one. */
   copySource?: ProductCopySource | null;
-  categories?: { id: string; name: string }[];
+  /** Carrying `parentId` and `shotList` lets the gallery resolve its slots per category (media-library D4). */
+  categories?: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
@@ -57,7 +60,7 @@ export function ProductForm({
   copySource,
   categories,
   orgs,
-  locations = [],
+  locations: offeredLocations = [],
   onSubmit,
   onCancel,
   isSubmitting,
@@ -78,6 +81,12 @@ export function ProductForm({
       row.quantity,
     ]),
   );
+  // Locations can grow while the form is open: the org adds one from here rather than leaving
+  // a half-filled product to visit another page (stock-locations R1, org-profile R7).
+  const [locations, setLocations] = useState<LocationOption[]>(offeredLocations);
+  const addLocation = (location: LocationOption) =>
+    setLocations((current) => (current.some((l) => l.id === location.id) ? current : [...current, location]));
+
   const defaultStockRows = locations.map((location) => ({
     orgAddressId: location.id,
     quantity: stockByLocation.get(location.id) ?? 0,
@@ -104,7 +113,8 @@ export function ProductForm({
           : undefined,
       currency: product?.currency || "INR",
       categoryId: product?.category?.id || copy?.categoryId || "",
-      orgId: product?.org?.id || "",
+      // In the org portal there is one org to choose from, so it is chosen (nothing to pick).
+      orgId: product?.org?.id || (orgs?.length === 1 ? orgs[0].id : ""),
       tags: product?.tags || copy?.tags || [],
       flags: product?.flags || copy?.flags || [],
       // No cover is pre-selected on create (D17a). On edit the saved flag comes back
@@ -115,6 +125,7 @@ export function ProductForm({
           ref: item.ref,
           description: item.description ?? undefined,
           isThumbnail: item.isThumbnail,
+          slot: item.slot ?? null,
         })) || [],
       weight: product?.weight || 0,
       sizes: product?.sizes || copy?.sizes || [],
@@ -228,9 +239,12 @@ export function ProductForm({
                   value={field.value as ProductMediaInput[]}
                   onChange={field.onChange}
                   endpoints={uploadEndpoints}
+                  shotList={resolveShotList(watch("categoryId"), categories ?? [])}
+                  orgId={watch("orgId") || undefined}
                   identifier={watch("name")}
                   // The code, not the id: it is the folder the presign route signs under.
                   orgCode={orgs?.find((org) => org.id === watch("orgId"))?.code}
+                  savedMedia={product?.media}
                 />
               )}
             />
@@ -254,23 +268,32 @@ export function ProductForm({
               {product.media.map((item) => (
                 <div
                   key={item.id}
-                  className="relative aspect-[3/4] rounded-lg overflow-hidden border"
+                  className="relative aspect-[3/4] rounded-lg overflow-hidden border bg-muted"
                 >
-                  <Image
-                    src={
-                      item.kind === "YOUTUBE"
-                        ? youtubePosterUrl(item.ref)
-                        : item.ref
-                    }
-                    alt={item.description ?? ""}
-                    fill
-                    sizes="(min-width: 768px) 25vw, 50vw"
-                    unoptimized={item.kind === "YOUTUBE"}
-                    className="object-cover"
-                  />
-                  {(item.kind === "YOUTUBE" || item.isThumbnail) && (
+                  {/* A hosted video has a poster once the worker is done; until then a film mark (video-hosting R3). */}
+                  {item.kind === "VIDEO" && !item.poster ? (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <Film className="size-8 text-muted-foreground" aria-hidden />
+                    </span>
+                  ) : (
+                    <Image
+                      src={
+                        item.kind === "YOUTUBE"
+                          ? youtubePosterUrl(item.ref)
+                          : item.kind === "VIDEO"
+                            ? (item.poster as string)
+                            : item.ref
+                      }
+                      alt={item.description ?? ""}
+                      fill
+                      sizes="(min-width: 768px) 25vw, 50vw"
+                      unoptimized={item.kind === "YOUTUBE"}
+                      className="object-cover"
+                    />
+                  )}
+                  {(item.kind !== "IMAGE" || item.isThumbnail) && (
                     <span className="absolute left-2 top-2 rounded bg-primary px-2 py-1 text-xs text-primary-foreground">
-                      {item.isThumbnail ? "Cover" : "Video"}
+                      {item.isThumbnail ? "Cover" : item.kind === "VIDEO" && item.state !== "ready" ? `Video · ${item.state}` : "Video"}
                     </span>
                   )}
                 </div>
@@ -300,6 +323,7 @@ export function ProductForm({
         watch={watch}
         orgs={orgs}
         locations={locations}
+        onLocationAdded={addLocation}
         readOnly={readOnly}
       />
 

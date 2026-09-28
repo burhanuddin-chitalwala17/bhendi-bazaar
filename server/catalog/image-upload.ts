@@ -9,6 +9,7 @@ import {
 } from "@server/catalog/image-paths";
 import { putObject } from "@server/catalog/object-store";
 import { mediaAssetService } from "@server/catalog/media-asset.service";
+import { sha256Hex } from "@server/shared/hash";
 
 /**
  * Server-side catalog image uploads: the bytes arrive in a request body, sharp
@@ -92,6 +93,7 @@ export async function uploadImages(
         bytes: body.byteLength,
         width,
         height,
+        contentHash: sha256Hex(body),
       });
     }
   }

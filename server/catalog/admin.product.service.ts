@@ -1,6 +1,8 @@
 // server/services/admin/productService.ts
 
 import { adminProductsRepository } from "@server/catalog/admin.product.repository";
+import { resolveShotList, unknownSlots } from "@server/catalog/shot-list";
+import { categoryRepository } from "@server/catalog/category.repository";
 import {
   ProductCopyOption,
   ProductCopySource,
@@ -173,6 +175,7 @@ export class ProductsService {
 
   async createProduct(data: ProductFormInput) {
     await this.checkLocations(data);
+    await this.checkSlots(data);
     const priced = this.moneyToPaise(data);
     const product = await adminProductsRepository.createProduct(priced);
     await this.syncMarkdown(product.id, priced);
@@ -206,12 +209,17 @@ export class ProductsService {
     };
   }
 
+  async listCategoriesSoldBy(orgId: string): Promise<Array<{ id: string; name: string }>> {
+    return adminProductsRepository.listCategoriesSoldBy(orgId);
+  }
+
   async listCopyOptions(orgId: string): Promise<ProductCopyOption[]> {
     return adminProductsRepository.listCopyOptions(orgId);
   }
 
   async updateProduct(id: string, data: ProductFormInput) {
     await this.checkLocations(data);
+    await this.checkSlots(data);
     const priced = this.moneyToPaise(data);
     const product = await adminProductsRepository.updateProduct(id, priced);
     if (!product) {
@@ -219,6 +227,17 @@ export class ProductsService {
     }
     await this.syncMarkdown(id, priced);
     return product;
+  }
+
+  /** A gallery slot must be one the product's category asks for (media-library R4, D4). */
+  private async checkSlots(data: ProductFormInput): Promise<void> {
+    const used = data.media.map((item) => item.slot);
+    if (!used.some(Boolean)) return;
+    const list = resolveShotList(data.categoryId, await categoryRepository.list());
+    const unknown = unknownSlots(used, list);
+    if (unknown.length) {
+      throw new DomainError(`This category has no "${unknown[0]}" slot`, { status: 400, field: "media" });
+    }
   }
 
   private async checkLocations(data: ProductFormInput): Promise<void> {

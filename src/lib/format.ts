@@ -32,3 +32,9 @@ export function titleCase(value: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 }
+
+/** 65_000 → "1:05": a video's playing time, on a tile badge and beside the player. */
+export function formatDuration(durationMs: number): string {
+  const seconds = Math.max(0, Math.round(durationMs / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}

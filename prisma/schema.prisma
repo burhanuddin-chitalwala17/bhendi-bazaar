@@ -20,12 +20,14 @@ datasource db {
 /// say when it was last seen rather than guess (worker-foundation R5). Counts are copied from
 /// the queue at the same moment; they are a snapshot, not a source of truth.
 model WorkerHeartbeat {
-  environment String   @id
-  version     String
-  lastSeenAt  DateTime
-  waiting     Int
-  active      Int
-  failed      Int
+  environment  String   @id
+  version      String
+  lastSeenAt   DateTime
+  waiting      Int
+  active       Int
+  failed       Int
+  /// Jobs finished in the 24 hours before the beat — the figure that says the worker is doing work, not just alive.
+  completedDay Int      @default(0)
 }
 
 /// Every image the platform stores, as a record (media-library R1): what it is, how big, who
@@ -40,10 +42,15 @@ model MediaAsset {
   /// Our object's pathname when the image lives in our store; null for an external URL or an embed.
   objectKey String?        @unique
 
-  width    Int?
-  height   Int?
-  bytes    Int?
-  mimeType String?
+  width       Int?
+  height      Int?
+  bytes       Int?
+  mimeType    String?
+  /// Playing time of a hosted video; null for anything else (video-hosting D1).
+  durationMs  Int?
+  /// SHA-256 of the stored bytes, hex. Within an org the same bytes are one asset, so a repeat
+  /// upload is answered with the existing record rather than a second copy (media-library D11).
+  contentHash String?
 
   /// Null means platform-owned: category heroes, home banners.
   orgId      String?
@@ -57,30 +64,43 @@ model MediaAsset {
   derivatives   MediaAsset[]     @relation("Derivation")
   /// How a derived asset was made from its source — a crop rectangle, a surface key, an operation.
   transform     Json?
+  /// The photograph an org member chose to stand in for this video instead of the derived frame (video-hosting spec R8).
+  posterAssetId String?
+  posterAsset   MediaAsset?      @relation("VideoPoster", fields: [posterAssetId], references: [id], onDelete: SetNull)
+  postersFor    MediaAsset[]     @relation("VideoPoster")
 
   /// PENDING between the presign and the confirm; READY once the store has the bytes and the
   /// record has the dimensions; RETIRED when nothing should use it any more (trd D2, D8).
-  state     MediaAssetState @default(PENDING)
-  retiredAt DateTime?
+  state         MediaAssetState @default(PENDING)
+  retiredAt     DateTime?
+  /// Why a video could not be made playable, shown to the org member (video-hosting spec R7).
+  failureReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  productMedia   ProductMedia[]
-  categoryHeroes Category[]     @relation("CategoryHero")
-  profileLogos   OrgProfile[]   @relation("ProfileLogo")
-  profileHeroes  OrgProfile[]   @relation("ProfileHero")
-  orgBanners     OrgBanner[]    @relation("OrgBannerImage")
-  banners        Banner[]       @relation("BannerImage")
+  productMedia     ProductMedia[]
+  categoryHeroes   Category[]     @relation("CategoryHero")
+  profileLogos     OrgProfile[]   @relation("ProfileLogo")
+  profileHeroes    OrgProfile[]   @relation("ProfileHero")
+  orgBanners       OrgBanner[]    @relation("OrgBannerImage")
+  banners          Banner[]       @relation("BannerImage")
+  /// The enhancements asked of this photograph, and the one this photograph was accepted from (image-enhancement trd D1).
+  enhancementsFrom Enhancement[]  @relation("EnhancementSource")
+  enhancementOf    Enhancement[]  @relation("EnhancementResult")
 
   @@index([orgId, state])
+  @@index([orgId, contentHash])
   @@index([ref])
   @@index([derivedFromId])
+  @@index([posterAssetId])
 }
 
 enum MediaAssetKind {
   IMAGE
   VIDEO_EMBED
+  /// A video file we host: the upload is the source, its renditions and poster are DERIVED from it (video-hosting D1).
+  VIDEO
 }
 
 enum MediaAssetSource {
@@ -91,8 +111,96 @@ enum MediaAssetSource {
 
 enum MediaAssetState {
   PENDING
+  /// A confirmed video the worker is still making playable (video-hosting D1).
+  PROCESSING
   READY
+  /// A video no decoder read or that broke a limit; `failureReason` says which (spec R7).
+  FAILED
   RETIRED
+}
+
+/// One requested improvement of one photograph (image-enhancement trd D1): the ledger row the
+/// worker acts on and the quota counts. The proposal is an object under `proposals/`, never an
+/// asset, until it is accepted — then `resultAssetId` names the DERIVED image made from it. Cost is
+/// integer paise (Invariant 3), recorded per run (spec R9). Money-bearing, so nothing cascades.
+model Enhancement {
+  id            String           @id @default(cuid())
+  orgId         String
+  org           Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  requesterId   String?
+  requester     User?            @relation(fields: [requesterId], references: [id], onDelete: SetNull)
+  sourceAssetId String
+  sourceAsset   MediaAsset       @relation("EnhancementSource", fields: [sourceAssetId], references: [id], onDelete: Restrict)
+  tool          EnhancementTool
+  /// A scene's setting, or any tool's named variant; null for a tool with none.
+  preset        String?
+  /// Which service performed the run — the platform's choice, recorded so a bake-off can be read back (spec R8).
+  provider      String
+  state         EnhancementState @default(REQUESTED)
+  /// The gallery slot the request came from, for the record; the label slot is refused before a row exists (spec R5).
+  slot          String?
+  /// Where the proposal sits in the store while nobody has decided on it (trd D1).
+  proposalKey   String?
+  resultAssetId String?
+  resultAsset   MediaAsset?      @relation("EnhancementResult", fields: [resultAssetId], references: [id], onDelete: SetNull)
+  costPaise     Int              @default(0)
+  /// Why a run failed, in the org member's words (spec R10).
+  error         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  proposedAt    DateTime?
+  decidedAt     DateTime?
+
+  @@index([orgId, createdAt])
+  @@index([orgId, state])
+  @@index([sourceAssetId])
+}
+
+/// How one org differs from the platform's numbers, and whether it may enhance at all
+/// (image-enhancement trd D5). A row exists only where there is a deviation to record; an org
+/// that is exactly the platform default carries none, and use itself is a count of rows, never stored.
+model OrgEnhancementPolicy {
+  orgId            String    @id
+  org              Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// An allowance of this org's own. Null is "whatever the platform's default is" — a row records
+  /// a deviation, never a copy of the platform's number, which would go stale the day it changes.
+  monthlyAllowance Int?
+  pausedAt         DateTime?
+  pauseReason      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+/// The platform owner's two numbers, in one row the code addresses by a constant id
+/// (image-enhancement trd D5): how many enhancements an org may do in a month unless its own row
+/// says otherwise, and what every org together may spend in a day, in paise (Invariant 3). A
+/// settings row rather than a constant so the owner changes them without a deploy; no relation to
+/// anything, because they belong to the platform rather than to any row in the tree. Absent means
+/// the fallbacks declared in `server/content/enhancement.types.ts`.
+model EnhancementSettings {
+  id                      String   @id @default("platform")
+  defaultMonthlyAllowance Int
+  dailyCapPaise           Int
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+enum EnhancementTool {
+  CUTOUT
+  WHITE
+  STUDIO
+  SCENE
+  LIGHT
+  ENLARGE
+}
+
+enum EnhancementState {
+  REQUESTED
+  RUNNING
+  PROPOSED
+  ACCEPTED
+  DISCARDED
+  FAILED
 }
 
 model Category {
@@ -109,6 +217,9 @@ model Category {
   heroAssetId String?
   heroAsset   MediaAsset?    @relation("CategoryHero", fields: [heroAssetId], references: [id], onDelete: Restrict)
   accent      CategoryAccent @default(EMERALD)
+  /// The named photo slots products in this category fill, inherited down the tree from the
+  /// nearest ancestor that sets one; null means the platform's generic list (media-library D4).
+  shotList    Json?
   order       Int            @default(0)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -208,8 +319,8 @@ model ProductMedia {
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   kind MediaKind
-  /// A blob URL for IMAGE, a bare video id for YOUTUBE — never a provider URL, so the
-  /// host stays swappable by backfill rather than by migration (ADR-0017 decision 2).
+  /// A stored URL for IMAGE and VIDEO, a bare video id for YOUTUBE — never a provider URL, so
+  /// the host stays swappable by backfill rather than by migration (ADR-0017 decision 2).
   ref  String
 
   /// The library record behind an IMAGE row, linked by `ref` on write and by the backfill.
@@ -218,6 +329,9 @@ model ProductMedia {
   asset   MediaAsset? @relation(fields: [assetId], references: [id], onDelete: Restrict)
 
   position    Int
+  /// Which of the category's named slots this item fills; null for an extra beyond the slots or
+  /// a video (media-library R4, D4). `position` still orders the gallery.
+  slot        String?
   /// Per-item alt text. Nullable because the backfill has none to give: pre-existing
   /// galleries only ever had positional alt text generated at render.
   description String?
@@ -233,6 +347,8 @@ model ProductMedia {
 enum MediaKind {
   IMAGE
   YOUTUBE
+  /// A video we host (video-hosting D1); `ref` is the source asset's URL.
+  VIDEO
 }
 
 model Review {
@@ -399,11 +515,12 @@ model User {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  accounts       Account[]
-  sessions       Session[]
-  orgMemberships OrgMember[]
-  mediaAssets    MediaAsset[]
-  addresses      UserAddress[]
+  accounts              Account[]
+  sessions              Session[]
+  orgMemberships        OrgMember[]
+  mediaAssets           MediaAsset[]
+  addresses             UserAddress[]
+  enhancementsRequested Enhancement[]
 
   settlementsCreated Settlement[] @relation("SettlementCreatedBy")
   settlementsUpdated Settlement[] @relation("SettlementUpdatedBy")
@@ -455,10 +572,12 @@ model Org {
 
   // Everything a buyer may see lives on the profile; everything else stays here
   // (org-profile spec R1/R2, trd D1). A leak now needs a join nobody wrote.
-  profile         OrgProfile?
-  listingDefaults OrgListingDefaults?
-  brands          Brand[]
-  mediaAssets     MediaAsset[]
+  profile           OrgProfile?
+  listingDefaults   OrgListingDefaults?
+  brands            Brand[]
+  mediaAssets       MediaAsset[]
+  enhancements      Enhancement[]
+  enhancementPolicy OrgEnhancementPolicy?
 
   /// The platform's cut, in basis points — 1500 = 15%. Set per org by design; rates
   /// differ between orgs (org-payouts spec R12). Category overrides live in

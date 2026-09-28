@@ -4,7 +4,7 @@
 - **Status:** 🔨 In progress — PR-150, PR-154 (2 of 3; the machine itself pending the account)
 - **Domain:** cross-domain (`server/shared/jobs/`, `worker/`)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-27
 - **References:** [trd.md](trd.md), [ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md), [ADR-0021](../../adr/0021-audit-trail-never-fails-the-action.md), [OPERATIONS.md](../../OPERATIONS.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
@@ -23,7 +23,7 @@ Enhancing a photo, re-encoding a video, reading ten images for attributes, publi
 - **R2** — A job is written in the same transaction as the record it concerns. A rolled-back record leaves no job; a committed job always has its record.
 - **R3** — A failed job retries on a schedule, then parks where an operator can see it, read why it failed, and run it again. Nothing fails silently and nothing is lost.
 - **R4** — Only a bounded number of jobs run at once for any one organisation. One seller's bulk upload cannot starve another.
-- **R5** — The worker's health is visible in admin: when it was last seen, how many jobs wait, how many have failed. "Not seen for forty minutes" is a fact on a page, not a mystery.
+- **R5** — The worker's health is visible in admin: when it was last seen, how many jobs wait, how many have failed, how many finished in the last day, and — on request, never by default — the recent jobs themselves with their state and the reason one failed. "Not seen for forty minutes" is a fact on a page, not a mystery.
 - **R6** — There is a production worker on the production database and a staging worker on the dev database. The staging one runs only while someone is testing.
 - **R7** — Losing the machine loses no data, and one script rebuilds it in under fifteen minutes. The machine holds nothing that is not also in Postgres or the object store.
 - **R8** — The worker's own database traffic fits the operations budget: idle chatter under a declared ceiling per day, measured, not estimated ([ADR-0038](../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) D8).

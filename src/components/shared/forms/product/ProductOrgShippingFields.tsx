@@ -1,11 +1,15 @@
 // components/shared/forms/product/ProductOrgShippingFields.tsx
 
+import { useState } from "react";
 import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
-import Link from "next/link";
 import { FormSelect, FormInput } from "../FormField";
-import { MapPin } from "lucide-react";
+import { MapPin, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LocationForm } from "@/components/org/location-form";
 import type { ProductFormInput } from "@/components/product/console/types";
 import type { OrgSummary } from "@/domain/org";
+import type { OrgLocation } from "@server/catalog/org.address.repository";
 
 export interface LocationOption {
   id: string;
@@ -22,6 +26,8 @@ interface ProductOrgShippingFieldsProps {
   orgs?: OrgSummary[];
   /** The selected org's pickup locations — one stock input per active location (R2/R3). */
   locations: LocationOption[];
+  /** Called with a location added from this form, so the stock rows can grow without a reload. */
+  onLocationAdded?: (location: LocationOption) => void;
   readOnly?: boolean;
 }
 
@@ -31,9 +37,14 @@ export function ProductOrgShippingFields({
   watch,
   orgs,
   locations,
+  onLocationAdded,
   readOnly = false,
 }: ProductOrgShippingFieldsProps) {
   const selectedOrgId = watch("orgId");
+  const [isAddingLocation, setIsAddingLocation] = useState(false);
+  // One org offered means the caller already knows which — the portal — so nothing is asked.
+  const fixedOrg = orgs?.length === 1 ? orgs[0] : null;
+  const orgField = register("orgId", { required: "Organisation is required" });
   const stockRows = watch("stockLocations") ?? [];
   const totalStock = stockRows.reduce(
     (sum, row) =>
@@ -50,29 +61,34 @@ export function ProductOrgShippingFields({
     <div className="bg-card rounded-lg border border-border p-6">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">
-          Org & Stock Locations
+          {fixedOrg ? "Stock locations" : "Org & Stock Locations"}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Choose the organisation, then say where this product physically sits —
-          nothing is preselected, and the customer only ever sees the total.
+          {fixedOrg
+            ? "Say where this product physically sits — the customer only ever sees the total."
+            : "Choose the organisation, then say where this product physically sits — nothing is preselected, and the customer only ever sees the total."}
         </p>
       </div>
 
       <div className="space-y-6">
-        <FormSelect
-          label="Organisation"
-          required
-          {...register("orgId", { required: "Organisation is required" })}
-          error={errors.orgId?.message}
-          disabled={readOnly}
-        >
-          <option value="">Select an organisation</option>
-          {orgs?.map((org) => (
-            <option key={org.id} value={org.id}>
-              {org.name} ({org.code})
-            </option>
-          ))}
-        </FormSelect>
+        {fixedOrg ? (
+          <input type="hidden" {...orgField} />
+        ) : (
+          <FormSelect
+            label="Organisation"
+            required
+            {...orgField}
+            error={errors.orgId?.message}
+            disabled={readOnly}
+          >
+            <option value="">Select an organisation</option>
+            {orgs?.map((org) => (
+              <option key={org.id} value={org.id}>
+                {org.name} ({org.code})
+              </option>
+            ))}
+          </FormSelect>
+        )}
 
         <div>
           <div className="mb-2 flex items-center justify-between">
@@ -92,18 +108,17 @@ export function ProductOrgShippingFields({
           )}
 
           {locations.length === 0 ? (
-            <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
-              This organisation has no pickup locations yet.{" "}
-              {selectedOrgId && (
-                <Link
-                  href={`/org/${selectedOrgId}/locations`}
-                  className="underline"
-                  prefetch={false}
-                >
-                  Add one first
-                </Link>
-              )}{" "}
-              — a product cannot be saved without a location.
+            <div className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                {selectedOrgId
+                  ? "No pickup location yet — a product needs somewhere to sit before it can be saved."
+                  : "Choose the organisation to see where its stock can sit."}
+              </span>
+              {selectedOrgId && onLocationAdded && !readOnly && (
+                <Button type="button" size="sm" variant="outline" onClick={() => setIsAddingLocation(true)}>
+                  <Plus className="mr-1 size-4" /> Add a location
+                </Button>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
@@ -146,8 +161,38 @@ export function ProductOrgShippingFields({
               ))}
             </div>
           )}
+          {locations.length > 0 && selectedOrgId && onLocationAdded && !readOnly && (
+            <Button type="button" size="sm" variant="ghost" className="mt-2" onClick={() => setIsAddingLocation(true)}>
+              <Plus className="mr-1 size-4" /> Add another location
+            </Button>
+          )}
         </div>
       </div>
+
+      {selectedOrgId && onLocationAdded && (
+        <Dialog open={isAddingLocation} onOpenChange={setIsAddingLocation}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Add pickup location</DialogTitle>
+            </DialogHeader>
+            <LocationForm
+              orgId={selectedOrgId}
+              location={null}
+              onDone={(location: OrgLocation) => {
+                onLocationAdded({
+                  id: location.id,
+                  name: location.name,
+                  city: location.city,
+                  pincode: location.pincode,
+                  isActive: location.isActive,
+                });
+                setIsAddingLocation(false);
+              }}
+              onCancel={() => setIsAddingLocation(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

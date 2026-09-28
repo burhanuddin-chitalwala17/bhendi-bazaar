@@ -95,7 +95,7 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           // Downscaled here because these bytes never pass through a function, so the
           // server's normalisation cannot reach them (ADR-0026).
           const downscaled = await downscaleImage(file);
-          const url = await uploadDirect(
+          const { url } = await uploadDirect(
             `products/${report.orgCode!.toLowerCase()}/bulk/${storedPathFor(sanitizePath(path), downscaled)}`,
             downscaled,
             orgUploadEndpoints(orgId),

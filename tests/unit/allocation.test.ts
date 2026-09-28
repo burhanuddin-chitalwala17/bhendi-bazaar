@@ -5,6 +5,7 @@
 // which carries ADR-0007's deadlock discipline onto the join row.
 import { describe, expect, it } from "vitest";
 import { allocateForOrg, reservationPlan } from "@server/checkout/allocation";
+import { OutOfStockError } from "@server/shared/domain-error";
 
 const pincodes = new Map([
   ["shop", "400003"], // Mumbai — same district as the buyer below
@@ -61,6 +62,37 @@ describe("allocateForOrg", () => {
         new Map([["p1", "Cream Rida"]])
       )
     ).toThrow(/Only 7 left of "Cream Rida" — you asked for 13/);
+  });
+
+  it("a shortfall names the products, so the caller can release holds rather than only report", () => {
+    // Regression: this refusal was a plain `ConflictError`. The caller releases abandoned
+    // holds and retries on an `OutOfStockError` and on nothing else (checkout-abandonment
+    // D4), so a buyer meeting a unit held by a closed payment window was turned away here
+    // while the identical shortfall found one statement later got them the retry. Which of
+    // the two fired was a matter of who committed first, so the behaviour was a race.
+    const shortfall = () =>
+      allocateForOrg(
+        [line("p1", 13)],
+        [at("shop", "p1", 3), at("godown", "p1", 4)],
+        pincodes,
+        BUYER,
+        new Map([["p1", "Cream Rida"]])
+      );
+
+    expect(shortfall).toThrow(OutOfStockError);
+    try {
+      shortfall();
+    } catch (error) {
+      expect((error as OutOfStockError).productIds).toEqual(["p1"]);
+      // Still a 409: naming the products adds to the answer, it does not change it.
+      expect((error as OutOfStockError).status).toBe(409);
+    }
+  });
+
+  it("nothing left at all is the same kind of refusal as too little", () => {
+    expect(() =>
+      allocateForOrg([line("p1", 1)], [at("shop", "p1", 0)], pincodes, BUYER, new Map([["p1", "Cream Rida"]]))
+    ).toThrow(OutOfStockError);
   });
 
   it("equal covers break toward the nearest origin — shared pincode prefix", () => {

@@ -13,6 +13,8 @@ import { orderService } from "@server/checkout/order.service";
 import {
   loadRatingContext,
   ratingFor,
+  summariseOrgRating,
+  type OrgRating,
   type ProductRating,
 } from "@server/catalog/review-rating";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
@@ -28,6 +30,7 @@ import type {
   ReviewRow,
   EditReviewData,
   ReviewMediaDto,
+  ShopReviewDto,
 } from "@server/catalog/review.types";
 import { REVIEWS_PAGE_SIZE } from "@server/catalog/review.types";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
@@ -146,6 +149,32 @@ export class ReviewService {
   /** This product's numbers on their own, for a surface that shows no list. */
   async getSummary(productId: string): Promise<ProductRating> {
     return ratingFor(await loadRatingContext([productId]), productId);
+  }
+
+  /**
+   * What one shop's reviews add up to, over its on-sale products (brand-page R4, D2). Not
+   * request-memoised like the product context: one page reads it once.
+   */
+  async ratingForOrg(orgId: string): Promise<OrgRating> {
+    return summariseOrgRating(await reviewRepository.publishedRatingRowsForOrg(orgId));
+  }
+
+  /**
+   * The newest published reviews across one shop's products, shaped for a stranger
+   * (brand-page R1, A3a): the product page's visibility predicate, so a withdrawn or
+   * retracted review leaves both surfaces at once — and never a `userId`.
+   */
+  async recentForOrg(orgId: string, take: number): Promise<ShopReviewDto[]> {
+    const rows = await reviewRepository.listPublishedForOrg(orgId, take);
+    return rows.map((row) => ({
+      id: row.id,
+      rating: row.rating,
+      comment: row.comment,
+      authorName: row.userName,
+      isVerifiedPurchase: row.isVerified,
+      createdAt: row.createdAt.toISOString(),
+      product: { name: row.product.name, slug: row.product.slug },
+    }));
   }
 
   /**

@@ -22,6 +22,17 @@ export function storedPathFor(path: string, file: File): string {
   return /\.[^./]*$/.test(path) ? path.replace(/\.[^./]*$/, extension) : path + extension;
 }
 
+/**
+ * A canvas as the file we store: WebP at the one quality, named after the picked file with the
+ * extension that describes the bytes. Null where the browser cannot encode WebP. The crop
+ * renderer encodes through this too, so there is one answer to "what does a stored image look like".
+ */
+export async function encodeCanvas(canvas: HTMLCanvasElement, name: string): Promise<File | null> {
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", IMAGE_QUALITY));
+  if (!blob) return null;
+  return new File([blob], `${name.replace(/\.[^.]*$/, "")}.webp`, { type: "image/webp" });
+}
+
 export async function downscaleImage(file: File): Promise<File> {
   // An animated GIF loses its animation on a canvas. Product photographs are not
   // animated, and the server path keeps animation for the ones that are.
@@ -48,14 +59,9 @@ export async function downscaleImage(file: File): Promise<File> {
     if (!context) return file;
     context.drawImage(bitmap, 0, 0, width, height);
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/webp", IMAGE_QUALITY)
-    );
-    if (!blob || blob.size >= file.size) return file;
-
-    return new File([blob], `${file.name.replace(/\.[^.]*$/, "")}.webp`, {
-      type: "image/webp",
-    });
+    const encoded = await encodeCanvas(canvas, file.name);
+    if (!encoded || encoded.size >= file.size) return file;
+    return encoded;
   } finally {
     bitmap.close();
   }

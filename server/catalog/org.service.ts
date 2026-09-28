@@ -48,6 +48,15 @@ export class AdminOrgService {
   }
 
   /**
+   * Name and code for a set of orgs, for a console that holds ids and needs to print them.
+   * One query for the set: a listing that resolves a name per row is an N+1 waiting to be found.
+   */
+  async summariesFor(ids: string[]) {
+    if (ids.length === 0) return [];
+    return await orgRepository.findSummaries(ids);
+  }
+
+  /**
    * Create new org with validation
    */
   async createOrg(data: CreateOrgSchemaInput) {
