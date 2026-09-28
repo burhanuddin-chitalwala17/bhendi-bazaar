@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-29
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -93,6 +93,34 @@ Its lesson outlives it, and applies to any metered store: Blob meters **data tra
 the free tier an overrun *blocks* rather than bills — every product image goes blank, including your
 own ability to read the store, which is what makes exporting after the fact impossible. A row may
 still hold one of those dead URLs; [OPERATIONS.md](OPERATIONS.md) has the query and the remedy.
+
+## Marketplaces and feeds (nothing integrated yet)
+
+Checked 2026-09-29 while spiking `listing-schema`. Recorded because the four routes are four
+different kinds of thing, and the difference decides the order they are worth building in.
+
+- **A feed file at a URL serves Google and Meta together.** Both fetch a file on a schedule
+  rather than being pushed to, and Meta accepts XML in Google's own RSS namespace, so one
+  artefact feeds both. No approval, no credentials, no partner agreement — the cheapest
+  publishing route by a wide margin. Meta requires images of at least 500×500 and prefers
+  square, which `MEDIA_SURFACES.social` already produces. Google's Content API for Shopping
+  shuts down on 18 August 2026 and the Merchant API replaces it, but that affects programmatic
+  integrations only: a scheduled fetch of a hosted file is unaffected.
+- **Flipkart is self-service.** A registered seller creates an application in the Seller
+  Dashboard, receives an application id and secret, and takes a token through client
+  credentials. Listing management is publicly documented.
+- **Amazon is gated on a paid account.** The Selling Partner API requires a **Professional**
+  selling account; an Individual account cannot use it at all. After that a private developer
+  registration and a self-authorised draft application are enough — no public listing needed.
+- **Meesho has no public publishing API.** Catalogues go up through the supplier panel as a
+  per-category bulk template, with a quality check of roughly 72 hours. Third-party
+  integrators hold partner access; nothing is documented for us to use.
+- **ONDC is not a channel in this sense.** A seller does not publish to it: one either joins
+  the network as a seller participant speaking the Beckn protocol, or lists through one that
+  already has. For this platform that is a question about the platform, not about pushing one
+  product, and it belongs in its own decision.
+- **Myntra, Ajio and Nykaa** are invite-only partner programmes. Relevant to what this store
+  sells, worth a name in the vocabulary, not worth chasing.
 
 ## YouTube (product video)
 
