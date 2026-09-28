@@ -340,6 +340,13 @@ This makes **rate quoting** live. Shipment booking currently uses a mock impleme
 The job queue is a set of tables in the application's own Postgres, in the `pgboss` schema, and
 the worker is a second process that runs them ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [worker-foundation](specs/worker-foundation/)).
 
+**What runs here.** Four job types, registered in `worker/main.ts` and owned by the domain each
+belongs to: a no-op `ping`, the media sweep, video transcoding, and photo enhancement. The last two
+decide what the machine needs. Transcoding wants ffmpeg, which the image carries as an OS package.
+Enhancement wants the same three `IMAGE_*` variables the web app has, because the web app only
+checks a tool is available and then queues it — set them in one place and not the other and every
+run fails on the half that is missing. Both are in `.env.worker.example`.
+
 - **Locally:** `npm run worker` beside `npm run dev`, same `DATABASE_URL`. It logs the job types it
   knows and writes a heartbeat row the admin dashboard reads. Send it a no-op with a `ping` job from
   any transaction (`server/shared/jobs/ping.job.ts`).
@@ -365,8 +372,9 @@ then only `server/`, `worker/` and `prisma/` on a Node 22 base, run with `node -
 `deploy-worker` job in `.github/workflows/ci.yml` builds it for arm64 and amd64 on every push and
 pushes `ghcr.io/<owner>/bhendi-bazaar-worker:<sha>` and `:<branch>`. Build it yourself with
 `docker build -f infra/worker/Dockerfile .`; run it anywhere with the env file below. It is about
-1.1 GB because it carries the whole lockfile's dependencies; trimming to the worker's own set is
-worth doing once a second job type exists.
+1.1 GB because it carries the whole lockfile's dependencies; trimming to the worker's own set was
+left until a second job type existed, and four now do — ping, the media sweep, video transcoding
+and photo enhancement — so it is work that is owed rather than work that is waiting.
 
 ### The worker's machine
 

@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-09-26
+- **Verified:** 2026-09-28
 - **Covers:** `package.json`
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
@@ -29,7 +29,7 @@
 | `zustand` | `^5.0.9` | Cart state with localStorage persistence. Chosen for size and minimal boilerplate | `src/store/cartStore.ts` | 2026-08-03 |
 | `@upstash/ratelimit` + `@upstash/redis` | `^2.0.7` / `^1.36.0` | Distributed rate limiting. Required because Vercel runs many instances, so in-memory counters do not hold. **Reads `KV_REST_API_*`, not `UPSTASH_REDIS_REST_*`** | `src/lib/rate-limit/index.ts` | 2026-08-03 |
 | `aws4fetch` | `^1.0.20` | Signs S3 requests to Cloudflare R2 — server-side PUT/DELETE and the presigned PUT a browser uploads with ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). Chosen over `@aws-sdk/client-s3` + `s3-request-presigner`: two packages and several MB, against one file, for two verbs | `server/catalog/object-store.ts` | 2026-09-17 |
-| `sharp` | `^0.35.4` | Downscale and re-encode uploads before they reach R2 ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)). Present as a Next transitive dependency before this; declared so the version we rely on is ours. **Note:** ships a platform binary, so the upload routes must stay on the Node.js runtime | `server/catalog/image-upload.ts`, `api/profile/upload-picture` | 2026-09-16 |
+| `sharp` | `^0.35.4` | Downscale and re-encode uploads before they reach R2 ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)). Present as a Next transitive dependency before this; declared so the version we rely on is ours. **Note:** ships a platform binary, so nothing that calls it may leave the Node.js runtime — which now includes the **worker**, not only the upload routes | `server/catalog/image-upload.ts`, `server/catalog/media-asset.service.ts`, `server/catalog/media-backfill.ts`, and the seven tools in `server/content/tools/` | 2026-09-28 |
 | `exceljs` | `^4.4.0` | Reads and writes the bulk-upload sheets (.xlsx/.csv) and generates the per-org sample. Chosen over npm `xlsx`/SheetJS, whose free build is unmaintained with unfixed parser advisories — this parses user-supplied files | `server/catalog/bulk/**` | 2026-08-21 |
 | `libphonenumber-js` | `^1.13.13` | Validates, normalises to E.164 and formats phone numbers for every country. Imported as `/max`: `min` metadata validates most countries by length alone and accepts numbers the Indian rule refused ([international-phone](specs/international-phone/trd.md) D1) | `server/shared/phone.ts` only | 2026-09-11 |
 | `resend` | `^6.6.0` | Transactional email | `server/notifications/email.service.ts` | 2026-08-03 |
@@ -75,9 +75,6 @@ back with its history.
 ## Design system
 
 Not a package, but a choice worth recording: shadcn/ui **New York** style on a neutral base, accented emerald and gold, with **Playfair Display** for display type and **DM Sans** for body. The stated design intent is a *daytime courtyard* aesthetic — the reason for the warm neutrals over a cooler default palette.
-
-## Removed
-*(none yet — record removals here rather than deleting rows)*
 
 ## Notable absences
 

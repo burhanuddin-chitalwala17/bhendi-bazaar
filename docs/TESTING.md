@@ -1,6 +1,6 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-09-26
+- **Verified:** 2026-09-28
 - **Covers:** `tests/*/`, `.github/workflows/ci.yml`, `vitest.config.ts`
 
 ## Stack
@@ -46,14 +46,16 @@ Mirror the source path: `server/checkout/order.service.ts` → `tests/unit/order
 ```
 tests/
 ├── setup.ts            # referenced by vitest.config.ts
-├── utils/              # shared fixtures, mock factories, auth helpers
-├── unit/               # pure logic; no disk, no network
-├── integration/        # crosses module boundaries
-├── e2e/                # full flows
-└── critical/           # tests that guard an Invariant — see targets above
+├── unit/               # 147 files: pure logic, plus every source-scanning guard
+├── integration/        # 18 files: crosses module boundaries, needs a disposable database
+└── helpers/            # test-db.ts — the one predicate deciding whether a database is disposable
 ```
 
-`critical/` is deliberately separate: those tests are the executable form of [../CLAUDE.md](../CLAUDE.md)'s Invariants, and a failure there blocks regardless of anything else.
+`critical/`, `e2e/`, `edge-cases/`, `hooks/`, `services/`, `store/` and `utils/` also exist and are
+empty. The tree used to list three of them as though they held something; see below for why
+`critical/` in particular is empty and where its tests actually are.
+
+The Invariants' executable form is the guard table below, and a failure in any of those blocks regardless of anything else.
 
 ### Database behaviour is tested against the local database, and only there
 
@@ -100,6 +102,8 @@ thing it guards had already gone wrong silently:
 | `jobs-config` | The worker's idle chatter: every pg-boss interval is named, none is under a minute, and the modelled daily total clears a declared ceiling. The database bills every poll, and the library's default is two seconds ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) D8) |
 | `route-reachability` | That every route handler has a caller. A route's only caller is a string in another file, so nothing in the build notices when a page converts to a server component and leaves its handler routed, gated and answering to nobody — nine did, one of them a `PATCH` that could set `platformRole` |
 | `design-tokens`, `ui-primitives`, `image-delivery` | [ADR-0022](adr/0022-design-decisions-go-through-tokens.md), [ADR-0031](adr/0031-one-components-home-organised-by-domain.md), [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) |
+| `overlay-surfaces` | That an overlay's surface is chosen rather than inherited ([ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)): only the declared files reach for a sheet, each entry naming which of the four cases it answers, and an entry that stops being a sheet is removed |
+| `channel-gate` | That a channel's size rule is applied only where the channel is known, so a marketplace's floor cannot quietly become every photograph's floor |
 | `portal-guards`, `rate-limit-detached`, `seed-guard` | The edge gate reaches every portal path; no cache dependency creeps back into the request path; the seed's allowlist |
 
 ### The tests are audited the same way the code is
@@ -119,12 +123,14 @@ the seed stops refusing a deployed environment. Two were not covered at all:
   unvalidated body.
 
 **Six integration suites had never run in CI.** They gated on `url.pathname ===
-"/bhendi_bazaar_dev"` while CI runs `bhendi_bazaar_ci`, so they reported `↓ skipped` — 43 of 51
-integration tests, including the guard on Invariants 1, 3 and 6. Three cases in
+"/bhendi_bazaar_dev"` while CI runs `bhendi_bazaar_ci`, so they reported `↓ skipped` — most of the
+integration tests then written, including the guard on Invariants 1, 3 and 6. Three cases in
 `join-equivalence` went further and *passed* on the empty schema by comparing `[]` to `[]`. The
 predicate now lives once in `tests/helpers/test-db.ts`, fixtures are built by `ensureFixtures`
-rather than read out of the seed, and `test-integrity` fails if either regresses. 44 of 51 run in
-CI today; the seventh suite needs a populated catalogue and says so.
+rather than read out of the seed, and `test-integrity` fails if either regresses. The suite has
+grown since — 18 files and 92 cases as of 2026-09-28 — so a fraction here would go stale the way
+the last one did; what matters is that a suite skips only for a stated reason, which
+`test-integrity` is what checks.
 
 **Every filesystem-scanning guard states a floor.** Seven asserted an empty offender list without
 proving the scan had found anything — a broken glob would have read as a pass, which had already
@@ -178,9 +184,9 @@ npx vitest run --coverage
    at a trust boundary — a rule that holds only until someone adds one line is not a rule. The
    scope grows as trees are cleared and never shrinks. The repo-wide `npm run lint` stays
    advisory.
-4. **Repo-wide lint does NOT block yet.** ⚠️ The step still carries `continue-on-error: true`. The remaining errors are all `no-explicit-any`: 81 as of 2026-09-20, **56** now that `src/app/api/**` is at zero — which was the priority, since that is where CLAUDE.md calls `any` a defect. What is left is in admin pages, hooks and the shipping provider layer. Clear those in scoped PRs, then delete the flag; the rule is only real once the flag is gone.
+4. **Repo-wide lint does NOT block yet.** ⚠️ The step still carries `continue-on-error: true`. Almost all the errors are `no-explicit-any`: 81 as of 2026-09-20, **37** on 2026-09-28 (35 of them that rule) now that `src/app/api/**` is at zero — which was the priority, since that is where CLAUDE.md calls `any` a defect. What is left is in admin pages, hooks and the shipping provider layer. Clear those in scoped PRs, then delete the flag; the rule is only real once the flag is gone.
 
-Warnings stay non-blocking throughout (109 `no-unused-vars`, 6 `exhaustive-deps`).
+Warnings stay non-blocking throughout (101 in total on 2026-09-28: 93 `no-unused-vars`, 5 `exhaustive-deps`).
 
 **The harness comes first** (see above) — recovery stalls on the first file otherwise.
 

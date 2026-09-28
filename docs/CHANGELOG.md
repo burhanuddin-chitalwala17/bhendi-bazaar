@@ -10,6 +10,35 @@
 
 ## Entries
 
+## [PR-207] 2026-09-28 — What the gate cannot see had drifted in every doc it does not check
+
+`npm run docs:check` guards `Verified:` dates, the generated indexes and a handful of counted
+things. Everything outside that had gone quietly wrong, and an audit of the last twenty-five
+commits found it in all six of the long-lived documents.
+
+The architecture diagram still said the object store held images only, four lines above a sentence
+about video playing from it; it called images the one asset class with a delivery layer of its own,
+which stopped being true when the worker started making renditions; it counted four inward
+type-only imports where there are seven, and forty lint errors all of one rule where there are
+thirty-seven of three. The contract for requesting an enhancement named `sourceAssetId` as though
+it were required and did not mention `sourceRef` at all, so a client written from it would have
+been refused by a schema that wants exactly one of the two. Dependencies carried a second
+`## Removed` heading declaring the populated one above it empty, and credited `sharp` to two
+callers when eleven import it — the material point being that it is now a worker dependency.
+
+Testing was the stalest, being the only one untouched by any of those commits. Its tree listed
+`utils/` as holding shared fixtures when it holds nothing, and omitted `helpers/`, which the same
+document depends on two paragraphs later. Seven of the ten directories under `tests/` are empty and
+now say so. Its guard table was missing the two guards added since. Operations described photo
+enhancement nowhere in the worker's own section, although the worker is what runs it, so a machine
+provisioned from that section alone would have failed every run; and it still offered to trim the
+image "once a second job type exists", with four of them running.
+
+One finding in the audit was wrong and is recorded here because a claim that a document lies is
+worth checking before repeating: there is no sentence saying the project has no background job
+runner. The statuses in the specs were otherwise sound, bar the parent of the brand page, which had
+not noticed its own child shipping a second part.
+
 ## [PR-206] 2026-09-28 — The backlog said a finished feature was planned, twice
 
 `BACKLOG.md` is the one index nothing generates and nothing gates, and it had drifted in three
