@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-215] 2026-09-29 — Five decisions, and a phase re-sequenced around what it costs to prove
+
+The spike into what the marketplaces actually require turned five questions into decisions, each
+recorded with the alternative it beat.
+
+A channel is classed by where the sale completes, because Google and Meta never hold an order and
+Amazon and Flipkart always do, and one abstraction would have given the first group machinery it
+has no use for. The shared vocabulary is the intersection of what a shop knows, with each channel
+declaring its own extras as a schema rather than a bag — which is the same pattern the photo shot
+list already proves, and which is what lets a per-channel form generate itself. A variant is a
+product in a family, because every marketplace needs a size to have its own stock and ours cannot
+give it one. A marketplace order's money is reported rather than computed, which is Invariant 2's
+shape rather than an exception to Invariant 1. And the three mapping layers are versioned data,
+because the thing most likely to change under us is the thing that must not need a release.
+
+The phase is re-sequenced to match. It now runs vocabulary, form, registry, feeds, connectors,
+marketplace publishing, sync, reporting, with subscriptions beside the line rather than in it.
+Two entries in it are scheduling dependencies rather than engineering ones and are named as such:
+Amazon needs a Professional selling account and a public site before any API conversation, and
+Meesho whitelists integrators by relationship.
+
+The ordering principle changed too. It was ambition; it is now cost to prove. Shopfront feeds come
+third not because they are the most valuable but because Google and Meta fetch a file and need
+approval from nobody, which makes them the honest test of whether the mapping layer works before
+anything is staked on it.
+
 ## [PR-214] 2026-09-29 — Where a shop can sell, named once instead of twice
 
 `CHANNEL` was declared in two modules with identical members and nothing between them: beside the

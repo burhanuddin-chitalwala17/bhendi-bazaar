@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
 
 
@@ -187,6 +187,11 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **Video is stored in our own object store and transcoded by the worker; a YouTube link stays an embed.** [ADR-0039](docs/adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)
 - **Every response carries a nonce-based CSP** — `script-src` never gains `'unsafe-inline'`. [ADR-0035](docs/adr/0035-every-response-carries-a-nonce-based-csp.md)
 - **The host is a deployment fact, not an architectural input** — seams, app-named environment, no vendor names in config; a free tier is used, never depended on. [ADR-0037](docs/adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
+- **A channel is classed by where the sale completes** — storefront, shopfront, marketplace; the kind decides the machinery. [ADR-0041](docs/adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
+- **The shared vocabulary is the intersection; a channel declares its own extras as a schema** — never a bag, never the union. [ADR-0042](docs/adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
+- **A variant is a product in a family** — its own SKU, price and stock; the family carries what they share. [ADR-0043](docs/adr/0043-a-variant-is-a-product-in-a-family.md)
+- **A marketplace order's money is reported, not computed** — Invariant 2's shape, not Invariant 1's exception; it never enters the payouts ledger. [ADR-0044](docs/adr/0044-a-marketplace-orders-money-is-reported-not-computed.md)
+- **Channel mappings are versioned data** — category, attribute and value; an unmapped value fails readiness rather than being guessed. [ADR-0045](docs/adr/0045-channel-mappings-are-versioned-data.md)
 - **Background work runs on an owned worker against a Postgres job queue** — enqueued in the business transaction, handlers idempotent on job id, no HTTP between queue and code. [ADR-0038](docs/adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)
 - **A guard is mutation-tested before it is trusted** — break the rule in the source and watch it go red, or it is decoration. Two Invariants had no guard at all and nothing noticed. ([docs/TESTING.md](docs/TESTING.md))
 - **The tests are audited like the code** — a suite that cannot run, or passes over an empty scan, is not a passing suite. `tests/unit/test-integrity.test.ts`

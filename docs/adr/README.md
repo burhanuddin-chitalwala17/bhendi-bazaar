@@ -78,4 +78,9 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0038](0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) | Background work runs on an owned worker against a Postgres job queue | Accepted | 2026-09-25 |
 | [0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | Video is stored in our own object store and transcoded by the worker | Accepted | 2026-09-27 |
 | [0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md) | An overlay's surface is chosen by what it holds, not by what was easiest to reach for | Accepted | 2026-09-27 |
+| [0041](0041-a-channel-is-classed-by-where-the-sale-completes.md) | A channel is classed by where the sale completes | Accepted | 2026-09-29 |
+| [0042](0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md) | The shared vocabulary is the intersection, and a channel declares its own extras | Accepted | 2026-09-29 |
+| [0043](0043-a-variant-is-a-product-in-a-family.md) | A variant is a product in a family | Accepted | 2026-09-29 |
+| [0044](0044-a-marketplace-orders-money-is-reported-not-computed.md) | A marketplace order's money is reported, not computed | Accepted | 2026-09-29 |
+| [0045](0045-channel-mappings-are-versioned-data.md) | Channel mappings are versioned data, not code | Accepted | 2026-09-29 |
 <!-- generated:adr-index:end -->
