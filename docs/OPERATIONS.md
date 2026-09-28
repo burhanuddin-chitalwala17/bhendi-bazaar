@@ -462,6 +462,14 @@ WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p work
 docker compose -p worker-staging down   # when done: an idle worker still bills polls
 ```
 
+**Or press the button.** `.github/workflows/staging-worker.yml` is a manually triggered workflow
+in the Actions tab with two choices: up or down, and how long before it stops itself. It reaches
+the same machine over the same connection, keeps its files in `/opt/worker-staging` beside the
+production stack, and schedules the shutdown **on the machine** — a job that slept for eight hours
+would spend eight hours of the Actions allowance doing nothing. Running it again extends the
+session rather than stacking a second timer. This is how somebody tests the dev site without a
+terminal, and it is why `WORKER_STAGING_ENV_FILE` exists.
+
 **Run it on the worker's own machine, not a laptop**, whenever somebody else is doing the testing.
 The stack publishes no port and mounts no named volume, so a second project beside the production
 one on the same host costs nothing and conflicts with nothing — and it keeps running when the

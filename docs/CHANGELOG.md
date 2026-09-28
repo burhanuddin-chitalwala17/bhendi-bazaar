@@ -10,6 +10,26 @@
 
 ## Entries
 
+## [PR-212] 2026-09-29 — A button that starts the dev worker, so a tester needs no terminal
+
+The worker serving the dev site runs only while somebody is testing, which until now meant
+somebody with an SSH key had to start it. That is fine when the tester is the owner and useless
+when it is anybody else. There is now a manually triggered workflow in the Actions tab: up or
+down, and how long before it stops itself.
+
+The shutdown timer runs on the machine rather than in the job, because a job that slept for eight
+hours would spend eight hours of the Actions allowance doing nothing. Running the workflow again
+cancels the previous timer before setting a new one, so asking a second time extends the session
+instead of leaving two timers to fight over the container.
+
+The whole hazard of a staging worker is which database its env file names, since that is the only
+thing distinguishing it from the production one. The workflow compares the two secrets and refuses
+to start if they name the same database, without either string reaching the log.
+
+Worth knowing for whoever is testing: only video and photo improvement need the worker at all.
+Everything else on the dev site works without it, so forgetting to press the button stalls two
+things rather than breaking the site.
+
 ## [PR-211] 2026-09-29 — Every size this store makes an image in, declared once
 
 The last part of the media library. A surface asks a picture for a size and gets a URL; the first
