@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-214] 2026-09-29 — Where a shop can sell, named once instead of twice
+
+`CHANNEL` was declared in two modules with identical members and nothing between them: beside the
+image rules in content, and beside the readiness states in catalog. Neither imported the other.
+That is the drift [ADR-0003](adr/0003-one-repository-per-aggregate.md) decision 5 forbids, and it
+had gone unnoticed because two copies of the same four strings behave identically right up until
+one of them gains a fifth.
+
+The set now lives in `server/shared/channels.ts`, because it genuinely spans both domains and is
+about to span more — catalog asks whether a shop is ready for a channel, content asks whether a
+photograph meets one, and neither owns the vocabulary. Both former homes import it and re-export
+it, so every existing caller is untouched.
+
+A refactor with no behaviour change, done before the multi-channel work rather than during it,
+because that vocabulary is the thing the whole of it keys on.
+
 ## [PR-213] 2026-09-29 — The media backfill has been run against dev
 
 Recorded because the runbook asks for it, and to close the pair with the production run.

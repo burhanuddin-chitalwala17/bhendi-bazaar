@@ -17,15 +17,11 @@ export type OnboardingStep = (typeof ONBOARDING_STEP)[keyof typeof ONBOARDING_ST
 /** The order the steps are shown in. */
 export const ONBOARDING_STEPS = Object.values(ONBOARDING_STEP) as readonly OnboardingStep[];
 
-export const CHANNEL = {
-  STORE: "store",
-  AMAZON: "amazon",
-  FLIPKART: "flipkart",
-  INSTAGRAM: "instagram",
-} as const;
-export type Channel = (typeof CHANNEL)[keyof typeof CHANNEL];
-/** The order the channels are shown in. */
-export const CHANNELS = Object.values(CHANNEL) as readonly Channel[];
+import { CHANNEL, CHANNELS, isChannel, type Channel } from "@server/shared/channels";
+
+// Re-exported, not re-declared: every caller that already imported the set from this module
+// keeps working, and there is still exactly one place the members are written down.
+export { CHANNEL, CHANNELS, isChannel, type Channel };
 
 export const READINESS_STATE = {
   READY: "ready",

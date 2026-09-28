@@ -13,13 +13,11 @@ import { ENHANCEMENT_TOOL, type EnhancementTool } from "@server/content/enhancem
  * because a number typed twice is a number that disagrees with itself.
  */
 
-export const CHANNEL = {
-  STORE: "store",
-  AMAZON: "amazon",
-  FLIPKART: "flipkart",
-  INSTAGRAM: "instagram",
-} as const;
-export type Channel = (typeof CHANNEL)[keyof typeof CHANNEL];
+import { CHANNEL, CHANNELS, isChannel, type Channel } from "@server/shared/channels";
+
+// Re-exported, not re-declared: every caller that already imported the set from this module
+// keeps working, and there is still exactly one place the members are written down.
+export { CHANNEL, CHANNELS, isChannel, type Channel };
 
 /** What a channel found wanting in an image. A closed set, so the copy for each is written once. */
 export const CHANNEL_IMAGE_PROBLEM = { TOO_SMALL: "too-small", WRONG_ASPECT: "wrong-aspect" } as const;
