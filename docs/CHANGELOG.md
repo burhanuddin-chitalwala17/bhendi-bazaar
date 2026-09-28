@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-206] 2026-09-28 — The backlog said a finished feature was planned, twice
+
+`BACKLOG.md` is the one index nothing generates and nothing gates, and it had drifted in three
+places: image enhancement was still a draft after all five of its parts landed, the brand page was
+missing the part that shipped beside it, and the worker still waited on an account for a machine
+that has been answering its heartbeat for a day.
+
+Image enhancement also appeared twice — once as the spec it became and once as the plan entry it
+used to be, each carrying its own status. One of the two had to be wrong eventually, so the plan
+entry is gone and the spec row is the single answer. The worker's own spec carried the same stale
+sentence and now says what is actually left, which is moving the reconciliation schedule across.
+
 ## [PR-205] 2026-09-28 — The media backfill has been run against production
 
 Recorded because the runbook asks for it. 336 asset records now stand behind what production

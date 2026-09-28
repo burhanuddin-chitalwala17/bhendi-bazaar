@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-26
+- **Verified:** 2026-09-28
 - **Covers:** `docs/specs/*/`
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
@@ -170,14 +170,13 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 
 | Spec | Requirement | Status |
 |---|---|---|
-| [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | 🔨 In progress — PR-150, PR-154 (2 of 3; machine pending) |
+| [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | 🔨 In progress — PR-150, PR-154 (2 of 3; the machine is live, the reconciliation move remains) |
 | [seller-profile](specs/seller-profile/) | A private face for what listing needs (brands, manufacturers, origin, tax codes) and a public face for what a buyer may see; nothing demanded before it is needed | 🔨 In progress — PR-151, PR-162, PR-175, PR-182 (4a of 4) |
 | [media-library](specs/media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 🔨 In progress — PR-152, PR-161, PR-163, PR-177, PR-178 (4 of 6) |
-| [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | 🔨 In progress — PR-182 (a of a–c) |
+| [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | 🔨 In progress — PR-182, PR-184 (a and c of a–c) |
 | [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Accepted — 2026-09-26 |
 | [media-library/video-hosting](specs/media-library/video-hosting/) | A short video uploads from the phone like a photograph; the worker makes the sizes that play, and it is an image's peer in the library | ✅ Implemented — 2026-09-27 (PR-180, PR-181, PR-183) |
-| [image-enhancement](specs/image-enhancement/) | A phone photo becomes a marketplace-grade image on demand — cut out, on white, in a studio, in a scene, brightened, enlarged — each a tool applied alone, each result accepted or discarded | 📝 Draft — 2026-09-27 |
-| image-enhancement | Cutout to white background and to a generated backdrop, as derived images, with a per-org usage ledger and quota; a dark or blurred warning at upload offers "improve this photo" as its way out; the first work on the owned worker | planned |
+| [image-enhancement](specs/image-enhancement/) | A phone photo becomes a marketplace-grade image on demand — cut out, on white, in a studio, in a scene, brightened, enlarged — each a tool applied alone, each result accepted or discarded | ✅ Implemented — PR-185, PR-190, PR-191, PR-193, PR-198 (2026-09-28) |
 | listing-schema | A canonical vocabulary, per-channel mappings held as data, product families, one effective-attribute resolver, per-value provenance, and readiness per channel | planned |
 | product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | planned |
 | instagram-post | A post draft generated only on explicit intent, replaceable, regenerable, skippable; manual share first | planned |
