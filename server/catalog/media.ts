@@ -197,6 +197,52 @@ export const IMAGE_QUALITY = 0.82;
  */
 export const ZOOMABLE_IMAGE_SIZES = `${Math.min(MAX_ZOOM_SCALE, 2) * 100}vw`;
 
+/**
+ * Every size this store makes an image in, declared once (renditions R1, D1).
+ *
+ * Beside the two constants above because all three answer the same question and drift apart
+ * the moment they do not: `MAX_IMAGE_EDGE` is the ceiling a stored original is kept under, and
+ * no surface here may ask for more than it, or the rendition would be an upscale of what we
+ * hold. Adding a channel is adding a row; `tests/unit/image-delivery.test.ts` holds every row
+ * to the ceiling and to the zoom rule ([ADR-0027](../../docs/adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)).
+ *
+ * `cover` fills the box and loses what does not fit; `inside` fits the whole picture within it
+ * and keeps the shape. Nothing pads and nothing stretches — where the pixels are not there, the
+ * rendition is made from the untouched original instead (R4).
+ */
+export const MEDIA_SURFACES = {
+  /** The product grid tile. Three to a row on a phone, so the pixels are modest (ADR-0016). */
+  tile: { width: 600, height: 600, fit: "cover", quality: 80 },
+  /** The product page's main image, which magnifies: its box times the zoom (ADR-0027). */
+  gallery: { width: MAX_IMAGE_EDGE, height: MAX_IMAGE_EDGE, fit: "inside", quality: 82 },
+  /** The strip under the gallery. Small, square, and never magnified. */
+  thumb: { width: 200, height: 200, fit: "cover", quality: 78 },
+  /** A shop's cover, full width at the top of its page and in the link preview. */
+  cover: { width: 1600, height: 900, fit: "cover", quality: 82 },
+  /** What a link preview shows. The one size every social host agrees on. */
+  preview: { width: 1200, height: 630, fit: "cover", quality: 82 },
+  /** A marketplace main image: square on white, at the size that turns their zoom on. */
+  marketplace: { width: 1600, height: 1600, fit: "inside", quality: 85 },
+  /** A feed post, composed square and delivered at 1080 (channel-rules). */
+  social: { width: 1080, height: 1080, fit: "cover", quality: 82 },
+} as const satisfies Record<string, MediaSurface>;
+
+export interface MediaSurface {
+  width: number;
+  height: number;
+  /** `cover` fills and crops; `inside` fits the whole picture and keeps its shape. */
+  fit: "cover" | "inside";
+  /** Whole-number quality as sharp takes it, not the 0-1 fraction `IMAGE_QUALITY` uses. */
+  quality: number;
+}
+
+export type MediaSurfaceKey = keyof typeof MEDIA_SURFACES;
+
+export const MEDIA_SURFACE_KEYS = Object.keys(MEDIA_SURFACES) as MediaSurfaceKey[];
+
+export const isMediaSurface = (value: string): value is MediaSurfaceKey =>
+  Object.hasOwn(MEDIA_SURFACES, value);
+
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 
 /**

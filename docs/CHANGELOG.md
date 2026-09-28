@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-211] 2026-09-29 — Every size this store makes an image in, declared once
+
+The last part of the media library. A surface asks a picture for a size and gets a URL; the first
+ask renders and records a derived image, and every later ask finds that one, because the pair of
+source and surface is what identifies it.
+
+Seven surfaces are declared in one table beside the stored ceiling, so no surface can ask for more
+pixels than we keep — which would be an upscale of the original wearing a size's name. Adding a
+channel is adding a row, and the guard that already held the zoom rule now holds every row to the
+ceiling too.
+
+The rule worth knowing is which picture a rendition is made from. A shop's own crop is used when
+it has the pixels, and when it does not — a portrait asked of a square crop — the rendition reaches
+back to the untouched original instead of enlarging what the shop cut. Losing the shop's framing is
+the lesser harm: a stretched picture is one nobody chose. The record still belongs to the crop that
+was asked, because that is the pair the next request looks up.
+
+The first caller is the link preview on a shop's brand page, which a social host fetches itself, so
+the optimizer never sees it and the full cover used to go over the wire on every share. It falls
+back to the cover if anything goes wrong: a large preview beats none, and a metadata function must
+not take a page down.
+
+Retiring a source now retires its renditions with it, by query rather than a trigger, so the rule
+is readable where it is owned and the sweep collects their objects on the usual schedule. A crop
+and an improvement are pictures the shop made and outlive the source they came from.
+
 ## [PR-210] 2026-09-29 — The payment backstop moves onto the worker, and the cron is retired
 
 The sweep that catches a payment we were never told about now runs on our own worker, hourly. The

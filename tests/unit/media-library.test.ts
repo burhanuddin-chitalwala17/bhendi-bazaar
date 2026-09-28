@@ -23,6 +23,8 @@ const repo = {
   listIn: vi.fn(),
   findAnywhere: vi.fn(),
   retireByPlatform: vi.fn(),
+  retireRenditionsOf: vi.fn(),
+  findRendition: vi.fn(),
 };
 const audit = { recordAdminAction: vi.fn() };
 vi.mock("@server/shared/audit/audit.service", () => audit);

@@ -1,7 +1,7 @@
 # Spec — media-library
 
 - **Summary:** Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone
-- **Status:** 🔨 In progress — PR-152, PR-161, PR-163, PR-177, PR-178, PR-209 (5 of 6)
+- **Status:** ✅ Implemented — PR-152, PR-161, PR-163, PR-177, PR-178, PR-209, PR-211 (2026-09-29)
 - **Domain:** catalog (assets, slots), content (renditions, capture checks)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-29

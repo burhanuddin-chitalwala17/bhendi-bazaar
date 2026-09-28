@@ -7,6 +7,7 @@ import { StorefrontTheme } from "@/components/storefront/storefront-theme";
 import { Button } from "@/components/ui/button";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { APP_NAME } from "@/lib/config";
+import { renditionUrlForRef } from "@server/content/renditions.service";
 import { appUrl } from "@server/shared/app-url";
 import { resolveBrandPage } from "../resolve";
 
@@ -37,7 +38,11 @@ export async function generateMetadata({
   const description =
     page.tagline ?? firstLine(page.about) ?? `About ${page.name} on ${APP_NAME}.`;
   const url = `${appUrl()}/store/${page.handle}/about`;
-  const image = page.heroUrl ?? page.logoUrl;
+  // The cover at the one size every social host agrees on, made once and found thereafter
+  // (renditions R2). A host fetches this itself, so the optimizer never sees it and the full
+  // cover would go over the wire every time a link is shared.
+  const cover = page.heroUrl ? await renditionUrlForRef(page.id, page.heroUrl, "preview") : null;
+  const image = cover ?? page.logoUrl;
 
   return {
     title: `About ${page.name}`,

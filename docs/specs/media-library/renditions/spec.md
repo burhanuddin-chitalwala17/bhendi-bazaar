@@ -1,10 +1,10 @@
 # Spec — renditions
 
 - **Summary:** Every surface that needs its own size or shape gets a derived image made once from a declared recipe, and the source never changes
-- **Status:** ✅ Accepted — 2026-09-26
+- **Status:** ✅ Implemented — PR-211 (2026-09-29)
 - **Domain:** content, reading catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-29
 - **References:** [../spec.md](../spec.md) (media-library), [trd.md](trd.md), [ADR-0026](../../../adr/0026-images-are-delivered-through-the-optimizer.md), [ADR-0027](../../../adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.

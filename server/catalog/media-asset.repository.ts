@@ -4,7 +4,7 @@ import {
   MediaAssetSource,
   MediaAssetState,
   MediaRetiredBy,
-  type Prisma,
+  Prisma,
 } from "@prisma/client";
 import type { MediaLibraryFilters } from "@/lib/validation/schemas/media-library.schema";
 import { MEDIA_LIBRARY_PAGE_SIZE, type MediaAssetRow, type MediaUseDto } from "@server/catalog/media-library.types";
@@ -542,6 +542,44 @@ export class MediaAssetRepository {
       },
     });
     return result.count === 1;
+  }
+
+  /**
+   * The rendition of a source for one surface, or null (renditions D2, R2).
+   *
+   * The pair is what identifies it, so the second request for a surface finds the first
+   * result instead of rendering the same pixels again. A retired one does not count: it is on
+   * its way out, and handing it back would resurrect an image the sweep is about to delete.
+   */
+  async findRendition(sourceAssetId: string, surface: string) {
+    return await prisma.mediaAsset.findFirst({
+      where: {
+        derivedFromId: sourceAssetId,
+        state: MediaAssetState.READY,
+        transform: { path: ["surface"], equals: surface },
+      },
+      select: { id: true, ref: true, width: true, height: true },
+    });
+  }
+
+  /**
+   * Retire every rendition of a source, in one statement (renditions D5).
+   *
+   * A cascade by query rather than a database trigger: the rule is then readable in the code
+   * that owns it, and the sweep collects their objects on the same schedule as any other
+   * retired asset. Only renditions — a crop and an improvement are pictures the shop made and
+   * outlive the source they came from.
+   */
+  async retireRenditionsOf(sourceAssetId: string, now: Date = new Date()): Promise<number> {
+    const result = await prisma.mediaAsset.updateMany({
+      where: {
+        derivedFromId: sourceAssetId,
+        state: { in: [MediaAssetState.READY, MediaAssetState.FAILED] },
+        transform: { path: ["surface"], not: Prisma.DbNull },
+      },
+      data: { state: MediaAssetState.RETIRED, retiredAt: now, retiredBy: MediaRetiredBy.ORG },
+    });
+    return result.count;
   }
 
   /** One asset from any library, for the platform owner's read-only view. */

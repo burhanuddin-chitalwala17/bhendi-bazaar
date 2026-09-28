@@ -270,8 +270,34 @@ export const mediaAssetService = {
       const where = uses.length ? describeUses(uses) : "a page that still shows it";
       throw new ConflictError(`This image is still used by ${where}. Remove it there first.`);
     }
+    // A rendition exists only to serve a surface from this source, so it goes when the source
+    // does (renditions D5, R6). A crop or an improvement is a picture the shop made and stays.
+    await mediaAssetRepository.retireRenditionsOf(id, now);
+
     const after = await mediaAssetRepository.findForOrg(orgId, id);
     return toMediaAssetDto(after ?? { ...row, state: MediaAssetState.RETIRED, retiredAt: now });
+  },
+
+  /**
+   * The rendition of a source at a surface, or null (renditions D2).
+   *
+   * Catalog owns the asset table, so content asks through here rather than reaching the
+   * repository ([ADR-0033](../../docs/adr/0033-a-domain-is-reached-through-its-public-surface.md)).
+   */
+  async findRendition(sourceAssetId: string, surface: string) {
+    return await mediaAssetRepository.findRendition(sourceAssetId, surface);
+  },
+
+  /** The stored image behind a URL, for a caller that holds the URL and needs the asset. */
+  async findImageByRef(ref: string) {
+    return await mediaAssetRepository.findByRef(MediaAssetKind.IMAGE, ref);
+  },
+
+  /** What a renderer needs to decide where to render from: this picture's size and its parent. */
+  async describeForRendition(assetId: string) {
+    const asset = await mediaAssetRepository.findById(assetId);
+    if (!asset) return null;
+    return { width: asset.width, height: asset.height, derivedFromId: asset.derivedFromId };
   },
 
   /**
@@ -327,6 +353,8 @@ export const mediaAssetService = {
       resourceId: id,
       metadata: { reason, orgId: row.orgId ?? null, ref: row.ref },
     });
+
+    await mediaAssetRepository.retireRenditionsOf(id, now);
 
     const after = await mediaAssetRepository.findAnywhere(id);
     return toMediaAssetDto(after ?? row);
