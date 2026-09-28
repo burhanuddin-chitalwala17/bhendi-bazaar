@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-204] 2026-09-28 — The rehearsal now says what the real run will refuse
+
+The store check added in the previous entry ran only on a write, so the report before it printed a
+confident plan — counts, links, one image without dimensions — against a store it had not
+recognised a single URL from. The first real use found exactly that: a production reference file
+whose `R2_PUBLIC_BASE_URL` was still the example placeholder, caught by the write and not by the
+report that preceded it. A report now carries the same finding as a warning.
+
 ## [PR-203] 2026-09-28 — A backfill that recognises none of its own library stops
 
 The media backfill reads one database and one bucket, and nothing downstream noticed when they

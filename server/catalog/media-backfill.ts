@@ -140,9 +140,13 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
     }
   };
 
-  // Before anything is written, and only on a write: a dry run reports and is harmless.
-  if (options.write && !options.allowForeign) {
-    await assertStoreMatchesDatabase(ownKey, publicBaseUrlOrNone());
+  // A write stops; a dry run says what the write would refuse. The rehearsal reporting a clean
+  // plan that the real run then declines is the rehearsal failing at its one job — and the
+  // numbers it printed were counted against a store it did not recognise.
+  if (!options.allowForeign) {
+    const check = assertStoreMatchesDatabase(ownKey, publicBaseUrlOrNone());
+    if (options.write) await check;
+    else await check.catch((error: unknown) => log(`WARNING: ${error instanceof Error ? error.message : String(error)}`));
   }
 
   const assetForImage = async (ref: string, orgId: string | null): Promise<string> => {

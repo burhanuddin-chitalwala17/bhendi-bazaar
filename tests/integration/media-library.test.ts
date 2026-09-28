@@ -63,19 +63,25 @@ describe.skipIf(!isDisposableDb)("media library (local db)", () => {
         ? new Response(new Uint8Array(png), { status: 200, headers: { "content-type": "image/png" } })
         : new Response(null, { status: 404 })) as typeof fetch;
 
-    const dry = await backfill({ write: false, fetchImpl });
+    // These fixtures are `https://media.test/…` on purpose, so nothing here belongs to the
+    // configured store and the store check would refuse a write. That refusal is the point of
+    // the check; saying so here is what the flag is for, and a run without it is covered by
+    // `tests/unit/media-backfill-store-check.test.ts`.
+    const allowForeign = true;
+
+    const dry = await backfill({ write: false, fetchImpl, allowForeign });
     expect(dry.imagesCreated).toBeGreaterThanOrEqual(1);
     const before = await prisma.mediaAsset.count({ where: { ref: heroRef } });
     expect(before).toBe(0);
 
-    const first = await backfill({ write: true, fetchImpl });
+    const first = await backfill({ write: true, fetchImpl, allowForeign });
     expect(first.imagesCreated).toBeGreaterThanOrEqual(1);
     const asset = await prisma.mediaAsset.findFirst({ where: { ref: heroRef } });
     expect(asset).toMatchObject({ width: 9, height: 4, orgId: null, state: "READY" });
     const category = await prisma.category.findFirst({ where: { slug: `media-test-${stamp}` } });
     expect(category?.heroAssetId).toBe(asset?.id);
 
-    const second = await backfill({ write: true, fetchImpl });
+    const second = await backfill({ write: true, fetchImpl, allowForeign });
     expect(await prisma.mediaAsset.count({ where: { ref: heroRef } })).toBe(1);
     expect(second.rowsLinked).toBe(0);
   });

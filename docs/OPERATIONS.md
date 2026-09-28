@@ -482,7 +482,8 @@ production database comes to be paired with a development bucket: every referenc
 unrecognised, every asset is written with no object key, and because the run is idempotent on the
 reference a corrected re-run skips them all and the null is permanent. Crop, improve and the
 deletion sweep each need that key. A write therefore stops when nothing in the library belongs to
-the configured store; `--allow-foreign` is how a library of genuinely external URLs says so.
+the configured store, and the report warns about the same thing rather than printing a clean plan
+the write will decline; `--allow-foreign` is how a library of genuinely external URLs says so.
 Report first, without `--write`, and read the summary before committing to it. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
 
 ## Infrastructure
