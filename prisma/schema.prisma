@@ -73,6 +73,11 @@ model MediaAsset {
   /// record has the dimensions; RETIRED when nothing should use it any more (trd D2, D8).
   state         MediaAssetState @default(PENDING)
   retiredAt     DateTime?
+  /// Who took it out of the library, and why when the platform did (spec R12, trd D10). An
+  /// organisation retiring its own picture owes nobody a reason; the platform taking one down
+  /// over a breach does, and the organisation is shown both.
+  retiredBy     MediaRetiredBy?
+  retiredReason String?
   /// Why a video could not be made playable, shown to the org member (video-hosting spec R7).
   failureReason String?
 
@@ -108,6 +113,13 @@ enum MediaAssetSource {
   UPLOAD
   DERIVED
   EMBED
+}
+
+/// Who retired an image. A closed set rather than a flag, because "the platform did it" is a
+/// different fact from "an admin's id", and the organisation is told the first, never the second.
+enum MediaRetiredBy {
+  ORG
+  PLATFORM
 }
 
 enum MediaAssetState {

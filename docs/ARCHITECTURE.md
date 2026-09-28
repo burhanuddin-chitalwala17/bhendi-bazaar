@@ -12,10 +12,10 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 ```
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
             ├── (main)  storefront    12 pages     ──▶ Cloudflare R2   (images and video — ADR-0028, ADR-0039)
-            ├── (admin) console       25 pages     ──▶ Razorpay         (payments)
+            ├── (admin) console       26 pages     ──▶ Razorpay         (payments)
             ├── (org)   seller portal 21 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
-            └── api/                  106 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
+            └── api/                  107 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
@@ -58,7 +58,7 @@ Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 64 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 49 models, 17 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 65 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 49 models, 18 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
 
 **Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
 

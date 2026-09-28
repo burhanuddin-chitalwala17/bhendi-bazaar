@@ -10,6 +10,25 @@
 
 ## Entries
 
+## [PR-209] 2026-09-29 [CONTRACT] [MIGRATION] — The platform can see every library, and take one image down
+
+The platform owner's read-only view across every shop's media, filterable to one shop or to the
+platform's own collection, with the one write being a takedown carrying a reason.
+
+The listing is the shop's own query with its organisation filter widened, not a second query, so
+the two screens cannot come to disagree about what a library holds. The screen renders on the
+server and pages by link; the only browser-callable route behind it is the takedown, because the
+takedown is the only thing on it that writes.
+
+A takedown differs from a shop retiring its own picture in two ways, both deliberate. It is not
+refused while the image is still on a page — a breach comes down now, and the pages stop pointing
+at it afterwards — and the reason is stored on the asset rather than only in the audit trail,
+because the shop has to be able to read why without an admin to ask. The shop sees "Taken down by
+Bhendi Bazaar" and the words, never which admin wrote them.
+
+Two rules that were about to be spelled twice are now declared once: which picture stands for an
+asset in a listing, and how this store prints a plain day.
+
 ## [PR-208] 2026-09-28 [CONTRACT] [MIGRATION] — The shop says who it is, and what to leave out
 
 The last part of the brand page. A shop can now name the person behind it, write up to three

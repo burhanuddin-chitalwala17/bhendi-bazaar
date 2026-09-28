@@ -112,6 +112,13 @@ Since PR-182 the about page speaks **`BrandPageDto`** (`server/catalog/storefron
 
 Since PR-184 `BrandPageDto.proof` is filled — `{ rating: { average, count } | null, ordersFulfilled: number | null }`, or null when nothing cleared a floor (`server/catalog/brand-page-proof.ts`: three published reviews for a rating, ten paid orders for a count) — and the DTO gains **`buyersSay`**: `ShopReviewDto[] | null`, the shop's three newest published reviews across its on-sale products, null under the rating's floor. **`ShopReviewDto`** (`server/catalog/review.types.ts`) is a `Pick` of `ReviewDto` — `id`, `rating`, `comment`, `authorName`, `isVerifiedPurchase`, `createdAt` — plus `product: { name, slug }`; no `isMine`, and as `ReviewDto`, no `userId`. Both slices come through public surfaces: `reviewService.ratingForOrg` / `recentForOrg` and `orderService.paidOrderCountForOrg`, paid orders counted as orders. `toBrandPageDto` takes them as a third argument.
 
+Since PR-209 **`MediaAssetDto`** carries `orgId` (null is the platform's own collection),
+`retiredBy` (`ORG` or `PLATFORM`) and `retiredReason`, so a shop can read why its picture went
+without an admin to ask. One route is added: `POST /api/admin/media/:assetId/retire` takes
+`{ reason }` — required, four characters up — and answers the asset. The listing behind
+`/admin/media` is `mediaAssetService.listAnywhere`, the same query the shop's own library runs
+with the organisation filter widened; it is read through a server component and has no route.
+
 Since PR-208 the DTO carries the shop's own additions and its choice of what to leave out.
 **`owner`** is `{ name, role, quote, photoUrl } | null`, null unless a name is given — a face
 with no name is not an introduction, so the other three are kept in the column and not shown.

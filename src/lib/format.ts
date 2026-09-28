@@ -38,3 +38,12 @@ export function formatDuration(durationMs: number): string {
   const seconds = Math.max(0, Math.round(durationMs / 1000));
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
+
+/** A plain day, as this store writes one. Declared here because three screens print it. */
+export function formatDay(value: string | Date): string {
+  return new Date(value).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}

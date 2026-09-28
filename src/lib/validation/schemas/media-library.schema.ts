@@ -57,3 +57,19 @@ export const videoPosterSchema = z.object({
 });
 
 export type VideoPosterInput = z.infer<typeof videoPosterSchema>;
+
+/**
+ * Why the platform took an image down (spec R12).
+ *
+ * Required and bounded: an org reads this instead of asking an admin what happened, so an
+ * empty reason would leave them with a picture gone and no account of it.
+ */
+export const platformRetireSchema = z.object({
+  reason: z
+    .string()
+    .trim()
+    .min(4, "Say why this is coming down; the shop will read it.")
+    .max(280),
+});
+
+export type PlatformRetireInput = z.infer<typeof platformRetireSchema>;

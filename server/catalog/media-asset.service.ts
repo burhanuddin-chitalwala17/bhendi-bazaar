@@ -6,6 +6,7 @@ import { enqueue } from "@server/shared/jobs";
 import { deleteObject, getObject, headObject, presignUpload, publicBaseUrl, publicUrlFor, putObject } from "@server/catalog/object-store";
 import { sha256Hex } from "@server/shared/hash";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 import { isVideoContentType } from "@server/catalog/video";
 import { IMAGE_QUALITY, MAX_IMAGE_EDGE } from "@server/catalog/media";
 import { videoTranscodeSpec } from "@server/catalog/video.job";
@@ -271,6 +272,64 @@ export const mediaAssetService = {
     }
     const after = await mediaAssetRepository.findForOrg(orgId, id);
     return toMediaAssetDto(after ?? { ...row, state: MediaAssetState.RETIRED, retiredAt: now });
+  },
+
+  /**
+   * The platform's own listing: every library, or one chosen from them (spec R12, trd D10).
+   *
+   * The same query the org's library runs, so the two cannot come to disagree about what a
+   * library holds — the org filter is the only difference, and read-only is enforced by there
+   * being no write here to reach.
+   */
+  async listAnywhere(
+    scope: string | null | undefined,
+    filters: MediaLibraryFilters,
+  ): Promise<{ assets: MediaAssetDto[]; pagination: Pagination }> {
+    const { rows, total } = await mediaAssetRepository.listIn(scope, filters);
+    return {
+      assets: rows.map(toMediaAssetDto),
+      pagination: {
+        page: filters.page,
+        limit: MEDIA_LIBRARY_PAGE_SIZE,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / MEDIA_LIBRARY_PAGE_SIZE)),
+      },
+    };
+  },
+
+  /**
+   * The platform taking an image down over a breach, with the reason recorded (spec R12).
+   *
+   * Two things are deliberately unlike an org retiring its own picture. It is not refused
+   * while the image is in use — a breach comes down now, and the pages that point at it stop
+   * pointing at it — and the reason is stored on the asset as well as written to the audit
+   * trail, because the org has to be able to read why without an admin to ask
+   * ([ADR-0021](../../docs/adr/0021-audit-trail-never-fails-the-action.md): the trail records
+   * the action, it never decides whether it happened).
+   */
+  async retireAsPlatform(
+    adminId: string,
+    id: string,
+    reason: string,
+    now: Date = new Date(),
+  ): Promise<MediaAssetDto> {
+    const row = await mediaAssetRepository.findAnywhere(id);
+    if (!row) throw new NotFoundError("Image not found");
+    if (row.state === MediaAssetState.RETIRED) return toMediaAssetDto(row);
+
+    const retired = await mediaAssetRepository.retireByPlatform(id, reason, now);
+    if (!retired) throw new ConflictError("This image has already been taken down.");
+
+    await recordAdminAction({
+      adminId,
+      action: "media.retire",
+      resource: "MediaAsset",
+      resourceId: id,
+      metadata: { reason, orgId: row.orgId ?? null, ref: row.ref },
+    });
+
+    const after = await mediaAssetRepository.findAnywhere(id);
+    return toMediaAssetDto(after ?? row);
   },
 
   /**
