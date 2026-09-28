@@ -24,6 +24,8 @@ import {
   proofFrom,
 } from "@server/catalog/brand-page-proof";
 import { toBrandPageDto, type BrandPageDto } from "@server/catalog/storefront.types";
+import { Prisma } from "@prisma/client";
+import type { BrandPillar, HideableBrandPageSection } from "@server/catalog/brand-page-sections";
 import {
   handleCandidates,
   holdCutoff,
@@ -46,6 +48,15 @@ export interface StorefrontSettingsInput {
   accent?: string | null;
   deliveryPolicy?: string | null;
   returnsPolicy?: string | null;
+  story?: string | null;
+  location?: string | null;
+  social?: Record<string, string> | null;
+  ownerName?: string | null;
+  ownerRole?: string | null;
+  ownerQuote?: string | null;
+  ownerPhotoUrl?: string | null;
+  pillars?: BrandPillar[] | null;
+  hiddenSections?: HideableBrandPageSection[] | null;
 }
 
 export interface BannerInput {
@@ -59,6 +70,31 @@ export interface BannerInput {
 
 /** Empty strings from a form mean "cleared", not "set to nothing". */
 const orNull = (value: string | null | undefined) => value?.trim() || null;
+
+/**
+ * A JSON column has two kinds of nothing. `null` tells Prisma to leave the column as it is,
+ * which is what an update means everywhere else in the client, so clearing one needs
+ * `JsonNull` — otherwise a shop that removes its last handle keeps showing the old ones.
+ */
+const jsonOrNull = (value: unknown) =>
+  value === null || value === undefined
+    ? Prisma.JsonNull
+    : (value as Prisma.InputJsonValue);
+
+/** The editor shows three slots; an untouched one is not a block. Both halves or neither
+ * is the schema's rule, so anything arriving here with one half is already refused. */
+function pillarsKept(pillars: { title: string; text: string }[] | null | undefined) {
+  if (!pillars) return null;
+  const kept = pillars.filter((pillar) => pillar.title.trim() !== "" && pillar.text.trim() !== "");
+  return kept.length ? kept : null;
+}
+
+/** Blank means "remove this network", so an empty handle never reaches the column. */
+function handlesKept(social: Record<string, string> | null | undefined) {
+  if (!social) return null;
+  const kept = Object.entries(social).filter(([, handle]) => handle.trim() !== "");
+  return kept.length ? Object.fromEntries(kept) : null;
+}
 
 /** Whitelisted field by field — the payload is never spread into a write. */
 function normaliseBanner(input: BannerInput): OrgBannerInput {
@@ -126,6 +162,17 @@ export const storefrontService = {
       accent: orNull(input.accent),
       deliveryPolicy: orNull(input.deliveryPolicy),
       returnsPolicy: orNull(input.returnsPolicy),
+      story: orNull(input.story),
+      location: orNull(input.location),
+      // A JSON column is cleared with `JsonNull`, not with `null` — the second is Prisma's
+      // "leave this alone", so an org emptying its handles would keep the old ones forever.
+      social: jsonOrNull(handlesKept(input.social)),
+      ownerName: orNull(input.ownerName),
+      ownerRole: orNull(input.ownerRole),
+      ownerQuote: orNull(input.ownerQuote),
+      ownerPhotoUrl: orNull(input.ownerPhotoUrl),
+      pillars: jsonOrNull(pillarsKept(input.pillars)),
+      hiddenSections: jsonOrNull(input.hiddenSections?.length ? input.hiddenSections : null),
     });
     return await this.getSettings(orgId);
   },

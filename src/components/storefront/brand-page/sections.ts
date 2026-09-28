@@ -3,6 +3,15 @@ import type { Category } from "@/domain/category";
 import type { Product } from "@/domain/product";
 import type { ShopReviewDto } from "@server/catalog/review.types";
 import type { SocialLink } from "@server/catalog/social-networks";
+import {
+  BRAND_PAGE_SECTION_ORDER,
+  type BrandOwner,
+  type BrandPageSection,
+  type BrandPillar,
+} from "@server/catalog/brand-page-sections";
+
+export { BRAND_PAGE_SECTION_ORDER };
+export type { BrandPageSection };
 
 /**
  * Which sections a brand page has, in the one order the platform sets (brand-page R1, D4).
@@ -13,25 +22,20 @@ import type { SocialLink } from "@server/catalog/social-networks";
  * nothing is absent rather than blank.
  *
  * Pure, so it can be tested without rendering. The proof strip is part of the hero, not a
- * section of its own (R3). Pillars join this list in part (b) of PR 4.
+ * section of its own (R3). The order itself is declared in the domain, beside the keys the
+ * schema accepts and the panel reports, so the three cannot drift apart.
  */
-export const BRAND_PAGE_SECTION_ORDER = [
-  "hero",
-  "story",
-  "categories",
-  "brands",
-  "buyersSay",
-  "newest",
-  "policies",
-  "social",
-] as const;
-
-export type BrandPageSection = (typeof BRAND_PAGE_SECTION_ORDER)[number];
 
 export interface StorySlice {
   name: string;
   about: string | null;
   story: string | null;
+  /** The person, when one is named — the story's own subject, not a section beside it (R5). */
+  owner: BrandOwner | null;
+}
+
+export interface PillarsSlice {
+  pillars: BrandPillar[];
 }
 
 export interface CategoriesSlice {
@@ -61,9 +65,13 @@ export interface SocialSlice {
 }
 
 export const storySlice = (page: BrandPage): StorySlice | null =>
-  page.about || page.story
-    ? { name: page.name, about: page.about, story: page.story }
+  page.about || page.story || page.owner
+    ? { name: page.name, about: page.about, story: page.story, owner: page.owner }
     : null;
+
+/** Null rather than an empty list: a section with no blocks is absent, not blank (R2, D4). */
+export const pillarsSlice = (page: BrandPage): PillarsSlice | null =>
+  page.pillars?.length ? { pillars: page.pillars } : null;
 
 export const categoriesSlice = (page: BrandPage): CategoriesSlice | null =>
   page.categories.length
@@ -103,6 +111,7 @@ const SLICES = {
   hero: (page) => page,
   story: storySlice,
   categories: categoriesSlice,
+  pillars: pillarsSlice,
   brands: brandsSlice,
   buyersSay: buyersSaySlice,
   newest: newestSlice,

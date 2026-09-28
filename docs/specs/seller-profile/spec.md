@@ -1,7 +1,7 @@
 # Spec — seller-profile
 
 - **Summary:** An organisation's profile has a private face for what listing needs and a public face for what a buyer may see, and nothing is demanded before it is needed
-- **Status:** 🔨 In progress — PR-151, PR-162, PR-175, PR-182, PR-184 (4a and 4c of 4)
+- **Status:** ✅ Implemented — PR-151, PR-162, PR-175, PR-182, PR-184, PR-208 (2026-09-28)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-28

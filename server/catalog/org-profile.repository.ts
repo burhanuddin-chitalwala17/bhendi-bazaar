@@ -20,6 +20,12 @@ export const PUBLIC_PROFILE_SELECT = {
   story: true,
   location: true,
   social: true,
+  ownerName: true,
+  ownerRole: true,
+  ownerQuote: true,
+  ownerPhotoUrl: true,
+  pillars: true,
+  hiddenSections: true,
 } as const satisfies Prisma.OrgProfileSelect;
 
 /**
@@ -41,6 +47,15 @@ export interface StorefrontSettingsData {
   accent: string | null;
   deliveryPolicy: string | null;
   returnsPolicy: string | null;
+  story: string | null;
+  location: string | null;
+  social: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+  ownerName: string | null;
+  ownerRole: string | null;
+  ownerQuote: string | null;
+  ownerPhotoUrl: string | null;
+  pillars: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+  hiddenSections: Prisma.InputJsonValue | typeof Prisma.JsonNull;
 }
 
 export class OrgProfileRepository {
@@ -79,6 +94,15 @@ export class OrgProfileRepository {
         accent: true,
         deliveryPolicy: true,
         returnsPolicy: true,
+        story: true,
+        location: true,
+        social: true,
+        ownerName: true,
+        ownerRole: true,
+        ownerQuote: true,
+        ownerPhotoUrl: true,
+        pillars: true,
+        hiddenSections: true,
         org: { select: { handle: true, name: true } },
       },
     });

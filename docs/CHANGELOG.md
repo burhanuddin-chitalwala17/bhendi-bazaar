@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-208] 2026-09-28 [CONTRACT] [MIGRATION] — The shop says who it is, and what to leave out
+
+The last part of the brand page. A shop can now name the person behind it, write up to three
+blocks on how it works, give its handles and its location, and switch off any of the parts it
+wrote itself.
+
+The person is invited, never required, and hangs on a name: a role, a photograph or a quoted line
+without one are kept in the column and not shown, because a face with no name is not an
+introduction and an unattributed line is copy. The person belongs to the story rather than sitting
+beside it, so a shop that has named somebody but written nothing still has a story section.
+
+Hiding is subtraction at the source. A hidden section's content never enters the payload, so there
+is no renderer — a cached page, a link preview, something written later — that can show it anyway.
+What a shop may hide is what it wrote. Reviews, orders filled and the goods are not on offer:
+proof is derived and never typed, and a page whose reviews disappear when they turn unflattering
+is not proof of anything. That reading of "any optional section" is the one judgement call in this
+change and it is the owner's to overturn.
+
+With no placeholders anywhere, a shop cannot tell a section it has not filled from one that is
+broken. So both the storefront screen and the dashboard now say what the page shows, computed by
+running the buyer's own extractors over the shop's own payload — never a second opinion — with the
+one fact each missing section is waiting for, and no link where no form would supply it.
+
+The checkbox primitive was fixed on the way past: its label was not associated with its input, so
+the tap target was the sixteen-pixel box alone in all nine places it is used.
+
 ## [PR-207] 2026-09-28 — What the gate cannot see had drifted in every doc it does not check
 
 `npm run docs:check` guards `Verified:` dates, the generated indexes and a handful of counted

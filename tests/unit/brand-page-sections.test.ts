@@ -51,6 +51,14 @@ const full = (overrides: Partial<BrandPage> = {}): BrandPage => ({
   social: [{ network: "instagram", label: "Instagram", handle: "silks", href: "https://www.instagram.com/silks/" }],
   proof: null,
   buyersSay: [review("r1"), review("r2"), review("r3")],
+  owner: {
+    name: "Anisa Merchant",
+    role: "Second generation",
+    quote: "My father chose every bolt himself.",
+    photoUrl: "https://img.example/anisa.webp",
+  },
+  pillars: [{ title: "Woven near by", text: "Every metre from three looms we visit." }],
+  hiddenSections: [],
   categories: [category],
   newest: [product],
   ...overrides,
@@ -70,6 +78,8 @@ const bare = (): BrandPage =>
     brands: null,
     social: null,
     buyersSay: null,
+    owner: null,
+    pillars: null,
     categories: [],
     newest: [],
   });
@@ -85,7 +95,7 @@ describe("brandPageSections", () => {
   });
 
   it("keeps the order fixed whatever is missing", () => {
-    const some = brandPageSections(full({ about: null, story: null, brands: null }));
+    const some = brandPageSections(full({ about: null, story: null, owner: null, brands: null }));
     const positions = some.map((key) => BRAND_PAGE_SECTION_ORDER.indexOf(key));
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(some).not.toContain("story");
@@ -96,11 +106,37 @@ describe("brandPageSections", () => {
     expect(brandPageSections(bare())).toEqual(["hero", "newest"]);
   });
 
-  it("omits the story when neither the introduction nor the longer story is written", () => {
-    expect(brandPageSections(full({ about: null, story: null }))).not.toContain("story");
+  it("omits the story only when there is no introduction, no longer story and nobody named", () => {
+    // The person is part of the story, not a section beside it (R5), so any one of the three
+    // is enough to make the section real — and a shop that named somebody but wrote nothing
+    // still has something worth showing.
+    expect(brandPageSections(full({ about: null, story: null, owner: null }))).not.toContain("story");
     expect(brandPageSections(full({ about: null }))).toContain("story");
     expect(brandPageSections(full({ story: null }))).toContain("story");
-    expect(storySlice(full({ about: null, story: null }))).toBeNull();
+    expect(brandPageSections(full({ about: null, story: null }))).toContain("story");
+    expect(storySlice(full({ about: null, story: null, owner: null }))).toBeNull();
+  });
+
+  it("carries the person through with the story, and nothing of them when none is named", () => {
+    expect(storySlice(full())?.owner).toEqual({
+      name: "Anisa Merchant",
+      role: "Second generation",
+      quote: "My father chose every bolt himself.",
+      photoUrl: "https://img.example/anisa.webp",
+    });
+    expect(storySlice(full({ owner: null }))?.owner).toBeNull();
+  });
+
+  it("places the blocks between what they sell and the brands they carry (R1)", () => {
+    const order: readonly string[] = BRAND_PAGE_SECTION_ORDER;
+    expect(order.indexOf("pillars")).toBe(order.indexOf("categories") + 1);
+    expect(order.indexOf("brands")).toBe(order.indexOf("pillars") + 1);
+  });
+
+  it("omits the blocks when there are none, and shows them when there are", () => {
+    expect(brandPageSections(full({ pillars: null }))).not.toContain("pillars");
+    expect(brandPageSections(full({ pillars: [] }))).not.toContain("pillars");
+    expect(brandPageSections(full())).toContain("pillars");
   });
 
   it("omits the categories when the shop sells in none", () => {

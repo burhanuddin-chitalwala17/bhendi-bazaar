@@ -112,6 +112,22 @@ Since PR-182 the about page speaks **`BrandPageDto`** (`server/catalog/storefron
 
 Since PR-184 `BrandPageDto.proof` is filled — `{ rating: { average, count } | null, ordersFulfilled: number | null }`, or null when nothing cleared a floor (`server/catalog/brand-page-proof.ts`: three published reviews for a rating, ten paid orders for a count) — and the DTO gains **`buyersSay`**: `ShopReviewDto[] | null`, the shop's three newest published reviews across its on-sale products, null under the rating's floor. **`ShopReviewDto`** (`server/catalog/review.types.ts`) is a `Pick` of `ReviewDto` — `id`, `rating`, `comment`, `authorName`, `isVerifiedPurchase`, `createdAt` — plus `product: { name, slug }`; no `isMine`, and as `ReviewDto`, no `userId`. Both slices come through public surfaces: `reviewService.ratingForOrg` / `recentForOrg` and `orderService.paidOrderCountForOrg`, paid orders counted as orders. `toBrandPageDto` takes them as a third argument.
 
+Since PR-208 the DTO carries the shop's own additions and its choice of what to leave out.
+**`owner`** is `{ name, role, quote, photoUrl } | null`, null unless a name is given — a face
+with no name is not an introduction, so the other three are kept in the column and not shown.
+**`pillars`** is `{ title, text }[] | null`, at most three, each with both halves or neither.
+**`hiddenSections`** is the keys the shop has switched off, from
+`HIDEABLE_BRAND_PAGE_SECTIONS` in `server/catalog/brand-page-sections.ts` — where the section
+order, the hideable subset and the defensive readers for both JSON columns are declared once,
+because the schema, the page and the shop's own panel all need them and must agree.
+
+Hiding is subtraction, not a flag: a hidden section's content is left out of the payload
+entirely, so no renderer can show it by mistake, and the introduction goes with the story
+because they are one section. What a shop may hide is what it wrote. Reviews, orders filled
+and the goods are not offered, because proof is derived and never typed and a page whose
+reviews vanish when they turn unflattering is not proof. `storefrontSettingsSchema` grows to
+match, so the same rules the page enforces are the ones the editor shows inline.
+
 ### Image enhancement
 
 Since PR-185 the org portal speaks **`EnhancementDto`** (`server/content/enhancement.types.ts`): `id`, `tool`, `preset`, `state`, `sourceAssetId`, `sourceRef`, `proposalUrl` (null unless the state is `PROPOSED`), `resultAssetId`, `resultRef`, `error`, `costPaise` (integer paise, [Invariant 3](../CLAUDE.md)), `createdAt`, `proposedAt`, `decidedAt` — beside **`EnhancementUsage`** (`used`, `allowance`, `paused`, `pauseReason`), which every answer carries so the sheet can say where the shop stands. Four routes, all `withOrg` and parsed by `src/lib/validation/schemas/enhancement.schema.ts`: `POST /api/org/:orgId/enhancements` (`{ sourceAssetId? | sourceRef?, tool, preset?, slot?, slotRole? }`, exactly one of the first two: the library names a photo by its asset id, the gallery editor knows only the URL of one it has just put up, and a request carrying both or neither is a 400) → `{ enhancement, usage }`; `GET …/:id` → `{ enhancement }`, which the sheet polls while the worker runs; `POST …/:id/accept` → `{ enhancement }` with `resultRef`, the derived image's URL; `POST …/:id/discard` → `{ enhancement }`. A refusal is a `DomainError` with the reason the org member reads ([image-enhancement](specs/image-enhancement/) R7, R10). Since PR-198 `preset` is **not free text**: it is one of the keys in `server/content/scene-presets.ts`, required when `tool` is `SCENE` and refused on every other tool, so a request carrying a description nobody approved is a 400 rather than a row (R11).

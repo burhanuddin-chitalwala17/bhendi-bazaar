@@ -3,6 +3,9 @@ import { DashboardWidgets } from "@/components/dashboard/DashboardWidgets";
 import { OnboardingCard } from "@/components/org/onboarding-card";
 import { orgOnboardingService } from "@server/catalog/org-onboarding.service";
 import type { OnboardingStatus } from "@server/catalog/org-onboarding.types";
+import { storefrontDAL } from "@/data-access-layer/storefront.dal";
+import { storefrontService } from "@server/catalog/storefront.service";
+import type { BrandPage } from "@/data-access-layer/storefront.dal";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -12,6 +15,17 @@ async function readOnboarding(orgId: string): Promise<OnboardingStatus | null> {
     return await orgOnboardingService.status(orgId);
   } catch (error) {
     console.error("[OrgDashboard] onboarding status failed:", error);
+    return null;
+  }
+}
+
+/** The same rule as the status above: a page the shop can still run without costs the line, not the card. */
+async function readBrandPage(orgId: string): Promise<BrandPage | null> {
+  try {
+    const settings = await storefrontService.getSettings(orgId);
+    return await storefrontDAL.getBrandPage(settings.handle);
+  } catch (error) {
+    console.error("[OrgDashboard] brand page read failed:", error);
     return null;
   }
 }
@@ -30,7 +44,10 @@ export default async function OrgDashboard({
 }) {
   const { orgId } = await params;
   const scope = await requireOrgMember(orgId);
-  const onboarding = await readOnboarding(scope.orgId);
+  const [onboarding, brandPage] = await Promise.all([
+    readOnboarding(scope.orgId),
+    readBrandPage(scope.orgId),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -41,7 +58,9 @@ export default async function OrgDashboard({
         </p>
       </div>
 
-      {onboarding && <OnboardingCard status={onboarding} orgId={scope.orgId} />}
+      {onboarding && (
+        <OnboardingCard status={onboarding} orgId={scope.orgId} page={brandPage} />
+      )}
 
       <DashboardWidgets
         ctx={{ audience: "org", orgId: scope.orgId }}

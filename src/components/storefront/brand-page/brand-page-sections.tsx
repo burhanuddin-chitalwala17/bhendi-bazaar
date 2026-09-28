@@ -3,6 +3,7 @@ import { Fragment, type ReactNode } from "react";
 import type { BrandPage } from "@/data-access-layer/storefront.dal";
 import { BrandCategories } from "./brand-categories";
 import { BrandHero } from "./brand-hero";
+import { BrandPillars } from "./brand-pillars";
 import { BrandStory } from "./brand-story";
 import { BrandsCarried } from "./brands-carried";
 import { BuyersSay } from "./buyers-say";
@@ -13,6 +14,7 @@ import {
   buyersSaySlice,
   categoriesSlice,
   newestSlice,
+  pillarsSlice,
   policiesSlice,
   socialSlice,
   storySlice,
@@ -37,6 +39,10 @@ const RENDER: Record<BrandPageSection, (page: BrandPage) => ReactNode> = {
   categories: (page) => {
     const slice = categoriesSlice(page);
     return slice && <BrandCategories {...slice} />;
+  },
+  pillars: (page) => {
+    const slice = pillarsSlice(page);
+    return slice && <BrandPillars {...slice} />;
   },
   brands: (page) => {
     const names = brandsSlice(page);
