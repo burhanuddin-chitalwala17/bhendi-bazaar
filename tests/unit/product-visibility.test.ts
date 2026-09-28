@@ -32,8 +32,8 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     note: "filtered — the storefront's own reads carry AVAILABLE and FROM_ACTIVE_ORG together, categoryIdsForOrg and isOnSale (which decides whether a product may be reviewed) included, plus archivedAmong and fromWithdrawnOrgAmong (which back the two sale gates and must therefore see the rows they refuse) and two ownership/pricing lookups that must see every row",
   },
   "server/catalog/admin.product.repository.ts": {
-    reads: 10,
-    note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, and the copy picker lists the available shelf only",
+    reads: 11,
+    note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code",
   },
   "server/catalog/bulk/bulk-product.service.ts": {
     reads: 2,

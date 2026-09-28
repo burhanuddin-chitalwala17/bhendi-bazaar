@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import type { Product } from "@/domain/product";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Film, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageLightbox } from "@/components/shared/image-lightbox";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
+import { VideoPlayer } from "@/components/product/video-player";
 import {
   MAX_ZOOM_SCALE,
   youtubePosterUrl,
@@ -39,6 +40,11 @@ export function ProductGallery(product: Product) {
             ref: product.thumbnail,
             description: null,
             isThumbnail: true,
+            slot: null,
+            poster: null,
+            durationMs: null,
+            renditions: [],
+            state: null,
           },
         ];
 
@@ -47,7 +53,7 @@ export function ProductGallery(product: Product) {
   // an image viewer rather than learning about kinds.
   const photographs = media.filter((item) => item.kind === "IMAGE");
   const activeItem = media[activeIndex] ?? media[0];
-  const isVideoSlide = activeItem.kind === "YOUTUBE";
+  const isVideoSlide = activeItem.kind !== "IMAGE";
   const photographIndexOf = (mediaIndex: number) =>
     media.slice(0, mediaIndex + 1).filter((item) => item.kind === "IMAGE")
       .length - 1;
@@ -170,6 +176,8 @@ export function ProductGallery(product: Product) {
     if (isLightboxOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // A focused player owns its arrow keys — they seek; flipping the slide would unmount it.
+      if (e.target instanceof Element && e.target.closest("video")) return;
       if (e.key === "ArrowLeft") handlePrevious();
       if (e.key === "ArrowRight") handleNext();
     };
@@ -215,6 +223,39 @@ export function ProductGallery(product: Product) {
                     description={item.description}
                     productName={product.name}
                   />
+                ) : item.kind === "VIDEO" ? (
+                  item.state === "ready" && item.renditions.length > 0 ? (
+                    <VideoPlayer
+                      poster={item.poster}
+                      renditions={item.renditions}
+                      durationMs={item.durationMs}
+                      title={item.description ?? `${product.name} - Video ${index + 1}`}
+                      active={index === activeIndex}
+                    />
+                  ) : (
+                    // The poster with no play control, or a quiet placeholder, while the worker is
+                    // still at it or has given up (video-hosting spec R3, R7).
+                    <div className="relative size-full bg-muted">
+                      {item.poster ? (
+                        <Image
+                          src={item.poster}
+                          alt={item.description ?? `${product.name} - Video ${index + 1}`}
+                          fill
+                          className="object-cover select-none"
+                          loading="lazy"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          draggable={false}
+                        />
+                      ) : (
+                        <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                          <Film className="size-10" aria-hidden />
+                          <span className="text-xs">
+                            {item.state === "failed" ? "This video is not available" : "Video is being prepared"}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  )
                 ) : (
                   <div
                     className="relative w-full h-full transition-transform duration-200 ease-out"
@@ -325,24 +366,32 @@ export function ProductGallery(product: Product) {
               }`}
               aria-label={
                 item.description ??
-                (item.kind === "YOUTUBE"
+                (item.kind !== "IMAGE"
                   ? `Video ${index + 1}`
                   : `Image ${index + 1}`)
               }
             >
-              <Image
-                src={
-                  item.kind === "YOUTUBE"
-                    ? youtubePosterUrl(item.ref)
-                    : item.ref
-                }
-                alt=""
-                fill
-                className="object-cover"
-                sizes="80px"
-              />
+              {item.kind === "VIDEO" && !item.poster ? (
+                <span className="absolute inset-0 flex items-center justify-center bg-muted">
+                  <Film className="size-5 text-muted-foreground" aria-hidden />
+                </span>
+              ) : (
+                <Image
+                  src={
+                    item.kind === "YOUTUBE"
+                      ? youtubePosterUrl(item.ref)
+                      : item.kind === "VIDEO"
+                        ? (item.poster as string)
+                        : item.ref
+                  }
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="80px"
+                />
+              )}
               {/* A video is identifiable before it is opened, without hover (R4). */}
-              {item.kind === "YOUTUBE" && (
+              {item.kind !== "IMAGE" && (
                 <span className="absolute inset-0 z-10 flex items-center justify-center bg-scrim/40">
                   <Play
                     className="size-5 fill-hero-foreground text-hero-foreground"

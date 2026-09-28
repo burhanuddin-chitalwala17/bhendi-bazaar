@@ -14,7 +14,7 @@ import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
-import { productsRepository } from "@server/catalog/product.repository";
+import { PRODUCT_MEDIA_ASSET_SELECT, productsRepository } from "@server/catalog/product.repository";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
 import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
@@ -29,15 +29,32 @@ import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.
  * how an unset cover becomes survivable instead of loud (D4a).
  */
 /**
- * The asset behind each image row, found by URL (media-library trd D1). A ref with no ready
- * asset links to nothing and the backfill catches it later; the write never waits on it.
+ * The asset behind each row (media-library trd D1). A stored file — a photograph or a hosted
+ * video — is found by URL; a photograph with no ready asset links to nothing and the backfill
+ * catches it later, so the write never waits on it. A YouTube video is the org's own reference,
+ * created the moment a gallery first names it (R5a), because nothing else ever will. Exported
+ * for tests.
  */
-async function withAssetIds<T extends { kind: MediaKind; ref: string }>(rows: T[], db: MediaDb = prisma) {
-    const ids = await mediaAssetRepository.idsByRefs(
-        rows.filter((row) => row.kind === "IMAGE").map((row) => row.ref),
+export async function withAssetIds<T extends { kind: MediaKind; ref: string }>(
+    rows: T[],
+    orgId: string,
+    db: MediaDb = prisma,
+) {
+    const imageIds = await mediaAssetRepository.idsByRefs(
+        rows.filter((row) => row.kind !== "YOUTUBE").map((row) => row.ref),
         db,
     );
-    return rows.map((row) => ({ ...row, assetId: ids.get(row.ref) ?? null }));
+    const videoRefs = [...new Set(rows.filter((row) => row.kind === "YOUTUBE").map((row) => row.ref))];
+    const videoIds = await mediaAssetRepository.embedIdsByRefs(orgId, videoRefs, db);
+    for (const ref of videoRefs) {
+        if (videoIds.has(ref)) continue;
+        const created = await mediaAssetRepository.createEmbed({ orgId, ref }, db);
+        videoIds.set(ref, created.id);
+    }
+    return rows.map((row) => ({
+        ...row,
+        assetId: (row.kind === "YOUTUBE" ? videoIds : imageIds).get(row.ref) ?? null,
+    }));
 }
 
 export function mediaWrite(media: ProductMediaInput[]) {
@@ -48,6 +65,7 @@ export function mediaWrite(media: ProductMediaInput[]) {
       ref: item.ref,
       description: blankToNull(item.description),
       isThumbnail: item.isThumbnail,
+      slot: item.kind === "IMAGE" ? blankToNull(item.slot) : null,
       position: index,
     })),
   };
@@ -81,9 +99,9 @@ const PRODUCT_LIST_SELECT = {
     },
 } satisfies Prisma.ProductSelect;
 
-/** Gallery order is the only order media is ever read in (R16). */
+/** Gallery order is the only order media is ever read in (R16). The asset join is what a VIDEO row's poster and state come from. */
 const MEDIA_SELECT = {
-    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true },
+    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true, slot: true, asset: PRODUCT_MEDIA_ASSET_SELECT },
     orderBy: { position: "asc" },
 } satisfies Prisma.Product$mediaArgs;
 
@@ -275,7 +293,7 @@ export class AdminProductsRepository {
         // are dropped ("not stocked here"), and origin comes from the locations.
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
         const media = mediaWrite(data.media);
-        const mediaRows = await withAssetIds(media.rows);
+        const mediaRows = await withAssetIds(media.rows, data.orgId);
         const product = await prisma.product.create({
             data: {
                 slug,
@@ -482,7 +500,7 @@ export class AdminProductsRepository {
             product = await prisma.$transaction(async (tx) => {
             await tx.productStock.deleteMany({ where: { productId: id } });
             await tx.productMedia.deleteMany({ where: { productId: id } });
-            const mediaRows = await withAssetIds(media.rows, tx);
+            const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
             return tx.product.update({
                 where: { id },
                 data: {
@@ -522,6 +540,17 @@ export class AdminProductsRepository {
         return product;
     }
 
+
+  /** The categories this org has products on sale in — what its listing defaults are keyed by. */
+  async listCategoriesSoldBy(orgId: string): Promise<Array<{ id: string; name: string }>> {
+    const rows = await prisma.product.findMany({
+      where: { orgId, archivedAt: null },
+      distinct: ["categoryId"],
+      select: { category: { select: { id: true, name: true } } },
+      orderBy: { category: { name: "asc" } },
+    });
+    return rows.map((row) => row.category);
+  }
 }
 
 export const adminProductsRepository = new AdminProductsRepository();

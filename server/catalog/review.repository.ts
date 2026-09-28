@@ -9,6 +9,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import { Prisma } from "@prisma/client";
+import { AVAILABLE } from "@server/catalog/product.visibility";
 import type { RatingRow } from "@server/catalog/review-rating";
 import type {
   AdminReview,
@@ -17,6 +18,7 @@ import type {
   CreateReviewData,
   EditReviewData,
   ReviewRow,
+  ShopReviewRow,
 } from "@server/catalog/review.types";
 
 /**
@@ -110,6 +112,41 @@ export class ReviewRepository {
       prisma.review.count({ where }),
     ]);
     return { rows, total };
+  }
+
+  /**
+   * The rating projection for every on-sale product of one org, in one query (brand-page D2).
+   * `AVAILABLE` because an archived product has no page: a review nobody can reach is not
+   * counted on the shop's sign either (A3a).
+   */
+  async publishedRatingRowsForOrg(orgId: string): Promise<RatingRow[]> {
+    return prisma.review.findMany({
+      where: { product: { orgId, ...AVAILABLE }, ...VISIBLE_REVIEW_WHERE },
+      select: { id: true, productId: true, userId: true, rating: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * The newest visible reviews across one org's on-sale products, with the product each is
+   * about (brand-page R1). Same predicate as the product page's list, so the two agree (A3a).
+   */
+  async listPublishedForOrg(orgId: string, take: number): Promise<ShopReviewRow[]> {
+    return prisma.review.findMany({
+      where: { product: { orgId, ...AVAILABLE }, ...VISIBLE_REVIEW_WHERE },
+      select: {
+        id: true,
+        userName: true,
+        rating: true,
+        comment: true,
+        isVerified: true,
+        createdAt: true,
+        product: { select: { name: true, slug: true } },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take,
+      relationLoadStrategy: "join",
+    });
   }
 
   /**

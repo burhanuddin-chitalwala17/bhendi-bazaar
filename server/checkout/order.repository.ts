@@ -129,6 +129,22 @@ export class OrderRepository {
   }
 
   /**
+   * Paid orders carrying at least one of this org's products — the shop's "orders fulfilled"
+   * (brand-page R4, D2). Counted as orders, so a basket with three of the org's lines is one.
+   * `VISIBLE_ORDER_WHERE` because the predicate is the rule, even though paid and expired are
+   * mutually exclusive by construction (`confirmPaid`).
+   */
+  async countPaidForOrg(orgId: string): Promise<number> {
+    return prisma.order.count({
+      where: {
+        paymentStatus: PAYMENT_STATUS.PAID,
+        ...VISIBLE_ORDER_WHERE,
+        items: { some: { product: { orgId } } },
+      },
+    });
+  }
+
+  /**
    * Find order by ID
    */
   async findById(orderId: string) {

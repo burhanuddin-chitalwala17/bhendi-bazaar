@@ -46,16 +46,15 @@ export function ReviewPhotoPicker({
     for (const file of chosen) {
       try {
         const reduced = await downscaleImage(file);
-        uploaded.push(
-          await uploadDirect(
-            // A file name only. The route puts it under the reviewer's own folder, which
-            // is not the browser's to choose, and answers with the URL it actually signed.
-            storedPathFor(file.name, reduced),
-            reduced,
-            // Reviews register no asset yet (media-library out of scope), so no confirm route.
-            { token: "/api/reviews/upload-token" },
-          ),
+        const { url } = await uploadDirect(
+          // A file name only. The route puts it under the reviewer's own folder, which
+          // is not the browser's to choose, and answers with the URL it actually signed.
+          storedPathFor(file.name, reduced),
+          reduced,
+          // Reviews register no asset yet (media-library out of scope), so no confirm route.
+          { token: "/api/reviews/upload-token" },
         );
+        uploaded.push(url);
       } catch (error) {
         toast.error(
           error instanceof Error

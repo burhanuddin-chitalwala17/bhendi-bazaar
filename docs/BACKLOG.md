@@ -23,7 +23,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **8** — Bidding | A product can be sold by timed bidding on a shareable link instead of at a fixed price | bidding, catalog, checkout, payouts | ✅ **Done** — PR-97 |
 | **9** — Seller storefronts | Every selling organisation gets a public storefront of its own, at a link it can promote | catalog | ✅ **Done** — 7 subfeatures |
 | **10** — Discoverability | The store is findable: every public page describes itself, every product is machine-readable, every URL answers honestly | catalog, *(cross-domain)* | ⏳ Not started — 1 spec drafted (seo) |
-| **11** — Listing: one entry, every channel | A product is described once, from its photographs, and is ready for the store, Amazon, Flipkart and Instagram from that one entry | catalog, content, listing, social, *(cross-domain)* | 🔨 In progress — 3 of 9 specs accepted (worker-foundation, seller-profile, media-library) plus 2 subfeatures; ADR-0037, ADR-0038 |
+| **11** — Listing: one entry, every channel | A product is described once, from its photographs, and is ready for the store, Amazon, Flipkart and Instagram from that one entry | catalog, content, listing, social, *(cross-domain)* | 🔨 In progress — 3 of 9 specs accepted (worker-foundation, seller-profile, media-library) plus 2 subfeatures accepted and 1 drafted (video-hosting); ADR-0037, ADR-0038, ADR-0039 |
 
 ---
 
@@ -172,10 +172,12 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | Spec | Requirement | Status |
 |---|---|---|
 | [worker-foundation](specs/worker-foundation/) | The queue in our Postgres and the worker we own, with nothing in it: health in admin, per-org fairness, a machine rebuilt by one script ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)) | 🔨 In progress — PR-150, PR-154 (2 of 3; machine pending) |
-| [seller-profile](specs/seller-profile/) | A private face for what listing needs (brands, manufacturers, origin, tax codes) and a public face for what a buyer may see; nothing demanded before it is needed | 🔨 In progress — PR-151 (1 of 4) |
-| [media-library](specs/media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 🔨 In progress — PR-152 (1 of 6) |
-| [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | ✅ Accepted — 2026-09-26 |
+| [seller-profile](specs/seller-profile/) | A private face for what listing needs (brands, manufacturers, origin, tax codes) and a public face for what a buyer may see; nothing demanded before it is needed | 🔨 In progress — PR-151, PR-162, PR-175, PR-182 (4a of 4) |
+| [media-library](specs/media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 🔨 In progress — PR-152, PR-161, PR-163, PR-177, PR-178 (4 of 6) |
+| [seller-profile/brand-page](specs/seller-profile/brand-page/) | The about page becomes a brand landing page: hero, derived proof, story with a real person, category tiles, newest goods, terms, one call to shop; finished when the seller has written one line | 🔨 In progress — PR-182 (a of a–c) |
 | [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Accepted — 2026-09-26 |
+| [media-library/video-hosting](specs/media-library/video-hosting/) | A short video uploads from the phone like a photograph; the worker makes the sizes that play, and it is an image's peer in the library | ✅ Implemented — 2026-09-27 (PR-180, PR-181, PR-183) |
+| [image-enhancement](specs/image-enhancement/) | A phone photo becomes a marketplace-grade image on demand — cut out, on white, in a studio, in a scene, brightened, enlarged — each a tool applied alone, each result accepted or discarded | 📝 Draft — 2026-09-27 |
 | image-enhancement | Cutout to white background and to a generated backdrop, as derived images, with a per-org usage ledger and quota; a dark or blurred warning at upload offers "improve this photo" as its way out; the first work on the owned worker | planned |
 | listing-schema | A canonical vocabulary, per-channel mappings held as data, product families, one effective-attribute resolver, per-value provenance, and readiness per channel | planned |
 | product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | planned |

@@ -25,22 +25,26 @@
 /** Razorpay serves checkout from one apex and phones home to several subdomains. */
 const RAZORPAY = "https://*.razorpay.com";
 
-/** The product video player (ADR-0017). `youtubeEmbedUrl` in `server/catalog/media.ts` emits it. */
+/** An embedded video's frame (ADR-0017). `youtubeEmbedUrl` in `server/catalog/media.ts` emits it.
+ *  A video we host is not a frame: it is a `<video>` reading our bucket under `media-src`. */
 const YOUTUBE_EMBED = "https://www.youtube-nocookie.com";
+
+/** The bucket's public read domain: every stored image, and every video rendition (ADR-0028). */
+function storeHost(): string[] {
+  const base = process.env.R2_PUBLIC_BASE_URL;
+  if (!base) return [];
+  try {
+    return [`https://${new URL(base).hostname}`];
+  } catch {
+    // A malformed R2_PUBLIC_BASE_URL already breaks image rendering at the optimizer
+    // (next.config.ts reads the same variable); it must not also break every response.
+    return [];
+  }
+}
 
 /** Hosts `next/image` is allowed to render from — kept beside `next.config.ts`'s list. */
 function imageHosts(): string[] {
-  const hosts = ["https://i.ytimg.com", "https://placehold.co", "https://shiprocket.in"];
-  const base = process.env.R2_PUBLIC_BASE_URL;
-  if (base) {
-    try {
-      hosts.push(`https://${new URL(base).hostname}`);
-    } catch {
-      // A malformed R2_PUBLIC_BASE_URL already breaks image rendering at the optimizer
-      // (next.config.ts reads the same variable); it must not also break every response.
-    }
-  }
-  return hosts;
+  return ["https://i.ytimg.com", "https://placehold.co", "https://shiprocket.in", ...storeHost()];
 }
 
 /**
@@ -81,6 +85,13 @@ export function contentSecurityPolicy(nonce: string, isDev: boolean): string {
     // `blob:` and `data:` are the local preview of an image a user has just picked, before
     // it is uploaded — the one case ADR-0026 lets skip the optimizer.
     "img-src": ["'self'", "data:", "blob:", ...imageHosts()],
+
+    // A `<video>` reads its bytes under `media-src`, which falls back to `default-src` when
+    // absent — so our own renditions, served from the bucket domain, were refused while the
+    // poster beside them loaded, because a poster is an image through the optimizer on this
+    // origin (ADR-0039). The element mounts, the source is dropped, nothing says why.
+    "media-src": ["'self'", "blob:", ...storeHost()],
+
     "font-src": ["'self'", "data:"], // next/font/google self-hosts at build time
 
     "connect-src": [

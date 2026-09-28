@@ -1,7 +1,7 @@
 # ADR-0017: Video is embedded from a third-party host, never stored in our own object storage
 
 - **Date:** 2026-08-13
-- **Status:** Accepted
+- **Status:** Superseded in part by [ADR-0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) — decisions 1 and 4 (no video file in our storage; every surface embeds) no longer hold; decisions 2 and 3 stand for YouTube embeds, which remain supported
 - **Context:** Every asset the store serves — product photographs, category heroes, avatars — lives in Vercel Blob, uploaded through one path and referenced by URL. So when the catalogue needed video, the shape of the answer looked settled: put the file where the other files are. It is not settled, because video differs from a photograph by an order of magnitude in exactly the dimension that allowance is metered on.
 
   Two properties of the storage tier decide this. Transfer is metered **per account**, shared across every asset the store serves, and video is 15–20× the bytes of every photograph on a product page combined — so a few hundred plays a day spends the catalogue's entire monthly transfer on one feature. And exceeding the allowance does not produce a bill; it withdraws access to the store for thirty days. The failure mode of self-hosted video is therefore not "video stops working", it is "every product image in the store stops working, for a month, because someone watched a clip". A nice-to-have cannot be allowed to hold the storefront hostage.

@@ -54,7 +54,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0014](0014-deploys-run-their-own-migrations.md) | Deploys run their own migrations | Accepted | 2026-08-09 |
 | [0015](0015-mobile-first-design.md) | The UI is designed mobile-first; desktop is the enhancement | Accepted | 2026-08-09 |
 | [0016](0016-mobile-app-shell.md) | The phone storefront is an app shell — bottom tab bar, dense grids, page-level chrome | Accepted | 2026-08-11 |
-| [0017](0017-video-is-embedded-not-hosted.md) | Video is embedded from a third-party host, never stored in our own object storage | Accepted | 2026-08-13 |
+| [0017](0017-video-is-embedded-not-hosted.md) | Video is embedded from a third-party host, never stored in our own object storage | Superseded in part by [ADR-0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) — decisions 1 and 4 (no video file in our storage; every surface embeds) no longer hold; decisions 2 and 3 stand for YouTube embeds, which remain supported | 2026-08-13 |
 | [0018](0018-one-effective-price-function.md) | One effective-price function serves display and charge | Accepted | 2026-08-16 |
 | [0019](0019-discount-is-one-winning-offer.md) | A discount is one winning offer, allocated to lines, with its funding recorded | Accepted | 2026-08-16 |
 | [0020](0020-money-bearing-records-never-cascade.md) | Records that carry money or attribution never cascade | Accepted | 2026-08-16 |
@@ -76,4 +76,6 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0036](0036-a-files-reasons-to-change-are-a-decision.md) | A file's reasons to change are a decision, not a drift | Accepted | 2026-09-23 |
 | [0037](0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) | The host is a deployment fact, not an architectural input | Accepted | 2026-09-25 |
 | [0038](0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) | Background work runs on an owned worker against a Postgres job queue | Accepted | 2026-09-25 |
+| [0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | Video is stored in our own object store and transcoded by the worker | Accepted | 2026-09-27 |
+| [0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md) | An overlay's surface is chosen by what it holds, not by what was easiest to reach for | Accepted | 2026-09-27 |
 <!-- generated:adr-index:end -->

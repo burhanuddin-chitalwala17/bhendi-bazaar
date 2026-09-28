@@ -36,6 +36,8 @@ export default async function OrgNewProductPage({
   const categories = categoriesResult.categories.map((c: AdminCategory) => ({
     id: c.id,
     name: c.name,
+    parentId: c.parentId,
+    shotList: c.shotList,
   }));
 
   const orgs = [

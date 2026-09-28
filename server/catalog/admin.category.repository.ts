@@ -11,6 +11,15 @@ import type {
   UpdateCategoryInput,
 } from "@server/catalog/admin.category.types";
 import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
+import { Prisma } from "@prisma/client";
+import { toJsonColumn } from "@server/shared/json";
+import { parseShotList, type ShotList } from "@server/catalog/shot-list";
+
+/** `null` clears the list back to the inherited one; `undefined` leaves the column alone. */
+function shotListColumn(list: ShotList | null | undefined) {
+  if (list === undefined) return undefined;
+  return list === null ? Prisma.JsonNull : toJsonColumn(list);
+}
 
 class AdminCategoryRepository {
   /**
@@ -61,6 +70,7 @@ class AdminCategoryRepository {
       heroImage: category.heroImage,
       accent: category.accent,
       order: category.order,
+      shotList: parseShotList(category.shotList),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,
@@ -94,6 +104,7 @@ class AdminCategoryRepository {
       heroImage: category.heroImage,
       accent: category.accent,
       order: category.order,
+      shotList: parseShotList(category.shotList),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,
@@ -129,6 +140,7 @@ class AdminCategoryRepository {
             heroImage: data.heroImage,
             accent: data.accent,
             order,
+            shotList: shotListColumn(data.shotList),
           },
           include: {
             _count: {
@@ -152,6 +164,7 @@ class AdminCategoryRepository {
       heroImage: category.heroImage,
       accent: category.accent,
       order: category.order,
+      shotList: parseShotList(category.shotList),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,
@@ -176,6 +189,7 @@ class AdminCategoryRepository {
         heroImage: data.heroImage,
         accent: data.accent,
         order: data.order,
+        shotList: shotListColumn(data.shotList),
       },
       include: {
         _count: {
@@ -193,6 +207,7 @@ class AdminCategoryRepository {
       heroImage: category.heroImage,
       accent: category.accent,
       order: category.order,
+      shotList: parseShotList(category.shotList),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,

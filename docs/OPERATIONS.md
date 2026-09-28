@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-26
+- **Verified:** 2026-09-28
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -29,13 +29,17 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ➖ | **Read by nothing.** Marked required here until 2026-09-23; no `process.env` reference exists. The checkout widget is handed the key id in the server's response (`server/payments/providers/razorpay/razorpay.repository.ts`), so setting it changes nothing and leaving it unset breaks nothing |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
-| `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it |
+| `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it. `NODE_ENV` is never set by us: Vercel and Next.js set it to `production` for every build, which is why `APP_ENV` is required there |
 | `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
 | `CRON_SECRET` | ✅ | Bearer token Vercel Cron sends to `/api/cron/reconcile-payments` (the missed-webhook and abandoned-reservation backstop, daily at 03:30 UTC per `vercel.json`). Any long random string; set it in Vercel env |
-| `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — the bucket's custom domain in production, its `r2.dev` URL locally. **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
+| `R2_PUBLIC_BASE_URL` | ✅ | Where a stored image is read from — a custom domain on the Cloudflare zone for each bucket, the production one and `dev.bhendi-bazaar.com` for the development bucket. An `r2.dev` URL also works and is the fallback before a domain is attached, but it can serve no image transformations, which is what background removal is (`IMAGE_SEGMENT_PROVIDER`). **Also feeds `next.config.ts` `remotePatterns` at build time**, so a wrong value 404s every image at the optimizer with no error anywhere |
 | `R2_ENDPOINT` | ✅ | The S3 API endpoint, `https://<account-id>.r2.cloudflarestorage.com`. Not public — never used to build an image URL |
+| `FFMPEG_PATH` / `FFPROBE_PATH` | — | Worker only, optional. Where the transcoder's binaries are when they are not on `PATH` ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)); the image installs ffmpeg as an OS package, so neither is set there |
 | `R2_BUCKET` | ✅ | Bucket name |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | ✅ | R2 API token with read+write on that bucket |
+| `IMAGE_SEGMENT_PROVIDER` | ○ | Which service cuts a product out of its background for the `cut out`, `on white` and `studio` improvements: `zone` — the image host's own delivery transform on the custom images domain, free to 5,000 a month — or `model`, the hosted vision model. **Defaults to `zone`**, and whichever is asked for, the other runs when it is not set up. An unrecognised value is the default rather than an error: it is a preference, not a credential |
+| `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development. The same key buys the **scene** improvement, which has no free route at all — no key, no scenes anywhere, and the account behind it needs a *balance* as well as a key (see [A scene costs money](#a-scene-costs-money)) |
+| `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
@@ -98,7 +102,7 @@ If you are looking at something that asks you to *supply* a secret rather than g
 
 **3. Turn on public read.** Bucket → Settings → Public access.
 
-- *Developing:* enable the **r2.dev subdomain** and use that as `R2_PUBLIC_BASE_URL`. Cloudflare rate-limits it and says not to use it in production.
+- *Developing:* attach a custom domain to the development bucket too — `dev.bhendi-bazaar.com` is on the same zone, so it costs nothing and the image transformations work there exactly as in production. The **r2.dev subdomain** is the fallback before that: Cloudflare rate-limits it, says not to use it in production, and serves no transformations, so background removal is unavailable on it.
 - *Production:* add a **custom domain**. See below — it needs the zone on Cloudflare DNS first. That URL becomes `R2_PUBLIC_BASE_URL`.
 
 #### Putting the custom domain on Cloudflare DNS
@@ -232,6 +236,60 @@ Then, for the duration of that session:
 
 Tunnel URLs are ephemeral on free tiers; each restart means repeating steps 1–3. Revert `.env` afterwards, or the next non-tunnelled run mails links to a dead host.
 
+### Set in admin, not in the environment: the enhancement allowance and the daily cap
+How many photo enhancements a shop may run in a month, and what every shop together may spend in a
+day, are rows in the database and are edited at `/admin/enhancements` — not variables, because they
+are the answer to a provider bill and that answer should not wait for a deploy. **With no settings
+row the code falls back** to 300 a month and ₹500 a day (`FALLBACK_MONTHLY_ALLOWANCE` /
+`FALLBACK_DAILY_CAP_PAISE` in `server/content/enhancement.types.ts`), so a fresh database works and
+the first save on that screen is what makes the numbers the platform's. A shop with no row of its
+own follows the platform's number; one with a row has been given an allowance of its own or paused.
+Nothing here needs seeding.
+
+### Choosing a cut-out service: the bake-off
+Which service cuts a product out is the platform's choice and changes no screen
+([image-enhancement](specs/image-enhancement/) R8). To choose it on evidence rather than on claims,
+run the same real photographs through every service that is set up:
+
+```bash
+npm run enhance:bakeoff -- --org <orgId> --limit 20
+```
+
+It prints the shop's name and how many photographs it will use before it starts, then takes that
+shop's newest ready images, runs each available service over every one, and prints the URL of a page
+that lays them out side by side — the original, then each service's cut-out shown twice, on mid-grey
+and on white, with the service's key and how many milliseconds it took. Grey is where a halo and a
+missed edge show; white is what the result is actually for.
+
+It writes nothing to the database and creates no library image: everything lands under a
+`bakeoff/<runId>/` prefix in the object store, so cleaning up is deleting that prefix. It does spend
+real money on any service that bills per image, which is what `--limit` is for. Set
+`IMAGE_SEGMENT_PROVIDER` to the winner afterwards; nothing else changes.
+
+### A scene costs money
+
+Every other improvement is free or nearly so: `light` and `enlarge` run on our own CPU, and a
+cut-out is free to 5,000 a month on the image host. **A scene is not.** One run pays a hosted model
+about **₹3.50** to paint the setting (`SCENE_PAINT_PAISE`), plus about ₹0.18 for the cut-out when
+that came from the paid model rather than the image host's transform — so a scene run is roughly
+₹3.50 and the ledger records the two together, which is also what the platform's daily cap counts.
+At the default cap of ₹500 a day that is about 140 scenes across every shop.
+
+That money is a **balance on the image-model account**, and a key alone does not make one. With a
+key and no balance the request is accepted, the worker runs, the service refuses, and the run is
+marked failed — which costs the shop nothing (a failed run is the one state that does not count
+against its month) and shows the member one line in the improve sheet:
+
+```text
+The picture service is out of credit. Ask the platform owner to top it up.
+```
+
+That sentence is deliberate: it names something the platform owner can do rather than telling a
+shop to try again at a service that will refuse again. With **no key at all** the tools list still
+offers "In a scene", and choosing a setting is refused before anything is spent with
+`Scene backdrops are not set up yet`. Nothing else is affected either way — the other five
+improvements keep working.
+
 ### Env hygiene
 `.env*` is gitignored and has never been committed — keep it that way. Set `NODE_ENV` to a valid Node value (`development` / `production` / `test`); anything else silently changes behaviour in code that branches on it. Avoid keeping more than one live connection string in the file at a time — see [Seeding](#seeding) for why.
 
@@ -290,6 +348,11 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
   new Prisma migration; the library's own runtime migration is switched off and must stay off.
 - **Every timer is set in `server/shared/jobs/jobs.config.ts`**, and `tests/unit/jobs-config.test.ts`
   fails if one is shortened or left to a default: the database bills every poll.
+- **ffmpeg is in the image** for hosted video ([ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md)): a Debian package, pinned by the base image's release. Transcodes run one at a time — the free machine has the CPU for one — and `tests/unit/video-transcode.test.ts` runs the real binary, so a laptop without ffmpeg (`brew install ffmpeg`) skips that one suite while CI never does.
+- **Schedules are in-process timers that enqueue a job** (`server/shared/jobs/jobs.schedule.ts`),
+  never pg-boss's cron: the floor is one tick an hour and the count is budgeted in the idle estimate.
+  The worker logs them at start. The first is `media.sweep`, every six hours: uploads that never
+  confirmed go after an hour, and a retired image's stored object goes after thirty days.
 - **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
   count and re-runs them; each re-run is an audit entry.
 - **Direct connections.** The worker needs the direct connection string (notify is session-bound);
@@ -365,6 +428,12 @@ That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not
 | `WORKER_ENV_FILE` | The whole env file, from `.env.worker.example` with values — `DATABASE_URL` is the **direct** string of the production database |
 | `GHCR_PULL_USER` / `GHCR_PULL_TOKEN` | A GitHub user and a personal access token with `read:packages`, so the machine can pull the private image |
 
+**Redeploys and the dev domain.** `dev.bhendi-bazaar.com` is moved onto a deployment by the pipeline's
+alias step, and only by it. A Redeploy from the Vercel dashboard rebuilds the source of the deployment
+you clicked — not the branch's latest commit — and leaves the domain where it was. To get current
+`develop` code onto dev with current variables, push, or re-run the workflow from the Actions tab.
+A new or changed environment variable also reaches only deployments created after it was saved.
+
 **Deploy.** A push to `main` builds the image, then over SSH writes the env file, copies
 `compose.yml`, pulls the commit's image and restarts the stack. The heartbeat on the admin dashboard
 goes green within five minutes. A rollback is re-running the job on an older commit. Until
@@ -379,6 +448,14 @@ WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p work
 docker compose -p worker-staging down   # when done: an idle worker still bills polls
 ```
 
+**Run it on the worker's own machine, not a laptop**, whenever somebody else is doing the testing.
+The stack publishes no port and mounts no named volume, so a second project beside the production
+one on the same host costs nothing and conflicts with nothing — and it keeps running when the
+laptop that started it is shut, which a tester three time zones or one sleep cycle away depends on.
+Its own directory is what keeps the two apart: the whole difference between staging and production
+is which `.env` sits next to the compose file, and one wrong `DATABASE_URL` there points a staging
+worker at the live database with nothing to notice it.
+
 **Rebuild after a loss.** Create the instance again with the reserved IP, run `provision.sh`, re-run
 the last `main` pipeline. Nothing was on the machine that is not in Postgres or the object store.
 
@@ -390,6 +467,10 @@ Every image the store holds has a record in `MediaAsset` from [media-library](sp
 npm run media:backfill            # report what would be created and linked
 npm run media:backfill -- --write # create the assets and link the rows
 ```
+
+A write also hashes ready images recorded before the content-hash column existed (trd D11), up to two
+thousand per run — a larger library needs a second run, and the summary line's `hashed` count says when
+it is done. Until an image is hashed, uploading it again stores a second copy.
 
 Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
 

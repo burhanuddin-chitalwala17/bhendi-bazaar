@@ -1,10 +1,10 @@
 # Spec — seller-profile
 
 - **Summary:** An organisation's profile has a private face for what listing needs and a public face for what a buyer may see, and nothing is demanded before it is needed
-- **Status:** 🔨 In progress — PR-151 (1 of 4)
+- **Status:** 🔨 In progress — PR-151, PR-162, PR-175, PR-182 (4a of 4)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-27
 - **References:** [trd.md](trd.md), [brand-page](brand-page/) (subfeature), [org-storefront](../org-storefront/) (seller-identity R5, storefront-branding, storefront-pages R3), [ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md), [ADR-0037](../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
@@ -31,6 +31,8 @@ Resellers are the reason the private face is built around brands rather than the
 - **R8** — The about page and the storefront read the public face and nothing else, and look exactly as they do today the day this ships.
 - **R9** — A brand or a default that products depend on is retired, never deleted, and a retired brand's products keep their values ([ADR-0032](../../adr/0032-records-people-authored-are-retired-not-deleted.md)).
 - **R10** — Everything here is editable from a phone, by a member of that organisation only.
+- **R11** — Which brand is the default is never changed silently: making one the default says which brand stopped being it, and retiring the default warns first and says afterwards that none is set. A country of origin is chosen from a list, never typed.
+- **R12** — The org sees what its brand page shows and what one more fact would add — "a cover and a tagline would add the hero; two brands would add a brands strip" — each line naming the fact and where it is written. Never a percentage, never a score, never the word "required": completeness is shown as what a buyer would see, because that is the only reason to complete it.
 
 ## Product acceptance
 

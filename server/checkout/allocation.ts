@@ -1,4 +1,4 @@
-import { ConflictError } from "@server/shared/domain-error";
+import { ConflictError, OutOfStockError } from "@server/shared/domain-error";
 
 /**
  * Which location fulfils what (stock-locations R5, TRD D8): fewest parcels first,
@@ -64,10 +64,16 @@ export function allocateForOrg(
     for (const forLocation of byLocation.values()) total += forLocation.get(productId) ?? 0;
     if (total < need) {
       const name = productNames.get(productId) ?? "An item in your order";
-      throw new ConflictError(
+      // A shortfall is the same answer wherever it is noticed. This read sees it first
+      // whenever the units went before the buyer got here, and the guarded write sees it
+      // when they go during — so naming the product here is what lets the caller release
+      // abandoned holds and retry (checkout-abandonment D4) instead of turning away a
+      // buyer for an item that a closed payment window is still holding.
+      throw new OutOfStockError(
         total > 0
           ? `Only ${total} left of "${name}" — you asked for ${need}. Please adjust your cart.`
-          : `"${name}" is out of stock. Please remove it from your cart.`
+          : `"${name}" is out of stock. Please remove it from your cart.`,
+        [productId]
       );
     }
   }

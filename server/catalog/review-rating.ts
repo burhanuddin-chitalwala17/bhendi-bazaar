@@ -61,6 +61,9 @@ const isLater = (row: RatingRow, than: RatingRow): boolean =>
     ? row.createdAt.getTime() > than.createdAt.getTime()
     : row.id > than.id;
 
+/** Whose review this is, for R10. A review with no account cannot be grouped with anything, so it keys on itself. */
+const voiceOf = (row: RatingRow): string => row.userId ?? `anonymous:${row.id}`;
+
 /**
  * The three numbers, from one pass over the rows (trd.md D4).
  *
@@ -83,8 +86,7 @@ export function summariseRatings(rows: readonly RatingRow[]): Map<string, Produc
 
     let perVoice = voices.get(row.productId);
     if (!perVoice) voices.set(row.productId, (perVoice = new Map()));
-    // A review with no account cannot be grouped with anything, so it keys on itself.
-    const voice = row.userId ?? `anonymous:${row.id}`;
+    const voice = voiceOf(row);
     const held = perVoice.get(voice);
     if (!held || isLater(row, held)) perVoice.set(voice, row);
   }
@@ -100,6 +102,35 @@ export function summariseRatings(rows: readonly RatingRow[]): Map<string, Produc
     });
   }
   return summaries;
+}
+
+/** What a shop's reviews add up to (brand-page R4): the same two numbers, over every product it sells. */
+export interface OrgRating {
+  /** Null with nothing published — a zero here would read as a rating. */
+  average: number | null;
+  count: number;
+}
+
+/**
+ * The shop-level figures, under the same R10 rule per product: a shopper who reviewed one piece
+ * ten times is one voice on it, and a shopper who reviewed three pieces is three. `count` is
+ * every published review, matching what the product pages list.
+ */
+export function summariseOrgRating(rows: readonly RatingRow[]): OrgRating {
+  const latest = new Map<string, RatingRow>();
+  for (const row of rows) {
+    const key = `${row.productId}|${voiceOf(row)}`;
+    const held = latest.get(key);
+    if (!held || isLater(row, held)) latest.set(key, row);
+  }
+  const voices = [...latest.values()];
+  return {
+    average:
+      voices.length === 0
+        ? null
+        : voices.reduce((sum, row) => sum + row.rating, 0) / voices.length,
+    count: rows.length,
+  };
 }
 
 /**

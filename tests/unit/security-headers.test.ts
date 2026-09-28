@@ -59,6 +59,30 @@ describe("content security policy", () => {
     expect(directive(prod, "img-src")).toContain(posterHost);
   });
 
+  it("lets a video we host actually play, which img-src does not cover", () => {
+    // Regression: the policy had no `media-src` at all, so a `<video>` fell back to
+    // `default-src 'self'` and every rendition we serve was refused — while the poster
+    // beside it loaded, because a poster is an image through the optimizer on this origin.
+    // The element mounted, the source was dropped, and the surface just sat there (ADR-0039).
+    const previous = process.env.R2_PUBLIC_BASE_URL;
+    process.env.R2_PUBLIC_BASE_URL = "https://media.example.test";
+    try {
+      const policy = contentSecurityPolicy(NONCE, false);
+      expect(directive(policy, "media-src")).toContain("https://media.example.test");
+    } finally {
+      if (previous === undefined) delete process.env.R2_PUBLIC_BASE_URL;
+      else process.env.R2_PUBLIC_BASE_URL = previous;
+    }
+  });
+
+  it("does not lend the media channel the hosts that only serve pictures", () => {
+    // A third party allowed to serve a thumbnail has no business streaming bytes into a
+    // `<video>` on this origin, so `media-src` is our own bucket and nothing else.
+    expect(directive(prod, "media-src")).not.toContain("placehold.co");
+    expect(directive(prod, "media-src")).not.toContain("ytimg.com");
+    expect(directive(prod, "media-src")).not.toContain("shiprocket.in");
+  });
+
   it("lets the browser write to the object store it uploads through", () => {
     // Regression: `connect-src` listed the payment gateway and nothing else, while every
     // image upload goes browser-to-R2 (ADR-0028). A CSP-blocked `fetch` rejects rather

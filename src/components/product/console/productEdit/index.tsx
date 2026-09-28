@@ -15,7 +15,7 @@ import type { LocationOption } from "@/components/shared/forms/product/ProductOr
 import { PageHeader } from "@/components/shared/page-shell";
 interface ProductEditContainerProps {
   product: ProductDetails;
-  categories: { id: string; name: string }[];
+  categories: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */

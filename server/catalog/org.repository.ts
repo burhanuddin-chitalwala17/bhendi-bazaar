@@ -280,6 +280,15 @@ export class OrgRepository {
     });
   }
 
+  /** The named few, for a console listing something else keyed by org id. */
+  async findSummaries(ids: string[]) {
+    return await prisma.org.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, code: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
   /** Every org's terms, for the payout overview. */
   async listCommercialTerms() {
     return await prisma.org.findMany({

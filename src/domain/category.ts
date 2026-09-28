@@ -15,6 +15,8 @@ export interface Category {
   heroImage: string;
   accent: CategoryAccent;
   order: number;
+  /** Stored JSON; resolve with `resolveShotList` from `@server/catalog/shot-list` (media-library D4). */
+  shotList?: unknown;
 }
 
 

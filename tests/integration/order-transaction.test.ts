@@ -274,6 +274,11 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
     // A sequential version of this passes with the condition deleted, which is how the race
     // survived unguarded — the two must overlap. `tests/unit/conditional-stock.test.ts` holds
     // the same rule at the level of the write's shape.
+    //
+    // The loser can be refused at either of two points, depending on whether the winner had
+    // committed before it read: the allocation's availability check, or the guarded write.
+    // Both are the same refusal and both name the product, so this assertion does not depend
+    // on which machine is faster — it did once, and went red on CI and nowhere else.
     const { input, lines } = await buildInput({
       specs: [{ suffix: `race-${Date.now()}`, price: 15_000, quantity: 1 }],
       stock: 1,

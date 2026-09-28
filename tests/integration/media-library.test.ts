@@ -80,3 +80,116 @@ describe.skipIf(!isDisposableDb)("media library (local db)", () => {
     expect(second.rowsLinked).toBe(0);
   });
 });
+
+describe.skipIf(!isDisposableDb)("media library — reads and retirement (local db)", () => {
+  let prisma: typeof import("@server/shared/prisma").prisma;
+  let repo: typeof import("@server/catalog/media-asset.repository").mediaAssetRepository;
+  let service: typeof import("@server/catalog/media-asset.service").mediaAssetService;
+  const stamp = `lib-${Date.now().toString(36)}`;
+  const prefix = `https://media.test/${stamp}/`;
+  const filters = (over: Partial<import("@/lib/validation/schemas/media-library.schema").MediaLibraryFilters> = {}) =>
+    ({ usage: "all" as const, retired: false, page: 1, ...over });
+  let orgId: string;
+  let assetId: string;
+
+  beforeAll(async () => {
+    ({ prisma } = await import("@server/shared/prisma"));
+    ({ mediaAssetRepository: repo } = await import("@server/catalog/media-asset.repository"));
+    ({ mediaAssetService: service } = await import("@server/catalog/media-asset.service"));
+    orgId = (await ensureFixtures()).orgId;
+    assetId = (
+      await repo.createReady({
+        orgId,
+        uploaderId: null,
+        ref: `${prefix}banner.webp`,
+        objectKey: null,
+        mimeType: "image/webp",
+        bytes: 10,
+        width: 1200,
+        height: 400,
+      })
+    ).id;
+  });
+
+  afterAll(async () => {
+    await prisma.orgBanner.deleteMany({ where: { title: stamp } });
+    await prisma.mediaAsset.deleteMany({ where: { ref: { startsWith: prefix } } });
+  });
+
+  it("lists with a use count derived from what points at the asset, and filters used from unused", async () => {
+    await prisma.orgBanner.create({
+      data: { orgId, title: stamp, imageUrl: `${prefix}banner.webp`, imageAssetId: assetId },
+    });
+    const used = await service.listLibrary(orgId, filters({ usage: "used" }));
+    expect(used.assets.find((asset) => asset.id === assetId)).toMatchObject({ uses: 1, width: 1200 });
+    const unused = await service.listLibrary(orgId, filters({ usage: "unused" }));
+    expect(unused.assets.map((asset) => asset.id)).not.toContain(assetId);
+    const detail = await service.assetDetail(orgId, assetId);
+    expect(detail.uses).toEqual([{ kind: "storefront-banner", id: expect.any(String), label: stamp, slot: null }]);
+  });
+
+  it("refuses to retire an image something uses, naming it, and retires it once nothing does", async () => {
+    await expect(service.retire(orgId, assetId)).rejects.toMatchObject({
+      name: "ConflictError",
+      message: expect.stringContaining("1 storefront banner"),
+    });
+    expect((await repo.findForOrg(orgId, assetId))?.state).toBe("READY");
+
+    await prisma.orgBanner.deleteMany({ where: { title: stamp } });
+    const retired = await service.retire(orgId, assetId);
+    expect(retired.state).toBe("RETIRED");
+    expect(retired.retiredAt).not.toBeNull();
+
+    const live = await service.listLibrary(orgId, filters());
+    expect(live.assets.map((asset) => asset.id)).not.toContain(assetId);
+    const shelved = await service.listLibrary(orgId, filters({ retired: true }));
+    expect(shelved.assets.map((asset) => asset.id)).toContain(assetId);
+  });
+
+  it("another org's id is not found, so a retire across orgs cannot even be refused", async () => {
+    const { otherOrgId } = await ensureFixtures();
+    await expect(service.retire(otherOrgId, assetId)).rejects.toMatchObject({ name: "NotFoundError" });
+  });
+});
+
+describe.skipIf(!isDisposableDb)("media library — the same bytes within an org (local db)", () => {
+  let prisma: typeof import("@server/shared/prisma").prisma;
+  let repo: typeof import("@server/catalog/media-asset.repository").mediaAssetRepository;
+  const stamp = `hash-${Date.now().toString(36)}`;
+  const prefix = `https://media.test/${stamp}/`;
+  const hash = "b".repeat(64);
+  let orgId: string;
+  let otherOrgId: string;
+
+  beforeAll(async () => {
+    ({ prisma } = await import("@server/shared/prisma"));
+    ({ mediaAssetRepository: repo } = await import("@server/catalog/media-asset.repository"));
+    ({ orgId, otherOrgId } = await ensureFixtures());
+  });
+
+  afterAll(async () => {
+    await prisma.mediaAsset.deleteMany({ where: { ref: { startsWith: prefix } } });
+  });
+
+  it("finds this org's ready asset by hash, never another org's, never a retired one", async () => {
+    const ready = { uploaderId: null, objectKey: null, mimeType: "image/webp", bytes: 3, width: 1, height: 1, contentHash: hash };
+    const mine = await repo.createReady({ ...ready, orgId, ref: `${prefix}mine.webp` });
+    await repo.createReady({ ...ready, orgId: otherOrgId, ref: `${prefix}theirs.webp` });
+    expect(await repo.findReadyByHash(orgId, hash)).toMatchObject({ id: mine.id, ref: `${prefix}mine.webp` });
+    expect((await repo.findReadyByHash(otherOrgId, hash))?.ref).toBe(`${prefix}theirs.webp`);
+    expect(await repo.findReadyByHash(orgId, "c".repeat(64))).toBeNull();
+
+    await prisma.mediaAsset.update({ where: { id: mine.id }, data: { state: "RETIRED", retiredAt: new Date() } });
+    expect(await repo.findReadyByHash(orgId, hash)).toBeNull();
+  });
+
+  it("the backfill's hash pass fills what was recorded before the column existed", async () => {
+    const created = await repo.createReady({
+      orgId, uploaderId: null, ref: `${prefix}unhashed.png`, objectKey: null, mimeType: "image/png", bytes: 3, width: 1, height: 1,
+    });
+    const pending = await repo.listWithoutHash(500);
+    expect(pending.map((row) => row.id)).toContain(created.id);
+    await repo.setHash(created.id, hash);
+    expect((await repo.listWithoutHash(500)).map((row) => row.id)).not.toContain(created.id);
+  });
+});

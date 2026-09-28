@@ -14,6 +14,7 @@ import { describe, expect, it } from "vitest";
 import {
   NO_RATING,
   ratingFor,
+  summariseOrgRating,
   summariseRatings,
   type RatingRow,
 } from "@server/catalog/review-rating";
@@ -141,5 +142,60 @@ describe("ratingFor", () => {
     };
     expect(ratingFor(context, "p1").average).toBe(4);
     expect(ratingFor(context, "unknown")).toEqual(NO_RATING);
+  });
+});
+
+/**
+ * The shop-level figure the brand page shows (brand-page R4, D2), from the same rows under the
+ * same R10 rule — per product, so a shopper is one voice on each piece they reviewed.
+ */
+describe("summariseOrgRating", () => {
+  it("has no average and a zero count with nothing published", () => {
+    expect(summariseOrgRating([])).toEqual({ average: null, count: 0 });
+  });
+
+  it("adds up every piece the shop sells, counting each review and averaging the voices", () => {
+    expect(
+      summariseOrgRating([
+        row({ id: "r1", productId: "p1", userId: "u1", rating: 5 }),
+        row({ id: "r2", productId: "p2", userId: "u2", rating: 3 }),
+        row({ id: "r3", productId: "p2", userId: "u3", rating: 4 }),
+      ]),
+    ).toEqual({ average: 4, count: 3 });
+  });
+
+  it("applies R10 per piece: one shopper is one voice on it, however often they wrote", () => {
+    expect(
+      summariseOrgRating([
+        row({ id: "r1", productId: "p1", userId: "u1", rating: 1, createdAt: at("2026-09-01T00:00:00Z") }),
+        row({ id: "r2", productId: "p1", userId: "u1", rating: 5, createdAt: at("2026-09-05T00:00:00Z") }),
+        row({ id: "r3", productId: "p2", userId: "u2", rating: 3 }),
+      ]),
+      // Two voices — u1's latest on p1 (5) and u2 on p2 (3) — over three reviews.
+    ).toEqual({ average: 4, count: 3 });
+  });
+
+  it("lets one shopper be a voice on each piece they reviewed", () => {
+    expect(
+      summariseOrgRating([
+        row({ id: "r1", productId: "p1", userId: "u1", rating: 5 }),
+        row({ id: "r2", productId: "p2", userId: "u1", rating: 3 }),
+      ]),
+    ).toEqual({ average: 4, count: 2 });
+  });
+
+  it("agrees with the per-product summaries it is built from (A3)", () => {
+    const rows = [
+      row({ id: "r1", productId: "p1", userId: "u1", rating: 5 }),
+      row({ id: "r2", productId: "p1", userId: "u1", rating: 2, createdAt: at("2026-09-09T00:00:00Z") }),
+      row({ id: "r3", productId: "p2", userId: "u2", rating: 4 }),
+    ];
+    const perProduct = summariseRatings(rows);
+    const shop = summariseOrgRating(rows);
+    expect(shop.count).toBe([...perProduct.values()].reduce((sum, p) => sum + p.count, 0));
+    // p1's one voice is u1's latest (2) and p2's is 4, so the shop averages 3 — not the 3.67
+    // that counting u1 twice would give.
+    expect(shop.average).toBe((perProduct.get("p1")!.average + perProduct.get("p2")!.average) / 2);
+    expect(shop.average).toBe(3);
   });
 });

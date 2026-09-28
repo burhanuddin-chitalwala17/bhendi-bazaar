@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import {
   storefrontDAL,
+  type BrandPage,
   type Storefront,
 } from "@/data-access-layer/storefront.dal";
 
@@ -19,11 +20,28 @@ import {
  * the rare request rather than every storefront view.
  */
 export async function resolveStorefront(handle: string): Promise<Storefront> {
-  const shop = await storefrontDAL.getByHandle(handle);
-  if (shop) return shop;
+  return await resolveOrLeave(handle, storefrontDAL.getByHandle, (current) => `/store/${current}`);
+}
+
+/** The brand page's resolve: same three answers, the redirect landing on the moved page. */
+export async function resolveBrandPage(handle: string): Promise<BrandPage> {
+  return await resolveOrLeave(
+    handle,
+    storefrontDAL.getBrandPage,
+    (current) => `/store/${current}/about`,
+  );
+}
+
+async function resolveOrLeave<T>(
+  handle: string,
+  read: (handle: string) => Promise<T | null>,
+  movedTo: (current: string) => string,
+): Promise<T> {
+  const found = await read(handle);
+  if (found) return found;
 
   const current = await storefrontDAL.currentHandleFor(handle);
-  if (current) redirect(`/store/${current}`);
+  if (current) redirect(movedTo(current));
 
   notFound();
 }

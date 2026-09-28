@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-159] 2026-09-26 — In-app notification system [MIGRATION] [CONTRACT]
+## [PR-203] 2026-09-28 — In-app notification system [MIGRATION] [CONTRACT]
 
 In-app notification system delivering real-time and polled alerts (order status updates, outbid alerts, promotions, and system notifications) with unread badge counters, status tracking (read/unread), a read history, and mobile-first drawer/popover panels.
 
@@ -21,6 +21,613 @@ In-app notification system delivering real-time and polled alerts (order status 
 - **Spec & TRD**: `docs/specs/in-app-notifications/spec.md` and `docs/specs/in-app-notifications/trd.md`.
 - **Closed set**: `NOTIFICATION_TYPE` in `server/notifications/in-app.types.ts` is the one declaration the Zod schema, the bell and every caller read; a `satisfies` against the Prisma enum fails the build if they drift.
 - **Tests**: 12 unit tests in `tests/unit/in-app-notification.test.ts`; `tests/unit/notification-history.test.ts` covers the inbox/history split and the on-site link rule; `tests/unit/outbid-notification.test.ts` covers the outbid notice, whose recipient `leaderBefore` now returns alongside the ladder entry.
+
+## [PR-202] 2026-09-28 — A shortfall is the same refusal wherever it is noticed
+
+Two places can find that the units are not there: the allocation's availability read, before the
+order transaction commits anything, and the guarded decrement inside it. Only the second named the
+products, and naming them is what makes the caller release abandoned holds and retry
+([checkout-abandonment](specs/checkout-abandonment/) D4) instead of turning the buyer away. So a
+buyer meeting a unit held by a closed payment window got the retry or did not depending on which
+check happened to fire, which is to say depending on who committed first.
+
+Both now raise the same error with the product named. Nothing about the answer to the browser
+changes — it was a 409 before and it is a 409 now — but the case the retry exists for is no longer
+decided by a race. The concurrency test that caught this asserted the invariant correctly and
+passed on a laptop while failing on CI, for exactly this reason; the comment beside it now says so.
+
+## [PR-201] 2026-09-28 — Enhancement runs on the worker, and the worker's env file never said so
+
+The tools that rework a photograph run as queue jobs, so their configuration has to reach the
+worker as well as the web app. `.env.worker.example` listed the database, the environment and the
+image store, and nothing about the hosted model — which meant a deploy built from it produced a
+worker that refused every setting needing that model, while the same key sat correctly in Vercel.
+The three variables are in the template now, with the sentence that explains why they are needed in
+two places rather than one.
+
+The staging block also now says to run that worker on the machine rather than on a laptop. It
+publishes no port and mounts no named volume, so it sits beside the production stack for nothing,
+and it keeps running once the laptop that started it is shut — which is the whole point when the
+person testing is not the person who started it.
+
+## [PR-200] 2026-09-28 — The three enhancement variables were documented everywhere but the file people copy
+
+`OPERATIONS.md` describes `IMAGE_SEGMENT_PROVIDER`, `IMAGE_MODEL_API_KEY` and `IMAGE_MODEL_ENDPOINT`
+in full, and `.env.example` — the file a new environment is actually built from — mentioned none of
+them. A local setup therefore came up with background removal quietly unavailable and nothing to
+suggest a variable was missing. They are listed now, in the optional section, each with the one fact
+that decides whether it is needed.
+
+The object store's comment also said the public base feeds `img-src`. It feeds `media-src` too, and
+that omission is what the previous entry was about.
+
+## [PR-198] 2026-09-28 — In a scene: the last improvement, and the one that must not redraw the product
+
+The sixth improvement is here, and it is the one the whole feature was careful about. A shop picks
+one of five settings — a wooden table by a window, a marble counter, a shop shelf, a fabric drape, a
+plain studio colour — and the photograph comes back with the product standing in it. The settings
+are the platform owner's list and nothing else: there is no box to type a description into, because
+a free prompt is a way to ask an account we pay for for a picture nobody has seen, and a fixed list
+is what makes the promise below checkable. Each setting carries the shape it is for, square where a
+marketplace wants one and tall where an Instagram post does, so the member chooses a picture rather
+than a geometry.
+
+The promise is that the product does not change. A service is asked for a **setting**, never for a
+result: whatever comes home is treated as a backdrop, our own cut-out goes back on top at a
+placement we chose, and the product's pixels are compared to the cut-out's with no tolerance before
+anything is encoded. If a service quietly re-rendered a logo, its version is covered by ours; if the
+product in the composite differs by one channel of one pixel, the run fails rather than putting a
+proposal in front of somebody. That check is the one `white` and `studio` already run, and it was
+written for this case.
+
+Painting sits behind its own interface with one implementation, which is a deliberate asymmetry: a
+cut-out has a free route and a bake-off to choose between two, and a scene has neither, because
+nothing we already pay for generates a picture. The seam exists so a second painter arrives as a
+file beside the first rather than as a rewrite of the tool that calls it. The key and the host both
+services buy from are now read in one place, since they are the same account.
+
+A scene is also the first improvement that costs real money — about ₹3.50 a run, and a little more
+when the cut-out came from the paid model too. The ledger records the sum of what one run actually
+spent rather than the price of its last step, because the platform's daily cap counts money and not
+steps. There is no second column for the breakdown: one number that is true beats two that can
+disagree.
+
+Which leaves the thing to know before trying it. The account has a key and no balance today, so a
+scene will fail until one is added, and it fails legibly: the member is told "The picture service is
+out of credit. Ask the platform owner to top it up.", the run is charged to nobody, and every other
+improvement carries on. Nothing here needed a balance to build or to test — every suite stubs the
+network, and the tool is exercised over generated pictures with both services stubbed, including the
+case where the painter returns a scene with its own idea of the product in the middle of it.
+
+## [PR-199] 2026-09-28 — A video would not play, and the policy said nothing
+
+A hosted video mounted its player, took the poster, and then sat at nought. Every link in the chain
+checked out: the file was in the bucket, it served `video/mp4` over a range request, the rendition
+probed as valid, and the row that fed the player was complete. What was missing was a
+Content-Security-Policy directive. A `<video>` draws its bytes under `media-src`, and the policy had
+no `media-src` at all, so it fell back to `default-src 'self'` and the bucket domain was refused.
+
+The poster beside it loaded throughout, because a poster is an image through the optimizer on our
+own origin, which is why nothing about the surface suggested a policy problem. `media-src` now names
+the bucket and nothing else: the hosts allowed to serve a thumbnail have no business streaming bytes
+into a player, and an embedded video is an iframe under `frame-src`, which is a separate question
+already answered. `tests/unit/security-headers.test.ts` fails if the directive goes missing again.
+
+## [PR-197] 2026-09-28 — A stored file is filed under who owns it, not what it was for
+
+Everything an organisation uploaded landed under `products/<org-code>/`, which was true while every
+upload belonged to a product. A library that holds pictures belonging to no product, and videos that
+are not products at all, made it false: a library upload was filed under `products/…/library/` and a
+video beside it. An organisation's files are written under `org/<org-code>/` from now on, because an
+owner is the one thing about a file that never changes, and the presign route signs nothing outside
+the caller's own prefix exactly as before.
+
+Files already written keep their keys. A key is opaque, nothing reads meaning from one, and moving
+them would mean copying every object and rewriting every stored reference — risk spent on tidiness.
+The bucket will show both shapes for a while, and that is the cost of not taking the risk.
+
+## [PR-196] 2026-09-28 — Two lines in the library sheet that should not have been there
+
+"Use the video's own frame" was offered on every video, including the ones showing exactly that
+frame, where pressing it did nothing. It appears only where a photograph is standing in and there
+is a choice to undo, which the asset now says.
+
+"N pictures were made from this one" is true of a photograph, whose derivatives are the crops and
+improvements somebody made deliberately. A video's derivatives are its playable copies and its
+poster — machinery the library already hides from the grid — so the line said the plumbing out loud
+and read as though the shop had made something. A video does not carry it.
+
+## [PR-195] 2026-09-28 — A run counts when it runs, not when it is kept
+
+A discarded improvement handed its slot back. By the time a proposal is on the screen the service
+has been paid and the platform's day is that much shorter, so a shop could have spent the
+platform's money without spending any of its own — and a shop asking for ten scenes and keeping one
+would have shown as one. Use now counts every run but a failed one, which is the single case where
+nothing was produced. The sheet says so before a tool is chosen rather than after: "Each one you run
+counts, whether you keep it or not." The cost of a failure that had already reached a service stays
+recorded against the platform's day, because that money did leave.
+
+## [PR-194] 2026-09-28 — One video, one item: what the first real upload showed
+
+Three faults, all visible in a single clip filmed on a phone.
+
+The library listed the video's renditions and its poster frame as items of their own, so one upload
+became three tiles. Those are the video's machinery, not pictures anybody would choose; the library
+lists what an org member would use, so anything derived from a video is left out of it. A crop or an
+improvement made from a photograph is a picture they made deliberately and stays.
+
+A phone films landscape and writes an instruction to turn the picture, so a portrait clip's stream
+reports itself as landscape. The probe asked only for the stream's own width and height, so a
+240 by 320 video was recorded as 320 by 240 and every later number was measured against the wrong
+one. It reads the turn now, from the display matrix or from the older tag, and reports the picture
+as it will be shown.
+
+The player told the browser not to load anything and then asked it to play, and between the two the
+video sat at nought. The element exists only because somebody tapped play, so it loads, and starting
+is asked for explicitly — a browser that declines simply leaves its own play button.
+
+## [PR-193] 2026-09-28 — Make it big enough, and say which channel is asking
+
+Image-enhancement spec R1, R6, A4. The fifth improvement is live: make it bigger. A phone photograph
+that a marketplace calls too small is now something a shop can fix in one tap, and the result is a
+proposal to compare and accept like every other improvement.
+
+It is a plain resize on our own machines, with no service behind it and nothing to pay. That is a
+promise about the product before it is a saving. An AI upscaler does not enlarge a photograph, it
+reimagines one: it invents detail the camera never saw, which is precisely the redrawing this feature
+refuses to let any service do to a product. A resize cannot change what the thing looks like. It only
+makes the file large enough for a marketplace to take it. So a reconstructing upscaler is not deferred
+until it is cheap enough, it is out, and the spec now says so. The picture grows by whole steps to the
+smallest size that clears what the channels ask, never past what we store, and a photograph that is
+already big enough is refused rather than proposed back unchanged, since a proposal that changes
+nothing still costs a shop one of its monthly runs.
+
+What the channels ask is now written down in one place, each number beside where it comes from:
+Amazon's thousand pixels and the sixteen hundred that turns its zoom on, Flipkart's thousand,
+Instagram's ten-eighty square. Our own store is in that list with no rule at all, and that is the
+point of the list. The store takes what the shop has. A marketplace's minimum is asked at the moment
+a picture is put to that marketplace, never when a product is saved, never on a page a buyer reads,
+and there is now a test that reads the source and fails if that question turns up in the storefront,
+in the product write path or in the server-side reads. A size rule that starts at the moment of use
+and creeps inwards is how a shop with a real photograph of a real thing ends up unable to list it.
+
+The warning a photograph already gets now offers the fix instead of only naming the fault. A dark one
+offers to brighten it, a small one offers to make it bigger, and the sheet goes straight to work
+rather than asking again which improvement was meant. A blurred one offers nothing, because nothing
+un-blurs a photograph and pretending otherwise would cost a shop a run to find out.
+
+## [PR-192] 2026-09-28 — Improve a photograph from the library, beside Crop
+
+Image-enhancement spec R2, R3. The tools were reachable only from a gallery slot, which is where a
+photograph is used but not where a shop keeps its photographs. The library sheet now offers Improve
+beside Crop for any ready picture. A request names its photograph by the asset when the caller knows
+it, as the library does, and by the URL its row carries when that is all there is, as the editor has;
+never both. Accepting in a gallery hands the slot the result, as before. Accepting in the library
+adds the improved picture beside the one it came from and the grid re-reads, because there is no row
+to hand it to — which keeps the one rule the feature rests on: an improvement is a new picture, never
+an edit of an old one.
+
+## [PR-191] 2026-09-28 — Cut out, on white, in a studio: the first improvements that need a provider
+
+Three of the six improvements are live, and they are the three a marketplace actually asks for. Cut
+out takes the product away from whatever it was photographed against. On plain white puts it on a
+square of pure 255,255,255 with an even margin, which is the shape Amazon and Flipkart check for. In
+a studio puts it on a soft neutral backdrop with a contact shadow under it, which is the shape an
+Instagram post wants. Each runs on its own, in the background, and comes back as a proposal to
+accept or discard like the brightening did.
+
+Cutting a product out is the first thing this store cannot do by itself, so it is also the first
+capability with a seam. One interface, two services behind it: the image host our own pictures are
+already served from, which does it as part of a delivery transform and is free for the first five
+thousand a month, and a hosted vision model that is better on hard edges and costs about a fifth of
+a paisa an image. Which one runs is one environment variable, it falls through to the other when the
+preferred one is not set up, and two files in the whole repository know that either vendor exists.
+Nothing an org member reads ever names one: a service that fails says the background could not be
+removed just now, in their words, and the run fails where they asked for it rather than retrying
+forever. Every call out is bounded at thirty seconds so one bad afternoon at a provider cannot stall
+the queue.
+
+The ledger now prices a run by the tool *and* the service that performed it, and records the service
+that actually ran rather than the one the request planned for. A request for a cutting tool is
+refused up front where no service is configured at all, before a shop spends a slot on a run nobody
+could have performed.
+
+The promise that matters is the one about the product. A backdrop is painted around it and never
+over it: the cut-out is placed unresized, and every opaque pixel of it is compared to the composite
+before anything is encoded, with no tolerance at all. A run whose product changed fails rather than
+proposing it. The comparison happens before the WebP because WebP is lossy, and a check that had to
+allow for the encoder would have to allow for a quietly redrawn logo too. The test moves one channel
+of one pixel by one and expects red.
+
+Choosing between the two services is a script rather than an argument. It takes a shop's newest
+photographs, runs every service that is set up over each of them, and writes a plain page laying the
+results side by side, on mid-grey where a halo shows and on white where it will be used, with how
+long each took. It records nothing and creates no library image; the whole run lives under one
+prefix in the object store that can be deleted afterwards.
+
+One smaller thing, dropped out of the above: a proposal's format is no longer assumed to be WebP. A
+cut-out is transparency, and flattening it would have thrown away the entire result, so each tool
+now declares what it writes and the proposal's key carries that extension.
+
+## [PR-190] 2026-09-28 — The enhancement allowance and the daily cap are the platform owner's to set [CONTRACT] [MIGRATION]
+
+The two numbers deciding how much photo improvement the platform pays for were constants in a
+source file, so answering the first provider bill would have meant a release. They are settings
+now — edited on a new admin screen, in force on the next request — defaulting to 300 enhancements
+per shop a month and ₹500 a day across every shop.
+
+An allowance resolves through three declared layers: the shop's own number, the platform's setting,
+then a constant that exists only so an unconfigured database still answers. A shop's row records a
+*deviation* — a number of its own, or a pause — where it used to carry a copy of the platform's
+allowance that would go stale the day that changed. A shop at the default now carries no row at
+all, and setting one back to the default deletes its row rather than rewriting the same number.
+
+The screen shows today's spend against the cap and a card per shop: this month's use, what it cost,
+the allowance that applies, and a pause switch with the reason its members read. The cap is typed
+in rupees and travels as paise. Both routes are platform-admin only and audited. Admin was the last
+of the five planned PRs and is now the second, because the owner asked for it before the provider
+work rather than after.
+
+## [PR-189] 2026-09-28 — Crop a photo already in the library, and stop calling lineage a use [CONTRACT]
+
+Three things the first real use of the library turned up.
+
+A photograph already stored can be reframed: the library sheet gains Crop, the same frame opens on
+it, and the cut is made on the server where its bytes already are rather than fetched back into the
+browser. The result is a derived picture beside the one it came from, which is left exactly as it
+was — so a reframe can be done again, from the original, as many times as it takes.
+
+A picture made from another was being counted as a use of it, which read as though a product were
+showing it and refused its retirement. It is lineage, not a use: nothing on a screen breaks when the
+source leaves the library. Uses are now only the places an asset is *shown* — a gallery row, a
+category hero, a shop's mark or cover, a banner, a video's poster — and a separate line says how
+many pictures were made from it. The source's file is still kept for as long as any of them exists,
+because that is what a rendition falls back to, so the promise the spec made is not quietly dropped:
+the sweep leaves a retired source's object alone while it has children.
+
+A library is mostly images used nowhere yet, so the "unused" tag said nothing on nearly every tile.
+A tile carries a count when there is one and nothing when there is not; the Usage filter is how the
+unused are found. The editor's row thumbnail also stopped centre-cropping: it contains the picture
+now, so "use as is" looks like what was actually stored.
+
+## [PR-188] 2026-09-28 — The crop frame shows the picture: the preview belongs to the queue
+
+The frame was still empty after the stylesheet was imported, and this time it could not even be
+used: the picture never loaded at all. The frame made its own preview URL while rendering and
+released it in an effect's cleanup, which in development runs once before the second mount — so
+every frame was handed an address that had already been given up. The queue that holds the photo
+now makes the preview when the photo joins it and releases it when the photo leaves, which is the
+one lifetime a remount cannot cut short, and the frame is handed a picture rather than making one.
+
+## [PR-187] 2026-09-27 — What the first local test of the crop frame and the improve sheet found
+
+The crop frame showed no picture and the dialog scrolled instead of fitting. Two causes. The crop
+library ships a stylesheet rather than injecting one, and nothing imported it, so the frame had no
+bounds and the picture was laid out by the page's own image reset — which is to say not shown at
+all; the dependency register said the opposite and now says what is true. And the frame asked for a
+square of its own inside a panel that then outgrew the screen: it takes the room the panel has left
+instead, the panel's height is settled before its content is laid out, and nothing inside a canvas
+task scrolls but the one part with more to see — the picker's tiles. On a wide screen the panel now
+stops short of the edges.
+
+Asking to improve an extra photo was refused with "please correct the highlighted fields": a photo
+that fills no slot sends `null`, and the schema accepted only an absent field. Saying "this has no
+slot" and saying nothing are both read as no slot now, and four cases pin the request's shape.
+
+## [PR-186] 2026-09-27 — An overlay's surface follows its content
+
+[ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md). The bottom sheet was the
+right answer for a phone and had quietly become the answer for everything: a country list, a date
+range, a crop canvas, a before-and-after, a grid of pictures to choose from. On a laptop each of
+those opened a narrow panel against the right edge — a two-month calendar cramped in it, a crop
+canvas unusable, a three-up grid showing one and a half tiles. The rule is now four cases, and each
+surface carries its own phone form so a component never chooses between screens: a value picked
+from a set opens against its field as a popover from the desktop breakpoint and a sheet below it;
+a task with a canvas is a dialog sized to its content and a full-screen sheet below; the details of
+a selected item stay a side panel; a short flow the page hands off to stays a sheet.
+
+`ResponsivePicker` and `TaskDialog` are the two pairs, and Radix's popover joins the dialog already
+here, dressed in our tokens. The country field and the date range become pickers; framing a photo,
+comparing a before and an after, and choosing from the library become canvas tasks — the first two
+renamed to say so. `tests/unit/overlay-surfaces.test.ts` fails a new sheet outside the four cases
+and keeps its allowlist honest, so the next overlay is a decision rather than a reflex.
+
+## [PR-185] 2026-09-27 — Image enhancement, part one: the ledger, the quota, and a dark photo fixed [CONTRACT] [MIGRATION]
+
+Image-enhancement spec R1–R3, R7, R9, R10, A1; trd D1, D2, D5, D6, D8, D9 — the first of five, and
+the one that needs no outside service. A `content` domain is added for what is made from an image:
+it reads catalog's assets through catalog's public surface and never its repositories. An
+enhancement is a row and a job. Asking for one is refused, in words the form shows, when the shop is
+paused by the platform owner, when it has used its month's allowance, when the platform has spent
+today's cap, when the photo is the label — evidence to be read later, never enhanced — or when the
+tool has no pipeline yet. Otherwise the row and the job are written in one transaction, so neither
+can exist without the other.
+
+The first tool is "fix the light": normalise, a gentle gamma and an unsharp mask, with sharp on the
+worker and no provider, so it costs nothing and is deterministic. The result is a proposal, not an
+image: it lives under a proposals key until the org member has seen it. The editor's "Improve…"
+opens a sheet that runs the tool, waits, and shows before and after; Accept copies the proposal to a
+final key and registers it as a derived image of the source, and the slot takes it with its cover
+flag and description intact; Discard deletes the object and leaves no trace. The original is never
+touched either way. `Enhancement` and `OrgEnhancementPolicy` arrive with the tools, the states, the
+month's allowance of two hundred and the platform's daily cap, all declared once.
+
+## [PR-184] 2026-09-27 — The brand page shows its proof: rating, orders fulfilled, and what buyers say [CONTRACT]
+
+Part (c) of seller-profile PR 4 ([brand-page](specs/seller-profile/brand-page/) R1, R3, R4; trd D2,
+D3). The proof strip part (a) left as a seam now draws the shop's rating with its review count and
+its orders fulfilled, each only above a declared floor — three published reviews, ten paid orders —
+and is absent when neither clears one. A new section, "what buyers say", quotes the shop's three
+newest published reviews with stars, the frozen author name, the verified mark, a clamped line and
+the piece linked, between the brands and the newest goods; it shares the rating's floor. Every
+figure is derived through public surfaces: the review service's org-level rating and recent list
+under the visibility rule and the catalogue's available shelf, and the order service's paid-order
+count, orders not lines. The shop-level average applies the product rule per piece, so one shopper
+is one voice. `BrandPageDto.proof` is filled and the DTO gains `buyersSay`; `ShopReviewDto` is a pick
+of the review DTO plus the product's name and slug, never a `userId`.
+
+## [PR-183] 2026-09-27 — Hosted video plays: the player, the poster you choose, and video into the library [CONTRACT] [MIGRATION]
+
+Video-hosting spec R1, R4, R8, R9, A3; trd D5, D7, D8. The product page's video slide plays: a
+native `<video>` behind the poster, mounted only on a tap, with no script from another host. A wide
+screen starts on 1080p and a phone on 720p, or on the largest the worker made, and a button group
+in the slide's corner switches rendition keeping the viewer's place; full screen is the browser's
+own control. A swiped-away slide goes back to its poster so nothing plays unseen; a failed video's
+slide says it is not available. The library sheet plays a ready video with the same player. An org
+member can choose any of their ready photographs as a video's poster: the library picker, restricted
+to photographs, sets it; "Use the video's own frame" clears it; one function resolves the chosen
+photograph over the worker's frame for the product page and the library alike. A photograph standing
+in for a video counts as in use, so its retirement is refused. The library's upload button accepts
+photos or a video together. `MediaAsset.posterAssetId` is added; `MediaAssetDto` carries the
+renditions so the sheet can play. The video-hosting subfeature is implemented.
+
+## [PR-181] 2026-09-27 — Hosted video, part two: upload, transcode job and the poster [CONTRACT] [MIGRATION]
+
+Video-hosting trd D1, D2, D3, D6, D7. `MediaAssetKind` gains `VIDEO`, `MediaAssetState` gains
+`PROCESSING` and `FAILED`, `MediaAsset` gains `durationMs` and `failureReason`, and a gallery row's
+`MediaKind` gains `VIDEO`. The presign accepts `video/mp4`, `video/quicktime` and `video/webm` up
+to 200 MB, naming the limit when it refuses, and registers the pending row as a video; the confirm
+moves it to PROCESSING and enqueues `media.transcode` in the same transaction, so neither exists
+without the other. The web app enqueues from the job's spec — name, payload, group — while the
+handler is registered only where the worker imports it, so the web process runs no ffmpeg plumbing.
+The worker downloads the source, probes it, refuses a clip past the limit with the limit named and
+its bytes deleted, otherwise stores the fitting renditions and a poster beside the source as
+DERIVED assets and finishes the source READY; a re-run makes only what is missing, and any other
+failure is the queue's to retry and park, the source kept processing. The gallery editor's "Upload
+photos or a video" sends a video as picked — no downscale, crop or capture check; a video is never
+the cover and never fills a slot, and links to its asset from confirm on. The library lists
+processing and failed videos with a state badge, duration and the failure reason; the picker gains
+a Videos tab; the product page shows the poster, or a placeholder while processing, with no player
+yet. The media backfill skips VIDEO rows.
+
+## [PR-182] 2026-09-27 — The shop's about page becomes a brand page, drawn from what the platform knows [CONTRACT]
+
+Brand-page spec R1–R3, R6–R11; TRD D1, D4, D5, D7, D8, D10 — part (a) of seller-profile PR 4,
+reading only what exists today. `/store/<handle>/about` is a fixed sequence of sections the platform
+orders and each shop fills: a hero (cover, mark, name, tagline, location and since-when, with the
+call to shop docked above the tab bar on a phone), the story, what they sell as the storefront's
+category rail, the brands they carry as names only and only when there are two or more, their six
+newest goods as the marketplace's own tiles, their terms in a collapsed disclosure, and the ways to
+follow them. A section with nothing to show is absent rather than blank — the goods alone show the
+storefront's honest empty state — so a shop with only a name has a page with no placeholder sentence
+on it. Ways to follow are handles on four known networks; the platform composes every address and a
+pasted URL yields no link. `BrandPageDto` is added and held to a literal allowlist; the proof strip
+is a seam that draws nothing until part (c); the owner, pillars, social editor and section toggles
+are part (b), with the migration.
+
+## [PR-180] 2026-09-27 — Hosted video, part one: the limits and the transcoder
+
+Video-hosting trd D3, D4. The declared limits — ninety seconds, two hundred megabytes, 1080p and
+720p, a poster a second in — live in one module; the transcode module probes a clip, refuses one
+past the limit with the limit named, makes the fitting renditions as H.264 MP4 with the index up
+front, takes the poster, and runs one encode at a time. ffmpeg joins the worker image as a Debian
+package and the CI test job, and the transcode test runs the real binary against a generated clip
+rather than a stub. Nothing reaches a screen yet: the upload path, the job and the player follow.
+
+## [PR-179] 2026-09-27 — The image-enhancement spec, and video-hosting accepted
+
+Documentation only. The image-enhancement spec and TRD are drafted from the brainstorm the owner
+closed today: six tools applied one at a time, on demand only, each result a before-and-after the
+org accepts or discards; a scene painted around the org's own cut-out, never over it; the label slot
+never touched; a warning that never blocks a save but blocks a channel at the moment of use; a
+monthly allowance per org, a daily platform cap, and a per-org pause for the platform owner; one
+provider seam with a bake-off before a provider is chosen; Photoroom out of scope. The video-hosting
+defaults are accepted.
+
+## [PR-178] 2026-09-27 — Rotate and crop at upload, kept as a derived image [CONTRACT]
+
+Media-library R8a and A2a, trd D6a. Picking a photo for a slot or as an extra now opens a sheet
+before anything uploads: the picture in a touch crop widget with 1:1, 4:5, 3:4 and free presets,
+quarter turns left and right, pinch or scroll zoom, and no colour control, since a filter
+misrepresents a product on a marketplace. "Use as is" uploads the untouched photo exactly as
+before. "Use this crop" uploads the untouched photo as the source and the crop as a second object,
+registered as derived from it with the rotation and rectangle recorded, and the crop's URL is what
+the gallery row carries; a multi-file pick is framed one photo at a time, with "Use all as is" to
+skip the rest. The upload token request may carry `derivedFrom`, accepted only for a ready source
+the caller owns, and `uploadDirect` now returns the asset id beside the URL. `react-easy-crop` is
+the one package added, for the gesture handling a hand-rolled crop gets wrong on a phone.
+
+## [PR-177] 2026-09-27 — The gallery is a list of named slots, and a photo is checked before it is kept
+
+Media-library R4 and R8, trd D4 and D6. The product editor's gallery was a strip of slot badges
+with a select per photograph; it is now a vertical list of the category's slots. An empty slot
+shows its name, its framing hint and a silhouette of the shot it wants, with one tap for the
+phone's camera or a file and one for the library; a filled slot shows the photo with cover,
+move-to-extra and remove. Extras and video sit beneath in their own order, and the saved order is
+always the slots then the extras. Every uploaded photo is judged on a small canvas — dark, blurred,
+or smaller than any marketplace accepts, by the slot's role — and a warning is a banner with
+Remove and Keep anyway, never a refusal. Rotate-and-crop follows as its own unit.
+
+## [PR-176] 2026-09-27 — Video will be hosted on our own store: ADR-0039 and the video-hosting spec
+
+Documentation only. The owner decided on the 27th that short product videos are stored in our
+object store and transcoded by the worker, which is what the worker was pulled forward for.
+[ADR-0039](adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) records it
+and supersedes ADR-0017's first and fourth decisions; YouTube links stay supported as embeds. The
+subfeature spec and TRD are drafted under media-library with the defaults — ninety seconds, two
+hundred megabytes, 1080p and 720p — left for the owner to confirm. The conventions index in
+CLAUDE.md points at the new decision.
+
+## [PR-175] 2026-09-27 — Onboarding shows its three steps, and the store's readiness
+
+The three onboarding screens existed but nothing put them in sequence, so a new org landed on a
+dashboard of zeros with no sense of what to do next. The org dashboard now opens with a card that
+shows the three steps — open your shop, describe it, say what you sell — with each one's done state
+and a link into the page where it is done. Beneath them sits per-channel readiness: the store's is
+computed now, from an active pickup location and a product on sale, and names what is still missing
+as a thing to do; Amazon, Flipkart and Instagram report unknown through the same seam until the
+listing rules compute them, shown as one muted line rather than a placeholder each. Once every step is
+done and the store is ready the card collapses to a single line. The rules are pure and unit-tested;
+the card fails alone, like every widget below it.
+
+## [PR-174] 2026-09-27 — One date-range field for the library, with a calendar
+
+Two native date inputs were too many taps and never showed the range. The library's date filter is
+one field: a button naming the range — "12 Sept – 27 Sept 2026", or "Any time" — opens a sheet with
+a two-month calendar in range mode, the picked range highlighted, and presets for the last seven
+and thirty days and this and last month. The range still travels as two day keys in the URL, so
+nothing on the server changed. `react-day-picker` is added for the calendar, styled through our
+tokens ([DEPENDENCIES.md](DEPENDENCIES.md)).
+
+## [PR-173] 2026-09-27 — Library filters re-render the grid instead of reloading the page
+
+Picking a filter navigated the whole page — a plain form submission — which read as a flicker, and
+left a Filter button nobody needed. The filters now navigate on the client: the URL still carries
+them, so the page is still a link, but only the grid re-renders. The button is gone.
+
+## [PR-172] 2026-09-27 — The specs catch up with the side fixes
+
+Documentation only. The seller-profile spec gains R11 (a change of default brand is announced, an
+origin is chosen from a list) and its TRD gains D9 (a country is an ISO 3166-1 alpha-2 code, named
+by the runtime, a table rejected) with the screen described as built. The stock-locations spec gains
+R12 (the portal's product form never asks which organisation, and adds a missing pickup location
+where it stands). From here every unit carries its spec and TRD changes in the same commit.
+
+## [PR-171] 2026-09-27 — The worker card opens into the jobs behind its counts
+
+Worker-foundation R5, trd D11. A count says a job is stuck or failed; the list says which one and
+why. The card gains "Show recent jobs", closed by default: on a tap it fetches the newest twenty on
+both queues through an admin route and shows each job's type, state, timing, attempt and, for a
+failed one, the reason pg-boss recorded. Nothing is stored and the dashboard itself pays nothing
+until the list is opened.
+
+## [PR-170] 2026-09-27 — A video's uses are counted, "used by" is a summary, and filters apply as picked
+
+A video carried by two galleries read "unused" in the library and offered Retire: product writes
+linked only photographs to their asset rows, never videos. A write now links a video to the org's
+own reference and creates that reference when the library has not seen the video yet, so the
+count and the uses are true; the backfill's write links the rows written before this. The sheet's
+"Used by" is a one-line summary — "2 products and 1 storefront banner" — that expands to the list
+on a tap. The library's filters apply as each one is picked; the Filter button stays for a browser
+without script.
+
+## [PR-169] 2026-09-27 — The worker card says how much got done [MIGRATION]
+
+The card showed waiting, running and failed, so a worker that had just run three jobs read
+"0 · 0 · 0" and looked idle. The heartbeat now also counts what finished in the last 24 hours,
+in the same single statement, and the card shows it as
+"N done in 24h". `WorkerHeartbeat.completedDay` is added with a default, so an older worker's
+beat still lands until the image is rebuilt.
+
+## [PR-168] 2026-09-27 — A video in the library shows its poster and plays in the sheet
+
+Library and picker tiles for a video showed a bare mark; they show the video's own poster now,
+through one small component that carries the one image-optimizer bypass for it. The library's
+detail sheet plays the video with the same tap-to-play embed the product page uses. Videos are in
+the library by design (media-library R5a): a reference to reuse, never a file we host (ADR-0017).
+
+## [PR-167] 2026-09-27 — Photos go into the library directly
+
+The library page gains "Upload photos": several at once, downscaled and hashed in the browser,
+stored under the org's folder with no product yet, and shown at the top when the page re-reads. The
+gallery editor and the library now share one batch uploader (`src/lib/image/upload-batch.ts`), so
+the downscale, the check, the concurrency and the duplicate handling cannot drift between them.
+A photo the org already holds is reported, not stored again.
+
+## [PR-166] 2026-09-27 — The same photograph is one image in an org's library [CONTRACT] [MIGRATION]
+
+Media-library R13, trd D11. The browser hashes each downscaled file before asking to upload and
+sends the digest with the request; when the org already holds those bytes as a ready image, the
+token route answers with that asset instead of a signed URL, the client adds its URL, and nothing is
+stored twice. The gallery says how many photos were added from the library that way. Deduplication is
+within an org on purpose: ownership is the library's unit, and another org's identical file stays its
+own. `MediaAsset.contentHash` is added and indexed with the org; the server upload path records it
+from the bytes, and the backfill's write gains a pass that hashes images recorded before the column
+existed, so older duplicates are recognised after the next `npm run media:backfill -- --write`.
+
+## [PR-165] 2026-09-27 — The country field is a searchable picker
+
+A native select of 249 countries is a long scroll on a phone. Both country-of-origin fields now
+open a sheet with a search box over the ISO list: names that start with the typed letters come
+first, accents are ignored, a code matches exactly, and Enter takes the first match. The code is
+still what is stored.
+
+## [PR-164] 2026-09-27 — What the first local test of PR-161 to PR-163 found
+
+A photograph's slot was saved but reopened as an extra: the edit form's default values dropped it.
+A "to" date on the library filters was read as the midnight that starts the day, so a range ending
+today excluded today's uploads. The library's Retire button was greyed out with no reason; it is
+always clickable now and a refusal says what still uses the image. A library pick can be undone by
+tapping the tile again. The org portal's product form no longer asks which organisation — there is
+one — and when the org has no pickup location yet it adds one from a dialog inside the form, the
+new location joining the stock rows without a reload. Making a brand the default says which brand
+stopped being it, and retiring the default brand warns first and says so after. A country of origin
+is picked from the ISO list, with names from the runtime's own locale data, and stored as its code.
+
+## [PR-163] 2026-09-27 — The library: browse, reuse, retire, and the first scheduled sweep [CONTRACT]
+
+Media-library PR 3 of 6 ([spec](specs/media-library/spec.md) R6, R7; trd D2, D7). The org portal
+gains "Library": every ready photo and video the org owns as the 3-up grid, paged as you scroll
+with a button as the fallback control, filtered from the URL by kind, usage, source and date. A
+tile opens a sheet with the asset's dimensions, size, format, date, and every place it is used —
+a query over the referencing relations at read time, never a counter. An image nothing uses can be
+retired; the state change is one conditional statement, so a reference landing between a check
+and a write cannot be lost, and a refusal names what still uses it. The product editor gains
+"From library", which adds an existing photo or video to a gallery without uploading anything.
+
+The worker gains its first schedule: an in-process timer that enqueues a singleton job, the shape
+`jobs.config.ts` reserved for it, with a floor of one tick an hour and a budgeted count that the
+idle estimate now carries. `media.sweep` runs every six hours: pending uploads past an hour go, and
+a retired image's stored object goes after thirty days unless a URL somewhere still shows it. The
+record stays either way (ADR-0032). `MediaAssetDto` and `MediaUseDto` are added for the portal.
+
+## [PR-162] 2026-09-27 — An org describes what it sells: brands and listing defaults [CONTRACT]
+
+seller-profile PR 2 of 4 ([spec](specs/seller-profile/spec.md), trd D7–D8). The org portal gains
+"What you sell", onboarding's third step: the brands the org carries — name, maker, packer or
+importer, origin, one default — as cards with an add-and-edit sheet, and the org-wide defaults
+beneath: origin, tax rate, and a tax code for each category it has products in. Only a brand's name
+is asked for; nothing is marked required, and a blank saves (R5). A duplicate name within an org is
+a conflict the form shows on the field; another org's brand id is not found. Retiring a brand hides
+it and keeps it (ADR-0032). The `brand.service` and `org-listing-defaults.service` are the write
+seam the product form will call; the "what would this change" previews of D7 wait for the product
+link that listing-schema brings, since the count they would return has nothing to count yet. The
+defaults repository could not clear its tax-code map — `null` read as "leave alone" — and now can.
+
+## [PR-161] 2026-09-27 — Galleries fill named slots from a per-category shot list [CONTRACT] [MIGRATION]
+
+Media-library PR 2 of 6. A category may carry a `shotList` — an ordered list of named slots, each
+with a label, a framing hint and a role — inherited down the tree from the nearest ancestor that
+sets one, with the generic front/back/detail/label/scale list in code as the default (D4). A
+gallery photograph may name the slot it fills; a video never does, a slot holds one photograph,
+and a key the product's category does not declare is refused at the boundary. The product editor
+shows the category's slots as a strip and lets each photograph be assigned to one, clearing
+assignments that stop existing when the category changes. `ProductMediaDto` gains `slot` and the
+category shapes gain `shotList`, both additive. No category has a tailored list yet; tailored lists
+follow the marketplace templates.
+
+## [PR-160] 2026-09-27 — The worker card shows a short commit hash
+
+The card printed the image's full forty-character commit as its version. A hash is shown as its
+first seven characters now; a version that is not a hash, such as `dev`, is shown whole.
+
+## [PR-159] 2026-09-27 — The runbook says what a Vercel redeploy does and does not do
+
+The first dev deploy of the worker card was fixed twice over and still showed nothing, because a
+dashboard Redeploy rebuilt an older deployment's source and left `dev.bhendi-bazaar.com` pointing
+where it was. OPERATIONS.md now records that the domain moves only through the pipeline's alias
+step, that a redeploy rebuilds the clicked deployment rather than the branch, that a variable reaches
+only deployments created after it was saved, and that `NODE_ENV` is never ours to set.
 
 ## [PR-158] 2026-09-26 — The worker card fails alone, and APP_ENV is required in deployments
 

@@ -1,0 +1,79 @@
+import { z } from "zod";
+import { ENHANCEMENT_TOOL } from "@server/content/enhancement.types";
+import { SCENE_PRESET_KEYS } from "@server/content/scene-presets";
+import { SHOT_ROLES } from "@server/catalog/shot-list";
+
+const id = z.string().trim().min(1).max(64);
+
+/**
+ * One request for one improvement (image-enhancement spec R1, R2, R5). The photo is named by its
+ * asset id or by the URL its gallery row carries — the editor knows only the URL — never both. The
+ * slot and its role travel with it so the label slot is refused before a row exists (trd D8);
+ * whether the photo is this org's and ready is the service's question, not the schema's.
+ *
+ * A photo that fills no slot sends `null`, not nothing: the editor knows it has no slot, which is
+ * a different statement from having forgotten to say. Both are read as no slot.
+ *
+ * A setting is a key from the platform's own list and belongs to exactly one tool (spec R11): a
+ * scene without one cannot be run, and anything else carrying one is describing a choice that tool
+ * does not have. Both are refused here rather than shrugged off downstream, because a free-text
+ * scene is the thing the fixed list exists to make impossible.
+ */
+export const requestEnhancementSchema = z
+  .object({
+    tool: z.enum(ENHANCEMENT_TOOL),
+    preset: z.enum(SCENE_PRESET_KEYS).optional(),
+    sourceAssetId: id.optional(),
+    sourceRef: z.url().max(1024).optional(),
+    slot: z
+      .string()
+      .trim()
+      .min(1)
+      .max(40)
+      .nullish()
+      .transform((value) => value ?? undefined),
+    slotRole: z
+      .enum(SHOT_ROLES)
+      .nullish()
+      .transform((value) => value ?? undefined),
+  })
+  .refine((request) => (request.sourceAssetId ? 1 : 0) + (request.sourceRef ? 1 : 0) === 1, {
+    message: "Name the photo by its asset id or its URL, not both",
+    path: ["sourceAssetId"],
+  })
+  .refine((request) => request.tool !== ENHANCEMENT_TOOL.SCENE || request.preset !== undefined, {
+    message: "Choose one of the scene settings",
+    path: ["preset"],
+  })
+  .refine((request) => request.tool === ENHANCEMENT_TOOL.SCENE || request.preset === undefined, {
+    message: "Only a scene has a setting to choose",
+    path: ["preset"],
+  });
+
+export type RequestEnhancementBody = z.infer<typeof requestEnhancementSchema>;
+
+/** An allowance is a count of runs; the ceilings are sanity, not policy — the policy is the value. */
+const allowance = z.number().int().positive().max(100_000);
+
+/**
+ * The platform's two numbers, as the admin form sends them (image-enhancement spec R7, trd D5).
+ * The cap crosses in **paise** (Invariant 3) — the form shows rupees and converts before it sends,
+ * so the wire carries the unit the column stores and no division happens on the way in.
+ */
+export const enhancementSettingsSchema = z.object({
+  defaultMonthlyAllowance: allowance,
+  dailyCapPaise: z.number().int().positive().max(10_000_000),
+});
+export type EnhancementSettingsInput = z.infer<typeof enhancementSettingsSchema>;
+
+/**
+ * What one org does differently (spec R7, A5): an allowance of its own, a pause, or neither. A
+ * null allowance is not a missing field — it is the org saying it defers to the platform's number,
+ * which is what lets its row be deleted rather than kept holding a copy.
+ */
+export const orgEnhancementPolicySchema = z.object({
+  monthlyAllowance: allowance.nullable(),
+  paused: z.boolean(),
+  pauseReason: z.string().trim().min(1).max(200).nullable(),
+});
+export type OrgEnhancementPolicyInput = z.infer<typeof orgEnhancementPolicySchema>;

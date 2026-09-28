@@ -16,6 +16,7 @@ import {
   isRenderableImageUrl,
   renderableMedia,
 } from "@server/catalog/image-paths";
+import { toProductMediaDto } from "@server/catalog/media";
 import { LOGO } from "@/lib/config";
 import {
   loadPriceContext,
@@ -71,7 +72,7 @@ const mapProduct = (
     reviewsCount: ratingFor(ratings, product.id).count,
     // A URL left on the retired store throws inside next/image and takes the whole
     // page down (OPERATIONS.md "Images left behind"), so it reads as no image here.
-    media: renderableMedia(product.media ?? []),
+    media: renderableMedia((product.media ?? []).map(toProductMediaDto)),
     thumbnail: isRenderableImageUrl(product.thumbnail)
       ? product.thumbnail
       : LOGO.ICON,

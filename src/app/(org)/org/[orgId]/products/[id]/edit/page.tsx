@@ -19,7 +19,7 @@ export default async function OrgEditProductPage({
   if (!product || product.org.id !== orgId) notFound();
 
   const categories = (await adminCategoriesDAL.getCategories()).categories.map(
-    (c: AdminCategory) => ({ id: c.id, name: c.name }),
+    (c: AdminCategory) => ({ id: c.id, name: c.name, parentId: c.parentId, shotList: c.shotList }),
   );
 
   // The product's own org, so the form cannot reassign ownership.

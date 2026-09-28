@@ -12,8 +12,12 @@ import type { ImageFolder } from "@server/catalog/image-paths";
 import { orgRepository } from "@server/catalog/org.repository";
 import { DomainError } from "@server/shared/domain-error";
 
+/**
+ * What a caller asks for, and where it is stored. `products` still names the request — that is the
+ * word every existing client sends — but an org's files live under the owner from now on.
+ */
 const UPLOAD_TYPES: Record<string, ImageFolder> = {
-  products: "products",
+  products: "org",
   categories: "categories",
   banners: "banners",
 };
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
     const identifier = formData.get("identifier") as string | null;
     const orgId = formData.get("orgId") as string | null;
     const org =
-      folder === "products" && orgId
+      folder === "org" && orgId
         ? await orgRepository.findById(orgId)
         : null;
 

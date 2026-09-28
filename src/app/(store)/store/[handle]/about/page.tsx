@@ -1,112 +1,81 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import Image from "next/image";
-
 import { PageShell } from "@/components/shared/page-shell";
-import { StorefrontIdentity } from "@/components/storefront/storefront-identity";
+import { BrandPageSections } from "@/components/storefront/brand-page/brand-page-sections";
 import { StorefrontTheme } from "@/components/storefront/storefront-theme";
 import { Button } from "@/components/ui/button";
 import { storefrontDAL } from "@/data-access-layer/storefront.dal";
+import { APP_NAME } from "@/lib/config";
 import { appUrl } from "@server/shared/app-url";
-import { resolveStorefront } from "../resolve";
+import { resolveBrandPage } from "../resolve";
 
-interface AboutPageProps {
+interface BrandPageProps {
   params: Promise<{ handle: string }>;
 }
 
+/** The first non-blank line of a text, cut to a preview's length, or null. */
+const firstLine = (text: string | null): string | null =>
+  text
+    ?.split("\n")
+    .map((line) => line.trim())
+    .find(Boolean)
+    ?.slice(0, 160) ?? null;
+
+/**
+ * The page describes itself from the same public face it renders (brand-page R11, D10), so a
+ * link pasted into a chat previews the cover, the name and the tagline. `getBrandPage` is
+ * request-memoised: metadata and page share one read.
+ */
 export async function generateMetadata({
   params,
-}: AboutPageProps): Promise<Metadata> {
+}: BrandPageProps): Promise<Metadata> {
   const { handle } = await params;
-  const shop = await storefrontDAL.getByHandle(handle);
-  if (!shop) return {};
+  const page = await storefrontDAL.getBrandPage(handle);
+  if (!page) return {};
+
+  const description =
+    page.tagline ?? firstLine(page.about) ?? `About ${page.name} on ${APP_NAME}.`;
+  const url = `${appUrl()}/store/${page.handle}/about`;
+  const image = page.heroUrl ?? page.logoUrl;
+
   return {
-    title: `About ${shop.name}`,
-    description: shop.tagline ?? `About ${shop.name} on Bhendi Bazaar.`,
-    alternates: { canonical: `${appUrl()}/store/${shop.handle}/about` },
+    title: `About ${page.name}`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      title: page.name,
+      description,
+      url,
+      ...(image ? { images: [{ url: image, alt: page.name }] } : {}),
+    },
   };
 }
 
 /**
- * What makes a stranger willing to buy from a shop they have never heard of.
+ * The shop's brand page: what makes a stranger on a phone willing to buy from a shop they
+ * have never heard of, drawn from what the platform already knows (brand-page spec).
  *
- * No contact channel of the shop's own: [contact-us](docs/specs/contact-us/) is
- * platform-scoped for now, so a buyer with a question reaches the platform
- * (storefront-pages R3).
+ * A fixed sequence of sections, each present only when it has something to show — the page
+ * itself never asks how much the org has written (R2, D4). No contact channel of the shop's
+ * own: [contact-us](docs/specs/contact-us/) is platform-scoped (storefront-pages R3).
  */
-export default async function StorefrontAboutPage({ params }: AboutPageProps) {
+export default async function StorefrontAboutPage({ params }: BrandPageProps) {
   const { handle } = await params;
-  const shop = await resolveStorefront(handle);
+  const page = await resolveBrandPage(handle);
 
   return (
-    <StorefrontTheme shop={shop}>
-      <PageShell width="narrow">
-        {shop.heroUrl && (
-          <div className="relative aspect-banner-source w-full overflow-hidden rounded-card bg-muted">
-            <Image
-              src={shop.heroUrl}
-              alt={`${shop.name} cover`}
-              fill
-              // Honest about the slot (ADR-0026): this page is PageShell width="narrow",
-              // so the picture caps at 48rem rather than the storefront's 72rem. It is
-              // the largest thing here and the page's LCP, hence `priority`.
-              sizes="(min-width: 768px) 48rem, 100vw"
-              className="object-cover"
-              priority
-            />
-          </div>
-        )}
+    <StorefrontTheme shop={page}>
+      {/* The bottom padding clears the docked call to shop on a phone; from md it is back
+          in the flow and the layout's own padding is enough. */}
+      <PageShell width="narrow" className="space-y-8 pb-16 md:pb-0">
+        <BrandPageSections page={page} />
 
-        <StorefrontIdentity shop={shop} />
-
-        {shop.about ? (
-          // Plain text, rendered as text: an org's copy is never markup (ADR-0030 D9).
-          <div className="space-y-4 whitespace-pre-line text-base leading-relaxed text-foreground/90">
-            {shop.about}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">
-            {shop.name} has not written an introduction yet.
-          </p>
-        )}
-
-        {(shop.deliveryPolicy || shop.returnsPolicy) && (
-          <section className="space-y-4 rounded-card border border-border bg-card p-4 md:p-6">
-            <h2 className="font-heading text-xl font-semibold">
-              This shop&apos;s terms
-            </h2>
-            {/* R3a: unambiguous whose promise this is. Payment and fraud protection stay
-              the platform's and are not a shop's to disclaim. */}
-            <p className="text-2xs text-muted-foreground">
-              Set by {shop.name}. Payment and fraud protection are Bhendi
-              Bazaar&apos;s.
-            </p>
-            {shop.deliveryPolicy && (
-              <div>
-                <h3 className="text-sm font-medium">Delivery</h3>
-                <p className="whitespace-pre-line text-sm text-muted-foreground">
-                  {shop.deliveryPolicy}
-                </p>
-              </div>
-            )}
-            {shop.returnsPolicy && (
-              <div>
-                <h3 className="text-sm font-medium">Returns</h3>
-                <p className="whitespace-pre-line text-sm text-muted-foreground">
-                  {shop.returnsPolicy}
-                </p>
-              </div>
-            )}
-          </section>
-        )}
-
-        <div className="flex gap-3">
-          <Button asChild>
-            <Link href={`/store/${shop.handle}`}>See what they sell</Link>
-          </Button>
+        {/* storefront-pages R6: a visitor is never trapped in one shop. */}
+        <div className="flex justify-center pt-2">
           <Button asChild variant="outline">
-            <Link href="/">The whole marketplace</Link>
+            <Link href="/">Browse the whole marketplace</Link>
           </Button>
         </div>
       </PageShell>
