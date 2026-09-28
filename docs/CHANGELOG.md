@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-203] 2026-09-28 — A backfill that recognises none of its own library stops
+
+The media backfill reads one database and one bucket, and nothing downstream noticed when they
+were not a pair. Dimensions arrive over plain HTTP from the stored URL, so a run against the wrong
+combination still wrote a full-looking record — missing only `objectKey`, which is the field crop,
+improve and the deletion sweep all read. The run is idempotent on the reference, so the corrected
+second run skipped every asset the first had made and the empty key was permanent.
+
+A write now samples the references it is about to record and stops when not one of them belongs to
+the configured store, which is the shape of a production database paired with a development
+bucket. A library of genuinely external URLs is a real state, so the refusal is overridable with
+`--allow-foreign` rather than being a rule. The runbook now also says how to aim the script at one
+database, and that a variable the passed file omits falls back to the local `.env` without a word.
+
 ## [PR-202] 2026-09-28 — A shortfall is the same refusal wherever it is noticed
 
 Two places can find that the units are not there: the allocation's availability read, before the

@@ -472,7 +472,18 @@ A write also hashes ready images recorded before the content-hash column existed
 thousand per run — a larger library needs a second run, and the summary line's `hashed` count says when
 it is done. Until an image is hashed, uploading it again stores a second copy.
 
-Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
+Run it once per database after the deploy that carries the migration, with that database's `DATABASE_URL` and the R2 variables in the environment.
+
+**Pointing it at a database is the whole risk.** The script loads `.env` by itself, so run bare it
+targets local development and says nothing about which database it reached. Pass the target's own
+file instead — `npx tsx --env-file=.env.production.reference scripts/backfill-media-assets.ts` — and
+note that a name the passed file omits still falls back to `.env`, silently. That is how a
+production database comes to be paired with a development bucket: every reference is then
+unrecognised, every asset is written with no object key, and because the run is idempotent on the
+reference a corrected re-run skips them all and the null is permanent. Crop, improve and the
+deletion sweep each need that key. A write therefore stops when nothing in the library belongs to
+the configured store; `--allow-foreign` is how a library of genuinely external URLs says so.
+Report first, without `--write`, and read the summary before committing to it. Re-running is safe: a URL that already has an asset is linked, not duplicated. A URL nobody can fetch still gets a record, without dimensions, and is listed at the end so it can be looked at. Record the run in the CHANGELOG.
 
 ## Infrastructure
 
