@@ -11,7 +11,7 @@ Investigates a question so a TRD can rest on something. **Research only.**
 
 1. **No code.** Do not implement, do not edit application files, do not create a branch. The output is understanding.
 2. **No decision.** Present options with trade-offs. The decision is made in a TRD or an ADR, by the user.
-3. **Verify, don't recall.** For anything about this codebase, read the code. For anything about an external service, check current documentation — an API's behaviour today is not necessarily what it was.
+3. **Verify, don't recall.** For anything about this codebase, read the code. For anything about an external service, check current documentation — an API's behaviour today is not necessarily what it was. **For the shape of a solution, check what the field actually does** ([ADR-0046](../../../docs/adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md)): a design can be internally sound, consistent with everything around it, and a named anti-pattern. Our own prevailing pattern is evidence, never authority.
 4. **Say what you could not determine.** An unresolved unknown is a finding; a confident guess is a liability, especially about payment or courier behaviour.
 
 ## Where to look

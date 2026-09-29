@@ -10,6 +10,55 @@
 
 ## Entries
 
+## [PR-217] 2026-09-29 — Check a new model against the field, not against ourselves
+
+Drafting the listing vocabulary produced a design for storing a product's variable facts as one
+row per attribute. It was internally sound and consistent with this codebase, which already holds
+declared shapes as validated data in eighteen places. It was also entity-attribute-value, the
+model Magento built its catalogue on and the one PostgreSQL's own community advises against by
+name, where a JSON column is a fraction of the storage and a large multiple of the read speed.
+
+Consistency with the house pattern produced the wrong answer, because the pattern was read at the
+wrong level of abstraction. Nothing in the process caught it. Every gate here checks our code
+against our rules, and none of them checks our rules against anybody else's experience. It was
+caught because the owner asked whether it was standard.
+
+So the TRD template now has a required **Prior art** section: name what the field does, with a
+source, and say whether we follow it. Departing is allowed and argued. An existing pattern in
+this repository is evidence and never authority — consistency is a reason to match and never a
+reason not to check. A wrong pattern found already in the code gets written down rather than
+quietly avoided, because working around one silently is how the next person copies it.
+
+The spike's "verify, don't recall" rule already covered external services and now covers the
+shape of a solution too.
+
+No gate enforces this and none can: no test knows that a schema resembles an anti-pattern, and
+one that tried would encode a fixed list of bad ideas and go stale. The section's presence in the
+template is the whole of the enforcement, which is weaker than this project usually accepts and
+is recorded as such.
+
+## [PR-216] 2026-09-29 — The first spec of the new phase: one description of a product
+
+`listing-vocabulary` is drafted. It is the phase's foundation and the only part of it that
+depends on nobody outside: one declared attribute set, variants as real products in a family, and
+one resolver that answers a product's facts by walking product, family, brand, then the shop's
+defaults, returning each value with the level that supplied it.
+
+Its shape is borrowed rather than invented. The shot list already declares a template as
+validated JSON, parses defensively and resolves by walking to the nearest ancestor that answers.
+This is that pattern with a different subject.
+
+The spec names five hazards so the technical approach cannot pass over them, which is what the
+convention asks of it. Two are worth repeating here. A vocabulary that still accepts free text is
+not a vocabulary, and today's colours already contain three spellings of maroon. And "products"
+stops meaning one thing the moment a garment in five sizes becomes five rows, so every screen
+that counts them has to say which count it means — the dashboard, the listing grid and the
+low-stock alert do not currently agree by accident.
+
+The migration deliberately keeps values it cannot map, as free text against the product. A shop's
+data is not ours to discard because it does not fit a list we wrote afterwards, and the leftovers
+are what tell us which values the list is missing.
+
 ## [PR-215] 2026-09-29 — Five decisions, and a phase re-sequenced around what it costs to prove
 
 The spike into what the marketplaces actually require turned five questions into decisions, each

@@ -72,6 +72,15 @@ What belongs to other features or phases, with links.
 ## Approach
 The chosen approach, and what makes it the right shape.
 
+## Prior art
+Required when this introduces a new persistence shape, data model, integration pattern, or
+concurrency or caching strategy; "None — no new model" otherwise. Name what the field does, with
+a source, and say whether we follow it. A departure is allowed and is argued here. **An existing
+pattern in this repository is evidence, not authority** — consistency is a reason to match and
+never a reason not to check ([ADR-0046](../../../docs/adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md)).
+If the check finds a pattern already in our code that is wrong, say so here, and either fix it in
+this change or record why it stays.
+
 ## Technical decisions
 - D1 — decision + rationale (+ reference).
 

@@ -83,4 +83,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0043](0043-a-variant-is-a-product-in-a-family.md) | A variant is a product in a family | Accepted | 2026-09-29 |
 | [0044](0044-a-marketplace-orders-money-is-reported-not-computed.md) | A marketplace order's money is reported, not computed | Accepted | 2026-09-29 |
 | [0045](0045-channel-mappings-are-versioned-data.md) | Channel mappings are versioned data, not code | Accepted | 2026-09-29 |
+| [0046](0046-a-new-model-is-checked-against-the-field-before-the-codebase.md) | A new model is checked against the field before the codebase | Accepted | 2026-09-29 |
 <!-- generated:adr-index:end -->
