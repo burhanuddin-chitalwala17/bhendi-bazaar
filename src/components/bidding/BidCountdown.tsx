@@ -16,11 +16,13 @@ export function BidCountdown({
   serverNow,
   onExpire,
   className,
+  endedLabel = "Bidding has closed",
 }: {
   endAt: string;
   serverNow: string;
   onExpire?: () => void;
   className?: string;
+  endedLabel?: string;
 }) {
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, new Date(endAt).getTime() - new Date(serverNow).getTime()),
@@ -42,7 +44,7 @@ export function BidCountdown({
   }, [endAt, serverNow, onExpire]);
 
   if (remaining === 0) {
-    return <span className={className}>Bidding has closed</span>;
+    return <span className={className}>{endedLabel}</span>;
   }
 
   const totalSeconds = Math.floor(remaining / 1000);

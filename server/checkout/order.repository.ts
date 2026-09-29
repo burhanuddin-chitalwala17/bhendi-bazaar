@@ -396,6 +396,34 @@ export class OrderRepository {
     return result.count === 1;
   }
 
+  /**
+   * Unpaid attempts on an auction offer that may still hold stock or have a payment moving
+   * (winner-offer D7). While one exists the offer is neither lapsed nor withdrawn, because a
+   * capture could still land on it.
+   */
+  async openOrdersForOffer(
+    offerId: string,
+    db: Pick<typeof prisma, "order"> = prisma
+  ): Promise<{ id: string }[]> {
+    return await db.order.findMany({
+      where: {
+        bidOfferId: offerId,
+        status: { in: [ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.FAILED] },
+        NOT: { paymentStatus: PAYMENT_STATUS.PAID },
+      },
+      select: { id: true },
+    });
+  }
+
+  /** Paid orders on these offers — the sweep's check that no completed sale went unrecorded. */
+  async paidOrdersForOffers(offerIds: string[]): Promise<{ id: string; bidOfferId: string }[]> {
+    if (offerIds.length === 0) return [];
+    const rows = await prisma.order.findMany({
+      where: { bidOfferId: { in: offerIds }, paymentStatus: PAYMENT_STATUS.PAID },
+      select: { id: true, bidOfferId: true },
+    });
+    return rows.flatMap((row) => (row.bidOfferId ? [{ id: row.id, bidOfferId: row.bidOfferId }] : []));
+  }
 
   /**
    * Delete an order (admin only)

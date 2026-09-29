@@ -1,7 +1,7 @@
 # ADR-0023: Bidding status stores only what the clock cannot decide
 
 - **Date:** 2026-09-09
-- **Status:** Accepted
+- **Status:** Accepted — decision 2 (nothing runs on a schedule) superseded in part by [ADR-0041](0041-an-auction-winner-buys-through-an-order-priced-from-their-offer.md): the offer chain after an auction ends runs on the worker; the auction's own phase is still derived from the clock
 - **Context:** A timed auction has states a person chooses — cancelled, sold, unsold — and states only the clock chooses: not started, running, finished. Storing both kinds in one column reads as the obvious design, and it is the one every scheduler-shaped answer assumes. It also means a row can be wrong: an event whose end time passed a minute ago is finished in fact and running in the database until something runs.
 
   Two forces made that unaffordable here. This project's Vercel plan cannot run a cron at minute granularity at all, so "something runs" would have had to be a request-triggered sweep — correctness resting on traffic. And the same question is asked from many places at once: the public bidding page, the product page, listings, the cart, the order transaction, the org console, the admin console. Each of those would need to agree about whether an event had ended, and any one of them reading a stale column is a product that can be bought while it is being auctioned.

@@ -9,6 +9,8 @@ import {
 import { getVerificationEmailTemplate } from "@server/notifications/templates/verificationEmail";
 import { getOutbidEmailTemplate } from "@server/notifications/templates/outbidEmail";
 import { getContactMessageEmailTemplate } from "@server/notifications/templates/contactMessageEmail";
+import { getBidOfferEmailTemplate } from "@server/notifications/templates/bidOfferEmail";
+import { getBiddingAlertEmailTemplate } from "@server/notifications/templates/biddingAlertEmail";
 import { esc, renderEmail } from "@server/notifications/templates/layout";
 
 const order: OrderEmailView = {
@@ -57,6 +59,21 @@ const emails = {
       currentBidPaise: 250000,
       endAt: new Date("2026-09-03T10:00:00Z"),
       slug: "ab12cd34ef",
+    }),
+  bidOffer: () =>
+    getBidOfferEmailTemplate({
+      bidderName: "Aisha",
+      productName: "Abaya <Special>",
+      option: "Size M · Black",
+      amountPaise: 345600,
+      expiresAt: new Date("2026-09-28T18:30:00Z"),
+      claimWindowHours: 12,
+      offerUrl: "https://x.test/bid-offer/tok",
+    }),
+  biddingAlert: () =>
+    getBiddingAlertEmailTemplate({
+      headline: "auction ab12cd34ef",
+      lines: ["Auction ab12cd34ef: no bidder completed the purchase."],
     }),
   contactMessage: () =>
     getContactMessageEmailTemplate({
@@ -117,5 +134,29 @@ describe("money", () => {
     expect(html).toContain("2,400");
     expect(html).toContain("2,200");
     expect(html).not.toContain("240000");
+  });
+});
+
+describe("the auction offer email", () => {
+  const html = emails.bidOffer();
+
+  it("never presents the bid as the whole cost (winner-offer R10a)", () => {
+    expect(html).toContain("₹3,456 + shipping");
+  });
+
+  it("states the deadline in India's time, whatever zone the worker runs in", () => {
+    // 18:30 UTC is midnight IST on the 29th.
+    expect(html).toContain("29 Sept 2026");
+    expect(html).toContain("IST");
+  });
+
+  it("offers both choices, and each lands on the confirm page rather than acting", () => {
+    expect(html).toContain("https://x.test/bid-offer/tok?choice=accept");
+    expect(html).toContain("https://x.test/bid-offer/tok?choice=decline");
+  });
+
+  it("escapes the product name", () => {
+    expect(html).toContain("Abaya &lt;Special&gt;");
+    expect(html).not.toContain("Abaya <Special>");
   });
 });

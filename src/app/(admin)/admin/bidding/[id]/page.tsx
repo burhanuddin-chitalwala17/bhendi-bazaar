@@ -13,6 +13,8 @@ import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { Card } from "@/components/ui/card";
 import { BiddingPhaseBadge } from "@/components/bidding/BiddingPhaseBadge";
 import { BidLadder } from "@/components/bidding/BidLadder";
+import { OfferChain } from "@/components/bidding/OfferChain";
+import { offerService } from "@server/bidding/offer.service";
 import { CopyLinkButton } from "@/components/bidding/CopyLinkButton";
 import { formatCurrency } from "@/lib/format";
 
@@ -30,7 +32,12 @@ export default async function AdminBiddingDetailPage({
     if (error instanceof NotFoundError) notFound();
     throw error;
   });
-  const locations = await adminBiddingService.stockLocations(id);
+  const hasOffers = event.claimWindowHours !== null;
+  const [locations, chain] = await Promise.all([
+    adminBiddingService.stockLocations(id),
+    hasOffers ? offerService.chainFor(id) : Promise.resolve([]),
+  ]);
+  const serverNow = new Date().toISOString();
 
   const variant = [event.product.size, event.product.color]
     .filter(Boolean)
@@ -91,6 +98,18 @@ export default async function AdminBiddingDetailPage({
         </div>
       </Card>
 
+      {hasOffers && (
+        <section className="space-y-3">
+          <h2 className="font-heading text-lg font-semibold">Offers</h2>
+          <p className="text-sm text-muted-foreground">
+            Each bidder, highest first, is emailed an offer with{" "}
+            {event.claimWindowHours} hours to accept and pay. A decline or a
+            missed deadline passes it to the next.
+          </p>
+          <OfferChain eventId={event.id} chain={chain} serverNow={serverNow} />
+        </section>
+      )}
+
       <section className="space-y-3">
         <h2 className="font-heading text-lg font-semibold">
           Bidders, highest first
@@ -106,6 +125,7 @@ export default async function AdminBiddingDetailPage({
           ladder={event.ladder}
           locations={locations}
           canRecordOutcome={event.phase === "ENDED"}
+          manualSale={!hasOffers}
         />
       </section>
     </PageShell>

@@ -1,16 +1,24 @@
 # notifications — domain rules
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-09-28
 - **Covers:** `server/notifications/**`
 
 Transactional email and in-app notifications ([in-app-notifications](../../docs/specs/in-app-notifications/spec.md)).
-- Email: One provider (Resend, in `email.service.ts`), one shell, six templates.
+- Email: One provider (Resend, in `email.service.ts`), one shell, eight templates.
 - In-App: `in-app.repository.ts`, `in-app.service.ts`, `in-app.types.ts`. Stores `InAppNotification` records per user with unread status tracking.
 
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
 a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route
 awaits the send and reports a failure ([contact-us](../../docs/specs/contact-us/trd.md) D2, D4).
 A signed-in sender's Reply-To is the session's email, never one from the request body.
+`biddingAlertEmail.ts` is the other store-bound one: an auction whose offers ran out, or a
+paid order that found its offer already closed.
+
+`bidOfferEmail.ts` is sent from the worker, not a request, and its send is **awaited** so a
+failure throws and the queue retries it ([winner-offer](../../docs/specs/bidding/winner-offer/trd.md)
+D10). Its deadline is formatted by `formatDeadline`, pinned to IST: `formatDate` takes the
+sending machine's zone, and the worker's is UTC. The link it carries is minted by the caller at
+the moment of sending and exists nowhere else, so never log the view it renders.
 
 ## Every email renders through `renderEmail`
 

@@ -18,6 +18,8 @@ export async function enqueue<T>(
   tx: EnqueueTx,
   definition: JobSpec<T>,
   payload: T,
+  /** Not before this instant — for work due at a known time, such as an auction's end. One row waiting, not a poll. */
+  options: { startAfter?: Date } = {},
 ): Promise<string> {
   const data: JobEnvelope = { type: definition.type, payload: definition.schema.parse(payload) };
   const group = definition.group?.(payload);
@@ -25,6 +27,7 @@ export async function enqueue<T>(
   const id = await boss.send(JOBS_QUEUE, data, {
     db: fromPrisma(tx),
     ...(group ? { group: { id: group } } : {}),
+    ...(options.startAfter ? { startAfter: options.startAfter } : {}),
   });
   if (!id) throw new Error(`Job "${definition.type}" was not accepted by the queue`);
   return id;

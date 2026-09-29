@@ -35,6 +35,7 @@ export function BidPanel({
   endAt,
   serverNow,
   isSignedIn,
+  accountHasEmail = true,
   quickBidsPaise,
   initial,
 }: {
@@ -42,6 +43,8 @@ export function BidPanel({
   endAt: string;
   serverNow: string;
   isSignedIn: boolean;
+  /** A signed-in account with no email cannot be offered the item if it wins (winner-offer R5, R6). */
+  accountHasEmail?: boolean;
   quickBidsPaise: number[];
   initial: BidState;
 }) {
@@ -153,6 +156,14 @@ export function BidPanel({
         </p>
       </div>
 
+      {isSignedIn && !accountHasEmail && (
+        <p className="rounded-card border border-warning/40 bg-warning/10 p-3 text-2xs">
+          Your account has no email address. If you win, we cannot send you the
+          offer, and the item goes to the next bidder. Add an email in your
+          profile before bidding.
+        </p>
+      )}
+
       {isBehind && (
         <div className="space-y-2 rounded-card border border-warning/40 bg-warning/10 p-3">
           <p className="text-sm font-medium">This page is behind</p>
@@ -228,9 +239,9 @@ export function BidPanel({
               id="bid-email-hint"
               className="mt-1.5 text-2xs text-muted-foreground"
             >
-              Optional — but without it there is no way to tell you if someone
-              outbids you. Add one and we will let you know so you can bid
-              again.
+              Optional — but without it we cannot tell you if someone outbids
+              you, and if you win we cannot offer you the item: it goes to the
+              next bidder instead.
             </p>
             {fieldErrors.guestEmail && (
               <p className="mt-1 text-sm text-destructive">

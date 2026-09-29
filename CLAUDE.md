@@ -178,6 +178,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **A record a person authored is retired, never deleted** — one column per way of retiring it. [ADR-0032](docs/adr/0032-records-people-authored-are-retired-not-deleted.md)
 - **A user is deactivated, never deleted** — and that is not `isBlocked`. [ADR-0032](docs/adr/0032-records-people-authored-are-retired-not-deleted.md)
 - **An item up for bidding cannot be bought, and the product never knows it.** [ADR-0023](docs/adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md)
+- **An auction winner buys through an ordinary order priced from their accepted offer** — the one exception to catalogue pricing. [ADR-0041](docs/adr/0041-an-auction-winner-buys-through-an-order-priced-from-their-offer.md)
 - **A phone number is contact data, not an identity key.** [ADR-0024](docs/adr/0024-phone-is-contact-data-not-an-identity-key.md)
 - **The audit trail records an action; it never decides whether it happened.** [ADR-0021](docs/adr/0021-audit-trail-never-fails-the-action.md)
 - **An org storefront is a scoped projection of the marketplace, on one domain.** [ADR-0030](docs/adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md)

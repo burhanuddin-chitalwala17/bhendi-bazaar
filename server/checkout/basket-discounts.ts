@@ -71,3 +71,18 @@ export async function applyOffersToBasket(args: {
     discountByKey: new Map(discounts.lines.map((line) => [line.key, line])),
   };
 }
+
+/** An auction line takes no offer: the bid already is the negotiated price (ADR-0019, winner-offer R16). */
+export function noOffers(): Awaited<ReturnType<typeof applyOffersToBasket>> {
+  return {
+    discounts: {
+      lines: [],
+      attributions: [],
+      totalDiscountPaise: 0,
+      rejection: null,
+      couponCoveredKeys: [],
+      claimedPromotionIds: [],
+    },
+    discountByKey: new Map(),
+  };
+}

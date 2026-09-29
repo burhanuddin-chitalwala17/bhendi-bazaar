@@ -32,3 +32,16 @@ export function formatShortDate(date: Date): string {
     dateStyle: "medium",
   }).format(date);
 }
+
+/**
+ * A deadline the reader must act by, in India's time and saying so. `formatDate` takes the
+ * sending machine's zone, and the worker's is UTC — five and a half hours off for a buyer.
+ */
+export function formatDeadline(date: Date): string {
+  const text = new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Kolkata",
+  }).format(date);
+  return `${text} IST`;
+}

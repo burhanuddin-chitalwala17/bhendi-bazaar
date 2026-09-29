@@ -5,6 +5,7 @@ import { NOTIFICATION_TYPE, type NotificationType } from "@server/notifications/
 const TYPE_META: Record<NotificationType, { label: string; icon: typeof Info; tone: string }> = {
   [NOTIFICATION_TYPE.ORDER_UPDATE]: { label: "Order update", icon: Package, tone: "text-info" },
   [NOTIFICATION_TYPE.BID_OUTBID]: { label: "Outbid", icon: Gavel, tone: "text-warning" },
+  [NOTIFICATION_TYPE.BID_OFFER]: { label: "You won", icon: Gavel, tone: "text-success" },
   [NOTIFICATION_TYPE.PROMOTION]: { label: "Offer", icon: Tag, tone: "text-success" },
   [NOTIFICATION_TYPE.SYSTEM]: { label: "Announcement", icon: Info, tone: "text-muted-foreground" },
 };

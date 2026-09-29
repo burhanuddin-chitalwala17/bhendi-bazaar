@@ -4,6 +4,7 @@ import type { NotificationType as DbNotificationType } from "@prisma/client";
 export const NOTIFICATION_TYPE = {
   ORDER_UPDATE: "ORDER_UPDATE",
   BID_OUTBID: "BID_OUTBID",
+  BID_OFFER: "BID_OFFER",
   PROMOTION: "PROMOTION",
   SYSTEM: "SYSTEM",
 } as const satisfies { [K in DbNotificationType]: K };

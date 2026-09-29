@@ -528,8 +528,9 @@ model User {
   bids                 Bid[]          @relation("UserBids")
   biddingEventsCreated BiddingEvent[] @relation("BiddingCreatedBy")
   biddingEventsSettled BiddingEvent[] @relation("BiddingSettledBy")
+  bidOffersClosed      BidOffer[]     @relation("BidOfferClosedBy")
 
-  inAppNotifications   InAppNotification[]
+  inAppNotifications InAppNotification[]
 
   @@index([platformRole])
   @@index([isBlocked])
@@ -770,8 +771,15 @@ model Order {
   discounts     OrderDiscount[]
   ledgerEntries OrgLedgerEntry[]
 
+  /// Set on an auction winner's order: its one line is priced from this offer, not the
+  /// catalogue (ADR-0041). Not unique — an abandoned attempt expires and the winner may try
+  /// again through the same link (winner-offer R17).
+  bidOfferId String?
+  bidOffer   BidOffer? @relation(fields: [bidOfferId], references: [id], onDelete: Restrict)
+
   @@index([userId])
   @@index([code])
+  @@index([bidOfferId])
   @@index([status])
   @@index([paymentStatus])
   @@index([paymentStatus, createdAt]) // the reconciliation sweep asks "pending and old"
@@ -1682,7 +1690,14 @@ model BiddingEvent {
   createdById String
   createdBy   User   @relation("BiddingCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
 
-  bids Bid[] @relation("EventBids")
+  /// How long each offered bidder has to accept and pay (winner-offer R9/R10), frozen with
+  /// the other terms. Null marks an event from before offers existed: it is settled by hand
+  /// and nothing automated ever touches it (winner-offer D3, ADR-0041 D5). No database
+  /// default, because a default would fill every existing row and start offers for them.
+  claimWindowHours Int?
+
+  bids   Bid[]      @relation("EventBids")
+  offers BidOffer[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1724,10 +1739,66 @@ model Bid {
   createdAt DateTime @default(now())
 
   wonEvent BiddingEvent? @relation("SoldBid")
+  offers   BidOffer[]
 
   @@unique([eventId, amountPaise])
   @@index([eventId, amountPaise(sort: Desc)])
   @@index([userId])
+}
+
+/// Only what the clock cannot decide, as `BiddingStatus` is. Whether an OFFERED or ACCEPTED
+/// offer can still be acted on is `expiresAt > now`, asked at the moment of acting; LAPSED is
+/// written when the chain moves past one, as the record of how it ended (winner-offer D1).
+enum BidOfferStatus {
+  OFFERED
+  ACCEPTED
+  DECLINED
+  LAPSED
+  /// Never sent: the bidder has no email to offer it to (winner-offer R5).
+  SKIPPED
+  /// Ended early by the platform (winner-offer R23).
+  WITHDRAWN
+  PAID
+}
+
+/// One step down the ladder after an auction ends: one person, offered the item at their own
+/// highest bid, with a deadline (winner-offer R2/R3/R9).
+///
+/// A partial unique index in the migration allows one open (OFFERED or ACCEPTED) offer per
+/// event, so "one person at a time" is a database fact and a job racing the sweep opens one
+/// offer, not two. Kept for good, like the bids it points at (ADR-0020).
+model BidOffer {
+  id      String       @id @default(cuid())
+  eventId String
+  event   BiddingEvent @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  bidId   String
+  bid     Bid          @relation(fields: [bidId], references: [id], onDelete: Restrict)
+
+  /// 1 for the winner, then down the ladder. Skips take a number too, so the record reads in order.
+  sequence Int
+  status   BidOfferStatus
+
+  /// SHA-256 of the emailed token; the token itself is never stored, not even in the job queue:
+  /// the email job mints it at the moment it sends (winner-offer D9). Null until then, and on a
+  /// SKIPPED row, which also has no `expiresAt` because it was never offered.
+  tokenHash String?   @unique
+  expiresAt DateTime?
+
+  /// When the email went out; the send job's idempotency guard (winner-offer D10).
+  emailSentAt DateTime?
+  respondedAt DateTime?
+  closedAt    DateTime?
+  /// Set only when the platform ended it (WITHDRAWN, or a chain stopped as unsold).
+  closedById  String?
+  closedBy    User?     @relation("BidOfferClosedBy", fields: [closedById], references: [id], onDelete: Restrict)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, sequence])
+  @@index([status, expiresAt])
+  @@index([bidId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1738,6 +1809,7 @@ model Bid {
 enum NotificationType {
   ORDER_UPDATE
   BID_OUTBID
+  BID_OFFER
   PROMOTION
   SYSTEM
 }

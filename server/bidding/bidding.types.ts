@@ -7,7 +7,7 @@
  * platform's own surfaces are typed to receive it.
  */
 
-import type { BiddingStatus } from "@prisma/client";
+import type { BidOfferStatus, BiddingStatus } from "@prisma/client";
 import type { BiddingPhase } from "./bidding-window";
 
 export interface BiddingTerms {
@@ -47,6 +47,8 @@ export interface PublicBiddingView extends BiddingTerms {
   maxBidPaise: number;
   soldAmountPaise: number | null;
   serverNow: Date;
+  /// What the winner is promised (winner-offer R10). Null on an event from before offers existed.
+  claimWindowHours: number | null;
 }
 
 /** What the selling org sees, at every phase: amounts and counts (bidding D19). */
@@ -61,6 +63,7 @@ export interface OrgBiddingSummary extends BiddingTerms {
   soldAmountPaise: number | null;
   settledAt: Date | null;
   createdAt: Date;
+  claimWindowHours: number | null;
 }
 
 /**
@@ -122,4 +125,51 @@ export interface ConfirmSaleInput {
   reason: string | null;
   orgAddressId: string;
   adminId: string;
+}
+
+/**
+ * What the offer page shows the one person it was made to (winner-offer R4, R11). Their own
+ * name and price only — never another bidder. `state` is derived from the status and the
+ * clock together, so a page never offers a button the server would refuse.
+ */
+export interface OfferView {
+  state: "open" | "accepted" | "paid" | "closed";
+  /** Why a closed offer closed, in the reader's terms. */
+  closedReason: "declined" | "expired" | "withdrawn" | "skipped" | null;
+  amountPaise: number;
+  expiresAt: Date | null;
+  serverNow: Date;
+  bidderName: string;
+  eventSlug: string;
+  product: { id: string; slug: string; name: string; thumbnail: string };
+  size: string | null;
+  color: string | null;
+}
+
+/** One step of the chain as the platform sees it (winner-offer R22). */
+export interface OfferChainEntry {
+  id: string;
+  sequence: number;
+  status: BidOfferStatus;
+  /** True while the offer can still be acted on: its status is open and its deadline has not passed. */
+  isLive: boolean;
+  amountPaise: number;
+  bidderName: string;
+  bidderEmail: string | null;
+  bidderPhone: string | null;
+  expiresAt: Date | null;
+  emailSentAt: Date | null;
+  respondedAt: Date | null;
+  closedAt: Date | null;
+  createdAt: Date;
+}
+
+/** What checkout needs from an accepted offer to price and build the one line (ADR-0041). */
+export interface OfferClaim {
+  offerId: string;
+  eventId: string;
+  productId: string;
+  size: string | null;
+  color: string | null;
+  amountPaise: number;
 }

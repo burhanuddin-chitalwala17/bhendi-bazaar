@@ -8,9 +8,9 @@ import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
  * Reached exactly once per order, because the caller is the conditional transition that flips
  * `paymentStatus` (payment-confirmation D3) — not whichever route happened to notice.
  *
- * Its own module because it is where three other domains meet: the ledger records what each org
- * earned, identity supplies a recipient when the address has none, and notifications sends the
- * confirmation. Leaving it inside `order.service.ts` made those three reasons for the order
+ * Its own module because it is where other domains meet: the ledger records what each org
+ * earned, identity supplies a recipient when the address has none, notifications sends the
+ * confirmation, and an auction winner's order completes its auction. Leaving it inside `order.service.ts` made those three reasons for the order
  * service to change, which is what
  * [ADR-0036](../../docs/adr/0036-a-files-reasons-to-change-are-a-decision.md) is about. The
  * imports stay deferred: none of this is on the path of creating an order.
@@ -45,6 +45,13 @@ export async function onPaymentConfirmed(orderId: string): Promise<void> {
       `[onPaymentConfirmed] ledger entry not written for order ${orderId} — the reconcile sweep will pick it up`,
       error
     );
+  }
+
+  // An auction winner's order completes the auction it bought from: the offer is paid and the
+  // event sold at the bid (winner-offer D8). Never throws; the offer sweep retries a miss.
+  if (order.bidOfferId) {
+    const { offerService } = await import("@server/bidding/offer.service");
+    await offerService.completeFromPaidOrder(order.id, order.bidOfferId);
   }
 
   // Deliberately nothing here for the wishlist: a purchase does not clear a wish.

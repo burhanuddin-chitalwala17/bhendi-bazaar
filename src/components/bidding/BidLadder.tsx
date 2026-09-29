@@ -46,11 +46,14 @@ export function BidLadder({
   ladder,
   locations,
   canRecordOutcome,
+  manualSale = true,
 }: {
   eventId: string;
   ladder: BidLadderEntry[];
   locations: StockLocation[];
   canRecordOutcome: boolean;
+  /** False where the auction settles through its offers: a sale is the winner's paid order, never a hand entry (winner-offer D3). */
+  manualSale?: boolean;
 }) {
   const router = useRouter();
   const [chosen, setChosen] = useState<BidLadderEntry | null>(null);
@@ -94,7 +97,7 @@ export function BidLadder({
                   }).format(new Date(bid.placedAt))}
                 </p>
               </div>
-              {canRecordOutcome && (
+              {canRecordOutcome && manualSale && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -110,7 +113,7 @@ export function BidLadder({
 
       {canRecordOutcome && (
         <Button variant="outline" onClick={() => setUnsoldOpen(true)}>
-          Nobody bought it
+          {manualSale ? "Nobody bought it" : "Stop offers and mark unsold"}
         </Button>
       )}
 

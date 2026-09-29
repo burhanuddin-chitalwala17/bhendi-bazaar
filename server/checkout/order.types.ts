@@ -166,6 +166,12 @@ export interface CreateOrderWithShipmentsInput {
    * discarded, not validated (Invariant 1, ADR-0002).
    */
   couponCode?: string;
+  /**
+   * The link token of an accepted auction offer. It prices the one line from the winning
+   * bid instead of the catalogue (ADR-0041). A token, never an amount: the server reads the
+   * price from the offer it names.
+   */
+  auctionToken?: string;
   notes?: string;
   paymentMethod?: string;
 }

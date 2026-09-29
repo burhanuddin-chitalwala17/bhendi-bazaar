@@ -148,12 +148,28 @@ export default async function BiddingPage({
             </p>
           </div>
 
+          {/* R10/R10a: the terms of winning, beside the price and above the controls, so a
+              bid is never read as the full cost. */}
+          {event.claimWindowHours !== null && !isOver && (
+            <div className="rounded-card border border-primary/30 bg-primary/5 p-3">
+              <p className="text-sm font-semibold">
+                Winner pays shipping on top of the bid
+              </p>
+              <p className="mt-0.5 text-2xs text-muted-foreground">
+                When bidding closes, the highest bidder is emailed an offer and
+                has {event.claimWindowHours} hours to confirm and pay. If they
+                don&apos;t, it goes to the next highest bidder.
+              </p>
+            </div>
+          )}
+
           {event.phase === "LIVE" && (
             <BidPanel
               slug={slug}
               endAt={event.endAt.toISOString()}
               serverNow={event.serverNow.toISOString()}
               isSignedIn={Boolean(session?.user?.id)}
+              accountHasEmail={Boolean(session?.user?.email)}
               quickBidsPaise={event.quickBidsPaise}
               initial={{
                 highestBidPaise: event.highestBidPaise,
@@ -220,8 +236,9 @@ export default async function BiddingPage({
           )}
 
           <p className="text-3xs leading-relaxed text-muted-foreground">
-            The highest bidder is contacted directly once bidding closes. Bids
-            are binding offers; who is leading is never shown, only the amount.
+            {event.claimWindowHours !== null
+              ? "Bids are binding offers; who is leading is never shown, only the amount."
+              : "The highest bidder is contacted directly once bidding closes. Bids are binding offers; who is leading is never shown, only the amount."}
           </p>
         </div>
       </div>

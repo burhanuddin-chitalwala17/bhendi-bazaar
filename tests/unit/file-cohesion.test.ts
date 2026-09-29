@@ -42,11 +42,12 @@ const FREE_REACH = 2;
  */
 const RECORDED: Record<string, { domains: string[]; why: string }> = {
   "server/checkout/payment-confirmed.ts": {
-    domains: ["identity", "notifications", "payouts"],
+    domains: ["bidding", "identity", "notifications", "payouts"],
     why:
-      "Where three domains meet by definition: once the money is real the ledger records what " +
-      "each org earned, identity supplies a recipient when the delivery address has none, and " +
-      "notifications sends the confirmation. That convergence is the module's whole purpose — " +
+      "Where domains meet by definition: once the money is real the ledger records what " +
+      "each org earned, identity supplies a recipient when the delivery address has none, " +
+      "notifications sends the confirmation, and an auction winner's order marks its auction " +
+      "sold (winner-offer D8, ADR-0041). That convergence is the module's whole purpose — " +
       "it exists so those three are not three reasons for `order.service.ts` to change, which " +
       "took that file from eight domains to two. Nothing here may throw: the gateway already " +
       "has the money.",
@@ -60,6 +61,14 @@ const RECORDED: Record<string, { domains: string[]; why: string }> = {
       "reaching into `checkout/order.repository`, which was the same coupling one layer lower and " +
       "past the service that owns the rules. The durable fix is for checkout to *push* a settlement " +
       "view rather than payouts pulling four ways, which is an events change, not a rename.",
+  },
+  "src/app/api/orders/create-with-shipments/route.ts": {
+    domains: ["bidding", "checkout", "payments"],
+    why:
+      "The order route composes three steps a buyer's one request needs: create the order " +
+      "(checkout), release an abandoned hold standing in its way (payments), and — for an auction " +
+      "winner — release their own abandoned attempt on the offer first (bidding, winner-offer R17). " +
+      "A route handler is a composition root; the rules stay in each domain's service.",
   },
   "src/domain/admin.ts": {
     domains: ["analytics", "cart", "catalog", "checkout", "identity"],

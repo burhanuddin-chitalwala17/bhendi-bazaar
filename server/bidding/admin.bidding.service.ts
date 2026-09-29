@@ -24,6 +24,7 @@ import type {
   OrgBiddingSummary,
 } from "@server/bidding/bidding.types";
 import { stockService } from "@server/catalog/stock.service";
+import { offerService } from "@server/bidding/offer.service";
 
 export class AdminBiddingService {
   async list(): Promise<(OrgBiddingSummary & { orgName: string })[]> {
@@ -56,6 +57,7 @@ export class AdminBiddingService {
       soldReason: row.soldReason,
       settledAt: row.settledAt,
       createdAt: row.createdAt,
+      claimWindowHours: row.claimWindowHours,
       ladder,
       product: {
         id: row.product.id,
@@ -88,6 +90,14 @@ export class AdminBiddingService {
     const now = new Date();
     const event = await biddingRepository.detailForAdmin(input.eventId);
     if (!event) throw new NotFoundError("Bidding event not found");
+
+    // An auction with a claim window settles through its offers and the winner's order
+    // (winner-offer D3). A hand-recorded sale beside that would sell the item twice.
+    if (event.claimWindowHours !== null) {
+      throw new ConflictError(
+        "This auction settles through its offers. Withdraw the current offer or stop the chain instead."
+      );
+    }
 
     if (biddingPhase(event, now) !== "ENDED") {
       throw new ConflictError(
@@ -186,6 +196,12 @@ export class AdminBiddingService {
       throw new ConflictError(
         "An outcome can only be set once bidding has closed and before one is set"
       );
+    }
+
+    // With offers, "unsold" also means ending whichever offer is open (winner-offer R23).
+    if (event.claimWindowHours !== null) {
+      await offerService.stopChain(params.eventId, params.adminId, params.reason?.trim() || null, now);
+      return;
     }
 
     await prisma.$transaction(async (tx) => {

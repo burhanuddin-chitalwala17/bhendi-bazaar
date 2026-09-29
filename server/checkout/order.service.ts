@@ -19,10 +19,10 @@ import type {
 import { Order, Prisma } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { isValidPhone, PHONE_MESSAGE } from "@server/shared/phone";
-import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
-import { applyOffersToBasket, lineKey } from "@server/checkout/basket-discounts";
+import { priceLines, priceAuctionLine, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
+import { applyOffersToBasket, lineKey, noOffers } from "@server/checkout/basket-discounts";
 import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
-import { assertLinesAreSaleable } from "@server/checkout/sale-gates";
+import { assertLinesAreSaleable, claimOfferForCheckout } from "@server/checkout/sale-gates";
 import { cartService } from "@server/cart/cart.service";
 import { ConflictError, OutOfStockError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
@@ -134,6 +134,18 @@ export class OrderService {
     return onPaymentConfirmed(orderId);
   }
 
+  /** Unpaid attempts on an auction offer; bidding asks before it closes one (winner-offer D7). */
+  async openOrdersForOffer(
+    offerId: string,
+    db?: Pick<typeof prisma, "order">
+  ): Promise<{ id: string }[]> {
+    return await orderRepository.openOrdersForOffer(offerId, db);
+  }
+
+  async paidOrdersForOffers(offerIds: string[]): Promise<{ id: string; bidOfferId: string }[]> {
+    return await orderRepository.paidOrdersForOffers(offerIds);
+  }
+
   /**
    * Delete an order (admin only)
    */
@@ -196,23 +208,47 @@ export class OrderService {
           }
         }
         const requestedLines = [...mergedLines.values()];
-        const { lines: pricedLines, itemsTotal } = priceLines(requestedLines, products);
+        const now = new Date();
+
+        // An auction winner's order: the offer is locked and read here, so the price and the
+        // offer's being open are one fact inside this transaction (ADR-0041). The request
+        // named a token, never an amount.
+        const claim = input.auctionToken
+          ? await claimOfferForCheckout(input.auctionToken, now, tx)
+          : null;
+        if (claim) {
+          if (input.couponCode) {
+            throw new DomainError("No coupon applies to an auction price.");
+          }
+          // After the lock, so a second attempt racing this one sees its order (winner-offer D7).
+          if ((await orderRepository.openOrdersForOffer(claim.offerId, tx)).length > 0) {
+            throw new ConflictError(
+              "A payment for this item is already in progress. If you closed the payment window, wait a minute and try again."
+            );
+          }
+        }
+
+        const cataloguePriced = priceLines(requestedLines, products);
+        const { lines: pricedLines } = claim
+          ? priceAuctionLine(cataloguePriced.lines, claim)
+          : cataloguePriced;
 
         // Offers, decided from persisted rows inside this transaction and at one
         // instant, so the preview and the charge are priced from the same moment
         // (ADR-0018). The request contributed a coupon *code* and nothing else: the
         // amount is computed here (Invariant 1, ADR-0002).
-        const now = new Date();
         // `basket-discounts.ts` owns the shape translation and the coupon claim; see its header
         // for why both belong inside this transaction.
-        const { discounts, discountByKey } = await applyOffersToBasket({
-          pricedLines,
-          products,
-          couponCode: input.couponCode,
-          userId: input.userId ?? null,
-          now,
-          tx,
-        });
+        const { discounts, discountByKey } = claim
+          ? noOffers()
+          : await applyOffersToBasket({
+              pricedLines,
+              products,
+              couponCode: input.couponCode,
+              userId: input.userId ?? null,
+              now,
+              tx,
+            });
 
         // Where the stock actually is (active locations only): the same pure
         // allocation the checkout preview ran, now against the rows this transaction
@@ -327,7 +363,7 @@ export class OrderService {
         // Deliberately **after** the reservation above — `sale-gates.ts` explains why the
         // lock ordering makes this the only race-safe point, and the only one that can
         // refuse at all.
-        await assertLinesAreSaleable(productIds, now, tx);
+        await assertLinesAreSaleable(productIds, now, tx, claim ?? undefined);
 
         // R6: the bought lines leave the cart in the same transaction, so a closed
         // tab cannot leave a cart that has already been purchased. Only those lines —
@@ -351,6 +387,7 @@ export class OrderService {
             // Never from the request: payment state has exactly one writer (Invariant 2).
             paymentStatus: PAYMENT_STATUS.PENDING,
             status: "pending_payment", // Order is pending until payment
+            bidOfferId: claim?.offerId ?? null,
           },
         });
 

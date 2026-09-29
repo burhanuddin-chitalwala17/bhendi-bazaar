@@ -23,6 +23,11 @@ import {
   getOutbidEmailTemplate,
   type OutbidEmailView,
 } from "./templates/outbidEmail";
+import { getBiddingAlertEmailTemplate } from "./templates/biddingAlertEmail";
+import {
+  getBidOfferEmailTemplate,
+  type BidOfferEmailView,
+} from "./templates/bidOfferEmail";
 import {
   getContactMessageEmailTemplate,
   type ContactMessageEmailView,
@@ -238,6 +243,24 @@ class EmailService {
       to: email,
       subject: `You have been outbid on ${view.productName} - Bhendi Bazaar`,
       html: getOutbidEmailTemplate(view),
+    });
+  }
+
+  /** Awaited by the offer job, unlike the outbid notice: a failed send is retried by the queue (winner-offer D10). */
+  async sendBidOfferEmail(email: string, view: BidOfferEmailView): Promise<void> {
+    await this.sendEmail({
+      to: email,
+      subject: `${view.productName} is yours to buy - Bhendi Bazaar`,
+      html: getBidOfferEmailTemplate(view),
+    });
+  }
+
+  /** Tells the store an auction's chain ran out, or that a paid order found its offer already closed. */
+  async sendBiddingAlert(subject: string, lines: string[]): Promise<void> {
+    await this.sendEmail({
+      to: SUPPORT_INBOX,
+      subject: `Bidding: ${subject}`,
+      html: getBiddingAlertEmailTemplate({ headline: subject, lines }),
     });
   }
 

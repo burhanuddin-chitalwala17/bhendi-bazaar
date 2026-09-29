@@ -32,6 +32,9 @@ import { stockService } from "@server/catalog/stock.service";
 import { productService } from "@server/catalog/product.service";
 import { adminOrgService } from "@server/catalog/org.service";
 import { NOTIFICATION_TYPE } from "@server/notifications/in-app.types";
+import { enqueue } from "@server/shared/jobs";
+import { CLAIM_WINDOW_HOURS } from "@server/bidding/offer-chain";
+import { offerAdvanceSpec } from "@server/bidding/offer.job";
 
 /**
  * No 0/O/1/I/l: a bidding link gets read aloud and retyped, and an ambiguous
@@ -129,7 +132,7 @@ export class BiddingService {
           );
         }
 
-        return await biddingRepository.create(
+        const event = await biddingRepository.create(
           {
             orgId,
             productId: input.productId,
@@ -145,9 +148,14 @@ export class BiddingService {
             // Snapshotted, so repricing the product later cannot rewrite what this
             // event says the item was worth when it opened (spec R4).
             referencePricePaise: facts.pricePaise,
+            claimWindowHours: CLAIM_WINDOW_HOURS,
           },
           tx
         );
+        // Runs at the close, in this transaction so an event never exists without it
+        // (winner-offer D4). Events have no edit path, so `endAt` never moves under it.
+        await enqueue(tx, offerAdvanceSpec, { eventId: event.id }, { startAfter: event.endAt });
+        return { id: event.id, slug: event.slug };
       });
     } catch (error) {
       // The partial unique index is what actually arbitrates two simultaneous
@@ -221,6 +229,7 @@ export class BiddingService {
       // Travels with the page so the countdown runs against the platform's clock and
       // not the visitor's device (bidding D17, spec R17).
       serverNow: now,
+      claimWindowHours: row.claimWindowHours,
       product: {
         id: row.product.id,
         slug: row.product.slug,

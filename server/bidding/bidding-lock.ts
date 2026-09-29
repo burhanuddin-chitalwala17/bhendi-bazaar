@@ -14,6 +14,7 @@
 import { cache } from "react";
 import { biddingRepository, type BiddingDb } from "@server/bidding/bidding.repository";
 import { ConflictError } from "@server/shared/domain-error";
+import type { OfferClaim } from "@server/bidding/bidding.types";
 
 export interface BiddingLockContext {
   /** `productId -> the event's public slug`, so a caller can link to it (spec R30). */
@@ -43,14 +44,23 @@ export function biddingLockFor(
   return context.locked.get(productId) ?? null;
 }
 
-/** Which of these products are up for bidding right now. Authoritative. */
+/**
+ * Which of these products are up for bidding right now. Authoritative.
+ *
+ * `claim` is the one way through: the auction whose accepted offer this order is buying
+ * does not hold its own winner out (ADR-0041 D3). It releases that event only, never the
+ * product, so a second event or any other buyer is still refused.
+ */
 export async function lockedAmong(
   productIds: string[],
   now: Date,
-  db?: BiddingDb
+  db?: BiddingDb,
+  claim?: Pick<OfferClaim, "eventId">
 ): Promise<Set<string>> {
   const locked = await biddingRepository.lockedAmong(productIds, now, db);
-  return new Set(locked.map((lock) => lock.productId));
+  return new Set(
+    locked.filter((lock) => lock.eventId !== claim?.eventId).map((lock) => lock.productId)
+  );
 }
 
 /**
@@ -62,9 +72,10 @@ export async function lockedAmong(
 export async function assertNotUnderBidding(
   productIds: string[],
   now: Date,
-  db?: BiddingDb
+  db?: BiddingDb,
+  claim?: Pick<OfferClaim, "eventId">
 ): Promise<void> {
-  const locked = await lockedAmong(productIds, now, db);
+  const locked = await lockedAmong(productIds, now, db, claim);
   if (locked.size === 0) return;
   throw new ConflictError(
     locked.size === 1

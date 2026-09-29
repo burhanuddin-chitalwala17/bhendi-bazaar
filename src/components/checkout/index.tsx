@@ -20,12 +20,18 @@ import { useAuthSheet } from "@/context/AuthSheetContext";
 import { DeliveryAddress } from "@/domain/profile";
 import { Button } from "@/components/ui/button";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { BidCountdown } from "@/components/bidding/BidCountdown";
 
 interface CheckoutContainerProps {
   buyNowProduct?: CartItem;
+  /**
+   * An auction winner's checkout (winner-offer R14): `buyNowProduct` carries the bid as its
+   * price, no coupon or offer applies, and the deadline counts down against the server clock.
+   */
+  auction?: { token: string; expiresAt: string; serverNow: string };
 }
 
-export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
+export function CheckoutContainer({ buyNowProduct, auction }: CheckoutContainerProps) {
   // check if user is authenticated
   const { user } = useAuth();
   const { open: openAuthSheet } = useAuthSheet();
@@ -107,8 +113,9 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   const canCheckout =
     validationErrors.length === 0 && !isProcessing && !isShippingLoading;
 
-  // What every live offer does to this basket, priced by the server.
-  const offers = useCheckoutOffers(checkoutItems, user?.id ?? null);
+  // What every live offer does to this basket, priced by the server. An auction line takes
+  // none (ADR-0019), so it is never quoted.
+  const offers = useCheckoutOffers(auction ? [] : checkoutItems, user?.id ?? null);
 
   const totals = useMemo(() => {
     // List prices, exactly as the server totals them — the reduction is its own
@@ -144,7 +151,8 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
         notes: undefined,
         paymentMethod: "razorpay",
         paymentStatus: PAYMENT_STATUS.PENDING,
-        couponCode: offers.appliedCode ?? undefined,
+        couponCode: auction ? undefined : (offers.appliedCode ?? undefined),
+        auctionToken: auction?.token,
         isBuyNow: !!buyNowProduct,
       });
     } catch (error) {
@@ -179,6 +187,25 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   return (
     <div className="grid gap-6 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
       <div className="space-y-6">
+        {auction && (
+          <div className="rounded-card border border-warning/40 bg-warning/10 p-3">
+            <p className="text-2xs uppercase tracking-label text-muted-foreground">
+              Time left to pay
+            </p>
+            <p className="font-heading text-xl font-semibold tabular-nums">
+              <BidCountdown
+                endAt={auction.expiresAt}
+                serverNow={auction.serverNow}
+                endedLabel="Time is up"
+              />
+            </p>
+            <p className="mt-1 text-2xs text-muted-foreground">
+              Your winning bid, plus shipping to your address. No coupon applies to an
+              auction price.
+            </p>
+          </div>
+        )}
+
         {/* Address Form */}
 
         {user ? (
@@ -229,14 +256,16 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
       {/* On mobile the summary must precede the CTA — a buyer sees the bill before the
           button that commits to it. On md the summary is the right rail spanning both rows. */}
       <div className="md:col-start-2 md:row-start-1 md:row-span-2">
-        <CouponField
-          quote={offers.quote}
-          appliedCode={offers.appliedCode}
-          isPricing={offers.isPricing}
-          onApply={offers.applyCode}
-          onClear={offers.clearCode}
-          lineCount={checkoutItems.length}
-        />
+        {!auction && (
+          <CouponField
+            quote={offers.quote}
+            appliedCode={offers.appliedCode}
+            isPricing={offers.isPricing}
+            onApply={offers.applyCode}
+            onClear={offers.clearCode}
+            lineCount={checkoutItems.length}
+          />
+        )}
 
         <CheckoutSummary
           items={checkoutItems}

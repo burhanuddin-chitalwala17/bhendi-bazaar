@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { uuidSchema, paiseAmount, quantitySchema, nameSchema, emailSchema, phoneSchema, postalCodeSchema, couponCodeSchema } from './common.schemas';
+import { OFFER_TOKEN_PATTERN } from '@server/bidding/offer-chain';
 
 // Order-specific address schema (requires fullName and state)
 const orderAddressSchema = z.object({
@@ -143,6 +144,8 @@ export const createOrderWithShipmentsSchema = z.object({
    * here — those are server-owned in exactly the way `paymentStatus` is.
    */
   couponCode: couponCodeSchema.optional(),
+  /** An accepted auction offer's link token (ADR-0041). The price comes from the offer, never from here. */
+  auctionToken: z.string().regex(OFFER_TOKEN_PATTERN, "That offer link is not valid").optional(),
   address: orderAddressSchema,
   notes: z.string().max(1000, "Notes too long").optional(),
   paymentMethod: z.enum(["razorpay"]).optional(),

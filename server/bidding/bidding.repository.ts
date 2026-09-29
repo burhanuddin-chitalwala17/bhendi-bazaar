@@ -18,6 +18,7 @@ import type {
   OrgBiddingSummary,
 } from "@server/bidding/bidding.types";
 import { biddingPhase } from "@server/bidding/bidding-window";
+import type { ChainBid } from "@server/bidding/offer-chain";
 
 /**
  * Anything that can run these queries — the client, or a transaction handle. Named so
@@ -47,6 +48,7 @@ const EVENT_SELECT = {
   soldAmountPaise: true,
   settledAt: true,
   createdAt: true,
+  claimWindowHours: true,
   product: { select: { id: true, slug: true, name: true, thumbnail: true } },
 } satisfies Prisma.BiddingEventSelect;
 
@@ -80,6 +82,7 @@ function toSummary(row: EventRow, now: Date): OrgBiddingSummary {
     soldAmountPaise: row.soldAmountPaise,
     settledAt: row.settledAt,
     createdAt: row.createdAt,
+    claimWindowHours: row.claimWindowHours,
     product: {
       id: row.product.id,
       slug: row.product.slug,
@@ -106,10 +109,33 @@ function toLadderEntry(row: LadderRow): BidLadderEntry {
   };
 }
 
+const CHAIN_EVENT_SELECT = {
+  id: true,
+  slug: true,
+  status: true,
+  startAt: true,
+  endAt: true,
+  bidCount: true,
+  claimWindowHours: true,
+  orgId: true,
+  productId: true,
+  size: true,
+  color: true,
+} satisfies Prisma.BiddingEventSelect;
+
+export type ChainEvent = Prisma.BiddingEventGetPayload<{ select: typeof CHAIN_EVENT_SELECT }>;
+
 /** A product held out of normal sale, and the event holding it (spec R30). */
 export interface BiddingLock {
   productId: string;
   slug: string;
+  eventId: string;
+}
+
+const LOCK_SELECT = { id: true, productId: true, slug: true } satisfies Prisma.BiddingEventSelect;
+
+function toLock(row: { id: string; productId: string; slug: string }): BiddingLock {
+  return { productId: row.productId, slug: row.slug, eventId: row.id };
 }
 
 export class BiddingRepository {
@@ -125,13 +151,14 @@ export class BiddingRepository {
    * on its own, which is why spec R33 needs no cleanup step.
    */
   async lockedProducts(now: Date, db: Db = prisma): Promise<BiddingLock[]> {
-    return await db.biddingEvent.findMany({
+    const rows = await db.biddingEvent.findMany({
       where: {
         status: "OPEN",
         OR: [{ endAt: { gt: now } }, { bidCount: { gt: 0 } }],
       },
-      select: { productId: true, slug: true },
+      select: LOCK_SELECT,
     });
+    return rows.map(toLock);
   }
 
   /**
@@ -147,14 +174,15 @@ export class BiddingRepository {
     db: Db = prisma
   ): Promise<BiddingLock[]> {
     if (productIds.length === 0) return [];
-    return await db.biddingEvent.findMany({
+    const rows = await db.biddingEvent.findMany({
       where: {
         productId: { in: productIds },
         status: "OPEN",
         OR: [{ endAt: { gt: now } }, { bidCount: { gt: 0 } }],
       },
-      select: { productId: true, slug: true },
+      select: LOCK_SELECT,
     });
+    return rows.map(toLock);
   }
 
   async findBySlug(slug: string, db: Db = prisma): Promise<EventRow | null> {
@@ -257,9 +285,13 @@ export class BiddingRepository {
   }
 
   async create(
-    input: CreateBiddingEventInput & { slug: string; referencePricePaise: number },
+    input: CreateBiddingEventInput & {
+      slug: string;
+      referencePricePaise: number;
+      claimWindowHours: number;
+    },
     db: Db = prisma
-  ): Promise<{ id: string; slug: string }> {
+  ): Promise<{ id: string; slug: string; endAt: Date }> {
     return await db.biddingEvent.create({
       data: {
         slug: input.slug,
@@ -274,8 +306,9 @@ export class BiddingRepository {
         maxIncreasePaise: input.maxIncreasePaise,
         quickBidsPaise: input.quickBidsPaise,
         referencePricePaise: input.referencePricePaise,
+        claimWindowHours: input.claimWindowHours,
       },
-      select: { id: true, slug: true },
+      select: { id: true, slug: true, endAt: true },
     });
   }
 
@@ -377,8 +410,9 @@ export class BiddingRepository {
     return sold.count === 1;
   }
 
+  /** `adminId` is null when the offer chain ran out on its own (winner-offer R20). */
   async markUnsold(
-    params: { id: string; reason: string | null; adminId: string; now: Date },
+    params: { id: string; reason: string | null; adminId: string | null; now: Date },
     db: Db = prisma
   ): Promise<boolean> {
     const closed = await db.biddingEvent.updateMany({
@@ -393,6 +427,86 @@ export class BiddingRepository {
     return closed.count === 1;
   }
 
+  /**
+   * Lock the event for one step of its offer chain (winner-offer D4). The end-of-auction job,
+   * the sweep, a decline and an admin can all move one chain; taking this row first makes
+   * them take turns rather than each deciding from what the others have not committed yet.
+   */
+  async lockForChain(eventId: string, tx: Prisma.TransactionClient): Promise<ChainEvent | null> {
+    const rows = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "BiddingEvent" WHERE "id" = ${eventId} FOR UPDATE`;
+    if (rows.length === 0) return null;
+    return await tx.biddingEvent.findUnique({ where: { id: eventId }, select: CHAIN_EVENT_SELECT });
+  }
+
+  async chainEvent(eventId: string, db: Db = prisma): Promise<ChainEvent | null> {
+    return await db.biddingEvent.findUnique({ where: { id: eventId }, select: CHAIN_EVENT_SELECT });
+  }
+
+  /** The ladder as the chain reads it: amounts and who, with each bidder's email resolved. */
+  async chainLadder(eventId: string, db: Db = prisma): Promise<ChainBid[]> {
+    const rows = await db.bid.findMany({
+      relationLoadStrategy: "join",
+      where: { eventId },
+      select: {
+        id: true,
+        amountPaise: true,
+        userId: true,
+        guestPhone: true,
+        guestEmail: true,
+        user: { select: { email: true } },
+      },
+      orderBy: { amountPaise: "desc" },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      amountPaise: row.amountPaise,
+      userId: row.userId,
+      guestPhone: row.guestPhone,
+      email: row.user?.email ?? row.guestEmail,
+    }));
+  }
+
+  /**
+   * Ended events with bids whose chain has not started: the backstop for a missed
+   * end-of-auction job. Events from before offers existed have no claim window and are
+   * never picked up (winner-offer D3).
+   */
+  async awaitingFirstOffer(now: Date, limit: number, db: Db = prisma): Promise<string[]> {
+    const rows = await db.biddingEvent.findMany({
+      where: {
+        status: "OPEN",
+        claimWindowHours: { not: null },
+        endAt: { lte: now },
+        bidCount: { gt: 0 },
+        offers: { none: {} },
+      },
+      select: { id: true },
+      orderBy: { endAt: "asc" },
+      take: limit,
+    });
+    return rows.map((row) => row.id);
+  }
+
+  /**
+   * Record a sale completed through its offer. No admin and no reason: the paid order is the
+   * attribution, and the amount is the bid, so there is no difference to explain.
+   */
+  async markSoldFromOffer(
+    params: { id: string; bidId: string; amountPaise: number; now: Date },
+    db: Db = prisma
+  ): Promise<boolean> {
+    const sold = await db.biddingEvent.updateMany({
+      where: { id: params.id, status: "OPEN" },
+      data: {
+        status: "SOLD",
+        soldBidId: params.bidId,
+        soldAmountPaise: params.amountPaise,
+        settledAt: params.now,
+      },
+    });
+    return sold.count === 1;
+  }
 }
 
 export const biddingRepository = new BiddingRepository();

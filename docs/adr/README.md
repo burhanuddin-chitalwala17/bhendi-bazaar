@@ -60,7 +60,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0020](0020-money-bearing-records-never-cascade.md) | Records that carry money or attribution never cascade | Accepted | 2026-08-16 |
 | [0021](0021-audit-trail-never-fails-the-action.md) | The audit trail records an action; it never decides whether it happened | Accepted | 2026-08-22 |
 | [0022](0022-design-decisions-go-through-tokens.md) | Every design axis goes through tokens, not just colour | Accepted | 2026-08-30 |
-| [0023](0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) | Bidding status stores only what the clock cannot decide | Accepted | 2026-09-09 |
+| [0023](0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) | Bidding status stores only what the clock cannot decide | Accepted — decision 2 (nothing runs on a schedule) superseded in part by [ADR-0041](0041-an-auction-winner-buys-through-an-order-priced-from-their-offer.md): the offer chain after an auction ends runs on the worker; the auction's own phase is still derived from the clock | 2026-09-09 |
 | [0024](0024-phone-is-contact-data-not-an-identity-key.md) | A phone number is contact data, not an identity key | Accepted | 2026-09-12 |
 | [0025](0025-order-codes-are-random-not-sequential.md) | Order codes are random, not sequential | Accepted | 2026-09-16 |
 | [0026](0026-images-are-delivered-through-the-optimizer.md) | Images are stored small and delivered through the optimizer | Accepted — decisions 3 and 4 amended by [ADR-0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) (stored ceiling is 2048px, and a zoomable surface deliberately overstates `sizes`) | 2026-09-16 |
@@ -78,4 +78,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0038](0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md) | Background work runs on an owned worker against a Postgres job queue | Accepted | 2026-09-25 |
 | [0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | Video is stored in our own object store and transcoded by the worker | Accepted | 2026-09-27 |
 | [0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md) | An overlay's surface is chosen by what it holds, not by what was easiest to reach for | Accepted | 2026-09-27 |
+| [0041](0041-an-auction-winner-buys-through-an-order-priced-from-their-offer.md) | An auction winner buys through an order priced from their accepted offer | Accepted | 2026-09-28 |
 <!-- generated:adr-index:end -->

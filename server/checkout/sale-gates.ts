@@ -1,6 +1,13 @@
 import type { Prisma } from "@prisma/client";
 
 import { assertNotUnderBidding } from "@server/bidding/bidding-lock";
+import type { OfferClaim } from "@server/bidding/bidding.types";
+
+/**
+ * The accepted auction offer an order buys, locked for this transaction (ADR-0041). Reached
+ * through here, where checkout already meets bidding, so the order service gains no domain.
+ */
+export { claimOfferForCheckout } from "@server/bidding/offer-claim";
 import { assertNotArchived } from "@server/catalog/product.sale-gate";
 import { assertOrgNotWithdrawn } from "@server/catalog/org.sale-gate";
 
@@ -28,8 +35,10 @@ export async function assertLinesAreSaleable(
   productIds: string[],
   now: Date,
   tx: Prisma.TransactionClient,
+  /** An accepted auction offer this order buys; lets that auction's own winner through (ADR-0041 D3). */
+  claim?: Pick<OfferClaim, "eventId">,
 ): Promise<void> {
-  await assertNotUnderBidding(productIds, now, tx);
+  await assertNotUnderBidding(productIds, now, tx, claim);
   await assertNotArchived(productIds, tx);
   await assertOrgNotWithdrawn(productIds, tx);
 }

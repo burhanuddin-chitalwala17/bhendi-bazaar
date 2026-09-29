@@ -27,6 +27,8 @@ interface ProcessPaymentWithShipmentsInput {
   shippingGroups: ShippingGroup[];
   /** The code the buyer typed, if any — a string, never an amount (Invariant 1). */
   couponCode?: string;
+  /** Set on an auction winner's checkout: a token, never a price (ADR-0041). */
+  auctionToken?: string;
   totals: {
     itemsTotal: number;
     shippingTotal: number;
@@ -131,6 +133,7 @@ export function useCheckoutPayment() {
         }),
         displayedGrandTotal: orderData.totals.grandTotal,
         couponCode: orderData.couponCode,
+        auctionToken: orderData.auctionToken,
         address: orderData.address,
         notes: orderData.notes,
         paymentMethod: orderData.paymentMethod,

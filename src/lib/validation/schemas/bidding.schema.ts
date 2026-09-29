@@ -120,3 +120,10 @@ export const markUnsoldSchema = z.object({
 });
 
 export type MarkUnsoldBody = z.infer<typeof markUnsoldSchema>;
+
+/** A bidder's answer to an offer (winner-offer R4, R7). The token is the path; nothing else identifies them. */
+export const offerResponseSchema = z.object({
+  choice: z.enum(["accept", "decline"]),
+});
+
+export type OfferResponseBody = z.infer<typeof offerResponseSchema>;

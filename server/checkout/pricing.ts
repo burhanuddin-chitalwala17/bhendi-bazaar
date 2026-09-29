@@ -149,6 +149,33 @@ export function priceLines(
   return { lines, itemsTotal };
 }
 
+/**
+ * The one line an auction winner buys, priced from their accepted offer instead of the
+ * catalogue — the single exception to `catalogueUnitPrice` (ADR-0041 D2).
+ *
+ * The request must name exactly the auctioned item, once. Anything else is refused rather
+ * than repriced: silently correcting a basket is how a second item would ride in at a bid.
+ */
+export function priceAuctionLine(
+  lines: PricedLine[],
+  claim: { productId: string; size: string | null; color: string | null; amountPaise: number }
+): { lines: PricedLine[]; itemsTotal: number } {
+  const [line] = lines;
+  const matches =
+    lines.length === 1 &&
+    line.productId === claim.productId &&
+    (line.size ?? null) === claim.size &&
+    (line.color ?? null) === claim.color &&
+    line.quantity === 1;
+  if (!matches) {
+    throw new DomainError("This checkout is for the item you won, one unit, and nothing else.");
+  }
+  return {
+    lines: [{ ...line, price: claim.amountPaise, unitPrice: claim.amountPaise }],
+    itemsTotal: claim.amountPaise,
+  };
+}
+
 export interface OrderTotals {
   itemsTotal: number;
   shippingTotal: number;

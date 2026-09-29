@@ -125,6 +125,7 @@ A new phase, added 2026-09-09. A fixed price cannot find out what a one-off item
 | Spec | Requirement | Status |
 |---|---|---|
 | [bidding](specs/bidding/) | An organisation puts one product up for timed bidding on a shareable link; the platform sells it directly and records what it fetched | ✅ Implemented — PR-97 |
+| [bidding/winner-offer](specs/bidding/winner-offer/) | When an auction ends the top bidder is offered the item by email with 12 hours to accept and pay through a checkout made for them; a decline or silence passes it down the list | Accepted |
 
 Depends on Phase 7. The amount a bidding sale fetches is what the organisation is owed, so it has to reach the same ledger `org-payouts` builds rather than a parallel one.
 

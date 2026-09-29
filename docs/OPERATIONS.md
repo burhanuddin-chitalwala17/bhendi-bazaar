@@ -42,9 +42,9 @@ npm run dev                 # http://localhost:3000
 | `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
 | `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
-| `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
+| `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email. **Set on the worker too**: auction offer emails are sent from there ([winner-offer](specs/bidding/winner-offer/) D10), and a key present only on Vercel fails every offer while the rest of the store's mail works |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
-| `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
+| `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking, the auction offer link (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...`. Needed on the worker as well, for the offer link |
 | `PROD_ADMIN_EMAIL` / `PROD_ADMIN_PASSWORD` | ○ | Read by `prisma/seed/prod.ts`, the one-off bootstrap that grants platform ADMIN where an environment has none. Set them for that single run and unset them afterwards. Until 2026-09-23 that script hashed the literal `'STRONG_RANDOM_PASSWORD'`, so anyone who could read the repository knew the admin password — CLAUDE.md Invariant 7's "no credential literal lives in a seed", broken in the one script that may legitimately be pointed at production. It now refuses a placeholder value, refuses to run without both variables, and will **not** reset the password of an account that already exists |
 | `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
 | `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
@@ -352,7 +352,14 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
 - **Schedules are in-process timers that enqueue a job** (`server/shared/jobs/jobs.schedule.ts`),
   never pg-boss's cron: the floor is one tick an hour and the count is budgeted in the idle estimate.
   The worker logs them at start. The first is `media.sweep`, every six hours: uploads that never
-  confirmed go after an hour, and a retired image's stored object goes after thirty days.
+  confirmed go after an hour, and a retired image's stored object goes after thirty days. The
+  second is `bidding.offer.sweep`, hourly: auctions whose end-of-auction job was missed, offers past
+  their 12-hour deadline, and paid winner orders whose sale did not record (winner-offer D4). An
+  auction's first offer does not wait for it — each event enqueues `bidding.offer.advance` for its
+  own `endAt` when it is created.
+- **The worker enqueues too.** Opening an offer queues its email from inside the worker, through
+  the web app's one-connection client (`jobs.client.ts`), which idles closed in seconds. That is a
+  one more connection for the moment it is open, beyond the three plus one below — count it when changing the pool.
 - **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
   count and re-runs them; each re-run is an audit entry.
 - **Direct connections.** The worker needs the direct connection string (notify is session-bound);

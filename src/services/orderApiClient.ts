@@ -48,6 +48,8 @@ export interface CreateOrderWithShipmentsInput {
    * amount, percentage or promotion id belongs here (promotions R16).
    */
   couponCode?: string;
+  /** An accepted auction offer's token; the server prices the line from the offer (ADR-0041). */
+  auctionToken?: string;
   shippingGroups: ShippingGroupPayload[];
   /** The total the customer saw — compared server-side, never persisted (R5). */
   displayedGrandTotal: number;

@@ -15,6 +15,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { orderService } from "@server/checkout/order.service";
 import { paymentService } from "@server/payments/payment.service";
+import { offerService } from "@server/bidding/offer.service";
 import { OutOfStockError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
 import {
@@ -69,6 +70,12 @@ export async function POST(request: NextRequest) {
   const input = { ...validation.data, userId };
 
   try {
+    // An auction winner retrying after a closed payment window: their own abandoned
+    // attempt would otherwise refuse this one (winner-offer R17).
+    if (input.auctionToken) {
+      await offerService.releaseAttemptsBeforeCheckout(input.auctionToken);
+    }
+
     return NextResponse.json(
       await orderService.createOrderWithShipments(input),
       {
