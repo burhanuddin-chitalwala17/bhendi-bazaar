@@ -17,16 +17,14 @@ function optionLabel(size: string | null, color: string | null): string | null {
 }
 
 /**
- * Send one offer's email. The link token is minted here, at the moment of sending, and only
- * its hash is stored, so the plaintext never sits in the database or the job queue
- * (winner-offer D9). Throws on a failed send so the queue retries; a retry mints a new token.
+ * Email one offer to the bidder's own address — their account's, or the one a guest gave.
+ * Called the moment the offer opens. The link token is minted here and only its hash is
+ * stored, so the plaintext is in no table (winner-offer D9). Throws on a failed send; the
+ * sweep resends, minting a new token, so only the delivered link works.
  */
-export async function sendOfferEmail(offerId: string, jobId = "direct", now: Date = new Date()): Promise<void> {
+export async function sendOfferEmail(offerId: string, now: Date = new Date()): Promise<void> {
   const offer = await bidOfferRepository.byId(offerId);
-  if (!offer || offer.emailSentAt || !isActionable(offer, now) || !offer.bid.email || !offer.expiresAt) {
-    console.log(`[jobs] bidding.offer.email ${jobId}: ${offerId} needs no email`);
-    return;
-  }
+  if (!offer || offer.emailSentAt || !isActionable(offer, now) || !offer.bid.email || !offer.expiresAt) return;
   const event = await biddingRepository.chainEvent(offer.eventId);
   if (!event?.claimWindowHours) return;
 
@@ -44,7 +42,7 @@ export async function sendOfferEmail(offerId: string, jobId = "direct", now: Dat
     offerUrl: `${appUrl()}/bid-offer/${token}`,
   });
   await bidOfferRepository.markEmailSent(offer.id, new Date());
-  console.log(`[jobs] bidding.offer.email ${jobId}: ${offerId} sent`);
+  console.log(`[bidding] offer ${offerId} emailed`);
 
   if (offer.bid.userId) {
     // Points at the auction, not the offer: a notification row is no place for the link's token.

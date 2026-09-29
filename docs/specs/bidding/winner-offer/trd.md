@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Domain:** bidding, checkout, payments, notifications
 - **Phase:** 8 — Bidding
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **References:** [spec.md](spec.md), [../trd.md](../trd.md) (bidding), [ADR-0041](../../../adr/0041-an-auction-winner-buys-through-an-order-priced-from-their-offer.md), [ADR-0002](../../../adr/0002-server-holds-pricing-authority.md), [ADR-0005](../../../adr/0005-payment-state-server-only.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0023](../../../adr/0023-bidding-status-stores-only-what-the-clock-cannot-decide.md), [ADR-0036](../../../adr/0036-a-files-reasons-to-change-are-a-decision.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [checkout-abandonment](../../checkout-abandonment/)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -51,9 +51,9 @@ The auction itself is unchanged. Its phase is still derived from the clock ([ADR
   - The token is 32 random bytes, minted by the email job at the moment it sends. Only its hash is stored (`server/shared/hash.ts`), so the token is never in a job payload or the database.
   - `/bid-offer/[token]` is a server-rendered confirm page. Accept and decline are one route handler parsed by Zod.
   - Accepting is a guarded `updateMany` on the status and `expiresAt` together (R8, R13). An accepted offer's page becomes the link to its checkout.
-- **D10 — Emails go out as jobs enqueued in the transaction that opens the offer.**
-  - The handler records the send time on the offer and skips a redelivery (ADR-0038 D4).
-  - A failed send is retried by the queue and never undoes the offer. An offer whose mail never went out still lapses and passes on.
+- **D10 — The email goes out the moment the offer opens, straight to the bidder's own address.**
+  - `advance` sends it after its transaction commits, in the same step: at the auction's end that is the worker's job, and after a decline or a withdrawal it is that request. There is no separate email job, so nothing sits between the auction ending and the email but the send itself.
+  - The send time is recorded on the offer, so a repeat skips it. A failed send never undoes the offer: the hourly sweep resends any open offer still unsent after five minutes, and an offer whose mail never went out still lapses and passes on.
   - New templates: the offer, and (optionally) "the item went to another bidder". The chain running out notifies platform admins in the app.
 - **D11 — Admin controls live in `admin.bidding.service.ts`:** withdraw the current offer, and stop the chain as unsold. Each is audited with `recordAdminActionIn` inside its transaction (R23).
 - **D12 — Organisations see the order, not the auction** (R24). `OrgBiddingSummary` and `PublicBiddingView` still carry no bidder field. The buyer reaches the org as the customer on an order, because shipping the item needs that.

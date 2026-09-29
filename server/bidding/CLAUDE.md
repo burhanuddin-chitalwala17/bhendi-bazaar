@@ -1,6 +1,6 @@
 # CLAUDE.md — bidding domain
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **Covers:** `server/bidding/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC and the Project Invariants. This file covers **bidding** only. Requirements are in [docs/specs/bidding/](../../docs/specs/bidding/) and, for what happens after an auction ends, [winner-offer](../../docs/specs/bidding/winner-offer/).
@@ -36,7 +36,7 @@ Bidding owns timed auctions on a single item: opening an event, taking bids, sus
 - **Offers never apply.** A bid is already the negotiated price, so layering a promotion on it double-discounts ([ADR-0019](../../docs/adr/0019-discount-is-one-winning-offer.md)). `resolveProductPrice` is not consulted on a bidding path.
 - **The recorded amount may differ from the winning bid, and then it needs a reason.** The organisation is paid on that figure, and the record has to explain a number that appears nowhere in the ladder.
 - **Settlement decisions audit inside their transaction** — `recordAdminActionIn(tx, …)`, never `recordAdminAction`, because these must live or die with the mutation ([ADR-0021](../../docs/adr/0021-audit-trail-never-fails-the-action.md)). The admin id comes from `requirePlatformAdminId()`, which re-reads the row.
-- **The outbid email is fire-and-forget; the offer email is not.** A mail failure must never unwind an accepted bid. The offer email runs as its own job and throws on failure so the queue retries it. A bidder with no email gets no outbid notice and no offer — the chain records them `SKIPPED` — which the bid form disclosed beforehand (R22a, winner-offer R5/R6).
+- **The outbid email is fire-and-forget; the offer email is not.** A mail failure must never unwind an accepted bid. The offer email is sent the moment the offer opens, after its transaction commits, by whichever process took the step (the worker at `endAt`, or the request that declined or withdrew). A failed send never undoes the offer; the hourly sweep resends it. A bidder with no email gets no outbid notice and no offer — the chain records them `SKIPPED` — which the bid form disclosed beforehand (R22a, winner-offer R5/R6).
 - **Nothing is deleted.** Bids are the record of what people offered and every foreign key out of these tables is `onDelete: Restrict` ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)). Cancellation is the real operation.
 - **No rate limiting is available** — the implementation is parked while the cache is unwired. The organisation's maximum increase per bid is what bounds a bad-faith bidder; do not budget for a limiter that is not there.
 

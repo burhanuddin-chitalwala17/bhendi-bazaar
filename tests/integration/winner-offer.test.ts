@@ -215,7 +215,7 @@ afterAll(async () => {
     select: { id: true },
   });
   const offerIds = offers.map((offer) => offer.id);
-  // Queued emails for these offers, so a local worker never sends them.
+  // Any queued job still naming these offers.
   if (offerIds.length > 0) {
     await prisma.$executeRawUnsafe(
       `DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'offerId' = ANY($2::text[])`,

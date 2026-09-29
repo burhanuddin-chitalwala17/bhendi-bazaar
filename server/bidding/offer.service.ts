@@ -12,21 +12,22 @@
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
-import { enqueue } from "@server/shared/jobs";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { biddingRepository } from "@server/bidding/bidding.repository";
 import { bidOfferRepository, type OfferRecord, type OfferWithItem } from "@server/bidding/bid-offer.repository";
 import { isActionable, isOpenStatus, nextStep, offerExpiry } from "@server/bidding/offer-chain";
 import { hashOfferToken, OFFER_TOKEN_PATTERN } from "@server/bidding/offer-token";
-import { alertStore } from "@server/bidding/offer-notify";
-import { offerEmailSpec } from "@server/bidding/offer.job";
+import { alertStore, sendOfferEmail } from "@server/bidding/offer-notify";
 import type { OfferChainEntry, OfferView } from "@server/bidding/bidding.types";
 import { orderService } from "@server/checkout/order.service";
 import { paymentService } from "@server/payments/payment.service";
 
 /** How many events one sweep moves. The sweep runs hourly; a backlog larger than this is an incident, not a load. */
 const SWEEP_LIMIT = 50;
+
+/** An unsent offer younger than this may still be mid-send from the step that opened it; the sweep leaves it alone. */
+const RESEND_AFTER_MS = 5 * 60_000;
 
 export type AdvanceOutcome =
   | { kind: "idle" }
@@ -108,8 +109,6 @@ export class OfferService {
             },
             tx
           );
-          // In this transaction, so an offer never exists without its email queued (ADR-0038 D2).
-          await enqueue(tx, offerEmailSpec, { offerId: offer.id });
           return { kind: "offered", offerId: offer.id } as const;
         }
       });
@@ -120,6 +119,10 @@ export class OfferService {
     }
 
     if (outcome.kind === "exhausted") void alertStore(eventId, "no bidder completed the purchase");
+    // Sent now, from whichever process took the step — the worker at the auction's end, or the
+    // request that declined or withdrew. After the commit, so a failed send never undoes the
+    // offer; the sweep resends one that did not go out (winner-offer D10).
+    if (outcome.kind === "offered") await this.sendQuietly(outcome.offerId);
     return outcome;
   }
 
@@ -132,6 +135,13 @@ export class OfferService {
       biddingRepository.awaitingFirstOffer(now, SWEEP_LIMIT),
       bidOfferRepository.eventsWithLapsedOffers(now, SWEEP_LIMIT),
     ]);
+
+    for (const offerId of await bidOfferRepository.unsentOpenOffers(
+      new Date(now.getTime() - RESEND_AFTER_MS),
+      SWEEP_LIMIT
+    )) {
+      await this.sendQuietly(offerId);
+    }
 
     let completed = 0;
     const accepted = await bidOfferRepository.acceptedOfferIds(SWEEP_LIMIT);
@@ -370,6 +380,14 @@ export class OfferService {
       } catch (error) {
         console.error(`[bidding] could not release order ${order.id} on offer ${open.id}`, error);
       }
+    }
+  }
+
+  private async sendQuietly(offerId: string): Promise<void> {
+    try {
+      await sendOfferEmail(offerId);
+    } catch (error) {
+      console.error(`[bidding] offer ${offerId} email failed; the sweep will resend it`, error);
     }
   }
 

@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
 
 

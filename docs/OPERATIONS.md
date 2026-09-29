@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -357,9 +357,8 @@ the worker is a second process that runs them ([ADR-0038](adr/0038-background-wo
   their 12-hour deadline, and paid winner orders whose sale did not record (winner-offer D4). An
   auction's first offer does not wait for it — each event enqueues `bidding.offer.advance` for its
   own `endAt` when it is created.
-- **The worker enqueues too.** Opening an offer queues its email from inside the worker, through
-  the web app's one-connection client (`jobs.client.ts`), which idles closed in seconds. That is a
-  one more connection for the moment it is open, beyond the three plus one below — count it when changing the pool.
+- **Auction emails are sent by the worker itself**, the moment each auction ends — it must be
+  running for a winner to hear anything, and it needs the mail variables above.
 - **Failed jobs** park in the `jobs_failed` queue after five attempts. The dashboard card shows the
   count and re-runs them; each re-run is an audit entry.
 - **Direct connections.** The worker needs the direct connection string (notify is session-bound);

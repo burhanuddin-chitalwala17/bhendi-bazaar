@@ -1,6 +1,6 @@
 # notifications — domain rules
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **Covers:** `server/notifications/**`
 
 Transactional email and in-app notifications ([in-app-notifications](../../docs/specs/in-app-notifications/spec.md)).
@@ -14,9 +14,9 @@ A signed-in sender's Reply-To is the session's email, never one from the request
 `biddingAlertEmail.ts` is the other store-bound one: an auction whose offers ran out, or a
 paid order that found its offer already closed.
 
-`bidOfferEmail.ts` is sent from the worker, not a request, and its send is **awaited** so a
-failure throws and the queue retries it ([winner-offer](../../docs/specs/bidding/winner-offer/trd.md)
-D10). Its deadline is formatted by `formatDeadline`, pinned to IST: `formatDate` takes the
+`bidOfferEmail.ts` is sent the moment an auction's offer opens — usually from the worker, at
+the auction's end — and its send is **awaited** so a failure throws and the offer sweep resends
+it ([winner-offer](../../docs/specs/bidding/winner-offer/trd.md) D10). Its deadline is formatted by `formatDeadline`, pinned to IST: `formatDate` takes the
 sending machine's zone, and the worker's is UTC. The link it carries is minted by the caller at
 the moment of sending and exists nowhere else, so never log the view it renders.
 

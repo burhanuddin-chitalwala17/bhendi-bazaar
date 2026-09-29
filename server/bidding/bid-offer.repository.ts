@@ -238,6 +238,17 @@ export class BidOfferRepository {
     return [...new Set(rows.map((row) => row.eventId))];
   }
 
+  /** Open offers whose email never went out, made before `createdBefore`: the sweep resends them. */
+  async unsentOpenOffers(createdBefore: Date, limit: number, db: Db = prisma): Promise<string[]> {
+    const rows = await db.bidOffer.findMany({
+      where: { status: "OFFERED", emailSentAt: null, createdAt: { lt: createdBefore }, expiresAt: { gt: new Date() } },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+      take: limit,
+    });
+    return rows.map((row) => row.id);
+  }
+
   /** Every accepted offer, for the sweep to check none of them has a paid order it missed. */
   async acceptedOfferIds(limit: number, db: Db = prisma): Promise<string[]> {
     const rows = await db.bidOffer.findMany({
