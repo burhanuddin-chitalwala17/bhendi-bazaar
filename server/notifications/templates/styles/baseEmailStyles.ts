@@ -81,6 +81,14 @@ export const baseEmailStyles = `
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   }
+  .button-pair .button {
+    margin: 6px;
+  }
+  .button-secondary {
+    background: #ffffff;
+    color: #1a1a1a !important;
+    border: 1px solid #1a1a1a;
+  }
   .divider {
     margin: 30px 0;
     border: 0;
@@ -209,6 +217,10 @@ export const baseEmailStyles = `
     .button {
       padding: 14px 30px;
       font-size: 15px;
+    }
+    .button-pair .button {
+      display: block;
+      margin: 10px 0;
     }
   }
 `;

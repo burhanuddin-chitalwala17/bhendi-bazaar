@@ -145,6 +145,18 @@ export function button(href: string, label: string): string {
             </div>`;
 }
 
+/** Two choices side by side — the first is the primary action — stacking on a phone. */
+export function buttonPair(
+  primary: { href: string; label: string },
+  secondary: { href: string; label: string }
+): string {
+  return `
+            <div class="cta-container button-pair">
+              <a href="${esc(primary.href)}" class="button">${primary.label}</a>
+              <a href="${esc(secondary.href)}" class="button button-secondary">${secondary.label}</a>
+            </div>`;
+}
+
 /** The gold-bordered "this link expires" strip. */
 export function noticeBox(html: string): string {
   return `

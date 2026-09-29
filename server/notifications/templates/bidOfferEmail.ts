@@ -1,7 +1,7 @@
 import { formatDeadline, formatPaise } from "../formatters";
 import {
   alternateLink,
-  button,
+  buttonPair,
   closingNote,
   detailPanel,
   esc,
@@ -56,10 +56,13 @@ export function getBidOfferEmailTemplate(view: BidOfferEmailView): string {
               `You have ${esc(view.claimWindowHours)} hours to accept and pay. After that the item is offered to the next bidder.`
             )}
 
-            ${button(`${view.offerUrl}?choice=accept`, "Accept and pay")}
+            ${buttonPair(
+              { href: `${view.offerUrl}?choice=accept`, label: "Accept and pay" },
+              { href: `${view.offerUrl}?choice=decline`, label: "Reject offer" }
+            )}
 
             ${paragraph(
-              `Changed your mind? <a href="${esc(`${view.offerUrl}?choice=decline`)}">Decline the offer</a> so the next bidder does not have to wait.`,
+              "Not buying it after all? Rejecting passes it to the next bidder straight away, so they do not have to wait.",
               "text-align: center;"
             )}
 

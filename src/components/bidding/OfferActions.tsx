@@ -56,7 +56,7 @@ export function OfferActions({
       {confirmingDecline ? (
         <>
           <p className="text-sm">
-            Decline this offer? The item goes to the next bidder, and you cannot take it back.
+            Reject this offer? The item goes to the next bidder, and you cannot take it back.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Button
@@ -73,7 +73,7 @@ export function OfferActions({
               onClick={() => respond("decline")}
               disabled={pending !== null}
             >
-              {pending === "decline" ? "Declining…" : "Yes, decline"}
+              {pending === "decline" ? "Rejecting…" : "Yes, reject"}
             </Button>
           </div>
         </>
@@ -99,7 +99,7 @@ export function OfferActions({
             onClick={() => setConfirmingDecline(true)}
             disabled={pending !== null}
           >
-            Decline the offer
+            Reject the offer
           </Button>
         </>
       )}

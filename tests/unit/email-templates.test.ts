@@ -150,9 +150,9 @@ describe("the auction offer email", () => {
     expect(html).toContain("IST");
   });
 
-  it("offers both choices, and each lands on the confirm page rather than acting", () => {
-    expect(html).toContain("https://x.test/bid-offer/tok?choice=accept");
-    expect(html).toContain("https://x.test/bid-offer/tok?choice=decline");
+  it("offers both choices as buttons, and each lands on the confirm page rather than acting", () => {
+    expect(html).toContain('href="https://x.test/bid-offer/tok?choice=accept" class="button">Accept and pay');
+    expect(html).toContain('href="https://x.test/bid-offer/tok?choice=decline" class="button button-secondary">Reject offer');
   });
 
   it("escapes the product name", () => {
