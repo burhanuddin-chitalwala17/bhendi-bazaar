@@ -3,6 +3,7 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput, FormSelect, FormTextarea } from "../FormField";
 import type { CreateCategoryInput } from "@/domain/admin";
+import { PRODUCT_TYPE_DECLARATIONS, PRODUCT_TYPES } from "@server/catalog/product-type";
 
 interface CategoryBasicFieldsProps {
   register: UseFormRegister<CreateCategoryInput>;
@@ -53,6 +54,26 @@ export function CategoryBasicFields({
           {parentOptions.map((option) => (
             <option key={option.id} value={option.id}>
               {option.name}
+            </option>
+          ))}
+        </FormSelect>
+
+        {/*
+          Which listing questions this category's products are asked. Separate from the browsing
+          tree on purpose: merchandising reorganises categories, and the questions asked of an
+          abaya must not change because somebody moved it under a seasonal heading
+          (listing-vocabulary/categories D1a).
+        */}
+        <FormSelect
+          label="Product type"
+          {...register("productType")}
+          error={errors.productType?.message}
+          hint="Decides which listing questions its products are asked. Leave empty to inherit from the parent category."
+        >
+          <option value="">Inherit from parent</option>
+          {PRODUCT_TYPES.map((key) => (
+            <option key={key} value={key}>
+              {PRODUCT_TYPE_DECLARATIONS[key].label}
             </option>
           ))}
         </FormSelect>

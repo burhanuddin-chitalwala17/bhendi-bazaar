@@ -71,6 +71,7 @@ export function CategoryForm({
       accent: category?.accent ?? "EMERALD",
       order: category?.order || 0,
       parentId: category?.parentId ?? null,
+      productType: category?.productType ?? null,
     },
   });
 

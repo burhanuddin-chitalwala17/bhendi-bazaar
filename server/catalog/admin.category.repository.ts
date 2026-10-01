@@ -14,6 +14,7 @@ import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { Prisma } from "@prisma/client";
 import { toJsonColumn } from "@server/shared/json";
 import { parseShotList, type ShotList } from "@server/catalog/shot-list";
+import { parseProductType } from "./product-type";
 
 /** `null` clears the list back to the inherited one; `undefined` leaves the column alone. */
 function shotListColumn(list: ShotList | null | undefined) {
@@ -71,6 +72,7 @@ class AdminCategoryRepository {
       accent: category.accent,
       order: category.order,
       shotList: parseShotList(category.shotList),
+      productType: parseProductType(category.productType),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,
@@ -105,6 +107,7 @@ class AdminCategoryRepository {
       accent: category.accent,
       order: category.order,
       shotList: parseShotList(category.shotList),
+      productType: parseProductType(category.productType),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,
@@ -141,6 +144,7 @@ class AdminCategoryRepository {
             accent: data.accent,
             order,
             shotList: shotListColumn(data.shotList),
+            productType: data.productType ?? null,
           },
           include: {
             _count: {
@@ -165,6 +169,7 @@ class AdminCategoryRepository {
       accent: category.accent,
       order: category.order,
       shotList: parseShotList(category.shotList),
+      productType: parseProductType(category.productType),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,
@@ -190,6 +195,7 @@ class AdminCategoryRepository {
         accent: data.accent,
         order: data.order,
         shotList: shotListColumn(data.shotList),
+        ...(data.productType === undefined ? {} : { productType: data.productType }),
       },
       include: {
         _count: {
@@ -208,6 +214,7 @@ class AdminCategoryRepository {
       accent: category.accent,
       order: category.order,
       shotList: parseShotList(category.shotList),
+      productType: parseProductType(category.productType),
       createdAt: category.createdAt,
       updatedAt: category.updatedAt,
       productsCount: category._count.products,

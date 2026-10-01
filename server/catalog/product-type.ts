@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { FACT, MEASURE, UNIT, type FactKey, type MeasureDeclaration, type MeasureKey } from "./listing-facts";
 
 /**
@@ -236,6 +238,15 @@ export const PRODUCT_TYPE_DECLARATIONS: Readonly<Record<ProductTypeKey, ProductT
     variantAxis: [FACT.COLOUR],
   },
 };
+
+/** The wire shape: one of the nine, or nothing. `""` is what an unselected `<select>` submits. */
+export const productTypeSchema = z
+  .union([
+    z.enum(PRODUCT_TYPES as unknown as [ProductTypeKey, ...ProductTypeKey[]]),
+    z.literal(""),
+    z.null(),
+  ])
+  .transform((value): ProductTypeKey | null => (value === "" || value === null ? null : value));
 
 export function isProductType(value: unknown): value is ProductTypeKey {
   return typeof value === "string" && (PRODUCT_TYPES as readonly string[]).includes(value);

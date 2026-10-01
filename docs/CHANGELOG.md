@@ -10,6 +10,26 @@
 
 ## Entries
 
+## [PR-231] 2026-10-02 — An admin says which product type a category uses
+
+The question was whether adding categories stays something the admin can do. It already was:
+`src/app/(admin)/admin/categories/` has create, edit, delete, a bulk importer and a tree with
+cycle checks, all audited, and `Category.shotList` is already a per-category setting an admin
+edits. So no new module and no new spec — `productType` is the same shape as `shotList` and
+joins the same form.
+
+One select on the category form, defaulting to "Inherit from parent". `productTypeSchema` lives
+beside the declarations so the enum has one spelling; the form's resolver and the route's parser
+are the same schema, so what a shop is shown inline is what the server enforces
+([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)).
+
+Twelve tests, three of them on the symmetry Invariant 4 asks for: create and update accept the
+same types and refuse the same rubbish, and `slug` is still refused on both. The update envelope
+stays `.optional()` rather than `.default()` — in zod v4 a default fires inside a PATCH and
+rewrites what the caller never mentioned, which is the bug the schema's own comment already
+warned about for `description` and `parentId`. Mutation-tested: widening the type to any string
+turns three tests red, and giving the update envelope a default turns the PATCH one red.
+
 ## [PR-230] 2026-10-02 — The permitted answers, read off the templates [MIGRATION]
 
 1,026 `ListingValue` rows across twenty-two lists, generated from the platforms' own bulk-upload

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CategoryAccent } from "@prisma/client";
 import { optionalNumber } from "./common.schemas";
 import { shotListSchema } from "@server/catalog/shot-list";
+import { productTypeSchema } from "@server/catalog/product-type";
 
 /**
  * The accepted shape of an admin category payload.
@@ -28,6 +29,9 @@ const rules = {
     .trim()
     .nullable()
     .transform((value) => (value ? value : null)),
+  // Which listing questions this category's products are asked; null means it inherits from the
+  // nearest ancestor that sets one (categories D1a).
+  productType: productTypeSchema,
 };
 
 export const categoryFormSchema = z.object({
@@ -40,6 +44,7 @@ export const categoryFormSchema = z.object({
   order: optionalNumber(rules.order),
   parentId: rules.parentId.default(null),
   shotList: shotListSchema.nullable().optional(),
+  productType: rules.productType.default(null),
 });
 
 export type CategoryFormSchemaInput = z.infer<typeof categoryFormSchema>;
@@ -51,6 +56,7 @@ export const updateCategorySchema = z.object({
   heroImage: rules.heroImage.optional(),
   accent: rules.accent.optional(),
   shotList: shotListSchema.nullable().optional(),
+  productType: rules.productType.optional(),
   order: optionalNumber(rules.order),
   parentId: rules.parentId.optional(),
 });
