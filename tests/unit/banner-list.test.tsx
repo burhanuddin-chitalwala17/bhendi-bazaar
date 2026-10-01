@@ -76,7 +76,7 @@ describe("BannerList while a reorder is in flight", () => {
       "fetch",
       vi.fn(async () => {
         await gate;
-        return { ok: true, json: async () => ({ success: true }) } as Response;
+        return Response.json({ success: true });
       })
     );
     return { release: () => act(() => (release(), gate)) };
@@ -110,11 +110,9 @@ describe("BannerList while a reorder is in flight", () => {
   it("returns to the server's order when the reorder is refused", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({
-        ok: false,
-        status: 400,
-        json: async () => ({ error: "Reorder must list every banner exactly once" }),
-      }) as unknown as Response)
+      vi.fn(async () =>
+        Response.json({ error: "Reorder must list every banner exactly once" }, { status: 400 })
+      )
     );
     render(<BannerList banners={[banner("a"), banner("b")]} />);
 

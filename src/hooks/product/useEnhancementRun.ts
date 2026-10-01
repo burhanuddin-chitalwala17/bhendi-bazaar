@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { readApiError } from "@/lib/api-error";
+import { enhancementRunApiClient } from "@/components/product/enhancementRunApiClient";
 import {
   ENHANCEMENT_STATE,
   type EnhancementDto,
@@ -21,11 +21,6 @@ export type EnhancementRun =
   | { phase: "deciding"; enhancement: EnhancementDto }
   | { phase: "failed"; message: string };
 
-interface Wire<T> {
-  ok: true;
-  body: T;
-}
-
 /**
  * One run's life, as data (image-enhancement spec R3, R10): ask for it, poll until the worker has
  * proposed or failed, then keep or discard. Which tool is offered and what the compare view shows
@@ -42,12 +37,6 @@ export function useEnhancementRun(orgId: string) {
   }, []);
   useEffect(() => stop, [stop]);
 
-  const call = useCallback(async <T,>(url: string, init?: RequestInit): Promise<Wire<T>> => {
-    const response = await fetch(url, init);
-    if (!response.ok) throw await readApiError(response);
-    return { ok: true, body: (await response.json()) as T };
-  }, []);
-
   const failed = (cause: unknown, fallback: string): EnhancementRun => ({
     phase: "failed",
     message: cause instanceof Error ? cause.message : fallback,
@@ -57,8 +46,7 @@ export function useEnhancementRun(orgId: string) {
     (id: string, startedAt: number) => {
       async function tick() {
         try {
-          const { body } = await call<{ enhancement: EnhancementDto }>(`/api/org/${orgId}/enhancements/${id}`);
-          const { enhancement } = body;
+          const { enhancement } = await enhancementRunApiClient.get(orgId, id);
           if (enhancement.state === ENHANCEMENT_STATE.PROPOSED) return setRun({ phase: "proposed", enhancement });
           if (enhancement.state === ENHANCEMENT_STATE.FAILED) {
             return setRun({ phase: "failed", message: enhancement.error ?? "The improvement could not be made" });
@@ -74,7 +62,7 @@ export function useEnhancementRun(orgId: string) {
       }
       timer.current = setTimeout(tick, ENHANCEMENT_POLL_MS);
     },
-    [call, orgId],
+    [orgId],
   );
 
   const request = useCallback(
@@ -82,10 +70,7 @@ export function useEnhancementRun(orgId: string) {
       stop();
       setRun({ phase: "requesting" });
       try {
-        const { body } = await call<{ enhancement: EnhancementDto; usage: EnhancementUsage }>(
-          `/api/org/${orgId}/enhancements`,
-          { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) },
-        );
+        const body = await enhancementRunApiClient.request(orgId, input);
         setUsage(body.usage);
         setRun({ phase: "running", enhancement: body.enhancement });
         poll(body.enhancement.id, Date.now());
@@ -93,7 +78,7 @@ export function useEnhancementRun(orgId: string) {
         setRun(failed(cause, "Could not start the improvement"));
       }
     },
-    [call, orgId, poll, stop],
+    [orgId, poll, stop],
   );
 
   const decide = useCallback(
@@ -102,11 +87,7 @@ export function useEnhancementRun(orgId: string) {
       const { enhancement } = run;
       setRun({ phase: "deciding", enhancement });
       try {
-        const url =
-          action === "accept"
-            ? `/api/org/${orgId}/enhancements/${enhancement.id}/accept`
-            : `/api/org/${orgId}/enhancements/${enhancement.id}/discard`;
-        const { body } = await call<{ enhancement: EnhancementDto }>(url, { method: "POST" });
+        const body = await enhancementRunApiClient.decide(orgId, enhancement.id, action);
         setRun({ phase: "idle" });
         return body.enhancement;
       } catch (cause) {
@@ -114,7 +95,7 @@ export function useEnhancementRun(orgId: string) {
         return null;
       }
     },
-    [call, orgId, run],
+    [orgId, run],
   );
 
   const reset = useCallback(() => {

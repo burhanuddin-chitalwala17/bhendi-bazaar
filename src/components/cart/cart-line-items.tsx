@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
+import { useAsyncData } from "@/hooks/core/useAsyncData";
+import { stockApiClient } from "@/components/product/stockApiClient";
 import { CartItem } from "./CartItem";
 
 export function CartLineItems() {
   const items = useCartStore((state) => state.items);
-  const [stockByProduct, setStockByProduct] = useState<Record<string, number>>(
-    {},
-  );
-  const [isLoadingStock, setIsLoadingStock] = useState(true);
-
   // One check for the whole cart — the endpoint takes the full array, so per-row
   // fetches were N round trips for one answer. Keyed on the product-id set: a
   // quantity change doesn't move stock, so it doesn't re-ask.
@@ -19,34 +15,24 @@ export function CartLineItems() {
     .sort()
     .join(",");
 
-  useEffect(() => {
-    if (!productIdsKey) return;
-    const controller = new AbortController();
-    setIsLoadingStock(true);
-    fetch("/api/products/check-stock", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: productIdsKey
-          .split(",")
-          .map((productId) => ({ productId, quantity: 1 })),
-      }),
-      signal: controller.signal,
-    })
-      .then((res) => res.json())
-      .then((data: { items?: Array<{ productId: string; stock: number }> }) => {
-        const next: Record<string, number> = {};
-        for (const row of data.items ?? []) next[row.productId] = row.stock;
-        setStockByProduct(next);
-        setIsLoadingStock(false);
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return;
-        console.error("Failed to fetch stock:", err);
-        setIsLoadingStock(false);
-      });
-    return () => controller.abort();
-  }, [productIdsKey]);
+  const { data: stockByProduct, loading, error } = useAsyncData(
+    async (signal) => {
+      const { items: rows } = await stockApiClient.check(
+        productIdsKey.split(",").map((productId) => ({ productId, quantity: 1 })),
+        signal,
+      );
+      const next: Record<string, number> = {};
+      for (const row of rows) next[row.productId] = row.stock;
+      return next;
+    },
+    {
+      enabled: Boolean(productIdsKey),
+      refetchDependencies: [productIdsKey],
+      onError: (err) => console.error("Failed to fetch stock:", err),
+    },
+  );
+  // Loading until the first answer or failure, not only while a request is in flight.
+  const isLoadingStock = loading || (stockByProduct === null && error === null);
 
   if (!items.length) {
     return (
@@ -63,7 +49,7 @@ export function CartLineItems() {
         <CartItem
           key={item.id}
           item={item}
-          stock={stockByProduct[item.productId] ?? null}
+          stock={stockByProduct?.[item.productId] ?? null}
           isLoadingStock={isLoadingStock}
         />
       ))}

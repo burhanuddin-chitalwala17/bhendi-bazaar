@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { authApiClient } from "@/components/auth/authApiClient";
 import {
   changePasswordSchema,
   type ChangePasswordInput,
@@ -37,15 +37,7 @@ export function ChangePasswordModal() {
       newPassword: "",
       confirmPassword: "",
     },
-    submit: async (data) => {
-      const response = await fetch("/api/auth/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      return response.json();
-    },
+    submit: (data) => authApiClient.changePassword(data),
     onSuccess: () => {
       setSuccess(true);
       reset();

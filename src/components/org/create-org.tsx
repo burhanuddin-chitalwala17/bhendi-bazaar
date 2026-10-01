@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { OrgForm } from "@/components/shared/forms/orgs";
-import { readApiError } from "@/lib/api-error";
+import { orgsApiClient } from "@/components/org/orgsApiClient";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
 
 /**
@@ -15,15 +15,7 @@ export function CreateOrg() {
   const router = useRouter();
 
   const submit = async (data: OrgFormInput) => {
-    const response = await fetch("/api/orgs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) throw await readApiError(response);
-
-    const org = (await response.json()) as { id: string };
+    const org = await orgsApiClient.create(data);
     toast.success("Organisation created");
     router.push(`/org/${org.id}`);
     router.refresh();

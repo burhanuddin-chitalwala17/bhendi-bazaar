@@ -1,4 +1,4 @@
-import { readApiError } from "@/lib/api-error";
+import { apiRequest } from "@/lib/api-client";
 import type { GuestContactMessageFormValues } from "@/lib/validation/schemas/contact.schema";
 
 /**
@@ -8,11 +8,5 @@ import type { GuestContactMessageFormValues } from "@/lib/validation/schemas/con
 export async function sendContactMessage(
   values: Pick<GuestContactMessageFormValues, "subject" | "message"> & { email?: string }
 ): Promise<void> {
-  const response = await fetch("/api/contact", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(values),
-  });
-
-  if (!response.ok) throw await readApiError(response);
+  await apiRequest("/api/contact", { method: "POST", body: values });
 }

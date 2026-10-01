@@ -12,14 +12,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "lucide-react";
-import { toast } from "sonner";
+import { useFieldArray } from "react-hook-form";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { readApiError } from "@/lib/api-error";
 import { Select } from "@/components/ui/select";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { bpsToPercent } from "@/lib/format";
+import {
+  commercialTermsSchema,
+  type CommercialTermsInput,
+} from "@/lib/validation/schemas/commercial-terms.schema";
+import { payoutsApiClient } from "@/components/payouts/payoutsApiClient";
 
 export interface CategoryOption {
   id: string;
@@ -43,55 +49,50 @@ export function CommercialTerms({
 }: CommercialTermsProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [commission, setCommission] = useState(String(commissionBps / 100));
-  const [maxDiscount, setMaxDiscount] = useState(String(maxDiscountBps / 100));
-  const [rates, setRates] = useState(
-    current.map((rule) => ({
-      categoryId: rule.categoryId,
-      percent: String(rule.rateBps / 100),
-    })),
-  );
-  const [busy, setBusy] = useState(false);
+
+  const form = useServerForm<CommercialTermsInput>({
+    schema: commercialTermsSchema,
+    defaultValues: {
+      commissionPercent: bpsToPercent(commissionBps),
+      maxDiscountPercent: bpsToPercent(maxDiscountBps),
+      categoryRates: current.map((rule) => ({
+        categoryId: rule.categoryId,
+        ratePercent: bpsToPercent(rule.rateBps),
+      })),
+    },
+    submit: (data) => payoutsApiClient.setCommercialTerms(orgId, data),
+    successMessage: "Commission updated",
+    onSuccess: () => {
+      setOpen(false);
+      router.refresh();
+    },
+  });
+  const {
+    register,
+    control,
+    watch,
+    getValues,
+    formState: { errors },
+    onSubmit,
+    formError,
+    isSubmitting: busy,
+  } = form;
+  const rates = useFieldArray({ control, name: "categoryRates" });
+  const chosen = watch("categoryRates") ?? [];
 
   const unused = categories.filter(
-    (c) => !rates.some((r) => r.categoryId === c.id),
+    (c) => !chosen.some((r) => r.categoryId === c.id),
   );
   const nameOf = (id: string) =>
     categories.find((c) => c.id === id)?.name ?? id;
 
-  const save = async () => {
-    setBusy(true);
-    try {
-      const response = await fetch(
-        `/api/admin/orgs/${orgId}/commercial-terms`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            commissionPercent: Number(commission),
-            maxDiscountPercent: Number(maxDiscount),
-            categoryRates: rates
-              .filter((rate) => rate.percent !== "")
-              .map((rate) => ({
-                categoryId: rate.categoryId,
-                ratePercent: Number(rate.percent),
-              })),
-          }),
-        },
-      );
-      if (!response.ok) throw await readApiError(response);
-      toast.success("Commission updated");
-      setOpen(false);
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not update the commission",
-      );
-    } finally {
-      setBusy(false);
-    }
+  const save = () => {
+    // A category added and left blank has always been dropped, not refused.
+    const blank = (getValues("categoryRates") ?? []).flatMap((rate, index) =>
+      Number.isNaN(rate.ratePercent) ? [index] : [],
+    );
+    if (blank.length > 0) rates.remove(blank);
+    return onSubmit();
   };
 
   if (!open) {
@@ -101,10 +102,10 @@ export function CommercialTerms({
           <div>
             <p className="text-sm font-medium">Commission</p>
             <p className="text-xs text-muted-foreground">
-              {commissionBps / 100}% by default
+              {bpsToPercent(commissionBps)}% by default
               {current.length > 0 &&
                 ` · ${current.length} category ${current.length === 1 ? "rate" : "rates"}`}
-              {" · "}discounts capped at {maxDiscountBps / 100}%
+              {" · "}discounts capped at {bpsToPercent(maxDiscountBps)}%
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
@@ -119,6 +120,8 @@ export function CommercialTerms({
     <Card className="space-y-4 p-4">
       <p className="text-sm font-medium">Commission</p>
 
+      {formError && <p className="text-xs text-destructive">{formError}</p>}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="commission" className="text-xs">
@@ -130,13 +133,18 @@ export function CommercialTerms({
             step="0.01"
             min="0"
             max="100"
-            value={commission}
-            onChange={(event) => setCommission(event.target.value)}
             className="mt-1"
+            aria-invalid={!!errors.commissionPercent}
+            {...register("commissionPercent", { valueAsNumber: true })}
           />
           <p className="mt-1 text-xs text-muted-foreground">
             Charged where no category rate covers an item.
           </p>
+          {errors.commissionPercent?.message && (
+            <p className="mt-1 text-xs text-destructive">
+              {errors.commissionPercent.message}
+            </p>
+          )}
         </div>
         <div>
           <Label htmlFor="maxDiscount" className="text-xs">
@@ -148,13 +156,18 @@ export function CommercialTerms({
             step="0.01"
             min="0"
             max="100"
-            value={maxDiscount}
-            onChange={(event) => setMaxDiscount(event.target.value)}
             className="mt-1"
+            aria-invalid={!!errors.maxDiscountPercent}
+            {...register("maxDiscountPercent", { valueAsNumber: true })}
           />
           <p className="mt-1 text-xs text-muted-foreground">
             How deep they may discount their own goods.
           </p>
+          {errors.maxDiscountPercent?.message && (
+            <p className="mt-1 text-xs text-destructive">
+              {errors.maxDiscountPercent.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -164,48 +177,51 @@ export function CommercialTerms({
           A rate on a category covers everything beneath it, unless a child sets
           its own.
         </p>
-        {rates.map((rate, index) => (
-          <div key={rate.categoryId} className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm">
-              {nameOf(rate.categoryId)}
-            </span>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={rate.percent}
-              onChange={(event) =>
-                setRates((current) =>
-                  current.map((r, i) =>
-                    i === index ? { ...r, percent: event.target.value } : r,
-                  ),
-                )
-              }
-              className="w-24"
-              aria-label={`Rate for ${nameOf(rate.categoryId)}`}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={`Remove the ${nameOf(rate.categoryId)} rate`}
-              onClick={() => setRates((c) => c.filter((_, i) => i !== index))}
-            >
-              <X className="size-4" aria-hidden />
-            </Button>
-          </div>
-        ))}
+        {rates.fields.map((rate, index) => {
+          const error = errors.categoryRates?.[index]?.ratePercent?.message;
+          return (
+            <div key={rate.id}>
+              <div className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {nameOf(rate.categoryId)}
+                </span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  className="w-24"
+                  aria-label={`Rate for ${nameOf(rate.categoryId)}`}
+                  aria-invalid={!!error}
+                  {...register(`categoryRates.${index}.ratePercent`, {
+                    valueAsNumber: true,
+                  })}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Remove the ${nameOf(rate.categoryId)} rate`}
+                  onClick={() => rates.remove(index)}
+                >
+                  <X className="size-4" aria-hidden />
+                </Button>
+              </div>
+              {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
+            </div>
+          );
+        })}
 
         {unused.length > 0 && (
           <Select
             value=""
             onChange={(event) =>
               event.target.value &&
-              setRates((c) => [
-                ...c,
-                { categoryId: event.target.value, percent: "" },
-              ])
+              rates.append({
+                categoryId: event.target.value,
+                // Blank until typed, as before; `save` drops it if it stays that way.
+                ratePercent: Number.NaN,
+              })
             }
             className="mt-1 h-10 w-full rounded-md bg-background text-sm"
             aria-label="Add a category rate"
@@ -228,7 +244,7 @@ export function CommercialTerms({
       </p>
 
       <div className="flex gap-2">
-        <Button size="sm" onClick={save} disabled={busy}>
+        <Button size="sm" onClick={() => void save().catch(() => {})} disabled={busy}>
           {busy ? "Saving…" : "Save commission"}
         </Button>
         <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>

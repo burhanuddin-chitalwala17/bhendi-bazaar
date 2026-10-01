@@ -30,11 +30,14 @@ vi.mock("@/context/AuthSheetContext", () => ({
 }));
 
 const fetchMock = vi.fn();
+// A real Response: `apiRequest` reads its status and content-type, not just `json()`.
+const reply = (body: unknown, status = 200) => async () =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
 beforeEach(() => {
   vi.clearAllMocks();
   authStatus = "authenticated";
-  fetchMock.mockResolvedValue({ ok: true, json: async () => ({ success: true }) });
+  fetchMock.mockImplementation(reply({ success: true }));
   vi.stubGlobal("fetch", fetchMock);
 });
 
@@ -129,11 +132,7 @@ describe("the heart, signed in", () => {
   });
 
   it("reverts the heart when the write fails, rather than lying about what is saved", async () => {
-    fetchMock.mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => ({ error: "Could not add that to your wishlist" }),
-    });
+    fetchMock.mockImplementation(reply({ error: "Could not add that to your wishlist" }, 500));
     renderHeart();
 
     fireEvent.click(screen.getByRole("button", { name: "Add to wishlist" }));

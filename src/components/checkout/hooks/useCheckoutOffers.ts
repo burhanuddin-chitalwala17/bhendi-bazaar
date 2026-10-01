@@ -11,22 +11,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { CartItem } from "@/domain/cart";
-import { readApiError } from "@/lib/api-error";
+import {
+  checkoutOffersApiClient,
+  type OfferQuote,
+} from "@/components/checkout/checkoutOffersApiClient";
 
-export interface CouponRejection {
-  code: string;
-  reason: string;
-  message: string;
-  shortfallPaise?: number;
-}
-
-export interface OfferQuote {
-  lineDiscounts: Record<string, number>;
-  applied: Array<{ label: string; code: string | null; amountPaise: number }>;
-  couponCoveredKeys: string[];
-  totalDiscountPaise: number;
-  rejection: CouponRejection | null;
-}
+export type { CouponRejection, OfferQuote } from "@/components/checkout/checkoutOffersApiClient";
 
 const EMPTY: OfferQuote = {
   lineDiscounts: {},
@@ -66,13 +56,7 @@ export function useCheckoutOffers(
       if (payload.length === 0) return EMPTY;
       setIsPricing(true);
       try {
-        const response = await fetch("/api/checkout/promotions/quote", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: payload, code: code || undefined }),
-        });
-        if (!response.ok) throw await readApiError(response);
-        return (await response.json()) as OfferQuote;
+        return await checkoutOffersApiClient.quote(payload, code || undefined);
       } finally {
         setIsPricing(false);
       }

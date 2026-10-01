@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormInput, FormSelect } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { biddingApiClient } from "@/components/bidding/biddingApiClient";
 import { formatCurrency, paiseToRupees } from "@/lib/format";
 import {
   biddingFormSchema,
@@ -70,15 +70,7 @@ export function BiddingForm({
       maxIncrease: 1000,
       quickBids: [50, 100],
     } as never,
-    submit: async (data) => {
-      const response = await fetch(action, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      return response.json();
-    },
+    submit: (data) => biddingApiClient.create(action, data),
     successMessage: "Bidding is set up — share the link",
     onSuccess: () => {
       router.push(returnTo);

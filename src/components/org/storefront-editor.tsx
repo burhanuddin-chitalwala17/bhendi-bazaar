@@ -15,7 +15,7 @@ import {
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { ImageUpload } from "@/components/shared/image-upload";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import {
   STOREFRONT_ACCENTS,
   storefrontSettingsSchema,
@@ -142,18 +142,10 @@ export function StorefrontEditor({
       hiddenSections: storedHidden(settings.hiddenSections),
     },
     successMessage: "Storefront saved.",
-    submit: async (data) => {
-      const response = await fetch(`/api/org/${orgId}/storefront`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        // The images are managed outside the form's state by ImageUpload, so they are
-        // merged in here rather than registered as fields.
-        body: JSON.stringify({ ...data, logoUrl, heroUrl, ownerPhotoUrl }),
-      });
-      if (!response.ok) throw await readApiError(response);
-      router.refresh();
-      return response.json();
-    },
+    // The images are managed outside the form's state by ImageUpload, so they are
+    // merged in here rather than registered as fields.
+    submit: (data) => orgStorefrontApiClient.saveSettings(orgId, { ...data, logoUrl, heroUrl, ownerPhotoUrl }),
+    onSuccess: () => router.refresh(),
   });
 
   return (

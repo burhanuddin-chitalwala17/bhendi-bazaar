@@ -2,7 +2,7 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
-import { cartApiClient } from "@/services/cartApiClient";
+import { cartApiClient } from "@/components/cart/cartApiClient";
 import { useDebounce } from "@/hooks/core/useDebounce";
 import { ApiError } from "@/lib/api-error";
 import { toast } from "sonner";
@@ -37,7 +37,15 @@ export function useCartSync() {
     justSyncedRef.current = true; // 👈 Mark that sync is happening
     
     try {
-      const merged = await cartApiClient.syncCart(items);
+      const merged = await cartApiClient.syncCart(items).catch((error) => {
+        // A failed sync keeps this device's lines rather than losing them.
+        console.error("[useCartSync] syncCart failed:", error);
+        toast.error("Failed to sync your cart with the server", {
+          description:
+            "Your local cart is still safe. We'll retry when you're back online.",
+        });
+        return { items, version: 0 };
+      });
       const changed = !sameLines(items, merged.items);
       setItems(merged.items);
       versionRef.current = merged.version;

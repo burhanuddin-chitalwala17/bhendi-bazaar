@@ -11,13 +11,12 @@
  * because that is also what an operator means — the campaign happened.
  */
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pencil, Square } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
+import { offersApiClient } from "@/components/promotions/offersApiClient";
 
 export function OfferActions({
   editHref,
@@ -31,23 +30,16 @@ export function OfferActions({
   label: string;
 }) {
   const router = useRouter();
-  const [isStopping, setIsStopping] = useState(false);
+  const { mutate, isLoading: isStopping } = useMutation(
+    () => offersApiClient.stop(stopHref),
+    {
+      successMessage: `“${label}” stopped`,
+      onSuccess: () => router.refresh(),
+    },
+  );
 
-  const stop = async () => {
-    setIsStopping(true);
-    try {
-      const response = await fetch(stopHref, { method: "DELETE" });
-      if (!response.ok) throw await readApiError(response);
-      toast.success(`“${label}” stopped`);
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not stop the offer",
-      );
-    } finally {
-      setIsStopping(false);
-    }
-  };
+  // The toast is the whole report; the rejection has nowhere further to go.
+  const stop = () => mutate().catch(() => {});
 
   return (
     <div className="mt-3 flex gap-2 border-t border-border pt-3">

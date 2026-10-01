@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-236] 2026-10-02 — The browser calls our API through one door
+
+Fifty-seven inline `fetch` calls — 49 in 42 components, 8 in hooks — each re-implemented "check
+`ok`, read the envelope, parse", and API clients lived in three places under two names. Now a
+component renders, a hook holds state, and an API client makes the call (ADR-0048):
+
+- `src/lib/api-client.ts` (`apiRequest`) is the one place the browser calls our API; a failure is
+  always an `ApiError` with its field details.
+- Every request lives in a `<thing>ApiClient.ts` beside its domain under `src/components/`. Clients
+  never toast or navigate. `src/services/` is dissolved into those folders.
+- Components call clients through `useServerForm`, `useMutation` and `useAsyncData`. `useAsyncData`
+  now hands the fetcher an `AbortSignal` and aborts the stale run, which `useDebouncedSearch`
+  builds on for the two product pickers.
+- `tests/unit/api-clients.test.ts` enforces it with no allowlist: every site was classified first
+  and none needed to own its request. Each of its four rules was broken once to confirm it fails.
+
+Defects closed by the move: the cart's stock check parsed an error body as stock rows; both
+checkout stock checks did the same and crashed; two search pickers let an older reply overwrite a
+newer one, and ignored failures; the media sheet could show one asset's details on another; the
+bulk wizards rebuilt their error and dropped its details; `orgService.createOrg` threw on its own
+error path; the shipping-provider client checked `!response` instead of `!response.ok`; four
+components read the envelope by hand; three hand-rolled forms (`CommercialTerms`, both
+`BidLadder` dialogs) dropped field errors and now use `useServerForm` with their existing schemas;
+the shipment-tracking schema moved out of its route into `src/lib/validation/schemas/` so its form
+can share it.
+
+Review of the conversion found one regression it had made reachable: a payment-order refusal with
+field details left checkout on "Processing" with the Pay button disabled. Fixed, with
+`tests/unit/checkout-payment-errors.test.ts`, seen to fail without the fix.
+
 ## [PR-235] 2026-10-02 — Three form factors, and the tablet gets the image it shows
 
 The breakpoints now have meanings (ADR-0050): phone at base, with `sm:` only refining it;

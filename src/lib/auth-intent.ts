@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 
-import { wishlistApiClient } from "@/services/wishlistApiClient";
+import { wishlistApiClient } from "@/components/wishlist/wishlistApiClient";
 
 /**
  * What a shopper was doing when asked to sign in, finished once they have

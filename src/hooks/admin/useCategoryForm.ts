@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
+import { adminCategoryApiClient } from "@/components/category/console/categoryApiClient";
 import type {
   AdminCategory,
   CreateCategoryInput,

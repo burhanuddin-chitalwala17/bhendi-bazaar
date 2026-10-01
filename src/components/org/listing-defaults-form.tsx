@@ -7,7 +7,7 @@ import { FormController, FormInput } from "@/components/shared/forms/FormField";
 import { CountryPicker } from "@/components/shared/forms/CountryPicker";
 import { asCountryCode } from "@server/shared/countries";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { orgListingDefaultsApiClient } from "@/components/org/orgListingDefaultsApiClient";
 import {
   listingDefaultsSchema,
   type ListingDefaultsParsed,
@@ -36,14 +36,7 @@ export function ListingDefaultsForm({ orgId, defaults, categories }: ListingDefa
     formState: { errors, isSubmitting },
   } = useServerForm<ListingDefaultsParsed>({
     schema: listingDefaultsSchema,
-    submit: async (data) => {
-      const response = await fetch(`/api/org/${orgId}/listing-defaults`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-    },
+    submit: (data) => orgListingDefaultsApiClient.save(orgId, data),
     successMessage: "Defaults saved",
     onSuccess: () => router.refresh(),
     defaultValues: {

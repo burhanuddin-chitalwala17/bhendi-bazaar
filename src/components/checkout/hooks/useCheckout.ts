@@ -7,6 +7,8 @@ import { useCartStore } from "@/store/cartStore";
 import type { DeliveryAddress } from "@/domain/profile";
 import { CartItem } from "@/domain/cart";
 import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { stockApiClient } from "@/components/product/stockApiClient";
+import { cartApiClient } from "@/components/cart/cartApiClient";
 
 interface UseCheckoutProps {
   items: CartItem[];
@@ -112,22 +114,12 @@ export function useCheckout({
       try {
         // Step 1: Stock validation
         console.log("📦 Step 1: Validating stock...");
-        const stockCheck = await fetch("/api/products/check-stock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: items.map((i) => ({
-              productId: i.productId,
-              quantity: i.quantity,
-            })),
-          }),
-        }).then((r) => r.json());
+        const stockCheck = await stockApiClient.check(
+          items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        );
 
         if (!stockCheck.available) {
-          const messages = stockCheck.issues
-            ?.map((i: { message: string }) => i.message)
-            .join(", ");
-          throw new Error(messages || "Some items are out of stock");
+          throw new Error("Some items are out of stock");
         }
 
         // Step 2: Prepare order data
@@ -149,7 +141,7 @@ export function useCheckout({
         if (!isBuyNow) {
           if (session?.user) {
             // Clear server cart
-            await fetch("/api/cart", { method: "DELETE" });
+            await cartApiClient.clearCart();
           }
           clearCart();
         }

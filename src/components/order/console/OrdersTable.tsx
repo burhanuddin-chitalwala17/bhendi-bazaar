@@ -4,7 +4,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminOrderApiClient } from "@/services/admin/orderApiClient";
+import { adminOrderApiClient } from "@/components/order/console/adminOrderApiClient";
 import type { AdminOrderRow } from "@server/checkout/admin.order.types";
 import { cn } from "@/lib/utils";
 import { formatCurrency, titleCase } from "@/lib/format";

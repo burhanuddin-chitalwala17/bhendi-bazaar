@@ -31,12 +31,12 @@ Images and video each have a delivery layer of their own. For images: uploads ar
 | Layer | Lives in | Responsibility |
 |---|---|---|
 | Pages / components | `src/app/**`, `src/components/<domain>/**` | Rendering, user interaction ([ADR-0031](adr/0031-one-components-home-organised-by-domain.md)) |
-| Client services | `src/services/**` | `fetch()` wrappers over own API routes |
+| API clients | `src/components/<domain>/*ApiClient.ts` | The browser's only requests to our routes, through `apiRequest` (`src/lib/api-client.ts`); called from hooks, never from a component ([ADR-0048](adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)) |
 | Server data access | `src/data-access-layer/**` | Server-component reads, called directly from pages |
 | Route handlers | `src/app/api/**` | HTTP boundary: parse, authorize, delegate |
 | **Domains** | `server/<domain>/` | Business logic, transactions, and Prisma access for their own aggregates |
 
-Two entry paths into data, by rendering mode: server components read through `src/data-access-layer/`, while client components call `src/services/`, which call route handlers. Both converge on the same domain services.
+Two entry paths into data, by rendering mode: server components read through `src/data-access-layer/`, while client components call a hook, which calls an API client, which calls a route handler. Both converge on the same domain services.
 
 Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `notifications`, `analytics`, `promotions`, `payouts`, `bidding`, `wishlist`, `content` (what is made from an image: enhancement, renditions, capture rules, and what each channel asks of a photograph — reading catalog's assets through catalog's public surface), plus `shared` for what genuinely spans them. Each owns its aggregate's repository ([ADR-0003](adr/0003-one-repository-per-aggregate.md)). External systems sit behind an interface in `<domain>/providers/<name>/`. Admin-facing reads are `admin.*` files inside the owning domain — there is no separate admin tree.
 
@@ -72,7 +72,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-175 Vitest files (154 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+178 Vitest files (157 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 

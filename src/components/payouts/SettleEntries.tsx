@@ -14,13 +14,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, PencilLine } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/format";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
+import { payoutsApiClient } from "@/components/payouts/payoutsApiClient";
 
 export interface LedgerEntryRow {
   id: string;
@@ -45,7 +45,6 @@ export function SettleEntries({
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Only entries nothing has claimed yet can go into a new settlement.
   const claimable = entries.filter(
@@ -60,28 +59,19 @@ export function SettleEntries({
       current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
     );
 
-  const settle = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch("/api/admin/settlements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgId, entryIds: selected }),
-      });
-      if (!response.ok) throw await readApiError(response);
-      toast.success(`Settlement created for ${formatCurrency(selectedTotal)}`);
-      setSelected([]);
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not create the settlement",
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const { mutate, isLoading: isSaving } = useMutation(
+    () => payoutsApiClient.createSettlement(orgId, selected),
+    {
+      successMessage: `Settlement created for ${formatCurrency(selectedTotal)}`,
+      onSuccess: () => {
+        setSelected([]);
+        router.refresh();
+      },
+    },
+  );
+
+  // The toast is the whole report; the rejection has nowhere further to go.
+  const settle = () => mutate().catch(() => {});
 
   return (
     <section className="space-y-3">

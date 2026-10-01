@@ -4,7 +4,7 @@
  * Presentation only — which offers it shows and who may edit them is decided by the
  * page that renders it, because scope belongs to the route, not to a component prop.
  */
-import { formatCurrency } from "@/lib/format";
+import { bpsToPercent, formatCurrency } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OfferActions } from "@/components/promotions/OfferActions";
@@ -32,7 +32,7 @@ export interface OfferRow {
 /** What the offer takes off, in the terms it was written in. */
 function value(offer: OfferRow): string {
   if (offer.valueType === "PERCENT")
-    return `${(offer.percentBps ?? 0) / 100}% off`;
+    return `${bpsToPercent(offer.percentBps ?? 0)}% off`;
   if (offer.valueType === "AMOUNT_OFF") {
     // Same figure, two meanings — say which (promotions D5).
     const amount = formatCurrency(offer.amountOffPaise ?? 0);

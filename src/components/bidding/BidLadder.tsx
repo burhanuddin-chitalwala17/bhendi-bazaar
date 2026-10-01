@@ -15,7 +15,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,8 +29,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { readApiError } from "@/lib/api-error";
 import { formatCurrency, paiseToRupees } from "@/lib/format";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import {
+  confirmSaleSchema,
+  type ConfirmSaleBody,
+} from "@/lib/validation/schemas/bidding.schema";
+import { biddingApiClient } from "@/components/bidding/biddingApiClient";
+import { MarkUnsoldDialog } from "@/components/bidding/MarkUnsoldDialog";
 import type { BidLadderEntry } from "@server/bidding/bidding.types";
 import { formatPhone } from "@server/shared/phone";
 
@@ -114,16 +119,20 @@ export function BidLadder({
         </Button>
       )}
 
-      <ConfirmSaleDialog
-        eventId={eventId}
-        bid={chosen}
-        locations={locations}
-        onClose={() => setChosen(null)}
-        onDone={() => {
-          setChosen(null);
-          router.refresh();
-        }}
-      />
+      {/* Keyed by the bid, so choosing another bidder starts from their figure. */}
+      {chosen && (
+        <ConfirmSaleDialog
+          key={chosen.id}
+          eventId={eventId}
+          bid={chosen}
+          locations={locations}
+          onClose={() => setChosen(null)}
+          onDone={() => {
+            setChosen(null);
+            router.refresh();
+          }}
+        />
+      )}
 
       <MarkUnsoldDialog
         eventId={eventId}
@@ -146,48 +155,42 @@ function ConfirmSaleDialog({
   onDone,
 }: {
   eventId: string;
-  bid: BidLadderEntry | null;
+  bid: BidLadderEntry;
   locations: StockLocation[];
   onClose: () => void;
   onDone: () => void;
 }) {
-  const [amount, setAmount] = useState("");
-  const [reason, setReason] = useState("");
-  const [orgAddressId, setOrgAddressId] = useState(
-    locations[0]?.orgAddressId ?? "",
-  );
-  const [isSaving, setIsSaving] = useState(false);
-
-  if (!bid) return null;
-
   const bidRupees = paiseToRupees(bid.amountPaise);
-  const entered = amount === "" ? bidRupees : Number(amount);
-  const differs = entered !== bidRupees;
 
-  const submit = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/admin/bidding/${eventId}/sale`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bidId: bid.id,
-          amount: entered,
-          orgAddressId,
-          reason: reason.trim() || undefined,
-        }),
-      });
-      if (!response.ok) throw await readApiError(response);
-      toast.success("Sale recorded");
-      onDone();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not record the sale",
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const form = useServerForm<ConfirmSaleBody>({
+    schema: confirmSaleSchema,
+    defaultValues: {
+      // No amount: the box starts empty, and an empty box reads as the bid itself.
+      bidId: bid.id,
+      orgAddressId: locations[0]?.orgAddressId ?? "",
+      reason: "",
+    },
+    submit: (data) =>
+      biddingApiClient.confirmSale(eventId, {
+        ...data,
+        reason: data.reason || undefined,
+      }),
+    successMessage: "Sale recorded",
+    onSuccess: onDone,
+  });
+  const {
+    register,
+    watch,
+    formState: { errors },
+    onSubmit,
+    formError,
+    isSubmitting,
+  } = form;
+
+  const amount = watch("amount");
+  const differs = amount !== undefined && amount !== bidRupees;
+  const orgAddressId = watch("orgAddressId");
+  const reason = watch("reason") ?? "";
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -202,6 +205,12 @@ function ConfirmSaleDialog({
         </DialogHeader>
 
         <div className="space-y-3">
+          {(formError || errors.bidId?.message) && (
+            <p className="text-sm text-destructive">
+              {errors.bidId?.message ?? formError}
+            </p>
+          )}
+
           <div>
             <Label htmlFor="sale-amount" className="text-sm">
               Sold for (₹)
@@ -213,12 +222,20 @@ function ConfirmSaleDialog({
               step="1"
               className="mt-1.5"
               placeholder={String(bidRupees)}
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
+              aria-invalid={!!errors.amount}
+              {...register("amount", {
+                setValueAs: (value) =>
+                  value === "" ? bidRupees : Number(value),
+              })}
             />
             <p className="mt-1.5 text-2xs text-muted-foreground">
               Their bid was {formatCurrency(bid.amountPaise)}.
             </p>
+            {errors.amount?.message && (
+              <p className="mt-1.5 text-sm text-destructive">
+                {errors.amount.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -228,8 +245,7 @@ function ConfirmSaleDialog({
             <Select
               id="sale-location"
               className="mt-1.5"
-              value={orgAddressId}
-              onChange={(event) => setOrgAddressId(event.target.value)}
+              {...register("orgAddressId")}
             >
               {locations.map((location) => (
                 <option
@@ -246,6 +262,11 @@ function ConfirmSaleDialog({
                 recorded.
               </p>
             )}
+            {errors.orgAddressId?.message && (
+              <p className="mt-1.5 text-sm text-destructive">
+                {errors.orgAddressId.message}
+              </p>
+            )}
           </div>
 
           {differs && (
@@ -258,14 +279,19 @@ function ConfirmSaleDialog({
                 id="sale-reason"
                 className="mt-1.5"
                 rows={2}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
                 placeholder="Negotiated down after they saw it in person"
+                aria-invalid={!!errors.reason}
+                {...register("reason")}
               />
               <p className="mt-1.5 text-2xs text-muted-foreground">
                 Required: this is what explains the figure the organisation is
                 paid on.
               </p>
+              {errors.reason?.message && (
+                <p className="mt-1.5 text-sm text-destructive">
+                  {errors.reason.message}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -275,87 +301,15 @@ function ConfirmSaleDialog({
             Cancel
           </Button>
           <Button
-            onClick={submit}
+            onClick={() => void onSubmit().catch(() => {})}
             disabled={
-              isSaving ||
+              isSubmitting ||
               locations.length === 0 ||
               !orgAddressId ||
               (differs && !reason.trim())
             }
           >
-            {isSaving ? "Recording…" : "Record the sale"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function MarkUnsoldDialog({
-  eventId,
-  open,
-  onClose,
-  onDone,
-}: {
-  eventId: string;
-  open: boolean;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const [reason, setReason] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-
-  const submit = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch(`/api/admin/bidding/${eventId}/unsold`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason.trim() || undefined }),
-      });
-      if (!response.ok) throw await readApiError(response);
-      toast.success("Recorded as unsold");
-      onDone();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not record the outcome",
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Nobody bought it?</DialogTitle>
-          <DialogDescription>
-            The item goes back on sale at its normal price and the organisation
-            is owed nothing. Every bid stays on record.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div>
-          <Label htmlFor="unsold-reason" className="text-sm">
-            Note (optional)
-          </Label>
-          <Textarea
-            id="unsold-reason"
-            className="mt-1.5"
-            rows={2}
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Top three bidders all backed out"
-          />
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={submit} disabled={isSaving}>
-            {isSaving ? "Recording…" : "Mark unsold"}
+            {isSubmitting ? "Recording…" : "Record the sale"}
           </Button>
         </DialogFooter>
       </DialogContent>

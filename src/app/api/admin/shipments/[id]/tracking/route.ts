@@ -9,16 +9,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@server/shared/prisma";
-import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { applyStatus } from "@server/shipping/shipment-status.service";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
-const updateTrackingSchema = z.object({
-  trackingNumber: z.string().min(5, "AWB/Tracking number is required"),
-  courierName: z.string().min(2, "Courier name is required"),
-  trackingUrl: z.string().url("Invalid tracking URL").optional(),
-});
+import { updateTrackingSchema } from "@/lib/validation/schemas/shipment-tracking.schema";
 
 export async function PATCH(
   request: NextRequest,
