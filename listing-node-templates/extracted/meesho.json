@@ -3470,5 +3470,179 @@
    "label": "Type",
    "required": false
   }
+ ],
+ "Trousers---Pants": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Fit/ Shape",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Length",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Occasion",
+   "required": true
+  },
+  {
+   "label": "Pattern",
+   "required": true
+  },
+  {
+   "label": "Print or Pattern Type",
+   "required": true
+  },
+  {
+   "label": "Waist Rise",
+   "required": true
+  },
+  {
+   "label": "Waist closure",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Surface Styling",
+   "required": false
+  }
  ]
 }

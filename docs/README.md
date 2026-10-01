@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-10-01
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).

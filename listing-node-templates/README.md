@@ -83,4 +83,9 @@ throwaway virtualenv rather than in `package.json`.
 | meesho | `Socks-10217-EXTERNAL-MeeshoTemplate2PricesGSTIN.xlsx` | 80,287 | `b901b5f536cc9447` |
 | meesho | `Socks-10218-EXTERNAL-MeeshoTemplate2PricesGSTIN.xlsx` | 77,549 | `99a4e4c4789cd000` |
 
-33 files, downloaded 2026-10-01.
+| meesho | `Trousers---Pants-10538-EXTERNAL-MeeshoTemplate2PricesGSTIN.xlsx` | 95,847 | *added 2026-10-01* |
+
+34 files. The first 33 were downloaded 2026-10-01; the Meesho trousers node was added the same
+day, after the extract showed Meesho asking for no size on `Palazzos` and the question arose of
+whether that held for trousers too. It does — `Trousers---Pants` requires `Length` and no size
+label.

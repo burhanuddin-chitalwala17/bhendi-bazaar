@@ -10,6 +10,42 @@
 
 ## Entries
 
+## [PR-220] 2026-10-01 — A canonical fact is admitted by answerability, not by agreement
+
+[ADR-0042](adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
+set the right criterion and then added a clause that said something narrower: that "Amazon
+requires it" is never a reason for a canonical field. Read strictly, that excludes a fact only one
+platform asks for even when the shop can answer it without being told who is asking.
+
+The templates made the cost concrete. Meesho's `Abayas` node requires `Bust Size` and
+`Length Size`; Flipkart's `abaya-burqa` asks for neither. A shop measuring an abaya can answer
+both. Under the intersection they are one platform's demand and would have been left out of the
+vocabulary, and the first abaya published to Meesho would have been rejected.
+
+The asymmetry behind it was named by the owner: sending a fact a platform ignores costs nothing,
+and omitting one a platform requires stops the listing. Two errors of different sizes do not want
+a criterion balanced between them.
+
+[ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md) therefore
+keeps ADR-0042's answerability test as the only admission test — can the shop answer it from the
+product, without knowing which platform it is for — and drops the requirement that more than one
+platform ask. One is enough and none is enough. ADR-0042's decisions 2 to 5 stand: a fact the
+shop cannot answer is still a channel extra declared by its adapter as a schema, never a bag.
+
+It also records two things the templates settled. **Store the fact that derives the other**: a
+measurement derives a size label and a label derives no measurement, so a garment's length and
+bust are stored and `Free` is computed. Thirteen of Meesho's nineteen nodes require a
+measurement, six require none, and none requires a size label without also requiring
+measurements — so the deriving fact is also the one asked for more often. And **the burden is on
+the extra**: the listing form is one form, because a per-platform section on it means the seller
+fills three, which is the cost this phase exists to remove.
+
+ADR-0042 is immutable, so its decision 1 is not edited. Its Status line and a note above its
+Alternatives point at the refinement, and the two are read together.
+
+Also added: Meesho's `Trousers---Pants` node, which confirms Meesho asks for no size label on
+trousers either — only `Length`. The Meesho core holds at 32 fields across all nineteen nodes.
+
 ## [PR-219] 2026-10-01 — Correction: Flipkart names the size scale as a field of its own
 
 The extract committed in PR-218 read Flipkart's `Brand Size` wrongly for two nodes. In `trouser`

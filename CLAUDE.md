@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-09-29
+- **Verified:** 2026-10-01
 - **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
 
 
@@ -188,7 +188,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **Every response carries a nonce-based CSP** — `script-src` never gains `'unsafe-inline'`. [ADR-0035](docs/adr/0035-every-response-carries-a-nonce-based-csp.md)
 - **The host is a deployment fact, not an architectural input** — seams, app-named environment, no vendor names in config; a free tier is used, never depended on. [ADR-0037](docs/adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)
 - **A channel is classed by where the sale completes** — storefront, shopfront, marketplace; the kind decides the machinery. [ADR-0041](docs/adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
-- **The shared vocabulary is the intersection; a channel declares its own extras as a schema** — never a bag, never the union. [ADR-0042](docs/adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
+- **A canonical fact is admitted by answerability, not by agreement** — one platform asking is enough, none is enough; a fact the shop cannot answer from the product is a channel extra declared as a schema, never a bag, never the union. Store the fact that derives the other. [ADR-0047](docs/adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md), [ADR-0042](docs/adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
 - **A variant is a product in a family** — its own SKU, price and stock; the family carries what they share. [ADR-0043](docs/adr/0043-a-variant-is-a-product-in-a-family.md)
 - **A marketplace order's money is reported, not computed** — Invariant 2's shape, not Invariant 1's exception; it never enters the payouts ledger. [ADR-0044](docs/adr/0044-a-marketplace-orders-money-is-reported-not-computed.md)
 - **Channel mappings are versioned data** — category, attribute and value; an unmapped value fails readiness rather than being guessed. [ADR-0045](docs/adr/0045-channel-mappings-are-versioned-data.md)

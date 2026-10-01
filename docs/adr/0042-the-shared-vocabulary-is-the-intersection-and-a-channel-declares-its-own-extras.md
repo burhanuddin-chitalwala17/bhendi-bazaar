@@ -1,7 +1,7 @@
 # ADR-0042: The shared vocabulary is the intersection, and a channel declares its own extras
 
 - **Date:** 2026-09-29
-- **Status:** Accepted
+- **Status:** Accepted — decision 1 refined by [ADR-0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)
 
 ## Context
 
@@ -35,6 +35,12 @@ any of them, so there is no vocabulary to preserve — this decision is about wh
    slot schema, stores it as JSON on a category, validates on the way in, and the product form
    renders the named slots from it. The channel adapter is the same idea with a different
    subject, and following it means one pattern in the codebase rather than two.
+
+> **Refined by [ADR-0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)
+> (2026-10-01):** decision 1 keeps its answerability test, which was always the control, and
+> loses the clause that "Amazon requires it" is never a reason. One platform asking is enough,
+> because the two errors are different sizes: a fact a platform ignores costs nothing to send,
+> and a fact it requires stops the listing. Decisions 2 to 5 stand.
 
 ## Alternatives considered
 
