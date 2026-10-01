@@ -177,7 +177,10 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Implemented — PR-211 (2026-09-29) |
 | [media-library/video-hosting](specs/media-library/video-hosting/) | A short video uploads from the phone like a photograph; the worker makes the sizes that play, and it is an image's peer in the library | ✅ Implemented — 2026-09-27 (PR-180, PR-181, PR-183) |
 | [image-enhancement](specs/image-enhancement/) | A phone photo becomes a marketplace-grade image on demand — cut out, on white, in a studio, in a scene, brightened, enlarged — each a tool applied alone, each result accepted or discarded | ✅ Implemented — PR-185, PR-190, PR-191, PR-193, PR-198 (2026-09-28) |
-| listing-vocabulary | The canonical attribute set, families and variants, one resolver through product → family → brand → org, and where each value came from | planned |
+| [listing-vocabulary](specs/listing-vocabulary/) | One description of a product that every surface and every channel reads — split into three subfeatures below | 📝 Draft — 2026-10-01 |
+| [listing-vocabulary/categories](specs/listing-vocabulary/categories/) | Nine categories, each naming the kinds it holds and the few questions it asks; measurements stored, size labels derived | 📝 Draft — 2026-10-01 |
+| [listing-vocabulary/variants](specs/listing-vocabulary/variants/) | Anything that sells on its own is its own product with its own stock; the category declares what varies | 📝 Draft — 2026-10-01 |
+| [listing-vocabulary/inherited-facts](specs/listing-vocabulary/inherited-facts/) | A blank fact filled from the family, the brand or the shop's defaults, stored on the product and shown with its origin | 📝 Draft — 2026-10-01 |
 | product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | planned |
 | channel-registry | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; the readiness gate wired to the resolver | planned |
 | shopfront-feeds | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | planned |
@@ -221,6 +224,14 @@ the host constrains operations, never design ([ADR-0037](adr/0037-the-host-is-a-
 ## Cross-cutting watch list
 
 Not a phase, but tracked:
+
+- **The existing models have never been checked against current practice** —
+  [ADR-0046](adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md) requires it
+  of anything new, and everything built before it was reasoned from this codebase alone. Worth one
+  focused pass over the stored shapes in the schema, the job queue, the caching approach, the
+  image pipeline and the auth handling, asking of each what the field does now. Deferred by
+  decision on 2026-09-29 so it does not swallow the listing phase; it is a piece of work in its
+  own right, not a line item inside another.
 
 - **The client/server contract** ([CONTRACTS.md](CONTRACTS.md)) — consolidating duplicate DTO declarations is a precondition for several specs above. Changes carry `[CONTRACT]`.
 - **Repository consolidation** ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — the *structural* half is done: `server/` is now one directory per domain ([ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md), CHANGELOG PR-02), so each aggregate has exactly one home. What remains is merging the duplicate repository *modules* that now sit side by side inside a domain — e.g. `catalog/product.repository.ts` and `catalog/admin.product.repository.ts` both read `prisma.product`. That is a behaviour-affecting merge, so it belongs with whichever spec touches the aggregate.

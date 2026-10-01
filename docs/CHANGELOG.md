@@ -10,6 +10,35 @@
 
 ## Entries
 
+## [PR-223] 2026-10-02 — The listing vocabulary, specified as three features
+
+Drafting it produced 156 readable lines against a 100-line cap, which
+[ADR-0010](adr/0010-spec-convention.md) treats as the signal that a feature is more than one
+feature. It was three: what a category asks, what makes two things sell separately, and what gets
+filled in from elsewhere. Each is independently demoable and each carries its own hazards.
+
+The field set is read off thirty-four platform templates rather than from our own product model,
+which was written without market knowledge and would otherwise have been the thing the new model
+was shaped to fit.
+
+What the templates changed, against the draft that preceded them. The variant axis is declared per
+category rather than assumed to be size, because Flipkart declares axes per node and no two of its
+twelve agree. Measurements are stored and size labels derived, because twelve of Meesho's nineteen
+nodes require a measurement and none requires a label without one. A kind — abaya, burqa, niqab —
+is a fact on the product rather than a category, because Flipkart holds the three as one node with
+a field while Meesho holds three categories, and only a stored fact serves both. A combo is an
+ordinary product with its own stock, because the shop counts it that way.
+
+Two questions closed during review, both by the owner reading the draft. Whether a member needs
+its own description: it does, and the family holds it as the answer to fill from so it is typed
+once. Whether the fill step needs cycle protection: it does not, the levels being a fixed list of
+three, and the guard was removed as the over-engineering it was.
+
+One question stays open and needs the owner: how rich the colour list should be. Implementation
+proceeds on the recommendation — the union, 31 of whose values Flipkart and Meesho already spell
+identically — because the choice seeds data rather than shaping the model, and seeded data is
+cheap to revisit.
+
 ## [PR-222] 2026-10-02 — Correction: the reader was dropping empty cells, and two figures were inflated
 
 The stdlib xlsx reader appended cells in document order without reading each cell's own column
