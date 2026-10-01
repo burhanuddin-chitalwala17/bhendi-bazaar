@@ -10,6 +10,38 @@
 
 ## Entries
 
+## [PR-225] 2026-10-02 — The listing vocabulary's declarations
+
+The first of the listing-vocabulary PRs. Pure declarations and one pure function, no schema
+change, no caller yet — so nothing in the product's behaviour moves.
+
+`server/catalog/listing-facts.ts` declares the facts a product type may ask beyond the spine,
+each with how it is answered and which value list it draws on, plus the measurements and their
+units. A fact is in it because the shop can answer it from the product without knowing which
+platform is asking, which is the only admission test
+([ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)).
+Flipkart's procurement terms and Meesho's returns price fail that test and are absent.
+
+`server/catalog/product-type.ts` declares the nine types, the kinds each holds, the facts it
+asks, its measurements and the axis its members vary on. `resolveProductType` walks the category
+tree for the nearest ancestor that declares one, mirroring `resolveShotList` — same tree, same
+walk, same `seen` set, because a self-referencing tree can hold a cycle.
+
+Three details the templates decided rather than we did. The variant axis can be a measurement
+rather than a fact, because the same attar in 6 ml and 100 ml is two sellable things and no fact
+expresses that. `Material` and `Fabric` are one question with a per-type label, because that is
+all Flipkart's two words are. And a stored answer carries the level that supplied it in the same
+entry, so origin costs no second column.
+
+Twenty-eight tests, of which eight are the declaration-integrity checks: a type may not ask for a
+fact that does not exist, may not vary on something it never asks about, may not relabel a fact
+it does not ask, and a choice fact must point at a list that exists. Mutation-tested — varying on
+an unasked fact and dropping a required mat dimension each go red, and removing the cycle guard
+hangs the suite until it is killed, which is the guard's point.
+
+`docs/ARCHITECTURE.md` gains the new test file in its count, and loses its claim that there is no
+background job runner, which the worker made false three PRs ago and nothing noticed.
+
 ## [PR-224] 2026-10-02 — A product type is not a browsing category
 
 Reading the schema before implementing found the vocabulary spec conflating two things. It said a
