@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { readApiError } from "@/lib/api-error";
-import type { OrgLocation } from "@server/catalog/org.address.repository";
+import type { OrgLocation } from "@server/catalog/org.address.types";
 import { LocationForm } from "@/components/org/location-form";
 import { formatPhone } from "@server/shared/phone";
 

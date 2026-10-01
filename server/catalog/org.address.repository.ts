@@ -1,5 +1,6 @@
 import { prisma } from "@server/shared/prisma";
 import { addressRepository } from "@server/shared/address.repository";
+import type { OrgLocation, OrgLocationWrite } from "@server/catalog/org.address.types";
 
 /**
  * Pickup locations — the only place `prisma.orgAddress` is touched (ADR-0003).
@@ -7,38 +8,6 @@ import { addressRepository } from "@server/shared/address.repository";
  * customer address book. Wire shape is flat, like DeliveryAddress: the id is the
  * OrgAddress (relationship) id, the postal fields come from the joined Address.
  */
-
-export interface OrgLocation {
-  id: string;
-  name: string;
-  contactName: string;
-  contactPhone: string;
-  isActive: boolean;
-  addressLine1: string;
-  addressLine2?: string;
-  landmark?: string;
-  city: string;
-  state: string;
-  pincode: string;
-  country: string;
-  /** Products with units physically here — what blocks deletion (R8). */
-  stockedProducts: number;
-  /** Parcels that name this location as their origin — also blocks deletion (R8). */
-  shipmentCount: number;
-}
-
-export interface OrgLocationWrite {
-  name: string;
-  contactName: string;
-  contactPhone: string;
-  addressLine1: string;
-  addressLine2?: string;
-  landmark?: string;
-  city: string;
-  state: string;
-  pincode: string;
-  isActive?: boolean;
-}
 
 const ROW_INCLUDE = {
   address: true,

@@ -8,7 +8,7 @@ import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { readApiError } from "@/lib/api-error";
 import { orgLocationSchema, type OrgLocationInput } from "@/lib/validation/schemas/location.schema";
-import type { OrgLocation } from "@server/catalog/org.address.repository";
+import type { OrgLocation } from "@server/catalog/org.address.types";
 
 /**
  * Add or edit a pickup location (stock-locations R1). Its own file because two screens open it:

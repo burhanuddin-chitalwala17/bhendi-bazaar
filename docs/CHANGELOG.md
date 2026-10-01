@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-233] 2026-10-02 — The orders table is handed the row it shows, not the order
+
+`OrdersTable` was typed by `@prisma/client`'s `Order`, so the admin orders page sent every column
+of every order to the browser to render seven of them. The boundary test missed it twice: it
+looked for the Prisma *client*, never `@prisma/client`, and it exempted type-only imports — an
+exemption written for imports between server domains (ADR-0033 D5), where a type really is just
+a type.
+
+`adminOrderService.getOrders` now returns `AdminOrderRow` (`server/checkout/admin.order.types.ts`),
+and `OrgLocation` moved out of the repository into `server/catalog/org.address.types.ts`, which
+three components were importing it from. The component rule in
+`tests/unit/module-boundaries.test.ts` now forbids `@prisma/client` and repositories outright,
+types included — broken on purpose once to confirm it fails.
+
 ## [PR-232] 2026-10-02 — A read-only survey, because the dev database is not evidence
 
 The listing-vocabulary migration was being designed against the dev database, and the owner

@@ -6,6 +6,7 @@
 import { adminOrderRepository } from "@server/checkout/admin.order.repository";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
+  OrderAddressSnapshot,
   OrderListFilters,
   OrderListResult,
   UpdateOrderStatusInput,
@@ -27,7 +28,15 @@ export class AdminOrderService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      orders,
+      orders: orders.map((order) => ({
+        id: order.id,
+        code: order.code,
+        customerName: (order.address as OrderAddressSnapshot | null)?.fullName ?? null,
+        grandTotal: order.grandTotal,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        createdAt: order.createdAt,
+      })),
       total,
       page,
       limit,

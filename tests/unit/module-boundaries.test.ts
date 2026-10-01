@@ -216,14 +216,13 @@ describe("layers do not reach past each other", () => {
 
   it("a component never imports Prisma or a repository", () => {
     // Components know nothing about Prisma; repositories know nothing about HTTP.
-    // Type-only is exempt (ADR-0033 D5): it is erased at compile time and carries no
-    // behaviour. `locations-manager.tsx` imports one such type from a repository — a mild
-    // smell, since the type belongs in `.types`, but not a layering breach.
-    const offenders = componentFiles.filter((f) => {
-      const t = readFileSync(f, "utf8");
-      const valueImport = /(?<!import type )import\s+(?!type\s)[^"']*?from\s+"(@server\/shared\/prisma|@server\/[a-z-]+\/[^"]*repository)"/;
-      return valueImport.test(t);
-    });
+    // Type-only imports count here, unlike between server domains (ADR-0033 D5): a component
+    // typed by a row renders the row's shape and is handed every column of it.
+    const offenders = componentFiles.filter((f) =>
+      /from\s+"(@prisma\/client|@server\/shared\/prisma|@server\/[a-z-]+\/[^"]*repository)"/.test(
+        readFileSync(f, "utf8"),
+      ),
+    );
     expect([...new Set(offenders.map((f) => relative(ROOT, f)))]).toEqual([]);
   });
 
