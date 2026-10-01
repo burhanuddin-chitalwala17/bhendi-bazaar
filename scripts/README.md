@@ -11,6 +11,27 @@ and writing the result into `prisma/migrations/20260926100000_worker_foundation/
 Upgrading pg-boss: call `getMigrationPlans("pgboss", <current version>)` the same way and put the
 output in a new migration. No script is kept for a step that runs once per library upgrade.
 
+## `survey-catalogue.sql` — reading the live catalogue before migrating it
+
+`SELECT` only; it writes nothing, locks nothing and prints no credential. It exists because the
+listing-vocabulary migration cannot be designed against the dev database: that one was seeded
+from the old product form, so it shows what the seed invented rather than what the shop actually
+typed.
+
+```bash
+psql "$(grep -oE '^DATABASE_URL="[^"]+"' .env.production.reference | sed 's/^DATABASE_URL="//; s/"$//')" \
+  -f scripts/survey-catalogue.sql > /tmp/catalogue-survey.txt
+```
+
+Seven questions, each feeding a decision the migration has to make: how much there is, what the
+category tree looks like and what hangs off each node, what `sizes` and `colors` actually hold
+per category, how many of the stored colours the vocabulary already knows the word for, how many
+products a colour-axis migration would produce, how many products vary on both at once, and what
+`ProductStock` holds — the one part that cannot be derived, because one stock number covers every
+colour today and splitting it is a decision rather than a sum.
+
+Delete it once the migration has run. It answers a question asked once.
+
 ## Why there is nothing else here
 
 Images live in Cloudflare R2 ([ADR-0028](../docs/adr/0028-images-live-in-cloudflare-r2.md)), reached

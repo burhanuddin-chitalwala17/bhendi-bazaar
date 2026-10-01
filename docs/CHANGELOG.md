@@ -10,6 +10,29 @@
 
 ## Entries
 
+## [PR-232] 2026-10-02 — A read-only survey, because the dev database is not evidence
+
+The listing-vocabulary migration was being designed against the dev database, and the owner
+pointed out it is not evidence: it was seeded from the old product form, so it shows what the
+seed invented rather than what the shop typed.
+
+`scripts/survey-catalogue.sql` asks the live catalogue seven questions instead, `SELECT` only —
+it writes nothing, locks nothing and prints no credential. How much there is; the category tree
+and what hangs off each node; what `sizes` and `colors` actually hold per category; how many
+stored colours the new vocabulary already knows the word for; how many products a colour-axis
+migration would produce; how many vary on both axes at once; and what `ProductStock` holds.
+
+That last one is the part no migration can derive. One stock number covers every colour today, so
+splitting twelve units of an abaya across black and maroon is a decision somebody makes, not a
+sum. Any plan that quietly divides or duplicates it would be inventing inventory.
+
+The shape of the problem is already visible in the seeded data even if the numbers are not
+trustworthy: `sizes` carries four different kinds of thing — garment letters, a capacity in
+millilitres, a physical dimension like `110x70cm`, and free-size words — so one migration rule
+cannot read it. A capacity belongs in `measurements`, a dimension becomes two measurements, and
+only the letters were ever a size. The TRD's D7 assumed one rule and will be rewritten once the
+survey comes back.
+
 ## [PR-231] 2026-10-02 — An admin says which product type a category uses
 
 The question was whether adding categories stays something the admin can do. It already was:
