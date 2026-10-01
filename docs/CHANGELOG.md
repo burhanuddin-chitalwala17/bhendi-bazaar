@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-238] 2026-10-02 — Invariant 5 gets the guard it never had
+
+"One aggregate, one repository" was a hard block with no test. Measured today: nineteen files
+outside a repository call `prisma.<model>` directly — six route handlers among them, and a
+shipping webhook writing `prisma.order`. `tests/unit/one-repository.test.ts` is a ratchet over
+them: each entry says why it has not moved, a new direct call fails, and a fixed file must leave
+the list. Broken once on purpose to confirm it fails. The webhook entry is marked the most urgent.
+
 ## [PR-237] 2026-10-02 — The rules say what the tests check, where the code is written
 
 An audit of the rules and skills against the tests found the server's rules stated where code is
