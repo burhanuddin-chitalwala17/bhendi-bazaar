@@ -7,12 +7,13 @@ import { ChevronLeft, ChevronRight, Film, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ImageLightbox } from "@/components/shared/image-lightbox";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
-import { VideoPlayer } from "@/components/product/video-player";
+import { GALLERY_SLIDE_SIZES, VideoPlayer } from "@/components/product/video-player";
 import {
   MAX_ZOOM_SCALE,
   youtubePosterUrl,
   ZOOMABLE_IMAGE_SIZES,
 } from "@server/catalog/media";
+
 
 export function ProductGallery(product: Product) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -243,7 +244,7 @@ export function ProductGallery(product: Product) {
                           fill
                           className="object-cover select-none"
                           loading="lazy"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          sizes={GALLERY_SLIDE_SIZES}
                           draggable={false}
                         />
                       ) : (
@@ -285,7 +286,7 @@ export function ProductGallery(product: Product) {
                       sizes={
                         index === activeIndex
                           ? ZOOMABLE_IMAGE_SIZES
-                          : "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          : GALLERY_SLIDE_SIZES
                       }
                       draggable={false}
                     />

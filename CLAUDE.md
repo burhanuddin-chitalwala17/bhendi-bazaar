@@ -164,6 +164,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **One components home, by domain; every control through its primitive.** [ADR-0031](docs/adr/0031-one-components-home-organised-by-domain.md)
 - **An overlay's surface follows its content** — picker, canvas task, detail panel, handed-off flow; each carries its own phone form. [ADR-0040](docs/adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)
 - **The UI is mobile-first** — base = phone, breakpoints add. [ADR-0015](docs/adr/0015-mobile-first-design.md)
+- **Three form factors on Tailwind's own breakpoints** — phone at base (`sm:` only refines it), tablet `md:`, desktop `lg:`; scripts read `FORM_FACTOR_QUERY`. [ADR-0050](docs/adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)
 - **The phone storefront is an app shell** — bottom tab bar, 3-up grids, docked actions. [ADR-0016](docs/adr/0016-mobile-app-shell.md)
 - **Every design axis goes through tokens** — colour, type, tracking, elevation, shape, width; colour values live only in the primitive palette, which semantic tokens point at. [ADR-0022](docs/adr/0022-design-decisions-go-through-tokens.md), [ADR-0049](docs/adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md)
 - **A file's reasons to change are a decision** — a file reaches at most two other domains; beyond that the set and the reason are recorded. It is the *import* that adds a reason, so that is where the gate fires, at any size. [ADR-0036](docs/adr/0036-a-files-reasons-to-change-are-a-decision.md)

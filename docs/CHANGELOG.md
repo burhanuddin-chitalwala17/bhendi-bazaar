@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-235] 2026-10-02 — Three form factors, and the tablet gets the image it shows
+
+The breakpoints now have meanings (ADR-0050): phone at base, with `sm:` only refining it;
+tablet from `md:`; desktop from `lg:`. Tailwind's defaults, not a custom scale. Scripts read
+the same two queries from `FORM_FACTOR_QUERY`, and `useIsDesktop` — which matched at 768px,
+the tablet — is now `useIsTabletUp`. `video-player.tsx`'s second copy of that query is gone.
+
+`tests/unit/form-factors.test.ts` requires every hand-written media query to name a declared
+breakpoint, and its first run found a real defect. The product gallery's image hint said
+half-width from 768px and a third from 1200px; the page is full width until `lg` and half the
+72rem column after. A tablet was downloading every gallery image at half the size it showed
+it. The hint is now declared once as `GALLERY_SLIDE_SIZES` and shared by the gallery, the
+video poster and the YouTube thumbnail, which had copied the same string.
+
 ## [PR-234] 2026-10-02 — Colour is a palette the themes pick from
 
 `globals.css` spelled out 52 colour values across 152 declarations, the warm charcoal ink seven

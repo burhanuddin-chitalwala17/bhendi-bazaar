@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Play, VideoOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { youtubeEmbedUrl, youtubePosterUrl } from "@server/catalog/media";
+import { GALLERY_SLIDE_SIZES } from "@/components/product/video-player";
 
 interface YouTubeEmbedProps {
   ref_: string;
@@ -65,7 +66,7 @@ export function YouTubeEmbed({
         alt={description ?? `${productName} video`}
         fill
         className="object-cover"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        sizes={GALLERY_SLIDE_SIZES}
         unoptimized
         onError={() => setUnavailable(true)}
       />

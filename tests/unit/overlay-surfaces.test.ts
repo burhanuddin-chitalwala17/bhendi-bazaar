@@ -86,7 +86,7 @@ describe("an overlay's surface is chosen, not inherited", () => {
     expect(picker, "the picker pair is missing").toBeDefined();
     expect(dialog, "the canvas pair is missing").toBeDefined();
     // The picker switches root at the breakpoint; the dialog styles from the phone up.
-    expect(picker?.code).toMatch(/useIsDesktop/);
+    expect(picker?.code).toMatch(/useIsTabletUp/);
     expect(picker?.code).toMatch(/PopoverContent/);
     expect(picker?.code).toMatch(/SheetContent/);
     expect(dialog?.code).toMatch(/h-dvh/);
