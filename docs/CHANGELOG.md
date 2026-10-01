@@ -10,6 +10,39 @@
 
 ## Entries
 
+## [PR-222] 2026-10-02 — Correction: the reader was dropping empty cells, and two figures were inflated
+
+The stdlib xlsx reader appended cells in document order without reading each cell's own column
+reference. A spreadsheet omits empty cells from a sparse row, so every value after a gap shifted
+left. Dense sheets were unaffected, which is why the Amazon extract re-reads byte-identical and its
+18 required of 390 stands. Sparse sheets were silently wrong.
+
+Meesho's `Validation Sheet` is sparse, which is why it looked like noise and was reported as
+Meesho publishing no value lists. It publishes all of them, and they are the richest source in the
+set: 185 distinct colours against Flipkart's 35, plus fabric, pattern, sleeve, stitch, size and the
+measurement ranges, per category. `listing-node-templates/extracted/meesho.json` now carries them.
+
+Two figures in [PR-220] and [PR-221] were inflated by a second fault in the same extraction: two
+template files for one node — Socks and Deodorant—Fragrances each ship twice — had their field
+lists concatenated rather than replaced. **Meesho requires 23 to 40 compulsory fields per node,
+not 23 to 56**, and **twelve of nineteen nodes require a measurement, not thirteen**. Both
+corrections leave the conclusions standing: Meesho is still the binding constraint against
+Amazon's 18, measurements are still required twice as often as labels, and **no node requires a
+size label without also requiring measurements**, which is what
+[ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md) decision 4
+rests on.
+
+The colour question this settles: for an abaya, sixteen of Flipkart's seventeen colours appear on
+Meesho spelled identically. Across all nodes, thirty-one values are common and spelled the same.
+The platforms do not disagree about what to call a colour; they disagree about how many colours
+exist. That makes an unmapped value a question of granularity rather than of vocabulary, and it is
+answered once per value rather than per product.
+
+An extraction bug is invisible in a way a code bug is not — nothing fails, the mapping is simply
+built on a wrong list. The reader now places each cell by its own reference, and the rule that
+follows is that a sheet which looks like noise is a reading to check before it is a finding to
+report.
+
 ## [PR-221] 2026-10-01 — What the platform templates actually ask for, measured
 
 [INTEGRATIONS.md](INTEGRATIONS.md) carried an estimate of the cross-platform core written on

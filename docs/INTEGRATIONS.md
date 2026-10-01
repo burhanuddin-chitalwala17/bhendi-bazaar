@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-01
+- **Verified:** 2026-10-02
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -131,7 +131,7 @@ than inferred.
 **Field counts are theatre; required counts are the constraint.** Amazon declares 390 fields
 across the ten product types in one workbook and requires 18, with 187 conditional on other
 answers. Flipkart declares 66 to 132 per vertical and requires 19 to 32. Meesho declares 35 to 84
-per category and requires 23 to 56, so **Meesho is the binding constraint on a listing form, not
+per category and requires 23 to 40, so **Meesho is the binding constraint on a listing form, not
 Amazon.** Flipkart encodes a field's requirement level as a cell *colour* rather than a value —
 blue mandatory, purple conditional, yellow recommended, green optional, grey filled by Flipkart —
 decoded against the legend each workbook carries on its own summary sheet.
@@ -166,7 +166,7 @@ and brand colour for a trouser. An axis assumed in code would be wrong for most 
 
 **Sizes are asked for as measurements more often than as labels.** Meesho requires `Bust Size` and
 `Length Size` on an abaya and offers no size field at all on palazzos or trousers, where it asks
-`Length` instead. Across its nineteen nodes, thirteen require a measurement, six require none, and
+`Length` instead. Across its nineteen nodes, twelve require a measurement, seven require none, and
 **none requires a size label without also requiring measurements.** Flipkart's `trouser` node
 resolves a size through Ideal For, then a `Qualifier` naming the scale — Regular, Number, Euro, UK,
 US, Kids — then the allowed value, so it treats "which scale" as its own field. `Free` is a
@@ -175,8 +175,11 @@ permitted value on every category this store sells.
 **Two gaps remain**, both access rather than research: Meesho publishes no bakhoor or incense
 template in the set downloaded, and Flipkart's attar node was not exported. Everything else the
 Indian marketplaces keep behind a seller login, which is why the templates had to come from the
-owner's own accounts — the public Flipkart listing API is offer and logistics only, Myntra the
-same shape, and Meesho publishes nothing. Amazon publishes the mechanism rather than the schemas:
+owner's own accounts — the public Flipkart listing API is offer and logistics only, and Myntra the
+same shape. Meesho publishes no API schema but its templates carry a `Validation Sheet` holding
+every permitted value, which is the richest value source in the set: 185 distinct colours against
+Flipkart's 35. Its `Brand` field is optional and drawn from a per-category registry of brands
+already enrolled, so a shop's own brand must be registered with Meesho before it can be named. Amazon publishes the mechanism rather than the schemas:
 a JSON schema fetched per product type, whose stated required list is not the real one because
 conditional rules add requirements as attributes are filled.
 
