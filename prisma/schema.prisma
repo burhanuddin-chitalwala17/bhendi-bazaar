@@ -233,6 +233,12 @@ model Category {
   /// The named photo slots products in this category fill, inherited down the tree from the
   /// nearest ancestor that sets one; null means the platform's generic list (media-library D4).
   shotList    Json?
+  /// Which listing questions this category's products are asked, inherited down the tree from the
+  /// nearest ancestor that sets one, exactly as `shotList` is (listing-vocabulary/categories D1a).
+  /// Null everywhere means a product is asked the spine only — it still saves and still sells.
+  /// A browsing category is reorganised for merchandising reasons; the resolved value is copied
+  /// onto the product on save (D1b) so moving a category never moves a product's stored answers.
+  productType String?
   order       Int            @default(0)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -276,6 +282,24 @@ model Product {
   sku               String? // Stock Keeping Unit — unique within the org, not the platform
   lowStockThreshold Int     @default(10) // Alert when stock falls below this
 
+  /// The product type resolved from the category tree at save time and kept here
+  /// (listing-vocabulary/categories D1b). A column rather than a fact because it says how to
+  /// read `facts` and `measurements`, so a row is interpretable without the tree.
+  productType String?
+  /// Which kind within that type — abaya, burqa, attar, bakhoor (categories D1). A column
+  /// because the channel mapping resolves a platform node from the type and the kind together,
+  /// and because the platforms disagree about which of the two it is.
+  kind        String?
+
+  /// The declared facts this product answers, each entry holding its value and the level that
+  /// supplied it, so origin costs no second column (listing-vocabulary trd D3). Only the
+  /// discriminators above earn columns: nothing filters on a colour or a fabric, and a column
+  /// added for a filter nobody has written is a second place for a value to live (categories D6a).
+  facts        Json?
+  /// Measurements in the unit the product type fixes, same shape as `facts`. Stored because a
+  /// measurement derives a size label and a label derives no measurement (ADR-0047 D4).
+  measurements Json?
+
   orderItems       OrderItem[]
   cartItems        CartItem[]
   wishlistItems    WishlistItem[]
@@ -315,6 +339,8 @@ model Product {
   // The org portal's default list is "this org, on sale", and it is the one query
   // this column adds to a hot path.
   @@index([orgId, archivedAt])
+  // A readiness sweep and the channel mapping both work type by type.
+  @@index([productType])
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -626,6 +652,7 @@ model Org {
   @@index([isActive])
   @@index([code])
   @@index([handle])
+  listingValues ListingValue[]
 }
 
 /// The public face of an organisation: what a storefront or an advertisement may show, and
@@ -1754,4 +1781,46 @@ model Bid {
   @@unique([eventId, amountPaise])
   @@index([eventId, amountPaise(sort: Desc)])
   @@index([userId])
+}
+
+/// A permitted answer to a listing fact (listing-vocabulary/categories D3, D5).
+///
+/// The facts are declared in code because they change with a release; the answers live here
+/// because a colour grows the first time a shop sells one, and waiting for a deploy to add one is
+/// the friction this phase exists to remove.
+///
+/// One list serves every product type that asks for it, rather than a list per type: Flipkart
+/// copies its colour list per node and they have drifted — thirty-five values of which only
+/// sixteen appear in every node (D5).
+model ListingValue {
+  id String @id @default(cuid())
+
+  /// Which list this belongs to — a `LIST` key from `server/catalog/listing-facts.ts`.
+  list String
+  /// What is stored on a product. Renaming a label must not rewrite products, and two shops must
+  /// not disagree about what maroon is (D4).
+  key   String
+  label String
+  order Int    @default(0)
+
+  /// The product types this answer applies to. Empty means every type that asks for its list,
+  /// which is the common case — a colour is a colour.
+  productTypes String[] @default([])
+
+  /// Null for a platform-provided answer, visible to everyone. Set when a shop added its own, so
+  /// one shop's vocabulary cannot quietly widen another's.
+  orgId String?
+  org   Org?    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Retired rather than deleted: products already store this key, and a deleted answer would
+  /// leave them reading as unlisted text ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)).
+  retiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // A shop may add a key the platform later adds too; scoping the uniqueness to the owner keeps
+  // both rows legal and lets the shop's own answer win for that shop.
+  @@unique([list, key, orgId])
+  @@index([list])
+  @@index([orgId])
 }

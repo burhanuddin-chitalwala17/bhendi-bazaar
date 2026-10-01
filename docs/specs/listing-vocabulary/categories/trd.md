@@ -48,10 +48,9 @@ without also requiring measurements**.
   exact concept `product_type` and it decides which attributes apply; Flipkart calls it a vertical
   and Meesho a category. Naming ours after the dominant published vocabulary costs nothing and
   makes every adapter's mapping read as a mapping ([ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md)).
-- **D2 — The declaration is one object per category, and it is what renders the form.** It names
-  each fact, its type, its permitted values and the words shown to a shop. This is the shape
-  `server/catalog/shot-list.ts` already proves for gallery slots, so following it means one
-  pattern in the codebase rather than two.
+- **D2 — The declaration is one object per type, and it is what renders the form.** It names each
+  fact, how it is answered, its permitted values and the words shown to a shop — the shape
+  `server/catalog/shot-list.ts` already proves for gallery slots.
 - **D3 — Facts are declared in code; permitted answers are held as data.** Which facts exist
   changes with a release. Which colours exist grows the first time a shop sells one, and waiting
   for a deploy to add one is the friction this phase exists to remove.
@@ -64,6 +63,14 @@ without also requiring measurements**.
   length and width for a mat, capacity for an attar, diameter for a ring. The unit is fixed per
   category rather than chosen per product, because a free unit is how centimetres and inches end
   up in one column.
+- **D6a — Only the discriminators earn columns; every answer lives in JSON with its origin.**
+  Checked against the code rather than assumed: nothing filters, sorts or searches on `sizes` or
+  `colors` today — they are selected and written and never appear in a `where`. So the parent's
+  D2 admits far fewer columns than it reads as. `productType` is a column because it says how to
+  interpret the rest of the row, and `kind` because the channel mapping resolves a platform node
+  from the pair. Colour, material and pattern are answers like any other. A column added for a
+  filter nobody has written is a second place for a value to live, and
+  [categories D7](#technical-decisions) is the same argument applied to labels.
 - **D7 — Derivation is a pure function with no stored result.** A label computed and also stored
   is two facts that can disagree, and the stored one always wins by accident.
 - **D8 — An answer matching no list is kept as free text, flagged.** A shop's data is not ours to
@@ -85,9 +92,11 @@ control, no horizontal scroll at 360px.
 
 ## Data model
 
-[MIGRATION]. New tables for the permitted answers and their availability per product type.
-`Category` gains a nullable `productType`. `Product` gains `productType`, `kind`, the common-fact
-columns, the measurement columns, and one indexed JSON column for the type's tail.
+[MIGRATION]. `Category` gains a nullable `productType`. `Product` gains `productType` and `kind`
+as columns, and `facts` and `measurements` as indexed JSON, each entry holding its value and the
+level that supplied it. `ListingValue` holds the permitted answers — list, key, label, order —
+with the product types it applies to, empty meaning every type that asks for that list, and a
+nullable `orgId` so a shop's own addition is visible to that shop without a later migration.
 
 ## API / contract changes
 

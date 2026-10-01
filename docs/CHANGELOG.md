@@ -10,6 +10,37 @@
 
 ## Entries
 
+## [PR-228] 2026-10-02 — The listing vocabulary's schema [MIGRATION]
+
+`Category` gains a nullable `productType`, inherited down the tree like `shotList`. `Product`
+gains `productType` and `kind` as columns and `facts` and `measurements` as JSON, each entry
+holding its value and the level that supplied it. `ListingValue` holds the permitted answers.
+Every column is nullable and the migration is purely additive; no existing row changes.
+
+**Only the discriminators earn columns, and that is a decision reading the code changed.** The
+TRD said what is filtered, sorted or searched on earns a column, and named colour among them.
+Nothing filters on `colors` or `sizes` — they are selected and written and appear in no `where`
+clause anywhere in `server/` or `src/`. So colour, material and pattern are answers like any
+other, in JSON with their origin. `productType` is a column because it says how to read the rest
+of the row, and `kind` because the channel mapping will resolve a platform node from the pair. A
+column added for a filter nobody has written is a second place for a value to live.
+
+**The unique index Prisma generated had a hole.** `@@unique([list, key, orgId])` does not
+constrain rows whose `orgId` is NULL, because Postgres treats NULLs as distinct — so two
+platform-provided answers could share a list and a key, which is the drift a single global list
+exists to prevent. The migration adds a partial unique index over `(list, key) WHERE orgId IS
+NULL`, which Prisma's schema language cannot declare, so nothing in `schema.prisma` shows it.
+`tests/integration/listing-value-uniqueness.test.ts` is what keeps it honest: dropping the index
+turns that test red, which was checked rather than assumed.
+
+A value is retired rather than deleted, because products already store its key and a deleted
+answer would leave them reading as unlisted text
+([ADR-0032](adr/0032-records-people-authored-are-retired-not-deleted.md)). A shop's own answer
+carries its `orgId` and cascades with the org, so one shop's vocabulary cannot widen another's.
+
+Generated against a throwaway database created and dropped for the purpose; the local dev
+database was left alone, being twelve migrations behind and holding whatever it holds.
+
 ## [PR-227] 2026-10-02 — The fill step, as an ordered list of levels
 
 The third listing-vocabulary PR, and the last pure one. `server/catalog/fill-facts.ts` fills a
