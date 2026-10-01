@@ -10,6 +10,31 @@
 
 ## Entries
 
+## [PR-230] 2026-10-02 — The permitted answers, read off the templates [MIGRATION]
+
+1,026 `ListingValue` rows across twenty-two lists, generated from the platforms' own bulk-upload
+templates rather than typed: 188 colours, 195 materials, 145 patterns, 125 scent families, and
+the smaller lists for sleeve, stitch, fit, plating, purity, gemstone and the rest.
+
+A data migration rather than the seed, which is the project's own rule for reference data
+(Invariant 7): `prisma/seed.ts` is permanently dev-only and deletes every table, while
+`vercel.json` runs `prisma migrate deploy` before every build — so a migration reaches every
+environment on merge and the seed reaches none. The test is whether production breaks without it,
+and without these a product form has empty dropdowns.
+
+**The union, not the intersection**, which settles the TRD's open question in the direction
+already recommended. The platforms do not disagree about what to call a colour — 31 of the 35
+Flipkart publishes appear on Meesho spelled identically — they disagree about how many exist, 35
+against 185. The narrower list would mean a colour the shop genuinely sells could not be recorded
+at all, and the mapping work is the same either way. Values both platforms name sort first, so
+the common ones sit at the top of a list and the long tail is below them.
+
+Idempotent on the partial unique index from PR-228, so replaying it is a no-op rather than a
+duplicate-key failure — checked by running it twice.
+
+`baseMaterial` is its own fact with its own list, so "base metal" was removed from the sources
+feeding `material`; without that the material list carried the jewellery metals as well.
+
 ## [PR-229] 2026-10-02 — ProductFamily, which cannot be sold [MIGRATION]
 
 The fifth listing-vocabulary PR. `ProductFamily` is a new aggregate with its own repository
