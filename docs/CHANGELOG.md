@@ -10,6 +10,33 @@
 
 ## Entries
 
+## [PR-224] 2026-10-02 — A product type is not a browsing category
+
+Reading the schema before implementing found the vocabulary spec conflating two things. It said a
+product "sits in one of nine categories", and `Category` already exists as the buyer's
+merchandising tree — hero image, accent, ordering, arbitrary depth, reorganised whenever
+merchandising wants. Had that been built as written, moving an abaya under a seasonal heading
+would have changed the questions asked of it.
+
+They are separate concerns and the codebase already separates them correctly once:
+`Category.shotList` declares the photo slots its products fill, inherited down the tree from the
+nearest ancestor that sets one (`server/catalog/shot-list.ts`). The product type now attaches the
+same way. A category says which type its products use, a category that says nothing inherits, and
+the tree stays free to be reorganised.
+
+The resolved type is stored on the product on save rather than read through the category, so a
+product read stays one row and merchandising cannot move a product's stored answers. Re-pointing
+a category at a different type becomes an explicit migration of its products, with a count and a
+confirmation, reusing the correction mechanism the inherited facts already need.
+
+Named `productType` because that is what Amazon names it, and it is the same concept: the thing
+that decides which attributes apply. Flipkart calls it a vertical, Meesho a category. Naming ours
+after the dominant published vocabulary costs nothing and makes every adapter's mapping read as a
+mapping ([ADR-0046](adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md)).
+
+Caught by reading the schema rather than by review, which is the order ADR-0046 asks for and the
+reason the first implementation PR has not been written yet.
+
 ## [PR-223] 2026-10-02 — The listing vocabulary, specified as three features
 
 Drafting it produced 156 readable lines against a 100-line cap, which

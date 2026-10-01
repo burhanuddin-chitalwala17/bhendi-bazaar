@@ -58,7 +58,7 @@ Cross-cutting only. Decisions belonging to one part live in that part's TRD.
   come from the shop's own profile and are never typed per product. Six more are common to most
   categories — colour, pattern, material, measurements, pack quantity, audience — and the genuine
   per-category tail is two to eight.
-- **D2 — The spine and the common facts earn columns; the category tail is one indexed JSON
+- **D2 — The spine and the common facts earn columns; the product type's tail is one indexed JSON
   column.** What is filtered, sorted or searched on is a column. Sleeve and stitch for an abaya,
   capacity and shelf life for an attar earn none, because an abaya and an attar share almost none
   of them and columns for both leave each half empty.

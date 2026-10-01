@@ -30,10 +30,24 @@ without also requiring measurements**.
 
 ## Technical decisions
 
-- **D1 — The nine categories and their kinds are declared in code.** A tenth is a declaration to
-  add. A kind is a value on the product rather than a category of its own, because the platforms
+- **D1 — The nine product types and their kinds are declared in code.** A tenth is a declaration
+  to add. A kind is a value on the product rather than a type of its own, because the platforms
   disagree about which it is: Flipkart holds abaya, burqa and niqab as one node separated by a
   field, Meesho as four categories. Storing the distinction as a fact lets each adapter decide.
+- **D1a — A product type attaches to a browsing category and is inherited down the tree**, exactly
+  as `shotList` already is (`server/catalog/shot-list.ts`, `resolveShotList`). `Category` gains a
+  nullable product type; a category that sets none takes its nearest ancestor's. Following the
+  proven shape means one pattern rather than two, and the tree walk already handles the cycle a
+  self-referencing tree makes possible.
+- **D1b — The resolved type is stored on the product on save, not read through the category.**
+  Merchandising moves categories; a product's questions and stored answers must not move with
+  them (spec A1a). It also keeps the parent's D4 true — a product read is one row. Re-pointing a
+  category then becomes an explicit migration of its products, which is spec R7 and reuses
+  [inherited-facts](../inherited-facts/) D5.
+- **D1c — `productType` is the field's name, because it is the field's name.** Amazon calls this
+  exact concept `product_type` and it decides which attributes apply; Flipkart calls it a vertical
+  and Meesho a category. Naming ours after the dominant published vocabulary costs nothing and
+  makes every adapter's mapping read as a mapping ([ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md)).
 - **D2 — The declaration is one object per category, and it is what renders the form.** It names
   each fact, its type, its permitted values and the words shown to a shop. This is the shape
   `server/catalog/shot-list.ts` already proves for gallery slots, so following it means one
@@ -71,9 +85,9 @@ control, no horizontal scroll at 360px.
 
 ## Data model
 
-[MIGRATION]. New tables for the permitted answers and their per-category availability. `Product`
-gains `category`, `kind`, the common-fact columns, the measurement columns, and one indexed JSON
-column for the category tail.
+[MIGRATION]. New tables for the permitted answers and their availability per product type.
+`Category` gains a nullable `productType`. `Product` gains `productType`, `kind`, the common-fact
+columns, the measurement columns, and one indexed JSON column for the type's tail.
 
 ## API / contract changes
 
@@ -81,8 +95,10 @@ column for the category tail.
 
 ## Test plan
 
-Each category's declaration is checked to name only facts that exist and only permitted values
-that resolve — the check that stops a declaration drifting from the form it renders. Label
+Each product type's declaration is checked to name only facts that exist and only permitted
+values that resolve — the check that stops a declaration drifting from the form it renders.
+Resolution up the category tree is tested for the inherited case, the unset-everywhere case and a
+cycle, mirroring `resolveShotList`'s own table. Label
 derivation is a table: each scale, a measurement with no label, a label with no measurement.
 D7 is a guard test: no derived label is persisted anywhere. The free-text fallback is tested over
 a fixture of the real messy colour values, asserting nothing is lost and every leftover is

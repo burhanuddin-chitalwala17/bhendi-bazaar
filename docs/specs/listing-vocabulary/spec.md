@@ -49,8 +49,10 @@ that, not against how complete the model looks.
 
 These are properties of the whole; each subfeature states its own in detail.
 
-- **R1** — A product sits in one category, which decides every question asked of it and asks
-  nothing that does not apply. Specified in [categories](categories/).
+- **R1** — Every product has a **product type** — one of nine — and it decides every question
+  asked of the product and asks nothing that does not apply. A product type is not a browsing
+  category: the category tree is what a buyer navigates, and a category says which product type
+  its products use. Specified in [categories](categories/).
 - **R2** — Where a fact can be measured, the measurement is what is recorded and anything
   following from it is worked out. Nobody in this store types a size.
 - **R3** — Anything that sells on its own is its own product with its own code, price and stock;
