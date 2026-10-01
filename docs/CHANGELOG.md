@@ -10,6 +10,33 @@
 
 ## Entries
 
+## [PR-227] 2026-10-02 — The fill step, as an ordered list of levels
+
+The third listing-vocabulary PR, and the last pure one. `server/catalog/fill-facts.ts` fills a
+fact the shop left blank from the family, then the brand, then the shop's defaults, and records
+which level answered.
+
+Precedence lives in the order of a list rather than inside branching code, so adding a level is
+inserting an entry rather than editing every fact's fallback — and so that *which level answered*
+survives, which is what the brand-level correction acts on. It is generic over its key type, so
+one implementation serves both the columns and the type-specific tail.
+
+Three behaviours worth naming. **Blank is not an answer**: an empty or whitespace string is a
+field somebody cleared, so the step keeps looking rather than inheriting it; `NaN` is likewise a
+blank number input rather than a number. A meaningful zero and a `false` are answers and are kept.
+**An answer on the product always records as the product's**, which is what later leaves it alone
+when a brand is corrected. And **editing clears the mark even where the new value equals the
+inherited one**, because the choice was still deliberate and leaving the mark would let the next
+correction silently revert it.
+
+`takeOwnership` takes its edited keys as `NoInfer`, so the key set comes from the stored answers
+rather than from whichever handful was edited — without it, editing one field narrowed the
+returned type to that one field.
+
+Twenty-two tests. Mutation-tested four ways: reordering the levels, counting a blank as an
+answer, not clearing the mark on an edit, and recording the product's own answer as inherited
+each go red.
+
 ## [PR-226] 2026-10-02 — A size label is worked out, never stored
 
 The second listing-vocabulary PR. Still pure, still no schema and no caller.
