@@ -10,6 +10,42 @@
 
 ## Entries
 
+## [PR-229] 2026-10-02 — ProductFamily, which cannot be sold [MIGRATION]
+
+The fifth listing-vocabulary PR. `ProductFamily` is a new aggregate with its own repository
+([ADR-0003](adr/0003-one-repository-per-aggregate.md)), carrying what a set of separately-selling
+products share — the description, the facts, the measurements — and `Product` gains a nullable
+`familyId`. Nullable because one abaya in one colour is one product and nothing asks a shop to
+declare a family of one, and because requiring it would refuse every row that exists.
+
+No behaviour changes yet: nothing creates a family, and every existing product keeps a null
+`familyId`.
+
+**The family holds no price, no stock and no `ProductStock` relation**, and that is enforced by
+the columns not existing rather than by a check — the only way it cannot be forgotten. If a
+family kept a stock number at all, something would eventually sell it and the four real counts
+would not move. `tests/integration/product-family.test.ts` asserts the absence against
+`information_schema`, because a later migration adding such a column is exactly how the leak
+would reopen silently. Adding a `stock` column turns it red, which was checked.
+
+`Product.familyId` is `Restrict`, not `Cascade`: a family carries no money but its members do
+([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). Deleting a family with members is
+refused and the real operation is retirement
+([ADR-0032](adr/0032-records-people-authored-are-retired-not-deleted.md)), which leaves every
+member reading exactly as before. Switching the constraint to `Cascade` turns that test red too.
+
+The repository scopes every read and write by `orgId`, writes through `updateMany` so the scope
+is part of the write rather than a read-then-write two requests can interleave, and whitelists
+field by field so create and update stay symmetric (Invariant 4). It gains the two counts
+variants D6 requires — families and sellable things are different numbers, and a screen saying
+"Products" has to say which it means.
+
+It also joins the ADR-0029 census in `tests/unit/product-visibility.test.ts`, which caught the
+new file reading products and required it classified. The sellable count spreads `AVAILABLE`
+rather than respelling `archivedAt: null`; `memberCount` deliberately counts archived members,
+because it previews which products a family-level correction would change and an archived product
+can be restored.
+
 ## [PR-228] 2026-10-02 — The listing vocabulary's schema [MIGRATION]
 
 `Category` gains a nullable `productType`, inherited down the tree like `shotList`. `Product`

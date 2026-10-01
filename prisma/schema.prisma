@@ -300,6 +300,14 @@ model Product {
   /// measurement derives a size label and a label derives no measurement (ADR-0047 D4).
   measurements Json?
 
+  /// The family this product is a member of, when it has siblings that sell separately
+  /// (listing-vocabulary/variants D2). Nullable because one abaya in one colour is one product
+  /// and nothing asks a shop to declare a family of one — and because requiring it would refuse
+  /// every row that exists. Restrict, not Cascade: a family carries no money, but its members do
+  /// ([ADR-0020](../docs/adr/0020-money-bearing-records-never-cascade.md)).
+  familyId String?
+  family   ProductFamily? @relation(fields: [familyId], references: [id], onDelete: Restrict)
+
   orderItems       OrderItem[]
   cartItems        CartItem[]
   wishlistItems    WishlistItem[]
@@ -341,6 +349,7 @@ model Product {
   @@index([orgId, archivedAt])
   // A readiness sweep and the channel mapping both work type by type.
   @@index([productType])
+  @@index([familyId])
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -653,6 +662,7 @@ model Org {
   @@index([code])
   @@index([handle])
   listingValues ListingValue[]
+  productFamilies ProductFamily[]
 }
 
 /// The public face of an organisation: what a storefront or an advertisement may show, and
@@ -1823,4 +1833,46 @@ model ListingValue {
   @@unique([list, key, orgId])
   @@index([list])
   @@index([orgId])
+}
+
+/// What a set of products that sell separately have in common (listing-vocabulary/variants R2).
+///
+/// An abaya in four colours is one family and four products. The family carries what the four
+/// share — the description, the fabric, the measurements — and the fill step copies those onto
+/// each member on save, so a member is read as one row and the family is never read to display
+/// or publish a product (variants D10, listing-vocabulary trd D4).
+///
+/// **It holds no price, no stock and no `ProductStock`.** Spec R3 is enforced by the columns not
+/// existing rather than by a check, which is the only way it cannot be forgotten: if a family
+/// kept a stock number at all, something would eventually sell it and the real counts would not
+/// move.
+model ProductFamily {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  name String
+  /// Typed once here and copied onto each member on save; a member may override it (variants D10).
+  description String? @db.Text
+
+  /// The product type its members take, and the facts and measurements they inherit. Same shape
+  /// as `Product.facts` so one fill step serves both.
+  productType  String?
+  facts        Json?
+  measurements Json?
+
+  /// Which facts make its members differ — a copy of the type's declared axis at the time the
+  /// family was made, so reordering the declaration later cannot silently re-group a shop's
+  /// products.
+  variantAxis String[] @default([])
+
+  /// Retired, never deleted ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)).
+  retiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products Product[]
+
+  @@index([orgId])
+  @@index([orgId, retiredAt])
 }
