@@ -1,0 +1,3474 @@
+{
+ "Abayas": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Pattern",
+   "required": true
+  },
+  {
+   "label": "Print or Pattern Type",
+   "required": true
+  },
+  {
+   "label": "Size",
+   "required": true
+  },
+  {
+   "label": "Sleeve Length",
+   "required": true
+  },
+  {
+   "label": "Sleeve Styling",
+   "required": true
+  },
+  {
+   "label": "Stitch Type",
+   "required": true
+  },
+  {
+   "label": "Bust Size",
+   "required": true
+  },
+  {
+   "label": "Length Size",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Hip Size",
+   "required": false
+  },
+  {
+   "label": "Shoulder Size",
+   "required": false
+  },
+  {
+   "label": "Waist Size",
+   "required": false
+  }
+ ],
+ "Attar": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Capacity",
+   "required": true
+  },
+  {
+   "label": "Flavour",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Shelf life (Best Before)",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Add On",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  }
+ ],
+ "Backpacks": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Back",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Included Components",
+   "required": true
+  },
+  {
+   "label": "Laptop Capacity",
+   "required": true
+  },
+  {
+   "label": "Material",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "No. of Compartments",
+   "required": true
+  },
+  {
+   "label": "Occasion",
+   "required": true
+  },
+  {
+   "label": "Pattern",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Product Height",
+   "required": true
+  },
+  {
+   "label": "Product Length",
+   "required": true
+  },
+  {
+   "label": "Product Width",
+   "required": true
+  },
+  {
+   "label": "Shoulder Strap",
+   "required": true
+  },
+  {
+   "label": "Trends",
+   "required": true
+  },
+  {
+   "label": "Type",
+   "required": true
+  },
+  {
+   "label": "Warranty",
+   "required": true
+  },
+  {
+   "label": "Water resistant",
+   "required": true
+  },
+  {
+   "label": "Length Size",
+   "required": true
+  },
+  {
+   "label": "Width Size",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Add On",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  }
+ ],
+ "Burqa": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Eyepiece Fabric",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Ornamentation",
+   "required": true
+  },
+  {
+   "label": "Print or Pattern Type",
+   "required": true
+  },
+  {
+   "label": "Sleeve Styling",
+   "required": true
+  },
+  {
+   "label": "Stitch Type",
+   "required": true
+  },
+  {
+   "label": "Bust Size",
+   "required": true
+  },
+  {
+   "label": "Length Size",
+   "required": true
+  },
+  {
+   "label": "Waist Size",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Closure",
+   "required": false
+  },
+  {
+   "label": "Dupatta Fabric",
+   "required": false
+  },
+  {
+   "label": "Neck",
+   "required": false
+  },
+  {
+   "label": "Sleeve Length",
+   "required": false
+  }
+ ],
+ "Cross-Body-Bags---Sling-Bags": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Compartment Closure",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Handles",
+   "required": true
+  },
+  {
+   "label": "Included Components",
+   "required": true
+  },
+  {
+   "label": "Material",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "No. of Compartments",
+   "required": true
+  },
+  {
+   "label": "Occasion",
+   "required": true
+  },
+  {
+   "label": "Pattern",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Product Height",
+   "required": true
+  },
+  {
+   "label": "Product Length",
+   "required": true
+  },
+  {
+   "label": "Product Width",
+   "required": true
+  },
+  {
+   "label": "Size",
+   "required": true
+  },
+  {
+   "label": "Sling Material Type",
+   "required": true
+  },
+  {
+   "label": "Trends",
+   "required": true
+  },
+  {
+   "label": "Height Size",
+   "required": true
+  },
+  {
+   "label": "Length Size",
+   "required": true
+  },
+  {
+   "label": "Width Size",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  }
+ ],
+ "Deodorant---Fragrances": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Capacity",
+   "required": true
+  },
+  {
+   "label": "Flavour",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Item Form",
+   "required": true
+  },
+  {
+   "label": "Material Volume",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Scent",
+   "required": true
+  },
+  {
+   "label": "Shelf life (Best Before)",
+   "required": true
+  },
+  {
+   "label": "Type",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Add On",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Flavour",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Shelf life (Best Before)",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Add On",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Type",
+   "required": false
+  }
+ ],
+ "Floormats---Dhurries": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Material",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Length Size",
+   "required": true
+  },
+  {
+   "label": "Width Size",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Pattern",
+   "required": false
+  }
+ ],
+ "Gifting-Combo": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Domestic Warranty",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Number Of Contents In Sales Package",
+   "required": true
+  },
+  {
+   "label": "Occasion",
+   "required": true
+  },
+  {
+   "label": "Package",
+   "required": true
+  },
+  {
+   "label": "Sales Package Include",
+   "required": true
+  },
+  {
+   "label": "Shelf life (Best Before)",
+   "required": true
+  },
+  {
+   "label": "Type",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Ideal For",
+   "required": false
+  }
+ ],
+ "Handbags": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Compartment Closure",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Handles",
+   "required": true
+  },
+  {
+   "label": "Included Components",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "No. of Compartments",
+   "required": true
+  },
+  {
+   "label": "Occasion",
+   "required": true
+  },
+  {
+   "label": "Pattern",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Product Height",
+   "required": true
+  },
+  {
+   "label": "Product Length",
+   "required": true
+  },
+  {
+   "label": "Product Width",
+   "required": true
+  },
+  {
+   "label": "Size",
+   "required": true
+  },
+  {
+   "label": "Trends",
+   "required": true
+  },
+  {
+   "label": "Height Size",
+   "required": true
+  },
+  {
+   "label": "Length Size",
+   "required": true
+  },
+  {
+   "label": "Width Size",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Color",
+   "required": false
+  },
+  {
+   "label": "Material",
+   "required": false
+  }
+ ],
+ "Hijab": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  }
+ ],
+ "Medium-Weight-Carpets": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Material",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Primary Color",
+   "required": true
+  },
+  {
+   "label": "Print Or Pattern Type",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Product Length",
+   "required": true
+  },
+  {
+   "label": "Product Width",
+   "required": true
+  },
+  {
+   "label": "Secondary Color",
+   "required": true
+  },
+  {
+   "label": "Shape",
+   "required": true
+  },
+  {
+   "label": "Size",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Length Size",
+   "required": false
+  },
+  {
+   "label": "Width Size",
+   "required": false
+  }
+ ],
+ "Niqab": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  }
+ ],
+ "Other-Islamic-Wear": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Print or Pattern Type",
+   "required": true
+  },
+  {
+   "label": "Sleeve Styling",
+   "required": true
+  },
+  {
+   "label": "Stitch Type",
+   "required": true
+  },
+  {
+   "label": "Type",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Closure",
+   "required": false
+  },
+  {
+   "label": "Fabric",
+   "required": false
+  },
+  {
+   "label": "Neck",
+   "required": false
+  },
+  {
+   "label": "Ornamentation",
+   "required": false
+  },
+  {
+   "label": "Sleeve Length",
+   "required": false
+  }
+ ],
+ "Palazzos": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Length",
+   "required": false
+  },
+  {
+   "label": "Pattern",
+   "required": false
+  },
+  {
+   "label": "Print or Pattern Type",
+   "required": false
+  },
+  {
+   "label": "Surface Styling",
+   "required": false
+  },
+  {
+   "label": "Type",
+   "required": false
+  },
+  {
+   "label": "Waist Rise",
+   "required": false
+  },
+  {
+   "label": "Waist closure",
+   "required": false
+  }
+ ],
+ "Pouches": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Ideal For",
+   "required": true
+  },
+  {
+   "label": "Material",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Pattern",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Product Height",
+   "required": true
+  },
+  {
+   "label": "Product Length",
+   "required": true
+  },
+  {
+   "label": "Product Unit",
+   "required": true
+  },
+  {
+   "label": "Product Weight",
+   "required": true
+  },
+  {
+   "label": "Product Weight Unit",
+   "required": true
+  },
+  {
+   "label": "Product Width",
+   "required": true
+  },
+  {
+   "label": "Type",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Occasion",
+   "required": false
+  },
+  {
+   "label": "Size",
+   "required": false
+  }
+ ],
+ "Real-Silver-Rings": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Base Metal",
+   "required": true
+  },
+  {
+   "label": "Certification",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Occasion",
+   "required": true
+  },
+  {
+   "label": "Plating",
+   "required": true
+  },
+  {
+   "label": "Product Diameter",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Silver Weight",
+   "required": true
+  },
+  {
+   "label": "Silver Weight Unit",
+   "required": true
+  },
+  {
+   "label": "Sizing",
+   "required": true
+  },
+  {
+   "label": "Stone Type",
+   "required": true
+  },
+  {
+   "label": "Type",
+   "required": true
+  },
+  {
+   "label": "Diameter",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  }
+ ],
+ "Rings": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Base Metal",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Occasion",
+   "required": true
+  },
+  {
+   "label": "Plating",
+   "required": true
+  },
+  {
+   "label": "Product Diameter",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Sizing",
+   "required": true
+  },
+  {
+   "label": "Stone Type",
+   "required": true
+  },
+  {
+   "label": "Trend",
+   "required": true
+  },
+  {
+   "label": "Type",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  }
+ ],
+ "Socks": [
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Length",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Product Height",
+   "required": true
+  },
+  {
+   "label": "Product Length",
+   "required": true
+  },
+  {
+   "label": "Product Width",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Pattern",
+   "required": false
+  },
+  {
+   "label": "Type",
+   "required": false
+  },
+  {
+   "label": "ERROR STATUS",
+   "required": false
+  },
+  {
+   "label": "ERROR MESSAGE",
+   "required": false
+  },
+  {
+   "label": "Product Name",
+   "required": true
+  },
+  {
+   "label": "Variation",
+   "required": true
+  },
+  {
+   "label": "Meesho Price",
+   "required": true
+  },
+  {
+   "label": "Wrong/Defective Returns Price",
+   "required": false
+  },
+  {
+   "label": "MRP",
+   "required": true
+  },
+  {
+   "label": "GST %",
+   "required": true
+  },
+  {
+   "label": "HSN ID",
+   "required": true
+  },
+  {
+   "label": "Net Weight (gms)",
+   "required": true
+  },
+  {
+   "label": "Inventory",
+   "required": true
+  },
+  {
+   "label": "Country of Origin",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Name",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Address",
+   "required": true
+  },
+  {
+   "label": "Manufacturer Pincode",
+   "required": true
+  },
+  {
+   "label": "Packer Name",
+   "required": true
+  },
+  {
+   "label": "Packer Address",
+   "required": true
+  },
+  {
+   "label": "Packer Pincode",
+   "required": true
+  },
+  {
+   "label": "Importer Name",
+   "required": true
+  },
+  {
+   "label": "Importer Address",
+   "required": true
+  },
+  {
+   "label": "Importer Pincode",
+   "required": true
+  },
+  {
+   "label": "Color",
+   "required": true
+  },
+  {
+   "label": "Fabric",
+   "required": true
+  },
+  {
+   "label": "Generic Name",
+   "required": true
+  },
+  {
+   "label": "Length",
+   "required": true
+  },
+  {
+   "label": "Net Quantity (N)",
+   "required": true
+  },
+  {
+   "label": "Product Dimension Unit",
+   "required": true
+  },
+  {
+   "label": "Product Height",
+   "required": true
+  },
+  {
+   "label": "Product Length",
+   "required": true
+  },
+  {
+   "label": "Product Width",
+   "required": true
+  },
+  {
+   "label": "Image 1 (Front)",
+   "required": true
+  },
+  {
+   "label": "Image 2",
+   "required": false
+  },
+  {
+   "label": "Image 3",
+   "required": false
+  },
+  {
+   "label": "Image 4",
+   "required": false
+  },
+  {
+   "label": "Product ID / Style ID",
+   "required": false
+  },
+  {
+   "label": "SKU ID",
+   "required": false
+  },
+  {
+   "label": "Brand Name",
+   "required": false
+  },
+  {
+   "label": "Group ID",
+   "required": false
+  },
+  {
+   "label": "Product Description",
+   "required": false
+  },
+  {
+   "label": "Brand",
+   "required": false
+  },
+  {
+   "label": "Pattern",
+   "required": false
+  },
+  {
+   "label": "Type",
+   "required": false
+  }
+ ]
+}

@@ -10,6 +10,47 @@
 
 ## Entries
 
+## [PR-218] 2026-10-01 — The platform templates, and what thirty-three of them agree on
+
+The vocabulary was being designed against two sheets and our own product model. Thirty-three real
+bulk-upload templates now sit behind it: Amazon's single workbook covering ten product types,
+twelve Flipkart verticals, and eighteen Meesho categories — every node this store actually sells
+into.
+
+The binaries are not committed. Nineteen megabytes of another company's undiffable spreadsheets,
+on an account that is not ours to publish them from, and git never forgets a blob. What is
+committed is `listing-node-templates/extracted/`: field names, requirement levels, variant axes
+and permitted value lists, one JSON per platform, which a diff can actually show. The manifest
+carries a checksum and a date per file so the extract can be traced to its source.
+
+Flipkart marks a field's requirement level as a cell colour rather than a value, decoded against
+the legend each workbook carries on its summary sheet: blue mandatory, purple conditional, yellow
+recommended, green optional, grey filled by Flipkart.
+
+What the extract shows, which the two sheets did not:
+
+Amazon declares 390 fields and requires 18 of them, 187 being conditional on other answers.
+Flipkart requires 19 to 32 per node out of 66 to 132. Meesho is the strict one, at 23 to 56
+compulsory per node — so the binding constraint on a listing form is Meesho, not Amazon.
+
+The three platforms agree, in every node, on thirteen fields, and they are almost all identity,
+money, stock and statutory compliance rather than description. The descriptive tail that two
+platforms agree on is one to six fields per category, and across all eight of this store's
+product groups it is the same handful: colour, pattern, material or fabric, size, net quantity,
+occasion.
+
+A field name agreeing is still not its values agreeing, and the templates show this inside a
+single platform. Flipkart's own colour list differs per node — sixteen values in all eleven that
+have one, nineteen more in only some. Its size list is three incompatible scales under one label:
+thirty-seven mixed age bands and letters for an abaya, five words for a mat, forty-five numbers
+for a ring. `Fabric` and `Material` are the same question asked of cloth and of everything else.
+
+[ADR-0043](adr/0043-a-variant-is-a-product-in-a-family.md) said a variant is a product in a
+family and left the axis open. The templates close it in the direction of per-category: Flipkart
+declares the axes per node and no two of the twelve agree — size for an abaya, capacity and
+colour for a bag, plating and size and colour for a ring, set and quantity for incense. The axis
+cannot be assumed, which is why the category declares it.
+
 ## [PR-217] 2026-09-29 — Check a new model against the field, not against ourselves
 
 Drafting the listing vocabulary produced a design for storing a product's variable facts as one
