@@ -85,4 +85,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0045](0045-channel-mappings-are-versioned-data.md) | Channel mappings are versioned data, not code | Accepted | 2026-09-29 |
 | [0046](0046-a-new-model-is-checked-against-the-field-before-the-codebase.md) | A new model is checked against the field before the codebase | Accepted | 2026-09-29 |
 | [0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md) | A canonical fact is admitted by answerability, not by agreement | Accepted | 2026-10-01 |
+| [0049](0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md) | Colour is a primitive palette, read only through semantic tokens | Accepted | 2026-10-02 |
 <!-- generated:adr-index:end -->

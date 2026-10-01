@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-234] 2026-10-02 — Colour is a palette the themes pick from
+
+`globals.css` spelled out 52 colour values across 152 declarations, the warm charcoal ink seven
+times. They now live once, in a primitive palette (`--emerald-550`, `--charcoal-220`, …) at the
+top of the file, and every semantic token in every theme is a `var()` to one of them
+(ADR-0049). Every declaration resolves to the value it had before — checked one by one — so
+nothing on screen moved. The near-duplicates the repetition was hiding are now visible as
+`-soft` twins, left for a deliberate design pass rather than merged here.
+
+`tests/unit/design-tokens.test.ts` guards it: no raw colour outside the palette, no unused
+primitive, and no file in `src/` naming one. Each was broken on purpose once to confirm it fails.
+
 ## [PR-233] 2026-10-02 — The orders table is handed the row it shows, not the order
 
 `OrdersTable` was typed by `@prisma/client`'s `Order`, so the admin orders page sent every column

@@ -261,3 +261,33 @@ describe("every font utility resolves to a real family", () => {
     expect([...new Set(offenders)]).toEqual([]);
   });
 });
+
+// A semantic token says what a colour is for; a primitive says what the colour is. Keeping
+// raw values in one palette block is what lets a theme pick from the palette instead of
+// inventing a near-duplicate (ADR-0049) — there were 52 values, several spelled out 5–7 times.
+describe("colour values live in the primitive palette", () => {
+  const FAMILY = "parchment|charcoal|emerald|green|gold|rose|maroon|red|amber|blue|pink|orange|violet|ink|grey";
+  const paletteBlock = CSS.split("/* Primitive palette")[1]?.split("}")[0] ?? "";
+  const outside = CSS.replace(paletteBlock, "");
+  const primitives = [...paletteBlock.matchAll(new RegExp(`(--(?:${FAMILY})-\\d+(?:-soft)?):`, "g"))].map((m) => m[1]);
+
+  it("finds the palette it guards", () => {
+    expect(primitives.length).toBeGreaterThan(40);
+  });
+
+  it("has no raw colour value outside the palette", () => {
+    // Two exemptions, both outside any theme: a shadow is black at low alpha in light and
+    // dark alike (Tailwind's own values), and the printed bill is on white paper.
+    const themed = outside.replace(/--shadow-[\w-]+:[^;]+;/g, "").split("@media print")[0];
+    expect(themed.match(/oklch\(|rgba?\(|hsl\(|#[0-9a-fA-F]{3,8}\b|\bwhite\b|\bblack\b/g) ?? []).toEqual([]);
+  });
+
+  it("every primitive is used by a semantic token", () => {
+    expect(primitives.filter((p) => !outside.includes(`var(${p})`))).toEqual([]);
+  });
+
+  it("no component reads a primitive directly — only the semantic tokens", () => {
+    const pattern = new RegExp(`--(?:${FAMILY})-\\d+`);
+    expect(FILES.filter((f) => pattern.test(readFileSync(f, "utf8")))).toEqual([]);
+  });
+});
