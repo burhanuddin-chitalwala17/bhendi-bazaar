@@ -10,6 +10,37 @@
 
 ## Entries
 
+## [PR-221] 2026-10-01 — What the platform templates actually ask for, measured
+
+[INTEGRATIONS.md](INTEGRATIONS.md) carried an estimate of the cross-platform core written on
+2026-09-29 from the published specifications, before any template had been read. It named colour
+and size as part of the shared core and closed with the per-category value lists being "a
+dependency on access, not a gap in research".
+
+The access arrived and the estimate was wrong on both counts, so the section is replaced with what
+thirty-four templates measure rather than what the specifications implied. Colour and size are not
+in the three-platform core. The core is thirteen fields and it is barely descriptive — the seller's
+own code, description, maximum retail price, stock, brand, images, tax code, country of origin,
+manufacturer, packer, importer, net weight and a variant key — of which nine are stated once by
+the shop rather than per product.
+
+Also now recorded there, each of which bears on a design decision rather than being trivia:
+
+Required counts, not field counts, are the constraint, and Meesho is the binding one at 23 to 56
+compulsory per category against Amazon's 18 of 390. Flipkart encodes requirement level as a cell
+colour decoded from each workbook's own legend. A platform's category sometimes holds what another
+keeps in a field, so the mapping is many-to-many and must be allowed to resolve to nothing. Variant
+axes are declared per node and no two of Flipkart's twelve agree. And sizes are asked for as
+measurements more often than as labels — thirteen of Meesho's nineteen nodes require a measurement
+and none requires a label without one.
+
+The "field name agreeing is not its values agreeing" finding survives and is strengthened: it holds
+inside a single platform, where Flipkart's own colour list differs per node and its `Size` is three
+incompatible scales under one label.
+
+Dated and sourced, because the previous version of this section was neither, and a confident
+estimate in a reference doc is worse than an absent one.
+
 ## [PR-220] 2026-10-01 — A canonical fact is admitted by answerability, not by agreement
 
 [ADR-0042](adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)

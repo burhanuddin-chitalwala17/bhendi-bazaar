@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-09-29
+- **Verified:** 2026-10-01
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -119,6 +119,67 @@ different kinds of thing, and the difference decides the order they are worth bu
   the network as a seller participant speaking the Beckn protocol, or lists through one that
   already has. For this platform that is a question about the platform, not about pushing one
   product, and it belongs in its own decision.
+### What each platform asks for in a listing
+
+Read off thirty-four of the platforms' own bulk-upload templates on 2026-10-01, for the categories
+this store sells. The templates and the data extracted from them are in
+[listing-node-templates](../listing-node-templates/); this section is the conclusions. An earlier
+version of it, written from the published specifications alone on 2026-09-29, estimated a shared
+core that included colour and size. The templates disagreed, and what follows is measured rather
+than inferred.
+
+**Field counts are theatre; required counts are the constraint.** Amazon declares 390 fields
+across the ten product types in one workbook and requires 18, with 187 conditional on other
+answers. Flipkart declares 66 to 132 per vertical and requires 19 to 32. Meesho declares 35 to 84
+per category and requires 23 to 56, so **Meesho is the binding constraint on a listing form, not
+Amazon.** Flipkart encodes a field's requirement level as a cell *colour* rather than a value —
+blue mandatory, purple conditional, yellow recommended, green optional, grey filled by Flipkart —
+decoded against the legend each workbook carries on its own summary sheet.
+
+**The three-platform core is thirteen fields, and it is barely descriptive.** Present in every
+node on all three: the seller's own code, description, maximum retail price, stock, brand, images,
+tax code, country of origin, manufacturer, packer, importer, net weight, and a key grouping
+variants together. Colour and size are *not* in it. Nine of the thirteen are things a shop states
+once rather than per product, which is why they belong to the seller profile.
+
+**A field name agreeing is not its values agreeing — and that holds inside one platform.**
+Flipkart's own colour list differs per node: sixteen values in all eleven nodes that have one,
+nineteen more in only some. Its `Size` is three incompatible scales under one label — thirty-seven
+mixed age bands and letters for an abaya, five words for a mat, forty-five numbers for a ring.
+`Fabric` and `Material` are the same question asked of cloth and of everything else. Across
+platforms Google and Meta remain the closest pair, Meta accepting feeds in Google's namespace and
+still disagreeing on values: Google writes `in_stock`, Meta `in stock`; Google offers five age
+groups, Meta seven. Only a barcode, an HSN code and an ISO-2 country genuinely agree
+([ADR-0045](adr/0045-channel-mappings-are-versioned-data.md)).
+
+**A platform's category sometimes holds what another keeps in a field.** Flipkart has one
+`abaya-burqa` node with `Type` in {Abaya, Burqa, Naqab}; Meesho has four separate categories. Bags
+are the same — Flipkart splits `bag`, `hand-messenger-bag` and `sling-bag` with `Type` values
+inside each, Meesho splits Backpacks, Handbags and Cross-Body. The mapping is therefore
+many-to-many and must be allowed to resolve to nothing: `Tote` appears in the `Type` list of two
+Flipkart nodes, and a standalone hijab appears in none. Flipkart's `mat` node carries
+`Type = Prayer`, so a prayer mat is that node rather than a category.
+
+**Variant axes are declared per node and no two agree.** Flipkart: size for an abaya; capacity and
+colour for a bag; plating, size and colour for a ring; set and quantity for incense; brand size
+and brand colour for a trouser. An axis assumed in code would be wrong for most categories.
+
+**Sizes are asked for as measurements more often than as labels.** Meesho requires `Bust Size` and
+`Length Size` on an abaya and offers no size field at all on palazzos or trousers, where it asks
+`Length` instead. Across its nineteen nodes, thirteen require a measurement, six require none, and
+**none requires a size label without also requiring measurements.** Flipkart's `trouser` node
+resolves a size through Ideal For, then a `Qualifier` naming the scale — Regular, Number, Euro, UK,
+US, Kids — then the allowed value, so it treats "which scale" as its own field. `Free` is a
+permitted value on every category this store sells.
+
+**Two gaps remain**, both access rather than research: Meesho publishes no bakhoor or incense
+template in the set downloaded, and Flipkart's attar node was not exported. Everything else the
+Indian marketplaces keep behind a seller login, which is why the templates had to come from the
+owner's own accounts — the public Flipkart listing API is offer and logistics only, Myntra the
+same shape, and Meesho publishes nothing. Amazon publishes the mechanism rather than the schemas:
+a JSON schema fetched per product type, whose stated required list is not the real one because
+conditional rules add requirements as attributes are filled.
+
 ### What it takes to act for many sellers
 
 Checked 2026-09-29. The distinction that decides the cost is **acting for our own one account** versus
