@@ -10,6 +10,35 @@
 
 ## Entries
 
+## [PR-237] 2026-10-02 — The rules say what the tests check, where the code is written
+
+An audit of the rules and skills against the tests found the server's rules stated where code is
+written, and the front end's mostly not: several gates (row-shaped buttons, overlay choice, portal
+guards, `cn` registration) had no rule anywhere, and were met only when a test went red. Root
+`CLAUDE.md` was also 232 lines against its own 200-line limit, four rules stated twice.
+
+- `src/components/CLAUDE.md` and `src/app/api/CLAUDE.md` are new and load lazily. Each rule names
+  the test that enforces it, or says it has none.
+- Root `CLAUDE.md` is back under 200 lines: duplicates removed, the repository tree replaced by a
+  pointer to `docs/README.md`, and an implementation step that names the directory's rules. When
+  a rule, skill and ADR disagree, the newest ADR now wins, instead of the skill.
+- `/bb-review`:
+  - scopes to the PR-sized unit instead of `main...HEAD`;
+  - its mobile-first grep no longer uses a lookahead `grep -E` rejects;
+  - its image section describes R2, not Blob;
+  - it drops a stale note about `Float` money and adds `slug` to the server-owned fields;
+  - it gains front-end layering, portal guards, allowlist edits and mutation-testing a new guard.
+- `/bb-sdlc`:
+  - drops `<domain>/CHANGELOG.md`;
+  - names `lint:boundary` and `docs:check`;
+  - matches the commit policy;
+  - its TRD template gains a per-form-factor UI section and "Gates touched".
+- `/bb-brainstorm` no longer assumes Vercel serverless or offers Upstash (ADR-0037, ADR-0038).
+- `docs:check` now scans skills (every path a skill names must exist) and the new `CLAUDE.md`
+  files, and fails if root `CLAUDE.md` passes 200 lines.
+- Small fixes: `ui-primitives.test.ts` cited the wrong ADR, `server/notifications/CLAUDE.md`
+  carried a second, older `Verified:` date, and the empty `src/probe-tmp.ts` is deleted.
+
 ## [PR-236] 2026-10-02 — The browser calls our API through one door
 
 Fifty-seven inline `fetch` calls — 49 in 42 components, 8 in hooks — each re-implemented "check

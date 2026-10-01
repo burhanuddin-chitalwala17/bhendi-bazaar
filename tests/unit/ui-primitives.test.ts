@@ -1,5 +1,5 @@
 /**
- * One components home, and one way to render a control (ADR-0027).
+ * One components home, and one way to render a control (ADR-0031).
  *
  * The consolidation that produced this test found 64 raw `<button>`, 14 raw `<select>`
  * and 9 raw text inputs living beside primitives that already existed — each one a

@@ -43,5 +43,3 @@ exception to "server code never formats money": an email has no client to format
 
 `BRAND_NAME` / `BRAND_TAGLINE` live in `layout.ts` because `server/` must not import from
 `src/`. Absolute links come from `appUrl()`, never a hardcoded origin.
-
-Verified: 2026-09-16
