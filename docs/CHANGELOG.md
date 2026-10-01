@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-219] 2026-10-01 — Correction: Flipkart names the size scale as a field of its own
+
+The extract committed in PR-218 read Flipkart's `Brand Size` wrongly for two nodes. In `trouser`
+and `salwar` that column is not a list — it is a three-column lookup of Ideal For, then a
+Qualifier, then the allowed value, and the extraction kept only the first column. So the data
+said the permitted sizes were "Baby Boys, Baby Boys, Baby Girls…" repeated, and said those two
+nodes had no free size.
+
+Both claims were wrong. `Free` is permitted for women's trousers and salwars, under the `Regular`
+qualifier, which matters because this store sells free size throughout.
+
+The Qualifier is the more interesting half. Flipkart names the *scale* explicitly — Regular
+letters, Number, Euro, UK, US, or Kids age bands — and the allowed values depend on it and on
+Ideal For together. That is the same conclusion the vocabulary reached from the other direction,
+reading three incompatible size lists under one label and deciding a category must declare its
+scale. One platform already does exactly that, so the design is matching an established shape
+rather than inventing one.
+
+Also recorded from the same pass, since they bear on the category mapping: Flipkart's `mat` node
+carries `Type = Prayer`, so a prayer mat is that node rather than a category of its own.
+`Tote` appears in the Type list of both `hand-messenger-bag` and `sling-bag`, so one of our kinds
+can have two candidate nodes and the mapping has to choose. And a standalone hijab has no
+Flipkart node in this set — `abaya-burqa` permits only Abaya, Burqa and Naqab — so a mapping must
+be able to say a product has nowhere to go on a platform without that being an error.
+
+The extract is data derived from someone else's files, so a reading error in it is silent in a
+way a code bug is not: nothing fails, the mapping is just built on a wrong list. Worth stating
+plainly that the remaining 31 files were extracted by the same code and only these two were
+checked by hand against the source.
+
 ## [PR-218] 2026-10-01 — The platform templates, and what thirty-three of them agree on
 
 The vocabulary was being designed against two sheets and our own product model. Thirty-three real
