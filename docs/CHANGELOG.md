@@ -10,6 +10,27 @@
 
 ## Entries
 
+## [PR-226] 2026-10-02 — A size label is worked out, never stored
+
+The second listing-vocabulary PR. Still pure, still no schema and no caller.
+
+`server/catalog/size-label.ts` works a size label out from a product's measurements. For
+everything this store sells the answer is `Free`, which is a permitted value on every category it
+sells into, and the measurements it came from travel with it so a screen can show its reasoning.
+Jewellery is the exception: a ring's inner diameter maps to a real scale, nearest step wins, and
+beyond either end it clamps rather than inventing a size.
+
+It is derived and not stored, which is the decision worth stating. A label held in a column
+alongside the measurements it came from is two facts that can disagree, and the stale one wins,
+because whatever reads the column never learns a fresher answer existed. Measurements are stored
+because a measurement derives a label and a label derives no measurement.
+
+Also here: the measurements a type requires and a product has not given, which is what readiness
+will report. It reports rather than refuses — nothing in this feature blocks saving.
+
+Eighteen tests. Mutation-tested three ways: returning a constant label, taking the first ring
+step rather than the nearest, and never reporting a missing measurement each go red.
+
 ## [PR-225] 2026-10-02 — The listing vocabulary's declarations
 
 The first of the listing-vocabulary PRs. Pure declarations and one pure function, no schema
