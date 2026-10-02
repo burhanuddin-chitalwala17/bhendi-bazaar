@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-244] 2026-10-03 — The product payload learns the vocabulary [CONTRACT]
+
+`ProductFormInput` accepts five more fields, all optional: `kind`, `familyId`, `brandId`, `facts`
+and `measurements`. Without them the route stripped everything the fill step was wired up to
+receive, so PR-243's work could not be reached from a browser.
+
+The answers travel as **bare values** — `{ "colour": "black" }` — never the stored
+`{value, origin}` shape. Origin is the server's word for where a value came from, and a request
+that could set it could claim a shop typed something it inherited, which is exactly what the
+brand-level correction then skips.
+
+**`productType` is absent deliberately**, like `slug` and `thumbnail`. It is resolved from the
+category tree on save, so accepting it would let a payload put a product under a type its
+category does not use. Both exclusions are tested, and both mutation-tested: adding `productType`
+to the schema, and widening the answer map to `z.any()`, each turn a test red.
+
+`PRODUCT_FORM_FIELDS` gains the five names too. A field missing from that list has its
+server-side error routed nowhere, so the person sees no message against the input they have to
+correct — the failure [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) exists to
+prevent. A test now holds the list and the schema in step.
+
+`docs/CONTRACTS.md` gains a listing-vocabulary section covering the wire shape, the separate
+`ProductPersistInput` the repository writes, the category envelopes becoming factories, and the
+new admin surface — where `DELETE` retires rather than deletes and answers with the usage counts,
+because "it is in use" without a number is not something anybody can act on.
+
 ## [PR-243] 2026-10-03 — The fill step gets its caller
 
 `fill-facts.ts` was written pure in PR-227 with nothing calling it. `listing-fill.service.ts` is

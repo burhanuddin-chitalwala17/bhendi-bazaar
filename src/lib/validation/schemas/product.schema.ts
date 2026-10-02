@@ -101,6 +101,26 @@ export const productFormSchema = z
       ),
     sku: z.string().trim().max(64).optional(),
     lowStockThreshold: optionalNumber(z.number().int("Low stock threshold must be a whole number").min(0)),
+
+    /**
+     * The listing vocabulary's answers
+     * ([listing-vocabulary](../../../../docs/specs/listing-vocabulary/)).
+     *
+     * `productType` is absent deliberately, like `slug` and `thumbnail`: it is resolved from the
+     * category tree on save and owned by the server, so accepting it would be accepting a value
+     * we overwrite (Invariant 4).
+     *
+     * `facts` and `measurements` carry bare answers here, never the stored `{value, origin}`
+     * shape — origin is the server's word for where a value came from, and a request that could
+     * set it could claim a shop typed something it inherited.
+     */
+    kind: z.string().trim().max(40).nullable().optional(),
+    familyId: z.string().trim().min(1).nullable().optional(),
+    brandId: z.string().trim().min(1).nullable().optional(),
+    facts: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+      .optional(),
+    measurements: z.record(z.string(), z.union([z.number(), z.null()])).optional(),
   })
   // A cross-field rule neither side could enforce alone, attributed to the field a
   // user would correct.
@@ -116,6 +136,7 @@ export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",
   "orgId", "categoryId", "tags", "flags", "media",
   "weight", "sizes", "colors", "stockLocations", "sku", "lowStockThreshold",
+  "kind", "familyId", "brandId", "facts", "measurements",
 ] as const;
 
 /**
