@@ -8,6 +8,8 @@ import { PRODUCT_TYPE_DECLARATIONS, PRODUCT_TYPES } from "@server/catalog/produc
 interface CategoryBasicFieldsProps {
   register: UseFormRegister<CreateCategoryInput>;
   errors: FieldErrors<CreateCategoryInput>;
+  /** The chosen type, so the field can say what leaving it empty costs. */
+  watchedProductType?: string | null;
   /** Valid parents — the form excludes self and descendants; the server re-checks. */
   parentOptions: Array<{ id: string; name: string }>;
 }
@@ -16,6 +18,7 @@ export function CategoryBasicFields({
   register,
   errors,
   parentOptions,
+  watchedProductType,
 }: CategoryBasicFieldsProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
@@ -68,7 +71,11 @@ export function CategoryBasicFields({
           label="Product type"
           {...register("productType")}
           error={errors.productType?.message}
-          hint="Decides which listing questions its products are asked. Leave empty to inherit from the parent category."
+          hint={
+            watchedProductType
+              ? "Decides which listing questions its products are asked."
+              : "Decides which listing questions its products are asked. Left empty, this category inherits from its parent — and if no ancestor sets one either, products here save and sell on the storefront but cannot be published to a marketplace."
+          }
         >
           <option value="">Inherit from parent</option>
           {PRODUCT_TYPES.map((key) => (

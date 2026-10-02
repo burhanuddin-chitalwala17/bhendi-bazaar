@@ -135,6 +135,7 @@ export function CategoryForm({
         register={register}
         errors={errors}
         parentOptions={parentOptions}
+        watchedProductType={watch("productType")}
       />
 
       <CategoryStylingFields register={register} watch={watch} />

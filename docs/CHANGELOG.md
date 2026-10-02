@@ -10,6 +10,21 @@
 
 ## Entries
 
+## [PR-233] 2026-10-03 — A category with no product type says what that costs
+
+The product-type field on the category form was optional with a neutral hint, which made it a
+blank somebody skips rather than a decision somebody takes. Leaving it empty is legitimate —
+three of this store's twelve categories have no type that fits, and a wrong type is worse than
+none because it asks the seller the wrong questions — but the consequence was invisible.
+
+The hint now states it while the field is empty: products here save and sell on the storefront,
+and cannot be published to a marketplace. It returns to the short wording once a type is chosen,
+so the warning is not permanent furniture.
+
+Still optional rather than required, deliberately. Forcing a choice on a mixed category — one
+holding a mat, a Quran cover and a tasbih — would make somebody guess, and the guess would be
+stored.
+
 ## [PR-232] 2026-10-02 — A read-only survey, because the dev database is not evidence
 
 The listing-vocabulary migration was being designed against the dev database, and the owner
