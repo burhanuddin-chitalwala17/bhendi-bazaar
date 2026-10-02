@@ -1,7 +1,7 @@
 # Spec — listing vocabulary / product types
 
 - **Summary:** An admin creates and edits the question sets themselves, so onboarding a seller with a new product line does not wait for a developer
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-236, PR-237, PR-238, PR-240, PR-241 (2026-10-03)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-03

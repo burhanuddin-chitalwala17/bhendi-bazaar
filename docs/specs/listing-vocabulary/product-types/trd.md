@@ -1,7 +1,7 @@
 # TRD — listing vocabulary / product types
 
 - **Summary:** A `ProductType` row keyed by the string products already store, referenced by a foreign key, with the fact vocabulary staying in code
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-236, PR-237, PR-238, PR-240, PR-241 (2026-10-03)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-03

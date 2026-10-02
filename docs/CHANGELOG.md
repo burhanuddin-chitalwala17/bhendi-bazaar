@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-242] 2026-10-03 — This store's catalogue gets its types [MIGRATION]
+
+**The first migration in this programme that writes to the live catalogue.** Everything before it
+added columns and reference rows; this one points the twelve existing categories at a product
+type and copies the resolved type onto the ninety-four products under them.
+
+The mapping was agreed against the survey of the live catalogue: hand bags to `bag`, the RIDAS
+parent to `islamic-wear`, bottom wear to `trousers`, bukhoor and attar to `fragrance`, jewellery
+to `jewellery`. Seventy-two of ninety-four products typed.
+
+**Three categories are deliberately left untyped** — masalla bags, beauty and health, kitchen and
+dining. Twenty-two products. A masalla bag is a combo and the owner points it there; the other
+two have no type that fits and inventing one would be guessing at questions. Their products save
+and sell on the storefront and are not publishable to a marketplace, which is what was chosen for
+all three.
+
+The four rida categories are not named anywhere in the migration. A recursive CTE expresses the
+same walk `resolveProductType` does in code — a category's own type, else the nearest ancestor's
+— so formal, semi-formal, casual and ohbat inherit from their parent. Verified against a replica
+of the live tree rather than assumed: all four resolved to `islamic-wear`, and the three
+intentional nulls stayed null.
+
+Two safety properties, both checked rather than claimed. It is **idempotent** — re-running leaves
+every row byte-identical. And every statement is guarded on the column still being NULL, so it
+**never overwrites a choice an admin made later**: a product reassigned by hand keeps the hand
+assignment when the migration runs again.
+
+It is keyed by slug, so it is a no-op on the dev and CI databases, which carry fixtures rather
+than this catalogue.
+
 ## [PR-241] 2026-10-03 — Rida, and a masalla bag that is a combo [MIGRATION]
 
 The first change that would have needed a release and does not. Both are rows, written through
