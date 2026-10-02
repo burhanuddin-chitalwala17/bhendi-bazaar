@@ -10,6 +10,35 @@
 
 ## Entries
 
+## [PR-245] 2026-10-03 — One list was holding two questions [MIGRATION]
+
+`listingValueRepository` is the one way to reach the permitted answers
+([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — always **by list**, never all of them,
+since there are over a thousand rows and a form needs the handful its own type asks about.
+
+Exercising it against the seeded rows found a defect in PR-230's generator. It mapped Flipkart's
+`Sling Strap` and Meesho's `Shoulder Strap` onto one `strap` list, on the assumption they were
+two platforms' words for one question. They are not: Flipkart asks whether the strap **comes
+off** — Detachable or Non-Detachable — and Meesho asks whether it is **padded**. Merged, a seller
+was offered four options to one question, two of which answered a different one.
+
+Both are facts a shop can answer by looking at the bag, so both stay — as two facts, which is
+what [ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)
+admits them as. `strapPadding` is now its own fact and its own list, and the bag type asks both.
+Nothing stored either, so the migration moves rows rather than answers.
+
+**A second, milder problem is recorded on the backlog rather than fixed**, because the fix is a
+judgement. The union of two vocabularies gives one concept two entries wherever the platforms use
+different words: `waistRise` holds High and High Rise, Low and Low Rise, Mid and Mid Rise;
+`sleeveLength` holds Full Sleeve beside Long Sleeves. That is harmless for colour, where 188
+values are genuinely different shades, and poor for a list of six that is really three. The
+answer is one canonical value with each platform's word as a mapping — which is what the mapping
+layer exists for — but choosing which word is canonical is the owner's call, not something to
+decide quietly in a migration.
+
+Worth stating plainly: neither of these was caught by a test or a review. Both came out of
+running the repository against the real rows and reading what came back.
+
 ## [PR-244] 2026-10-03 — The product payload learns the vocabulary [CONTRACT]
 
 `ProductFormInput` accepts five more fields, all optional: `kind`, `familyId`, `brandId`, `facts`

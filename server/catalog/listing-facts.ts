@@ -30,6 +30,7 @@ export const FACT = {
   COMPARTMENTS: "compartments",
   WATER_RESISTANT: "waterResistant",
   STRAP: "strap",
+  STRAP_PADDING: "strapPadding",
   SCENT_FAMILY: "scentFamily",
   SHELF_LIFE_MONTHS: "shelfLifeMonths",
   PLATING: "plating",
@@ -110,6 +111,7 @@ export const LIST = {
   CARE: "care",
   CLOSURE: "closure",
   STRAP: "strap",
+  STRAP_PADDING: "strapPadding",
   SCENT_FAMILY: "scentFamily",
   PLATING: "plating",
   BASE_MATERIAL: "baseMaterial",
@@ -248,10 +250,19 @@ export const FACT_DECLARATIONS: Readonly<Record<FactKey, FactDeclaration>> = {
   },
   [FACT.STRAP]: {
     key: FACT.STRAP,
+    // Flipkart's question: does the strap come off. Meesho asks a different one about the same
+    // strap — whether it is padded — which is `strapPadding`, not a second word for this.
     label: "Strap",
     answer: ANSWER.CHOICE,
     list: LIST.STRAP,
     requiredBy: [PLATFORM.AMAZON, PLATFORM.MEESHO],
+  },
+  [FACT.STRAP_PADDING]: {
+    key: FACT.STRAP_PADDING,
+    label: "Strap padding",
+    answer: ANSWER.CHOICE,
+    list: LIST.STRAP_PADDING,
+    requiredBy: [PLATFORM.MEESHO],
   },
   [FACT.SCENT_FAMILY]: {
     key: FACT.SCENT_FAMILY,

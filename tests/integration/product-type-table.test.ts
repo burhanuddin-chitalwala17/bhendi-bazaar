@@ -53,7 +53,7 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
       "islamic-wear": { facts: 9, measures: 6, kinds: 6, axis: ["colour"] },
       trousers: { facts: 10, measures: 2, kinds: 3, axis: ["colour"] },
       "prayer-mat": { facts: 6, measures: 2, kinds: 2, axis: ["colour"] },
-      bag: { facts: 9, measures: 3, kinds: 5, axis: ["colour"] },
+      bag: { facts: 10, measures: 3, kinds: 5, axis: ["colour"] },
       "travel-pouch": { facts: 6, measures: 3, kinds: 2, axis: ["colour"] },
       fragrance: { facts: 3, measures: 1, kinds: 3, axis: ["capacity"] },
       jewellery: { facts: 8, measures: 1, kinds: 3, axis: ["plating", "colour"] },
