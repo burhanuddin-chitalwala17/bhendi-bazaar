@@ -28,8 +28,10 @@ goods for its own storefront.
 answer it from the product, without knowing which platform is asking
 ([ADR-0047](../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)) —
 one platform asking is enough, none is enough. The set was read off thirty-four real bulk-upload
-templates in [listing-node-templates](../../../listing-node-templates/), not invented and not
-inferred from how the product model happens to look today.
+templates in [listing-node-templates](../../../listing-node-templates/), then checked against
+Google's and Meta's feed requirements — the channels that publish first, since a feed needs
+nobody's approval. Not invented, and not inferred from how the product model happens to look
+today.
 
 ## Why
 

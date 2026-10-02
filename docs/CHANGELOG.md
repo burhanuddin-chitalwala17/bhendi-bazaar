@@ -10,6 +10,37 @@
 
 ## Entries
 
+## [PR-234] 2026-10-03 — Checked the vocabulary against the channel that publishes first
+
+The vocabulary was derived from thirty-four Amazon, Flipkart and Meesho templates. The owner asked
+whether Google and Meta had been considered, and they had not — which is a real gap in the order
+the checking was done, because those are the channels that publish *first*. A feed file at a URL
+needs nobody's approval ([ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)),
+while every marketplace needs an account, an approval, or partner status. The vocabulary was
+verified against the channels that come last.
+
+Checked now, and it holds. Google demands more of apparel than of any other category and a single
+missing attribute is an immediate disapproval: `color`, `size`, `gender`, `age_group`, and
+`item_group_id` on every variant. Eight of the ten are already carried.
+
+The interesting result is that **`Ideal For` answers two of Google's questions at once.** The
+marketplaces ask one question whose values are Men, Women, Boys, Girls, Baby Boys, Baby Girls,
+Kids and Unisex; Google splits that into `gender` and `age_group`. So `age_group` is a mapping of
+an answer already held rather than a fact that was missing — one canonical question, two channel
+fields, which is exactly what [ADR-0045](adr/0045-channel-mappings-are-versioned-data.md) exists
+for. That the marketplace-derived vocabulary happened to cover a channel it was not derived from
+is evidence for the answerability test in
+[ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md): a fact
+admitted because the shop can answer it tends to serve channels nobody checked.
+
+`size` is required for apparel and is derived rather than stored; `Free Size` is an accepted value
+and is what everything this store sells resolves to. `condition` is required only when a product
+is not new, so for this store it is a constant in the Google adapter rather than a product fact —
+recorded so it becomes one the day anything used is sold.
+
+The ordering lesson is worth more than the finding: the first channel to publish is the one to
+verify against first, and it was checked last because it was the least documented in templates.
+
 ## [PR-233] 2026-10-03 — A category with no product type says what that costs
 
 The product-type field on the category form was optional with a neutral hint, which made it a
