@@ -4,10 +4,20 @@ import { cache } from "react";
 import type { AdminCategory, CategoryListFilters, CategoryListResult } from "@/domain/admin";
 // SERVER-SIDE CATEGORIES SERVICE
 import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
+import { productTypeRepository } from "@server/catalog/product-type.repository";
 class CategoriesDAL {
     getCategories = cache(async (): Promise<CategoryListResult> => {
         const { categories, total } = await adminCategoryRepository.getCategories({ limit: 100 });
         return { categories, total, page: 1, limit: 100, totalPages: Math.ceil(total / 100) };
+    });
+
+    /**
+     * The product types a category may point at. `cache` so a page rendering the form and the
+     * breadcrumb reads them once (product-types D5); they are tens of rows and change rarely,
+     * which is why two indexed reads do not earn a caching layer this project does not have.
+     */
+    getProductTypeOptions = cache(async (): Promise<Array<{ key: string; label: string }>> => {
+        return productTypeRepository.options();
     });
 
     /**

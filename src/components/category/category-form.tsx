@@ -28,15 +28,19 @@ interface CategoryFormProps {
   /**
    * The product types that exist, read by the page on the server for the same reason as the
    * parents. They are rows now, so the form cannot import them (product-types D6).
+   *
+   * Required, not optional: the resolver is built from these keys, so a page that forgot to
+   * pass them would silently refuse every type a shop chose. A compile error is the right place
+   * to find that out.
    */
-  productTypeOptions?: Array<{ key: string; label: string }>;
+  productTypeOptions: Array<{ key: string; label: string }>;
 }
 
 export function CategoryForm({
   category,
   isEdit = false,
   parentOptions: allCategories,
-  productTypeOptions = [],
+  productTypeOptions,
 }: CategoryFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();

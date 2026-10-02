@@ -10,6 +10,23 @@
 
 ## Entries
 
+## [PR-238] 2026-10-03 — The category pages hand the form the types that exist
+
+PR-237 turned the schema into a factory and left the two category pages still calling the form
+without any types to build it from. The prop defaulted to an empty list, so the resolver would
+have refused every product type a shop chose — a silent bug introduced by the previous commit and
+caught by reading the call sites rather than by any test.
+
+Both pages now read the options server-side alongside the parents they already read, and
+`adminCategoriesDAL.getProductTypeOptions` is `cache`d per request like its neighbours. A server
+component reads and a client component receives ([ADR-0034](adr/0034-render-on-the-server-by-default.md)),
+and the two reads go out together rather than in sequence.
+
+The prop is **required rather than optional**, which is the part worth keeping. An optional one
+with an empty default is how this bug happened: a page that forgets it compiles, renders, and
+refuses every choice at submit. Required, the omission is a type error at the call site.
+Verified by removing it from one page and watching the compiler object.
+
 ## [PR-237] 2026-10-03 — The types are read from the table, and the constants are gone [MIGRATION]
 
 The second product-types PR, and the one where the table becomes authoritative.

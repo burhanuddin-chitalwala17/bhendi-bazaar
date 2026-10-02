@@ -17,16 +17,22 @@ export default async function EditCategoryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [category, { categories }] = await Promise.all([
+  const [category, { categories }, productTypeOptions] = await Promise.all([
     adminCategoriesDAL.getCategoryById(id),
     adminCategoriesDAL.getCategories(),
+    adminCategoriesDAL.getProductTypeOptions(),
   ]);
 
   if (!category) notFound();
 
   return (
     <PageShell width="form">
-      <CategoryForm category={category} parentOptions={categories} isEdit />
+      <CategoryForm
+        category={category}
+        parentOptions={categories}
+        productTypeOptions={productTypeOptions}
+        isEdit
+      />
     </PageShell>
   );
 }
