@@ -10,6 +10,40 @@
 
 ## Entries
 
+## [PR-235] 2026-10-03 — Product types become something an admin creates
+
+The nine types were written as a TypeScript object, which made adding one a release. The owner's
+own frequency estimate inverted the recommendation to leave it that way: for the first hundred
+sellers a new product line arrives often enough that a developer in the loop is a bottleneck on
+onboarding, which is the main growth activity. Later it becomes rare again, but the expensive
+period is now.
+
+[product-types](specs/listing-vocabulary/product-types/) specifies the move. The split is between
+the **vocabulary** and the **selection**: a fact carries a way of being answered and a validation
+rule, so it stays in code; a type is a list of fact keys, so it becomes a row. Both reference
+implementations draw the line in the same place —
+[Akeneo](https://help.akeneo.com/v7-build-your-catalog/v7-manage-your-attributes) creates
+attributes and families in the UI with only the attribute *types* fixed, and
+[Shopify](https://shopify.dev/docs/apps/build/metafields/definitions) ships a standard taxonomy
+filled in and lets merchants add definitions with only the *data types* fixed.
+
+The decision that makes this cheap is the foreign key: `ProductType.key` is unique and both
+`Product.productType` and `Category.productType` reference it, so every existing row keeps the
+exact string it holds and simply gains integrity — no backfill, no id rewrite. That the columns
+were `String?` rather than a Postgres enum turns out to be what makes it free, and an enum would
+have been exactly wrong, since adding a value needs a migration.
+
+Three costs raised when this was first assessed are resolved rather than accepted. The zod schema
+becomes a factory so form and route still build from one function. The form costs two indexed
+queries in a render that already reads the category, with value lists fetched only for the lists
+that type uses — no cache, which this project deliberately does not have. And the ring-size scale
+turns out to be data after all: nearest-match is generic, so a type is fully configurable rather
+than half, which was a modelling error on first assessment.
+
+D11 records what the owner closed today: a type belongs to the platform, never to a seller. The
+permitted *answers* stay org-scopeable, because a shop knowing a colour the platform does not is
+harmless where a shop knowing a different question set would break publishing.
+
 ## [PR-234] 2026-10-03 — Checked the vocabulary against the channel that publishes first
 
 The vocabulary was derived from thirty-four Amazon, Flipkart and Meesho templates. The owner asked

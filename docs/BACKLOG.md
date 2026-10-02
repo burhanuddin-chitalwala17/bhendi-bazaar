@@ -181,6 +181,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [listing-vocabulary/categories](specs/listing-vocabulary/categories/) | Nine categories, each naming the kinds it holds and the few questions it asks; measurements stored, size labels derived | 📝 Draft — 2026-10-01 |
 | [listing-vocabulary/variants](specs/listing-vocabulary/variants/) | Anything that sells on its own is its own product with its own stock; the category declares what varies | 📝 Draft — 2026-10-01 |
 | [listing-vocabulary/inherited-facts](specs/listing-vocabulary/inherited-facts/) | A blank fact filled from the family, the brand or the shop's defaults, stored on the product and shown with its origin | 📝 Draft — 2026-10-01 |
+| [listing-vocabulary/product-types](specs/listing-vocabulary/product-types/) | The question sets become rows an admin creates and edits, so onboarding a seller with a new product line does not wait for a developer | 📝 Draft — 2026-10-03 |
 | product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | planned |
 | channel-registry | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; the readiness gate wired to the resolver | planned |
 | shopfront-feeds | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | planned |
