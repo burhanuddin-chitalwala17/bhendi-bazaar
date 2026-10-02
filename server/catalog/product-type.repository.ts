@@ -1,5 +1,6 @@
 import { prisma } from "@server/shared/prisma";
 
+import type { CreateProductTypeInput, UpdateProductTypeInput } from "./admin.product-type.types";
 import { parseProductTypeRecord, type ProductTypeRecord } from "./product-type.types";
 
 /**
@@ -99,6 +100,63 @@ export const productTypeRepository = {
   async keys(): Promise<string[]> {
     const rows = await prisma.productType.findMany({ select: { key: true } });
     return rows.map((r) => r.key);
+  },
+
+  async create(input: CreateProductTypeInput): Promise<ProductTypeRecord | null> {
+    // Whitelisted field by field; create and update stay symmetric, and no request object is
+    // spread into a Prisma `data` argument (Invariant 4).
+    const row = await prisma.productType.create({
+      data: {
+        key: input.key,
+        label: input.label,
+        facts: [...input.facts],
+        measures: input.measures as never,
+        variantAxis: [...input.variantAxis],
+        kinds: input.kinds as never,
+        factLabels: input.factLabels as never,
+        labelFrom: [...input.labelFrom],
+        labelScale: (input.labelScale ?? undefined) as never,
+        order: input.order,
+      },
+      select: SELECT,
+    });
+    return toRecord(row as Row);
+  },
+
+  /** `key` is absent on purpose: products and categories store it, so renaming orphans them. */
+  async update(key: string, input: UpdateProductTypeInput): Promise<ProductTypeRecord | null> {
+    const { count } = await prisma.productType.updateMany({
+      where: { key },
+      data: {
+        ...(input.label === undefined ? {} : { label: input.label }),
+        ...(input.facts === undefined ? {} : { facts: [...input.facts] }),
+        ...(input.measures === undefined ? {} : { measures: input.measures as never }),
+        ...(input.variantAxis === undefined ? {} : { variantAxis: [...input.variantAxis] }),
+        ...(input.kinds === undefined ? {} : { kinds: input.kinds as never }),
+        ...(input.factLabels === undefined ? {} : { factLabels: input.factLabels as never }),
+        ...(input.labelFrom === undefined ? {} : { labelFrom: [...input.labelFrom] }),
+        ...(input.labelScale === undefined ? {} : { labelScale: input.labelScale as never }),
+        ...(input.order === undefined ? {} : { order: input.order }),
+      },
+    });
+    if (count === 0) return null;
+    return this.byKey(key);
+  },
+
+  async retire(key: string): Promise<boolean> {
+    const { count } = await prisma.productType.updateMany({
+      where: { key, retiredAt: null },
+      data: { retiredAt: new Date() },
+    });
+    return count > 0;
+  },
+
+  async restore(key: string): Promise<boolean> {
+    const { count } = await prisma.productType.updateMany({
+      where: { key, retiredAt: { not: null } },
+      data: { retiredAt: null },
+    });
+    return count > 0;
   },
 
   /** How many categories and products name a type — what a delete has to refuse. */

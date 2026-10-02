@@ -10,6 +10,38 @@
 
 ## Entries
 
+## [PR-240] 2026-10-03 — An admin builds a question set
+
+The screen the whole product-types spec was for. `/admin/product-types` lists the types with what
+each one costs to change, and the form creates and edits them: which facts it asks, what it
+measures and in which unit, what makes two of its products sell separately, and the kinds it
+holds.
+
+**Every fact says which marketplaces demand it**, measured from the templates rather than
+asserted — colour by all three, sleeve styling and stitch by Meesho alone, care by nobody. That
+is spec R7's "the screen shows what each choice will demand", and it is the difference between
+leaving a fact out as a decision and leaving it out as an omission discovered at the first
+rejection. It refuses nothing on that basis: a type we would not have built may be a line we
+have not met.
+
+**Four coherence rules are enforced at the write**, the same four the integration suite makes of
+the rows that shipped. There they catch a bad migration; here they catch a bad admin, which is
+the case that starts mattering now the screen exists. A type may not vary on something it never
+asks about, rename a fact it does not ask, read a size label from a measurement it does not take,
+or ask one fact twice.
+
+`key` is absent from the update envelope entirely. Products and categories store it, so renaming
+one would orphan every row that named it — frozen after creation, exactly as a slug is.
+
+Three gates caught things worth catching. Route reachability refused two handlers with no named
+caller until the client wrapper existed. The primitives gate refused a raw `<select>` and four
+raw inputs — `Checkbox` already carries its own label and 40px target, which is the thing the
+hand-rolled version got wrong. And the vocabulary gate had caught "seller" for "org" a commit
+earlier.
+
+Twenty tests, mutation-tested three ways: dropping the axis rule, letting the update envelope
+default its fields, and allowing a key to be renamed each turn it red.
+
 ## [PR-239] 2026-10-03 — Two decisions closed: the colour list, and what the bulk sheet does
 
 **The colour list is the union**, which is what PR-230 already shipped: 188 values with the 31
