@@ -14,8 +14,7 @@ import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("product types (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let PRODUCT_TYPES: typeof import("@server/catalog/product-type").PRODUCT_TYPES;
-  let PRODUCT_TYPE_DECLARATIONS: typeof import("@server/catalog/product-type").PRODUCT_TYPE_DECLARATIONS;
+  let repo: typeof import("@server/catalog/product-type.repository").productTypeRepository;
   const stamp = `pt-${Date.now().toString(36)}`;
   let orgId: string;
   let categoryId: string;
@@ -33,7 +32,7 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ PRODUCT_TYPES, PRODUCT_TYPE_DECLARATIONS } = await import("@server/catalog/product-type"));
+    ({ productTypeRepository: repo } = await import("@server/catalog/product-type.repository"));
     const fixtures = await ensureFixtures();
     orgId = fixtures.orgId;
     categoryId = fixtures.categoryId;
@@ -44,40 +43,130 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
     await prisma.category.updateMany({ where: { id: categoryId }, data: { productType: null } });
   });
 
-  describe("the nine arrived intact", () => {
-    it("has a row for every type the code declares, keyed the same", async () => {
-      const rows = await prisma.productType.findMany({ select: { key: true } });
-      expect(rows.map((r) => r.key).sort()).toEqual([...PRODUCT_TYPES].sort());
+  /**
+   * The constants are gone, so this pins the data rather than comparing it to itself. The nine
+   * shipped as a data migration and a later edit that drops one, or empties its facts, is a
+   * silent break: no code fails, the form just stops asking.
+   */
+  describe("the nine shipped and are intact", () => {
+    const EXPECTED: Record<string, { facts: number; measures: number; kinds: number; axis: string[] }> = {
+      "islamic-wear": { facts: 9, measures: 6, kinds: 5, axis: ["colour"] },
+      trousers: { facts: 10, measures: 2, kinds: 3, axis: ["colour"] },
+      "prayer-mat": { facts: 6, measures: 2, kinds: 2, axis: ["colour"] },
+      bag: { facts: 9, measures: 3, kinds: 5, axis: ["colour"] },
+      "travel-pouch": { facts: 6, measures: 3, kinds: 2, axis: ["colour"] },
+      fragrance: { facts: 3, measures: 1, kinds: 3, axis: ["capacity"] },
+      jewellery: { facts: 8, measures: 1, kinds: 3, axis: ["plating", "colour"] },
+      socks: { facts: 5, measures: 1, kinds: 4, axis: ["colour", "packQuantity"] },
+      combo: { facts: 4, measures: 0, kinds: 2, axis: ["colour"] },
+    };
+
+    it("has exactly the nine, and every one parses", async () => {
+      const rows = await repo.list(true);
+      expect(rows.map((r) => r.key).sort()).toEqual(Object.keys(EXPECTED).sort());
     });
 
-    it("carries each type's facts, measures, axis and kinds unchanged", async () => {
-      for (const key of PRODUCT_TYPES) {
-        const row = await prisma.productType.findUnique({ where: { key } });
-        const declared = PRODUCT_TYPE_DECLARATIONS[key];
-        expect(row?.label, key).toBe(declared.label);
-        expect(row?.facts, key).toEqual([...declared.facts]);
-        expect(row?.variantAxis, key).toEqual([...declared.variantAxis]);
-        expect((row?.kinds as { key: string }[]).map((k) => k.key), key).toEqual(
-          declared.kinds.map((k) => k.key),
-        );
-        expect((row?.measures as { key: string }[]).map((m) => m.key), key).toEqual(
-          declared.measures.map((m) => m.key),
-        );
+    it("carries each type's facts, measures, kinds and axis", async () => {
+      for (const [key, want] of Object.entries(EXPECTED)) {
+        const row = await repo.byKey(key);
+        expect(row, key).not.toBeNull();
+        expect(row!.facts.length, `${key} facts`).toBe(want.facts);
+        expect(row!.measures.length, `${key} measures`).toBe(want.measures);
+        expect(row!.kinds.length, `${key} kinds`).toBe(want.kinds);
+        expect(row!.variantAxis, `${key} axis`).toEqual(want.axis);
+      }
+    });
+
+    // One question with two labels, not two facts — this was dropped by the first migration
+    // and carried across by the second.
+    it("keeps the per-type wording: cloth is asked its Fabric, everything else its Material", async () => {
+      for (const key of ["islamic-wear", "trousers", "socks"]) {
+        expect((await repo.byKey(key))?.factLabels.material, key).toBe("Fabric");
+      }
+      for (const key of ["bag", "prayer-mat", "jewellery"]) {
+        expect((await repo.byKey(key))?.factLabels.material, key).toBeUndefined();
       }
     });
 
     // The ring scale was the one thing claimed to be un-configurable. It is data.
     it("gives jewellery a label scale and nothing else one", async () => {
-      const rows = await prisma.productType.findMany({ select: { key: true, labelScale: true } });
-      const withScale = rows.filter((r) => r.labelScale !== null).map((r) => r.key);
-      expect(withScale).toEqual(["jewellery"]);
+      const rows = await repo.list(true);
+      expect(rows.filter((r) => r.labelScale !== null).map((r) => r.key)).toEqual(["jewellery"]);
     });
 
     it("records which measurements each type reads a size label from", async () => {
-      const islamic = await prisma.productType.findUnique({ where: { key: "islamic-wear" } });
-      expect(islamic?.labelFrom).toContain("bust");
-      const fragrance = await prisma.productType.findUnique({ where: { key: "fragrance" } });
-      expect(fragrance?.labelFrom).toEqual([]);
+      expect((await repo.byKey("islamic-wear"))?.labelFrom).toContain("bust");
+      expect((await repo.byKey("fragrance"))?.labelFrom).toEqual([]);
+    });
+
+    it("fetches many in one query, for a screen of mixed types", async () => {
+      const many = await repo.byKeys(["bag", "fragrance", "bag", "nope"]);
+      expect([...many.keys()].sort()).toEqual(["bag", "fragrance"]);
+    });
+
+    it("offers only live types to a picker, and keeps a retired one readable", async () => {
+      await prisma.productType.update({ where: { key: "combo" }, data: { retiredAt: new Date() } });
+      expect((await repo.options()).map((o) => o.key)).not.toContain("combo");
+      expect(await repo.byKey("combo")).not.toBeNull();
+      await prisma.productType.update({ where: { key: "combo" }, data: { retiredAt: null } });
+    });
+  });
+
+  /**
+   * These ran against constants the compiler checked. A row is checked by nothing, so they move
+   * here — and they are now the check on a type an **admin** creates, which is the case that
+   * matters once the screen exists (product-types D3).
+   */
+  describe("every stored type is internally consistent", () => {
+    it("names only facts the vocabulary declares", async () => {
+      const { FACTS } = await import("@server/catalog/listing-facts");
+      for (const type of await repo.list(true)) {
+        for (const fact of type.facts) {
+          expect(FACTS, `${type.key} asks for an unknown fact "${fact}"`).toContain(fact);
+        }
+      }
+    });
+
+    it("varies only on something it actually asks about", async () => {
+      for (const type of await repo.list(true)) {
+        const asked = new Set<string>([...type.facts, ...type.measures.map((m) => m.key)]);
+        for (const axis of type.variantAxis) {
+          expect(asked, `${type.key} varies on "${axis}" but never asks for it`).toContain(axis);
+        }
+      }
+    });
+
+    it("relabels only facts it asks for", async () => {
+      for (const type of await repo.list(true)) {
+        for (const fact of Object.keys(type.factLabels)) {
+          expect(type.facts, `${type.key} relabels "${fact}" without asking it`).toContain(fact);
+        }
+      }
+    });
+
+    it("reads its size label only from measurements it takes", async () => {
+      for (const type of await repo.list(true)) {
+        const taken = new Set(type.measures.map((m) => m.key));
+        for (const key of type.labelFrom) {
+          expect(taken, `${type.key} labels from "${key}" but never measures it`).toContain(key);
+        }
+      }
+    });
+
+    it("asks no fact twice, measures nothing twice, and repeats no kind", async () => {
+      for (const type of await repo.list(true)) {
+        expect(new Set(type.facts).size, `${type.key} asks a fact twice`).toBe(type.facts.length);
+        const measures = type.measures.map((m) => m.key);
+        expect(new Set(measures).size, `${type.key} measures one thing twice`).toBe(measures.length);
+        const kinds = type.kinds.map((k) => k.key);
+        expect(new Set(kinds).size, `${type.key} repeats a kind`).toBe(kinds.length);
+      }
+    });
+
+    it("gives every type at least one kind", async () => {
+      for (const type of await repo.list(true)) {
+        expect(type.kinds.length, `${type.key} holds no kinds`).toBeGreaterThan(0);
+      }
     });
   });
 

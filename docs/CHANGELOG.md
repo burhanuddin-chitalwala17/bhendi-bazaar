@@ -10,6 +10,41 @@
 
 ## Entries
 
+## [PR-237] 2026-10-03 — The types are read from the table, and the constants are gone [MIGRATION]
+
+The second product-types PR, and the one where the table becomes authoritative.
+`PRODUCT_TYPE_DECLARATIONS` is deleted. `server/catalog/product-type.ts` keeps only what stays
+pure — the tree walk, the key parsing and the schema factory — and `product-type.repository.ts`
+is now the one way to reach a type ([ADR-0003](adr/0003-one-repository-per-aggregate.md)).
+
+**A second migration, because the first dropped something.** Emitting the nine as rows lost the
+per-type relabelling: Flipkart asks cloth its `Fabric` and everything else its `Material`, which
+is one question with two labels rather than two facts. `factLabels` carries it, backfilled onto
+Islamic wear, trousers and socks. The test now asserts both halves — those three say Fabric, and
+bag, prayer mat and jewellery say Material — because the omission was silent the first time.
+
+**The zod schema is a factory**, which is how the runtime-known set keeps ADR-0013's property.
+`categoryFormSchemaFor(keys)` is built by the form from the options it was handed and by the
+route from `productTypeRepository.keys()`. Same function, same rules, both sides, with the
+foreign key as the backstop underneath. A widened set widens what is accepted, which is the test
+that proves it is a factory rather than a constant in disguise.
+
+**`sizeLabelFor` now takes the type's row**, so the ring diameter-to-size table is nine rows
+rather than a constant and nearest-match is the only code. A test builds a shoe type with a
+UK-size scale the codebase has never seen and the derivation follows it — which is what
+"configurable" has to mean to be worth the word.
+
+The declaration-integrity checks moved from unit to integration, because they changed meaning.
+They used to check constants the compiler already checked; they now check **rows**, which nothing
+checks — a type naming a fact that does not exist, varying on something it never asks about,
+relabelling a fact it does not ask, or reading a size label from a measurement it does not take.
+That is the check on a type an admin creates, which is the case that will matter once the screen
+exists. Mutation-tested: an axis on an unasked fact and a label on an unasked fact each turn it
+red.
+
+A vocabulary gate caught "never per seller" in a comment — this codebase says org — which is the
+kind of thing only a test notices.
+
 ## [PR-236] 2026-10-03 — The nine product types become rows [MIGRATION]
 
 The first product-types PR. `ProductType` exists, the nine declarations are carried across

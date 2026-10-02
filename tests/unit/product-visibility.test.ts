@@ -35,6 +35,10 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     reads: 11,
     note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code",
   },
+  "server/catalog/product-type.repository.ts": {
+    reads: 1,
+    note: "deliberate — `usage` counts every product naming a type, archived included, because it answers whether a type may be deleted and an archived product still holds its key (product-types D8)",
+  },
   "server/catalog/product-family.repository.ts": {
     reads: 2,
     note: "the two counts a family screen needs (variants D6): the sellable count spreads AVAILABLE because it is what a shop is told it has on sale, while memberCount deliberately counts archived members too — it previews which products a correction at family level would change, and an archived product can be restored",

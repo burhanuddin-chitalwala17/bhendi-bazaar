@@ -2,7 +2,6 @@ import { prisma } from "@server/shared/prisma";
 
 import { AVAILABLE } from "./product.visibility";
 
-import type { ProductTypeKey } from "./product-type";
 
 /**
  * The one way to reach `ProductFamily` ([ADR-0003](../../docs/adr/0003-one-repository-per-aggregate.md)).
@@ -31,7 +30,7 @@ export interface CreateFamilyInput {
   orgId: string;
   name: string;
   description?: string | null;
-  productType?: ProductTypeKey | null;
+  productType?: string | null;
   facts?: unknown;
   measurements?: unknown;
   variantAxis?: readonly string[];
@@ -40,7 +39,7 @@ export interface CreateFamilyInput {
 export interface UpdateFamilyInput {
   name?: string;
   description?: string | null;
-  productType?: ProductTypeKey | null;
+  productType?: string | null;
   facts?: unknown;
   measurements?: unknown;
   variantAxis?: readonly string[];

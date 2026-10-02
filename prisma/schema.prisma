@@ -1920,6 +1920,11 @@ model ProductType {
   /// to, which is why abaya, burqa and rida are kinds rather than types of their own.
   kinds Json?
 
+  /// Where this type's trade uses another word for a shared fact — Flipkart asks cloth "Fabric"
+  /// and everything else "Material", which is one question with two labels, not two facts.
+  /// `{ "<factKey>": "<label>" }`.
+  factLabels Json?
+
   /// Which measurements a size label is read from, and optionally the scale that turns one into
   /// a label — a ring's inner diameter becoming a ring size (D9). Nearest-match is generic code,
   /// so the scale is data and a type is fully configurable rather than half.

@@ -3,13 +3,15 @@
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput, FormSelect, FormTextarea } from "../FormField";
 import type { CreateCategoryInput } from "@/domain/admin";
-import { PRODUCT_TYPE_DECLARATIONS, PRODUCT_TYPES } from "@server/catalog/product-type";
+
 
 interface CategoryBasicFieldsProps {
   register: UseFormRegister<CreateCategoryInput>;
   errors: FieldErrors<CreateCategoryInput>;
   /** The chosen type, so the field can say what leaving it empty costs. */
   watchedProductType?: string | null;
+  /** The types that exist, passed in rather than imported — they are rows now, not constants. */
+  productTypeOptions?: Array<{ key: string; label: string }>;
   /** Valid parents — the form excludes self and descendants; the server re-checks. */
   parentOptions: Array<{ id: string; name: string }>;
 }
@@ -19,6 +21,7 @@ export function CategoryBasicFields({
   errors,
   parentOptions,
   watchedProductType,
+  productTypeOptions = [],
 }: CategoryBasicFieldsProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
@@ -78,9 +81,9 @@ export function CategoryBasicFields({
           }
         >
           <option value="">Inherit from parent</option>
-          {PRODUCT_TYPES.map((key) => (
-            <option key={key} value={key}>
-              {PRODUCT_TYPE_DECLARATIONS[key].label}
+          {productTypeOptions.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
             </option>
           ))}
         </FormSelect>

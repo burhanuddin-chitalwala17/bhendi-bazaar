@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { categoryFormSchema, updateCategorySchema } from "@/lib/validation/schemas/category.schema";
-import { PRODUCT_TYPE, PRODUCT_TYPES } from "@server/catalog/product-type";
+import {
+  categoryFormSchemaFor,
+  updateCategorySchemaFor,
+} from "@/lib/validation/schemas/category.schema";
+/**
+ * The valid types are rows now, so the schema is a factory and these are the keys a caller
+ * handed it — the form from its options, the route from the database (product-types D6).
+ */
+const PRODUCT_TYPES = ["islamic-wear", "trousers", "bag", "fragrance", "jewellery"] as const;
+const PRODUCT_TYPE = { FRAGRANCE: "fragrance" } as const;
+const categoryFormSchema = categoryFormSchemaFor(PRODUCT_TYPES);
+const updateCategorySchema = updateCategorySchemaFor(PRODUCT_TYPES);
 
 /**
  * A category says which listing questions its products are asked
@@ -28,8 +38,8 @@ describe("a category's product type on the create payload", () => {
     expect(categoryFormSchema.parse(base).productType).toBeNull();
   });
 
-  it("refuses a type that is not declared, rather than storing it", () => {
-    for (const bad of ["islamicwear", "ISLAMIC-WEAR", "abaya", "other", " "]) {
+  it("refuses a type the caller did not offer, rather than storing it", () => {
+    for (const bad of ["islamicwear", "ISLAMIC-WEAR", "abaya", "other", "socks"]) {
       expect(categoryFormSchema.safeParse({ ...base, productType: bad }).success).toBe(false);
     }
   });
@@ -59,8 +69,14 @@ describe("a category's product type on the update payload", () => {
     );
   });
 
-  it("refuses an undeclared type on update too", () => {
+  it("refuses an unoffered type on update too", () => {
     expect(updateCategorySchema.safeParse({ productType: "perfume" }).success).toBe(false);
+  });
+
+  // The form and the route build from the same function, so a type one accepts the other does.
+  it("accepts a type once the caller offers it", () => {
+    expect(updateCategorySchemaFor(["socks"]).safeParse({ productType: "socks" }).success).toBe(true);
+    expect(updateCategorySchemaFor([]).safeParse({ productType: "socks" }).success).toBe(false);
   });
 });
 
