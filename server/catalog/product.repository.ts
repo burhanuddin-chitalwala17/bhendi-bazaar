@@ -241,6 +241,73 @@ export class ProductsRepository {
     return rows.map((row) => row.name);
   }
 
+  /** Whether this product is on sale. AVAILABLE only — unlike `isOnSale`, a withdrawn org's product passes. */
+  async isAvailable(id: string): Promise<boolean> {
+    const product = await prisma.product.findFirst({
+      where: { id, ...AVAILABLE },
+      select: { id: true },
+    });
+    return product !== null;
+  }
+
+  /**
+   * The products and active-location stock a parcel preview allocates from. Unfiltered: the
+   * order transaction is what refuses, so this must still resolve the row it is asked about.
+   */
+  async listForAllocation(productIds: string[]) {
+    const [products, stockRows] = await Promise.all([
+      prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: {
+          id: true,
+          name: true,
+          weight: true,
+          orgId: true,
+          org: { select: { name: true, code: true } },
+        },
+      }),
+      prisma.productStock.findMany({
+        where: {
+          productId: { in: productIds },
+          quantity: { gt: 0 },
+          orgAddress: { isActive: true },
+        },
+        select: {
+          productId: true,
+          orgAddressId: true,
+          quantity: true,
+          orgAddress: {
+            select: {
+              orgId: true,
+              name: true,
+              address: { select: { pincode: true, city: true, state: true } },
+            },
+          },
+        },
+      }),
+    ]);
+    return { products, stockRows };
+  }
+
+  /**
+   * What a cart's stock check needs: each product's name and archive state, and its stock rows at
+   * active locations. `archivedAt` rather than an AVAILABLE filter, so an archived product comes
+   * back unavailable by name rather than as an unknown one (ADR-0029 D6).
+   */
+  async listForStockCheck(productIds: string[]) {
+    const [products, stockRows] = await Promise.all([
+      prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, name: true, archivedAt: true },
+      }),
+      prisma.productStock.findMany({
+        where: { productId: { in: productIds }, orgAddress: { isActive: true } },
+        select: { productId: true, quantity: true },
+      }),
+    ]);
+    return { products, stockRows };
+  }
+
   /** How many of these products belong to someone else — the org-scoping guard. */
   async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
     if (productIds.length === 0) return 0;

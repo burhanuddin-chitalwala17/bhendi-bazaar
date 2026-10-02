@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@server/shared/prisma";
+import { accountService } from "@server/identity/account.service";
 import { hash } from "bcryptjs";
 import {
   authRateLimit,
@@ -48,10 +48,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Email alone identifies an account. A phone may back any number of them (ADR-0024).
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
+    const existingUser = await accountService.findIdByEmail(email);
 
     if (existingUser) {
       return NextResponse.json(
@@ -62,18 +59,7 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        mobile,
-        passwordHash,
-        isEmailVerified: false, // Explicitly set to false
-        profile: {
-          create: {},
-        },
-      },
-    });
+    const user = await accountService.createPasswordAccount({ name, email, mobile, passwordHash });
 
     // Send verification email
     if (email) {

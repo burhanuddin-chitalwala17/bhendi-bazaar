@@ -2,7 +2,7 @@ import { cache } from "react";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { prisma } from "@server/shared/prisma";
+import { accountService } from "@server/identity/account.service";
 import { UnauthorizedError, ForbiddenError } from "@server/shared/domain-error";
 
 /**
@@ -42,10 +42,7 @@ async function resolvePlatformAdmin(): Promise<Session> {
     throw new ForbiddenError("This area is restricted to platform administrators");
   }
 
-  const admin = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { platformRole: true, isBlocked: true },
-  });
+  const admin = await accountService.findAdminStanding(session.user.id);
 
   if (!admin) {
     throw new UnauthorizedError(

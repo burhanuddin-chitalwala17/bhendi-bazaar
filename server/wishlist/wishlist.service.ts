@@ -1,8 +1,7 @@
-import { prisma } from "@server/shared/prisma";
 import { wishlistRepository } from "@server/wishlist/wishlist.repository";
 import type { WishlistProduct } from "@server/wishlist/wishlist.types";
 import { NotFoundError } from "@server/shared/domain-error";
-import { AVAILABLE } from "@server/catalog/product.visibility";
+import { productService } from "@server/catalog/product.service";
 
 /**
  * Wishlist service — saving a product, forgetting one, and reading the set back.
@@ -47,11 +46,7 @@ export class WishlistService {
     // Archived products are refused here too (ADR-0029): saving one would promise a
     // buyer something not for sale. Wishes already saved are deliberately left alone —
     // withdrawal is reversible, and a removed wish cannot come back (R5/R6).
-    const product = await prisma.product.findFirst({
-      where: { id: productId, ...AVAILABLE },
-      select: { id: true },
-    });
-    if (!product) {
+    if (!(await productService.isAvailable(productId))) {
       throw new NotFoundError("That product is no longer available");
     }
     await wishlistRepository.add(userId, productId);

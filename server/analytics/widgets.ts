@@ -1,7 +1,5 @@
 import { cache } from "react";
-import { AVAILABLE } from "@server/catalog/product.visibility";
-import { prisma } from "@server/shared/prisma";
-import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { widgetsRepository } from "@server/analytics/widgets.repository";
 
 /**
  * The dashboard, as declarations (dashboard-widgets R1–R4).
@@ -11,7 +9,7 @@ import { PAYMENT_STATUS } from "@server/checkout/order.types";
  * a widget is adding an entry here, and nothing else.
  *
  * Analytics is the documented read-only exception to no-cross-domain-reads
- * (CLAUDE.md), which is what a dashboard is; fetchers read Prisma directly.
+ * (CLAUDE.md), which is what a dashboard is; its reads live in `widgets.repository.ts`.
  */
 
 export type WidgetAudience = "platform" | "org" | "both";
@@ -40,30 +38,15 @@ export interface WidgetDefinition {
   fetch: (ctx: WidgetContext) => Promise<WidgetData>;
 }
 
-const orgScope = (ctx: WidgetContext) => (ctx.audience === "org" ? { orgId: ctx.orgId } : {});
+const orgOf = (ctx: WidgetContext) => (ctx.audience === "org" ? ctx.orgId : null);
 
 /**
  * Reads shared by more than one widget, memoised per request (the loadPriceContext
  * pattern). Widgets stay independently declared; what they stop doing is buying
  * the same rows twice in one render (PR-72).
  */
-const productStockRows = cache(async (orgId: string | null) =>
-  prisma.product.findMany({
-    // Inventory and low-stock are about what can be sold, so archived products are
-    // out (ADR-0029 D12). Revenue and order aggregates below are about what happened
-    // and deliberately keep them.
-    where: { ...(orgId === null ? {} : { orgId }), ...AVAILABLE },
-    select: { lowStockThreshold: true, stockLocations: { select: { quantity: true } } },
-  })
-);
-
-const paidOrderTotals = cache(async () =>
-  prisma.order.aggregate({
-    where: { paymentStatus: PAYMENT_STATUS.PAID },
-    _sum: { grandTotal: true },
-    _count: true,
-  })
-);
+const productStockRows = cache((orgId: string | null) => widgetsRepository.productStockRows(orgId));
+const paidOrderTotals = cache(() => widgetsRepository.paidOrderTotals());
 
 export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
   {
@@ -75,7 +58,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     href: "/products",
     fetch: async (ctx) => ({
       kind: "count",
-      value: (await productStockRows(ctx.audience === "org" ? ctx.orgId : null)).length,
+      value: (await productStockRows(orgOf(ctx))).length,
     }),
   },
   {
@@ -86,7 +69,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     scope: "Product.orgId",
     href: "/products",
     fetch: async (ctx) => {
-      const products = await productStockRows(ctx.audience === "org" ? ctx.orgId : null);
+      const products = await productStockRows(orgOf(ctx));
       const low = products.filter((product) => {
         const total = product.stockLocations.reduce((sum, row) => sum + row.quantity, 0);
         return total > 0 && total <= product.lowStockThreshold;
@@ -103,13 +86,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     href: "/orders",
     fetch: async (ctx) => ({
       kind: "count",
-      value: await prisma.shipment.count({
-        where: {
-          ...orgScope(ctx),
-          status: { in: ["pending", "processing"] },
-          order: { paymentStatus: PAYMENT_STATUS.PAID },
-        },
-      }),
+      value: await widgetsRepository.pendingParcelCount(orgOf(ctx)),
       caption: "paid, not yet shipped",
     }),
   },
@@ -122,12 +99,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     href: "/orders",
     fetch: async (ctx) => ({
       kind: "count",
-      value: await prisma.order.count({
-        where: {
-          paymentStatus: PAYMENT_STATUS.PAID,
-          ...(ctx.audience === "org" ? { shipments: { some: { orgId: ctx.orgId } } } : {}),
-        },
-      }),
+      value: await widgetsRepository.paidOrderCount(orgOf(ctx)),
     }),
   },
   {
@@ -141,14 +113,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
         const paid = await paidOrderTotals();
         return { kind: "money", value: paid._sum.grandTotal ?? 0, caption: "all paid orders" };
       }
-      // The attribution order-and-cart-lines exists for: this org's parcel lines,
-      // at the unit price actually paid. Shipping deliberately excluded (TRD D5).
-      const lines = await prisma.shipmentItem.findMany({
-        where: {
-          shipment: { orgId: ctx.orgId, order: { paymentStatus: PAYMENT_STATUS.PAID } },
-        },
-        select: { quantity: true, orderItem: { select: { unitPrice: true } } },
-      });
+      const lines = await widgetsRepository.paidLinesForOrg(ctx.orgId);
       const value = lines.reduce((sum, line) => sum + line.quantity * line.orderItem.unitPrice, 0);
       return { kind: "money", value, caption: "items on paid orders" };
     },
@@ -161,7 +126,7 @@ export const DASHBOARD_WIDGETS: WidgetDefinition[] = [
     href: "/users",
     fetch: async () => ({
       kind: "count",
-      value: await prisma.user.count({ where: { platformRole: "USER" } }),
+      value: await widgetsRepository.customerCount(),
       caption: "registered",
     }),
   },

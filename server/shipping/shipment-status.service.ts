@@ -9,6 +9,7 @@ import {
   type ShipmentStatus,
 } from "@server/shipping/domain/shipping.types";
 import { normalizeShipmentStatus } from "@server/shipping/utils/statusNormalizer";
+import { shipmentRepository } from "@server/shipping/repositories/shipment.repository";
 
 /**
  * The only thing that writes `Shipment.status`
@@ -66,10 +67,7 @@ async function restock(shipmentId: string, tx: Prisma.TransactionClient): Promis
 }
 
 async function currentStatus(shipmentId: string) {
-  return prisma.shipment.findUnique({
-    where: { id: shipmentId },
-    select: { id: true, status: true },
-  });
+  return shipmentRepository.findStatus(shipmentId);
 }
 
 /**
@@ -150,15 +148,28 @@ export async function applyProviderStatus(
     if (!shipment) return { kind: "not-found" };
     // Keep the wording even though the status does not move — it is what an operator needs to
     // see to add the table entry.
-    await prisma.shipment.update({
-      where: { id: shipmentId },
-      data: { shipmentStatus: raw },
-    });
+    await shipmentRepository.recordProviderWording(shipmentId, raw);
     console.warn(`[shipping] unmapped ${provider} status "${raw}" on shipment ${shipmentId}`);
     return { kind: "unmapped", current: shipment.status as ShipmentStatus, raw };
   }
 
   return applyStatus(shipmentId, status, raw);
+}
+
+/** The carrier accepted the parcel. Bypasses the transition table, as the booking path always has. */
+export async function recordBooking(
+  shipmentId: string,
+  booking: { trackingNumber?: string; trackingUrl?: string },
+): Promise<void> {
+  await shipmentRepository.markBooked(shipmentId, booking);
+}
+
+/** Booking failed and needs a human; `shippingMeta` carries why. */
+export async function recordBookingFailure(
+  shipmentId: string,
+  shippingMeta: Prisma.InputJsonValue,
+): Promise<void> {
+  await shipmentRepository.markBookingFailed(shipmentId, shippingMeta);
 }
 
 /** What this status means for stock, money and settlement — one answer, read from one table. */

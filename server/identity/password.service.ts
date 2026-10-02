@@ -4,9 +4,12 @@
  * Handles password change and reset operations
  */
 
-import { prisma } from "@server/shared/prisma";
+import { profileRepository } from "@server/identity/profile.repository";
 import { hash, compare } from "bcryptjs";
 import crypto from "crypto";
+
+// Reset tokens share VerificationToken with email verification; the prefix tells them apart.
+const PASSWORD_RESET_PREFIX = "password-reset:";
 
 export class PasswordService {
   /**
@@ -19,10 +22,7 @@ export class PasswordService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Get user with password hash
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { passwordHash: true },
-      });
+      const user = await profileRepository.findPasswordHash(userId);
 
       if (!user) {
         return { success: false, error: "User not found" };
@@ -46,10 +46,7 @@ export class PasswordService {
       const newPasswordHash = await hash(newPassword, 10);
 
       // Update password
-      await prisma.user.update({
-        where: { id: userId },
-        data: { passwordHash: newPasswordHash },
-      });
+      await profileRepository.updatePasswordHash(userId, newPasswordHash);
 
       return { success: true };
     } catch (error) {
@@ -67,10 +64,7 @@ export class PasswordService {
   }> {
     try {
       // Find user by email
-      const user = await prisma.user.findUnique({
-        where: { email },
-        select: { id: true, passwordHash: true, name: true },
-      });
+      const user = await profileRepository.findPasswordResetCandidate(email);
 
       // Always return success even if user not found (security)
       if (!user) {
@@ -87,13 +81,11 @@ export class PasswordService {
       const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
       // Store token in VerificationToken table (reusing existing table)
-      await prisma.verificationToken.create({
-        data: {
-          identifier: `password-reset:${user.id}`,
-          token: resetToken,
-          expires,
-        },
-      });
+      await profileRepository.createVerificationToken(
+        `${PASSWORD_RESET_PREFIX}${user.id}`,
+        resetToken,
+        expires,
+      );
 
       // Send reset email
       const { emailService } = await import("@server/notifications/email.service");
@@ -115,14 +107,10 @@ export class PasswordService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Find token with password-reset prefix
-      const resetToken = await prisma.verificationToken.findFirst({
-        where: {
-          token,
-          identifier: {
-            startsWith: "password-reset:",
-          },
-        },
-      });
+      const resetToken = await profileRepository.findTokenWithIdentifierPrefix(
+        token,
+        PASSWORD_RESET_PREFIX,
+      );
 
       if (!resetToken) {
         return { success: false, error: "Invalid or expired reset link" };
@@ -131,28 +119,21 @@ export class PasswordService {
       // Check if token has expired
       if (resetToken.expires < new Date()) {
         // Delete expired token (use deleteMany to handle concurrent requests)
-        await prisma.verificationToken.deleteMany({
-          where: { token: resetToken.token },
-        });
+        await profileRepository.deleteVerificationToken(resetToken.token);
         return { success: false, error: "Reset link has expired" };
       }
 
       // Extract user ID from identifier
-      const userId = resetToken.identifier.replace("password-reset:", "");
+      const userId = resetToken.identifier.replace(PASSWORD_RESET_PREFIX, "");
 
       // Hash new password
       const passwordHash = await hash(newPassword, 10);
 
       // Update password
-      await prisma.user.update({
-        where: { id: userId },
-        data: { passwordHash },
-      });
+      await profileRepository.updatePasswordHash(userId, passwordHash);
 
       // Delete used token (use deleteMany to handle concurrent requests)
-      await prisma.verificationToken.deleteMany({
-        where: { token: resetToken.token },
-      });
+      await profileRepository.deleteVerificationToken(resetToken.token);
 
       return { success: true };
     } catch (error) {

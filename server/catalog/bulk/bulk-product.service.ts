@@ -6,7 +6,6 @@
  * (D5), and therefore all-or-nothing by construction (R3).
  */
 import { randomUUID } from "node:crypto";
-import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
 import { categoryRepository } from "@server/catalog/category.repository";
 import { orgAddressRepository } from "@server/catalog/org.address.repository";
@@ -16,6 +15,7 @@ import { rupeesToPaise } from "@server/shared/money";
 import { ConflictError } from "@server/shared/domain-error";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
+import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import {
   BULK_MAX_ROWS,
   type BulkProductRow,
@@ -59,13 +59,9 @@ export async function validateProductRows(
 
   const skus = rows.flatMap(({ row, rowNumber }) => (row.sku ? [{ sku: row.sku, rowNumber }] : []));
   const taken = skus.length
-    ? await prisma.product.findMany({
-        where: { orgId, sku: { in: skus.map((s) => s.sku) } },
-        // Archived products are included deliberately: they still hold their SKU, so
-        // a row claiming one is refused rather than silently restoring the product an
-        // import must never restore (ADR-0029, product-archive Q1).
-        select: { sku: true, name: true, archivedAt: true },
-      })
+    ? // Archived products are included deliberately: they still hold their SKU, so a row
+      // claiming one is refused rather than silently restoring it (ADR-0029, product-archive Q1).
+      await adminProductsRepository.listSkusTaken(orgId, skus.map((s) => s.sku))
     : [];
   const takenBy = new Map(taken.map((p) => [p.sku as string, p.name]));
   const archivedSkus = new Set(
@@ -145,9 +141,8 @@ export async function validateProductRows(
  */
 async function assignSlugs(rows: RowWithNumber<BulkProductCreateRow>[]): Promise<string[]> {
   const existing = new Set(
-    // Every slug, archived included (ADR-0029): an archived product keeps its slug so
-    // a restore finds its own URL free, so an import must not reuse it.
-    (await prisma.product.findMany({ select: { slug: true } })).map((p) => p.slug)
+    // Archived included (ADR-0029): an import must not reuse a slug a restore will want back.
+    (await adminProductsRepository.listAllSlugs()).map((p) => p.slug)
   );
   return rows.map(({ row }) => {
     const base = slugify(row.name) || "item";
@@ -238,11 +233,7 @@ export async function createProducts(
   for (const row of media) row.assetId = assetIds.get(row.ref) ?? null;
 
   try {
-    await prisma.$transaction(async (tx) => {
-      await tx.product.createMany({ data: products });
-      if (media.length) await tx.productMedia.createMany({ data: media });
-      if (stock.length) await tx.productStock.createMany({ data: stock });
-    });
+    await adminProductsRepository.createBulk(products, media, stock);
   } catch (error) {
     if (isUniqueViolation(error, "sku")) {
       throw new ConflictError(

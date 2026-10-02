@@ -8,10 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@server/shared/prisma";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { applyStatus } from "@server/shipping/shipment-status.service";
+import { trackingService } from "@server/shipping/tracking.service";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { updateTrackingSchema } from "@/lib/validation/schemas/shipment-tracking.schema";
 
@@ -49,10 +49,7 @@ export async function PATCH(
     const { trackingNumber, courierName, trackingUrl } = validation.data;
 
     // Check if shipment exists
-    const shipment = await prisma.shipment.findUnique({
-      where: { id: shipmentId },
-      include: { order: true },
-    });
+    const shipment = await trackingService.findShipmentWithOrder(shipmentId);
 
     if (!shipment) {
       return NextResponse.json(
@@ -62,9 +59,10 @@ export async function PATCH(
     }
 
     // Update shipment with tracking details
-    const updatedShipment = await prisma.shipment.update({
-      where: { id: shipmentId },
-      data: { trackingNumber, courierName, trackingUrl, updatedAt: new Date() },
+    const updatedShipment = await trackingService.updateTracking(shipmentId, {
+      trackingNumber,
+      courierName,
+      trackingUrl,
     });
 
     // An AWB means the courier has it. The status moves through the one writer that owns the

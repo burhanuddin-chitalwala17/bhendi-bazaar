@@ -135,6 +135,24 @@ export class ProductService {
   }
 
   /**
+   * Whether a buyer may newly save this product. Asked by `wishlist`; a withdrawn org's product
+   * still passes, as it did when wishlist read the row itself.
+   */
+  async isAvailable(productId: string): Promise<boolean> {
+    return await productsRepository.isAvailable(productId);
+  }
+
+  /** The rows `/api/checkout/allocate` plans parcels from. Never sent to the browser as stock figures (A9). */
+  async listForAllocation(productIds: string[]) {
+    return await productsRepository.listForAllocation(productIds);
+  }
+
+  /** The rows `/api/products/check-stock` sums into one availability figure per product. */
+  async listForStockCheck(productIds: string[]) {
+    return await productsRepository.listForStockCheck(productIds);
+  }
+
+  /**
    * How many of these products belong to someone other than this org — zero is the only
    * acceptable answer when an org is naming its own products. Asked by `promotions` before it
    * targets an offer, so one shop cannot discount another's goods.

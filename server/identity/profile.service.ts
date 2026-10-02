@@ -6,7 +6,6 @@
  */
 
 import { profileRepository } from "@server/identity/profile.repository";
-import { prisma } from "@server/shared/prisma";
 import type {
   ServerProfileData,
   UpdateProfileInput,
@@ -56,6 +55,18 @@ export class ProfileService {
     return updated;
   }
 
+  async findUserWithProfile(userId: string) {
+    return await profileRepository.findWithProfile(userId);
+  }
+
+  async setProfilePic(userId: string, profilePic: string): Promise<void> {
+    await profileRepository.setProfilePic(userId, profilePic);
+  }
+
+  async clearProfilePic(userId: string): Promise<void> {
+    await profileRepository.clearProfilePic(userId);
+  }
+
   /**
    * Delete user profile
    */
@@ -78,10 +89,7 @@ export class ProfileService {
       }
 
       // Check if email is already taken by another user
-      const existingUser = await prisma.user.findUnique({
-        where: { email: input.email },
-        select: { id: true },
-      });
+      const existingUser = await profileRepository.findIdByEmail(input.email);
 
       if (existingUser && existingUser.id !== userId) {
         throw new ConflictError("This email is already registered to another account");

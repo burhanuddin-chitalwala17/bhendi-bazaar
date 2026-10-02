@@ -551,6 +551,53 @@ export class AdminProductsRepository {
     });
     return rows.map((row) => row.category);
   }
+
+  /** Which of these SKUs this org already holds. Archived included: an archived product keeps its SKU (ADR-0029). */
+  async listSkusTaken(orgId: string, skus: string[]) {
+    return await prisma.product.findMany({
+      where: { orgId, sku: { in: skus } },
+      select: { sku: true, name: true, archivedAt: true },
+    });
+  }
+
+  /** Every slug, archived included (ADR-0029): an archived product keeps its slug so a restore finds its URL free. */
+  async listAllSlugs(): Promise<Array<{ slug: string }>> {
+    return await prisma.product.findMany({ select: { slug: true } });
+  }
+
+  /** A bulk import's rows, in one transaction of createMany per table — all-or-nothing by construction. */
+  async createBulk(
+    products: Prisma.ProductCreateManyInput[],
+    media: Prisma.ProductMediaCreateManyInput[],
+    stock: Prisma.ProductStockCreateManyInput[],
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await tx.product.createMany({ data: products });
+      if (media.length) await tx.productMedia.createMany({ data: media });
+      if (stock.length) await tx.productStock.createMany({ data: stock });
+    });
+  }
+
+  /** Gallery rows whose image predates the asset record — the media backfill's input (media-library D3). */
+  async listUnlinkedMedia() {
+    return await prisma.productMedia.findMany({
+      where: { assetId: null },
+      select: { id: true, kind: true, ref: true, product: { select: { orgId: true } } },
+    });
+  }
+
+  /** A sample of unlinked, non-embed gallery refs: enough to tell which store they belong to. */
+  async sampleUnlinkedMediaRefs(take: number) {
+    return await prisma.productMedia.findMany({
+      where: { assetId: null, kind: { not: "YOUTUBE" } },
+      select: { ref: true },
+      take,
+    });
+  }
+
+  async linkMediaAsset(id: string, assetId: string): Promise<void> {
+    await prisma.productMedia.update({ where: { id }, data: { assetId } });
+  }
 }
 
 export const adminProductsRepository = new AdminProductsRepository();

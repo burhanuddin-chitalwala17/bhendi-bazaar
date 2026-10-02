@@ -1,8 +1,12 @@
 import sharp from "sharp";
 import { sha256Hex } from "@server/shared/hash";
 import { MediaAssetKind } from "@prisma/client";
-import { prisma } from "@server/shared/prisma";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
+import { adminProductsRepository } from "@server/catalog/admin.product.repository";
+import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
+import { bannerRepository } from "@server/catalog/banner.repository";
+import { orgProfileRepository } from "@server/catalog/org-profile.repository";
+import { orgBannerRepository } from "@server/catalog/org-banner.repository";
 import { isOwnObjectUrl, pathnameFor, publicBaseUrl } from "@server/catalog/object-store";
 
 /** The configured store, for a message; an unconfigured one is a fact the message should carry. */
@@ -77,32 +81,12 @@ async function assertStoreMatchesDatabase(
   base: string,
 ): Promise<void> {
   const [media, categories, banners, profiles, orgBanners] = await Promise.all([
-    prisma.productMedia.findMany({
-      where: { assetId: null, kind: { not: "YOUTUBE" } },
-      select: { ref: true },
-      take: STORE_CHECK_SAMPLE,
-    }),
+    adminProductsRepository.sampleUnlinkedMediaRefs(STORE_CHECK_SAMPLE),
     // `heroImage` is not nullable but is often empty; the filter below drops those.
-    prisma.category.findMany({
-      where: { heroAssetId: null },
-      select: { heroImage: true },
-      take: STORE_CHECK_SAMPLE,
-    }),
-    prisma.banner.findMany({
-      where: { imageAssetId: null, imageUrl: { not: null } },
-      select: { imageUrl: true },
-      take: STORE_CHECK_SAMPLE,
-    }),
-    prisma.orgProfile.findMany({
-      where: { OR: [{ logoAssetId: null, logoUrl: { not: null } }, { heroAssetId: null, heroUrl: { not: null } }] },
-      select: { logoUrl: true, heroUrl: true },
-      take: STORE_CHECK_SAMPLE,
-    }),
-    prisma.orgBanner.findMany({
-      where: { imageAssetId: null, imageUrl: { not: null } },
-      select: { imageUrl: true },
-      take: STORE_CHECK_SAMPLE,
-    }),
+    adminCategoryRepository.listUnlinkedHeroes(STORE_CHECK_SAMPLE),
+    bannerRepository.listUnlinkedImages(STORE_CHECK_SAMPLE),
+    orgProfileRepository.listUnlinkedImages(STORE_CHECK_SAMPLE),
+    orgBannerRepository.listUnlinkedImages(STORE_CHECK_SAMPLE),
   ]);
 
   const refs = [
@@ -219,10 +203,7 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
   };
 
   // Product galleries: images and video references, owned by the product's org.
-  const media = await prisma.productMedia.findMany({
-    where: { assetId: null },
-    select: { id: true, kind: true, ref: true, product: { select: { orgId: true } } },
-  });
+  const media = await adminProductsRepository.listUnlinkedMedia();
   for (const row of media) {
     // A hosted video is linked on write, from confirm on (video-hosting D1); one left unlinked
     // was saved against a failed asset, and there is no image to make of it.
@@ -231,37 +212,34 @@ export async function backfillMediaAssets(options: BackfillOptions): Promise<Bac
       row.kind === "YOUTUBE"
         ? await assetForEmbed(row.ref, row.product.orgId)
         : await assetForImage(row.ref, row.product.orgId);
-    if (options.write) await prisma.productMedia.update({ where: { id: row.id }, data: { assetId } });
+    if (options.write) await adminProductsRepository.linkMediaAsset(row.id, assetId);
     report.rowsLinked += 1;
   }
 
   // Category heroes and home banners are the platform's own.
-  for (const category of await prisma.category.findMany({ where: { heroAssetId: null }, select: { id: true, heroImage: true } })) {
+  for (const category of await adminCategoryRepository.listUnlinkedHeroes()) {
     if (!category.heroImage) continue;
     const assetId = await assetForImage(category.heroImage, null);
-    if (options.write) await prisma.category.update({ where: { id: category.id }, data: { heroAssetId: assetId } });
+    if (options.write) await adminCategoryRepository.linkHeroAsset(category.id, assetId);
     report.rowsLinked += 1;
   }
-  for (const banner of await prisma.banner.findMany({ where: { imageAssetId: null, imageUrl: { not: null } }, select: { id: true, imageUrl: true } })) {
+  for (const banner of await bannerRepository.listUnlinkedImages()) {
     const assetId = await assetForImage(banner.imageUrl!, null);
-    if (options.write) await prisma.banner.update({ where: { id: banner.id }, data: { imageAssetId: assetId } });
+    if (options.write) await bannerRepository.linkImageAsset(banner.id, assetId);
     report.rowsLinked += 1;
   }
 
   // An organisation's own face and signage.
-  for (const profile of await prisma.orgProfile.findMany({
-    where: { OR: [{ logoAssetId: null, logoUrl: { not: null } }, { heroAssetId: null, heroUrl: { not: null } }] },
-    select: { orgId: true, logoUrl: true, logoAssetId: true, heroUrl: true, heroAssetId: true },
-  })) {
+  for (const profile of await orgProfileRepository.listUnlinkedImages()) {
     const data: { logoAssetId?: string; heroAssetId?: string } = {};
     if (profile.logoUrl && !profile.logoAssetId) data.logoAssetId = await assetForImage(profile.logoUrl, profile.orgId);
     if (profile.heroUrl && !profile.heroAssetId) data.heroAssetId = await assetForImage(profile.heroUrl, profile.orgId);
-    if (options.write) await prisma.orgProfile.update({ where: { orgId: profile.orgId }, data });
+    if (options.write) await orgProfileRepository.linkImageAssets(profile.orgId, data);
     report.rowsLinked += Object.keys(data).length;
   }
-  for (const banner of await prisma.orgBanner.findMany({ where: { imageAssetId: null, imageUrl: { not: null } }, select: { id: true, orgId: true, imageUrl: true } })) {
+  for (const banner of await orgBannerRepository.listUnlinkedImages()) {
     const assetId = await assetForImage(banner.imageUrl!, banner.orgId);
-    if (options.write) await prisma.orgBanner.update({ where: { id: banner.id }, data: { imageAssetId: assetId } });
+    if (options.write) await orgBannerRepository.linkImageAsset(banner.id, assetId);
     report.rowsLinked += 1;
   }
 

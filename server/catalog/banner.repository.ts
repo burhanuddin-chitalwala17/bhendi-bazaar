@@ -107,6 +107,19 @@ class BannerRepository {
   async countAll(): Promise<number> {
     return prisma.banner.count();
   }
+
+  /** Banners whose image predates the asset record — the media backfill's input (media-library D3). */
+  async listUnlinkedImages(take?: number) {
+    return await prisma.banner.findMany({
+      where: { imageAssetId: null, imageUrl: { not: null } },
+      select: { id: true, imageUrl: true },
+      ...(take === undefined ? {} : { take }),
+    });
+  }
+
+  async linkImageAsset(id: string, imageAssetId: string): Promise<void> {
+    await prisma.banner.update({ where: { id }, data: { imageAssetId } });
+  }
 }
 
 export const bannerRepository = new BannerRepository();

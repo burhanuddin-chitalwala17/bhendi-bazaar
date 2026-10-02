@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-239] 2026-10-02 — Every table is reached through a repository
+
+PR-238's ratchet listed nineteen files calling `prisma.<model>` outside a repository. All of them
+have moved, and its allowlist is now empty:
+
+- **Identity:** auth config, the NextAuth adapter's account creation, admin re-reads (still on
+  every request, ADR-0021), password and verification tokens, signup, and the profile picture
+  now go through `profile.repository.ts`. Callers outside identity use the new
+  `accountService`; notifications reaches its token rows through it too.
+- **Shipping and checkout:** `Shipment` gets its first repository
+  (`server/shipping/repositories/shipment.repository.ts`). The tracking route and the Shiprocket
+  webhook call a new `trackingService`. The webhook's order write — the worst entry — is now
+  `orderService.markDelivered`, so only checkout writes order state.
+- **Catalog:** bulk import, stock check, wishlist availability and the media backfill go through
+  catalog's repositories. The allocate route's body became
+  `server/checkout/parcel-preview.service.ts`, so the route reaches one domain.
+- **Analytics:** the dashboard widgets' reads moved to `server/analytics/widgets.repository.ts`.
+
+The NextAuth adapter is still handed the Prisma client, because the library works that way.
+
+Measuring this found the harder half of Invariant 5. Four tables are *written* by more than one
+repository: `ProductStock`, `User`, `OrgMember` and `Order`. Most are a storefront repository
+beside an `admin.*` one, which "no admin domain" sanctions and Invariant 5 forbids. That
+contradiction needs a decision, not a move. `one-repository.test.ts` gains a second ratchet that
+records the four and fails a fifth.
+
+Every query moved with its where, select and include unchanged. Verified with the integration
+suite against a freshly migrated local database — 103 tests, the seeded-data suite skipped — as
+well as the unit suite.
+
 ## [PR-238] 2026-10-02 — Invariant 5 gets the guard it never had
 
 "One aggregate, one repository" was a hard block with no test. Measured today: nineteen files

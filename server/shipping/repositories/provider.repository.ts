@@ -41,6 +41,14 @@ export class ShippingProviderRepository {
     });
   }
 
+  /** Id and code only: a webhook needs to know the carrier is configured, not its credentials. */
+  async findIdentityByCode(code: string): Promise<{ id: string; code: string } | null> {
+    return await prisma.shippingProvider.findUnique({
+      where: { code },
+      select: { id: true, code: true },
+    });
+  }
+
   /**
    * Get provider by ID
    */

@@ -229,6 +229,24 @@ class AdminCategoryRepository {
       where: { id },
     });
   }
+
+  /** One statement for a whole sheet; ids, slugs and parents are settled by the caller. */
+  async createMany(data: Prisma.CategoryCreateManyInput[]): Promise<void> {
+    await prisma.category.createMany({ data });
+  }
+
+  /** Categories whose hero predates the asset record — the media backfill's input. `heroImage` is often empty. */
+  async listUnlinkedHeroes(take?: number) {
+    return await prisma.category.findMany({
+      where: { heroAssetId: null },
+      select: { id: true, heroImage: true },
+      ...(take === undefined ? {} : { take }),
+    });
+  }
+
+  async linkHeroAsset(id: string, heroAssetId: string): Promise<void> {
+    await prisma.category.update({ where: { id }, data: { heroAssetId } });
+  }
 }
 
 export const adminCategoryRepository = new AdminCategoryRepository();
