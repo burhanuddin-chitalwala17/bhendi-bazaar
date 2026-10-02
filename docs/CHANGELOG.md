@@ -10,6 +10,39 @@
 
 ## Entries
 
+## [PR-239] 2026-10-03 — Two decisions closed: the colour list, and what the bulk sheet does
+
+**The colour list is the union**, which is what PR-230 already shipped: 188 values with the 31
+both platforms spell identically sorted first. It was held open on a concern that turned out to
+be overstated twice over.
+
+The concern was that a wide list commits somebody to mapping 154 values onto Flipkart's narrower
+vocabulary. But only the colours a shop *actually uses* ever need mapping — tens, not hundreds —
+and [ADR-0045](adr/0045-channel-mappings-are-versioned-data.md) decision 3 already has them
+decided lazily: an unmapped value fails readiness and the shop is asked to choose at the moment
+it first blocks a publish. There was never an upfront session to dread. The narrow list, by
+contrast, would leave a colour the shop genuinely sells unrecordable, which is the failure that
+cannot be undone later.
+
+That closes the last open question across all five listing-vocabulary specs.
+
+**The bulk sheet creates and updates, keyed by SKU** (owner, 2026-10-03). The existing importer
+is create-only, so a catalogue already listed can only be corrected one form at a time — ninety-four
+of them here. Update-by-SKU turns that into one upload, and it is nearly free once the sheet
+exists.
+
+Its shape follows Amazon rather than Flipkart and Meesho: those publish one sheet per node, so a
+seller in twelve categories downloads twelve files. Amazon lets several product types be selected
+and returns one workbook. That is the better shape and it is far cheaper here — Amazon's costs 390
+columns because it spans everything; ours spans a vocabulary of twenty-eight facts, so three types
+is roughly twenty-five columns. Each choice column carries its permitted values as a dropdown read
+from `ListingValue`, which stops "Maroon / maroon / Marron" at the source rather than cleaning it
+up afterwards.
+
+Recorded on the backlog as `product-form/bulk-sheet` rather than built now; the current importer's
+headers still carry `sizes` and `colors`, the two columns this phase replaces, so it is rewritten
+rather than extended.
+
 ## [PR-238] 2026-10-03 — The category pages hand the form the types that exist
 
 PR-237 turned the schema into a factory and left the two category pages still calling the form
