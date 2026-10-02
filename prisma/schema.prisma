@@ -238,7 +238,8 @@ model Category {
   /// Null everywhere means a product is asked the spine only — it still saves and still sells.
   /// A browsing category is reorganised for merchandising reasons; the resolved value is copied
   /// onto the product on save (D1b) so moving a category never moves a product's stored answers.
-  productType String?
+  productType     String?
+  productTypeRef  ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
   order       Int            @default(0)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -290,6 +291,8 @@ model Product {
   /// because the channel mapping resolves a platform node from the type and the kind together,
   /// and because the platforms disagree about which of the two it is.
   kind        String?
+  /// Restrict: a type in use is retired, never deleted (product-types D8).
+  productTypeRef ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
 
   /// The declared facts this product answers, each entry holding its value and the level that
   /// supplied it, so origin costs no second column (listing-vocabulary trd D3). Only the
@@ -1875,4 +1878,63 @@ model ProductFamily {
 
   @@index([orgId])
   @@index([orgId, retiredAt])
+}
+
+/// A question set: which facts a product is asked, what it measures, what makes two of its
+/// products sell separately, and which kinds it holds
+/// ([product-types](../docs/specs/listing-vocabulary/product-types/) D1).
+///
+/// A row rather than a constant, so onboarding a seller with a line the platform has never
+/// carried does not wait for a release (spec R1). What stays in code is the *vocabulary* — the
+/// facts in `server/catalog/listing-facts.ts`, each carrying a validation rule and a way of
+/// being answered. A type is a selection from it, and a selection is data. This is where Akeneo
+/// and Shopify both draw the line.
+///
+/// Platform-wide, never per seller (D11): an admin defines types as an admin defines categories.
+/// A seller inventing its own would fragment the mappings every channel adapter depends on. The
+/// permitted *answers* stay org-scopeable (`ListingValue.orgId`) because a shop knowing a colour
+/// the platform does not is harmless, where a shop knowing a different question set is not.
+model ProductType {
+  id String @id @default(cuid())
+
+  /// What `Product.productType` and `Category.productType` already store — `islamic-wear` and
+  /// the rest. Unique so both columns can reference it, which lets every existing row keep the
+  /// exact string it holds and simply gain integrity: no backfill, no id rewrite (D2).
+  key   String @unique
+  label String
+
+  /// Fact keys from `server/catalog/listing-facts.ts`, in the order the form shows them. A key
+  /// naming no declared fact is refused on write — a form field with no meaning is worse than a
+  /// missing one (D3).
+  facts String[] @default([])
+
+  /// `[{ key, label, unit, required }]` — the measurements this type takes, with the unit fixed
+  /// per type rather than chosen per product.
+  measures Json?
+
+  /// Which facts or measures make two of its products sell separately (variants D1). Declared
+  /// per type because Flipkart declares its axes per node and no two of its twelve agree.
+  variantAxis String[] @default([])
+
+  /// `[{ key, label }]` — the kinds it holds. A kind decides which platform node a product maps
+  /// to, which is why abaya, burqa and rida are kinds rather than types of their own.
+  kinds Json?
+
+  /// Which measurements a size label is read from, and optionally the scale that turns one into
+  /// a label — a ring's inner diameter becoming a ring size (D9). Nearest-match is generic code,
+  /// so the scale is data and a type is fully configurable rather than half.
+  labelFrom  String[] @default([])
+  labelScale Json?
+
+  /// Retired, never deleted ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)):
+  /// products store its key, and the foreign keys refuse the delete anyway.
+  retiredAt DateTime?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products   Product[]
+  categories Category[]
+
+  @@index([retiredAt])
 }

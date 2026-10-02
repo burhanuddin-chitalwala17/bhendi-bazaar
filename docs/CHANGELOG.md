@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-236] 2026-10-03 — The nine product types become rows [MIGRATION]
+
+The first product-types PR. `ProductType` exists, the nine declarations are carried across
+unchanged, and both `Product.productType` and `Category.productType` now reference it. No
+behaviour changes: the code still reads the constants, and this PR is what lets the next one stop.
+
+**The foreign key references `key`, not `id`**, which is the decision that makes this free.
+Postgres permits a foreign key against any unique column, so every existing row keeps the exact
+string it holds and simply gains integrity — no backfill, no id rewrite, no touching the ninety-four
+products. Null stays legal, because a foreign key never constrains one, which is what the untyped
+categories need: masalla bags, beauty and health, kitchen and dining.
+
+Before this, `Product.productType` was a loose string. The compiler checked it only where a
+constant was used, so a typo written through any other path would have been stored and later
+published. Now the database refuses it.
+
+The rows are inserted **before** the constraints are added, in the same migration, so a database
+where a `productType` had already been set during testing does not fail the moment the key
+appears. Idempotent on the unique key.
+
+`labelScale` carries the ring diameter-to-size table, and `labelFrom` which measurements each type
+reads a label from — both of which were claimed un-configurable when this was first assessed and
+turn out to be data. Only jewellery has a scale, which the test asserts.
+
+Eleven tests against a real schema. Mutation-tested three ways: dropping the foreign key, changing
+its `RESTRICT` to `CASCADE`, and corrupting a carried fact list each turn it red. Worth recording
+that the `CASCADE` mutation genuinely deleted a type and its product before the restore — a
+mutation that lets a delete through does delete, and the fixture had to be rebuilt from the
+migration's own insert.
+
 ## [PR-235] 2026-10-03 — Product types become something an admin creates
 
 The nine types were written as a TypeScript object, which made adding one a release. The owner's
