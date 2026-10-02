@@ -10,6 +10,32 @@
 
 ## Entries
 
+## [PR-241] 2026-10-03 — Rida, and a masalla bag that is a combo [MIGRATION]
+
+The first change that would have needed a release and does not. Both are rows, written through
+the path PR-236 to PR-240 built.
+
+**`rida` is a kind of Islamic wear, not a type of its own.** It is thirty-five of this store's
+ninety-four products and its largest line, which argued for a type. The mapping cost settles it:
+`(type, kind)` resolves a platform node in either shape, so the number of mapping rows is
+identical, and the questions are the same — the owner had already been mapping abaya and burqa
+fields onto rida fields. One question set, one more kind.
+
+The four rida categories — formal, semi-formal, casual, ohbat — stay categories. They are not
+kinds, because all four hold the same kind and map to the same node. And they need no `style`
+fact: neither Flipkart's `abaya-burqa` nor Meesho's `Abayas` asks for one, and the category
+already says it. Recording it on the product would store the same fact twice.
+
+**A masalla bag is a combo, not a bag.** A handbag and a prayer mat sold together; mapping it to
+a bag node would send a buyer a mat they never read about. Eighteen products, the second largest
+line. They stay typeless until the owner points the category at `combo` — the kind exists first
+so that is one click rather than a release, which is the whole point of the four PRs before this.
+
+One thing worth stating plainly: `rida` has no exact match on either platform. Flipkart's
+`abaya-burqa` permits Abaya, Burqa and Naqab; Meesho has Abayas, Burqa, Niqab, Hijab and Other
+Islamic Wear. So this store's largest line will publish under a **nearest-fit** mapping, which is
+the case the readiness gate must show rather than resolve silently.
+
 ## [PR-240] 2026-10-03 — An admin builds a question set
 
 The screen the whole product-types spec was for. `/admin/product-types` lists the types with what

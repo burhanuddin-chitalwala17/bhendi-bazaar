@@ -50,7 +50,7 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
    */
   describe("the nine shipped and are intact", () => {
     const EXPECTED: Record<string, { facts: number; measures: number; kinds: number; axis: string[] }> = {
-      "islamic-wear": { facts: 9, measures: 6, kinds: 5, axis: ["colour"] },
+      "islamic-wear": { facts: 9, measures: 6, kinds: 6, axis: ["colour"] },
       trousers: { facts: 10, measures: 2, kinds: 3, axis: ["colour"] },
       "prayer-mat": { facts: 6, measures: 2, kinds: 2, axis: ["colour"] },
       bag: { facts: 9, measures: 3, kinds: 5, axis: ["colour"] },
@@ -58,7 +58,7 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
       fragrance: { facts: 3, measures: 1, kinds: 3, axis: ["capacity"] },
       jewellery: { facts: 8, measures: 1, kinds: 3, axis: ["plating", "colour"] },
       socks: { facts: 5, measures: 1, kinds: 4, axis: ["colour", "packQuantity"] },
-      combo: { facts: 4, measures: 0, kinds: 2, axis: ["colour"] },
+      combo: { facts: 4, measures: 0, kinds: 3, axis: ["colour"] },
     };
 
     it("has exactly the nine, and every one parses", async () => {
@@ -75,6 +75,19 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
         expect(row!.kinds.length, `${key} kinds`).toBe(want.kinds);
         expect(row!.variantAxis, `${key} axis`).toEqual(want.axis);
       }
+    });
+
+    /**
+     * This store's two largest lines. Rida is a kind rather than a type because the questions
+     * are the same as an abaya's and the mapping cost is identical either way; a masalla bag is
+     * a combo rather than a bag because mapping it to a bag node would send a buyer a prayer mat
+     * they did not read about.
+     */
+    it("holds rida among Islamic wear, and a masalla set among combos", async () => {
+      const islamic = await repo.byKey("islamic-wear");
+      expect(islamic?.kinds.map((k) => k.key)).toContain("rida");
+      const combo = await repo.byKey("combo");
+      expect(combo?.kinds.map((k) => k.key)).toContain("masalla-set");
     });
 
     // One question with two labels, not two facts — this was dropped by the first migration
