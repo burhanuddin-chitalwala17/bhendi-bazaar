@@ -10,6 +10,38 @@
 
 ## Entries
 
+## [PR-243] 2026-10-03 — The fill step gets its caller
+
+`fill-facts.ts` was written pure in PR-227 with nothing calling it. `listing-fill.service.ts` is
+now that caller: it resolves the type from the category tree, gathers the levels — the family,
+the brand, the org's defaults — and asks the pure step to walk them. The walking stays pure; what
+lives here is the reading.
+
+Wired into `createProduct` and `updateProduct`, so a product saved through the service comes back
+carrying its resolved type and its answers, each marked with the level that supplied it. Nothing
+here refuses a save: a product with facts unanswered still sells on this storefront and is told
+what is missing.
+
+**Two shapes that genuinely differ stopped sharing a type.** `ProductFormInput` is what a form
+sends; `ProductPersistInput` is what the repository writes — the same fields plus a
+`productType` the form never sends and answers carrying their origin. Forcing both through one
+type is how a server-owned field comes to look like something a request may set (Invariant 4).
+`syncMarkdown` now takes only the four scalars it reads, so it serves either.
+
+**A bug the tests found rather than the compiler**: a family stores its facts the way a product
+does, each with the level that supplied it, so reading one *as a level* has to take the value
+back out. Passing the stored entry straight through made the inherited answer
+`{value: "crepe", origin: "product"}` rather than `crepe`. It typechecked, because both sides are
+JSON.
+
+**A second gap the mutation testing found rather than the tests.** Breaking the type scoping —
+asking every fact the vocabulary declares rather than the ones this type declares — left all nine
+tests green. That is the central claim of the whole feature, untested. Two tests now cover it: an
+abaya is never asked about plating, and an answer for a fact its type does not ask is dropped
+rather than stored.
+
+Eleven integration tests. Mutation-tested three ways, all caught once the gap was closed.
+
 ## [PR-242] 2026-10-03 — This store's catalogue gets its types [MIGRATION]
 
 **The first migration in this programme that writes to the live catalogue.** Everything before it

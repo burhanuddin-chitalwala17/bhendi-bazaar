@@ -2,6 +2,9 @@
 
 import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import { resolveShotList, unknownSlots } from "@server/catalog/shot-list";
+import { fillListing } from "@server/catalog/listing-fill.service";
+import { holdsKind, resolveProductType } from "@server/catalog/product-type";
+import { productTypeRepository } from "@server/catalog/product-type.repository";
 import { categoryRepository } from "@server/catalog/category.repository";
 import {
   ProductCopyOption,
@@ -176,7 +179,8 @@ export class ProductsService {
   async createProduct(data: ProductFormInput) {
     await this.checkLocations(data);
     await this.checkSlots(data);
-    const priced = this.moneyToPaise(data);
+    await this.checkKind(data);
+    const priced = { ...this.moneyToPaise(data), ...(await this.fill(data)) };
     const product = await adminProductsRepository.createProduct(priced);
     await this.syncMarkdown(product.id, priced);
     return product;
@@ -220,13 +224,51 @@ export class ProductsService {
   async updateProduct(id: string, data: ProductFormInput) {
     await this.checkLocations(data);
     await this.checkSlots(data);
-    const priced = this.moneyToPaise(data);
+    await this.checkKind(data);
+    const priced = { ...this.moneyToPaise(data), ...(await this.fill(data)) };
     const product = await adminProductsRepository.updateProduct(id, priced);
     if (!product) {
       throw new NotFoundError("Product not found");
     }
     await this.syncMarkdown(id, priced);
     return product;
+  }
+
+  /**
+   * The listing vocabulary's answers, worked out on save
+   * ([inherited-facts](../../docs/specs/listing-vocabulary/inherited-facts/) D2). Nothing here
+   * refuses a save: a product with facts unanswered still sells on this storefront and is told
+   * what is missing instead (listing-vocabulary spec R5).
+   */
+  private async fill(data: ProductFormInput) {
+    const filled = await fillListing({
+      categoryId: data.categoryId,
+      orgId: data.orgId,
+      familyId: data.familyId ?? null,
+      brandId: data.brandId ?? null,
+      facts: data.facts as never,
+      measurements: data.measurements as never,
+    });
+    return {
+      productType: filled.productType,
+      facts: filled.facts,
+      measurements: filled.measurements,
+    };
+  }
+
+  /** A kind must be one its type holds — otherwise no channel can map it (product-types D3). */
+  private async checkKind(data: ProductFormInput): Promise<void> {
+    if (!data.kind) return;
+    const key = resolveProductType(data.categoryId, await categoryRepository.list());
+    const type = await productTypeRepository.byKey(key);
+    if (!holdsKind(type, data.kind)) {
+      throw new DomainError(
+        type
+          ? `"${data.kind}" is not a kind of ${type.label}`
+          : "This category has no product type, so it holds no kinds",
+        { status: 400, field: "kind" },
+      );
+    }
   }
 
   /** A gallery slot must be one the product's category asks for (media-library R4, D4). */
@@ -256,7 +298,11 @@ export class ProductsService {
    * Clearing the field deactivates the offer rather than deleting it, since it may
    * already be named by an order's discount record.
    */
-  private async syncMarkdown(productId: string, data: ProductFormInput): Promise<void> {
+  // Takes only what it reads, so it serves both the submitted shape and the persisted one.
+  private async syncMarkdown(
+    productId: string,
+    data: Pick<ProductFormInput, "salePrice" | "price" | "name" | "orgId">,
+  ): Promise<void> {
     const markdown = data.salePrice;
     const valid = markdown !== undefined && markdown > 0 && markdown < data.price;
     await promotionService.setProductMarkdown({

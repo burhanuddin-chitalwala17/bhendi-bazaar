@@ -52,7 +52,32 @@ export interface ProductFormInput {
   sku?: string;
   lowStockThreshold?: number;
   weight: number;
+  /**
+   * The listing vocabulary's answers. `productType` is absent deliberately — it is resolved
+   * from the category tree on save and is server-owned, so accepting it would be accepting a
+   * value we then overwrite (Invariant 4, categories D1b).
+   */
+  kind?: string | null;
+  familyId?: string | null;
+  brandId?: string | null;
+  facts?: Record<string, string | number | boolean | null | undefined>;
+  measurements?: Record<string, number | null | undefined>;
 }
+/**
+ * What the repository writes: the form's input, plus what the server resolved on save.
+ *
+ * Distinct from `ProductFormInput` because the two genuinely differ. A form sends answers; the
+ * repository stores answers **with the level that supplied each**, and it stores a `productType`
+ * the form never sent. Forcing both through one type is how a server-owned field comes to look
+ * like something a request may set (Invariant 4).
+ */
+export interface ProductPersistInput
+  extends Omit<ProductFormInput, "facts" | "measurements"> {
+  productType: string | null;
+  facts: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean }>;
+  measurements: Record<string, { value: string | number | boolean; origin: string }>;
+}
+
 /**
  * What "copy product" carries onto a new product's form — the descriptive fields only.
  * Name, price, SKU, media and stock are left behind: each identifies or values one

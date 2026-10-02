@@ -7,6 +7,7 @@ import { prisma } from "@server/shared/prisma";
 import type {
     ProductFilters,
     ProductFormInput,
+    ProductPersistInput,
 } from "@server/catalog/admin.product.types";
 import { ProductFlag } from "@server/catalog/product.flags";
 import { Prisma } from "@prisma/client";
@@ -269,7 +270,7 @@ export class AdminProductsRepository {
     /**
      * Create new product
      */
-    async createProduct(data: ProductFormInput) {
+    async createProduct(data: ProductPersistInput) {
         // The slug is derived from the name, never taken from input, and settled by
         // the unique constraint rather than a prior availability query — checking
         // first is a race the database already arbitrates.
@@ -288,7 +289,7 @@ export class AdminProductsRepository {
         }
     }
 
-    private async insertProduct(slug: string, data: ProductFormInput) {
+    private async insertProduct(slug: string, data: ProductPersistInput) {
         // Quantities live only on the join rows since the destructive PR; zero rows
         // are dropped ("not stocked here"), and origin comes from the locations.
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
@@ -312,6 +313,13 @@ export class AdminProductsRepository {
                 sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold || 10,
                 weight: data.weight,
+                // Resolved on save and server-owned; the form never sends them
+                // (listing-vocabulary/categories D1b, inherited-facts D2).
+                productType: data.productType,
+                kind: blankToNull(data.kind ?? undefined),
+                familyId: data.familyId ?? null,
+                facts: data.facts as never,
+                measurements: data.measurements as never,
                 stockLocations: {
                     create: stockRows.map((row) => ({
                         orgAddressId: row.orgAddressId,
@@ -481,7 +489,7 @@ export class AdminProductsRepository {
         };
     }
 
-    async updateProduct(id: string, data: ProductFormInput) {
+    async updateProduct(id: string, data: ProductPersistInput) {
         // Fields are enumerated, not spread: `data` originates from a request body,
         // so spreading it would let any writable column through. `slug` is absent
         // deliberately — it is generated once at creation and then frozen, because
@@ -519,6 +527,13 @@ export class AdminProductsRepository {
                     sku: blankToNull(data.sku),
                     lowStockThreshold: data.lowStockThreshold,
                     weight: data.weight,
+                    // Symmetric with create (Invariant 4): an update that whitelists
+                    // less than its create is how a field becomes unsettable.
+                    productType: data.productType,
+                    kind: blankToNull(data.kind ?? undefined),
+                    familyId: data.familyId ?? null,
+                    facts: data.facts as never,
+                    measurements: data.measurements as never,
                     stockLocations: {
                         create: stockRows.map((row) => ({
                             orgAddressId: row.orgAddressId,
