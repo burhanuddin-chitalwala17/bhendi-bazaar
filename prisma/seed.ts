@@ -78,6 +78,33 @@ function seedMediaRows(product: SeedProduct) {
   return rows;
 }
 
+/**
+ * A fact as it is stored: the answer, plus the level that supplied it
+ * ([inherited-facts](../docs/specs/listing-vocabulary/inherited-facts/) D3). Everything seeded is
+ * the product's own, because nothing here inherits.
+ */
+function asStoredFacts(
+  answers: Record<string, string | number | boolean> | undefined,
+): Record<string, { value: string | number | boolean; origin: "product" }> | undefined {
+  if (!answers) return undefined;
+  return Object.fromEntries(
+    Object.entries(answers).map(([key, value]) => [key, { value, origin: "product" as const }]),
+  );
+}
+
+/** A category's own type, else the nearest ancestor's — the same walk `resolveProductType` does. */
+function resolveSeedProductType(categoryId: string): string | undefined {
+  const byId = new Map(seedCategories.map((category) => [category.id, category]));
+  let at = byId.get(categoryId);
+  const seen = new Set<string>();
+  while (at && !seen.has(at.id)) {
+    if (at.productType) return at.productType;
+    seen.add(at.id);
+    at = at.parentId ? byId.get(at.parentId) : undefined;
+  }
+  return undefined;
+}
+
 async function main() {
   assertSeedTargetIsAllowed();
 
@@ -115,6 +142,21 @@ async function main() {
   await prisma.productStock.deleteMany(); // before products and org addresses
   await prisma.productMedia.deleteMany();
   await prisma.product.deleteMany();
+  // Media came after this teardown was written and was never added to it, so `db seed` has
+  // failed on any database holding an asset since the library landed. Enhancements and the
+  // category hero both point at an asset, and the asset points at its org.
+  await prisma.enhancement.deleteMany(); // before media assets, orgs and users
+  await prisma.orgEnhancementPolicy.deleteMany(); // before orgs
+  await prisma.orgChannel.deleteMany(); // before orgs
+  // Six models point at an asset with Restrict, so every reference is cleared before the assets
+  // go. Banner and OrgBanner rows are deleted above; these are the ones that survive.
+  await prisma.category.updateMany({ data: { heroAssetId: null } });
+  await prisma.orgProfile.updateMany({ data: { logoAssetId: null, ownerPhotoAssetId: null } });
+  await prisma.orgBanner.deleteMany();
+  // An asset points at the one it was derived from, and at its poster, both Restrict. Cleared
+  // first so the set can go in one delete rather than in derivation order.
+  await prisma.mediaAsset.updateMany({ data: { derivedFromId: null, posterAssetId: null } });
+  await prisma.mediaAsset.deleteMany(); // before orgs and users
   await prisma.orgMember.deleteMany(); // before orgs; explicit rather than via cascade
   await prisma.orgAddress.deleteMany(); // before orgs and addresses
   await prisma.userAddress.deleteMany(); // before users and addresses
@@ -188,7 +230,11 @@ async function main() {
   // SEED CATEGORIES
   // ====================
   console.log("📦 Seeding categories...");
-  for (const categoryData of seedCategories) {
+  // Parents first: a child names its parent, and the row has to exist to be named.
+  const inTreeOrder = [...seedCategories].sort(
+    (a, b) => Number(Boolean(a.parentId)) - Number(Boolean(b.parentId)),
+  );
+  for (const categoryData of inTreeOrder) {
     const category = await prisma.category.create({
       data: {
         id: categoryData.id,
@@ -198,6 +244,11 @@ async function main() {
         heroImage: categoryData.heroImage,
         accent: categoryData.accent,
         order: categoryData.order,
+        parentId: categoryData.parentId,
+        // Assigned here because the live catalogue's types were set by a migration keyed on its
+        // own slugs. Without this a seeded category asks nothing and the listing vocabulary
+        // looks broken on a developer's machine while working in production.
+        productType: categoryData.productType,
       },
     });
     console.log(`  ✓ ${category.name}`);
@@ -289,6 +340,12 @@ async function main() {
         sku: productData.sku,
         lowStockThreshold: productData.lowStockThreshold,
         weight: productData.weight || 0.5, // ⭐ Default to 0.5kg if not specified
+        // The type is resolved from the category tree and copied onto the row, exactly as the
+        // save path does it — a product must be readable without walking the tree (categories D1b).
+        productType: resolveSeedProductType(productData.categoryId),
+        kind: productData.kind,
+        facts: asStoredFacts(productData.facts),
+        measurements: asStoredFacts(productData.measurements),
       },
     });
     console.log(`  ✓ ${product.name} (Stock: ${productData.stock})`);

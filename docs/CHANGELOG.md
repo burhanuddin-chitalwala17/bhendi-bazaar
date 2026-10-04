@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-277] 2026-10-04 — develop's new code, brought under the new rules
+## [PR-278] 2026-10-04 — develop's new code, brought under the new rules
 
 Merging `develop` into the design branch brought in 35 commits written before ADR-0048 and the
 Invariant 5 ratchet existed, and the guards caught exactly that code:
@@ -28,12 +28,12 @@ Invariant 5 ratchet existed, and the guards caught exactly that code:
   `importBulk` (creates and full-replace updates in one transaction). The wizard's new "updated"
   count is carried through the shared `useBulkImport` hook.
 
-Numbering: this branch's entries were PR-233 to PR-239 while `develop` reached PR-269, so they are
-renumbered PR-270 to PR-276. ADR-0048 to ADR-0050 did not collide.
+Numbering: this branch's entries were PR-233 to PR-239 while `develop` reached PR-270, so they are
+renumbered PR-271 to PR-277. ADR-0048 to ADR-0050 did not collide.
 
-## [PR-276] 2026-10-02 — Every table is reached through a repository
+## [PR-277] 2026-10-02 — Every table is reached through a repository
 
-PR-275's ratchet listed nineteen files calling `prisma.<model>` outside a repository. All of them
+PR-276's ratchet listed nineteen files calling `prisma.<model>` outside a repository. All of them
 have moved, and its allowlist is now empty:
 
 - **Identity:** auth config, the NextAuth adapter's account creation, admin re-reads (still on
@@ -61,7 +61,7 @@ Every query moved with its where, select and include unchanged. Verified with th
 suite against a freshly migrated local database — 103 tests, the seeded-data suite skipped — as
 well as the unit suite.
 
-## [PR-275] 2026-10-02 — Invariant 5 gets the guard it never had
+## [PR-276] 2026-10-02 — Invariant 5 gets the guard it never had
 
 "One aggregate, one repository" was a hard block with no test. Measured today: nineteen files
 outside a repository call `prisma.<model>` directly — six route handlers among them, and a
@@ -69,7 +69,7 @@ shipping webhook writing `prisma.order`. `tests/unit/one-repository.test.ts` is 
 them: each entry says why it has not moved, a new direct call fails, and a fixed file must leave
 the list. Broken once on purpose to confirm it fails. The webhook entry is marked the most urgent.
 
-## [PR-274] 2026-10-02 — The rules say what the tests check, where the code is written
+## [PR-275] 2026-10-02 — The rules say what the tests check, where the code is written
 
 An audit of the rules and skills against the tests found the server's rules stated where code is
 written, and the front end's mostly not: several gates (row-shaped buttons, overlay choice, portal
@@ -98,7 +98,7 @@ guards, `cn` registration) had no rule anywhere, and were met only when a test w
 - Small fixes: `ui-primitives.test.ts` cited the wrong ADR, `server/notifications/CLAUDE.md`
   carried a second, older `Verified:` date, and the empty `src/probe-tmp.ts` is deleted.
 
-## [PR-273] 2026-10-02 — The browser calls our API through one door
+## [PR-274] 2026-10-02 — The browser calls our API through one door
 
 Fifty-seven inline `fetch` calls — 49 in 42 components, 8 in hooks — each re-implemented "check
 `ok`, read the envelope, parse", and API clients lived in three places under two names. Now a
@@ -128,7 +128,7 @@ Review of the conversion found one regression it had made reachable: a payment-o
 field details left checkout on "Processing" with the Pay button disabled. Fixed, with
 `tests/unit/checkout-payment-errors.test.ts`, seen to fail without the fix.
 
-## [PR-272] 2026-10-02 — Three form factors, and the tablet gets the image it shows
+## [PR-273] 2026-10-02 — Three form factors, and the tablet gets the image it shows
 
 The breakpoints now have meanings (ADR-0050): phone at base, with `sm:` only refining it;
 tablet from `md:`; desktop from `lg:`. Tailwind's defaults, not a custom scale. Scripts read
@@ -142,7 +142,7 @@ half-width from 768px and a third from 1200px; the page is full width until `lg`
 it. The hint is now declared once as `GALLERY_SLIDE_SIZES` and shared by the gallery, the
 video poster and the YouTube thumbnail, which had copied the same string.
 
-## [PR-271] 2026-10-02 — Colour is a palette the themes pick from
+## [PR-272] 2026-10-02 — Colour is a palette the themes pick from
 
 `globals.css` spelled out 52 colour values across 152 declarations, the warm charcoal ink seven
 times. They now live once, in a primitive palette (`--emerald-550`, `--charcoal-220`, …) at the
@@ -154,7 +154,7 @@ nothing on screen moved. The near-duplicates the repetition was hiding are now v
 `tests/unit/design-tokens.test.ts` guards it: no raw colour outside the palette, no unused
 primitive, and no file in `src/` naming one. Each was broken on purpose once to confirm it fails.
 
-## [PR-270] 2026-10-02 — The orders table is handed the row it shows, not the order
+## [PR-271] 2026-10-02 — The orders table is handed the row it shows, not the order
 
 `OrdersTable` was typed by `@prisma/client`'s `Order`, so the admin orders page sent every column
 of every order to the browser to render seven of them. The boundary test missed it twice: it
@@ -167,6 +167,39 @@ and `OrgLocation` moved out of the repository into `server/catalog/org.address.t
 three components were importing it from. The component rule in
 `tests/unit/module-boundaries.test.ts` now forbids `@prisma/client` and repositories outright,
 types included — broken on purpose once to confirm it fails.
+## [PR-270] 2026-10-04 — A dev catalogue shaped like the real one
+
+The seed was broken and the dev database could not exercise any of the listing work. Both fixed.
+
+**`db seed` had failed since the media library landed.** Six models point at a `MediaAsset` with
+Restrict and none of them was in the teardown, so clearing the database threw on the first org.
+An asset also points at the one it was derived from and at its poster, so the self-references are
+cleared before the set goes.
+
+**The seeded categories now carry a product type.** The live catalogue's types were assigned by a
+migration keyed on its own slugs, which a seeded database does not have — so locally every
+category asked nothing and the whole vocabulary looked broken while working in production.
+
+**The catalogue is now shaped like the real one**: ridas with four children — formal, semi-formal,
+casual, ohbat — that share one product type. That is the case worth having in dev, because nothing
+else shows as plainly that a browsing category is not a question set.
+
+Three products exist to make a surface reachable: a rida answered in plain `nida`, which Flipkart
+has no word for, so the worklist is not empty; a half-answered rida, because a catalogue where
+everything is complete never shows what incomplete looks like; and a masalla bag, whose type is
+decided against, so the "not sold here" list is not empty either.
+
+Every seeded answer is checked against the vocabulary a migration ships —
+`tests/integration/seed-vocabulary.test.ts`, mutation-tested four ways. Writing it caught two
+values I had invented: `plating: 925-silver` and `shape: rectangle`, where the real keys are
+`sterling-silver` and `rectangular`.
+
+**And a test that was eating reference data.** `channel-readiness-service` used the real values
+`maroon` and `ochre` as fixtures and deleted them in its teardown, so every full-suite run removed
+the platform's own seeded mapping for maroon. The same class of fault as the billed-operations
+instrument in PR-257: a suite quietly spending something it did not own. Its fixtures are now
+stamped and collide with nothing.
+
 ## [PR-269] 2026-10-04 — The channel contracts, recorded [CONTRACT]
 
 Found by running `/bb-review` over the thirteen commits: the TRD said `[CONTRACT]` and that

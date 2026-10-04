@@ -1,7 +1,7 @@
 # Spec — listing vocabulary / variants
 
 - **Summary:** Anything that sells on its own is its own product with its own stock, and the category says what makes two things different
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-247, PR-249, PR-250 (2026-10-04)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-01

@@ -1,7 +1,7 @@
 # Spec — listing vocabulary
 
 - **Summary:** Describe a product once, in the words this shop uses, so every fact is stated where it is known and anything that sells on its own has its own stock
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-236…PR-253 (2026-10-04)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-01

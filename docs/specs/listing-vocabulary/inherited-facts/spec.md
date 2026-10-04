@@ -1,7 +1,7 @@
 # Spec — listing vocabulary / inherited facts
 
 - **Summary:** A fact left blank is filled in from the family, the brand or the shop's defaults, stored on the product, and shown with where it came from
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-227, PR-253 (2026-10-04)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-02

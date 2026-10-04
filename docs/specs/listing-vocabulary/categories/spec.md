@@ -1,7 +1,7 @@
 # Spec — listing vocabulary / categories
 
 - **Summary:** Nine categories, each naming the kinds it holds and the few questions it asks, with fixed answers where a list exists
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-236…PR-246 (2026-10-03)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-01

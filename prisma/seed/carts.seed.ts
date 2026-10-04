@@ -19,7 +19,7 @@ export const seedCarts: SeedCart[] = [
     userId: "user-1",
     items: [
       {
-        productId: "prod-8",
+        productId: "prod-bag-1",
         productName: "Emerald Stone Necklace",
         productSlug: "emerald-stone-necklace",
         quantity: 1,
@@ -27,7 +27,7 @@ export const seedCarts: SeedCart[] = [
         thumbnail: "https://placehold.co/800x800/eab308/ffffff.png?text=Emerald+Necklace",
       },
       {
-        productId: "prod-4",
+        productId: "prod-attar-1",
         productName: "Royal Oud Attar",
         productSlug: "royal-oud-attar",
         quantity: 1,
@@ -44,7 +44,7 @@ export const seedCarts: SeedCart[] = [
     userId: "user-2",
     items: [
       {
-        productId: "prod-3",
+        productId: "prod-rida-3",
         productName: "Embroidered Maroon Abaya",
         productSlug: "embroidered-maroon-abaya",
         quantity: 1,
@@ -61,7 +61,7 @@ export const seedCarts: SeedCart[] = [
     userId: "user-3",
     items: [
       {
-        productId: "prod-2",
+        productId: "prod-rida-2",
         productName: "Classic Black Jilbab",
         productSlug: "classic-black-jilbab",
         quantity: 1,
@@ -69,7 +69,7 @@ export const seedCarts: SeedCart[] = [
         thumbnail: "https://placehold.co/800x800/000000/ffffff.png?text=Black+Jilbab",
       },
       {
-        productId: "prod-6",
+        productId: "prod-bakhoor-1",
         productName: "Sandalwood Amber Attar",
         productSlug: "sandalwood-amber-attar",
         quantity: 2,
@@ -77,7 +77,7 @@ export const seedCarts: SeedCart[] = [
         thumbnail: "https://placehold.co/800x800/f59e0b/ffffff.png?text=Sandalwood+Amber",
       },
       {
-        productId: "prod-11",
+        productId: "prod-masalla-1",
         productName: "Wooden Tasbih (99 Beads)",
         productSlug: "wooden-tasbih-99-beads",
         quantity: 1,
