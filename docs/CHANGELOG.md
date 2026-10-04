@@ -10,6 +10,28 @@
 
 ## Entries
 
+## [PR-259] 2026-10-04 — Where you sell, on the page that already asks what you sell
+
+A "Where you sell" section on the org's listing screen: one row per channel, a switch, and a
+sentence saying what turning it on actually buys. This storefront is not among them — a shop does
+not opt into the place it already is.
+
+Without this the registry was inert. Channels are off by default and nothing could turn one on,
+so readiness could never appear anywhere, which made the rest of the feature undemonstrable.
+That is why it comes before the readiness panel rather than after it.
+
+**Off is a complete answer, and no row is written to say so.** A shop that has never been asked
+reads as selling nowhere else rather than as having declined — the difference matters the first
+time a channel is added to the set, because silence must not become a decision taken on the
+shop's behalf.
+
+**A channel the request does not mention is left alone, never switched off.** The form sends what
+it showed; treating silence as "off" would turn off whatever a later release adds the moment a
+page loaded before it posted.
+
+Turning one on buys exactly one thing today: this shop starts hearing whether its products are
+ready for that channel. No credential is asked for and nothing is sent anywhere.
+
 ## [PR-258] 2026-10-04 — The register, read: what a channel says about a product
 
 The reads behind the gate. Two repositories and a service that assembles them into the shape the

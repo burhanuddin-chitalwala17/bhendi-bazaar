@@ -36,9 +36,8 @@ diagnostics exist so a shop learns before submitting. **We go further on one poi
 pure function of stored data, so a hard case is a unit test rather than an account and a
 rejection ([ADR-0045](../../adr/0045-channel-mappings-are-versioned-data.md) D4).
 
-**Where we depart**: no scheduled re-sync of taxonomies. Fetching five channels' category trees
-quarterly is machinery this project does not need yet, and a stale mapping is visible through its
-`checkedOn` date instead (D4). Deliberate, not overlooked.
+**Where we depart**: no scheduled re-sync of taxonomies. Fetching five category trees quarterly is
+machinery this project does not need yet; `checkedOn` makes a stale one visible instead (D4).
 
 ## Technical decisions
 
@@ -133,13 +132,14 @@ a type that does not exist fails, which catches a bad seed.
 
 ## Delivery (PRs)
 
-1. The tables and the channels, seeded. No behaviour change.
+1. The tables and the channels, declared. No behaviour change.
 2. The pure readiness function and its tests, with no caller.
-3. Readiness wired into the product form and the org's product list.
-4. The admin register, including the unmapped-value worklist.
-5. The seeded mappings: Flipkart and Meesho from the extracted templates, Google from its spec.
+3. The register read, and the shop's opt-in — without which nothing can turn a channel on, so
+   readiness could never appear and the rest would be undemonstrable.
+4. Readiness wired into the product form and the org's product list.
+5. The admin register, including the unmapped-value worklist.
+6. The seeded mappings: Flipkart and Meesho from the extracted templates, Google from its spec.
 
 ## Open questions
 
-None. The one this draft carried — whether a nearest fit is the platform's decision or the
-shop's — was closed by the owner on 2026-10-04 and is recorded as D12.
+None. The one this draft carried — a nearest fit's owner — was closed on 2026-10-04 as D12.

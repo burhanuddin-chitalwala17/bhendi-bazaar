@@ -35,4 +35,27 @@ export const orgChannelRepository = {
       select: SELECT,
     });
   },
+
+  /**
+   * Several at once, in one transaction.
+   *
+   * A half-saved set would leave a shop selling somewhere it has just said it does not, and the
+   * form sends its whole set, so the write is all of it or none.
+   */
+  async setMany(
+    orgId: string,
+    choices: readonly { channel: Channel; enabled: boolean }[],
+  ): Promise<void> {
+    if (choices.length === 0) return;
+    await prisma.$transaction(
+      choices.map((choice) =>
+        prisma.orgChannel.upsert({
+          where: { orgId_channel: { orgId, channel: choice.channel } },
+          create: { orgId, channel: choice.channel, enabled: choice.enabled },
+          update: { enabled: choice.enabled },
+          select: { channel: true },
+        }),
+      ),
+    );
+  },
 };
