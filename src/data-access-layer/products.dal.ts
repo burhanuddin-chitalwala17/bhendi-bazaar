@@ -80,8 +80,6 @@ const mapProduct = (
     stock: totalStock,
     lowStockThreshold: product.lowStockThreshold,
     options: {
-      sizes: product.sizes,
-      colors: product.colors,
     },
     shippingFromPincode: mainRow?.orgAddress.address.pincode || "",
     org: {

@@ -45,8 +45,6 @@ export interface ProductFormInput {
    * so accepting it would be accepting a value we then overwrite (Invariant 4).
    */
   media: ProductMediaInput[];
-  sizes?: string[];
-  colors?: string[];
   /** Stock per pickup location (stock-locations R2/R3). Zero rows are dropped. */
   stockLocations: Array<{ orgAddressId: string; quantity: number }>;
   sku?: string;
@@ -84,7 +82,7 @@ export interface ProductPersistInput
  * specific item, so copying them makes a duplicate rather than a sibling (copy-product R2).
  */
 export type ProductCopySource = Required<
-  Pick<ProductFormInput, "description" | "categoryId" | "tags" | "flags" | "sizes" | "colors">
+  Pick<ProductFormInput, "description" | "categoryId" | "tags" | "flags">
 > & { id: string; name: string };
 
 /** One entry in the new-product page's "Copy from" picker. */

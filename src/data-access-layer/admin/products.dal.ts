@@ -113,8 +113,6 @@ class ProductsDAL {
       // edit form is then what clears them from the row — the re-upload remedy.
       media: renderableMedia((product.media ?? []).map(toProductMediaDto)),
       thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,
-      sizes: product.sizes,
-      colors: product.colors,
       org: {
         id: product.org.id,
         name: product.org.name,

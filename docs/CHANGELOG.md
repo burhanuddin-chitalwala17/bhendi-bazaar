@@ -10,6 +10,36 @@
 
 ## Entries
 
+## [PR-252] 2026-10-04 — `sizes` and `colors` are gone, and bidding stops naming a variant [MIGRATION]
+
+The two columns this whole phase replaced. They were free text: a colour typed three ways was
+three colours to a marketplace. A colour is now chosen from a list and stored by its key, and a
+size is derived from stored measurements rather than typed.
+
+Dropped in a **later** migration than the one that replaced them, which is
+[variants](specs/listing-vocabulary/variants/) D8 — if the new shape had read something wrong,
+the old data was still there to re-read. Nothing had read either column since the product form
+and the bulk sheet stopped offering them.
+
+**Bidding was the last reader, and its rule is obsolete rather than broken.** An event named
+exactly one item, so a product with options could not be auctioned without saying which. Every
+colour is its own product with its own stock now
+([ADR-0043](adr/0043-a-variant-is-a-product-in-a-family.md)), so "a product with options" no
+longer exists: the guard could never fire and `BiddingEvent.size`/`color` could never be filled.
+The step is gone from the form, the fields from the payload, and the columns from the table. The
+owner confirmed production holds no bidding events, so nothing recorded is lost.
+
+**Checkout lost a check it could no longer answer.** It refused a cart line naming a size the
+product never offered. With no options list there is nothing to check against — the product *is*
+the choice. The order line still records which size and colour were bought, and that record
+stays: an order is history and never loses what was sold
+([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). Only the validation went.
+
+Worth being plain about what this costs: a cart line's `size` and `colour` are now recorded as
+given, unchecked. They are vestigial for anything listed under the new model, and the honest
+place to remove them is whenever `order-and-cart-lines` is next opened — not in a migration that
+would rewrite order history.
+
 ## [PR-251] 2026-10-04 — A sheet row with a known SKU updates the product
 
 The `sku` column's note has said this since PR-249; now it is true. A row whose SKU matches a

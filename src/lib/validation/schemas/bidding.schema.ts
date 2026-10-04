@@ -41,8 +41,6 @@ export const biddingFormSchema = z
     productId: z.string().min(1, "Choose the product being auctioned"),
 
     /** Which item, where the product has options (spec R1a). */
-    size: z.string().trim().min(1).optional(),
-    color: z.string().trim().min(1).optional(),
 
     startAt: z.coerce.date(),
     endAt: z.coerce.date(),

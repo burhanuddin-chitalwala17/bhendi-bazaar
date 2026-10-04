@@ -21,8 +21,6 @@ export interface ServerProduct {
   flags: ProductFlag[];
   media: ProductMediaDto[];
   thumbnail: string;
-  sizes: string[];
-  colors: string[];
   stock: number;
   lowStockThreshold: number;
   weight: number;

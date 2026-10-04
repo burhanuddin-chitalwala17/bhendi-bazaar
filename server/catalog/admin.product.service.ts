@@ -208,8 +208,6 @@ export class ProductsService {
       categoryId: product.category.id,
       tags: product.tags,
       flags: product.flags as ProductFlag[],
-      sizes: product.sizes,
-      colors: product.colors,
     };
   }
 

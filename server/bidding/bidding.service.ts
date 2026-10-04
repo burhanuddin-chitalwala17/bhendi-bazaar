@@ -78,8 +78,6 @@ export class BiddingService {
       id: facts.id,
       name: facts.name,
       pricePaise: facts.price,
-      sizes: facts.sizes,
-      colors: facts.colors,
       unitsOnHand: stock.reduce((sum, row) => sum + row.quantity, 0),
     };
   }
@@ -97,7 +95,6 @@ export class BiddingService {
     createdById: string
   ): Promise<{ id: string; slug: string }> {
     const facts = await this.productFacts(orgId, input.productId);
-    this.assertVariantNamed(facts, input);
 
     const quickBidsPaise = [...new Set(input.quickBids.map(rupeesToPaise))].sort(
       (a, b) => a - b
@@ -133,8 +130,6 @@ export class BiddingService {
             orgId,
             productId: input.productId,
             createdById,
-            size: input.size ?? null,
-            color: input.color ?? null,
             startAt: input.startAt,
             endAt: input.endAt,
             startingBidPaise: rupeesToPaise(input.startingBid),
@@ -160,28 +155,6 @@ export class BiddingService {
     }
   }
 
-  /** An event names exactly one item, so an optioned product cannot leave it open. */
-  private assertVariantNamed(
-    facts: { sizes: string[]; colors: string[] },
-    input: BiddingFormInput
-  ) {
-    if (facts.sizes.length > 0 && !input.size) {
-      throw new DomainError("Choose which size is being auctioned", { field: "size" });
-    }
-    if (facts.colors.length > 0 && !input.color) {
-      throw new DomainError("Choose which colour is being auctioned", { field: "color" });
-    }
-    if (input.size && !facts.sizes.includes(input.size)) {
-      throw new DomainError("That size is not one of this product's options", {
-        field: "size",
-      });
-    }
-    if (input.color && !facts.colors.includes(input.color)) {
-      throw new DomainError("That colour is not one of this product's options", {
-        field: "color",
-      });
-    }
-  }
 
   /**
    * Call it off. Guarded on OPEN in the repository, so a cancellation cannot land on
@@ -226,8 +199,6 @@ export class BiddingService {
         name: row.product.name,
         thumbnail: row.product.thumbnail,
         referencePricePaise: row.referencePricePaise,
-        size: row.size,
-        color: row.color,
       },
     };
   }

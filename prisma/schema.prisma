@@ -277,8 +277,6 @@ model Product {
   /// never from input; NOT NULL is the one database-level guarantee that a product has
   /// a picture at all.
   thumbnail String
-  sizes     String[] // Available sizes
-  colors    String[] // Available colors
 
   sku               String? // Stock Keeping Unit — unique within the org, not the platform
   lowStockThreshold Int     @default(10) // Alert when stock falls below this
@@ -1709,11 +1707,6 @@ model BiddingEvent {
   orgId     String
   org       Org     @relation(fields: [orgId], references: [id], onDelete: Restrict)
 
-  /// Which item this is, where the product has options. Descriptive only: `ProductStock`
-  /// has no variant dimension, so this states what is being sold without creating
-  /// variant-level inventory (D10, R1a).
-  size  String?
-  color String?
 
   startAt DateTime
   endAt   DateTime

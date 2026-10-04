@@ -112,8 +112,6 @@ const PRODUCT_DETAILS_SELECT = {
     description: true,
     tags: true,
     media: MEDIA_SELECT,
-    sizes: true,
-    colors: true,
     stockLocations: {
         select: {
             orgAddressId: true,
@@ -308,8 +306,6 @@ export class AdminProductsRepository {
                 flags: data.flags || [],
                 thumbnail: media.thumbnail,
                 media: { create: mediaRows },
-                sizes: data.sizes || [],
-                colors: data.colors || [],
                 sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold || 10,
                 weight: data.weight,
@@ -530,8 +526,6 @@ export class AdminProductsRepository {
                     flags: data.flags,
                     thumbnail: media.thumbnail,
                     media: { create: mediaRows },
-                    sizes: data.sizes,
-                    colors: data.colors,
                     sku: blankToNull(data.sku),
                     lowStockThreshold: data.lowStockThreshold,
                     weight: data.weight,

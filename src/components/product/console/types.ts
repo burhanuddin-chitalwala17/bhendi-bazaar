@@ -68,8 +68,6 @@ export interface ProductDetails {
   weight: number;
   media: ProductMediaDto[];
   thumbnail: string;
-  sizes: string[];
-  colors: string[];
   org: OrgSummary;
   /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
   stockLocations: Array<{

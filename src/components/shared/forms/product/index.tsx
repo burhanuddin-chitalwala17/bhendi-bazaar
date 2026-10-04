@@ -152,8 +152,6 @@ export function ProductForm({
           slot: item.slot ?? null,
         })) || [],
       weight: product?.weight || 0,
-      sizes: product?.sizes || copy?.sizes || [],
-      colors: product?.colors || copy?.colors || [],
       stockLocations: defaultStockRows,
       sku: product?.sku || "",
       lowStockThreshold: product?.lowStockThreshold || 10,
