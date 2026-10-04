@@ -105,6 +105,8 @@ thing it guards had already gone wrong silently:
 | `overlay-surfaces` | That an overlay's surface is chosen rather than inherited ([ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)): only the declared files reach for a sheet, each entry naming which of the four cases it answers, and an entry that stops being a sheet is removed |
 | `channel-gate` | That a channel's size rule is applied only where the channel is known, so a marketplace's floor cannot quietly become every photograph's floor |
 | `portal-guards`, `rate-limit-detached`, `seed-guard` | The edge gate reaches every portal path; no cache dependency creeps back into the request path; the seed's allowlist |
+| `labelled-controls` | That every form label names its control: `FormField` renders a `<label for>` matching the control's `id` and points `aria-describedby` at the hint or error it shows, and no raw `<label>` outside `ui/` is left unassociated — `htmlFor`, or wrapping the control |
+| `migration-drops` | That a column or table is never dropped without the file saying whose data goes: every migration with a `DROP COLUMN` or `DROP TABLE` carries a dated statement that the data was confirmed disposable, and the migrations that predate the rule are listed, shrink-only |
 
 ### The tests are audited the same way the code is
 

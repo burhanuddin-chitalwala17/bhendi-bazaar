@@ -1,7 +1,7 @@
 # ADR-0048: A component renders, a hook holds state, an API client makes the call
 
 - **Date:** 2026-10-02
-- **Status:** Accepted
+- **Status:** Accepted (the CSRF premise in Alternatives corrected by [ADR-0060](0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md))
 
 ## Context
 

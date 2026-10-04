@@ -1,7 +1,7 @@
 # TRD — listing vocabulary / inherited facts
 
 - **Summary:** An ordered list of levels asked on save, each stored value carrying which level answered, and a brand-level correction previewed from the same query that performs it
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-227, PR-253 (2026-10-04)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-02

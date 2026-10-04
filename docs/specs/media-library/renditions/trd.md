@@ -1,6 +1,6 @@
 # TRD — renditions
 
-- **Status:** ✅ Accepted — 2026-09-26
+- **Status:** ✅ Implemented — PR-211 (2026-09-29)
 - **Domain:** content, reading catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-25
