@@ -12,7 +12,7 @@ import {
   listingDefaultsSchema,
   type ListingDefaultsParsed,
 } from "@/lib/validation/schemas/listing-defaults.schema";
-import type { OrgListingDefaultsDto } from "@server/catalog/org-listing-defaults.types";
+import type { OrgListingDefaultsDto } from "@server/listing/org-listing-defaults.types";
 
 interface ListingDefaultsFormProps {
   orgId: string;

@@ -2,9 +2,9 @@
 
 import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import { resolveShotList, unknownSlots } from "@server/catalog/shot-list";
-import { fillListing } from "@server/catalog/listing-fill.service";
-import { holdsKind, resolveProductType } from "@server/catalog/product-type";
-import { productTypeRepository } from "@server/catalog/product-type.repository";
+import { fillListing } from "@server/listing/listing-fill.service";
+import { holdsKind, resolveProductType } from "@server/listing/product-type";
+import { productTypeRepository } from "@server/listing/product-type.repository";
 import { categoryRepository } from "@server/catalog/category.repository";
 import {
   ProductCopyOption,

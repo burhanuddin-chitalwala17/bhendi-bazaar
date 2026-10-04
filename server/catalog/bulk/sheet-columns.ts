@@ -1,5 +1,5 @@
-import { FACT_DECLARATIONS, type FactKey } from "@server/catalog/listing-facts";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import { FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * What columns a bulk sheet has, worked out from the types it is being generated for

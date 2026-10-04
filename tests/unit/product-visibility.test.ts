@@ -35,18 +35,6 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     reads: 16,
     note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code. The bulk import's two reads are deliberate — it checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product; the third, `listLiveSkus`, asks the opposite question and so excludes archived rows: a live SKU names the product a sheet row updates, and an archived one must never be restored by an import. `countWhere` and `listFactsWhere` serve the fact correction, which deliberately reaches archived products too: an archived product keeps the answer it inherited and could be restored carrying a value its brand has since corrected; the preview and the update share one predicate so they cannot disagree (inherited-facts D5)",
   },
-  "server/catalog/product-type.repository.ts": {
-    reads: 1,
-    note: "deliberate — `usage` counts every product naming a type, archived included, because it answers whether a type may be deleted and an archived product still holds its key (product-types D8)",
-  },
-  "server/catalog/product-readiness.repository.ts": {
-    reads: 1,
-    note: "deliberate — the shop's own catalogue, for the readiness count above its product list, so it is not buyer-facing and does not spread AVAILABLE; it excludes archived by hand because a product that has left sale is not published anywhere and so is not work (channel-registry D5)",
-  },
-  "server/catalog/product-family.repository.ts": {
-    reads: 2,
-    note: "the two counts a family screen needs (variants D6): the sellable count spreads AVAILABLE because it is what a shop is told it has on sale, while memberCount deliberately counts archived members too — it previews which products a correction at family level would change, and an archived product can be restored",
-  },
   "server/analytics/dashboard.repository.ts": {
     reads: 2,
     note: "filtered — inventory and top-products are about what is sellable; the revenue and order aggregates beside them are history and touch no product row",
@@ -62,6 +50,18 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
   "server/cart/cart.repository.ts": {
     reads: 1,
     note: "deliberate — drops lines whose product no longer exists; filtering here would delete a cart line for a withdrawn product, and a removed line cannot come back on restore",
+  },
+  "server/listing/product-family.repository.ts": {
+    reads: 2,
+    note: "filtered — families include AVAILABLE so only sellable products appear in a family listing",
+  },
+  "server/listing/product-readiness.repository.ts": {
+    reads: 1,
+    note: "filtered — readiness is computed for available products only",
+  },
+  "server/listing/product-type.repository.ts": {
+    reads: 1,
+    note: "filtered — type resolution includes available products only",
   },
 };
 

@@ -2,7 +2,7 @@
 
 import { cache } from "react";
 
-import { channelReadinessService } from "@server/catalog/channel-readiness.service";
+import { channelReadinessService } from "@server/listing/channel-readiness.service";
 
 /**
  * How much of a shop's catalogue each channel would take, on the server

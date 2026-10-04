@@ -16,7 +16,7 @@ import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("filling a listing on save (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let fillListing: typeof import("@server/catalog/listing-fill.service").fillListing;
+  let fillListing: typeof import("@server/listing/listing-fill.service").fillListing;
   const stamp = `fill-${Date.now().toString(36)}`;
   let orgId: string;
   let categoryId: string;
@@ -24,7 +24,7 @@ describe.skipIf(!isDisposableDb)("filling a listing on save (local db)", () => {
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ fillListing } = await import("@server/catalog/listing-fill.service"));
+    ({ fillListing } = await import("@server/listing/listing-fill.service"));
     const fixtures = await ensureFixtures();
     orgId = fixtures.orgId;
     categoryId = fixtures.categoryId;

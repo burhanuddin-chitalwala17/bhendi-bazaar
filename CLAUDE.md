@@ -27,7 +27,8 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 
 | Domain | Directory | Owns |
 |---|---|---|
-| catalog | `server/catalog/` | Products and stock, categories, orgs (profile, members, locations, storefront, listing defaults), brands, reviews, search, media assets and the R2 seam, video, bulk import, and — until it is carved out — the listing vocabulary, product types, families and channel registry |
+| catalog | `server/catalog/` | Products and stock, categories, orgs (profile, members, locations, storefront), brands, reviews, search, media assets and the R2 seam, video, bulk import |
+| listing | `server/listing/` | The vocabulary a product is described in — facts, product types, families, permitted answers — and what each channel makes of it: mappings, readiness, the register, org listing defaults |
 | cart | `server/cart/` | Cart persistence and the sign-in merge |
 | checkout | `server/checkout/` | Orders and their lifecycle |
 | payments | `server/payments/` | Gateway conversation and payment state |

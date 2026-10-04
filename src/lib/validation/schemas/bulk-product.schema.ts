@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isOwnObjectUrl } from "@server/catalog/object-store";
 import { rupeeAmount } from "./common.schemas";
 import { parseYoutubeRef, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
-import { FACT_DECLARATIONS, MEASURES } from "@server/catalog/listing-facts";
+import { FACT_DECLARATIONS, MEASURES } from "@server/listing/listing-facts";
 import type { RawSheetRow } from "@server/catalog/bulk/sheet";
 import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
 

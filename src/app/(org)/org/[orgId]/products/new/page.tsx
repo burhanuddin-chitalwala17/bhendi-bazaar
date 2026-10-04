@@ -2,7 +2,7 @@ import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
-import { productFamilyService } from "@server/catalog/product-family.service";
+import { productFamilyService } from "@server/listing/product-family.service";
 import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";

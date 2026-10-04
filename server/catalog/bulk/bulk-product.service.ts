@@ -8,7 +8,7 @@
 import { randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { categoryRepository } from "@server/catalog/category.repository";
-import { productFamilyService } from "@server/catalog/product-family.service";
+import { productFamilyService } from "@server/listing/product-family.service";
 import {
   loadVocabulary,
   resolveRowVocabulary,

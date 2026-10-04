@@ -14,7 +14,7 @@ import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { Prisma } from "@prisma/client";
 import { toJsonColumn } from "@server/shared/json";
 import { parseShotList, type ShotList } from "@server/catalog/shot-list";
-import { parseProductTypeKey } from "./product-type";
+import { parseProductTypeKey } from "@server/listing/product-type";
 
 /** `null` clears the list back to the inherited one; `undefined` leaves the column alone. */
 function shotListColumn(list: ShotList | null | undefined) {

@@ -13,7 +13,7 @@ import {
   type OrgChannelsParsed,
 } from "@/lib/validation/schemas/org-channels.schema";
 import { CHANNEL_KIND } from "@server/shared/channels";
-import type { OrgChannelChoice } from "@server/catalog/org-channel.service";
+import type { OrgChannelChoice } from "@server/listing/org-channel.service";
 
 interface WhereYouSellProps {
   orgId: string;

@@ -12,7 +12,7 @@ import {
   type ChannelValueMappingInput,
 } from "@/lib/validation/schemas/channel-mapping.schema";
 import type { Channel } from "@server/shared/channels";
-import type { UnmappedValue } from "@server/catalog/channel-register.service";
+import type { UnmappedValue } from "@server/listing/channel-register.service";
 
 interface UnmappedValueRowProps {
   channel: Channel;

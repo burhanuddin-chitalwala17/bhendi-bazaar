@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   createProductTypeSchema,
   updateProductTypeSchema,
-} from "@server/catalog/admin.product-type.types";
-import { FACTS, FACT_DECLARATIONS, PLATFORMS } from "@server/catalog/listing-facts";
+} from "@server/listing/admin.product-type.types";
+import { FACTS, FACT_DECLARATIONS, PLATFORMS } from "@server/listing/listing-facts";
 
 /**
  * What an admin may write ([product-types](../../docs/specs/listing-vocabulary/product-types/)

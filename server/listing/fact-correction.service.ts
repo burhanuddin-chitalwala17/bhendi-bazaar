@@ -1,4 +1,4 @@
-import { adminProductsRepository } from "@server/catalog/admin.product.repository";
+import { productService } from "@server/catalog/product.service";
 import { DomainError } from "@server/shared/domain-error";
 
 import { FACT_DECLARATIONS, ORIGIN, type FactKey, type Origin } from "./listing-facts";
@@ -85,8 +85,8 @@ export const factCorrectionService = {
   async preview(target: CorrectionTarget): Promise<CorrectionPreview> {
     assertKnownFact(target.fact);
     const [willChange, leftAlone] = await Promise.all([
-      adminProductsRepository.countWhere(matching(target)),
-      adminProductsRepository.countWhere(ownAnswer(target)),
+      productService.countProductsWhere(matching(target)),
+      productService.countProductsWhere(ownAnswer(target)),
     ]);
     return { willChange, leftAlone };
   },
@@ -103,11 +103,11 @@ export const factCorrectionService = {
 
     // `updateMany` cannot merge into a JSON path, so the rows are read and written. The set is
     // the products of one org under one level, which is tens or hundreds — not a scan.
-    const products = await adminProductsRepository.listFactsWhere(matching(target));
+    const products = await productService.listProductFactsWhere(matching(target));
 
     if (products.length === 0) return { changed: 0 };
 
-    await adminProductsRepository.replaceFacts(
+    await productService.replaceProductFacts(
       products.map((product) => ({
         id: product.id,
         facts: {

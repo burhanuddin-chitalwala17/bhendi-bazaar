@@ -1,6 +1,6 @@
 import { prisma } from "@server/shared/prisma";
 
-import { AVAILABLE } from "./product.visibility";
+import { AVAILABLE } from "@server/catalog/product.visibility";
 
 
 /**

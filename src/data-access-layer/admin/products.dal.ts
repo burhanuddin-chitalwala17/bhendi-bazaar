@@ -9,7 +9,7 @@ import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-
 import { wishlistService } from "@server/wishlist/wishlist.service";
 import { isRenderableImageUrl, renderableMedia } from "@server/catalog/image-paths";
 import { toProductMediaDto } from "@server/catalog/media";
-import { parseStoredFacts } from "@server/catalog/listing-facts";
+import { parseStoredFacts } from "@server/listing/listing-facts";
 import { LOGO } from "@/lib/config";
 import { NotFoundError } from "@server/shared/domain-error";
 import type { ProductCopyOption, ProductCopySource } from "@server/catalog/admin.product.types";

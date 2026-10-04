@@ -14,7 +14,7 @@ import { ProductBasicFields } from "./ProductBasicFields";
 import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
 import { ProductFactFields } from "./ProductFactFields";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 import { ProductFlagsFields } from "./ProductFlagsFields";
 import {
   ProductOrgShippingFields,

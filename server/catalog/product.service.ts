@@ -1,9 +1,11 @@
+import type { Prisma } from "@prisma/client";
 /**
  * Server-side Product Service
  *
  * This service encapsulates all business logic related to products.
  */
 
+import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import { productsRepository, type ProductDb } from "@server/catalog/product.repository";
 import { categoryRepository } from "@server/catalog/category.repository";
 import { collectSubtreeIds } from "@server/catalog/category.tree";
@@ -225,6 +227,21 @@ export class ProductService {
     if (filter.offset !== undefined && filter.offset < 0) {
       throw new DomainError("Offset cannot be negative");
     }
+  }
+
+  /** How many products match a predicate — the fact correction's preview (ADR-0051 D5). */
+  async countProductsWhere(where: Prisma.ProductWhereInput): Promise<number> {
+    return await adminProductsRepository.countWhere(where);
+  }
+
+  /** The facts of every product matching a predicate — the rows a fact correction rewrites. */
+  async listProductFactsWhere(where: Prisma.ProductWhereInput) {
+    return await adminProductsRepository.listFactsWhere(where);
+  }
+
+  /** Writes each product's facts whole, all-or-nothing. */
+  async replaceProductFacts(rows: Array<{ id: string; facts: Record<string, unknown> }>): Promise<void> {
+    return await adminProductsRepository.replaceFacts(rows);
   }
 }
 

@@ -10,6 +10,21 @@
 
 ## Entries
 
+## [PR-283] 2026-10-05 — The listing vocabulary becomes its own domain
+
+`server/catalog/` was 43% of `server/` at 14k LOC. Twenty-three files — facts, product types,
+families, channel registry, readiness, listing values, org channels, listing defaults, size labels
+— had zero outward imports and formed a clean cluster. They now live in `server/listing/`, the
+fourteenth bounded context.
+
+Cross-domain calls go through services: `fact-correction.service.ts` used to reach catalog's
+product repository directly for the three methods that rewrite a product's facts; those became
+`productService.countProductsWhere`/`listProductFactsWhere`/`replaceProductFacts`. `listing-fill`
+reaches `brand.repository` and `category.repository` through catalog's declared public surface.
+
+`module-boundaries.test.ts` gains a `listing` entry in `PUBLIC_SURFACE`; the product-visibility
+census, the file-cohesion records and the domain table in root `CLAUDE.md` are all updated.
+
 ## [PR-282] 2026-10-05 — The pipeline that decides quality, written down and wired in
 
 A review across architecture, the design system, the rules, the ADRs, the process and the docs

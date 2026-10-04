@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { answeredBy, fillFacts, levelsOf, takeOwnership } from "@server/catalog/fill-facts";
-import { ORIGIN } from "@server/catalog/listing-facts";
+import { answeredBy, fillFacts, levelsOf, takeOwnership } from "@server/listing/fill-facts";
+import { ORIGIN } from "@server/listing/listing-facts";
 
 type K = "material" | "countryOfOrigin" | "manufacturer" | "colour";
 const KEYS: K[] = ["material", "countryOfOrigin", "manufacturer", "colour"];

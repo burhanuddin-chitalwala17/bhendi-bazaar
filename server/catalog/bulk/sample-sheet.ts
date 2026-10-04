@@ -13,7 +13,7 @@
  */
 import ExcelJS from "exceljs";
 
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 import { sheetColumns, type SheetColumn } from "./sheet-columns";
 

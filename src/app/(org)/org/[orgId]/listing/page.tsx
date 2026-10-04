@@ -1,7 +1,7 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { brandService } from "@server/catalog/brand.service";
-import { orgListingDefaultsService } from "@server/catalog/org-listing-defaults.service";
-import { orgChannelService } from "@server/catalog/org-channel.service";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
+import { orgChannelService } from "@server/listing/org-channel.service";
 import { productsService } from "@server/catalog/admin.product.service";
 import { BrandsManager } from "@/components/org/brands-manager";
 import { ListingDefaultsForm } from "@/components/org/listing-defaults-form";

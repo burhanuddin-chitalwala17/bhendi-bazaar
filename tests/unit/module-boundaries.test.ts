@@ -44,6 +44,32 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
     // media-library D4: the editor and the server resolve a category's slots with one function,
     // and enhancement refuses the label slot by the same role constant (image-enhancement R5).
     "shot-list",
+    // listing-fill reads brand defaults and category trees to fill a product's blanks.
+    "brand.repository",
+    "category.repository",
+  ],
+  listing: [
+    // ADR-0051/0052: the vocabulary, types and readiness are listing's public answers.
+    "product-type",
+    "product-type.types",
+    "listing-facts",
+    "size-label",
+    "fill-facts",
+    "listing-fill.service",
+    "listing-value.repository",
+    "channel-readiness",
+    "channel-readiness.service",
+    "channel-register.service",
+    "channel-map.repository",
+    "org-channel.service",
+    "org-listing-defaults.service",
+    "org-listing-defaults.types",
+    "product-family.service",
+    "fact-correction.service",
+    "admin.product-type.service",
+    "admin.product-type.types",
+    "product-readiness.repository",
+    "org-channel.repository",
   ],
   promotions: [
     // ADR-0018: every surface that needs a price calls this resolver.

@@ -27,6 +27,7 @@ vi.mock("@server/catalog/org-profile.repository", () => ({
   },
 }));
 vi.mock("@server/catalog/product.repository", () => ({
+  PRODUCT_MEDIA_ASSET_SELECT: { id: true, kind: true, state: true, ref: true, width: true, height: true },
   productsRepository: { getProductBySlug: (...a: unknown[]) => getProductBySlug(...a) },
 }));
 vi.mock("@server/shared/app-url", () => ({ appUrl: () => "https://shop.test" }));
