@@ -12,15 +12,16 @@
 import "dotenv/config";
 import { describe, it, expect, beforeAll } from "vitest";
 
-import { CHANNEL, isChannel } from "@server/shared/channels";
+import { CHANNEL, PUBLISHABLE_CHANNELS, isChannel } from "@server/shared/channels";
 import { isDisposableDb } from "../helpers/test-db";
 
 interface Row {
   channel: string;
   productType: string;
   kind: string | null;
-  theirCategory: string;
+  theirCategory: string | null;
   fit: "EXACT" | "NEAREST";
+  notSold: boolean;
   note: string | null;
   checkedOn: Date;
   checkedSource: string | null;
@@ -39,6 +40,7 @@ describe.skipIf(!isDisposableDb)("the seeded channel mappings (local db)", () =>
         kind: true,
         theirCategory: true,
         fit: true,
+        notSold: true,
         note: true,
         checkedOn: true,
         checkedSource: true,
@@ -82,7 +84,7 @@ describe.skipIf(!isDisposableDb)("the seeded channel mappings (local db)", () =>
   // D6: a nearest fit is shown with its note every time. One without a note shows nothing, which
   // is the silent approval the column exists to prevent.
   it("gives every nearest fit a note saying why", () => {
-    for (const row of seeded().filter((entry) => entry.fit === "NEAREST")) {
+    for (const row of seeded().filter((entry) => entry.fit === "NEAREST" && !entry.notSold)) {
       expect(row.note?.trim(), `${row.channel}/${row.productType}/${row.kind ?? "*"}`).toBeTruthy();
     }
   });
@@ -132,10 +134,21 @@ describe.skipIf(!isDisposableDb)("the seeded channel mappings (local db)", () =>
       expect(find(CHANNEL.GOOGLE, "prayer-mat", null)?.theirCategory).toBe("97");
     });
 
-    // The owner's call: gift, prayer and masalla sets sell on this store only. No row is the
-    // truth about that, not an omission — which is why it is asserted rather than left alone.
-    it("publishes combos nowhere", () => {
-      expect(seeded().filter((row) => row.productType === "combo")).toEqual([]);
+    /**
+     * The owner's call: gift, prayer and masalla sets sell on this store only.
+     *
+     * Asserted as a written decision rather than an absent row. It used to be the absence, and
+     * the register could not tell that from nobody having got to it — so it listed 18 masalla
+     * bags as work. Every publishable channel carries the row, and none carries a category.
+     */
+    it("records combos as not sold anywhere, rather than merely unmapped", () => {
+      const combos = seeded().filter((row) => row.productType === "combo");
+      expect(combos.length).toBe(PUBLISHABLE_CHANNELS.length);
+      for (const row of combos) {
+        expect(row.notSold, row.channel).toBe(true);
+        expect(row.theirCategory, row.channel).toBeNull();
+        expect(row.note).toMatch(/this store only/i);
+      }
     });
 
     it("sends a palazzo to Flipkart's trouser node, which carries Palazzos in its Type", () => {

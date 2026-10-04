@@ -1989,8 +1989,13 @@ model ChannelCategoryMap {
   productType String
   kind        String?
 
-  /// What the channel calls it — its node id, path, or whatever that channel keys on.
-  theirCategory String
+  /// What the channel calls it — its node id, path, or whatever that channel keys on. Null only
+  /// when `notSold` says this type is deliberately not published here, which has no category.
+  theirCategory String?
+  /// The owner has decided this type does not sell on this channel. A decision, not a blank: an
+  /// absent row means nobody has chosen yet, and the register must tell the two apart or it keeps
+  /// listing a settled question as work. Reversible — clearing it puts the choice back.
+  notSold       Boolean @default(false)
   /// How the channel labels it, so a screen can show something a person recognises.
   theirLabel    String?
 

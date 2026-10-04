@@ -151,14 +151,16 @@ async function registersFor(
 
 const toCategoryMapping = (row: {
   kind: string | null;
-  theirCategory: string;
+  theirCategory: string | null;
   fit: CategoryMapping["fit"];
   note: string | null;
+  notSold: boolean;
 }): CategoryMapping => ({
   kind: row.kind,
   theirCategory: row.theirCategory,
   fit: row.fit,
   note: row.note,
+  notSold: row.notSold,
 });
 
 /** Their fields, under the node that asks for them. */

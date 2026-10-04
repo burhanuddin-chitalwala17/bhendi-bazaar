@@ -39,13 +39,11 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
 
 ## Technical decisions
 
-- **D1 — A channel is declared in code, not a row.** Corrected before building: the first draft
-  made channels rows so an admin could add one. `server/shared/channels.ts` already declares the
-  set, and adding one needs code in three places regardless — an image rule, a readiness rule and
-  an adapter — so a row would have been a second spelling of a closed set, which that file's own
-  comment exists to prevent. The kinds
-  ([ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)) are declared
-  beside them. What a *shop* chooses is data, which is D2.
+- **D1 — A channel is declared in code, not a row.** `server/shared/channels.ts` declares the
+  set, and adding one needs an image rule, a readiness rule and an adapter regardless, so a row
+  would be a second spelling of a closed set. The kinds
+  ([ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)) sit beside
+  them; what a *shop* chooses is data, which is D2.
 - **D2 — A shop opts in per channel, and off is the default** (spec R9). `OrgChannel` carries
   the enablement and, later, whatever `channel-connectors` needs. An absent row is off, so a shop
   that has decided nothing is not nagged about anything.
@@ -73,24 +71,26 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
   checked cannot drift from what is sent — the second hazard.
 - **D9 — Nothing here holds a credential or makes a request** (spec R10); the secrets arrive with
   `channel-connectors`.
-- **D10 — Readiness advises; it never gates.** Decided by the owner on 2026-10-04, replacing a
-  draft where an incomplete product was refused with a `DomainError`. Nothing disables a control
-  and nothing refuses a publish: "required" here is our reading of a template, never something
-  watched, so refusing on it would stop listings that would have gone through and we would never
-  learn which. The channel's answer is the verdict. A gate becomes arguable once there are real
-  rejections to build it from, and the band names say advice so none is wired in by accident.
+- **D10 — Readiness advises; it never gates.** Owner's call, 2026-10-04. Nothing disables a
+  control and nothing refuses a publish: "required" here is our reading of a template, never
+  something watched, so refusing on it would stop listings that would have gone through and we
+  would never learn which. A gate becomes arguable once there are real rejections to build it
+  from, and the band names say advice so none is wired in by accident.
 - **D11 — What an adapter can derive, it derives; it does not become a fact.** Google wants
   `gender` and `age_group`, which the marketplaces ask as one question — Men, Women, Boys, Baby
   Girls, Kids, Unisex — so the split belongs in Google's mapping. And `condition`, which no
   product can answer differently here, is a constant in that adapter until this store sells
   something used ([ADR-0047](../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)).
-- **D12 — A nearest fit is the platform's decision, shown to every shop it affects.** Decided by
-  the owner on 2026-10-04. Choosing that a rida lists as an abaya is a commercial judgement about
-  where buyers look, which argues for the shop — but one mapping serves every shop selling that
-  type, so a seller's choice would silently change another's listings. The platform decides and
-  the fit is shown with its note wherever a product's readiness is (D6), so a shop can see what
-  it disagrees with. It reopens the first time two shops want different answers, which would need
-  the mapping scoped per org.
+- **D13 — "Not sold here" is written down, because an absent row already means something else.**
+  Owner's call, 2026-10-04: combos were recorded as unpublishable by mapping them nowhere, which
+  is also what nobody-has-decided-yet looks like, so the register listed 18 masalla bags as work.
+  A third answer to the same question, so it sits on the category mapping under the same kind
+  precedence, with a CHECK against a row claiming both. Listed and reversible where it is read.
+- **D12 — A nearest fit is the platform's decision, shown to every shop it affects.** Owner's
+  call, 2026-10-04. Choosing that a rida lists as an abaya is a commercial judgement, which argues
+  for the shop — but one mapping serves every shop selling that type, so a seller's choice would
+  silently change another's listings. The fit is shown with its note wherever readiness is (D6).
+  It reopens the first time two shops want different answers.
 
 ## Packages
 

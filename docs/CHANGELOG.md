@@ -18,6 +18,37 @@ all of them: nine on first paint (three rows of the phone grid), then the rest t
 filter (`?hero=1`). The section is hidden when there are no heroes. `productsDAL.getHeroProducts`
 is gone — nothing called it any more.
 
+## [PR-266] 2026-10-04 — Not sold here, on purpose [MIGRATION]
+
+The register could not tell a decision from a blank, so it listed 18 masalla bags as work to do.
+
+Combos sell on this store only — the owner's call on 2026-10-04 — and that was recorded by
+writing no mapping. But no mapping is also what *nobody has chosen yet* looks like, so the
+worklist named a settled question every time it was opened. A to-do list that keeps telling you
+to do something you have already done is a list that stops being read, which costs more than the
+one entry it was wrong about.
+
+**A third answer to the same question.** Where does this type go on this channel — their word for
+it, the nearest they have, or nowhere. All three sit on the category mapping and obey the same
+kind precedence, so a type can be not sold while one kind of it is. A database CHECK keeps a row
+from claiming both a category and none; a second table would have been a second copy of
+`categoryFor`, which is already tested.
+
+**Listed, not hidden, and reversible from where it is read.** Marked types move into a "Not sold
+on X" section beside the nearest-fits, with the button that undoes it on the row itself. Hiding
+them would have traded a nagging list for a decision nobody could find again — the worse of the
+two problems. Undoing deletes the row rather than blanking it, so the type reads as undecided
+again and the choice is genuinely back.
+
+A product whose type is not sold on a channel simply does not appear for that channel in the
+readiness panel — the same silence as a channel the shop never enabled, rather than a ready
+verdict that reads as an invitation.
+
+The decision itself is now data: one row per publishable channel for `combo`. Four mutations were
+watched turning the guards red, including one that only a direct caller of the pure function can
+reach — `readinessByChannel` filters those channels out first, so the guard inside it had no test
+until the mutation said so.
+
 ## [PR-265] 2026-10-04 — How this would list elsewhere, on the product itself
 
 The readiness panel, on the org's product page. Per channel: the band, where it would be listed,

@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { adminChannelRegisterDAL } from "@/data-access-layer/admin/channel-register.dal";
 import { UnmappedValueRow } from "@/components/channel/unmapped-value-row";
+import { NotSoldButton } from "@/components/channel/not-sold-button";
 import { isChannel } from "@server/shared/channels";
 
 export const metadata = { robots: { index: false, follow: false } };
@@ -75,17 +76,68 @@ export default async function AdminChannelPage({
               {view.unmappedCategories.map((entry) => (
                 <li
                   key={`${entry.productType}:${entry.kind ?? "*"}`}
-                  className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 p-4"
+                  className="flex flex-wrap items-center gap-3 p-4"
                 >
-                  <p className="font-medium">
-                    {entry.typeLabel}
-                    {entry.kind && (
-                      <span className="text-muted-foreground"> · {entry.kind}</span>
-                    )}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {entry.products} {entry.products === 1 ? "product" : "products"}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">
+                      {entry.typeLabel}
+                      {entry.kind && (
+                        <span className="text-muted-foreground"> · {entry.kind}</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {entry.products} {entry.products === 1 ? "product" : "products"}
+                    </p>
+                  </div>
+                  <NotSoldButton
+                    channel={channel}
+                    productType={entry.productType}
+                    kind={entry.kind}
+                    label={entry.typeLabel}
+                    marked={false}
+                  />
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
+      )}
+
+      {view.notSold.length > 0 && (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">Not sold on {view.label}</h2>
+            <p className="text-sm text-muted-foreground">
+              Decided, not overlooked — so they stay off the list above. Change your mind here and
+              they go back to it, with the choice still to make.
+            </p>
+          </div>
+          <Card className="py-0">
+            <ul className="divide-y">
+              {view.notSold.map((entry) => (
+                <li
+                  key={`${entry.productType}:${entry.kind ?? "*"}`}
+                  className="flex flex-wrap items-center gap-3 p-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">
+                      {entry.typeLabel}
+                      {entry.kind && (
+                        <span className="text-muted-foreground"> · {entry.kind}</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {entry.products} {entry.products === 1 ? "product" : "products"}, sold on
+                      this store only
+                    </p>
+                  </div>
+                  <NotSoldButton
+                    channel={channel}
+                    productType={entry.productType}
+                    kind={entry.kind}
+                    label={entry.typeLabel}
+                    marked
+                  />
                 </li>
               ))}
             </ul>
