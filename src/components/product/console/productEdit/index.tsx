@@ -26,6 +26,7 @@ interface ProductEditContainerProps {
   /** The question sets and the answers for the category rendered with — read by the page. */
   productTypes?: ProductTypeRecord[];
   listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
+  families?: Array<{ id: string; name: string }>;
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
@@ -37,6 +38,7 @@ export function ProductEditContainer({
   categories,
   productTypes,
   listingValues,
+  families,
   orgs,
   locations,
   uploadEndpoints,
@@ -75,6 +77,7 @@ export function ProductEditContainer({
         categories={categories}
         productTypes={productTypes}
         listingValues={listingValues}
+        families={families}
         orgs={orgs}
         locations={locations}
         onSubmit={updateProduct}

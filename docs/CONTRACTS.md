@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-03
+- **Verified:** 2026-10-04
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -165,6 +165,18 @@ New admin surface: `GET`/`POST /api/admin/product-types` and `PATCH`/`DELETE
 (`server/catalog/product-type.types.ts`). `DELETE` **retires** rather than deletes and answers
 `{ retired, usage: { categories, products } }` — the foreign keys refuse a delete while anything
 names the type, and the counts are what make that a sentence somebody can act on.
+
+Since PR-248 a product may belong to a **family** — what an abaya in four colours has in common.
+`POST /api/org/[orgId]/families` takes `{ name, description?, categoryId }` and answers the row.
+`productType` and `variantAxis` are absent from the payload deliberately: both are resolved from
+the category when the family is made, so a request cannot group products by a fact their type
+never asks about. The listing is read by the product form's page on the server, so there is no
+`GET` ([ADR-0034](adr/0034-render-on-the-server-by-default.md)).
+
+`ProductStats` gains `familyCount` — how many families the available products belong to. Two
+numbers rather than one, because twenty abayas in five colours is twenty families and a hundred
+sellable things, and a figure that does not say which it counts is the ambiguous one
+([variants](specs/listing-vocabulary/variants/) D6).
 
 ### Image enhancement
 

@@ -42,6 +42,7 @@ const product = (id: string, wishlistCount: number): ProductForTable => ({
 
 const stats: ProductStats = {
   totalProducts: 2,
+  familyCount: 0,
   archivedProducts: 0,
   lowStockProducts: 0,
   outOfStockProducts: 0,

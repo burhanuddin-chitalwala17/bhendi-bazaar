@@ -10,6 +10,41 @@
 
 ## Entries
 
+## [PR-248] 2026-10-04 — A family can be made, which is what variants was waiting for
+
+`ProductFamily` existed since PR-229 with nothing creating one. The owner's correction is why
+this came first: *"my father will list his first variant as soon as this feature lands."*
+
+`productFamilyService` makes a family from a category, which is where its type and its axis come
+from — the same walk the product form does, so a family asks what its members will be asked. The
+axis is **copied rather than referenced**, so reordering a type's declaration later cannot
+silently regroup a shop's products. A family for a category with no type is legitimate and
+carries no axis: the siblings still share a description even where nothing has named what makes
+them differ.
+
+The picker sits on the product form with **"On its own" as the default**, because that is the
+normal case — one abaya in one colour is one product, and nothing asks a shop to declare a family
+of one. A new family is made without leaving the form, since the moment one is wanted is the
+moment a second colour is being listed.
+
+**"Products" is two numbers now** (variants D6). The stats tile already said "Available" rather
+than "Total", which avoided one ambiguity; it now reads "in 20 families" beside it once any
+exist. Twenty abayas in five colours is twenty families and a hundred sellable things, and a
+figure that does not say which it counts is the ambiguous one.
+
+`POST /api/org/[orgId]/families` is under `/api/org`, not `/api/admin` — a family belongs to a
+shop. `productType` and `variantAxis` are absent from its payload deliberately: both are resolved
+from the category, so a request cannot group products by a fact their type never asks about.
+
+Nine tests, mutation-tested three ways — referencing the axis instead of copying it, dropping the
+org scope, and accepting a blank name each turn it red.
+
+**One of those mutations poisoned the suite**, which is worth recording. The axis test mutated
+reference data every other test reads and restored it on the line after the assertion — so when
+the assertion failed, the restore never ran and two more tests failed for a reason that had
+nothing to do with them. The restore is now in a `finally`, and that was verified by breaking the
+assertion on purpose and checking the row came back.
+
 ## [PR-247] 2026-10-04 — The product form asks the type's questions
 
 The screen the vocabulary was for. `ProductAttributeFields` — the free-text sizes and colours

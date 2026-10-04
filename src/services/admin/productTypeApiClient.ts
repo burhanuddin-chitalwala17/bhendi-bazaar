@@ -76,3 +76,17 @@ export async function fetchListingValues(
   if (!response.ok) throw await readApiError(response);
   return response.json();
 }
+
+/** Making a family from the product form, so a sibling can be added without leaving it. */
+export async function createFamily(
+  orgId: string,
+  input: { name: string; description?: string | null; categoryId: string },
+): Promise<{ id: string; name: string }> {
+  const response = await fetch(`/api/org/${encodeURIComponent(orgId)}/families`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw await readApiError(response);
+  return response.json();
+}

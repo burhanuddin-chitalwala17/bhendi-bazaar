@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
+import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from "react-hook-form";
 
 import { FormController, FormInput, FormSelect } from "../FormField";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +10,7 @@ import { ANSWER, FACT_DECLARATIONS, type FactKey } from "@server/catalog/listing
 import { resolveProductType } from "@server/catalog/product-type";
 import type { ProductTypeRecord } from "@server/catalog/product-type.types";
 import type { ProductFormInput } from "@/components/product/console/types";
+import { ProductFamilyField, type FamilyOption } from "./ProductFamilyField";
 
 interface ProductFactFieldsProps {
   control: Control<ProductFormInput>;
@@ -17,6 +18,9 @@ interface ProductFactFieldsProps {
   /** A field and its error are two things: bind one without the other and the form refuses to
    * submit while saying nothing (`tests/unit/form-error-display.test.ts`). */
   errors: FieldErrors<ProductFormInput>;
+  setValue: UseFormSetValue<ProductFormInput>;
+  /** The org's families, read by the page; a new one can be made from here (variants R2). */
+  families?: FamilyOption[];
   orgId: string;
   /** The chosen category, watched: it decides the type, and the type decides the questions. */
   categoryId: string;
@@ -49,6 +53,8 @@ export function ProductFactFields({
   control,
   register,
   errors,
+  setValue,
+  families = [],
   orgId,
   categoryId,
   categories,
@@ -84,6 +90,19 @@ export function ProductFactFields({
           This category has no product type, so there is nothing more to ask. The product saves
           and sells here; it cannot be published to a marketplace until a type is set.
         </p>
+        {/* A family is still legitimate without a type: the siblings share a description even
+            where nothing has named what makes them differ. */}
+        <div className="mt-4">
+          <ProductFamilyField
+            register={register}
+            setValue={setValue}
+            errors={errors}
+            orgId={orgId}
+            categoryId={categoryId}
+            families={families}
+            readOnly={readOnly}
+          />
+        </div>
       </section>
     );
   }
@@ -95,6 +114,18 @@ export function ProductFactFields({
         What a marketplace asks about this kind of thing. Leave anything you do not know — it
         saves either way.
       </p>
+
+      <div className="mt-4">
+        <ProductFamilyField
+          register={register}
+          setValue={setValue}
+          errors={errors}
+          orgId={orgId}
+          categoryId={categoryId}
+          families={families}
+          readOnly={readOnly}
+        />
+      </div>
 
       {type.kinds.length > 0 && (
         <div className="mt-4">

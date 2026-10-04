@@ -29,6 +29,7 @@ interface ProductAddContainerProps {
   /** The question sets and the answers for the category rendered with — read by the page. */
   productTypes?: ProductTypeRecord[];
   listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
+  families?: Array<{ id: string; name: string }>;
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The product this one is being copied from, already scoped to the org. */
@@ -43,6 +44,7 @@ export function ProductAddContainer({
   categories,
   productTypes,
   listingValues,
+  families,
   orgs,
   locations,
   copySource,
@@ -107,6 +109,7 @@ export function ProductAddContainer({
         categories={categories}
         productTypes={productTypes}
         listingValues={listingValues}
+        families={families}
         orgs={orgs}
         locations={locations}
         onSubmit={createProduct}

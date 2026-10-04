@@ -73,6 +73,7 @@ class ProductsDAL {
     const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
+      familyCount: stats.familyCount,
       archivedProducts: stats.archivedProducts,
       lowStockProducts: stats.lowStockProducts,
       outOfStockProducts: stats.outOfStockProducts,

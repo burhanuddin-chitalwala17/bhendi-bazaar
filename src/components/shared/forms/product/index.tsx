@@ -57,6 +57,8 @@ interface ProductFormProps {
   listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
   /** Which level supplied each filled-in value, so the form can say so (inherited-facts R3). */
   factOrigins?: Partial<Record<string, string>>;
+  /** The org's families, for the picker; a new one is made from the form itself (variants R2). */
+  families?: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
@@ -87,6 +89,7 @@ export function ProductForm({
   productTypes = [],
   listingValues = {},
   factOrigins = {},
+  families = [],
 }: ProductFormProps) {
   const isEdit = !!product;
   const copy = isEdit ? null : (copySource ?? null);
@@ -341,6 +344,8 @@ export function ProductForm({
         control={control}
         register={register}
         errors={errors}
+        setValue={setValue}
+        families={families}
         orgId={watch("orgId") || ""}
         categoryId={watch("categoryId") || ""}
         categories={categories ?? []}

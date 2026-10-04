@@ -2,6 +2,7 @@ import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
+import { productFamilyService } from "@server/catalog/product-family.service";
 import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
@@ -32,6 +33,13 @@ export default async function OrgNewProductPage({
       copyFromId ? adminProductsDAL.getCopySource(copyFromId, orgId) : null,
       adminProductTypesDAL.getProductTypes(),
     ]);
+
+  // The org's families, for the picker. A product belongs to none by default, which is the
+  // normal case — one abaya in one colour is one product (variants R6).
+  const families = (await productFamilyService.list(orgId)).map((family) => ({
+    id: family.id,
+    name: family.name,
+  }));
 
   if (!org) notFound();
 
@@ -64,6 +72,7 @@ export default async function OrgNewProductPage({
     <ProductAddContainer
       categories={categories}
       productTypes={productTypes}
+      families={families}
       orgs={orgs}
       locations={locations}
       copySource={copySource}

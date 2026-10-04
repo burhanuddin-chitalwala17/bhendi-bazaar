@@ -6,6 +6,7 @@ import { ProductEditContainer } from "@/components/product/console/productEdit";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
+import { productFamilyService } from "@server/catalog/product-family.service";
 import type { AdminCategory } from "@/domain/admin";
 import { orgAddressService } from "@server/catalog/org.address.service";
 
@@ -33,10 +34,12 @@ export default async function OrgEditProductPage({
   // The question sets, and the answers for the category this product is already in — so the
   // form opens with filled dropdowns rather than empty ones. Changing the category fetches the
   // rest ([ADR-0034]).
-  const [productTypes, listingValues] = await Promise.all([
+  const [productTypes, listingValues, familyRows] = await Promise.all([
     adminProductTypesDAL.getProductTypes(),
     adminProductTypesDAL.getValuesForCategory(product.category?.id ?? null, categories, orgId),
+    productFamilyService.list(orgId),
   ]);
+  const families = familyRows.map((family) => ({ id: family.id, name: family.name }));
 
   // The product's own org, so the form cannot reassign ownership.
   const orgs = [product.org];
@@ -62,6 +65,7 @@ export default async function OrgEditProductPage({
           categories={categories}
           productTypes={productTypes}
           listingValues={listingValues}
+          families={families}
           orgs={orgs}
           locations={locations}
           uploadEndpoints={orgUploadEndpoints(orgId)}

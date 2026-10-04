@@ -451,9 +451,16 @@ export class AdminProductsRepository {
         // product's stock is real but not sellable, and a low-stock alert on something
         // deliberately archived is noise. Archived is reported as its own count
         // rather than folded in, so no figure is silently ambiguous.
-        const [totalProducts, archivedProducts, scopedProducts] = await Promise.all([
+        // "Products" is two numbers once a product can have siblings (variants D6): twenty
+        // abayas in five colours is twenty families and a hundred sellable things, and a figure
+        // that does not say which it counts is the ambiguous one. The family count is reported
+        // beside the sellable one rather than instead of it.
+        const [totalProducts, archivedProducts, familyCount, scopedProducts] = await Promise.all([
             prisma.product.count({ where: { ...scope, ...AVAILABLE } }),
             prisma.product.count({ where: { ...scope, ...ARCHIVED } }),
+            prisma.productFamily.count({
+                where: { retiredAt: null, products: { some: { ...scope, ...AVAILABLE } } },
+            }),
             prisma.product.findMany({
                 where: { ...scope, ...AVAILABLE },
                 select: {
@@ -482,6 +489,7 @@ export class AdminProductsRepository {
         return {
             totalProducts,
             archivedProducts,
+            familyCount,
             lowStockProducts,
             outOfStockProducts,
             featuredProducts,

@@ -83,6 +83,8 @@ export interface ProductDetails {
 export interface ProductStats {
   /** Available. Archived products are counted separately, never folded in here. */
   totalProducts: number;
+  /** How many families those sellable products belong to — zero until one is made. */
+  familyCount: number;
   /** Archived but intact (ADR-0029) — excluded from every other figure here. */
   archivedProducts: number;
   lowStockProducts: number;
