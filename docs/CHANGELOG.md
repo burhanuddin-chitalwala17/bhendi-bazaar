@@ -10,6 +10,40 @@
 
 ## Entries
 
+## [PR-249] 2026-10-04 — The bulk sheet is built from what exists, not from a template
+
+The sample sheet's columns came from a hard-coded list that still read `sizes` and `colors` — the
+two the whole phase replaces. They now come from the product types the sheet is generated for,
+its dropdowns from the permitted answers in the database, its stock columns from the org's real
+locations and its category examples from current slugs.
+
+**Nothing in it is fixed**, which the owner asked for and which matters more than it sounds: a
+template written down once goes stale the first time a type or a colour is added, and the drift
+is invisible until somebody's upload is rejected for a column that no longer exists. A test gives
+the builder a `footwear` type this codebase has never seen and asserts its columns appear.
+
+One workbook spanning several types — Amazon's shape rather than Flipkart's and Meesho's
+one-sheet-per-category, so an org listing bags and attar fills one file rather than two.
+`?types=a,b` narrows it; omitted, it spans every live type. A `Types` sheet says which columns
+belong to which type, and the notes carry each type's own wording — cloth is asked its Fabric.
+
+**A measurement column names its unit, because one measure takes two.** `length` is inches for a
+garment and centimetres for a mat, so a single `length` column across both would mean two things
+and the person filling it would have no way to tell which. They are separate columns and a row
+fills the one its type uses. Checked against the real rows rather than assumed: six types declare
+`length`, in two different units.
+
+The sheet also now says that **a row whose SKU matches an existing product updates it** — the
+import side of that is the next PR; the column and its note come first so the sheet is not
+promising something before it exists.
+
+**A bug found by reading the file rather than the code.** Applying the dropdowns materialises
+every row down to 500, so `addRow` appended the two example rows at 501 — below five hundred
+blanks, where nobody opening the sheet would ever see them. The examples are written first now.
+It compiled, it passed every column test, and it was only visible by generating a workbook and
+looking at row 2. `tests/unit/bulk-sheet-build.test.ts` builds one and reads it back, so the
+regression is caught; verified by re-introducing the ordering and watching it go red.
+
 ## [PR-248] 2026-10-04 — A family can be made, which is what variants was waiting for
 
 `ProductFamily` existed since PR-229 with nothing creating one. The owner's correction is why
