@@ -55,6 +55,7 @@ export function PaginatedProductGrid({
     query.category ?? "",
     query.search ?? "",
     query.offersOnly ? "1" : "",
+    query.heroOnly ? "1" : "",
   ].join("\u0000");
 
   const [products, setProducts] = useState(initial);

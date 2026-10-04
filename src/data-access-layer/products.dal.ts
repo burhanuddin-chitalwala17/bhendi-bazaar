@@ -188,17 +188,6 @@ export const productsDAL = {
     return rows.map((product) => mapProduct(product, context, locks, ratings));
   },
 
-  getHeroProducts: async (limit: number): Promise<Product[]> => {
-    const [products, context, locks] = await Promise.all([
-      productsRepository.getHeroProducts(limit),
-      loadPriceContext(),
-      loadBiddingLockContext(),
-    ]);
-    const rows = products.filter((p) => p !== null);
-    const ratings = await ratingsFor(rows);
-    return rows.map((product) => mapProduct(product, context, locks, ratings));
-  },
-
   getOfferProducts: async (limit: number): Promise<Product[]> => {
     const [products, context, locks] = await Promise.all([
       productsRepository.getOfferProducts(limit),

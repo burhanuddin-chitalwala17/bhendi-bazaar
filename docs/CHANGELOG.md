@@ -10,6 +10,14 @@
 
 ## Entries
 
+## [PR-266] 2026-10-04 — Every hero piece on the home page, loaded as you scroll
+
+The home page showed the six newest `HERO` products and silently dropped the rest. It now shows
+all of them: nine on first paint (three rows of the phone grid), then the rest through the same
+`PaginatedProductGrid` and `/api/products` route every other listing uses, via a new `heroOnly`
+filter (`?hero=1`). The section is hidden when there are no heroes. `productsDAL.getHeroProducts`
+is gone — nothing called it any more.
+
 ## [PR-265] 2026-10-04 — How this would list elsewhere, on the product itself
 
 The readiness panel, on the org's product page. Per channel: the band, where it would be listed,

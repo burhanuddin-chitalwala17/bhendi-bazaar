@@ -1,5 +1,8 @@
 import { CategoryLanes } from "@/components/category/category-lanes";
-import { HeroProductsGrid } from "@/components/home/hero-products-grid";
+import {
+  HEROES_FIRST_PAGE,
+  HeroProductsGrid,
+} from "@/components/home/hero-products-grid";
 import { HomeHero } from "@/components/home/home-hero";
 import { OffersStrip, OFFERS_IN_STRIP } from "@/components/home/offers-strip";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
@@ -14,7 +17,7 @@ export default async function HomePage() {
   // category tree because home is the one page with no ancestor to descend from.
   const [banners, heroes, offers, lanes] = await Promise.all([
     bannersDAL.getActiveBanners(),
-    productsDAL.getHeroProducts(6),
+    productsDAL.getPage({ heroOnly: true }, { limit: HEROES_FIRST_PAGE }),
     // One more than the strip shows: the extra row is how it knows whether to offer
     // a way to the rest, without a second count query.
     productsDAL.getOfferProducts(OFFERS_IN_STRIP + 1),
@@ -38,7 +41,7 @@ export default async function HomePage() {
         />
       </Suspense>
       <Suspense fallback={<LoadingSkeleton />}>
-        <HeroProductsGrid heroes={heroes} />
+        <HeroProductsGrid heroes={heroes.products} done={heroes.done} />
       </Suspense>
     </div>
   );

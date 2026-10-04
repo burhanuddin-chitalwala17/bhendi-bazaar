@@ -10,6 +10,7 @@ import { loadPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
+import { ProductFlag } from "@server/catalog/product.flags";
 import {
   ARCHIVED,
   FROM_ACTIVE_ORG,
@@ -332,6 +333,7 @@ export class ProductsRepository {
       maxPrice,
       offerOnly,
       featuredOnly,
+      heroOnly,
       limit,
       offset,
     } = filter;
@@ -354,6 +356,7 @@ export class ProductsRepository {
           ...(maxPrice && { price: { lte: maxPrice } }),
           ...(offerOnly ? await offerFilter() : {}),
           ...(featuredOnly && { flags: { has: "FEATURED" } }),
+          ...(heroOnly && { flags: { has: ProductFlag.HERO } }),
         },
         include: {
           ...PRODUCT_INCLUDE,

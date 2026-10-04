@@ -48,6 +48,13 @@ describe("the page URL carries the listing", () => {
     expect(q.has("offers")).toBe(false);
   });
 
+  it("carries the hero listing forward, so page two is still heroes", () => {
+    const q = params(productPageUrl({ heroOnly: true }, 9));
+    expect(q.get("hero")).toBe("1");
+    expect(productPageParams.parse(Object.fromEntries(q)).hero).toBe("1");
+    expect(params(productPageUrl({}, 0)).has("hero")).toBe(false);
+  });
+
   it("round-trips through the route's own parser", () => {
     const query = { handle: "naaz", category: "abayas", offersOnly: true };
     const parsed = productPageParams.parse(
