@@ -2,9 +2,10 @@
 "use client";
 
 import { useAsyncData } from "@/hooks/core/useAsyncData";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { orderApiClient } from "./orderApiClient";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { OrderSummary } from "./order-summary";
 import { SectionHeader } from "../shared/SectionHeader";
@@ -12,6 +13,7 @@ import { SectionHeader } from "../shared/SectionHeader";
 export function OrderLookup() {
   const [code, setCode] = useState("");
   const [shouldFetch, setShouldFetch] = useState(false); // Add this
+  const codeId = useId();
 
   const {
     data: order,
@@ -42,10 +44,11 @@ export function OrderLookup() {
           />
         </header>
         <div className="space-y-2">
-          <label className="text-xs font-medium uppercase tracking-eyebrow">
+          <Label variant="eyebrow" htmlFor={codeId} className="text-xs">
             Order ID
-          </label>
+          </Label>
           <Input
+            id={codeId}
             placeholder="e.g. BB-7KQ4MNZP"
             value={code}
             onChange={(e) => setCode(e.target.value.trim())}

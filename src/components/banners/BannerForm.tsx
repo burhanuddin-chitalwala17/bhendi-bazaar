@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { useFieldArray } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
@@ -58,6 +59,9 @@ export function BannerForm({
 
   const errors = form.formState.errors;
   const imageUrl = form.watch("imageUrl");
+  // One prefix, so each label can point at the control it names.
+  const id = useId();
+  const fieldId = (name: string) => `${id}-${name}`;
 
   return (
     <form onSubmit={form.onSubmit} className="space-y-5">
@@ -68,30 +72,34 @@ export function BannerForm({
       )}
 
       <FormField
+        id={fieldId("eyebrow")}
         label="Eyebrow"
         error={errors.eyebrow?.message}
         hint="The small line above the headline."
       >
-        <Input {...form.register("eyebrow")} placeholder="The Abaya Edit" />
+        <Input id={fieldId("eyebrow")} {...form.register("eyebrow")} placeholder="The Abaya Edit" />
       </FormField>
 
       <FormField
+        id={fieldId("title")}
         label="Headline"
         error={errors.title?.message}
         hint="Leave it blank for artwork that already carries its own words — the banner then shows the picture alone, with no shading over it."
       >
         <Input
+          id={fieldId("title")}
           {...form.register("title")}
           placeholder="Cut for the everyday…"
         />
       </FormField>
 
       <FormField
+        id={fieldId("description")}
         label="Description"
         error={errors.description?.message}
         hint="Two lines on a phone, three on desktop — anything longer is clipped."
       >
-        <Textarea rows={3} {...form.register("description")} />
+        <Textarea id={fieldId("description")} rows={3} {...form.register("description")} />
       </FormField>
 
       <BannerImageField
@@ -104,11 +112,12 @@ export function BannerForm({
 
       {imageUrl && (
         <FormField
+          id={fieldId("imageAlt")}
           label="Image description"
           error={errors.imageAlt?.message}
           hint="What the picture shows, for a shopper using a screen reader."
         >
-          <Input {...form.register("imageAlt")} />
+          <Input id={fieldId("imageAlt")} {...form.register("imageAlt")} />
         </FormField>
       )}
 
@@ -122,23 +131,27 @@ export function BannerForm({
             className="space-y-3 rounded-field border border-border p-3 sm:flex sm:items-end sm:gap-3 sm:space-y-0"
           >
             <FormField
+              id={fieldId(`actions-${index}-label`)}
               label="Label"
               required
               className="sm:flex-1"
               error={errors.actions?.[index]?.label?.message}
             >
               <Input
+                id={fieldId(`actions-${index}-label`)}
                 {...form.register(`actions.${index}.label`)}
                 placeholder="Shop Abayas"
               />
             </FormField>
             <FormField
+              id={fieldId(`actions-${index}-href`)}
               label="Destination"
               required
               className="sm:flex-1"
               error={errors.actions?.[index]?.href?.message}
             >
               <Input
+                id={fieldId(`actions-${index}-href`)}
                 {...form.register(`actions.${index}.href`)}
                 // What an admin will actually paste. Stored as the path, so the origin
                 // in this example never reaches the database.
@@ -148,8 +161,8 @@ export function BannerForm({
                 spellCheck={false}
               />
             </FormField>
-            <FormField label="Style" className="sm:w-40">
-              <Select {...form.register(`actions.${index}.variant`)}>
+            <FormField id={fieldId(`actions-${index}-variant`)} label="Style" className="sm:w-40">
+              <Select id={fieldId(`actions-${index}-variant`)} {...form.register(`actions.${index}.variant`)}>
                 <option value="PRIMARY">Filled</option>
                 <option value="SECONDARY">Outlined</option>
               </Select>
@@ -182,10 +195,12 @@ export function BannerForm({
       </fieldset>
 
       <FormField
+        id={fieldId("isActive")}
         label="Live on the storefront"
         hint="Turn off to take it down without losing it."
       >
         <Switch
+          id={fieldId("isActive")}
           checked={form.watch("isActive")}
           onCheckedChange={(on) =>
             form.setValue("isActive", on, { shouldDirty: true })

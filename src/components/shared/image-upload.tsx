@@ -5,13 +5,14 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useId, useState, useRef } from "react";
 import NextImage from "next/image";
 import { toast } from "sonner";
 import { Upload, X } from "lucide-react";
 import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 import { useMutation } from "@/hooks/core/useMutation";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { uploadApiClient } from "@/components/shared/uploadApiClient";
 
 interface ImageUploadProps {
@@ -38,6 +39,7 @@ export function ImageUpload({
   const upload = useMutation((files: File[]) => uploadApiClient.uploadFiles(endpoint, uploadType, files));
   const isUploading = upload.isLoading;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputId = useId();
   const { remember, localPreview } = useLocalPreviews();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,10 +84,9 @@ export function ImageUpload({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-2">
+      <Label htmlFor={fileInputId} required={required} className="mb-2">
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
-      </label>
+      </Label>
 
       {/* Image Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -188,6 +189,7 @@ export function ImageUpload({
 
       <input
         ref={fileInputRef}
+        id={fileInputId}
         type="file"
         accept="image/*"
         multiple

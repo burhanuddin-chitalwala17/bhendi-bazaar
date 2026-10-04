@@ -7,8 +7,10 @@
 
 "use client";
 
+import { useId } from "react";
 import { Package, Truck, Link as LinkIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { shipmentTrackingApiClient } from "@/components/shipping/shipmentTrackingApiClient";
@@ -39,6 +41,7 @@ export function ShipmentTrackingForm({
   existingTracking,
   onSuccess,
 }: ShipmentTrackingFormProps) {
+  const id = useId();
   const {
     register,
     onSubmit,
@@ -73,11 +76,12 @@ export function ShipmentTrackingForm({
 
       {/* AWB Number */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
+        <Label htmlFor={`${id}-trackingNumber`}>
           AWB / Tracking Number <span className="text-destructive">*</span>
-        </label>
+        </Label>
         <div className="relative">
           <Input
+            id={`${id}-trackingNumber`}
             type="text"
             {...register("trackingNumber", { setValueAs: trimmed })}
             placeholder="Enter AWB from Shiprocket"
@@ -96,11 +100,12 @@ export function ShipmentTrackingForm({
 
       {/* Courier Name */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
+        <Label htmlFor={`${id}-courierName`}>
           Courier Name <span className="text-destructive">*</span>
-        </label>
+        </Label>
         <div className="relative">
           <Input
+            id={`${id}-courierName`}
             type="text"
             {...register("courierName", { setValueAs: trimmed })}
             placeholder="e.g., Blue Dart, Delhivery"
@@ -119,12 +124,13 @@ export function ShipmentTrackingForm({
 
       {/* Tracking URL (Optional) */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
+        <Label htmlFor={`${id}-trackingUrl`}>
           Tracking URL{" "}
           <span className="text-muted-foreground/70 text-xs">(optional)</span>
-        </label>
+        </Label>
         <div className="relative">
           <Input
+            id={`${id}-trackingUrl`}
             type="url"
             {...register("trackingUrl", { setValueAs: optional })}
             placeholder="Auto-generated if left empty"

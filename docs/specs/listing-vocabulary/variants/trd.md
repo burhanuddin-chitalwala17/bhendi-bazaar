@@ -1,10 +1,10 @@
 # TRD — listing vocabulary / variants
 
 - **Summary:** `ProductFamily` as its own aggregate carrying no money and no stock; the variant axis declared per category; a combo an ordinary product
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-247, PR-249, PR-250 (2026-10-04)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-10-02
+- **Verified:** 2026-10-05
 - **References:** [spec.md](spec.md), [parent trd](../trd.md), [ADR-0043](../../../adr/0043-a-variant-is-a-product-in-a-family.md), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
@@ -55,9 +55,12 @@ first, ERPs the second. **We take the first** and say why in D4.
 - **D6 — "Products" becomes two counts, and every caller picks one.** A family count and a
   sellable count, named differently wherever they appear. The dashboard widget, the product list
   and the low-stock warning each state which they mean.
-- **D7 — The migration reads `sizes` and `colors` and keeps everything, matched or not.** A value
-  matching a permitted answer becomes a member; one matching nothing becomes a member with the
-  value kept as flagged free text. Nothing is dropped, which is spec A4.
+- **D7 — Not done; `sizes` and `colors` were dropped uncopied (owner, 2026-10-05).** As written,
+  the migration was to read both columns and keep every value, matched or not, as spec A4 asked.
+  It was never built: the new product form carries variants as products, and the two columns were
+  free text no reader used, so the owner confirmed on 2026-10-05 that they were safe to drop
+  without a copy. The drop is `prisma/migrations/20261004085003_drop_sizes_colors_and_bidding_variant/migration.sql`,
+  which records the confirmation in its header.
 - **D8 — `sizes` and `colors` are removed in a later PR than the one that replaces them.**
   Dropping a column in the migration that replaces it leaves no way back if the mapping was
   wrong, and the mapping is over data nobody has audited.
@@ -88,8 +91,8 @@ family's facts rather than an empty form. Mobile-first per
 ## Data model
 
 [MIGRATION]. New `ProductFamily`, holding the shared facts and no money or stock columns.
-`Product` gains nullable `familyId`. `Product.sizes` and `Product.colors` are read by the
-migration and removed in a later step (D8).
+`Product` gains nullable `familyId`. `Product.sizes` and `Product.colors` were removed in a later
+step (D8), without the copy D7 had planned.
 
 ## API / contract changes
 
@@ -101,8 +104,9 @@ two counts of D6. `docs/CONTRACTS.md` moves in the same PR.
 `ProductStock` keeping its key is a guard test, because spec A1 depends on it. A family having no
 price or stock is asserted once so its absence reads as deliberate, and mutation-tested by adding
 a stock column and watching it go red. Spec A3 is tested by route, not by UI: no route resolves a
-family id to a buyable product. The migration runs over a fixture of the real messy values,
-asserting nothing is lost and every unmatched value is flagged. D9's refusal to delete a family
+family id to a buyable product. The fixture-driven migration test D7 called for went with D7;
+what guards the drop instead is `tests/unit/migration-drops.test.ts`, which refuses a `DROP
+COLUMN` whose file does not say whose data goes. D9's refusal to delete a family
 with members is a test, because cascade is the default and the default is wrong here.
 
 ## Delivery (PRs)
