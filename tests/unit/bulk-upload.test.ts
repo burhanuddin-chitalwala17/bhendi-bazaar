@@ -18,8 +18,12 @@ const validCells = {
   category: "Abayas",
   sku: "ABAYA-001",
   weight: "0.6",
-  sizes: "S;M;L",
-  colors: "Emerald; Black",
+  producttype: "islamic-wear",
+  kind: "rida",
+  colour: "Black",
+  // Lower-cased by the sheet parser, as a real upload arrives (sheet.ts).
+  sleevelength: "Full Sleeves",
+  "length (in)": "54",
   tags: "abaya;silk",
   images: "front.jpg; back.jpg",
   cover: "front.jpg",
@@ -35,8 +39,14 @@ describe("parseBulkProductRow", () => {
     if (!("row" in parsed)) return;
     expect(parsed.row.name).toBe("Emerald Silk Abaya");
     expect(parsed.row.categorySlug).toBe("abayas");
-    expect(parsed.row.sizes).toEqual(["S", "M", "L"]);
-    expect(parsed.row.colors).toEqual(["Emerald", "Black"]);
+    // `sizes` and `colors` are gone: the sheet asks the questions the product's type declares.
+    // The answers come through as the **labels** the dropdown offered — resolving a label to
+    // the key a product stores needs the database, so it happens in the service.
+    expect(parsed.row.productType).toBe("islamic-wear");
+    expect(parsed.row.kind).toBe("rida");
+    expect(parsed.row.factLabels).toEqual({ colour: "Black", sleeveLength: "Full Sleeves" });
+    // A measurement column names its unit, because one measure takes two.
+    expect(parsed.row.measurements).toEqual({ length: 54 });
     expect(parsed.row.images).toEqual(["front.jpg", "back.jpg"]);
     expect(parsed.row.videoRef).toBe("dQw4w9WgXcQ");
     expect(parsed.row.stock).toEqual({ "Main shop": 12, Godown: 0 });

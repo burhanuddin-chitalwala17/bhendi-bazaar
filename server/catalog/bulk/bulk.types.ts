@@ -20,9 +20,27 @@ export interface BulkProductRow {
   categorySlug: string;
   sku?: string;
   weight: number;
-  sizes: string[];
-  colors: string[];
   tags: string[];
+  /**
+   * The listing vocabulary, as the sheet said it
+   * ([listing-vocabulary](../../../docs/specs/listing-vocabulary/)).
+   *
+   * `productType` is accepted here, unlike on the product form, because a sheet row names its
+   * own type — that is what lets one workbook span several (Amazon's shape). It is still
+   * checked against the category, so a row cannot put a product under a type its category
+   * does not use.
+   *
+   * The answers are the **labels** the dropdowns offered, not the keys we store: resolving one
+   * to the other needs the database, so it happens in the service with the other semantic
+   * checks rather than here.
+   */
+  productType?: string;
+  kind?: string;
+  /** A family by name; one that does not exist yet is created once and reused by later rows. */
+  familyName?: string;
+  salePrice?: number;
+  factLabels: Record<string, string>;
+  measurements: Record<string, number>;
   /** Image filenames, gallery order; the first is the default cover (R12). */
   images: string[];
   /** Cover filename; must be one of `images`. */

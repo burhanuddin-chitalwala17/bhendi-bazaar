@@ -10,6 +10,41 @@
 
 ## Entries
 
+## [PR-250] 2026-10-04 — The bulk import reads the vocabulary, and two silent bugs with it
+
+The sheet grew its question columns in PR-249; nothing read them. `bulk-vocabulary.ts` now turns
+what a row said into what a product stores, and the import writes `productType`, `kind`, `facts`
+and `measurements` alongside everything else. `sizes` and `colors` are gone from the row shape —
+the sheet stopped offering them a PR ago.
+
+A **label** becomes a **key**: the dropdowns offer "Maroon" and the product stores `maroon`,
+because renaming a colour must not rewrite products. A key typed directly is accepted too, since
+a sheet round-tripped through an export carries keys and refusing one would punish whoever did
+the tidier thing. An answer matching nothing is kept as flagged free text rather than dropped —
+a shop's data is not ours to discard for not fitting a list written afterwards.
+
+A row is only asked what its type asks: an answer for a fact the type never asks is dropped
+rather than stored, since it would answer a question this product was never put. The type comes
+from the row when it names one — that is what lets one workbook span several — and from the
+category otherwise. A row naming a type its category does not resolve to is **refused**: that is
+the one case where guessing would publish a product under the wrong marketplace category.
+
+A family named in the sheet is created once and reused by every later row naming it, so four
+colours of one abaya arrive as four rows and one family.
+
+**Two silent bugs, both found by tests rather than by the compiler.**
+
+`sheet.ts` lower-cases every header, and fact keys are camelCase — so `sleeveLength` arrived as
+`sleevelength` and a direct lookup dropped it. **Every camelCase question would have imported as
+blank**: sleeve, pack quantity, scent family, waist rise. Only all-lowercase ones like `colour`
+worked. Matching is case-insensitive now.
+
+`categoryRepository.listTree()` returned `(id, parentId, slug)` and nothing else, so
+`resolveProductType` walking it found no type on any node — **every bulk-uploaded product would
+have been untyped**, which looks exactly like a catalogue nobody has typed yet. The tree carries
+`productType` now. Both were mutation-tested after fixing: reintroducing either turns four tests
+red.
+
 ## [PR-249] 2026-10-04 — The bulk sheet is built from what exists, not from a template
 
 The sample sheet's columns came from a hard-coded list that still read `sizes` and `colors` — the

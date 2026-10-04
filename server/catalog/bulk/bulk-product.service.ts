@@ -9,6 +9,12 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
 import { categoryRepository } from "@server/catalog/category.repository";
+import { productFamilyService } from "@server/catalog/product-family.service";
+import {
+  loadVocabulary,
+  resolveRowVocabulary,
+  type VocabularyContext,
+} from "./bulk-vocabulary";
 import { orgAddressRepository } from "@server/catalog/org.address.repository";
 import { slugify } from "@server/shared/slug";
 import { isUniqueViolation } from "@server/shared/constraint";
@@ -137,6 +143,63 @@ export async function validateProductRows(
   return errors;
 }
 
+/** One row's resolved vocabulary, as the columns the product row carries. */
+function vocabularyFor(
+  row: BulkProductCreateRow,
+  index: number,
+  rows: RowWithNumber<BulkProductCreateRow>[],
+  categoryBySlug: Map<string, string>,
+  vocabulary: VocabularyContext,
+) {
+  const { resolved } = resolveRowVocabulary(
+    row,
+    rows[index].rowNumber,
+    categoryBySlug.get(row.categorySlug),
+    vocabulary,
+  );
+  return {
+    productType: resolved.productType,
+    kind: resolved.kind,
+    facts: resolved.facts as Prisma.InputJsonValue,
+    measurements: resolved.measurements as Prisma.InputJsonValue,
+  };
+}
+
+/**
+ * Families named in the sheet, made once each.
+ *
+ * A name that already exists is reused rather than duplicated — otherwise a second upload of
+ * the same range would split a family in two and the siblings would stop sharing anything.
+ */
+async function resolveFamilies(
+  orgId: string,
+  rows: RowWithNumber<BulkProductCreateRow>[],
+  categoryBySlug: Map<string, string>,
+): Promise<Map<string, string>> {
+  const wanted = new Map<string, string>();
+  for (const { row } of rows) {
+    const name = row.familyName?.trim();
+    if (name) wanted.set(name.toLowerCase(), row.categorySlug);
+  }
+  if (wanted.size === 0) return new Map();
+
+  const existing = await productFamilyService.list(orgId, true);
+  const byName = new Map(existing.map((family) => [family.name.trim().toLowerCase(), family.id]));
+
+  for (const [lowered, categorySlug] of wanted) {
+    if (byName.has(lowered)) continue;
+    const original = rows.find(
+      ({ row }) => row.familyName?.trim().toLowerCase() === lowered,
+    )?.row.familyName;
+    const created = await productFamilyService.create(orgId, {
+      name: original?.trim() ?? lowered,
+      categoryId: categoryBySlug.get(categorySlug) ?? "",
+    });
+    byName.set(lowered, created.id);
+  }
+  return byName;
+}
+
 /**
  * Slugs for every row, honouring existing products and earlier rows: base name,
  * then -2, -3… One read of the existing slugs replaces a per-row availability
@@ -168,6 +231,16 @@ export async function createProducts(
   const categoryBySlug = new Map(tree.map((c) => [c.slug, c.id]));
   const slugs = await assignSlugs(rows);
 
+  // The vocabulary for every row at once — two queries rather than two per row.
+  const vocabulary = await loadVocabulary(
+    rows.map(({ row }) => row),
+    tree,
+    orgId,
+  );
+  // A family named in the sheet is made once and reused by every later row naming it, which is
+  // how four colours of one abaya arrive as four rows and one family (variants R2).
+  const familyIds = await resolveFamilies(orgId, rows, categoryBySlug);
+
   const products: Prisma.ProductCreateManyInput[] = [];
   const media: {
     productId: string;
@@ -196,10 +269,10 @@ export async function createProducts(
       tags: row.tags,
       flags: [],
       thumbnail,
-      sizes: row.sizes,
-      colors: row.colors,
       sku: row.sku ?? null,
       weight: row.weight,
+      ...vocabularyFor(row, index, rows, categoryBySlug, vocabulary),
+      familyId: row.familyName ? (familyIds.get(row.familyName.toLowerCase()) ?? null) : null,
     });
 
     row.images.forEach((filename, position) => {
