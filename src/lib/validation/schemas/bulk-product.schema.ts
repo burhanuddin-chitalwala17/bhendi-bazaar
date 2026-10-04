@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isOwnObjectUrl } from "@server/catalog/object-store";
 import { rupeeAmount } from "./common.schemas";
 import { parseYoutubeRef, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
+import { FACT_DECLARATIONS, MEASURES } from "@server/catalog/listing-facts";
 import type { RawSheetRow } from "@server/catalog/bulk/sheet";
 import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
 
@@ -15,6 +16,20 @@ import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
  */
 
 const STOCK_PREFIX = "stock:";
+
+/** `length (cm)` → `length`. A measurement column names its unit because one measure takes two. */
+const MEASURE_HEADER = /^([a-z]+)\s*\(([a-z]+)\)$/;
+
+/**
+ * Sheet headers arrive lower-cased (`server/catalog/bulk/sheet.ts`), and fact keys are camelCase
+ * — so `sleeveLength` reaches here as `sleevelength` and a direct lookup silently drops it. Every
+ * camelCase question would have imported as blank, which is the kind of loss nothing complains
+ * about.
+ */
+const FACT_BY_LOWER = new Map(
+  Object.keys(FACT_DECLARATIONS).map((fact) => [fact.toLowerCase(), fact]),
+);
+const MEASURE_BY_LOWER = new Map(MEASURES.map((measure) => [measure.toLowerCase(), measure]));
 
 const list = (raw: string | undefined): string[] =>
   (raw ?? "")
@@ -38,9 +53,13 @@ const rowShape = z.object({
   weight: z
     .number({ message: "Weight is required" })
     .positive("Weight must be greater than 0"),
-  sizes: z.array(z.string()),
-  colors: z.array(z.string()),
   tags: z.array(z.string()),
+  productType: z.string().trim().max(40).optional(),
+  kind: z.string().trim().max(40).optional(),
+  familyName: z.string().trim().max(120).optional(),
+  salePrice: z.number().positive("Sale price must be greater than 0").optional(),
+  factLabels: z.record(z.string(), z.string()),
+  measurements: z.record(z.string(), z.number()),
   images: z
     .array(z.string())
     .min(1, "Name at least one image file")
@@ -88,6 +107,31 @@ export function parseBulkProductRow(
     stock[location] = qty as number;
   }
 
+  // Fact and measurement columns are not a fixed list: the sheet is generated from whatever
+  // types exist, so the parser recognises them by what they are rather than by name.
+  const factLabels: Record<string, string> = {};
+  const measurements: Record<string, number> = {};
+  for (const [header, value] of Object.entries(cells)) {
+    const text = (value ?? "").trim();
+    if (!text) continue;
+    const fact = FACT_BY_LOWER.get(header.toLowerCase());
+    if (fact) {
+      factLabels[fact] = text;
+      continue;
+    }
+    const matched = MEASURE_HEADER.exec(header.toLowerCase());
+    const measure = matched ? MEASURE_BY_LOWER.get(matched[1]) : undefined;
+    if (measure) {
+      const n = numberCell(text);
+      if (n === undefined) continue;
+      if (Number.isNaN(n)) {
+        errors.push({ row: raw.rowNumber, field: header, message: `"${text}" is not a number` });
+        continue;
+      }
+      measurements[measure] = n;
+    }
+  }
+
   const candidate = {
     name: cells["name"] ?? "",
     description: cells["description"] ?? "",
@@ -95,9 +139,13 @@ export function parseBulkProductRow(
     categorySlug: (cells["category"] ?? "").toLowerCase(),
     sku: (cells["sku"] ?? "").trim() || undefined,
     weight: numberCell(cells["weight"]),
-    sizes: list(cells["sizes"]),
-    colors: list(cells["colors"]),
     tags: list(cells["tags"]),
+    productType: (cells["producttype"] ?? "").trim() || undefined,
+    kind: (cells["kind"] ?? "").trim() || undefined,
+    familyName: (cells["family"] ?? "").trim() || undefined,
+    salePrice: numberCell(cells["saleprice"]),
+    factLabels,
+    measurements,
     images,
     cover: (cells["cover"] ?? "").trim() || undefined,
     videoRef,

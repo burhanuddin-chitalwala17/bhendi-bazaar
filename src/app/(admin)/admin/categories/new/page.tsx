@@ -9,11 +9,16 @@ import { PageShell } from "@/components/shared/page-shell";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 
 export default async function NewCategoryPage() {
-  const { categories } = await adminCategoriesDAL.getCategories();
+  // Both reads happen here rather than in the form: a server component reads, a client
+  // component receives ([ADR-0034]).
+  const [{ categories }, productTypeOptions] = await Promise.all([
+    adminCategoriesDAL.getCategories(),
+    adminCategoriesDAL.getProductTypeOptions(),
+  ]);
 
   return (
     <PageShell width="form">
-      <CategoryForm parentOptions={categories} />
+      <CategoryForm parentOptions={categories} productTypeOptions={productTypeOptions} />
     </PageShell>
   );
 }

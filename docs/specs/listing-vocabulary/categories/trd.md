@@ -122,21 +122,22 @@ flagged.
 
 ## Open questions
 
-- **How rich the colour list should be — the data now answers the hard half.** Measured on
-  2026-10-02 from the templates: for an abaya, sixteen of Flipkart's seventeen colours appear on
-  Meesho **spelled identically**, and across all nodes thirty-one values are common and identical.
-  The platforms do not disagree about what to call a colour. They disagree about how many exist:
-  Flipkart publishes 35 distinct values, Meesho 185.
+None.
 
-  So the choice is granularity, not vocabulary. Flipkart's 35 alone means a shop cannot record
-  "Navy Blue" at all, which is a colour it sells. Meesho's 185 alone means 154 values have no
-  Flipkart equivalent. **The recommendation is the union, with a per-platform mapping decided once
-  per value and shown to the shop** — "our Navy Blue goes to Flipkart as Dark Blue" is then a
-  deliberate statement the shop made, not a guess the system made, which is what keeps every
-  published value exact ([ADR-0045](../../../adr/0045-channel-mappings-are-versioned-data.md)).
-  It stays an open question because it commits the shop to a one-off mapping session, and that is
-  the owner's time.
-- **Meesho's `Brand` is a per-category registry, not free text.** It is optional, so it does not
-  block listing, but a shop's own brand must be enrolled with Meesho before it can be named. Not a
-  decision for this subfeature; recorded here because the brand facts in
-  [inherited-facts](../inherited-facts/) assume a brand is something the shop simply states.
+**Closed 2026-10-03 — how rich the colour list should be.** The union, which is what shipped: 188
+values with the 31 both platforms spell identically sorted first. Flipkart publishes 35 and
+Meesho 185, and they disagree about how *many* colours exist rather than what to call one, so the
+narrow list would leave a colour the shop genuinely sells unrecordable while the wide one costs
+only a mapping.
+
+The concern that held this open was that the wide list commits somebody to mapping 154 values
+onto Flipkart's vocabulary. That was overstated twice over: only the colours a shop actually uses
+ever need mapping, which is tens rather than hundreds, and
+[ADR-0045](../../../adr/0045-channel-mappings-are-versioned-data.md) decision 3 already has them
+decided **lazily** — an unmapped value fails readiness and the shop is asked to choose at the
+moment it first blocks a publish, never upfront.
+
+**Meesho's `Brand` is a per-category registry, not free text.** It is optional, so it does not
+block listing, but a shop's own brand must be enrolled with Meesho before it can be named. Not a
+decision for this subfeature; recorded here because the brand facts in
+[inherited-facts](../inherited-facts/) assume a brand is something the shop simply states.

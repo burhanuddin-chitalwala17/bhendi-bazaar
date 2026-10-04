@@ -11,12 +11,16 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCategoryService } from "@server/catalog/admin.category.service";
 import type { CreateCategoryInput } from "@server/catalog/admin.category.types";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
+import { categoryFormSchemaFor } from "@/lib/validation/schemas/category.schema";
+import { productTypeRepository } from "@server/catalog/product-type.repository";
 
 export async function POST(request: NextRequest) {
   try {
     const session = await requirePlatformAdmin();
-    const body = categoryFormSchema.parse(await request.json());
+    // The valid types are rows, so the parser is built from the keys that exist. The foreign
+    // key on Category.productType refuses an unknown one anyway; this is what turns that into a
+    // readable message rather than a constraint violation.
+    const body = categoryFormSchemaFor(await productTypeRepository.keys()).parse(await request.json());
     const category = await adminCategoryService.createCategory(
       session.user.id,
       body,

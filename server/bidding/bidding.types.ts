@@ -26,8 +26,6 @@ export interface BiddingProduct {
   thumbnail: string;
   /// The price when the event opened, not the price now (bidding D9, spec R4).
   referencePricePaise: number;
-  size: string | null;
-  color: string | null;
 }
 
 /**
@@ -104,8 +102,6 @@ export interface CreateBiddingEventInput {
   orgId: string;
   productId: string;
   createdById: string;
-  size: string | null;
-  color: string | null;
   startAt: Date;
   endAt: Date;
   startingBidPaise: number;

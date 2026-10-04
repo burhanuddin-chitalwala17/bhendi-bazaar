@@ -41,19 +41,18 @@ GROUP BY c.name, s.value
 ORDER BY c.name, products DESC, s.value;
 
 \echo ''
-\echo '=== 4. What `colors` actually holds, and whether we already know the word ==='
+\echo '=== 4. What `colors` actually holds ==='
+\echo '    (whether the new vocabulary knows each word is checked in code, not here: this must'
+\echo '     run against a database that has not had the ListingValue migration deployed yet)'
 SELECT
   col.value AS colour_value,
   count(*)  AS products,
-  EXISTS (
-    SELECT 1 FROM "ListingValue" lv
-    WHERE lv.list = 'colour' AND lv."orgId" IS NULL
-      AND lower(lv.label) = lower(col.value)
-  ) AS already_a_known_colour
+  string_agg(DISTINCT c.name, ', ') AS categories
 FROM "Product" pr
+JOIN "Category" c ON c.id = pr."categoryId"
 CROSS JOIN LATERAL unnest(pr.colors) AS col(value)
 GROUP BY col.value
-ORDER BY already_a_known_colour, products DESC, col.value;
+ORDER BY products DESC, col.value;
 
 \echo ''
 \echo '=== 5. The cartesian question: how many products would become how many ==='

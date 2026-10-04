@@ -17,6 +17,12 @@
  *
  * Needs the seeded local database (see docs/OPERATIONS.md); skips anywhere else
  * so CI and metered environments never pay for or depend on it.
+ *
+ * Every budget here is an upper bound, so an instrument that counts nothing
+ * passes all of them. It did: a static import of the client in
+ * tests/helpers/test-db.ts ran before this file's env assignment, so the client
+ * was built without the query listener and all eight budgets read zero. The
+ * first test below is what makes that impossible to repeat.
  */
 import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll, vi, type MockInstance } from "vitest";
@@ -55,6 +61,13 @@ describe.skipIf(!isDisposableDb)("db ops budgets", () => {
 
   afterAll(() => {
     spy?.mockRestore();
+  });
+
+  // Before any budget, proof there is something to budget. An upper bound over a dead
+  // instrument is an assertion that cannot fail, which is worse than no assertion at all.
+  it("is actually counting statements", async () => {
+    const n = await countQueries(() => productsRepository.getHeroProducts(1));
+    expect(n, "PRISMA_LOG_QUERIES is not reaching the client").toBeGreaterThan(0);
   });
 
   it("getProductBySlug stays within budget", async () => {

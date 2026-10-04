@@ -29,10 +29,18 @@ export function ProductsStats({ stats }: ProductsStatsProps) {
       // (ADR-0029 D12), and a label that did not say so would be the ambiguous one.
       label: "Available",
       value: stats.totalProducts.toLocaleString(),
-      note:
+      // Two notes, because two different things can be worth saying and neither is the figure:
+      // what is archived, and how many garments the sellable ones amount to (variants D6).
+      note: [
+        stats.familyCount > 0
+          ? `in ${stats.familyCount.toLocaleString()} ${stats.familyCount === 1 ? "family" : "families"}`
+          : null,
         stats.archivedProducts > 0
           ? `+ ${stats.archivedProducts.toLocaleString()} archived`
-          : undefined,
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || undefined,
       icon: Package,
       color: "text-info",
       bgColor: "bg-info/10",

@@ -11,11 +11,22 @@ import type { ProductDetails } from "../types";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
 import type { OrgSummary } from "@/domain/org";
 import type { LocationOption } from "@/components/shared/forms/product/ProductOrgShippingFields";
+import type { ProductTypeRecord } from "@server/catalog/product-type.types";
 
 import { PageHeader } from "@/components/shared/page-shell";
 interface ProductEditContainerProps {
   product: ProductDetails;
-  categories: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
+  categories: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    shotList?: unknown;
+    productType?: unknown;
+  }[];
+  /** The question sets and the answers for the category rendered with — read by the page. */
+  productTypes?: ProductTypeRecord[];
+  listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
+  families?: Array<{ id: string; name: string }>;
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
@@ -25,6 +36,9 @@ interface ProductEditContainerProps {
 export function ProductEditContainer({
   product,
   categories,
+  productTypes,
+  listingValues,
+  families,
   orgs,
   locations,
   uploadEndpoints,
@@ -61,6 +75,9 @@ export function ProductEditContainer({
       <ProductForm
         product={product}
         categories={categories}
+        productTypes={productTypes}
+        listingValues={listingValues}
+        families={families}
         orgs={orgs}
         locations={locations}
         onSubmit={updateProduct}

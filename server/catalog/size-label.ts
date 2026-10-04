@@ -1,15 +1,19 @@
-import { MEASURE, UNIT, type MeasureKey, type Unit } from "./listing-facts";
-import { PRODUCT_TYPE, declarationFor, type ProductTypeKey } from "./product-type";
+import { UNIT, type MeasureKey, type Unit } from "./listing-facts";
+import type { ProductTypeRecord } from "./product-type.types";
 
 /**
  * The size label a product reads as, worked out from its measurements
- * (listing-vocabulary/categories R5, D6/D7).
+ * ([product-types](../../docs/specs/listing-vocabulary/product-types/) D9).
  *
  * Derived and never stored: a label that is both computed and persisted is two facts that can
  * disagree, and the stale one wins because whatever reads the column never learns a fresher
  * answer existed. Measurements are what is stored, because a measurement derives a label and a
  * label derives no measurement — and because twelve of Meesho's nineteen nodes require a
  * measurement while none requires a label without one.
+ *
+ * Everything here reads the type's own row rather than a constant, so a scale is data: a ring's
+ * diameter-to-size table is nine rows an admin can edit, and nearest-match is the generic code
+ * below. That is what makes a type fully configurable rather than half.
  */
 
 /** Measurements as the shop gave them, in the units the product type fixed. */
@@ -26,63 +30,48 @@ export interface SizeLabel {
   unit: Unit | null;
 }
 
-/** Ring sizes are a scale of their own, and the one place a number beats a word. */
-const RING_DIAMETER_TO_SIZE: readonly { mm: number; size: string }[] = [
-  { mm: 14.0, size: "6" },
-  { mm: 14.9, size: "8" },
-  { mm: 15.7, size: "10" },
-  { mm: 16.5, size: "12" },
-  { mm: 17.3, size: "14" },
-  { mm: 18.2, size: "16" },
-  { mm: 19.0, size: "18" },
-  { mm: 19.8, size: "20" },
-  { mm: 20.6, size: "22" },
-];
-
-/** The nearest declared ring size; beyond the ends, the end. Nearest is honest here — a ring either fits or does not. */
-function ringSizeFor(diameterMm: number): string {
-  let nearest = RING_DIAMETER_TO_SIZE[0];
-  for (const step of RING_DIAMETER_TO_SIZE) {
-    if (Math.abs(step.mm - diameterMm) < Math.abs(nearest.mm - diameterMm)) nearest = step;
+/** The nearest step of a declared scale. Nearest is honest here — a ring either fits or does not. */
+function nearest(scale: readonly { value: number; label: string }[], value: number): string {
+  let best = scale[0];
+  for (const step of scale) {
+    if (Math.abs(step.value - value) < Math.abs(best.value - value)) best = step;
   }
-  return nearest.size;
+  return best.label;
 }
 
-function unitFor(type: ProductTypeKey, measure: MeasureKey): Unit | null {
-  return declarationFor(type).measures.find((m) => m.key === measure)?.unit ?? null;
+function unitFor(type: ProductTypeRecord, measure: MeasureKey): Unit | null {
+  return type.measures.find((m) => m.key === measure)?.unit ?? null;
 }
 
 /**
  * The label for a product of this type with these measurements.
  *
- * Everything this store sells is free size, so the answer is `Free` wherever a garment-style
- * label is wanted — which is a permitted value on every category it sells into. Jewellery is the
- * exception, because a ring's size is a real scale rather than a word.
+ * A type with a scale reads its first declared measurement against it — a ring's diameter
+ * becoming a ring size. A type without one reads as free size, which is a permitted value on
+ * every category this store sells into.
  *
- * Returns null when the type has no notion of size at all, so a caller shows nothing rather than
- * an empty label: a combo and an attar are not sized, they are measured.
+ * Returns null when the type reads no label at all, so a caller shows nothing rather than an
+ * empty one: a combo and an attar are not sized, they are measured.
  */
 export function sizeLabelFor(
-  type: ProductTypeKey | null,
+  type: ProductTypeRecord | null,
   measurements: Measurements,
 ): SizeLabel | null {
-  if (!type) return null;
+  if (!type || type.labelFrom.length === 0) return null;
 
-  if (type === PRODUCT_TYPE.JEWELLERY) {
-    const diameter = measurements[MEASURE.DIAMETER];
-    if (diameter === undefined) return null;
+  if (type.labelScale && type.labelScale.length > 0) {
+    const key = type.labelFrom[0];
+    const value = measurements[key];
+    if (value === undefined) return null;
     return {
-      label: ringSizeFor(diameter),
-      from: { [MEASURE.DIAMETER]: diameter },
-      unit: unitFor(type, MEASURE.DIAMETER) ?? UNIT.MM,
+      label: nearest(type.labelScale, value),
+      from: { [key]: value },
+      unit: unitFor(type, key) ?? UNIT.MM,
     };
   }
 
-  const sized = SIZED_BY[type];
-  if (!sized) return null;
-
   const from: Measurements = {};
-  for (const key of sized) {
+  for (const key of type.labelFrom) {
     const value = measurements[key];
     if (value !== undefined) from[key] = value;
   }
@@ -90,36 +79,21 @@ export function sizeLabelFor(
   // no size to show until somebody measures it.
   if (Object.keys(from).length === 0) return null;
 
-  return { label: FREE_SIZE, from, unit: unitFor(type, sized[0]) };
+  return { label: FREE_SIZE, from, unit: unitFor(type, type.labelFrom[0]) };
 }
 
-/**
- * Which measurements a type's label is read from. A type absent here has no notion of size —
- * fragrance is measured by capacity and a combo is not sized at all.
- */
-const SIZED_BY: Partial<Record<ProductTypeKey, readonly MeasureKey[]>> = {
-  [PRODUCT_TYPE.ISLAMIC_WEAR]: [MEASURE.LENGTH, MEASURE.BUST, MEASURE.WAIST, MEASURE.HIP, MEASURE.SHOULDER],
-  [PRODUCT_TYPE.TROUSERS]: [MEASURE.LENGTH, MEASURE.WAIST],
-  [PRODUCT_TYPE.PRAYER_MAT]: [MEASURE.LENGTH, MEASURE.WIDTH],
-  [PRODUCT_TYPE.BAG]: [MEASURE.LENGTH, MEASURE.WIDTH, MEASURE.HEIGHT],
-  [PRODUCT_TYPE.TRAVEL_POUCH]: [MEASURE.LENGTH, MEASURE.WIDTH, MEASURE.HEIGHT],
-  [PRODUCT_TYPE.SOCKS]: [MEASURE.LENGTH],
-};
-
-/** The measurements a type requires and the product has not given — what readiness reports (parent spec R5). */
+/** The measurements a type requires and the product has not given — what readiness reports. */
 export function missingRequiredMeasurements(
-  type: ProductTypeKey | null,
+  type: ProductTypeRecord | null,
   measurements: Measurements,
 ): MeasureKey[] {
   if (!type) return [];
-  return declarationFor(type)
-    .measures.filter((m) => m.required && measurements[m.key] === undefined)
-    .map((m) => m.key);
+  return type.measures.filter((m) => m.required && measurements[m.key] === undefined).map((m) => m.key);
 }
 
 /** How a measurement reads on screen: the number with the unit its type fixed. */
 export function formatMeasurement(
-  type: ProductTypeKey | null,
+  type: ProductTypeRecord | null,
   measure: MeasureKey,
   value: number | undefined,
 ): string | null {

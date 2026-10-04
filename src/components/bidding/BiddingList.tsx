@@ -49,8 +49,7 @@ export function BiddingList({
                   <BiddingPhaseBadge phase={event.phase} />
                 </div>
                 <p className="mt-0.5 text-2xs text-muted-foreground">
-                  {variantLabel(event) ?? "No options"} · usually{" "}
-                  {formatCurrency(event.product.referencePricePaise)}
+                  Usually {formatCurrency(event.product.referencePricePaise)}
                 </p>
               </div>
             </div>
@@ -100,10 +99,6 @@ export function BiddingList({
   );
 }
 
-function variantLabel(event: OrgBiddingSummary): string | null {
-  const parts = [event.product.size, event.product.color].filter(Boolean);
-  return parts.length > 0 ? parts.join(" · ") : null;
-}
 
 function formatWhen(date: Date): string {
   return new Intl.DateTimeFormat("en-IN", {

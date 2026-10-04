@@ -2,7 +2,7 @@
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { resolveShotList } from "@server/catalog/shot-list";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Film } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
@@ -13,7 +13,8 @@ import { ProductMediaManager } from "@/components/product/product-media-manager"
 import { ProductBasicFields } from "./ProductBasicFields";
 import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
-import { ProductAttributeFields } from "./ProductAttributeFields";
+import { ProductFactFields } from "./ProductFactFields";
+import type { ProductTypeRecord } from "@server/catalog/product-type.types";
 import { ProductFlagsFields } from "./ProductFlagsFields";
 import {
   ProductOrgShippingFields,
@@ -37,8 +38,27 @@ interface ProductFormProps {
   product?: ProductDetails;
   /** Create only: another of the org's products whose descriptive fields seed this one. */
   copySource?: ProductCopySource | null;
-  /** Carrying `parentId` and `shotList` lets the gallery resolve its slots per category (media-library D4). */
-  categories?: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
+  /**
+   * Carrying `parentId`, `shotList` and `productType` lets the form resolve, per category, both
+   * the gallery's slots (media-library D4) and the questions this product is asked
+   * (listing-vocabulary/categories D1a) — the same walks the server does, so what is asked is
+   * what is stored.
+   */
+  categories?: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    shotList?: unknown;
+    productType?: unknown;
+  }[];
+  /** The question sets, read by the page: they are rows now, so the form cannot import them. */
+  productTypes?: ProductTypeRecord[];
+  /** The answers for the category the page rendered with; others are fetched on change. */
+  listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
+  /** Which level supplied each filled-in value, so the form can say so (inherited-facts R3). */
+  factOrigins?: Partial<Record<string, string>>;
+  /** The org's families, for the picker; a new one is made from the form itself (variants R2). */
+  families?: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
@@ -66,8 +86,27 @@ export function ProductForm({
   isSubmitting,
   readOnly = false,
   uploadEndpoints,
+  productTypes = [],
+  listingValues = {},
+  factOrigins,
+  families = [],
 }: ProductFormProps) {
   const isEdit = !!product;
+
+  /**
+   * Which level supplied each stored answer, in the words a shop would use — "from your brand".
+   * Only values the shop did *not* type get one: an answer marked as the product's own is the
+   * shop's, and saying where it came from would be saying "from yourself".
+   */
+  const origins = useMemo(() => {
+    const stored = { ...(product?.facts ?? {}), ...(product?.measurements ?? {}) };
+    const words: Record<string, string> = { family: "family", brand: "brand", defaults: "defaults" };
+    return Object.fromEntries(
+      Object.entries(stored)
+        .filter(([, entry]) => entry.origin !== "product")
+        .map(([key, entry]) => [key, words[entry.origin] ?? entry.origin]),
+    );
+  }, [product]);
   const copy = isEdit ? null : (copySource ?? null);
   // A restored draft would overwrite the copied fields on mount, so a copy is not
   // draft-persisted — and must not clear a blank-form draft the org left behind.
@@ -117,6 +156,16 @@ export function ProductForm({
       orgId: product?.org?.id || (orgs?.length === 1 ? orgs[0].id : ""),
       tags: product?.tags || copy?.tags || [],
       flags: product?.flags || copy?.flags || [],
+      kind: product?.kind ?? null,
+      familyId: product?.familyId ?? null,
+      // A stored answer carries the level that supplied it; the form edits the value and shows
+      // the origin beside it (inherited-facts R3, R4).
+      facts: Object.fromEntries(
+        Object.entries(product?.facts ?? {}).map(([fact, stored]) => [fact, stored.value]),
+      ),
+      measurements: Object.fromEntries(
+        Object.entries(product?.measurements ?? {}).map(([key, stored]) => [key, stored.value]),
+      ),
       // No cover is pre-selected on create (D17a). On edit the saved flag comes back
       // with the rows, so an existing product keeps the cover its org chose.
       media:
@@ -128,8 +177,6 @@ export function ProductForm({
           slot: item.slot ?? null,
         })) || [],
       weight: product?.weight || 0,
-      sizes: product?.sizes || copy?.sizes || [],
-      colors: product?.colors || copy?.colors || [],
       stockLocations: defaultStockRows,
       sku: product?.sku || "",
       lowStockThreshold: product?.lowStockThreshold || 10,
@@ -311,7 +358,25 @@ export function ProductForm({
       />
 
       {/* Attributes */}
-      <ProductAttributeFields control={control} readOnly={readOnly} />
+      {/*
+        The questions this product's type asks, in place of the free-text sizes and colours
+        boxes — a colour typed three ways is three colours to a marketplace
+        ([listing-vocabulary](../../../../docs/specs/listing-vocabulary/)).
+      */}
+      <ProductFactFields
+        control={control}
+        register={register}
+        errors={errors}
+        setValue={setValue}
+        families={families}
+        orgId={watch("orgId") || ""}
+        categoryId={watch("categoryId") || ""}
+        categories={categories ?? []}
+        productTypes={productTypes}
+        initialValues={listingValues}
+        origins={origins}
+        readOnly={readOnly}
+      />
 
       {/* Flags */}
       <ProductFlagsFields control={control} readOnly={readOnly} />
@@ -354,6 +419,6 @@ export function ProductForm({
 export { ProductBasicFields } from "./ProductBasicFields";
 export { ProductPricingFields } from "./ProductPricingFields";
 export { ProductInventoryFields } from "./ProductInventoryFields";
-export { ProductAttributeFields } from "./ProductAttributeFields";
+export { ProductFactFields } from "./ProductFactFields";
 export { ProductFlagsFields } from "./ProductFlagsFields";
 export { ProductOrgShippingFields } from "./ProductOrgShippingFields";

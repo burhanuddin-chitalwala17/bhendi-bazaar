@@ -12,7 +12,16 @@
  * if the predicate is false while `CI` is set — the integration layer must not be able to
  * vanish quietly.
  */
-import { prisma } from "@server/shared/prisma";
+/**
+ * The client is imported where it is used, never at module scope.
+ *
+ * It used to be imported here, and an import is evaluated before any statement in the file that
+ * imports it — so a suite setting `PRISMA_LOG_QUERIES` at its top had the client already built
+ * without the query listener, and `db-ops-budget.test.ts` counted zero for every budget it
+ * claimed to enforce. Eight assertions of the form `expect(0).toBeLessThanOrEqual(1)` passed for
+ * two months. Asking whether this database is disposable must not construct a client.
+ */
+const client = async () => (await import("@server/shared/prisma")).prisma;
 
 /** Databases whose rows exist to be created and destroyed. Never a metered or shared one. */
 export const DISPOSABLE_DATABASES = ["/bhendi_bazaar_dev", "/bhendi_bazaar_ci"] as const;
@@ -56,6 +65,7 @@ export interface Fixtures {
  * nothing, so it costs one query per row there and builds the world only where it is missing.
  */
 export async function ensureFixtures(): Promise<Fixtures> {
+  const prisma = await client();
   const unique = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
   const location =
@@ -154,6 +164,7 @@ export async function ensureOrgMember(
   orgId: string,
   userId: string,
 ): Promise<{ orgId: string; userId: string }> {
+  const prisma = await client();
   const existing = await prisma.orgMember.findFirst({
     where: { orgId, userId },
     select: { orgId: true, userId: true },
@@ -177,6 +188,7 @@ export async function ensureOrgMember(
 export async function hasCatalogueData(): Promise<boolean> {
   if (!isDisposableDb) return false;
   try {
+    const prisma = await client();
     const [products, orders, reviews, promotions, carts] = await Promise.all([
       prisma.product.count({ take: 1 }),
       prisma.order.count({ take: 1 }),

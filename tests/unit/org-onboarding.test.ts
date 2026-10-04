@@ -96,7 +96,16 @@ describe("the store's readiness", () => {
 describe("the other channels", () => {
   it("every channel is listed exactly once, in display order", () => {
     expect(deriveOnboarding(facts()).readiness.map((entry) => entry.channel)).toEqual([...CHANNELS]);
-    expect(CHANNELS).toEqual([CHANNEL.STORE, CHANNEL.AMAZON, CHANNEL.FLIPKART, CHANNEL.INSTAGRAM]);
+    // Pinned, because the order is what a shop reads down and the set is what every adapter,
+    // mapping and readiness answer keys on (channel-registry D1).
+    expect(CHANNELS).toEqual([
+      CHANNEL.STORE,
+      CHANNEL.GOOGLE,
+      CHANNEL.META,
+      CHANNEL.AMAZON,
+      CHANNEL.FLIPKART,
+      CHANNEL.MEESHO,
+    ]);
   });
 
   it("report unknown with an empty missing list, whatever the facts — no rule exists for them yet", () => {

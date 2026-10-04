@@ -12,10 +12,14 @@ import {
   type CategoryTreeNode,
 } from "@server/catalog/category.tree";
 import {
-  categoryFormSchema,
-  updateCategorySchema,
+  categoryFormSchemaFor,
+  updateCategorySchemaFor,
 } from "@/lib/validation/schemas/category.schema";
 
+
+/** The schemas are factories now; these are the keys a caller would hand them (product-types D6). */
+const categoryFormSchema = categoryFormSchemaFor(["islamic-wear", "trousers", "bag", "fragrance", "jewellery"]);
+const updateCategorySchema = updateCategorySchemaFor(["islamic-wear", "trousers", "bag", "fragrance", "jewellery"]);
 // ridas ─┬─ bridal-ridas ── heavy-bridal
 //        └─ daily-ridas
 // kurtas (unrelated root)

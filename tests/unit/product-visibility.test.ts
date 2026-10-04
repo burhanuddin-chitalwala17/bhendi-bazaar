@@ -32,8 +32,12 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     note: "filtered — the storefront's own reads carry AVAILABLE and FROM_ACTIVE_ORG together, categoryIdsForOrg and isOnSale (which decides whether a product may be reviewed) included, plus archivedAmong and fromWithdrawnOrgAmong (which back the two sale gates and must therefore see the rows they refuse) and two ownership/pricing lookups that must see every row. isAvailable (wishlist's save) spreads AVAILABLE: an archived product cannot be newly saved, and wishes already saved are left alone so a restore brings them back. Two are deliberate: listForStockCheck selects archivedAt so an archived product comes back unavailable by name, letting the cart say which line is the problem, and listForAllocation is a parcel preview — the order transaction is what refuses, so it must still resolve the row it is asked about",
   },
   "server/catalog/admin.product.repository.ts": {
-    reads: 13,
-    note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code. The bulk import's two reads are deliberate — it checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product",
+    reads: 16,
+    note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code. The bulk import's two reads are deliberate — it checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product; the third, `listLiveSkus`, asks the opposite question and so excludes archived rows: a live SKU names the product a sheet row updates, and an archived one must never be restored by an import. `countWhere` and `listFactsWhere` serve the fact correction, which deliberately reaches archived products too: an archived product keeps the answer it inherited and could be restored carrying a value its brand has since corrected; the preview and the update share one predicate so they cannot disagree (inherited-facts D5)",
+  },
+  "server/catalog/product-type.repository.ts": {
+    reads: 1,
+    note: "deliberate — `usage` counts every product naming a type, archived included, because it answers whether a type may be deleted and an archived product still holds its key (product-types D8)",
   },
   "server/catalog/product-family.repository.ts": {
     reads: 2,

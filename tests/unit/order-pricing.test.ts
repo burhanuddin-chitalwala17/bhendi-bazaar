@@ -18,8 +18,6 @@ const product = (overrides: Partial<PricingProduct> = {}): PricingProduct => ({
   price: 120000, // ₹1,200 in paise
   weight: 0.5,
   orgId: "org-a",
-  sizes: ["S", "M", "L"],
-  colors: ["Cream", "Gold"],
   ...overrides,
 });
 
@@ -35,16 +33,21 @@ describe("priceGroupItems — variants (order-and-cart-lines D5)", () => {
     expect(line).toMatchObject({ size: "M", color: "Gold", unitPrice: 120000 });
   });
 
-  it("refuses a size the product never offered — an unfulfillable instruction", () => {
-    expect(() =>
-      priceGroupItems([{ productId: "p1", quantity: 1, size: "XXL" }], catalogue(product()), "org-a")
-    ).toThrow(/not available in size XXL/);
+  /**
+   * A product has no options any more — every colour is its own product with its own stock
+   * ([ADR-0043](../../docs/adr/0043-a-variant-is-a-product-in-a-family.md)) — so there is no
+   * list to check a line's choice against. What the line says is recorded as given.
+   */
+  it("records whatever size and colour the line carried, having nothing to check them against", () => {
+    const { items } = priceGroupItems(
+      [{ productId: "p1", quantity: 1, size: "XXL", color: "Neon" }],
+      catalogue(product()),
+      "org-a"
+    );
+    expect(items[0]).toMatchObject({ size: "XXL", color: "Neon" });
   });
 
-  it("refuses an unoffered colour, and accepts a line with no variant at all", () => {
-    expect(() =>
-      priceGroupItems([{ productId: "p1", quantity: 1, color: "Neon" }], catalogue(product()), "org-a")
-    ).toThrow(/not available in Neon/);
+  it("accepts a line with no variant at all, which is now every line", () => {
     const { items } = priceGroupItems([{ productId: "p1", quantity: 1 }], catalogue(product()), "org-a");
     expect(items[0].size).toBeUndefined();
   });

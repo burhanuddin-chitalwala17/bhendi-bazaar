@@ -282,8 +282,6 @@ async function main() {
         flags: productData.flags,
         thumbnail: productData.thumbnail,
         media: { create: seedMediaRows(productData) },
-        sizes: productData.sizes,
-        colors: productData.colors,
         // Quantity lives on the join row, at the org's seeded pickup location.
         stockLocations: {
           create: [{ orgAddressId: `${productData.orgId}-pickup`, quantity: productData.stock }],

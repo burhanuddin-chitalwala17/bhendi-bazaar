@@ -46,8 +46,13 @@ export const CHANNEL_IMAGE_RULES: Record<Channel, ChannelImageRule | null> = {
   [CHANNEL.AMAZON]: { minLongEdgePx: 1000, bestLongEdgePx: 1600, aspect: null },
   // Flipkart: 1000px on the longest side for a listing image; no shape of its own.
   [CHANNEL.FLIPKART]: { minLongEdgePx: 1000, bestLongEdgePx: null, aspect: null },
-  // Instagram: a feed post is delivered at 1080px, and a square is the shape it is composed in.
-  [CHANNEL.INSTAGRAM]: { minLongEdgePx: 1080, bestLongEdgePx: null, aspect: 1 },
+  // Meesho: 1000px on the longest side, and the same free shape as Flipkart.
+  [CHANNEL.MEESHO]: { minLongEdgePx: 1000, bestLongEdgePx: null, aspect: null },
+  // Google Shopping: at least 100px for apparel, which nothing a phone takes will fail — so the
+  // rule that bites is the 1000px its own guidance recommends for a usable listing image.
+  [CHANNEL.GOOGLE]: { minLongEdgePx: 1000, bestLongEdgePx: null, aspect: null },
+  // Meta: the feed is Google's, and a square is the shape a post is composed in.
+  [CHANNEL.META]: { minLongEdgePx: 1080, bestLongEdgePx: null, aspect: 1 },
 };
 
 /**

@@ -20,7 +20,7 @@ import { uploadDirect } from "@/lib/image/upload-direct";
 import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 
 export function BulkProductWizard({ orgId }: { orgId: string }) {
-  const { step, setSheet, images, setImages, report, created, providedPaths, check, run } = useBulkImport(
+  const { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run } = useBulkImport(
     (sheet, filenames) => bulkImportApiClient.validateProducts(orgId, sheet, filenames),
   );
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -69,14 +69,19 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           row.images.map((name) => [name, urls.get(name)!]),
         ),
       }));
-      return (await bulkImportApiClient.createProducts(orgId, rows)).created;
+      return bulkImportApiClient.createProducts(orgId, rows);
     });
   };
 
   if (step === "done") {
     return (
       <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-        <p className="text-lg font-semibold">✅ {created} products created</p>
+        {/* Both numbers, because they are not the same event: a wrong create leaves a
+            product to archive, and a wrong update has overwritten something. */}
+        <p className="text-lg font-semibold">
+          ✅ {created} products created
+          {updated > 0 ? `, ${updated} updated` : ""}
+        </p>
         <Button asChild>
           <a href={`/org/${orgId}/products`}>View products</a>
         </Button>

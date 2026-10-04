@@ -45,12 +45,23 @@ export class CategoryRepository {
   }
 
   /**
-   * The whole tree as (id, parentId, slug) rows — what the pure helpers in
+   * The whole tree as (id, parentId, slug, productType) rows — what the pure helpers in
    * category.tree.ts walk. Tens of rows; loaded whole on purpose (TRD D1).
+   *
+   * `productType` is here because `resolveProductType` walks the same tree
+   * (listing-vocabulary/categories D1a), and a node without it resolves to null for every
+   * category — which looks exactly like a catalogue nobody has typed yet.
    */
-  async listTree(): Promise<Array<CategoryTreeNode & { slug: string }>> {
+  async listTree(): Promise<
+    Array<CategoryTreeNode & { slug: string; productType: string | null }>
+  > {
     const categories = await allCategories();
-    return categories.map(({ id, parentId, slug }) => ({ id, parentId, slug }));
+    return categories.map(({ id, parentId, slug, productType }) => ({
+      id,
+      parentId,
+      slug,
+      productType,
+    }));
   }
 
   /**

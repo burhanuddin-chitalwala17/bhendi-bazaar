@@ -43,7 +43,7 @@ export function BulkCategoryWizard() {
         ...row,
         imageUrl: urls.get(row.image)!,
       }));
-      return (await bulkImportApiClient.createCategories(rows)).created;
+      return bulkImportApiClient.createCategories(rows);
     });
   };
 

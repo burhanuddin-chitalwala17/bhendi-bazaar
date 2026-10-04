@@ -6,7 +6,7 @@ import { useServerForm } from "@/hooks/core/useServerForm";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { useCategoryForm } from "@/hooks/admin/useCategoryForm";
-import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
+import { categoryFormSchemaFor } from "@/lib/validation/schemas/category.schema";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import {
   CategoryBasicFields,
@@ -25,12 +25,22 @@ interface CategoryFormProps {
    * stays; the read is not.
    */
   parentOptions: AdminCategory[];
+  /**
+   * The product types that exist, read by the page on the server for the same reason as the
+   * parents. They are rows now, so the form cannot import them (product-types D6).
+   *
+   * Required, not optional: the resolver is built from these keys, so a page that forgot to
+   * pass them would silently refuse every type a shop chose. A compile error is the right place
+   * to find that out.
+   */
+  productTypeOptions: Array<{ key: string; label: string }>;
 }
 
 export function CategoryForm({
   category,
   isEdit = false,
   parentOptions: allCategories,
+  productTypeOptions,
 }: CategoryFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -60,7 +70,7 @@ export function CategoryForm({
 
   // Initialize react-hook-form
   const form = useServerForm<CreateCategoryInput>({
-    schema: categoryFormSchema,
+    schema: categoryFormSchemaFor(productTypeOptions.map((option) => option.key)),
     // Deferred: submitCategory is declared below, after useFormPersist, and is
     // only needed when the form is submitted.
     submit: (data) => submitCategory(data),
@@ -135,6 +145,8 @@ export function CategoryForm({
         register={register}
         errors={errors}
         parentOptions={parentOptions}
+        watchedProductType={watch("productType")}
+        productTypeOptions={productTypeOptions}
       />
 
       <CategoryStylingFields register={register} watch={watch} />

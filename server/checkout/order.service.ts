@@ -177,7 +177,6 @@ export class OrderService {
           select: {
             id: true, name: true, slug: true, thumbnail: true,
             price: true, weight: true, orgId: true,
-            sizes: true, colors: true,
             // Offers target categories and resolve commission rates by ancestry, so
             // the line needs to know where in the tree it sits (ADR-0019).
             categoryId: true,

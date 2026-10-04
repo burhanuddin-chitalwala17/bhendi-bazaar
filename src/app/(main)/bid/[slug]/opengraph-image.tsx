@@ -69,10 +69,6 @@ export default async function Image({ params }: { params: { slug: string } }) {
     timeZone: "Asia/Kolkata",
   }).format(event.phase === "SCHEDULED" ? event.startAt : event.endAt);
 
-  const variant = [event.product.size, event.product.color]
-    .filter(Boolean)
-    .join(" · ");
-
   return new ImageResponse(
     <div
       style={{
@@ -129,18 +125,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
             : event.product.name}
         </div>
 
-        {variant && (
-          <div
-            style={{
-              display: "flex",
-              fontSize: 26,
-              color: "#a1a1aa",
-              marginTop: 10,
-            }}
-          >
-            {variant}
-          </div>
-        )}
+
 
         <div
           style={{

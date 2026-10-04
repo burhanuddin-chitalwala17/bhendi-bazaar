@@ -80,8 +80,6 @@ const mapProduct = (
     stock: totalStock,
     lowStockThreshold: product.lowStockThreshold,
     options: {
-      sizes: product.sizes,
-      colors: product.colors,
     },
     shippingFromPincode: mainRow?.orgAddress.address.pincode || "",
     org: {
@@ -182,17 +180,6 @@ export const productsDAL = {
   ): Promise<Product[]> => {
     const [products, context, locks] = await Promise.all([
       productsRepository.getSimilarProducts(slug, count),
-      loadPriceContext(),
-      loadBiddingLockContext(),
-    ]);
-    const rows = products.filter((p) => p !== null);
-    const ratings = await ratingsFor(rows);
-    return rows.map((product) => mapProduct(product, context, locks, ratings));
-  },
-
-  getHeroProducts: async (limit: number): Promise<Product[]> => {
-    const [products, context, locks] = await Promise.all([
-      productsRepository.getHeroProducts(limit),
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);

@@ -4,8 +4,11 @@
 // that `.optional()` does not rescue. See CHANGELOG PR-22.
 import { describe, expect, it } from "vitest";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
-import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
+import { categoryFormSchemaFor } from "@/lib/validation/schemas/category.schema";
 
+
+/** The schemas are factories now; these are the keys a caller would hand them (product-types D6). */
+const categoryFormSchema = categoryFormSchemaFor(["islamic-wear", "trousers", "bag", "fragrance", "jewellery"]);
 /** What the form sends when a user fills only the fields marked required. */
 const filledForm = (overrides: Record<string, unknown> = {}) => ({
   name: "Cream Rida",

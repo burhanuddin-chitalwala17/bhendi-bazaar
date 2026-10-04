@@ -34,8 +34,6 @@ interface BiddingFormProduct {
   id: string;
   name: string;
   pricePaise: number;
-  sizes: string[];
-  colors: string[];
   unitsOnHand: number;
 }
 
@@ -62,8 +60,6 @@ export function BiddingForm({
     schema: biddingFormSchema,
     defaultValues: {
       productId: product.id,
-      size: product.sizes[0],
-      color: product.colors[0],
       startAt: opensIn,
       endAt: closesIn,
       startingBid: paiseToRupees(product.pricePaise),
@@ -136,38 +132,7 @@ export function BiddingForm({
         )}
       </Card>
 
-      {(product.sizes.length > 0 || product.colors.length > 0) && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {product.sizes.length > 0 && (
-            <FormSelect
-              label="Size being auctioned"
-              required
-              error={errors.size?.message}
-              {...register("size")}
-            >
-              {product.sizes.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </FormSelect>
-          )}
-          {product.colors.length > 0 && (
-            <FormSelect
-              label="Colour being auctioned"
-              required
-              error={errors.color?.message}
-              {...register("color")}
-            >
-              {product.colors.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </FormSelect>
-          )}
-        </div>
-      )}
+
 
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput

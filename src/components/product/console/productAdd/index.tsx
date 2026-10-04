@@ -17,8 +17,19 @@ import type {
 import { CopyFromPicker } from "./CopyFromPicker";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import type { ProductTypeRecord } from "@server/catalog/product-type.types";
 interface ProductAddContainerProps {
-  categories: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
+  categories: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    shotList?: unknown;
+    productType?: unknown;
+  }[];
+  /** The question sets and the answers for the category rendered with — read by the page. */
+  productTypes?: ProductTypeRecord[];
+  listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
+  families?: Array<{ id: string; name: string }>;
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The product this one is being copied from, already scoped to the org. */
@@ -31,6 +42,9 @@ interface ProductAddContainerProps {
 
 export function ProductAddContainer({
   categories,
+  productTypes,
+  listingValues,
+  families,
   orgs,
   locations,
   copySource,
@@ -93,6 +107,9 @@ export function ProductAddContainer({
         key={copySource?.id ?? "blank"}
         copySource={copySource}
         categories={categories}
+        productTypes={productTypes}
+        listingValues={listingValues}
+        families={families}
         orgs={orgs}
         locations={locations}
         onSubmit={createProduct}

@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-02
+- **Verified:** 2026-10-03
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -172,7 +172,26 @@ resolves a size through Ideal For, then a `Qualifier` naming the scale — Regul
 US, Kids — then the allowed value, so it treats "which scale" as its own field. `Free` is a
 permitted value on every category this store sells.
 
-**Two gaps remain**, both access rather than research: Meesho publishes no bakhoor or incense
+**Checked against Google and Meta too, on 2026-10-03, because they publish first.** The
+vocabulary was derived from the three marketplaces' templates, and the shopfront channels are the
+ones that reach a buyer first — a feed file needs nobody's approval
+([ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)). Google requires more
+of apparel than of any other category, and a single missing attribute is an immediate
+disapproval: `color`, `size`, `gender`, `age_group`, plus `item_group_id` on every variant.
+
+Eight of the ten are already carried. The interesting one is that **`Ideal For` answers two of
+Google's questions at once**: the marketplaces ask a single question whose values are Men, Women,
+Boys, Girls, Baby Boys, Baby Girls, Kids and Unisex, which Google splits into `gender`
+(male/female/unisex) and `age_group` (newborn/infant/toddler/kids/adult). So `age_group` is a
+mapping of an answer we already hold, not a fact we are missing — one canonical question, two
+channel fields, which is what the adapters are for.
+
+`size` is required for apparel and we derive rather than store it; `Free Size` is an accepted
+value and is what everything this store sells resolves to. `condition` is required only when a
+product is *not* new, so for this store it is a constant in the Google adapter rather than a
+product fact — it becomes one the day anything used or refurbished is sold.
+
+**Two gaps remain, both access rather than research: Meesho publishes no bakhoor or incense
 template in the set downloaded, and Flipkart's attar node was not exported. Everything else the
 Indian marketplaces keep behind a seller login, which is why the templates had to come from the
 owner's own accounts — the public Flipkart listing API is offer and logistics only, and Myntra the

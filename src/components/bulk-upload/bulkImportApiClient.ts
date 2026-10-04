@@ -35,7 +35,7 @@ export const bulkImportApiClient = {
   },
 
   createProducts(orgId: string, rows: (BulkProductRow & { imageUrls: Record<string, string> })[]) {
-    return apiRequest<{ created: number }>(`/api/org/${orgId}/products/bulk`, { method: "POST", body: { rows } });
+    return apiRequest<{ created: number; updated: number }>(`/api/org/${orgId}/products/bulk`, { method: "POST", body: { rows } });
   },
 
   validateCategories(sheet: File, filenames: string[]) {

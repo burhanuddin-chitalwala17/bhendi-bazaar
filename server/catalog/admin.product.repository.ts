@@ -7,6 +7,7 @@ import { prisma } from "@server/shared/prisma";
 import type {
     ProductFilters,
     ProductFormInput,
+    ProductPersistInput,
 } from "@server/catalog/admin.product.types";
 import { ProductFlag } from "@server/catalog/product.flags";
 import { Prisma } from "@prisma/client";
@@ -110,9 +111,16 @@ const PRODUCT_DETAILS_SELECT = {
     slug: true,
     description: true,
     tags: true,
+    // The listing vocabulary, including **which level answered each fact**: a value filled in
+    // from a brand is convenient until it is wrong on one product and nothing on screen says
+    // where it came from (inherited-facts R3).
+    productType: true,
+    kind: true,
+    familyId: true,
+    brandId: true,
+    facts: true,
+    measurements: true,
     media: MEDIA_SELECT,
-    sizes: true,
-    colors: true,
     stockLocations: {
         select: {
             orgAddressId: true,
@@ -269,7 +277,7 @@ export class AdminProductsRepository {
     /**
      * Create new product
      */
-    async createProduct(data: ProductFormInput) {
+    async createProduct(data: ProductPersistInput) {
         // The slug is derived from the name, never taken from input, and settled by
         // the unique constraint rather than a prior availability query — checking
         // first is a race the database already arbitrates.
@@ -288,7 +296,7 @@ export class AdminProductsRepository {
         }
     }
 
-    private async insertProduct(slug: string, data: ProductFormInput) {
+    private async insertProduct(slug: string, data: ProductPersistInput) {
         // Quantities live only on the join rows since the destructive PR; zero rows
         // are dropped ("not stocked here"), and origin comes from the locations.
         const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
@@ -307,11 +315,17 @@ export class AdminProductsRepository {
                 flags: data.flags || [],
                 thumbnail: media.thumbnail,
                 media: { create: mediaRows },
-                sizes: data.sizes || [],
-                colors: data.colors || [],
                 sku: blankToNull(data.sku),
                 lowStockThreshold: data.lowStockThreshold || 10,
                 weight: data.weight,
+                // Resolved on save and server-owned; the form never sends them
+                // (listing-vocabulary/categories D1b, inherited-facts D2).
+                productType: data.productType,
+                kind: blankToNull(data.kind ?? undefined),
+                familyId: data.familyId ?? null,
+                brandId: data.brandId ?? null,
+                facts: data.facts as never,
+                measurements: data.measurements as never,
                 stockLocations: {
                     create: stockRows.map((row) => ({
                         orgAddressId: row.orgAddressId,
@@ -443,9 +457,16 @@ export class AdminProductsRepository {
         // product's stock is real but not sellable, and a low-stock alert on something
         // deliberately archived is noise. Archived is reported as its own count
         // rather than folded in, so no figure is silently ambiguous.
-        const [totalProducts, archivedProducts, scopedProducts] = await Promise.all([
+        // "Products" is two numbers once a product can have siblings (variants D6): twenty
+        // abayas in five colours is twenty families and a hundred sellable things, and a figure
+        // that does not say which it counts is the ambiguous one. The family count is reported
+        // beside the sellable one rather than instead of it.
+        const [totalProducts, archivedProducts, familyCount, scopedProducts] = await Promise.all([
             prisma.product.count({ where: { ...scope, ...AVAILABLE } }),
             prisma.product.count({ where: { ...scope, ...ARCHIVED } }),
+            prisma.productFamily.count({
+                where: { retiredAt: null, products: { some: { ...scope, ...AVAILABLE } } },
+            }),
             prisma.product.findMany({
                 where: { ...scope, ...AVAILABLE },
                 select: {
@@ -474,6 +495,7 @@ export class AdminProductsRepository {
         return {
             totalProducts,
             archivedProducts,
+            familyCount,
             lowStockProducts,
             outOfStockProducts,
             featuredProducts,
@@ -481,7 +503,7 @@ export class AdminProductsRepository {
         };
     }
 
-    async updateProduct(id: string, data: ProductFormInput) {
+    async updateProduct(id: string, data: ProductPersistInput) {
         // Fields are enumerated, not spread: `data` originates from a request body,
         // so spreading it would let any writable column through. `slug` is absent
         // deliberately — it is generated once at creation and then frozen, because
@@ -514,11 +536,17 @@ export class AdminProductsRepository {
                     flags: data.flags,
                     thumbnail: media.thumbnail,
                     media: { create: mediaRows },
-                    sizes: data.sizes,
-                    colors: data.colors,
                     sku: blankToNull(data.sku),
                     lowStockThreshold: data.lowStockThreshold,
                     weight: data.weight,
+                    // Symmetric with create (Invariant 4): an update that whitelists
+                    // less than its create is how a field becomes unsettable.
+                    productType: data.productType,
+                    kind: blankToNull(data.kind ?? undefined),
+                    familyId: data.familyId ?? null,
+                    brandId: data.brandId ?? null,
+                    facts: data.facts as never,
+                    measurements: data.measurements as never,
                     stockLocations: {
                         create: stockRows.map((row) => ({
                             orgAddressId: row.orgAddressId,
@@ -556,7 +584,32 @@ export class AdminProductsRepository {
   async listSkusTaken(orgId: string, skus: string[]) {
     return await prisma.product.findMany({
       where: { orgId, sku: { in: skus } },
-      select: { sku: true, name: true, archivedAt: true },
+      select: { id: true, sku: true, name: true, archivedAt: true },
+    });
+  }
+
+  /** A count under a predicate the caller owns — the fact correction's preview (inherited-facts R6). */
+  async countWhere(where: Prisma.ProductWhereInput): Promise<number> {
+    return await prisma.product.count({ where });
+  }
+
+  /** The facts of every product under a predicate — the rows a fact correction rewrites. */
+  async listFactsWhere(where: Prisma.ProductWhereInput) {
+    return await prisma.product.findMany({ where, select: { id: true, facts: true } });
+  }
+
+  /** Writes each product's facts whole, all-or-nothing: `updateMany` cannot merge into a JSON path. */
+  async replaceFacts(rows: Array<{ id: string; facts: Record<string, unknown> }>): Promise<void> {
+    await prisma.$transaction(
+      rows.map(({ id, facts }) => prisma.product.update({ where: { id }, data: { facts: facts as never } })),
+    );
+  }
+
+  /** The live products holding these SKUs: the rows a bulk import updates rather than creates. */
+  async listLiveSkus(orgId: string, skus: string[]) {
+    return await prisma.product.findMany({
+      where: { orgId, sku: { in: skus }, archivedAt: null },
+      select: { id: true, sku: true },
     });
   }
 
@@ -565,14 +618,32 @@ export class AdminProductsRepository {
     return await prisma.product.findMany({ select: { slug: true } });
   }
 
-  /** A bulk import's rows, in one transaction of createMany per table — all-or-nothing by construction. */
-  async createBulk(
+  /** A bulk import's rows, all-or-nothing in one transaction. */
+  async importBulk(
     products: Prisma.ProductCreateManyInput[],
+    updates: Prisma.ProductCreateManyInput[],
     media: Prisma.ProductMediaCreateManyInput[],
     stock: Prisma.ProductStockCreateManyInput[],
   ): Promise<void> {
     await prisma.$transaction(async (tx) => {
-      await tx.product.createMany({ data: products });
+      if (products.length) await tx.product.createMany({ data: products });
+
+      // An update is a full replace, the same semantics the admin form's edit has: the sheet
+      // row is the product now. `slug` is absent from the data — it is the product's own, and
+      // changing it would break every link to it.
+      for (const row of updates) {
+        const { id, slug: _slug, ...data } = row;
+        await tx.product.update({ where: { id }, data });
+      }
+
+      // The gallery and the stock are replaced wholesale for an updated product, in the same
+      // transaction, so nothing can commit with `thumbnail` pointing at a row that is gone.
+      if (updates.length) {
+        const ids = updates.map((row) => row.id as string);
+        await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
+        await tx.productStock.deleteMany({ where: { productId: { in: ids } } });
+      }
+
       if (media.length) await tx.productMedia.createMany({ data: media });
       if (stock.length) await tx.productStock.createMany({ data: stock });
     });

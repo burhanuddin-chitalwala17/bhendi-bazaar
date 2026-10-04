@@ -25,6 +25,7 @@ export function useBulkImport<TReport extends { ok: boolean }>(
   const [images, setImages] = useState<File[]>([]);
   const [report, setReport] = useState<TReport | null>(null);
   const [created, setCreated] = useState(0);
+  const [updated, setUpdated] = useState(0);
 
   const filesByPath = useMemo(() => new Map(images.map((file) => [relativePath(file), file])), [images]);
   const providedPaths = useMemo(() => [...filesByPath.keys()], [filesByPath]);
@@ -44,11 +45,13 @@ export function useBulkImport<TReport extends { ok: boolean }>(
     }
   };
 
-  /** `create` uploads, calls `creating()`, creates, and answers how many were made. */
-  const run = async (create: (work: BulkImportWork) => Promise<number>) => {
+  /** `create` uploads, calls `creating()`, creates, and answers how many were made and updated. */
+  const run = async (create: (work: BulkImportWork) => Promise<{ created: number; updated?: number }>) => {
     setStep("uploading");
     try {
-      setCreated(await create({ filesByPath, providedPaths, creating: () => setStep("creating") }));
+      const result = await create({ filesByPath, providedPaths, creating: () => setStep("creating") });
+      setCreated(result.created);
+      setUpdated(result.updated ?? 0);
       setStep("done");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
@@ -56,5 +59,5 @@ export function useBulkImport<TReport extends { ok: boolean }>(
     }
   };
 
-  return { step, setSheet, images, setImages, report, created, providedPaths, check, run };
+  return { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run };
 }

@@ -9,6 +9,7 @@ import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-
 import { wishlistService } from "@server/wishlist/wishlist.service";
 import { isRenderableImageUrl, renderableMedia } from "@server/catalog/image-paths";
 import { toProductMediaDto } from "@server/catalog/media";
+import { parseStoredFacts } from "@server/catalog/listing-facts";
 import { LOGO } from "@/lib/config";
 import { NotFoundError } from "@server/shared/domain-error";
 import type { ProductCopyOption, ProductCopySource } from "@server/catalog/admin.product.types";
@@ -73,6 +74,7 @@ class ProductsDAL {
     const stats = await productsService.getStats(orgId);
     return {
       totalProducts: stats.totalProducts,
+      familyCount: stats.familyCount,
       archivedProducts: stats.archivedProducts,
       lowStockProducts: stats.lowStockProducts,
       outOfStockProducts: stats.outOfStockProducts,
@@ -108,12 +110,17 @@ class ProductsDAL {
       ),
       lowStockThreshold: product.lowStockThreshold,
       weight: product.weight ?? 0,
+      // Read defensively: a malformed stored shape must not take down the form that would let
+      // somebody fix it.
+      productType: product.productType ?? null,
+      kind: product.kind ?? null,
+      familyId: product.familyId ?? null,
+      facts: parseStoredFacts(product.facts) as ProductDetails["facts"],
+      measurements: parseStoredFacts(product.measurements) as ProductDetails["measurements"],
       // Dead photos are dropped rather than shown: they cannot render, and saving the
       // edit form is then what clears them from the row — the re-upload remedy.
       media: renderableMedia((product.media ?? []).map(toProductMediaDto)),
       thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,
-      sizes: product.sizes,
-      colors: product.colors,
       org: {
         id: product.org.id,
         name: product.org.name,

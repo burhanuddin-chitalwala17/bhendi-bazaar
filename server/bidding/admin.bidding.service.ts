@@ -63,8 +63,6 @@ export class AdminBiddingService {
         name: row.product.name,
         thumbnail: row.product.thumbnail,
         referencePricePaise: row.referencePricePaise,
-        size: row.size,
-        color: row.color,
       },
     };
   }

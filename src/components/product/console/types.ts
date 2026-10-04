@@ -68,9 +68,16 @@ export interface ProductDetails {
   weight: number;
   media: ProductMediaDto[];
   thumbnail: string;
-  sizes: string[];
-  colors: string[];
   org: OrgSummary;
+  /**
+   * The listing vocabulary as stored, each answer with the level that supplied it — the form
+   * says "from your brand Noor" beside anything filled in rather than typed (inherited-facts R3).
+   */
+  productType?: string | null;
+  kind?: string | null;
+  familyId?: string | null;
+  facts?: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean }>;
+  measurements?: Record<string, { value: number; origin: string }>;
   /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
   stockLocations: Array<{
     orgAddressId: string;
@@ -83,6 +90,8 @@ export interface ProductDetails {
 export interface ProductStats {
   /** Available. Archived products are counted separately, never folded in here. */
   totalProducts: number;
+  /** How many families those sellable products belong to — zero until one is made. */
+  familyCount: number;
   /** Archived but intact (ADR-0029) — excluded from every other figure here. */
   archivedProducts: number;
   lowStockProducts: number;

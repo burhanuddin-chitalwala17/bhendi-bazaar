@@ -112,16 +112,13 @@ Order is forced by dependency: declarations first, because the other two need so
 
 ## Open questions
 
-One, and it needs the owner.
+None.
 
-- **Which permitted values ship first.** The colour lists differ in granularity rather than in
-  wording — Flipkart publishes 35 values, Meesho 185, and the 31 they share are spelled
-  identically. Taking the union lets the shop record the colour it actually sells and commits it
-  to deciding, once per value, what a coarser platform should receive. Stated with the measured
-  numbers in [categories](categories/trd.md).
+**Closed since drafting**, recorded so none is reopened:
 
-**Closed since drafting**, recorded so a reader does not reopen them:
-
+- How rich the colour list should be: the union, already shipped. Only the colours a shop uses
+  ever need mapping, and they are mapped lazily when one first blocks a publish
+  ([categories](categories/trd.md)).
 - Whether a member needs its own description. It does, and it gets one without being typed: the
   family holds it as the answer to fill from and each member stores its own copy, overridable
   ([variants](variants/trd.md) D10).

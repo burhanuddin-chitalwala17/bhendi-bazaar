@@ -10,6 +10,7 @@ import { loadPriceContext } from "@server/promotions/price-context";
 import { offerCoverage } from "@server/promotions/targeting";
 import { ProductFilter } from "@server/catalog/product.types";
 import { NotFoundError } from "@server/shared/domain-error";
+import { ProductFlag } from "@server/catalog/product.flags";
 import {
   ARCHIVED,
   FROM_ACTIVE_ORG,
@@ -123,7 +124,7 @@ export class ProductsRepository {
       // An archived product cannot be listed for bidding either: bidding is a way of
       // selling, and this row is not for sale (ADR-0029).
       where: { id: productId, orgId, ...AVAILABLE },
-      select: { id: true, name: true, price: true, sizes: true, colors: true },
+      select: { id: true, name: true, price: true },
     });
   }
 
@@ -399,6 +400,7 @@ export class ProductsRepository {
       maxPrice,
       offerOnly,
       featuredOnly,
+      heroOnly,
       limit,
       offset,
     } = filter;
@@ -421,6 +423,7 @@ export class ProductsRepository {
           ...(maxPrice && { price: { lte: maxPrice } }),
           ...(offerOnly ? await offerFilter() : {}),
           ...(featuredOnly && { flags: { has: "FEATURED" } }),
+          ...(heroOnly && { flags: { has: ProductFlag.HERO } }),
         },
         include: {
           ...PRODUCT_INCLUDE,
