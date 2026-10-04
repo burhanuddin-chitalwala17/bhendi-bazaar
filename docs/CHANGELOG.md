@@ -10,6 +10,34 @@
 
 ## Entries
 
+## [PR-256] 2026-10-04 — Whether a product could be listed, answered without asking anyone
+
+The channel registry's gate, as a pure function with no caller yet. It takes the product's stored
+facts, the channel's three mappings and what that channel calls required, and answers in the three
+bands the TRD names: blocked, warned, ready.
+
+**A nearest-fit category warns rather than blocks.** Blocking it would make this store's largest
+line unlistable — a rida is 36 of 94 products and has no exact node on either marketplace. The
+point of recording the fit was never to stop the listing; it was to show the shop, every time,
+what it will be listed as and why, instead of approving it once and forgetting.
+
+**A value the channel has no word for blocks, and is never guessed.** Google and Meta are the
+closest pair in this space and still disagree on values; a tool that guessed would be wrong at
+exactly the rate its guesses looked plausible. So an unmapped answer blocks that channel only,
+and the worklist is keyed by value rather than by product — one mapping for "maroon" clears every
+product that answers maroon, which is what keeps a long job finite rather than endless.
+
+**Every problem is reported, not the first.** A shop fixing one, saving, and only then learning
+of the next is the slow loop this phase exists to shorten.
+
+An absent `OrgChannel` row is off, and a shop that has enabled nothing is asked nothing and warned
+about nothing. A stored key that is no longer a declared channel is dropped rather than honoured,
+so the `instagram` → `meta` rename cannot re-enable something nothing can publish to.
+
+Purity is the point: twelve mutations of the rules were each confirmed to turn the suite red.
+`fill-facts` now exports its rule for what counts as blank, because a second spelling of it is how
+a fact comes to be answered in one place and missing in the other.
+
 ## [PR-255] 2026-10-04 — The channel set, declared, and the four tables under it [MIGRATION]
 
 The channel registry's first piece. No behaviour changes: this is the vocabulary and the storage

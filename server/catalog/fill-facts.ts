@@ -29,8 +29,13 @@ export interface Level<K extends string> {
 export type Answers<K extends string> = Partial<Record<K, Answerable | null | undefined>>;
 export type Filled<K extends string> = Partial<Record<K, FilledAnswer>>;
 
-/** Blank is not an answer: an empty string is a field somebody cleared, not a value to inherit. */
-function answered(value: Answerable | null | undefined): value is Answerable {
+/**
+ * Blank is not an answer: an empty string is a field somebody cleared, not a value to inherit.
+ *
+ * Exported because the readiness gate asks the same question of a stored answer, and a second
+ * spelling of "blank" is how a fact counts as answered here and missing there.
+ */
+export function answered(value: Answerable | null | undefined): value is Answerable {
   if (value === null || value === undefined) return false;
   if (typeof value === "string") return value.trim() !== "";
   if (typeof value === "number") return Number.isFinite(value);
