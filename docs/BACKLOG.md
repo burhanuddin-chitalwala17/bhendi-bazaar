@@ -184,7 +184,7 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [listing-vocabulary/product-types](specs/listing-vocabulary/product-types/) | The question sets become rows an admin creates and edits, so onboarding a seller with a new product line does not wait for a developer | ✅ Implemented — PR-236, PR-237, PR-238, PR-240, PR-241 (2026-10-03) |
 | product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | planned |
 | product-form/bulk-sheet | One sheet for several product types at once, Amazon's shape rather than Flipkart's one-per-node; permitted values as dropdowns; **creates and updates by SKU**, so an existing catalogue is fixed in one upload rather than one form at a time | planned — decided 2026-10-03 |
-| channel-registry | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; the readiness gate wired to the resolver | planned |
+| [channel-registry](specs/channel-registry/) | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; the readiness gate answered before publishing rather than after a rejection | 📝 Draft — 2026-10-04 |
 | shopfront-feeds | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | planned |
 | channel-connectors | Per-seller authorisation and encrypted credentials — the foundation publishing, orders and reporting all share | planned |
 | marketplace-publish | Listings pushed under the shop's own account, Flipkart first as the most accessible real API | planned |

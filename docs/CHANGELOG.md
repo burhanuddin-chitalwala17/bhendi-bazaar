@@ -10,6 +10,41 @@
 
 ## Entries
 
+## [PR-254] 2026-10-04 — The channel registry, specified
+
+What each selling channel is, what it calls the things this shop sells, and whether a product is
+ready to go there. It publishes nothing: it is the dictionary and the pre-flight check that
+`shopfront-feeds`, `channel-connectors` and `marketplace-publish` all need first, because none of
+them would otherwise know what to send.
+
+Most of it records decisions already taken rather than making new ones —
+[ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md) for what a channel is,
+[ADR-0045](adr/0045-channel-mappings-are-versioned-data.md) for mappings as versioned data. Four
+decisions are this spec's own.
+
+**Three mapping tables, not one.** Category, attribute and value are filled at different times
+and by different effort, so a shop can publish with categories mapped and values half-done, and
+the gate says exactly which values are missing. One table would have made the job all-or-nothing,
+which is how a mapping job never finishes.
+
+**Readiness answers in three bands** — blocked, warned, ready — so a half-mapped register still
+reports usefully rather than refusing everything.
+
+**A nearest fit is a warning every time, not an approval once.** This store's largest line is the
+case: a rida is 36 of 94 products and has no exact match on either marketplace. Shown once and
+accepted, the mapping would then apply silently to every later product, including ones it suits
+far less.
+
+**The gate never disables a control**, per the owner's standing preference: the publish action
+refuses with a message naming what is missing, through the error envelope this project already
+has. A disabled button explains nothing.
+
+D12 records what the owner closed today: a nearest fit is the **platform's** decision, shown to
+every shop it affects. Choosing that a rida lists as an abaya is a commercial judgement, which
+argued for the shop — but one mapping serves every shop selling that type, so a seller's choice
+would silently change another's listings. It reopens the first time two shops want different
+answers.
+
 ## [PR-253] 2026-10-04 — Where a value came from, and correcting it where it came from [MIGRATION]
 
 The last two pieces of [inherited-facts](specs/listing-vocabulary/inherited-facts/). The fill
