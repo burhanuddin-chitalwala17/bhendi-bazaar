@@ -24,10 +24,10 @@ maps attributes and their options per target system as configuration; Shopify's 
 exists to be mapped onto Google's and Meta's rather than replace them. **We follow it**: three
 layers, all data, none a `switch`.
 
-**Nobody maps values automatically.** Google and Meta are the closest pair here — Meta accepts
-Google's namespace — and still disagree on values: `in_stock` against `in stock`, five age groups
-against seven. A tool that guessed would be wrong at the rate its guesses were plausible. **We
-follow the consequence**: an unmapped value fails readiness and the shop chooses (spec R5).
+**Nobody maps values automatically.** Google and Meta are the closest pair here and still
+disagree on values: `in_stock` against `in stock`, five age groups against seven. A tool that
+guessed would be wrong at the rate its guesses were plausible, so an unmapped value is reported
+and the shop chooses (spec R5).
 
 **Readiness before publish is the norm** — Amazon's product-type schemas and Shopify's feed
 diagnostics exist so a shop learns before submitting. **We go further on one point**: ours is a
@@ -44,17 +44,16 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
   would be a second spelling of a closed set. The kinds
   ([ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)) sit beside
   them; what a *shop* chooses is data, which is D2.
-- **D2 — A shop opts in per channel, and off is the default** (spec R9). `OrgChannel` carries
-  the enablement and, later, whatever `channel-connectors` needs. An absent row is off, so a shop
-  that has decided nothing is not nagged about anything.
+- **D2 — A shop opts in per channel, and off is the default** (spec R9). `OrgChannel` carries the
+  enablement. An absent row is off, so a shop that has decided nothing is nagged about nothing.
 - **D3 — Three mapping tables, not one.** Category mapping is keyed by `(channel, productType,
   kind)`; attribute by `(channel, productType, fact)`; value by `(channel, list, valueKey)`. They
   are separate because they are filled at different times and by different effort — a shop can
   publish with categories mapped and values half-done, and the gate will say exactly which values
   are missing (spec R5, the fourth hazard).
-- **D4 — Every mapping row carries `checkedOn` and the source it was checked against.** A mapping
-  is a claim about somebody else's system on a particular day. Nothing expires automatically; the
-  date is what makes a stale one visible and is shown wherever a mapping is.
+- **D4 — Every mapping row carries `checkedOn` and its source.** A mapping is a claim about
+  somebody else's system on a particular day. Nothing expires automatically; the date is what
+  makes a stale one visible, and it is shown wherever a mapping is.
 - **D5 — Readiness is a pure function** of the product row, the channel's mappings and the
   channel's declared required set. No Prisma, so the hard cases are unit tests
   ([ADR-0045](../../adr/0045-channel-mappings-are-versioned-data.md) D4) and a page and a service
@@ -117,8 +116,9 @@ distinct to a unique index, so a partial index carries that case as it does for 
 
 ## API / contract changes
 
-[CONTRACT]. A readiness DTO per product and channel — band, blocks, warnings — plus the admin
-register's own shapes. `docs/CONTRACTS.md` moves in the same PR.
+[CONTRACT]. The shop's channel choice and the register's two decisions. **No readiness DTO**:
+the verdict is computed and rendered on the server, so it never crosses the boundary — a route
+handler for it would be a round trip for a read the server already does (ADR-0034).
 
 ## Test plan
 

@@ -10,6 +10,26 @@
 
 ## Entries
 
+## [PR-269] 2026-10-04 — The channel contracts, recorded [CONTRACT]
+
+Found by running `/bb-review` over the thirteen commits: the TRD said `[CONTRACT]` and that
+`CONTRACTS.md` would move in the same PR. It never did, and no entry carried the flag.
+
+Three shapes cross the boundary — a shop's channel choice, a value mapping, a not-sold decision —
+and they are now recorded with the reasoning that is easy to lose: the channel set is sent whole
+so silence is never read as "off", `theirValue` is free text because it is somebody else's
+vocabulary, and both register writes upsert so a repeat is a correction rather than a duplicate.
+
+**And one the TRD promised that does not exist.** It anticipated a readiness DTO per product and
+channel. Building it showed a route handler would be a round trip for a read the server already
+does, so readiness is computed and rendered server-side and never crosses the wire. Recorded as
+an absence with its reason, because a contract document that lists a shape nobody sends is worse
+than one that is merely incomplete.
+
+The review also caught a numbering collision — the owner committed PR-266 between two of mine and
+I reused the number — and a commit that shipped with no changelog entry at all. Both corrected in
+PR-268 above.
+
 ## [PR-268] 2026-10-04 — How much of the catalogue each channel would take
 
 The last of the channel registry's delivery list, and the spec moves to Implemented.

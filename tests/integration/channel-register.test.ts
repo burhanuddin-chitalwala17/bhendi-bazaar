@@ -34,7 +34,7 @@ describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
         name: `${stamp} ${colour} ${n}`,
         slug: `${stamp}-${n}`,
         description: "Worklist fixture",
-        thumbnail: "https://media.test/worklist.webp",
+        thumbnail: "https://example.invalid/worklist.webp",
         price: 100_000,
         orgId,
         categoryId,
