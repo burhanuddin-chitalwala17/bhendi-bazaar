@@ -10,6 +10,26 @@
 
 ## Entries
 
+## [PR-257] 2026-10-04 — The billed-operations budgets were measuring nothing
+
+Found while writing a budget for new code. Every assertion in
+`tests/integration/db-ops-budget.test.ts` is an upper bound, and the instrument behind them was
+counting zero — so all eight read `expect(0).toBeLessThanOrEqual(n)` and could not fail.
+
+The cause is import order. `PRISMA_LOG_QUERIES` has to be set before the Prisma client is
+constructed, because the query event listener is attached at construction. The suite sets it at
+the top of the file, but `tests/helpers/test-db.ts` imported the client at module scope, and an
+import is evaluated before any statement in the file importing it. Asking whether a database is
+disposable was enough to build a client that would never report a query.
+
+The helper now reaches the client through a lazy accessor, and the budget suite's first test
+asserts the instrument is live before any budget is checked. An upper bound over a dead
+instrument is an assertion that cannot fail, which is worse than no assertion.
+
+The budgets themselves were honest: with real counts, all eight still pass unchanged. What was
+missing was the enforcement, not the performance — a query regression at any point in the last
+two months would have gone through.
+
 ## [PR-256] 2026-10-04 — Whether a product could be listed, answered without asking anyone
 
 The channel registry's gate, as a pure function with no caller yet. It takes the product's stored
