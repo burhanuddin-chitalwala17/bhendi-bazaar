@@ -1,7 +1,7 @@
 # ADR-0002: Carrier credentials are entered through the admin console, encrypted at rest
 
 - **Date:** 2026-08-03
-- **Status:** Accepted
+- **Status:** Accepted (D5 deprecated — the `SHIPROCKET_EMAIL`/`PASSWORD` fallback no longer exists in code)
 - **Context:** A carrier account belongs to the *store operator*, not the deployment. Operators connect and disconnect carriers as commercial arrangements change, and that should not require an environment-variable change and a redeploy. Environment variables also scale badly here: a second carrier, or a second account with the same carrier, means a second set of names, and nothing associates a credential with the provider record it belongs to.
 - **Decision:**
   1. Credentials are entered in the admin console and stored on the carrier's provider record.

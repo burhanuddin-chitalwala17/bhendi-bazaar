@@ -1,15 +1,48 @@
 /**
- * Admin User Repository
- * Handles database operations for user management
+ * The admin console's reads of the `User` table. Read-only: the table's one writer is
+ * `profile.repository.ts` (Invariant 5), which exposes `updateAdminFields` for the console.
  */
 
 import { prisma } from "@server/shared/prisma";
+import type { Prisma } from "@prisma/client";
 import type {
   AdminUser,
   UserListFilters,
-  UpdateUserInput,
   UserStats,
 } from "@server/identity/admin.user.types";
+
+/** One projection for every console read and write, so a row cannot differ by path (ADR-0003 D3). */
+export const ADMIN_USER_INCLUDE = {
+  _count: {
+    select: { orders: true },
+  },
+  orders: {
+    select: {
+      grandTotal: true,
+    },
+  },
+} as const satisfies Prisma.UserInclude;
+
+type AdminUserRow = Prisma.UserGetPayload<{ include: typeof ADMIN_USER_INCLUDE }>;
+
+export function toAdminUser(user: AdminUserRow): AdminUser {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    mobile: user.mobile,
+    platformRole: user.platformRole,
+    isBlocked: user.isBlocked,
+    lastActiveAt: user.lastActiveAt,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    ordersCount: user._count.orders,
+    totalSpent: user.orders.reduce((sum, order) => {
+      const grandTotal = order.grandTotal || 0;
+      return sum + grandTotal;
+    }, 0),
+  };
+}
 
 export class AdminUserRepository {
   /**
@@ -55,39 +88,12 @@ export class AdminUserRepository {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
-        include: {
-          _count: {
-            select: { orders: true },
-          },
-          orders: {
-            select: {
-              grandTotal: true,
-            },
-          },
-        },
+        include: ADMIN_USER_INCLUDE,
       }),
       prisma.user.count({ where }),
     ]);
 
-    // Transform to AdminUser format
-    const adminUsers: AdminUser[] = users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      mobile: user.mobile,
-      platformRole: user.platformRole,
-      isBlocked: user.isBlocked,
-      lastActiveAt: user.lastActiveAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      ordersCount: user._count.orders,
-      totalSpent: user.orders.reduce((sum, order) => {
-        const grandTotal = order.grandTotal || 0;
-        return sum + (grandTotal || 0);
-      }, 0),
-    }));
-
-    return { users: adminUsers, total };
+    return { users: users.map(toAdminUser), total };
   }
 
   /**
@@ -97,76 +103,12 @@ export class AdminUserRepository {
     const user = await prisma.user.findUnique({
       relationLoadStrategy: "join",
       where: { id },
-      include: {
-        _count: {
-          select: { orders: true },
-        },
-        orders: {
-          select: {
-            grandTotal: true,
-          },
-        },
-      },
+      include: ADMIN_USER_INCLUDE,
     });
 
     if (!user) return null;
 
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      mobile: user.mobile,
-      platformRole: user.platformRole,
-      isBlocked: user.isBlocked,
-      lastActiveAt: user.lastActiveAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      ordersCount: user._count.orders,
-      totalSpent: user.orders.reduce((sum, order) => {
-        const grandTotal = order.grandTotal || 0;
-        return sum + grandTotal;
-      }, 0),
-    };
-  }
-
-  /**
-   * Update user
-   */
-  async updateUser(
-    id: string,
-    data: UpdateUserInput
-  ): Promise<AdminUser | null> {
-    const updated = await prisma.user.update({
-      where: { id },
-      data,
-      include: {
-        _count: {
-          select: { orders: true },
-        },
-        orders: {
-          select: {
-            grandTotal: true,
-          },
-        },
-      },
-    });
-
-    return {
-      id: updated.id,
-      name: updated.name,
-      email: updated.email,
-      mobile: updated.mobile,
-      platformRole: updated.platformRole,
-      isBlocked: updated.isBlocked,
-      lastActiveAt: updated.lastActiveAt,
-      createdAt: updated.createdAt,
-      updatedAt: updated.updatedAt,
-      ordersCount: updated._count.orders,
-      totalSpent: updated.orders.reduce((sum, order) => {
-        const grandTotal = order.grandTotal || 0;
-        return sum + grandTotal;
-      }, 0),
-    };
+    return toAdminUser(user);
   }
 
   /**
@@ -214,5 +156,3 @@ export class AdminUserRepository {
 }
 
 export const adminUserRepository = new AdminUserRepository();
-
-

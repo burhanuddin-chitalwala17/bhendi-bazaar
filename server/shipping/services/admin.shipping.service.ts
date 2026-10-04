@@ -1,30 +1,29 @@
 /**
  * Admin Shipping Service
- * 
- * Server-side service for managing shipping providers (Admin operations).
- * Business logic layer between API routes and repositories.
+ *
+ * What the providers console reads. Every provider here is a `ShippingProviderSummary`:
+ * the repository never hands this service a credential (shipping ADR-0002 D3).
  */
 
-import { shippingProviderRepository } from "@server/shipping/repositories";
-import type { ShippingProvider } from "@prisma/client";
+import {
+  shippingProviderRepository,
+  type ShippingProviderSummary,
+} from "@server/shipping/repositories";
 
 export interface GetProvidersResponse {
   success: boolean;
-  providers: ShippingProvider[];
+  providers: ShippingProviderSummary[];
   error?: string;
 }
 
 export interface GetProviderByIdResponse {
   success: boolean;
-  provider?: ShippingProvider;
+  provider?: ShippingProviderSummary;
   error?: string;
 }
 export class AdminShippingService {
-  /**
-   * Get all providers (safe for admin view - no sensitive config)
-   */
   async getAllProviders(): Promise<GetProvidersResponse> {
-    const providers = await shippingProviderRepository.getAllProviders();
+    const providers = await shippingProviderRepository.listSummaries();
     if (providers.length === 0) {
       return {
         success: false,
@@ -38,13 +37,10 @@ export class AdminShippingService {
     };
   }
 
-  /**
-   * Get provider by ID (safe summary)
-   */
   async getProviderById(
     providerId: string
   ): Promise<GetProviderByIdResponse | null> {
-    const provider = await shippingProviderRepository.getById(providerId);
+    const provider = await shippingProviderRepository.findSummaryById(providerId);
 
     if (!provider) {
       return {
@@ -62,4 +58,3 @@ export class AdminShippingService {
 
 // Singleton instance
 export const adminShippingService = new AdminShippingService();
-

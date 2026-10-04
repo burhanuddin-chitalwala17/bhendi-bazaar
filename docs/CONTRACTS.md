@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-04
+- **Verified:** 2026-10-05
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -91,7 +91,7 @@ Order creation gains an optional **`couponCode`** — a string, normalised to up
 `POST /api/payments/abandon` (PR-104) takes `{ localOrderId }` — an order reference and deliberately nothing else. It reports that the buyer left the payment window; it does **not** assert what happened to the money, which the server establishes by asking the gateway. Returns `{ orderId, outcome }`, where `outcome` is one of `released`, `confirmed`, `in-flight`, `already-paid`, `already-released`, `not-released`. Safe to call more than once, and safe never to call — the reconciliation sweep reaches the same answer later.
 
 ### Admin
-`GET /api/admin/shipping/providers` returns `ShippingProvider` rows without a `select`, so credential and auth-error fields reach the browser. Rule 5 requires an explicit projection exposing only connection state.
+`GET /api/admin/shipping/providers` and `GET /api/admin/shipping/providers/[id]` return **`ShippingProviderSummary`** (`server/shipping/repositories/provider.repository.ts`): id, code, name, description, priority, connection state and dates, connection type, payment options, delivery modes, features, logo and website, and `accountInfo` narrowed to `{ email }`. `authToken`, `tokenExpiresAt`, `authError` and the rest of `accountInfo` never leave the server; `POST …/providers/[id]/connect` answers without the token or the password, and the audit record carries neither. `tests/unit/provider-dto.test.ts` holds the projection at type level, so `tsc` fails a widened select. Until 2026-10-05 the rows went out whole — the leak Rule 5 exists for.
 
 ### Banners
 `BannerFormSchemaInput` (`src/lib/validation/schemas/banner.schema.ts`) is one declaration used by three things — `POST /api/admin/banners`, `PATCH /api/admin/banners/[id]`, and the admin form's resolver — so what an admin sees inline is what the route enforces (ADR-0013).
