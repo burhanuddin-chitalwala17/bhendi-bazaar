@@ -30,6 +30,39 @@ The review also caught a numbering collision — the owner committed PR-266 betw
 I reused the number — and a commit that shipped with no changelog entry at all. Both corrected in
 PR-268 above.
 
+## [PR-270] 2026-10-04 — A dev catalogue shaped like the real one
+
+The seed was broken and the dev database could not exercise any of the listing work. Both fixed.
+
+**`db seed` had failed since the media library landed.** Six models point at a `MediaAsset` with
+Restrict and none of them was in the teardown, so clearing the database threw on the first org.
+An asset also points at the one it was derived from and at its poster, so the self-references are
+cleared before the set goes.
+
+**The seeded categories now carry a product type.** The live catalogue's types were assigned by a
+migration keyed on its own slugs, which a seeded database does not have — so locally every
+category asked nothing and the whole vocabulary looked broken while working in production.
+
+**The catalogue is now shaped like the real one**: ridas with four children — formal, semi-formal,
+casual, ohbat — that share one product type. That is the case worth having in dev, because nothing
+else shows as plainly that a browsing category is not a question set.
+
+Three products exist to make a surface reachable: a rida answered in plain `nida`, which Flipkart
+has no word for, so the worklist is not empty; a half-answered rida, because a catalogue where
+everything is complete never shows what incomplete looks like; and a masalla bag, whose type is
+decided against, so the "not sold here" list is not empty either.
+
+Every seeded answer is checked against the vocabulary a migration ships —
+`tests/integration/seed-vocabulary.test.ts`, mutation-tested four ways. Writing it caught two
+values I had invented: `plating: 925-silver` and `shape: rectangle`, where the real keys are
+`sterling-silver` and `rectangular`.
+
+**And a test that was eating reference data.** `channel-readiness-service` used the real values
+`maroon` and `ochre` as fixtures and deleted them in its teardown, so every full-suite run removed
+the platform's own seeded mapping for maroon. The same class of fault as the billed-operations
+instrument in PR-257: a suite quietly spending something it did not own. Its fixtures are now
+stamped and collide with nothing.
+
 ## [PR-268] 2026-10-04 — How much of the catalogue each channel would take
 
 The last of the channel registry's delivery list, and the spec moves to Implemented.

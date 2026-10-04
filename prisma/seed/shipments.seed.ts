@@ -27,7 +27,7 @@ export const seedShipments: SeedShipment[] = [
     orderId: "order-1",
     items: [
       {
-        productId: "prod-1",
+        productId: "prod-rida-1",
         productName: "Emerald Satin Abaya",
         productSlug: "emerald-satin-abaya",
         quantity: 1,
@@ -35,7 +35,7 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/10b981/ffffff.png?text=Emerald+Abaya",
       },
       {
-        productId: "prod-7",
+        productId: "prod-ring-1",
         productName: "Gold Filigree Earrings",
         productSlug: "gold-filigree-earrings",
         quantity: 1,
@@ -64,7 +64,7 @@ export const seedShipments: SeedShipment[] = [
     orderId: "order-2",
     items: [
       {
-        productId: "prod-4",
+        productId: "prod-attar-1",
         productName: "Royal Oud Attar",
         productSlug: "royal-oud-attar",
         quantity: 2,
@@ -93,7 +93,7 @@ export const seedShipments: SeedShipment[] = [
     orderId: "order-3",
     items: [
       {
-        productId: "prod-10",
+        productId: "prod-mat-1",
         productName: "Velvet Prayer Mat",
         productSlug: "velvet-prayer-mat",
         quantity: 1,
@@ -101,7 +101,7 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff.png?text=Prayer+Mat",
       },
       {
-        productId: "prod-11",
+        productId: "prod-masalla-1",
         productName: "Wooden Tasbih (99 Beads)",
         productSlug: "wooden-tasbih-99-beads",
         quantity: 2,
@@ -109,7 +109,7 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff.png?text=Tasbih",
       },
       {
-        productId: "prod-12",
+        productId: "prod-bottom-1",
         productName: "Embroidered Quran Cover",
         productSlug: "quran-cover-embroidered",
         quantity: 1,
@@ -138,7 +138,7 @@ export const seedShipments: SeedShipment[] = [
     orderId: "order-4",
     items: [
       {
-        productId: "prod-8",
+        productId: "prod-bag-1",
         productName: "Emerald Stone Necklace",
         productSlug: "emerald-stone-necklace",
         quantity: 1,
@@ -164,7 +164,7 @@ export const seedShipments: SeedShipment[] = [
     orderId: "order-5",
     items: [
       {
-        productId: "prod-6",
+        productId: "prod-bakhoor-1",
         productName: "Sandalwood Amber Attar",
         productSlug: "sandalwood-amber-attar",
         quantity: 1,
@@ -172,7 +172,7 @@ export const seedShipments: SeedShipment[] = [
         thumbnail: "https://placehold.co/800x800/f59e0b/ffffff.png?text=Sandalwood+Amber",
       },
       {
-        productId: "prod-9",
+        productId: "prod-bag-2",
         productName: "Pearl Jhumka Set",
         productSlug: "pearl-jhumka-set",
         quantity: 1,

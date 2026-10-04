@@ -34,6 +34,10 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
   const stamp = `crs-${Date.now().toString(36)}`;
   const typeKey = `${stamp}-rida`;
   const theirNode = "ethnic-wear/abaya";
+  // Stamped, not real: this suite used `maroon` and `ochre` and deleted them afterwards, which
+  // took the platform's seeded mappings with them. A fixture owns only what it invented.
+  const mapped = `${stamp}-mapped`;
+  const unmapped = `${stamp}-unmapped`;
   const checkedOn = new Date("2026-10-04");
   let orgId: string;
 
@@ -110,8 +114,8 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     await maps.setValue({
       channel: CHANNEL.FLIPKART,
       list: LIST.COLOUR,
-      valueKey: "maroon",
-      theirValue: "Maroon",
+      valueKey: mapped,
+      theirValue: "Their word for it",
       checkedOn,
     });
   });
@@ -121,14 +125,14 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     await Promise.all([
       prisma.channelCategoryMap.deleteMany({ where: { productType: typeKey } }),
       prisma.channelAttributeMap.deleteMany({ where: { theirCategory: theirNode } }),
-      prisma.channelValueMap.deleteMany({ where: { list: LIST.COLOUR, valueKey: "maroon" } }),
+      prisma.channelValueMap.deleteMany({ where: { valueKey: { in: [mapped, unmapped] } } }),
       prisma.orgChannel.deleteMany({ where: { orgId } }),
     ]);
     await prisma.productType.deleteMany({ where: { key: typeKey } });
   });
 
   it("says nothing while the shop has enabled no channel", async () => {
-    expect(await service.forProduct(orgId, subject("abaya", { [FACT.COLOUR]: "maroon" }))).toEqual(
+    expect(await service.forProduct(orgId, subject("abaya", { [FACT.COLOUR]: mapped }))).toEqual(
       [],
     );
   });
@@ -136,7 +140,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
   it("still says nothing for a channel the shop turned on and off again", async () => {
     await orgChannels.set(orgId, CHANNEL.FLIPKART, true);
     await orgChannels.set(orgId, CHANNEL.FLIPKART, false);
-    expect(await service.forProduct(orgId, subject("abaya", { [FACT.COLOUR]: "maroon" }))).toEqual(
+    expect(await service.forProduct(orgId, subject("abaya", { [FACT.COLOUR]: mapped }))).toEqual(
       [],
     );
   });
@@ -149,7 +153,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     it("is ready for a kind the type's own mapping covers", async () => {
       const [verdict] = await service.forProduct(
         orgId,
-        subject("abaya", { [FACT.COLOUR]: "maroon" }),
+        subject("abaya", { [FACT.COLOUR]: mapped }),
       );
       expect(verdict.channel).toBe(CHANNEL.FLIPKART);
       expect(verdict.report.state).toBe(LISTING_READINESS.READY);
@@ -159,7 +163,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     it("warns on the kind whose mapping is only the nearest they have", async () => {
       const [verdict] = await service.forProduct(
         orgId,
-        subject("rida", { [FACT.COLOUR]: "maroon" }),
+        subject("rida", { [FACT.COLOUR]: mapped }),
       );
       expect(verdict.report.state).toBe(LISTING_READINESS.WARNED);
       expect(verdict.report.problems[0]).toMatchObject({
@@ -171,12 +175,12 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     it("reads incomplete for an answer the channel has no word for", async () => {
       const [verdict] = await service.forProduct(
         orgId,
-        subject("abaya", { [FACT.COLOUR]: "ochre" }),
+        subject("abaya", { [FACT.COLOUR]: unmapped }),
       );
       expect(verdict.report.state).toBe(LISTING_READINESS.INCOMPLETE);
       expect(verdict.report.problems[0]).toMatchObject({
         problem: LISTING_PROBLEM.UNMAPPED_VALUE,
-        value: "ochre",
+        value: unmapped,
       });
     });
 
@@ -185,23 +189,23 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
       await maps.setValue({
         channel: CHANNEL.FLIPKART,
         list: LIST.COLOUR,
-        valueKey: "ochre",
-        theirValue: "Mustard",
+        valueKey: unmapped,
+        theirValue: "Their other word",
         checkedOn,
       });
       const [verdict] = await service.forProduct(
         orgId,
-        subject("abaya", { [FACT.COLOUR]: "ochre" }),
+        subject("abaya", { [FACT.COLOUR]: unmapped }),
       );
       expect(verdict.report.state).toBe(LISTING_READINESS.READY);
-      await prisma.channelValueMap.deleteMany({ where: { list: LIST.COLOUR, valueKey: "ochre" } });
+      await prisma.channelValueMap.deleteMany({ where: { valueKey: unmapped } });
     });
 
     it("answers each product of a batch on its own facts and kind", async () => {
       const verdicts = await service.forProducts(orgId, [
-        { id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) },
-        { id: "b", ...subject("rida", { [FACT.COLOUR]: "maroon" }) },
-        { id: "c", ...subject("abaya", { [FACT.COLOUR]: "ochre" }) },
+        { id: "a", ...subject("abaya", { [FACT.COLOUR]: mapped }) },
+        { id: "b", ...subject("rida", { [FACT.COLOUR]: mapped }) },
+        { id: "c", ...subject("abaya", { [FACT.COLOUR]: unmapped }) },
         { id: "d", productType: null, kind: null, facts: {} },
       ]);
 
@@ -219,14 +223,14 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
      */
     it("costs the same for forty products of a type as for one", async () => {
       const one = await countQueries(() =>
-        service.forProducts(orgId, [{ id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) }]),
+        service.forProducts(orgId, [{ id: "a", ...subject("abaya", { [FACT.COLOUR]: mapped }) }]),
       );
       const forty = await countQueries(() =>
         service.forProducts(
           orgId,
           Array.from({ length: 40 }, (_, i) => ({
             id: `p${i}`,
-            ...subject(i % 2 ? "rida" : "abaya", { [FACT.COLOUR]: "maroon" }),
+            ...subject(i % 2 ? "rida" : "abaya", { [FACT.COLOUR]: mapped }),
           })),
         ),
       );
@@ -245,11 +249,11 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
      */
     it("costs the same for many product types as for one", async () => {
       const oneType = await countQueries(() =>
-        service.forProducts(orgId, [{ id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) }]),
+        service.forProducts(orgId, [{ id: "a", ...subject("abaya", { [FACT.COLOUR]: mapped }) }]),
       );
       const manyTypes = await countQueries(() =>
         service.forProducts(orgId, [
-          { id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) },
+          { id: "a", ...subject("abaya", { [FACT.COLOUR]: mapped }) },
           { id: "b", productType: "bag", kind: "handbag", facts: {} },
           { id: "c", productType: "socks", kind: "ankle", facts: {} },
           { id: "d", productType: "jewellery", kind: "ring", facts: {} },
