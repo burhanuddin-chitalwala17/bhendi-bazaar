@@ -163,7 +163,13 @@ const toCategoryMapping = (row: {
 
 /** Their fields, under the node that asks for them. */
 function groupByCategory(
-  rows: readonly { theirCategory: string; fact: string; theirAttribute: string; required: boolean }[],
+  rows: readonly {
+    theirCategory: string;
+    fact: string;
+    theirAttribute: string;
+    required: boolean;
+    freeText: boolean;
+  }[],
 ): Map<string, AttributeMapping[]> {
   const out = new Map<string, AttributeMapping[]>();
   for (const row of rows) {
@@ -172,6 +178,7 @@ function groupByCategory(
       fact: row.fact as FactKey,
       theirAttribute: row.theirAttribute,
       required: row.required,
+      freeText: row.freeText,
     });
     out.set(row.theirCategory, group);
   }

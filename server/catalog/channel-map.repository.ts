@@ -39,6 +39,7 @@ export interface AttributeMapRow {
   fact: string;
   theirAttribute: string;
   required: boolean;
+  freeText: boolean;
   checkedOn: Date;
   checkedSource: string | null;
 }
@@ -73,6 +74,7 @@ const ATTRIBUTE_SELECT = {
   fact: true,
   theirAttribute: true,
   required: true,
+  freeText: true,
   checkedOn: true,
   checkedSource: true,
 } as const;
@@ -244,6 +246,7 @@ export const channelMapRepository = {
     fact: FactKey;
     theirAttribute: string;
     required: boolean;
+    freeText?: boolean;
     checkedOn: Date;
     checkedSource?: string | null;
   }): Promise<AttributeMapRow> {
@@ -251,6 +254,7 @@ export const channelMapRepository = {
     const rest = {
       theirAttribute: input.theirAttribute,
       required: input.required,
+      freeText: input.freeText ?? false,
       checkedOn: input.checkedOn,
       checkedSource: input.checkedSource ?? null,
     };

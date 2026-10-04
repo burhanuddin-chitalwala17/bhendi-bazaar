@@ -10,6 +10,42 @@
 
 ## Entries
 
+## [PR-263] 2026-10-04 — What Google asks for, read rather than remembered [MIGRATION]
+
+Google's and Meta's attribute mappings, from Google's own product data specification fetched on
+the day. Reading it rather than recalling it changed the answer, which is the whole point of
+[ADR-0046](adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md).
+
+**From memory this would have marked `gender`, `age_group` and `size` required for apparel.** The
+specification says they are required only for products targeted to **Brazil, France, Germany,
+Japan, the UK and the US**. This shop sells in India, so Google asks for none of the three. A gate
+built on recall would have told a seller to answer three questions nobody was asking.
+
+**What it does require, country-independently, is `color` for free listings on every Apparel &
+Accessories product.** Six of the eleven nodes this shop maps to sit under that branch — clothing,
+pants, socks, scarves, rings and handbags — and five do not: perfume, incense, religious items,
+backpacks and toiletry bags. So the same fact is required on some nodes and optional on others,
+which is the per-node key from PR-262 earning itself a second time.
+
+**A channel can now say its field takes any text.** Google's colour, material and pattern are free
+text; Flipkart's are closed lists of 35, 140 and 56 words. Without somewhere to record that, the
+gate reported every colour as having no Google equivalent — on a channel that needs no equivalent.
+`freeText` on the attribute mapping says so, and it is a property of the channel's own field, which
+is where it sits.
+
+**Meta carries the field names and nothing required.** It accepts Google's RSS namespace so the
+names hold, but Meta's own specification has not been read. Marking its fields required would be
+claiming knowledge we have not checked, so Meta can warn and will never call a product incomplete
+— honest about what has been verified rather than tidy.
+
+Absent on purpose: `condition`, a constant until this store sells anything used; `item_group_id`,
+which is the family and is derived; `gender` and `age_group`, which the audience fact answers in
+the adapter the day a target country needs them.
+
+A black nida rida now reads warned on Google and Meta and incomplete on Flipkart, where `nida` is
+still unmapped — Flipkart spells it "Nida Matte", which is one decision for the owner rather than
+a guess for the code.
+
 ## [PR-262] 2026-10-04 — What Flipkart calls our facts and our answers [MIGRATION]
 
 Sixty attribute mappings and 474 value mappings, derived from the twelve template workbooks

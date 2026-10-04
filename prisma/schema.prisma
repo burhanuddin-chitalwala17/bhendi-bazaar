@@ -2037,6 +2037,11 @@ model ChannelAttributeMap {
   /// Whether that channel refuses a listing without it. An absent required one reads incomplete,
   /// the rest warn (D7). Nothing refuses a publish either way (D10).
   required       Boolean @default(false)
+  /// The channel takes any text here rather than a value from a list of its own, so there is
+  /// nothing to map and an answer it has never heard of is still a valid answer. Google's colour,
+  /// material and pattern are free text; Flipkart's are closed lists. Without this the gate would
+  /// report every colour as having no equivalent on a channel that needs no equivalent.
+  freeText       Boolean @default(false)
 
   checkedOn     DateTime
   checkedSource String?

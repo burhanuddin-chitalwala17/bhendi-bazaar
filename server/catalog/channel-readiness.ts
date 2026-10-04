@@ -106,6 +106,11 @@ export interface AttributeMapping {
   fact: FactKey;
   theirAttribute: string;
   required: boolean;
+  /**
+   * The channel takes any text here rather than a value from a list of its own, so there is
+   * nothing to map. Google's colour is free text; Flipkart's is 35 permitted words.
+   */
+  freeText?: boolean;
 }
 
 /**
@@ -202,6 +207,9 @@ export function listingReadiness(
       continue;
     }
 
+    // Nothing to map where the channel takes any text, and nothing to map where the answer was
+    // never drawn from a list in the first place.
+    if (attribute.freeText) continue;
     const list = listOf(attribute.fact);
     if (list === null) continue;
 

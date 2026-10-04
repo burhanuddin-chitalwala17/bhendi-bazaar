@@ -174,6 +174,37 @@ describe("an answer the channel has no word for", () => {
   });
 });
 
+// Google takes any text for colour, material and pattern; Flipkart takes 35, 140 and 56 permitted
+// words. Without this a shop would be told Google has no word for maroon, when Google takes the
+// word maroon.
+describe("a channel that takes any text", () => {
+  const freeText = register({
+    attributesByCategory: asks([
+      { fact: FACT.COLOUR, theirAttribute: "color", required: true, freeText: true },
+    ]),
+    mappedValues: new Map(),
+  });
+
+  it("asks for no mapping, even with nothing mapped at all", () => {
+    const report = listingReadiness({ kind: null, facts: facts({ [FACT.COLOUR]: "ochre" }) }, freeText);
+    expect(report.state).toBe(LISTING_READINESS.READY);
+  });
+
+  it("still notices the answer missing entirely — free text is not no question", () => {
+    const report = listingReadiness({ kind: null, facts: {} }, freeText);
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
+    expect(report.problems[0]?.problem).toBe(LISTING_PROBLEM.MISSING_FACT);
+  });
+
+  it("does not spare a channel that does keep a list", () => {
+    const report = listingReadiness(
+      { kind: null, facts: facts({ [FACT.COLOUR]: "ochre", [FACT.MATERIAL]: "cotton" }) },
+      register(),
+    );
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
+  });
+});
+
 describe("a category that is only the nearest they have", () => {
   const nearest: CategoryMapping = {
     kind: "rida",
