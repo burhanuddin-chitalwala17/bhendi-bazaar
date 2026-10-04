@@ -231,11 +231,31 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
         ),
       );
 
-      // The shop's channels (1), the type (1), and the three maps (3). Asserted exactly rather
+      // The shop's channels (1), the types (1), and the three maps (3). Asserted exactly rather
       // than as a bound: an upper bound over an instrument that counts nothing cannot fail, and
       // that is how this project's billed-operations budgets read zero for two months.
       expect(one).toBe(5);
       expect(forty).toBe(one);
+    });
+
+    /**
+     * The register is read for every type at once, which is what lets the products screen ask
+     * about a whole catalogue. A read moved back inside the per-type loop is invisible in a diff
+     * and silent in every other test, so it is a budget rather than a comment.
+     */
+    it("costs the same for many product types as for one", async () => {
+      const oneType = await countQueries(() =>
+        service.forProducts(orgId, [{ id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) }]),
+      );
+      const manyTypes = await countQueries(() =>
+        service.forProducts(orgId, [
+          { id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) },
+          { id: "b", productType: "bag", kind: "handbag", facts: {} },
+          { id: "c", productType: "socks", kind: "ankle", facts: {} },
+          { id: "d", productType: "jewellery", kind: "ring", facts: {} },
+        ]),
+      );
+      expect(manyTypes).toBe(oneType);
     });
 
     it("says nothing for a type nothing has mapped, rather than throwing", async () => {

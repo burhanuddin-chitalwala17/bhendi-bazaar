@@ -69,8 +69,7 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
   ([ADR-0042](../../adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
   decisions 2–5 unchanged). One declaration answers readiness and builds the payload, so what is
   checked cannot drift from what is sent — the second hazard.
-- **D9 — Nothing here holds a credential or makes a request** (spec R10); the secrets arrive with
-  `channel-connectors`.
+- **D9 — Nothing here holds a credential or makes a request** (spec R10).
 - **D10 — Readiness advises; it never gates.** Owner's call, 2026-10-04. Nothing disables a
   control and nothing refuses a publish: "required" here is our reading of a template, never
   something watched, so refusing on it would stop listings that would have gone through and we
@@ -102,9 +101,9 @@ Two surfaces, both mobile-first ([ADR-0015](../../adr/0015-mobile-first-design.m
 
 An admin register: per channel, what is mapped and what is not, with the unmapped values as a
 worklist — one value fixed there serves every product using it, which keeps the job finite. And
-a readiness panel on the product: the bands read differently and a nearest fit names what it
-will be listed as, with nothing on either surface preventing a publish (D10). On a phone, one
-channel per row, expanding.
+a readiness panel on the product: the bands read differently, a nearest fit names what it will be
+listed as, and nothing on either surface prevents a publish (D10). The product list carries a
+count per channel, not a column, because it pages on the client.
 
 ## Data model
 
@@ -135,7 +134,8 @@ a type that does not exist fails, which catches a bad seed.
 2. The pure readiness function and its tests, with no caller.
 3. The register read, and the shop's opt-in — without which nothing can turn a channel on, so
    readiness could never appear and the rest would be undemonstrable.
-4. Readiness wired into the product form and the org's product list.
+4. Readiness on the product, and a count per channel above the product list — a column would be
+   blank on page two, since that table pages and refetches on the client.
 5. The admin register, including the unmapped-value worklist.
 6. The seeded mappings: Flipkart and Meesho from the extracted templates, Google from its spec.
 

@@ -142,7 +142,8 @@ export const channelMapRepository = {
    */
   async registersFor(input: {
     channels: readonly Channel[];
-    productType: string;
+    /** Several at once: a listing screen asks about every type it shows, in one read. */
+    productTypes: readonly string[];
     lists: readonly string[];
   }): Promise<{
     categories: CategoryMapRow[];
@@ -150,14 +151,15 @@ export const channelMapRepository = {
     values: ValueMapRow[];
   }> {
     const channels = [...new Set(input.channels)];
-    if (channels.length === 0 || !input.productType) {
+    const productTypes = [...new Set(input.productTypes.filter(Boolean))];
+    if (channels.length === 0 || productTypes.length === 0) {
       return { categories: [], attributes: [], values: [] };
     }
     const lists = [...new Set(input.lists.filter(Boolean))];
 
     const [categories, values] = await Promise.all([
       prisma.channelCategoryMap.findMany({
-        where: { channel: { in: channels }, productType: input.productType },
+        where: { channel: { in: channels }, productType: { in: productTypes } },
         select: CATEGORY_SELECT,
       }),
       lists.length === 0

@@ -10,6 +10,22 @@
 
 ## Entries
 
+## [PR-268] 2026-10-04 — How much of the catalogue each channel would take
+
+The last of the channel registry's delivery list, and the spec moves to Implemented.
+
+**A count per channel above the product list, not a column on it.** The list pages and refetches
+on the client, so a per-row verdict would be blank on page two unless it travelled through a
+route handler — a round trip for a read the server already does. The number answers the question
+a shop has, which is how much is left; the product page already says what.
+
+**The register is read for every product type at once** rather than once per type, so a catalogue
+of nine types costs what one does. Budgeted exactly, and watched going from 5 queries to 14 when
+the read was moved back inside the loop.
+
+Numbering correction: this entry and the one below it were first written as a second PR-266,
+colliding with the entry above. Both are same-day and unpushed; what happened is unchanged.
+
 ## [PR-266] 2026-10-04 — Every hero piece on the home page, loaded as you scroll
 
 The home page showed the six newest `HERO` products and silently dropped the rest. It now shows
@@ -18,7 +34,7 @@ all of them: nine on first paint (three rows of the phone grid), then the rest t
 filter (`?hero=1`). The section is hidden when there are no heroes. `productsDAL.getHeroProducts`
 is gone — nothing called it any more.
 
-## [PR-266] 2026-10-04 — Not sold here, on purpose [MIGRATION]
+## [PR-267] 2026-10-04 — Not sold here, on purpose [MIGRATION]
 
 The register could not tell a decision from a blank, so it listed 18 masalla bags as work to do.
 

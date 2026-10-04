@@ -1,7 +1,7 @@
 # Spec — channel registry
 
 - **Summary:** What each selling channel is, what it calls the things this shop sells, and whether a product is ready to go there — answered before publishing rather than after a rejection
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented
 - **Domain:** catalog, with a seam each channel adapter implements
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-04

@@ -4,6 +4,8 @@ import { Plus, Upload } from "lucide-react";
 import type { Metadata } from "next";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { orgChannelSummaryDAL } from "@/data-access-layer/org/channel-summary.dal";
+import { ChannelReadinessSummary } from "@/components/channel/channel-readiness-summary";
 import { ProductsContainer } from "@/components/product/console/productsList";
 import { ProductsTableSkeleton } from "@/components/product/console/productsList/components/ProductsTableSkeleton";
 import { Button } from "@/components/ui/button";
@@ -102,18 +104,23 @@ async function OrgProductsData({
     wishlistedOnly: params.wishlisted === "true" ? true : undefined,
   };
 
-  const [productsData, stats, categoryList] = await Promise.all([
+  const [productsData, stats, categoryList, channels] = await Promise.all([
     adminProductsDAL.getProducts(filters),
     adminProductsDAL.getStats(orgId),
     adminCategoriesDAL.getCategories(),
+    // Empty, and so silent, for a shop that sells nowhere else — which is most of them.
+    orgChannelSummaryDAL.forOrg(orgId),
   ]);
 
   return (
-    <ProductsContainer
-      initialData={productsData}
-      initialStats={stats}
-      initialFilters={filters}
-      categories={categoryList.categories}
-    />
+    <div className="space-y-6">
+      <ChannelReadinessSummary orgId={orgId} rows={channels} />
+      <ProductsContainer
+        initialData={productsData}
+        initialStats={stats}
+        initialFilters={filters}
+        categories={categoryList.categories}
+      />
+    </div>
   );
 }
