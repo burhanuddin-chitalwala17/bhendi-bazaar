@@ -1,6 +1,7 @@
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
 import { OrgOrdersTable } from "@/components/org/org-orders-table";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = {
   title: "Orders",
@@ -24,12 +25,7 @@ export default async function OrgOrdersPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Orders</h1>
-        <p className="text-muted-foreground">
-          Orders with a parcel that ships from your organisation
-        </p>
-      </div>
+      <SectionHeader as="h1" title="Orders" description="Orders with a parcel that ships from your organisation" />
       <OrgOrdersTable orders={orders} pagination={pagination} orgId={orgId} />
     </div>
   );

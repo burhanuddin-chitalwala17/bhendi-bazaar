@@ -19,7 +19,7 @@ Investigates a question so a TRD can rest on something. **Research only.**
 - **This codebase** — read it. Note what already exists: a capability may be half-built (a column with no reader, an interface with one implementation, a helper with no callers). Half-built is a different starting point from nothing, and often the more important finding.
 - **Existing decisions** — `docs/adr/` and the domain `adr/` folders. A question may already be answered, or answered and superseded. Check before researching afresh.
 - **`docs/INTEGRATIONS.md`** — accumulated external-service behaviour. Read it first for anything gateway-, courier-, or email-related, and add to it as you learn.
-- **External docs** — the provider's own current documentation for Razorpay, Shiprocket, Resend, Cloudflare R2, Prisma, Next.js (and `node_modules/next/dist/docs/` for the installed version).
+- **External docs** — the provider's own current documentation for Razorpay, Shiprocket, Resend, Cloudflare R2, fal.run (image model host), Prisma, Next.js (and `node_modules/next/dist/docs/` for the installed version).
 - **The database** — `prisma/schema.prisma` is the authoritative schema. For questions about query behaviour, Postgres capability often matters more than Prisma's surface.
 
 ## Constraints to respect

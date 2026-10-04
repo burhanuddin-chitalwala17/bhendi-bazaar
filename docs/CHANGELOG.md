@@ -10,6 +10,18 @@
 
 ## Entries
 
+## [PR-284] 2026-10-05 — Money, page titles and touch targets through the wrappers
+
+- `shared/Money.tsx` replaces inline `formatCurrency` in table/summary contexts —
+  `OrderDetailAside`, `OrdersTable`, `ShipmentsPanel`, `SettleEntries`, `CartsTable`.
+- `SectionHeader` gains an `as` prop (`h1`/`h2`/`h3`); 17 portal pages' hand-rolled `<h1>`
+  converted to `<SectionHeader as="h1" />` with their description.
+- `Button size="sm"` is phone-first: `min-h-10` at base (40px touch target), `md:h-8` from
+  tablet. The 36 sites that were 32px on a phone are fixed by the primitive, not per-file.
+- Skills refreshed: `/bb-review` gains the listing/channel checks (readiness, facts origin,
+  reference data, jobs); `/bb-sdlc`'s Gates touched gains one-repository and the visibility
+  census; `/bb-brainstorm` knows about fal.run.
+
 ## [PR-283] 2026-10-05 — The listing vocabulary becomes its own domain
 
 `server/catalog/` was 43% of `server/` at 14k LOC. Twenty-three files — facts, product types,

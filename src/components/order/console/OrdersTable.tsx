@@ -7,9 +7,10 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { adminOrderApiClient } from "@/components/order/console/adminOrderApiClient";
 import type { AdminOrderRow } from "@server/checkout/admin.order.types";
 import { cn } from "@/lib/utils";
-import { formatCurrency, titleCase } from "@/lib/format";
+import { titleCase } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 import { Select } from "@/components/ui/select";
+import { Money } from "@/components/shared/Money";
 
 /** The statuses an admin may set by hand — the fulfilment ones, not the payment lifecycle. */
 const SETTABLE = [
@@ -77,7 +78,7 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
       key: "grandTotal",
       label: "Total",
       render: (order) => (
-        <span className="font-semibold">{formatCurrency(order.grandTotal || 0)}</span>
+        <span className="font-semibold"><Money paise={order.grandTotal || 0} /></span>
       ),
     },
     {

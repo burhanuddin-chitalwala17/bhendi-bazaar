@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -30,7 +31,7 @@ export default async function OrgOrderDetailPage({
     <div className="max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold">{order.code}</h1>
+          <SectionHeader as="h1" title="{order.code}" />
           <StatusBadge
             status={
               PAYMENT_BADGE[
