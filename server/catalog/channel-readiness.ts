@@ -185,9 +185,8 @@ export function listingReadiness(
   const problems: ListingProblem[] = [];
   const category = categoryFor(register.categories, subject.kind);
 
-  // Nothing to say about a channel this type is deliberately not sold on. `readinessByChannel`
-  // leaves it out entirely rather than reporting a ready-with-nothing, which would read as an
-  // invitation to publish something the owner has decided not to.
+  // Nothing to say about a channel this type is deliberately not sold on; a ready-with-nothing
+  // would read as an invitation to publish what the owner decided against.
   if (category?.notSold) {
     return { state: LISTING_READINESS.READY, problems: [], theirCategory: null };
   }
@@ -323,9 +322,8 @@ export function readinessByChannel(
   registers: ReadonlyMap<Channel, ChannelRegister>,
 ): { channel: Channel; report: ListingReadinessReport }[] {
   return CHANNELS.filter((channel) => registers.has(channel))
-    // A type the owner has decided not to sell on a channel is simply absent from the answer, the
-    // same as a channel the shop has not enabled. There is nothing to report about somewhere it
-    // was never going.
+    // Absent from the answer, like a channel the shop never enabled: there is nothing to report
+    // about somewhere it was never going.
     .filter((channel) => !notSoldOn(subject, registers.get(channel)!))
     .map((channel) => ({
       channel,

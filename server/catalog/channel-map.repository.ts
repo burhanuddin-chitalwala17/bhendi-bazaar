@@ -170,10 +170,8 @@ export const channelMapRepository = {
           }),
     ]);
 
-    // The attributes belong to their nodes, so they are read for the nodes this type can reach
-    // — every one of them, because which applies depends on the product's kind. A second round
-    // trip rather than a third parallel query, and still one query however many products follow.
-    // A type with nowhere to go asks nothing, so its rows contribute no node to read fields for.
+    // Attributes belong to their nodes, so every node these types can reach is read at once —
+    // which applies depends on the product's kind, known only later. One query, not one per type.
     const theirCategories = [
       ...new Set(categories.map((row) => row.theirCategory).filter((it): it is string => it !== null)),
     ];
@@ -261,10 +259,8 @@ export const channelMapRepository = {
       checkedOn: input.checkedOn,
       checkedSource: input.checkedSource ?? null,
     };
-    // Prisma's compound-unique input will not take a null `kind`, because a unique index does
-    // not constrain NULLs — so the catch-all mapping cannot go through `upsert` and is matched
-    // by hand. The partial index is what actually keeps it single: a concurrent second create
-    // fails there rather than quietly becoming a second answer.
+    // Prisma's compound-unique input will not take a null `kind`, so the catch-all is matched by
+    // hand. The partial index is the real guard: a concurrent second create fails there.
     if (kind === null) {
       const changed = await prisma.channelCategoryMap.updateMany({
         where: { channel, productType, kind: null },
