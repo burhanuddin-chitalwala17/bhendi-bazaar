@@ -10,6 +10,38 @@
 
 ## Entries
 
+## [PR-261] 2026-10-04 — Where each thing is listed on Flipkart, Google and Meta [MIGRATION]
+
+Forty-four category mappings, seeded as a data migration because without them the register is
+empty and every product reads as having nowhere to go. The owner's calls, taken 2026-10-04.
+
+Google's node ids come from its published taxonomy, fetched on the day and named in every row's
+`checkedSource`. Flipkart's come from the template workbooks downloaded on 2026-10-01. **Meta
+carries Google's values as its own rows** rather than sharing them: they are two channels that
+agree on categories today and already disagree on values — Google writes `in_stock`, Meta
+`in stock` — so separate rows are what let one move without the other, with no code change.
+
+**Two of them stopped being compromises.** Flipkart's `trouser` node has a mandatory `Type` field
+whose values include "Palazzos", and its `mat` node's `Type` includes "Prayer" — so a palazzo and
+a prayer mat are exact matches, not nearest fits. The category is never the only slot a channel
+gives you, and reading the permitted values rather than the field names is what showed it.
+
+**Six are nearest fits, each with a note shown on every product it touches.** A rida has no node
+on Flipkart and is listed as an abaya; bakhoor is neither perfume nor incense stick and goes with
+incense; Google has no node for Islamic outerwear, so Clothing is its nearest parent.
+
+**The inferred one is marked inferred.** Flipkart has an attar category whose template was never
+downloaded, so its slug and required fields are unverified. It is seeded as a nearest fit whose
+source reads "Inferred. No template obtained." rather than left out — the product still publishes,
+and the note is visible every time until the sheet arrives.
+
+**Combos are deliberately absent.** Gift, prayer and masalla sets sell on this store only. No row
+is the truth about that rather than a gap, which is why a test asserts it rather than ignoring it.
+
+A consistency guard checks every row names a product type and a kind that exist, that every
+nearest fit carries a note, and that Meta has not drifted from Google. Six mutations of the seed
+were each watched turning it red, including a combo appearing and a rida quietly moving.
+
 ## [PR-260] 2026-10-04 — Readiness advises; it never gates
 
 Owner's decision, taken before the panel was built and while it still cost a rename. Nothing in
