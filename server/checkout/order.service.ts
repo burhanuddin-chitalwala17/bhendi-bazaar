@@ -12,7 +12,12 @@ import { generateOrderCode } from "@server/checkout/order-code";
 import { prisma, toJsonColumn } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
-import { recordBooking, recordBookingFailure } from "@server/shipping/shipment-status.service";
+import {
+  createShipmentForOrder,
+  createShipmentItemsForOrder,
+  recordBooking,
+  recordBookingFailure,
+} from "@server/shipping/shipment-status.service";
 import type {
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
@@ -22,11 +27,12 @@ import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { isValidPhone, PHONE_MESSAGE } from "@server/shared/phone";
 import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
 import { applyOffersToBasket, lineKey } from "@server/checkout/basket-discounts";
-import { allocateAcrossOrgs, reservationPlan } from "@server/checkout/allocation";
+import { allocateAcrossOrgs } from "@server/checkout/allocation";
 import { assertLinesAreSaleable } from "@server/checkout/sale-gates";
+import { catalogueFacts, reserveStock, stockOnHand } from "@server/checkout/reservation";
 import { cartService } from "@server/cart/cart.service";
-import { ConflictError, OutOfStockError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
-import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { ConflictError, DomainError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 
 /**
  * A `code` collision, which is the only reason to retry a whole order. With 30^8
@@ -172,16 +178,7 @@ export class OrderService {
         const productIds = [
           ...new Set(input.shippingGroups.flatMap((g) => g.items.map((i) => i.productId))),
         ];
-        const productRows = await tx.product.findMany({
-          where: { id: { in: productIds } },
-          select: {
-            id: true, name: true, slug: true, thumbnail: true,
-            price: true, weight: true, orgId: true,
-            // Offers target categories and resolve commission rates by ancestry, so
-            // the line needs to know where in the tree it sits (ADR-0019).
-            categoryId: true,
-          },
-        });
+        const productRows = await catalogueFacts(productIds, tx);
         const products = new Map(productRows.map((row) => [row.id, row]));
 
         // Merge duplicate variant lines across the client's parcel groups: pricing
@@ -218,24 +215,7 @@ export class OrderService {
         // allocation the checkout preview ran, now against the rows this transaction
         // will decrement — the decision is made here and persisted, never recomputed
         // later (stock-locations D6).
-        const stockRows = await tx.productStock.findMany({
-          where: {
-            productId: { in: productIds },
-            quantity: { gt: 0 },
-            orgAddress: { isActive: true },
-          },
-          select: {
-            productId: true,
-            orgAddressId: true,
-            quantity: true,
-            orgAddress: {
-              select: {
-                orgId: true,
-                address: { select: { pincode: true, city: true, state: true } },
-              },
-            },
-          },
-        });
+        const stockRows = await stockOnHand(productIds, tx);
         const locationInfo = new Map(stockRows.map((row) => [row.orgAddressId, row.orgAddress]));
         const locationPincodes = new Map(
           [...locationInfo.entries()].map(([id, info]) => [id, info.address.pincode])
@@ -304,25 +284,9 @@ export class OrderService {
         }
 
         // Reserve stock where it actually sits: the availability check IS the where
-        // clause of the write (Invariant 6, ADR-0007), re-pointed from Product.stock
-        // to the allocated (product, location) row (stock-locations TRD D7). Rows are
-        // merged and sorted by reservationPlan so concurrent orders lock in the same
-        // sequence; count === 0 rolls the whole order back.
-        for (const { productId, orgAddressId, quantity } of reservationPlan(parcels)) {
-          const reserved = await tx.productStock.updateMany({
-            where: { productId, orgAddressId, quantity: { gte: quantity } },
-            data: { quantity: { decrement: quantity } },
-          });
-          if (reserved.count === 0) {
-            const name = productNames.get(productId) ?? "An item in your order";
-            // Named rather than merely reported: the caller retries once after
-            // releasing abandoned holds on this product (checkout-abandonment D4).
-            throw new OutOfStockError(
-              `"${name}" just sold at its location while you were checking out. Please try again.`,
-              [productId]
-            );
-          }
-        }
+        // clause of the write (Invariant 6, ADR-0007), on the allocated (product,
+        // location) rows (stock-locations TRD D7). A miss rolls the whole order back.
+        await reserveStock(parcels, productNames, tx);
 
         // Deliberately **after** the reservation above — `sale-gates.ts` explains why the
         // lock ordering makes this the only race-safe point, and the only one that can
@@ -337,8 +301,8 @@ export class OrderService {
         }
 
         // 1. Create the main order (pending payment)
-        const order = await tx.order.create({
-          data: {
+        const order = await orderRepository.createInTransaction(
+          {
             code: orderCode,
             userId: input.userId || null,
             address: toJsonColumn(input.address),
@@ -350,9 +314,10 @@ export class OrderService {
             paymentMethod: input.paymentMethod,
             // Never from the request: payment state has exactly one writer (Invariant 2).
             paymentStatus: PAYMENT_STATUS.PENDING,
-            status: "pending_payment", // Order is pending until payment
+            status: ORDER_STATUS.PENDING_PAYMENT,
           },
-        });
+          tx,
+        );
 
         // 2. One shipment per allocated parcel (NO provider calls yet). The location
         // is persisted on the row (D6) and its address is snapshotted (D5): editing
@@ -360,10 +325,13 @@ export class OrderService {
         // city and state all come from ONE location row — the mismatch where a
         // parcel carried one location's pincode beside another's city is no longer
         // expressible.
-        const createdShipments = [] as Array<{ shipment: Awaited<ReturnType<typeof tx.shipment.create>>; lines: typeof plans[number]["lines"] }>;
+        const createdShipments = [] as Array<{
+          shipment: Awaited<ReturnType<typeof createShipmentForOrder>>;
+          lines: typeof plans[number]["lines"];
+        }>;
         for (const [index, plan] of plans.entries()) {
-          const shipment = await tx.shipment.create({
-            data: {
+          const shipment = await createShipmentForOrder(
+            {
               code: `${order.code}-SH${index + 1}`,
               orderId: order.id,
               orgId: plan.location.orgId,
@@ -384,7 +352,8 @@ export class OrderService {
                 estimatedDays: plan.rate.estimatedDays,
               },
             },
-          });
+            tx,
+          );
           createdShipments.push({ shipment, lines: plan.lines });
         }
 
@@ -407,8 +376,8 @@ export class OrderService {
         // `createManyAndReturn` because the ids ARE needed below — but keyed off each
         // returned row's own fields, never its position, so nothing depends on the
         // driver returning rows in the order they were sent.
-        const createdItems = await tx.orderItem.createManyAndReturn({
-          data: pricedLines.map((line) => {
+        const createdItems = await orderRepository.createLines(
+          pricedLines.map((line) => {
             const share = discountByKey.get(lineKey(line));
             return {
               orderId: order.id,
@@ -426,8 +395,8 @@ export class OrderService {
               orgFundedPaise: share?.orgFundedPaise ?? 0,
             };
           }),
-          select: { id: true, productId: true, size: true, color: true },
-        });
+          tx,
+        );
 
         const orderItemIdByKey = new Map(
           createdItems.map((item) => [lineKey(item), item.id])
@@ -436,20 +405,19 @@ export class OrderService {
         // One attribution row per offer per organisation, carrying who funded what.
         // A database check asserts the two halves sum to the buyer's discount, so no
         // settlement can later be computed from a split that does not reconcile.
-        if (discounts.attributions.length) {
-          await tx.orderDiscount.createMany({
-            data: discounts.attributions.map((attribution) => ({
-              orderId: order.id,
-              promotionId: attribution.promotionId,
-              orgId: attribution.orgId,
-              labelSnapshot: attribution.labelSnapshot,
-              codeSnapshot: attribution.codeSnapshot,
-              buyerDiscountPaise: attribution.buyerDiscountPaise,
-              orgFundedPaise: attribution.orgFundedPaise,
-              platformFundedPaise: attribution.platformFundedPaise,
-            })),
-          });
-        }
+        await orderRepository.recordDiscountAttributions(
+          discounts.attributions.map((attribution) => ({
+            orderId: order.id,
+            promotionId: attribution.promotionId,
+            orgId: attribution.orgId,
+            labelSnapshot: attribution.labelSnapshot,
+            codeSnapshot: attribution.codeSnapshot,
+            buyerDiscountPaise: attribution.buyerDiscountPaise,
+            orgFundedPaise: attribution.orgFundedPaise,
+            platformFundedPaise: attribution.platformFundedPaise,
+          })),
+          tx,
+        );
 
         const shipmentItems = createdShipments.flatMap(({ shipment, lines }) =>
           lines.map((line) => ({
@@ -464,9 +432,7 @@ export class OrderService {
         if (shipmentItems.some((item) => !item.orderItemId)) {
           throw new Error("Allocated a parcel line that has no priced order item");
         }
-        if (shipmentItems.length) {
-          await tx.shipmentItem.createMany({ data: shipmentItems });
-        }
+        await createShipmentItemsForOrder(shipmentItems, tx);
 
         // Return order with shipments in the expected format. Line shape matches
         // what reads rebuild from rows: price = the unit price actually paid (D2).

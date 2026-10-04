@@ -38,6 +38,26 @@ export const ORDER_STATUS = {
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 /**
+ * The fulfilment moves an operator may make by hand, and nothing else: the table is the guard,
+ * as `SHIPMENT_TRANSITIONS` is for a parcel. Payment-driven states (`confirmPaid`,
+ * `expireAndRestock`, `markPaymentFailed`) and the booking pipeline's outcomes have their own
+ * conditional writers in `order.repository.ts` and are deliberately absent here — an admin
+ * dropdown must not be a second way to reach them. `delivered` is terminal.
+ */
+export const ORDER_TRANSITIONS: Partial<Record<OrderStatus, readonly OrderStatus[]>> = {
+  [ORDER_STATUS.CONFIRMED]: [ORDER_STATUS.PROCESSING],
+  [ORDER_STATUS.PROCESSING]: [ORDER_STATUS.PACKED],
+  [ORDER_STATUS.PACKED]: [ORDER_STATUS.SHIPPED],
+  [ORDER_STATUS.SHIPPED]: [ORDER_STATUS.DELIVERED],
+  [ORDER_STATUS.DELIVERED]: [],
+};
+
+/** The statuses `ORDER_TRANSITIONS` can reach — what an operator may ask for at all. */
+export const OPERATOR_SETTABLE_STATUSES: readonly OrderStatus[] = [
+  ...new Set(Object.values(ORDER_TRANSITIONS).flat()),
+];
+
+/**
  * Every value `Order.paymentStatus` may hold.
  *
  * Declared late: this is the set [Invariant 2](../../CLAUDE.md) is entirely about, and until

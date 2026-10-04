@@ -15,7 +15,8 @@ import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
 import { blankToNull } from "@server/shared/nullable";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
-import { PRODUCT_MEDIA_ASSET_SELECT, productsRepository } from "@server/catalog/product.repository";
+import { PRODUCT_MEDIA_ASSET_SELECT } from "@server/catalog/product.repository";
+import { stockRepository } from "@server/catalog/stock.repository";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
 import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
@@ -297,12 +298,10 @@ export class AdminProductsRepository {
     }
 
     private async insertProduct(slug: string, data: ProductPersistInput) {
-        // Quantities live only on the join rows since the destructive PR; zero rows
-        // are dropped ("not stocked here"), and origin comes from the locations.
-        const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
         const media = mediaWrite(data.media);
-        const mediaRows = await withAssetIds(media.rows, data.orgId);
-        const product = await prisma.product.create({
+        return await prisma.$transaction(async (tx) => {
+        const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
+        const product = await tx.product.create({
             data: {
                 slug,
                 name: data.name,
@@ -326,12 +325,6 @@ export class AdminProductsRepository {
                 brandId: data.brandId ?? null,
                 facts: data.facts as never,
                 measurements: data.measurements as never,
-                stockLocations: {
-                    create: stockRows.map((row) => ({
-                        orgAddressId: row.orgAddressId,
-                        quantity: row.quantity,
-                    })),
-                },
             },
             include: {
                 category: {
@@ -341,8 +334,11 @@ export class AdminProductsRepository {
                 },
             },
         });
-
-        return product
+        // Quantities live only on the join rows (stock-locations D3); a new product has seen
+        // nothing, so every row is a creation and zero rows are dropped ("not stocked here").
+        await stockRepository.adjust(product.id, data.stockLocations, tx);
+        return product;
+        });
     }
 
     async getProductById(id: string) {
@@ -394,7 +390,7 @@ export class AdminProductsRepository {
         guard?: (tx: Prisma.TransactionClient) => Promise<void>
     ) {
         return await prisma.$transaction(async (tx) => {
-            await productsRepository.lockStock(id, tx);
+            await stockRepository.lockAll(id, tx);
             if (guard) await guard(tx);
             const product = await tx.product.update({
                 where: { id },
@@ -508,9 +504,8 @@ export class AdminProductsRepository {
         // so spreading it would let any writable column through. `slug` is absent
         // deliberately — it is generated once at creation and then frozen, because
         // changing it would 404 every existing link to the product.
-        // An admin edit is a full replace, so delete-then-create is the honest
-        // semantics — corrections included (R9).
-        const stockRows = data.stockLocations.filter((row) => row.quantity > 0);
+        // Stock is NOT replaced wholesale any more: each row is compared against what the
+        // editor saw, so a sale that landed while the form was open is refused, not undone.
         // The gallery is replaced wholesale in the same transaction as `thumbnail`, so
         // no ordering, insertion, or removal can commit having left the cache pointing
         // at a row that is gone (D4b). Removing the cover without designating another
@@ -520,7 +515,7 @@ export class AdminProductsRepository {
         let product;
         try {
             product = await prisma.$transaction(async (tx) => {
-            await tx.productStock.deleteMany({ where: { productId: id } });
+            await stockRepository.adjust(id, data.stockLocations, tx);
             await tx.productMedia.deleteMany({ where: { productId: id } });
             const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
             return tx.product.update({
@@ -547,12 +542,6 @@ export class AdminProductsRepository {
                     brandId: data.brandId ?? null,
                     facts: data.facts as never,
                     measurements: data.measurements as never,
-                    stockLocations: {
-                        create: stockRows.map((row) => ({
-                            orgAddressId: row.orgAddressId,
-                            quantity: row.quantity,
-                        })),
-                    },
                 },
             });
             });
@@ -638,14 +627,10 @@ export class AdminProductsRepository {
 
       // The gallery and the stock are replaced wholesale for an updated product, in the same
       // transaction, so nothing can commit with `thumbnail` pointing at a row that is gone.
-      if (updates.length) {
-        const ids = updates.map((row) => row.id as string);
-        await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
-        await tx.productStock.deleteMany({ where: { productId: { in: ids } } });
-      }
-
+      const ids = updates.map((row) => row.id as string);
+      if (ids.length) await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
       if (media.length) await tx.productMedia.createMany({ data: media });
-      if (stock.length) await tx.productStock.createMany({ data: stock });
+      await stockRepository.setForImport(ids, stock, tx);
     });
   }
 

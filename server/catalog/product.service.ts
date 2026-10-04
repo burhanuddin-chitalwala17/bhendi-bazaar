@@ -4,7 +4,7 @@
  * This service encapsulates all business logic related to products.
  */
 
-import { productsRepository } from "@server/catalog/product.repository";
+import { productsRepository, type ProductDb } from "@server/catalog/product.repository";
 import { categoryRepository } from "@server/catalog/category.repository";
 import { collectSubtreeIds } from "@server/catalog/category.tree";
 import type { ProductFilter, ProductSuggestion } from "@server/catalog/product.types";
@@ -140,6 +140,15 @@ export class ProductService {
    */
   async isAvailable(productId: string): Promise<boolean> {
     return await productsRepository.isAvailable(productId);
+  }
+
+  /**
+   * What the order transaction prices and allocates from, read on the caller's `tx` so the
+   * price charged is the price checked (Invariant 1). Checkout asks here rather than reading
+   * `Product` itself (ADR-0033).
+   */
+  async checkoutFacts(productIds: string[], db?: ProductDb) {
+    return await productsRepository.checkoutFacts(productIds, db);
   }
 
   /** The rows `/api/checkout/allocate` plans parcels from. Never sent to the browser as stock figures (A9). */

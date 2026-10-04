@@ -10,6 +10,7 @@ import {
 } from "@server/shipping/domain/shipping.types";
 import { normalizeShipmentStatus } from "@server/shipping/utils/statusNormalizer";
 import { shipmentRepository } from "@server/shipping/repositories/shipment.repository";
+import { stockService } from "@server/catalog/stock.service";
 
 /**
  * The only thing that writes `Shipment.status`
@@ -35,35 +36,17 @@ export type TransitionOutcome =
  * Return this parcel's units to the location they were reserved from.
  *
  * Guarded and idempotent in the same shape as the reservation that took them
- * ([ADR-0007](../../docs/adr/0007-conditional-stock-decrement.md)): `restockedAt` is claimed with
- * a conditional `updateMany`, so a courier repeating a terminal event finds `count === 0` and
- * credits nothing. Read-then-write would be a race, not a check.
+ * ([ADR-0007](../../docs/adr/0007-conditional-stock-decrement.md)): `restockedAt` is claimed
+ * conditionally here — the Shipment write is shipping's — and only a successful claim asks
+ * catalog to move the units, on the same `tx`. A courier repeating a terminal event credits nothing.
  *
  * `LOST` and `DAMAGED` never reach here — those units are gone, and crediting them back invents
  * inventory. The effects table is what decides.
  */
 async function restock(shipmentId: string, tx: Prisma.TransactionClient): Promise<void> {
-  const claimed = await tx.shipment.updateMany({
-    where: { id: shipmentId, restockedAt: null },
-    data: { restockedAt: new Date() },
-  });
-  if (claimed.count === 0) return; // already restocked by an earlier event
-
-  const shipment = await tx.shipment.findUnique({
-    where: { id: shipmentId },
-    select: {
-      orgAddressId: true,
-      items: { select: { quantity: true, orderItem: { select: { productId: true } } } },
-    },
-  });
-  if (!shipment?.orgAddressId) return;
-
-  for (const item of shipment.items) {
-    await tx.productStock.updateMany({
-      where: { productId: item.orderItem.productId, orgAddressId: shipment.orgAddressId },
-      data: { quantity: { increment: item.quantity } },
-    });
-  }
+  const claimed = await shipmentRepository.claimRestock(shipmentId, tx);
+  if (!claimed) return; // already restocked by an earlier event
+  await stockService.restockShipment(shipmentId, tx);
 }
 
 async function currentStatus(shipmentId: string) {
@@ -94,16 +77,17 @@ export async function applyStatus(
   // The status change and its consequences are one transaction: a parcel recorded as returned
   // while its units stayed decremented is inventory the shop has and cannot sell.
   await prisma.$transaction(async (tx) => {
-    await tx.shipment.update({
-      where: { id: shipmentId },
-      data: {
+    await shipmentRepository.recordTransition(
+      shipmentId,
+      {
         status: to,
         // The courier's own wording is kept whether or not we mapped it: it is the evidence for
         // adding a mapping, and the only record of what they actually said.
         ...(raw ? { shipmentStatus: raw } : {}),
         ...(to === SHIPMENT_STATUS.DELIVERED ? { deliveredAt: new Date() } : {}),
       },
-    });
+      tx,
+    );
 
     if (effects.restocks) await restock(shipmentId, tx);
 
@@ -115,12 +99,9 @@ export async function applyStatus(
       // Deliberately no refund: a gateway refund is irreversible, so the entitlement is recorded
       // and a human presses the button (owner's decision, 2026-09-24).
       const { ledgerService } = await import("@server/payouts/ledger.service");
-      const shipmentRow = await tx.shipment.findUnique({
-        where: { id: shipmentId },
-        select: { orderId: true },
-      });
-      if (shipmentRow) {
-        await ledgerService.reverseSale(shipmentRow.orderId, `Parcel ${to}`, tx);
+      const orderId = await shipmentRepository.findOrderId(shipmentId, tx);
+      if (orderId) {
+        await ledgerService.reverseSale(orderId, `Parcel ${to}`, tx);
       }
     }
   });
@@ -154,6 +135,24 @@ export async function applyProviderStatus(
   }
 
   return applyStatus(shipmentId, status, raw);
+}
+
+/**
+ * A new order's parcels, on the order's own transaction — checkout reaches shipping here rather
+ * than through its repository (ADR-0033). Born `pending`, outside the transition table like booking.
+ */
+export async function createShipmentForOrder(
+  data: Parameters<typeof shipmentRepository.createForOrder>[0],
+  tx: Prisma.TransactionClient,
+) {
+  return await shipmentRepository.createForOrder(data, tx);
+}
+
+export async function createShipmentItemsForOrder(
+  rows: Parameters<typeof shipmentRepository.createItemsForOrder>[0],
+  tx: Prisma.TransactionClient,
+): Promise<void> {
+  await shipmentRepository.createItemsForOrder(rows, tx);
 }
 
 /** The carrier accepted the parcel. Bypasses the transition table, as the booking path always has. */

@@ -104,13 +104,6 @@ async function offerFilter() {
   return { OR: clauses };
 }
 
-/**
- * Stock rows, so a caller inside a `$transaction` passes `tx` and gets the same
- * guarantees. `ProductStock` hangs off a product, so it is reached from here rather
- * than from each domain that needs a unit (ADR-0003).
- */
-export type ProductStockDb = Pick<typeof prisma, "productStock">;
-
 /** Enough of the client to read products — `prisma`, or a `$transaction` tx. */
 export type ProductDb = Pick<typeof prisma, "product">;
 
@@ -129,64 +122,18 @@ export class ProductsRepository {
   }
 
   /**
-   * Stock on hand for one product, by location.
-   *
-   * Active locations only, matching what `PRODUCT_INCLUDE` already treats as sellable:
-   * an inactive location's units are held, not offered. Returned per location rather
-   * than summed, because a caller taking a unit has to name where from.
+   * What the order transaction prices and allocates from, read inside that transaction so the
+   * price charged is the price checked (Invariant 1). `categoryId` because offers target
+   * categories and commission rates resolve by ancestry (ADR-0019).
    */
-  async stockByLocation(productId: string, db: ProductStockDb = prisma) {
-    return await db.productStock.findMany({
-      where: { productId, orgAddress: { isActive: true }, quantity: { gt: 0 } },
+  async checkoutFacts(productIds: string[], db: ProductDb = prisma) {
+    return await db.product.findMany({
+      where: { id: { in: productIds } },
       select: {
-        orgAddressId: true,
-        quantity: true,
-        orgAddress: { select: { name: true } },
+        id: true, name: true, slug: true, thumbnail: true,
+        price: true, weight: true, orgId: true, categoryId: true,
       },
-      orderBy: { quantity: "desc" },
     });
-  }
-
-  /**
-   * Take the row lock on this product's stock, without moving any.
-   *
-   * The `increment: 0` is the entire point and is not a mistake: an UPDATE takes a
-   * row-level lock on every row it matches whether or not it changes a value. That
-   * makes a caller about to promise this unit to someone serialise against the order
-   * path, which locks the same rows when it reserves. Two transactions that never
-   * touch a common row cannot see each other, which is how an item comes to be sold
-   * and auctioned at the same instant.
-   *
-   * Returns how many locations still hold stock, so the caller's own check runs behind
-   * the lock rather than in front of it.
-   */
-  async lockStock(
-    productId: string,
-    db: ProductStockDb = prisma,
-  ): Promise<number> {
-    const locked = await db.productStock.updateMany({
-      where: { productId, quantity: { gte: 1 } },
-      data: { quantity: { increment: 0 } },
-    });
-    return locked.count;
-  }
-
-  /**
-   * Take one unit from a named location, conditionally (Invariant 6, ADR-0007).
-   *
-   * `false` means there was nothing there to take — read-then-write would be a race,
-   * so the guard and the decrement are one statement.
-   */
-  async takeOneFromLocation(
-    productId: string,
-    orgAddressId: string,
-    db: ProductStockDb = prisma,
-  ): Promise<boolean> {
-    const taken = await db.productStock.updateMany({
-      where: { productId, orgAddressId, quantity: { gte: 1 } },
-      data: { quantity: { decrement: 1 } },
-    });
-    return taken.count === 1;
   }
 
   /**

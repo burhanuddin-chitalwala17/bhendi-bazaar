@@ -95,11 +95,6 @@ describe("the admin console", () => {
     expect(count.mock.calls.filter((c) => excludesExpired(c[0]?.where))).toHaveLength(1);
     expect(findMany.mock.calls.every((c) => excludesExpired(c[0]?.where))).toBe(true);
   });
-
-  it("does not bulk-update one", async () => {
-    await adminOrderRepository.bulkUpdateStatus(["order-1"], ORDER_STATUS.PACKED);
-    expect(excludesExpired(updateMany.mock.calls[0][0].where)).toBe(true);
-  });
 });
 
 describe("the org panel", () => {

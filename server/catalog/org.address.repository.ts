@@ -1,5 +1,6 @@
 import { prisma } from "@server/shared/prisma";
 import { addressRepository } from "@server/shared/address.repository";
+import { stockRepository } from "@server/catalog/stock.repository";
 import type { OrgLocation, OrgLocationWrite } from "@server/catalog/org.address.types";
 
 /**
@@ -151,9 +152,7 @@ export class OrgAddressRepository {
     if (!owned) return false;
 
     await prisma.$transaction(async (tx) => {
-      await tx.productStock.deleteMany({
-        where: { orgAddressId: owned.id, quantity: 0 },
-      });
+      await stockRepository.dropEmptyAt(owned.id, tx);
       await tx.orgAddress.delete({ where: { id: owned.id } });
     });
     return true;

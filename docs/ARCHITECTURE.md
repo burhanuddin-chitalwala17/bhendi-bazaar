@@ -44,7 +44,7 @@ Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `
 
 `catalog` now derives one number the same way, for the same reason: a product's rating and review count are computed from its published reviews on every read (`server/catalog/review-rating.ts`), memoised per request so a listing asks once for a page of tiles rather than once per tile. The two columns that used to hold them were written by nothing, so every product advertised itself as unrated however many reviews it carried — a stored aggregate with no writer is worse than no aggregate ([product-reviews](specs/product-reviews/) R6a).
 
-`server/` is imported through the `@server/*` alias; deep relative paths are not used. Seven type-only imports across six files still run inward, from `server/` to `src/lib/validation/schemas/` — the residue of DTOs declared on both sides, tracked in [CONTRACTS.md](CONTRACTS.md). Six route handlers use Prisma directly rather than going through a domain: `api/admin/shipments/[id]/tracking`, `api/auth/signup`, `api/checkout/allocate`, `api/products/check-stock`, `api/profile/upload-picture`, `api/webhooks/shipping/shiprocket`.
+No route handler reaches Prisma, and no service writes through a transaction client: every write is a command on the aggregate's one repository, `admin.*` modules are read models, and `tests/unit/one-repository.test.ts` scans every file under `src/` and `server/` to hold it ([ADR-0055](adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)).
 
 ## Cross-cutting
 
@@ -72,7 +72,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-196 Vitest files (164 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+201 Vitest files (168 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 
