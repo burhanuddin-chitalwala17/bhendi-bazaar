@@ -34,7 +34,7 @@ const facts = (answers: Record<string, string | number | boolean>): StoredFacts 
   ) as StoredFacts;
 
 const register = (overrides: Partial<ChannelRegister> = {}): ChannelRegister => ({
-  category: exactCategory,
+  categories: [exactCategory],
   attributes: [
     { fact: FACT.COLOUR, theirAttribute: "Color", required: true },
     { fact: FACT.MATERIAL, theirAttribute: "Fabric", required: true },
@@ -181,7 +181,7 @@ describe("a category that is only the nearest they have", () => {
   it("warns rather than blocks, and says what it will be listed as and why", () => {
     const report = listingReadiness(
       { kind: "rida", facts: answered },
-      register({ category: nearest }),
+      register({ categories: [nearest] }),
     );
     expect(report.state).toBe(LISTING_READINESS.WARNED);
     expect(report.problems).toEqual([
@@ -197,16 +197,44 @@ describe("a category that is only the nearest they have", () => {
   it("is still outranked by anything blocked beside it", () => {
     const report = listingReadiness(
       { kind: "rida", facts: facts({ [FACT.COLOUR]: "maroon" }) },
-      register({ category: nearest }),
+      register({ categories: [nearest] }),
     );
     expect(report.state).toBe(LISTING_READINESS.BLOCKED);
     expect(report.problems).toHaveLength(2);
   });
 });
 
+describe("the kind decides which of the type's categories applies", () => {
+  const catchAll: CategoryMapping = { ...exactCategory, kind: null, theirCategory: "clothing" };
+  const rida: CategoryMapping = {
+    kind: "rida",
+    theirCategory: "ethnic-wear/abaya",
+    fit: "NEAREST",
+    note: "No rida node; abaya is where buyers look.",
+  };
+
+  it("takes the kind's own mapping, warning because that one is a nearest fit", () => {
+    const report = listingReadiness(
+      { kind: "rida", facts: answered },
+      register({ categories: [catchAll, rida] }),
+    );
+    expect(report.state).toBe(LISTING_READINESS.WARNED);
+    expect(report.theirCategory).toBe("ethnic-wear/abaya");
+  });
+
+  it("takes the catch-all for a kind nothing names, and is ready on it", () => {
+    const report = listingReadiness(
+      { kind: "abaya", facts: answered },
+      register({ categories: [catchAll, rida] }),
+    );
+    expect(report.state).toBe(LISTING_READINESS.READY);
+    expect(report.theirCategory).toBe("clothing");
+  });
+});
+
 describe("a type with nowhere to go", () => {
   it("blocks, and names no category, because there is none to name", () => {
-    const report = listingReadiness({ kind: null, facts: answered }, register({ category: null }));
+    const report = listingReadiness({ kind: null, facts: answered }, register({ categories: [] }));
     expect(report.state).toBe(LISTING_READINESS.BLOCKED);
     expect(report.problems).toEqual([{ problem: LISTING_PROBLEM.NO_CATEGORY }]);
     expect(report.theirCategory).toBeNull();
@@ -312,7 +340,7 @@ describe("readiness across a shop's channels", () => {
       { kind: null, facts: answered },
       new Map([
         [CHANNEL.MEESHO, register()],
-        [CHANNEL.GOOGLE, register({ category: null })],
+        [CHANNEL.GOOGLE, register({ categories: [] })],
       ]),
     );
 

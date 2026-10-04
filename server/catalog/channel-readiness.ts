@@ -102,9 +102,15 @@ export interface AttributeMapping {
   required: boolean;
 }
 
-/** One channel's half of the dictionary, for one product type. */
+/**
+ * One channel's half of the dictionary, for one product type.
+ *
+ * The categories are the type's whole set rather than one resolved row, because which applies
+ * depends on the product's kind — so a register built once serves every product of that type,
+ * which is what makes a listing screen three queries instead of three per row.
+ */
 export interface ChannelRegister {
-  category: CategoryMapping | null;
+  categories: readonly CategoryMapping[];
   attributes: readonly AttributeMapping[];
   /** Their word exists for these of ours: list key → the value keys that are mapped. */
   mappedValues: ReadonlyMap<string, ReadonlySet<string>>;
@@ -153,14 +159,15 @@ export function listingReadiness(
   register: ChannelRegister,
 ): ListingReadinessReport {
   const problems: ListingProblem[] = [];
+  const category = categoryFor(register.categories, subject.kind);
 
-  if (register.category === null) {
+  if (category === null) {
     problems.push({ problem: LISTING_PROBLEM.NO_CATEGORY });
-  } else if (register.category.fit === ChannelMapFit.NEAREST) {
+  } else if (category.fit === ChannelMapFit.NEAREST) {
     problems.push({
       problem: LISTING_PROBLEM.NEAREST_CATEGORY,
-      theirCategory: register.category.theirCategory,
-      note: register.category.note,
+      theirCategory: category.theirCategory,
+      note: category.note,
     });
   }
 
@@ -192,7 +199,7 @@ export function listingReadiness(
   return {
     state: worst(problems),
     problems,
-    theirCategory: register.category?.theirCategory ?? null,
+    theirCategory: category?.theirCategory ?? null,
   };
 }
 

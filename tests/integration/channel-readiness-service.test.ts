@@ -1,0 +1,287 @@
+/**
+ * The gate's caller, against a real schema ([channel-registry](../../docs/specs/channel-registry/)
+ * D2, D5). The rules are unit-tested in `tests/unit/channel-readiness.test.ts`; what is checked
+ * here is what only a database can answer — that the four reads assemble into the register the
+ * pure function expects, that a shop's own enablement is what decides, and that a mapping edited
+ * now is reflected in the next verdict with no deploy (spec A5).
+ */
+import "dotenv/config";
+import { describe, it, expect, beforeAll, afterAll, vi, type MockInstance } from "vitest";
+
+import { CHANNEL } from "@server/shared/channels";
+import { FACT, LIST, ORIGIN } from "@server/catalog/listing-facts";
+import { LISTING_PROBLEM, LISTING_READINESS } from "@server/catalog/channel-readiness";
+import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
+
+// Counted the way `db-ops-budget.test.ts` counts: one `prisma:query` line per billed statement,
+// and the instrument has to be set before the client module loads.
+process.env.PRISMA_LOG_QUERIES = "1";
+let queries = 0;
+let spy: MockInstance;
+
+async function countQueries(run: () => Promise<unknown>): Promise<number> {
+  queries = 0;
+  await run();
+  return queries;
+}
+
+describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
+  let prisma: typeof import("@server/shared/prisma").prisma;
+  let service: typeof import("@server/catalog/channel-readiness.service").channelReadinessService;
+  let maps: typeof import("@server/catalog/channel-map.repository").channelMapRepository;
+  let orgChannels: typeof import("@server/catalog/org-channel.repository").orgChannelRepository;
+
+  const stamp = `crs-${Date.now().toString(36)}`;
+  const typeKey = `${stamp}-rida`;
+  const checkedOn = new Date("2026-10-04");
+  let orgId: string;
+
+  const facts = (answers: Record<string, string>) =>
+    Object.fromEntries(
+      Object.entries(answers).map(([key, value]) => [key, { value, origin: ORIGIN.PRODUCT }]),
+    );
+
+  const subject = (kind: string | null, answers: Record<string, string>) => ({
+    productType: typeKey,
+    kind,
+    facts: facts(answers),
+  });
+
+  beforeAll(async () => {
+    spy = vi.spyOn(console, "log").mockImplementation((...args) => {
+      if (typeof args[0] === "string" && args[0].startsWith("prisma:query")) queries += 1;
+    });
+    ({ prisma } = await import("@server/shared/prisma"));
+    ({ channelReadinessService: service } = await import(
+      "@server/catalog/channel-readiness.service"
+    ));
+    ({ channelMapRepository: maps } = await import("@server/catalog/channel-map.repository"));
+    ({ orgChannelRepository: orgChannels } = await import(
+      "@server/catalog/org-channel.repository"
+    ));
+    ({ orgId } = await ensureFixtures());
+
+    await prisma.productType.create({
+      data: {
+        key: typeKey,
+        label: "Rida (test)",
+        facts: [FACT.COLOUR, FACT.MATERIAL],
+        measures: [],
+        variantAxis: [],
+        kinds: [
+          { key: "rida", label: "Rida" },
+          { key: "abaya", label: "Abaya" },
+        ],
+        factLabels: {},
+        labelFrom: [],
+        labelScale: undefined,
+      },
+    });
+
+    // The whole type goes to one node on Flipkart, except a rida, which has none of its own.
+    await maps.setCategory({
+      channel: CHANNEL.FLIPKART,
+      productType: typeKey,
+      kind: null,
+      theirCategory: "ethnic-wear/abaya",
+      fit: "EXACT",
+      checkedOn,
+    });
+    await maps.setCategory({
+      channel: CHANNEL.FLIPKART,
+      productType: typeKey,
+      kind: "rida",
+      theirCategory: "ethnic-wear/abaya",
+      fit: "NEAREST",
+      note: "Flipkart has no rida node.",
+      checkedOn,
+    });
+    await maps.setAttribute({
+      channel: CHANNEL.FLIPKART,
+      productType: typeKey,
+      fact: FACT.COLOUR,
+      theirAttribute: "Color",
+      required: true,
+      checkedOn,
+    });
+    await maps.setValue({
+      channel: CHANNEL.FLIPKART,
+      list: LIST.COLOUR,
+      valueKey: "maroon",
+      theirValue: "Maroon",
+      checkedOn,
+    });
+  });
+
+  afterAll(async () => {
+    spy?.mockRestore();
+    await Promise.all([
+      prisma.channelCategoryMap.deleteMany({ where: { productType: typeKey } }),
+      prisma.channelAttributeMap.deleteMany({ where: { productType: typeKey } }),
+      prisma.channelValueMap.deleteMany({ where: { list: LIST.COLOUR, valueKey: "maroon" } }),
+      prisma.orgChannel.deleteMany({ where: { orgId } }),
+    ]);
+    await prisma.productType.deleteMany({ where: { key: typeKey } });
+  });
+
+  it("says nothing while the shop has enabled no channel", async () => {
+    expect(await service.forProduct(orgId, subject("abaya", { [FACT.COLOUR]: "maroon" }))).toEqual(
+      [],
+    );
+  });
+
+  it("still says nothing for a channel the shop turned on and off again", async () => {
+    await orgChannels.set(orgId, CHANNEL.FLIPKART, true);
+    await orgChannels.set(orgId, CHANNEL.FLIPKART, false);
+    expect(await service.forProduct(orgId, subject("abaya", { [FACT.COLOUR]: "maroon" }))).toEqual(
+      [],
+    );
+  });
+
+  describe("once the shop sells there", () => {
+    beforeAll(async () => {
+      await orgChannels.set(orgId, CHANNEL.FLIPKART, true);
+    });
+
+    it("is ready for a kind the type's own mapping covers", async () => {
+      const [verdict] = await service.forProduct(
+        orgId,
+        subject("abaya", { [FACT.COLOUR]: "maroon" }),
+      );
+      expect(verdict.channel).toBe(CHANNEL.FLIPKART);
+      expect(verdict.report.state).toBe(LISTING_READINESS.READY);
+      expect(verdict.report.theirCategory).toBe("ethnic-wear/abaya");
+    });
+
+    it("warns on the kind whose mapping is only the nearest they have", async () => {
+      const [verdict] = await service.forProduct(
+        orgId,
+        subject("rida", { [FACT.COLOUR]: "maroon" }),
+      );
+      expect(verdict.report.state).toBe(LISTING_READINESS.WARNED);
+      expect(verdict.report.problems[0]).toMatchObject({
+        problem: LISTING_PROBLEM.NEAREST_CATEGORY,
+        note: "Flipkart has no rida node.",
+      });
+    });
+
+    it("blocks an answer the channel has no word for", async () => {
+      const [verdict] = await service.forProduct(
+        orgId,
+        subject("abaya", { [FACT.COLOUR]: "ochre" }),
+      );
+      expect(verdict.report.state).toBe(LISTING_READINESS.BLOCKED);
+      expect(verdict.report.problems[0]).toMatchObject({
+        problem: LISTING_PROBLEM.UNMAPPED_VALUE,
+        value: "ochre",
+      });
+    });
+
+    // Spec A5: the owner changes a mapping and the next answer reflects it, with no deploy.
+    it("reflects a mapping added a moment ago", async () => {
+      await maps.setValue({
+        channel: CHANNEL.FLIPKART,
+        list: LIST.COLOUR,
+        valueKey: "ochre",
+        theirValue: "Mustard",
+        checkedOn,
+      });
+      const [verdict] = await service.forProduct(
+        orgId,
+        subject("abaya", { [FACT.COLOUR]: "ochre" }),
+      );
+      expect(verdict.report.state).toBe(LISTING_READINESS.READY);
+      await prisma.channelValueMap.deleteMany({ where: { list: LIST.COLOUR, valueKey: "ochre" } });
+    });
+
+    it("answers each product of a batch on its own facts and kind", async () => {
+      const verdicts = await service.forProducts(orgId, [
+        { id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) },
+        { id: "b", ...subject("rida", { [FACT.COLOUR]: "maroon" }) },
+        { id: "c", ...subject("abaya", { [FACT.COLOUR]: "ochre" }) },
+        { id: "d", productType: null, kind: null, facts: {} },
+      ]);
+
+      expect(verdicts.get("a")?.[0].report.state).toBe(LISTING_READINESS.READY);
+      expect(verdicts.get("b")?.[0].report.state).toBe(LISTING_READINESS.WARNED);
+      expect(verdicts.get("c")?.[0].report.state).toBe(LISTING_READINESS.BLOCKED);
+      // A product with no type can be mapped nowhere, which is silence rather than a verdict.
+      expect(verdicts.get("d")).toEqual([]);
+    });
+
+    /**
+     * The register is read per *type*, not per product, which is the whole reason `forProducts`
+     * exists beside `forProduct`. A budget rather than a comment, because the regression — a
+     * read moved inside the loop — is invisible in a diff and silent in every other test.
+     */
+    it("costs the same for forty products of a type as for one", async () => {
+      const one = await countQueries(() =>
+        service.forProducts(orgId, [{ id: "a", ...subject("abaya", { [FACT.COLOUR]: "maroon" }) }]),
+      );
+      const forty = await countQueries(() =>
+        service.forProducts(
+          orgId,
+          Array.from({ length: 40 }, (_, i) => ({
+            id: `p${i}`,
+            ...subject(i % 2 ? "rida" : "abaya", { [FACT.COLOUR]: "maroon" }),
+          })),
+        ),
+      );
+
+      // The shop's channels (1), the type (1), and the three maps (3). Asserted exactly rather
+      // than as a bound: an upper bound over an instrument that counts nothing cannot fail, and
+      // that is how this project's billed-operations budgets read zero for two months.
+      expect(one).toBe(5);
+      expect(forty).toBe(one);
+    });
+
+    it("says nothing for a type nothing has mapped, rather than throwing", async () => {
+      expect(
+        await service.forProduct(orgId, { productType: `${typeKey}-absent`, kind: null, facts: {} }),
+      ).toEqual([]);
+    });
+  });
+
+  describe("correcting a catch-all mapping", () => {
+    // Prisma cannot upsert on a compound unique holding a null, so that path is hand-written —
+    // which makes "correcting it twice does not make two of it" worth proving against Postgres.
+    it("updates the one row rather than adding a second", async () => {
+      await maps.setCategory({
+        channel: CHANNEL.MEESHO,
+        productType: typeKey,
+        kind: null,
+        theirCategory: "Abayas",
+        fit: "EXACT",
+        checkedOn,
+      });
+      const corrected = await maps.setCategory({
+        channel: CHANNEL.MEESHO,
+        productType: typeKey,
+        kind: null,
+        theirCategory: "Other Islamic Wear",
+        fit: "NEAREST",
+        note: "Reclassified after checking their tree.",
+        checkedOn,
+      });
+
+      expect(corrected.theirCategory).toBe("Other Islamic Wear");
+      expect(corrected.fit).toBe("NEAREST");
+      const rows = await prisma.channelCategoryMap.findMany({
+        where: { channel: CHANNEL.MEESHO, productType: typeKey, kind: null },
+      });
+      expect(rows).toHaveLength(1);
+    });
+
+    it("clears a note the correction did not carry, rather than leaving the old one", async () => {
+      const cleared = await maps.setCategory({
+        channel: CHANNEL.MEESHO,
+        productType: typeKey,
+        kind: null,
+        theirCategory: "Abayas",
+        fit: "EXACT",
+        checkedOn,
+      });
+      expect(cleared.note).toBeNull();
+    });
+  });
+});

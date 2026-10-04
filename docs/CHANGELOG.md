@@ -10,6 +10,31 @@
 
 ## Entries
 
+## [PR-258] 2026-10-04 — The register, read: what a channel says about a product
+
+The reads behind the gate. Two repositories and a service that assembles them into the shape the
+pure function already takes, so every judgement stays where it was tested.
+
+**The three maps are one repository**, because a register is a category, its attributes and their
+values together and nothing reads one without the others. The shop's own enablement is a second
+repository: the maps are the platform's dictionary, shared by every shop, and `OrgChannel` is one
+shop's choice. They are written by different people for different reasons.
+
+**The register is read per product type, not per product.** A listing screen asking per row would
+read the same dictionary once per row; the type is what the mappings are keyed by, so products
+are grouped by it and each group costs the five queries one product would. Asserted as an exact
+query count, not a bound — and the count was watched going from 5 to 122 when the read was moved
+inside the loop.
+
+**A catch-all category mapping cannot go through `upsert`.** Prisma's compound-unique input will
+not take a null, because a unique index does not constrain NULLs — so that one path matches by
+hand, with the partial index from PR-255 as the real guard: a concurrent second create fails
+there rather than quietly becoming a second answer. Correcting one twice makes one row, which is
+checked against Postgres rather than reasoned about.
+
+A mapping naming a fact this codebase no longer declares is ignored rather than cast through, so
+a dictionary outliving a renamed fact degrades to silence instead of a wrong attribute.
+
 ## [PR-257] 2026-10-04 — The billed-operations budgets were measuring nothing
 
 Found while writing a budget for new code. Every assertion in
