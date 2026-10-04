@@ -89,7 +89,46 @@ const VALUE_SELECT = {
   checkedSource: true,
 } as const;
 
+/** One answer real products give, and how many give it. */
+export interface ValueInUse {
+  fact: string;
+  value: string;
+  products: number;
+}
+
 export const channelMapRepository = {
+  /**
+   * Every answer this catalogue actually gives, with how many products give it.
+   *
+   * The worklist is built from this rather than from the vocabulary, because mapping all 186
+   * colours before anybody sells one is work with no buyer. A value arrives on the list when a
+   * product answers it, and one mapping clears it for every product that shares it (spec A3).
+   *
+   * Archived products are excluded: they have left sale, so nothing publishes them and a word
+   * only they used is not work.
+   */
+  async valuesInUse(): Promise<ValueInUse[]> {
+    return await prisma.$queryRaw<ValueInUse[]>`
+      SELECT f.key AS fact, f.value->>'value' AS value, count(*)::int AS products
+        FROM "Product" p, jsonb_each(p.facts) AS f(key, value)
+       WHERE p."archivedAt" IS NULL
+         AND p.facts IS NOT NULL
+         AND jsonb_typeof(f.value) = 'object'
+         AND f.value->>'value' IS NOT NULL
+       GROUP BY 1, 2
+       ORDER BY count(*) DESC, 1, 2`;
+  },
+
+  /** The product types and kinds this catalogue actually sells, for the category worklist. */
+  async typesInUse(): Promise<{ productType: string; kind: string | null; products: number }[]> {
+    return await prisma.$queryRaw`
+      SELECT p."productType", p.kind, count(*)::int AS products
+        FROM "Product" p
+       WHERE p."archivedAt" IS NULL AND p."productType" IS NOT NULL
+       GROUP BY 1, 2
+       ORDER BY count(*) DESC`;
+  },
+
   /**
    * Everything the given channels say about one product type, in three queries however many
    * channels are asked about.

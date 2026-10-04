@@ -12,6 +12,7 @@ import {
   ShoppingCart,
   Users,
   FolderTree,
+  Radio,
   Star,
   ShoppingBag,
   Truck,
@@ -43,6 +44,11 @@ const navItems = [
     title: "Categories",
     href: "/admin/categories",
     icon: FolderTree,
+  },
+  {
+    title: "Channels",
+    href: "/admin/channels",
+    icon: Radio,
   },
   {
     title: "Banners",

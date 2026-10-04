@@ -10,6 +10,38 @@
 
 ## Entries
 
+## [PR-264] 2026-10-04 — The register, and a worklist that shortens
+
+The platform owner's screen: what each channel has mapped, and what this catalogue still needs
+decided. `/admin/channels`, one page per channel.
+
+**Both worklists are built from what products actually answer, never from the vocabulary.** There
+are 186 colours in the list and 35 on Flipkart; mapping the other 151 before anybody sells one is
+work with no buyer. A value arrives on the list when a product answers it, carries how many
+products share it, and leaves the moment a decision is recorded — which is what makes a long job
+finite rather than endless (spec A3, the fourth hazard).
+
+The same row corrects a mapping that already exists. Everything seeded over the last few commits
+is a starting point, not a fixture: `setValue` upserts on the natural key, so recording a
+different word is a correction rather than a second mapping, and the owner's rows carry
+"Decided in the channel register" where the seeded ones name a template and a date.
+
+**One field and one button per row, deliberately.** A single form saving the whole list would
+make a long job all-or-nothing, when the point is that it can be done a few at a time.
+
+A second list names product types that sell here and have no category on that channel — which is
+how a newly added type surfaces without anybody remembering to check.
+
+Nearest fits are listed apart from both, because they are not work. They are decisions already
+taken, shown with the note every affected product keeps displaying (D6, D12).
+
+Audited: a mapping decides where somebody else's listing goes, so recording one writes to the
+admin trail ([ADR-0021](adr/0021-audit-trail-never-fails-the-action.md)).
+
+Five mutations of the worklist were each watched turning its guard red — including a mapped
+category still reading as unmapped, which the first pass did not catch because the test only ever
+asserted the negative. The positive assertion came from the mutation, not the other way round.
+
 ## [PR-263] 2026-10-04 — What Google asks for, read rather than remembered [MIGRATION]
 
 Google's and Meta's attribute mappings, from Google's own product data specification fetched on
