@@ -10,6 +10,41 @@
 
 ## Entries
 
+## [PR-253] 2026-10-04 — Where a value came from, and correcting it where it came from [MIGRATION]
+
+The last two pieces of [inherited-facts](specs/listing-vocabulary/inherited-facts/). The fill
+step has been recording which level answered each fact since PR-227; nothing showed it and
+nothing acted on it.
+
+**The form now says so.** A value filled in from the family, the brand or the shop's defaults
+carries "from your brand" beneath it, and stays editable — editing makes it the product's own.
+Only inherited values get the note: an answer marked as the product's own is the shop's, and
+saying where it came from would be saying "from yourself".
+
+**A correction at brand or family level offers to correct what took its answer from there.** The
+preview says how many will change *and* how many are left alone, because the second number is
+the reassurance — a product somebody deliberately edited keeps its answer. The preview and the
+update are one predicate evaluated twice, so a shop cannot confirm one figure and have a
+different set change.
+
+**A column was missing and the typechecker could not see it.** `Product` had no `brandId`: a
+brand answered what a product left blank at save time and was then forgotten, so a brand-level
+correction would have matched nothing and reported zero — working, silent, useless. It survived
+review because the `where` clause built it through an object spread, which TypeScript does not
+check for unknown keys. Found by reading the schema rather than trusting the build.
+
+`Product.brandId` is `Restrict`: a brand is retired rather than deleted, and a retired brand
+still answers for the products that named it.
+
+The correction reaches archived products deliberately, which the ADR-0029 census now records: an
+archived product keeps the answer it inherited and can be restored, so skipping it would bring it
+back carrying a value its brand has since corrected.
+
+Mutation-tested three ways — ignoring the stored origin, letting the preview and the update
+diverge, and marking a corrected answer as the product's own each turn it red. The first attempt
+at the divergence mutation was logically equivalent and passed; it was rewritten until it
+actually diverged rather than recorded as caught.
+
 ## [PR-252] 2026-10-04 — `sizes` and `colors` are gone, and bidding stops naming a variant [MIGRATION]
 
 The two columns this whole phase replaced. They were free text: a colour typed three ways was

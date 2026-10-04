@@ -35,6 +35,10 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     reads: 11,
     note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code",
   },
+  "server/catalog/fact-correction.service.ts": {
+    reads: 3,
+    note: "deliberate — a correction at brand or family level reaches archived products too: an archived product keeps the answer it inherited, can be restored, and would otherwise come back carrying a value its brand has since corrected. The two counts and the write-path read use one predicate so the preview and the update cannot disagree (inherited-facts D5)",
+  },
   "server/catalog/product-type.repository.ts": {
     reads: 1,
     note: "deliberate — `usage` counts every product naming a type, archived included, because it answers whether a type may be deleted and an archived product still holds its key (product-types D8)",

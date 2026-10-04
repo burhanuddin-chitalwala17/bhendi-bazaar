@@ -2,7 +2,7 @@
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { resolveShotList } from "@server/catalog/shot-list";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Film } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
@@ -88,10 +88,25 @@ export function ProductForm({
   uploadEndpoints,
   productTypes = [],
   listingValues = {},
-  factOrigins = {},
+  factOrigins,
   families = [],
 }: ProductFormProps) {
   const isEdit = !!product;
+
+  /**
+   * Which level supplied each stored answer, in the words a shop would use — "from your brand".
+   * Only values the shop did *not* type get one: an answer marked as the product's own is the
+   * shop's, and saying where it came from would be saying "from yourself".
+   */
+  const origins = useMemo(() => {
+    const stored = { ...(product?.facts ?? {}), ...(product?.measurements ?? {}) };
+    const words: Record<string, string> = { family: "family", brand: "brand", defaults: "defaults" };
+    return Object.fromEntries(
+      Object.entries(stored)
+        .filter(([, entry]) => entry.origin !== "product")
+        .map(([key, entry]) => [key, words[entry.origin] ?? entry.origin]),
+    );
+  }, [product]);
   const copy = isEdit ? null : (copySource ?? null);
   // A restored draft would overwrite the copied fields on mount, so a copy is not
   // draft-persisted — and must not clear a blank-form draft the org left behind.
@@ -141,6 +156,16 @@ export function ProductForm({
       orgId: product?.org?.id || (orgs?.length === 1 ? orgs[0].id : ""),
       tags: product?.tags || copy?.tags || [],
       flags: product?.flags || copy?.flags || [],
+      kind: product?.kind ?? null,
+      familyId: product?.familyId ?? null,
+      // A stored answer carries the level that supplied it; the form edits the value and shows
+      // the origin beside it (inherited-facts R3, R4).
+      facts: Object.fromEntries(
+        Object.entries(product?.facts ?? {}).map(([fact, stored]) => [fact, stored.value]),
+      ),
+      measurements: Object.fromEntries(
+        Object.entries(product?.measurements ?? {}).map(([key, stored]) => [key, stored.value]),
+      ),
       // No cover is pre-selected on create (D17a). On edit the saved flag comes back
       // with the rows, so an existing product keeps the cover its org chose.
       media:
@@ -349,7 +374,7 @@ export function ProductForm({
         categories={categories ?? []}
         productTypes={productTypes}
         initialValues={listingValues}
-        origins={factOrigins}
+        origins={origins}
         readOnly={readOnly}
       />
 

@@ -111,6 +111,15 @@ const PRODUCT_DETAILS_SELECT = {
     slug: true,
     description: true,
     tags: true,
+    // The listing vocabulary, including **which level answered each fact**: a value filled in
+    // from a brand is convenient until it is wrong on one product and nothing on screen says
+    // where it came from (inherited-facts R3).
+    productType: true,
+    kind: true,
+    familyId: true,
+    brandId: true,
+    facts: true,
+    measurements: true,
     media: MEDIA_SELECT,
     stockLocations: {
         select: {
@@ -314,6 +323,7 @@ export class AdminProductsRepository {
                 productType: data.productType,
                 kind: blankToNull(data.kind ?? undefined),
                 familyId: data.familyId ?? null,
+                brandId: data.brandId ?? null,
                 facts: data.facts as never,
                 measurements: data.measurements as never,
                 stockLocations: {
@@ -534,6 +544,7 @@ export class AdminProductsRepository {
                     productType: data.productType,
                     kind: blankToNull(data.kind ?? undefined),
                     familyId: data.familyId ?? null,
+                    brandId: data.brandId ?? null,
                     facts: data.facts as never,
                     measurements: data.measurements as never,
                     stockLocations: {

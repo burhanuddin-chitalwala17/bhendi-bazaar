@@ -309,6 +309,19 @@ model Product {
   familyId String?
   family   ProductFamily? @relation(fields: [familyId], references: [id], onDelete: Restrict)
 
+  /// Which of the org's brands this product carries
+  /// ([inherited-facts](../docs/specs/listing-vocabulary/inherited-facts/) R1).
+  ///
+  /// Stored rather than only used: the brand answers what the shop left blank at save time, and
+  /// correcting a fact on the brand later has to find the products that took their answer from
+  /// it (R5). Without this column that question is unanswerable — the fill would work and the
+  /// correction would silently match nothing.
+  ///
+  /// Restrict: a brand is retired, never deleted, and a retired brand still answers for the
+  /// products that named it ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)).
+  brandId String?
+  brand   Brand?  @relation(fields: [brandId], references: [id], onDelete: Restrict)
+
   orderItems       OrderItem[]
   cartItems        CartItem[]
   wishlistItems    WishlistItem[]
@@ -351,6 +364,8 @@ model Product {
   // A readiness sweep and the channel mapping both work type by type.
   @@index([productType])
   @@index([familyId])
+  // The brand-level correction asks for one org's products of one brand.
+  @@index([brandId])
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -756,6 +771,7 @@ model Brand {
 
   @@unique([orgId, name])
   @@index([orgId])
+  products Product[]
 }
 
 model Account {

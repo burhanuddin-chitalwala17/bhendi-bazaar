@@ -69,6 +69,15 @@ export interface ProductDetails {
   media: ProductMediaDto[];
   thumbnail: string;
   org: OrgSummary;
+  /**
+   * The listing vocabulary as stored, each answer with the level that supplied it — the form
+   * says "from your brand Noor" beside anything filled in rather than typed (inherited-facts R3).
+   */
+  productType?: string | null;
+  kind?: string | null;
+  familyId?: string | null;
+  facts?: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean }>;
+  measurements?: Record<string, { value: number; origin: string }>;
   /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
   stockLocations: Array<{
     orgAddressId: string;
