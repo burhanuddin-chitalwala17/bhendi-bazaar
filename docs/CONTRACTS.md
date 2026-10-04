@@ -178,6 +178,29 @@ numbers rather than one, because twenty abayas in five colours is twenty familie
 sellable things, and a figure that does not say which it counts is the ambiguous one
 ([variants](specs/listing-vocabulary/variants/) D6).
 
+### Channels
+
+Three shapes cross the wire, all of them decisions rather than reads
+([channel-registry](specs/channel-registry/)).
+
+**A shop's channels** — `PUT /api/org/[orgId]/channels`, schema
+`src/lib/validation/schemas/org-channels.schema.ts`. The whole set the form showed is sent every
+time, so a channel the body omits is one the form did not render, never one being switched off:
+treating silence as "off" would turn off whatever a later release adds the moment a page loaded
+before it posted. `store` is not among the accepted values — a shop does not opt into the place
+it already is.
+
+**A value mapping and a not-sold decision** — `PUT /api/admin/channels/values` and
+`/api/admin/channels/not-sold`, both in `channel-mapping.schema.ts`. `theirValue` is free text
+because it is somebody else's vocabulary, which goes stale on their release schedule rather than
+ours. Both upsert on the natural key, so sending one again is a correction and not a second row.
+
+**Readiness never crosses the boundary.** The verdict is computed on the server and rendered
+there ([ADR-0034](adr/0034-render-on-the-server-by-default.md)); there is no readiness route and
+no readiness DTO. The TRD anticipated one, and building it showed a route handler would be a
+round trip for a read the server already does. Nothing in the browser decides whether a product
+is ready, which also means nothing in the browser can disagree with what gets published.
+
 ### Image enhancement
 
 Since PR-185 the org portal speaks **`EnhancementDto`** (`server/content/enhancement.types.ts`): `id`, `tool`, `preset`, `state`, `sourceAssetId`, `sourceRef`, `proposalUrl` (null unless the state is `PROPOSED`), `resultAssetId`, `resultRef`, `error`, `costPaise` (integer paise, [Invariant 3](../CLAUDE.md)), `createdAt`, `proposedAt`, `decidedAt` — beside **`EnhancementUsage`** (`used`, `allowance`, `paused`, `pauseReason`), which every answer carries so the sheet can say where the shop stands. Four routes, all `withOrg` and parsed by `src/lib/validation/schemas/enhancement.schema.ts`: `POST /api/org/:orgId/enhancements` (`{ sourceAssetId? | sourceRef?, tool, preset?, slot?, slotRole? }`, exactly one of the first two: the library names a photo by its asset id, the gallery editor knows only the URL of one it has just put up, and a request carrying both or neither is a 400) → `{ enhancement, usage }`; `GET …/:id` → `{ enhancement }`, which the sheet polls while the worker runs; `POST …/:id/accept` → `{ enhancement }` with `resultRef`, the derived image's URL; `POST …/:id/discard` → `{ enhancement }`. A refusal is a `DomainError` with the reason the org member reads ([image-enhancement](specs/image-enhancement/) R7, R10). Since PR-198 `preset` is **not free text**: it is one of the keys in `server/content/scene-presets.ts`, required when `tool` is `SCENE` and refused on every other tool, so a request carrying a description nobody approved is a 400 rather than a row (R11).

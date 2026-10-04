@@ -311,6 +311,67 @@ describe("a type whose kinds reach two of their nodes", () => {
   });
 });
 
+/**
+ * "Not sold here, on purpose" against "nobody has decided yet". Both used to be an absent row,
+ * which is how 18 masalla bags came to sit in a to-do list as work nobody had to do.
+ */
+describe("a type the owner has decided not to sell on a channel", () => {
+  const notSold: CategoryMapping = {
+    kind: null,
+    theirCategory: null,
+    fit: "EXACT",
+    note: null,
+    notSold: true,
+  };
+
+  it("is left out of the answer entirely, like a channel the shop never enabled", () => {
+    const answers = readinessByChannel(
+      { kind: "gift-set", facts: {} },
+      new Map([
+        [CHANNEL.FLIPKART, register({ categories: [notSold] })],
+        [CHANNEL.GOOGLE, register()],
+      ]),
+    );
+    expect(answers.map((entry) => entry.channel)).toEqual([CHANNEL.GOOGLE]);
+  });
+
+  // The distinction the whole thing exists for: a blank is work, a decision is not.
+  it("is not the same as nobody having decided, which still reports nowhere to go", () => {
+    const undecided = readinessByChannel(
+      { kind: "gift-set", facts: {} },
+      new Map([[CHANNEL.FLIPKART, register({ categories: [] })]]),
+    );
+    expect(undecided).toHaveLength(1);
+    expect(undecided[0].report.problems).toEqual([{ problem: LISTING_PROBLEM.NO_CATEGORY }]);
+  });
+
+  // `readinessByChannel` filters these out before asking, so this is about a caller that asks
+  // directly: without the guard a decided "nowhere" reads as NO_CATEGORY, which is the system
+  // telling the owner to decide something they already decided.
+  it("is not mistaken for an unanswered question when asked about directly", () => {
+    const report = listingReadiness(
+      { kind: "gift-set", facts: {} },
+      register({ categories: [notSold] }),
+    );
+    expect(report.problems).toEqual([]);
+    expect(report.theirCategory).toBeNull();
+  });
+
+  it("still lets one kind of it sell, because a named kind beats the catch-all", () => {
+    const soldKind: CategoryMapping = {
+      kind: "gift-set",
+      theirCategory: "gifting",
+      fit: "EXACT",
+      note: null,
+    };
+    const registers = new Map([
+      [CHANNEL.FLIPKART, register({ categories: [notSold, soldKind] })],
+    ]);
+    expect(readinessByChannel({ kind: "gift-set", facts: {} }, registers)).toHaveLength(1);
+    expect(readinessByChannel({ kind: "masalla-set", facts: {} }, registers)).toEqual([]);
+  });
+});
+
 describe("a type with nowhere to go", () => {
   it("reads incomplete, and names no category, because there is none to name", () => {
     const report = listingReadiness({ kind: null, facts: answered }, register({ categories: [] }));

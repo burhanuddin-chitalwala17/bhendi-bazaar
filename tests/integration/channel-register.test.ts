@@ -34,7 +34,7 @@ describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
         name: `${stamp} ${colour} ${n}`,
         slug: `${stamp}-${n}`,
         description: "Worklist fixture",
-        thumbnail: "https://media.test/worklist.webp",
+        thumbnail: "https://example.invalid/worklist.webp",
         price: 100_000,
         orgId,
         categoryId,
@@ -166,6 +166,56 @@ describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
     const view = await service.view(CHANNEL.FLIPKART);
     const entry = view.unmappedCategories.find((row) => row.productType === `${stamp}-type`);
     expect(entry?.products).toBe(3);
+  });
+
+  describe("a type decided against rather than overlooked", () => {
+    it("moves out of the worklist and into the decisions beside it", async () => {
+      await maps.setCategory({
+        channel: CHANNEL.FLIPKART,
+        productType: `${stamp}-type`,
+        kind: null,
+        theirCategory: null,
+        notSold: true,
+        fit: "EXACT",
+        checkedOn,
+        checkedSource: "Decided in the channel register: not sold here",
+      });
+
+      const view = await service.view(CHANNEL.FLIPKART);
+      expect(view.unmappedCategories.map((row) => row.productType)).not.toContain(`${stamp}-type`);
+      const entry = view.notSold.find((row) => row.productType === `${stamp}-type`);
+      expect(entry?.products).toBe(3);
+    });
+
+    // The reason it is listed rather than hidden: a decision you cannot find is one you cannot
+    // take back, which would be a worse problem than the worklist it quieted.
+    it("goes back on the worklist when the decision is taken back", async () => {
+      await maps.clearCategory({
+        channel: CHANNEL.FLIPKART,
+        productType: `${stamp}-type`,
+        kind: null,
+      });
+      const view = await service.view(CHANNEL.FLIPKART);
+      expect(view.notSold.map((row) => row.productType)).not.toContain(`${stamp}-type`);
+      expect(view.unmappedCategories.map((row) => row.productType)).toContain(`${stamp}-type`);
+    });
+
+    it("refuses a row that claims both a category and nowhere", async () => {
+      await expect(
+        prisma.channelCategoryMap.create({
+          data: {
+            channel: CHANNEL.FLIPKART,
+            productType: `${stamp}-type`,
+            kind: "rida",
+            theirCategory: "somewhere",
+            notSold: true,
+            checkedOn,
+          },
+        }),
+        // Named, not merely "it threw": the rule is the database CHECK, and a row rejected for
+        // some other reason would pass a bare assertion while proving nothing.
+      ).rejects.toThrow(/ChannelCategoryMap_sold_xor_not|constraint/i);
+    });
   });
 
   it("leaves an archived product's answer off the list — it has left sale", async () => {

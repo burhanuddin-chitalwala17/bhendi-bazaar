@@ -39,6 +39,10 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     reads: 1,
     note: "deliberate — `usage` counts every product naming a type, archived included, because it answers whether a type may be deleted and an archived product still holds its key (product-types D8)",
   },
+  "server/catalog/product-readiness.repository.ts": {
+    reads: 1,
+    note: "deliberate — the shop's own catalogue, for the readiness count above its product list, so it is not buyer-facing and does not spread AVAILABLE; it excludes archived by hand because a product that has left sale is not published anywhere and so is not work (channel-registry D5)",
+  },
   "server/catalog/product-family.repository.ts": {
     reads: 2,
     note: "the two counts a family screen needs (variants D6): the sellable count spreads AVAILABLE because it is what a shop is told it has on sale, while memberCount deliberately counts archived members too — it previews which products a correction at family level would change, and an archived product can be restored",

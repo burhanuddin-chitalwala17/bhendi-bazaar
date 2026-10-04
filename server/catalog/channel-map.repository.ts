@@ -24,9 +24,11 @@ export interface CategoryMapRow {
   channel: string;
   productType: string;
   kind: string | null;
-  theirCategory: string;
+  /** Null when `notSold` — a row saying nowhere has no category to name. */
+  theirCategory: string | null;
   theirLabel: string | null;
   fit: ChannelMapFit;
+  notSold: boolean;
   note: string | null;
   checkedOn: Date;
   checkedSource: string | null;
@@ -62,6 +64,7 @@ const CATEGORY_SELECT = {
   theirCategory: true,
   theirLabel: true,
   fit: true,
+  notSold: true,
   note: true,
   checkedOn: true,
   checkedSource: true,
@@ -139,7 +142,8 @@ export const channelMapRepository = {
    */
   async registersFor(input: {
     channels: readonly Channel[];
-    productType: string;
+    /** Several at once: a listing screen asks about every type it shows, in one read. */
+    productTypes: readonly string[];
     lists: readonly string[];
   }): Promise<{
     categories: CategoryMapRow[];
@@ -147,14 +151,15 @@ export const channelMapRepository = {
     values: ValueMapRow[];
   }> {
     const channels = [...new Set(input.channels)];
-    if (channels.length === 0 || !input.productType) {
+    const productTypes = [...new Set(input.productTypes.filter(Boolean))];
+    if (channels.length === 0 || productTypes.length === 0) {
       return { categories: [], attributes: [], values: [] };
     }
     const lists = [...new Set(input.lists.filter(Boolean))];
 
     const [categories, values] = await Promise.all([
       prisma.channelCategoryMap.findMany({
-        where: { channel: { in: channels }, productType: input.productType },
+        where: { channel: { in: channels }, productType: { in: productTypes } },
         select: CATEGORY_SELECT,
       }),
       lists.length === 0
@@ -168,7 +173,10 @@ export const channelMapRepository = {
     // The attributes belong to their nodes, so they are read for the nodes this type can reach
     // — every one of them, because which applies depends on the product's kind. A second round
     // trip rather than a third parallel query, and still one query however many products follow.
-    const theirCategories = [...new Set(categories.map((row) => row.theirCategory))];
+    // A type with nowhere to go asks nothing, so its rows contribute no node to read fields for.
+    const theirCategories = [
+      ...new Set(categories.map((row) => row.theirCategory).filter((it): it is string => it !== null)),
+    ];
     const attributes =
       theirCategories.length === 0
         ? []
@@ -234,7 +242,9 @@ export const channelMapRepository = {
     channel: Channel;
     productType: string;
     kind: string | null;
-    theirCategory: string;
+    /** Null together with `notSold`, which is the row that says nowhere. */
+    theirCategory: string | null;
+    notSold?: boolean;
     theirLabel?: string | null;
     fit: ChannelMapFit;
     note?: string | null;
@@ -244,6 +254,7 @@ export const channelMapRepository = {
     const { channel, productType, kind } = input;
     const rest = {
       theirCategory: input.theirCategory,
+      notSold: input.notSold ?? false,
       theirLabel: input.theirLabel ?? null,
       fit: input.fit,
       note: input.note ?? null,
@@ -277,6 +288,20 @@ export const channelMapRepository = {
       update: rest,
       select: CATEGORY_SELECT,
     });
+  },
+
+  /**
+   * Forget a category decision entirely, so the type reads as undecided again.
+   *
+   * Deleting rather than blanking: an absent row is what "nobody has chosen yet" means, and
+   * leaving an empty one behind would be a third state nothing knows how to read.
+   */
+  async clearCategory(input: {
+    channel: Channel;
+    productType: string;
+    kind: string | null;
+  }): Promise<void> {
+    await prisma.channelCategoryMap.deleteMany({ where: input });
   },
 
   async setAttribute(input: {

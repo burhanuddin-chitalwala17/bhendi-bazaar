@@ -33,12 +33,26 @@ export interface UnmappedCategory {
   products: number;
 }
 
+/** A type the owner has decided does not sell on this channel — a decision, not a gap. */
+export interface NotSoldHere {
+  productType: string;
+  typeLabel: string;
+  kind: string | null;
+  products: number;
+}
+
 export interface ChannelRegisterView {
   channel: Channel;
   label: string;
   counts: { categories: number; attributes: number; values: number };
+  notSold: NotSoldHere[];
   /** Category mappings that are the nearest they have rather than their own word (D6). */
-  nearestFits: { productType: string; kind: string | null; theirCategory: string; note: string | null }[];
+  nearestFits: {
+    productType: string;
+    kind: string | null;
+    theirCategory: string | null;
+    note: string | null;
+  }[];
   unmappedValues: UnmappedValue[];
   unmappedCategories: UnmappedCategory[];
 }
@@ -89,9 +103,22 @@ export const channelRegisterService = {
     await labelThem([...byValue.values()]);
 
     const unmappedCategories: UnmappedCategory[] = [];
+    const notSold: NotSoldHere[] = [];
     for (const inUse of typesInUse) {
       const rows = maps.categories.filter((row) => row.productType === inUse.productType);
-      if (categoryFor(rows, inUse.kind) !== null) continue;
+      const resolved = categoryFor(rows, inUse.kind);
+      // A decision already taken is not work. It is listed separately so it stays findable and
+      // reversible — hiding it would trade one problem for a worse one.
+      if (resolved?.notSold) {
+        notSold.push({
+          productType: inUse.productType,
+          typeLabel: typeLabels.get(inUse.productType) ?? inUse.productType,
+          kind: inUse.kind,
+          products: inUse.products,
+        });
+        continue;
+      }
+      if (resolved !== null) continue;
       unmappedCategories.push({
         productType: inUse.productType,
         typeLabel: typeLabels.get(inUse.productType) ?? inUse.productType,
@@ -108,8 +135,9 @@ export const channelRegisterService = {
         attributes: maps.attributes.length,
         values: maps.values.length,
       },
+      notSold: notSold.sort((a, b) => b.products - a.products),
       nearestFits: maps.categories
-        .filter((row) => row.fit === "NEAREST")
+        .filter((row) => row.fit === "NEAREST" && !row.notSold)
         .map((row) => ({
           productType: row.productType,
           kind: row.kind,

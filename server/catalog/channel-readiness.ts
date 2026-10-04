@@ -97,9 +97,15 @@ export type ListingProblem =
 export interface CategoryMapping {
   /** Null means every kind of the type; a row naming the kind wins over it. */
   kind: string | null;
-  theirCategory: string;
+  /** Null together with `notSold`: a row saying nowhere has no category to name. */
+  theirCategory: string | null;
   fit: ChannelMapFit;
   note: string | null;
+  /**
+   * The owner has decided this type does not sell on this channel. Distinct from no row at all,
+   * which means nobody has chosen yet — telling the two apart is the whole reason it exists.
+   */
+  notSold?: boolean;
 }
 
 export interface AttributeMapping {
@@ -179,19 +185,30 @@ export function listingReadiness(
   const problems: ListingProblem[] = [];
   const category = categoryFor(register.categories, subject.kind);
 
-  if (category === null) {
+  // Nothing to say about a channel this type is deliberately not sold on. `readinessByChannel`
+  // leaves it out entirely rather than reporting a ready-with-nothing, which would read as an
+  // invitation to publish something the owner has decided not to.
+  if (category?.notSold) {
+    return { state: LISTING_READINESS.READY, problems: [], theirCategory: null };
+  }
+
+  // Past the `notSold` return above, a row always names a category — the two go together, and a
+  // database CHECK says so. A row with neither is treated as no row rather than trusted.
+  const theirCategory = category?.theirCategory ?? null;
+
+  if (theirCategory === null) {
     problems.push({ problem: LISTING_PROBLEM.NO_CATEGORY });
-  } else if (category.fit === ChannelMapFit.NEAREST) {
+  } else if (category?.fit === ChannelMapFit.NEAREST) {
     problems.push({
       problem: LISTING_PROBLEM.NEAREST_CATEGORY,
-      theirCategory: category.theirCategory,
+      theirCategory,
       note: category.note,
     });
   }
 
   // Whatever their node asks. No category resolved means no node, so there is nothing it asks.
   const attributes =
-    category === null ? [] : (register.attributesByCategory.get(category.theirCategory) ?? []);
+    theirCategory === null ? [] : (register.attributesByCategory.get(theirCategory) ?? []);
 
   for (const attribute of attributes) {
     const stored = subject.facts[attribute.fact];
@@ -224,7 +241,7 @@ export function listingReadiness(
   return {
     state: worst(problems),
     problems,
-    theirCategory: category?.theirCategory ?? null,
+    theirCategory,
   };
 }
 
@@ -305,8 +322,16 @@ export function readinessByChannel(
   subject: ListingSubject,
   registers: ReadonlyMap<Channel, ChannelRegister>,
 ): { channel: Channel; report: ListingReadinessReport }[] {
-  return CHANNELS.filter((channel) => registers.has(channel)).map((channel) => ({
-    channel,
-    report: listingReadiness(subject, registers.get(channel)!),
-  }));
+  return CHANNELS.filter((channel) => registers.has(channel))
+    // A type the owner has decided not to sell on a channel is simply absent from the answer, the
+    // same as a channel the shop has not enabled. There is nothing to report about somewhere it
+    // was never going.
+    .filter((channel) => !notSoldOn(subject, registers.get(channel)!))
+    .map((channel) => ({
+      channel,
+      report: listingReadiness(subject, registers.get(channel)!),
+    }));
 }
+
+const notSoldOn = (subject: ListingSubject, register: ChannelRegister): boolean =>
+  categoryFor(register.categories, subject.kind)?.notSold === true;

@@ -10,7 +10,7 @@
 
 ## Entries
 
-## [PR-274] 2026-10-04 — develop's new code, brought under the new rules
+## [PR-277] 2026-10-04 — develop's new code, brought under the new rules
 
 Merging `develop` into the design branch brought in 35 commits written before ADR-0048 and the
 Invariant 5 ratchet existed, and the guards caught exactly that code:
@@ -18,8 +18,9 @@ Invariant 5 ratchet existed, and the guards caught exactly that code:
 - `src/services/admin/productTypeApiClient.ts` re-created the dissolved `src/services/`. It splits
   into `src/components/product-type/productTypeApiClient.ts` (the console) and
   `src/components/product/listingApiClient.ts` (the product form's listing values and families).
-- Two new components called `fetch` themselves; both now go through
-  `src/components/channel/channelsApiClient.ts`.
+- Three new components called `fetch` themselves (`unmapped-value-row`, `where-you-sell`, and from
+  the second merge `not-sold-button`); all now go through
+  `src/components/channel/channelsApiClient.ts`, the last with `useMutation`.
 - `fact-correction.service.ts` read and wrote products directly. Its queries are now
   `admin.product.repository.ts` methods, and the predicate stays in the service so the preview
   and the update still share it.
@@ -27,12 +28,12 @@ Invariant 5 ratchet existed, and the guards caught exactly that code:
   `importBulk` (creates and full-replace updates in one transaction). The wizard's new "updated"
   count is carried through the shared `useBulkImport` hook.
 
-Numbering: this branch's entries were PR-233 to PR-239 while `develop` reached PR-266, so they are
-renumbered PR-267 to PR-273. ADR-0048 to ADR-0050 did not collide.
+Numbering: this branch's entries were PR-233 to PR-239 while `develop` reached PR-269, so they are
+renumbered PR-270 to PR-276. ADR-0048 to ADR-0050 did not collide.
 
-## [PR-273] 2026-10-02 — Every table is reached through a repository
+## [PR-276] 2026-10-02 — Every table is reached through a repository
 
-PR-272's ratchet listed nineteen files calling `prisma.<model>` outside a repository. All of them
+PR-275's ratchet listed nineteen files calling `prisma.<model>` outside a repository. All of them
 have moved, and its allowlist is now empty:
 
 - **Identity:** auth config, the NextAuth adapter's account creation, admin re-reads (still on
@@ -60,7 +61,7 @@ Every query moved with its where, select and include unchanged. Verified with th
 suite against a freshly migrated local database — 103 tests, the seeded-data suite skipped — as
 well as the unit suite.
 
-## [PR-272] 2026-10-02 — Invariant 5 gets the guard it never had
+## [PR-275] 2026-10-02 — Invariant 5 gets the guard it never had
 
 "One aggregate, one repository" was a hard block with no test. Measured today: nineteen files
 outside a repository call `prisma.<model>` directly — six route handlers among them, and a
@@ -68,7 +69,7 @@ shipping webhook writing `prisma.order`. `tests/unit/one-repository.test.ts` is 
 them: each entry says why it has not moved, a new direct call fails, and a fixed file must leave
 the list. Broken once on purpose to confirm it fails. The webhook entry is marked the most urgent.
 
-## [PR-271] 2026-10-02 — The rules say what the tests check, where the code is written
+## [PR-274] 2026-10-02 — The rules say what the tests check, where the code is written
 
 An audit of the rules and skills against the tests found the server's rules stated where code is
 written, and the front end's mostly not: several gates (row-shaped buttons, overlay choice, portal
@@ -97,7 +98,7 @@ guards, `cn` registration) had no rule anywhere, and were met only when a test w
 - Small fixes: `ui-primitives.test.ts` cited the wrong ADR, `server/notifications/CLAUDE.md`
   carried a second, older `Verified:` date, and the empty `src/probe-tmp.ts` is deleted.
 
-## [PR-270] 2026-10-02 — The browser calls our API through one door
+## [PR-273] 2026-10-02 — The browser calls our API through one door
 
 Fifty-seven inline `fetch` calls — 49 in 42 components, 8 in hooks — each re-implemented "check
 `ok`, read the envelope, parse", and API clients lived in three places under two names. Now a
@@ -127,7 +128,7 @@ Review of the conversion found one regression it had made reachable: a payment-o
 field details left checkout on "Processing" with the Pay button disabled. Fixed, with
 `tests/unit/checkout-payment-errors.test.ts`, seen to fail without the fix.
 
-## [PR-269] 2026-10-02 — Three form factors, and the tablet gets the image it shows
+## [PR-272] 2026-10-02 — Three form factors, and the tablet gets the image it shows
 
 The breakpoints now have meanings (ADR-0050): phone at base, with `sm:` only refining it;
 tablet from `md:`; desktop from `lg:`. Tailwind's defaults, not a custom scale. Scripts read
@@ -141,7 +142,7 @@ half-width from 768px and a third from 1200px; the page is full width until `lg`
 it. The hint is now declared once as `GALLERY_SLIDE_SIZES` and shared by the gallery, the
 video poster and the YouTube thumbnail, which had copied the same string.
 
-## [PR-268] 2026-10-02 — Colour is a palette the themes pick from
+## [PR-271] 2026-10-02 — Colour is a palette the themes pick from
 
 `globals.css` spelled out 52 colour values across 152 declarations, the warm charcoal ink seven
 times. They now live once, in a primitive palette (`--emerald-550`, `--charcoal-220`, …) at the
@@ -153,7 +154,7 @@ nothing on screen moved. The near-duplicates the repetition was hiding are now v
 `tests/unit/design-tokens.test.ts` guards it: no raw colour outside the palette, no unused
 primitive, and no file in `src/` naming one. Each was broken on purpose once to confirm it fails.
 
-## [PR-267] 2026-10-02 — The orders table is handed the row it shows, not the order
+## [PR-270] 2026-10-02 — The orders table is handed the row it shows, not the order
 
 `OrdersTable` was typed by `@prisma/client`'s `Order`, so the admin orders page sent every column
 of every order to the browser to render seven of them. The boundary test missed it twice: it
@@ -166,6 +167,72 @@ and `OrgLocation` moved out of the repository into `server/catalog/org.address.t
 three components were importing it from. The component rule in
 `tests/unit/module-boundaries.test.ts` now forbids `@prisma/client` and repositories outright,
 types included — broken on purpose once to confirm it fails.
+## [PR-269] 2026-10-04 — The channel contracts, recorded [CONTRACT]
+
+Found by running `/bb-review` over the thirteen commits: the TRD said `[CONTRACT]` and that
+`CONTRACTS.md` would move in the same PR. It never did, and no entry carried the flag.
+
+Three shapes cross the boundary — a shop's channel choice, a value mapping, a not-sold decision —
+and they are now recorded with the reasoning that is easy to lose: the channel set is sent whole
+so silence is never read as "off", `theirValue` is free text because it is somebody else's
+vocabulary, and both register writes upsert so a repeat is a correction rather than a duplicate.
+
+**And one the TRD promised that does not exist.** It anticipated a readiness DTO per product and
+channel. Building it showed a route handler would be a round trip for a read the server already
+does, so readiness is computed and rendered server-side and never crosses the wire. Recorded as
+an absence with its reason, because a contract document that lists a shape nobody sends is worse
+than one that is merely incomplete.
+
+The review also caught a numbering collision — the owner committed PR-266 between two of mine and
+I reused the number — and a commit that shipped with no changelog entry at all. Both corrected in
+PR-268 above.
+
+## [PR-268] 2026-10-04 — How much of the catalogue each channel would take
+
+The last of the channel registry's delivery list, and the spec moves to Implemented.
+
+**A count per channel above the product list, not a column on it.** The list pages and refetches
+on the client, so a per-row verdict would be blank on page two unless it travelled through a
+route handler — a round trip for a read the server already does. The number answers the question
+a shop has, which is how much is left; the product page already says what.
+
+**The register is read for every product type at once** rather than once per type, so a catalogue
+of nine types costs what one does. Budgeted exactly, and watched going from 5 queries to 14 when
+the read was moved back inside the loop.
+
+Numbering correction: this entry and the one below it were first written as a second PR-266,
+colliding with the entry above. Both are same-day and unpushed; what happened is unchanged.
+
+## [PR-267] 2026-10-04 — Not sold here, on purpose [MIGRATION]
+
+The register could not tell a decision from a blank, so it listed 18 masalla bags as work to do.
+
+Combos sell on this store only — the owner's call on 2026-10-04 — and that was recorded by
+writing no mapping. But no mapping is also what *nobody has chosen yet* looks like, so the
+worklist named a settled question every time it was opened. A to-do list that keeps telling you
+to do something you have already done is a list that stops being read, which costs more than the
+one entry it was wrong about.
+
+**A third answer to the same question.** Where does this type go on this channel — their word for
+it, the nearest they have, or nowhere. All three sit on the category mapping and obey the same
+kind precedence, so a type can be not sold while one kind of it is. A database CHECK keeps a row
+from claiming both a category and none; a second table would have been a second copy of
+`categoryFor`, which is already tested.
+
+**Listed, not hidden, and reversible from where it is read.** Marked types move into a "Not sold
+on X" section beside the nearest-fits, with the button that undoes it on the row itself. Hiding
+them would have traded a nagging list for a decision nobody could find again — the worse of the
+two problems. Undoing deletes the row rather than blanking it, so the type reads as undecided
+again and the choice is genuinely back.
+
+A product whose type is not sold on a channel simply does not appear for that channel in the
+readiness panel — the same silence as a channel the shop never enabled, rather than a ready
+verdict that reads as an invitation.
+
+The decision itself is now data: one row per publishable channel for `combo`. Four mutations were
+watched turning the guards red, including one that only a direct caller of the pure function can
+reach — `readinessByChannel` filters those channels out first, so the guard inside it had no test
+until the mutation said so.
 
 ## [PR-266] 2026-10-04 — Every hero piece on the home page, loaded as you scroll
 

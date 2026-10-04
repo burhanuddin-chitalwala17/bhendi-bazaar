@@ -18,3 +18,18 @@ export const channelValueMappingSchema = z.object({
 });
 
 export type ChannelValueMappingInput = z.output<typeof channelValueMappingSchema>;
+
+/**
+ * Whether a product type sells on a channel at all (channel-registry D12).
+ *
+ * `notSold: true` records the owner deciding it does not, which is different from nobody having
+ * chosen yet — and `false` puts the choice back, so the decision is never a one-way door.
+ */
+export const channelNotSoldSchema = z.object({
+  channel: z.enum(PUBLISHABLE_CHANNELS as unknown as [Channel, ...Channel[]]),
+  productType: z.string().trim().min(1).max(60),
+  kind: z.string().trim().min(1).max(60).nullable(),
+  notSold: z.boolean(),
+});
+
+export type ChannelNotSoldInput = z.output<typeof channelNotSoldSchema>;

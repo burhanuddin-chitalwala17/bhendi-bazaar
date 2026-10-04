@@ -24,10 +24,10 @@ maps attributes and their options per target system as configuration; Shopify's 
 exists to be mapped onto Google's and Meta's rather than replace them. **We follow it**: three
 layers, all data, none a `switch`.
 
-**Nobody maps values automatically.** Google and Meta are the closest pair here — Meta accepts
-Google's namespace — and still disagree on values: `in_stock` against `in stock`, five age groups
-against seven. A tool that guessed would be wrong at the rate its guesses were plausible. **We
-follow the consequence**: an unmapped value fails readiness and the shop chooses (spec R5).
+**Nobody maps values automatically.** Google and Meta are the closest pair here and still
+disagree on values: `in_stock` against `in stock`, five age groups against seven. A tool that
+guessed would be wrong at the rate its guesses were plausible, so an unmapped value is reported
+and the shop chooses (spec R5).
 
 **Readiness before publish is the norm** — Amazon's product-type schemas and Shopify's feed
 diagnostics exist so a shop learns before submitting. **We go further on one point**: ours is a
@@ -39,24 +39,21 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
 
 ## Technical decisions
 
-- **D1 — A channel is declared in code, not a row.** Corrected before building: the first draft
-  made channels rows so an admin could add one. `server/shared/channels.ts` already declares the
-  set, and adding one needs code in three places regardless — an image rule, a readiness rule and
-  an adapter — so a row would have been a second spelling of a closed set, which that file's own
-  comment exists to prevent. The kinds
-  ([ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)) are declared
-  beside them. What a *shop* chooses is data, which is D2.
-- **D2 — A shop opts in per channel, and off is the default** (spec R9). `OrgChannel` carries
-  the enablement and, later, whatever `channel-connectors` needs. An absent row is off, so a shop
-  that has decided nothing is not nagged about anything.
+- **D1 — A channel is declared in code, not a row.** `server/shared/channels.ts` declares the
+  set, and adding one needs an image rule, a readiness rule and an adapter regardless, so a row
+  would be a second spelling of a closed set. The kinds
+  ([ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)) sit beside
+  them; what a *shop* chooses is data, which is D2.
+- **D2 — A shop opts in per channel, and off is the default** (spec R9). `OrgChannel` carries the
+  enablement. An absent row is off, so a shop that has decided nothing is nagged about nothing.
 - **D3 — Three mapping tables, not one.** Category mapping is keyed by `(channel, productType,
   kind)`; attribute by `(channel, productType, fact)`; value by `(channel, list, valueKey)`. They
   are separate because they are filled at different times and by different effort — a shop can
   publish with categories mapped and values half-done, and the gate will say exactly which values
   are missing (spec R5, the fourth hazard).
-- **D4 — Every mapping row carries `checkedOn` and the source it was checked against.** A mapping
-  is a claim about somebody else's system on a particular day. Nothing expires automatically; the
-  date is what makes a stale one visible and is shown wherever a mapping is.
+- **D4 — Every mapping row carries `checkedOn` and its source.** A mapping is a claim about
+  somebody else's system on a particular day. Nothing expires automatically; the date is what
+  makes a stale one visible, and it is shown wherever a mapping is.
 - **D5 — Readiness is a pure function** of the product row, the channel's mappings and the
   channel's declared required set. No Prisma, so the hard cases are unit tests
   ([ADR-0045](../../adr/0045-channel-mappings-are-versioned-data.md) D4) and a page and a service
@@ -71,26 +68,27 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
   ([ADR-0042](../../adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
   decisions 2–5 unchanged). One declaration answers readiness and builds the payload, so what is
   checked cannot drift from what is sent — the second hazard.
-- **D9 — Nothing here holds a credential or makes a request** (spec R10); the secrets arrive with
-  `channel-connectors`.
-- **D10 — Readiness advises; it never gates.** Decided by the owner on 2026-10-04, replacing a
-  draft where an incomplete product was refused with a `DomainError`. Nothing disables a control
-  and nothing refuses a publish: "required" here is our reading of a template, never something
-  watched, so refusing on it would stop listings that would have gone through and we would never
-  learn which. The channel's answer is the verdict. A gate becomes arguable once there are real
-  rejections to build it from, and the band names say advice so none is wired in by accident.
+- **D9 — Nothing here holds a credential or makes a request** (spec R10).
+- **D10 — Readiness advises; it never gates.** Owner's call, 2026-10-04. Nothing disables a
+  control and nothing refuses a publish: "required" here is our reading of a template, never
+  something watched, so refusing on it would stop listings that would have gone through and we
+  would never learn which. A gate becomes arguable once there are real rejections to build it
+  from, and the band names say advice so none is wired in by accident.
 - **D11 — What an adapter can derive, it derives; it does not become a fact.** Google wants
   `gender` and `age_group`, which the marketplaces ask as one question — Men, Women, Boys, Baby
   Girls, Kids, Unisex — so the split belongs in Google's mapping. And `condition`, which no
   product can answer differently here, is a constant in that adapter until this store sells
   something used ([ADR-0047](../../adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)).
-- **D12 — A nearest fit is the platform's decision, shown to every shop it affects.** Decided by
-  the owner on 2026-10-04. Choosing that a rida lists as an abaya is a commercial judgement about
-  where buyers look, which argues for the shop — but one mapping serves every shop selling that
-  type, so a seller's choice would silently change another's listings. The platform decides and
-  the fit is shown with its note wherever a product's readiness is (D6), so a shop can see what
-  it disagrees with. It reopens the first time two shops want different answers, which would need
-  the mapping scoped per org.
+- **D13 — "Not sold here" is written down, because an absent row already means something else.**
+  Owner's call, 2026-10-04: combos were recorded as unpublishable by mapping them nowhere, which
+  is also what nobody-has-decided-yet looks like, so the register listed 18 masalla bags as work.
+  A third answer to the same question, so it sits on the category mapping under the same kind
+  precedence, with a CHECK against a row claiming both. Listed and reversible where it is read.
+- **D12 — A nearest fit is the platform's decision, shown to every shop it affects.** Owner's
+  call, 2026-10-04. Choosing that a rida lists as an abaya is a commercial judgement, which argues
+  for the shop — but one mapping serves every shop selling that type, so a seller's choice would
+  silently change another's listings. The fit is shown with its note wherever readiness is (D6).
+  It reopens the first time two shops want different answers.
 
 ## Packages
 
@@ -102,9 +100,9 @@ Two surfaces, both mobile-first ([ADR-0015](../../adr/0015-mobile-first-design.m
 
 An admin register: per channel, what is mapped and what is not, with the unmapped values as a
 worklist — one value fixed there serves every product using it, which keeps the job finite. And
-a readiness panel on the product: the bands read differently and a nearest fit names what it
-will be listed as, with nothing on either surface preventing a publish (D10). On a phone, one
-channel per row, expanding.
+a readiness panel on the product: the bands read differently, a nearest fit names what it will be
+listed as, and nothing on either surface prevents a publish (D10). The product list carries a
+count per channel, not a column, because it pages on the client.
 
 ## Data model
 
@@ -118,8 +116,9 @@ distinct to a unique index, so a partial index carries that case as it does for 
 
 ## API / contract changes
 
-[CONTRACT]. A readiness DTO per product and channel — band, blocks, warnings — plus the admin
-register's own shapes. `docs/CONTRACTS.md` moves in the same PR.
+[CONTRACT]. The shop's channel choice and the register's two decisions. **No readiness DTO**:
+the verdict is computed and rendered on the server, so it never crosses the boundary — a route
+handler for it would be a round trip for a read the server already does (ADR-0034).
 
 ## Test plan
 
@@ -135,7 +134,8 @@ a type that does not exist fails, which catches a bad seed.
 2. The pure readiness function and its tests, with no caller.
 3. The register read, and the shop's opt-in — without which nothing can turn a channel on, so
    readiness could never appear and the rest would be undemonstrable.
-4. Readiness wired into the product form and the org's product list.
+4. Readiness on the product, and a count per channel above the product list — a column would be
+   blank on page two, since that table pages and refetches on the client.
 5. The admin register, including the unmapped-value worklist.
 6. The seeded mappings: Flipkart and Meesho from the extracted templates, Google from its spec.
 
