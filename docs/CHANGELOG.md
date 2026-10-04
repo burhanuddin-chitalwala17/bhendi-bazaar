@@ -10,6 +10,41 @@
 
 ## Entries
 
+## [PR-255] 2026-10-04 — The channel set, declared, and the four tables under it [MIGRATION]
+
+The channel registry's first piece. No behaviour changes: this is the vocabulary and the storage
+the rest of [channel-registry](specs/channel-registry/) is built on.
+
+**The channel set is now the real one.** `instagram` is gone and `meta` replaces it — one feed
+serves Facebook and Instagram — and `google` and `meesho` join. Each channel now carries its kind
+([ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)), which is what decides
+whether it gets a feed or the full marketplace machinery.
+
+**A channel is declared in code, not stored as a row.** This corrects the spec's D1, which said
+the opposite when it was committed yesterday. Reading the code settled it: a channel does nothing
+until it has an image rule, a readiness rule and an adapter, all three of them code — so a row an
+admin could add would be a row that sits there inert. What a *shop* chooses is data, and that is
+`OrgChannel`. The TRD now says so; the entry above, written before, does not.
+
+**One label, not two.** `onboarding-card.tsx` carried its own copy of the channel names beside
+the one in the server types. Two spellings of one closed set is the drift Invariant 5 exists for,
+and this set is the one every adapter, mapping and readiness answer keys on.
+
+**Four tables:** `OrgChannel`, and the three maps — category, attribute and value — each keyed on
+the channel plus what it maps, and each dated with what it was checked against
+([ADR-0045](adr/0045-channel-mappings-are-versioned-data.md)).
+
+**A partial unique index closes a hole that would have shipped.** `ChannelCategoryMap.kind` is
+nullable, meaning "every kind of this type", and NULLs are distinct to a unique index — so the
+declared `@@unique` permitted two of those for one channel and type. That is two answers to which
+of their nodes a product publishes to, settled by whichever row the query returned first. Prisma's
+schema language cannot say the rule, so the migration does, and a database test mutation-tested
+against each of the four constraints is what keeps it honest.
+
+Also fixed, on contact: `enhancement-settings` asserted absolute usage counts against a shared
+dev database, so it passed the first run and failed every one after — it read 11 for a month it
+had put one run into. It now measures the change it causes.
+
 ## [PR-254] 2026-10-04 — The channel registry, specified
 
 What each selling channel is, what it calls the things this shop sells, and whether a product is

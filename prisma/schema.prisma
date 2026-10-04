@@ -679,6 +679,7 @@ model Org {
   @@index([handle])
   listingValues ListingValue[]
   productFamilies ProductFamily[]
+  channels OrgChannel[]
 }
 
 /// The public face of an organisation: what a storefront or an advertisement may show, and
@@ -1951,4 +1952,120 @@ model ProductType {
   categories Category[]
 
   @@index([retiredAt])
+}
+
+/// Which channels a shop has turned on ([channel-registry](../docs/specs/channel-registry/) D2).
+///
+/// The channels themselves are declared in `server/shared/channels.ts`, not stored: one needs an
+/// image rule, a readiness rule and an adapter before it can do anything, so a row an admin
+/// could add would be a row that does nothing (D1). What a *shop* chooses is this.
+///
+/// **An absent row is off**, which is the default: a shop that has decided nothing is not warned
+/// about anything (spec R9).
+model OrgChannel {
+  orgId   String
+  org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// A `CHANNEL` key. Not a foreign key, because the channels are declared rather than stored.
+  channel String
+  enabled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([orgId, channel])
+  @@index([channel])
+}
+
+/// Which of a channel's categories a product type and kind list under
+/// ([ADR-0045](../docs/adr/0045-channel-mappings-are-versioned-data.md), channel-registry D3).
+///
+/// Keyed by the pair because the platforms disagree about which of the two a distinction is:
+/// Flipkart holds abaya, burqa and niqab as one node separated by a field, Meesho as three
+/// categories. A rida maps through the same pair, and has an exact match on neither.
+model ChannelCategoryMap {
+  id      String @id @default(cuid())
+  channel String
+  /// A `ProductType.key`; `kind` is one of that type's declared kinds, or null for all of them.
+  productType String
+  kind        String?
+
+  /// What the channel calls it — its node id, path, or whatever that channel keys on.
+  theirCategory String
+  /// How the channel labels it, so a screen can show something a person recognises.
+  theirLabel    String?
+
+  /// Whether this is the channel's own word for the same thing, or the closest it has (D6).
+  /// A nearest fit is a **warning on every product**, not an approval taken once — otherwise it
+  /// applies silently to later products it suits far less.
+  fit  ChannelMapFit @default(EXACT)
+  /// Why, when it is a nearest fit. Shown wherever the fit is.
+  note String?
+
+  /// When this was last checked, and against what. A claim about somebody else's system on a
+  /// particular day; undated, it cannot be audited or expired (D4).
+  checkedOn     DateTime
+  checkedSource String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A null `kind` means every kind of the type, and NULLs are distinct to a unique index — so a
+  // partial index in the migration is what stops two of those, which would be two answers to
+  // which node an untyped product publishes to.
+  @@unique([channel, productType, kind])
+  @@index([channel])
+}
+
+enum ChannelMapFit {
+  EXACT
+  NEAREST
+}
+
+/// What a channel calls one of our facts, within one of its categories.
+model ChannelAttributeMap {
+  id      String @id @default(cuid())
+  channel String
+  /// A `ProductType.key`, so the same fact can be named differently in two of a channel's
+  /// categories — which is how Flipkart asks cloth its `Fabric` and everything else `Material`.
+  productType String
+  /// A `FACT` key from `server/catalog/listing-facts.ts`.
+  fact        String
+
+  theirAttribute String
+  /// Whether that channel refuses a listing without it. Readiness blocks on a required one and
+  /// warns on the rest (D7).
+  required       Boolean @default(false)
+
+  checkedOn     DateTime
+  checkedSource String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, productType, fact])
+  @@index([channel])
+}
+
+/// What a channel calls one of our answers.
+///
+/// The layer nobody can automate: Google and Meta are the closest pair in this space and still
+/// disagree — `in_stock` against `in stock`, five age groups against seven. An answer with no row
+/// here fails readiness and the shop is asked to choose, once, for every product using it.
+model ChannelValueMap {
+  id      String @id @default(cuid())
+  channel String
+  /// A `LIST` key, and the stored key of one of its values.
+  list     String
+  valueKey String
+
+  theirValue String
+
+  checkedOn     DateTime
+  checkedSource String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, list, valueKey])
+  @@index([channel, list])
 }

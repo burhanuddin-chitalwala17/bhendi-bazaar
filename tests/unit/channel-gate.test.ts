@@ -34,7 +34,7 @@ describe("the rules are declared once, and every channel has an answer", () => {
     expect(Object.keys(CHANNEL_IMAGE_RULES).sort()).toEqual(Object.values(CHANNEL).sort());
     // Null is a stated answer, not a gap: it is what "the store accepts what the shop has" means.
     expect(CHANNEL_IMAGE_RULES[CHANNEL.STORE]).toBeNull();
-    for (const channel of [CHANNEL.AMAZON, CHANNEL.FLIPKART, CHANNEL.INSTAGRAM]) {
+    for (const channel of [CHANNEL.AMAZON, CHANNEL.FLIPKART, CHANNEL.META]) {
       expect(CHANNEL_IMAGE_RULES[channel], channel).not.toBeNull();
     }
   });
@@ -43,8 +43,8 @@ describe("the rules are declared once, and every channel has an answer", () => {
     expect(CHANNEL_IMAGE_RULES[CHANNEL.AMAZON]?.minLongEdgePx).toBe(1000);
     expect(CHANNEL_IMAGE_RULES[CHANNEL.AMAZON]?.bestLongEdgePx, "1600px is what turns zoom on").toBe(1600);
     expect(CHANNEL_IMAGE_RULES[CHANNEL.FLIPKART]?.minLongEdgePx).toBe(1000);
-    expect(CHANNEL_IMAGE_RULES[CHANNEL.INSTAGRAM]?.minLongEdgePx).toBe(1080);
-    expect(CHANNEL_IMAGE_RULES[CHANNEL.INSTAGRAM]?.aspect, "a feed post is square").toBe(1);
+    expect(CHANNEL_IMAGE_RULES[CHANNEL.META]?.minLongEdgePx).toBe(1080);
+    expect(CHANNEL_IMAGE_RULES[CHANNEL.META]?.aspect, "a feed post is square").toBe(1);
   });
 
   it("aims one enlarge at the largest edge any channel asks for, derived rather than typed", () => {
@@ -84,20 +84,20 @@ describe("imageMeetsChannel", () => {
     expect(imageMeetsChannel({ width: 800, height: 1400 }, CHANNEL.AMAZON).ok).toBe(true);
   });
 
-  it("names white for Instagram's shape, because a square of white meets it without cropping", () => {
-    const verdict = imageMeetsChannel({ width: 1440, height: 1080 }, CHANNEL.INSTAGRAM);
+  it("names white for Meta's shape, because a square of white meets it without cropping", () => {
+    const verdict = imageMeetsChannel({ width: 1440, height: 1080 }, CHANNEL.META);
     expect(verdict.ok).toBe(false);
     expect(verdict.missing).toEqual([CHANNEL_IMAGE_PROBLEM.WRONG_ASPECT]);
     expect(verdict.fix).toBe(ENHANCEMENT_TOOL.WHITE);
 
-    expect(imageMeetsChannel({ width: 1080, height: 1080 }, CHANNEL.INSTAGRAM).ok).toBe(true);
+    expect(imageMeetsChannel({ width: 1080, height: 1080 }, CHANNEL.META).ok).toBe(true);
     // Whole pixels never divide into an exact square; a hundredth of nothing is not the wrong shape.
-    expect(imageMeetsChannel({ width: 1081, height: 1080 }, CHANNEL.INSTAGRAM).ok).toBe(true);
+    expect(imageMeetsChannel({ width: 1081, height: 1080 }, CHANNEL.META).ok).toBe(true);
     expect(ASPECT_TOLERANCE).toBeGreaterThan(0);
   });
 
   it("answers size before shape, since padding a small photograph leaves it small", () => {
-    const verdict = imageMeetsChannel({ width: 800, height: 600 }, CHANNEL.INSTAGRAM);
+    const verdict = imageMeetsChannel({ width: 800, height: 600 }, CHANNEL.META);
     expect(verdict.missing).toEqual([CHANNEL_IMAGE_PROBLEM.TOO_SMALL, CHANNEL_IMAGE_PROBLEM.WRONG_ASPECT]);
     expect(verdict.fix, "one tool at a time (spec R1), and the size is the hard floor").toBe(
       ENHANCEMENT_TOOL.ENLARGE,
