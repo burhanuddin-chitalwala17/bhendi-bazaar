@@ -5,6 +5,7 @@ import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { ProductEditContainer } from "@/components/product/console/productEdit";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
 import type { AdminCategory } from "@/domain/admin";
 import { orgAddressService } from "@server/catalog/org.address.service";
 
@@ -19,8 +20,23 @@ export default async function OrgEditProductPage({
   if (!product || product.org.id !== orgId) notFound();
 
   const categories = (await adminCategoriesDAL.getCategories()).categories.map(
-    (c: AdminCategory) => ({ id: c.id, name: c.name, parentId: c.parentId, shotList: c.shotList }),
+    (c: AdminCategory) => ({
+      id: c.id,
+      name: c.name,
+      parentId: c.parentId,
+      shotList: c.shotList,
+      // Carried so the form resolves this product's questions the same way the server does.
+      productType: c.productType,
+    }),
   );
+
+  // The question sets, and the answers for the category this product is already in — so the
+  // form opens with filled dropdowns rather than empty ones. Changing the category fetches the
+  // rest ([ADR-0034]).
+  const [productTypes, listingValues] = await Promise.all([
+    adminProductTypesDAL.getProductTypes(),
+    adminProductTypesDAL.getValuesForCategory(product.category?.id ?? null, categories, orgId),
+  ]);
 
   // The product's own org, so the form cannot reassign ownership.
   const orgs = [product.org];
@@ -44,6 +60,8 @@ export default async function OrgEditProductPage({
         <ProductEditContainer
           product={product}
           categories={categories}
+          productTypes={productTypes}
+          listingValues={listingValues}
           orgs={orgs}
           locations={locations}
           uploadEndpoints={orgUploadEndpoints(orgId)}

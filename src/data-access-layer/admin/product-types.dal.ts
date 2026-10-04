@@ -2,7 +2,10 @@
 
 import { cache } from "react";
 
+import { FACT_DECLARATIONS } from "@server/catalog/listing-facts";
+import { listingValueRepository } from "@server/catalog/listing-value.repository";
 import { productTypeRepository } from "@server/catalog/product-type.repository";
+import { resolveProductType } from "@server/catalog/product-type";
 import type { ProductTypeRecord } from "@server/catalog/product-type.types";
 
 /**
@@ -21,6 +24,30 @@ class ProductTypesDAL {
   getProductType = cache(async (key: string): Promise<ProductTypeRecord | null> => {
     return productTypeRepository.byKey(key);
   });
+
+  /**
+   * The answers a product form needs for the category it is rendering with, so the first load
+   * shows filled dropdowns rather than empty ones that fill in afterwards. Changing the category
+   * fetches the rest through the route — only an interaction costs a round trip (ADR-0034).
+   *
+   * Only the lists that one type asks about: there are a thousand values and this needs a
+   * handful (product-types D5).
+   */
+  getValuesForCategory = cache(
+    async (
+      categoryId: string | null,
+      categories: readonly { id: string; parentId?: string | null; productType?: unknown }[],
+      orgId: string,
+    ) => {
+      const key = resolveProductType(categoryId, categories);
+      const type = await productTypeRepository.byKey(key);
+      if (!type) return {};
+      const lists = type.facts
+        .map((fact) => FACT_DECLARATIONS[fact]?.list)
+        .filter((list): list is string => !!list);
+      return listingValueRepository.byLists(lists, orgId);
+    },
+  );
 
   /** How many categories and products name each type — what the list shows beside it. */
   getUsage = cache(async (keys: readonly string[]) => {

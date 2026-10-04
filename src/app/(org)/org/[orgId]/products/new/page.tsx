@@ -1,6 +1,7 @@
 import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
+import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
 import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
@@ -22,13 +23,14 @@ export default async function OrgNewProductPage({
   // Independent reads, fetched together. One org, not a list: in this portal there
   // is nothing to choose between, and offering the choice would be offering a product
   // owned by somebody else — read that org by id rather than loading every platform org.
-  const [categoriesResult, org, allLocations, copyOptions, copySource] =
+  const [categoriesResult, org, allLocations, copyOptions, copySource, productTypes] =
     await Promise.all([
       adminCategoriesDAL.getCategories(),
       orgsDAL.getOrgSummary(orgId),
       orgAddressService.listLocations(orgId),
       adminProductsDAL.getCopyOptions(orgId),
       copyFromId ? adminProductsDAL.getCopySource(copyFromId, orgId) : null,
+      adminProductTypesDAL.getProductTypes(),
     ]);
 
   if (!org) notFound();
@@ -38,6 +40,8 @@ export default async function OrgNewProductPage({
     name: c.name,
     parentId: c.parentId,
     shotList: c.shotList,
+    // Carried so the form resolves this product's questions the same way the server does.
+    productType: c.productType,
   }));
 
   const orgs = [
@@ -59,6 +63,7 @@ export default async function OrgNewProductPage({
   return (
     <ProductAddContainer
       categories={categories}
+      productTypes={productTypes}
       orgs={orgs}
       locations={locations}
       copySource={copySource}

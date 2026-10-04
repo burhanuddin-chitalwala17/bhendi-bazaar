@@ -61,3 +61,18 @@ class AdminProductTypeApiClient {
 }
 
 export const adminProductTypeApiClient = new AdminProductTypeApiClient();
+
+/**
+ * The permitted answers for a type's lists, fetched when the category changes — the page serves
+ * the first load, so this only runs on an interaction (ADR-0034).
+ */
+export async function fetchListingValues(
+  orgId: string,
+  lists: readonly string[],
+): Promise<Record<string, Array<{ key: string; label: string; orgId: string | null }>>> {
+  if (lists.length === 0) return {};
+  const params = new URLSearchParams({ lists: lists.join(",") });
+  const response = await fetch(`/api/org/${encodeURIComponent(orgId)}/listing-values?${params}`);
+  if (!response.ok) throw await readApiError(response);
+  return response.json();
+}

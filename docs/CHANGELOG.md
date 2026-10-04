@@ -10,6 +10,42 @@
 
 ## Entries
 
+## [PR-247] 2026-10-04 — The product form asks the type's questions
+
+The screen the vocabulary was for. `ProductAttributeFields` — the free-text sizes and colours
+boxes — is deleted, and `ProductFactFields` puts the questions this product's type actually asks
+in its place. A colour typed three ways was three colours to a marketplace; now it is chosen from
+a list.
+
+The type is resolved **in the form the same way the server resolves it**, by walking the category
+tree the form already carries for the gallery's slots. So what is asked is what will be stored,
+without a second notion of the rules living in the client.
+
+The answers for the category a page renders with are read **by the page**; changing the category
+fetches the rest through `GET /api/org/[orgId]/listing-values`. That is a fetch triggered by an
+interaction, which is what earns a route handler — the first load costs no round trip
+([ADR-0034](adr/0034-render-on-the-server-by-default.md)). `useListingValues` does that one
+thing, and tracks which lists it has asked for in a ref rather than state, so the effect never
+depends on what it sets.
+
+A category with no product type says so plainly rather than rendering an empty section: the
+product saves and sells here, and cannot be published until a type is set. That is the untyped
+part of this store's catalogue — masalla bags, beauty and health, kitchen and dining.
+
+**Four gates caught four real things**, which is the part worth recording:
+
+- `portal-boundary` refused the route: I had put an org-scoped read under `/api/admin`, guarded
+  by org membership rather than platform admin. Moved to `/api/org/[orgId]/`, where the shop's
+  own added answers belong.
+- `form-error-display` refused the `kind` select and the fact fields: a field bound without an
+  error output makes a form that refuses to submit while saying nothing. All of them now bind.
+- `design-tokens` refused a stale `SHAPE_LEGACY` entry for the file I had just deleted.
+- `react-hooks/set-state-in-effect` refused the first version of the fetching, which depended on
+  the state it set — each fetch would have scheduled the next.
+
+Both of the first two were mutation-tested afterwards: moving the route back under `/api/admin`
+and unbinding the `kind` error each turn their gate red.
+
 ## [PR-246] 2026-10-04 — One value per concept, one spelling per value [MIGRATION]
 
 The duplicate-values problem recorded on the backlog yesterday, closed. Twenty-one values

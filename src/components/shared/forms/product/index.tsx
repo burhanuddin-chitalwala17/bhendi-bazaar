@@ -13,7 +13,8 @@ import { ProductMediaManager } from "@/components/product/product-media-manager"
 import { ProductBasicFields } from "./ProductBasicFields";
 import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
-import { ProductAttributeFields } from "./ProductAttributeFields";
+import { ProductFactFields } from "./ProductFactFields";
+import type { ProductTypeRecord } from "@server/catalog/product-type.types";
 import { ProductFlagsFields } from "./ProductFlagsFields";
 import {
   ProductOrgShippingFields,
@@ -37,8 +38,25 @@ interface ProductFormProps {
   product?: ProductDetails;
   /** Create only: another of the org's products whose descriptive fields seed this one. */
   copySource?: ProductCopySource | null;
-  /** Carrying `parentId` and `shotList` lets the gallery resolve its slots per category (media-library D4). */
-  categories?: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
+  /**
+   * Carrying `parentId`, `shotList` and `productType` lets the form resolve, per category, both
+   * the gallery's slots (media-library D4) and the questions this product is asked
+   * (listing-vocabulary/categories D1a) — the same walks the server does, so what is asked is
+   * what is stored.
+   */
+  categories?: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    shotList?: unknown;
+    productType?: unknown;
+  }[];
+  /** The question sets, read by the page: they are rows now, so the form cannot import them. */
+  productTypes?: ProductTypeRecord[];
+  /** The answers for the category the page rendered with; others are fetched on change. */
+  listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
+  /** Which level supplied each filled-in value, so the form can say so (inherited-facts R3). */
+  factOrigins?: Partial<Record<string, string>>;
   orgs?: OrgSummary[];
   /** The org's pickup locations; the form shows a stock input per active one. */
   locations?: LocationOption[];
@@ -66,6 +84,9 @@ export function ProductForm({
   isSubmitting,
   readOnly = false,
   uploadEndpoints,
+  productTypes = [],
+  listingValues = {},
+  factOrigins = {},
 }: ProductFormProps) {
   const isEdit = !!product;
   const copy = isEdit ? null : (copySource ?? null);
@@ -311,7 +332,23 @@ export function ProductForm({
       />
 
       {/* Attributes */}
-      <ProductAttributeFields control={control} readOnly={readOnly} />
+      {/*
+        The questions this product's type asks, in place of the free-text sizes and colours
+        boxes — a colour typed three ways is three colours to a marketplace
+        ([listing-vocabulary](../../../../docs/specs/listing-vocabulary/)).
+      */}
+      <ProductFactFields
+        control={control}
+        register={register}
+        errors={errors}
+        orgId={watch("orgId") || ""}
+        categoryId={watch("categoryId") || ""}
+        categories={categories ?? []}
+        productTypes={productTypes}
+        initialValues={listingValues}
+        origins={factOrigins}
+        readOnly={readOnly}
+      />
 
       {/* Flags */}
       <ProductFlagsFields control={control} readOnly={readOnly} />
@@ -354,6 +391,6 @@ export function ProductForm({
 export { ProductBasicFields } from "./ProductBasicFields";
 export { ProductPricingFields } from "./ProductPricingFields";
 export { ProductInventoryFields } from "./ProductInventoryFields";
-export { ProductAttributeFields } from "./ProductAttributeFields";
+export { ProductFactFields } from "./ProductFactFields";
 export { ProductFlagsFields } from "./ProductFlagsFields";
 export { ProductOrgShippingFields } from "./ProductOrgShippingFields";
