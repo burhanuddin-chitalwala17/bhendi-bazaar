@@ -227,18 +227,11 @@ the host constrains operations, never design ([ADR-0037](adr/0037-the-host-is-a-
 
 Not a phase, but tracked:
 
-- **The seeded listing values hold near-duplicates across small lists** — the union of two
-  platforms' vocabularies gives one concept two entries where they use different words:
-  `waistRise` has High and High Rise, Low and Low Rise, Mid and Mid Rise; `sleeveLength` has Full
-  Sleeve and Long Sleeves, Half Sleeve and Short Sleeves, 3/4 Sleeve and Three-Quarter Sleeves;
-  `fit` has Comfort and Comfort Fit. Harmless for colour, where 188 values are genuinely
-  different shades, and poor for a list of six that is really three. The fix is to keep one
-  canonical value and let each platform's word be a mapping
-  ([ADR-0045](adr/0045-channel-mappings-are-versioned-data.md)), which is what the mapping layer
-  is for — but choosing the canonical word is a judgement, so it waits for the owner rather than
-  being decided quietly. Found 2026-10-03 by exercising `listingValueRepository` against the
-  seeded rows; the worse case in the same list, two different questions merged into one, was a
-  bug and is fixed (PR-245).
+- **The seeded listing values held near-duplicates** — resolved 2026-10-04 (PR-246). The union
+  of two platforms' vocabularies gave one concept two entries wherever they worded or spelled it
+  differently. The owner chose the trade's word where it was a judgement ("full sleeves is the
+  correct term"); the rest followed a stated convention. Discarded forms are retired rather than
+  deleted, because each is what one platform writes and the mapping layer will need it.
 
 - **The existing models have never been checked against current practice** —
   [ADR-0046](adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md) requires it

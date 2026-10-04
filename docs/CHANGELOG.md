@@ -10,6 +10,33 @@
 
 ## Entries
 
+## [PR-246] 2026-10-04 — One value per concept, one spelling per value [MIGRATION]
+
+The duplicate-values problem recorded on the backlog yesterday, closed. Twenty-one values
+retired, none deleted.
+
+**Where it was a judgement, the owner made it**: *"full sleeves is the correct term."* Not the
+shorter word or the longer one — the trade's. The other two sleeve pairs follow it, so the list
+reads Sleeveless, Full Sleeves, Half Sleeves, Roll-up Sleeves, Three-Quarter Sleeves: five values
+where there were eight. `waistRise` goes from six to three, keeping High Rise, Low Rise and Mid
+Rise, because an entry in a dropdown has to read on its own. `fit` keeps the `Fit` suffix it
+already used for Athletic, Skinny and Slim.
+
+**Where it was not a judgement, a stated convention settled it.** Thirteen more collisions were
+one word spelled two ways — Cut-Outs beside Cutouts, Polka Dot beside Polka Dots, Aloe Vera
+beside Aloevera. The rule, written down so it can be applied again: the spaced form and the
+plural where the thing is naturally countable, except where one word is the established trade
+term — Polycotton, Cutwork — which keeps its own spelling.
+
+**Retired, not deleted**, and that is the part that matters. Every discarded form is what some
+platform writes, and the mapping layer will need it: our Full Sleeves is Meesho's Long Sleeves.
+Retiring hides it from every picker, keeps it readable on anything that stored it, and leaves the
+word where [ADR-0045](adr/0045-channel-mappings-are-versioned-data.md)'s mappings can find it.
+Deleting would have thrown away the evidence that made the mapping possible.
+
+Checked afterwards rather than assumed: no spelling collision remains in any list, and 1,001
+values are offered where 1,026 were.
+
 ## [PR-245] 2026-10-03 — One list was holding two questions [MIGRATION]
 
 `listingValueRepository` is the one way to reach the permitted answers
