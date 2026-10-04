@@ -140,9 +140,9 @@ async function registersFor(
 
     registers.set(channel, {
       categories: categories.filter((row) => row.channel === channel).map(toCategoryMapping),
-      attributes: attributes
-        .filter((row) => row.channel === channel && isFact(row.fact))
-        .map(toAttributeMapping),
+      attributesByCategory: groupByCategory(
+        attributes.filter((row) => row.channel === channel && isFact(row.fact)),
+      ),
       mappedValues,
     });
   }
@@ -161,15 +161,22 @@ const toCategoryMapping = (row: {
   note: row.note,
 });
 
-const toAttributeMapping = (row: {
-  fact: string;
-  theirAttribute: string;
-  required: boolean;
-}): AttributeMapping => ({
-  fact: row.fact as FactKey,
-  theirAttribute: row.theirAttribute,
-  required: row.required,
-});
+/** Their fields, under the node that asks for them. */
+function groupByCategory(
+  rows: readonly { theirCategory: string; fact: string; theirAttribute: string; required: boolean }[],
+): Map<string, AttributeMapping[]> {
+  const out = new Map<string, AttributeMapping[]>();
+  for (const row of rows) {
+    const group = out.get(row.theirCategory) ?? [];
+    group.push({
+      fact: row.fact as FactKey,
+      theirAttribute: row.theirAttribute,
+      required: row.required,
+    });
+    out.set(row.theirCategory, group);
+  }
+  return out;
+}
 
 /** A mapping naming a fact this codebase no longer declares is ignored, never cast through. */
 const isFact = (fact: string): fact is FactKey => fact in FACT_DECLARATIONS;

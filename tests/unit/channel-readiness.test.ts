@@ -21,6 +21,10 @@ import {
 import { FACT, LIST, ORIGIN, type StoredFacts } from "@server/catalog/listing-facts";
 import { CHANNEL, CHANNELS } from "@server/shared/channels";
 
+/** What the node every fixture resolves to asks for. Keyed by their category, as stored. */
+const asks = (list: AttributeMapping[]) =>
+  new Map<string, AttributeMapping[]>([["ethnic-wear/abaya", list]]);
+
 const exactCategory: CategoryMapping = {
   kind: null,
   theirCategory: "ethnic-wear/abaya",
@@ -35,10 +39,10 @@ const facts = (answers: Record<string, string | number | boolean>): StoredFacts 
 
 const register = (overrides: Partial<ChannelRegister> = {}): ChannelRegister => ({
   categories: [exactCategory],
-  attributes: [
+  attributesByCategory: asks([
     { fact: FACT.COLOUR, theirAttribute: "Color", required: true },
     { fact: FACT.MATERIAL, theirAttribute: "Fabric", required: true },
-  ] satisfies AttributeMapping[],
+  ]),
   mappedValues: new Map([
     [LIST.COLOUR, new Set(["maroon", "black"])],
     [LIST.MATERIAL, new Set(["cotton"])],
@@ -84,10 +88,10 @@ describe("a fact the product has not answered", () => {
     const report = listingReadiness(
       { kind: null, facts: facts({ [FACT.COLOUR]: "maroon" }) },
       register({
-        attributes: [
+        attributesByCategory: asks([
           { fact: FACT.COLOUR, theirAttribute: "Color", required: true },
           { fact: FACT.MATERIAL, theirAttribute: "Fabric", required: false },
-        ],
+        ]),
       }),
     );
     expect(report.state).toBe(LISTING_READINESS.WARNED);
@@ -160,7 +164,9 @@ describe("an answer the channel has no word for", () => {
     const report = listingReadiness(
       { kind: null, facts: facts({ [FACT.SHELF_LIFE_MONTHS]: 24 }) },
       register({
-        attributes: [{ fact: FACT.SHELF_LIFE_MONTHS, theirAttribute: "Shelf Life", required: true }],
+        attributesByCategory: asks([
+          { fact: FACT.SHELF_LIFE_MONTHS, theirAttribute: "Shelf Life", required: true },
+        ]),
         mappedValues: new Map(),
       }),
     );
@@ -229,6 +235,48 @@ describe("the kind decides which of the type's categories applies", () => {
     );
     expect(report.state).toBe(LISTING_READINESS.READY);
     expect(report.theirCategory).toBe("clothing");
+  });
+});
+
+/**
+ * The reason attributes are stored under their category rather than our type: Flipkart's `bag`
+ * asks Number of Compartments and Waterproof, while `sling-bag` carries neither field — and both
+ * are our `bag`. Keyed by our type, a sling bag would be told to answer a question nobody asks.
+ */
+describe("a type whose kinds reach two of their nodes", () => {
+  const plainBag: CategoryMapping = { ...exactCategory, kind: null, theirCategory: "bag" };
+  const slingBag: CategoryMapping = { ...exactCategory, kind: "sling", theirCategory: "sling-bag" };
+
+  const bagRegister = register({
+    categories: [plainBag, slingBag],
+    attributesByCategory: new Map<string, AttributeMapping[]>([
+      ["bag", [{ fact: FACT.COMPARTMENTS, theirAttribute: "Number of Compartments", required: true }]],
+      ["sling-bag", [{ fact: FACT.COLOUR, theirAttribute: "Color", required: true }]],
+    ]),
+  });
+
+  it("asks a handbag for the compartment count their bag node wants", () => {
+    const report = listingReadiness({ kind: "handbag", facts: {} }, bagRegister);
+    expect(report.theirCategory).toBe("bag");
+    expect(report.problems).toEqual([
+      {
+        problem: LISTING_PROBLEM.MISSING_FACT,
+        fact: FACT.COMPARTMENTS,
+        theirAttribute: "Number of Compartments",
+      },
+    ]);
+  });
+
+  it("does not ask a sling bag for it, because their sling node has no such field", () => {
+    const report = listingReadiness({ kind: "sling", facts: {} }, bagRegister);
+    expect(report.theirCategory).toBe("sling-bag");
+    expect(report.problems.map((entry) => entry.problem)).toEqual([LISTING_PROBLEM.MISSING_FACT]);
+    expect(report.problems[0]).toMatchObject({ fact: FACT.COLOUR });
+  });
+
+  it("asks nothing where there is no node, because a node is what asks", () => {
+    const report = listingReadiness({ kind: "handbag", facts: {} }, register({ categories: [] }));
+    expect(report.problems).toEqual([{ problem: LISTING_PROBLEM.NO_CATEGORY }]);
   });
 });
 

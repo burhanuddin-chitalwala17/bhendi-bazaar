@@ -28,7 +28,7 @@ describe.skipIf(!isDisposableDb)("the channel registry (local db)", () => {
   afterAll(async () => {
     await Promise.all([
       prisma.channelCategoryMap.deleteMany({ where: { productType: type } }),
-      prisma.channelAttributeMap.deleteMany({ where: { productType: type } }),
+      prisma.channelAttributeMap.deleteMany({ where: { theirCategory: type } }),
       prisma.channelValueMap.deleteMany({ where: { list } }),
       prisma.orgChannel.deleteMany({ where: { orgId } }),
     ]);
@@ -139,7 +139,7 @@ describe.skipIf(!isDisposableDb)("the channel registry (local db)", () => {
       const row = await prisma.channelAttributeMap.create({
         data: {
           channel: CHANNEL.FLIPKART,
-          productType: type,
+          theirCategory: type,
           fact: "material",
           theirAttribute: "Fabric",
           required: true,
@@ -154,7 +154,7 @@ describe.skipIf(!isDisposableDb)("the channel registry (local db)", () => {
         prisma.channelAttributeMap.create({
           data: {
             channel: CHANNEL.FLIPKART,
-            productType: type,
+            theirCategory: type,
             fact: "material",
             theirAttribute: "Material",
             checkedOn,
@@ -169,14 +169,14 @@ describe.skipIf(!isDisposableDb)("the channel registry (local db)", () => {
       const row = await prisma.channelAttributeMap.create({
         data: {
           channel: CHANNEL.FLIPKART,
-          productType: `${type}-bag`,
+          theirCategory: `${type}-bag`,
           fact: "material",
           theirAttribute: "Material",
           checkedOn,
         },
       });
       expect(row.theirAttribute).toBe("Material");
-      await prisma.channelAttributeMap.deleteMany({ where: { productType: `${type}-bag` } });
+      await prisma.channelAttributeMap.deleteMany({ where: { theirCategory: `${type}-bag` } });
     });
   });
 

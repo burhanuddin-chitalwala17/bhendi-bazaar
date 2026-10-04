@@ -2025,15 +2025,17 @@ enum ChannelMapFit {
 model ChannelAttributeMap {
   id      String @id @default(cuid())
   channel String
-  /// A `ProductType.key`, so the same fact can be named differently in two of a channel's
-  /// categories — which is how Flipkart asks cloth its `Fabric` and everything else `Material`.
-  productType String
+  /// **Their** category, matching `ChannelCategoryMap.theirCategory` — not our product type.
+  /// A required-field set belongs to the channel's own node: Flipkart's `bag` asks Number of
+  /// Compartments and Waterproof, while `sling-bag` has neither field, and both are our `bag`.
+  /// Keyed by our type, a sling bag would be told to answer a question Flipkart never asks.
+  theirCategory String
   /// A `FACT` key from `server/catalog/listing-facts.ts`.
-  fact        String
+  fact          String
 
   theirAttribute String
-  /// Whether that channel refuses a listing without it. Readiness blocks on a required one and
-  /// warns on the rest (D7).
+  /// Whether that channel refuses a listing without it. An absent required one reads incomplete,
+  /// the rest warn (D7). Nothing refuses a publish either way (D10).
   required       Boolean @default(false)
 
   checkedOn     DateTime
@@ -2042,8 +2044,8 @@ model ChannelAttributeMap {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([channel, productType, fact])
-  @@index([channel])
+  @@unique([channel, theirCategory, fact])
+  @@index([channel, theirCategory])
 }
 
 /// What a channel calls one of our answers.

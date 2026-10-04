@@ -33,6 +33,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
 
   const stamp = `crs-${Date.now().toString(36)}`;
   const typeKey = `${stamp}-rida`;
+  const theirNode = "ethnic-wear/abaya";
   const checkedOn = new Date("2026-10-04");
   let orgId: string;
 
@@ -83,7 +84,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
       channel: CHANNEL.FLIPKART,
       productType: typeKey,
       kind: null,
-      theirCategory: "ethnic-wear/abaya",
+      theirCategory: theirNode,
       fit: "EXACT",
       checkedOn,
     });
@@ -91,14 +92,16 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
       channel: CHANNEL.FLIPKART,
       productType: typeKey,
       kind: "rida",
-      theirCategory: "ethnic-wear/abaya",
+      theirCategory: theirNode,
       fit: "NEAREST",
       note: "Flipkart has no rida node.",
       checkedOn,
     });
+    // Keyed by their node, not our type: that is where a required-field set belongs, and both
+    // category rows above resolve here.
     await maps.setAttribute({
       channel: CHANNEL.FLIPKART,
-      productType: typeKey,
+      theirCategory: theirNode,
       fact: FACT.COLOUR,
       theirAttribute: "Color",
       required: true,
@@ -117,7 +120,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     spy?.mockRestore();
     await Promise.all([
       prisma.channelCategoryMap.deleteMany({ where: { productType: typeKey } }),
-      prisma.channelAttributeMap.deleteMany({ where: { productType: typeKey } }),
+      prisma.channelAttributeMap.deleteMany({ where: { theirCategory: theirNode } }),
       prisma.channelValueMap.deleteMany({ where: { list: LIST.COLOUR, valueKey: "maroon" } }),
       prisma.orgChannel.deleteMany({ where: { orgId } }),
     ]);
@@ -150,7 +153,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
       );
       expect(verdict.channel).toBe(CHANNEL.FLIPKART);
       expect(verdict.report.state).toBe(LISTING_READINESS.READY);
-      expect(verdict.report.theirCategory).toBe("ethnic-wear/abaya");
+      expect(verdict.report.theirCategory).toBe(theirNode);
     });
 
     it("warns on the kind whose mapping is only the nearest they have", async () => {

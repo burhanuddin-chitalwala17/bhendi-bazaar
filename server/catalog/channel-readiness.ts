@@ -113,11 +113,15 @@ export interface AttributeMapping {
  *
  * The categories are the type's whole set rather than one resolved row, because which applies
  * depends on the product's kind — so a register built once serves every product of that type,
- * which is what makes a listing screen three queries instead of three per row.
+ * which is what makes a listing screen a fixed number of queries instead of a few per row.
+ *
+ * Attributes are grouped by **their** category for the same reason they are stored that way: the
+ * required-field set belongs to the channel's node, and two of our kinds can reach two nodes
+ * that ask different things.
  */
 export interface ChannelRegister {
   categories: readonly CategoryMapping[];
-  attributes: readonly AttributeMapping[];
+  attributesByCategory: ReadonlyMap<string, readonly AttributeMapping[]>;
   /** Their word exists for these of ours: list key → the value keys that are mapped. */
   mappedValues: ReadonlyMap<string, ReadonlySet<string>>;
 }
@@ -180,7 +184,11 @@ export function listingReadiness(
     });
   }
 
-  for (const attribute of register.attributes) {
+  // Whatever their node asks. No category resolved means no node, so there is nothing it asks.
+  const attributes =
+    category === null ? [] : (register.attributesByCategory.get(category.theirCategory) ?? []);
+
+  for (const attribute of attributes) {
     const stored = subject.facts[attribute.fact];
 
     if (!stored || !answered(stored.value)) {

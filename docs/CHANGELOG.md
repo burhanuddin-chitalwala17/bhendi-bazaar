@@ -10,6 +10,42 @@
 
 ## Entries
 
+## [PR-262] 2026-10-04 — What Flipkart calls our facts and our answers [MIGRATION]
+
+Sixty attribute mappings and 474 value mappings, derived from the twelve template workbooks
+rather than typed, so a mapping cannot claim Flipkart asks something it does not.
+
+**An attribute mapping is now keyed by their node, not our product type.** Found while seeding,
+before a single row existed. Flipkart's `bag` asks Number of Compartments and Waterproof;
+`sling-bag` and `hand-messenger-bag` carry neither field — and all three are our `bag`. Keyed by
+our type, a sling bag would have been told to answer a question Flipkart never asks, which is the
+readiness-that-disagrees-with-the-channel hazard the spec names second. One template file per
+node is also how the data arrives, so the table now has the shape its source already had.
+
+`material` is seeded as "Fabric" on cloth nodes and "Material" on the rest — one question, two
+names, which is what a per-node key makes expressible.
+
+**Thirty-three mandatory Flipkart fields are deliberately absent**, and the migration lists each.
+`Type` (mandatory in eleven nodes) is answered by the product's kind, and `Size` by the stored
+measurements — both derived by the adapter, never asked of a shop. `With Hijab`, `Features`, the
+five Diamond grades and the kids' age bands are channel extras the shop cannot answer by looking
+at the product, so they belong to the adapter's own schema. Neither group is a gap: a fact is
+admitted because a shop can answer it, never because a platform asks.
+
+**468 values matched exactly; 366 did not and carry no row.** Our vocabulary is the union of what
+Flipkart and Meesho permit, so a colour Meesho has and Flipkart does not is expected. Nothing is
+guessed — "Baby Pink" is reported as having no Flipkart word rather than quietly listed as Pink.
+Six more were mapped by hand where only the wording differs (their waist rise drops the word
+"Rise"), recorded under their own `checkedSource` so a reader can tell which rows a person decided.
+
+Walked end to end against the seeded register: a fully answered rida reads warned on Google and
+incomplete on Flipkart, naming its nearest-fit category, one unanswered optional fact, and one
+unmapped value — `nida`, which Flipkart spells "Nida Matte". That is one decision serving all 36
+ridas, and the worklist is where it belongs.
+
+Google's attribute mappings are **not** seeded. Its taxonomy was fetched and read; its product-data
+specification was not, and seeding required fields from memory is the thing ADR-0046 forbids.
+
 ## [PR-261] 2026-10-04 — Where each thing is listed on Flipkart, Google and Meta [MIGRATION]
 
 Forty-four category mappings, seeded as a data migration because without them the register is

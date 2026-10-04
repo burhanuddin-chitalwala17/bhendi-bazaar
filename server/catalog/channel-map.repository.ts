@@ -35,7 +35,7 @@ export interface CategoryMapRow {
 export interface AttributeMapRow {
   id: string;
   channel: string;
-  productType: string;
+  theirCategory: string;
   fact: string;
   theirAttribute: string;
   required: boolean;
@@ -69,7 +69,7 @@ const CATEGORY_SELECT = {
 const ATTRIBUTE_SELECT = {
   id: true,
   channel: true,
-  productType: true,
+  theirCategory: true,
   fact: true,
   theirAttribute: true,
   required: true,
@@ -111,14 +111,10 @@ export const channelMapRepository = {
     }
     const lists = [...new Set(input.lists.filter(Boolean))];
 
-    const [categories, attributes, values] = await Promise.all([
+    const [categories, values] = await Promise.all([
       prisma.channelCategoryMap.findMany({
         where: { channel: { in: channels }, productType: input.productType },
         select: CATEGORY_SELECT,
-      }),
-      prisma.channelAttributeMap.findMany({
-        where: { channel: { in: channels }, productType: input.productType },
-        select: ATTRIBUTE_SELECT,
       }),
       lists.length === 0
         ? Promise.resolve([])
@@ -127,6 +123,18 @@ export const channelMapRepository = {
             select: VALUE_SELECT,
           }),
     ]);
+
+    // The attributes belong to their nodes, so they are read for the nodes this type can reach
+    // — every one of them, because which applies depends on the product's kind. A second round
+    // trip rather than a third parallel query, and still one query however many products follow.
+    const theirCategories = [...new Set(categories.map((row) => row.theirCategory))];
+    const attributes =
+      theirCategories.length === 0
+        ? []
+        : await prisma.channelAttributeMap.findMany({
+            where: { channel: { in: channels }, theirCategory: { in: theirCategories } },
+            select: ATTRIBUTE_SELECT,
+          });
 
     return { categories, attributes, values };
   },
@@ -145,7 +153,7 @@ export const channelMapRepository = {
       }),
       prisma.channelAttributeMap.findMany({
         where: { channel },
-        orderBy: [{ productType: "asc" }, { fact: "asc" }],
+        orderBy: [{ theirCategory: "asc" }, { fact: "asc" }],
         select: ATTRIBUTE_SELECT,
       }),
       prisma.channelValueMap.findMany({
@@ -232,14 +240,14 @@ export const channelMapRepository = {
 
   async setAttribute(input: {
     channel: Channel;
-    productType: string;
+    theirCategory: string;
     fact: FactKey;
     theirAttribute: string;
     required: boolean;
     checkedOn: Date;
     checkedSource?: string | null;
   }): Promise<AttributeMapRow> {
-    const { channel, productType, fact } = input;
+    const { channel, theirCategory, fact } = input;
     const rest = {
       theirAttribute: input.theirAttribute,
       required: input.required,
@@ -247,8 +255,8 @@ export const channelMapRepository = {
       checkedSource: input.checkedSource ?? null,
     };
     return await prisma.channelAttributeMap.upsert({
-      where: { channel_productType_fact: { channel, productType, fact } },
-      create: { channel, productType, fact, ...rest },
+      where: { channel_theirCategory_fact: { channel, theirCategory, fact } },
+      create: { channel, theirCategory, fact, ...rest },
       update: rest,
       select: ATTRIBUTE_SELECT,
     });
