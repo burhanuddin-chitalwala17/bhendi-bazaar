@@ -12,11 +12,9 @@
 ## Approach
 
 Four tables and one pure function. `OrgChannel` says which places a shop has turned on; three
-mapping tables hold category, attribute and value; readiness is computed from those plus the
-product's own row, with no network call.
-
-The shape follows the listing vocabulary: declarations in code, selections and answers as data,
-and the thing that decides kept pure so a page, a service and a test agree.
+mapping tables hold category, attribute and value; readiness is computed from those and the
+product's own row, with no network call. The shape follows the listing vocabulary: declarations
+in code, answers as data, and the thing that decides kept pure so page, service and test agree.
 
 ## Prior art
 
@@ -42,14 +40,12 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
 ## Technical decisions
 
 - **D1 — A channel is declared in code, not a row.** Corrected before building: the first draft
-  made channels rows so an admin could add one, and reading the codebase showed that is not what
-  a channel is. `server/shared/channels.ts` already declares the set, and adding one needs code
-  in three places regardless — an image rule in `channel-rules.ts`, a readiness rule in
-  `org-onboarding.types.ts`, and an adapter. A row would have been a second spelling of a closed
-  set, which that file's own comment exists to prevent. The kinds — storefront, shopfront,
-  marketplace, network
-  ([ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)) — are
-  declared beside them. What a *shop* chooses is data, which is D2.
+  made channels rows so an admin could add one. `server/shared/channels.ts` already declares the
+  set, and adding one needs code in three places regardless — an image rule, a readiness rule and
+  an adapter — so a row would have been a second spelling of a closed set, which that file's own
+  comment exists to prevent. The kinds
+  ([ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)) are declared
+  beside them. What a *shop* chooses is data, which is D2.
 - **D2 — A shop opts in per channel, and off is the default** (spec R9). `OrgChannel` carries
   the enablement and, later, whatever `channel-connectors` needs. An absent row is off, so a shop
   that has decided nothing is not nagged about anything.
@@ -66,21 +62,23 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
   ([ADR-0045](../../adr/0045-channel-mappings-are-versioned-data.md) D4) and a page and a service
   cannot disagree about whether something is ready.
 - **D6 — A nearest fit is a column on the category mapping, not a convention.** `fit: exact |
-  nearest`, with a note saying why. Readiness returns it as a **warning rather than a block**, so
-  it is shown every time rather than approved once and forgotten (spec R4, third hazard).
-- **D7 — Readiness answers in three bands: blocked, warned, ready.** Blocked is what the channel
-  will refuse; warned is a nearest fit or a recommended-but-absent fact; ready is neither. A
-  half-mapped register therefore still reports usefully instead of refusing everything.
+  nearest`, with a note saying why. It is the **quieter band**, so it is shown every time rather
+  than approved once and forgotten (spec R4, third hazard).
+- **D7 — Three bands: incomplete, warned, ready.** Incomplete is something the channel marks
+  compulsory; warned is a nearest fit or a recommended-but-absent fact; ready is neither. A
+  half-mapped register therefore still reports usefully.
 - **D8 — A channel's required set is declared by its adapter, as a schema**
   ([ADR-0042](../../adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
-  decisions 2–5 unchanged). The same declaration answers readiness and builds the payload, so the
-  gate cannot drift from what is actually sent — which is the second hazard.
-- **D9 — Nothing here holds a credential or makes a request** (spec R10); `channel-connectors`
-  adds the secrets later, in its own domain.
-- **D10 — The gate never disables a control.** Readiness is returned to the UI, and the publish
-  action refuses with a `DomainError` naming what is missing, shown through the error envelope
-  this project already has ([ADR-0013](../../adr/0013-one-error-envelope-and-useserverform.md)).
-  A disabled button explains nothing (spec R7).
+  decisions 2–5 unchanged). One declaration answers readiness and builds the payload, so what is
+  checked cannot drift from what is sent — the second hazard.
+- **D9 — Nothing here holds a credential or makes a request** (spec R10); the secrets arrive with
+  `channel-connectors`.
+- **D10 — Readiness advises; it never gates.** Decided by the owner on 2026-10-04, replacing a
+  draft where an incomplete product was refused with a `DomainError`. Nothing disables a control
+  and nothing refuses a publish: "required" here is our reading of a template, never something
+  watched, so refusing on it would stop listings that would have gone through and we would never
+  learn which. The channel's answer is the verdict. A gate becomes arguable once there are real
+  rejections to build it from, and the band names say advice so none is wired in by accident.
 - **D11 — What an adapter can derive, it derives; it does not become a fact.** Google wants
   `gender` and `age_group`, which the marketplaces ask as one question — Men, Women, Boys, Baby
   Girls, Kids, Unisex — so the split belongs in Google's mapping. And `condition`, which no
@@ -91,8 +89,8 @@ machinery this project does not need yet; `checkedOn` makes a stale one visible 
   where buyers look, which argues for the shop — but one mapping serves every shop selling that
   type, so a seller's choice would silently change another's listings. The platform decides and
   the fit is shown with its note wherever a product's readiness is (D6), so a shop can see what
-  it disagrees with. The question reopens the first time two shops want different answers, which
-  would need the mapping scoped per org and is not worth building before anybody asks.
+  it disagrees with. It reopens the first time two shops want different answers, which would need
+  the mapping scoped per org.
 
 ## Packages
 
@@ -104,8 +102,9 @@ Two surfaces, both mobile-first ([ADR-0015](../../adr/0015-mobile-first-design.m
 
 An admin register: per channel, what is mapped and what is not, with the unmapped values as a
 worklist — one value fixed there serves every product using it, which keeps the job finite. And
-a readiness panel on the product: blocked and warned read differently, and a nearest fit names
-what it will be listed as. On a phone, one channel per row, expanding.
+a readiness panel on the product: the bands read differently and a nearest fit names what it
+will be listed as, with nothing on either surface preventing a publish (D10). On a phone, one
+channel per row, expanding.
 
 ## Data model
 

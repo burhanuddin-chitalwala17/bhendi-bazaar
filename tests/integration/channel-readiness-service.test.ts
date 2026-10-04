@@ -165,12 +165,12 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
       });
     });
 
-    it("blocks an answer the channel has no word for", async () => {
+    it("reads incomplete for an answer the channel has no word for", async () => {
       const [verdict] = await service.forProduct(
         orgId,
         subject("abaya", { [FACT.COLOUR]: "ochre" }),
       );
-      expect(verdict.report.state).toBe(LISTING_READINESS.BLOCKED);
+      expect(verdict.report.state).toBe(LISTING_READINESS.INCOMPLETE);
       expect(verdict.report.problems[0]).toMatchObject({
         problem: LISTING_PROBLEM.UNMAPPED_VALUE,
         value: "ochre",
@@ -204,7 +204,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
 
       expect(verdicts.get("a")?.[0].report.state).toBe(LISTING_READINESS.READY);
       expect(verdicts.get("b")?.[0].report.state).toBe(LISTING_READINESS.WARNED);
-      expect(verdicts.get("c")?.[0].report.state).toBe(LISTING_READINESS.BLOCKED);
+      expect(verdicts.get("c")?.[0].report.state).toBe(LISTING_READINESS.INCOMPLETE);
       // A product with no type can be mapped nowhere, which is silence rather than a verdict.
       expect(verdicts.get("d")).toEqual([]);
     });

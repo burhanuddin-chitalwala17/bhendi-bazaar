@@ -10,6 +10,31 @@
 
 ## Entries
 
+## [PR-260] 2026-10-04 — Readiness advises; it never gates
+
+Owner's decision, taken before the panel was built and while it still cost a rename. Nothing in
+the channel registry refuses a publish, and nothing disables a control.
+
+The reasoning is the spec's own second hazard, read in the direction it was not read the first
+time: readiness that disagrees with the channel is worse than none — and it will disagree in
+**both** directions until publishing has actually been watched. "Required" here is our reading of
+a downloaded template, not something seen to fail. Refusing on it would stop listings that would
+have gone through, and the rejection we would need in order to learn better is exactly the one we
+prevented. A listing that goes and comes back refused teaches us something; one we never sent
+teaches us nothing.
+
+**The band is renamed `blocked` → `incomplete`.** If we never block, `blocked` is a name that
+lies, and a lying name is an invitation to wire a refusal in later and call it consistent. The
+three bands are kept, because the severity is real advice — "they mark this compulsory" is
+different from "this is our nearest guess at a category" — but they now say what we expect the
+channel to think, never what we will do about it.
+
+A gate may still be right. The evidence for it will be real rejections, and there are none yet.
+Recorded as D10, replacing a draft that refused with a `DomainError`; R7 and A2 move with it.
+
+Costed nothing but a rename because the readiness panel had not been built — the pure function
+and the register reads were in, with no caller that could have refused anything.
+
 ## [PR-259] 2026-10-04 — Where you sell, on the page that already asks what you sell
 
 A "Where you sell" section on the org's listing screen: one row per channel, a switch, and a

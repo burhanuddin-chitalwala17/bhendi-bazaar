@@ -6,8 +6,12 @@ import { answered } from "./fill-facts";
 import { FACT_DECLARATIONS, ANSWER, type FactKey, type StoredFacts } from "./listing-facts";
 
 /**
- * Whether a product could be listed on a channel, answered from stored data alone
+ * What each channel would make of a product, answered from stored data alone
  * ([channel-registry](../../docs/specs/channel-registry/) R6, D5).
+ *
+ * **It advises; it never gates** (D13). Nothing here refuses a publish, because nothing here has
+ * ever watched one succeed — a refusal based on an untested idea of "required" would block
+ * listings that would have gone through, and we would never learn which.
  *
  * Pure on purpose. The hard cases — a value mapping to nothing, a category that is only a
  * nearest fit, a channel whose required set changed — are unit tests here rather than an
@@ -21,13 +25,15 @@ import { FACT_DECLARATIONS, ANSWER, type FactKey, type StoredFacts } from "./lis
  */
 
 /**
- * The three bands (D7). Distinct from `READINESS_STATE` in `org-onboarding.types.ts`, which
- * answers about the *shop* — these are different questions with different answers, and one set
- * stretched to cover both would be a set that fits neither.
+ * The three bands (D7). They are **advice, never permission** (D13): nothing here refuses a
+ * publish, and the names say what we expect the channel to think rather than what we will do.
+ *
+ * Distinct from `READINESS_STATE` in `org-onboarding.types.ts`, which answers about the *shop* —
+ * different questions with different answers, and one set stretched over both fits neither.
  */
 export const LISTING_READINESS = {
-  /** The channel would refuse it. */
-  BLOCKED: "blocked",
+  /** Something the channel calls required is absent, so we expect it to refuse. */
+  INCOMPLETE: "incomplete",
   /** It would go, but not as well as it could, or not quite as itself. */
   WARNED: "warned",
   READY: "ready",
@@ -40,7 +46,7 @@ export const LISTING_PROBLEM = {
   NO_CATEGORY: "noCategory",
   /** Their nearest category rather than their word for the same thing (D6). */
   NEAREST_CATEGORY: "nearestCategory",
-  /** They refuse a listing without this one. */
+  /** They mark it compulsory, so we expect a listing without it to be refused. */
   MISSING_FACT: "missingFact",
   /** They ask for it and accept its absence. */
   MISSING_OPTIONAL_FACT: "missingOptionalFact",
@@ -51,16 +57,16 @@ export const LISTING_PROBLEM = {
 export type ListingProblemKind = (typeof LISTING_PROBLEM)[keyof typeof LISTING_PROBLEM];
 
 /**
- * What each problem does to the verdict, declared once rather than decided at each site.
+ * How loudly each problem is said, declared once rather than decided at each site.
  *
- * A nearest fit warns rather than blocks deliberately: blocking would make this shop's largest
- * line unlistable, and the point is that it is *seen* every time, not that it is stopped
+ * A nearest fit is the quieter of the two deliberately: it is a listing that will go somewhere
+ * defensible, and the point is that it is *seen* every time rather than that it is stopped
  * (spec R4, D6).
  */
 const BAND: Readonly<Record<ListingProblemKind, Exclude<ListingReadiness, "ready">>> = {
-  [LISTING_PROBLEM.NO_CATEGORY]: LISTING_READINESS.BLOCKED,
-  [LISTING_PROBLEM.MISSING_FACT]: LISTING_READINESS.BLOCKED,
-  [LISTING_PROBLEM.UNMAPPED_VALUE]: LISTING_READINESS.BLOCKED,
+  [LISTING_PROBLEM.NO_CATEGORY]: LISTING_READINESS.INCOMPLETE,
+  [LISTING_PROBLEM.MISSING_FACT]: LISTING_READINESS.INCOMPLETE,
+  [LISTING_PROBLEM.UNMAPPED_VALUE]: LISTING_READINESS.INCOMPLETE,
   [LISTING_PROBLEM.NEAREST_CATEGORY]: LISTING_READINESS.WARNED,
   [LISTING_PROBLEM.MISSING_OPTIONAL_FACT]: LISTING_READINESS.WARNED,
 };
@@ -150,9 +156,12 @@ export function categoryFor(
 /**
  * Every reason this product would not list cleanly on this channel, and the band they add up to.
  *
- * The worst problem decides: one blocked reason blocks however many warnings sit beside it. The
- * problems are all returned rather than the first — a shop fixing one at a time, learning of the
- * next only after saving, is the slow loop this whole phase exists to shorten.
+ * The loudest problem decides the band, and every problem is returned rather than the first — a
+ * shop fixing one at a time, learning of the next only after saving, is the slow loop this whole
+ * phase exists to shorten.
+ *
+ * A verdict is something to show, never something to act on: whether a listing is actually
+ * accepted is the channel's answer, not ours (D13).
  */
 export function listingReadiness(
   subject: ListingSubject,
@@ -211,8 +220,8 @@ function listOf(fact: FactKey): string | null {
 }
 
 function worst(problems: readonly ListingProblem[]): ListingReadiness {
-  if (problems.some((entry) => BAND[entry.problem] === LISTING_READINESS.BLOCKED)) {
-    return LISTING_READINESS.BLOCKED;
+  if (problems.some((entry) => BAND[entry.problem] === LISTING_READINESS.INCOMPLETE)) {
+    return LISTING_READINESS.INCOMPLETE;
   }
   return problems.length > 0 ? LISTING_READINESS.WARNED : LISTING_READINESS.READY;
 }

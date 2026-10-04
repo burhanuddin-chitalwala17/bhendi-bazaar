@@ -65,12 +65,12 @@ describe("a product that answers everything the channel asks", () => {
 });
 
 describe("a fact the product has not answered", () => {
-  it("blocks when the channel refuses a listing without it, naming their word for it", () => {
+  it("reads incomplete when the channel marks it compulsory, naming their word for it", () => {
     const report = listingReadiness(
       { kind: null, facts: facts({ [FACT.COLOUR]: "maroon" }) },
       register(),
     );
-    expect(report.state).toBe(LISTING_READINESS.BLOCKED);
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
     expect(report.problems).toEqual([
       {
         problem: LISTING_PROBLEM.MISSING_FACT,
@@ -101,7 +101,7 @@ describe("a fact the product has not answered", () => {
       { kind: null, facts: facts({ [FACT.COLOUR]: "maroon", [FACT.MATERIAL]: "   " }) },
       register(),
     );
-    expect(report.state).toBe(LISTING_READINESS.BLOCKED);
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
     expect(report.problems[0]?.problem).toBe(LISTING_PROBLEM.MISSING_FACT);
   });
 
@@ -115,12 +115,12 @@ describe("a fact the product has not answered", () => {
 });
 
 describe("an answer the channel has no word for", () => {
-  it("blocks, naming the list and our key so one fix serves every product", () => {
+  it("reads incomplete, naming the list and our key so one fix serves every product", () => {
     const report = listingReadiness(
       { kind: null, facts: facts({ [FACT.COLOUR]: "ochre", [FACT.MATERIAL]: "cotton" }) },
       register(),
     );
-    expect(report.state).toBe(LISTING_READINESS.BLOCKED);
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
     expect(report.problems).toEqual([
       {
         problem: LISTING_PROBLEM.UNMAPPED_VALUE,
@@ -131,7 +131,7 @@ describe("an answer the channel has no word for", () => {
     ]);
   });
 
-  it("blocks on an unlisted answer, which can have no mapping by construction", () => {
+  it("says so for an unlisted answer, which can have no mapping by construction", () => {
     const report = listingReadiness(
       {
         kind: null,
@@ -145,13 +145,13 @@ describe("an answer the channel has no word for", () => {
     expect(report.problems[0]?.problem).toBe(LISTING_PROBLEM.UNMAPPED_VALUE);
   });
 
-  it("blocks when the channel has no words for that list at all", () => {
+  it("says so for every answer when the channel has no words for that list at all", () => {
     const report = listingReadiness(
       { kind: null, facts: answered },
       register({ mappedValues: new Map() }),
     );
     expect(report.problems).toHaveLength(2);
-    expect(report.state).toBe(LISTING_READINESS.BLOCKED);
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
   });
 
   // The mapping is per channel: Google's vocabulary saying nothing about maroon is not Meesho's
@@ -176,9 +176,9 @@ describe("a category that is only the nearest they have", () => {
     note: "Flipkart has no rida node; abaya is where buyers look.",
   };
 
-  // Blocking would make this shop's largest line unlistable. It is shown every time instead —
-  // approved once and forgotten is the failure D6 exists for.
-  it("warns rather than blocks, and says what it will be listed as and why", () => {
+  // The quieter band, because the listing will go somewhere defensible. It is shown every time
+  // rather than approved once and forgotten, which is the failure D6 exists for.
+  it("is the quieter band, and says what it will be listed as and why", () => {
     const report = listingReadiness(
       { kind: "rida", facts: answered },
       register({ categories: [nearest] }),
@@ -194,12 +194,12 @@ describe("a category that is only the nearest they have", () => {
     expect(report.theirCategory).toBe("ethnic-wear/abaya");
   });
 
-  it("is still outranked by anything blocked beside it", () => {
+  it("is still outranked by anything louder beside it", () => {
     const report = listingReadiness(
       { kind: "rida", facts: facts({ [FACT.COLOUR]: "maroon" }) },
       register({ categories: [nearest] }),
     );
-    expect(report.state).toBe(LISTING_READINESS.BLOCKED);
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
     expect(report.problems).toHaveLength(2);
   });
 });
@@ -233,9 +233,9 @@ describe("the kind decides which of the type's categories applies", () => {
 });
 
 describe("a type with nowhere to go", () => {
-  it("blocks, and names no category, because there is none to name", () => {
+  it("reads incomplete, and names no category, because there is none to name", () => {
     const report = listingReadiness({ kind: null, facts: answered }, register({ categories: [] }));
-    expect(report.state).toBe(LISTING_READINESS.BLOCKED);
+    expect(report.state).toBe(LISTING_READINESS.INCOMPLETE);
     expect(report.problems).toEqual([{ problem: LISTING_PROBLEM.NO_CATEGORY }]);
     expect(report.theirCategory).toBeNull();
   });
@@ -264,7 +264,7 @@ describe("picking the mapping that applies to a kind", () => {
 
 describe("the unmapped values, gathered into a worklist", () => {
   const report = (...problems: ListingReadinessReport["problems"]): ListingReadinessReport => ({
-    state: LISTING_READINESS.BLOCKED,
+    state: LISTING_READINESS.INCOMPLETE,
     problems,
     theirCategory: null,
   });
@@ -294,7 +294,7 @@ describe("the unmapped values, gathered into a worklist", () => {
     expect(work[0].facts).toEqual([FACT.COLOUR, FACT.MATERIAL]);
   });
 
-  it("puts the value blocking the most products first", () => {
+  it("puts the value holding up the most products first", () => {
     const work = unmappedValues([
       report(missing(LIST.MATERIAL, "tussar", FACT.MATERIAL)),
       report(missing(LIST.COLOUR, "ochre", FACT.COLOUR)),
@@ -345,7 +345,7 @@ describe("readiness across a shop's channels", () => {
     );
 
     expect(answers.map((entry) => entry.channel)).toEqual([CHANNEL.GOOGLE, CHANNEL.MEESHO]);
-    expect(answers[0].report.state).toBe(LISTING_READINESS.BLOCKED);
+    expect(answers[0].report.state).toBe(LISTING_READINESS.INCOMPLETE);
     expect(answers[1].report.state).toBe(LISTING_READINESS.READY);
   });
 

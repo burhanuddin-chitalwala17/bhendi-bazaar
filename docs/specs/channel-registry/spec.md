@@ -48,18 +48,22 @@ decision somebody took rather than a guess the system made.
 - **R4** — A mapping is marked **exact** or **nearest fit**, and a nearest fit is shown before
   anything is published. A rida listed as an abaya is a decision; a rida listed as an abaya
   silently is a surprise waiting to be found.
-- **R5** — An answer with no mapping fails readiness and is never guessed. The shop is told which
-  value has no equivalent and chooses one, once, for every product that uses it.
+- **R5** — An answer with no mapping is reported and never guessed. The shop is told which value
+  has no equivalent and chooses one, once, for every product that uses it.
 - **R6** — Readiness is answerable per product and per channel, before publishing: what is
-  missing, what is unmapped, and what the channel will refuse.
-- **R7** — Being unready never disables the action. The publish button stays live, and clicking
-  it says what is in the way. A dead control explains nothing.
+  missing, what is unmapped, and where a category is only the nearest they have.
+- **R7** — **Readiness advises and never gates.** It is shown wherever a product is, and
+  publishing is always attempted — not disabled, and not refused. We have never published once,
+  so our idea of what a channel requires is itself untested; refusing on it would stop listings
+  that would have gone through and we would never learn which. The channel's own answer is the
+  only verdict that has been tested. A gate may be added once publishing has been, and the
+  evidence for it will be the rejections we actually see.
 - **R8** — The platform owner edits mappings without a release. A channel adding a colour on a
-  Tuesday must not wait for a deploy, and nor must the shop it blocked.
+  Tuesday must not wait for a deploy, and nor must the shop waiting on it.
 - **R9** — A channel can be turned off per shop, and off is the default. A shop sells where it
   has chosen to sell.
-- **R10** — Nothing here contacts anybody. The register and the gate answer from stored data, so
-  the hard cases are tests rather than an account and a rejection.
+- **R10** — Nothing here contacts anybody. The register and the advice answer from stored data,
+  so the hard cases are tests rather than an account and a rejection.
 
 ## Hazards this feature must answer
 
@@ -69,8 +73,8 @@ Each is a bar the design must clear rather than a question for the owner, and na
 - **A mapping that is right today is wrong next quarter.** Channels rename categories and retire
   values. A register with no date and no way to re-check becomes a confident lie. *Answered by
   D4.*
-- **Readiness that disagrees with the channel is worse than none.** A gate saying ready for a
-  listing the channel then refuses has taught the shop to ignore it. *Answered by D5 and D8.*
+- **Readiness that disagrees with the channel is worse than none.** It will disagree, in both
+  directions, until publishing has been watched. *Answered by D5, D8 and D13.*
 - **A nearest fit is invisible once it works.** It is approved once and then applies silently to
   every later product, including ones it suits far less. *Answered by D6.*
 - **Mapping is a long job nobody finishes.** Thousands of values across several channels is not
@@ -80,10 +84,10 @@ Each is a bar the design must clear rather than a question for the owner, and na
 ## Product acceptance
 
 - **A1** — A product's readiness for a channel is answerable with no network call.
-- **A2** — Clicking publish on an unready product says what is missing, naming the fact and the
-  channel.
-- **A3** — A value with no mapping blocks that channel only, and the shop is shown it once rather
-  than per product.
+- **A2** — An unready product says what is missing, naming the fact and the channel, and can
+  still be published.
+- **A3** — A value with no mapping is reported for that channel only, and the shop is shown it
+  once rather than per product.
 - **A4** — A rida's listing category on each marketplace is visible before publishing, marked as
   a nearest fit.
 - **A5** — The owner changes a mapping and the next readiness answer reflects it, with no deploy.
