@@ -10,6 +10,27 @@
 
 ## Entries
 
+## [PR-265] 2026-10-04 — How this would list elsewhere, on the product itself
+
+The readiness panel, on the org's product page. Per channel: the band, where it would be listed,
+and every reason it would not go cleanly — in the shop's words rather than the schema's.
+
+**It advises and never gates** (D10). Nothing is disabled and nothing is refused. The panel says
+so in as many words: *"if a channel disagrees with us, it is the channel that is right."* We have
+never watched a publish succeed, so the gate's idea of required is untested, and the panel is
+honest about being a prediction rather than a verdict.
+
+**A shop selling nowhere else sees nothing at all** — not an empty panel, no panel (spec A6).
+Channels are off until a shop says otherwise, so this is most shops until they opt in.
+
+A nearest fit reads as what it is, with its note, every time rather than once: *"This is the
+nearest they have, not their own word for it. Flipkart has no rida node…"*. An unmapped value says
+what it costs to fix and that fixing it once serves every product that shares it, which is the
+same sentence the register's worklist is built on.
+
+A read, so a server component does it and no route handler exists for it: a client fetch here
+would be a round trip bought for data the server already had ([ADR-0034](adr/0034-render-on-the-server-by-default.md)).
+
 ## [PR-264] 2026-10-04 — The register, and a worklist that shortens
 
 The platform owner's screen: what each channel has mapped, and what this catalogue still needs

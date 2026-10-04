@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ProductsView } from "@/components/product/console/ProductsView";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
+import { orgChannelReadinessDAL } from "@/data-access-layer/org/channel-readiness.dal";
+import { ListingReadinessPanel } from "@/components/channel/listing-readiness-panel";
 
 export default async function OrgProductViewPage({
   params,
@@ -15,13 +17,23 @@ export default async function OrgProductViewPage({
   // whether another org owns this id is not this caller's business.
   if (!product || product.org.id !== orgId) notFound();
 
+  // Silent for a shop that sells nowhere else, which is most of them until they say otherwise.
+  const verdicts = await orgChannelReadinessDAL.forProduct(orgId, {
+    productType: product.productType ?? null,
+    kind: product.kind ?? null,
+    facts: product.facts,
+  });
+
   return (
     <Suspense>
-      <ProductsView
-        product={product}
-        category={product.category}
-        org={product.org}
-      />
+      <div className="space-y-6">
+        <ProductsView
+          product={product}
+          category={product.category}
+          org={product.org}
+        />
+        <ListingReadinessPanel verdicts={verdicts} />
+      </div>
     </Suspense>
   );
 }
