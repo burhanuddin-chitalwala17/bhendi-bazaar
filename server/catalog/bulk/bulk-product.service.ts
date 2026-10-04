@@ -39,6 +39,20 @@ export interface RowWithNumber<T> {
  * org's real locations, SKUs are free (in the sheet and in this org), image
  * filenames were actually provided, covers point at their own images.
  */
+/**
+ * What an upload will do, so a person sees it before confirming rather than afterwards.
+ *
+ * A row whose SKU matches a live product of this org **updates** it; everything else creates.
+ * The counts matter because the two are not equally recoverable: a wrong create leaves a
+ * product to archive, and a wrong update has overwritten something.
+ */
+export interface BulkPlan {
+  errors: RowError[];
+  /** Row number → the id of the product it will replace. Absent means it creates one. */
+  updates: Map<number, string>;
+  creates: number;
+}
+
 export async function validateProductRows(
   orgId: string,
   rows: RowWithNumber<BulkProductRow>[],
@@ -70,7 +84,7 @@ export async function validateProductRows(
         // Archived products are included deliberately: they still hold their SKU, so
         // a row claiming one is refused rather than silently restoring the product an
         // import must never restore (ADR-0029, product-archive Q1).
-        select: { sku: true, name: true, archivedAt: true },
+        select: { id: true, sku: true, name: true, archivedAt: true },
       })
     : [];
   const takenBy = new Map(taken.map((p) => [p.sku as string, p.name]));
@@ -99,14 +113,14 @@ export async function validateProductRows(
     }
 
     if (row.sku) {
-      const conflictName = takenBy.get(row.sku);
-      if (conflictName) {
+      // A SKU already in use is not a conflict any more — it is how a sheet says "update this
+      // one" (bulk-sheet). The one exception stays an error: an archived product still holds
+      // its SKU, and an import must never silently restore it (ADR-0029, product-archive Q1).
+      if (archivedSkus.has(row.sku)) {
         errors.push({
           row: rowNumber,
           field: "sku",
-          message: archivedSkus.has(row.sku)
-            ? `SKU "${row.sku}" is still held by "${conflictName}", which is archived. Restore that product to edit it, or use a different code.`
-            : `SKU "${row.sku}" is already used by "${conflictName}".`,
+          message: `SKU "${row.sku}" is still held by "${takenBy.get(row.sku)}", which is archived. Restore that product to edit it, or use a different code.`,
         });
       }
       const firstRow = seenInSheet.get(row.sku);
@@ -141,6 +155,37 @@ export async function validateProductRows(
   }
 
   return errors;
+}
+
+/**
+ * Which rows update and which create, by the same rule validation uses: a SKU already held by a
+ * live product of this org names that product.
+ *
+ * Read separately from validation rather than threaded through it, because the two answer
+ * different questions and a caller may want either — and the read is one indexed query on a
+ * unique pair.
+ */
+export async function planProductRows(
+  orgId: string,
+  rows: RowWithNumber<BulkProductRow>[]
+): Promise<{ updates: Map<number, string>; creates: number }> {
+  const skus = rows.map(({ row }) => row.sku).filter((sku): sku is string => !!sku);
+  const updates = new Map<number, string>();
+  if (skus.length === 0) return { updates, creates: rows.length };
+
+  const existing = await prisma.product.findMany({
+    // Archived products are excluded: they hold their SKU but an import must not restore one,
+    // which validation refuses separately with a message naming the product.
+    where: { orgId, sku: { in: skus }, archivedAt: null },
+    select: { id: true, sku: true },
+  });
+  const bySku = new Map(existing.map((product) => [product.sku as string, product.id]));
+
+  for (const { row, rowNumber } of rows) {
+    const id = row.sku ? bySku.get(row.sku) : undefined;
+    if (id) updates.set(rowNumber, id);
+  }
+  return { updates, creates: rows.length - updates.size };
 }
 
 /** One row's resolved vocabulary, as the columns the product row carries. */
@@ -206,13 +251,20 @@ async function resolveFamilies(
  * race — the unique constraint still arbitrates, and a collision in the window
  * fails the whole transaction, which all-or-nothing wants anyway.
  */
-async function assignSlugs(rows: RowWithNumber<BulkProductCreateRow>[]): Promise<string[]> {
+async function assignSlugs(
+  rows: RowWithNumber<BulkProductCreateRow>[],
+  /** Rows that update keep the slug their product already has; only creates take a new one. */
+  updates: Map<number, string>,
+): Promise<string[]> {
   const existing = new Set(
     // Every slug, archived included (ADR-0029): an archived product keeps its slug so
     // a restore finds its own URL free, so an import must not reuse it.
     (await prisma.product.findMany({ select: { slug: true } })).map((p) => p.slug)
   );
-  return rows.map(({ row }) => {
+  return rows.map(({ row, rowNumber }) => {
+    // An updating row's slug is never recomputed: it is frozen at creation, because changing
+    // one 404s every link to the product.
+    if (updates.has(rowNumber)) return "";
     const base = slugify(row.name) || "item";
     let candidate = base;
     for (let n = 2; existing.has(candidate); n++) candidate = `${base}-${n}`;
@@ -224,12 +276,15 @@ async function assignSlugs(rows: RowWithNumber<BulkProductCreateRow>[]): Promise
 export async function createProducts(
   orgId: string,
   rows: RowWithNumber<BulkProductCreateRow>[]
-): Promise<{ created: number }> {
+): Promise<{ created: number; updated: number }> {
   const locations = await orgAddressRepository.listByOrg(orgId);
   const locationByName = new Map(locations.map((l) => [l.name.trim().toLowerCase(), l.id]));
   const tree = await categoryRepository.listTree();
   const categoryBySlug = new Map(tree.map((c) => [c.slug, c.id]));
-  const slugs = await assignSlugs(rows);
+  // Which rows replace a product and which make one. Read before the slugs, because an
+  // updating row keeps the slug it already has rather than taking a new one.
+  const plan = await planProductRows(orgId, rows);
+  const slugs = await assignSlugs(rows, plan.updates);
 
   // The vocabulary for every row at once — two queries rather than two per row.
   const vocabulary = await loadVocabulary(
@@ -242,6 +297,7 @@ export async function createProducts(
   const familyIds = await resolveFamilies(orgId, rows, categoryBySlug);
 
   const products: Prisma.ProductCreateManyInput[] = [];
+  const updates: Prisma.ProductCreateManyInput[] = [];
   const media: {
     productId: string;
     kind: "IMAGE" | "YOUTUBE";
@@ -252,12 +308,16 @@ export async function createProducts(
   }[] = [];
   const stock: { productId: string; orgAddressId: string; quantity: number }[] = [];
 
-  rows.forEach(({ row }, index) => {
-    const id = randomUUID();
+  rows.forEach(({ row, rowNumber }, index) => {
+    // An updating row writes to the product it names rather than a new one, and keeps that
+    // product's slug: regenerating it would 404 every existing link (Invariant 4's reasoning
+    // for freezing a slug at creation).
+    const existingId = plan.updates.get(rowNumber);
+    const id = existingId ?? randomUUID();
     const coverName = row.cover ?? row.images[0];
     const thumbnail = row.imageUrls[coverName];
 
-    products.push({
+    (existingId ? updates : products).push({
       id,
       slug: slugs[index],
       name: row.name,
@@ -312,7 +372,24 @@ export async function createProducts(
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.product.createMany({ data: products });
+      if (products.length) await tx.product.createMany({ data: products });
+
+      // An update is a full replace, the same semantics the admin form's edit has: the sheet
+      // row is the product now. `slug` is absent from the data — it is the product's own, and
+      // changing it would break every link to it.
+      for (const row of updates) {
+        const { id, slug: _slug, ...data } = row;
+        await tx.product.update({ where: { id }, data });
+      }
+
+      // The gallery and the stock are replaced wholesale for an updated product, in the same
+      // transaction, so nothing can commit with `thumbnail` pointing at a row that is gone.
+      if (updates.length) {
+        const ids = updates.map((row) => row.id as string);
+        await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
+        await tx.productStock.deleteMany({ where: { productId: { in: ids } } });
+      }
+
       if (media.length) await tx.productMedia.createMany({ data: media });
       if (stock.length) await tx.productStock.createMany({ data: stock });
     });
@@ -332,5 +409,5 @@ export async function createProducts(
     throw error;
   }
 
-  return { created: rows.length };
+  return { created: products.length, updated: updates.length };
 }

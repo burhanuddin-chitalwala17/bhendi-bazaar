@@ -44,8 +44,8 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
     note: "the two counts a family screen needs (variants D6): the sellable count spreads AVAILABLE because it is what a shop is told it has on sale, while memberCount deliberately counts archived members too — it previews which products a correction at family level would change, and an archived product can be restored",
   },
   "server/catalog/bulk/bulk-product.service.ts": {
-    reads: 2,
-    note: "deliberate — an import checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product",
+    reads: 3,
+    note: "deliberate — an import checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product; the third read is `planProductRows`, which asks the opposite question and therefore excludes archived rows: a live SKU names the product a sheet row updates, and an archived one must never be restored by an import",
   },
   "server/analytics/dashboard.repository.ts": {
     reads: 2,

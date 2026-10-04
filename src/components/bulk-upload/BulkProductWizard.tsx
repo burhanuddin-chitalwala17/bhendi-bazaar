@@ -37,6 +37,7 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
   const [report, setReport] = useState<ValidateResponse | null>(null);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [created, setCreated] = useState(0);
+  const [updated, setUpdated] = useState(0);
   const sheetInputRef = useRef<HTMLInputElement>(null);
 
   const filesByPath = useMemo(
@@ -120,8 +121,9 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
         body: JSON.stringify({ rows }),
       });
       if (!response.ok) throw new Error((await readApiError(response)).message);
-      const body = (await response.json()) as { created: number };
+      const body = (await response.json()) as { created: number; updated: number };
       setCreated(body.created);
+      setUpdated(body.updated ?? 0);
       setStep("done");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
@@ -132,7 +134,12 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
   if (step === "done") {
     return (
       <div className="space-y-3 rounded-xl border border-border bg-card p-4">
-        <p className="text-lg font-semibold">✅ {created} products created</p>
+        {/* Both numbers, because they are not the same event: a wrong create leaves a
+            product to archive, and a wrong update has overwritten something. */}
+        <p className="text-lg font-semibold">
+          ✅ {created} products created
+          {updated > 0 ? `, ${updated} updated` : ""}
+        </p>
         <Button asChild>
           <a href={`/org/${orgId}/products`}>View products</a>
         </Button>

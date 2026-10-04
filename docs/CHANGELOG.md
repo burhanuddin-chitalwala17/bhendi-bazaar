@@ -10,6 +10,27 @@
 
 ## Entries
 
+## [PR-251] 2026-10-04 — A sheet row with a known SKU updates the product
+
+The `sku` column's note has said this since PR-249; now it is true. A row whose SKU matches a
+**live** product of this org replaces it, and anything else creates one. `planProductRows` says
+which is which, so a person sees it before confirming — and the wizard reports both numbers,
+because they are not the same event: a wrong create leaves a product to archive, a wrong update
+has overwritten something.
+
+Three things an update does deliberately. It **keeps the slug**, which is frozen at creation
+because changing one 404s every link to the product. It **replaces the gallery and the stock**
+rather than adding to them, the same semantics the admin form's edit has. And it **still refuses
+an archived product's SKU**: an archived product holds its code, and an import must never
+silently restore one.
+
+That last rule is now the only SKU conflict left, which meant rewriting the all-or-nothing test.
+It had doomed its row with a duplicate SKU — a legal update now — so it dooms with an archived
+one instead, which is the real remaining case.
+
+Mutation-tested three ways: regenerating a slug on update, adding media instead of replacing it,
+and treating a live SKU as a conflict again each turn it red.
+
 ## [PR-250] 2026-10-04 — The bulk import reads the vocabulary, and two silent bugs with it
 
 The sheet grew its question columns in PR-249; nothing read them. `bulk-vocabulary.ts` now turns
