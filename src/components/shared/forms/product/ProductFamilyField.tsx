@@ -6,7 +6,7 @@ import type { FieldErrors, UseFormRegister, UseFormSetValue } from "react-hook-f
 import { FormInput, FormSelect } from "../FormField";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api-error";
-import { createFamily } from "@/services/admin/productTypeApiClient";
+import { listingApiClient } from "@/components/product/listingApiClient";
 import type { ProductFormInput } from "@/components/product/console/types";
 
 export interface FamilyOption {
@@ -61,7 +61,7 @@ export function ProductFamilyField({
     }
     setBusy(true);
     try {
-      const family = await createFamily(orgId, { name, categoryId });
+      const family = await listingApiClient.createFamily(orgId, { name, categoryId });
       setOptions((current) => [...current, { id: family.id, name: family.name }]);
       setValue("familyId", family.id, { shouldDirty: true });
       setCreating(false);

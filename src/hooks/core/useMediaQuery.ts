@@ -32,9 +32,17 @@ export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }
 
-/** Tailwind's `md` — the breakpoint every surface pair in ADR-0040 switches on. Declared once. */
-export const DESKTOP_QUERY = "(min-width: 768px)";
+/**
+ * The form factors, as media queries (ADR-0050). Tailwind's own breakpoints, not new ones:
+ * `md` starts the tablet, `lg` the desktop. Declared once so a script can never disagree
+ * with the stylesheet about which device it is on.
+ */
+export const FORM_FACTOR_QUERY = {
+  tablet: "(min-width: 768px)",
+  desktop: "(min-width: 1024px)",
+} as const;
 
-export function useIsDesktop(): boolean {
-  return useMediaQuery(DESKTOP_QUERY);
+/** Tablet and wider — where every surface pair in ADR-0040 leaves its phone form. */
+export function useIsTabletUp(): boolean {
+  return useMediaQuery(FORM_FACTOR_QUERY.tablet);
 }

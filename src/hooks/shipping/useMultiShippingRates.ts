@@ -1,11 +1,10 @@
 // src/hooks/shipping/useMultiShippingRates.ts
 
 import { useState, useCallback, useMemo } from "react";
-import { shippingService } from "@/services/shippingService";
+import { shippingApiClient } from "@/components/shipping/shippingApiClient";
 import type { CartItem } from "@/domain/cart";
 import type { ShippingGroup, ShippingRate, GetShippingRatesRequest } from "@/domain/shipping";
 import { calculateTotalShipping, areAllGroupsReady } from "@/utils/shipping";
-import { readApiError } from "@/lib/api-error";
 
 export interface UseMultiShippingRatesReturn {
   // Data
@@ -36,35 +35,15 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
    */
   const allocateParcels = useCallback(
     async (items: CartItem[], toPincode: string): Promise<ShippingGroup[]> => {
-      const response = await fetch("/api/checkout/allocate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            size: item.size || undefined,
-            color: item.color || undefined,
-          })),
-          destinationPincode: toPincode,
-        }),
-      });
-      if (!response.ok) throw await readApiError(response);
-      const data: {
-        groups: Array<{
-          groupId: string;
-          orgId: string;
-          orgName: string;
-          orgCode: string;
-          locationName: string;
-          fromPincode: string;
-          fromCity: string;
-          fromState: string;
-          items: Array<{ productId: string; quantity: number; size?: string; color?: string }>;
-          totalWeight: number;
-          billableWeightKg: number;
-        }>;
-      } = await response.json();
+      const allocated = await shippingApiClient.allocate(
+        items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          size: item.size || undefined,
+          color: item.color || undefined,
+        })),
+        toPincode,
+      );
 
       const cartItemFor = (line: { productId: string; size?: string; color?: string }) =>
         items.find(
@@ -74,7 +53,7 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
             (item.color || undefined) === line.color
         );
 
-      return data.groups.map((group) => {
+      return allocated.map((group) => {
         const groupItems = group.items
           .map((line) => {
             const item = cartItemFor(line);
@@ -148,7 +127,7 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
                 cod: false,
               };
               
-              const response = await shippingService.getRates(request);
+              const response = await shippingApiClient.getRates(request);
               
               return {
                 ...updatedGroup,

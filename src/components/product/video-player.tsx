@@ -9,12 +9,12 @@ import type { ProductMediaRendition } from "@server/catalog/media";
 import { VIDEO_RENDITION_MIME_TYPE } from "@server/catalog/video";
 import { formatDuration } from "@/lib/format";
 import { pickRendition } from "@/lib/video-renditions";
+import { FORM_FACTOR_QUERY } from "@/hooks/core/useMediaQuery";
 
-/** The gallery slide's slot, and the default for a surface that does not say (ADR-0026). */
-export const VIDEO_PLAYER_GALLERY_SIZES = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw";
+/** The gallery slide's slot, and the default for a surface that does not say (ADR-0026):
+ *  full width until `lg`, then half the 72rem page column (`lg:grid-cols-2` on the product page). */
+export const GALLERY_SLIDE_SIZES = "(min-width: 1024px) 36rem, 100vw";
 
-/** Tailwind's `md`, read once at the tap: the line the two renditions split on (video-hosting D5). */
-const WIDE_VIEWPORT = "(min-width: 768px)";
 
 interface VideoPlayerProps {
   poster: string | null;
@@ -43,7 +43,7 @@ export function VideoPlayer({
   renditions,
   durationMs,
   title,
-  sizes = VIDEO_PLAYER_GALLERY_SIZES,
+  sizes = GALLERY_SLIDE_SIZES,
   active = true,
 }: VideoPlayerProps) {
   const [current, setCurrent] = useState<ProductMediaRendition | null>(null);
@@ -56,7 +56,7 @@ export function VideoPlayer({
   // to a changed prop, rather than an effect that would paint a playing frame first.
   if (!active && current !== null) setCurrent(null);
 
-  const play = () => setCurrent(pickRendition(renditions, window.matchMedia(WIDE_VIEWPORT).matches));
+  const play = () => setCurrent(pickRendition(renditions, window.matchMedia(FORM_FACTOR_QUERY.tablet).matches));
 
   const switchTo = (rendition: ProductMediaRendition) => {
     if (rendition.key === current?.key) return;

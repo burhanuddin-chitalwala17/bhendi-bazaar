@@ -6,7 +6,7 @@ import { CheckCircle, XCircle } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
+import { adminReviewApiClient } from "@/components/product/console/reviews/adminReviewApiClient";
 import { ReviewMedia } from "@/components/product/review-media";
 import type { AdminReview } from "@/domain/admin";
 import { Badge } from "@/components/ui/badge";

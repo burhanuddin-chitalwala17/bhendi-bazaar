@@ -35,9 +35,9 @@
   --color-favorite: var(--favorite);
   /* Fixed in both themes, deliberately: a scrim dims, whatever the theme; the hero
      scene is the storefront's deep-emerald brand surface and does not flip. */
-  --color-scrim: oklch(0.1 0.02 260);
-  --color-hero: oklch(0.27 0.07 150);
-  --color-hero-foreground: oklch(0.97 0.02 145);
+  --color-scrim: var(--ink-100);
+  --color-hero: var(--emerald-270);
+  --color-hero-foreground: var(--green-970);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -109,89 +109,162 @@
   --shadow-inset-field: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
+/* Primitive palette — every colour the system owns, named by family and lightness
+   (`-550` = L 0.55). Nothing outside this file reads these: components see only the
+   semantic tokens below, which point here, so a theme picks from the palette and never
+   invents a value (ADR-0049). `-soft` is the lower-chroma twin at the same lightness. */
+:root {
+  --parchment-720: oklch(0.72 0.05 98);
+  --parchment-900: oklch(0.9 0.01 95);
+  --parchment-940: oklch(0.94 0.02 95);
+  --parchment-960: oklch(0.96 0.02 98);
+  --parchment-980: oklch(0.98 0.01 95);
+  --parchment-990: oklch(0.99 0.015 95);
+
+  --charcoal-220: oklch(0.22 0.03 40);
+  --charcoal-520: oklch(0.52 0.04 40);
+
+  --emerald-270: oklch(0.27 0.07 150);
+  --emerald-550: oklch(0.55 0.17 150);
+  --emerald-600: oklch(0.6 0.18 150);
+  --emerald-700: oklch(0.7 0.19 150);
+  --emerald-700-soft: oklch(0.7 0.15 150);
+
+  --green-550: oklch(0.55 0.15 145);
+  --green-720: oklch(0.72 0.16 145);
+  --green-970: oklch(0.97 0.02 145);
+
+  --gold-780: oklch(0.78 0.16 85);
+  --gold-800: oklch(0.8 0.16 85);
+  --gold-820: oklch(0.82 0.14 85);
+  --gold-850: oklch(0.85 0.12 85);
+
+  --rose-620: oklch(0.62 0.14 30);
+  --rose-650: oklch(0.65 0.17 30);
+  --rose-900: oklch(0.9 0.05 30);
+
+  --maroon-320: oklch(0.32 0.08 350);
+
+  --red-600: oklch(0.6 0.25 27);
+  --red-600-soft: oklch(0.6 0.23 22);
+
+  --amber-550: oklch(0.55 0.13 70);
+  --amber-780: oklch(0.78 0.14 75);
+
+  --blue-520: oklch(0.52 0.13 245);
+  --blue-720: oklch(0.72 0.13 245);
+
+  --pink-580: oklch(0.58 0.22 15);
+  --pink-700: oklch(0.7 0.2 15);
+
+  --orange-700: oklch(0.7 0.14 55);
+  --orange-750: oklch(0.75 0.15 55);
+
+  --violet-580: oklch(0.58 0.14 310);
+  --violet-700: oklch(0.7 0.18 310);
+
+  --ink-100: oklch(0.1 0.02 260);
+  --ink-140: oklch(0.14 0.04 260);
+  --ink-160: oklch(0.16 0.03 260);
+  --ink-180: oklch(0.18 0.03 260);
+  --ink-240: oklch(0.24 0.04 260);
+  --ink-300: oklch(0.3 0.03 260);
+  --ink-320: oklch(0.32 0.03 260);
+
+  --grey-150: oklch(0.15 0 0);
+  --grey-180: oklch(0.18 0 0);
+  --grey-230: oklch(0.23 0 0);
+  --grey-280: oklch(0.28 0 0);
+  --grey-300: oklch(0.3 0 0);
+  --grey-915: oklch(0.915 0 0);
+  --grey-955: oklch(0.955 0 0);
+  --grey-985: oklch(0.985 0 0);
+  --grey-1000: oklch(1 0 0);
+}
+
 :root {
   --radius: 0.75rem;
   --tab-bar-h: 3.5rem;
   /* Daytime courtyard: warm parchment background, deep charcoal text */
-  --background: oklch(0.98 0.01 95);
-  --foreground: oklch(0.22 0.03 40);
-  --card: oklch(0.99 0.015 95);
-  --card-foreground: oklch(0.22 0.03 40);
-  --popover: oklch(0.99 0.015 95);
-  --popover-foreground: oklch(0.22 0.03 40);
+  --background: var(--parchment-980);
+  --foreground: var(--charcoal-220);
+  --card: var(--parchment-990);
+  --card-foreground: var(--charcoal-220);
+  --popover: var(--parchment-990);
+  --popover-foreground: var(--charcoal-220);
   /* Primary: deep emerald; accent: muted gold; secondary: soft maroon wash */
-  --primary: oklch(0.55 0.17 150);
-  --primary-foreground: oklch(0.98 0.01 95);
-  --secondary: oklch(0.9 0.05 30);
-  --secondary-foreground: oklch(0.22 0.03 40);
-  --muted: oklch(0.94 0.02 95);
-  --muted-foreground: oklch(0.52 0.04 40);
-  --accent: oklch(0.85 0.12 85);
-  --accent-foreground: oklch(0.22 0.03 40);
-  --destructive: oklch(0.6 0.25 27);
+  --primary: var(--emerald-550);
+  --primary-foreground: var(--parchment-980);
+  --secondary: var(--rose-900);
+  --secondary-foreground: var(--charcoal-220);
+  --muted: var(--parchment-940);
+  --muted-foreground: var(--charcoal-520);
+  --accent: var(--gold-850);
+  --accent-foreground: var(--charcoal-220);
+  --destructive: var(--red-600);
   /* Status colours: outcomes, not brand. success ≠ primary on purpose — "it worked"
      should survive a rebrand of the store's green. */
-  --success: oklch(0.55 0.15 145);
-  --warning: oklch(0.55 0.13 70);
-  --info: oklch(0.52 0.13 245);
+  --success: var(--green-550);
+  --warning: var(--amber-550);
+  --info: var(--blue-520);
   /* A saved product. Its own role rather than `destructive`, which means "this will
      break something" — a filled heart is the opposite of a warning. */
-  --favorite: oklch(0.58 0.22 15);
-  --border: oklch(0.9 0.01 95);
-  --input: oklch(0.9 0.01 95);
-  --ring: oklch(0.7 0.15 150);
-  --chart-1: oklch(0.6 0.18 150);
-  --chart-2: oklch(0.62 0.14 30);
-  --chart-3: oklch(0.58 0.14 310);
-  --chart-4: oklch(0.78 0.16 85);
-  --chart-5: oklch(0.7 0.14 55);
-  --sidebar: oklch(0.98 0.01 95);
-  --sidebar-foreground: oklch(0.22 0.03 40);
-  --sidebar-primary: oklch(0.55 0.17 150);
-  --sidebar-primary-foreground: oklch(0.98 0.01 95);
-  --sidebar-accent: oklch(0.85 0.12 85);
-  --sidebar-accent-foreground: oklch(0.22 0.03 40);
-  --sidebar-border: oklch(0.9 0.01 95);
-  --sidebar-ring: oklch(0.7 0.15 150);
+  --favorite: var(--pink-580);
+  --border: var(--parchment-900);
+  --input: var(--parchment-900);
+  --ring: var(--emerald-700-soft);
+  --chart-1: var(--emerald-600);
+  --chart-2: var(--rose-620);
+  --chart-3: var(--violet-580);
+  --chart-4: var(--gold-780);
+  --chart-5: var(--orange-700);
+  --sidebar: var(--parchment-980);
+  --sidebar-foreground: var(--charcoal-220);
+  --sidebar-primary: var(--emerald-550);
+  --sidebar-primary-foreground: var(--parchment-980);
+  --sidebar-accent: var(--gold-850);
+  --sidebar-accent-foreground: var(--charcoal-220);
+  --sidebar-border: var(--parchment-900);
+  --sidebar-ring: var(--emerald-700-soft);
 }
 
 .dark {
   /* Night-time bazaar: inky charcoal, emerald highlights, gold accents */
-  --background: oklch(0.16 0.03 260);
-  --foreground: oklch(0.96 0.02 98);
-  --card: oklch(0.18 0.03 260);
-  --card-foreground: oklch(0.96 0.02 98);
-  --popover: oklch(0.18 0.03 260);
-  --popover-foreground: oklch(0.96 0.02 98);
-  --primary: oklch(0.7 0.19 150);
-  --primary-foreground: oklch(0.14 0.04 260);
-  --secondary: oklch(0.32 0.08 350);
-  --secondary-foreground: oklch(0.96 0.02 98);
-  --muted: oklch(0.24 0.04 260);
-  --muted-foreground: oklch(0.72 0.05 98);
-  --accent: oklch(0.82 0.14 85);
-  --accent-foreground: oklch(0.14 0.04 260);
-  --destructive: oklch(0.6 0.23 22);
-  --success: oklch(0.72 0.16 145);
-  --warning: oklch(0.78 0.14 75);
-  --info: oklch(0.72 0.13 245);
-  --favorite: oklch(0.7 0.2 15);
-  --border: oklch(0.32 0.03 260);
-  --input: oklch(0.3 0.03 260);
-  --ring: oklch(0.7 0.19 150);
-  --chart-1: oklch(0.7 0.19 150);
-  --chart-2: oklch(0.65 0.17 30);
-  --chart-3: oklch(0.7 0.18 310);
-  --chart-4: oklch(0.8 0.16 85);
-  --chart-5: oklch(0.75 0.15 55);
-  --sidebar: oklch(0.16 0.03 260);
-  --sidebar-foreground: oklch(0.96 0.02 98);
-  --sidebar-primary: oklch(0.7 0.19 150);
-  --sidebar-primary-foreground: oklch(0.14 0.04 260);
-  --sidebar-accent: oklch(0.82 0.14 85);
-  --sidebar-accent-foreground: oklch(0.14 0.04 260);
-  --sidebar-border: oklch(0.32 0.03 260);
-  --sidebar-ring: oklch(0.7 0.19 150);
+  --background: var(--ink-160);
+  --foreground: var(--parchment-960);
+  --card: var(--ink-180);
+  --card-foreground: var(--parchment-960);
+  --popover: var(--ink-180);
+  --popover-foreground: var(--parchment-960);
+  --primary: var(--emerald-700);
+  --primary-foreground: var(--ink-140);
+  --secondary: var(--maroon-320);
+  --secondary-foreground: var(--parchment-960);
+  --muted: var(--ink-240);
+  --muted-foreground: var(--parchment-720);
+  --accent: var(--gold-820);
+  --accent-foreground: var(--ink-140);
+  --destructive: var(--red-600-soft);
+  --success: var(--green-720);
+  --warning: var(--amber-780);
+  --info: var(--blue-720);
+  --favorite: var(--pink-700);
+  --border: var(--ink-320);
+  --input: var(--ink-300);
+  --ring: var(--emerald-700);
+  --chart-1: var(--emerald-700);
+  --chart-2: var(--rose-650);
+  --chart-3: var(--violet-700);
+  --chart-4: var(--gold-800);
+  --chart-5: var(--orange-750);
+  --sidebar: var(--ink-160);
+  --sidebar-foreground: var(--parchment-960);
+  --sidebar-primary: var(--emerald-700);
+  --sidebar-primary-foreground: var(--ink-140);
+  --sidebar-accent: var(--gold-820);
+  --sidebar-accent-foreground: var(--ink-140);
+  --sidebar-border: var(--ink-320);
+  --sidebar-ring: var(--emerald-700);
 }
 
 /* The portals are working surfaces, not the shopfront: plain neutral grounds where
@@ -199,21 +272,21 @@
    component beneath `.portal` without touching one of them — which is the point of
    routing colour through tokens. Brand and status colours stay shared. */
 .portal {
-  --background: oklch(0.985 0 0);
-  --card: oklch(1 0 0);
-  --popover: oklch(1 0 0);
-  --muted: oklch(0.955 0 0);
-  --border: oklch(0.915 0 0);
-  --input: oklch(0.915 0 0);
+  --background: var(--grey-985);
+  --card: var(--grey-1000);
+  --popover: var(--grey-1000);
+  --muted: var(--grey-955);
+  --border: var(--grey-915);
+  --input: var(--grey-915);
 }
 
 .dark .portal {
-  --background: oklch(0.15 0 0);
-  --card: oklch(0.18 0 0);
-  --popover: oklch(0.18 0 0);
-  --muted: oklch(0.23 0 0);
-  --border: oklch(0.3 0 0);
-  --input: oklch(0.28 0 0);
+  --background: var(--grey-150);
+  --card: var(--grey-180);
+  --popover: var(--grey-180);
+  --muted: var(--grey-230);
+  --border: var(--grey-300);
+  --input: var(--grey-280);
 }
 
 /* A shop's accent (storefront-branding R2, ADR-0030 decision 8).

@@ -2,11 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-
-interface StockCheckItem {
-  productId: string;
-  quantity: number;
-}
+import { stockApiClient, type StockCheckLine } from "@/components/product/stockApiClient";
 
 interface StockCheckResult {
   available: boolean;
@@ -17,7 +13,7 @@ export function useStockCheck() {
   const [checking, setChecking] = useState(false);
 
   const checkStock = useCallback(
-    async (items: StockCheckItem[]): Promise<StockCheckResult> => {
+    async (items: StockCheckLine[]): Promise<StockCheckResult> => {
       if (items.length === 0) {
         return { available: true, issues: [] };
       }
@@ -25,24 +21,15 @@ export function useStockCheck() {
       try {
         setChecking(true);
 
-        const response = await fetch("/api/products/check-stock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items }),
-        });
-
-        if (!response.ok) {
-          throw new Error("Stock check failed");
-        }
-
-        const data = await response.json();
+        const data = await stockApiClient.check(items);
 
         if (!data.available) {
+          const requested = new Map(items.map((item) => [item.productId, item.quantity]));
           const issues = data.items
-            .filter((item: any) => !item.available)
-            .map((item: any) => ({
+            .filter((item) => !item.available)
+            .map((item) => ({
               productId: item.productId,
-              message: `Only ${item.stock} available for ${item.name} (you requested ${item.requested})`,
+              message: `Only ${item.stock} available for ${item.name} (you requested ${requested.get(item.productId)})`,
             }));
 
           return { available: false, issues };

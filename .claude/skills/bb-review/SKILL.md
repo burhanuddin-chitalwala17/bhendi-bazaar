@@ -1,6 +1,6 @@
 ---
 name: bb-review
-description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus design tokens across every axis — colour, type scale, tracking, elevation, shape, page width and font resolution (ADR-0022) — image delivery and stored image size (ADR-0026), mobile-first UI (ADR-0015), and the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
+description: Pre-merge review for bhendi-bazaar. Checks a diff against the seven Project Invariants in CLAUDE.md (pricing authority, payment state, integer paise, boundary validation, one repository per aggregate, conditional stock, seed safety) plus design tokens and the primitive palette (ADR-0022, ADR-0049), front-end layering — API clients, hooks, DTO props (ADR-0048) — form factors (ADR-0050), image delivery (ADR-0026), mobile-first UI (ADR-0015), portal guards, allowlist edits, and the documentation conventions. Invoke before any PR is considered done. Different from the built-in /review — this one knows the project's rules. Examples — "/bb-review", "/bb-review before I merge", "review my diff against the invariants".
 ---
 
 # /bb-review — pre-merge review
@@ -9,11 +9,12 @@ Reviews the current diff against **this project's** rules, not general good prac
 
 ## Scope
 
-```bash
-git diff main...HEAD            # default: the branch
-git diff --stat main...HEAD     # orient first
-```
-If the user names a range or path, use that instead. If the branch *is* `main`, review uncommitted changes (`git diff HEAD`).
+Work is committed on `develop` one PR-sized unit at a time, so `main...HEAD` is weeks of commits, not a PR. Pick the range in this order:
+1. A range, commit or path the user names.
+2. On a feature branch: `git diff develop...HEAD`.
+3. Otherwise, uncommitted work plus the last commit: `git diff HEAD~1`. Ask if the unit spans more commits.
+
+Below, `$RANGE` stands for whichever you chose; `git diff --stat $RANGE` first, to orient.
 
 Read the whole changed file, not just the hunk — several invariants below are about what a file *doesn't* do, which a hunk cannot show.
 
@@ -29,7 +30,7 @@ Does any new or changed code persist, or charge, a monetary value that arrived i
 - A schema newly *accepting* a price field.
 - A total "validated" by comparison against other client-supplied numbers — self-consistency is not verification.
 ```bash
-git diff main...HEAD -- src/app/api src/lib/validation server | grep -nE '\b(price|salePrice|amount|total|subtotal|grandTotal|discount)\b'
+git diff $RANGE -- src/app/api src/lib/validation server | grep -nE '\b(price|salePrice|amount|total|subtotal|grandTotal|discount)\b'
 ```
 Ask of each hit: *where did this number come from?* If the answer is the request, it is a violation.
 
@@ -44,16 +45,15 @@ Ask of each hit: *where did this number come from?* If the answer is the request
 - A new `Float` monetary column, or float arithmetic on money.
 - **Any epsilon comparison on an amount** (`Math.abs(a - b) < ...`). This is a violation, not a tolerance.
 - A `* 100` or `/ 100` outside `src/lib/format.ts` — the conversion belongs in one place.
-- Note: until [money-as-paise](../../../docs/specs/money-as-paise/) lands the columns are still `Float`. Flag *new* violations; do not demand the migration in an unrelated PR.
 
 ### I4 · Every body parsed, never cast — [CLAUDE.md](../../../CLAUDE.md) Invariant 4
 ```bash
-git diff main...HEAD | grep -nE 'request\.json\(\)\s*\)?\s*as |as unknown as'
+git diff $RANGE | grep -nE 'request\.json\(\)\s*\)?\s*as |as unknown as'
 ```
 - `as SomeType` on `await request.json()` — a compile-time fiction with no runtime effect.
 - `data: input` into a Prisma call where `input` traces back to a request body (mass assignment).
 - A create that whitelists fields while its matching update does not.
-- Server-owned fields accepted as input: `rating`, `reviewsCount`, `createdAt`, `updatedAt`, `paymentStatus`, computed totals.
+- Server-owned fields accepted as input: `rating`, `reviewsCount`, `createdAt`, `updatedAt`, `paymentStatus`, computed totals, `slug`.
 - **`any` in a route handler, auth, or payment code** — a defect at a trust boundary, not a style issue.
 
 ### I5 · One aggregate, one repository — [ADR-0003](../../../docs/adr/0003-one-repository-per-aggregate.md)
@@ -62,7 +62,7 @@ git diff main...HEAD | grep -nE 'request\.json\(\)\s*\)?\s*as |as unknown as'
 - A duplicated class or singleton export name.
 - A closed set (enum / `as const` union) declared a second time.
 ```bash
-git diff main...HEAD -- src/app/api | grep -nE 'prisma\.[a-z]'
+git diff $RANGE -- src/app/api | grep -nE 'prisma\.[a-z]'
 ```
 
 ### I6 · Stock moves conditionally, in-transaction — [ADR-0007](../../../docs/adr/0007-conditional-stock-decrement.md)
@@ -134,22 +134,22 @@ The test catches those. **The review job is the cases it cannot judge:**
 **Reuse before invention.** A new UI element hand-rolled where a shared component exists (`PageShell`, `PageHeader`, `HeroBanner`, `DataTable`, `StatusBadge`, `Card`, `FormInput`, `PortalSidebar`, `PortalHeader`) — the org orders page shipped with a hand-rolled table while `DataTable` sat unused, and eight admin pages each spelled out the same `<h1>` before `PageHeader` existed. That is how two of everything happens.
 
 ```bash
-git diff main...HEAD -- 'src/**/*.tsx' | grep -nE 'text-\[[0-9.]+(rem|px|em)|tracking-\[|shadow-(xs|sm|md|lg|xl)\b|rgba?\(|oklch\(|mx-auto max-w-|font-[a-z]+'
+git diff $RANGE -- 'src/**/*.tsx' | grep -nE 'text-\[[0-9.]+(rem|px|em)|tracking-\[|shadow-(xs|sm|md|lg|xl)\b|rgba?\(|oklch\(|mx-auto max-w-|font-[a-z]+'
 ```
 The grep is a prompt, not the check — the suite already blocks the mechanical cases, so a hit here is usually either a blind spot above or a false positive.
 
 **Image delivery** ([ADR-0026](../../../docs/adr/0026-images-are-delivered-through-the-optimizer.md) — stored small, served through the optimizer)
 
-The free tier's 10 GB Blob transfer allowance was exhausted pre-launch by three changes that all looked right on screen. `tests/unit/image-delivery.test.ts` fails the build on a raw `<img>`, on `unoptimized`, and on `fill` without `sizes`. **The review job is what it cannot judge:**
+Vercel Blob's free transfer allowance was exhausted pre-launch by three changes that all looked right on screen; images now live in R2 ([ADR-0028](../../../docs/adr/0028-images-live-in-cloudflare-r2.md)) and the same rules hold. `tests/unit/image-delivery.test.ts` fails the build on a raw `<img>`, on `unoptimized`, and on `fill` without `sizes`. **The review job is what it cannot judge:**
 
 - A **new allowlist entry**. Legitimate only for a local `blob:`/`data:` preview (bytes already in the page, and not something `next/image` accepts) or a renderer that cannot take `next/image` — Satori, in `opengraph-image.tsx`. "It was easier" is a finding, and so is an entry whose stated reason does not match what the file does.
 - A **`sizes` that overstates the slot.** The test only checks that `sizes` exists. `sizes="100vw"` on a 64px avatar passes it and downloads the viewport width — the same overrun, now invisible. Read the value against the class list: a `size-16` box is `64px`, not `100vw`. The product tile's value is `PRODUCT_TILE_SIZES`; a second spelling of the same grid is a finding.
-- A **new upload path that skips normalisation.** Anything reaching `put()` without `normalizeImage`, or any browser-direct `upload()` without `downscaleImage`. The bulk wizards are browser-direct precisely because no server code sees those bytes, so a new one inherits nothing.
+- A **new upload path that skips normalisation.** A server upload reaching `putObject` (`server/catalog/object-store.ts`) without `normalizeImage`. Browser-direct uploads (`uploadDirect`) must `downscaleImage` first, and `image-delivery.test.ts` fails a caller that doesn't, so judge only new allowlist entries.
 - **A second spelling of the size budget.** `MAX_IMAGE_EDGE` and `IMAGE_QUALITY` are declared once in `server/catalog/media.ts` because two paths enforce them; a local `1600` is the drift starting.
-- An **image fetched server-side per render** — an OG image or a metadata route pulling a Blob URL on every request is egress the optimizer never sees.
+- An **image fetched server-side per render** — an OG image or a metadata route pulling an R2 URL on every request is egress the optimizer never sees.
 
 ```bash
-git diff main...HEAD -- 'src/**/*.tsx' | grep -nE '<img|unoptimized|sizes="100vw"|no-img-element'
+git diff $RANGE -- 'src/**/*.tsx' | grep -nE '<img|unoptimized|sizes="100vw"|no-img-element'
 ```
 The grep is a prompt, not the check — the suite blocks the mechanical cases, so a hit is usually a new allowlist entry to judge or an overstated `sizes`.
 
@@ -163,7 +163,8 @@ The grep is a prompt, not the check — the suite blocks the mechanical cases, s
 - A **fixed width that can't fit 360px**: `w-[NNNpx]`/`min-w-*` ≥ ~16rem without an `sm:` gate, or `flex-1`/`justify-between` rows of no-wrap content missing `min-w-0`/`flex-wrap` — the classic horizontal-overflow pair.
 - **DOM order vs mobile reading order**: stacked grids render in source order. If a buyer must see something before acting on it (the bill before Place Order), it must precede the action in the DOM; grid placement handles desktop.
 ```bash
-git diff main...HEAD -- 'src/**/*.tsx' | grep -nE 'grid-cols-[2-9](?!.*(sm|md|lg):)|hidden (sm|md|lg):(flex|block|inline)|opacity-0 group-hover|h-[4-7] w-[4-7]"|size-[4-8]"|text-xs.*<Input|min-w-(64|72|80|96)\b'
+git diff $RANGE -- 'src/**/*.tsx' | grep -nE 'grid-cols-[2-9]' | grep -vE '(sm|md|lg):grid-cols'
+git diff $RANGE -- 'src/**/*.tsx' | grep -nE 'hidden (sm|md|lg):(flex|block|inline)|opacity-0 group-hover|h-[4-7] w-[4-7]"|size-[4-8]"|text-xs.*<Input|min-w-(64|72|80|96)\b' 
 ```
 The grep is a prompt, not the check — most of these are judged by reading the component at 360px in your head. Dense admin tables satisfy the single-column rule by scrolling inside `overflow-x-auto` instead of reflowing.
 
@@ -173,10 +174,26 @@ The grep is a prompt, not the check — most of these are judged by reading the 
 - A field the form marks `required` that the schema leaves optional, or the reverse. The stricter side is the one users meet; make the schema say it, since the schema is also what the route enforces.
 
 ```bash
-git diff main...HEAD | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(message|error|details)|throw new Error\(|valueAsNumber'
+git diff $RANGE | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(message|error|details)|throw new Error\(|valueAsNumber'
 ```
 
 **Migrate on contact.** ADR-0013 decision 7: if the diff touches a form or handler that still uses the old pattern, converting it is part of the change. Flag a modified file left on the old pattern — that is exactly how the product form ended up as the only form with no error display while its sibling had one.
+
+**Front-end layering** ([ADR-0048](../../../docs/adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md), [ADR-0049](../../../docs/adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md), [ADR-0050](../../../docs/adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md); rules in [src/components/CLAUDE.md](../../../src/components/CLAUDE.md))
+
+`api-clients.test.ts`, `module-boundaries.test.ts`, `design-tokens.test.ts` and `form-factors.test.ts` block the mechanical cases: `fetch` outside a client, `@prisma/client` in a component, raw colour outside the palette, an invented breakpoint. **The review job is what they cannot judge:**
+- A client that **swallows an error** (returns a fallback, logs and continues) where the caller needed to know. Toasting is the caller's job, and so is deciding a failure is fine.
+- A **hook doing two jobs**: fetching *and* holding form state, or returning presentation. Split it.
+- A **DTO that is a row in disguise**: a `*.types` interface copying every column so a component can be handed the whole record.
+- A **new palette primitive**: a new colour the system now owns. Ask whether an existing one was meant, since the `-soft` twins exist because nobody asked.
+- A **`sizes` string that disagrees with its grid**: check it against the layout classes around it. The gallery shipped half-resolution images to tablets this way.
+- **A layout branch in a script** (`useIsTabletUp`) where CSS breakpoints would do. Scripts branch only for surface pairs (ADR-0040) and rendition choice.
+
+**Portal guards** — `/api/admin/**` calls `requirePlatformAdmin`, `/api/org/**` goes through `withOrg`, and a portal layout owns its guard. `portal-boundary.test.ts` and `portal-guards.test.ts` block the mechanical cases; judge any new exception.
+
+**An allowlist edit is a finding to judge, never a formality.** Every gate here keeps an exception list. An entry added, or a reason that no longer matches its file, needs an argument in the diff. That covers `PUBLIC_SURFACE`, `ALLOWED_VIOLATIONS`, `RECORDED`, `MAY_USE_SHEET`, `SHAPE_LEGACY`, `EXTERNALLY_CALLED`, `DATA_DEPENDENT`, `NEVER_ASKS`, `REQUEST_MODULES`, and the design-token allowlists.
+
+**A new guard is mutation-tested.** A new test that scans source must have been seen to fail: break the rule once in the source and watch it go red ([TESTING.md](../../../docs/TESTING.md)). Ask how it was checked. "It passes" is not evidence that it guards anything.
 
 ---
 

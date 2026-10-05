@@ -2,82 +2,36 @@
 
 /**
  * The bulk-upload wizard (bulk-catalog-upload R1–R3): sheet + images in, one
- * validation report, then upload-and-create. Images go browser → Blob directly
+ * validation report, then upload-and-create. Images go browser → object store directly
  * (D10); nothing is created until the sheet validated clean.
  *
  * Mobile-first: both pickers are native file inputs (the photo picker on a
  * phone), the report and match list are single-column, and the primary action
  * docks above the tab bar (ADR-0015/0016).
  */
-import { useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { readApiError } from "@/lib/api-error";
-import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
-import { imagesOnly, relativePath, sanitizePath } from "./files";
+import { imagesOnly, sanitizePath } from "./files";
+import { bulkImportApiClient } from "./bulkImportApiClient";
+import { useBulkImport } from "./useBulkImport";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 
-interface ValidateResponse {
-  ok: boolean;
-  errors: RowError[];
-  rows: { rowNumber: number; row: BulkProductRow }[];
-  orgCode: string | null;
-  summary: { rows: number; images: number };
-}
-
-type Step = "pick" | "checking" | "report" | "uploading" | "creating" | "done";
-
 export function BulkProductWizard({ orgId }: { orgId: string }) {
-  const [step, setStep] = useState<Step>("pick");
-  const [sheet, setSheet] = useState<File | null>(null);
-  const [images, setImages] = useState<File[]>([]);
-  const [report, setReport] = useState<ValidateResponse | null>(null);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
-  const [created, setCreated] = useState(0);
-  const [updated, setUpdated] = useState(0);
-  const sheetInputRef = useRef<HTMLInputElement>(null);
-
-  const filesByPath = useMemo(
-    () => new Map(images.map((file) => [relativePath(file), file])),
-    [images],
+  const { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run } = useBulkImport(
+    (sheet, filenames) => bulkImportApiClient.validateProducts(orgId, sheet, filenames),
   );
-  const providedPaths = useMemo(() => [...filesByPath.keys()], [filesByPath]);
-
-  const check = async () => {
-    if (!sheet) {
-      toast.error("Choose the filled-in sheet first");
-      return;
-    }
-    setStep("checking");
-    try {
-      const formData = new FormData();
-      formData.append("sheet", sheet);
-      formData.append("filenames", JSON.stringify(providedPaths));
-      const response = await fetch(`/api/org/${orgId}/products/bulk/validate`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) throw new Error((await readApiError(response)).message);
-      const body = (await response.json()) as ValidateResponse;
-      setReport(body);
-      setStep("report");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not check the sheet",
-      );
-      setStep("pick");
-    }
-  };
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const sheetInputRef = useRef<HTMLInputElement>(null);
 
   const createAll = async () => {
     if (!report?.ok || !report.orgCode) return;
+    const orgCode = report.orgCode;
     const needed = [...new Set(report.rows.flatMap(({ row }) => row.images))];
     setProgress({ done: 0, total: needed.length });
-    setStep("uploading");
-    try {
+    await run(async ({ filesByPath, providedPaths, creating }) => {
       // A small queue, not a 3000-promise stampede: a phone's radio and the
       // token route both prefer bounded concurrency.
       const urls = new Map<string, string>();
@@ -97,7 +51,7 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
           // server's normalisation cannot reach them (ADR-0026).
           const downscaled = await downscaleImage(file);
           const { url } = await uploadDirect(
-            `products/${report.orgCode!.toLowerCase()}/bulk/${storedPathFor(sanitizePath(path), downscaled)}`,
+            `products/${orgCode.toLowerCase()}/bulk/${storedPathFor(sanitizePath(path), downscaled)}`,
             downscaled,
             orgUploadEndpoints(orgId),
           );
@@ -108,27 +62,15 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       };
       await Promise.all(Array.from({ length: 4 }, worker));
 
-      setStep("creating");
+      creating();
       const rows = report.rows.map(({ row }) => ({
         ...row,
         imageUrls: Object.fromEntries(
           row.images.map((name) => [name, urls.get(name)!]),
         ),
       }));
-      const response = await fetch(`/api/org/${orgId}/products/bulk`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows }),
-      });
-      if (!response.ok) throw new Error((await readApiError(response)).message);
-      const body = (await response.json()) as { created: number; updated: number };
-      setCreated(body.created);
-      setUpdated(body.updated ?? 0);
-      setStep("done");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-      setStep("report");
-    }
+      return bulkImportApiClient.createProducts(orgId, rows);
+    });
   };
 
   if (step === "done") {

@@ -12,12 +12,12 @@ import { Switch } from "@/components/ui/switch";
 import { FormField } from "@/components/shared/forms/FormField";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
 import {
   bannerFormSchema,
   type BannerFormSchemaInput,
 } from "@/lib/validation/schemas/banner.schema";
 import { BannerImageField } from "./BannerImageField";
+import { bannersApiClient } from "./bannersApiClient";
 
 const EMPTY: BannerFormSchemaInput = {
   title: null,
@@ -44,15 +44,7 @@ export function BannerForm({
     schema: bannerFormSchema,
     defaultValues: initial ?? EMPTY,
     successMessage: "Banner saved",
-    submit: async (data) => {
-      const response = await fetch(action, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      return response.json();
-    },
+    submit: (data) => bannersApiClient.save(action, method, data),
     onSuccess: () => {
       router.push("/admin/banners");
       router.refresh();

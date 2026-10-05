@@ -12,7 +12,6 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -27,10 +26,11 @@ import {
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { EmptyState } from "@/components/shared/states/EmptyState";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
 import { bannerLabel } from "@/lib/banner-label";
 import type { AdminBanner } from "@server/catalog/banner.types";
 import { isRenderableImageUrl } from "@server/catalog/image-paths";
+import { bannersApiClient } from "./bannersApiClient";
 
 /** Order as written, and membership regardless of order. */
 const sequenceOf = (list: AdminBanner[]) => list.map((b) => b.id).join("|");
@@ -46,7 +46,6 @@ const TAP = "size-10 sm:size-9";
 export function BannerList({ banners }: { banners: AdminBanner[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState<AdminBanner | null>(null);
   // A move shows its result before the round trip finishes. The override is held
   // against the server's list rather than against a transition: `router.refresh()`
@@ -67,51 +66,40 @@ export function BannerList({ banners }: { banners: AdminBanner[] }) {
     setOverride(null);
     optimistic = null;
   }
+  // Every write here ends the same way — refresh on success, toast on failure — so one
+  // mutation runs whichever request it is handed.
+  const { mutate, isLoading: busy } = useMutation(
+    (request: () => Promise<void>) => request(),
+    { onSuccess: () => startTransition(() => router.refresh()) },
+  );
   const rows = optimistic ?? banners;
   const frozen = busy || isPending;
 
-  async function send(url: string, init: RequestInit): Promise<boolean> {
-    setBusy(true);
-    try {
-      const response = await fetch(url, init);
-      if (!response.ok) throw await readApiError(response);
-      startTransition(() => router.refresh());
-      return true;
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Something went wrong",
-      );
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  }
+  const send = (request: () => Promise<void>): Promise<boolean> =>
+    mutate(request).then(
+      () => true,
+      () => false,
+    );
 
   async function move(from: number, to: number) {
     if (to < 0 || to >= rows.length || frozen) return;
     const next = [...rows];
     [next[from], next[to]] = [next[to], next[from]];
     setOverride(next);
-    const ok = await send("/api/admin/banners/reorder", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: next.map((banner) => banner.id) }),
-    });
+    const ok = await send(() =>
+      bannersApiClient.reorder(next.map((banner) => banner.id)),
+    );
     // A refused reorder must not leave the screen showing an order nobody stored.
     if (!ok) setOverride(null);
   }
 
   function setActive(banner: AdminBanner, isActive: boolean) {
-    void send(`/api/admin/banners/${banner.id}/active`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive }),
-    });
+    void send(() => bannersApiClient.setActive(banner.id, isActive));
   }
 
   function remove(banner: AdminBanner) {
     setConfirming(null);
-    void send(`/api/admin/banners/${banner.id}`, { method: "DELETE" });
+    void send(() => bannersApiClient.remove(banner.id));
   }
 
   if (rows.length === 0) {

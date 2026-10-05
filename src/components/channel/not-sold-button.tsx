@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { readApiError } from "@/lib/api-error";
+import { channelsApiClient } from "@/components/channel/channelsApiClient";
+import { useMutation } from "@/hooks/core/useMutation";
 import type { Channel } from "@server/shared/channels";
 
 interface NotSoldButtonProps {
@@ -27,25 +26,12 @@ interface NotSoldButtonProps {
  */
 export function NotSoldButton({ channel, productType, kind, label, marked }: NotSoldButtonProps) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
-
-  async function send() {
-    setSaving(true);
-    try {
-      const response = await fetch("/api/admin/channels/not-sold", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel, productType, kind, notSold: !marked }),
-      });
-      if (!response.ok) throw await readApiError(response);
-      toast.success(marked ? `${label} is back on the list to decide` : `${label} marked not sold here`);
-      router.refresh();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not record that decision");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const { mutate, isLoading: saving } = useMutation(channelsApiClient.setNotSold, {
+    successMessage: marked ? `${label} is back on the list to decide` : `${label} marked not sold here`,
+    onSuccess: () => router.refresh(),
+  });
+  // useMutation has already shown the error; the rethrow is for callers that await it.
+  const send = () => void mutate({ channel, productType, kind, notSold: !marked }).catch(() => {});
 
   return (
     <Button

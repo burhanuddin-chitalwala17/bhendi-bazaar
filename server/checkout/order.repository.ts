@@ -396,6 +396,29 @@ export class OrderRepository {
     return result.count === 1;
   }
 
+  /** The order with its raw shipment rows, as booking needs them (no wire mapping). */
+  async findForFulfilment(orderId: string) {
+    return prisma.order.findUnique({
+      relationLoadStrategy: "join",
+      where: { id: orderId },
+      include: { shipments: true },
+    });
+  }
+
+  async recordFulfilmentStatus(orderId: string, status: string): Promise<void> {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status, updatedAt: new Date() },
+    });
+  }
+
+  async markDelivered(orderId: string): Promise<void> {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: ORDER_STATUS.DELIVERED },
+    });
+  }
+
 
   /**
    * Delete an order (admin only)

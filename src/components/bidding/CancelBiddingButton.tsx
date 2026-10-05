@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +12,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
+import { biddingApiClient } from "@/components/bidding/biddingApiClient";
 
 /**
  * Calling an event off (spec R11).
@@ -31,24 +31,19 @@ export function CancelBiddingButton({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
+  const { mutate, isLoading: isCancelling } = useMutation(
+    () => biddingApiClient.cancel(apiPath),
+    {
+      successMessage: "Bidding cancelled",
+      onSuccess: () => {
+        setOpen(false);
+        router.refresh();
+      },
+    },
+  );
 
-  const cancel = async () => {
-    setIsCancelling(true);
-    try {
-      const response = await fetch(apiPath, { method: "DELETE" });
-      if (!response.ok) throw await readApiError(response);
-      toast.success("Bidding cancelled");
-      setOpen(false);
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not cancel this event",
-      );
-    } finally {
-      setIsCancelling(false);
-    }
-  };
+  // The toast is the whole report; the rejection has nowhere further to go.
+  const cancel = () => mutate().catch(() => {});
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

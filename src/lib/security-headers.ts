@@ -18,7 +18,7 @@
  *
  * `strict-dynamic` is deliberately *not* used: it would discard the host allowlist below
  * in supporting browsers, and Razorpay's checkout script is appended at runtime by
- * `src/services/paymentGatewayService.ts` rather than rendered with a nonce. The explicit
+ * `src/components/checkout/razorpay-checkout.ts` rather than rendered with a nonce. The explicit
  * allowlist covers that case and fails visibly rather than silently.
  */
 

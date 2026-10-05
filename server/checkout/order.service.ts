@@ -12,6 +12,7 @@ import { generateOrderCode } from "@server/checkout/order-code";
 import { prisma, toJsonColumn } from "@server/shared/prisma";
 import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
 import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
+import { recordBooking, recordBookingFailure } from "@server/shipping/shipment-status.service";
 import type {
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
@@ -513,6 +514,11 @@ export class OrderService {
     }
   }
 
+  /** Every parcel has arrived. The caller (the carrier webhook) decides that from the shipment rows. */
+  async markDelivered(orderId: string): Promise<void> {
+    await orderRepository.markDelivered(orderId);
+  }
+
   /**
    * Fulfill order after successful payment
    * 
@@ -526,11 +532,7 @@ export class OrderService {
    */
   async fulfillOrder(orderId: string): Promise<void> {
     // Get order with shipments
-    const order = await prisma.order.findUnique({
-      relationLoadStrategy: "join",
-      where: { id: orderId },
-      include: { shipments: true },
-    });
+    const order = await orderRepository.findForFulfilment(orderId);
 
     if (!order) {
       throw new NotFoundError(`Order not found: ${orderId}`);
@@ -576,14 +578,9 @@ export class OrderService {
         );
 
         // Update shipment with tracking info
-        await prisma.shipment.update({
-          where: { id: shipment.id },
-          data: {
-            trackingNumber: providerResult.awb,
-            trackingUrl: providerResult.trackingUrl,
-            status: "confirmed", // Now confirmed with provider
-            updatedAt: new Date(),
-          },
+        await recordBooking(shipment.id, {
+          trackingNumber: providerResult.awb,
+          trackingUrl: providerResult.trackingUrl,
         });
 
         fulfillmentResults.successful.push(shipment.code);
@@ -598,19 +595,15 @@ export class OrderService {
         });
 
         // Update shipment to failed state (requires manual intervention)
-        await prisma.shipment.update({
-          where: { id: shipment.id },
-          data: {
-            status: "failed",
-            shippingMeta: toJsonColumn({
-              ...(shipment.shippingMeta as Record<string, unknown> | null),
-              fulfillmentError: errorMessage,
-              requiresManualIntervention: true,
-              failedAt: new Date().toISOString(),
-            }),
-            updatedAt: new Date(),
-          },
-        });
+        await recordBookingFailure(
+          shipment.id,
+          toJsonColumn({
+            ...(shipment.shippingMeta as Record<string, unknown> | null),
+            fulfillmentError: errorMessage,
+            requiresManualIntervention: true,
+            failedAt: new Date().toISOString(),
+          }),
+        );
       }
     }
 
@@ -628,13 +621,7 @@ export class OrderService {
       finalOrderStatus = "partially_fulfilled";
     }
 
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: finalOrderStatus,
-        updatedAt: new Date(),
-      },
-    });
+    await orderRepository.recordFulfilmentStatus(orderId, finalOrderStatus);
 
     // If there are failures, log them for monitoring/alerting
     if (fulfillmentResults.failed.length > 0) {

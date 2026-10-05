@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminUserApiClient } from "@/services/admin/userApiClient";
+import { adminUserApiClient } from "@/components/profile/console/adminUserApiClient";
 import type { AdminUser } from "@/domain/admin";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";

@@ -16,7 +16,7 @@ const { signIn, push, refresh, save, session } = vi.hoisted(() => ({
 vi.mock("next-auth/react", () => ({ signIn, useSession: () => ({ status: session.status }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
-vi.mock("@/services/wishlistApiClient", () => ({ wishlistApiClient: { save, remove: vi.fn() } }));
+vi.mock("@/components/wishlist/wishlistApiClient", () => ({ wishlistApiClient: { save, remove: vi.fn() } }));
 
 import { AuthSheetProvider, useAuthSheet, type OpenAuthSheet } from "@/context/AuthSheetContext";
 import { storeIntent } from "@/lib/auth-intent";
@@ -95,7 +95,9 @@ describe("the auth sheet", () => {
   });
 
   it("finishes it after a new account too (A4)", async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+    fetchMock.mockImplementation(
+      async () => new Response("{}", { headers: { "content-type": "application/json" } }),
+    );
     renderSheet({ intent: SAVE_INTENT });
     fireEvent.click(screen.getByRole("button", { name: "Create an account" }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "New Buyer" } });
@@ -130,7 +132,9 @@ describe("the auth sheet", () => {
   });
 
   it("lands on Sign in with the email filled when sign-up's own sign-in fails (D4)", async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+    fetchMock.mockImplementation(
+      async () => new Response("{}", { headers: { "content-type": "application/json" } }),
+    );
     signIn.mockResolvedValue({ ok: false, error: "CredentialsSignin" });
     renderSheet();
 

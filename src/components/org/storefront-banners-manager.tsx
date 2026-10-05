@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
 import { bannerLabel } from "@/lib/banner-label";
 import { AddPromotionDialog } from "@/components/org/add-promotion-dialog";
+import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 
 export interface ManagedBanner {
   id: string;
@@ -49,54 +48,34 @@ export function StorefrontBannersManager({
   banners: ManagedBanner[];
 }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
+  const refresh = { onSuccess: () => router.refresh() };
 
-  const base = `/api/org/${orgId}/storefront/banners`;
+  const toggleBanner = useMutation(
+    (banner: ManagedBanner) =>
+      orgStorefrontApiClient.updateBanner(orgId, { ...banner, isActive: !banner.isActive }),
+    refresh,
+  );
+  const deleteBanner = useMutation(
+    (bannerId: string) => orgStorefrontApiClient.deleteBanner(orgId, bannerId),
+    { ...refresh, successMessage: "Promotion deleted." },
+  );
+  const reorderBanners = useMutation(
+    (ids: string[]) => orgStorefrontApiClient.reorderBanners(orgId, ids),
+    refresh,
+  );
+  const busy = toggleBanner.isLoading || deleteBanner.isLoading || reorderBanners.isLoading;
 
-  const call = async (url: string, init: RequestInit) => {
-    setBusy(true);
-    try {
-      const response = await fetch(url, {
-        headers: { "Content-Type": "application/json" },
-        ...init,
-      });
-      if (!response.ok) throw await readApiError(response);
-      router.refresh();
-      return true;
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not save. Please try again.",
-      );
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  };
+  // `useMutation` toasts a failure and rethrows; the catches keep it from going unhandled.
+  const toggle = (banner: ManagedBanner) => void toggleBanner.mutate(banner).catch(() => {});
 
-  const toggle = async (banner: ManagedBanner) => {
-    await call(`${base}/${banner.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ ...banner, isActive: !banner.isActive }),
-    });
-  };
+  const remove = (banner: ManagedBanner) => void deleteBanner.mutate(banner.id).catch(() => {});
 
-  const remove = async (banner: ManagedBanner) => {
-    if (await call(`${base}/${banner.id}`, { method: "DELETE" })) {
-      toast.success("Promotion deleted.");
-    }
-  };
-
-  const move = async (index: number, direction: -1 | 1) => {
+  const move = (index: number, direction: -1 | 1) => {
     const next = [...banners];
     const target = index + direction;
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
-    await call(`${base}/reorder`, {
-      method: "PATCH",
-      body: JSON.stringify({ ids: next.map((b) => b.id) }),
-    });
+    void reorderBanners.mutate(next.map((b) => b.id)).catch(() => {});
   };
 
   return (

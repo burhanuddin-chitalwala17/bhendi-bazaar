@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { FormController } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { enhancementsApiClient } from "@/components/content/enhancementsApiClient";
 import {
   orgEnhancementPolicySchema,
   type OrgEnhancementPolicyInput,
@@ -41,14 +41,7 @@ export function OrgEnhancementPolicyForm({
       paused: org.paused,
       pauseReason: org.pauseReason,
     },
-    submit: async (data) => {
-      const response = await fetch(`/api/admin/enhancements/orgs/${org.orgId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-    },
+    submit: (data) => enhancementsApiClient.saveOrgPolicy(org.orgId, data),
     successMessage: `Saved for ${org.name}`,
     onSuccess: () => router.refresh(),
   });

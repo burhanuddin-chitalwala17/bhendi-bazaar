@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { shippingProviderService } from "@/components/shipping/providers-console/services/shippingProviderService";
+import { shippingProviderApiClient } from "@/components/shipping/providers-console/shippingProviderApiClient";
 import type {
   ConnectionRequestBody,
   ShippingProvider,
@@ -49,7 +49,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
     setError(null);
 
     try {
-      const response = await shippingProviderService.getProviders();
+      const response = await shippingProviderApiClient.getProviders();
 
       if (response.success) {
         setProviders(response.providers);
@@ -75,7 +75,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
       setError(null);
 
       try {
-        const response = await shippingProviderService.connectProvider(
+        const response = await shippingProviderApiClient.connectProvider(
           providerId,
           requestBody,
         );
@@ -119,7 +119,7 @@ export function useShippingProviders(): UseShippingProvidersReturn {
     setError(null);
     try {
       const response =
-        await shippingProviderService.disconnectProvider(providerId);
+        await shippingProviderApiClient.disconnectProvider(providerId);
       if (response.success) {
         setProviders((prev) =>
           prev.map((provider) =>

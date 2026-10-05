@@ -8,9 +8,9 @@
  * error says so when a row breaks it.
  */
 import { randomUUID } from "node:crypto";
-import { prisma } from "@server/shared/prisma";
 import type { CategoryAccent, Prisma } from "@prisma/client";
 import { categoryRepository } from "@server/catalog/category.repository";
+import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
 import { slugify } from "@server/shared/slug";
 import { BULK_MAX_ROWS, type RowError } from "@server/catalog/bulk/bulk.types";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
@@ -266,6 +266,6 @@ export async function createCategories(
     data[i].parentId = id ?? (rowNumber === undefined ? null : idByRow.get(rowNumber) ?? null);
   }
 
-  await prisma.category.createMany({ data });
+  await adminCategoryRepository.createMany(data);
   return { created: rows.length };
 }

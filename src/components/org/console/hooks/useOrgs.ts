@@ -1,7 +1,7 @@
 // src/components/admin/orgsContainer/hooks/useOrgs.ts
 
 import { useState, useEffect, useCallback } from "react";
-import { orgService, type OrgListFilters } from "@/services/admin/orgService";
+import { orgApiClient, type OrgListFilters } from "@/components/org/console/orgApiClient";
 import type { OrgWithStats } from "@/domain/org";
 import type { Pagination } from "@/types/shared";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
@@ -32,12 +32,13 @@ export function useOrgs(filters: OrgListFilters) {
     try {
       setLoading(true);
       setError(null);
-      const data = await orgService.getOrgs({ page, limit, search, status });
+      const data = await orgApiClient.getOrgs({ page, limit, search, status });
       setOrgs(data.orgs);
       setPagination(data.pagination);
-    } catch (err: any) {
-      setError(err.message);
-      toast.error(err.message || "Failed to load orgs");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      setError(message);
+      toast.error(message || "Failed to load orgs");
     } finally {
       setLoading(false);
     }
@@ -49,7 +50,7 @@ export function useOrgs(filters: OrgListFilters) {
 
   const createOrg = async (data: OrgFormInput) => {
     try {
-      await orgService.createOrg(data);
+      await orgApiClient.createOrg(data);
       toast.success("Organisation created successfully");
       await loadOrgs();
     } catch (err) {
@@ -60,7 +61,7 @@ export function useOrgs(filters: OrgListFilters) {
 
   const updateOrg = async (id: string, data: Partial<OrgFormInput>) => {
     try {
-      await orgService.updateOrg(id, data);
+      await orgApiClient.updateOrg(id, data);
       toast.success("Organisation updated successfully");
       await loadOrgs();
     } catch (err) {
@@ -71,11 +72,11 @@ export function useOrgs(filters: OrgListFilters) {
 
   const deleteOrg = async (id: string) => {
     try {
-      await orgService.deleteOrg(id);
+      await orgApiClient.deleteOrg(id);
       toast.success("Organisation deleted successfully");
       await loadOrgs();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete org");
+    } catch (err) {
+      toast.error((err instanceof Error && err.message) || "Failed to delete org");
       throw err;
     }
   };

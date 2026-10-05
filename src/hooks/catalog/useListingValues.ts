@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { fetchListingValues } from "@/services/admin/productTypeApiClient";
+import { listingApiClient } from "@/components/product/listingApiClient";
 
 export type ValueOption = { key: string; label: string; orgId: string | null };
 export type ValuesByList = Record<string, ValueOption[]>;
@@ -24,7 +24,7 @@ export function useListingValues(orgId: string, lists: readonly string[], initia
     async (wanted: string[]) => {
       setLoading(true);
       try {
-        const fetched = await fetchListingValues(orgId, wanted);
+        const fetched = await listingApiClient.listValues(orgId, wanted);
         setValues((current) => ({ ...current, ...fetched }));
       } catch {
         // A failed load leaves those lists empty rather than the form broken: the questions

@@ -15,9 +15,7 @@
  * there and should not be on screen.
  */
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import {
   promotionFormSchema,
@@ -31,7 +29,8 @@ import {
   ProductPicker,
   type TargetOption,
 } from "@/components/promotions/ProductPicker";
-import { readApiError } from "@/lib/api-error";
+import { offersApiClient } from "@/components/promotions/offersApiClient";
+import { bpsToPercent, paiseToRupees } from "@/lib/format";
 
 /** An offer as stored, for editing. Paise and basis points — converted on the way in. */
 export interface OfferInitialValues {
@@ -105,22 +104,24 @@ export function OfferForm({
           code: initial.code ?? undefined,
           // Back to the units a person types (ADR-0004 keeps the storage integral).
           percent:
-            initial.percentBps !== null ? initial.percentBps / 100 : undefined,
+            initial.percentBps !== null
+              ? bpsToPercent(initial.percentBps)
+              : undefined,
           amountOff:
             initial.amountOffPaise !== null
-              ? initial.amountOffPaise / 100
+              ? paiseToRupees(initial.amountOffPaise)
               : undefined,
           fixedPrice:
             initial.fixedPricePaise !== null
-              ? initial.fixedPricePaise / 100
+              ? paiseToRupees(initial.fixedPricePaise)
               : undefined,
           maxDiscount:
             initial.maxDiscountPaise !== null
-              ? initial.maxDiscountPaise / 100
+              ? paiseToRupees(initial.maxDiscountPaise)
               : undefined,
           minSubtotal:
             initial.minSubtotalPaise > 0
-              ? initial.minSubtotalPaise / 100
+              ? paiseToRupees(initial.minSubtotalPaise)
               : undefined,
           usageLimit: initial.usageLimit ?? undefined,
           perUserLimit: initial.perUserLimit ?? undefined,
@@ -139,15 +140,7 @@ export function OfferForm({
           startsAt: toLocalInput(now),
           endsAt: toLocalInput(inAMonth),
         }) as never,
-    submit: async (data) => {
-      const response = await fetch(action, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      return await response.json();
-    },
+    submit: (data) => offersApiClient.save(action, method, data),
     successMessage: isEdit ? "Offer updated" : "Offer created",
     onSuccess: () => {
       router.push(returnTo);

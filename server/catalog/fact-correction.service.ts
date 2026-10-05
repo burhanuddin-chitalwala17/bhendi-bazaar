@@ -1,4 +1,4 @@
-import { prisma } from "@server/shared/prisma";
+import { adminProductsRepository } from "@server/catalog/admin.product.repository";
 import { DomainError } from "@server/shared/domain-error";
 
 import { FACT_DECLARATIONS, ORIGIN, type FactKey, type Origin } from "./listing-facts";
@@ -85,8 +85,8 @@ export const factCorrectionService = {
   async preview(target: CorrectionTarget): Promise<CorrectionPreview> {
     assertKnownFact(target.fact);
     const [willChange, leftAlone] = await Promise.all([
-      prisma.product.count({ where: matching(target) }),
-      prisma.product.count({ where: ownAnswer(target) }),
+      adminProductsRepository.countWhere(matching(target)),
+      adminProductsRepository.countWhere(ownAnswer(target)),
     ]);
     return { willChange, leftAlone };
   },
@@ -103,27 +103,20 @@ export const factCorrectionService = {
 
     // `updateMany` cannot merge into a JSON path, so the rows are read and written. The set is
     // the products of one org under one level, which is tens or hundreds — not a scan.
-    const products = await prisma.product.findMany({
-      where: matching(target),
-      select: { id: true, facts: true },
-    });
+    const products = await adminProductsRepository.listFactsWhere(matching(target));
 
     if (products.length === 0) return { changed: 0 };
 
-    await prisma.$transaction(
-      products.map((product) =>
-        prisma.product.update({
-          where: { id: product.id },
-          data: {
-            facts: {
-              ...(product.facts as Record<string, unknown>),
-              // The origin stays the level's: the shop did not type this, and a later
-              // correction at the same level must find it again.
-              [target.fact]: { value: target.value, origin: target.level },
-            } as never,
-          },
-        }),
-      ),
+    await adminProductsRepository.replaceFacts(
+      products.map((product) => ({
+        id: product.id,
+        facts: {
+          ...(product.facts as Record<string, unknown>),
+          // The origin stays the level's: the shop did not type this, and a later
+          // correction at the same level must find it again.
+          [target.fact]: { value: target.value, origin: target.level },
+        },
+      })),
     );
 
     return { changed: products.length };

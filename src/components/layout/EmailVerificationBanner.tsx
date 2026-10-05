@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { X, Mail, AlertCircle, CheckCircle } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { authApiClient } from "@/components/auth/authApiClient";
+import { useMutation } from "@/hooks/core/useMutation";
+import { ApiError } from "@/lib/api-error";
 
 export function EmailVerificationBanner() {
   const { data: session, status, update } = useSession();
@@ -11,32 +14,13 @@ export function EmailVerificationBanner() {
   // per-page /api/profile fetch just to know whether to show.
   const isEmailVerified = session?.user?.isEmailVerified ?? true;
 
-  const resendVerificationEmail = useCallback(async () => {
-    try {
-      const response = await fetch("/api/auth/resend-verification", {
-        method: "POST",
-      });
-      const result = await response.json();
-      return response.ok
-        ? {
-            success: true,
-            message: result.message || "Verification email sent!",
-          }
-        : {
-            success: false,
-            message: result.error || "Failed to send verification email",
-          };
-    } catch (error) {
-      console.error("Failed to resend verification email:", error);
-      return {
-        success: false,
-        message: "Failed to send verification email. Please try again.",
-      };
-    }
-  }, []);
+  // The banner reports in place, so the hook's toasts stay off.
+  const { mutate: resendVerification, isLoading: isResending } = useMutation(
+    authApiClient.resendVerification,
+    { showToast: false },
+  );
 
   const [isVisible, setIsVisible] = useState(false);
-  const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   // Syncs with sessionStorage. A lazy useState initialiser would hydrate-mismatch.
@@ -88,12 +72,19 @@ export function EmailVerificationBanner() {
   };
 
   const handleResendEmail = async () => {
-    setIsResending(true);
     setResendMessage(null);
 
-    const result = await resendVerificationEmail();
-    setResendMessage(result.message);
-    setIsResending(false);
+    try {
+      const result = await resendVerification();
+      setResendMessage(result?.message || "Verification email sent!");
+    } catch (error) {
+      console.error("Failed to resend verification email:", error);
+      setResendMessage(
+        error instanceof ApiError
+          ? error.message
+          : "Failed to send verification email. Please try again.",
+      );
+    }
 
     setTimeout(() => setResendMessage(null), 5000);
   };

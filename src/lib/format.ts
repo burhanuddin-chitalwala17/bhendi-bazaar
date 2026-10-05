@@ -9,6 +9,11 @@
 // client code has one import for all things money.
 export { rupeesToPaise, paiseToRupees } from "@server/shared/money";
 
+/** 1250 → 12.5. Rates are stored as integer basis points; this is the one way back to a percent. */
+export function bpsToPercent(bps: number): number {
+  return bps / 100;
+}
+
 /** 120050 → "₹1,200.50"; whole-rupee amounts drop the decimals: 120000 → "₹1,200". */
 export function formatCurrency(paise: number, currency: "INR" = "INR") {
   const wholeRupees = paise % 100 === 0;

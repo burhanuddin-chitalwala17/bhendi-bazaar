@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-10-01
+- **Verified:** 2026-10-02
 - **Covers:** `server/*/`, `src/components/*/`, `docs/adr/*.md`
 
 
@@ -12,31 +12,14 @@ Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-comme
 - Always-on **project-wide** rules live here.
 - Always-on **domain-specific** rules live in that domain's `CLAUDE.md` (e.g. `server/shipping/CLAUDE.md`). These load **lazily** — only when a file in that directory is read — so they cost nothing until relevant.
 - Operational workflows (start a spec, finish a PR, log a decision) live in `.claude/skills/`. Invoke them rather than asking Claude to remember the steps.
-- When a rule and a skill disagree, the skill wins for that workflow — then update this file to match.
+- When a rule, a skill and an ADR disagree, the newest ADR wins; fix the stale one in the same change.
 - The **canonical index of standing conventions** is the *Documentation & Process Conventions* section below. Each entry is a one-line pointer to its ADR; detail lives there so it cannot drift.
 
 ## Repository shape
-Single git repo (monorepo). Docs are split by **volatility**, not by folder convenience:
-
-```
-CLAUDE.md              ← you are here: rules, invariants, conventions index
-docs/
-├── ARCHITECTURE.md    ← current state HLD (what exists now, never plans)
-├── CONTRACTS.md       ← client ↔ API DTO shapes; breaking-change protocol
-├── BACKLOG.md         ← phased status map
-├── CHANGELOG.md       ← append-only history, newest first
-├── DEPENDENCIES.md    ← why each package exists
-├── TESTING.md         ← strategy + per-layer coverage targets
-├── OPERATIONS.md      ← env vars, deploy, runbook
-├── INTEGRATIONS.md    ← how external services actually behave
-├── adr/               ← one immutable file per decision + README index
-└── specs/<feature>/   ← spec.md (product) + trd.md (technical)
-
-server/<domain>/            ← one directory per bounded context, owning its own layers
-  CLAUDE.md                 ← that domain's rules (+ ARCHITECTURE.md, adr/ where warranted)
-  providers/<name>/          ← an external system, behind an interface
-```
-Domain files load **lazily** — only when a file in that directory is read — so they cost no context until relevant.
+Single git repo. Docs are split by **volatility**; [docs/README.md](docs/README.md) maps every file. Rules for one directory live in that directory's `CLAUDE.md`, which loads only when a file there is read:
+- `server/<domain>/CLAUDE.md` — that domain (+ `ARCHITECTURE.md`, `adr/` where warranted)
+- `src/components/CLAUDE.md` — the front end: layers, primitives, tokens, form factors, hooks and API clients
+- `src/app/api/CLAUDE.md` — route handlers: portal guards, parsing, the error envelope
 
 ## Domains
 Bounded contexts. A change that crosses two of these needs a `CONTRACTS.md` check.
@@ -109,22 +92,12 @@ Stock is changed with a guarded `updateMany({ where: { stock: { gte: qty } } })`
 
 ### Cycle per feature
 ```
-SPIKE / R&D          — /bb-brainstorm <topic>      (research only, no code)
-   ↓
-SPEC + TRD           — /bb-sdlc spec-start <feature-name>
-   - docs/specs/<feature>/spec.md  (requirements + product approach)
-   - docs/specs/<feature>/trd.md   (technical approach, NO code)
-   - ≤100 readable lines each; over that → split into subfeatures
-   ↓
-IMPLEMENTATION       — small PRs, each independently demoable, each with tests
-   ↓
-REVIEW               — /bb-review
-   ↓
-ARCHITECTURE.md      — only if structure changed (domain-local vs docs/, by scope)
-   ↓
-CHANGELOG.md entry   — always
-   ↓
-MERGE                — /bb-sdlc pr-finish walks the gate
+SPIKE            /bb-brainstorm <topic>           research only, no code
+SPEC + TRD       /bb-sdlc spec-start <feature>    spec.md + trd.md, ≤100 readable lines each
+IMPLEMENTATION   small PRs, each demoable, each with tests; the directory's CLAUDE.md names the gates you will meet
+REVIEW           /bb-review
+DOCS             ARCHITECTURE.md only if structure changed; CHANGELOG.md always
+MERGE            /bb-sdlc pr-finish walks the gate
 ```
 
 ### A TRD is required when a PR
@@ -138,11 +111,7 @@ typo/comment fixes, config tweaks with no behaviour change, single-function refa
 
 ### Golden Rules
 1. **Architecture docs describe what exists, not what is planned.** Update *after* the change, never before.
-2. **Changelogs are append-only.** Never edit an old entry; append a correction.
-3. **ADRs are immutable.** To reverse one, write a new ADR and set the old one's Status to `Superseded by ADR-NNNN`.
-4. **No pasted code in docs.** Reference `path/file.ts:42` instead. Pasted code is an uncompiled copy of a moving target — it is why the pre-2026-08 docs rotted. ([ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md))
-5. **Every doc carries `Verified:` YYYY-MM-DD.** Stale is acceptable; *silently* stale is not.
-6. **/bb-review runs before any PR is done.**
+2. **/bb-review runs before any PR is done.** The rest — append-only changelog, immutable ADRs, no pasted code, `Verified:` dates — is in the index below.
 
 ---
 
@@ -162,10 +131,12 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **`server/` is organised by domain, not by layer or caller** — no `admin/` tree. [ADR-0012](docs/adr/0012-modules-are-vertical-slices-by-domain.md)
 - **A domain is reached through its public surface** — `*.service`, `*.types` and the seams it declares. Never another domain's repository. [ADR-0033](docs/adr/0033-a-domain-is-reached-through-its-public-surface.md)
 - **One components home, by domain; every control through its primitive.** [ADR-0031](docs/adr/0031-one-components-home-organised-by-domain.md)
+- **A component renders, a hook holds state, an API client makes the call** — `fetch` only in a `*ApiClient.ts` beside its domain; props are DTOs, never `@prisma/client`. [ADR-0048](docs/adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
 - **An overlay's surface follows its content** — picker, canvas task, detail panel, handed-off flow; each carries its own phone form. [ADR-0040](docs/adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)
 - **The UI is mobile-first** — base = phone, breakpoints add. [ADR-0015](docs/adr/0015-mobile-first-design.md)
+- **Three form factors on Tailwind's own breakpoints** — phone at base (`sm:` only refines it), tablet `md:`, desktop `lg:`; scripts read `FORM_FACTOR_QUERY`. [ADR-0050](docs/adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)
 - **The phone storefront is an app shell** — bottom tab bar, 3-up grids, docked actions. [ADR-0016](docs/adr/0016-mobile-app-shell.md)
-- **Every design axis goes through tokens** — colour, type, tracking, elevation, shape, width. [ADR-0022](docs/adr/0022-design-decisions-go-through-tokens.md)
+- **Every design axis goes through tokens** — colour, type, tracking, elevation, shape, width; colour values live only in the primitive palette, which semantic tokens point at. [ADR-0022](docs/adr/0022-design-decisions-go-through-tokens.md), [ADR-0049](docs/adr/0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md)
 - **A file's reasons to change are a decision** — a file reaches at most two other domains; beyond that the set and the reason are recorded. It is the *import* that adds a reason, so that is where the gate fires, at any size. [ADR-0036](docs/adr/0036-a-files-reasons-to-change-are-a-decision.md)
 - **Closed sets are declared once and compared by constant** — `ORDER_STATUS.PAID`, never `"paid"`.
 - **Render on the server by default** — a `page.tsx` is never `"use client"`; push it to the smallest leaf. [ADR-0034](docs/adr/0034-render-on-the-server-by-default.md)
@@ -203,11 +174,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 
 - **SOLID**, **DRY**, **YAGNI**, **KISS** — extensibility comes from good seams, not pre-built features.
 - **Separation of concerns** — components know nothing about Prisma; repositories know nothing about HTTP.
-- **Render on the server by default.** `"use client"` is earned by interactivity — state, effects, event handlers, browser APIs — not by being a component. A server component reads through `src/data-access-layer/`; a client component that only displays data receives it as props. **A route handler exists for something a browser must call**: a mutation, or a fetch triggered by interaction. Reading data a server component could have read is a round trip bought for nothing, and it is how a page ends up with a loading spinner over data the server already had. Push `"use client"` down to the smallest leaf that needs it rather than marking a whole page.
-- **Mobile-first: base styles target a ~360px phone; breakpoints add, never restore.** Single-column at base except comparison grids (`PRODUCT_GRID_CLASSES`); a fixed element sits at `bottom-tabbar`, not `bottom-0`; `hidden md:*` on a primary action needs a mobile affordance in the same change; hover is never the only affordance; targets ≥40px; inputs keep `Input`'s 16px base or iOS zooms. ([ADR-0015](docs/adr/0015-mobile-first-design.md), [ADR-0016](docs/adr/0016-mobile-app-shell.md))
-- **A hook does one thing.** Data fetching, form state, and presentation are three hooks, not one; a hook that returns more than one concern is the seam in the wrong place.
-- **Design goes through tokens.** Colour, type size, tracking, elevation and shape reach a className only as a semantic token from `src/app/globals.css`; page width and title come from `PageShell`/`PageHeader`. A literal at the call site turns a redesign into a hunt. `tests/unit/design-tokens.test.ts` and `tests/unit/cn-tokens.test.ts` enforce it — the second because `cn` must be taught every custom token or `tailwind-merge` cannot tell it is one. ([ADR-0022](docs/adr/0022-design-decisions-go-through-tokens.md))
-- **No magic strings** — closed sets are enums or `as const` unions, declared **once** (see Invariant 5's reasoning; `ProductFlag` was declared three times and drifted silently).
+- **A hook does one thing.** Data fetching, form state, and presentation are three hooks, not one. Front-end detail is in [src/components/CLAUDE.md](src/components/CLAUDE.md).
 - **Dependency direction is inward** — `server/` must not import from `src/`. Shared types belong in a neutral module.
 - **`any` is a defect at a trust boundary.** Route handlers, auth, and payment code are typed or they are wrong.
 - **Never hardcode our own origin.** In the browser use a relative path; where an absolute URL is genuinely needed there, use `window.location.origin`. On the server use `appUrl()` (`server/shared/app-url.ts`). `src/lib/config.ts` is for static brand facts only — an origin is environment-specific or runtime-known, so it is never a constant.

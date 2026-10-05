@@ -9,7 +9,7 @@ import { AddOrgModal } from "./components/AddOrgModal";
 import { useOrgs } from "./hooks/useOrgs";
 import type { OrgWithStats } from "@/domain/org";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
-import type { OrgListFilters } from "@/services/admin/orgService";
+import type { OrgListFilters } from "./orgApiClient";
 import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";

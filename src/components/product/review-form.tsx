@@ -17,7 +17,7 @@ import {
   reviewSubmissionSchema,
   type ReviewSubmissionInput,
 } from "@/lib/validation/schemas/review.schema";
-import { reviewApiClient } from "@/services/reviewApiClient";
+import { reviewApiClient } from "@/components/product/reviewApiClient";
 import { STAR_VALUES } from "@server/catalog/review.types";
 import type { ReviewDto } from "@server/catalog/review.types";
 

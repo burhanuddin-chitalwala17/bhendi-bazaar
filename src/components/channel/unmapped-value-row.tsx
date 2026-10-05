@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { channelsApiClient } from "@/components/channel/channelsApiClient";
 import {
   channelValueMappingSchema,
   type ChannelValueMappingInput,
@@ -36,17 +36,10 @@ export function UnmappedValueRow({ channel, entry }: UnmappedValueRowProps) {
     formState: { errors, isSubmitting },
   } = useServerForm<ChannelValueMappingInput>({
     schema: channelValueMappingSchema,
-    submit: async (data) => {
-      const response = await fetch("/api/admin/channels/values", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        // The three identifiers come from props, not from anything typed, so they are sent
-        // rather than registered as fields: a bound field with no way to show an error is a form
-        // that refuses silently (tests/unit/form-error-display.test.ts).
-        body: JSON.stringify({ ...data, channel, list: entry.list, valueKey: entry.valueKey }),
-      });
-      if (!response.ok) throw await readApiError(response);
-    },
+    // The three identifiers come from props, not from anything typed, so they are sent rather
+    // than registered as fields: a bound field with no way to show an error refuses silently.
+    submit: (data) =>
+      channelsApiClient.mapValue({ ...data, channel, list: entry.list, valueKey: entry.valueKey }),
     successMessage: `Recorded what they call ${entry.label}`,
     onSuccess: () => router.refresh(),
     defaultValues: {

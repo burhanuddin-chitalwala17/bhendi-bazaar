@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,8 +12,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
-import { readApiError } from "@/lib/api-error";
-import type { OrgLocation } from "@server/catalog/org.address.repository";
+import { useMutation } from "@/hooks/core/useMutation";
+import { orgLocationsApiClient } from "@/components/org/orgLocationsApiClient";
+import type { OrgLocation } from "@server/catalog/org.address.types";
 import { LocationForm } from "@/components/org/location-form";
 import { formatPhone } from "@server/shared/phone";
 
@@ -41,18 +41,15 @@ export function LocationsManager({ orgId, locations }: LocationsManagerProps) {
     setIsOpen(true);
   };
 
-  const remove = async (location: OrgLocation) => {
+  const { mutate: removeLocation } = useMutation(
+    (locationId: string) => orgLocationsApiClient.remove(orgId, locationId),
+    { successMessage: "Location deleted", onSuccess: () => router.refresh() },
+  );
+
+  const remove = (location: OrgLocation) => {
     if (!confirm(`Delete "${location.name}"?`)) return;
-    const response = await fetch(`/api/org/${orgId}/locations/${location.id}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) {
-      const error = await readApiError(response);
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Location deleted");
-    router.refresh();
+    // `useMutation` toasts the failure and rethrows; catching keeps it from going unhandled.
+    void removeLocation(location.id).catch(() => {});
   };
 
   return (

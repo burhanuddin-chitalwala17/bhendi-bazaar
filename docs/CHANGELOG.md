@@ -10,26 +10,163 @@
 
 ## Entries
 
-## [PR-269] 2026-10-04 — The channel contracts, recorded [CONTRACT]
+## [PR-278] 2026-10-04 — develop's new code, brought under the new rules
 
-Found by running `/bb-review` over the thirteen commits: the TRD said `[CONTRACT]` and that
-`CONTRACTS.md` would move in the same PR. It never did, and no entry carried the flag.
+Merging `develop` into the design branch brought in 35 commits written before ADR-0048 and the
+Invariant 5 ratchet existed, and the guards caught exactly that code:
 
-Three shapes cross the boundary — a shop's channel choice, a value mapping, a not-sold decision —
-and they are now recorded with the reasoning that is easy to lose: the channel set is sent whole
-so silence is never read as "off", `theirValue` is free text because it is somebody else's
-vocabulary, and both register writes upsert so a repeat is a correction rather than a duplicate.
+- `src/services/admin/productTypeApiClient.ts` re-created the dissolved `src/services/`. It splits
+  into `src/components/product-type/productTypeApiClient.ts` (the console) and
+  `src/components/product/listingApiClient.ts` (the product form's listing values and families).
+- Three new components called `fetch` themselves (`unmapped-value-row`, `where-you-sell`, and from
+  the second merge `not-sold-button`); all now go through
+  `src/components/channel/channelsApiClient.ts`, the last with `useMutation`.
+- `fact-correction.service.ts` read and wrote products directly. Its queries are now
+  `admin.product.repository.ts` methods, and the predicate stays in the service so the preview
+  and the update still share it.
+- The bulk import's new update-by-SKU path joined the repository move: `listLiveSkus` and
+  `importBulk` (creates and full-replace updates in one transaction). The wizard's new "updated"
+  count is carried through the shared `useBulkImport` hook.
 
-**And one the TRD promised that does not exist.** It anticipated a readiness DTO per product and
-channel. Building it showed a route handler would be a round trip for a read the server already
-does, so readiness is computed and rendered server-side and never crosses the wire. Recorded as
-an absence with its reason, because a contract document that lists a shape nobody sends is worse
-than one that is merely incomplete.
+Numbering: this branch's entries were PR-233 to PR-239 while `develop` reached PR-270, so they are
+renumbered PR-271 to PR-277. ADR-0048 to ADR-0050 did not collide.
 
-The review also caught a numbering collision — the owner committed PR-266 between two of mine and
-I reused the number — and a commit that shipped with no changelog entry at all. Both corrected in
-PR-268 above.
+## [PR-277] 2026-10-02 — Every table is reached through a repository
 
+PR-276's ratchet listed nineteen files calling `prisma.<model>` outside a repository. All of them
+have moved, and its allowlist is now empty:
+
+- **Identity:** auth config, the NextAuth adapter's account creation, admin re-reads (still on
+  every request, ADR-0021), password and verification tokens, signup, and the profile picture
+  now go through `profile.repository.ts`. Callers outside identity use the new
+  `accountService`; notifications reaches its token rows through it too.
+- **Shipping and checkout:** `Shipment` gets its first repository
+  (`server/shipping/repositories/shipment.repository.ts`). The tracking route and the Shiprocket
+  webhook call a new `trackingService`. The webhook's order write — the worst entry — is now
+  `orderService.markDelivered`, so only checkout writes order state.
+- **Catalog:** bulk import, stock check, wishlist availability and the media backfill go through
+  catalog's repositories. The allocate route's body became
+  `server/checkout/parcel-preview.service.ts`, so the route reaches one domain.
+- **Analytics:** the dashboard widgets' reads moved to `server/analytics/widgets.repository.ts`.
+
+The NextAuth adapter is still handed the Prisma client, because the library works that way.
+
+Measuring this found the harder half of Invariant 5. Four tables are *written* by more than one
+repository: `ProductStock`, `User`, `OrgMember` and `Order`. Most are a storefront repository
+beside an `admin.*` one, which "no admin domain" sanctions and Invariant 5 forbids. That
+contradiction needs a decision, not a move. `one-repository.test.ts` gains a second ratchet that
+records the four and fails a fifth.
+
+Every query moved with its where, select and include unchanged. Verified with the integration
+suite against a freshly migrated local database — 103 tests, the seeded-data suite skipped — as
+well as the unit suite.
+
+## [PR-276] 2026-10-02 — Invariant 5 gets the guard it never had
+
+"One aggregate, one repository" was a hard block with no test. Measured today: nineteen files
+outside a repository call `prisma.<model>` directly — six route handlers among them, and a
+shipping webhook writing `prisma.order`. `tests/unit/one-repository.test.ts` is a ratchet over
+them: each entry says why it has not moved, a new direct call fails, and a fixed file must leave
+the list. Broken once on purpose to confirm it fails. The webhook entry is marked the most urgent.
+
+## [PR-275] 2026-10-02 — The rules say what the tests check, where the code is written
+
+An audit of the rules and skills against the tests found the server's rules stated where code is
+written, and the front end's mostly not: several gates (row-shaped buttons, overlay choice, portal
+guards, `cn` registration) had no rule anywhere, and were met only when a test went red. Root
+`CLAUDE.md` was also 232 lines against its own 200-line limit, four rules stated twice.
+
+- `src/components/CLAUDE.md` and `src/app/api/CLAUDE.md` are new and load lazily. Each rule names
+  the test that enforces it, or says it has none.
+- Root `CLAUDE.md` is back under 200 lines: duplicates removed, the repository tree replaced by a
+  pointer to `docs/README.md`, and an implementation step that names the directory's rules. When
+  a rule, skill and ADR disagree, the newest ADR now wins, instead of the skill.
+- `/bb-review`:
+  - scopes to the PR-sized unit instead of `main...HEAD`;
+  - its mobile-first grep no longer uses a lookahead `grep -E` rejects;
+  - its image section describes R2, not Blob;
+  - it drops a stale note about `Float` money and adds `slug` to the server-owned fields;
+  - it gains front-end layering, portal guards, allowlist edits and mutation-testing a new guard.
+- `/bb-sdlc`:
+  - drops `<domain>/CHANGELOG.md`;
+  - names `lint:boundary` and `docs:check`;
+  - matches the commit policy;
+  - its TRD template gains a per-form-factor UI section and "Gates touched".
+- `/bb-brainstorm` no longer assumes Vercel serverless or offers Upstash (ADR-0037, ADR-0038).
+- `docs:check` now scans skills (every path a skill names must exist) and the new `CLAUDE.md`
+  files, and fails if root `CLAUDE.md` passes 200 lines.
+- Small fixes: `ui-primitives.test.ts` cited the wrong ADR, `server/notifications/CLAUDE.md`
+  carried a second, older `Verified:` date, and the empty `src/probe-tmp.ts` is deleted.
+
+## [PR-274] 2026-10-02 — The browser calls our API through one door
+
+Fifty-seven inline `fetch` calls — 49 in 42 components, 8 in hooks — each re-implemented "check
+`ok`, read the envelope, parse", and API clients lived in three places under two names. Now a
+component renders, a hook holds state, and an API client makes the call (ADR-0048):
+
+- `src/lib/api-client.ts` (`apiRequest`) is the one place the browser calls our API; a failure is
+  always an `ApiError` with its field details.
+- Every request lives in a `<thing>ApiClient.ts` beside its domain under `src/components/`. Clients
+  never toast or navigate. `src/services/` is dissolved into those folders.
+- Components call clients through `useServerForm`, `useMutation` and `useAsyncData`. `useAsyncData`
+  now hands the fetcher an `AbortSignal` and aborts the stale run, which `useDebouncedSearch`
+  builds on for the two product pickers.
+- `tests/unit/api-clients.test.ts` enforces it with no allowlist: every site was classified first
+  and none needed to own its request. Each of its four rules was broken once to confirm it fails.
+
+Defects closed by the move: the cart's stock check parsed an error body as stock rows; both
+checkout stock checks did the same and crashed; two search pickers let an older reply overwrite a
+newer one, and ignored failures; the media sheet could show one asset's details on another; the
+bulk wizards rebuilt their error and dropped its details; `orgService.createOrg` threw on its own
+error path; the shipping-provider client checked `!response` instead of `!response.ok`; four
+components read the envelope by hand; three hand-rolled forms (`CommercialTerms`, both
+`BidLadder` dialogs) dropped field errors and now use `useServerForm` with their existing schemas;
+the shipment-tracking schema moved out of its route into `src/lib/validation/schemas/` so its form
+can share it.
+
+Review of the conversion found one regression it had made reachable: a payment-order refusal with
+field details left checkout on "Processing" with the Pay button disabled. Fixed, with
+`tests/unit/checkout-payment-errors.test.ts`, seen to fail without the fix.
+
+## [PR-273] 2026-10-02 — Three form factors, and the tablet gets the image it shows
+
+The breakpoints now have meanings (ADR-0050): phone at base, with `sm:` only refining it;
+tablet from `md:`; desktop from `lg:`. Tailwind's defaults, not a custom scale. Scripts read
+the same two queries from `FORM_FACTOR_QUERY`, and `useIsDesktop` — which matched at 768px,
+the tablet — is now `useIsTabletUp`. `video-player.tsx`'s second copy of that query is gone.
+
+`tests/unit/form-factors.test.ts` requires every hand-written media query to name a declared
+breakpoint, and its first run found a real defect. The product gallery's image hint said
+half-width from 768px and a third from 1200px; the page is full width until `lg` and half the
+72rem column after. A tablet was downloading every gallery image at half the size it showed
+it. The hint is now declared once as `GALLERY_SLIDE_SIZES` and shared by the gallery, the
+video poster and the YouTube thumbnail, which had copied the same string.
+
+## [PR-272] 2026-10-02 — Colour is a palette the themes pick from
+
+`globals.css` spelled out 52 colour values across 152 declarations, the warm charcoal ink seven
+times. They now live once, in a primitive palette (`--emerald-550`, `--charcoal-220`, …) at the
+top of the file, and every semantic token in every theme is a `var()` to one of them
+(ADR-0049). Every declaration resolves to the value it had before — checked one by one — so
+nothing on screen moved. The near-duplicates the repetition was hiding are now visible as
+`-soft` twins, left for a deliberate design pass rather than merged here.
+
+`tests/unit/design-tokens.test.ts` guards it: no raw colour outside the palette, no unused
+primitive, and no file in `src/` naming one. Each was broken on purpose once to confirm it fails.
+
+## [PR-271] 2026-10-02 — The orders table is handed the row it shows, not the order
+
+`OrdersTable` was typed by `@prisma/client`'s `Order`, so the admin orders page sent every column
+of every order to the browser to render seven of them. The boundary test missed it twice: it
+looked for the Prisma *client*, never `@prisma/client`, and it exempted type-only imports — an
+exemption written for imports between server domains (ADR-0033 D5), where a type really is just
+a type.
+
+`adminOrderService.getOrders` now returns `AdminOrderRow` (`server/checkout/admin.order.types.ts`),
+and `OrgLocation` moved out of the repository into `server/catalog/org.address.types.ts`, which
+three components were importing it from. The component rule in
+`tests/unit/module-boundaries.test.ts` now forbids `@prisma/client` and repositories outright,
+types included — broken on purpose once to confirm it fails.
 ## [PR-270] 2026-10-04 — A dev catalogue shaped like the real one
 
 The seed was broken and the dev database could not exercise any of the listing work. Both fixed.
@@ -63,6 +200,26 @@ the platform's own seeded mapping for maroon. The same class of fault as the bil
 instrument in PR-257: a suite quietly spending something it did not own. Its fixtures are now
 stamped and collide with nothing.
 
+## [PR-269] 2026-10-04 — The channel contracts, recorded [CONTRACT]
+
+Found by running `/bb-review` over the thirteen commits: the TRD said `[CONTRACT]` and that
+`CONTRACTS.md` would move in the same PR. It never did, and no entry carried the flag.
+
+Three shapes cross the boundary — a shop's channel choice, a value mapping, a not-sold decision —
+and they are now recorded with the reasoning that is easy to lose: the channel set is sent whole
+so silence is never read as "off", `theirValue` is free text because it is somebody else's
+vocabulary, and both register writes upsert so a repeat is a correction rather than a duplicate.
+
+**And one the TRD promised that does not exist.** It anticipated a readiness DTO per product and
+channel. Building it showed a route handler would be a round trip for a read the server already
+does, so readiness is computed and rendered server-side and never crosses the wire. Recorded as
+an absence with its reason, because a contract document that lists a shape nobody sends is worse
+than one that is merely incomplete.
+
+The review also caught a numbering collision — the owner committed PR-266 between two of mine and
+I reused the number — and a commit that shipped with no changelog entry at all. Both corrected in
+PR-268 above.
+
 ## [PR-268] 2026-10-04 — How much of the catalogue each channel would take
 
 The last of the channel registry's delivery list, and the spec moves to Implemented.
@@ -78,14 +235,6 @@ the read was moved back inside the loop.
 
 Numbering correction: this entry and the one below it were first written as a second PR-266,
 colliding with the entry above. Both are same-day and unpushed; what happened is unchanged.
-
-## [PR-266] 2026-10-04 — Every hero piece on the home page, loaded as you scroll
-
-The home page showed the six newest `HERO` products and silently dropped the rest. It now shows
-all of them: nine on first paint (three rows of the phone grid), then the rest through the same
-`PaginatedProductGrid` and `/api/products` route every other listing uses, via a new `heroOnly`
-filter (`?hero=1`). The section is hidden when there are no heroes. `productsDAL.getHeroProducts`
-is gone — nothing called it any more.
 
 ## [PR-267] 2026-10-04 — Not sold here, on purpose [MIGRATION]
 
@@ -117,6 +266,14 @@ The decision itself is now data: one row per publishable channel for `combo`. Fo
 watched turning the guards red, including one that only a direct caller of the pure function can
 reach — `readinessByChannel` filters those channels out first, so the guard inside it had no test
 until the mutation said so.
+
+## [PR-266] 2026-10-04 — Every hero piece on the home page, loaded as you scroll
+
+The home page showed the six newest `HERO` products and silently dropped the rest. It now shows
+all of them: nine on first paint (three rows of the phone grid), then the rest through the same
+`PaginatedProductGrid` and `/api/products` route every other listing uses, via a new `heroOnly`
+filter (`?hero=1`). The section is hidden when there are no heroes. `productsDAL.getHeroProducts`
+is gone — nothing called it any more.
 
 ## [PR-265] 2026-10-04 — How this would list elsewhere, on the product itself
 

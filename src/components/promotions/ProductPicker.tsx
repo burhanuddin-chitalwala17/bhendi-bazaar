@@ -12,8 +12,10 @@
  * has already made never disappears just because it is off the current page.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { useDebouncedSearch } from "@/hooks/core/useDebouncedSearch";
+import { productSearchApiClient } from "@/components/promotions/productSearchApiClient";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,37 +50,15 @@ export function ProductPicker({
   error,
 }: ProductPickerProps) {
   const [term, setTerm] = useState("");
-  const [results, setResults] = useState<TargetOption[]>(initial);
-  const [total, setTotal] = useState(initialTotal);
-  const [isSearching, setIsSearching] = useState(false);
-
-  // Debounced, so typing a word is one query rather than one per keystroke.
-  useEffect(() => {
-    if (term === "") {
-      setResults(initial);
-      setTotal(initialTotal);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const response = await fetch(
-          `${searchPath}?q=${encodeURIComponent(term)}`,
-        );
-        if (response.ok) {
-          const data = (await response.json()) as {
-            products: TargetOption[];
-            total: number;
-          };
-          setResults(data.products);
-          setTotal(data.total);
-        }
-      } finally {
-        setIsSearching(false);
-      }
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [term, searchPath, initial, initialTotal]);
+  const search = useDebouncedSearch(
+    term,
+    (query, signal) => productSearchApiClient.search(searchPath, query, signal),
+    { skipEmpty: true, dependencies: [searchPath] },
+  );
+  // Until a search has answered, the page the server rendered is what there is.
+  const results = search.data?.products ?? initial;
+  const total = search.data?.total ?? initialTotal;
+  const { isSearching } = search;
 
   // Selected first, then the page, with no duplicates.
   const shown = useMemo(() => {
@@ -140,6 +120,9 @@ export function ProductPicker({
           : `${total} product${total === 1 ? "" : "s"}`}
       </p>
 
+      {search.error && (
+        <p className="mt-1.5 text-sm text-destructive">{search.error}</p>
+      )}
       {error && <p className="mt-1.5 text-sm text-destructive">{error}</p>}
     </div>
   );

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireSession } from "@/lib/admin-auth";
-import { prisma } from "@server/shared/prisma";
+import { profileService } from "@server/identity/profile.service";
 import { normalizeImage } from "@server/catalog/image-upload";
 import { deleteObject, putObject } from "@server/catalog/object-store";
 
@@ -37,10 +37,7 @@ export async function POST(request: Request) {
     }
 
     // 4. Get user's current profile
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true },
-    });
+    const user = await profileService.findUserWithProfile(userId);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -64,16 +61,7 @@ export async function POST(request: Request) {
     const uploadedUrl = await putObject(filename, body, contentType);
 
     // 7. Update profile with new blob URL
-    await prisma.profile.upsert({
-      where: { userId },
-      create: {
-        userId,
-        profilePic: uploadedUrl,
-      },
-      update: {
-        profilePic: uploadedUrl,
-      },
-    });
+    await profileService.setProfilePic(userId, uploadedUrl);
 
     // 8. Return success
     return NextResponse.json({
@@ -94,10 +82,7 @@ export async function DELETE(request: Request) {
   try {
     const userId = (await requireSession()).user.id;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true },
-    });
+    const user = await profileService.findUserWithProfile(userId);
 
     if (!user?.profile?.profilePic) {
       return NextResponse.json(
@@ -109,10 +94,7 @@ export async function DELETE(request: Request) {
     await deleteObject(user.profile.profilePic);
 
     // Update profile
-    await prisma.profile.update({
-      where: { userId },
-      data: { profilePic: null },
-    });
+    await profileService.clearProfilePic(userId);
 
     return NextResponse.json({ message: "Profile picture deleted" });
   } catch (error) {

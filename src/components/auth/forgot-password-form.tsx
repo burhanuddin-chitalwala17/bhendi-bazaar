@@ -6,7 +6,6 @@ import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
 import {
   forgotPasswordSchema,
   type ForgotPasswordInput,
@@ -14,6 +13,7 @@ import {
 import { AuthField, PRIMARY_BUTTON } from "@/components/auth/auth-field";
 import { SWITCH_LINK } from "@/components/auth/sign-in-form";
 import type { SwitchAuthView } from "@/components/auth/auth-view";
+import { authApiClient } from "@/components/auth/authApiClient";
 
 /** Ask for a reset link and confirm in place; the emailed link opens a page (R4). */
 export function ForgotPasswordForm({
@@ -33,15 +33,8 @@ export function ForgotPasswordForm({
     formState: { errors, isSubmitting },
   } = useServerForm<ForgotPasswordInput>({
     schema: forgotPasswordSchema,
-    submit: async (data) => {
-      const response = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      setSent(true);
-    },
+    submit: (data) => authApiClient.forgotPassword(data),
+    onSuccess: () => setSent(true),
     defaultValues: { email: defaultEmail },
   });
 

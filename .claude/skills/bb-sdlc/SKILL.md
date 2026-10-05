@@ -10,7 +10,8 @@ Three subcommands. Pick the one matching the invocation.
 ## Where docs live
 
 - **Project-wide:** `docs/` — `ARCHITECTURE.md`, `CONTRACTS.md`, `BACKLOG.md`, `CHANGELOG.md`, `DEPENDENCIES.md`, `TESTING.md`, `OPERATIONS.md`, `INTEGRATIONS.md`, `adr/`, `specs/`.
-- **Domain-internal:** co-located with the code — `<domain>/CLAUDE.md`, `<domain>/ARCHITECTURE.md`, `<domain>/adr/`, `<domain>/CHANGELOG.md`.
+- **Domain-internal:** co-located with the code — `<domain>/CLAUDE.md`, `<domain>/ARCHITECTURE.md`, `<domain>/adr/`. One changelog for everything: `docs/CHANGELOG.md`.
+- **Directory rules:** `src/components/CLAUDE.md` (front end), `src/app/api/CLAUDE.md` (route handlers).
 
 When something below says "the relevant `ARCHITECTURE.md`", choose by scope: one domain → that domain's; crossing domains → `docs/`.
 
@@ -88,10 +89,21 @@ this change or record why it stays.
 New dependencies, cross-referenced to DEPENDENCIES.md. "None" if none.
 
 ## UI approach
-Only if the feature has UI, else "None". Mobile-first per [ADR-0015](../../adr/0015-mobile-first-design.md):
-describe the ~360px single-column layout first — content order, primary actions,
-touch affordances — then what desktop breakpoints add. A TRD that only describes
-the desktop layout is not done: the phone is the primary device, not the variant.
+Only if the feature has UI, else "None". Rules: [src/components/CLAUDE.md](../../../src/components/CLAUDE.md).
+- **Per form factor** ([ADR-0050](../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)): the ~360px phone layout first (content order, primary actions, touch affordances), then what `md:` (tablet) and `lg:` (desktop) add. A TRD that describes only desktop is not done.
+- **Rendering:** which parts are server components reading through the data-access layer, and which leaf earns `"use client"`.
+- **Behaviour:** each request's `*ApiClient` and the hook that calls it (`useServerForm`, `useMutation`, `useAsyncData`); the DTO each component is handed.
+- **Surfaces:** which primitives and overlays (ADR-0040) it uses, and any new token.
+
+## Gates touched
+Which source-scanning tests this change meets, and any allowlist entry it adds with its reason. That way the cost is seen at design time, not when a test fails. The common ones:
+- a new domain → `PUBLIC_SURFACE` (module-boundaries);
+- a new `CLAUDE.md` → `LIVING_DOCS` (docs-integrity);
+- a new route → its caller and its portal guard (route-reachability, portal-boundary);
+- a file reaching a third domain → `RECORDED` (file-cohesion);
+- a sheet → `MAY_USE_SHEET` (overlay-surfaces).
+
+"None" if none.
 
 ## Data model
 Schema changes. Flag [MIGRATION]. "None" if none.
@@ -149,12 +161,12 @@ Walks the pre-merge gate. Report each item as pass, fail, or not-applicable — 
 1. **`/bb-review` has been run** and its findings addressed. If not, run it now; this is the substantive check and the rest is bookkeeping.
 2. **Tests exist** for changed logic, and pass. `npm run test:run`.
 3. **Typecheck passes.** `npx tsc --noEmit`.
-4. **Lint** introduces no new errors.
+4. **Lint.** `npm run lint:boundary` passes; it is the blocking lint in CI. `npm run lint` introduces no new errors (advisory). `npm run docs:check` passes.
 5. **CHANGELOG entry** added — newest at top, one per PR, append-only. `[CONTRACT]` if a DTO changed, `[MIGRATION]` if a migration was added.
 6. **A TRD exists** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
 7. **Docs updated** where they are now wrong: the relevant `ARCHITECTURE.md` if structure changed, `CONTRACTS.md` if a DTO changed, `DEPENDENCIES.md` if a package was added, `OPERATIONS.md` if setup or deploy changed. Bump each touched doc's `Verified:` date.
 8. **Spec status moved** if this PR completed one — `Draft` → `Implemented` in the spec and in `docs/specs/README.md`, and the row in `BACKLOG.md`.
 9. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the CHANGELOG records what changed, and that is enough.
-10. **Branch is not `main`.** Commit or push only when asked.
+10. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Never push or open a PR unless the user asks in this conversation.
 
 Report the checklist with its verdicts, then state plainly whether the PR is ready.

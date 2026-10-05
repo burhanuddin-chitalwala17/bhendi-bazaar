@@ -19,7 +19,7 @@ interface UseMutationReturn<TData, TVariables> {
   reset: () => void;
 }
 
-export function useMutation<TData = any, TVariables = any>(
+export function useMutation<TData = unknown, TVariables = void>(
   mutationFn: (variables: TVariables) => Promise<TData>,
   options: UseMutationOptions<TData, TVariables> = {}
 ): UseMutationReturn<TData, TVariables> {

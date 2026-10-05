@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { reviewApiClient } from "@/services/reviewApiClient";
+import { reviewApiClient } from "@/components/product/reviewApiClient";
 import type { ReviewDto } from "@server/catalog/review.types";
 
 /**
