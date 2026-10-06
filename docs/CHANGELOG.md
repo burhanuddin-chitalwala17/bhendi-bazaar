@@ -10,6 +10,19 @@
 
 ## Entries
 
+## [PR-285] 2026-10-06 — The aggregate's repository carries the aggregate's name
+
+`admin.product.repository.ts` held every product write while `product.repository.ts` was
+read-only. That named the write side for the console instead of for the table it owns.
+Swapped: `product.repository.ts` is the aggregate repository (writes), `product.read.repository.ts`
+is the storefront read model. Same for category. Export names stay (`productsRepository`,
+`adminProductsRepository`) so the 56 import sites change their path, not their code.
+
+The `ADMIN_WRITERS` ratchet in `one-repository.test.ts` is now empty: no `admin.*` file writes,
+and the test refuses a new one. The rule that held this together — "an admin listing is a query
+on its domain, kept as `admin.*` files" — and the rule that held it accountable — "a write in
+an `admin.*` file fails the build" — both hold outright.
+
 ## [PR-284] 2026-10-05 — Money, page titles and touch targets through the wrappers
 
 - `shared/Money.tsx` replaces inline `formatCurrency` in table/summary contexts —

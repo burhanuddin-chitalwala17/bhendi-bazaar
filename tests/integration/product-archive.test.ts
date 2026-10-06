@@ -73,7 +73,7 @@ describe.skipIf(!isDisposableDb)("product archive (local db)", () => {
   });
 
   it("removes an archived product from every buyer-facing read, and a restore puts it back", async () => {
-    const { productsRepository } = await import("@server/catalog/product.repository");
+    const { productsRepository } = await import("@server/catalog/product.read.repository");
     const { productsService } = await import("@server/catalog/admin.product.service");
     const product = await makeProduct();
     const actor = await actorFor(product.orgId);
@@ -125,7 +125,7 @@ describe.skipIf(!isDisposableDb)("product archive (local db)", () => {
   });
 
   it("still lets the org find and restore it, which is why the portal read is unfiltered", async () => {
-    const { adminProductsRepository } = await import("@server/catalog/admin.product.repository");
+    const { adminProductsRepository } = await import("@server/catalog/product.repository");
     const { productsService } = await import("@server/catalog/admin.product.service");
     const product = await makeProduct();
     const actor = await actorFor(product.orgId);

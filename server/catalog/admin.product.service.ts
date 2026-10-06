@@ -1,11 +1,11 @@
 // server/services/admin/productService.ts
 
-import { adminProductsRepository } from "@server/catalog/admin.product.repository";
+import { adminProductsRepository } from "@server/catalog/product.repository";
 import { resolveShotList, unknownSlots } from "@server/catalog/shot-list";
 import { fillListing } from "@server/listing/listing-fill.service";
 import { holdsKind, resolveProductType } from "@server/listing/product-type";
 import { productTypeRepository } from "@server/listing/product-type.repository";
-import { categoryRepository } from "@server/catalog/category.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import {
   ProductCopyOption,
   ProductCopySource,

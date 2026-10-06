@@ -26,7 +26,7 @@ vi.mock("@server/catalog/org-profile.repository", () => ({
     updateSettings: vi.fn(),
   },
 }));
-vi.mock("@server/catalog/product.repository", () => ({
+vi.mock("@server/catalog/product.read.repository", () => ({
   PRODUCT_MEDIA_ASSET_SELECT: { id: true, kind: true, state: true, ref: true, width: true, height: true },
   productsRepository: { getProductBySlug: (...a: unknown[]) => getProductBySlug(...a) },
 }));

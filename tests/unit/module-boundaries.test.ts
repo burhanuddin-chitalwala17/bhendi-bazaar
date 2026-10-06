@@ -46,7 +46,7 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
     "shot-list",
     // listing-fill reads brand defaults and category trees to fill a product's blanks.
     "brand.repository",
-    "category.repository",
+    "category.read.repository",
   ],
   listing: [
     // ADR-0051/0052: the vocabulary, types and readiness are listing's public answers.

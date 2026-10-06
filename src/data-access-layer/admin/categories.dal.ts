@@ -3,7 +3,7 @@
 import { cache } from "react";
 import type { AdminCategory, CategoryListFilters, CategoryListResult } from "@/domain/admin";
 // SERVER-SIDE CATEGORIES SERVICE
-import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
+import { adminCategoryRepository } from "@server/catalog/category.repository";
 import { productTypeRepository } from "@server/listing/product-type.repository";
 class CategoriesDAL {
     getCategories = cache(async (): Promise<CategoryListResult> => {

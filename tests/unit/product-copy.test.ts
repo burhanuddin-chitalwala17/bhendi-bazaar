@@ -14,7 +14,7 @@ const listCopyOptions = vi.fn();
 
 // Neighbouring modules import the client at load; nothing on the copy path queries it.
 vi.mock("@server/shared/prisma", () => ({ prisma: {} }));
-vi.mock("@server/catalog/admin.product.repository", () => ({
+vi.mock("@server/catalog/product.repository", () => ({
   adminProductsRepository: {
     getProductById: (id: string) => getProductById(id),
     listCopyOptions: (orgId: string) => listCopyOptions(orgId),

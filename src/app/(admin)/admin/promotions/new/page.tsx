@@ -1,7 +1,7 @@
 /** New platform offer. Options are loaded server-side; the form posts to the platform route. */
 import { requirePlatformAdmin } from "@/lib/admin-auth";
-import { categoryRepository } from "@server/catalog/category.repository";
-import { productsRepository } from "@server/catalog/product.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import { OfferForm } from "@/components/promotions/OfferForm";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";

@@ -9,8 +9,8 @@
  */
 import { randomUUID } from "node:crypto";
 import type { CategoryAccent, Prisma } from "@prisma/client";
-import { categoryRepository } from "@server/catalog/category.repository";
-import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
+import { adminCategoryRepository } from "@server/catalog/category.repository";
 import { slugify } from "@server/shared/slug";
 import { BULK_MAX_ROWS, type RowError } from "@server/catalog/bulk/bulk.types";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";

@@ -12,7 +12,7 @@
 import { withOrg } from "@/lib/org-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { buildProductSampleSheet } from "@server/catalog/bulk/sample-sheet";
-import { categoryRepository } from "@server/catalog/category.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import { FACT_DECLARATIONS } from "@server/listing/listing-facts";
 import { listingValueRepository } from "@server/listing/listing-value.repository";
 import { productTypeRepository } from "@server/listing/product-type.repository";

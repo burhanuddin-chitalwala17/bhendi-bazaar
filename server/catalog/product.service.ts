@@ -5,9 +5,9 @@ import type { Prisma } from "@prisma/client";
  * This service encapsulates all business logic related to products.
  */
 
-import { adminProductsRepository } from "@server/catalog/admin.product.repository";
-import { productsRepository, type ProductDb } from "@server/catalog/product.repository";
-import { categoryRepository } from "@server/catalog/category.repository";
+import { adminProductsRepository } from "@server/catalog/product.repository";
+import { productsRepository, type ProductDb } from "@server/catalog/product.read.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import { collectSubtreeIds } from "@server/catalog/category.tree";
 import type { ProductFilter, ProductSuggestion } from "@server/catalog/product.types";
 import {

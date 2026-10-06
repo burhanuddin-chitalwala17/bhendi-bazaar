@@ -80,7 +80,7 @@ describe("the domain boundary still holds", () => {
   // That catalog names no wishlist table is pinned by wishlist-demand-column.test.ts,
   // which owns that rule — and which caught a comment of this filter's naming it.
   it("filters on an empty array instead of falling through on truthiness", () => {
-    const repo = readFileSync("server/catalog/admin.product.repository.ts", "utf8");
+    const repo = readFileSync("server/catalog/product.repository.ts", "utf8");
     // `[] && …` is truthy, so a truthiness test would have worked by accident here and
     // broken the day someone rewrote it. The undefined check is the load-bearing part.
     expect(repo).toMatch(/productIds !== undefined/);

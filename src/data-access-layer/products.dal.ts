@@ -5,7 +5,7 @@
 import {
   productsRepository,
   type ProductWithRelations,
-} from "@server/catalog/product.repository";
+} from "@server/catalog/product.read.repository";
 import { productService } from "@server/catalog/product.service";
 import { Product, ProductFilter, effectivePrice } from "@/domain/product";
 import { PRODUCT_PAGE_SIZE, type ProductSort } from "@/lib/product-paging";

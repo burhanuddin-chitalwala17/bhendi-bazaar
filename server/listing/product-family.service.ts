@@ -1,6 +1,6 @@
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
-import { categoryRepository } from "@server/catalog/category.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import { productFamilyRepository, type FamilyRow } from "./product-family.repository";
 import { resolveProductType } from "./product-type";
 import { productTypeRepository } from "./product-type.repository";

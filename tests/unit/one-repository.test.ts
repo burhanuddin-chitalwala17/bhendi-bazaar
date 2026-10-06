@@ -52,13 +52,7 @@ const MULTI_WRITER: Record<string, string> = {};
  * `Order` had two until 2026-10-04. These still write; each leaves when its commands move to the
  * aggregate's repository.
  */
-const ADMIN_WRITERS: Record<string, string> = {
-  "server/catalog/admin.product.repository.ts":
-    "Product create, update, archive and bulk import — the catalogue's whole write path, which " +
-    "product.repository has never held. Moving it is a rename of the two files, not a fix.",
-  "server/catalog/admin.category.repository.ts":
-    "Category create, update, reorder and delete; category.repository is read-only today.",
-};
+const ADMIN_WRITERS: Record<string, string> = {};
 
 const isRepository = (f: string) => /\.repository\.ts$/.test(f);
 const matches = (f: string, re: RegExp) => [...readFileSync(f, "utf8").matchAll(re)];

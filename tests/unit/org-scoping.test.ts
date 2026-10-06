@@ -42,7 +42,7 @@ vi.mock("@server/promotions/targeting", () => ({
   }),
 }));
 
-const { productsRepository } = await import("@server/catalog/product.repository");
+const { productsRepository } = await import("@server/catalog/product.read.repository");
 
 const ACTIVE_ORG = { org: { isActive: true } };
 const lastWhere = (spy: typeof findMany) =>
@@ -113,7 +113,7 @@ describe("a storefront listing sees one shop", () => {
 
 describe("the source says so too", () => {
   const source = readFileSync(
-    join(process.cwd(), "server/catalog/product.repository.ts"),
+    join(process.cwd(), "server/catalog/product.read.repository.ts"),
     "utf8"
   );
 
