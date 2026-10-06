@@ -1,0 +1,22 @@
+src/components/shared/overlays/form-dialog.tsx
+  s_e9d0d9a966de14::t_a08fd0392811cb 1-71
+tests/unit/overlay-surfaces.test.ts
+  s_e9d0d9a966de14::t_dc15e3114674ec 26-27
+  s_e9d0d9a966de14::t_7c2c4650388bbe 100-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "5c293a83d824ad5a5428575619616e87d17b6b49",
+  "prompts": {},
+  "sessions": {
+    "s_e9d0d9a966de14": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b1c01ffe-8db4-4ac7-9f1a-8c7c4f42d20b",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
