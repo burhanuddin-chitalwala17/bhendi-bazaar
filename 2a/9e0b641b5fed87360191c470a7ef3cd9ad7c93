@@ -1,0 +1,14 @@
+src/components/shared/product-grid.tsx
+  h_b67201bb58135f 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "2a9e0b641b5fed87360191c470a7ef3cd9ad7c93",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
