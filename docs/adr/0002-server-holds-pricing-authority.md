@@ -1,7 +1,7 @@
 # ADR-0002: The server is the sole authority on prices and totals
 
 - **Date:** 2026-08-03
-- **Status:** Accepted
+- **Status:** Accepted (D5 moot: no client-supplied price reaches the server, so there is nothing to compare)
 - **Context:** The order and payment schemas accepted item prices and totals from the request body and validated them only for *internal consistency* — that the line items summed to the stated total. Nothing compared them against `Product.price`, and the gateway amount was likewise taken from the request rather than derived from the persisted order.
 
   The underlying error is treating a request body as a source of facts rather than a claim to be checked. Self-consistency of client-supplied numbers is not a security property: it proves the caller can do arithmetic, not that the arithmetic is about real prices. A gateway signature does not close the gap either — it attests that a payment occurred against a gateway order, and says nothing about whether that order's amount matched ours.

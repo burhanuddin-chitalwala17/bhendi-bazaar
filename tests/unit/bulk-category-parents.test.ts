@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const listIdentifiers = vi.fn();
 const createMany = vi.fn();
-vi.mock("@server/catalog/category.repository", () => ({
+vi.mock("@server/catalog/category.read.repository", () => ({
   categoryRepository: {
     listIdentifiers: () => listIdentifiers(),
     list: async () => [],

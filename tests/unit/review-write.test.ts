@@ -26,7 +26,7 @@ const orderService = { hasPurchased: vi.fn() };
 const profileService = { getProfile: vi.fn() };
 
 vi.mock("@server/catalog/review.repository", () => ({ reviewRepository: repository }));
-vi.mock("@server/catalog/product.repository", () => ({ productsRepository }));
+vi.mock("@server/catalog/product.read.repository", () => ({ productsRepository }));
 vi.mock("@server/checkout/order.service", () => ({ orderService }));
 vi.mock("@server/identity/profile.service", () => ({ profileService }));
 vi.mock("@server/shared/audit/audit.service", () => ({

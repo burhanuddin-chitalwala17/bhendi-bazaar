@@ -1,7 +1,7 @@
 # ADR-0031: One components home, organised by domain, with controls through the primitives
 
 - **Date:** 2026-09-19
-- **Status:** Accepted
+- **Status:** Accepted (D4 hooks home refined by [ADR-0057](0057-shared-hooks-live-in-one-core-folder-and-every-other-hook-travels-with-its-component.md))
 
 ## Context
 

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 import {
   FREE_SIZE,
   formatMeasurement,
   missingRequiredMeasurements,
   sizeLabelFor,
-} from "@server/catalog/size-label";
+} from "@server/listing/size-label";
 
 /**
  * A type is a row now, so these are records rather than constants — which is the point: a scale

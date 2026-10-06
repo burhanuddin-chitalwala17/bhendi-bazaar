@@ -13,7 +13,7 @@ import { adminCategoryService } from "@server/catalog/admin.category.service";
 import type { UpdateCategoryInput } from "@server/catalog/admin.category.types";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { updateCategorySchemaFor } from "@/lib/validation/schemas/category.schema";
-import { productTypeRepository } from "@server/catalog/product-type.repository";
+import { productTypeRepository } from "@server/listing/product-type.repository";
 
 export async function PATCH(
   request: NextRequest,

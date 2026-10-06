@@ -12,7 +12,7 @@
 import {
   productsRepository,
   type ProductDb,
-} from "@server/catalog/product.repository";
+} from "@server/catalog/product.read.repository";
 import { ConflictError } from "@server/shared/domain-error";
 
 /**

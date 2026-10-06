@@ -9,7 +9,7 @@ const repo = { idsByRefs: vi.fn(), embedIdsByRefs: vi.fn(), createEmbed: vi.fn()
 vi.mock("@server/catalog/media-asset.repository", () => ({ mediaAssetRepository: repo }));
 vi.mock("@server/shared/prisma", () => ({ prisma: {} }));
 
-const { withAssetIds } = await import("@server/catalog/admin.product.repository");
+const { withAssetIds } = await import("@server/catalog/product.repository");
 
 beforeEach(() => vi.resetAllMocks());
 

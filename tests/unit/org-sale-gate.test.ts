@@ -8,7 +8,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const fromWithdrawnOrgAmong = vi.fn();
-vi.mock("@server/catalog/product.repository", () => ({
+vi.mock("@server/catalog/product.read.repository", () => ({
   productsRepository: {
     fromWithdrawnOrgAmong: (...args: unknown[]) => fromWithdrawnOrgAmong(...args),
   },

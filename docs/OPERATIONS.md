@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-09-29
+- **Verified:** 2026-10-06
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -10,7 +10,7 @@ Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test 
 
 ```bash
 npm install                 # postinstall runs `prisma generate`
-touch .env                  # build it from the table below — there is no .env.example
+cp .env.example .env        # then fill in the values from the table below
 npx prisma migrate dev      # apply the migrations
 npm run dev                 # http://localhost:3000
 ```
@@ -59,7 +59,7 @@ npm run dev                 # http://localhost:3000
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
 
 ```
-createdb bhendi_bazaar_dev
+docker start bhendi-pg      # or: docker run --name bhendi-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=bhendi_bazaar_dev -p 5433:5432 -d postgres:16
 # .env
 DATABASE_URL="postgres://<your-user>@localhost:5432/bhendi_bazaar_dev"
 npx prisma migrate deploy

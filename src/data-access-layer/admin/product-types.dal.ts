@@ -2,11 +2,11 @@
 
 import { cache } from "react";
 
-import { FACT_DECLARATIONS } from "@server/catalog/listing-facts";
-import { listingValueRepository } from "@server/catalog/listing-value.repository";
-import { productTypeRepository } from "@server/catalog/product-type.repository";
-import { resolveProductType } from "@server/catalog/product-type";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import { FACT_DECLARATIONS } from "@server/listing/listing-facts";
+import { listingValueRepository } from "@server/listing/listing-value.repository";
+import { productTypeRepository } from "@server/listing/product-type.repository";
+import { resolveProductType } from "@server/listing/product-type";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * What the product-types console reads, on the server

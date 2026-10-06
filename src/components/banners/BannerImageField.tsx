@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { ImageIcon, ImageOff, Loader2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export function BannerImageField({
   disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const [error, setError] = useState<string | null>(null);
   // Said in the field, not toasted: the field is where the admin is looking.
   const upload = useMutation(
@@ -60,6 +61,7 @@ export function BannerImageField({
 
   return (
     <FormField
+      id={inputId}
       label="Background image"
       hint={BANNER_IMAGE_HINT}
       error={error ?? undefined}
@@ -131,8 +133,10 @@ export function BannerImageField({
 
         <input
           ref={inputRef}
+          id={inputId}
           type="file"
           accept="image/*"
+          disabled={disabled || uploading}
           className="hidden"
           onChange={(event) => handleFile(event.target.files?.[0])}
         />

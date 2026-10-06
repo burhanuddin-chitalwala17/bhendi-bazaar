@@ -13,6 +13,8 @@ import type {
   DeliveryAddress
 } from "@server/identity/profile.types";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+import { ADMIN_USER_INCLUDE, toAdminUser } from "@server/identity/admin.user.repository";
+import type { AdminUser, UpdateUserInput } from "@server/identity/admin.user.types";
 
 export class ProfileRepository {
   /** An account's login email — nothing else. For notifying the account holder. */
@@ -274,6 +276,21 @@ export class ProfileRepository {
         profile: { create: { profilePic: input.image ?? null } },
       },
     });
+  }
+
+  // --- User: what the admin console may set ---
+
+  /**
+   * Name, platform role and blocked flag, which the console sets through one command.
+   * Lives here so `admin.user.repository.ts` stays read-only and the table keeps one writer.
+   */
+  async updateAdminFields(userId: string, data: UpdateUserInput): Promise<AdminUser> {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data,
+      include: ADMIN_USER_INCLUDE,
+    });
+    return toAdminUser(updated);
   }
 
   // --- User: passwords ---

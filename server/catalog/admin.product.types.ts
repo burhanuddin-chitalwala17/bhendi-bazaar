@@ -45,8 +45,12 @@ export interface ProductFormInput {
    * so accepting it would be accepting a value we then overwrite (Invariant 4).
    */
   media: ProductMediaInput[];
-  /** Stock per pickup location (stock-locations R2/R3). Zero rows are dropped. */
-  stockLocations: Array<{ orgAddressId: string; quantity: number }>;
+  /**
+   * Stock per pickup location (stock-locations R2/R3). Zero rows are dropped. `seenQuantity` is
+   * what the editor loaded for an existing row — the save is refused where it no longer holds,
+   * so an edit cannot undo a sale that landed meanwhile. Absent for a location with no row yet.
+   */
+  stockLocations: Array<{ orgAddressId: string; quantity: number; seenQuantity?: number }>;
   sku?: string;
   lowStockThreshold?: number;
   weight: number;

@@ -9,8 +9,8 @@ import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll, vi, type MockInstance } from "vitest";
 
 import { CHANNEL } from "@server/shared/channels";
-import { FACT, LIST, ORIGIN } from "@server/catalog/listing-facts";
-import { LISTING_PROBLEM, LISTING_READINESS } from "@server/catalog/channel-readiness";
+import { FACT, LIST, ORIGIN } from "@server/listing/listing-facts";
+import { LISTING_PROBLEM, LISTING_READINESS } from "@server/listing/channel-readiness";
 import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 // Counted the way `db-ops-budget.test.ts` counts: one `prisma:query` line per billed statement,
@@ -27,9 +27,9 @@ async function countQueries(run: () => Promise<unknown>): Promise<number> {
 
 describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let service: typeof import("@server/catalog/channel-readiness.service").channelReadinessService;
-  let maps: typeof import("@server/catalog/channel-map.repository").channelMapRepository;
-  let orgChannels: typeof import("@server/catalog/org-channel.repository").orgChannelRepository;
+  let service: typeof import("@server/listing/channel-readiness.service").channelReadinessService;
+  let maps: typeof import("@server/listing/channel-map.repository").channelMapRepository;
+  let orgChannels: typeof import("@server/listing/org-channel.repository").orgChannelRepository;
 
   const stamp = `crs-${Date.now().toString(36)}`;
   const typeKey = `${stamp}-rida`;
@@ -58,11 +58,11 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
     });
     ({ prisma } = await import("@server/shared/prisma"));
     ({ channelReadinessService: service } = await import(
-      "@server/catalog/channel-readiness.service"
+      "@server/listing/channel-readiness.service"
     ));
-    ({ channelMapRepository: maps } = await import("@server/catalog/channel-map.repository"));
+    ({ channelMapRepository: maps } = await import("@server/listing/channel-map.repository"));
     ({ orgChannelRepository: orgChannels } = await import(
-      "@server/catalog/org-channel.repository"
+      "@server/listing/org-channel.repository"
     ));
     ({ orgId } = await ensureFixtures());
 

@@ -1,7 +1,7 @@
 # ADR-0028: Images live in Cloudflare R2, reached through one seam
 
 - **Date:** 2026-09-17
-- **Status:** Accepted
+- **Status:** Accepted (D6 historical — Blob is gone; the confirm-time check is [media-library](../specs/media-library/) D2)
 - **Context:** The free Vercel Blob allowance was exhausted pre-launch and the store was blocked — every content read returning `403 Your store is blocked`, including our own, which made exporting the data impossible ([ADR-0026](0026-images-are-delivered-through-the-optimizer.md) has the cause). The delivery and storage fixes in ADR-0026/0027 were necessary and are not in question. What they could not fix is the shape of the allowance itself.
 
   Measured against what this catalogue actually does, Vercel Blob's Hobby tier is the wrong instrument. 321 objects, 653 MB, built over twelve days:

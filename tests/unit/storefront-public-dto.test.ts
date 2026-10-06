@@ -407,7 +407,7 @@ describe("storefrontDAL.getBrandPage", () => {
     vi.doMock("@server/catalog/storefront.service", () => ({
       storefrontService: { brandPage: vi.fn(async (handle: string) => (handle === "silks" ? dto : null)) },
     }));
-    vi.doMock("@server/catalog/product.repository", () => ({
+    vi.doMock("@server/catalog/product.read.repository", () => ({
       productsRepository: { categoryIdsForOrg: vi.fn(async () => ["c1"]) },
     }));
     vi.doMock("@/data-access-layer/categories.dal", () => ({

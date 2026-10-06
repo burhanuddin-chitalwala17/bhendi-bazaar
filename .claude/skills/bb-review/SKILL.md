@@ -189,6 +189,15 @@ git diff $RANGE | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(
 - A **`sizes` string that disagrees with its grid**: check it against the layout classes around it. The gallery shipped half-resolution images to tablets this way.
 - **A layout branch in a script** (`useIsTabletUp`) where CSS breakpoints would do. Scripts branch only for surface pairs (ADR-0040) and rendition choice.
 
+**Listing and channels** ([ADR-0051](../../../docs/adr/0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md), [ADR-0052](../../../docs/adr/0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md), [ADR-0053](../../../docs/adr/0053-readiness-advises-and-never-gates.md), [ADR-0054](../../../docs/adr/0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md); rules in `server/listing/` when it has a CLAUDE.md)
+
+- A fact is stored with `{ value, origin }`, parsed through `storedFactsSchema`, filled on save never on read.
+- Readiness **advises and never gates**: no `disabled` or refusal keyed on readiness; any such is a finding.
+- A new fact passes the answerability test ([ADR-0047](../../../docs/adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)) and no per-platform section appears on the product form.
+- Channel extras are a declared schema, never a bag ([ADR-0042](../../../docs/adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md) D3–D5).
+- A seed or test never writes or deletes reference rows (product types, listing values, channel maps) as fixtures.
+- A job is enqueued in the business transaction, the handler is idempotent on job id, and the interval is declared in `jobs-config` ([ADR-0038](../../../docs/adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)).
+
 **Portal guards** — `/api/admin/**` calls `requirePlatformAdmin`, `/api/org/**` goes through `withOrg`, and a portal layout owns its guard. `portal-boundary.test.ts` and `portal-guards.test.ts` block the mechanical cases; judge any new exception.
 
 **An allowlist edit is a finding to judge, never a formality.** Every gate here keeps an exception list. An entry added, or a reason that no longer matches its file, needs an argument in the diff. That covers `PUBLIC_SURFACE`, `ALLOWED_VIOLATIONS`, `RECORDED`, `MAY_USE_SHEET`, `SHAPE_LEGACY`, `EXTERNALLY_CALLED`, `DATA_DEPENDENT`, `NEVER_ASKS`, `REQUEST_MODULES`, and the design-token allowlists.

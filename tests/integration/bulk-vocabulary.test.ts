@@ -15,7 +15,7 @@ describe.skipIf(!isDisposableDb)("bulk vocabulary (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
   let loadVocabulary: typeof import("@server/catalog/bulk/bulk-vocabulary").loadVocabulary;
   let resolveRowVocabulary: typeof import("@server/catalog/bulk/bulk-vocabulary").resolveRowVocabulary;
-  let categoryRepository: typeof import("@server/catalog/category.repository").categoryRepository;
+  let categoryRepository: typeof import("@server/catalog/category.read.repository").categoryRepository;
   const stamp = `bv-${Date.now().toString(36)}`;
   let orgId: string;
   let categoryId: string;
@@ -45,7 +45,7 @@ describe.skipIf(!isDisposableDb)("bulk vocabulary (local db)", () => {
     ({ loadVocabulary, resolveRowVocabulary } = await import(
       "@server/catalog/bulk/bulk-vocabulary"
     ));
-    ({ categoryRepository } = await import("@server/catalog/category.repository"));
+    ({ categoryRepository } = await import("@server/catalog/category.read.repository"));
     const fixtures = await ensureFixtures();
     orgId = fixtures.orgId;
     categoryId = fixtures.categoryId;

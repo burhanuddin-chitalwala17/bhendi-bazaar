@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requirePlatformAdminId } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { channelMapRepository } from "@server/catalog/channel-map.repository";
+import { channelMapRepository } from "@server/listing/channel-map.repository";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import { channelValueMappingSchema } from "@/lib/validation/schemas/channel-mapping.schema";
 

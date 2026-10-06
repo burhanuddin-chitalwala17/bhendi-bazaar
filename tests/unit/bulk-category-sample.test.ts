@@ -5,7 +5,7 @@ import ExcelJS from "exceljs";
 import { CategoryAccent } from "@prisma/client";
 
 vi.mock("@/lib/admin-auth", () => ({ requirePlatformAdmin: async () => ({}) }));
-vi.mock("@server/catalog/category.repository", () => ({
+vi.mock("@server/catalog/category.read.repository", () => ({
   categoryRepository: {
     list: async () => [{ name: "Abayas", slug: "abayas", order: 0 }],
   },

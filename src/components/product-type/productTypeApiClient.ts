@@ -2,8 +2,8 @@ import { apiRequest } from "@/lib/api-client";
 import type {
   CreateProductTypeInput,
   UpdateProductTypeInput,
-} from "@server/catalog/admin.product-type.types";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+} from "@server/listing/admin.product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * What the product-types console asks the browser to do. There is no plain `list`: the listing is

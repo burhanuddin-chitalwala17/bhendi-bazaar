@@ -10,7 +10,7 @@
 import "dotenv/config";
 import { describe, it, expect, beforeAll } from "vitest";
 
-import { ANSWER, FACT_DECLARATIONS, type FactKey } from "@server/catalog/listing-facts";
+import { ANSWER, FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
 import { seedCategories } from "../../prisma/seed/categories.seed";
 import { seedProducts } from "../../prisma/seed/products.seed";
 import { isDisposableDb } from "../helpers/test-db";

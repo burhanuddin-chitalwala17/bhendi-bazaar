@@ -10,6 +10,161 @@
 
 ## Entries
 
+## [PR-286] 2026-10-06 — FormDialog, dead code, and the docs match the tree
+
+- **FormDialog** (`src/components/shared/overlays/form-dialog.tsx`): the fifth overlay surface
+  (ADR-0040) — a bottom sheet on phone, a centred dialog from tablet. Today's 17 raw
+  `DialogContent` form sites are ratcheted in `overlay-surfaces.test.ts` with their case;
+  a new one fails unless it goes through `FormDialog`, `TaskDialog` or is listed with a reason.
+  Mutation-tested.
+- **Dead code removed**: `AdminAccessButton` (0 importers), `useStockCheck` (0 importers).
+  Two single-domain hooks moved to their component: `useCategoryForm` → `components/category/`,
+  `useListingValues` → `components/shared/forms/product/`.
+- **Docs corrected**: ARCHITECTURE.md no longer claims every handler uses `toErrorResponse`;
+  TESTING.md counts and dead-directory paragraph fixed; OPERATIONS.md local DB recipe uses
+  the real Docker container on port 5433 and `.env.example`. Verified dates bumped.
+
+## [PR-285] 2026-10-06 — The aggregate's repository carries the aggregate's name
+
+`admin.product.repository.ts` held every product write while `product.repository.ts` was
+read-only. That named the write side for the console instead of for the table it owns.
+Swapped: `product.repository.ts` is the aggregate repository (writes), `product.read.repository.ts`
+is the storefront read model. Same for category. Export names stay (`productsRepository`,
+`adminProductsRepository`) so the 56 import sites change their path, not their code.
+
+The `ADMIN_WRITERS` ratchet in `one-repository.test.ts` is now empty: no `admin.*` file writes,
+and the test refuses a new one. The rule that held this together — "an admin listing is a query
+on its domain, kept as `admin.*` files" — and the rule that held it accountable — "a write in
+an `admin.*` file fails the build" — both hold outright.
+
+## [PR-284] 2026-10-05 — Money, page titles and touch targets through the wrappers
+
+- `shared/Money.tsx` replaces inline `formatCurrency` in table/summary contexts —
+  `OrderDetailAside`, `OrdersTable`, `ShipmentsPanel`, `SettleEntries`, `CartsTable`.
+- `SectionHeader` gains an `as` prop (`h1`/`h2`/`h3`); 17 portal pages' hand-rolled `<h1>`
+  converted to `<SectionHeader as="h1" />` with their description.
+- `Button size="sm"` is phone-first: `min-h-10` at base (40px touch target), `md:h-8` from
+  tablet. The 36 sites that were 32px on a phone are fixed by the primitive, not per-file.
+- Skills refreshed: `/bb-review` gains the listing/channel checks (readiness, facts origin,
+  reference data, jobs); `/bb-sdlc`'s Gates touched gains one-repository and the visibility
+  census; `/bb-brainstorm` knows about fal.run.
+
+## [PR-283] 2026-10-05 — The listing vocabulary becomes its own domain
+
+`server/catalog/` was 43% of `server/` at 14k LOC. Twenty-three files — facts, product types,
+families, channel registry, readiness, listing values, org channels, listing defaults, size labels
+— had zero outward imports and formed a clean cluster. They now live in `server/listing/`, the
+fourteenth bounded context.
+
+Cross-domain calls go through services: `fact-correction.service.ts` used to reach catalog's
+product repository directly for the three methods that rewrite a product's facts; those became
+`productService.countProductsWhere`/`listProductFactsWhere`/`replaceProductFacts`. `listing-fill`
+reaches `brand.repository` and `category.repository` through catalog's declared public surface.
+
+`module-boundaries.test.ts` gains a `listing` entry in `PUBLIC_SURFACE`; the product-visibility
+census, the file-cohesion records and the domain table in root `CLAUDE.md` are all updated.
+
+## [PR-282] 2026-10-05 — The pipeline that decides quality, written down and wired in
+
+A review across architecture, the design system, the rules, the ADRs, the process and the docs
+found the same thing from six directions: the guards are strong and voluntary. Nothing ran until an
+agent chose to run it, review was self-review, and the owner's decisions lived in specs and in one
+assistant's memory. This unit is the process half of the answer; the code halves are PR-279 to
+PR-281.
+
+- **Ten ADRs** record decisions that were only spec prose or habit: facts as one JSON column with
+  an origin per entry (0051), a product type as a row over facts declared in code (0052), readiness
+  advises and never gates (0053, superseding 0045 D3), mappings carry a date and source (0054),
+  admin modules read and the aggregate's one repository writes (0055), the ratchet pattern (0056),
+  one shared hooks home (0057), media as one aggregate (0058), pixel identity (0059), and route
+  handlers with an Origin check instead of Server Actions (0060, correcting 0048's CSRF premise).
+  Twelve older ADRs gain Status notes saying which decision a later one amended; 0032's heading
+  used an em dash the index generator could not read, so the index showed its filename.
+- **Hooks, committed in `.claude/settings.json`.** Every `Edit`/`Write` to source runs the
+  scanning gates on the spot (`scripts/hooks/post-edit.sh`, ~5s); a schema edit regenerates the
+  client and refuses to pass without a migration folder; a docs or skill edit runs `docs:check`.
+  The turn cannot end (`scripts/hooks/stop.sh`) with a failing typecheck, failing related tests, a
+  changed wire type without `CONTRACTS.md`, or changed code without a CHANGELOG entry. `git push`
+  and `gh` are denied for this repo: the owner pushes.
+- **`/bb-build`**, the implementation skill the cycle never had: refuses a Draft TRD, plans units
+  from Delivery mapped to R/A/D ids, writes the failing test for each acceptance id first,
+  mutation-tests and *records* every new guard, reviews in a fresh subagent, flips spec and TRD
+  Status together, and ends with an acceptance report the owner walks on a phone.
+- **Five docs gates** for what `docs:check` could not see: a spec and its TRD agree on Status (nine
+  TRDs said Draft under Implemented specs), CHANGELOG numbers are unique with the newest highest
+  (eight historical collisions stay, append-only), every directory rulebook carries `Covers:` and is
+  a living doc (`server/shipping/ARCHITECTURE.md` said `Scope:` and had dodged the date gate since
+  August), every npm script a doc names exists, and every API route a doc names exists with that
+  verb (README named ~20 that were gone). Each broken on purpose once and seen red.
+- Root `CLAUDE.md` re-read against the tree: catalog's "Owns" cell, content's, shared's, the admin
+  paragraph, Invariants 5–7 and the cycle corrected; the commit rule and the spec-stays-uncommitted
+  rule move out of memory into the file; ten index lines added and the skills table folded into one
+  line, so it sits at 195 of its 200.
+
+## [PR-281] 2026-10-05 — Every form field's label reaches its control, and a dropped column says whose data goes
+
+`FormField` rendered a raw `<label>` with no `htmlFor` and never gave its control an `id`, so the
+102 fields built on `FormInput`/`FormSelect`/`FormTextarea` had labels a click did nothing with
+and a screen reader read as "edit text". It now uses `useId()` and the `Label` primitive, passes
+`id`, `aria-invalid` and `aria-describedby` to the control, and the hint and error carry the ids
+they are described by. Eleven raw labels elsewhere were given `htmlFor`. `labelled-controls.test`
+holds both: render tests that the `for` matches the control and the error is announced for it
+(all five fail when `htmlFor` is dropped), and a scan for a raw `<label>` without `htmlFor`
+outside `ui/` (red on a planted one).
+
+The variants TRD promised (D7) a migration that copied `sizes`/`colors` into the new shape before
+the drop. None did, and the drop shipped. The owner confirmed on 2026-10-05 that both were free text
+no reader used and are safe to drop in production too; D7 now says so, dated, and the migration's
+header carries the confirmation beside the one it already had for `BiddingEvent`. The rule that
+makes this a check rather than a memory: `migration-drops.test` requires every `DROP COLUMN`/
+`DROP TABLE` migration to state, with a date, that the data was confirmed disposable — older
+migrations are on a dated ratchet. Red when both confirmations were removed from the header.
+
+## [PR-280] 2026-10-05 — Credentials stop at the server, and a mutating request must come from here [CONTRACT]
+
+- **Carrier credentials never reached the browser on purpose and did anyway.** The admin provider
+  reads returned whole rows — `authToken`, `tokenExpiresAt`, encrypted `accountInfo` — under a
+  comment saying "no sensitive config", and the connect response and its audit record carried the
+  live Shiprocket JWT and the encrypted password. Every read that answers a request is now
+  `ShippingProviderSummary` with `accountInfo` narrowed to `{ email }`; only the provider's own
+  auth path may call `findWithCredentials`. `provider-dto.test` holds the projection at type level
+  (red on `authToken: true` in the select, and on a mapper that spreads the row) — the test
+  shipping ADR-0002 D3 asked for in August.
+- **`User` has one writer.** `admin.user.repository` is a read model; its one write became
+  `profileRepository.updateAdminFields`. `orgMember.addMember` had no callers and is gone, so
+  `org.repository.createWithOwner` is that table's only writer.
+- **A cross-site page cannot mutate anything.** `src/middleware.ts` refuses `POST`/`PUT`/`PATCH`/
+  `DELETE` to `/api/**` whose `Origin` (or `Referer`) is not ours, computed the way `appUrl()`
+  computes it; `Sec-Fetch-Site: same-origin` is accepted; the signed webhooks and `/api/auth` are
+  the named exemptions. The predicate is `src/lib/same-origin.ts`, with 27 cases including the
+  forwarded-host deploy and lookalike paths; flipping the comparison fails ten of them.
+  `src/lib/csrf.ts`, which nothing called and ADR-0048 cited as protection, is deleted (ADR-0060).
+
+## [PR-279] 2026-10-05 — Stock has one writer, and an admin cannot move an order where the table forbids [CONTRACT]
+
+`ProductStock` had five writers across three domains — checkout's reserve, two restocks, bidding's
+lock-and-take, and the admin save, which replaced every row from the form and silently overwrote a
+reservation taken mid-edit. `server/catalog/stock.repository.ts` is now the only module that
+touches the table, through commands that carry their own guard — `reserve`, `release`,
+`restockShipment`, `lockAll`/`takeOne`, `adjust`, `setForImport`, `dropEmptyAt` — and checkout and
+shipping call them through `stockService` on their own transaction, the way the sale gate is
+called. The admin form sends the quantity it saw (`seenQuantity`, hence [CONTRACT]) and `adjust` is
+a compare-and-set: stock that moved answers 409 "reload", which `useServerForm` shows. Bulk import
+sets absolute quantities and says so.
+
+Orders: `orderRepository.transition` moves a fulfilment status only where the table allows;
+`admin.order.repository` is a read model and its unconditional write — any string, no table — is
+gone with `bulkUpdateStatus`, which nothing called. The order transaction's direct `tx.*` writes
+moved into named repository methods; `server/checkout/reservation.ts` is what it takes from the
+catalogue.
+
+`one-repository.test` now reads every file for `prisma.`, `tx.`, `db.` and `client.` model calls:
+no write outside a `*.repository.ts`, no write in an `admin.*` file (two catalogue files ratcheted
+with their reason — they are the write path misnamed, fixed by the rename the catalog restructuring
+carries), and the two-writer list is empty. Red on a planted `prisma.user.update` in an admin file.
+Integration: a stale `adjust` is refused and leaves the row unchanged; delivered→processing is
+refused; the order, bidding and shipment suites pass unchanged (ADR-0055).
+
 ## [PR-278] 2026-10-04 — develop's new code, brought under the new rules
 
 Merging `develop` into the design branch brought in 35 commits written before ADR-0048 and the

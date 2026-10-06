@@ -14,7 +14,7 @@ import { ProductBasicFields } from "./ProductBasicFields";
 import { ProductPricingFields } from "./ProductPricingFields";
 import { ProductInventoryFields } from "./ProductInventoryFields";
 import { ProductFactFields } from "./ProductFactFields";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 import { ProductFlagsFields } from "./ProductFlagsFields";
 import {
   ProductOrgShippingFields,
@@ -126,9 +126,12 @@ export function ProductForm({
   const addLocation = (location: LocationOption) =>
     setLocations((current) => (current.some((l) => l.id === location.id) ? current : [...current, location]));
 
+  // `seenQuantity` travels with each existing row: the server writes only where it still holds,
+  // so a sale that lands while this form is open is a refusal to reload from, not an overwrite.
   const defaultStockRows = locations.map((location) => ({
     orgAddressId: location.id,
     quantity: stockByLocation.get(location.id) ?? 0,
+    seenQuantity: stockByLocation.get(location.id),
   }));
 
   // Client validation and server error routing both come from this one call:
@@ -230,6 +233,7 @@ export function ProductForm({
           Number(
             typed.get(location.id) ?? stockByLocation.get(location.id) ?? 0,
           ) || 0,
+        seenQuantity: stockByLocation.get(location.id),
       })),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps

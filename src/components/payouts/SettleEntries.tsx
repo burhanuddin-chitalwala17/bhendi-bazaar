@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { formatCurrency } from "@/lib/format";
 import { useMutation } from "@/hooks/core/useMutation";
 import { payoutsApiClient } from "@/components/payouts/payoutsApiClient";
+import { Money } from "@/components/shared/Money";
 
 export interface LedgerEntryRow {
   id: string;
@@ -150,19 +151,19 @@ export function SettleEntries({
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">Buyer paid</dt>
                     <dd className="tabular-nums">
-                      {formatCurrency(entry.buyerPaidPaise)}
+                      <Money paise={entry.buyerPaidPaise} />
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">Payable</dt>
                     <dd className="tabular-nums text-primary">
-                      −{formatCurrency(entry.payablePaise)}
+                      −<Money paise={entry.payablePaise} />
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4 border-t border-border pt-1.5 font-medium">
                     <dt>Platform net</dt>
                     <dd className="tabular-nums">
-                      {formatCurrency(entry.platformNetPaise)}
+                      <Money paise={entry.platformNetPaise} />
                     </dd>
                   </div>
                   <div className="flex justify-between gap-4 pt-1 text-xs text-muted-foreground">

@@ -1,6 +1,7 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import { LocationsManager } from "@/components/org/locations-manager";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = {
   title: "Locations",
@@ -18,12 +19,7 @@ export default async function OrgLocationsPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Pickup locations</h1>
-        <p className="text-muted-foreground">
-          The shops and warehouses your parcels leave from
-        </p>
-      </div>
+      <SectionHeader as="h1" title="Pickup locations" description="The shops and warehouses your parcels leave from" />
       <LocationsManager orgId={scope.orgId} locations={locations} />
     </div>
   );

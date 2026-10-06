@@ -10,6 +10,7 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { payoutsDAL } from "@/data-access-layer/payouts.dal";
 import { formatCurrency } from "@/lib/format";
 import { Card } from "@/components/ui/card";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export default async function AdminPayoutsPage() {
   await requirePlatformAdmin();
@@ -17,12 +18,7 @@ export default async function AdminPayoutsPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Payouts</h1>
-        <p className="text-sm text-muted-foreground">
-          What each organisation has earned, and what is still owed.
-        </p>
-      </div>
+      <SectionHeader as="h1" title="Payouts" description="What each organisation has earned, and what is still owed." />
 
       {/* Paid orders with no ledger entry. Always zero unless a write failed — a
           non-zero figure is money owed that nothing has recorded, so it leads. */}

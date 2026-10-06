@@ -1,11 +1,11 @@
-import { orgListingDefaultsRepository } from "@server/catalog/org-listing-defaults.repository";
+import { orgListingDefaultsRepository } from "./org-listing-defaults.repository";
 import {
   percentToBps,
   taxCodesToColumn,
   toListingDefaultsDto,
   type ListingDefaultsInput,
   type OrgListingDefaultsDto,
-} from "@server/catalog/org-listing-defaults.types";
+} from "./org-listing-defaults.types";
 
 /**
  * The org-wide defaults a product starts from (org-profile spec R4, trd D7). Defaults pre-fill

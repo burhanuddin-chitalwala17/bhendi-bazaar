@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Building2 } from "lucide-react";
 import { requireSession } from "@/lib/admin-auth";
 import { orgMemberRepository } from "@server/catalog/org.member.repository";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -49,10 +50,7 @@ export default async function OrgIndexPage() {
         </div>
       ) : (
         <div>
-          <h1 className="text-2xl font-bold">Choose an organisation</h1>
-          <p className="mt-2 text-muted-foreground">
-            You act for more than one. Pick the one you want to work on.
-          </p>
+          <SectionHeader as="h1" title="Choose an organisation" description="You act for more than one. Pick the one you want to work on." />
 
           <ul className="mt-8 flex flex-col gap-3">
             {orgs.map((org) => (

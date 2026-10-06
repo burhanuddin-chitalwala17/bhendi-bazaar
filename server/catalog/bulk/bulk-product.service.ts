@@ -7,8 +7,8 @@
  */
 import { randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
-import { categoryRepository } from "@server/catalog/category.repository";
-import { productFamilyService } from "@server/catalog/product-family.service";
+import { categoryRepository } from "@server/catalog/category.read.repository";
+import { productFamilyService } from "@server/listing/product-family.service";
 import {
   loadVocabulary,
   resolveRowVocabulary,
@@ -21,7 +21,7 @@ import { rupeesToPaise } from "@server/shared/money";
 import { ConflictError } from "@server/shared/domain-error";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
-import { adminProductsRepository } from "@server/catalog/admin.product.repository";
+import { adminProductsRepository } from "@server/catalog/product.repository";
 import {
   BULK_MAX_ROWS,
   type BulkProductRow,

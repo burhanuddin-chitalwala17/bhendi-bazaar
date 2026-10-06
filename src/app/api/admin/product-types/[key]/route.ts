@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { adminProductTypeService } from "@server/catalog/admin.product-type.service";
-import { updateProductTypeSchema } from "@server/catalog/admin.product-type.types";
+import { adminProductTypeService } from "@server/listing/admin.product-type.service";
+import { updateProductTypeSchema } from "@server/listing/admin.product-type.types";
 
 export async function PATCH(
   request: NextRequest,

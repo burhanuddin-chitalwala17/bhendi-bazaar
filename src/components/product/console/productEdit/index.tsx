@@ -11,7 +11,7 @@ import type { ProductDetails } from "../types";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
 import type { OrgSummary } from "@/domain/org";
 import type { LocationOption } from "@/components/shared/forms/product/ProductOrgShippingFields";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 import { PageHeader } from "@/components/shared/page-shell";
 interface ProductEditContainerProps {

@@ -13,12 +13,12 @@ import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("where a shop sells (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let service: typeof import("@server/catalog/org-channel.service").orgChannelService;
+  let service: typeof import("@server/listing/org-channel.service").orgChannelService;
   let orgId: string;
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ orgChannelService: service } = await import("@server/catalog/org-channel.service"));
+    ({ orgChannelService: service } = await import("@server/listing/org-channel.service"));
     ({ orgId } = await ensureFixtures());
     await prisma.orgChannel.deleteMany({ where: { orgId } });
   });

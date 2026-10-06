@@ -59,7 +59,7 @@ export class ShiprocketProvider extends BaseShippingProvider {
    * Load stored authentication token from database
    */
   private async loadStoredAuth(): Promise<void> {
-    const provider = await shippingProviderRepository.getById(this.providerId);
+    const provider = await shippingProviderRepository.findWithCredentials(this.providerId);
 
     if (!provider?.isConnected || !provider.authToken) {
       return; // Not connected, will authenticate on-demand
@@ -98,7 +98,7 @@ export class ShiprocketProvider extends BaseShippingProvider {
    * Authenticate with Shiprocket (uses stored credentials)
    */
   private async authenticate(): Promise<void> {
-    const provider = await shippingProviderRepository.getById(this.providerId);
+    const provider = await shippingProviderRepository.findWithCredentials(this.providerId);
 
     if (!provider?.isConnected) {
       throw new DomainError("Provider account is not connected. Please connect your account in admin panel.");

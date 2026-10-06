@@ -6,7 +6,7 @@ import {
   channelReadinessService,
   type ChannelVerdict,
   type ReadinessSubject,
-} from "@server/catalog/channel-readiness.service";
+} from "@server/listing/channel-readiness.service";
 
 /**
  * What each channel would make of a product, on the server

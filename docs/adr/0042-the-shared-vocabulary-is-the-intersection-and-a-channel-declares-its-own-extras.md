@@ -1,7 +1,7 @@
 # ADR-0042: The shared vocabulary is the intersection, and a channel declares its own extras
 
 - **Date:** 2026-09-29
-- **Status:** Accepted — decision 1 refined by [ADR-0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)
+- **Status:** Accepted (D1 refined by [ADR-0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md); D2 required-set amended by [ADR-0054](0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md))
 
 ## Context
 

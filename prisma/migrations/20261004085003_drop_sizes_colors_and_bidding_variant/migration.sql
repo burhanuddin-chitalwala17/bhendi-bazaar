@@ -8,7 +8,10 @@
 -- Dropped in a **later** migration than the one that replaced them, which is
 -- [variants](../../docs/specs/listing-vocabulary/variants/) D8: if the new shape had read
 -- something wrong, the old data was still there to re-read. Nothing has read either column since
--- the product form and the bulk sheet stopped offering them.
+-- the product form and the bulk sheet stopped offering them. The copy that variants D7 planned
+-- was not made: the owner confirmed on 2026-10-05 that `Product.sizes` and `Product.colors` are
+-- disposable — free text no reader used, with the new product form carrying variants as
+-- products — so nothing recorded is lost by dropping them uncopied.
 --
 -- `BiddingEvent.size` and `.color` go with them. They existed for one rule — an event names
 -- exactly one item, so a product with options could not be auctioned without saying which — and

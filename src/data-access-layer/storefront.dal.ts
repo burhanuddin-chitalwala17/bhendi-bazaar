@@ -10,7 +10,7 @@
 import { cache } from "react";
 import { orgRepository } from "@server/catalog/org.repository";
 import { orgProfileRepository } from "@server/catalog/org-profile.repository";
-import { productsRepository } from "@server/catalog/product.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import { orgBannerRepository } from "@server/catalog/org-banner.repository";
 import { storefrontService } from "@server/catalog/storefront.service";
 import type { BrandPageDto } from "@server/catalog/storefront.types";

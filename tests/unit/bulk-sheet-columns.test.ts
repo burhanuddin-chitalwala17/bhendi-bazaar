@@ -8,7 +8,7 @@ import {
   sheetColumns,
   stockColumns,
 } from "@server/catalog/bulk/sheet-columns";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * The sheet's columns are worked out from the types it is generated for, never fixed.

@@ -86,7 +86,10 @@ this change or record why it stays.
 - D1 — decision + rationale (+ reference).
 
 ## Packages
-New dependencies, cross-referenced to DEPENDENCIES.md. "None" if none.
+New dependencies, cross-referenced to DEPENDENCIES.md. - a new `prisma.<model>` write outside a `*.repository.ts` → `one-repository`;
+- a listing fact or product-type change → `product-visibility` CENSUS.
+
+"None" if none.
 
 ## UI approach
 Only if the feature has UI, else "None". Rules: [src/components/CLAUDE.md](../../../src/components/CLAUDE.md).

@@ -42,8 +42,8 @@ async function countQueries(run: () => Promise<unknown>): Promise<number> {
 }
 
 describe.skipIf(!isDisposableDb)("db ops budgets", () => {
-  let productsRepository: typeof import("@server/catalog/product.repository").productsRepository;
-  let categoryRepository: typeof import("@server/catalog/category.repository").categoryRepository;
+  let productsRepository: typeof import("@server/catalog/product.read.repository").productsRepository;
+  let categoryRepository: typeof import("@server/catalog/category.read.repository").categoryRepository;
   let promotionRepository: typeof import("@server/promotions/promotion.repository").promotionRepository;
   let productSlug: string;
 
@@ -51,8 +51,8 @@ describe.skipIf(!isDisposableDb)("db ops budgets", () => {
     spy = vi.spyOn(console, "log").mockImplementation((...args) => {
       if (typeof args[0] === "string" && args[0].startsWith("prisma:query")) queryCount++;
     });
-    ({ productsRepository } = await import("@server/catalog/product.repository"));
-    ({ categoryRepository } = await import("@server/catalog/category.repository"));
+    ({ productsRepository } = await import("@server/catalog/product.read.repository"));
+    ({ categoryRepository } = await import("@server/catalog/category.read.repository"));
     ({ promotionRepository } = await import("@server/promotions/promotion.repository"));
     // Any seeded product works; budgets don't depend on which.
     const heroes = await productsRepository.getHeroProducts(1);

@@ -13,7 +13,7 @@ import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let service: typeof import("@server/catalog/fact-correction.service").factCorrectionService;
+  let service: typeof import("@server/listing/fact-correction.service").factCorrectionService;
   const stamp = `fc-${Date.now().toString(36)}`;
   let orgId: string;
   let categoryId: string;
@@ -40,7 +40,7 @@ describe.skipIf(!isDisposableDb)("correcting a fact at a level (local db)", () =
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ factCorrectionService: service } = await import("@server/catalog/fact-correction.service"));
+    ({ factCorrectionService: service } = await import("@server/listing/fact-correction.service"));
     const fixtures = await ensureFixtures();
     orgId = fixtures.orgId;
     categoryId = fixtures.categoryId;

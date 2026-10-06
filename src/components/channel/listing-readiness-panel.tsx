@@ -3,9 +3,9 @@ import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CHANNEL_LABELS } from "@server/shared/channels";
-import { LISTING_PROBLEM, LISTING_READINESS } from "@server/catalog/channel-readiness";
-import type { ChannelVerdict } from "@server/catalog/channel-readiness.service";
-import type { ListingProblem } from "@server/catalog/channel-readiness";
+import { LISTING_PROBLEM, LISTING_READINESS } from "@server/listing/channel-readiness";
+import type { ChannelVerdict } from "@server/listing/channel-readiness.service";
+import type { ListingProblem } from "@server/listing/channel-readiness";
 
 interface ListingReadinessPanelProps {
   verdicts: ChannelVerdict[];

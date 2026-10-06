@@ -6,7 +6,7 @@
  * aggregate (Invariant 5). Listing filters are presentation; this is the control.
  */
 
-import { productsRepository, type ProductDb } from "@server/catalog/product.repository";
+import { productsRepository, type ProductDb } from "@server/catalog/product.read.repository";
 import { ConflictError } from "@server/shared/domain-error";
 
 /**

@@ -12,7 +12,7 @@ import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("the family service (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let service: typeof import("@server/catalog/product-family.service").productFamilyService;
+  let service: typeof import("@server/listing/product-family.service").productFamilyService;
   const stamp = `fs-${Date.now().toString(36)}`;
   let orgId: string;
   let otherOrgId: string;
@@ -21,7 +21,7 @@ describe.skipIf(!isDisposableDb)("the family service (local db)", () => {
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ productFamilyService: service } = await import("@server/catalog/product-family.service"));
+    ({ productFamilyService: service } = await import("@server/listing/product-family.service"));
     const fixtures = await ensureFixtures();
     orgId = fixtures.orgId;
     otherOrgId = fixtures.otherOrgId;

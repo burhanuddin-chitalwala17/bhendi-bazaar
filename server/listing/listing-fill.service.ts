@@ -1,5 +1,5 @@
-import { brandRepository } from "./brand.repository";
-import { categoryRepository } from "./category.repository";
+import { brandRepository } from "@server/catalog/brand.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import { fillFacts, levelsOf, type Answers, type Filled } from "./fill-facts";
 import { FACT_DECLARATIONS, type FactKey, type MeasureKey } from "./listing-facts";
 import { orgListingDefaultsRepository } from "./org-listing-defaults.repository";

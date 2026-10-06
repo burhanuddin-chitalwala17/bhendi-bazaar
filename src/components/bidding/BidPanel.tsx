@@ -15,7 +15,7 @@ import { useCallback, useState } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FormField, FormInput } from "@/components/shared/forms/FormField";
+import { FormField, FormInput, fieldMessageIds } from "@/components/shared/forms/FormField";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -199,11 +199,13 @@ export function BidPanel({
             error={fieldErrors.guestName}
             autoComplete="name"
           />
-          <FormField label="Phone" required error={fieldErrors.guestPhone}>
+          <FormField id="bid-phone" label="Phone" required error={fieldErrors.guestPhone}>
             <PhoneInput
+              id="bid-phone"
               value={guest.phone}
               onChange={(phone) => setGuest({ ...guest, phone })}
               aria-invalid={!!fieldErrors.guestPhone}
+              aria-describedby={fieldErrors.guestPhone ? fieldMessageIds("bid-phone").error : undefined}
             />
           </FormField>
           <div>

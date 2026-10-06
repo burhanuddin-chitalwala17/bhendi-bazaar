@@ -1,6 +1,6 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-10-06
 - **Covers:** `tests/*/`, `.github/workflows/ci.yml`, `vitest.config.ts`
 
 ## Stack
@@ -46,14 +46,12 @@ Mirror the source path: `server/checkout/order.service.ts` → `tests/unit/order
 ```
 tests/
 ├── setup.ts            # referenced by vitest.config.ts
-├── unit/               # 147 files: pure logic, plus every source-scanning guard
-├── integration/        # 18 files: crosses module boundaries, needs a disposable database
+├── unit/               # 168 files: pure logic, plus every source-scanning guard
+├── integration/        # 32 files: crosses module boundaries, needs a disposable database
 └── helpers/            # test-db.ts — the one predicate deciding whether a database is disposable
 ```
 
 `critical/`, `e2e/`, `edge-cases/`, `hooks/`, `services/`, `store/` and `utils/` also exist and are
-empty. The tree used to list three of them as though they held something; see below for why
-`critical/` in particular is empty and where its tests actually are.
 
 The Invariants' executable form is the guard table below, and a failure in any of those blocks regardless of anything else.
 
@@ -105,6 +103,8 @@ thing it guards had already gone wrong silently:
 | `overlay-surfaces` | That an overlay's surface is chosen rather than inherited ([ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)): only the declared files reach for a sheet, each entry naming which of the four cases it answers, and an entry that stops being a sheet is removed |
 | `channel-gate` | That a channel's size rule is applied only where the channel is known, so a marketplace's floor cannot quietly become every photograph's floor |
 | `portal-guards`, `rate-limit-detached`, `seed-guard` | The edge gate reaches every portal path; no cache dependency creeps back into the request path; the seed's allowlist |
+| `labelled-controls` | That every form label names its control: `FormField` renders a `<label for>` matching the control's `id` and points `aria-describedby` at the hint or error it shows, and no raw `<label>` outside `ui/` is left unassociated — `htmlFor`, or wrapping the control |
+| `migration-drops` | That a column or table is never dropped without the file saying whose data goes: every migration with a `DROP COLUMN` or `DROP TABLE` carries a dated statement that the data was confirmed disposable, and the migrations that predate the rule are listed, shrink-only |
 
 ### The tests are audited the same way the code is
 
@@ -128,7 +128,7 @@ integration tests then written, including the guard on Invariants 1, 3 and 6. Th
 `join-equivalence` went further and *passed* on the empty schema by comparing `[]` to `[]`. The
 predicate now lives once in `tests/helpers/test-db.ts`, fixtures are built by `ensureFixtures`
 rather than read out of the seed, and `test-integrity` fails if either regresses. The suite has
-grown since — 18 files and 92 cases as of 2026-09-28 — so a fraction here would go stale the way
+grown since — 32 files and 245 cases as of 2026-10-06 — so a fraction here would go stale the way
 the last one did; what matters is that a suite skips only for a stated reason, which
 `test-integrity` is what checks.
 

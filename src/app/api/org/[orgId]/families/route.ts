@@ -10,7 +10,7 @@
 import { NextResponse } from "next/server";
 
 import { withOrg } from "@/lib/org-auth";
-import { productFamilyService } from "@server/catalog/product-family.service";
+import { productFamilyService } from "@server/listing/product-family.service";
 import { createFamilySchema } from "@/lib/validation/schemas/family.schema";
 
 export const POST = withOrg(async (request, scope) => {

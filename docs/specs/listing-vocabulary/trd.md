@@ -1,7 +1,7 @@
 # TRD — listing vocabulary
 
 - **Summary:** The product holds everything it says about itself; categories declare the questions, families carry what siblings share, and the fill step runs on save
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-236…PR-253 (2026-10-04)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-02

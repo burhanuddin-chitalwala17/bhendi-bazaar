@@ -1,6 +1,6 @@
 # TRD — worker-foundation
 
-- **Status:** 🔨 In progress — PR-150, PR-154 (2 of 3; the machine itself pending the account)
+- **Status:** ✅ Implemented — PR-150, PR-154, PR-210 (2026-09-29)
 - **Domain:** cross-domain (`server/shared/jobs/`, `worker/`)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-27
