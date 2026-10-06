@@ -5,7 +5,7 @@ import type { Control, FieldErrors, UseFormRegister, UseFormSetValue } from "rea
 
 import { FormController, FormInput, FormSelect } from "../FormField";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useListingValues, type ValueOption, type ValuesByList } from "@/hooks/catalog/useListingValues";
+import { useListingValues, type ValueOption, type ValuesByList } from "@/components/shared/forms/product/useListingValues";
 import { ANSWER, FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
 import { resolveProductType } from "@server/listing/product-type";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";

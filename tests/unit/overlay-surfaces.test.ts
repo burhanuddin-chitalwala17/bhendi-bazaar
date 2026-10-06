@@ -23,6 +23,8 @@ const MAY_USE_SHEET: Record<string, string> = {
     "Decision 1: the picker pair's phone half. A popover from `md`, this below it.",
   "src/components/org/media-library-grid.tsx":
     "Decision 3: the details of a selected item, beside a list that stays visible and whose selection moves.",
+  "src/components/shared/overlays/form-dialog.tsx":
+    "Decision 5: the short-form pair's phone half — a bottom sheet below md, a centred dialog above it.",
   "src/components/auth/auth-sheet.tsx":
     "Decision 4: a short flow the page hands off to. Signing in is a passage, not a place.",
   "src/components/support/contact-sheet.tsx":
@@ -93,6 +95,64 @@ describe("an overlay's surface is chosen, not inherited", () => {
     expect(dialog?.code).toMatch(/md:h-\[min\(/);
     // A canvas that scrolls is a canvas bigger than the screen, which is the one thing it must not be.
     expect(dialog?.code).toMatch(/overflow-hidden/);
+  });
+
+  /**
+   * A short form in a centred dialog is wrong at 360px: the keyboard pushes the submit
+   * button out of reach. `FormDialog` gives it a bottom sheet on phone and a centred
+   * dialog from md — like `ResponsivePicker`, two primitives, one breakpoint.
+   *
+   * Today's users of raw DialogContent are ratcheted. A new one must go through
+   * FormDialog (short form), TaskDialog (canvas/gallery), or be listed here with its case.
+   */
+  const MAY_USE_DIALOG: Record<string, string> = {
+    "src/components/ui/dialog.tsx": "Defines it.",
+    "src/components/shared/overlays/task-dialog.tsx": "Decision 2: the canvas pair.",
+    "src/components/shared/overlays/form-dialog.tsx": "Decision 5: the short-form pair.",
+    "src/components/shared/image-lightbox.tsx": "Decision 2: full-screen image viewer.",
+    "src/components/shared/ShareDialog.tsx": "Decision 3: a non-form detail panel.",
+    // Ratchet: these use raw DialogContent and should migrate to FormDialog.
+    "src/components/org/brands-manager.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/org/locations-manager.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/org/add-promotion-dialog.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/org/handle-change-dialog.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/org/console/components/AddOrgModal.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/shipping/providers-console/component/ConnectProviderModal.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/product/console/reviews/ReviewsTable.tsx": "Ratchet: confirm dialog.",
+    "src/components/product/review-media.tsx": "Ratchet: image preview.",
+    "src/components/product/review-list.tsx": "Ratchet: confirm dialog.",
+    "src/components/product/console/productsList/components/ProductRowMenu.tsx": "Ratchet: confirm dialog.",
+    "src/components/banners/BannerList.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/profile/change-password-modal.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/bidding/BidLadder.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/bidding/CancelBiddingButton.tsx": "Ratchet: confirm dialog.",
+    "src/components/bidding/CreateBiddingDialog.tsx": "Ratchet: search picker.",
+    "src/components/bidding/MarkUnsoldDialog.tsx": "Ratchet: short form, wants FormDialog.",
+    "src/components/shared/forms/product/ProductOrgShippingFields.tsx": "Ratchet: location form inline.",
+  };
+
+  it("only the declared files reach for a dialog themselves", () => {
+    const offenders = files
+      .filter((file) => /\bDialogContent\b/.test(file.code))
+      .map((file) => file.path)
+      .filter((path) => !(path in MAY_USE_DIALOG));
+
+    expect(
+      offenders,
+      "A short form belongs in FormDialog; a canvas in TaskDialog. If this is something else, " +
+        "add it to MAY_USE_DIALOG with the case it answers to:\n" +
+        offenders.map((o) => `    ${o}`).join("\n"),
+    ).toEqual([]);
+  });
+
+  it("keeps the dialog list honest: an entry that no longer uses a dialog is removed", () => {
+    const stale = Object.keys(MAY_USE_DIALOG).filter(
+      (path) =>
+        !files.some(
+          (file) => file.path === path && /\bDialogContent\b/.test(file.code),
+        ),
+    );
+    expect(stale).toEqual([]);
   });
 
   it("a popover is reached through the primitive, never from the package", () => {

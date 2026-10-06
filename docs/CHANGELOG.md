@@ -10,6 +10,20 @@
 
 ## Entries
 
+## [PR-286] 2026-10-06 — FormDialog, dead code, and the docs match the tree
+
+- **FormDialog** (`src/components/shared/overlays/form-dialog.tsx`): the fifth overlay surface
+  (ADR-0040) — a bottom sheet on phone, a centred dialog from tablet. Today's 17 raw
+  `DialogContent` form sites are ratcheted in `overlay-surfaces.test.ts` with their case;
+  a new one fails unless it goes through `FormDialog`, `TaskDialog` or is listed with a reason.
+  Mutation-tested.
+- **Dead code removed**: `AdminAccessButton` (0 importers), `useStockCheck` (0 importers).
+  Two single-domain hooks moved to their component: `useCategoryForm` → `components/category/`,
+  `useListingValues` → `components/shared/forms/product/`.
+- **Docs corrected**: ARCHITECTURE.md no longer claims every handler uses `toErrorResponse`;
+  TESTING.md counts and dead-directory paragraph fixed; OPERATIONS.md local DB recipe uses
+  the real Docker container on port 5433 and `.env.example`. Verified dates bumped.
+
 ## [PR-285] 2026-10-06 — The aggregate's repository carries the aggregate's name
 
 `admin.product.repository.ts` held every product write while `product.repository.ts` was

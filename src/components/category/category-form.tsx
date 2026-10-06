@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
-import { useCategoryForm } from "@/hooks/admin/useCategoryForm";
+import { useCategoryForm } from "@/components/category/useCategoryForm";
 import { categoryFormSchemaFor } from "@/lib/validation/schemas/category.schema";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import {
