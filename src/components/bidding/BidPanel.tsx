@@ -15,20 +15,20 @@ import { useCallback, useState } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { FormField, FormInput } from "@/components/shared/forms/FormField";
+import { FormField, FormInput, fieldMessageIds } from "@/components/shared/forms/FormField";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BidCountdown } from "@/components/bidding/BidCountdown";
-import { readApiError, ApiError } from "@/lib/api-error";
+import { ApiError, applyServerErrors } from "@/lib/api-error";
 import { formatCurrency, paiseToRupees, rupeesToPaise } from "@/lib/format";
+import { useMutation } from "@/hooks/core/useMutation";
+import {
+  biddingApiClient,
+  type BidStateView,
+} from "@/components/bidding/biddingApiClient";
+import type { PlaceBidInputBody } from "@/lib/validation/schemas/bidding.schema";
 
-interface BidState {
-  highestBidPaise: number | null;
-  bidCount: number;
-  minBidPaise: number;
-  maxBidPaise: number;
-}
 
 export function BidPanel({
   slug,
@@ -43,13 +43,12 @@ export function BidPanel({
   serverNow: string;
   isSignedIn: boolean;
   quickBidsPaise: number[];
-  initial: BidState;
+  initial: BidStateView;
 }) {
-  const [state, setState] = useState<BidState>(initial);
+  const [state, setState] = useState<BidStateView>(initial);
   const [customIncrease, setCustomIncrease] = useState("");
   const [guest, setGuest] = useState({ name: "", phone: "", email: "" });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [isPlacing, setIsPlacing] = useState(false);
   const [placed, setPlaced] = useState<number | null>(null);
   const [hasExpired, setHasExpired] = useState(false);
   const [isBehind, setIsBehind] = useState(false);
@@ -59,51 +58,51 @@ export function BidPanel({
   const minIncrease = Math.min(...quickBidsPaise);
   const isOpeningBid = state.highestBidPaise === null;
 
-  const place = async (amountPaise: number) => {
-    setIsPlacing(true);
-    setFieldErrors({});
-    try {
-      const response = await fetch(`/api/bidding/${slug}/bids`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: paiseToRupees(amountPaise),
-          expectedHighestBid: state.highestBidPaise,
-          ...(isSignedIn
-            ? {}
-            : {
-                guestName: guest.name,
-                guestPhone: guest.phone,
-                guestEmail: guest.email || undefined,
-              }),
-        }),
-      });
-      if (!response.ok) throw await readApiError(response);
-
-      const view = (await response.json()) as BidState;
-      setState(view);
-      setPlaced(amountPaise);
-      setCustomIncrease("");
-      setIsBehind(false);
-      toast.success("Your bid is in");
-    } catch (error) {
-      if (error instanceof ApiError) {
+  const { mutate: placeBid, isLoading: isPlacing } = useMutation(
+    (body: PlaceBidInputBody) => biddingApiClient.placeBid(slug, body),
+    {
+      showToast: false,
+      onError: (error) => {
+        if (!(error instanceof ApiError)) {
+          toast.error("Could not place your bid. Please try again.");
+          return;
+        }
         // A refusal means this page is behind the event — the price moved, or it
         // closed. The server deliberately names no amount (money is formatted in one
         // place, client-side), so the honest offer is a reload (spec R24).
         if (error.status === 409) setIsBehind(true);
         const byField: Record<string, string> = {};
-        for (const detail of error.details) {
-          if (detail.path) byField[detail.path] = detail.message;
-        }
+        applyServerErrors(error.details, (path, { message }) => {
+          byField[path] = message;
+        });
         setFieldErrors(byField);
         if (Object.keys(byField).length === 0) toast.error(error.message);
         else if (byField.amount) toast.error(byField.amount);
-      } else {
-        toast.error("Could not place your bid. Please try again.");
-      }
-    } finally {
-      setIsPlacing(false);
+      },
+    },
+  );
+
+  const place = async (amountPaise: number) => {
+    setFieldErrors({});
+    try {
+      const view = await placeBid({
+        amount: paiseToRupees(amountPaise),
+        expectedHighestBid: state.highestBidPaise,
+        ...(isSignedIn
+          ? {}
+          : {
+              guestName: guest.name,
+              guestPhone: guest.phone,
+              guestEmail: guest.email || undefined,
+            }),
+      });
+      setState(view);
+      setPlaced(amountPaise);
+      setCustomIncrease("");
+      setIsBehind(false);
+      toast.success("Your bid is in");
+    } catch {
+      // Reported by onError above.
     }
   };
 
@@ -200,11 +199,13 @@ export function BidPanel({
             error={fieldErrors.guestName}
             autoComplete="name"
           />
-          <FormField label="Phone" required error={fieldErrors.guestPhone}>
+          <FormField id="bid-phone" label="Phone" required error={fieldErrors.guestPhone}>
             <PhoneInput
+              id="bid-phone"
               value={guest.phone}
               onChange={(phone) => setGuest({ ...guest, phone })}
               aria-invalid={!!fieldErrors.guestPhone}
+              aria-describedby={fieldErrors.guestPhone ? fieldMessageIds("bid-phone").error : undefined}
             />
           </FormField>
           <div>

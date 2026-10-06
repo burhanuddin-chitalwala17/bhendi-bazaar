@@ -39,7 +39,7 @@ describe("content security policy", () => {
   });
 
   it("admits the payment gateway on every channel its checkout uses", () => {
-    // Razorpay appends checkout.js at runtime (src/services/paymentGatewayService.ts),
+    // Razorpay appends checkout.js at runtime (src/components/checkout/razorpay-checkout.ts),
     // renders the modal in an iframe, posts back through a form, and beacons to its own
     // API. Miss one and payment fails in a way that looks like a gateway outage.
     for (const name of ["script-src", "frame-src", "form-action", "connect-src"]) {

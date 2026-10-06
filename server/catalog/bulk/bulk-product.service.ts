@@ -6,10 +6,9 @@
  * (D5), and therefore all-or-nothing by construction (R3).
  */
 import { randomUUID } from "node:crypto";
-import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
-import { categoryRepository } from "@server/catalog/category.repository";
-import { productFamilyService } from "@server/catalog/product-family.service";
+import { categoryRepository } from "@server/catalog/category.read.repository";
+import { productFamilyService } from "@server/listing/product-family.service";
 import {
   loadVocabulary,
   resolveRowVocabulary,
@@ -22,6 +21,7 @@ import { rupeesToPaise } from "@server/shared/money";
 import { ConflictError } from "@server/shared/domain-error";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
+import { adminProductsRepository } from "@server/catalog/product.repository";
 import {
   BULK_MAX_ROWS,
   type BulkProductRow,
@@ -79,13 +79,9 @@ export async function validateProductRows(
 
   const skus = rows.flatMap(({ row, rowNumber }) => (row.sku ? [{ sku: row.sku, rowNumber }] : []));
   const taken = skus.length
-    ? await prisma.product.findMany({
-        where: { orgId, sku: { in: skus.map((s) => s.sku) } },
-        // Archived products are included deliberately: they still hold their SKU, so
-        // a row claiming one is refused rather than silently restoring the product an
-        // import must never restore (ADR-0029, product-archive Q1).
-        select: { id: true, sku: true, name: true, archivedAt: true },
-      })
+    ? // Archived products are included deliberately: they still hold their SKU, so a row
+      // claiming one is refused rather than silently restoring it (ADR-0029, product-archive Q1).
+      await adminProductsRepository.listSkusTaken(orgId, skus.map((s) => s.sku))
     : [];
   const takenBy = new Map(taken.map((p) => [p.sku as string, p.name]));
   const archivedSkus = new Set(
@@ -173,12 +169,9 @@ export async function planProductRows(
   const updates = new Map<number, string>();
   if (skus.length === 0) return { updates, creates: rows.length };
 
-  const existing = await prisma.product.findMany({
-    // Archived products are excluded: they hold their SKU but an import must not restore one,
-    // which validation refuses separately with a message naming the product.
-    where: { orgId, sku: { in: skus }, archivedAt: null },
-    select: { id: true, sku: true },
-  });
+  // Archived products are excluded: they hold their SKU but an import must not restore one,
+  // which validation refuses separately with a message naming the product.
+  const existing = await adminProductsRepository.listLiveSkus(orgId, skus);
   const bySku = new Map(existing.map((product) => [product.sku as string, product.id]));
 
   for (const { row, rowNumber } of rows) {
@@ -257,9 +250,8 @@ async function assignSlugs(
   updates: Map<number, string>,
 ): Promise<string[]> {
   const existing = new Set(
-    // Every slug, archived included (ADR-0029): an archived product keeps its slug so
-    // a restore finds its own URL free, so an import must not reuse it.
-    (await prisma.product.findMany({ select: { slug: true } })).map((p) => p.slug)
+    // Archived included (ADR-0029): an import must not reuse a slug a restore will want back.
+    (await adminProductsRepository.listAllSlugs()).map((p) => p.slug)
   );
   return rows.map(({ row, rowNumber }) => {
     // An updating row's slug is never recomputed: it is frozen at creation, because changing
@@ -371,28 +363,7 @@ export async function createProducts(
   for (const row of media) row.assetId = assetIds.get(row.ref) ?? null;
 
   try {
-    await prisma.$transaction(async (tx) => {
-      if (products.length) await tx.product.createMany({ data: products });
-
-      // An update is a full replace, the same semantics the admin form's edit has: the sheet
-      // row is the product now. `slug` is absent from the data — it is the product's own, and
-      // changing it would break every link to it.
-      for (const row of updates) {
-        const { id, slug: _slug, ...data } = row;
-        await tx.product.update({ where: { id }, data });
-      }
-
-      // The gallery and the stock are replaced wholesale for an updated product, in the same
-      // transaction, so nothing can commit with `thumbnail` pointing at a row that is gone.
-      if (updates.length) {
-        const ids = updates.map((row) => row.id as string);
-        await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
-        await tx.productStock.deleteMany({ where: { productId: { in: ids } } });
-      }
-
-      if (media.length) await tx.productMedia.createMany({ data: media });
-      if (stock.length) await tx.productStock.createMany({ data: stock });
-    });
+    await adminProductsRepository.importBulk(products, updates, media, stock);
   } catch (error) {
     if (isUniqueViolation(error, "sku")) {
       throw new ConflictError(

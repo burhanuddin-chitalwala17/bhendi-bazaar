@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { paymentGatewayService } from "@/services/paymentGatewayService";
-import { orderApiClient } from "@/services/orderApiClient";
-import { cartApiClient } from "@/services/cartApiClient";
+import { paymentGatewayApiClient } from "@/components/checkout/paymentGatewayApiClient";
+import { openRazorpayCheckout } from "@/components/checkout/razorpay-checkout";
+import { orderApiClient } from "@/components/order/orderApiClient";
+import { stockApiClient } from "@/components/product/stockApiClient";
 import { useCartStore } from "@/store/cartStore";
 
 import type { CartItem, CartTotals } from "@/domain/cart";
@@ -71,23 +72,12 @@ export function useCheckoutPayment() {
 
       // Step 0: Validate stock for all items across all groups
       const allItems = orderData.shippingGroups.flatMap((group) => group.items);
-      const stockCheck = await fetch("/api/products/check-stock", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: allItems.map((i) => ({
-            productId: i.productId,
-            quantity: i.quantity,
-          })),
-        }),
-      }).then((r) => r.json());
+      const stockCheck = await stockApiClient.check(
+        allItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      );
 
       if (!stockCheck.available) {
-        const outOfStock = stockCheck.items.filter(
-          (i: { available: boolean; name: string }) => !i.available,
-        );
+        const outOfStock = stockCheck.items.filter((i) => !i.available);
         throw new Error(
           `Sorry, ${outOfStock[0].name} is out of stock. Please update your cart.`,
         );
@@ -142,7 +132,7 @@ export function useCheckoutPayment() {
       // Free order case — the server checks the persisted total is zero and
       // performs the transition itself; the browser asserts nothing.
       if (amountInMinorUnit <= 0) {
-        await paymentGatewayService.confirmFreeOrder(order.id);
+        await paymentGatewayApiClient.confirmFreeOrder(order.id);
         useCartStore.getState().removeLines(allItems);
         router.push(`/order/${order.id}`);
         return order;
@@ -150,7 +140,7 @@ export function useCheckoutPayment() {
 
       // Step 2: Create payment gateway order
       console.log("💳 Creating Razorpay payment order...");
-      const paymentOrder = await paymentGatewayService.createPaymentOrder({
+      const paymentOrder = await paymentGatewayApiClient.createPaymentOrder({
         localOrderId: order.id,
         customer: {
           name: orderData.address.fullName,
@@ -163,7 +153,7 @@ export function useCheckoutPayment() {
       // the modal's own callbacks cannot see. `pagehide` fires where `beforeunload`
       // does not on mobile Safari, which is most of our buyers (ADR-0015).
       const releaseOnLeave = () => {
-        void paymentGatewayService.abandon(order.id);
+        void paymentGatewayApiClient.abandon(order.id);
       };
       window.addEventListener("pagehide", releaseOnLeave);
       const stopListening = () =>
@@ -171,14 +161,14 @@ export function useCheckoutPayment() {
 
       // Step 3: Open Razorpay checkout
       console.log("🔐 Opening Razorpay checkout modal...");
-      await paymentGatewayService.openCheckout(paymentOrder, {
+      await openRazorpayCheckout(paymentOrder, {
         onSuccess: async (response) => {
           stopListening();
           try {
             // The server verifies the signature against the persisted order and
             // writes the paid state — the browser reports, it does not decide
             // (ADR-0005). The webhook is the second, independent trigger.
-            await paymentGatewayService.confirmPayment({
+            await paymentGatewayApiClient.confirmPayment({
               localOrderId: order.id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -206,7 +196,7 @@ export function useCheckoutPayment() {
           // The gateway records the failure itself; this releases what the order is
           // holding, and only after the gateway confirms nothing was captured
           // (checkout-abandonment D1/D2).
-          void paymentGatewayService.abandon(order.id);
+          void paymentGatewayApiClient.abandon(order.id);
           // No state write from here: the gateway's own failure webhook records it,
           // and a failure signal must never be able to overwrite a captured payment.
           const description = (
@@ -221,7 +211,7 @@ export function useCheckoutPayment() {
           // The common case, not the exception: most people who open a payment window
           // close it. The goods go back on sale now rather than at the next sweep
           // (checkout-abandonment R1).
-          void paymentGatewayService.abandon(order.id);
+          void paymentGatewayApiClient.abandon(order.id);
           setIsProcessing(false);
         },
       });
@@ -238,6 +228,7 @@ export function useCheckoutPayment() {
             .map((d) => (d.path ? `${d.path}: ${d.message}` : d.message))
             .join(" · "),
         );
+        setIsProcessing(false);
         return;
       }
 

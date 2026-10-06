@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const sendContactMessage = vi.fn();
-vi.mock("@/services/contactApiClient", () => ({
+vi.mock("@/components/support/contactApiClient", () => ({
   sendContactMessage: (values: unknown) => sendContactMessage(values),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));

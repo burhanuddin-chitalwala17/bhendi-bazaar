@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { contentSecurityPolicy } from "@/lib/security-headers";
+import { CROSS_SITE_REFUSED, isCrossSiteMutation } from "@/lib/same-origin";
 
 /**
  * Edge gate for the two portals.
@@ -67,6 +68,13 @@ export async function middleware(request: NextRequest) {
 
   if (isDeadPermalink(pathname)) {
     return new NextResponse(null, { status: 410 });
+  }
+
+  // A mutation of our API from another site stops here (ADR-0060). The body is the error
+  // envelope by shape, built directly: `toErrorResponse` would pull zod and the server's
+  // constraint module into the edge bundle to produce one constant.
+  if (isCrossSiteMutation(request)) {
+    return NextResponse.json(CROSS_SITE_REFUSED, { status: 403 });
   }
 
   // Rebuilt with the mutated headers so the nonce reaches the render, not just the client.

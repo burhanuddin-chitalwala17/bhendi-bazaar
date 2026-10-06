@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ShipmentTrackingForm } from "@/components/shipping/ShipmentTrackingForm";
 import { formatCurrency } from "@/lib/format";
 import type { AdminShipmentView } from "@server/checkout/admin.order.types";
+import { Money } from "@/components/shared/Money";
 import {
   SHIPMENT_STATUS,
   SHIPMENT_STATUS_EFFECTS,
@@ -65,7 +66,7 @@ export function ShipmentsPanel({ shipments }: { shipments: AdminShipmentView[] }
                       Weight: {shipment.packageWeight}kg
                     </p>
                   )}
-                  <p>Shipping: {formatCurrency(shipment.shippingCost)}</p>
+                  <p>Shipping: <Money paise={shipment.shippingCost} /></p>
                 </div>
               </div>
               <Badge variant={badgeVariant(shipment.status)}>

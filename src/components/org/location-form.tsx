@@ -1,14 +1,13 @@
 "use client";
 
-import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormInput, FormPhoneInput } from "@/components/shared/forms/FormField";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { orgLocationsApiClient } from "@/components/org/orgLocationsApiClient";
 import { orgLocationSchema, type OrgLocationInput } from "@/lib/validation/schemas/location.schema";
-import type { OrgLocation } from "@server/catalog/org.address.repository";
+import type { OrgLocation } from "@server/catalog/org.address.types";
 
 /**
  * Add or edit a pickup location (stock-locations R1). Its own file because two screens open it:
@@ -36,21 +35,9 @@ export function LocationForm({
     formState: { errors, isSubmitting },
   } = useServerForm<OrgLocationInput>({
     schema: orgLocationSchema,
-    submit: async (data) => {
-      const response = await fetch(
-        location
-          ? `/api/org/${orgId}/locations/${location.id}`
-          : `/api/org/${orgId}/locations`,
-        {
-          method: location ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        },
-      );
-      if (!response.ok) throw await readApiError(response);
-      toast.success(location ? "Location updated" : "Location added");
-      onDone((await response.json()) as OrgLocation);
-    },
+    submit: (data) => orgLocationsApiClient.save(orgId, location?.id, data),
+    successMessage: location ? "Location updated" : "Location added",
+    onSuccess: (saved) => onDone(saved as OrgLocation),
     defaultValues: {
       name: location?.name ?? "",
       contactName: location?.contactName ?? "",

@@ -7,7 +7,7 @@
  */
 
 import { reviewRepository } from "@server/catalog/review.repository";
-import { productsRepository } from "@server/catalog/product.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import { profileService } from "@server/identity/profile.service";
 import { orderService } from "@server/checkout/order.service";
 import {

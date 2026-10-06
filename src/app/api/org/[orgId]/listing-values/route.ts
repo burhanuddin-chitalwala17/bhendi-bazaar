@@ -17,7 +17,7 @@
 import { NextResponse } from "next/server";
 
 import { withOrg } from "@/lib/org-auth";
-import { listingValueRepository } from "@server/catalog/listing-value.repository";
+import { listingValueRepository } from "@server/listing/listing-value.repository";
 
 /** A form asks a handful of questions; a longer list is a caller that has lost its way. */
 const MAX_LISTS = 20;

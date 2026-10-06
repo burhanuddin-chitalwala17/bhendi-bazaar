@@ -6,7 +6,6 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
 import {
   signupSchema,
   type SignupInput,
@@ -19,6 +18,7 @@ import {
 import { PasswordInput } from "@/components/auth/password-input";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { SWITCH_LINK, type AuthFormHost } from "@/components/auth/sign-in-form";
+import { authApiClient } from "@/components/auth/authApiClient";
 
 /**
  * Create an account, then sign straight in. If that sign-in fails the account still
@@ -42,12 +42,7 @@ export function SignUpForm({
   } = useServerForm<SignupInput>({
     schema: signupSchema,
     submit: async (data) => {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw await readApiError(res);
+      await authApiClient.signUp(data);
 
       const result = await signIn("credentials", {
         redirect: false,

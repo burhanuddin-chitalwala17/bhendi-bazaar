@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OfferList, type OfferRow } from "@/components/promotions/OfferList";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export default async function AdminPromotionsPage() {
   await requirePlatformAdmin();
@@ -18,14 +19,7 @@ export default async function AdminPromotionsPage() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Offers</h1>
-          <p className="text-sm text-muted-foreground">
-            Platform-funded offers. These apply across every organisation&apos;s
-            goods, and the platform bears whatever an organisation&apos;s own
-            offer does not already cover.
-          </p>
-        </div>
+        <SectionHeader as="h1" title="Offers" description="Platform-funded offers. These apply across every organisation's goods, and the platform bears whatever an organisation's own offer does not already cover." />
         <Button asChild>
           <Link href="/admin/promotions/new" prefetch={false}>
             <Plus className="size-4" aria-hidden /> New offer

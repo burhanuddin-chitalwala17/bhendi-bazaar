@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-10-01
+- **Verified:** 2026-10-05
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -34,6 +34,8 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [server/payments/CLAUDE.md](../server/payments/CLAUDE.md) | Payments — the gateway conversation and the single-writer rule |
 | [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md) | Bidding — timed auctions, and the sale gate that suspends an item from normal sale |
 | [server/notifications/CLAUDE.md](../server/notifications/CLAUDE.md) | Notifications — transactional email |
+| [src/components/CLAUDE.md](../src/components/CLAUDE.md) | The front end — its layers, and the gates each rule answers to (not a domain; loads when a component is read) |
+| [src/app/api/CLAUDE.md](../src/app/api/CLAUDE.md) | Route handlers — authorize, parse, delegate, answer (not a domain) |
 
 The remaining domains (`catalog`, `cart`, `identity`, `analytics`, `promotions`, `payouts`, `wishlist`, `content`, `shared`) have directories but no `CLAUDE.md` yet — one is added when work first touches the domain, per [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md) decision 8.
 

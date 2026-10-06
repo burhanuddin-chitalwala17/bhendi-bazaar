@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { Upload, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMutation } from "@/hooks/core/useMutation";
+import { uploadApiClient } from "@/components/shared/uploadApiClient";
 import { Button } from "../ui/button";
 
 interface ProfilePicUploadProps {
@@ -26,6 +28,8 @@ export function ProfilePicUpload({
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Errors are shown under the drop zone, so no toast as well.
+  const upload = useMutation(uploadApiClient.uploadProfilePicture, { showToast: false });
 
   const initial = userName?.charAt(0)?.toUpperCase() ?? "B";
 
@@ -63,20 +67,7 @@ export function ProfilePicUpload({
     try {
       setUploading(true);
 
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/profile/upload-picture", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Upload failed");
-      }
-
-      const { url } = await response.json();
+      const url = await upload.mutate(file);
       await onUploadComplete(url);
       setPreview(null);
     } catch (err) {

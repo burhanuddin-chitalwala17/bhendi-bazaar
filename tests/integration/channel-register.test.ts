@@ -11,13 +11,13 @@ import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 import { CHANNEL } from "@server/shared/channels";
-import { FACT, LIST, ORIGIN } from "@server/catalog/listing-facts";
+import { FACT, LIST, ORIGIN } from "@server/listing/listing-facts";
 import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let service: typeof import("@server/catalog/channel-register.service").channelRegisterService;
-  let maps: typeof import("@server/catalog/channel-map.repository").channelMapRepository;
+  let service: typeof import("@server/listing/channel-register.service").channelRegisterService;
+  let maps: typeof import("@server/listing/channel-map.repository").channelMapRepository;
 
   const stamp = `reg-${Date.now().toString(36)}`;
   const node = `${stamp}-node`;
@@ -52,9 +52,9 @@ describe.skipIf(!isDisposableDb)("the channel register (local db)", () => {
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
     ({ channelRegisterService: service } = await import(
-      "@server/catalog/channel-register.service"
+      "@server/listing/channel-register.service"
     ));
-    ({ channelMapRepository: maps } = await import("@server/catalog/channel-map.repository"));
+    ({ channelMapRepository: maps } = await import("@server/listing/channel-map.repository"));
     ({ orgId, categoryId, orgAddressId } = await ensureFixtures());
 
     // `Product.productType` is a foreign key, so the type exists before the products do.

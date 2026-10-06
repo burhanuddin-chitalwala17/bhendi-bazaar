@@ -2,7 +2,7 @@ import { z } from "zod";
 import { CategoryAccent } from "@prisma/client";
 import { optionalNumber } from "./common.schemas";
 import { shotListSchema } from "@server/catalog/shot-list";
-import { productTypeSchemaFor } from "@server/catalog/product-type";
+import { productTypeSchemaFor } from "@server/listing/product-type";
 
 /**
  * The accepted shape of an admin category payload.

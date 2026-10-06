@@ -7,12 +7,12 @@ import {
   productTypeSchemaFor,
   resolveProductType,
   type ProductTypeSource,
-} from "@server/catalog/product-type";
+} from "@server/listing/product-type";
 import {
   parseProductTypeRecord,
   labelForFact,
   type ProductTypeRecord,
-} from "@server/catalog/product-type.types";
+} from "@server/listing/product-type.types";
 
 /**
  * The types are rows now, so what stays here is what stays pure: the tree walk, the key parsing,

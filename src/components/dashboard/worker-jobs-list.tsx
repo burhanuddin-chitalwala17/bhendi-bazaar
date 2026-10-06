@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { readApiError } from "@/lib/api-error";
-import type { JobSummary } from "@server/shared/jobs";
+import { useAsyncData } from "@/hooks/core/useAsyncData";
+import { workerJobsApiClient } from "@/components/dashboard/workerJobsApiClient";
 
 function ago(iso: string, now: Date): string {
   const minutes = Math.round((now.getTime() - new Date(iso).getTime()) / 60_000);
@@ -31,28 +31,19 @@ const STATE_VARIANT: Record<string, "default" | "secondary" | "outline" | "destr
  */
 export function WorkerJobsList() {
   const [open, setOpen] = useState(false);
-  const [jobs, setJobs] = useState<JobSummary[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/admin/jobs");
-      if (!response.ok) throw await readApiError(response);
-      setJobs(((await response.json()) as { jobs: JobSummary[] }).jobs);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not read the jobs");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Latches on the first open, so closing and reopening shows the jobs already read.
+  const [requested, setRequested] = useState(false);
+  const { data: jobs, loading, error, refetch } = useAsyncData(workerJobsApiClient.list, {
+    enabled: requested,
+  });
 
   const toggle = () => {
     const next = !open;
     setOpen(next);
-    if (next && jobs === null) void load();
+    if (!next) return;
+    // A first read that failed is retried on reopen, as it was before the hook.
+    if (requested && jobs === null && !loading) void refetch();
+    else setRequested(true);
   };
 
   const now = new Date();
@@ -67,7 +58,7 @@ export function WorkerJobsList() {
         <div className="mt-2 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">The newest twenty, both queues.</p>
-            <Button type="button" variant="ghost" size="sm" onClick={() => void load()} disabled={loading} aria-label="Refresh jobs">
+            <Button type="button" variant="ghost" size="sm" onClick={() => void refetch()} disabled={loading} aria-label="Refresh jobs">
               <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden />
             </Button>
           </div>

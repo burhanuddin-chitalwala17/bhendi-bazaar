@@ -75,10 +75,8 @@ const RECORDED: Record<string, { domains: string[]; why: string }> = {
       "bidding suspension (ADR-0023). Both extra reaches are mandated seams, not shortcuts.",
   },
   "src/data-access-layer/admin/products.dal.ts": {
-    domains: ["catalog", "promotions", "wishlist"],
-    why:
-      "The console's product list shows the effective price and the wishlist demand signal " +
-      "beside the row. Same shape as the buyer-facing DAL above.",
+    domains: ["catalog", "listing", "promotions", "wishlist"],
+    why: "The admin product list: catalogue products, listing type resolution for the form, promotions for the effective price (ADR-0018). Each a service call.",
   },
   "src/app/api/checkout/promotions/quote/route.ts": {
     domains: ["catalog", "checkout", "promotions"],
@@ -86,6 +84,10 @@ const RECORDED: Record<string, { domains: string[]; why: string }> = {
       "Quotes a basket's discount before checkout: it needs the catalogue's prices, the " +
       "promotion engine and checkout's totals. A thin handler over three services rather than " +
       "logic of its own.",
+  },
+  "server/catalog/admin.product.service.ts": {
+    domains: ["bidding", "listing", "promotions"],
+    why: "The catalogue admin reads: bidding lock for an auctioned product, listing's type resolution for the form, promotions for offer targeting. Each is a single call to that domain's public surface.",
   },
 };
 

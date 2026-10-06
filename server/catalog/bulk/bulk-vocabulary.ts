@@ -1,8 +1,8 @@
-import { FACT_DECLARATIONS, ORIGIN, type FactKey } from "@server/catalog/listing-facts";
-import { listingValueRepository } from "@server/catalog/listing-value.repository";
-import { resolveProductType } from "@server/catalog/product-type";
-import { productTypeRepository } from "@server/catalog/product-type.repository";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import { FACT_DECLARATIONS, ORIGIN, type FactKey } from "@server/listing/listing-facts";
+import { listingValueRepository } from "@server/listing/listing-value.repository";
+import { resolveProductType } from "@server/listing/product-type";
+import { productTypeRepository } from "@server/listing/product-type.repository";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 import type { BulkProductRow, RowError } from "./bulk.types";
 

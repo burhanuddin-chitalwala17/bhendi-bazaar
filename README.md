@@ -462,87 +462,9 @@ Full-featured admin dashboard for managing all aspects of the e-commerce platfor
 
 ## 📚 API Documentation
 
-### Public API Routes
-
-#### Products
-```
-GET    /api/products          # List all products
-GET    /api/products/[slug]   # Get product by slug
-GET    /api/products/offers   # Get products on sale
-GET    /api/products/hero     # Get featured products
-POST   /api/products/search   # Search products
-```
-
-#### Categories
-```
-GET    /api/categories        # List all categories
-GET    /api/categories/[slug] # Get category by slug
-```
-
-#### Cart
-```
-GET    /api/cart              # Get user cart
-POST   /api/cart              # Create/update cart
-PUT    /api/cart              # Update cart
-DELETE /api/cart              # Clear cart
-```
-
-#### Orders
-```
-GET    /api/orders            # List user orders
-GET    /api/orders/[id]       # Get order by ID
-POST   /api/orders            # Create order
-PATCH  /api/orders/[id]       # Update order
-POST   /api/orders/create-with-shipments  # Create order with multiple shipments
-POST   /api/orders/lookup     # Lookup order by code (guest)
-```
-
-#### Authentication
-```
-POST   /api/auth/signin       # Sign in
-POST   /api/auth/signup       # Sign up
-POST   /api/auth/signout      # Sign out
-GET    /api/auth/session      # Get session
-POST   /api/auth/callback/*   # OAuth callbacks
-```
-
-### Admin API Routes
-
-All admin routes require `ADMIN` role and are prefixed with `/api/admin/`.
-
-```
-GET    /api/admin/dashboard              # Dashboard stats
-GET    /api/admin/dashboard/activities   # Recent activities
-GET    /api/admin/dashboard/revenue      # Revenue chart
-
-GET    /api/admin/products               # List products
-POST   /api/admin/products               # Create product
-GET    /api/admin/products/[id]          # Get product
-PUT    /api/admin/products/[id]          # Update product
-DELETE /api/admin/products/[id]          # Delete product
-
-GET    /api/admin/orders                 # List orders
-GET    /api/admin/orders/[id]            # Get order
-PATCH  /api/admin/orders/[id]            # Update order
-POST   /api/admin/shipments/[id]/tracking # Update tracking
-
-GET    /api/admin/users                  # List users
-GET    /api/admin/users/[id]             # Get user
-PATCH  /api/admin/users/[id]             # Update user
-DELETE /api/admin/users/[id]             # Delete user
-
-GET    /api/admin/reviews                # List reviews
-PATCH  /api/admin/reviews/[id]           # Update review status
-```
-
-### Webhooks
-
-```
-POST   /api/webhooks/razorpay             # Razorpay payment webhooks
-POST   /api/webhooks/shipping/shiprocket  # Shiprocket shipping updates
-```
-
----
+Every shape that crosses the client/server boundary, and the protocol for changing one, is in
+[docs/CONTRACTS.md](docs/CONTRACTS.md). Route handlers live under `src/app/api/`; each one's caller is
+named in `tests/unit/route-reachability.test.ts`, so that list is the live index of what exists.
 
 ## 🚀 Deployment
 
@@ -679,13 +601,13 @@ The application can be deployed to any platform that supports Node.js:
 npm test
 
 # Run tests in watch mode
-npm run test:watch
+npm run test
 
 # Run tests with UI
 npm run test:ui
 
 # Run tests with coverage
-npm run test:coverage
+npm run test:run
 ```
 
 ### Manual Testing

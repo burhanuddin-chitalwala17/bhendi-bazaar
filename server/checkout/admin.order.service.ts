@@ -4,16 +4,20 @@
  */
 
 import { adminOrderRepository } from "@server/checkout/admin.order.repository";
+import { orderRepository } from "@server/checkout/order.repository";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
+  OrderAddressSnapshot,
   OrderListFilters,
   OrderListResult,
   UpdateOrderStatusInput,
   OrderStats,
 } from "@server/checkout/admin.order.types";
+import { OPERATOR_SETTABLE_STATUSES, type OrderStatus } from "@server/checkout/order.types";
 import { DomainError } from "@server/shared/domain-error";
 
-const VALID_ORDER_STATUSES = ["processing", "packed", "shipped", "delivered"];
+const isOperatorSettable = (status: string): status is OrderStatus =>
+  (OPERATOR_SETTABLE_STATUSES as readonly string[]).includes(status);
 
 export class AdminOrderService {
   /**
@@ -27,7 +31,15 @@ export class AdminOrderService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      orders,
+      orders: orders.map((order) => ({
+        id: order.id,
+        code: order.code,
+        customerName: (order.address as OrderAddressSnapshot | null)?.fullName ?? null,
+        grandTotal: order.grandTotal,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        createdAt: order.createdAt,
+      })),
       total,
       page,
       limit,
@@ -43,56 +55,38 @@ export class AdminOrderService {
   }
 
   /**
-   * Update order status
+   * An operator's edit: a fulfilment move, notes, or both. The move is conditional on the
+   * transition table (`orderRepository.transition`), so a stale dropdown is refused with where
+   * the order actually is rather than overwriting it. The audit record stays — it records the
+   * action, it never decides it (ADR-0021).
    */
   async updateOrderStatus(
     id: string,
     adminId: string,
     data: UpdateOrderStatusInput
   ) {
-    // Validate status if provided
-    if (data.status && !VALID_ORDER_STATUSES.includes(data.status)) {
-      throw new DomainError(`Invalid status. Must be one of: ${VALID_ORDER_STATUSES.join(", ")}`);
+    if (data.status !== undefined) {
+      if (!isOperatorSettable(data.status)) {
+        throw new DomainError(
+          `Invalid status. Must be one of: ${OPERATOR_SETTABLE_STATUSES.join(", ")}`,
+          { field: "status" },
+        );
+      }
+      await orderRepository.transition(id, data.status);
     }
-
-    const order = await adminOrderRepository.updateOrderStatus(id, data);
-
-    if (order) {
-      await recordAdminAction({
-        adminId,
-        action: "ORDER_UPDATED",
-        resource: "Order",
-        resourceId: id,
-        metadata: { changes: data },
-      });
+    if (data.notes !== undefined) {
+      await orderRepository.setNotes(id, data.notes);
     }
-
-    return order;
-  }
-
-  /**
-   * Bulk update order status
-   */
-  async bulkUpdateStatus(
-    orderIds: string[],
-    status: string,
-    adminId: string
-  ): Promise<number> {
-    if (!VALID_ORDER_STATUSES.includes(status)) {
-      throw new DomainError(`Invalid status. Must be one of: ${VALID_ORDER_STATUSES.join(", ")}`);
-    }
-
-    const count = await adminOrderRepository.bulkUpdateStatus(orderIds, status);
 
     await recordAdminAction({
       adminId,
-      action: "ORDERS_BULK_UPDATED",
+      action: "ORDER_UPDATED",
       resource: "Order",
-      resourceId: orderIds.join(","),
-      metadata: { status, count },
+      resourceId: id,
+      metadata: { changes: data },
     });
 
-    return count;
+    return true;
   }
 
   /**

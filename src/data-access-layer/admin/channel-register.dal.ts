@@ -5,7 +5,7 @@ import { cache } from "react";
 import {
   channelRegisterService,
   type ChannelRegisterView,
-} from "@server/catalog/channel-register.service";
+} from "@server/listing/channel-register.service";
 import type { Channel } from "@server/shared/channels";
 
 /**

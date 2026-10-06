@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-04
+- **Verified:** 2026-10-05
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -91,7 +91,7 @@ Order creation gains an optional **`couponCode`** — a string, normalised to up
 `POST /api/payments/abandon` (PR-104) takes `{ localOrderId }` — an order reference and deliberately nothing else. It reports that the buyer left the payment window; it does **not** assert what happened to the money, which the server establishes by asking the gateway. Returns `{ orderId, outcome }`, where `outcome` is one of `released`, `confirmed`, `in-flight`, `already-paid`, `already-released`, `not-released`. Safe to call more than once, and safe never to call — the reconciliation sweep reaches the same answer later.
 
 ### Admin
-`GET /api/admin/shipping/providers` returns `ShippingProvider` rows without a `select`, so credential and auth-error fields reach the browser. Rule 5 requires an explicit projection exposing only connection state.
+`GET /api/admin/shipping/providers` and `GET /api/admin/shipping/providers/[id]` return **`ShippingProviderSummary`** (`server/shipping/repositories/provider.repository.ts`): id, code, name, description, priority, connection state and dates, connection type, payment options, delivery modes, features, logo and website, and `accountInfo` narrowed to `{ email }`. `authToken`, `tokenExpiresAt`, `authError` and the rest of `accountInfo` never leave the server; `POST …/providers/[id]/connect` answers without the token or the password, and the audit record carries neither. `tests/unit/provider-dto.test.ts` holds the projection at type level, so `tsc` fails a widened select. Until 2026-10-05 the rows went out whole — the leak Rule 5 exists for.
 
 ### Banners
 `BannerFormSchemaInput` (`src/lib/validation/schemas/banner.schema.ts`) is one declaration used by three things — `POST /api/admin/banners`, `PATCH /api/admin/banners/[id]`, and the admin form's resolver — so what an admin sees inline is what the route enforces (ADR-0013).
@@ -162,7 +162,7 @@ and by the route from the database, so what a shop is shown inline stays what th
 
 New admin surface: `GET`/`POST /api/admin/product-types` and `PATCH`/`DELETE
 /api/admin/product-types/:key`, speaking `ProductTypeRecord`
-(`server/catalog/product-type.types.ts`). `DELETE` **retires** rather than deletes and answers
+(`server/listing/product-type.types.ts`). `DELETE` **retires** rather than deletes and answers
 `{ retired, usage: { categories, products } }` — the foreign keys refuse a delete while anything
 names the type, and the counts are what make that a sentence somebody can act on.
 
@@ -207,7 +207,7 @@ Since PR-185 the org portal speaks **`EnhancementDto`** (`server/content/enhance
 
 Two admin routes since PR-190, both `requirePlatformAdminId` and parsed by the same schema module. `PUT /api/admin/enhancements/settings` takes `{ defaultMonthlyAllowance, dailyCapPaise }` — both positive integers, the cap in **paise** (Invariant 3), since the form shows rupees and converts before it sends — and answers `{ settings }`, an **`EnhancementSettingsDto`** of `defaultMonthlyAllowance`, `dailyCapPaise` and `configured` (false while those are the code's fallbacks and nothing has been saved). `PUT /api/admin/enhancements/orgs/:orgId` takes `{ monthlyAllowance, paused, pauseReason }` — `monthlyAllowance` is `number | null`, and **null is not a missing field**: it says the org defers to the platform, which is what lets its row be deleted rather than kept holding a copy — and answers `{ policy }`, an **`OrgEnhancementPolicyView`** of `monthlyAllowance` (resolved), `monthlyAllowanceOverride` (what the org's own row says, or null), `paused` and `pauseReason`. `EnhancementUsage.allowance` is likewise the **resolved** number — the org's override where it has one, else the platform's setting, else the fallback in `server/content/enhancement.types.ts` — so a refusal names the number that actually applied.
 
-The editor's shape is `StorefrontSettingsInput` in `src/lib/validation/schemas/storefront.schema.ts`, parsed by the settings route and rendered by `useServerForm`; it too now reads and writes the profile. Since PR-162 the portal's listing-context screen speaks two private-face shapes, neither of which reaches a storefront payload: **`BrandDto`** (`server/catalog/brand.types.ts` — `id`, `name`, `manufacturer`, `packerOrImporter`, `countryOfOrigin`, `isDefault`, `retiredAt` as ISO or null) and **`OrgListingDefaultsDto`** (`server/catalog/org-listing-defaults.types.ts` — `countryOfOrigin`, `taxRatePercent`, `taxCodes` as a list of `{ categoryId, taxCode }`). The write shapes are `brandSchema` / `updateBrandSchema` and `listingDefaultsSchema` in `src/lib/validation/schemas/`, two envelopes for the brand as for locations. **The wire talks percent and a list; the column holds basis points and a JSON map keyed by category id**, converted in one place, so a reader never divides. Only a brand's name is required anywhere here ([seller-profile](specs/seller-profile/) R5). **`countryOfOrigin` is an ISO 3166-1 alpha-2 code** on both shapes, since PR-164 — `COUNTRY_CODES` in `server/shared/countries.ts` is the closed set the schemas accept, and `countryName` is how a code is shown.
+The editor's shape is `StorefrontSettingsInput` in `src/lib/validation/schemas/storefront.schema.ts`, parsed by the settings route and rendered by `useServerForm`; it too now reads and writes the profile. Since PR-162 the portal's listing-context screen speaks two private-face shapes, neither of which reaches a storefront payload: **`BrandDto`** (`server/catalog/brand.types.ts` — `id`, `name`, `manufacturer`, `packerOrImporter`, `countryOfOrigin`, `isDefault`, `retiredAt` as ISO or null) and **`OrgListingDefaultsDto`** (`server/listing/org-listing-defaults.types.ts` — `countryOfOrigin`, `taxRatePercent`, `taxCodes` as a list of `{ categoryId, taxCode }`). The write shapes are `brandSchema` / `updateBrandSchema` and `listingDefaultsSchema` in `src/lib/validation/schemas/`, two envelopes for the brand as for locations. **The wire talks percent and a list; the column holds basis points and a JSON map keyed by category id**, converted in one place, so a reader never divides. Only a brand's name is required anywhere here ([seller-profile](specs/seller-profile/) R5). **`countryOfOrigin` is an ISO 3166-1 alpha-2 code** on both shapes, since PR-164 — `COUNTRY_CODES` in `server/shared/countries.ts` is the closed set the schemas accept, and `countryName` is how a code is shown.
 
 ### Media uploads
 

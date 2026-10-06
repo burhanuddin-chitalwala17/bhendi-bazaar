@@ -82,4 +82,17 @@ export const orgBannerRepository = {
       )
     );
   },
+
+  /** Banners whose image predates the asset record — the media backfill's input (media-library D3). */
+  async listUnlinkedImages(take?: number) {
+    return await prisma.orgBanner.findMany({
+      where: { imageAssetId: null, imageUrl: { not: null } },
+      select: { id: true, orgId: true, imageUrl: true },
+      ...(take === undefined ? {} : { take }),
+    });
+  },
+
+  async linkImageAsset(id: string, imageAssetId: string): Promise<void> {
+    await prisma.orgBanner.update({ where: { id }, data: { imageAssetId } });
+  },
 };

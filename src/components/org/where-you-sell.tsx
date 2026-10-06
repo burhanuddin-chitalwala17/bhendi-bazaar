@@ -7,13 +7,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { channelsApiClient } from "@/components/channel/channelsApiClient";
 import {
   orgChannelsSchema,
   type OrgChannelsParsed,
 } from "@/lib/validation/schemas/org-channels.schema";
 import { CHANNEL_KIND } from "@server/shared/channels";
-import type { OrgChannelChoice } from "@server/catalog/org-channel.service";
+import type { OrgChannelChoice } from "@server/listing/org-channel.service";
 
 interface WhereYouSellProps {
   orgId: string;
@@ -43,14 +43,7 @@ export function WhereYouSell({ orgId, choices }: WhereYouSellProps) {
     formState: { isSubmitting },
   } = useServerForm<OrgChannelsParsed>({
     schema: orgChannelsSchema,
-    submit: async (data) => {
-      const response = await fetch(`/api/org/${orgId}/channels`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-    },
+    submit: (data) => channelsApiClient.saveOrgChannels(orgId, data),
     successMessage: "Saved where you sell",
     onSuccess: () => router.refresh(),
     defaultValues: {

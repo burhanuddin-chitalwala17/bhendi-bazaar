@@ -4,7 +4,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 import ExcelJS from "exceljs";
 import { CategoryAccent } from "@prisma/client";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
-import { categoryRepository } from "@server/catalog/category.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import { BULK_MAX_ROWS } from "@server/catalog/bulk/bulk.types";
 
 const ACCENTS = Object.values(CategoryAccent);

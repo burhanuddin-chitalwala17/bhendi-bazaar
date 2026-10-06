@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { authApiClient } from "@/components/auth/authApiClient";
 import {
   changePasswordSchema,
   type ChangePasswordInput,
 } from "@/lib/validation/schemas/auth.schemas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ export function ChangePasswordModal() {
   const [open, setOpen] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
   const [success, setSuccess] = useState(false);
+  const id = useId();
 
   const {
     register,
@@ -37,15 +39,7 @@ export function ChangePasswordModal() {
       newPassword: "",
       confirmPassword: "",
     },
-    submit: async (data) => {
-      const response = await fetch("/api/auth/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      return response.json();
-    },
+    submit: (data) => authApiClient.changePassword(data),
     onSuccess: () => {
       setSuccess(true);
       reset();
@@ -77,11 +71,12 @@ export function ChangePasswordModal() {
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-eyebrow">
+            <Label variant="eyebrow" htmlFor={`${id}-current`} className="text-xs">
               Current Password
-            </label>
+            </Label>
             <div className="relative">
               <Input
+                id={`${id}-current`}
                 type={showPasswords ? "text" : "password"}
                 {...register("currentPassword")}
               />
@@ -94,10 +89,11 @@ export function ChangePasswordModal() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-eyebrow">
+            <Label variant="eyebrow" htmlFor={`${id}-new`} className="text-xs">
               New Password
-            </label>
+            </Label>
             <Input
+              id={`${id}-new`}
               type={showPasswords ? "text" : "password"}
               {...register("newPassword")}
             />
@@ -112,10 +108,11 @@ export function ChangePasswordModal() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-eyebrow">
+            <Label variant="eyebrow" htmlFor={`${id}-confirm`} className="text-xs">
               Confirm New Password
-            </label>
+            </Label>
             <Input
+              id={`${id}-confirm`}
               type={showPasswords ? "text" : "password"}
               {...register("confirmPassword")}
             />

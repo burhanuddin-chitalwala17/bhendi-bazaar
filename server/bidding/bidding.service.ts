@@ -114,7 +114,7 @@ export class BiddingService {
         // count below — or waits behind us and then finds the event already open. The
         // order path takes the same lock when it reserves, which is what makes the two
         // decisions serial rather than merely close together.
-        await stockService.lock(input.productId, tx);
+        await stockService.lockAll(input.productId, tx);
 
         const stock = await stockService.stockByLocation(input.productId, tx);
         const unitsOnHand = stock.reduce((sum, row) => sum + row.quantity, 0);

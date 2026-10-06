@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * The question sets, with what each one costs to change.

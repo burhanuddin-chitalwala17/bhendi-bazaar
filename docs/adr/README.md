@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-One decision per file, named `NNNN-kebab-title.md`. Immutable once Accepted: to reverse a decision, write a **new** ADR and edit only the old one's `Status` line to `Superseded by ADR-NNNN`.
+One decision per file, named `NNNN-kebab-title.md`. Immutable once Accepted: to reverse a decision, write a **new** ADR and edit only the old one's `Status` line to `Superseded by ADR-NNNN`. When a later ADR changes *one* decision of an earlier one, the Status line says which: `Accepted (D3 amended by ADR-NNNN)` — the record stays, the reader knows where to look. Numbers are allocated at drafting, so dates may run out of order.
 
 > **Origin note:** this set was written together on 2026-08-03 (see [CHANGELOG](../CHANGELOG.md) PR-01). Most record rules the codebase was not yet meeting, so they read as corrections rather than greenfield choices. Each states the force that motivated it, not an inventory of defects — a defect is fixed and forgotten; the reasoning is what has to last.
 
@@ -10,7 +10,7 @@ One decision per file, named `NNNN-kebab-title.md`. Immutable once Accepted: to 
 ```
 # ADR-NNNN: Title
 - **Date:** YYYY-MM-DD
-- **Status:** Proposed / Accepted / Superseded by ADR-NNNN / Deprecated
+- **Status:** Proposed / Accepted / Accepted (Dn amended by ADR-NNNN) / Superseded by ADR-NNNN / Deprecated
 - **Context:** Why was this decision needed? What forces are at play?
 - **Decision:** What was decided?
 - **Alternatives considered:** What else was on the table, and why was it rejected?
@@ -42,8 +42,8 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
 | [0001](0001-monorepo-doc-structure.md) | Monorepo docs split by volatility; domain docs co-located with code | Accepted | 2026-08-03 |
-| [0002](0002-server-holds-pricing-authority.md) | The server is the sole authority on prices and totals | Accepted | 2026-08-03 |
-| [0003](0003-one-repository-per-aggregate.md) | One aggregate, one repository | Accepted | 2026-08-03 |
+| [0002](0002-server-holds-pricing-authority.md) | The server is the sole authority on prices and totals | Accepted (D5 moot: no client-supplied price reaches the server, so there is nothing to compare) | 2026-08-03 |
+| [0003](0003-one-repository-per-aggregate.md) | One aggregate, one repository | Accepted (D2 layout superseded by [ADR-0012](0012-modules-are-vertical-slices-by-domain.md); caller-split writes resolved by [ADR-0055](0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)) | 2026-08-03 |
 | [0004](0004-money-as-integer-paise.md) | Money is stored and computed as integer paise | Accepted | 2026-08-03 |
 | [0005](0005-payment-state-server-only.md) | Payment state changes only on a verified gateway signal | Accepted | 2026-08-03 |
 | [0007](0007-conditional-stock-decrement.md) | Stock moves conditionally, inside the order transaction | Accepted | 2026-08-03 |
@@ -53,8 +53,8 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0013](0013-one-error-envelope-and-useserverform.md) | Errors travel in one envelope; forms consume it through `useServerForm` | Accepted | 2026-08-05 |
 | [0014](0014-deploys-run-their-own-migrations.md) | Deploys run their own migrations | Accepted | 2026-08-09 |
 | [0015](0015-mobile-first-design.md) | The UI is designed mobile-first; desktop is the enhancement | Accepted | 2026-08-09 |
-| [0016](0016-mobile-app-shell.md) | The phone storefront is an app shell — bottom tab bar, dense grids, page-level chrome | Accepted | 2026-08-11 |
-| [0017](0017-video-is-embedded-not-hosted.md) | Video is embedded from a third-party host, never stored in our own object storage | Superseded in part by [ADR-0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) — decisions 1 and 4 (no video file in our storage; every surface embeds) no longer hold; decisions 2 and 3 stand for YouTube embeds, which remain supported | 2026-08-13 |
+| [0016](0016-mobile-app-shell.md) | The phone storefront is an app shell — bottom tab bar, dense grids, page-level chrome | Accepted (D5 refined by [ADR-0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md)) | 2026-08-11 |
+| [0017](0017-video-is-embedded-not-hosted.md) | Video is embedded from a third-party host, never stored in our own object storage | Superseded by [ADR-0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | 2026-08-13 |
 | [0018](0018-one-effective-price-function.md) | One effective-price function serves display and charge | Accepted | 2026-08-16 |
 | [0019](0019-discount-is-one-winning-offer.md) | A discount is one winning offer, allocated to lines, with its funding recorded | Accepted | 2026-08-16 |
 | [0020](0020-money-bearing-records-never-cascade.md) | Records that carry money or attribution never cascade | Accepted | 2026-08-16 |
@@ -63,14 +63,14 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0023](0023-bidding-status-stores-only-what-the-clock-cannot-decide.md) | Bidding status stores only what the clock cannot decide | Accepted | 2026-09-09 |
 | [0024](0024-phone-is-contact-data-not-an-identity-key.md) | A phone number is contact data, not an identity key | Accepted | 2026-09-12 |
 | [0025](0025-order-codes-are-random-not-sequential.md) | Order codes are random, not sequential | Accepted | 2026-09-16 |
-| [0026](0026-images-are-delivered-through-the-optimizer.md) | Images are stored small and delivered through the optimizer | Accepted — decisions 3 and 4 amended by [ADR-0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) (stored ceiling is 2048px, and a zoomable surface deliberately overstates `sizes`) | 2026-09-16 |
+| [0026](0026-images-are-delivered-through-the-optimizer.md) | Images are stored small and delivered through the optimizer | Accepted (D3, D4 amended by [ADR-0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md); D5 amended by [media-library](../specs/media-library/) D2 — the confirm step reads the stored object) | 2026-09-16 |
 | [0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) | A zoomable surface declares the size it zooms to, and the stored ceiling clears it | Accepted | 2026-09-17 |
-| [0028](0028-images-live-in-cloudflare-r2.md) | Images live in Cloudflare R2, reached through one seam | Accepted | 2026-09-17 |
+| [0028](0028-images-live-in-cloudflare-r2.md) | Images live in Cloudflare R2, reached through one seam | Accepted (D6 historical — Blob is gone; the confirm-time check is [media-library](../specs/media-library/) D2) | 2026-09-17 |
 | [0029](0029-a-product-leaves-sale-by-archiving-not-deletion.md) | A product leaves sale by archiving, not deletion | Accepted | 2026-09-16 |
 | [0030](0030-org-storefronts-are-scoped-projections-on-one-domain.md) | An org storefront is a scoped projection of the marketplace, on one domain | Accepted | 2026-09-15 |
-| [0031](0031-one-components-home-organised-by-domain.md) | One components home, organised by domain, with controls through the primitives | Accepted | 2026-09-19 |
-| [0032](0032-records-people-authored-are-retired-not-deleted.md) | 0032-records-people-authored-are-retired-not-deleted.md | Accepted | 2026-09-23 |
-| [0033](0033-a-domain-is-reached-through-its-public-surface.md) | A domain is reached through its declared public surface | Accepted | 2026-09-23 |
+| [0031](0031-one-components-home-organised-by-domain.md) | One components home, organised by domain, with controls through the primitives | Accepted (D4 hooks home refined by [ADR-0057](0057-shared-hooks-live-in-one-core-folder-and-every-other-hook-travels-with-its-component.md)) | 2026-09-19 |
+| [0032](0032-records-people-authored-are-retired-not-deleted.md) | A record a person authored is retired, never deleted | Accepted | 2026-09-23 |
+| [0033](0033-a-domain-is-reached-through-its-public-surface.md) | A domain is reached through its declared public surface | Accepted (D5 type-only exemption narrowed for components by [ADR-0048](0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)) | 2026-09-23 |
 | [0034](0034-render-on-the-server-by-default.md) | Render on the server by default, and never mark a page `"use client"` | Accepted | 2026-09-23 |
 | [0035](0035-every-response-carries-a-nonce-based-csp.md) | Every response carries a nonce-based Content-Security-Policy | Accepted | 2026-09-21 |
 | [0036](0036-a-files-reasons-to-change-are-a-decision.md) | A file's reasons to change are a decision, not a drift | Accepted | 2026-09-23 |
@@ -79,10 +79,23 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0039](0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) | Video is stored in our own object store and transcoded by the worker | Accepted | 2026-09-27 |
 | [0040](0040-an-overlays-surface-is-chosen-by-what-it-holds.md) | An overlay's surface is chosen by what it holds, not by what was easiest to reach for | Accepted | 2026-09-27 |
 | [0041](0041-a-channel-is-classed-by-where-the-sale-completes.md) | A channel is classed by where the sale completes | Accepted | 2026-09-29 |
-| [0042](0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md) | The shared vocabulary is the intersection, and a channel declares its own extras | Accepted — decision 1 refined by [ADR-0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md) | 2026-09-29 |
-| [0043](0043-a-variant-is-a-product-in-a-family.md) | A variant is a product in a family | Accepted | 2026-09-29 |
+| [0042](0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md) | The shared vocabulary is the intersection, and a channel declares its own extras | Accepted (D1 refined by [ADR-0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md); D2 required-set amended by [ADR-0054](0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md)) | 2026-09-29 |
+| [0043](0043-a-variant-is-a-product-in-a-family.md) | A variant is a product in a family | Accepted (D2, D3 refined by [ADR-0051](0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md)) | 2026-09-29 |
 | [0044](0044-a-marketplace-orders-money-is-reported-not-computed.md) | A marketplace order's money is reported, not computed | Accepted | 2026-09-29 |
-| [0045](0045-channel-mappings-are-versioned-data.md) | Channel mappings are versioned data, not code | Accepted | 2026-09-29 |
+| [0045](0045-channel-mappings-are-versioned-data.md) | Channel mappings are versioned data, not code | Accepted (D3 superseded by [ADR-0053](0053-readiness-advises-and-never-gates.md); D2, D5 amended by [ADR-0054](0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md)) | 2026-09-29 |
 | [0046](0046-a-new-model-is-checked-against-the-field-before-the-codebase.md) | A new model is checked against the field before the codebase | Accepted | 2026-09-29 |
 | [0047](0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md) | A canonical fact is admitted by answerability, not by agreement | Accepted | 2026-10-01 |
+| [0048](0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md) | A component renders, a hook holds state, an API client makes the call | Accepted (the CSRF premise in Alternatives corrected by [ADR-0060](0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)) | 2026-10-02 |
+| [0049](0049-colour-is-a-primitive-palette-read-through-semantic-tokens.md) | Colour is a primitive palette, read only through semantic tokens | Accepted | 2026-10-02 |
+| [0050](0050-three-form-factors-on-tailwinds-own-breakpoints.md) | Three form factors, on Tailwind's own breakpoints | Accepted | 2026-10-02 |
+| [0051](0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md) | A product's facts are one JSON column, each entry carrying its origin | Accepted | 2026-10-05 |
+| [0052](0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md) | A product type is a row that selects from facts declared in code | Accepted | 2026-10-05 |
+| [0053](0053-readiness-advises-and-never-gates.md) | Readiness advises and never gates | Accepted. Supersedes [ADR-0045](0045-channel-mappings-are-versioned-data.md) decision 3. | 2026-10-05 |
+| [0054](0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md) | A channel mapping carries a checked date and source, and required-ness is data | Accepted. Amends [ADR-0045](0045-channel-mappings-are-versioned-data.md) decisions 2 and 5 and [ADR-0042](0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md) decision 2. | 2026-10-05 |
+| [0055](0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md) | An admin surface reads through projections and writes through the aggregate's one repository | Accepted | 2026-10-05 |
+| [0056](0056-a-gate-against-existing-debt-is-a-ratchet.md) | A gate against existing debt is a ratchet | Accepted | 2026-10-05 |
+| [0057](0057-shared-hooks-live-in-one-core-folder-and-every-other-hook-travels-with-its-component.md) | Shared hooks live in one core folder, and every other hook travels with its component | Accepted. Amends [ADR-0031](0031-one-components-home-organised-by-domain.md) decision 4. | 2026-10-05 |
+| [0058](0058-media-is-one-aggregate-a-derivative-is-lineage-not-a-use-and-usage-is-derived.md) | Media is one aggregate; a derivative is lineage, not a use; and usage is derived | Accepted | 2026-10-05 |
+| [0059](0059-an-enhancement-never-changes-the-products-pixels-proven-before-encoding.md) | An enhancement never changes the product's pixels, proven before encoding | Accepted | 2026-10-05 |
+| [0060](0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md) | Mutations stay on route handlers, and a mutating request must come from our origin | Accepted. Corrects the CSRF premise in [ADR-0048](0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)'s alternatives. | 2026-10-05 |
 <!-- generated:adr-index:end -->

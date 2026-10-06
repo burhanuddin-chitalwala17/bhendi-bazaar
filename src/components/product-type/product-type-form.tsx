@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FormInput, FormSelect, FormTextarea } from "@/components/shared/forms/FormField";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ApiError } from "@/lib/api-error";
-import { adminProductTypeApiClient } from "@/services/admin/productTypeApiClient";
+import { productTypeApiClient } from "@/components/product-type/productTypeApiClient";
 import {
   FACTS,
   FACT_DECLARATIONS,
@@ -16,8 +16,8 @@ import {
   UNITS,
   type FactKey,
   type MeasureKey,
-} from "@server/catalog/listing-facts";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+} from "@server/listing/listing-facts";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * Building a question set.
@@ -95,9 +95,9 @@ export function ProductTypeForm({ type }: { type?: ProductTypeRecord }) {
       };
 
       if (isEdit) {
-        await adminProductTypeApiClient.updateProductType(type.key, payload);
+        await productTypeApiClient.update(type.key, payload);
       } else {
-        await adminProductTypeApiClient.createProductType({ ...payload, key });
+        await productTypeApiClient.create({ ...payload, key });
       }
       router.push("/admin/product-types");
       router.refresh();

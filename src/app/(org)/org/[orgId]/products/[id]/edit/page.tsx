@@ -6,7 +6,7 @@ import { ProductEditContainer } from "@/components/product/console/productEdit";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
-import { productFamilyService } from "@server/catalog/product-family.service";
+import { productFamilyService } from "@server/listing/product-family.service";
 import type { AdminCategory } from "@/domain/admin";
 import { orgAddressService } from "@server/catalog/org.address.service";
 

@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider, { type GoogleProfile } from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@server/shared/prisma";
+import { accountService } from "@server/identity/account.service";
 import { bhendiPrismaAdapter } from "./auth-adapter";
 import { compare } from "bcryptjs";
 
@@ -30,9 +31,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        const user = await accountService.findCredentialsUser(credentials.email);
 
         if (!user || !user.passwordHash || user.isBlocked) {
           return null;
@@ -66,10 +65,7 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
 
-      const existingUser = await prisma.user.findUnique({
-        where: { email: google.email },
-        select: { id: true, isBlocked: true, isEmailVerified: true },
-      });
+      const existingUser = await accountService.findSignInState(google.email);
 
       if (!existingUser) {
         return true; // New user — the adapter creates it, already marked verified.
@@ -82,10 +78,7 @@ export const authOptions: NextAuthOptions = {
       // They signed up with a password and never clicked the verification link, but
       // Google has now vouched for the same address.
       if (!existingUser.isEmailVerified) {
-        await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { isEmailVerified: true, emailVerified: new Date() },
-        });
+        await accountService.markEmailVerified(existingUser.id);
       }
 
       return true;
@@ -98,20 +91,14 @@ export const authOptions: NextAuthOptions = {
         // team page can revoke mid-session and so is read per request
         // (portal-separation trd.md D3). isEmailVerified rides the same query (no extra
         // op) so the chrome reads it from the session instead of fetching /api/profile.
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { platformRole: true, isEmailVerified: true },
-        });
+        const dbUser = await accountService.findSessionClaims(user.id);
         token.platformRole = dbUser?.platformRole ?? "USER";
         token.isEmailVerified = dbUser?.isEmailVerified ?? false;
       } else if (trigger === "update") {
         // The user just verified their email (the banner calls session.update() on the
         // verification-success redirect). Re-read the one field that can flip mid-session.
         if (token.sub) {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.sub },
-            select: { isEmailVerified: true },
-          });
+          const dbUser = await accountService.findIsEmailVerified(token.sub);
           token.isEmailVerified = dbUser?.isEmailVerified ?? token.isEmailVerified ?? false;
         }
       } else if ((!token.platformRole || token.isEmailVerified === undefined) && token.sub) {
@@ -119,10 +106,7 @@ export const authOptions: NextAuthOptions = {
         // carry no claim, which silently hid every admin affordance until the next
         // sign-in; likewise tokens minted before isEmailVerified rode the token. Stamp
         // both once from the database; removable when pre-2026-09 sessions have expired.
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { platformRole: true, isEmailVerified: true },
-        });
+        const dbUser = await accountService.findSessionClaims(token.sub);
         token.platformRole = dbUser?.platformRole ?? "USER";
         token.isEmailVerified = dbUser?.isEmailVerified ?? false;
       }

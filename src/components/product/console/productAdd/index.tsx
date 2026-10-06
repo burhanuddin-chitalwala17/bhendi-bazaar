@@ -17,7 +17,7 @@ import type {
 import { CopyFromPicker } from "./CopyFromPicker";
 
 import { PageHeader } from "@/components/shared/page-shell";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 interface ProductAddContainerProps {
   categories: {
     id: string;

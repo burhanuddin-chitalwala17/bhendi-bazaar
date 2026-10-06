@@ -1,7 +1,9 @@
 "use client";
 
+import { useId } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
+import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 
 /** Both filters are closed sets, so both are declared once and rendered from the declaration. */
@@ -22,8 +24,9 @@ export function CartsFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
+  const id = useId();
 
-  const apply = (changes: Record<string, string>) => {
+  const apply =(changes: Record<string, string>) => {
     const next = new URLSearchParams(params.toString());
     for (const [key, value] of Object.entries(changes)) {
       if (value) next.set(key, value);
@@ -36,10 +39,9 @@ export function CartsFilters() {
   return (
     <div className="flex flex-wrap gap-4">
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/80">
-          Minimum Days Abandoned
-        </label>
+        <Label htmlFor={`${id}-minDays`}>Minimum Days Abandoned</Label>
         <Select
+          id={`${id}-minDays`}
           value={params.get("minDays") ?? "1"}
           onChange={(e) => apply({ minDays: e.target.value })}
         >
@@ -50,10 +52,9 @@ export function CartsFilters() {
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/80">
-          Minimum Cart Value
-        </label>
+        <Label htmlFor={`${id}-minValue`}>Minimum Cart Value</Label>
         <Select
+          id={`${id}-minValue`}
           value={params.get("minValue") ?? "0"}
           onChange={(e) => apply({ minValue: e.target.value === "0" ? "" : e.target.value })}
         >

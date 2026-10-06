@@ -160,7 +160,7 @@ describe("the removal rule: only the heart removes a saved product", () => {
   it("gives the client no removal path but the toggle", () => {
     expect(context).not.toMatch(/markCartedFromWishlist/);
     // The DELETE lives in the API client; the toggle is its one caller.
-    const client = readFileSync("src/services/wishlistApiClient.ts", "utf8");
+    const client = readFileSync("src/components/wishlist/wishlistApiClient.ts", "utf8");
     expect(client.match(/method: "DELETE"/g)).toHaveLength(1);
     expect(context.match(/wishlistApiClient\.remove\(/g)).toHaveLength(1);
     expect(readFileSync("src/lib/auth-intent.ts", "utf8")).not.toMatch(/\.remove\(/);

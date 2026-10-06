@@ -1,7 +1,7 @@
 # ARCHITECTURE.md — shipping domain, current state
 
-- **Verified:** 2026-08-03
-- **Scope:** `server/shipping/**`. Product-wide architecture is [`/docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
+- **Verified:** 2026-10-05
+- **Covers:** `server/shipping/**`. Product-wide architecture is [`/docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
 Describes what exists now. Update after a structural change, never before.
 
@@ -28,8 +28,14 @@ Status updates arrive independently, by webhook, and are normalised before they 
 | `services/orchestrator.service.ts` | Requests rates from connected providers, applies a strategy, returns quotes. |
 | `providers/base.provider.ts` | Shared provider behaviour — auth handling and common request plumbing. |
 | `providers/shiprocket/` | The one live carrier: `config`, `mapper` (their shape ↔ ours), `provider`, `types`. |
-| `repositories/provider.repository.ts` | Provider records, including encrypted credentials. |
+| `repositories/provider.repository.ts` | Provider records. Credentials are encrypted at rest and read only by the connection path; every read that leaves the server is a projection without them. |
 | `repositories/event.repository.ts` | Shipping events, appended as status changes arrive. |
+| `repositories/shipment.repository.ts` | The one module that reaches the `Shipment` table ([ADR-0003](../../docs/adr/0003-one-repository-per-aggregate.md)). |
+| `shipment-status.service.ts` | The single writer of `Shipment.status`, through a transition table; a terminal event that returns goods asks catalog's stock commands to restock, once. |
+| `tracking.service.ts` | What the admin tracking form and the carrier webhooks read and record; an order's delivered state is checkout's to write, so it is asked for. |
+| `billable-weight.ts` | What a parcel is billed as: real weights summed, settled to grams, rounded up to the next kilogram, floor 1 kg ([product-weight-and-rates](../../docs/specs/product-weight-and-rates/)). |
+| `services/connection.types.ts` | The shapes the connection flow exchanges. |
+| `providers/_placeholder/` | The mock booking — see *Quoting vs booking*. |
 | `utils/encryption.ts` | AES-256-GCM, random IV per message, PBKDF2 key derivation. |
 | `utils/statusNormalizer.ts` | Carrier status vocabulary → ours. |
 | `utils/weightCalculator.ts` | Shipment weight from its contents, with a fallback when a weight is absent. |
@@ -46,7 +52,7 @@ Connected through the admin console at `/admin/shipping/providers`, encrypted wi
 
 ## Rate caching
 
-`ShippingRateCache` keys quotes by provider, origin, destination, weight, and mode. It exists because rate lookups are the hot path in checkout and carrier APIs are slow and rate-limited.
+`ShippingRateCache` exists in the schema and nothing reads or writes it. It was built for the day rate lookups became the hot path; quotes are requested live today. Dropping the table or starting to use it is a decision for [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), not an accident to leave standing.
 
 ## Current state of quoting vs booking
 
@@ -54,11 +60,11 @@ Connected through the admin console at `/admin/shipping/providers`, encrypted wi
 
 It sits under `providers/` because that is where an implementation of the carrier boundary belongs, and it is prefixed `_placeholder` because it is not one. That naming is the safeguard: it cannot be mistaken for a real provider at a call site or in a directory listing. [shipping-fulfilment](../../docs/specs/shipping-fulfilment/) deletes it.
 
-Unifying them is [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), which is gated on a product decision and on [product-weight-and-rates](../../docs/specs/product-weight-and-rates/).
+Unifying them is [shipping-fulfilment](../../docs/specs/shipping-fulfilment/), which is gated on a product decision. Its other prerequisite, [product-weight-and-rates](../../docs/specs/product-weight-and-rates/), is done.
 
 ## Weight
 
-`weightCalculator.ts` sums item weights and falls back to a default when an item has none. Because `Product.weight` is not currently persisted, the fallback is the normal path rather than the exception — [product-weight-and-rates](../../docs/specs/product-weight-and-rates/) addresses this, and it is a prerequisite for real booking.
+`Product.weight` is persisted in kilograms with gram precision, and `billable-weight.ts` turns a parcel's contents into what a courier bills: the sum, settled to grams, rounded up to the next whole kilogram, floor 1 kg — so a quote never undercharges. `utils/weightCalculator.ts` is the older helper and is reached only through `index.ts`'s re-export, which nothing imports; it is a deletion waiting for its PR.
 
 ## Intentionally absent
 

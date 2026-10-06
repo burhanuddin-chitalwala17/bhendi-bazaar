@@ -16,7 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/format";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
+import {
+  payoutsApiClient,
+  type SettlementStatusChange,
+} from "@/components/payouts/payoutsApiClient";
 
 export interface SettlementRow {
   id: string;
@@ -35,35 +39,27 @@ export function SettlementList({
   const router = useRouter();
   const [recording, setRecording] = useState<string | null>(null);
   const [reference, setReference] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  const send = async (
-    id: string,
-    body: Record<string, unknown>,
-    done: string,
-  ) => {
-    setBusy(true);
-    try {
-      const response = await fetch(`/api/admin/settlements/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw await readApiError(response);
-      toast.success(done);
-      setRecording(null);
-      setReference("");
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not update the settlement",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
+  // One mutation for both changes. Each says something different on success, so the
+  // message rides with the request rather than living in the options.
+  const { mutate, isLoading: busy } = useMutation(
+    async ({ id, change, done }: { id: string; change: SettlementStatusChange; done: string }) => {
+      await payoutsApiClient.updateSettlement(id, change);
+      return done;
+    },
+    {
+      onSuccess: (done) => {
+        toast.success(done);
+        setRecording(null);
+        setReference("");
+        router.refresh();
+      },
+    },
+  );
+
+  // The toast is the whole report; the rejection has nowhere further to go.
+  const send = (id: string, change: SettlementStatusChange, done: string) =>
+    mutate({ id, change, done }).catch(() => {});
 
   if (settlements.length === 0) return null;
 

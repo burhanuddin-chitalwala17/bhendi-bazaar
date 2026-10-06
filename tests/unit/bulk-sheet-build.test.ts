@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import ExcelJS from "exceljs";
 
 import { buildProductSampleSheet } from "@server/catalog/bulk/sample-sheet";
-import type { ProductTypeRecord } from "@server/catalog/product-type.types";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
  * The workbook itself, built and read back.

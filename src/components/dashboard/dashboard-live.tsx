@@ -13,7 +13,7 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { toast } from "sonner";
 import { StatsCard } from "@/components/shared/stats-card";
 import { DollarSign, TrendingUp, Clock } from "lucide-react";
-import { adminDashboardApiClient } from "@/services/admin/dashboardApiClient";
+import { adminDashboardApiClient } from "@/components/dashboard/dashboardApiClient";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { formatCurrency } from "@/lib/format";

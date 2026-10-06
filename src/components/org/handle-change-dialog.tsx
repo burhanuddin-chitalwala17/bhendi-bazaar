@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { FormInput } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import {
   handleChangeSchema,
   type HandleChangeInput,
@@ -68,17 +68,10 @@ export function HandleChangeDialog({
     schema: handleChangeSchema,
     defaultValues: { handle: "" },
     successMessage: "Your shop has a new address.",
-    submit: async (data) => {
-      const response = await fetch(`/api/org/${orgId}/storefront/handle`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      const result = await response.json();
+    submit: (data) => orgStorefrontApiClient.changeHandle(orgId, data),
+    onSuccess: () => {
       setOpen(false);
       router.refresh();
-      return result;
     },
   });
 

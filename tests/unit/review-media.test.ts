@@ -31,7 +31,7 @@ const repository = {
 const deleted: string[] = [];
 
 vi.mock("@server/catalog/review.repository", () => ({ reviewRepository: repository }));
-vi.mock("@server/catalog/product.repository", () => ({
+vi.mock("@server/catalog/product.read.repository", () => ({
   productsRepository: { isOnSale: async () => true },
 }));
 vi.mock("@server/checkout/order.service", () => ({

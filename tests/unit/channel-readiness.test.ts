@@ -17,8 +17,8 @@ import {
   type CategoryMapping,
   type ChannelRegister,
   type ListingReadinessReport,
-} from "@server/catalog/channel-readiness";
-import { FACT, LIST, ORIGIN, type StoredFacts } from "@server/catalog/listing-facts";
+} from "@server/listing/channel-readiness";
+import { FACT, LIST, ORIGIN, type StoredFacts } from "@server/listing/listing-facts";
 import { CHANNEL, CHANNELS } from "@server/shared/channels";
 
 /** What the node every fixture resolves to asks for. Keyed by their category, as stored. */

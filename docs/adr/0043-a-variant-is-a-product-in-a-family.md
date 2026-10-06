@@ -1,7 +1,7 @@
 # ADR-0043: A variant is a product in a family
 
 - **Date:** 2026-09-29
-- **Status:** Accepted
+- **Status:** Accepted (D2, D3 refined by [ADR-0051](0051-a-products-facts-are-one-json-column-each-entry-carrying-its-origin.md))
 
 ## Context
 

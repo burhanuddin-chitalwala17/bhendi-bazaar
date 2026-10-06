@@ -1,7 +1,7 @@
 # TRD — channel registry
 
 - **Summary:** Channels and three mapping tables as data, a readiness answer that is a pure function of them, and a seam each adapter fills
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented
 - **Domain:** catalog, with a seam each channel adapter implements
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-04

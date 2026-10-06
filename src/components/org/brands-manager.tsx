@@ -15,7 +15,8 @@ import { CountryPicker } from "@/components/shared/forms/CountryPicker";
 import { asCountryCode, countryName } from "@server/shared/countries";
 import { FormActions } from "@/components/shared/button-groups/FormActions";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
+import { orgBrandsApiClient } from "@/components/org/orgBrandsApiClient";
 import { brandSchema, type BrandInput } from "@/lib/validation/schemas/brand.schema";
 import type { BrandDto } from "@server/catalog/brand.types";
 
@@ -43,21 +44,25 @@ export function BrandsManager({ orgId, brands }: BrandsManagerProps) {
     setIsOpen(true);
   };
 
+  const { mutate: retireBrand } = useMutation(
+    (brand: BrandDto) => orgBrandsApiClient.retire(orgId, brand.id).then(() => brand),
+    {
+      onSuccess: (brand) => {
+        toast.success(brand.isDefault ? "Brand retired. You have no default brand now." : "Brand retired");
+        router.refresh();
+      },
+    },
+  );
+
   // Retirement, never deletion (ADR-0032): the brand stays readable for whatever names it.
   // Retiring the default is allowed — nothing here is compulsory (R5) — but never silently.
-  const retire = async (brand: BrandDto) => {
+  const retire = (brand: BrandDto) => {
     const warning = brand.isDefault
       ? `"${brand.name}" is your default brand. After retiring it no brand is the default until you choose another. Retire it?`
       : `Retire "${brand.name}"? Products that use it keep their values.`;
     if (!confirm(warning)) return;
-    const response = await fetch(`/api/org/${orgId}/brands/${brand.id}/retire`, { method: "POST" });
-    if (!response.ok) {
-      const error = await readApiError(response);
-      toast.error(error.message);
-      return;
-    }
-    toast.success(brand.isDefault ? "Brand retired. You have no default brand now." : "Brand retired");
-    router.refresh();
+    // `useMutation` toasts the failure and rethrows; catching keeps it from going unhandled.
+    void retireBrand(brand).catch(() => {});
   };
   const currentDefault = brands.find((brand) => brand.isDefault) ?? null;
 
@@ -162,28 +167,22 @@ function BrandForm({
     control,
     watch,
     setValue,
+    getValues,
     onSubmit: handleFormSubmit,
     formError,
     formState: { errors, isSubmitting },
   } = useServerForm<BrandInput>({
     schema: brandSchema,
-    submit: async (data) => {
-      const response = await fetch(
-        brand ? `/api/org/${orgId}/brands/${brand.id}` : `/api/org/${orgId}/brands`,
-        {
-          method: brand ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        },
-      );
-      if (!response.ok) throw await readApiError(response);
-      const saved = (await response.json()) as BrandDto;
-      toast.success(brand ? "Brand updated" : "Brand added");
-      if (data.isDefault && currentDefault && currentDefault.id !== saved.id) {
+    submit: (data) => orgBrandsApiClient.save(orgId, brand?.id, data),
+    successMessage: brand ? "Brand updated" : "Brand added",
+    onSuccess: (result) => {
+      const saved = result as BrandDto;
+      const isDefault = getValues("isDefault");
+      if (isDefault && currentDefault && currentDefault.id !== saved.id) {
         toast.info(`"${saved.name}" is now your default brand; "${currentDefault.name}" no longer is.`);
-      } else if (data.isDefault && !currentDefault) {
+      } else if (isDefault && !currentDefault) {
         toast.info(`"${saved.name}" is now your default brand.`);
-      } else if (!data.isDefault && brand?.isDefault) {
+      } else if (!isDefault && brand?.isDefault) {
         toast.info(`"${saved.name}" is no longer your default brand. You have no default now.`);
       }
       onDone();

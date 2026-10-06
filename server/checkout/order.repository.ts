@@ -6,11 +6,21 @@
  */
 
 import { prisma, toJsonColumn } from "@server/shared/prisma";
-import { ORDER_STATUS, VISIBLE_ORDER_WHERE, PAYMENT_STATUS } from "@server/checkout/order.types";
+import {
+  ORDER_STATUS,
+  ORDER_TRANSITIONS,
+  VISIBLE_ORDER_WHERE,
+  PAYMENT_STATUS,
+  type OrderStatus,
+} from "@server/checkout/order.types";
 import type { ShipmentItem } from "@server/checkout/order.types";
-import { Order } from "@prisma/client";
+import { Order, type Prisma } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { promotionService } from "@server/promotions/promotion.service";
+import { stockService } from "@server/catalog/stock.service";
+
+/** `prisma`, or the `tx` of the order transaction. */
+type OrderDb = Pick<typeof prisma, "order" | "orderItem" | "orderDiscount">;
 
 /**
  * Order lines live in OrderItem/ShipmentItem rows (order-and-cart-lines), but the
@@ -306,9 +316,8 @@ export class OrderRepository {
       if (expired.count === 0) return false;
 
       // Stock goes back where it came from: each parcel's rows, at the location the
-      // allocation persisted on it (stock-locations D6). Legacy shipments predating
-      // the cutover carry no location — their lines fall back to the product's
-      // largest current row, loudly, rather than vanishing.
+      // allocation persisted on it (stock-locations D6). Catalog's stock seam does the
+      // movement on this same `tx`; a legacy shipment with no location is its concern too.
       const shipments = await tx.shipment.findMany({
         where: { orderId },
         select: {
@@ -316,31 +325,16 @@ export class OrderRepository {
           items: { select: { quantity: true, orderItem: { select: { productId: true } } } },
         },
       });
-      for (const shipment of shipments) {
-        for (const item of shipment.items) {
-          const productId = item.orderItem.productId;
-          let target = shipment.orgAddressId;
-          if (!target) {
-            const fallback = await tx.productStock.findFirst({
-              where: { productId },
-              orderBy: { quantity: "desc" },
-              select: { orgAddressId: true },
-            });
-            if (!fallback) {
-              console.warn(
-                `[expireAndRestock] no stock row to restore ${item.quantity} of ${productId} (legacy shipment, no location) — correct manually`
-              );
-              continue;
-            }
-            target = fallback.orgAddressId;
-          }
-          await tx.productStock.upsert({
-            where: { productId_orgAddressId: { productId, orgAddressId: target } },
-            update: { quantity: { increment: item.quantity } },
-            create: { productId, orgAddressId: target, quantity: item.quantity },
-          });
-        }
-      }
+      await stockService.release(
+        shipments.flatMap((shipment) =>
+          shipment.items.map((item) => ({
+            productId: item.orderItem.productId,
+            orgAddressId: shipment.orgAddressId,
+            quantity: item.quantity,
+          })),
+        ),
+        tx,
+      );
 
       // A coupon claim is held exactly like stock, so it comes back in the same
       // transaction (promotions D11). Releasing it afterwards would leave a window
@@ -394,6 +388,74 @@ export class OrderRepository {
       data: { paymentStatus: PAYMENT_STATUS.FAILED },
     });
     return result.count === 1;
+  }
+
+  /** The order with its raw shipment rows, as booking needs them (no wire mapping). */
+  async findForFulfilment(orderId: string) {
+    return prisma.order.findUnique({
+      relationLoadStrategy: "join",
+      where: { id: orderId },
+      include: { shipments: true },
+    });
+  }
+
+  async recordFulfilmentStatus(orderId: string, status: string): Promise<void> {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status, updatedAt: new Date() },
+    });
+  }
+
+  async markDelivered(orderId: string): Promise<void> {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: ORDER_STATUS.DELIVERED },
+    });
+  }
+
+  /**
+   * An operator's fulfilment move, conditional on the order standing where the table says it
+   * must (`ORDER_TRANSITIONS`). One statement, so two operators racing resolve at the database;
+   * the loser is told where the order actually is. Payment states are not reachable from here.
+   */
+  async transition(orderId: string, to: OrderStatus, tx: OrderDb = prisma): Promise<void> {
+    const from = (Object.keys(ORDER_TRANSITIONS) as OrderStatus[]).filter((status) =>
+      ORDER_TRANSITIONS[status]?.includes(to),
+    );
+    const moved = from.length
+      ? await tx.order.updateMany({ where: { id: orderId, status: { in: from } }, data: { status: to } })
+      : { count: 0 };
+    if (moved.count === 1) return;
+
+    // Refused — read only to say why, never to decide.
+    const current = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
+    if (!current) throw new NotFoundError("Order not found");
+    throw new ConflictError(`An order cannot move from ${current.status} to ${to}.`, { field: "status" });
+  }
+
+  async setNotes(orderId: string, notes: string): Promise<void> {
+    await prisma.order.update({ where: { id: orderId }, data: { notes } });
+  }
+
+  /** The order row itself, inside the order transaction. Totals arrive computed; none come from a request. */
+  async createInTransaction(data: Prisma.OrderUncheckedCreateInput, tx: OrderDb) {
+    return await tx.order.create({ data });
+  }
+
+  /**
+   * One row per priced line, in one statement (checkout/CLAUDE.md). Returns each row with the
+   * fields a caller keys on — never read these positionally.
+   */
+  async createLines(rows: Prisma.OrderItemCreateManyInput[], tx: OrderDb) {
+    return await tx.orderItem.createManyAndReturn({
+      data: rows,
+      select: { id: true, productId: true, size: true, color: true },
+    });
+  }
+
+  /** One attribution row per offer per org; a database check holds the two halves to the discount. */
+  async recordDiscountAttributions(rows: Prisma.OrderDiscountCreateManyInput[], tx: OrderDb): Promise<void> {
+    if (rows.length) await tx.orderDiscount.createMany({ data: rows });
   }
 
 

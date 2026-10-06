@@ -42,7 +42,7 @@ vi.mock("@server/promotions/targeting", () => ({
   }),
 }));
 
-const { productsRepository } = await import("@server/catalog/product.repository");
+const { productsRepository } = await import("@server/catalog/product.read.repository");
 
 const ACTIVE_ORG = { org: { isActive: true } };
 const lastWhere = (spy: typeof findMany) =>
@@ -113,7 +113,7 @@ describe("a storefront listing sees one shop", () => {
 
 describe("the source says so too", () => {
   const source = readFileSync(
-    join(process.cwd(), "server/catalog/product.repository.ts"),
+    join(process.cwd(), "server/catalog/product.read.repository.ts"),
     "utf8"
   );
 
@@ -136,6 +136,9 @@ describe("the source says so too", () => {
     listByIds: "admin/org promotion editor",
     listForPricing: "prices ids already held; the order transaction is the refusal",
     categoryIdsForOrg: "carries the clause, and is scoped by orgId besides",
+    isAvailable: "wishlist's save check; AVAILABLE only, as wishlist read it before the read moved here",
+    listForAllocation: "a parcel preview of ids already held; the order transaction is the refusal",
+    listForStockCheck: "a cart's stock check of ids already held; reports archived lines by name",
   };
 
   const methods = source

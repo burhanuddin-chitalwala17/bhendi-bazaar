@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { adminProductTypeService } from "@server/catalog/admin.product-type.service";
-import { createProductTypeSchema } from "@server/catalog/admin.product-type.types";
+import { adminProductTypeService } from "@server/listing/admin.product-type.service";
+import { createProductTypeSchema } from "@server/listing/admin.product-type.types";
 
 /**
  * The question sets an admin creates

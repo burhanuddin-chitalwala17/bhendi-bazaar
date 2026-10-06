@@ -4,6 +4,7 @@
  */
 
 import { adminUserRepository } from "@server/identity/admin.user.repository";
+import { profileRepository } from "@server/identity/profile.repository";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {
   UserListFilters,
@@ -56,7 +57,7 @@ export class AdminUserService {
       throw new DomainError(`Invalid role. Must be one of: ${Object.values(PlatformRole).join(", ")}`, { field: "platformRole" });
     }
 
-    const user = await adminUserRepository.updateUser(id, data);
+    const user = await profileRepository.updateAdminFields(id, data);
 
     if (user) {
       // Log the action
@@ -80,7 +81,7 @@ export class AdminUserService {
     adminId: string,
     isBlocked: boolean
   ): Promise<AdminUser | null> {
-    const user = await adminUserRepository.updateUser(id, { isBlocked });
+    const user = await profileRepository.updateAdminFields(id, { isBlocked });
 
     if (user) {
       await recordAdminAction({

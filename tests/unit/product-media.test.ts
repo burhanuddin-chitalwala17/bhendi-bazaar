@@ -15,7 +15,7 @@ import {
   youtubePosterUrl,
   type ProductMediaInput,
 } from "@server/catalog/media";
-import { mediaWrite } from "@server/catalog/admin.product.repository";
+import { mediaWrite } from "@server/catalog/product.repository";
 import { renderableMedia } from "@server/catalog/image-paths";
 import { DEFAULT_SHOT_LIST } from "@server/catalog/shot-list";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";

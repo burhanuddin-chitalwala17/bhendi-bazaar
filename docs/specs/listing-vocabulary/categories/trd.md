@@ -1,7 +1,7 @@
 # TRD — listing vocabulary / categories
 
 - **Summary:** Categories and facts declared in code, permitted answers held as data, measurements stored and labels derived
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-236…PR-246 (2026-10-03)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-02

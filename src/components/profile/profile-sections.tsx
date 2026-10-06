@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Package } from "lucide-react";
 
@@ -9,9 +8,10 @@ import { AddressesSection } from "@/components/profile/addresses-section";
 import { RecentOrdersSection } from "@/components/profile/recent-orders-section";
 import { EmptyState } from "@/components/shared/states/EmptyState";
 import { ErrorState } from "@/components/shared/states/ErrorState";
-import { readApiError } from "@/lib/api-error";
-import { addressApiClient } from "@/services/addressApiClient";
-import type { DeliveryAddress, ProfileData, UpdateProfileInput } from "@/domain/profile";
+import { useMutation } from "@/hooks/core/useMutation";
+import { addressApiClient } from "@/components/profile/addressApiClient";
+import { profileApiClient } from "@/components/profile/profileApiClient";
+import type { DeliveryAddress, ProfileData } from "@/domain/profile";
 import type { Order } from "@/domain/order";
 
 /**
@@ -31,33 +31,13 @@ export function ProfileSections({
   orders: Order[];
 }) {
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  /** Every write here ends the same way: post, surface a failure, re-read from the server. */
-  async function run(write: () => Promise<void>) {
-    setSaving(true);
-    setError(null);
-    try {
+  // Every write here ends the same way: post, surface a failure, re-read from the server.
+  const { mutate: run, isLoading: saving, error } = useMutation(
+    async (write: () => Promise<unknown>) => {
       await write();
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save changes. Please try again.");
-      throw err;
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function putProfile(input: UpdateProfileInput) {
-    const response = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(input),
-    });
-    if (!response.ok) throw await readApiError(response);
-  }
+    },
+    { showToast: false, onSuccess: () => router.refresh() },
+  );
 
   return (
     <div className="space-y-6">
@@ -69,8 +49,8 @@ export function ProfileSections({
           profilePic={data.profile.profilePic}
           saving={saving}
           fallbackName="User"
-          onUpdate={(input) => run(() => putProfile(input))}
-          onUpdateProfilePic={(profilePic) => run(() => putProfile({ profilePic }))}
+          onUpdate={(input) => run(() => profileApiClient.updateProfile(input))}
+          onUpdateProfilePic={(profilePic) => run(() => profileApiClient.updateProfile({ profilePic }))}
         />
       </section>
 
@@ -79,14 +59,10 @@ export function ProfileSections({
           addresses={data.profile.addresses}
           saving={saving}
           onSaveAddress={(address: DeliveryAddress) =>
-            run(async () => {
-              await addressApiClient.addAddress(address);
-            })
+            run(() => addressApiClient.addAddress(address))
           }
           onDeleteAddress={(addressId: string) =>
-            run(async () => {
-              await addressApiClient.deleteAddress(addressId);
-            })
+            run(() => addressApiClient.deleteAddress(addressId))
           }
         />
       </section>

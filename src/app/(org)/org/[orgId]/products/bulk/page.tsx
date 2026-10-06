@@ -1,5 +1,6 @@
 import { requireOrgMember } from "@/lib/org-auth";
 import { BulkProductWizard } from "@/components/bulk-upload/BulkProductWizard";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -13,12 +14,7 @@ export default async function BulkUploadPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Bulk upload</h1>
-        <p className="text-muted-foreground">
-          Create your catalogue from one sheet and a folder of photos
-        </p>
-      </div>
+      <SectionHeader as="h1" title="Bulk upload" description="Create your catalogue from one sheet and a folder of photos" />
       <BulkProductWizard orgId={scope.orgId} />
     </div>
   );

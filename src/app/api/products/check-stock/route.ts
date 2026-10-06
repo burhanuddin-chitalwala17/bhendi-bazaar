@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { prisma } from "@server/shared/prisma";
+import { productService } from "@server/catalog/product.service";
 import { validateRequest } from "@/lib/validation";
 import { stockCheckSchema } from "@/lib/validation/schemas/cart.schemas";
 
@@ -25,19 +25,7 @@ export async function POST(request: NextRequest) {
     // (stock-locations R4/R11). The response never carries a per-location figure —
     // what reaches the browser has been disclosed whether or not it is displayed (A9).
     const ids = validation.data.items.map((item) => item.productId);
-    const [products, stockRows] = await Promise.all([
-      prisma.product.findMany({
-        where: { id: { in: ids } },
-        // `archivedAt` rather than an AVAILABLE filter: an archived product must come
-        // back unavailable *by name*, so the cart can say which line is the problem.
-        // Filtering it out here would report it as an unknown product (ADR-0029 D6).
-        select: { id: true, name: true, archivedAt: true },
-      }),
-      prisma.productStock.findMany({
-        where: { productId: { in: ids }, orgAddress: { isActive: true } },
-        select: { productId: true, quantity: true },
-      }),
-    ]);
+    const { products, stockRows } = await productService.listForStockCheck(ids);
     const totals = new Map<string, number>();
     for (const row of stockRows) {
       totals.set(

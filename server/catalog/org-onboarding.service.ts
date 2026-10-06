@@ -1,6 +1,6 @@
 import { orgProfileRepository } from "@server/catalog/org-profile.repository";
 import { brandService } from "@server/catalog/brand.service";
-import { orgListingDefaultsService } from "@server/catalog/org-listing-defaults.service";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import { productsService } from "@server/catalog/admin.product.service";
 import { deriveOnboarding, type OnboardingStatus } from "@server/catalog/org-onboarding.types";

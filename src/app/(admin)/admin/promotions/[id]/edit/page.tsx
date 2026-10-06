@@ -2,8 +2,8 @@
 import { notFound } from "next/navigation";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminPromotionService } from "@server/promotions/admin.promotion.service";
-import { categoryRepository } from "@server/catalog/category.repository";
-import { productsRepository } from "@server/catalog/product.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import { OfferForm } from "@/components/promotions/OfferForm";
 import { toInitialValues } from "@/components/promotions/toInitialValues";
 

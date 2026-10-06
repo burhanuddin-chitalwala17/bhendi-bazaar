@@ -92,6 +92,9 @@ export const productFormSchema = z
         z.object({
           orgAddressId: z.string().min(1),
           quantity: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative"),
+          // The client's claim of what it loaded, not a server-owned value: the save is a
+          // compare-and-set against it, so a stale editor is refused rather than winning.
+          seenQuantity: z.number().int().min(0).optional(),
         })
       )
       .min(1, "Choose at least one pickup location")

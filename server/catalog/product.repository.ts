@@ -1,504 +1,659 @@
 /**
- * Server-side Product Repository
- *
- * This repository handles all database operations for products.
+ * Admin Product Repository
+ * Handles database operations for product management
  */
 
 import { prisma } from "@server/shared/prisma";
-import { MediaAssetState, type Prisma } from "@prisma/client";
-import { loadPriceContext } from "@server/promotions/price-context";
-import { offerCoverage } from "@server/promotions/targeting";
-import { ProductFilter } from "@server/catalog/product.types";
-import { NotFoundError } from "@server/shared/domain-error";
+import type {
+    ProductFilters,
+    ProductFormInput,
+    ProductPersistInput,
+} from "@server/catalog/admin.product.types";
 import { ProductFlag } from "@server/catalog/product.flags";
-import {
-  ARCHIVED,
-  FROM_ACTIVE_ORG,
-  AVAILABLE,
-} from "@server/catalog/product.visibility";
+import { Prisma } from "@prisma/client";
+import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
+import { blankToNull } from "@server/shared/nullable";
+import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
+import { PRODUCT_MEDIA_ASSET_SELECT } from "@server/catalog/product.read.repository";
+import { stockRepository } from "@server/catalog/stock.repository";
+import { recordAdminActionIn } from "@server/shared/audit/audit.service";
+import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
+import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
 
 /**
- * The join both product reads add to a gallery row (video-hosting D1): the asset behind a VIDEO
- * row, with its ready derivatives, is what `toProductMediaDto` maps a poster, renditions and a
- * state from. Declared here rather than in `media.ts`, which the browser loads and so cannot
- * name a Prisma enum.
- */
-export const PRODUCT_MEDIA_ASSET_SELECT = {
-  select: {
-    state: true,
-    durationMs: true,
-    derivatives: {
-      where: { state: MediaAssetState.READY },
-      select: { ref: true, width: true, height: true, transform: true },
-    },
-    // The photograph chosen over the worker's frame (video-hosting spec R8); null means the frame.
-    posterAsset: { select: { ref: true } },
-  },
-} satisfies Prisma.ProductMedia$assetArgs;
-
-export const PRODUCT_INCLUDE = {
-  category: { select: { slug: true } },
-  org: { select: { id: true, name: true, code: true, handle: true } },
-  // The gallery, in gallery order — the only order it is ever read in (product-video
-  // R16). Selected explicitly rather than left to `include`'s defaults so the ordering
-  // travels with the query instead of being re-established by each caller.
-  media: {
-    select: {
-      id: true,
-      kind: true,
-      ref: true,
-      description: true,
-      isThumbnail: true,
-      slot: true,
-      // A hosted video's poster, renditions and state (video-hosting D1); null for anything else.
-      asset: PRODUCT_MEDIA_ASSET_SELECT,
-    },
-    orderBy: { position: "asc" as const },
-  },
-  // Sellable stock lives on the join rows (stock-locations D3): active locations
-  // only — an inactive location's units are held, not offered.
-  stockLocations: {
-    where: { orgAddress: { isActive: true } },
-    select: {
-      quantity: true,
-      orgAddress: { select: { address: { select: { pincode: true } } } },
-    },
-  },
-};
-
-/**
- * One product with everything a storefront render needs, as the database returns it.
- * Derived from `PRODUCT_INCLUDE` rather than restated — the DAL mapper took `any`
- * before this existed, which let the include tree change shape unnoticed.
- */
-export type ProductWithRelations = Prisma.ProductGetPayload<{
-  include: typeof PRODUCT_INCLUDE;
-}>;
-
-/**
- * "Currently on offer" as a query.
+ * Pure, exported for tests: media rows for a Prisma nested create, in submitted order, plus the `thumbnail` the
+ * cover resolves to.
  *
- * This used to be `salePrice IS NOT NULL` — a column test. Coverage is computed now:
- * an offer may name products, name a category and reach its subtree, or name nothing
- * and cover everything in its scope (promotions D3). A store-wide platform offer is
- * expressed as an empty filter rather than by enumerating the catalogue.
+ * The two are built together and written together because they must never disagree
+ * (D4b): `thumbnail` is a cache of the cover's `ref`, not an input. `coverOf` throws if
+ * no item is flagged rather than falling back to the first image — a fallback here is
+ * how an unset cover becomes survivable instead of loud (D4a).
  */
-async function offerFilter() {
-  // The request's shared price context, not a fresh query pair: `loadPriceContext`
-  // is request-memoised, so this costs nothing here — and the filter now shares the
-  // context's clock, so a listing cannot filter by one offer set and label prices
-  // with another across an offer boundary.
-  const { promotions, categoryParents } = await loadPriceContext();
-  const { coversEverything, productIds, orgIds, categoryIds } = offerCoverage(
-    promotions,
-    categoryParents,
-  );
-  if (coversEverything) return {};
-  const clauses = [
-    productIds.length > 0 ? { id: { in: productIds } } : null,
-    categoryIds.length > 0 ? { categoryId: { in: categoryIds } } : null,
-    orgIds.length > 0 ? { orgId: { in: orgIds } } : null,
-  ].filter((clause) => clause !== null);
-  // Nothing live: match nothing, rather than silently matching everything.
-  if (clauses.length === 0) return { id: { in: [] as string[] } };
-  return { OR: clauses };
-}
-
 /**
- * Stock rows, so a caller inside a `$transaction` passes `tx` and gets the same
- * guarantees. `ProductStock` hangs off a product, so it is reached from here rather
- * than from each domain that needs a unit (ADR-0003).
+ * The asset behind each row (media-library trd D1). A stored file — a photograph or a hosted
+ * video — is found by URL; a photograph with no ready asset links to nothing and the backfill
+ * catches it later, so the write never waits on it. A YouTube video is the org's own reference,
+ * created the moment a gallery first names it (R5a), because nothing else ever will. Exported
+ * for tests.
  */
-export type ProductStockDb = Pick<typeof prisma, "productStock">;
+export async function withAssetIds<T extends { kind: MediaKind; ref: string }>(
+    rows: T[],
+    orgId: string,
+    db: MediaDb = prisma,
+) {
+    const imageIds = await mediaAssetRepository.idsByRefs(
+        rows.filter((row) => row.kind !== "YOUTUBE").map((row) => row.ref),
+        db,
+    );
+    const videoRefs = [...new Set(rows.filter((row) => row.kind === "YOUTUBE").map((row) => row.ref))];
+    const videoIds = await mediaAssetRepository.embedIdsByRefs(orgId, videoRefs, db);
+    for (const ref of videoRefs) {
+        if (videoIds.has(ref)) continue;
+        const created = await mediaAssetRepository.createEmbed({ orgId, ref }, db);
+        videoIds.set(ref, created.id);
+    }
+    return rows.map((row) => ({
+        ...row,
+        assetId: (row.kind === "YOUTUBE" ? videoIds : imageIds).get(row.ref) ?? null,
+    }));
+}
 
-/** Enough of the client to read products — `prisma`, or a `$transaction` tx. */
-export type ProductDb = Pick<typeof prisma, "product">;
+export function mediaWrite(media: ProductMediaInput[]) {
+  return {
+    thumbnail: coverOf(media).ref,
+    rows: media.map((item, index) => ({
+      kind: item.kind,
+      ref: item.ref,
+      description: blankToNull(item.description),
+      isThumbnail: item.isThumbnail,
+      slot: item.kind === "IMAGE" ? blankToNull(item.slot) : null,
+      position: index,
+    })),
+  };
+}
 
-export class ProductsRepository {
-  /**
-   * What one product carries that decides whether it can be offered at all —
-   * its price to snapshot, and the options a caller may have to choose between.
-   */
-  async listingFacts(productId: string, orgId: string) {
-    return await prisma.product.findFirst({
-      // An archived product cannot be listed for bidding either: bidding is a way of
-      // selling, and this row is not for sale (ADR-0029).
-      where: { id: productId, orgId, ...AVAILABLE },
-      select: { id: true, name: true, price: true },
-    });
-  }
-
-  /**
-   * Stock on hand for one product, by location.
-   *
-   * Active locations only, matching what `PRODUCT_INCLUDE` already treats as sellable:
-   * an inactive location's units are held, not offered. Returned per location rather
-   * than summed, because a caller taking a unit has to name where from.
-   */
-  async stockByLocation(productId: string, db: ProductStockDb = prisma) {
-    return await db.productStock.findMany({
-      where: { productId, orgAddress: { isActive: true }, quantity: { gt: 0 } },
-      select: {
-        orgAddressId: true,
-        quantity: true,
-        orgAddress: { select: { name: true } },
-      },
-      orderBy: { quantity: "desc" },
-    });
-  }
-
-  /**
-   * Take the row lock on this product's stock, without moving any.
-   *
-   * The `increment: 0` is the entire point and is not a mistake: an UPDATE takes a
-   * row-level lock on every row it matches whether or not it changes a value. That
-   * makes a caller about to promise this unit to someone serialise against the order
-   * path, which locks the same rows when it reserves. Two transactions that never
-   * touch a common row cannot see each other, which is how an item comes to be sold
-   * and auctioned at the same instant.
-   *
-   * Returns how many locations still hold stock, so the caller's own check runs behind
-   * the lock rather than in front of it.
-   */
-  async lockStock(
-    productId: string,
-    db: ProductStockDb = prisma,
-  ): Promise<number> {
-    const locked = await db.productStock.updateMany({
-      where: { productId, quantity: { gte: 1 } },
-      data: { quantity: { increment: 0 } },
-    });
-    return locked.count;
-  }
-
-  /**
-   * Take one unit from a named location, conditionally (Invariant 6, ADR-0007).
-   *
-   * `false` means there was nothing there to take — read-then-write would be a race,
-   * so the guard and the decrement are one statement.
-   */
-  async takeOneFromLocation(
-    productId: string,
-    orgAddressId: string,
-    db: ProductStockDb = prisma,
-  ): Promise<boolean> {
-    const taken = await db.productStock.updateMany({
-      where: { productId, orgAddressId, quantity: { gte: 1 } },
-      data: { quantity: { decrement: 1 } },
-    });
-    return taken.count === 1;
-  }
-
-  /**
-   * The categories one org actually sells in (storefront-browse R2).
-   *
-   * Grouped rather than joined from the category side: the question is about this
-   * org's catalogue, so it is asked of the products. Carries the same visibility the
-   * listings do, or a shop's bar would offer a category whose every item is hidden.
-   */
-  async categoryIdsForOrg(orgId: string): Promise<string[]> {
-    const rows = await prisma.product.groupBy({
-      by: ["categoryId"],
-      where: { orgId, ...AVAILABLE, ...FROM_ACTIVE_ORG },
-    });
-    return rows.map((row) => row.categoryId);
-  }
-
-  /**
-   * Which of these products belong to a withdrawn organisation, by name.
-   *
-   * The org-level twin of `archivedAmong`: `FROM_ACTIVE_ORG` stops a withdrawn shop's
-   * goods being *shown*, and this is what stops them being *bought*. Two queries rather
-   * than one because the two refusals say different things to a buyer — an archived
-   * item is gone, a withdrawn shop's item may well come back.
-   */
-  async fromWithdrawnOrgAmong(
-    productIds: string[],
-    db: ProductDb = prisma,
-  ): Promise<string[]> {
-    if (productIds.length === 0) return [];
-    const rows = await db.product.findMany({
-      where: { id: { in: productIds }, org: { isActive: false } },
-      select: { name: true },
-    });
-    return rows.map((row) => row.name);
-  }
-
-  /**
-   * Which of these products are archived, by name (ADR-0029).
-   *
-   * Names rather than ids because the only caller shows them to a buyer. Authoritative
-   * when handed a `tx`; `product.sale-gate.ts` is what turns it into a refusal.
-   */
-  async archivedAmong(
-    productIds: string[],
-    db: ProductDb = prisma,
-  ): Promise<string[]> {
-    if (productIds.length === 0) return [];
-    const rows = await db.product.findMany({
-      where: { id: { in: productIds }, ...ARCHIVED },
-      select: { name: true },
-    });
-    return rows.map((row) => row.name);
-  }
-
-  /** How many of these products belong to someone else — the org-scoping guard. */
-  async countOutsideOrg(productIds: string[], orgId: string): Promise<number> {
-    if (productIds.length === 0) return 0;
-    return await prisma.product.count({
-      where: { id: { in: productIds }, NOT: { orgId } },
-    });
-  }
-
-  /** What offer resolution needs about a set of products, and nothing more. */
-  async listForPricing(productIds: string[]) {
-    if (productIds.length === 0) return [];
-    return await prisma.product.findMany({
-      where: { id: { in: productIds } },
-      select: { id: true, price: true, orgId: true, categoryId: true },
-    });
-  }
-
-  /**
-   * Id and name only — what a target picker needs, one page at a time.
-   *
-   * Searched and counted at the database rather than filtered in the browser: a
-   * capped fetch with client-side filtering silently stops finding products once the
-   * catalogue outgrows the cap, and nothing on screen says so.
-   */
-  async listForPicker({
-    orgId,
-    search,
-    ids,
-    limit = 30,
-  }: { orgId?: string; search?: string; ids?: string[]; limit?: number } = {}) {
-    const where = {
-      // An offer cannot be pointed at something that is not for sale.
-      ...AVAILABLE,
-      ...(orgId ? { orgId } : {}),
-      ...(search
-        ? { name: { contains: search, mode: "insensitive" as const } }
-        : {}),
-      // Already-selected products are always included, so a picker never hides a
-      // choice the offer has already made just because it is off the current page.
-      ...(ids && ids.length > 0 && !search ? {} : {}),
-    };
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
+// ✅ Efficient select - only fetch needed fields
+const PRODUCT_LIST_SELECT = {
+    id: true,
+    orgId: true,
+    categoryId: true,
+    name: true,
+    sku: true,
+    price: true,
+    currency: true,
+    // Admin truth: every row, active or not (R9) — summed into `stock` on the way out.
+    stockLocations: { select: { quantity: true } },
+    lowStockThreshold: true,
+    flags: true,
+    thumbnail: true,
+    weight: true,
+    createdAt: true,
+    // The org sees its own archived products and can restore them, so this travels
+    // on the org-facing shape (ADR-0029). The buyer-facing DTO never carries it —
+    // a buyer is never handed an archived product at all.
+    archivedAt: true,
+    category: {
         select: { id: true, name: true },
-        orderBy: { name: "asc" },
-        take: limit,
-      }),
-      prisma.product.count({ where }),
-    ]);
-    return { products, total };
-  }
+    },
+    org: {
+        select: { id: true, name: true, code: true },
+    },
+} satisfies Prisma.ProductSelect;
 
-  /** The named products, whatever page they would otherwise fall on. */
-  async listByIds(ids: string[]) {
-    if (ids.length === 0) return [];
-    return await prisma.product.findMany({
-      where: { id: { in: ids } },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    });
-  }
+/** Gallery order is the only order media is ever read in (R16). The asset join is what a VIDEO row's poster and state come from. */
+const MEDIA_SELECT = {
+    select: { id: true, kind: true, ref: true, description: true, isThumbnail: true, slot: true, asset: PRODUCT_MEDIA_ASSET_SELECT },
+    orderBy: { position: "asc" },
+} satisfies Prisma.Product$mediaArgs;
 
-  /**
-   * Every product slug, for the sitemap. One lean statement — no relations and no offer
-   * resolution, because a URL list needs neither. `getProducts({})` used to serve this,
-   * loading the whole join tree and pricing every row to emit a path.
-   */
-  async listSlugs(): Promise<Array<{ slug: string }>> {
-    return await prisma.product.findMany({
-      where: { ...AVAILABLE, ...FROM_ACTIVE_ORG, ...FROM_ACTIVE_ORG },
-      select: { slug: true },
-    });
-  }
-
-  // Nothing a storefront listing renders needs the whole catalogue at once. When the
-  // caller gives no limit we still cap the row set: a bare search like `?q=a` otherwise
-  // loads every matching product with the full join tree. The service validates an
-  // explicit limit to ≤100 (product.service.ts); this bounds the no-limit case.
-  private static readonly MAX_LIST_ROWS = 200;
-
-  async getProducts(filter: ProductFilter) {
-    const {
-      orgId,
-      categorySlug,
-      categoryIds,
-      search,
-      minPrice,
-      maxPrice,
-      offerOnly,
-      featuredOnly,
-      heroOnly,
-      limit,
-      offset,
-    } = filter;
-    try {
-      const products = await prisma.product.findMany({
-        relationLoadStrategy: "join",
-        // categoryIds (a resolved subtree) wins over a bare slug, which matches
-        // only the category's own products.
-        where: {
-          ...AVAILABLE,
-          ...FROM_ACTIVE_ORG,
-          // Scoped to one shop when a storefront asks; resolved server-side from the
-          // handle, so no query parameter can widen it (ADR-0030 decision 6).
-          ...(orgId ? { orgId } : {}),
-          ...(categoryIds
-            ? { categoryId: { in: categoryIds } }
-            : { category: { slug: categorySlug } }),
-          ...(search && { name: { contains: search, mode: "insensitive" } }),
-          ...(minPrice && { price: { gte: minPrice } }),
-          ...(maxPrice && { price: { lte: maxPrice } }),
-          ...(offerOnly ? await offerFilter() : {}),
-          ...(featuredOnly && { flags: { has: "FEATURED" } }),
-          ...(heroOnly && { flags: { has: ProductFlag.HERO } }),
-        },
-        include: {
-          ...PRODUCT_INCLUDE,
-        },
-        // Pagination needs a total order or it is not pagination: Postgres promises
-        // nothing about row order without ORDER BY, so `LIMIT 12 OFFSET 12` can hand
-        // back rows page one already showed and skip others entirely. `id` is the
-        // tiebreak — two products created in the same millisecond would otherwise be
-        // free to swap places between requests.
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        ...(offset ? { skip: offset } : {}),
-        take: limit ?? ProductsRepository.MAX_LIST_ROWS,
-      });
-      return products;
-    } catch (error) {
-      throw new NotFoundError("Products not found");
-    }
-  }
-
-  /**
-   * Whether a buyer can reach this product at all — the check a review write needs
-   * (product-reviews R7), without loading a gallery to answer it. Spreads the same two
-   * fragments every buyer-facing read does, so an archived product and a withdrawn
-   * shop's product are equally unreviewable.
-   */
-  async isOnSale(id: string): Promise<boolean> {
-    const count = await prisma.product.count({
-      where: { id, ...AVAILABLE, ...FROM_ACTIVE_ORG },
-    });
-    return count > 0;
-  }
-
-  async getProductById(id: string) {
-    try {
-      const product = await prisma.product.findFirst({
-        relationLoadStrategy: "join",
-        where: { id, ...AVAILABLE, ...FROM_ACTIVE_ORG },
-        include: {
-          ...PRODUCT_INCLUDE,
-        },
-      });
-      return product;
-    } catch (error) {
-      throw new NotFoundError("Product not found");
-    }
-  }
-
-  async getProductBySlug(slug: string) {
-    try {
-      const product = await prisma.product.findFirst({
-        relationLoadStrategy: "join",
-        where: { slug, ...AVAILABLE, ...FROM_ACTIVE_ORG },
-        include: {
-          ...PRODUCT_INCLUDE,
-        },
-      });
-      return product;
-    } catch (error) {
-      throw new NotFoundError("Product not found");
-    }
-  }
-
-  async getSimilarProducts(slug: string, count: number) {
-    try {
-      const products = await prisma.product.findMany({
-        relationLoadStrategy: "join",
-        where: { slug: { not: slug }, ...AVAILABLE, ...FROM_ACTIVE_ORG },
-        orderBy: { createdAt: "desc" },
-        take: count,
-        include: {
-          ...PRODUCT_INCLUDE,
-        },
-      });
-      return products;
-    } catch (error) {
-      throw new NotFoundError("Similar products not found");
-    }
-  }
-
-  async getHeroProducts(limit: number) {
-    try {
-      const products = await prisma.product.findMany({
-        relationLoadStrategy: "join",
-        where: { flags: { has: "HERO" }, ...AVAILABLE, ...FROM_ACTIVE_ORG },
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        include: {
-          ...PRODUCT_INCLUDE,
-        },
-      });
-      return products;
-    } catch (error) {
-      throw new NotFoundError("Hero products not found");
-    }
-  }
-
-  async getOfferProducts(limit: number) {
-    try {
-      const products = await prisma.product.findMany({
-        relationLoadStrategy: "join",
-        where: { ...(await offerFilter()), ...AVAILABLE, ...FROM_ACTIVE_ORG },
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        include: {
-          ...PRODUCT_INCLUDE,
-        },
-      });
-      return products;
-    } catch (error) {
-      throw new NotFoundError("Offer products not found");
-    }
-  }
-
-  async searchProducts(query: string, limit: number) {
-    try {
-      // Suggestion rows, not product detail: the dropdown renders name, thumbnail
-      // and price, so the full include tree here was several queries per keystroke
-      // buying data the response never carried.
-      const products = await prisma.product.findMany({
-        where: {
-          name: { contains: query, mode: "insensitive" },
-          ...AVAILABLE,
-          ...FROM_ACTIVE_ORG,
-        },
-        orderBy: { createdAt: "desc" },
-        take: limit,
+const PRODUCT_DETAILS_SELECT = {
+    ...PRODUCT_LIST_SELECT,
+    slug: true,
+    description: true,
+    tags: true,
+    // The listing vocabulary, including **which level answered each fact**: a value filled in
+    // from a brand is convenient until it is wrong on one product and nothing on screen says
+    // where it came from (inherited-facts R3).
+    productType: true,
+    kind: true,
+    familyId: true,
+    brandId: true,
+    facts: true,
+    measurements: true,
+    media: MEDIA_SELECT,
+    stockLocations: {
         select: {
-          id: true,
-          slug: true,
-          name: true,
-          thumbnail: true,
-          price: true,
-          // Not rendered: the offer resolver keys on them (ADR-0018).
-          orgId: true,
-          categoryId: true,
+            orgAddressId: true,
+            quantity: true,
+            orgAddress: { select: { name: true } },
         },
-      });
-      return products;
-    } catch (error) {
-      throw new NotFoundError("Search products not found");
+    },
+} satisfies Prisma.ProductSelect;
+
+/** Sum the join rows into the `stock` total every consumer already reads (D3). */
+function withStockTotal<P extends { stockLocations: Array<{ quantity: number }> }>(product: P) {
+    const { stockLocations, ...rest } = product;
+    return { ...rest, stock: stockLocations.reduce((sum, row) => sum + row.quantity, 0) };
+}
+
+export class AdminProductsRepository {
+    /**
+     * Get paginated list of products with filters
+     */
+    // the write-side product repository
+
+    async getProducts(filters: ProductFilters) {
+        const {
+            page = 1,
+            limit = 20,
+            shelf = "available",
+            search,
+            categoryId,
+            orgId,
+            flags,
+            lowStock,
+            outOfStock,
+            productIds,
+            sortBy,
+            sortOrder,
+        } = filters;
+
+        // Build where clause. Stock is an aggregate since stock-locations (D3), so
+        // stock-dependent filters and sorts happen in memory below — measured fine at
+        // this catalogue size (tens of rows), which was D3's open question.
+        const where: Prisma.ProductWhereInput = {
+            ...shelfFilter(shelf),
+            ...(search && {
+                OR: [
+                    { name: { contains: search, mode: "insensitive" } },
+                    { sku: { contains: search, mode: "insensitive" } },
+                ],
+            }),
+            ...(categoryId && { categoryId }),
+            ...(orgId && { orgId }),
+            ...(flags && { flags: { hasSome: flags } }),
+            // An empty list is a real answer — a caller whose filter matched nothing
+            // wants no rows, not every row — so this tests undefined, not truthiness.
+            ...(productIds !== undefined && { id: { in: productIds } }),
+        };
+
+        const orderBy: Prisma.ProductOrderByWithRelationInput =
+            sortBy === "name"
+                ? { name: sortOrder || "asc" }
+                : sortBy === "price"
+                    ? { price: sortOrder || "desc" }
+                    : { createdAt: "desc" };
+
+        // Any stock-dependent shape: fetch the (small) matching set, aggregate, then
+        // filter/sort/slice in memory.
+        if (lowStock || outOfStock || sortBy === "stock") {
+            const allProducts = (await prisma.product.findMany({
+                where,
+                orderBy,
+                select: PRODUCT_LIST_SELECT,
+                // Product + stockLocations + category + org in one JOIN, not four
+                // statements. (The in-memory slice below stands: stock is a sum across
+                // stockLocations, so this shape cannot paginate in SQL.)
+                relationLoadStrategy: "join",
+            })).map(withStockTotal);
+
+            let filteredProducts = allProducts;
+            if (outOfStock) filteredProducts = filteredProducts.filter((p) => p.stock === 0);
+            if (lowStock) {
+                filteredProducts = filteredProducts.filter(
+                    (p) => p.stock <= p.lowStockThreshold && p.stock > 0
+                );
+            }
+            if (sortBy === "stock") {
+                filteredProducts = [...filteredProducts].sort((a, b) =>
+                    (sortOrder || "desc") === "desc" ? b.stock - a.stock : a.stock - b.stock
+                );
+            }
+
+            const total = filteredProducts.length;
+            const startIndex = (page - 1) * limit;
+            const paginatedProducts = filteredProducts.slice(startIndex, startIndex + limit);
+
+            return {
+                products: paginatedProducts,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit),
+                },
+            };
+        }
+
+        // ✅ Standard query for other filters
+        const [products, total] = await Promise.all([
+            prisma.product.findMany({
+                where,
+                orderBy,
+                skip: (page - 1) * limit,
+                take: limit,
+                select: PRODUCT_LIST_SELECT,
+                relationLoadStrategy: "join",
+            }),
+            prisma.product.count({ where }),
+        ]);
+
+        return {
+            products: products.map(withStockTotal),
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
+
+    /**
+     * The product already wearing this SKU in this org, so the refusal can name it.
+     * SKU uniqueness is org-scoped (bulk-catalog-upload R4): the constraint is
+     * (orgId, sku), and the violation surfaces as a correctable form error rather
+     * than a raw P2002.
+     */
+    private async skuConflictError(orgId: string, sku: string | null | undefined) {
+        const taken = sku
+            ? await prisma.product.findUnique({
+                  where: { orgId_sku: { orgId, sku } },
+                  select: { name: true, archivedAt: true },
+              })
+            : null;
+        // An archived product still holds its SKU, so the clash is with something the
+        // org cannot see in its default list. Saying so is the whole mitigation
+        // (ADR-0029 D8) — "already in use" would send them hunting for a product that
+        // is not there.
+        const message = !taken
+            ? `SKU "${sku}" is already used by another product in this organisation`
+            : taken.archivedAt
+              ? `SKU "${sku}" is still held by "${taken.name}", which is archived. An archived product keeps its SKU so it can be restored — reuse the code by restoring and editing that product, or choose another.`
+              : `SKU "${sku}" is already used by "${taken.name}"`;
+        return new ConflictError(message, { field: "sku" });
+    }
+
+    /**
+     * Create new product
+     */
+    async createProduct(data: ProductPersistInput) {
+        // The slug is derived from the name, never taken from input, and settled by
+        // the unique constraint rather than a prior availability query — checking
+        // first is a race the database already arbitrates.
+        const candidates = slugCandidates(data.name);
+        for (let attempt = 0; ; attempt++) {
+            const slug = candidates.next().value as string;
+            try {
+                return await this.insertProduct(slug, data);
+            } catch (error) {
+                if (isUniqueViolation(error, "slug") && attempt < 25) continue;
+                if (isUniqueViolation(error, "sku")) {
+                    throw await this.skuConflictError(data.orgId, data.sku);
+                }
+                throw error;
+            }
+        }
+    }
+
+    private async insertProduct(slug: string, data: ProductPersistInput) {
+        const media = mediaWrite(data.media);
+        return await prisma.$transaction(async (tx) => {
+        const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
+        const product = await tx.product.create({
+            data: {
+                slug,
+                name: data.name,
+                description: data.description || "",
+                price: data.price,
+                currency: data.currency || "INR",
+                orgId: data.orgId,
+                categoryId: data.categoryId,
+                tags: data.tags || [],
+                flags: data.flags || [],
+                thumbnail: media.thumbnail,
+                media: { create: mediaRows },
+                sku: blankToNull(data.sku),
+                lowStockThreshold: data.lowStockThreshold || 10,
+                weight: data.weight,
+                // Resolved on save and server-owned; the form never sends them
+                // (listing-vocabulary/categories D1b, inherited-facts D2).
+                productType: data.productType,
+                kind: blankToNull(data.kind ?? undefined),
+                familyId: data.familyId ?? null,
+                brandId: data.brandId ?? null,
+                facts: data.facts as never,
+                measurements: data.measurements as never,
+            },
+            include: {
+                category: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+        });
+        // Quantities live only on the join rows (stock-locations D3); a new product has seen
+        // nothing, so every row is a creation and zero rows are dropped ("not stocked here").
+        await stockRepository.adjust(product.id, data.stockLocations, tx);
+        return product;
+        });
+    }
+
+    async getProductById(id: string) {
+        return await prisma.product.findUnique({
+            where: { id },
+            select: PRODUCT_DETAILS_SELECT,
+            relationLoadStrategy: "join",
+        });
+    }
+
+    /** The copy picker's list: the org's available products, names only (copy-product D3). */
+    async listCopyOptions(orgId: string) {
+        return await prisma.product.findMany({
+            where: { orgId, ...AVAILABLE },
+            select: { id: true, name: true, sku: true },
+            orderBy: { name: "asc" },
+        });
+    }
+
+    /**
+     * Delete product
+     */
+    async deleteProduct(id: string) {
+        await prisma.product.delete({
+            where: { id },
+        });
+    }
+
+    /**
+     * Archive a product, or restore it (ADR-0029). `archivedAt` is server-owned
+     * and never arrives from a request body (Invariant 4), so it is set here from a
+     * clock rather than passed through.
+     *
+     * The stock row lock is the point of the transaction. Archiving is a one-row
+     * update that needs no transaction of its own, but the order path locks these same
+     * rows when it reserves stock, and `assertNotArchived` runs behind that lock — so
+     * taking it here makes a withdrawal and a checkout serialise instead of
+     * interleaving. Whichever gets the lock wins, and the other sees the result.
+     *
+     * `guard` runs *after* the lock for the same reason: a check made in front of it
+     * is a read-then-write, and whatever it was looking for can commit in the gap
+     * (Invariant 6). Opening a bidding event takes this same lock, so the caller's
+     * bidding check only means anything from in here.
+     */
+    async setArchived(
+        id: string,
+        archivedAt: Date | null,
+        adminId: string,
+        guard?: (tx: Prisma.TransactionClient) => Promise<void>
+    ) {
+        return await prisma.$transaction(async (tx) => {
+            await stockRepository.lockAll(id, tx);
+            if (guard) await guard(tx);
+            const product = await tx.product.update({
+                where: { id },
+                data: { archivedAt },
+                select: PRODUCT_DETAILS_SELECT,
+            });
+            // In-transaction, so the trail cannot record a withdrawal that rolled back
+            // (ADR-0021). `adminId` is the org membership's user, re-read by
+            // `resolveOrgScope` rather than taken from the token claim.
+            await recordAdminActionIn(tx, {
+                adminId,
+                action: archivedAt ? "PRODUCT_ARCHIVED" : "PRODUCT_RESTORED",
+                resource: "Product",
+                resourceId: id,
+                metadata: { name: product.name },
+            });
+            return product;
+        });
+    }
+
+    /**
+     * How many rows hold a `Restrict` foreign key on this product, per relation —
+     * null when there is no such product.
+     *
+     * These three are the only referrers that do not cascade (ADR-0020): an order
+     * line, a promotion target and a bidding event each carry money or attribution,
+     * so the database refuses to orphan them. Counted here, through the product's own
+     * relations in one round trip, purely so the refusal can name its reason — the
+     * foreign keys remain the enforcement, and a count is not a lock.
+     */
+    async countDeleteBlockers(id: string) {
+        const row = await prisma.product.findUnique({
+            where: { id },
+            select: {
+                _count: {
+                    select: { orderItems: true, promotionTargets: true, biddingEvents: true },
+                },
+            },
+        });
+        return row?._count ?? null;
+    }
+
+    /**
+     * Get product statistics
+     */
+    /**
+     * Catalogue statistics, for one org or for the whole platform.
+     *
+     * The scope is a required argument, and `null` means the whole platform. Making it
+     * optional would default to platform-wide, which is the wrong default for a
+     * vendor-facing page — and is exactly how an org came to see the platform's product
+     * count and inventory value.
+     */
+    async getStats(orgId: string | null) {
+        const scope = orgId ? { orgId } : {};
+
+        // Stock is an aggregate (D3): load the scope's products with their rows and
+        // sum in memory — measured fine at this catalogue size.
+        // Every figure below is about what is available (ADR-0029): an archived
+        // product's stock is real but not sellable, and a low-stock alert on something
+        // deliberately archived is noise. Archived is reported as its own count
+        // rather than folded in, so no figure is silently ambiguous.
+        // "Products" is two numbers once a product can have siblings (variants D6): twenty
+        // abayas in five colours is twenty families and a hundred sellable things, and a figure
+        // that does not say which it counts is the ambiguous one. The family count is reported
+        // beside the sellable one rather than instead of it.
+        const [totalProducts, archivedProducts, familyCount, scopedProducts] = await Promise.all([
+            prisma.product.count({ where: { ...scope, ...AVAILABLE } }),
+            prisma.product.count({ where: { ...scope, ...ARCHIVED } }),
+            prisma.productFamily.count({
+                where: { retiredAt: null, products: { some: { ...scope, ...AVAILABLE } } },
+            }),
+            prisma.product.findMany({
+                where: { ...scope, ...AVAILABLE },
+                select: {
+                    price: true,
+                    stockLocations: { select: { quantity: true } },
+                    lowStockThreshold: true,
+                    flags: true,
+                },
+            }),
+        ]);
+
+        const withTotals = scopedProducts.map(withStockTotal);
+        const outOfStockProducts = withTotals.filter((p) => p.stock === 0).length;
+        const lowStockProducts = withTotals.filter(
+            (p) => p.stock > 0 && p.stock <= p.lowStockThreshold
+        ).length;
+
+        const featuredProducts = withTotals.filter((p) =>
+            p.flags.includes(ProductFlag.FEATURED)
+        ).length;
+
+        const totalInventoryValue = withTotals.reduce((sum, product) => {
+            return sum + product.price * product.stock;
+        }, 0);
+
+        return {
+            totalProducts,
+            archivedProducts,
+            familyCount,
+            lowStockProducts,
+            outOfStockProducts,
+            featuredProducts,
+            totalInventoryValue,
+        };
+    }
+
+    async updateProduct(id: string, data: ProductPersistInput) {
+        // Fields are enumerated, not spread: `data` originates from a request body,
+        // so spreading it would let any writable column through. `slug` is absent
+        // deliberately — it is generated once at creation and then frozen, because
+        // changing it would 404 every existing link to the product.
+        // Stock is NOT replaced wholesale any more: each row is compared against what the
+        // editor saw, so a sale that landed while the form was open is refused, not undone.
+        // The gallery is replaced wholesale in the same transaction as `thumbnail`, so
+        // no ordering, insertion, or removal can commit having left the cache pointing
+        // at a row that is gone (D4b). Removing the cover without designating another
+        // never reaches here — the payload fails validation first, which is what A12's
+        // refusal is (D4c).
+        const media = mediaWrite(data.media);
+        let product;
+        try {
+            product = await prisma.$transaction(async (tx) => {
+            await stockRepository.adjust(id, data.stockLocations, tx);
+            await tx.productMedia.deleteMany({ where: { productId: id } });
+            const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
+            return tx.product.update({
+                where: { id },
+                data: {
+                    name: data.name,
+                    description: data.description,
+                    price: data.price,
+                    currency: data.currency,
+                    orgId: data.orgId,
+                    categoryId: data.categoryId,
+                    tags: data.tags,
+                    flags: data.flags,
+                    thumbnail: media.thumbnail,
+                    media: { create: mediaRows },
+                    sku: blankToNull(data.sku),
+                    lowStockThreshold: data.lowStockThreshold,
+                    weight: data.weight,
+                    // Symmetric with create (Invariant 4): an update that whitelists
+                    // less than its create is how a field becomes unsettable.
+                    productType: data.productType,
+                    kind: blankToNull(data.kind ?? undefined),
+                    familyId: data.familyId ?? null,
+                    brandId: data.brandId ?? null,
+                    facts: data.facts as never,
+                    measurements: data.measurements as never,
+                },
+            });
+            });
+        } catch (error) {
+            if (isUniqueViolation(error, "sku")) {
+                throw await this.skuConflictError(data.orgId, data.sku);
+            }
+            throw error;
+        }
+        if (!product) {
+            throw new NotFoundError("Product not found");
+        }
+        return product;
+    }
+
+
+  /** The categories this org has products on sale in — what its listing defaults are keyed by. */
+  async listCategoriesSoldBy(orgId: string): Promise<Array<{ id: string; name: string }>> {
+    const rows = await prisma.product.findMany({
+      where: { orgId, archivedAt: null },
+      distinct: ["categoryId"],
+      select: { category: { select: { id: true, name: true } } },
+      orderBy: { category: { name: "asc" } },
+    });
+    return rows.map((row) => row.category);
+  }
+
+  /** Which of these SKUs this org already holds. Archived included: an archived product keeps its SKU (ADR-0029). */
+  async listSkusTaken(orgId: string, skus: string[]) {
+    return await prisma.product.findMany({
+      where: { orgId, sku: { in: skus } },
+      select: { id: true, sku: true, name: true, archivedAt: true },
+    });
+  }
+
+  /** A count under a predicate the caller owns — the fact correction's preview (inherited-facts R6). */
+  async countWhere(where: Prisma.ProductWhereInput): Promise<number> {
+    return await prisma.product.count({ where });
+  }
+
+  /** The facts of every product under a predicate — the rows a fact correction rewrites. */
+  async listFactsWhere(where: Prisma.ProductWhereInput) {
+    return await prisma.product.findMany({ where, select: { id: true, facts: true } });
+  }
+
+  /** Writes each product's facts whole, all-or-nothing: `updateMany` cannot merge into a JSON path. */
+  async replaceFacts(rows: Array<{ id: string; facts: Record<string, unknown> }>): Promise<void> {
+    await prisma.$transaction(
+      rows.map(({ id, facts }) => prisma.product.update({ where: { id }, data: { facts: facts as never } })),
+    );
+  }
+
+  /** The live products holding these SKUs: the rows a bulk import updates rather than creates. */
+  async listLiveSkus(orgId: string, skus: string[]) {
+    return await prisma.product.findMany({
+      where: { orgId, sku: { in: skus }, archivedAt: null },
+      select: { id: true, sku: true },
+    });
+  }
+
+  /** Every slug, archived included (ADR-0029): an archived product keeps its slug so a restore finds its URL free. */
+  async listAllSlugs(): Promise<Array<{ slug: string }>> {
+    return await prisma.product.findMany({ select: { slug: true } });
+  }
+
+  /** A bulk import's rows, all-or-nothing in one transaction. */
+  async importBulk(
+    products: Prisma.ProductCreateManyInput[],
+    updates: Prisma.ProductCreateManyInput[],
+    media: Prisma.ProductMediaCreateManyInput[],
+    stock: Prisma.ProductStockCreateManyInput[],
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      if (products.length) await tx.product.createMany({ data: products });
+
+      // An update is a full replace, the same semantics the admin form's edit has: the sheet
+      // row is the product now. `slug` is absent from the data — it is the product's own, and
+      // changing it would break every link to it.
+      for (const row of updates) {
+        const { id, slug: _slug, ...data } = row;
+        await tx.product.update({ where: { id }, data });
+      }
+
+      // The gallery and the stock are replaced wholesale for an updated product, in the same
+      // transaction, so nothing can commit with `thumbnail` pointing at a row that is gone.
+      const ids = updates.map((row) => row.id as string);
+      if (ids.length) await tx.productMedia.deleteMany({ where: { productId: { in: ids } } });
+      if (media.length) await tx.productMedia.createMany({ data: media });
+      await stockRepository.setForImport(ids, stock, tx);
+    });
+  }
+
+  /** Gallery rows whose image predates the asset record — the media backfill's input (media-library D3). */
+  async listUnlinkedMedia() {
+    return await prisma.productMedia.findMany({
+      where: { assetId: null },
+      select: { id: true, kind: true, ref: true, product: { select: { orgId: true } } },
+    });
+  }
+
+  /** A sample of unlinked, non-embed gallery refs: enough to tell which store they belong to. */
+  async sampleUnlinkedMediaRefs(take: number) {
+    return await prisma.productMedia.findMany({
+      where: { assetId: null, kind: { not: "YOUTUBE" } },
+      select: { ref: true },
+      take,
+    });
+  }
+
+  async linkMediaAsset(id: string, assetId: string): Promise<void> {
+    await prisma.productMedia.update({ where: { id }, data: { assetId } });
   }
 }
 
-export const productsRepository = new ProductsRepository();
+export const adminProductsRepository = new AdminProductsRepository();

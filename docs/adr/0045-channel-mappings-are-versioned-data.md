@@ -1,7 +1,7 @@
 # ADR-0045: Channel mappings are versioned data, not code
 
 - **Date:** 2026-09-29
-- **Status:** Accepted
+- **Status:** Accepted (D3 superseded by [ADR-0053](0053-readiness-advises-and-never-gates.md); D2, D5 amended by [ADR-0054](0054-a-channel-mapping-carries-a-checked-date-and-source-and-required-ness-is-data.md))
 
 ## Context
 

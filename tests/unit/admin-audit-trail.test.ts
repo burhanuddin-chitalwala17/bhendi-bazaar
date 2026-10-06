@@ -13,13 +13,13 @@ vi.mock("@server/shared/prisma", () => ({
 
 const deleteCategory = vi.fn();
 const getCategoryById = vi.fn();
-vi.mock("@server/catalog/admin.category.repository", () => ({
+vi.mock("@server/catalog/category.repository", () => ({
   adminCategoryRepository: {
     getCategoryById: (id: string) => getCategoryById(id),
     deleteCategory: (id: string) => deleteCategory(id),
   },
 }));
-vi.mock("@server/catalog/category.repository", () => ({
+vi.mock("@server/catalog/category.read.repository", () => ({
   categoryRepository: { listTree: async () => [] },
 }));
 

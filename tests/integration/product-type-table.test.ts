@@ -14,7 +14,7 @@ import { isDisposableDb, ensureFixtures } from "../helpers/test-db";
 
 describe.skipIf(!isDisposableDb)("product types (local db)", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let repo: typeof import("@server/catalog/product-type.repository").productTypeRepository;
+  let repo: typeof import("@server/listing/product-type.repository").productTypeRepository;
   const stamp = `pt-${Date.now().toString(36)}`;
   let orgId: string;
   let categoryId: string;
@@ -32,7 +32,7 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ productTypeRepository: repo } = await import("@server/catalog/product-type.repository"));
+    ({ productTypeRepository: repo } = await import("@server/listing/product-type.repository"));
     const fixtures = await ensureFixtures();
     orgId = fixtures.orgId;
     categoryId = fixtures.categoryId;
@@ -132,7 +132,7 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
    */
   describe("every stored type is internally consistent", () => {
     it("names only facts the vocabulary declares", async () => {
-      const { FACTS } = await import("@server/catalog/listing-facts");
+      const { FACTS } = await import("@server/listing/listing-facts");
       for (const type of await repo.list(true)) {
         for (const fact of type.facts) {
           expect(FACTS, `${type.key} asks for an unknown fact "${fact}"`).toContain(fact);

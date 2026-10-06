@@ -11,6 +11,7 @@ import { ProductsTableSkeleton } from "@/components/product/console/productsList
 import { Button } from "@/components/ui/button";
 import type { ProductShelf } from "@server/catalog/product.visibility";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata: Metadata = {
   title: "Products",
@@ -50,12 +51,7 @@ export default async function OrgProductsPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">
-            Your organisation&apos;s catalogue
-          </p>
-        </div>
+        <SectionHeader as="h1" title="Products" description="Your organisation's catalogue" />
         <div className="flex gap-2">
           <Button asChild variant="outline">
             <Link href={`/org/${orgId}/products/bulk`} prefetch={false}>

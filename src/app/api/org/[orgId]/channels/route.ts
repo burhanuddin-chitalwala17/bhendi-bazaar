@@ -7,7 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
-import { orgChannelService } from "@server/catalog/org-channel.service";
+import { orgChannelService } from "@server/listing/org-channel.service";
 import { orgChannelsSchema } from "@/lib/validation/schemas/org-channels.schema";
 
 export const PUT = withOrg(async (request, scope) => {

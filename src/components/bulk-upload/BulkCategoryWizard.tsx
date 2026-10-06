@@ -2,72 +2,26 @@
 
 /**
  * Admin bulk category upload — the category variant of the product wizard, same
- * contract: validate everything first, upload hero images browser → Blob, then
+ * contract: validate everything first, upload hero images browser → object store, then
  * one all-or-nothing create.
  */
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { readApiError } from "@/lib/api-error";
-import type { RowError } from "@server/catalog/bulk/bulk.types";
-import type { BulkCategoryRow } from "@server/catalog/bulk/bulk-category.service";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
-import { imagesOnly, relativePath, sanitizePath } from "./files";
+import { imagesOnly, sanitizePath } from "./files";
+import { bulkImportApiClient } from "./bulkImportApiClient";
+import { useBulkImport } from "./useBulkImport";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import { ADMIN_UPLOAD_ENDPOINTS } from "@/lib/image/upload-endpoints";
 
-interface ValidateResponse {
-  ok: boolean;
-  errors: RowError[];
-  rows: { rowNumber: number; row: BulkCategoryRow }[];
-  summary: { rows: number };
-}
-
-type Step = "pick" | "checking" | "report" | "uploading" | "creating" | "done";
-
 export function BulkCategoryWizard() {
-  const [step, setStep] = useState<Step>("pick");
-  const [sheet, setSheet] = useState<File | null>(null);
-  const [images, setImages] = useState<File[]>([]);
-  const [report, setReport] = useState<ValidateResponse | null>(null);
-  const [created, setCreated] = useState(0);
-
-  const filesByPath = useMemo(
-    () => new Map(images.map((file) => [relativePath(file), file])),
-    [images],
+  const { step, setSheet, images, setImages, report, created, check, run } = useBulkImport(
+    bulkImportApiClient.validateCategories,
   );
-  const providedPaths = useMemo(() => [...filesByPath.keys()], [filesByPath]);
-
-  const check = async () => {
-    if (!sheet) {
-      toast.error("Choose the filled-in sheet first");
-      return;
-    }
-    setStep("checking");
-    try {
-      const formData = new FormData();
-      formData.append("sheet", sheet);
-      formData.append("filenames", JSON.stringify(providedPaths));
-      const response = await fetch("/api/admin/categories/bulk/validate", {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) throw new Error((await readApiError(response)).message);
-      setReport((await response.json()) as ValidateResponse);
-      setStep("report");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not check the sheet",
-      );
-      setStep("pick");
-    }
-  };
 
   const createAll = async () => {
     if (!report?.ok) return;
-    setStep("uploading");
-    try {
+    await run(async ({ filesByPath, providedPaths, creating }) => {
       const urls = new Map<string, string>();
       for (const { row } of report.rows) {
         if (urls.has(row.image)) continue;
@@ -84,24 +38,13 @@ export function BulkCategoryWizard() {
         urls.set(row.image, url);
       }
 
-      setStep("creating");
+      creating();
       const rows = report.rows.map(({ row }) => ({
         ...row,
         imageUrl: urls.get(row.image)!,
       }));
-      const response = await fetch("/api/admin/categories/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows }),
-      });
-      if (!response.ok) throw new Error((await readApiError(response)).message);
-      const body = (await response.json()) as { created: number };
-      setCreated(body.created);
-      setStep("done");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-      setStep("report");
-    }
+      return bulkImportApiClient.createCategories(rows);
+    });
   };
 
   if (step === "done") {

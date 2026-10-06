@@ -4,13 +4,13 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminOrderApiClient } from "@/services/admin/orderApiClient";
-import type { Order } from "@prisma/client";
-import type { OrderAddress } from "@/domain/order";
+import { adminOrderApiClient } from "@/components/order/console/adminOrderApiClient";
+import type { AdminOrderRow } from "@server/checkout/admin.order.types";
 import { cn } from "@/lib/utils";
-import { formatCurrency, titleCase } from "@/lib/format";
+import { titleCase } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 import { Select } from "@/components/ui/select";
+import { Money } from "@/components/shared/Money";
 
 /** The statuses an admin may set by hand — the fulfilment ones, not the payment lifecycle. */
 const SETTABLE = [
@@ -21,7 +21,7 @@ const SETTABLE = [
 ] as const;
 
 interface Props {
-  orders: Order[];
+  orders: AdminOrderRow[];
   page: number;
   pageSize: number;
   totalPages: number;
@@ -55,7 +55,7 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
     { successMessage: "Order status updated!", onSuccess: () => router.refresh() },
   );
 
-  const columns: Column<Order>[] = [
+  const columns: Column<AdminOrderRow>[] = [
     {
       key: "code",
       label: "Order Code",
@@ -72,18 +72,13 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
     {
       key: "userName",
       label: "Customer",
-      // `address` is a Json column on the row; the console only needs the name off it.
-      render: (order) => (
-        <p className="font-medium">
-          {(order.address as OrderAddress | null)?.fullName || "Guest"}
-        </p>
-      ),
+      render: (order) => <p className="font-medium">{order.customerName || "Guest"}</p>,
     },
     {
       key: "grandTotal",
       label: "Total",
       render: (order) => (
-        <span className="font-semibold">{formatCurrency(order.grandTotal || 0)}</span>
+        <span className="font-semibold"><Money paise={order.grandTotal || 0} /></span>
       ),
     },
     {

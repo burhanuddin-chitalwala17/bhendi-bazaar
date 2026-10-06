@@ -7,7 +7,7 @@ import { Edit, MoveDown, MoveUp, Trash2 } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
+import { adminCategoryApiClient } from "@/components/category/console/categoryApiClient";
 import type { AdminCategory } from "@/domain/admin";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 import { cn } from "@/lib/utils";
