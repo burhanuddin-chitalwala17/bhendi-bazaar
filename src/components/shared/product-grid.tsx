@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  *  widening to the roomier desktop layout from `md`. Declared once so a lane, a
  *  category listing, and a search result can't drift apart. */
 export const PRODUCT_GRID_CLASSES =
-  "grid grid-cols-3 gap-2 sm:gap-3 md:grid-cols-2 md:gap-5 lg:grid-cols-3";
+  "grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-2 md:gap-5 lg:grid-cols-3";
 
 export function ProductGrid({
   products,
