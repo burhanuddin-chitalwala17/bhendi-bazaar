@@ -17,10 +17,12 @@ export class OrgMemberRepository {
    * revoked between sign-in and now, and a token would keep asserting it.
    */
   async findMembership(userId: string, orgId: string) {
-    return prisma.orgMember.findUnique({
+    const row = await prisma.orgMember.findUnique({
       where: { userId_orgId: { userId, orgId } },
-      select: { id: true, orgId: true, role: true },
+      select: { id: true, orgId: true, role: true, org: { select: { isBlocked: true } } },
     });
+    if (!row) return null;
+    return { id: row.id, orgId: row.orgId, role: row.role, orgBlocked: row.org.isBlocked };
   }
 
   /** The orgs this person can act for — the org switcher's list, and "do you have one at all". */
@@ -36,6 +38,7 @@ export class OrgMemberRepository {
             name: true,
             handle: true,
             isActive: true,
+            isBlocked: true,
           },
         },
       },

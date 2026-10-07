@@ -20,6 +20,19 @@ export async function requireSession(): Promise<Session> {
 }
 
 /**
+ * Like `requireSession`, but also checks the database for `isBlocked`.
+ * Use on mutation paths where a blocked user must not proceed (checkout, cart sync).
+ */
+export async function requireActiveSession(): Promise<Session> {
+  const session = await requireSession();
+  const standing = await accountService.findAdminStanding(session.user.id);
+  if (standing?.isBlocked) {
+    throw new ForbiddenError("Your account has been suspended");
+  }
+  return session;
+}
+
+/**
  * The session, having established that this person runs the platform.
  *
  * The role and the id both arrive as JWT claims minted at sign-in, so they outlive

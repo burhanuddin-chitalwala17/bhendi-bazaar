@@ -1,10 +1,8 @@
-// components/shared/forms/product/ProductFlagsFields.tsx
-
 import { Control } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ProductFormInput } from "@/components/product/console/types";
 import { FormController } from "../FormField";
-import { ProductFlag, PRODUCT_FLAG_METADATA } from "@/types/product";
+import { ProductFlag, MANUAL_FLAGS, PRODUCT_FLAG_METADATA } from "@/types/product";
 
 interface ProductFlagsFieldsProps {
   control: Control<ProductFormInput>;
@@ -16,7 +14,7 @@ export function ProductFlagsFields({
   readOnly = false,
 }: ProductFlagsFieldsProps) {
   return (
-    <div className="bg-card rounded-lg border border-border p-6">
+    <div className="bg-card rounded-card border border-border p-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">
         Product Flags
       </h2>
@@ -37,16 +35,19 @@ export function ProductFlagsFields({
 
             return (
               <div className="space-y-3">
-                {Object.entries(PRODUCT_FLAG_METADATA).map(([flag, meta]) => (
-                  <Checkbox
-                    key={flag}
-                    disabled={readOnly}
-                    label={meta.label}
-                    description={meta.description}
-                    checked={currentFlags.includes(flag as ProductFlag)}
-                    onChange={() => toggleFlag(flag as ProductFlag)}
-                  />
-                ))}
+                {MANUAL_FLAGS.map((flag) => {
+                  const meta = PRODUCT_FLAG_METADATA[flag];
+                  return (
+                    <Checkbox
+                      key={flag}
+                      disabled={readOnly}
+                      label={meta.label}
+                      description={meta.description}
+                      checked={currentFlags.includes(flag)}
+                      onChange={() => toggleFlag(flag)}
+                    />
+                  );
+                })}
               </div>
             );
           }}

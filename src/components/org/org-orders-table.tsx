@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { DataTable, type Column } from "@/components/shared/data-table";
 import type { Pagination } from "@/types/shared";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
@@ -28,10 +28,12 @@ export function OrgOrdersTable({
   orgId: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith("/admin/");
+  const orderBase = isAdmin ? "/admin/orders" : `/org/${orgId}/orders`;
 
-  /** Pagination lives in the URL, so a size change is a navigation like any other. */
   const goTo = (page: number, limit: number) =>
-    router.push(`/org/${orgId}/orders?page=${page}&limit=${limit}`);
+    router.push(`${orderBase}?page=${page}&limit=${limit}`);
 
   const columns: Column<OrgOrderView>[] = [
     {
@@ -40,7 +42,7 @@ export function OrgOrdersTable({
       render: (order) => (
         <Link
           prefetch={false}
-          href={`/org/${orgId}/orders/${order.id}`}
+          href={`${isAdmin ? "/admin/orders" : `/org/${orgId}/orders`}/${order.id}`}
           className="font-medium text-primary hover:underline"
         >
           {order.code}

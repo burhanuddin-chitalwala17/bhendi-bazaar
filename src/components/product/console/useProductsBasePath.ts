@@ -1,16 +1,18 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 
 /**
  * Where the product screens live in whichever portal the user is currently in.
  *
- * The product containers are shared between `/admin/products` and
- * `/org/[orgId]/products`, so a hardcoded path in one of them would send an org member
- * into the platform tree — which they may not be allowed to open at all.
+ * The product containers are shared between `/admin/products`,
+ * `/org/[orgId]/products`, and the admin org detail (`/admin/orgs/[orgId]`).
+ * A hardcoded path in one of them would send a user into the wrong portal.
  */
 export function useProductsBasePath(): string {
   const params = useParams();
+  const pathname = usePathname();
+  if (pathname.startsWith("/admin/")) return "/admin/products";
   const orgId = typeof params.orgId === "string" ? params.orgId : undefined;
   return orgId ? `/org/${orgId}/products` : "/admin/products";
 }

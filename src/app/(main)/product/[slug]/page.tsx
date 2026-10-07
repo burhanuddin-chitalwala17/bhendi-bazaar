@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductDetails } from "@/components/product/product-details";
 import { Reviews } from "@/components/product/reviews";
@@ -9,6 +10,7 @@ import { ProductPageSkeleton } from "@/components/shared/states/LoadingSkeleton"
 import type { Metadata } from "next";
 import { APP_NAME } from "@/lib/config";
 import { appUrl } from "@server/shared/app-url";
+import { NotFoundError } from "@server/shared/domain-error";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -61,7 +63,13 @@ export async function generateMetadata({
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
-  const product = await getProduct(slug);
+  let product;
+  try {
+    product = await getProduct(slug);
+  } catch (error) {
+    if (error instanceof NotFoundError) notFound();
+    throw error;
+  }
   const similar = await productsDAL.getSimilarProducts(slug, 4);
   return (
     // pb-16 clears the docked Add-to-cart bar, which is fixed and so out of flow.

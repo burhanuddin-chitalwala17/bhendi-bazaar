@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-10-05
+- **Verified:** 2026-10-07
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -24,6 +24,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [TESTING.md](TESTING.md) | Test strategy and coverage targets | The strategy changes |
 | [OPERATIONS.md](OPERATIONS.md) | Env vars, deploy, runbook | The deployment or an external service changes |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | How Razorpay, Shiprocket, Resend, Cloudflare R2, Vercel and Prisma actually behave | A spike or an incident teaches something durable |
+| [TRACKER.md](TRACKER.md) | Bugs and features from the platform audit | A bug is fixed or a feature is built |
 
 **Domain-level docs co-locate with their code**, not here. They load lazily — only when a file in that directory is read — so they cost no context until relevant. The thirteen domains are listed in [../CLAUDE.md](../CLAUDE.md); those with docs so far:
 
@@ -37,7 +38,7 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 | [src/components/CLAUDE.md](../src/components/CLAUDE.md) | The front end — its layers, and the gates each rule answers to (not a domain; loads when a component is read) |
 | [src/app/api/CLAUDE.md](../src/app/api/CLAUDE.md) | Route handlers — authorize, parse, delegate, answer (not a domain) |
 
-The remaining domains (`catalog`, `cart`, `identity`, `analytics`, `promotions`, `payouts`, `wishlist`, `content`, `shared`) have directories but no `CLAUDE.md` yet — one is added when work first touches the domain, per [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md) decision 8.
+The remaining domains (`catalog`, `listing`, `cart`, `identity`, `analytics`, `promotions`, `payouts`, `wishlist`, `content`, `shared`) have directories but no `CLAUDE.md` yet — one is added when work first touches the domain, per [ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md) decision 8.
 
 ## Where to look
 

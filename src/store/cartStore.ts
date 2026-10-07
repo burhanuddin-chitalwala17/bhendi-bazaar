@@ -93,7 +93,6 @@ export const useCartStore = create<CartStoreState>()(
       updatedAt: new Date(),
 
       addItem: (itemInput) => {
-        // console.log("Adding item: ", JSON.stringify(itemInput, null, 2));
         set((state) => {
           const existing = state.items.find(
             (i) =>
@@ -117,10 +116,6 @@ export const useCartStore = create<CartStoreState>()(
 
           const totals = computeTotals(nextItems);
 
-          // ✨ Add this log to see what's being stored
-          console.log("State after add (before persist):", JSON.stringify(nextItems, null, 2));
-
-
           return {
             items: nextItems,
             totals: totals,
@@ -128,11 +123,6 @@ export const useCartStore = create<CartStoreState>()(
           };
         });
 
-        // ✨ Add this to check localStorage after persist
-        setTimeout(() => {
-          const stored = localStorage.getItem('bhendi-bazaar-cart');
-          console.log("LocalStorage after persist:", JSON.stringify(stored, null, 2));
-        }, 2000);
       },
 
       removeItem: (id) => {
@@ -207,14 +197,10 @@ export const useCartStore = create<CartStoreState>()(
           const validItems: CartItem[] = [];
           let corruptedCount = 0;
 
-          // ✨ Log what came from localStorage
-
           for (const item of state.items) {
-
             const validatedItem = validateCartItem(item);
             if (validatedItem) {
               validItems.push(validatedItem);
-              // console.log("Validated item: ", JSON.stringify(validatedItem, null, 2));
             } else {
               corruptedCount++;
               console.warn("[Cart] Removed corrupted item from storage:", item);

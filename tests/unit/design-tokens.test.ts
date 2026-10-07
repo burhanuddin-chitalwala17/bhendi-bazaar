@@ -102,7 +102,6 @@ const SHAPE_LEGACY = new Set([
   "src/components/shared/forms/category/CategoryStylingFields.tsx",
   "src/components/shared/forms/orgs/index.tsx",
   "src/components/shared/forms/product/ProductBasicFields.tsx",
-  "src/components/shared/forms/product/ProductFlagsFields.tsx",
   "src/components/shared/forms/product/ProductInventoryFields.tsx",
   "src/components/shared/forms/product/ProductOrgShippingFields.tsx",
   "src/components/shared/forms/product/ProductPricingFields.tsx",

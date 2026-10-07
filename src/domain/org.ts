@@ -16,6 +16,7 @@ export interface Org {
   panNumber?: string;
 
   isActive: boolean;
+  isBlocked: boolean;
   isVerified: boolean;
 
   description?: string;

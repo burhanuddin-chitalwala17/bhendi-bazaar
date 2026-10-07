@@ -27,7 +27,9 @@ export const AVAILABLE = { archivedAt: null } satisfies Prisma.ProductWhereInput
  * organisation writes nothing to its catalogue, so restoring it needs no backfill.
  * `Org.isActive` is the platform's one withdrawal switch — see the org-withdrawal spec.
  */
-export const FROM_ACTIVE_ORG = { org: { isActive: true } } satisfies Prisma.ProductWhereInput;
+export const FROM_ACTIVE_ORG = {
+  org: { isActive: true, isBlocked: false },
+} satisfies Prisma.ProductWhereInput;
 
 /** Archived only — the org portal's "Archived" filter. */
 export const ARCHIVED = { archivedAt: { not: null } } satisfies Prisma.ProductWhereInput;

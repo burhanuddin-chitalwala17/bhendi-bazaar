@@ -87,13 +87,6 @@ export function ProductAddContainer({
         </div>
       )}
 
-      {/* Messages */}
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>{error}</p>
-        </div>
-      )}
       {successMessage && (
         <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
           <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -101,8 +94,6 @@ export function ProductAddContainer({
         </div>
       )}
 
-      {/* Keyed on the source: defaults are read once, so picking another product
-          must remount the form rather than leave the previous copy in place. */}
       <ProductForm
         key={copySource?.id ?? "blank"}
         copySource={copySource}
@@ -118,6 +109,13 @@ export function ProductAddContainer({
         readOnly={false}
         uploadEndpoints={uploadEndpoints}
       />
+
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p>{error}</p>
+        </div>
+      )}
     </div>
   );
 }

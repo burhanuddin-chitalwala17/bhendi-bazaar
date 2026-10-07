@@ -99,11 +99,17 @@ export function toOrgOrderView(order: OrderRow, orgId: string): OrgOrderView {
 }
 
 class OrgOrdersDAL {
-  getOrders = cache(async (orgId: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) => {
+  getOrders = cache(async (
+    orgId: string,
+    page = 1,
+    pageSize = DEFAULT_PAGE_SIZE,
+    filters?: { search?: string; status?: string },
+  ) => {
     const { orders, total, limit } = await adminOrderRepository.getOrdersForOrg(
       orgId,
       page,
-      pageSize
+      pageSize,
+      filters,
     );
     return {
       orders: orders.map((o) => toOrgOrderView(o, orgId)),

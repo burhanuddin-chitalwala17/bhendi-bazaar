@@ -1,0 +1,703 @@
+<title>Bhendi Bazaar Platform Audit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
+
+  /* Layout: single-column document, max 860px, generous vertical rhythm */
+  :root {
+    --bg: #FAFAF8;
+    --fg: #2D2A26;
+    --fg-muted: #6B6560;
+    --accent: #3B6B8A;
+    --accent-light: #E8F0F5;
+    --surface: #F0EFEC;
+    --surface-alt: #E8E5E0;
+    --border: #D5D0CA;
+    --done: #2E7D4F;
+    --done-bg: #E6F4EC;
+    --partial: #9E7A1A;
+    --partial-bg: #FDF5E0;
+    --missing: #B83A3A;
+    --missing-bg: #FCEAEA;
+    --info: #3B6B8A;
+    --info-bg: #E8F0F5;
+    --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-body: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1A1917;
+      --fg: #E8E6E1;
+      --fg-muted: #9C9790;
+      --accent: #6AAED4;
+      --accent-light: #1E2E38;
+      --surface: #252320;
+      --surface-alt: #302D28;
+      --border: #3D3A35;
+      --done: #4CAF75;
+      --done-bg: #1A2E22;
+      --partial: #DAA520;
+      --partial-bg: #2E2810;
+      --missing: #E05555;
+      --missing-bg: #2E1A1A;
+      --info: #6AAED4;
+      --info-bg: #1E2E38;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1A1917;
+    --fg: #E8E6E1;
+    --fg-muted: #9C9790;
+    --accent: #6AAED4;
+    --accent-light: #1E2E38;
+    --surface: #252320;
+    --surface-alt: #302D28;
+    --border: #3D3A35;
+    --done: #4CAF75;
+    --done-bg: #1A2E22;
+    --partial: #DAA520;
+    --partial-bg: #2E2810;
+    --missing: #E05555;
+    --missing-bg: #2E1A1A;
+    --info: #6AAED4;
+    --info-bg: #1E2E38;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.65;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; line-height: 1.25; text-wrap: balance; }
+  h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+  h2 { font-size: 1.5rem; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 1.15rem; margin: 1.8rem 0 0.6rem; }
+  h4 { font-size: 1rem; margin: 1.2rem 0 0.4rem; color: var(--fg-muted); font-weight: 600; }
+
+  .subtitle { color: var(--fg-muted); font-size: 1.05rem; margin-bottom: 2rem; }
+  .date { color: var(--fg-muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.15em 0.55em;
+    border-radius: 4px;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .badge-done { background: var(--done-bg); color: var(--done); }
+  .badge-partial { background: var(--partial-bg); color: var(--partial); }
+  .badge-missing { background: var(--missing-bg); color: var(--missing); }
+  .badge-info { background: var(--info-bg); color: var(--info); }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 1.5rem 0;
+  }
+  .stat-card {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-number {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--fg-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-done .stat-number { color: var(--done); }
+  .stat-partial .stat-number { color: var(--partial); }
+  .stat-missing .stat-number { color: var(--missing); }
+
+  /* Module table */
+  .module-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  .module-table th { text-align: left; font-weight: 600; padding: 8px 10px; border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-muted); }
+  .module-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .module-table tr:last-child td { border-bottom: none; }
+
+  .module-table .overflow-wrap { overflow-x: auto; }
+
+  /* Loophole cards */
+  .loophole {
+    background: var(--surface);
+    border-left: 3px solid var(--partial);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .loophole.critical { border-left-color: var(--missing); }
+  .loophole.info { border-left-color: var(--info); }
+  .loophole strong { display: block; margin-bottom: 2px; }
+  .loophole p { margin: 0; color: var(--fg-muted); font-size: 0.9rem; }
+
+  /* Q&A */
+  .qa { margin: 1rem 0; }
+  .qa-q { font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .qa-a { margin: 0 0 1rem; padding-left: 1rem; border-left: 2px solid var(--accent-light); }
+
+  /* Roadmap tiers */
+  .tier { margin: 1.2rem 0; }
+  .tier-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .tier-label { font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+  .tier-items { list-style: none; padding: 0; margin: 0; }
+  .tier-items li {
+    padding: 6px 0 6px 20px;
+    position: relative;
+    font-size: 0.9rem;
+  }
+  .tier-items li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 13px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--fg-muted);
+  }
+
+  /* Section anchors */
+  .toc { list-style: none; padding: 0; margin: 1rem 0; columns: 2; column-gap: 2rem; }
+  .toc li { padding: 3px 0; font-size: 0.9rem; break-inside: avoid; }
+  .toc a { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Details / collapsible */
+  details { margin: 6px 0; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; padding: 4px 0; }
+  details summary:hover { color: var(--accent); }
+  details[open] summary { margin-bottom: 6px; }
+
+  /* Relationship diagram */
+  .diagram-wrap { overflow-x: auto; margin: 1rem 0; }
+  .dep-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .dep-table th, .dep-table td { padding: 5px 8px; text-align: center; border: 1px solid var(--border); }
+  .dep-table th { background: var(--surface); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .dep-table .dot { color: var(--accent); font-weight: 700; }
+  .dep-table .self { background: var(--surface-alt); }
+
+  a { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.25rem; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .toc { columns: 1; }
+    .module-table { font-size: 0.8rem; }
+    .module-table th, .module-table td { padding: 6px 6px; }
+  }
+</style>
+
+<p class="date">7 October 2026</p>
+<h1>Bhendi Bazaar: Platform Audit</h1>
+<p class="subtitle">A full sweep of buyer, seller, and admin surfaces. What works, what's broken, what's missing, and what order to tackle it in.</p>
+
+<nav>
+  <ol class="toc">
+    <li><a href="#overview">Status overview</a></li>
+    <li><a href="#modules">Module map</a></li>
+    <li><a href="#buyer">Buyer surface</a></li>
+    <li><a href="#seller">Seller surface</a></li>
+    <li><a href="#admin">Admin surface</a></li>
+    <li><a href="#questions">Your questions answered</a></li>
+    <li><a href="#loopholes">Loopholes found</a></li>
+    <li><a href="#docs">Documentation gaps</a></li>
+    <li><a href="#listing">Listing phase status</a></li>
+    <li><a href="#newfeatures">New features assessment</a></li>
+    <li><a href="#roadmap">Recommended order</a></li>
+  </ol>
+</nav>
+
+<!-- ───────────────────── OVERVIEW ───────────────────── -->
+<h2 id="overview">Status Overview</h2>
+
+<p>44 database models, 97 API routes, 64 pages, 15 server domains. The foundations are production-grade. The gaps are in the last-mile UX and the marketplace integration layer.</p>
+
+<div class="stats-row">
+  <div class="stat-card stat-done"><div class="stat-number">31</div><div class="stat-label">Modules solid</div></div>
+  <div class="stat-card stat-partial"><div class="stat-number">14</div><div class="stat-label">Need work</div></div>
+  <div class="stat-card stat-missing"><div class="stat-number">8</div><div class="stat-label">Not built</div></div>
+  <div class="stat-card"><div class="stat-number">15</div><div class="stat-label">Domains</div></div>
+</div>
+
+<!-- ───────────────────── MODULE MAP ───────────────────── -->
+<h2 id="modules">Module Map</h2>
+
+<h3>Buyer Modules</h3>
+<div style="overflow-x:auto">
+<table class="module-table">
+  <tr><th>Module</th><th>Status</th><th>Key gap</th></tr>
+  <tr><td>Browse &amp; discovery (home, categories, product detail)</td><td><span class="badge badge-done">Done</span></td><td>Search is basic LIKE query, no filters on results</td></tr>
+  <tr><td>Cart</td><td><span class="badge badge-done">Done</span></td><td>Checkout button violates "never disable" rule</td></tr>
+  <tr><td>Checkout &amp; payment</td><td><span class="badge badge-done">Done</span></td><td>Only Razorpay; no COD (by design)</td></tr>
+  <tr><td>Orders</td><td><span class="badge badge-partial">Partial</span></td><td>No tracking shown, no fulfilment status, no cancellation, no returns</td></tr>
+  <tr><td>Profile &amp; identity</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Wishlist</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Auctions / bidding</td><td><span class="badge badge-done">Done</span></td><td>No dedicated auction listing page (only per-product)</td></tr>
+  <tr><td>Reviews</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Coupons</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Sharing</td><td><span class="badge badge-done">Done</span></td><td>Instagram falls back to copy with browser alert (minor)</td></tr>
+  <tr><td>Email notifications</td><td><span class="badge badge-done">Done</span></td><td>None (6 templates via Resend)</td></tr>
+  <tr><td>Contact (email &amp; WhatsApp)</td><td><span class="badge badge-done">Done</span></td><td>No contact history persisted</td></tr>
+  <tr><td>Toast close button</td><td><span class="badge badge-missing">Missing</span></td><td><code>closeButton</code> prop not set on Toaster</td></tr>
+  <tr><td>Bill download</td><td><span class="badge badge-partial">Partial</span></td><td>Browser print only, no generated PDF/invoice with GST</td></tr>
+  <tr><td>Auctions listing page</td><td><span class="badge badge-missing">Missing</span></td><td>No page showing all ongoing/upcoming auctions</td></tr>
+</table>
+</div>
+
+<h3>Seller / Org Modules</h3>
+<div style="overflow-x:auto">
+<table class="module-table">
+  <tr><th>Module</th><th>Status</th><th>Key gap</th></tr>
+  <tr><td>Org creation</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Org profile &amp; branding</td><td><span class="badge badge-done">Done</span></td><td>Only 3 accent options; no custom hex</td></tr>
+  <tr><td>Storefront (9 sections)</td><td><span class="badge badge-done">Done</span></td><td>None (well designed, hide/show works)</td></tr>
+  <tr><td>Promotional banners</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Product list &amp; metrics</td><td><span class="badge badge-done">Done</span></td><td>None (filters, stats, badges all present)</td></tr>
+  <tr><td>Product form</td><td><span class="badge badge-done">Done</span></td><td>Dynamic facts from product type are working; photo suggestions not built</td></tr>
+  <tr><td>Product families</td><td><span class="badge badge-partial">Partial</span></td><td>No standalone management page; create/edit only from product form</td></tr>
+  <tr><td>Product flags</td><td><span class="badge badge-partial">Partial</span></td><td>All 5 flags are manual; ON_OFFER and NEW_ARRIVAL should be derived</td></tr>
+  <tr><td>Product copy</td><td><span class="badge badge-done">Done</span></td><td>Copies limited fields (no media, stock, price)</td></tr>
+  <tr><td>Stock &amp; locations</td><td><span class="badge badge-done">Done</span></td><td>None (conditional writes, per-location, delete protection)</td></tr>
+  <tr><td>"What you sell" (brands, defaults, tax)</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Channel readiness</td><td><span class="badge badge-done">Done</span></td><td>Readiness tracking works; no actual platform integration</td></tr>
+  <tr><td>Media library</td><td><span class="badge badge-done">Done</span></td><td>Enhancement feature is secondary</td></tr>
+  <tr><td>Orders (seller view)</td><td><span class="badge badge-partial">Partial</span></td><td>Read-only; seller can't update fulfilment; no search/filter</td></tr>
+  <tr><td>Offers / promotions</td><td><span class="badge badge-done">Done</span></td><td>Well built, clash handling solid</td></tr>
+  <tr><td>Bidding</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Earnings / payouts</td><td><span class="badge badge-done">Done</span></td><td>Read-only for seller (by design)</td></tr>
+  <tr><td>Reviews (seller view)</td><td><span class="badge badge-partial">Partial</span></td><td>Read-only; seller can't respond to reviews</td></tr>
+  <tr><td>Seller subscription / gating</td><td><span class="badge badge-missing">Missing</span></td><td>Zero infrastructure; no plans, billing, or feature gates</td></tr>
+</table>
+</div>
+
+<h3>Admin Modules</h3>
+<div style="overflow-x:auto">
+<table class="module-table">
+  <tr><th>Module</th><th>Status</th><th>Key gap</th></tr>
+  <tr><td>Dashboard</td><td><span class="badge badge-partial">Partial</span></td><td>Top products placeholder; revenue chart dead code; no auto-refresh</td></tr>
+  <tr><td>Orders management</td><td><span class="badge badge-done">Done</span></td><td>Manual tracking entry; no delivery scheduling</td></tr>
+  <tr><td>Products (platform view)</td><td><span class="badge badge-partial">Partial</span></td><td>Read-only; admin can't archive violating products</td></tr>
+  <tr><td>Categories</td><td><span class="badge badge-done">Done</span></td><td>None (full CRUD + bulk + hierarchy)</td></tr>
+  <tr><td>Channels (mapping dictionary)</td><td><span class="badge badge-done">Done</span></td><td>None (well designed)</td></tr>
+  <tr><td>Banners</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Promotions / offers</td><td><span class="badge badge-done">Done</span></td><td>None (clash handling, cost allocation solid)</td></tr>
+  <tr><td>Bidding monitoring</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Payouts / settlements</td><td><span class="badge badge-done">Done</span></td><td>None (comprehensive)</td></tr>
+  <tr><td>Enhancements management</td><td><span class="badge badge-done">Done</span></td><td>None</td></tr>
+  <tr><td>Users</td><td><span class="badge badge-partial">Partial</span></td><td>No detail page; list is not clickable; no user profile/history view</td></tr>
+  <tr><td>Organizations</td><td><span class="badge badge-partial">Partial</span></td><td>Modal-only, no detail page; delete may violate ADR-0020/0032</td></tr>
+  <tr><td>Reviews moderation</td><td><span class="badge badge-done">Done</span></td><td>None (withdraw/restore, 3-state model)</td></tr>
+  <tr><td>Abandoned carts</td><td><span class="badge badge-partial">Partial</span></td><td>Read-only; no automated recovery/reminder flow</td></tr>
+  <tr><td>Shipping</td><td><span class="badge badge-partial">Partial</span></td><td>Provider registry only; no API booking, no label gen, no auto-scheduling</td></tr>
+  <tr><td>Product types</td><td><span class="badge badge-done">Done</span></td><td>Full CRUD works but not in sidebar nav (direct URL only)</td></tr>
+  <tr><td>Media management</td><td><span class="badge badge-done">Done</span></td><td>Not in sidebar nav (direct URL only)</td></tr>
+</table>
+</div>
+
+<h3>Infrastructure</h3>
+<div style="overflow-x:auto">
+<table class="module-table">
+  <tr><th>Service</th><th>Status</th><th>Notes</th></tr>
+  <tr><td>Authentication (NextAuth)</td><td><span class="badge badge-done">Done</span></td><td>Credentials + OAuth, guest purchase supported</td></tr>
+  <tr><td>Razorpay (payments)</td><td><span class="badge badge-done">Done</span></td><td>Full: order, verify, webhook, reconciliation job</td></tr>
+  <tr><td>Cloudflare R2 (storage)</td><td><span class="badge badge-done">Done</span></td><td>Presigned uploads, public reads, single seam</td></tr>
+  <tr><td>Resend (email)</td><td><span class="badge badge-done">Done</span></td><td>6 templates</td></tr>
+  <tr><td>Shiprocket (shipping)</td><td><span class="badge badge-partial">Partial</span></td><td>Rate quoting + webhook + status normalization; no booking API</td></tr>
+  <tr><td>fal.run / Cloudflare Zone (AI images)</td><td><span class="badge badge-done">Done</span></td><td>Background removal, scene generation, 7 tools</td></tr>
+  <tr><td>ffmpeg (video transcoding)</td><td><span class="badge badge-done">Done</span></td><td>Renditions, poster frame, hosted</td></tr>
+  <tr><td>pg-boss (job queue)</td><td><span class="badge badge-done">Done</span></td><td>5 jobs, heartbeat, admin UI</td></tr>
+  <tr><td>Stripe (future payment)</td><td><span class="badge badge-missing">Missing</span></td><td>Type declared but no implementation</td></tr>
+  <tr><td>Subscription billing</td><td><span class="badge badge-missing">Missing</span></td><td>Zero models, zero code</td></tr>
+  <tr><td>Marketplace APIs (Amazon/Flipkart)</td><td><span class="badge badge-missing">Missing</span></td><td>Readiness tracking exists; no connectors</td></tr>
+  <tr><td>Shopping feeds (Google/Meta)</td><td><span class="badge badge-missing">Missing</span></td><td>No feed generation</td></tr>
+</table>
+</div>
+
+<h3>Module Dependencies</h3>
+<p>How the domains call each other (each arrow = "uses the public surface of"):</p>
+<pre class="mermaid">
+graph LR
+  checkout --> catalog
+  checkout --> payments
+  checkout --> shipping
+  checkout --> promotions
+  checkout --> cart
+  checkout --> notifications
+  checkout --> identity
+  payments --> checkout
+  payouts --> checkout
+  payouts --> promotions
+  bidding --> catalog
+  content --> catalog
+  listing --> catalog
+  analytics --> checkout
+  analytics --> catalog
+  analytics --> identity
+  wishlist --> catalog
+  cart --> catalog
+</pre>
+<p style="font-size:0.85rem;color:var(--fg-muted)">One known violation: payments writes directly to checkout's order repository (the paid transition). Fix: checkout should expose a <code>confirmPaid</code> command.</p>
+
+<!-- ───────────────────── BUYER ───────────────────── -->
+<h2 id="buyer">Buyer Surface</h2>
+
+<h3>What's solid</h3>
+<p>The core purchase flow works end-to-end: browse, search, add to cart (guest or signed in), checkout with address + shipping + coupon, pay via Razorpay, receive confirmation email, view order. Wishlist, reviews with photos, bidding with live countdown, share dialog, contact via email/WhatsApp &mdash; all complete.</p>
+
+<h3>What needs fixing</h3>
+
+<div class="loophole critical">
+  <strong>Orders page shows no tracking or fulfilment status</strong>
+  <p>Tracking fields (AWB, courier, tracking URL, estimated delivery) exist in the database and admin enters them, but the buyer order detail page doesn't display them. Buyer also can't see whether their order is processing, packed, shipped, or delivered.</p>
+</div>
+
+<div class="loophole critical">
+  <strong>No order cancellation or return/refund flow</strong>
+  <p>REFUNDED status exists but nothing exposes a cancellation or return request to buyers.</p>
+</div>
+
+<div class="loophole">
+  <strong>No auction listing page</strong>
+  <p>Buyers can bid on <code>/bid/[slug]</code> but there's no page showing all ongoing and upcoming auctions.</p>
+</div>
+
+<div class="loophole">
+  <strong>Toast has no close button</strong>
+  <p>One-line fix: add <code>closeButton</code> to the <code>&lt;Toaster&gt;</code> in <code>providers.tsx</code>.</p>
+</div>
+
+<div class="loophole">
+  <strong>Bill download is browser print, not a real invoice</strong>
+  <p>No generated PDF, no GST/tax breakdown, no invoice number.</p>
+</div>
+
+<div class="loophole info">
+  <strong>Search has no filters and no full-text search</strong>
+  <p>Just a Prisma <code>contains</code> (LIKE) on product name. No category filter, no price range, no sort on search results.</p>
+</div>
+
+<!-- ───────────────────── SELLER ───────────────────── -->
+<h2 id="seller">Seller Surface</h2>
+
+<h3>What's solid</h3>
+<p>Org creation, product CRUD (with dynamic facts from product type), stock per location, offers with date/usage/conditional controls, bidding, earnings ledger, media library with AI enhancement, storefront editor with 9 sections and hide controls, promotional banners. The product form is <em>not</em> the "old" one &mdash; it has category-driven facts, measurements, family assignment, and the full pricing/gallery/inventory stack.</p>
+
+<h3>What needs fixing</h3>
+
+<div class="loophole critical">
+  <strong>Org profile is confusing to complete</strong>
+  <p>The standing panel (your second screenshot) shows 5 sections as "Waiting" but the labels are unclear about what exactly is needed. "Waiting on at least one block, with a heading and a line under it" for "How you work" is jargon. The storefront editor could guide the seller step by step instead of dumping all fields at once.</p>
+</div>
+
+<div class="loophole">
+  <strong>Product families have no standalone management page</strong>
+  <p>A family can only be created from inside the product form. No way to edit a family's shared facts, measurements, or description after creation without editing a member product.</p>
+</div>
+
+<div class="loophole">
+  <strong>Product flags are all manual</strong>
+  <p>ON_OFFER should be derived from active promotions. NEW_ARRIVAL should be derived from creation date. Only FEATURED and HERO make sense as manual flags. CLEARANCE_SALE should pair with an offer.</p>
+</div>
+
+<div class="loophole">
+  <strong>Seller orders are read-only with no search</strong>
+  <p>Seller can't update fulfilment status (processing &rarr; packed &rarr; shipped), can't search orders, can't filter by status or date.</p>
+</div>
+
+<div class="loophole">
+  <strong>Seller can't respond to reviews</strong>
+  <p>Reviews are read-only. No seller-reply mechanism.</p>
+</div>
+
+<div class="loophole info">
+  <strong>No feature gating for free vs paid sellers</strong>
+  <p>You want the storefront locked for free sellers, plus limits on channels, image enhancer, social posting. There's zero subscription infrastructure to gate anything.</p>
+</div>
+
+<!-- ───────────────────── ADMIN ───────────────────── -->
+<h2 id="admin">Admin Surface</h2>
+
+<h3>What's solid</h3>
+<p>Categories (CRUD + bulk + hierarchy), banners, promotions with clash handling, bidding monitoring with outcome recording, payouts with commission/settlement, reviews moderation (3-state), enhancements management with per-org controls, channel mapping dictionary. All server-rendered with URL-driven filters.</p>
+
+<h3>What needs fixing</h3>
+
+<div class="loophole critical">
+  <strong>Users page is a dead end</strong>
+  <p>List exists but rows aren't clickable. No user detail page &mdash; no profile view, order history, activity log, or address list for any user.</p>
+</div>
+
+<div class="loophole critical">
+  <strong>Organizations page is modal-only and shallow</strong>
+  <p>Oldest-style admin page. No detail page, no org stats, no product/order/member view from admin side. Delete exists (may violate ADR-0020/0032). Still a <code>"use client"</code> component.</p>
+</div>
+
+<div class="loophole">
+  <strong>Dashboard has placeholder data</strong>
+  <p><code>getTopProducts</code> returns featured products with <code>salesCount: 0</code>. Revenue chart code exists but is never rendered. No auto-refresh.</p>
+</div>
+
+<div class="loophole">
+  <strong>Admin can't archive policy-violating products</strong>
+  <p>Products tab is read-only for admin. Archiving is org-only.</p>
+</div>
+
+<div class="loophole">
+  <strong>Product Types and Media not in sidebar</strong>
+  <p>Both exist and work but aren't in the sidebar nav &mdash; reachable only by direct URL.</p>
+</div>
+
+<div class="loophole">
+  <strong>Shipping is manual end-to-end</strong>
+  <p>Admin creates shipment on Shiprocket website, then manually enters tracking details. No API booking, no auto-scheduling, no label generation, no pickup scheduling.</p>
+</div>
+
+<div class="loophole info">
+  <strong>Abandoned carts are view-only</strong>
+  <p>No automated recovery emails or follow-up workflow.</p>
+</div>
+
+<!-- ───────────────────── QUESTIONS ───────────────────── -->
+<h2 id="questions">Your Questions Answered</h2>
+
+<div class="qa">
+  <div class="qa-q">How do we decide "best selling products" on the storefront?</div>
+  <div class="qa-a">Currently we don't. <code>getTopProducts</code> is a placeholder &mdash; it returns featured products with <code>salesCount: 0, revenue: 0</code>. The comment in the code admits "Would need to calculate from orders." To make it real: query <code>OrderItem</code> grouped by productId, sum quantities, filter by org and time window. Stars don't factor in &mdash; best selling means most purchased.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">What does the accent color actually do?</div>
+  <div class="qa-a">It works. <code>StorefrontTheme</code> wraps the storefront in <code>data-accent="..."</code> and CSS remaps <code>--primary</code> and <code>--ring</code> tokens. It colors the identity bar, buttons, and focus rings <strong>inside the storefront only</strong> &mdash; navbar/footer stay platform-colored. The limitation: only 3 non-default choices (success=green, warning=amber, info=blue). "primary" is the default, not a distinct pick. If you want the accent to also affect background lighting or fonts, that's new work.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Where do we put family details? There's no form for it.</div>
+  <div class="qa-a">Correct. A family can be created inline from the product form (just a name + description), but there's <strong>no standalone family management page</strong> to edit shared facts, measurements, or variant axes after creation. The data model supports it (<code>ProductFamily</code> has facts, measurements, variantAxis fields), but there's no UI to manage them independently.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Do we need connections to Google and Meta to sell there, or does listing on BB auto-enlist?</div>
+  <div class="qa-a"><strong>It does not auto-enlist.</strong> Google Shopping and Meta are "shopfront" channels &mdash; they work by fetching a <strong>feed file</strong> (XML/CSV) from your site. You generate the feed, submit the URL to Google Merchant Center / Meta Commerce Manager, and they index it. This is different from Amazon/Flipkart which need direct API integration. So: you need to <strong>build feed generation</strong> (the <code>shopfront-feeds</code> spec in the backlog), but not a real-time API connector. The channel readiness system already tells you if products are ready for each platform.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Product flags &mdash; are any derived?</div>
+  <div class="qa-a"><strong>All 5 are manual.</strong> ON_OFFER should auto-set when a promotion covers the product. NEW_ARRIVAL should auto-set based on creation date (e.g. last 30 days). CLEARANCE_SALE should pair with a deep-discount offer. Only FEATURED and HERO make sense as manual seller-chosen flags.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">Channels tab &mdash; what does it do?</div>
+  <div class="qa-a">It's the <strong>channel-mapping dictionary</strong>. When you eventually publish to Amazon, you need to translate "our product type = Abaya" into "Amazon category = Ethnic Wear > Abayas", and "our fact key = material" into "Amazon attribute = material_type". The channels tab is where admin builds this translation dictionary. It also shows what's still unmapped. It's pre-publishing infrastructure, not a live integration.</div>
+</div>
+
+<div class="qa">
+  <div class="qa-q">How incomplete is the listing phase (phase 11)?</div>
+  <div class="qa-a">The <strong>foundations are done</strong> (60% by spec count): product types, facts vocabulary, families, channel mappings, readiness engine, channel register &mdash; all implemented and working. What remains is the <strong>integration layer</strong>: feed generation, marketplace connectors, publishing, inventory sync, channel reporting, Instagram posting. These 6 items have no specs yet. The phase is "dictionary complete, no one speaks the language yet."</div>
+</div>
+
+<!-- ───────────────────── LOOPHOLES ───────────────────── -->
+<h2 id="loopholes">Loopholes Found</h2>
+
+<h3>Security &amp; data integrity</h3>
+
+<div class="loophole critical">
+  <strong>Admin org delete may violate ADR-0020 and ADR-0032</strong>
+  <p>DELETE route exists for orgs. Money-bearing records (orders, ledger entries) reference the org. Deletion should be refused; the operation is deactivation. Uses <code>confirm()</code> browser dialog instead of a proper confirmation.</p>
+</div>
+
+<div class="loophole">
+  <strong>Console.log debug statements left in cartStore.ts</strong>
+  <p>Lines 121-134 have debug logs that ship to production.</p>
+</div>
+
+<div class="loophole">
+  <strong>Dead CartService interface in src/domain/cart.ts</strong>
+  <p>Unreachable code.</p>
+</div>
+
+<h3>UX violations of project rules</h3>
+
+<div class="loophole">
+  <strong>Checkout button disabled when cart is empty (ADR-0053)</strong>
+  <p>"Never disable a button" &mdash; it should stay enabled and explain why checkout can't proceed.</p>
+</div>
+
+<div class="loophole">
+  <strong>Location delete button disabled instead of explaining (ADR-0053)</strong>
+  <p>Uses disabled button + title tooltip when a location has stock. Should keep the button enabled and show a message on click.</p>
+</div>
+
+<h3>Missing enforcement</h3>
+
+<div class="loophole">
+  <strong>payments &rarr; checkout cross-domain violation</strong>
+  <p>Payments writes directly to checkout's order repository. Allowlisted in the boundary test but needs checkout to expose a <code>confirmPaid</code> command.</p>
+</div>
+
+<div class="loophole">
+  <strong>Product.weight has a leftover "// ADD THIS:" comment in schema</strong>
+  <p>Task artifact in production schema.</p>
+</div>
+
+<!-- ───────────────────── DOCS ───────────────────── -->
+<h2 id="docs">Documentation Gaps</h2>
+
+<div style="overflow-x:auto">
+<table class="module-table">
+  <tr><th>What</th><th>Problem</th></tr>
+  <tr><td><code>docs/README.md</code></td><td><code>listing</code> domain is absent from both the domain table and "remaining domains" paragraph</td></tr>
+  <tr><td><code>docs/ARCHITECTURE.md</code></td><td>Enumerates 14 domains but omits <code>listing</code></td></tr>
+  <tr><td>8 spec/TRD files (listing-vocabulary, channel-registry)</td><td>All say <code>Domain: catalog</code> instead of <code>Domain: listing</code> (extraction happened in PR-283)</td></tr>
+  <tr><td><code>server/listing/</code></td><td>No <code>CLAUDE.md</code> despite being a fully built domain with 23 files</td></tr>
+  <tr><td><code>docs/BACKLOG.md</code></td><td>Verified 2026-09-29, before the listing extraction (PR-283 was 2026-10-05)</td></tr>
+  <tr><td>No ADR contradictions found</td><td>The amendment/supersession chain is clean across all 60 ADRs</td></tr>
+</table>
+</div>
+
+<!-- ───────────────────── LISTING PHASE ───────────────────── -->
+<h2 id="listing">Listing Phase Status</h2>
+
+<h3>Done (foundations)</h3>
+<div style="overflow-x:auto">
+<table class="module-table">
+  <tr><th>Spec</th><th>What it built</th></tr>
+  <tr><td>worker-foundation</td><td>pg-boss job queue, 5 registered jobs</td></tr>
+  <tr><td>seller-profile + brand-page</td><td>Org profile, 9-section brand page, hide controls</td></tr>
+  <tr><td>media-library + renditions + video</td><td>Full media pipeline, crop, poster, transcode</td></tr>
+  <tr><td>image-enhancement</td><td>AI tools, per-org policy, pixel identity verification</td></tr>
+  <tr><td>listing-vocabulary (+ 4 sub-specs)</td><td>27 facts, product types, families, fill system, corrections</td></tr>
+  <tr><td>channel-registry</td><td>3 mapping tables, readiness engine, register view</td></tr>
+  <tr><td>product-form + bulk-sheet</td><td>Dynamic form from type, bulk CSV upload</td></tr>
+</table>
+</div>
+
+<h3>Not started (integration layer)</h3>
+<div style="overflow-x:auto">
+<table class="module-table">
+  <tr><th>Spec</th><th>What it needs</th><th>Dependency</th></tr>
+  <tr><td>shopfront-feeds</td><td>Google Shopping / Meta catalogue XML/CSV generation</td><td>Channel readiness (done)</td></tr>
+  <tr><td>channel-connectors</td><td>Per-seller auth, encrypted credentials for marketplace APIs</td><td>Subscription gating</td></tr>
+  <tr><td>marketplace-publish</td><td>Push listings to Amazon/Flipkart/Meesho</td><td>channel-connectors</td></tr>
+  <tr><td>inventory-sync</td><td>Ingest marketplace orders, reconcile stock across channels</td><td>marketplace-publish</td></tr>
+  <tr><td>channel-reporting</td><td>Consolidated what-sold-where figures</td><td>inventory-sync</td></tr>
+  <tr><td>instagram-post</td><td>Post draft generation from product data</td><td>Media library (done)</td></tr>
+  <tr><td>subscriptions</td><td>Plans, billing, feature gates</td><td>Stripe integration</td></tr>
+</table>
+</div>
+
+<!-- ───────────────────── NEW FEATURES ───────────────────── -->
+<h2 id="newfeatures">New Features Assessment</h2>
+
+<h3>Subscription tiers (1, 3, 6, 12 months)</h3>
+<div class="loophole info">
+  <strong>Build from scratch</strong>
+  <p>Zero infrastructure exists. Needs: Plan/Subscription/Invoice models, Stripe integration (type declared, nothing built), recurring billing, metering, feature-gate middleware, upgrade/downgrade/cancel flows, grace period handling. This is the <strong>biggest new feature</strong> and should come first because everything else (channel connectors, social posting, enhancement quotas) gates on it.</p>
+</div>
+
+<h3>Auto delivery scheduling</h3>
+<div class="loophole info">
+  <strong>Extend existing shipping domain</strong>
+  <p>Shiprocket integration exists for rates + tracking. The stub <code>mock.booking.ts</code> is ready for real booking. Needs: API-based shipment creation (Shiprocket has the API), auto-trigger on order confirmation, pickup scheduling, label generation. The provider interface is already designed for this.</p>
+</div>
+
+<h3>Flipkart &amp; Amazon integration</h3>
+<div class="loophole info">
+  <strong>Large project with external dependencies</strong>
+  <p>Needs: OAuth/credential management per seller, API adapter per platform (SP-API for Amazon, Flipkart Seller API), listing push, order import, stock sync, return handling. Each platform is ~4-6 weeks of work. The readiness system and channel mappings are already built as the foundation.</p>
+</div>
+
+<h3>Google &amp; Meta integration</h3>
+<div class="loophole info">
+  <strong>Feed-based, simpler than marketplaces</strong>
+  <p>Generate a product feed file (Google: XML per Merchant Center spec, Meta: CSV per Commerce Manager spec). Host it at a public URL. Sellers register the URL with Google/Meta. No real-time API, no order import. ~1-2 weeks once the feed generator is built.</p>
+</div>
+
+<h3>Instagram posting</h3>
+<div class="loophole info">
+  <strong>Moderate &mdash; needs Meta Graph API</strong>
+  <p>Generate a post draft (image + caption from product data), publish via Instagram Graph API (requires Facebook Business account + long-lived token per seller). Gated behind subscription.</p>
+</div>
+
+<!-- ───────────────────── ROADMAP ───────────────────── -->
+<h2 id="roadmap">Recommended Order</h2>
+
+<p>Three tiers. Each tier's items are independent within the tier and can be parallelized.</p>
+
+<div class="tier">
+  <div class="tier-header">
+    <span class="badge badge-missing">Tier 1</span>
+    <span class="tier-label">Fix what's broken (before adding anything new)</span>
+  </div>
+  <ul class="tier-items">
+    <li><strong>Buyer orders:</strong> show tracking info + fulfilment status on order detail</li>
+    <li><strong>Toast close button:</strong> add <code>closeButton</code> prop (5-minute fix)</li>
+    <li><strong>Admin users page:</strong> make rows clickable, add user detail page with order history</li>
+    <li><strong>Admin orgs page:</strong> replace modal with detail page, remove delete route, add deactivate</li>
+    <li><strong>Admin dashboard:</strong> wire up top products from orders, render the revenue chart</li>
+    <li><strong>Admin products:</strong> add archive action for policy violations</li>
+    <li><strong>Admin sidebar:</strong> add Product Types and Media to nav</li>
+    <li><strong>Seller orders:</strong> add search/filter, allow seller to update fulfilment status (at least packed/shipped)</li>
+    <li><strong>Product flags:</strong> derive ON_OFFER and NEW_ARRIVAL; keep FEATURED and HERO as manual</li>
+    <li><strong>Disabled buttons:</strong> fix checkout button and location delete to follow ADR-0053</li>
+    <li><strong>Docs:</strong> add listing domain to README, ARCHITECTURE; fix spec headers; write <code>server/listing/CLAUDE.md</code></li>
+    <li><strong>Cleanup:</strong> remove console.logs in cartStore, dead CartService, schema comment</li>
+  </ul>
+</div>
+
+<div class="tier">
+  <div class="tier-header">
+    <span class="badge badge-partial">Tier 2</span>
+    <span class="tier-label">Complete the product (makes it a sellable platform)</span>
+  </div>
+  <ul class="tier-items">
+    <li><strong>Subscription &amp; billing:</strong> Stripe integration, plan models, feature gates &mdash; this unlocks everything below that needs gating</li>
+    <li><strong>Auto delivery scheduling:</strong> extend Shiprocket integration to API-based booking + pickup scheduling</li>
+    <li><strong>Auction listing page:</strong> a <code>/auctions</code> page showing all ongoing/upcoming events</li>
+    <li><strong>Product family management page:</strong> standalone CRUD for families outside the product form</li>
+    <li><strong>Buyer order cancellation:</strong> cancel flow + refund initiation</li>
+    <li><strong>Invoice generation:</strong> proper PDF with GST breakdown and invoice number</li>
+    <li><strong>Seller review replies:</strong> let sellers respond to reviews</li>
+    <li><strong>Search improvement:</strong> pg_trgm or full-text search, add filters (category, price, sort)</li>
+    <li><strong>Abandoned cart recovery:</strong> automated email sequence</li>
+    <li><strong>Org profile UX:</strong> guided setup wizard instead of a wall of fields</li>
+    <li><strong>Best selling products:</strong> compute from orders, show on storefront</li>
+    <li><strong>Accent color:</strong> either add more presets or allow custom hex</li>
+  </ul>
+</div>
+
+<div class="tier">
+  <div class="tier-header">
+    <span class="badge badge-done">Tier 3</span>
+    <span class="tier-label">Expand the platform (marketplace integrations)</span>
+  </div>
+  <ul class="tier-items">
+    <li><strong>Google Shopping + Meta feeds:</strong> generate XML/CSV feeds from product data + channel mappings</li>
+    <li><strong>Flipkart connector:</strong> OAuth, listing push, order import, stock sync</li>
+    <li><strong>Amazon connector:</strong> SP-API, listing push, order import, stock sync</li>
+    <li><strong>Instagram posting:</strong> draft generation + publish via Graph API</li>
+    <li><strong>Channel reporting:</strong> consolidated cross-channel sales view</li>
+    <li><strong>Inventory sync:</strong> real-time stock reconciliation across all channels</li>
+    <li><strong>Return/refund flow:</strong> buyer-initiated, with gateway refund</li>
+  </ul>
+</div>
+
+<p style="margin-top:2rem;color:var(--fg-muted);font-size:0.9rem"><strong>Summary:</strong> Tier 1 is fixing what exists &mdash; mostly UI gaps and admin pages that need detail views. Tier 2 is making the platform complete enough to charge for &mdash; subscription billing is the gate. Tier 3 is the marketplace expansion that makes the listing phase vocabulary pay off. Don't start Tier 3 until subscription billing is live, because every connector needs a subscription gate.</p>

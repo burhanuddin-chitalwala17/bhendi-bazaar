@@ -10,6 +10,118 @@
 
 ## Entries
 
+## 2026-10-08 — Org blocking: API guard and location confirm dialog (B-007 follow-up)
+
+- **API guard**: `resolveOrgScope` (`src/lib/org-auth.ts`) now checks `org.isBlocked`
+  before granting a scope. All `withOrg` route handlers and `requireOrgMember` server
+  components reject blocked orgs with "This organisation has been suspended".
+  `findMembership` joins the org row to carry `orgBlocked`.
+- **Location delete**: Replaced browser `confirm()` with a proper Dialog component
+  in `LocationsManager`.
+
+## 2026-10-08 — Tracker bug fixes: seller orders improvements (B-016)
+
+- **Search and filter**: Seller orders page now has a search bar (by order code)
+  and a status filter dropdown (confirmed/processing/packed/shipped/delivered).
+  Extended `adminOrderRepository.getOrdersForOrg` and `orgOrdersDAL.getOrders`
+  with `filters` parameter.
+- **Mark as Packed**: Seller order detail page shows a "Mark as Packed" button
+  when order status is `processing`. New API route
+  `PATCH /api/org/[orgId]/orders/[orderId]/transition` accepting `{ status: "packed" }`,
+  with org ownership verification through `adminOrderService.transitionForOrg`.
+- No "Mark as Shipped" — shipping is the delivery partner's responsibility.
+
+## 2026-10-08 — Tracker bug fixes: admin org detail page (B-013)
+
+- New page at `/admin/orgs/[orgId]` — read-only portal mirror with horizontal tabs.
+  Five tabs live (Dashboard, Products, Orders, Earnings, Reviews); six more
+  (Storefront, Listing, Library, Offers, Bidding, Locations) show "coming soon"
+  pending `readOnly` prop additions to their interactive components.
+- Org rows in the admin orgs table are now clickable (Link on the name column).
+- Added `AdminOrgTabs` component for horizontal tab navigation.
+- Added `OrgBlockToggle` client component for block/unblock on the detail page.
+- Added `getById` to `orgsDAL`.
+- Fixed pre-existing `product-family.test.ts` teardown FK constraint error.
+
+## 2026-10-08 — Tracker bug fixes: admin user detail page (B-012)
+
+- New page at `/admin/users/[userId]` — read-only detail view showing profile
+  (name, email, mobile, role, joined date), activity stats (orders, total spent,
+  last active), and a block/unblock action.
+- User rows in the admin users table are now clickable (Link on the name column).
+- Added `UserBlockToggle` client component and `getById` to `adminUsersDAL`.
+
+## 2026-10-08 — Tracker bug fixes: product flag derivation (B-015)
+
+- ON_OFFER and NEW_ARRIVAL are now computed, not stored. ON_OFFER is derived from
+  whether the product has an active sale price; NEW_ARRIVAL from `createdAt` (14 days).
+  FEATURED, HERO, CLEARANCE_SALE remain manual checkboxes.
+- Removed ON_OFFER and NEW_ARRIVAL from the product form (`ProductFlagsFields.tsx`);
+  only `MANUAL_FLAGS` are shown.
+- Added `isNewArrival()` helper and `MANUAL_FLAGS` constant to `src/types/product.ts`.
+- Product list table badges now derive ON_OFFER and NEW_ARRIVAL at display time.
+- Shrunk the shape-legacy allowlist by one entry (`ProductFlagsFields.tsx` → `rounded-card`).
+
+## 2026-10-08 — Tracker bug fixes: buyer order tracking display (B-009)
+
+- Added order status badge and tracking info to buyer order detail page
+  (`src/components/order/order-client.tsx`). Shows order fulfilment status
+  (confirmed/processing/packed/shipped/delivered), delivery address, and per-shipment
+  tracking cards with courier name, AWB number, tracking URL, and estimated delivery.
+  Data already flowed from DB through DAL — just was not rendered.
+
+## 2026-10-08 — Tracker bug fixes: org blocking replaces deletion (B-007) [MIGRATION] [CONTRACT]
+
+- Replaced hard-delete route with block/unblock. `DELETE /api/admin/orgs/[id]` removed;
+  `PATCH /api/admin/orgs/[id]` added accepting `{ action: "block" | "unblock" }`.
+  Aligns with ADR-0032 (records people authored are retired, never deleted) and
+  ADR-0020 (money-bearing records never cascade).
+- **Migration**: Added `isBlocked Boolean @default(false)` to Org model with index.
+- **Portal guard**: Org layout shows a suspended page when `isBlocked` is true.
+- **Buyer-facing**: `FROM_ACTIVE_ORG` visibility filter now excludes blocked orgs
+  (`server/catalog/product.visibility.ts`).
+- **UI**: Delete button → block/unblock toggle in admin orgs table. Browser `confirm()`
+  removed. Blocked badge shown in status column.
+- `src/domain/org.ts`: `Org` interface gains `isBlocked: boolean`.
+- `orgApiClient`: `deleteOrg` → `blockOrg` / `unblockOrg`.
+
+## 2026-10-07 — Tracker bug fixes: ADR-0053 compliance and error pulse (B-002, B-003, side-note)
+
+- **Button pulse**: Added `data-[error]` classes to Button (`src/components/ui/button.tsx`).
+  Any `<Button data-error>` now pulses with a destructive ring — global error signal.
+- **B-002**: Checkout button no longer disabled when cart is empty. Clicking shows an
+  inline message + pulse effect instead (ADR-0053).
+- **B-003**: Location delete button no longer disabled. Server `DomainError` reaches the
+  user as a toast via the existing mutation handler (ADR-0053).
+- **Side-note**: Product form error banner moved from top of form to directly above the
+  submit button, where it's visible on long forms.
+
+## 2026-10-07 — Tracker bug fixes: admin sidebar nav (B-014)
+
+- Added Product Types and Media to admin sidebar navigation
+  (`src/components/layout/AdminSidebar.tsx`). Both pages existed but were only
+  reachable by typing the URL directly.
+
+## 2026-10-07 — Tracker bug fixes: Instagram share (B-008)
+
+- Replaced browser `alert()` with a sonner toast in the Instagram share handler
+  (`src/components/shared/ShareDialog.tsx`). Also fixed the handler copying a
+  relative path instead of the resolved full URL.
+
+## 2026-10-07 — Tracker bug fixes: code cleanup (B-004, B-005, B-006, B-010, B-011)
+
+- **B-004**: Removed debug `console.log` statements and `setTimeout` debug wrapper from
+  `src/store/cartStore.ts`. Kept `console.warn` for corrupted-item detection.
+- **B-005**: Deleted dead `CartService` interface from `src/domain/cart.ts` (zero imports).
+  Not a contract change — the interface was never implemented or consumed.
+- **B-006**: Removed scaffolding comments (`ADD THIS`) from `prisma/schema.prisma`
+  and Prisma marketing boilerplate. Comment-only — no structural schema change, no migration.
+- **B-010/B-011**: Deleted dead `getTopProducts` and `getRevenueChart` functions from
+  `server/analytics/dashboard.service.ts`, `dashboard.repository.ts`, and their types
+  (`TopProduct`, `RevenueChart`) from `dashboard.types.ts` and `src/domain/admin.ts`.
+  Both returned placeholder/zero data and had zero callers. Not a contract change —
+  no route handler served these types and no client consumed them.
+
 ## [PR-286] 2026-10-06 — FormDialog, dead code, and the docs match the tree
 
 - **FormDialog** (`src/components/shared/overlays/form-dialog.tsx`): the fifth overlay surface

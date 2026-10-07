@@ -263,8 +263,18 @@ export class AdminOrderRepository {
    * shipments. The `include` filter is the scope — a cross-vendor basket's other parcels
    * never leave the database. Read-only; an org mutates its shipments, never the order.
    */
-  async getOrdersForOrg(orgId: string, page = 1, limit = 20) {
-    const where = { ...VISIBLE_ORDER_WHERE, shipments: { some: { orgId } } };
+  async getOrdersForOrg(
+    orgId: string,
+    page = 1,
+    limit = 20,
+    filters?: { search?: string; status?: string },
+  ) {
+    const where = {
+      ...VISIBLE_ORDER_WHERE,
+      shipments: { some: { orgId } },
+      ...(filters?.search ? { code: { contains: filters.search, mode: "insensitive" as const } } : {}),
+      ...(filters?.status ? { status: filters.status } : {}),
+    };
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,

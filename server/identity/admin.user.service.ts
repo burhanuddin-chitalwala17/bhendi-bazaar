@@ -81,6 +81,10 @@ export class AdminUserService {
     adminId: string,
     isBlocked: boolean
   ): Promise<AdminUser | null> {
+    if (isBlocked && id === adminId) {
+      throw new DomainError("You cannot block your own account");
+    }
+
     const user = await profileRepository.updateAdminFields(id, { isBlocked });
 
     if (user) {

@@ -21,10 +21,3 @@ export interface CartTotals {
   shipping: number;
   total: number;
 }
-
-// NEW: Service interface for client-side operations
-export interface CartService {
-  syncCart(localItems: CartItem[]): Promise<CartItem[]>;
-  updateCart(items: CartItem[]): Promise<void>;
-  clearCart(): Promise<void>;
-}

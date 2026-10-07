@@ -36,7 +36,11 @@ export const orgApiClient = {
     return apiRequest(`${BASE_URL}/${id}`, { method: "PUT", body: data });
   },
 
-  deleteOrg(id: string): Promise<void> {
-    return apiRequest(`${BASE_URL}/${id}`, { method: "DELETE" });
+  blockOrg(id: string): Promise<void> {
+    return apiRequest(`${BASE_URL}/${id}`, { method: "PATCH", body: { action: "block" } });
+  },
+
+  unblockOrg(id: string): Promise<void> {
+    return apiRequest(`${BASE_URL}/${id}`, { method: "PATCH", body: { action: "unblock" } });
   },
 };

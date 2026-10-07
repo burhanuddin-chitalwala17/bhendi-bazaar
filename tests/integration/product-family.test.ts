@@ -33,8 +33,16 @@ describe.skipIf(!isDisposableDb)("product families (local db)", () => {
   });
 
   afterAll(async () => {
-    await prisma.product.deleteMany({ where: { family: { orgId: { in: [orgA, orgB] } } } });
-    await prisma.productFamily.deleteMany({ where: { orgId: { in: [orgA, orgB] } } });
+    const testProducts = await prisma.product.findMany({
+      where: { family: { name: { startsWith: stamp } } },
+      select: { id: true },
+    });
+    const testProductIds = testProducts.map((p) => p.id);
+    if (testProductIds.length > 0) {
+      await prisma.orderItem.deleteMany({ where: { productId: { in: testProductIds } } });
+      await prisma.product.deleteMany({ where: { id: { in: testProductIds } } });
+    }
+    await prisma.productFamily.deleteMany({ where: { name: { startsWith: stamp } } });
     await prisma.org.deleteMany({ where: { id: orgB } });
   });
 

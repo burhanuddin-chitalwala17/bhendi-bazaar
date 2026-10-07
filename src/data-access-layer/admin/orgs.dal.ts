@@ -24,6 +24,7 @@ function toOrgWithStats(org: OrgRow): OrgWithStats {
     gstNumber: org.gstNumber ?? undefined,
     panNumber: org.panNumber ?? undefined,
     isActive: org.isActive,
+    isBlocked: org.isBlocked,
     isVerified: org.isVerified,
     description: org.profile?.description ?? undefined,
     logoUrl: org.profile?.logoUrl ?? undefined,
@@ -41,7 +42,12 @@ class OrgsDAL {
     return orgs.map(toOrgWithStats);
   });
 
-  /** One org's identity — for a page that names an org rather than listing them. */
+  getById = cache(async (id: string): Promise<OrgWithStats | null> => {
+    const org = await orgRepository.findById(id);
+    if (!org) return null;
+    return toOrgWithStats(org);
+  });
+
   getOrgSummary = cache(
     async (
       orgId: string

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
@@ -11,8 +12,14 @@ export function CartSummary() {
   const items = useCartStore((state) => state.items);
   const { subtotal, discount, total } = useCartStore((state) => state.totals);
   const hasItems = items.length > 0;
+  const [emptyError, setEmptyError] = useState(false);
 
   const handleCheckout = () => {
+    if (!hasItems) {
+      setEmptyError(true);
+      setTimeout(() => setEmptyError(false), 2000);
+      return;
+    }
     router.push("/checkout");
   };
 
@@ -48,12 +55,17 @@ export function CartSummary() {
         </Link>
       </Button>
       <Button
-        disabled={!hasItems}
+        data-error={emptyError || undefined}
         onClick={handleCheckout}
         className="mt-2 w-full rounded-full text-xs font-semibold uppercase tracking-eyebrow"
       >
         Proceed to checkout
       </Button>
+      {emptyError && (
+        <p className="text-xs text-destructive text-center">
+          Your cart is empty — add items before checking out
+        </p>
+      )}
     </aside>
   );
 }

@@ -1,16 +1,13 @@
 import { redirect } from "next/navigation";
+import { Ban } from "lucide-react";
 import { requireOrgMember } from "@/lib/org-auth";
 import { OrgSidebar } from "@/components/layout/OrgSidebar";
 import { isDomainError } from "@server/shared/domain-error";
 import { orgMemberRepository } from "@server/catalog/org.member.repository";
 import { requireSession } from "@/lib/admin-auth";
 import { PortalHeader } from "@/components/layout/PortalHeader";
+import { PageShell } from "@/components/shared/page-shell";
 
-/**
- * Everything beneath this path belongs to one org, so membership is established once
- * here rather than in each page. A page still scopes its own queries — the layout
- * proves who you are, not what a query may return.
- */
 export default async function OrgLayout({
   children,
   params,
@@ -23,21 +20,34 @@ export default async function OrgLayout({
   try {
     await requireOrgMember(orgId);
   } catch (error) {
-    // 401 means sign in and come back; 403 means this account will never have access,
-    // so sending it to a sign-in page would be a loop.
     if (isDomainError(error) && error.status === 401) {
       redirect(`/signin?callbackUrl=/org/${orgId}`);
     }
     redirect("/");
   }
 
-  // The switcher needs every org this person can act for, and the header needs who
-  // they are — both fetched here once, server-side, for everything beneath.
   const session = await requireSession();
   const orgs = await orgMemberRepository.listOrgsForUser(session.user.id);
-  // The header's Storefront link points at this org's own shop, not the marketplace
-  // root — the handle rides along on the switcher's list rather than a second query.
-  const handle = orgs.find((org) => org.id === orgId)?.handle;
+  const currentOrg = orgs.find((org) => org.id === orgId);
+  const handle = currentOrg?.handle;
+
+  if (currentOrg?.isBlocked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <PageShell width="narrow" className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+            <Ban className="h-8 w-8 text-destructive" />
+          </div>
+          <h1 className="text-2xl font-bold">Organisation Suspended</h1>
+          <p className="text-muted-foreground">
+            This organisation has been suspended by the platform. Your products
+            and storefront are not visible to customers. Contact support for
+            more information.
+          </p>
+        </PageShell>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">

@@ -41,15 +41,19 @@ export function LocationsManager({ orgId, locations }: LocationsManagerProps) {
     setIsOpen(true);
   };
 
+  const [confirmingDelete, setConfirmingDelete] = useState<OrgLocation | null>(null);
+
   const { mutate: removeLocation } = useMutation(
     (locationId: string) => orgLocationsApiClient.remove(orgId, locationId),
     { successMessage: "Location deleted", onSuccess: () => router.refresh() },
   );
 
-  const remove = (location: OrgLocation) => {
-    if (!confirm(`Delete "${location.name}"?`)) return;
-    // `useMutation` toasts the failure and rethrows; catching keeps it from going unhandled.
-    void removeLocation(location.id).catch(() => {});
+  const remove = (location: OrgLocation) => setConfirmingDelete(location);
+
+  const confirmRemove = () => {
+    if (!confirmingDelete) return;
+    void removeLocation(confirmingDelete.id).catch(() => {});
+    setConfirmingDelete(null);
   };
 
   return (
@@ -122,17 +126,6 @@ export function LocationsManager({ orgId, locations }: LocationsManagerProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => remove(location)}
-                      disabled={
-                        location.stockedProducts > 0 ||
-                        location.shipmentCount > 0
-                      }
-                      title={
-                        location.stockedProducts > 0
-                          ? "Holds stock — move or zero it first"
-                          : location.shipmentCount > 0
-                            ? "Parcels shipped from here — deactivate instead"
-                            : undefined
-                      }
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -161,6 +154,26 @@ export function LocationsManager({ orgId, locations }: LocationsManagerProps) {
             }}
             onCancel={() => setIsOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={!!confirmingDelete} onOpenChange={() => setConfirmingDelete(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete location</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete &ldquo;{confirmingDelete?.name}&rdquo;?
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setConfirmingDelete(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" size="sm" onClick={confirmRemove}>
+              Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

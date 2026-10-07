@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { useShare } from "@/hooks/core/useShare";
 import { SOCIAL_BRAND } from "@/lib/social-brand";
 import {
@@ -111,11 +112,8 @@ export function ShareDialog({
   };
 
   const handleInstagram = () => {
-    // Instagram doesn't have direct web sharing, so we copy and inform user
-    copyToClipboard(url);
-    alert(
-      "Link copied! Instagram doesn't support direct web sharing. Please paste the link in your Instagram post or story.",
-    );
+    copyToClipboard(shareUrl);
+    toast("Link copied — paste it in your Instagram post or story");
     setOpen(false);
   };
 

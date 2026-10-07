@@ -1,7 +1,3 @@
-/**
- * Product Flag Enum
- * Used to mark products with special characteristics
- */
 export enum ProductFlag {
   FEATURED = "FEATURED",
   HERO = "HERO",
@@ -10,13 +6,25 @@ export enum ProductFlag {
   CLEARANCE_SALE = "CLEARANCE_SALE",
 }
 
-/**
- * Product Flag Metadata
- * UI labels and descriptions for each flag
- */
+/** Flags the seller sets by hand. ON_OFFER and NEW_ARRIVAL are computed. */
+export const MANUAL_FLAGS = [
+  ProductFlag.FEATURED,
+  ProductFlag.HERO,
+  ProductFlag.CLEARANCE_SALE,
+] as const;
+
+const NEW_ARRIVAL_DAYS = 14;
+
+export function isNewArrival(createdAt: Date | string): boolean {
+  const created = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - NEW_ARRIVAL_DAYS);
+  return created > cutoff;
+}
+
 export const PRODUCT_FLAG_METADATA: Record<
   ProductFlag,
-  { label: string; description: string; color?: string }
+  { label: string; description: string; color?: string; computed?: boolean }
 > = {
   [ProductFlag.FEATURED]: {
     label: "Featured Product",
@@ -30,13 +38,15 @@ export const PRODUCT_FLAG_METADATA: Record<
   },
   [ProductFlag.ON_OFFER]: {
     label: "On Offer",
-    description: "Mark this product as being on special offer",
+    description: "Derived from active promotions",
     color: "orange",
+    computed: true,
   },
   [ProductFlag.NEW_ARRIVAL]: {
     label: "New Arrival",
-    description: "Mark this product as a new arrival",
+    description: `Derived from creation date (${NEW_ARRIVAL_DAYS} days)`,
     color: "green",
+    computed: true,
   },
   [ProductFlag.CLEARANCE_SALE]: {
     label: "Clearance Sale",

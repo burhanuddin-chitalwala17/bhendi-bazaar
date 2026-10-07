@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-05
+- **Verified:** 2026-10-07
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -63,6 +63,8 @@ Every admin and org listing crosses the wire as `{ ..., pagination: { page, limi
 `limit` is **caller-chosen but not caller-defined**: it is parsed at every handler against the closed set `PAGE_SIZE_OPTIONS` (10/25/50/100) by `resolvePageSize`, and anything else falls back to `DEFAULT_PAGE_SIZE` rather than reaching a Prisma `take`. An unbounded `take` is a table scan a query string can ask for, so this is Invariant 4 at a read boundary, not a convenience. `page` goes through `resolvePageNumber` for the same reason — a negative page is a negative `skip`.
 
 `GET /api/admin/orgs` returns this envelope as of PR-111, where it previously returned a bare `OrgWithStats[]` and the browser searched, filtered and sliced it locally. Its `search` and `status` params now narrow the query, so `total` counts matching rows rather than fetched ones.
+
+Since the B-007 tracker fix, `DELETE /api/admin/orgs/[id]` is removed. In its place, `PATCH /api/admin/orgs/[id]` accepts `{ action: "block" | "unblock" }` (Zod-validated) and returns the updated `OrgWithStats`. The `Org` client type (`src/domain/org.ts`) gains `isBlocked: boolean`. Blocked orgs are invisible to buyers via `FROM_ACTIVE_ORG` and their portal shows a suspended state.
 
 ### Cart
 Since PR-44 the server stores only the buyer's choice per line (`CartLineInput`: product, quantity, size, colour) and **derives everything else from the product at read time** — prices, names, `weight`, `shippingFromPincode`, and the `org` block all come from the join, so a cart can no longer hold a stale or spoofed price and the boundary casts are gone. Since PR-45 there is **one `CartItem` declaration** (`server/cart/cart.types.ts`, re-exported by `src/domain/cart.ts`), satisfying Rule 1.

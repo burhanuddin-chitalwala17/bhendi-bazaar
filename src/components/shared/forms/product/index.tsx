@@ -246,16 +246,6 @@ export function ProductForm({
 
   return (
     <form onSubmit={handleFormSubmit} className="space-y-6">
-      {/* Server errors that could not be attributed to a field. Field-level ones
-          are already showing on their inputs. */}
-      {formError && (
-        <div
-          role="alert"
-          className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-        >
-          {formError}
-        </div>
-      )}
 
       {/* Basic Information */}
       <ProductBasicFields
@@ -397,6 +387,15 @@ export function ProductForm({
       />
 
       {/* Actions */}
+      {formError && (
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          {formError}
+        </div>
+      )}
+
       {readOnly ? (
         <div className="flex justify-end gap-3">
           <Button

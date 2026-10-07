@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
@@ -56,13 +57,13 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
       key: "name",
       label: "User",
       render: (user) => (
-        <div>
+        <Link href={`/admin/users/${user.id}`} className="block hover:underline">
           <p className="font-medium">{user.name || "N/A"}</p>
           <p className="text-sm text-muted-foreground">{user.email}</p>
           {user.mobile && (
             <p className="text-sm text-muted-foreground">{formatPhone(user.mobile)}</p>
           )}
-        </div>
+        </Link>
       ),
     },
     {

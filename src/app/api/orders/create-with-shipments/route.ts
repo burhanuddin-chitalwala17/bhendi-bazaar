@@ -52,8 +52,6 @@ export async function POST(request: NextRequest) {
   }
 
   const session = await getServerSession(authOptions);
-
-  // Orders can be created by both authenticated users and guests
   const userId = session?.user?.id;
 
   // Validate request body

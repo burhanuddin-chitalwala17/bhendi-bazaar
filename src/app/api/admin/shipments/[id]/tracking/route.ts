@@ -48,7 +48,6 @@ export async function PATCH(
 
     const { trackingNumber, courierName, trackingUrl } = validation.data;
 
-    // Check if shipment exists
     const shipment = await trackingService.findShipmentWithOrder(shipmentId);
 
     if (!shipment) {
@@ -58,23 +57,24 @@ export async function PATCH(
       );
     }
 
-    // Update shipment with tracking details
+    if (shipment.order?.status !== "packed" && shipment.order?.status !== "shipped" && shipment.order?.status !== "delivered") {
+      return NextResponse.json(
+        { error: "Tracking can only be added after the seller marks the order as packed" },
+        { status: 400 },
+      );
+    }
+
     const updatedShipment = await trackingService.updateTracking(shipmentId, {
       trackingNumber,
       courierName,
       trackingUrl,
     });
 
-    // An AWB means the courier has it. The status moves through the one writer that owns the
-    // column, so the transition table decides whether the move is legal — it used to be the
-    // literal `"shipped"`, a value `ShipmentStatus` did not contain (shipment-lifecycle D12).
-    await applyStatus(shipmentId, SHIPMENT_STATUS.PICKED_UP);
-
-    // Log the update
-    console.log(`✅ Tracking updated for shipment ${shipment.code}`);
-    console.log(`   AWB: ${trackingNumber}`);
-    console.log(`   Courier: ${courierName}`);
-    console.log(`   Updated by: ${session.user.email}`);
+    try {
+      await applyStatus(shipmentId, SHIPMENT_STATUS.PICKED_UP);
+    } catch {
+      // Status transition may fail if shipment is already past packing — tracking is saved regardless
+    }
 
     return NextResponse.json({
       success: true,

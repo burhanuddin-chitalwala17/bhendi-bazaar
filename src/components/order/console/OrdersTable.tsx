@@ -125,7 +125,7 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
       key: "createdAt",
       label: "Date",
       sortable: true,
-      render: (order) => new Date(order.createdAt).toLocaleDateString(),
+      render: (order) => new Date(order.createdAt).toLocaleDateString("en-IN"),
     },
   ];
 

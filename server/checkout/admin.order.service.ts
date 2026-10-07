@@ -13,7 +13,7 @@ import type {
   UpdateOrderStatusInput,
   OrderStats,
 } from "@server/checkout/admin.order.types";
-import { OPERATOR_SETTABLE_STATUSES, type OrderStatus } from "@server/checkout/order.types";
+import { ORDER_STATUS, OPERATOR_SETTABLE_STATUSES, type OrderStatus } from "@server/checkout/order.types";
 import { DomainError } from "@server/shared/domain-error";
 
 const isOperatorSettable = (status: string): status is OrderStatus =>
@@ -89,9 +89,23 @@ export class AdminOrderService {
     return true;
   }
 
-  /**
-   * Get order statistics
-   */
+  async transitionForOrg(orderId: string, orgId: string, status: OrderStatus) {
+    if (!isOperatorSettable(status)) {
+      throw new DomainError(
+        `Invalid status. Must be one of: ${OPERATOR_SETTABLE_STATUSES.join(", ")}`,
+      );
+    }
+    const order = await adminOrderRepository.getOrderForOrg(orderId, orgId);
+    if (!order) {
+      throw new DomainError("This order has no shipment from your organisation");
+    }
+    // confirmed → packed requires an intermediate step through processing
+    if (order.status === "confirmed" && status === "packed") {
+      await orderRepository.transition(orderId, ORDER_STATUS.PROCESSING);
+    }
+    await orderRepository.transition(orderId, status);
+  }
+
   async getOrderStats(): Promise<OrderStats> {
     return await adminOrderRepository.getOrderStats();
   }

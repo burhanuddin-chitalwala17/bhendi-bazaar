@@ -141,24 +141,16 @@ export class AdminOrgService {
     return await orgRepository.update(id, org);
   }
 
-  /**
-   * Delete org with business rules
-   */
-  async deleteOrg(id: string) {
-    // Check if org exists
+  async blockOrg(id: string) {
     const org = await orgRepository.findById(id);
-    if (!org) {
-      throw new NotFoundError("Org not found");
-    }
+    if (!org) throw new NotFoundError("Org not found");
+    return await orgRepository.setBlocked(id, true);
+  }
 
-    // Business rule: Cannot delete org with products
-    const productCount = await orgRepository.countProducts(id);
-    if (productCount > 0) {
-      throw new DomainError(`Cannot delete org with products. This org has ${productCount} product(s). Please reassign or delete them first.`);
-    }
-
-    // Delete org
-    return await orgRepository.delete(id);
+  async unblockOrg(id: string) {
+    const org = await orgRepository.findById(id);
+    if (!org) throw new NotFoundError("Org not found");
+    return await orgRepository.setBlocked(id, false);
   }
 }
 

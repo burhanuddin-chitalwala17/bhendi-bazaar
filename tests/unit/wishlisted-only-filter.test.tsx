@@ -17,6 +17,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
   useParams: () => ({ orgId: "org-1" }),
+  usePathname: () => "/org/org-1/products",
 }));
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), { error: vi.fn(), success: vi.fn() }),

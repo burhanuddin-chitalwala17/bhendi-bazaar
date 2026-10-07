@@ -70,13 +70,24 @@ export function useOrgs(filters: OrgListFilters) {
     }
   };
 
-  const deleteOrg = async (id: string) => {
+  const blockOrg = async (id: string) => {
     try {
-      await orgApiClient.deleteOrg(id);
-      toast.success("Organisation deleted successfully");
+      await orgApiClient.blockOrg(id);
+      toast.success("Organisation blocked");
       await loadOrgs();
     } catch (err) {
-      toast.error((err instanceof Error && err.message) || "Failed to delete org");
+      toast.error((err instanceof Error && err.message) || "Failed to block org");
+      throw err;
+    }
+  };
+
+  const unblockOrg = async (id: string) => {
+    try {
+      await orgApiClient.unblockOrg(id);
+      toast.success("Organisation unblocked");
+      await loadOrgs();
+    } catch (err) {
+      toast.error((err instanceof Error && err.message) || "Failed to unblock org");
       throw err;
     }
   };
@@ -88,7 +99,8 @@ export function useOrgs(filters: OrgListFilters) {
     error,
     createOrg,
     updateOrg,
-    deleteOrg,
+    blockOrg,
+    unblockOrg,
     refetch: loadOrgs,
   };
 }

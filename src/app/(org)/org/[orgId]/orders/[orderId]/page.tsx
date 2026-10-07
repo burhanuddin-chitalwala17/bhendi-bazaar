@@ -6,6 +6,8 @@ import { formatPhone } from "@server/shared/phone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+import { OrgOrderPackButton } from "@/components/org/org-order-pack-button";
+import { ORDER_STATUS } from "@server/checkout/order.types";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -31,7 +33,7 @@ export default async function OrgOrderDetailPage({
     <div className="max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <SectionHeader as="h1" title="{order.code}" />
+          <SectionHeader as="h1" title={order.code} />
           <StatusBadge
             status={
               PAYMENT_BADGE[
@@ -123,6 +125,10 @@ export default async function OrgOrderDetailPage({
           </CardContent>
         </Card>
       ))}
+
+      {(order.status === ORDER_STATUS.CONFIRMED || order.status === ORDER_STATUS.PROCESSING) && (
+        <OrgOrderPackButton orgId={orgId} orderId={orderId} />
+      )}
 
       <p className="text-xs text-muted-foreground">
         You see only the parcels that ship from your organisation. The
