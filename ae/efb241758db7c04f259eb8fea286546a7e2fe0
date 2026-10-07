@@ -1,0 +1,235 @@
+server/catalog/product.visibility.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 30-32
+prisma/schema.prisma
+  s_0eecf3af7f9007::t_89c66d6e14aec7 331,628-629,672,841
+tests/unit/product-visibility.test.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 39-40
+src/app/api/org/[orgId]/orders/[orderId]/transition/route.ts
+  s_0eecf3af7f9007::t_bf979e220ef6fa 4,16
+  s_0eecf3af7f9007::t_020461a8205b70 8
+  s_0eecf3af7f9007::t_c7e12917fb9411 1-3,5-7,9-15,17-20
+docs/CHANGELOG.md
+  s_0eecf3af7f9007::t_5df253fe77781a 22-33
+  s_0eecf3af7f9007::t_78ad68d065b83a 13-21
+  s_0eecf3af7f9007::t_c5096c62e4d224 34-45
+  s_0eecf3af7f9007::t_89c66d6e14aec7 46-124
+src/components/org/console/AdminOrgTabs.tsx
+  s_0eecf3af7f9007::t_530ccb254abd9c 1-4,18-20,22-27,42-46,48-51,53-89
+  s_0eecf3af7f9007::t_e2a4f599ff36dd 5-17,21,28-41,47,52
+src/app/api/CLAUDE.md
+  s_0eecf3af7f9007::t_7e400ed13b963d 3
+package-lock.json
+  ai_agent 30,39,1185,1194,1204,1217,2384-2389,2396-2399,2402,2419-2422,2425-2433,2450-2459,2471-2474,2477-2479,2483,2491-2494,2496-2498,2509-2512,2524-2527,2530-2534,2551-2560,2572-2575,2577-2579,2582-2584,2589-2591,2595-2598,2600-2602,2605-2607,2612-2614,2618-2621,2624-2629,2646-2655,2659,2667-2670,2673-2679,2683-2685,2690-2692,2696-2705,2717-2720,2723-2725,2729,2737-2740,2743,2747,2755-2758,2770-2773,2780-2783,2800,2802,2806,2808,2821-2824,2826-2830,2841-2844,2859-2877,2880-2883,2900-2903,2915-2918,2930-3856,3870,3872-4084,4097-4179,4181-4183,4194-4197,4201,4209-4212,4215-4224,4241-4244,4256-4259,4271-4274,4277-4278,4295-4298,4310-4336,4348-4351,4354,4371-4374,4376-4379,4382-4384,4389-4391,4395-4398,4401,4403-4409,4426-4435,4447-4450,4453-4454,4459,4467-4470,4477,4482-4495,4500-4503,4506-4516,4533-4542,4554-4557,4559-4563,4574,4576,4592,4594,4607-4610,4613,4617-4622,4639,4641,4645,4647,4660-4663,4675-4678,4681,4683,4685-4695,4697-4702,4719-4728,4740-4743,4746-4748,4752,4760-4763,4778-4781,4785,4793-4796,4799,4816-4819,4822-4832,4849-4853,4855-4858,4870,4872,4890,4892,4908,4910,4923-4926,4929,4933,4941,4943,4956-4959,4962-4967,4984-4988,4990-4993,5005-5008,5010-5014,5025-5028,5043-5046,5050,5058-5061,5064-5071,5088-5097,5100-5102,5114-5117,5120,5124,5132-5135,5139,5147-5150,5154,5157-5160,5163-5164,5181,5183,5187,5189,5202-5205,5207-5211,5222-5225,5240-5258,5261-5263,5280-5283,5286-5292,5296-5298,5303-5305,5309-5318,5320-5324,5327-5329,5334-5336,5340,5342,5360,5362,5378,5380,5393-5396,5399,5416-5419,5434-5437,5440-5446,5463-5472,5475-5487,5504-5513,5525-5528,5531-5533,5537,5545-5548,5551,5555,5563-5566,5579-5581,5631-5633,5636,5679-5681,5695,5712-5714,5717-5721,5723-5733,5744-5766,5769,8716-8727,13266-13440
+tests/integration/product-family.test.ts
+  s_0eecf3af7f9007::t_312ab51ec57df3 36-45
+src/components/product/console/productAdd/index.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 112-118
+src/components/shared/ShareDialog.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 12,115-116
+src/app/api/admin/orgs/[id]/route.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 2,10,17,27-31,33,39-45,47,49
+src/components/org/console/OrgBlockToggle.tsx
+  s_0eecf3af7f9007::t_7bcdabfcc51f99 1-48
+src/components/shared/forms/product/index.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 390-398
+src/components/org/console/tabs/AdminOrgOrders.tsx
+  s_0eecf3af7f9007::t_d0b7f0e8331c61 1-22
+src/app/(org)/org/[orgId]/orders/page.tsx
+  s_0eecf3af7f9007::t_64e2970addb402 3,6,14,20,23-26,29,34,40
+  s_0eecf3af7f9007::t_44f272b4555161 27-28
+  s_0eecf3af7f9007::t_6531b82a7584af 13
+src/data-access-layer/org/orders.dal.ts
+  s_0eecf3af7f9007::t_4f203143ed77da 102-107,111-112
+src/app/api/admin/shipments/[id]/tracking/route.ts
+  s_0eecf3af7f9007::t_9502f465b36f2f 60-66,73-77
+src/app/(admin)/admin/orgs/[orgId]/page.tsx
+  s_0eecf3af7f9007::t_85d28232c913a8 1-2,4-7,9-45,47-53,55-62
+  s_0eecf3af7f9007::t_945230dca81d80 54
+  s_0eecf3af7f9007::t_4580a543b61e33 3,8
+  s_0eecf3af7f9007::t_6f9a5e19a6e0d2 46
+src/components/order/console/OrdersTable.tsx
+  s_0eecf3af7f9007::t_19a70deb5015a8 128
+src/lib/org-auth.ts
+  s_0eecf3af7f9007::t_56ffe9155eb0df 30-31
+  s_0eecf3af7f9007::t_cb312a9cc8ed59 6
+server/catalog/org.service.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 144,146-148,150-153
+src/data-access-layer/admin/orgs.dal.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 27
+  s_0eecf3af7f9007::t_2450ae088f567a 45-50
+docs/ARCHITECTURE.md
+  s_0eecf3af7f9007::t_fd35af96571409 18
+  s_0eecf3af7f9007::t_89c66d6e14aec7 61
+  s_0eecf3af7f9007::t_11aa9815a6cf1f 15
+src/components/order/order-client.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 1-2,5-63,70-74,84-115
+src/components/org/console/tabs/AdminOrgDashboard.tsx
+  s_0eecf3af7f9007::t_a3e248cb339fa0 11
+  s_0eecf3af7f9007::t_e3ebdc767d04af 1-10,12-14
+prisma/migrations/20261008000000_add_org_is_blocked/migration.sql
+  s_0eecf3af7f9007::t_c4513336970497 1-5
+server/catalog/org.repository.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 376-377,379,381
+src/components/org/locations-manager.tsx
+  s_0eecf3af7f9007::t_8cd2b50abf4a3b 44-45,51-56
+  s_0eecf3af7f9007::t_d52bfa72e7fe57 159-178
+src/app/not-found.tsx
+  s_0eecf3af7f9007::t_4a425cb03dd06d 1-23
+src/components/org/org-orders-filters.tsx
+  s_0eecf3af7f9007::t_43f6beb694e2dc 1-65
+server/identity/admin.user.service.ts
+  s_0eecf3af7f9007::t_2eca9c979a03f6 84-87
+src/components/product/console/useProductsBasePath.ts
+  s_0eecf3af7f9007::t_6708e43e206a8b 3,8-10,14-15
+server/checkout/admin.order.repository.ts
+  s_0eecf3af7f9007::t_41fe9bd9502c1c 266-277
+src/components/org/orgOrdersApiClient.ts
+  s_0eecf3af7f9007::t_f50c1b2b0068af 1-3,5-6,8-10
+  s_0eecf3af7f9007::t_c8df0501760da6 4,7
+src/components/cart/cart-summary.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 3,15,18-22,58,64-68
+src/components/org/console/tabs/AdminOrgReviews.tsx
+  s_0eecf3af7f9007::t_4620a8f9e025bc 50-51,54,57
+  s_0eecf3af7f9007::t_b91cf416ca4255 1-49,52-53,55-56,58-67
+src/app/(admin)/admin/users/[userId]/page.tsx
+  s_0eecf3af7f9007::t_6dab19111163ac 1-29,31-124
+  s_0eecf3af7f9007::t_47be6490068f0a 30
+src/app/(org)/org/[orgId]/orders/[orderId]/page.tsx
+  s_0eecf3af7f9007::t_8bbb4a0512f8e3 9-10
+  s_0eecf3af7f9007::t_bbdea136c527e7 131-132
+  s_0eecf3af7f9007::t_166b0930fb985b 129-130
+  s_0eecf3af7f9007::t_10298aaa4187ac 36
+src/components/profile/console/UsersTable.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 3,60,66
+src/components/ui/button.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 8
+src/types/product.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 9-24,27,41,43,47,49
+package.json
+  s_0eecf3af7f9007::t_89c66d6e14aec7 41,50
+src/components/org/org-order-pack-button.tsx
+  s_0eecf3af7f9007::t_b08627516d663d 4,14,17-18,20,26-28
+  s_0eecf3af7f9007::t_a430467a66a996 1-3,5-13,15-16,19,21-25,29-31
+src/components/org/console/orgApiClient.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 39-44
+docs/README.md
+  s_0eecf3af7f9007::t_89c66d6e14aec7 3,27,41
+next.config.ts
+  s_8b468f8cd6c05c::t_be0901537ecf20 59-63
+src/components/profile/console/UserBlockToggle.tsx
+  s_0eecf3af7f9007::t_adea7a3538519a 1-46
+src/components/shared/forms/product/ProductFlagsFields.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 5,17,38-50
+src/data-access-layer/admin/users.dal.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 2,9-11
+src/components/product/console/productsList/components/ProductsTable.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 10,147,151-152,157,161-162,167
+src/app/(main)/product/[slug]/page.tsx
+  s_0eecf3af7f9007::t_faeafc613f2488 66-72
+  s_0eecf3af7f9007::t_1c9abe796c4c5b 1,13
+src/components/layout/AdminSidebar.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 20-21,45-53
+  s_0eecf3af7f9007::t_e197660cbfce98 54
+docs/TRACKER.md
+  s_0eecf3af7f9007::t_4c62287e63324a 4
+  s_0eecf3af7f9007::t_bb04d1bef4186c 258,260-392,412
+  s_0eecf3af7f9007::t_b58b9542f8520a 25
+  s_a7aff176c4d694::t_2d22d40236d3f2 1-3,5-13,15-24,27,29,31-39,41,44,46-54,58-59,61-69,72,74,76-82,85,87,89-96,98,101,103-111,114,117,119-128,131,133,135-145,147,150,152-159,162,165,167-174,179-180,182-191,194,196,198-206,210,212,214-222,226-227,229-237,241,243,245-252,417-418,420-424,426,428,430-435,438,440-445,448,450-454,457-458,460-464,466,468,470-474,476,478,480-485,488,490-495,498,500-504,507-508,510-514,516,518,520-524,526,528,530-535,538,540-546,549,551-556,558,560,562-568,571,573-578,581,583-587,590-591,593-598,600,602,604-609,611,613,615-622,625,627,629,631-633,636,638-640,643,645-646,649,653,655,657,659-660
+  s_0eecf3af7f9007::t_11a6d0391edd81 40
+  s_0eecf3af7f9007::t_ed1571af2e8b03 192
+  s_0eecf3af7f9007::t_b1413be586f55b 207-208
+  s_0eecf3af7f9007::t_15cecedff9dbe9 255-257,259,413,415-416
+  s_0eecf3af7f9007::t_4888db1d64a891 223
+  s_0eecf3af7f9007::t_c2af91a6a6d2d7 55
+  h_b67201bb58135f 14,26,28,30,42-43,45,56-57,60,71,73,75,84,86,88,99-100,102,115-116,118,130,132,134,148-149,151,163-164,166,177-178,181,193,195,197,209,211,213,224-225,228,240,242,244,414,419,425,427,429,436-437,439,446-447,449,455-456,459,465,467,469,475,477,479,486-487,489,496-497,499,505-506,509,515,517,519,525,527,529,536-537,539,547-548,550,557,559,561,569-570,572,579-580,582,588-589,592,599,601,603,610,612,614,623-624,626,628,630,634-635,637,641-642,644,647-648,650-651,654,656,658,661
+  s_0eecf3af7f9007::t_93180c74e7e2d6 238-239
+  s_0eecf3af7f9007::t_e635322b987d77 393-411
+  s_0eecf3af7f9007::t_12dd7063d3461c 129
+  s_0eecf3af7f9007::t_95b0950538725d 146
+  s_0eecf3af7f9007::t_defbc189b739fa 175-176
+  s_0eecf3af7f9007::t_afd25a6b6525b6 97
+  s_0eecf3af7f9007::t_eefca283adabf2 83
+  s_0eecf3af7f9007::t_b87a9417516083 70
+  s_0eecf3af7f9007::t_db7c25f92f715f 253-254
+  s_a7aff176c4d694::t_45f8cc0543265a 652
+  s_0eecf3af7f9007::t_10cb0d8d9905ee 112-113
+  s_0eecf3af7f9007::t_a454afb3479711 160-161
+.claude/artifacts/platform-audit.html
+  s_a7aff176c4d694::t_54e516c9c91f4e 1-703
+src/components/org/console/components/OrgsTable.tsx
+  s_0eecf3af7f9007::t_325fab89f8593b 1
+  s_0eecf3af7f9007::t_89c66d6e14aec7 3,18,29,111-132,134,166-167,169
+  s_0eecf3af7f9007::t_06476c33efe439 47,55
+src/components/org/org-orders-table.tsx
+  s_0eecf3af7f9007::t_ab32dfac37aaa9 31-33,36,45
+  s_0eecf3af7f9007::t_30ac51eb3108dc 4
+src/lib/admin-auth.ts
+  s_0eecf3af7f9007::t_d67e1a1074bcd3 22-27
+  s_0eecf3af7f9007::t_237fb24eb8695b 28-31
+server/catalog/org.member.repository.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 41
+  s_0eecf3af7f9007::t_2637bee366df02 20,22,24-25
+src/components/org/console/index.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 32-33,42,96-100,196
+src/domain/org.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 19
+docs/CONTRACTS.md
+  s_0eecf3af7f9007::t_89c66d6e14aec7 3,67
+  s_0eecf3af7f9007::t_5707f4f52ce002 68
+src/components/org/console/tabs/AdminOrgEarnings.tsx
+  s_0eecf3af7f9007::t_25b58f0b58a66f 64-72
+  s_0eecf3af7f9007::t_c09d8fbe58c79c 43-45
+src/components/org/console/hooks/useOrgs.ts
+  s_0eecf3af7f9007::t_89c66d6e14aec7 73,75-76,79-90,102-103
+src/app/(org)/org/[orgId]/layout.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 2,9,31-50
+src/app/providers.tsx
+  s_0eecf3af7f9007::t_89c66d6e14aec7 27
+src/components/org/console/tabs/AdminOrgProducts.tsx
+  s_0eecf3af7f9007::t_62b419cd79228e 1-49
+server/checkout/admin.order.service.ts
+  s_0eecf3af7f9007::t_fb20d9e6401105 92-101,106-108
+  s_0eecf3af7f9007::t_834de3a552586a 16
+  s_0eecf3af7f9007::t_7abcd184ca9270 102-105
+tests/unit/wishlisted-only-filter.test.tsx
+  s_0eecf3af7f9007::t_98918efcdaf060 20
+src/components/CLAUDE.md
+  s_0eecf3af7f9007::t_89c66d6e14aec7 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "aeefb241758db7c04f259eb8fea286546a7e2fe0",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0eecf3af7f9007": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "86e64567-2798-416c-9547-5220a58a09bf",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_8b468f8cd6c05c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7b2b2a8b-5c3a-4e5c-81ab-53d809d5a011",
+        "model": "system.ai.claude-opus-4-6"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_a7aff176c4d694": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d5c4ad53-6b4b-436b-afa9-8f3f28251c26",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
