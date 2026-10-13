@@ -331,6 +331,26 @@ export class ProductsRepository {
     });
   }
 
+  /**
+   * Every buyable product of these shops, for a channel feed (shopfront-feeds D2). The whole
+   * catalogue is the point of a feed, so the cap is a ceiling against a runaway, not a page.
+   */
+  async listForChannelFeed(orgIds: string[]) {
+    if (orgIds.length === 0) return [];
+    const rows = await prisma.product.findMany({
+      where: { ...AVAILABLE, ...FROM_ACTIVE_ORG, orgId: { in: orgIds } },
+      include: { ...PRODUCT_INCLUDE, brand: { select: { name: true } } },
+      orderBy: { createdAt: "asc" },
+      take: ProductsRepository.MAX_FEED_ROWS,
+    });
+    if (rows.length === ProductsRepository.MAX_FEED_ROWS) {
+      console.warn(`Channel feed hit its ${ProductsRepository.MAX_FEED_ROWS}-row cap; newer products are missing`);
+    }
+    return rows;
+  }
+
+  private static readonly MAX_FEED_ROWS = 10_000;
+
   // Nothing a storefront listing renders needs the whole catalogue at once. When the
   // caller gives no limit we still cap the row set: a bare search like `?q=a` otherwise
   // loads every matching product with the full join tree. The service validates an

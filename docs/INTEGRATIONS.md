@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-03
+- **Verified:** 2026-10-14
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -94,7 +94,7 @@ the free tier an overrun *blocks* rather than bills — every product image goes
 own ability to read the store, which is what makes exporting after the fact impossible. A row may
 still hold one of those dead URLs; [OPERATIONS.md](OPERATIONS.md) has the query and the remedy.
 
-## Marketplaces and feeds (nothing integrated yet)
+## Marketplaces and feeds (Google and Meta feeds live; marketplaces not yet)
 
 Checked 2026-09-29 while spiking `listing-schema`. Recorded because the four routes are four
 different kinds of thing, and the difference decides the order they are worth building in.
@@ -119,6 +119,17 @@ different kinds of thing, and the difference decides the order they are worth bu
   the network as a seller participant speaking the Beckn protocol, or lists through one that
   already has. For this platform that is a question about the platform, not about pushing one
   product, and it belongs in its own decision.
+
+### The shopfront feeds
+
+`/feeds/google.xml` and `/feeds/meta.xml` ([shopfront-feeds](specs/shopfront-feeds/)) are
+registered by hand — a scheduled-fetch data source in Merchant Center, a scheduled data feed in
+Commerce Manager. Each is built on the request, lists only shops that turned that channel on, and
+is empty while `BLOCK_CRAWLERS` is set. Google also crawls each product page and pauses an item
+whose page price differs from the feed until its next fetch. Meta's 500×500 image minimum is not
+enforced by the feed: it sends the stored cover, so a smaller photograph is Meta's rejection to
+report.
+
 ### What each platform asks for in a listing
 
 Read off thirty-four of the platforms' own bulk-upload templates on 2026-10-01, for the categories

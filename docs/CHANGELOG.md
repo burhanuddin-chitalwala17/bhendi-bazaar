@@ -10,6 +10,30 @@
 
 ## Entries
 
+## 2026-10-14 — Google and Meta product feeds (shopfront-feeds)
+
+- `GET /feeds/google.xml` and `GET /feeds/meta.xml`: RSS 2.0 with the `g:` namespace, built on
+  every fetch from `productsDAL.listForChannelFeed`, which maps through the product page's own
+  `mapProduct` — so the declared price, offer and bidding hold are the page's answers (spec R2, R3).
+- One builder, `server/listing/shopfront-feed.ts`, with the channel a parameter; the shops come from
+  `orgChannelRepository.orgsWith`, categories from each channel's own `channel-map` rows.
+  Products with no image or description are left out; the brand falls back to the shop's name.
+  Characters XML forbids are dropped and text is cut by code point, so one pasted description
+  cannot void the file; a sale price is declared only when `hasOffer` says one is in force.
+- Gates: `/feeds/*.xml` in `EXTERNALLY_CALLED` (route-reachability); the new read in the
+  product-visibility CENSUS (23 → 24) and in org-scoping's `PUBLIC_READS`.
+- Mutation-tested, each one red then restored: `isBuyable` ignoring `biddingSlug` (unit);
+  `categoryFor` ignoring `notSold` (unit); `orgsWith` dropping `enabled: true` (integration, A4);
+  the feed read dropping `AVAILABLE` (integration, A3) and `FROM_ACTIVE_ORG` (integration, R4); the
+  crawl-block check removed (integration, R8); the forbidden-character strip removed and truncation
+  by UTF-16 unit (unit).
+- Tests: `tests/unit/shopfront-feed.test.ts` (14), `tests/integration/shopfront-feed.test.ts` (6).
+  Reviewed in a fresh context with `/bb-review`; its findings are fixed here.
+  Ran `tsc --noEmit`, `tests/unit` (all), `tests/integration` against `bhendi_bazaar_ci`,
+  `lint:boundary`, `docs:check`. One unrelated integration failure: `channel-registry` "refuses a
+  second mapping covering every kind" — the local `bhendi_bazaar_ci` lacks the partial index
+  `ChannelCategoryMap_channel_productType_allkinds_key` that the dev database has.
+
 ## 2026-10-14 — Lockfile resolves from the public npm registry
 
 - `aeefb24` was installed on a work machine, so 185 `resolved` URLs in `package-lock.json` pointed

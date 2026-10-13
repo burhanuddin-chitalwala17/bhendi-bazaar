@@ -127,6 +127,7 @@ describe("the source says so too", () => {
     "getHeroProducts",
     "getOfferProducts",
     "searchProducts",
+    "listForChannelFeed",
   ];
 
   /** Scoped or privileged by other means, with the reason. */

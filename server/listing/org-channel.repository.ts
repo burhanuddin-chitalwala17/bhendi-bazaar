@@ -26,6 +26,15 @@ export const orgChannelRepository = {
     return await prisma.orgChannel.findMany({ where: { orgId }, select: SELECT });
   },
 
+  /** Every shop that has turned this channel on. */
+  async orgsWith(channel: Channel): Promise<string[]> {
+    const rows = await prisma.orgChannel.findMany({
+      where: { channel, enabled: true },
+      select: { orgId: true },
+    });
+    return rows.map((row) => row.orgId);
+  },
+
   /** Turn a channel on or off for a shop. The row is created the first time either is said. */
   async set(orgId: string, channel: Channel, enabled: boolean): Promise<OrgChannelRow> {
     return await prisma.orgChannel.upsert({

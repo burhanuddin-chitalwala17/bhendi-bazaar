@@ -28,6 +28,8 @@ const EXTERNALLY_CALLED: Record<string, string> = {
   "/api/webhooks/shipping/shiprocket": "Shiprocket posts tracking updates here.",
   "/api/auth/verify-email": "The link in the verification email.",
   "/api/auth/[...nextauth]": "next-auth's own handler, reached by its client.",
+  "/feeds/google.xml": "Google Merchant Center fetches it on the schedule its data source sets.",
+  "/feeds/meta.xml": "Meta Commerce Manager fetches it on the schedule its data feed sets.",
 };
 
 /**

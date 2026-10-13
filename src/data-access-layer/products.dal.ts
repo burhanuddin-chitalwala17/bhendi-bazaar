@@ -304,4 +304,30 @@ export const productsDAL = {
     const rows = await productsRepository.listSlugs();
     return rows.map((row) => row.slug);
   },
+
+  /**
+   * These shops' buyable products, priced and judged exactly as the product page is
+   * (shopfront-feeds D2), with the type, kind and brand a channel feed needs beside them.
+   */
+  listForChannelFeed: async (orgIds: string[]): Promise<ChannelFeedProduct[]> => {
+    const [rows, context, locks] = await Promise.all([
+      productsRepository.listForChannelFeed(orgIds),
+      loadPriceContext(),
+      loadBiddingLockContext(),
+    ]);
+    const ratings = await ratingsFor(rows);
+    return rows.map((row) => ({
+      product: mapProduct(row, context, locks, ratings),
+      productType: row.productType,
+      kind: row.kind,
+      brandName: row.brand?.name ?? null,
+    }));
+  },
 };
+
+export interface ChannelFeedProduct {
+  product: Product;
+  productType: string | null;
+  kind: string | null;
+  brandName: string | null;
+}
