@@ -1,0 +1,161 @@
+tests/unit/admin-auth.test.ts
+  s_0eecf3af7f9007::t_bcc3b3e8d4b35c 30-42
+  s_0eecf3af7f9007::t_75977bcacc52a6 79,81,84-85
+src/data-access-layer/products.dal.ts
+  s_0eecf3af7f9007::t_02d053741b727e 102-110
+  s_0eecf3af7f9007::t_347fd7ca19ef2a 94-95,100-101,111-113,121
+  s_0eecf3af7f9007::t_384ccd27571606 11
+  s_0eecf3af7f9007::t_607aaa18ff0955 195-197,213-215
+  s_0eecf3af7f9007::t_85c7590e80976c 198
+  s_0eecf3af7f9007::t_ae13fe5284b0d7 199-212
+  s_0eecf3af7f9007::t_b639392e4d2f68 114-120
+tests/unit/stored-measurements.test.ts
+  s_0eecf3af7f9007::t_9540d065ddd0c7 1-44
+docs/README.md
+  s_0eecf3af7f9007::t_c65a99e7cf6f25 3
+src/components/org/org-orders-table.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 8,55
+src/app/api/admin/shipments/[id]/tracking/route.ts
+  s_0eecf3af7f9007::t_8f14c94ec7788a 17-20,64
+  s_0eecf3af7f9007::t_0ee2edd0f09a0a 66
+src/components/order/console/OrderDetailAside.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 3,62
+src/components/order/order-client.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 8,55
+src/components/storefront/brand-page/proof-strip.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 3,35
+docs/TRACKER.md
+  s_0eecf3af7f9007::t_673ae620c77aeb 381-401
+  s_0eecf3af7f9007::t_4e910276b38d9d 360-370
+  s_0eecf3af7f9007::t_f12f362e15cf6c 429
+  s_25a3b1a09b8c89::t_e826e85296cab8 493-494,526-527,689
+  s_0eecf3af7f9007::t_89b42d09de2115 438-444,448-454
+  s_0eecf3af7f9007::t_239c1ae908e6d9 371-380
+  s_25a3b1a09b8c89::t_c687e256f38cf9 4,7,466-472,479-481,485,488-492,495-496,504-513,518,520,522-525,534,536-538,544,546-547,556-557,566,575,580,584-585,590,594,601,603-605,610,614-617,626-627,635-637,646,655,663,669,671-673,680-688,690-729
+src/app/layout.tsx
+  h_b67201bb58135f 35-38
+src/app/(org)/org/[orgId]/reviews/page.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 10,78
+src/components/org/console/tabs/AdminOrgEarnings.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 2,65,87
+src/domain/product.ts
+  s_0eecf3af7f9007::t_e288fb98ae1c45 63-71
+  s_0eecf3af7f9007::t_0be46257f2ec69 49
+  s_0eecf3af7f9007::t_acde7537c79ddc 47-48
+src/components/product/console/productsList/components/ProductsStats.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 11,31,36,39,50,57,64
+src/types/product.ts
+  s_0eecf3af7f9007::t_0ee2edd0f09a0a 9
+server/listing/listing-facts.ts
+  s_0eecf3af7f9007::t_80719ea65499b1 408-420
+tests/helpers/test-db.ts
+  s_0eecf3af7f9007::t_c2003c42454fa8 55-65,69,71-75,79-98,102,105-109,116-122,124,127-128,130,132,137-141,143-147,149-150
+  s_0eecf3af7f9007::t_5f3e2dcdd645dd 66-67,125-126,129,134
+tests/integration/product-type-table.test.ts
+  s_0eecf3af7f9007::t_1cf2403e8c2b68 121,123-128,231,233-238
+src/components/org/console/tabs/AdminOrgReviews.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 6,44
+tests/integration/product-family-service.test.ts
+  s_0eecf3af7f9007::t_1cf2403e8c2b68 60,70
+tests/unit/product-visibility.test.ts
+  s_0eecf3af7f9007::t_ed0beb8cf7351e 31-32
+src/app/(admin)/admin/users/[userId]/page.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 15,67,103
+src/components/order/console/OrdersTable.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 10,128
+src/components/org/handle-change-dialog.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 24,53,57
+src/lib/admin-auth.ts
+  s_0eecf3af7f9007::t_f91d4b839ca866 24
+src/components/product/product-details.tsx
+  s_0eecf3af7f9007::t_50503b5b396c38 3,7
+  s_0eecf3af7f9007::t_7ec58020bb674f 110-142
+src/components/cart/console/CartsTable.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 10,89
+docs/CHANGELOG.md
+  s_0eecf3af7f9007::t_29c515b0f053bd 63-71
+  s_0eecf3af7f9007::t_673ae620c77aeb 14-23,25-28
+  s_0eecf3af7f9007::t_239c1ae908e6d9 29-43
+  s_0eecf3af7f9007::t_4e910276b38d9d 44-62
+  s_0eecf3af7f9007::t_dfed850c194a80 72-78
+  s_0eecf3af7f9007::t_4b974dbf01a024 13,24
+tests/unit/test-integrity.test.ts
+  s_0eecf3af7f9007::t_fea3d85848daae 141-160
+src/components/order/orders-client.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 11,75
+src/lib/format.ts
+  s_0eecf3af7f9007::t_93bfb28fc822c5 47-55,57,61,64,70-82
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 65-69
+tests/integration/bulk-upload.test.ts
+  s_0eecf3af7f9007::t_f2b2892e1c0077 321
+tests/unit/org-scoping.test.ts
+  s_0eecf3af7f9007::t_3e77214d074efc 142
+tests/integration/channel-readiness-service.test.ts
+  s_0eecf3af7f9007::t_1cf2403e8c2b68 36
+src/components/payouts/SettlementList.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 18,92
+src/components/product/console/reviews/ReviewsTable.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 23,123,173,195
+src/lib/validation/schemas/product.schema.ts
+  s_0eecf3af7f9007::t_b0631c8f086d85 6-9,124-126
+src/components/promotions/OfferList.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 7,124,129
+src/components/category/console/CategoriesTable.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 15,150
+tests/unit/product-schema.test.ts
+  s_0eecf3af7f9007::t_082d1f4de9893c 145-156
+src/utils/shipping.ts
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 9,33
+src/components/product/review-list.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 22,131
+src/components/dashboard/dashboard-live.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 19,126
+src/components/profile/recent-orders-section.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 6,44
+docs/ARCHITECTURE.md
+  s_0eecf3af7f9007::t_b639392e4d2f68 75
+src/app/(org)/org/[orgId]/earnings/page.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 10,147
+src/components/profile/console/UsersTable.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 12,95
+src/app/(org)/org/[orgId]/orders/[orderId]/page.tsx
+  s_0eecf3af7f9007::t_9fadbc1de01c7f 4,56
+tests/unit/locale-formatting.test.ts
+  s_0eecf3af7f9007::t_75c2999ac9fc55 1-40
+src/data-access-layer/admin/products.dal.ts
+  s_0eecf3af7f9007::t_80719ea65499b1 12,119
+docs/CONTRACTS.md
+  s_0eecf3af7f9007::t_4b974dbf01a024 148-152
+server/catalog/product.read.repository.ts
+  s_0eecf3af7f9007::t_d952e0af3dc350 516-518,520-522
+  s_0eecf3af7f9007::t_0e421ab234f34a 519
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "7ce6093fc5f75494a7b02f0e1f062461b24b1777",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0eecf3af7f9007": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "86e64567-2798-416c-9547-5220a58a09bf",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_25a3b1a09b8c89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "666afa20-dca5-4d35-9880-942ee22c33ef",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
