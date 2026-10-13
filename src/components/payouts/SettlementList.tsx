@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { useMutation } from "@/hooks/core/useMutation";
 import {
   payoutsApiClient,
@@ -89,7 +89,7 @@ export function SettlementList({
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {settlement.status === "PAID" && settlement.paidAt
-                    ? `Paid ${new Date(settlement.paidAt).toLocaleDateString("en-IN")}`
+                    ? `Paid ${formatShortDate(settlement.paidAt)}`
                     : "Not yet transferred"}
                   {settlement.reference ? ` · ${settlement.reference}` : ""}
                 </p>

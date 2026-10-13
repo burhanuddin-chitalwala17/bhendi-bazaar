@@ -142,3 +142,15 @@ describe("the category form shares the optional-number fix", () => {
     expect(result.error?.issues[0]?.message).toBe("Order must be a whole number");
   });
 });
+
+describe("a picker's none option is no choice, not an empty one", () => {
+  // "On its own" submits "": it failed `min(1)` with "Too small: expected string to have >=1 characters".
+  it("reads an unselected family, brand or kind as null", () => {
+    const parsed = productFormSchema.parse(filledForm({ familyId: "", brandId: "", kind: "" }));
+    expect([parsed.familyId, parsed.brandId, parsed.kind]).toEqual([null, null, null]);
+  });
+
+  it("keeps a chosen family", () => {
+    expect(productFormSchema.parse(filledForm({ familyId: "fam-1" })).familyId).toBe("fam-1");
+  });
+});

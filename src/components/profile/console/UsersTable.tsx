@@ -9,7 +9,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { adminUserApiClient } from "@/components/profile/console/adminUserApiClient";
 import type { AdminUser } from "@/domain/admin";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import { Button } from "@/components/ui/button";
 
@@ -92,7 +92,7 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
       key: "createdAt",
       label: "Joined",
       sortable: true,
-      render: (user) => new Date(user.createdAt).toLocaleDateString(),
+      render: (user) => formatShortDate(user.createdAt),
     },
     {
       key: "isBlocked",

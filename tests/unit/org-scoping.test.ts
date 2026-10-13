@@ -139,6 +139,7 @@ describe("the source says so too", () => {
     isAvailable: "wishlist's save check; AVAILABLE only, as wishlist read it before the read moved here",
     listForAllocation: "a parcel preview of ids already held; the order transaction is the refusal",
     listForStockCheck: "a cart's stock check of ids already held; reports archived lines by name",
+    getFamilySiblings: "scoped to a familyId the current product already resolved; filters archivedAt: null",
   };
 
   const methods = source

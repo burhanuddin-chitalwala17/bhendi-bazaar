@@ -1,5 +1,5 @@
 import { payoutsDAL } from "@/data-access-layer/payouts.dal";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -62,7 +62,7 @@ export async function AdminOrgEarnings({ orgId }: Props) {
             <Card key={order.id} className="flex items-center justify-between p-3 text-sm">
               <div>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                  {formatShortDate(order.createdAt)}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -84,7 +84,7 @@ export async function AdminOrgEarnings({ orgId }: Props) {
               <Card key={s.id} className="flex items-center justify-between p-3 text-sm">
                 <div>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(s.createdAt).toLocaleDateString("en-IN")}
+                    {formatShortDate(s.createdAt)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

@@ -6,7 +6,7 @@ export enum ProductFlag {
   CLEARANCE_SALE = "CLEARANCE_SALE",
 }
 
-/** Flags the seller sets by hand. ON_OFFER and NEW_ARRIVAL are computed. */
+/** Flags the org sets by hand. ON_OFFER and NEW_ARRIVAL are computed. */
 export const MANUAL_FLAGS = [
   ProductFlag.FEATURED,
   ProductFlag.HERO,

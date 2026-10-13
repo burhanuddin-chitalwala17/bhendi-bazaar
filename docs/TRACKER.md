@@ -1,10 +1,10 @@
 # Tracker
 
 - **Created:** 2026-10-07
-- **Updated:** 2026-10-08
+- **Updated:** 2026-10-09
 - **Source:** Platform audit (full sweep of buyer, seller, admin surfaces)
 
-Status key: `[ ]` open, `[~]` in progress, `[x]` done
+Status key: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` on hold / parked / merged
 
 ---
 
@@ -269,11 +269,12 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 ### BF-002: Blocked user can still browse and purchase
 - **Severity:** High
 - **Surface:** All authenticated buyer actions
-- **Fix:** `requireActiveSession()` added for mutation routes. Org API calls gated via `resolveOrgScope`
-- **Status:** `[~]` — org API calls gated; checkout gate pending (file-cohesion constraint)
+- **Fix:** `requireSession` now checks `isBlocked` on every authenticated request. Sign-in was already gated (credentials + Google). Active sessions are now revoked too.
+- **Status:** `[x]`
 - **How to test:**
   1. Block a user from Admin > Users
-  2. Log in as that user, try org portal → "suspended" message
+  2. If they have an active session, any page requiring auth shows "Your account has been suspended"
+  3. Signing in again fails silently (credentials) or is refused (Google)
 
 ### BF-003: Location delete uses browser confirm()
 - **Severity:** Low
@@ -356,6 +357,48 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
   2. Org Portal > Orders > click it — one "Mark as Packed" button
   3. Click it — order moves to packed
 
+### BF-012: Integration tests overwrote real dev data
+- **Severity:** High
+- **Surface:** Dev database (all modules)
+- **Problem:** Category product types kept disappearing. The test fixture borrowed the first real org/category/user/carrier and suites reset or deleted their data: category product types, org sales channels, colour values, enhancement policy, real marketplace attribute maps.
+- **Fix:** `ensureFixtures()` owns dedicated rows by fixed test keys. Three suites now restore shared reference data. New guard in `test-integrity.test.ts` blocks unscoped `findFirst` in tests.
+- **Status:** `[x]`
+- **How to test:**
+  1. Assign product types to your categories in Admin > Categories
+  2. Run `npx vitest run tests/integration`
+  3. Reopen the categories — the product types are still there
+
+### BF-013: Hydration errors from dates in admin tables
+- **Severity:** Medium
+- **Surface:** Admin — categories, users, carts, orders tables (and every other date on the site)
+- **Problem:** Dates formatted with the runtime's locale and timezone differed between server and browser
+- **Fix:** One set of date/count helpers pinned to en-IN + Asia/Kolkata; a test blocks raw `toLocale*String` calls
+- **Status:** `[x]`
+- **How to test:**
+  1. Open Admin > Categories, Users, Carts, Orders
+  2. No hydration error in the console; dates show as DD/MM/YYYY
+
+### BF-014: Measurements blank when editing a product
+- **Severity:** High
+- **Surface:** Seller/Admin — product edit form
+- **Problem:** Measurements saved correctly but were read back through the facts parser, which rejected them and returned nothing
+- **Fix:** Dedicated `parseStoredMeasurements`; regression test blocks reading measurements through the facts parser
+- **Status:** `[x]`
+- **How to test:**
+  1. Edit a product whose category has a product type (e.g. Abayas → Islamic wear)
+  2. Fill in the measurements and save
+  3. Open edit again — the measurements are filled in
+
+### BF-015: Choosing "On its own" for product family fails validation
+- **Severity:** Medium
+- **Surface:** Seller/Admin — product form
+- **Problem:** "On its own" sent an empty string; the schema demanded at least one character
+- **Fix:** Empty picker values (family, brand, kind) are stored as no value
+- **Status:** `[x]`
+- **How to test:**
+  1. Create or edit a product, set Family to "On its own", save
+  2. Saves without the "Too small" error
+
 ---
 
 ## Backlog (from this session)
@@ -383,7 +426,7 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 ### BL-005: Blocked user checkout gate
 - **Surface:** Buyer — checkout
 - **Problem:** Blocked user can still attempt checkout (file-cohesion constraint blocks the fix)
-- **Status:** `[ ]`
+- **Status:** `[x]` — resolved by BF-002; `requireSession` now checks `isBlocked` on every request
 
 ### BL-006: Order status undo (packed → processing)
 - **Surface:** Seller / Admin
@@ -392,16 +435,23 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 ### BL-007: Buyer product page — show facts and measurements
 - **Surface:** Buyer — `/product/[slug]`
-- **Problem:** Product attributes (colour, material, sleeve length) and measurements (length, bust, waist) are saved in the DB but the buyer product page doesn't render them. The `Product` domain type has no `facts` field.
-- **What it needs:** Add `facts` and `measurements` to buyer `Product` type, include in DAL query, render a "Specifications" section on the product detail page below the description.
-- **Status:** `[ ]`
+- **Problem:** Product attributes (colour, material, sleeve length) and measurements (length, bust, waist) are saved in the DB but the buyer product page doesn't render them.
+- **Fix:** Added `facts` and `measurements` to buyer `Product` type and DAL. Rendered a "Specifications" section on the product detail page below the description.
+- **Status:** `[x]`
+- **How to test:**
+  1. Create/edit a product with a category that has a product type
+  2. Fill in the attribute questions (colour, material, etc.) and measurements
+  3. View the product as a buyer — a "Specifications" section shows below the description
 
 ### BL-008: Buyer variant switcher (product families)
 - **Surface:** Buyer — `/product/[slug]`
-- **Problem:** Products in a family (same item in different colours/sizes) are separate pages with no way to switch between them. A buyer visiting the blue abaya doesn't know the red one exists without going back to the listing.
-- **What it needs:** When viewing a product that belongs to a family, load all siblings. Show variant axes (colour, size) as selectable options on the product page — clicking swaps gallery, price, stock without a full page navigation. The family and variant data exist (`ProductFamily`, `Product.familyId`, ADR-0043); the buyer-side switcher UI does not.
-- **Depends on:** F-006 (product family management page) for seller-side setup
-- **Status:** `[ ]`
+- **Problem:** Products in a family (same item in different colours/sizes) are separate pages with no way to switch between them.
+- **Fix:** When a product has a `familyId`, siblings are loaded and shown as an "Also available" section with thumbnail links. Clicking navigates to the sibling's page.
+- **Status:** `[x]`
+- **How to test:**
+  1. Create 2+ products in the same family (via the product form's family picker)
+  2. View any of them as a buyer — an "Also available" row shows the siblings with thumbnails
+  3. Click a sibling — navigates to that product's page, with the current one highlighted
 
 ### BL-009: Re-save products to pick up product type from category
 - **Surface:** Seller
@@ -413,24 +463,37 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 ## Features
 
+Decisions from the 2026-10-09 planning pass. Manual operations are fine at today's order
+volume: we automate when volume makes the manual step hurt, not before.
+
+**Order of work:** quick wins (F-016, F-017, F-011, F-008) → F-021 commission → F-002
+cancel + returns with F-024 per-shipment fulfilment → F-004 → F-006 → F-012 → F-013 +
+F-019 → F-015. F-003, F-007, F-009, F-010, F-022, F-023, F-025 slot in between.
+
 
 
 ### F-001: Auction listing page
 
 - **Priority:** Tier 1
 - **Surface:** Buyer
-- **Business reason:** Buyers can only reach auctions via direct links to `/bid/[slug]`. There is no way to discover ongoing or upcoming auctions. This kills auction participation and makes the bidding feature nearly invisible.
-- **What it needs:** A `/auctions` page listing all ongoing and upcoming bidding events with countdown timers, product images, current highest bids, and filtering by status (live/upcoming/ended).
-- **Status:** `[ ]`
+- **Business reason:** Buyers can only reach auctions via direct links to `/bid/[slug]`. There is no way to discover ongoing or upcoming auctions.
+- **What it needs:** A `/auctions` page listing ongoing and upcoming bidding events with countdowns, images, current highest bids, and a live/upcoming/ended filter.
+- **Status:** `[-]` — on hold (owner, 2026-10-09)
 
 
 
-### F-002: Buyer order cancellation and return/refund flow
+### F-002: Order cancellation and returns (merged with former F-020)
 
 - **Priority:** Tier 2
-- **Surface:** Buyer
-- **Business reason:** Buyers have no way to cancel an order or request a return. `REFUNDED` payment status exists but nothing triggers it. This is a legal requirement for e-commerce in India (Consumer Protection Act). Without it, every cancellation/return is manual email work for the admin.
-- **What it needs:** Cancel button (pre-shipment), return request (post-delivery, time-windowed), refund initiation through Razorpay API, status tracking for the buyer.
+- **Surface:** Buyer, Seller, Admin
+- **Business reason:** Buyers have no way to cancel or return. The Consumer Protection (E-Commerce) Rules 2020 require a displayed cancellation/return/refund policy; a self-serve button is not required, so the operation stays manual for now. What must not stay manual is the record: a refund our system doesn't know about leaves the ledger owing the seller for money the buyer got back.
+- **Decisions:**
+  - **No refund API.** Admin refunds in the Razorpay dashboard; Razorpay's signed `refund` webhook flips our payment state (Invariant 2's shape).
+  - **Cancel (pre-shipment):** admin "Cancel order" releases stock in the transaction, marks the order cancelled, writes the ledger reversal.
+  - **Return, two steps:** (1) *Return initiated* — buyer requests within the window (7 days after delivery, to confirm), admin approves and books reverse pickup manually on Shiprocket. (2) *Received and verified* — the **org owner** receives the item, records its condition and decides restock (it is their stock). The **refund is the admin's call**, separate from restock, so a seller can't withhold a buyer's money by marking an item damaged; a disputed return goes to admin with the seller's photos.
+  - **Ledger reversal follows the refund, through events, not calls.** Payments verifies the Razorpay refund webhook and enqueues `payment.refunded` in the same transaction (ADR-0038). Checkout matches it to the open return/cancellation, which knows the items, and enqueues `return.refunded`. Payouts writes the per-item reversal, idempotent on the return id. No domain calls another. A daily check flags refunds with no matching return (e.g. a goodwill refund) and returns marked refund-due with no refund after N days.
+  - **Reversal is per item**, not per order — returning one of three items reverses one line. Today `createReversal` negates the whole SALE entry (`orderId, orgId, kind` is unique).
+- **Depends on:** F-024 for per-shipment status
 - **Status:** `[ ]`
 
 
@@ -438,39 +501,50 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 ### F-003: Invoice generation with GST
 
 - **Priority:** Tier 2
-- **Surface:** Buyer
-- **Business reason:** The current "download bill" is just browser print. Indian e-commerce requires a proper tax invoice with GST breakdown, invoice number, seller GSTIN, and buyer details. Without it, B2B buyers can't claim input tax credit.
-- **What it needs:** Server-generated PDF invoice with: invoice number sequence, GSTIN of seller and buyer (if provided), HSN codes, CGST/SGST/IGST breakdown, QR code (for e-invoice compliance above threshold).
+- **Surface:** Buyer, Seller, Admin
+- **Business reason:** "Download bill" is browser print. A tax invoice needs GSTINs, HSN codes and a CGST/SGST or IGST split; B2B buyers need it to claim input tax credit.
+- **Decisions:**
+  - **The seller issues the invoice** under their GSTIN; the platform invoices the seller for commission + 18% GST.
+  - **GSTIN-only sellers at launch.** The law (Notification 34/2023) lets unregistered sellers use an Enrolment ID for intra-state sales, but Amazon India doesn't accept it either (checked on Seller Central, 2026-10-09). Revisit if small sellers ask.
+  - Prices are tax-inclusive; taxable value is derived backwards, in paise. Seller state vs delivery state picks CGST+SGST or IGST.
+  - Invoice number is sequential per seller per financial year, ≤16 chars, separate from the random order code (ADR-0025).
+  - e-invoice QR only for sellers above ₹5 crore turnover — out of scope at launch.
+- **Platform obligations (payouts, not the invoice):** TCS on seller sales (GSTR-8, monthly), TDS under 194-O.
+- **Risk:** no CA review yet. Get a one-time CA review of rates and the invoice layout before this goes live.
 - **Status:** `[ ]`
 
 
 
-### F-004: Subscription & billing (1, 3, 6, 12 month plans)
+### F-004: Feature locks and the plans page
 
-- **Priority:** Tier 2 (gates most Tier 3 work)
+- **Priority:** Tier 2 (gates F-012, F-013, F-015)
 - **Surface:** Seller, Admin
-- **Business reason:** The platform currently has zero recurring revenue from sellers — only per-sale commission. Subscription tiers gate premium features (channel connectors, social posting, image enhancers, storefront unlocking). Without this, there's no monetization path beyond commission and no way to differentiate free vs paid sellers.
-- **What it needs:** Plan/Subscription/Invoice models, Stripe or Razorpay subscription integration, feature-gate middleware, upgrade/downgrade/cancel flows, grace period handling, admin management UI. Tiers: Free (locked storefront, no channels, no enhancer, no social), Paid (1/3/6/12 month options unlocking everything).
+- **Business reason:** Premium features (channel connectors, social posting, image enhancers, storefront) need to be switched per org. Sellers pay the admin offline.
+- **Decisions:**
+  - **No time-based plans, no payment integration.** Admin turns an org's premium features on or off, with a note (amount, date, reference).
+  - **Plans page is marketing:** explains the features and tiers. It does not show commission.
+  - **Tier prices shown on the page.** It must look better than the platform itself: every feature with its use case, world-class marketing quality. Spike first (`/bb-brainstorm`): references and component sources (shadcn blocks, Launch UI, Tailark, Magic UI); any animation library is a new package and needs a TRD.
+- **Open:** tier names, prices, and which features sit in which tier.
 - **Status:** `[ ]`
 
 
 
 ### F-005: Auto delivery scheduling
 
-- **Priority:** Tier 2
+- **Priority:** Tier 3 (deferred)
 - **Surface:** Admin
-- **Business reason:** Currently admin manually books shipments on Shiprocket's website, then comes back and enters tracking details. This doesn't scale — every order requires 2 manual steps. Auto-scheduling means orders flow through without admin touching each one.
-- **What it needs:** Extend Shiprocket integration to use their booking API: auto-create shipment on order confirmation, schedule pickup, generate label, fetch AWB. The provider interface (`server/shipping/providers/`) is already designed for this — the stub `mock.booking.ts` is ready to be replaced.
-- **Status:** `[ ]`
+- **Business reason:** Admin books on Shiprocket by hand and enters tracking. Fine at today's volume.
+- **Decision:** deferred until daily orders make the manual step hurt. The provider seam (`server/shipping/providers/`) keeps the choice open; when picked up, compare aggregators (Shiprocket, NimbusPost, iThink, Shipway) on test environment, reverse-pickup API, COD remittance cycle and lane rates. Shiprocket appears to have no sandbox — confirm with their support.
+- **Status:** `[-]` — deferred (owner, 2026-10-09)
 
 
 
 ### F-006: Product family management page
 
-- **Priority:** Tier 2
+- **Priority:** Tier 2 (before F-012 / F-013)
 - **Surface:** Seller
-- **Business reason:** Families can only be created from inside the product form with just a name. There's no way to edit a family's shared facts, measurements, description, or variant axes after creation. Sellers managing product ranges (e.g., a kurta in 5 colours) can't manage the family's shared properties.
-- **What it needs:** A standalone `/org/[orgId]/families` page with list/create/edit/retire. Form for shared facts, measurements, description, variant axis selection. Show member products.
+- **Business reason:** Families can only be created by name inside the product form. Channels require variants grouped (Google `item_group_id`, Amazon parent-child, Flipkart listing groups), so channel publishing depends on this.
+- **What it needs:** `/org/[orgId]/families` with list/create/edit/retire, shared facts, measurements and description. **Variant generator:** pick axis values (Red, Blue × S, M, L) and create the products at once; each variant fills only price, stock and photos.
 - **Status:** `[ ]`
 
 
@@ -479,8 +553,8 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 - **Priority:** Tier 2
 - **Surface:** Buyer
-- **Business reason:** Search is a Prisma `contains` (SQL LIKE) on product name only. No typo tolerance, no relevance ranking, no filters. A buyer searching "red kurta" who types "red krta" gets zero results. Buyers can't narrow by category, price range, or sort by relevance/price. Poor search = lost sales.
-- **What it needs:** pg_trgm or Postgres full-text search for typo tolerance and relevance. Filter sidebar: category, price range, brand. Sort: relevance, price low-high, price high-low, newest.
+- **Business reason:** Search is SQL `LIKE` on name only: no typo tolerance, no ranking, no filters. The win is result quality; latency gains matter only as the catalogue grows.
+- **What it needs:** pg_trgm and/or Postgres full-text search across name, category, brand and facts. Filters: category, price, brand. Sort: relevance, price, newest. **First:** confirm Prisma Postgres supports `pg_trgm`.
 - **Status:** `[ ]`
 
 
@@ -489,8 +563,7 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 - **Priority:** Tier 2
 - **Surface:** Seller
-- **Business reason:** Reviews are read-only for sellers. Sellers can't respond to negative reviews to offer resolution or thank positive reviewers. This is standard on every marketplace (Amazon, Flipkart) and builds buyer trust.
-- **What it needs:** A reply field on each review in the seller portal. One reply per review. Shown publicly below the review on the product page. Moderable by admin.
+- **What it needs:** One reply per review from the seller portal, shown publicly below the review, moderable by admin.
 - **Status:** `[ ]`
 
 
@@ -499,49 +572,49 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 - **Priority:** Tier 2
 - **Surface:** Admin, Buyer
-- **Business reason:** Admin can see abandoned carts but can't act on them. Automated recovery emails are the highest-ROI marketing automation in e-commerce (typical 5-15% recovery rate). Each recovered cart is direct revenue.
-- **What it needs:** A scheduled job that identifies carts idle > N hours with value > threshold, sends a templated email with cart contents and a return link. Configurable delay and frequency. Opt-out handling.
+- **What it needs:** Scheduled job for carts idle > N hours above a value threshold; templated email with a return link; configurable delay; unsubscribe link and opt-out honoured.
 - **Status:** `[ ]`
 
 
 
-### F-010: Org profile guided setup
+### F-010: Org onboarding and guided profile setup
 
 - **Priority:** Tier 2
 - **Surface:** Seller
-- **Business reason:** The storefront editor dumps all fields at once — tagline, description, logo, cover image, accent, intro, story, location, owner info, pillars, social handles, policies. The "Waiting" labels are confusing ("Waiting on at least one block, with a heading and a line under it"). New sellers don't know what to fill or in what order, and abandon the setup.
-- **What it needs:** A step-by-step wizard: (1) Identity — name, logo, tagline, (2) Story — about, owner, location, (3) Operations — delivery/returns policy, social handles, (4) Look — cover image, accent, pillars. Show progress. Let them skip and return.
+- **Business reason:** The storefront editor shows every field at once with confusing "Waiting on…" labels; new sellers abandon setup.
+- **What it needs:** Step-by-step wizard — (1) Identity, (2) Story, (3) Operations, (4) Look. Every field has a hint saying what to write plus a good example. Live storefront preview, progress bar, skip and return. Rewrite the "Waiting" labels in plain words.
 - **Status:** `[ ]`
 
 
 
-### F-011: Best selling products on storefront
+### F-011: Best selling products on storefront (+ broken sort)
 
 - **Priority:** Tier 2
 - **Surface:** Buyer (storefront)
-- **Business reason:** The storefront currently shows "newest goods" but not best sellers. Best sellers are social proof — they tell a buyer "other people bought this and came back." Currently `getTopProducts` is a placeholder returning zero data.
-- **What it needs:** Query `OrderItem` grouped by productId for the org, sum quantities over a rolling window (e.g., last 90 days). Show on storefront and org dashboard.
+- **What it needs:** `OrderItem` grouped by product for the org over a rolling 90 days; shown on storefront and org dashboard. **Also fix the sort dropdown:** it offers price sorts, but a comment in `src/app/(store)/store/[handle]/page.tsx` says price sort was dropped with pagination. Root-cause before fixing.
 - **Status:** `[ ]`
 
 
 
 ### F-012: Google Shopping & Meta catalogue feeds
 
-- **Priority:** Tier 3
+- **Priority:** Tier 3 (first channel)
 - **Surface:** Seller, Admin
-- **Business reason:** Google and Meta are "shopfront" channels — they fetch a feed file from your site and index products. This is the simplest marketplace integration: no real-time API, no order import. Just generate the file and host it. Products appear on Google Shopping and Facebook/Instagram shops. The channel readiness system already tells you if products are ready.
-- **What it needs:** Feed generator that reads products + channel mappings, produces Google Merchant Center XML and Meta Commerce Manager CSV. Host at a public URL per org. Seller registers URL with Google/Meta. Gated behind subscription.
+- **Business reason:** Cheapest channel: a feed file, no orders coming back.
+- **Owner setup:** Google Merchant Center and Meta Commerce Manager, both with domain verification. Decide one platform account vs one per seller (shops share one domain, so likely one).
+- **What it needs:** Feed with brand, condition, availability, price, image, gender, age group, colour, size, `item_group_id` (needs F-006), refreshed on a schedule. Gated by F-004.
 - **Status:** `[ ]`
 
 
 
-### F-013: Flipkart connector (end-to-end)
+### F-013: Marketplace connector base + Flipkart adapter
 
 - **Priority:** Tier 3
 - **Surface:** Seller, Admin
-- **Business reason:** Flipkart is India's second-largest marketplace. Sellers listing on Flipkart from BB means one product form, one inventory, multiple channels. This is the core value proposition of the listing phase — "list once, sell everywhere."
-- **What it needs:** OAuth credential management per seller, Flipkart Seller API adapter, listing push (using channel mappings), order import, stock sync, return handling. ~4-6 weeks.
-- **Depends on:** F-004 (subscription gating), channel-connectors spec
+- **Business reason:** "List once, sell everywhere." **The base is channel-neutral** for Flipkart, Amazon and Meesho; Flipkart is first only because it is quickest.
+- **What it needs:** Channel-neutral connector seam (credentials, listing push, order import, status), then the Flipkart adapter: seller authorisation, listing push through channel mappings, order import, labels. Sellers pushed to a marketplace must have a GSTIN.
+- **Owner setup now:** apply for Flipkart third-party API access — approval is the long pole. Flipkart has a sandbox.
+- **Depends on:** F-004, F-006, channel-connectors spec
 - **Status:** `[ ]`
 
 
@@ -550,10 +623,8 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 - **Priority:** Tier 3
 - **Surface:** Seller, Admin
-- **Business reason:** Amazon is India's largest marketplace. Same value proposition as Flipkart — list once, sell everywhere. Amazon SP-API is more complex than Flipkart's API but the pattern is the same.
-- **What it needs:** SP-API registration, per-seller auth, listing push, order import, stock sync, return handling. ~4-6 weeks.
-- **Depends on:** F-004 (subscription gating), channel-connectors spec
-- **Status:** `[ ]`
+- **What it needs:** SP-API registration, per-seller auth, an adapter on the F-013 base.
+- **Status:** `[-]` — parked until F-012 and F-013 are done end to end (owner, 2026-10-09)
 
 
 
@@ -561,9 +632,9 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 - **Priority:** Tier 3
 - **Surface:** Seller
-- **Business reason:** Sellers want to post product photos to Instagram directly from their media library. Instagram is the primary discovery channel for fashion/lifestyle products in India. Currently sellers have to download images and post manually.
-- **What it needs:** Meta Graph API integration, per-seller Facebook Business account linking, post draft generation (image + caption from product data), publish flow. Gated behind subscription.
-- **Depends on:** F-004 (subscription gating)
+- **Owner setup now:** Instagram Business account linked to a Facebook Page, Meta business verification, Meta app review for publishing (weeks).
+- **What it needs:** Account linking, draft post from product data, publish. Images from R2 as JPEG, aspect 4:5 to 1.91:1; daily post cap. Gated by F-004.
+- **Depends on:** F-004
 - **Status:** `[ ]`
 
 
@@ -572,8 +643,7 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 - **Priority:** Tier 1
 - **Surface:** Admin
-- **Business reason:** Admin sees all products across orgs but can only view them — can't archive a product that violates platform policy. Currently requires asking the org to archive it themselves, which doesn't work for urgent takedowns (counterfeit, prohibited items).
-- **What it needs:** An "Archive" action on the admin product view that archives the product with a platform reason, notifying the org. Separate from org self-archive.
+- **What it needs:** "Archive" on the admin product view with a platform reason, notifying the org. Separate from org self-archive.
 - **Status:** `[ ]`
 
 
@@ -582,8 +652,7 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 
 - **Priority:** Tier 2
 - **Surface:** Seller (storefront)
-- **Business reason:** Only 3 accent options (green, amber, blue) besides the default. Sellers with specific brand colours (e.g., a brand that uses pink or teal) can't match their storefront to their identity. More presets or a custom hex picker would let the storefront feel like the seller's own shop.
-- **What it needs:** Either expand to 8-10 presets covering common brand colours, or allow custom hex input (with a validator that checks contrast ratios for accessibility).
+- **Decision:** 8–10 presets, not a free hex picker — fits ADR-0049 and can't produce an unreadable shop.
 - **Status:** `[ ]`
 
 
@@ -591,31 +660,73 @@ Status key: `[ ]` open, `[~]` in progress, `[x]` done
 ### F-018: Channel reporting (consolidated sales)
 
 - **Priority:** Tier 3
-- **Surface:** Seller, Admin
-- **Business reason:** Once sellers sell on multiple channels, they need one view of what sold where, with revenue and commission per channel. Without this, sellers track each platform separately — the exact problem BB is supposed to solve.
-- **What it needs:** Aggregate order data by channel, show per-channel revenue/units/returns. Admin sees platform-wide; seller sees their own.
-- **Depends on:** F-013 / F-014 (marketplace connectors)
-- **Status:** `[ ]`
+- **Status:** `[-]` — parked (owner, 2026-10-09). Publishing and inventory sync come first.
 
 
 
 ### F-019: Inventory sync across channels
 
-- **Priority:** Tier 3
+- **Priority:** Tier 3 (required)
 - **Surface:** Seller
-- **Business reason:** If a product sells on Amazon, stock must decrement on Flipkart and BB simultaneously. Without real-time sync, overselling is inevitable and causes cancellations and penalties on marketplaces.
-- **What it needs:** Event-driven stock sync: when stock changes on any channel (sale, restock, return), propagate to all connected channels. Race condition handling with retries.
-- **Depends on:** F-013 / F-014 (marketplace connectors)
+- **Business reason:** A sale on one channel must reduce stock everywhere, or overselling causes cancellations and marketplace penalties. **Channel-neutral, separate from F-013.**
+- **What it needs:** Stock events (sale, cancel, return, restock) from any channel propagate to all connected channels through the job queue (ADR-0038), with retries. Needs order import from each channel even without reporting. **Channel returns restock us:** only when received in good condition; RTO (undelivered) and customer returns are different events.
+- **Depends on:** F-013 base
 - **Status:** `[ ]`
 
 
 
 ### F-020: Return/refund flow
 
-- **Priority:** Tier 3
-- **Surface:** Buyer, Seller, Admin
-- **Business reason:** Buyers currently have no way to request a return. This is legally required and operationally necessary. Every return is currently manual email work. With marketplace integration, return handling must be consistent across channels.
-- **What it needs:** Buyer-initiated return request (time-windowed), admin approval/rejection, reverse pickup scheduling, refund through Razorpay, restock on return receipt, per-org return policy enforcement.
+- **Status:** `[-]` — merged into F-002 (owner, 2026-10-09)
+
+
+
+### F-021: Commission default 2%, configurable
+
+- **Priority:** Tier 1
+- **Surface:** Admin, Seller
+- **Business reason:** Commission (on-platform sales only) is hardcoded at 15% (schema default `commissionBps 1500`, fallbacks in `server/payouts/ledger.service.ts` and `ledger.repository.ts`).
+- **What it needs:** Platform default as an admin-editable setting, starting at 2%; per-org override stays; org owner emailed when their rate changes. Past orders are already safe — the rate is snapshotted per ledger line. Existing orgs move from 15% to 2% (owner, 2026-10-10); the change applies to orders paid after it. Platform absorbs gateway fees for now.
+- **Status:** `[ ]`
+
+
+
+### F-022: Courier cost record
+
+- **Priority:** Tier 2
+- **Surface:** Admin
+- **Business reason:** We pay the courier directly; each shipment stores what the buyer was charged but not what we paid.
+- **What it needs:** "Actual cost paid" on each shipment, entered with the AWB; admin report of charged vs paid, per order and per month. A full shipping ledger only if Shiprocket wallet reconciliation is needed later.
+- **Status:** `[ ]`
+
+
+
+### F-023: 45-day payout hold
+
+- **Priority:** Tier 2
+- **Surface:** Admin
+- **Business reason:** Payouts happen off-platform; paying before the return window closes means chasing the seller for refunded money.
+- **What it needs:** A ledger entry is eligible 45 days after delivery. The payout screen shows the policy as a disclaimer and highlights entries still inside the window — warns, never blocks.
+- **Status:** `[ ]`
+
+
+
+### F-024: Per-shipment fulfilment
+
+- **Priority:** Tier 1 (before F-002)
+- **Surface:** Seller, Admin, Buyer
+- **Business reason:** Orders already split into one `Shipment` per seller and pickup location, each with its own tracking and charge. But "Mark as Packed" and status are order-level, so one seller packing marks the whole multi-seller order packed.
+- **What it needs:** Pack, track and deliver per shipment; order status derived from its shipments (e.g. "Partly shipped"); buyer order page groups items under each shipment's tracking card.
+- **Status:** `[ ]`
+
+
+
+### F-025: E-commerce rules compliance
+
+- **Priority:** Tier 1
+- **Surface:** Buyer
+- **Business reason:** The Consumer Protection (E-Commerce) Rules 2020 require more than a policy page.
+- **What it needs:** Cancellation/return/refund policy page; named grievance officer with contact (acknowledge in 48h, resolve within a month); seller name and address on product pages; country of origin on listings; no cancellation charge unless the platform bears an equal one. Not legal advice — confirm with a lawyer when possible.
 - **Status:** `[ ]`
 
 ---

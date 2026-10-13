@@ -138,6 +138,26 @@ describe("the test suite cannot quietly stop testing", () => {
     ).toEqual([]);
   });
 
+  it("no fixture or suite borrows a row it did not create", () => {
+    // `findFirst` with no `where` hands back whichever real row comes first, and a suite that then
+    // writes to it rewrites the owner's data: category product types reset, an org's channels gone.
+    const UNSCOPED = /\.findFirst(?:OrThrow)?\(\s*(?:\)|\{\s*(?:select|include|orderBy)\b)/;
+    const helper = {
+      path: "tests/helpers/test-db.ts",
+      code: withoutComments(readFileSync(join(ROOT, "tests/helpers/test-db.ts"), "utf8")),
+    };
+    const offenders = [helper, ...integration.filter((f) => !(f.path in DATA_DEPENDENT))]
+      .filter((f) => UNSCOPED.test(f.code))
+      .map((f) => f.path);
+
+    expect(
+      offenders,
+      "Scope the read to a row the test created, or use a fixture from `ensureFixtures`, which " +
+        "owns its rows by fixed test keys:\n" +
+        offenders.map((o) => `    ${o}`).join("\n"),
+    ).toEqual([]);
+  });
+
   it("every declared exception still exists and still says why", () => {
     const paths = new Set(files.map((f) => f.path));
     const declared = { ...DATA_DEPENDENT, ...ENVIRONMENT_GATED };

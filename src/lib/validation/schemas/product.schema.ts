@@ -3,6 +3,10 @@ import { optionalNumber, rupeeAmount } from "./common.schemas";
 import { ProductFlag } from "@server/catalog/product.flags";
 import { MEDIA_KINDS, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
 
+/** A picker's "none" option submits `""`; the column stores null. Without this, "On its own" failed `min(1)`. */
+const unselectedIsNull = <T extends z.ZodType>(inner: T) =>
+  z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? null : value), inner.nullable().optional());
+
 /**
  * One gallery item. `ref` is already an id for YOUTUBE by the time it gets here — the
  * form parses the pasted link so the org member sees "that is not a YouTube link" inline
@@ -117,9 +121,9 @@ export const productFormSchema = z
      * shape — origin is the server's word for where a value came from, and a request that could
      * set it could claim a shop typed something it inherited.
      */
-    kind: z.string().trim().max(40).nullable().optional(),
-    familyId: z.string().trim().min(1).nullable().optional(),
-    brandId: z.string().trim().min(1).nullable().optional(),
+    kind: unselectedIsNull(z.string().trim().max(40)),
+    familyId: unselectedIsNull(z.string().trim().min(1)),
+    brandId: unselectedIsNull(z.string().trim().min(1)),
     facts: z
       .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
       .optional(),

@@ -6,6 +6,7 @@
 
 import type { CartItem } from "@/domain/cart";
 import { ShippingGroup } from "@/domain/shipping";
+import { formatDate } from "@/lib/format";
 
 /**
  * Format delivery estimate
@@ -29,7 +30,7 @@ export function getEstimatedDeliveryDate(days: number): Date {
  * Format delivery date
  */
 export function formatDeliveryDate(date: Date): string {
-  return date.toLocaleDateString("en-IN", {
+  return formatDate(date, {
     weekday: "short",
     month: "short",
     day: "numeric",

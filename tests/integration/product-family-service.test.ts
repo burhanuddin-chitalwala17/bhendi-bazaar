@@ -57,6 +57,7 @@ describe.skipIf(!isDisposableDb)("the family service (local db)", () => {
   // an earlier version restored inline and poisoned the suite the first time it went red.
   it("keeps the axis it was made with when the type changes afterwards", async () => {
     const family = await service.create(orgId, { name: `${stamp} frozen`, categoryId });
+    const prior = await prisma.productType.findUniqueOrThrow({ where: { key: "islamic-wear" } });
     try {
       await prisma.productType.update({
         where: { key: "islamic-wear" },
@@ -66,7 +67,7 @@ describe.skipIf(!isDisposableDb)("the family service (local db)", () => {
     } finally {
       await prisma.productType.update({
         where: { key: "islamic-wear" },
-        data: { variantAxis: ["colour"] },
+        data: { variantAxis: prior.variantAxis },
       });
     }
   });

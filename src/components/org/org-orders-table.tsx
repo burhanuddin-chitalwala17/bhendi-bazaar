@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { DataTable, type Column } from "@/components/shared/data-table";
 import type { Pagination } from "@/types/shared";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import type { OrgOrderView } from "@/data-access-layer/org/orders.dal";
 
 const PAYMENT_BADGE = {
@@ -52,7 +52,7 @@ export function OrgOrdersTable({
     {
       key: "createdAt",
       label: "Placed",
-      render: (order) => new Date(order.createdAt).toLocaleDateString("en-IN"),
+      render: (order) => formatShortDate(order.createdAt),
     },
     { key: "itemCount", label: "Items" },
     {

@@ -14,6 +14,10 @@ import { applyStatus } from "@server/shipping/shipment-status.service";
 import { trackingService } from "@server/shipping/tracking.service";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { updateTrackingSchema } from "@/lib/validation/schemas/shipment-tracking.schema";
+import { ORDER_STATUS } from "@server/checkout/order.types";
+
+/** A courier is booked once the org has packed; before that there is no parcel to track. */
+const TRACKABLE = new Set<string>([ORDER_STATUS.PACKED, ORDER_STATUS.SHIPPED, ORDER_STATUS.DELIVERED]);
 
 export async function PATCH(
   request: NextRequest,
@@ -57,9 +61,9 @@ export async function PATCH(
       );
     }
 
-    if (shipment.order?.status !== "packed" && shipment.order?.status !== "shipped" && shipment.order?.status !== "delivered") {
+    if (!TRACKABLE.has(shipment.order?.status ?? "")) {
       return NextResponse.json(
-        { error: "Tracking can only be added after the seller marks the order as packed" },
+        { error: "Tracking can only be added after the org marks the order as packed" },
         { status: 400 },
       );
     }

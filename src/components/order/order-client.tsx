@@ -5,6 +5,7 @@ import { SectionHeader } from "../shared/SectionHeader";
 import { Badge } from "@/components/ui/badge";
 import type { Order, Shipment } from "@/domain/order";
 import { ORDER_STATUS } from "@server/checkout/order.types";
+import { formatDay } from "@/lib/format";
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   [ORDER_STATUS.PENDING_PAYMENT]: { label: "Awaiting Payment", className: "bg-warning text-warning-foreground" },
@@ -51,11 +52,7 @@ function ShipmentCard({ shipment }: { shipment: Shipment }) {
       {shipment.estimatedDelivery && (
         <p className="text-xs">
           <span className="text-muted-foreground">Est. delivery:</span>{" "}
-          {new Date(shipment.estimatedDelivery).toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          })}
+          {formatDay(shipment.estimatedDelivery)}
         </p>
       )}
     </div>

@@ -7,7 +7,7 @@ import { Eye, ShoppingCart } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import type { AbandonedCart } from "@/domain/admin";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Money } from "@/components/shared/Money";
 
@@ -86,7 +86,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
             {cart.daysSinceUpdate} {cart.daysSinceUpdate === 1 ? "day" : "days"} ago
           </p>
           <p className="text-xs text-muted-foreground">
-            {new Date(cart.updatedAt).toLocaleDateString()}
+            {formatShortDate(cart.updatedAt)}
           </p>
         </div>
       ),

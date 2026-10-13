@@ -27,6 +27,19 @@ describe("requireSession", () => {
     signedInAs(null);
     await expect(requireSession()).rejects.toMatchObject({ status: 401 });
   });
+
+  it("refuses a blocked user", async () => {
+    signedInAs("user-1", "USER");
+    findUnique.mockResolvedValue({ platformRole: "USER", isBlocked: true });
+    await expect(requireSession()).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("admits an active user", async () => {
+    signedInAs("user-1", "USER");
+    findUnique.mockResolvedValue({ platformRole: "USER", isBlocked: false });
+    const session = await requireSession();
+    expect(session.user.id).toBe("user-1");
+  });
 });
 
 describe("requirePlatformAdmin", () => {
@@ -63,10 +76,12 @@ describe("requirePlatformAdmin", () => {
     await expect(requirePlatformAdmin()).rejects.toMatchObject({ status: 403 });
   });
 
-  it("refuses a non-admin claim without reaching the database", async () => {
+  it("refuses a non-admin claim after the session check", async () => {
     signedInAs("user-1", "USER");
+    findUnique.mockResolvedValue({ platformRole: "USER", isBlocked: false });
 
     await expect(requirePlatformAdmin()).rejects.toMatchObject({ status: 403 });
-    expect(findUnique).not.toHaveBeenCalled();
+    // Called once by requireSession (blocked check), not a second time by requirePlatformAdmin
+    expect(findUnique).toHaveBeenCalledTimes(1);
   });
 });

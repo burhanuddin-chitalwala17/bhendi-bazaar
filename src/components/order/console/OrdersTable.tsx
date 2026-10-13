@@ -7,7 +7,7 @@ import { useMutation } from "@/hooks/core/useMutation";
 import { adminOrderApiClient } from "@/components/order/console/adminOrderApiClient";
 import type { AdminOrderRow } from "@server/checkout/admin.order.types";
 import { cn } from "@/lib/utils";
-import { titleCase } from "@/lib/format";
+import { formatShortDate, titleCase } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
 import { Select } from "@/components/ui/select";
 import { Money } from "@/components/shared/Money";
@@ -125,7 +125,7 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
       key: "createdAt",
       label: "Date",
       sortable: true,
-      render: (order) => new Date(order.createdAt).toLocaleDateString("en-IN"),
+      render: (order) => formatShortDate(order.createdAt),
     },
   ];
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { orgOrdersDAL } from "@/data-access-layer/org/orders.dal";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
@@ -53,7 +53,7 @@ export default async function OrgOrderDetailPage({
         </Link>
       </div>
       <p className="text-muted-foreground">
-        Placed {new Date(order.createdAt).toLocaleString("en-IN")}
+        Placed {formatDateTime(order.createdAt)}
       </p>
 
       <Card>

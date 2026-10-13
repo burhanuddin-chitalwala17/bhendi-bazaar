@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { reviewApiClient } from "@/components/product/reviewApiClient";
 import type { ReviewDto } from "@server/catalog/review.types";
+import { formatDay } from "@/lib/format";
 
 /**
  * The reviews themselves, extending in place (product-reviews R3).
@@ -127,11 +128,7 @@ export function ReviewList({
                     dateTime={review.createdAt}
                     className="text-4xs text-muted-foreground sm:text-3xs"
                   >
-                    {new Date(review.createdAt).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {formatDay(review.createdAt)}
                   </time>
                 </div>
 

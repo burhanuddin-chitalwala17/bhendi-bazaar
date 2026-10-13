@@ -318,7 +318,7 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
       where: { id: fixtures.orgAddressId },
       select: { name: true, orgId: true },
     });
-    const category = await prisma.category.findFirstOrThrow({ select: { slug: true } });
+    const category = { slug: fixtures.categorySlug };
     const result = await createProducts(location.orgId, [
       {
         rowNumber: 2,

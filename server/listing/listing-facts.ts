@@ -405,3 +405,16 @@ export function parseStoredFacts(value: unknown): StoredFacts {
   const parsed = storedFactsSchema.safeParse(value);
   return parsed.success ? parsed.data : {};
 }
+
+/** Measurements keyed by measure, not fact: read through the fact schema, every entry fails and the whole column reads as empty. */
+export const storedMeasurementsSchema = z.partialRecord(
+  measureKeySchema,
+  z.object({ value: z.number(), origin: z.enum(ORIGINS as unknown as [Origin, ...Origin[]]) }),
+);
+export type StoredMeasurements = z.infer<typeof storedMeasurementsSchema>;
+
+export function parseStoredMeasurements(value: unknown): StoredMeasurements {
+  if (value === null || value === undefined) return {};
+  const parsed = storedMeasurementsSchema.safeParse(value);
+  return parsed.success ? parsed.data : {};
+}

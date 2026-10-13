@@ -21,6 +21,7 @@ import {
   handleChangeSchema,
   type HandleChangeInput,
 } from "@/lib/validation/schemas/storefront.schema";
+import { formatDate } from "@/lib/format";
 
 /**
  * Changing a shop's public address (org-handle R4, R4g, R4g1).
@@ -49,14 +50,11 @@ export function HandleChangeDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  const stopsWorking = new Date(oldAddressWorksUntil).toLocaleDateString(
-    undefined,
-    {
+  const stopsWorking = formatDate(oldAddressWorksUntil, {
       day: "numeric",
       month: "long",
       year: "numeric",
-    },
-  );
+    });
 
   const {
     register,

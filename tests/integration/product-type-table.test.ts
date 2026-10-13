@@ -118,10 +118,14 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
     });
 
     it("offers only live types to a picker, and keeps a retired one readable", async () => {
+      const prior = await prisma.productType.findUniqueOrThrow({ where: { key: "combo" } });
       await prisma.productType.update({ where: { key: "combo" }, data: { retiredAt: new Date() } });
-      expect((await repo.options()).map((o) => o.key)).not.toContain("combo");
-      expect(await repo.byKey("combo")).not.toBeNull();
-      await prisma.productType.update({ where: { key: "combo" }, data: { retiredAt: null } });
+      try {
+        expect((await repo.options()).map((o) => o.key)).not.toContain("combo");
+        expect(await repo.byKey("combo")).not.toBeNull();
+      } finally {
+        await prisma.productType.update({ where: { key: "combo" }, data: { retiredAt: prior.retiredAt } });
+      }
     });
   });
 
@@ -224,10 +228,14 @@ describe.skipIf(!isDisposableDb)("product types (local db)", () => {
     });
 
     it("retires it instead, leaving every product that names it readable", async () => {
+      const prior = await prisma.productType.findUniqueOrThrow({ where: { key: "socks" } });
       await prisma.productType.update({ where: { key: "socks" }, data: { retiredAt: new Date() } });
-      const holder = await prisma.product.findFirst({ where: { slug: `${stamp}-holder` } });
-      expect(holder?.productType).toBe("socks");
-      await prisma.productType.update({ where: { key: "socks" }, data: { retiredAt: null } });
+      try {
+        const holder = await prisma.product.findFirst({ where: { slug: `${stamp}-holder` } });
+        expect(holder?.productType).toBe("socks");
+      } finally {
+        await prisma.productType.update({ where: { key: "socks" }, data: { retiredAt: prior.retiredAt } });
+      }
     });
   });
 });

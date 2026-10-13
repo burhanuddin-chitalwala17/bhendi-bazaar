@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+import { formatShortDate } from "@/lib/format";
 
 export const metadata = {
   title: "Reviews",
@@ -74,7 +75,7 @@ export default async function OrgReviewsPage({
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <p className="text-xs text-muted-foreground">
                         {review.reviewerName} ·{" "}
-                        {new Date(review.createdAt).toLocaleDateString("en-IN")}
+                        {formatShortDate(review.createdAt)}
                       </p>
                       {review.isVerified && (
                         <Badge variant="secondary">Verified purchase</Badge>

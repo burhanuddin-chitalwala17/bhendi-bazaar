@@ -9,7 +9,7 @@ import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-
 import { wishlistService } from "@server/wishlist/wishlist.service";
 import { isRenderableImageUrl, renderableMedia } from "@server/catalog/image-paths";
 import { toProductMediaDto } from "@server/catalog/media";
-import { parseStoredFacts } from "@server/listing/listing-facts";
+import { parseStoredFacts, parseStoredMeasurements } from "@server/listing/listing-facts";
 import { LOGO } from "@/lib/config";
 import { NotFoundError } from "@server/shared/domain-error";
 import type { ProductCopyOption, ProductCopySource } from "@server/catalog/admin.product.types";
@@ -116,7 +116,7 @@ class ProductsDAL {
       kind: product.kind ?? null,
       familyId: product.familyId ?? null,
       facts: parseStoredFacts(product.facts) as ProductDetails["facts"],
-      measurements: parseStoredFacts(product.measurements) as ProductDetails["measurements"],
+      measurements: parseStoredMeasurements(product.measurements) as ProductDetails["measurements"],
       // Dead photos are dropped rather than shown: they cannot render, and saving the
       // edit form is then what clears them from the row — the re-upload remedy.
       media: renderableMedia((product.media ?? []).map(toProductMediaDto)),

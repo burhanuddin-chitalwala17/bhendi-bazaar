@@ -10,6 +10,72 @@
 
 ## Entries
 
+## 2026-10-08 — Edit form keeps measurements; "On its own" family saves (BF-014, BF-015) [CONTRACT]
+
+- **BF-014 — measurements blank on edit.** The admin products DAL read the `measurements`
+  column through `parseStoredFacts`, whose keys are *facts*. Every measurement key (`bust`,
+  `hip`, …) failed it, the defensive parse returned `{}`, and the edit form opened empty although
+  the values were saved. Added `parseStoredMeasurements` (keyed by `measureKeySchema`) in
+  `server/listing/listing-facts.ts` and used it in `src/data-access-layer/admin/products.dal.ts`.
+- **BF-015 — "Too small: expected string to have >=1 characters".** The family picker's
+  "On its own" option submits `""`, which `familyId: z.string().min(1)` refused. `kind`, `familyId`
+  and `brandId` now read an unselected picker as `null` (`unselectedIsNull` in
+  `product.schema.ts`), so `kind` no longer stores `""` either. No existing rows held `""`.
+  Additive contract change, recorded under *Listing vocabulary* in CONTRACTS.md.
+- Tests: `tests/unit/stored-measurements.test.ts` (parser + a scan that nothing feeds a
+  measurements column to the fact parser) and two cases in `product-schema.test.ts`. Both
+  mutation-tested; reverting the schema reproduces the exact message the user saw.
+
+## 2026-10-08 — Dates and counts formatted in one locale and zone (BF-013)
+
+- **Root cause**: tables called `toLocaleDateString()` with no locale, so the server (UTC, en-US)
+  rendered `10/8/2026` and the browser (IST, en-IN) `08/10/2026`, failing React hydration. It
+  recurred in the orders, categories, users and carts tables. Pinning only the locale (BF-006)
+  still left a different *day* near midnight, because the zones differ.
+- **Fix**: `src/lib/format.ts` pins `en-IN` and `Asia/Kolkata` in `formatDay`, plus new
+  `formatShortDate`, `formatDateTime`, `formatDate(value, options)` and `formatCount`. All 24
+  call sites across `src/` route through them.
+- **Gate**: `tests/unit/locale-formatting.test.ts` fails on any `toLocale*String(` outside
+  `format.ts`. Mutation-tested.
+- Fixture category hero image is now a local file, so the admin categories table can render it.
+- Side fixes: "seller" → "org" in two strings (retired vocabulary); the tracking gate compares
+  against `ORDER_STATUS` rather than bare strings.
+
+## 2026-10-08 — Integration tests no longer write to real data (BF-012)
+
+- **Root cause**: `ensureFixtures()` (`tests/helpers/test-db.ts`) borrowed the first real org,
+  category, user and carrier with an unscoped `findFirst`. Suites then mutated those rows on the
+  dev database: category product types reset to null (4 suites), the org's sales channels deleted
+  (3 suites), its colour values and enhancement policy deleted. The stop hook ran these suites
+  after every edit, which is why category product types kept disappearing.
+- **Fix**: `ensureFixtures()` now owns its world. Every row is found or created by a fixed test
+  key (`FIXTURE_KEYS`), so suites mutate only test rows and reruns reuse them rather than leak.
+- Three suites that touched shared reference data now leave it as found:
+  `channel-readiness-service` used the real `ethnic-wear/abaya` node (now stamped);
+  `product-type-table` restores each type's prior `retiredAt` in `finally`;
+  `product-family-service` restores `islamic-wear`'s prior variant axis, not a guessed one.
+  `bulk-upload` uses the fixture category instead of a random real one.
+- **Guard**: `test-integrity.test.ts` fails if the fixture helper or any integration suite reads
+  with an unscoped `findFirst`. Mutation-tested: restoring the old borrow fails it.
+- Verified: real categories, product types, org channels, listing values, attribute maps and
+  enhancement policies are byte-identical before and after a full 32-suite run.
+
+## 2026-10-08 — Buyer product specs and variant switcher (BL-007, BL-008)
+
+- **Specifications section** on buyer product page: facts (colour, material, sleeve length)
+  and measurements (length, bust, waist) now render below the description. Added `facts`
+  and `measurements` to buyer `Product` type and DAL mapping.
+- **Variant switcher**: when a product belongs to a family, an "Also available" row shows
+  sibling products with thumbnails. Clicking navigates to that variant's page.
+  Added `getFamilySiblings` to `product.read.repository.ts` and `siblings` to `Product`.
+
+## 2026-10-08 — Blocked user session revocation (BF-002, BL-005)
+
+- `requireSession` now checks `isBlocked` on every authenticated request (one PK lookup).
+  A blocked user with an active JWT is stopped immediately — not just at next sign-in.
+  Resolves BF-002 and BL-005. `requireActiveSession` removed (redundant).
+- Admin self-block prevented: `toggleBlockUser` refuses `id === adminId` (BF-001).
+
 ## 2026-10-08 — Org blocking: API guard and location confirm dialog (B-007 follow-up)
 
 - **API guard**: `resolveOrgScope` (`src/lib/org-auth.ts`) now checks `org.isBlocked`

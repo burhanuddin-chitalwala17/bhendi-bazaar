@@ -513,6 +513,13 @@ export class ProductsRepository {
       throw new NotFoundError("Search products not found");
     }
   }
+  async getFamilySiblings(familyId: string) {
+    return prisma.product.findMany({
+      where: { familyId, archivedAt: null },
+      select: { id: true, slug: true, name: true, thumbnail: true, price: true, categoryId: true },
+      orderBy: { name: "asc" },
+    });
+  }
 }
 
 export const productsRepository = new ProductsRepository();

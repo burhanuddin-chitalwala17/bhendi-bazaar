@@ -33,7 +33,7 @@ describe.skipIf(!isDisposableDb)("readiness, read through (local db)", () => {
 
   const stamp = `crs-${Date.now().toString(36)}`;
   const typeKey = `${stamp}-rida`;
-  const theirNode = "ethnic-wear/abaya";
+  const theirNode = `${stamp}-ethnic-wear/abaya`;
   // Stamped, not real: this suite used `maroon` and `ochre` and deleted them afterwards, which
   // took the platform's seeded mappings with them. A fixture owns only what it invented.
   const mapped = `${stamp}-mapped`;

@@ -12,6 +12,7 @@ import type { AdminCategory } from "@/domain/admin";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { formatShortDate } from "@/lib/format";
 
 interface Props {
   categories: AdminCategory[];
@@ -146,7 +147,7 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
       key: "createdAt",
       label: "Created",
       sortable: true,
-      render: (category) => new Date(category.createdAt).toLocaleDateString(),
+      render: (category) => formatShortDate(category.createdAt),
     },
     {
       key: "actions",

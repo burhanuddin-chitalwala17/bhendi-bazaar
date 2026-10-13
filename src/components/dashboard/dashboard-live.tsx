@@ -16,7 +16,7 @@ import { DollarSign, TrendingUp, Clock } from "lucide-react";
 import { adminDashboardApiClient } from "@/components/dashboard/dashboardApiClient";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { SectionHeader } from "@/components/shared/SectionHeader";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDateTime } from "@/lib/format";
 
 export function AdminDashboardLive() {
   const {
@@ -123,7 +123,7 @@ export function AdminDashboardLive() {
                   {activity.description}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(activity.timestamp).toLocaleString()}
+                  {formatDateTime(activity.timestamp)}
                 </p>
               </div>
             </div>

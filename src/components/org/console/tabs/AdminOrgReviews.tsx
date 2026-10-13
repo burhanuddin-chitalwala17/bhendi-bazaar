@@ -3,6 +3,7 @@ import { orgReviewsDAL } from "@/data-access-layer/org/reviews.dal";
 import { ReviewMedia } from "@/components/product/review-media";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatShortDate } from "@/lib/format";
 
 interface Props {
   orgId: string;
@@ -40,7 +41,7 @@ export async function AdminOrgReviews({ orgId, searchParams }: Props) {
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">
-                {new Date(review.createdAt).toLocaleDateString("en-IN")}
+                {formatShortDate(review.createdAt)}
               </span>
             </div>
             {review.comment && (

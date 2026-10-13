@@ -4,7 +4,7 @@
  * Presentation only — which offers it shows and who may edit them is decided by the
  * page that renders it, because scope belongs to the route, not to a component prop.
  */
-import { bpsToPercent, formatCurrency } from "@/lib/format";
+import { bpsToPercent, formatCurrency, formatShortDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { OfferActions } from "@/components/promotions/OfferActions";
@@ -121,12 +121,12 @@ export function OfferList({
                 Covers: {covers(offer)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                {offer.startsAt.toLocaleDateString("en-IN")} –{" "}
+                {formatShortDate(offer.startsAt)} –{" "}
                 {/* Markdowns migrated from the old column carry a placeholder end date
                     rather than a deadline anyone chose — say so instead of showing 2099. */}
                 {offer.endsAt.getFullYear() > 2090
                   ? "no end date set"
-                  : offer.endsAt.toLocaleDateString("en-IN")}
+                  : formatShortDate(offer.endsAt)}
                 {offer.usageLimit !== null &&
                   ` · ${offer.usageCount}/${offer.usageLimit} used`}
               </p>

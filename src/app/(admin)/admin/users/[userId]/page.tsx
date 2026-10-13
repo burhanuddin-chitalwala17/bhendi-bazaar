@@ -12,6 +12,7 @@ import {
   Calendar,
   ShoppingCart,
 } from "lucide-react";
+import { formatDay } from "@/lib/format";
 
 export default async function AdminUserDetailPage({
   params,
@@ -63,11 +64,7 @@ export default async function AdminUserDetailPage({
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <dt className="text-muted-foreground">Joined</dt>
               <dd className="ml-auto font-medium">
-                {new Date(user.createdAt).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
+                {formatDay(user.createdAt)}
               </dd>
             </div>
           </dl>
@@ -103,11 +100,7 @@ export default async function AdminUserDetailPage({
             </div>
             <div className="text-xs text-muted-foreground">
               Last active:{" "}
-              {new Date(user.lastActiveAt).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
+              {formatDay(user.lastActiveAt)}
             </div>
           </section>
 

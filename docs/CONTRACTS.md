@@ -145,6 +145,11 @@ fields, all optional: `kind`, `familyId`, `brandId`, `facts` and `measurements`.
 shape, because an answer is persisted with the level that supplied it and a request that could
 set that could claim a shop typed something it inherited.
 
+Since BF-015, `kind`, `familyId` and `brandId` also accept `""` and read it as `null`: a picker's
+"none" option ("On its own", "Not specified") submits the empty string, and `familyId` used to
+refuse it with a `min(1)` error. Additive — every payload valid before is still valid and means
+the same; `""` is never stored.
+
 **`productType` is absent from the wire deliberately**, like `slug` and `thumbnail`. It is
 resolved from the category tree when the product is saved and copied onto the row
 ([categories](specs/listing-vocabulary/categories/) D1b), so a payload cannot put a product under
