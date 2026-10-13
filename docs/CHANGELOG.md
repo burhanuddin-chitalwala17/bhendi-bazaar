@@ -10,6 +10,14 @@
 
 ## Entries
 
+## 2026-10-14 — Lockfile resolves from the public npm registry
+
+- `aeefb24` was installed on a work machine, so 185 `resolved` URLs in `package-lock.json` pointed
+  at a private corporate Artifactory the deploy cannot authenticate to. Rewritten to
+  `registry.npmjs.org` (same tarballs, same integrity hashes).
+- New project `.npmrc` pins `registry=https://registry.npmjs.org/`, overriding any machine-wide
+  registry so it cannot recur.
+
 ## 2026-10-08 — Edit form keeps measurements; "On its own" family saves (BF-014, BF-015) [CONTRACT]
 
 - **BF-014 — measurements blank on edit.** The admin products DAL read the `measurements`
