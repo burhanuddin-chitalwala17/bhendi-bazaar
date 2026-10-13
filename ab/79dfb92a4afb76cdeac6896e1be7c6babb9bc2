@@ -1,0 +1,24 @@
+docs/OPERATIONS.md
+  s_25a3b1a09b8c89::t_a14c363067d43a 55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "ab79dfb92a4afb76cdeac6896e1be7c6babb9bc2",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_25a3b1a09b8c89": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "666afa20-dca5-4d35-9880-942ee22c33ef",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
