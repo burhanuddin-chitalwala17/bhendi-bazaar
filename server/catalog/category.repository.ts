@@ -1,73 +1,254 @@
 /**
- * Server-side Category Repository
- *
- * This repository handles all database operations for categories.
+ * Admin Category Repository
+ * Handles database operations for category management
  */
 
-import { cache } from "react";
 import { prisma } from "@server/shared/prisma";
-import type { Category } from "@prisma/client";
-import type { ServerCategory } from "@server/catalog/category.types";
-import type { CategoryTreeNode } from "@server/catalog/category.tree";
+import type {
+  AdminCategory,
+  CategoryListFilters,
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from "@server/catalog/admin.category.types";
+import { slugCandidates, isUniqueViolation } from "@server/shared/slug";
+import { Prisma } from "@prisma/client";
+import { toJsonColumn } from "@server/shared/json";
+import { parseShotList, type ShotList } from "@server/catalog/shot-list";
+import { parseProductTypeKey } from "@server/listing/product-type";
 
-/**
- * The whole table, once per request. Tens of rows, and a single category page used
- * to read them four times in four shapes (slug lookup, subtree walk, parents map,
- * offer filter) — four billed operations for one small table. Every reader below
- * derives from this one request-memoised query instead. Same pattern and request
- * scope as loadPriceContext; deliberately memoised no further than a request.
- */
-const allCategories = cache(async (): Promise<Category[]> => {
-  return prisma.category.findMany({
-    orderBy: [{ order: "asc" }, { name: "asc" }],
-  });
-});
+/** `null` clears the list back to the inherited one; `undefined` leaves the column alone. */
+function shotListColumn(list: ShotList | null | undefined) {
+  if (list === undefined) return undefined;
+  return list === null ? Prisma.JsonNull : toJsonColumn(list);
+}
 
-export class CategoryRepository {
-  /** Id, name and slug — what a bulk sheet needs to resolve a `parent` cell to a
-   *  category. Name as well as slug, because a renamed category keeps its original
-   *  slug (Invariant 4) and the two stop being derivable from each other. */
-  async listIdentifiers(): Promise<Array<{ id: string; name: string; slug: string }>> {
-    const categories = await allCategories();
-    return categories.map(({ id, name, slug }) => ({ id, name, slug }));
-  }
+class AdminCategoryRepository {
+  /**
+   * Get paginated list of categories with filters
+   */
+  async getCategories(filters: CategoryListFilters) {
+    const {
+      search,
+      page = 1,
+      limit = 20,
+      sortBy = "order",
+      sortOrder = "asc",
+    } = filters;
 
-  /** Id and name only — what a target picker needs. */
-  async listForPicker() {
-    const categories = await allCategories();
-    return categories
-      .map(({ id, name }) => ({ id, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }
+    const skip = (page - 1) * limit;
 
-  async list(): Promise<ServerCategory[]> {
-    return await allCategories();
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [categories, total] = await Promise.all([
+      prisma.category.findMany({
+        relationLoadStrategy: "join",
+        where,
+        skip,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+        include: {
+          _count: {
+            select: { products: true },
+          },
+        },
+      }),
+      prisma.category.count({ where }),
+    ]);
+
+    const adminCategories: AdminCategory[] = categories.map((category) => ({
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      parentId: category.parentId,
+      description: category.description,
+      heroImage: category.heroImage,
+      accent: category.accent,
+      order: category.order,
+      shotList: parseShotList(category.shotList),
+      productType: parseProductTypeKey(category.productType),
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+      productsCount: category._count.products,
+    }));
+
+    return { categories: adminCategories, total };
   }
 
   /**
-   * The whole tree as (id, parentId, slug) rows — what the pure helpers in
-   * category.tree.ts walk. Tens of rows; loaded whole on purpose (TRD D1).
+   * Get single category by ID
    */
-  async listTree(): Promise<Array<CategoryTreeNode & { slug: string }>> {
-    const categories = await allCategories();
-    return categories.map(({ id, parentId, slug }) => ({ id, parentId, slug }));
+  async getCategoryById(id: string): Promise<AdminCategory | null> {
+    const category = await prisma.category.findUnique({
+      relationLoadStrategy: "join",
+      where: { id },
+      include: {
+        _count: {
+          select: { products: true },
+        },
+      },
+    });
+
+    if (!category) return null;
+
+    return {
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      parentId: category.parentId,
+      description: category.description,
+      heroImage: category.heroImage,
+      accent: category.accent,
+      order: category.order,
+      shotList: parseShotList(category.shotList),
+      productType: parseProductTypeKey(category.productType),
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+      productsCount: category._count.products,
+    };
   }
 
   /**
-   * Find category by slug
+   * Create new category
    */
-  async findBySlug(slug: string): Promise<ServerCategory | null> {
-    const categories = await allCategories();
-    return categories.find((category) => category.slug === slug) ?? null;
+  async createCategory(data: CreateCategoryInput): Promise<AdminCategory> {
+    // Get max order if not provided
+    let order = data.order;
+    if (order === undefined) {
+      const maxOrder = await prisma.category.findFirst({
+        orderBy: { order: "desc" },
+        select: { order: true },
+      });
+      order = (maxOrder?.order || 0) + 1;
+    }
+
+    // Slug derived from the name, settled by the unique constraint. Fields are
+    // enumerated rather than spread: `data` comes from a request body.
+    const candidates = slugCandidates(data.name);
+    let category;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        category = await prisma.category.create({
+          data: {
+            slug: candidates.next().value as string,
+            name: data.name,
+            parentId: data.parentId ?? null,
+            description: data.description,
+            heroImage: data.heroImage,
+            accent: data.accent,
+            order,
+            shotList: shotListColumn(data.shotList),
+            productType: data.productType ?? null,
+          },
+          include: {
+            _count: {
+              select: { products: true },
+            },
+          },
+        });
+        break;
+      } catch (error) {
+        if (isUniqueViolation(error, "slug") && attempt < 25) continue;
+        throw error;
+      }
+    }
+
+    return {
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      parentId: category.parentId,
+      description: category.description,
+      heroImage: category.heroImage,
+      accent: category.accent,
+      order: category.order,
+      shotList: parseShotList(category.shotList),
+      productType: parseProductTypeKey(category.productType),
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+      productsCount: category._count.products,
+    };
   }
 
   /**
-   * Get category by ID
+   * Update category
    */
-  async findById(id: string): Promise<ServerCategory | null> {
-    const categories = await allCategories();
-    return categories.find((category) => category.id === id) ?? null;
+  async updateCategory(
+    id: string,
+    data: UpdateCategoryInput
+  ): Promise<AdminCategory | null> {
+    // `slug` is intentionally absent: generated once at creation, then frozen,
+    // because changing it would 404 every existing link to the category.
+    const category = await prisma.category.update({
+      where: { id },
+      data: {
+        name: data.name,
+        parentId: data.parentId,
+        description: data.description,
+        heroImage: data.heroImage,
+        accent: data.accent,
+        order: data.order,
+        shotList: shotListColumn(data.shotList),
+        ...(data.productType === undefined ? {} : { productType: data.productType }),
+      },
+      include: {
+        _count: {
+          select: { products: true },
+        },
+      },
+    });
+
+    return {
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      parentId: category.parentId,
+      description: category.description,
+      heroImage: category.heroImage,
+      accent: category.accent,
+      order: category.order,
+      shotList: parseShotList(category.shotList),
+      productType: parseProductTypeKey(category.productType),
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+      productsCount: category._count.products,
+    };
+  }
+
+  /**
+   * Delete category
+   */
+  async deleteCategory(id: string): Promise<void> {
+    await prisma.category.delete({
+      where: { id },
+    });
+  }
+
+  /** One statement for a whole sheet; ids, slugs and parents are settled by the caller. */
+  async createMany(data: Prisma.CategoryCreateManyInput[]): Promise<void> {
+    await prisma.category.createMany({ data });
+  }
+
+  /** Categories whose hero predates the asset record — the media backfill's input. `heroImage` is often empty. */
+  async listUnlinkedHeroes(take?: number) {
+    return await prisma.category.findMany({
+      where: { heroAssetId: null },
+      select: { id: true, heroImage: true },
+      ...(take === undefined ? {} : { take }),
+    });
+  }
+
+  async linkHeroAsset(id: string, heroAssetId: string): Promise<void> {
+    await prisma.category.update({ where: { id }, data: { heroAssetId } });
   }
 }
 
-export const categoryRepository = new CategoryRepository();
+export const adminCategoryRepository = new AdminCategoryRepository();
+
+

@@ -14,7 +14,7 @@ import {
   orgBannerRepository,
   type OrgBannerInput,
 } from "@server/catalog/org-banner.repository";
-import { productsRepository } from "@server/catalog/product.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import { brandService } from "@server/catalog/brand.service";
 import { reviewService } from "@server/catalog/review.service";
 import { orderService } from "@server/checkout/order.service";

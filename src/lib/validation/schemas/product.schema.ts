@@ -3,6 +3,10 @@ import { optionalNumber, rupeeAmount } from "./common.schemas";
 import { ProductFlag } from "@server/catalog/product.flags";
 import { MEDIA_KINDS, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
 
+/** A picker's "none" option submits `""`; the column stores null. Without this, "On its own" failed `min(1)`. */
+const unselectedIsNull = <T extends z.ZodType>(inner: T) =>
+  z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? null : value), inner.nullable().optional());
+
 /**
  * One gallery item. `ref` is already an id for YOUTUBE by the time it gets here — the
  * form parses the pasted link so the org member sees "that is not a YouTube link" inline
@@ -92,6 +96,9 @@ export const productFormSchema = z
         z.object({
           orgAddressId: z.string().min(1),
           quantity: z.number().int("Stock must be a whole number").min(0, "Stock cannot be negative"),
+          // The client's claim of what it loaded, not a server-owned value: the save is a
+          // compare-and-set against it, so a stale editor is refused rather than winning.
+          seenQuantity: z.number().int().min(0).optional(),
         })
       )
       .min(1, "Choose at least one pickup location")
@@ -101,6 +108,26 @@ export const productFormSchema = z
       ),
     sku: z.string().trim().max(64).optional(),
     lowStockThreshold: optionalNumber(z.number().int("Low stock threshold must be a whole number").min(0)),
+
+    /**
+     * The listing vocabulary's answers
+     * ([listing-vocabulary](../../../../docs/specs/listing-vocabulary/)).
+     *
+     * `productType` is absent deliberately, like `slug` and `thumbnail`: it is resolved from the
+     * category tree on save and owned by the server, so accepting it would be accepting a value
+     * we overwrite (Invariant 4).
+     *
+     * `facts` and `measurements` carry bare answers here, never the stored `{value, origin}`
+     * shape — origin is the server's word for where a value came from, and a request that could
+     * set it could claim a shop typed something it inherited.
+     */
+    kind: unselectedIsNull(z.string().trim().max(40)),
+    familyId: unselectedIsNull(z.string().trim().min(1)),
+    brandId: unselectedIsNull(z.string().trim().min(1)),
+    facts: z
+      .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+      .optional(),
+    measurements: z.record(z.string(), z.union([z.number(), z.null()])).optional(),
   })
   // A cross-field rule neither side could enforce alone, attributed to the field a
   // user would correct.
@@ -116,6 +143,7 @@ export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",
   "orgId", "categoryId", "tags", "flags", "media",
   "weight", "sizes", "colors", "stockLocations", "sku", "lowStockThreshold",
+  "kind", "familyId", "brandId", "facts", "measurements",
 ] as const;
 
 /**

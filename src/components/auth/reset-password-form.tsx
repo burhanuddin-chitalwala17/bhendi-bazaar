@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { AuthField, PRIMARY_BUTTON } from "@/components/auth/auth-field";
 import { PasswordInput } from "@/components/auth/password-input";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
 import {
   resetPasswordSchema,
   type ResetPasswordInput,
 } from "@/lib/validation/schemas/auth.schemas";
+import { authApiClient } from "@/components/auth/authApiClient";
 
 /**
  * Set a new password against an emailed token.
@@ -34,13 +34,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
     formState: { errors, isSubmitting },
   } = useServerForm<ResetPasswordInput>({
     schema: resetPasswordSchema,
-    submit: async (data) => {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
+    submit: (data) => authApiClient.resetPassword(data),
+    onSuccess: () => {
       setDone(true);
       setTimeout(() => router.push("/signin"), 3000);
     },

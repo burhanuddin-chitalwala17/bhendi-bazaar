@@ -373,13 +373,12 @@ export class OrgRepository {
     return orgWithStats;
   }
 
-  /**
-   * Delete org
-   */
-  async delete(id: string): Promise<Org> {
-    return await prisma.org.delete({
+  async setBlocked(id: string, isBlocked: boolean) {
+    await prisma.org.update({
       where: { id },
+      data: { isBlocked },
     });
+    return await this.findById(id);
   }
 
   /**

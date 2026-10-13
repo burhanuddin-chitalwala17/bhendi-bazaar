@@ -91,10 +91,6 @@ export default async function BiddingPage({
   ]);
   // A slug that never existed is genuinely missing. A finished event is not.
   if (!event) notFound();
-
-  const variant = [event.product.size, event.product.color]
-    .filter(Boolean)
-    .join(" · ");
   const isOver = event.phase !== "LIVE" && event.phase !== "SCHEDULED";
 
   return (
@@ -137,11 +133,6 @@ export default async function BiddingPage({
                 size="icon"
               />
             </div>
-            {variant && (
-              <p className="text-2xs uppercase tracking-label text-muted-foreground">
-                {variant}
-              </p>
-            )}
             {/* R20: what the contest is against. */}
             <p className="text-sm text-muted-foreground">
               Usually {formatCurrency(event.product.referencePricePaise)}

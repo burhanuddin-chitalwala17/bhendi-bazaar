@@ -2,7 +2,6 @@
  * Admin Order Management Domain Types
  */
 
-import { Order } from "@prisma/client";
 import type { ShipmentItem } from "@server/checkout/order.types";
 import type { ShipmentStatus } from "@server/shipping/domain/shipping.types";
 
@@ -74,8 +73,20 @@ export interface OrderListFilters {
   sortOrder?: "asc" | "desc";
 }
 
+/** One row of the console's order listing — only what the table shows, so the full
+ *  order row (address, payment ids, internal notes) never reaches the browser. */
+export interface AdminOrderRow {
+  id: string;
+  code: string;
+  customerName: string | null;
+  grandTotal: number;
+  status: string;
+  paymentStatus: string | null;
+  createdAt: Date;
+}
+
 export interface OrderListResult {
-  orders: Order[];
+  orders: AdminOrderRow[];
   total: number;
   page: number;
   limit: number;

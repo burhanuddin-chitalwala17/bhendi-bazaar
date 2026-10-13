@@ -7,7 +7,7 @@ import { Eye, Heart } from "lucide-react";
 import { DataTable, Column } from "@/components/shared/data-table";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
 import { StockBadge } from "@/components/shared/badges/StatusBadge";
-import { ProductFlag } from "@/types/product";
+import { ProductFlag, isNewArrival } from "@/types/product";
 import { ProductForTable } from "../../types";
 import { ProductRowMenu } from "./ProductRowMenu";
 import { Pagination } from "@/types/shared";
@@ -144,27 +144,27 @@ export function ProductsTable({
       render: (product) => (
         <div className="flex flex-wrap gap-1">
           {product.flags?.includes(ProductFlag.FEATURED) && (
-            <span className="px-2 py-1 bg-accent/40 text-accent-foreground text-xs rounded">
+            <span className="px-2 py-1 bg-accent/40 text-accent-foreground text-xs rounded-field">
               Featured
             </span>
           )}
-          {product.flags?.includes(ProductFlag.ON_OFFER) && (
-            <span className="px-2 py-1 bg-destructive/15 text-destructive text-xs rounded">
+          {product.salePrice != null && product.salePrice < product.price && (
+            <span className="px-2 py-1 bg-destructive/15 text-destructive text-xs rounded-field">
               Offer
             </span>
           )}
           {product.flags.includes(ProductFlag.HERO) && (
-            <span className="px-2 py-1 bg-info/15 text-info text-xs rounded">
+            <span className="px-2 py-1 bg-info/15 text-info text-xs rounded-field">
               Hero
             </span>
           )}
-          {product.flags.includes(ProductFlag.NEW_ARRIVAL) && (
-            <span className="px-2 py-1 bg-success/15 text-success text-xs rounded">
+          {isNewArrival(product.createdAt) && (
+            <span className="px-2 py-1 bg-success/15 text-success text-xs rounded-field">
               New
             </span>
           )}
           {product.flags.includes(ProductFlag.CLEARANCE_SALE) && (
-            <span className="px-2 py-1 bg-warning/15 text-warning text-xs rounded">
+            <span className="px-2 py-1 bg-warning/15 text-warning text-xs rounded-field">
               Clearance
             </span>
           )}

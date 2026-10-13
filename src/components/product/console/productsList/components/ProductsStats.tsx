@@ -8,7 +8,7 @@ import {
   Star,
   DollarSign,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
+import { formatCount, formatCurrency } from "@/lib/format";
 import type { ProductStats } from "../../types";
 
 interface ProductsStatsProps {
@@ -28,32 +28,40 @@ export function ProductsStats({ stats }: ProductsStatsProps) {
       // "Available", not "Total": every figure on this row excludes archived products
       // (ADR-0029 D12), and a label that did not say so would be the ambiguous one.
       label: "Available",
-      value: stats.totalProducts.toLocaleString(),
-      note:
+      value: formatCount(stats.totalProducts),
+      // Two notes, because two different things can be worth saying and neither is the figure:
+      // what is archived, and how many garments the sellable ones amount to (variants D6).
+      note: [
+        stats.familyCount > 0
+          ? `in ${formatCount(stats.familyCount)} ${stats.familyCount === 1 ? "family" : "families"}`
+          : null,
         stats.archivedProducts > 0
-          ? `+ ${stats.archivedProducts.toLocaleString()} archived`
-          : undefined,
+          ? `+ ${formatCount(stats.archivedProducts)} archived`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || undefined,
       icon: Package,
       color: "text-info",
       bgColor: "bg-info/10",
     },
     {
       label: "Low Stock",
-      value: stats.lowStockProducts.toLocaleString(),
+      value: formatCount(stats.lowStockProducts),
       icon: AlertTriangle,
       color: "text-warning",
       bgColor: "bg-warning/10",
     },
     {
       label: "Out of Stock",
-      value: stats.outOfStockProducts.toLocaleString(),
+      value: formatCount(stats.outOfStockProducts),
       icon: XCircle,
       color: "text-destructive",
       bgColor: "bg-destructive/10",
     },
     {
       label: "Featured",
-      value: stats.featuredProducts.toLocaleString(),
+      value: formatCount(stats.featuredProducts),
       icon: Star,
       color: "text-accent-foreground",
       bgColor: "bg-accent/25",

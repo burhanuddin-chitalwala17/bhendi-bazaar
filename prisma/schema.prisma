@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider        = "prisma-client-js"
   // Join strategy for relation reads: one LATERAL JOIN instead of one query per
@@ -233,6 +227,13 @@ model Category {
   /// The named photo slots products in this category fill, inherited down the tree from the
   /// nearest ancestor that sets one; null means the platform's generic list (media-library D4).
   shotList    Json?
+  /// Which listing questions this category's products are asked, inherited down the tree from the
+  /// nearest ancestor that sets one, exactly as `shotList` is (listing-vocabulary/categories D1a).
+  /// Null everywhere means a product is asked the spine only — it still saves and still sells.
+  /// A browsing category is reorganised for merchandising reasons; the resolved value is copied
+  /// onto the product on save (D1b) so moving a category never moves a product's stored answers.
+  productType     String?
+  productTypeRef  ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
   order       Int            @default(0)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -270,11 +271,50 @@ model Product {
   /// never from input; NOT NULL is the one database-level guarantee that a product has
   /// a picture at all.
   thumbnail String
-  sizes     String[] // Available sizes
-  colors    String[] // Available colors
 
   sku               String? // Stock Keeping Unit — unique within the org, not the platform
   lowStockThreshold Int     @default(10) // Alert when stock falls below this
+
+  /// The product type resolved from the category tree at save time and kept here
+  /// (listing-vocabulary/categories D1b). A column rather than a fact because it says how to
+  /// read `facts` and `measurements`, so a row is interpretable without the tree.
+  productType String?
+  /// Which kind within that type — abaya, burqa, attar, bakhoor (categories D1). A column
+  /// because the channel mapping resolves a platform node from the type and the kind together,
+  /// and because the platforms disagree about which of the two it is.
+  kind        String?
+  /// Restrict: a type in use is retired, never deleted (product-types D8).
+  productTypeRef ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
+
+  /// The declared facts this product answers, each entry holding its value and the level that
+  /// supplied it, so origin costs no second column (listing-vocabulary trd D3). Only the
+  /// discriminators above earn columns: nothing filters on a colour or a fabric, and a column
+  /// added for a filter nobody has written is a second place for a value to live (categories D6a).
+  facts        Json?
+  /// Measurements in the unit the product type fixes, same shape as `facts`. Stored because a
+  /// measurement derives a size label and a label derives no measurement (ADR-0047 D4).
+  measurements Json?
+
+  /// The family this product is a member of, when it has siblings that sell separately
+  /// (listing-vocabulary/variants D2). Nullable because one abaya in one colour is one product
+  /// and nothing asks a shop to declare a family of one — and because requiring it would refuse
+  /// every row that exists. Restrict, not Cascade: a family carries no money, but its members do
+  /// ([ADR-0020](../docs/adr/0020-money-bearing-records-never-cascade.md)).
+  familyId String?
+  family   ProductFamily? @relation(fields: [familyId], references: [id], onDelete: Restrict)
+
+  /// Which of the org's brands this product carries
+  /// ([inherited-facts](../docs/specs/listing-vocabulary/inherited-facts/) R1).
+  ///
+  /// Stored rather than only used: the brand answers what the shop left blank at save time, and
+  /// correcting a fact on the brand later has to find the products that took their answer from
+  /// it (R5). Without this column that question is unanswerable — the fill would work and the
+  /// correction would silently match nothing.
+  ///
+  /// Restrict: a brand is retired, never deleted, and a retired brand still answers for the
+  /// products that named it ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)).
+  brandId String?
+  brand   Brand?  @relation(fields: [brandId], references: [id], onDelete: Restrict)
 
   orderItems       OrderItem[]
   cartItems        CartItem[]
@@ -288,8 +328,7 @@ model Product {
   orgId String
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
 
-  // ⭐ ADD THIS:
-  weight Float? @default(0.5) // Weight in kg
+  weight Float? @default(0.5)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -315,6 +354,11 @@ model Product {
   // The org portal's default list is "this org, on sale", and it is the one query
   // this column adds to a hot path.
   @@index([orgId, archivedAt])
+  // A readiness sweep and the channel mapping both work type by type.
+  @@index([productType])
+  @@index([familyId])
+  // The brand-level correction asks for one org's products of one brand.
+  @@index([brandId])
 }
 
 /// One item in a product's gallery — a photograph or an embedded video, in an order
@@ -581,7 +625,8 @@ model Org {
 
   // Status
   isActive   Boolean @default(true)
-  isVerified Boolean @default(false) // KYC verification
+  isBlocked  Boolean @default(false)
+  isVerified Boolean @default(false)
 
   // Everything a buyer may see lives on the profile; everything else stays here
   // (org-profile spec R1/R2, trd D1). A leak now needs a join nobody wrote.
@@ -624,8 +669,12 @@ model Org {
 
   @@index([email])
   @@index([isActive])
+  @@index([isBlocked])
   @@index([code])
   @@index([handle])
+  listingValues ListingValue[]
+  productFamilies ProductFamily[]
+  channels OrgChannel[]
 }
 
 /// The public face of an organisation: what a storefront or an advertisement may show, and
@@ -718,6 +767,7 @@ model Brand {
 
   @@unique([orgId, name])
   @@index([orgId])
+  products Product[]
 }
 
 model Account {
@@ -786,10 +836,9 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // ✅ NEW: Relations to shipments
   items          OrderItem[]
   shipments      Shipment[]
-  shippingEvents ShippingEvent[] // ← ADD THIS
+  shippingEvents ShippingEvent[]
 
   /// One row per offer that touched this order, carrying who funded it (ADR-0019).
   /// `discount` above is their sum — a display total, never an input to settlement.
@@ -1669,11 +1718,6 @@ model BiddingEvent {
   orgId     String
   org       Org     @relation(fields: [orgId], references: [id], onDelete: Restrict)
 
-  /// Which item this is, where the product has options. Descriptive only: `ProductStock`
-  /// has no variant dimension, so this states what is being sold without creating
-  /// variant-level inventory (D10, R1a).
-  size  String?
-  color String?
 
   startAt DateTime
   endAt   DateTime
@@ -1754,4 +1798,280 @@ model Bid {
   @@unique([eventId, amountPaise])
   @@index([eventId, amountPaise(sort: Desc)])
   @@index([userId])
+}
+
+/// A permitted answer to a listing fact (listing-vocabulary/categories D3, D5).
+///
+/// The facts are declared in code because they change with a release; the answers live here
+/// because a colour grows the first time a shop sells one, and waiting for a deploy to add one is
+/// the friction this phase exists to remove.
+///
+/// One list serves every product type that asks for it, rather than a list per type: Flipkart
+/// copies its colour list per node and they have drifted — thirty-five values of which only
+/// sixteen appear in every node (D5).
+model ListingValue {
+  id String @id @default(cuid())
+
+  /// Which list this belongs to — a `LIST` key from `server/catalog/listing-facts.ts`.
+  list String
+  /// What is stored on a product. Renaming a label must not rewrite products, and two shops must
+  /// not disagree about what maroon is (D4).
+  key   String
+  label String
+  order Int    @default(0)
+
+  /// The product types this answer applies to. Empty means every type that asks for its list,
+  /// which is the common case — a colour is a colour.
+  productTypes String[] @default([])
+
+  /// Null for a platform-provided answer, visible to everyone. Set when a shop added its own, so
+  /// one shop's vocabulary cannot quietly widen another's.
+  orgId String?
+  org   Org?    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  /// Retired rather than deleted: products already store this key, and a deleted answer would
+  /// leave them reading as unlisted text ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)).
+  retiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // A shop may add a key the platform later adds too; scoping the uniqueness to the owner keeps
+  // both rows legal and lets the shop's own answer win for that shop.
+  @@unique([list, key, orgId])
+  @@index([list])
+  @@index([orgId])
+}
+
+/// What a set of products that sell separately have in common (listing-vocabulary/variants R2).
+///
+/// An abaya in four colours is one family and four products. The family carries what the four
+/// share — the description, the fabric, the measurements — and the fill step copies those onto
+/// each member on save, so a member is read as one row and the family is never read to display
+/// or publish a product (variants D10, listing-vocabulary trd D4).
+///
+/// **It holds no price, no stock and no `ProductStock`.** Spec R3 is enforced by the columns not
+/// existing rather than by a check, which is the only way it cannot be forgotten: if a family
+/// kept a stock number at all, something would eventually sell it and the real counts would not
+/// move.
+model ProductFamily {
+  id    String @id @default(cuid())
+  orgId String
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+
+  name String
+  /// Typed once here and copied onto each member on save; a member may override it (variants D10).
+  description String? @db.Text
+
+  /// The product type its members take, and the facts and measurements they inherit. Same shape
+  /// as `Product.facts` so one fill step serves both.
+  productType  String?
+  facts        Json?
+  measurements Json?
+
+  /// Which facts make its members differ — a copy of the type's declared axis at the time the
+  /// family was made, so reordering the declaration later cannot silently re-group a shop's
+  /// products.
+  variantAxis String[] @default([])
+
+  /// Retired, never deleted ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)).
+  retiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products Product[]
+
+  @@index([orgId])
+  @@index([orgId, retiredAt])
+}
+
+/// A question set: which facts a product is asked, what it measures, what makes two of its
+/// products sell separately, and which kinds it holds
+/// ([product-types](../docs/specs/listing-vocabulary/product-types/) D1).
+///
+/// A row rather than a constant, so onboarding a seller with a line the platform has never
+/// carried does not wait for a release (spec R1). What stays in code is the *vocabulary* — the
+/// facts in `server/catalog/listing-facts.ts`, each carrying a validation rule and a way of
+/// being answered. A type is a selection from it, and a selection is data. This is where Akeneo
+/// and Shopify both draw the line.
+///
+/// Platform-wide, never per seller (D11): an admin defines types as an admin defines categories.
+/// A seller inventing its own would fragment the mappings every channel adapter depends on. The
+/// permitted *answers* stay org-scopeable (`ListingValue.orgId`) because a shop knowing a colour
+/// the platform does not is harmless, where a shop knowing a different question set is not.
+model ProductType {
+  id String @id @default(cuid())
+
+  /// What `Product.productType` and `Category.productType` already store — `islamic-wear` and
+  /// the rest. Unique so both columns can reference it, which lets every existing row keep the
+  /// exact string it holds and simply gain integrity: no backfill, no id rewrite (D2).
+  key   String @unique
+  label String
+
+  /// Fact keys from `server/catalog/listing-facts.ts`, in the order the form shows them. A key
+  /// naming no declared fact is refused on write — a form field with no meaning is worse than a
+  /// missing one (D3).
+  facts String[] @default([])
+
+  /// `[{ key, label, unit, required }]` — the measurements this type takes, with the unit fixed
+  /// per type rather than chosen per product.
+  measures Json?
+
+  /// Which facts or measures make two of its products sell separately (variants D1). Declared
+  /// per type because Flipkart declares its axes per node and no two of its twelve agree.
+  variantAxis String[] @default([])
+
+  /// `[{ key, label }]` — the kinds it holds. A kind decides which platform node a product maps
+  /// to, which is why abaya, burqa and rida are kinds rather than types of their own.
+  kinds Json?
+
+  /// Where this type's trade uses another word for a shared fact — Flipkart asks cloth "Fabric"
+  /// and everything else "Material", which is one question with two labels, not two facts.
+  /// `{ "<factKey>": "<label>" }`.
+  factLabels Json?
+
+  /// Which measurements a size label is read from, and optionally the scale that turns one into
+  /// a label — a ring's inner diameter becoming a ring size (D9). Nearest-match is generic code,
+  /// so the scale is data and a type is fully configurable rather than half.
+  labelFrom  String[] @default([])
+  labelScale Json?
+
+  /// Retired, never deleted ([ADR-0032](../docs/adr/0032-records-people-authored-are-retired-not-deleted.md)):
+  /// products store its key, and the foreign keys refuse the delete anyway.
+  retiredAt DateTime?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products   Product[]
+  categories Category[]
+
+  @@index([retiredAt])
+}
+
+/// Which channels a shop has turned on ([channel-registry](../docs/specs/channel-registry/) D2).
+///
+/// The channels themselves are declared in `server/shared/channels.ts`, not stored: one needs an
+/// image rule, a readiness rule and an adapter before it can do anything, so a row an admin
+/// could add would be a row that does nothing (D1). What a *shop* chooses is this.
+///
+/// **An absent row is off**, which is the default: a shop that has decided nothing is not warned
+/// about anything (spec R9).
+model OrgChannel {
+  orgId   String
+  org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  /// A `CHANNEL` key. Not a foreign key, because the channels are declared rather than stored.
+  channel String
+  enabled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([orgId, channel])
+  @@index([channel])
+}
+
+/// Which of a channel's categories a product type and kind list under
+/// ([ADR-0045](../docs/adr/0045-channel-mappings-are-versioned-data.md), channel-registry D3).
+///
+/// Keyed by the pair because the platforms disagree about which of the two a distinction is:
+/// Flipkart holds abaya, burqa and niqab as one node separated by a field, Meesho as three
+/// categories. A rida maps through the same pair, and has an exact match on neither.
+model ChannelCategoryMap {
+  id      String @id @default(cuid())
+  channel String
+  /// A `ProductType.key`; `kind` is one of that type's declared kinds, or null for all of them.
+  productType String
+  kind        String?
+
+  /// What the channel calls it — its node id, path, or whatever that channel keys on. Null only
+  /// when `notSold` says this type is deliberately not published here, which has no category.
+  theirCategory String?
+  /// The owner has decided this type does not sell on this channel. A decision, not a blank: an
+  /// absent row means nobody has chosen yet, and the register must tell the two apart or it keeps
+  /// listing a settled question as work. Reversible — clearing it puts the choice back.
+  notSold       Boolean @default(false)
+  /// How the channel labels it, so a screen can show something a person recognises.
+  theirLabel    String?
+
+  /// Whether this is the channel's own word for the same thing, or the closest it has (D6).
+  /// A nearest fit is a **warning on every product**, not an approval taken once — otherwise it
+  /// applies silently to later products it suits far less.
+  fit  ChannelMapFit @default(EXACT)
+  /// Why, when it is a nearest fit. Shown wherever the fit is.
+  note String?
+
+  /// When this was last checked, and against what. A claim about somebody else's system on a
+  /// particular day; undated, it cannot be audited or expired (D4).
+  checkedOn     DateTime
+  checkedSource String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A null `kind` means every kind of the type, and NULLs are distinct to a unique index — so a
+  // partial index in the migration is what stops two of those, which would be two answers to
+  // which node an untyped product publishes to.
+  @@unique([channel, productType, kind])
+  @@index([channel])
+}
+
+enum ChannelMapFit {
+  EXACT
+  NEAREST
+}
+
+/// What a channel calls one of our facts, within one of its categories.
+model ChannelAttributeMap {
+  id      String @id @default(cuid())
+  channel String
+  /// **Their** category, matching `ChannelCategoryMap.theirCategory` — not our product type.
+  /// A required-field set belongs to the channel's own node: Flipkart's `bag` asks Number of
+  /// Compartments and Waterproof, while `sling-bag` has neither field, and both are our `bag`.
+  /// Keyed by our type, a sling bag would be told to answer a question Flipkart never asks.
+  theirCategory String
+  /// A `FACT` key from `server/catalog/listing-facts.ts`.
+  fact          String
+
+  theirAttribute String
+  /// Whether that channel refuses a listing without it. An absent required one reads incomplete,
+  /// the rest warn (D7). Nothing refuses a publish either way (D10).
+  required       Boolean @default(false)
+  /// The channel takes any text here rather than a value from a list of its own, so there is
+  /// nothing to map and an answer it has never heard of is still a valid answer. Google's colour,
+  /// material and pattern are free text; Flipkart's are closed lists. Without this the gate would
+  /// report every colour as having no equivalent on a channel that needs no equivalent.
+  freeText       Boolean @default(false)
+
+  checkedOn     DateTime
+  checkedSource String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, theirCategory, fact])
+  @@index([channel, theirCategory])
+}
+
+/// What a channel calls one of our answers.
+///
+/// The layer nobody can automate: Google and Meta are the closest pair in this space and still
+/// disagree — `in_stock` against `in stock`, five age groups against seven. An answer with no row
+/// here fails readiness and the shop is asked to choose, once, for every product using it.
+model ChannelValueMap {
+  id      String @id @default(cuid())
+  channel String
+  /// A `LIST` key, and the stored key of one of its values.
+  list     String
+  valueKey String
+
+  theirValue String
+
+  checkedOn     DateTime
+  checkedSource String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([channel, list, valueKey])
+  @@index([channel, list])
 }

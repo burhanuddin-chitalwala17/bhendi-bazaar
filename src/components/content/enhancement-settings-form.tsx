@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormController, FormInput } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { enhancementsApiClient } from "@/components/content/enhancementsApiClient";
 import { paiseToRupees, rupeesToPaise } from "@/lib/format";
 import {
   enhancementSettingsSchema,
@@ -35,14 +35,7 @@ export function EnhancementSettingsForm({ settings }: { settings: EnhancementSet
       defaultMonthlyAllowance: settings.defaultMonthlyAllowance,
       dailyCapPaise: settings.dailyCapPaise,
     },
-    submit: async (data) => {
-      const response = await fetch("/api/admin/enhancements/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-    },
+    submit: (data) => enhancementsApiClient.saveSettings(data),
     successMessage: "Saved",
     onSuccess: () => router.refresh(),
   });

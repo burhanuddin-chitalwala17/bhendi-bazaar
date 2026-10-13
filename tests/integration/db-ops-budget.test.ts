@@ -17,6 +17,12 @@
  *
  * Needs the seeded local database (see docs/OPERATIONS.md); skips anywhere else
  * so CI and metered environments never pay for or depend on it.
+ *
+ * Every budget here is an upper bound, so an instrument that counts nothing
+ * passes all of them. It did: a static import of the client in
+ * tests/helpers/test-db.ts ran before this file's env assignment, so the client
+ * was built without the query listener and all eight budgets read zero. The
+ * first test below is what makes that impossible to repeat.
  */
 import "dotenv/config";
 import { describe, it, expect, beforeAll, afterAll, vi, type MockInstance } from "vitest";
@@ -36,8 +42,8 @@ async function countQueries(run: () => Promise<unknown>): Promise<number> {
 }
 
 describe.skipIf(!isDisposableDb)("db ops budgets", () => {
-  let productsRepository: typeof import("@server/catalog/product.repository").productsRepository;
-  let categoryRepository: typeof import("@server/catalog/category.repository").categoryRepository;
+  let productsRepository: typeof import("@server/catalog/product.read.repository").productsRepository;
+  let categoryRepository: typeof import("@server/catalog/category.read.repository").categoryRepository;
   let promotionRepository: typeof import("@server/promotions/promotion.repository").promotionRepository;
   let productSlug: string;
 
@@ -45,8 +51,8 @@ describe.skipIf(!isDisposableDb)("db ops budgets", () => {
     spy = vi.spyOn(console, "log").mockImplementation((...args) => {
       if (typeof args[0] === "string" && args[0].startsWith("prisma:query")) queryCount++;
     });
-    ({ productsRepository } = await import("@server/catalog/product.repository"));
-    ({ categoryRepository } = await import("@server/catalog/category.repository"));
+    ({ productsRepository } = await import("@server/catalog/product.read.repository"));
+    ({ categoryRepository } = await import("@server/catalog/category.read.repository"));
     ({ promotionRepository } = await import("@server/promotions/promotion.repository"));
     // Any seeded product works; budgets don't depend on which.
     const heroes = await productsRepository.getHeroProducts(1);
@@ -55,6 +61,13 @@ describe.skipIf(!isDisposableDb)("db ops budgets", () => {
 
   afterAll(() => {
     spy?.mockRestore();
+  });
+
+  // Before any budget, proof there is something to budget. An upper bound over a dead
+  // instrument is an assertion that cannot fail, which is worse than no assertion at all.
+  it("is actually counting statements", async () => {
+    const n = await countQueries(() => productsRepository.getHeroProducts(1));
+    expect(n, "PRISMA_LOG_QUERIES is not reaching the client").toBeGreaterThan(0);
   });
 
   it("getProductBySlug stays within budget", async () => {

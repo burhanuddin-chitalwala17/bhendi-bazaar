@@ -1,6 +1,7 @@
 /**
- * Admin Order Repository
- * Handles database operations for order management
+ * Admin Order Repository — the console's reads on the order aggregate. Read-only since
+ * 2026-10-04: the status and notes writes it carried went to `order.repository.ts`, so `Order`
+ * has one writing repository (Invariant 5); `tests/unit/one-repository.test.ts` holds it there.
  */
 
 import { prisma } from "@server/shared/prisma";
@@ -15,7 +16,6 @@ import type {
   AdminOrderDetail,
   OrderAddressSnapshot,
   OrderListFilters,
-  UpdateOrderStatusInput,
   OrderStats,
 } from "@server/checkout/admin.order.types";
 import type { ShipmentStatus } from "@server/shipping/domain/shipping.types";
@@ -198,36 +198,6 @@ export class AdminOrderRepository {
   }
 
   /**
-   * Update order status
-   */
-  async updateOrderStatus(
-    id: string,
-    data: UpdateOrderStatusInput
-  ) {
-    const updateData: Prisma.OrderUpdateInput = {};
-
-    if (data.status) updateData.status = data.status;
-    if (data.notes !== undefined) updateData.notes = data.notes;
-    // estimatedDelivery is a Shipment column, not an Order one — the write that used to
-    // sit here threw at runtime whenever a date was supplied, hidden by `any`.
-
-    await prisma.order.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    return true;
-  }
-
-  /**
    * Get order statistics
    */
   async getOrderStats(): Promise<OrderStats> {
@@ -289,34 +259,22 @@ export class AdminOrderRepository {
   }
 
   /**
-   * Bulk update order status
-   */
-  async bulkUpdateStatus(
-    orderIds: string[],
-    status: string
-  ): Promise<number> {
-    const result = await prisma.order.updateMany({
-      where: {
-        ...VISIBLE_ORDER_WHERE,
-        id: {
-          in: orderIds,
-        },
-      },
-      data: {
-        status,
-      },
-    });
-
-    return result.count;
-  }
-
-  /**
    * Orders visible to one org: those with a shipment from it, carrying only that org's
    * shipments. The `include` filter is the scope — a cross-vendor basket's other parcels
    * never leave the database. Read-only; an org mutates its shipments, never the order.
    */
-  async getOrdersForOrg(orgId: string, page = 1, limit = 20) {
-    const where = { ...VISIBLE_ORDER_WHERE, shipments: { some: { orgId } } };
+  async getOrdersForOrg(
+    orgId: string,
+    page = 1,
+    limit = 20,
+    filters?: { search?: string; status?: string },
+  ) {
+    const where = {
+      ...VISIBLE_ORDER_WHERE,
+      shipments: { some: { orgId } },
+      ...(filters?.search ? { code: { contains: filters.search, mode: "insensitive" as const } } : {}),
+      ...(filters?.status ? { status: filters.status } : {}),
+    };
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,

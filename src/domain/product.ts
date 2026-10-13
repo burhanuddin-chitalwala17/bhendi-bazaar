@@ -44,6 +44,9 @@ export interface Product {
   /** Indicative origin (largest active holding); allocation decides the real one. */
   shippingFromPincode: string;
   org: OrgSummary;
+  facts?: Record<string, string | number | boolean>;
+  measurements?: Record<string, number>;
+  siblings?: ProductSibling[];
   /**
    * The public link of the bidding event holding this item out of normal sale, or
    * undefined when it can be bought as usual (bidding spec R30).
@@ -57,6 +60,15 @@ export interface Product {
   biddingSlug?: string;
 }
 
+export interface ProductSibling {
+  slug: string;
+  name: string;
+  thumbnail: string;
+  price: number;
+  salePrice?: number;
+  isCurrent: boolean;
+}
+
 export interface ProductFilter {
   orgId?: string;
   categorySlug?: string;
@@ -65,6 +77,7 @@ export interface ProductFilter {
   maxPrice?: number;
   offerOnly?: boolean;
   featuredOnly?: boolean;
+  heroOnly?: boolean;
   limit?: number;
   offset?: number;
 }

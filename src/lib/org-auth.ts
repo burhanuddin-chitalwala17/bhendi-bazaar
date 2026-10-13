@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import type { OrgRole } from "@prisma/client";
 import { requireSession } from "@/lib/admin-auth";
 import { orgMemberRepository } from "@server/catalog/org.member.repository";
-import { ForbiddenError } from "@server/shared/domain-error";
+import { DomainError, ForbiddenError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 /**
@@ -22,11 +22,13 @@ export interface OrgScope {
 async function resolveOrgScope(orgId: string): Promise<OrgScope> {
   const session = await requireSession();
 
-  // No platform-admin bypass, deliberately (portal-separation trd.md D6). A bypass is an
-  // exception inside a filter that must never fail, and exceptions are where leaks live.
   const membership = await orgMemberRepository.findMembership(session.user.id, orgId);
   if (!membership) {
     throw new ForbiddenError("You do not have access to this organisation");
+  }
+
+  if (membership.orgBlocked) {
+    throw new DomainError("This organisation has been suspended", { status: 403 });
   }
 
   return { orgId: membership.orgId, role: membership.role, userId: session.user.id };

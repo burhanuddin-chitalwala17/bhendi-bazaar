@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { DataTable, Column } from "@/components/shared/data-table";
-import { Edit, Trash2, CheckCircle, XCircle, MapPin, Eye } from "lucide-react";
+import { Edit, Ban, CheckCircle, XCircle, MapPin, Eye, ShieldOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { OrgWithStats } from "@/domain/org";
 import type { Pagination } from "@/types/shared";
@@ -14,7 +15,7 @@ interface OrgsTableProps {
   onPageSizeChange: (pageSize: number) => void;
   onView: (org: OrgWithStats) => void;
   onEdit: (org: OrgWithStats) => void;
-  onDelete: (id: string, name: string) => void;
+  onToggleBlock: (org: OrgWithStats) => void;
 }
 
 export function OrgsTable({
@@ -25,7 +26,7 @@ export function OrgsTable({
   onPageSizeChange,
   onView,
   onEdit,
-  onDelete,
+  onToggleBlock,
 }: OrgsTableProps) {
   const { page, limit, total, totalPages } = pagination;
   const startItem = total === 0 ? 0 : (page - 1) * limit + 1;
@@ -43,7 +44,7 @@ export function OrgsTable({
       key: "name",
       label: "Organisation",
       render: (org) => (
-        <div className="flex items-center gap-3">
+        <Link href={`/admin/orgs/${org.id}`} className="flex items-center gap-3 hover:underline">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-primary-foreground font-semibold">
             {org.name.substring(0, 2).toUpperCase()}
           </div>
@@ -51,7 +52,7 @@ export function OrgsTable({
             <p className="font-medium">{org.name}</p>
             <p className="text-sm text-muted-foreground">{org.email}</p>
           </div>
-        </div>
+        </Link>
       ),
     },
     {
@@ -107,22 +108,30 @@ export function OrgsTable({
       key: "status",
       label: "Status",
       render: (org) => (
-        <Badge
-          variant={org.isActive ? "default" : "secondary"}
-          className={org.isActive ? "bg-success" : ""}
-        >
-          {org.isActive ? (
-            <>
-              <CheckCircle className="mr-1 h-3 w-3" />
-              Active
-            </>
-          ) : (
-            <>
-              <XCircle className="mr-1 h-3 w-3" />
-              Inactive
-            </>
+        <div className="flex flex-col gap-1">
+          <Badge
+            variant={org.isActive ? "default" : "secondary"}
+            className={org.isActive ? "bg-success" : ""}
+          >
+            {org.isActive ? (
+              <>
+                <CheckCircle className="mr-1 h-3 w-3" />
+                Active
+              </>
+            ) : (
+              <>
+                <XCircle className="mr-1 h-3 w-3" />
+                Inactive
+              </>
+            )}
+          </Badge>
+          {org.isBlocked && (
+            <Badge variant="destructive">
+              <Ban className="mr-1 h-3 w-3" />
+              Blocked
+            </Badge>
           )}
-        </Badge>
+        </div>
       ),
     },
     {
@@ -151,29 +160,13 @@ export function OrgsTable({
             <Edit className="w-4 h-4" />
           </Button>
 
-          {/* <div className="flex items-center gap-2">
-            <Switch
-              checked={org.isActive}
-              onCheckedChange={() => onToggleStatus(org.id, org.isActive)}
-              className="data-[state=checked]:bg-success"
-            />
-            <span
-              className={`text-xs font-medium ${
-                org.isActive ? "text-success" : "text-muted-foreground/70"
-              }`}
-            >
-              {org.isActive ? "Active" : "Inactive"}
-            </span>
-          </div> */}
-
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(org.id, org.name)}
-            className="text-destructive hover:bg-destructive/10"
-            title="Delete org"
+            onClick={() => onToggleBlock(org)}
+            className={org.isBlocked ? "text-success hover:bg-success/10" : "text-destructive hover:bg-destructive/10"}
           >
-            <Trash2 className="w-4 h-4" />
+            {org.isBlocked ? <ShieldOff className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
           </Button>
         </div>
       ),

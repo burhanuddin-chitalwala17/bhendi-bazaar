@@ -1,7 +1,7 @@
 /** GET /api/admin/promotions/products?q= — the offer form's product search. */
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
-import { productsRepository } from "@server/catalog/product.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: NextRequest) {

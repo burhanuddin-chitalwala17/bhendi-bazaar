@@ -56,7 +56,7 @@ describe("countByProductIds", () => {
 
 describe("who may read the saves", () => {
   it("keeps WishlistItem behind its own repository — catalog asks, it does not join", () => {
-    const catalogRepo = readFileSync("server/catalog/admin.product.repository.ts", "utf8");
+    const catalogRepo = readFileSync("server/catalog/product.repository.ts", "utf8");
     expect(catalogRepo).not.toMatch(/wishlist/i);
   });
 

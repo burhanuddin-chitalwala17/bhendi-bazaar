@@ -24,7 +24,7 @@ export function Providers({
   return (
     <SessionProvider session={session}>
       <CartSyncProvider>
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors closeButton={true} />
         {/* Inside the session, so a sign-in here is seen by useCartSync's merge. */}
         <AuthSheetProvider>{children}</AuthSheetProvider>
       </CartSyncProvider>

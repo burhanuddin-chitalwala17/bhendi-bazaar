@@ -1,10 +1,5 @@
-/**
- * Admin Product Service (Client-side)
- * Handles API calls for product management
- */
-
-import { ProductFormInput, ProductDetails } from "./types";
-import { readApiError } from "@/lib/api-error";
+import { apiRequest } from "@/lib/api-client";
+import type { ProductFormInput, ProductDetails } from "./types";
 
 export class ProductsApiClient {
   /**
@@ -15,59 +10,27 @@ export class ProductsApiClient {
   constructor(private readonly orgId?: string) {}
 
   private get baseUrl() {
-    return this.orgId
-      ? `/api/org/${this.orgId}/products`
-      : "/api/admin/products";
+    return this.orgId ? `/api/org/${this.orgId}/products` : "/api/admin/products";
   }
-  /**
-   * Create product
-   */
-  async createProduct(data: ProductFormInput): Promise<ProductDetails | null> {
-    const response = await fetch(this.baseUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
 
-    if (!response.ok) throw await readApiError(response);
-
-    return response.json() as Promise<ProductDetails | null>;
+  createProduct(data: ProductFormInput): Promise<ProductDetails | null> {
+    return apiRequest(this.baseUrl, { method: "POST", body: data });
   }
+
   /**
    * Delete a product outright. Refused, by name, if any record depends on it
    * (ADR-0029) — archiving is the separate act, and `setArchived` is its call.
    */
-  async deleteProduct(id: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/${id}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) throw await readApiError(response);
+  deleteProduct(id: string): Promise<void> {
+    return apiRequest(`${this.baseUrl}/${id}`, { method: "DELETE" });
   }
 
   /** Archive a product, or restore it. */
-  async setArchived(id: string, archived: boolean): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/${id}/archive`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ archived }),
-    });
-
-    if (!response.ok) throw await readApiError(response);
+  setArchived(id: string, archived: boolean): Promise<void> {
+    return apiRequest(`${this.baseUrl}/${id}/archive`, { method: "PATCH", body: { archived } });
   }
 
-  async updateProduct(
-    id: string,
-    data: ProductFormInput,
-  ): Promise<ProductDetails | null> {
-    const response = await fetch(`${this.baseUrl}/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) throw await readApiError(response);
-
-    return response.json() as Promise<ProductDetails | null>;
+  updateProduct(id: string, data: ProductFormInput): Promise<ProductDetails | null> {
+    return apiRequest(`${this.baseUrl}/${id}`, { method: "PATCH", body: data });
   }
 }

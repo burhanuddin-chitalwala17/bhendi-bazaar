@@ -9,10 +9,7 @@ import { VISIBLE_ORDER_WHERE } from "@server/checkout/order.types";
 import type {
   DashboardStats,
   RecentActivity,
-  TopProduct,
-  RevenueChart,
 } from "@server/analytics/dashboard.types";
-import { ProductFlag } from "@server/catalog/product.flags";
 
 export class AdminDashboardRepository {
   /**
@@ -186,78 +183,6 @@ export class AdminDashboardRepository {
       .slice(0, limit);
   }
 
-  /**
-   * Get top selling products
-   */
-  async getTopProducts(limit: number = 5): Promise<TopProduct[]> {
-    // This would require order item parsing from JSON
-    // For now, return featured products as placeholder
-    const products = await prisma.product.findMany({
-      where: { flags: { has: ProductFlag.FEATURED }, ...AVAILABLE },
-      take: limit,
-      // Was `reviewsCount: "desc"` — a column nothing ever wrote, so this ordered
-      // twelve featured products by twelve zeroes. Newest first is at least true while
-      // this stays the placeholder its own comment admits to.
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        thumbnail: true,
-        price: true,
-      },
-    });
-
-    return products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      thumbnail: p.thumbnail,
-      salesCount: 0, // Would need to calculate from orders
-      revenue: 0, // Would need to calculate from orders
-    }));
-  }
-
-  /**
-   * Get revenue chart data
-   */
-  async getRevenueChart(days: number = 30): Promise<RevenueChart[]> {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const orders = await prisma.order.findMany({
-      where: {
-        ...VISIBLE_ORDER_WHERE,
-        createdAt: {
-          gte: startDate,
-        },
-      },
-      select: {
-        createdAt: true,
-        grandTotal: true,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
-
-    // Group by date
-    const chartData: Record<string, { revenue: number; orders: number }> = {};
-
-    orders.forEach((order) => {
-      const date = order.createdAt.toISOString().split("T")[0];
-      if (!chartData[date]) {
-        chartData[date] = { revenue: 0, orders: 0 };
-      }
-      chartData[date].revenue += order.grandTotal || 0;
-      chartData[date].orders += 1;
-    });
-
-    // Convert to array
-    return Object.entries(chartData).map(([date, data]) => ({
-      date,
-      revenue: data.revenue,
-      orders: data.orders,
-    }));
-  }
 }
 
 export const adminDashboardRepository = new AdminDashboardRepository();

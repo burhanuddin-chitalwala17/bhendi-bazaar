@@ -7,8 +7,9 @@ import { Eye, ShoppingCart } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import type { AbandonedCart } from "@/domain/admin";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { Money } from "@/components/shared/Money";
 
 interface Props {
   carts: AbandonedCart[];
@@ -73,7 +74,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
       key: "totalValue",
       label: "Cart Value",
       render: (cart) => (
-        <span className="font-semibold text-primary">{formatCurrency(cart.totalValue)}</span>
+        <span className="font-semibold text-primary"><Money paise={cart.totalValue} /></span>
       ),
     },
     {
@@ -85,7 +86,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
             {cart.daysSinceUpdate} {cart.daysSinceUpdate === 1 ? "day" : "days"} ago
           </p>
           <p className="text-xs text-muted-foreground">
-            {new Date(cart.updatedAt).toLocaleDateString()}
+            {formatShortDate(cart.updatedAt)}
           </p>
         </div>
       ),
@@ -191,7 +192,7 @@ export function CartsTable({ carts, page, pageSize, totalPages, total }: Props) 
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold">Total Value:</span>
                   <span className="text-2xl font-bold text-primary">
-                    {formatCurrency(selected.totalValue)}
+                    <Money paise={selected.totalValue} />
                   </span>
                 </div>
               </div>

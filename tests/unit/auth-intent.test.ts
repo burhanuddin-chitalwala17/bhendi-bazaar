@@ -7,7 +7,7 @@ const { save, toast } = vi.hoisted(() => ({
   toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }),
 }));
 vi.mock("sonner", () => ({ toast }));
-vi.mock("@/services/wishlistApiClient", () => ({ wishlistApiClient: { save, remove: vi.fn() } }));
+vi.mock("@/components/wishlist/wishlistApiClient", () => ({ wishlistApiClient: { save, remove: vi.fn() } }));
 
 import {
   INTENT_TTL_MS,

@@ -1,15 +1,19 @@
 /**
  * Image Upload Component
- * Handles single and multiple image uploads to Vercel Blob
+ * Handles single and multiple image uploads, through the server, to Cloudflare R2 (ADR-0028)
  */
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useId, useState, useRef } from "react";
 import NextImage from "next/image";
+import { toast } from "sonner";
 import { Upload, X } from "lucide-react";
 import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
+import { useMutation } from "@/hooks/core/useMutation";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { uploadApiClient } from "@/components/shared/uploadApiClient";
 
 interface ImageUploadProps {
   label: string;
@@ -31,9 +35,11 @@ export function ImageUpload({
   uploadType = "products",
   endpoint = "/api/admin/upload",
 }: ImageUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const upload = useMutation((files: File[]) => uploadApiClient.uploadFiles(endpoint, uploadType, files));
+  const isUploading = upload.isLoading;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputId = useId();
   const { remember, localPreview } = useLocalPreviews();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,36 +48,21 @@ export function ImageUpload({
 
     // Check max images limit
     if (value.length + files.length > maxImages) {
-      alert(`Maximum ${maxImages} images allowed`);
+      toast.error(`Maximum ${maxImages} images allowed`);
       return;
     }
 
-    setIsUploading(true);
     setUploadProgress(0);
 
     try {
-      const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
-
-      const response = await fetch(`${endpoint}?type=${uploadType}`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Upload failed");
-      }
-
-      const data = await response.json();
-      remember(files, data.urls as string[]);
-      onChange([...value, ...data.urls]);
+      // useMutation toasts the failure with the server's reason.
+      const urls = await upload.mutate(files);
+      remember(files, urls);
+      onChange([...value, ...urls]);
       setUploadProgress(100);
     } catch (error) {
       console.error("Upload error:", error);
-      alert(error instanceof Error ? error.message : "Failed to upload images");
     } finally {
-      setIsUploading(false);
       setUploadProgress(0);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -93,10 +84,9 @@ export function ImageUpload({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-foreground/80 mb-2">
+      <Label htmlFor={fileInputId} required={required} className="mb-2">
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
-      </label>
+      </Label>
 
       {/* Image Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -107,7 +97,7 @@ export function ImageUpload({
           >
             {localPreview(url) ? (
               /* Uploaded in this session, so the bytes are already here — rendering the
-                 Blob copy instead would buy nothing and cost egress (ADR-0026). A
+                 stored copy instead would buy nothing and cost egress (ADR-0026). A
                  blob: URL is also not something next/image can take. */
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -199,6 +189,7 @@ export function ImageUpload({
 
       <input
         ref={fileInputRef}
+        id={fileInputId}
         type="file"
         accept="image/*"
         multiple

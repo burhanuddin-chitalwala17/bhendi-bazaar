@@ -1,6 +1,7 @@
 # Home banners — technical approach
 
-**Verified:** 2026-08-30
+- **Status:** ✅ Implemented
+- **Verified:** 2026-08-30
 
 ## Where it lives
 

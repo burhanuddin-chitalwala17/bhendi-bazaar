@@ -18,7 +18,7 @@ vi.mock("@/lib/auth", () => ({
   useAuth: () => ({ status: auth.user ? "authenticated" : "guest", user: auth.user }),
 }));
 vi.mock("@/context/AuthSheetContext", () => ({ useAuthSheet: () => ({ open: openAuthSheet }) }));
-vi.mock("@/services/addressApiClient", () => ({ addressApiClient: { getAddresses } }));
+vi.mock("@/components/profile/addressApiClient", () => ({ addressApiClient: { getAddresses } }));
 vi.mock("@/hooks/shipping/useMultiShippingRates", () => ({
   useMultiShippingRates: () => ({
     groups: [],

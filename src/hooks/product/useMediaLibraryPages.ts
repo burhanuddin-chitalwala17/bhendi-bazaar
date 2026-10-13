@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { readApiError } from "@/lib/api-error";
+import { orgMediaApiClient, type MediaLibraryPage } from "@/components/org/orgMediaApiClient";
 import type { MediaAssetDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 
@@ -10,7 +10,7 @@ interface Options {
   /** The filters, as the query string the library route parses; `page` is added here. */
   query: string;
   /** The first page, when the server already rendered it; otherwise fetched on mount. */
-  initial?: { assets: MediaAssetDto[]; pagination: Pagination };
+  initial?: MediaLibraryPage;
 }
 
 /**
@@ -28,15 +28,7 @@ export function useMediaLibraryPages({ orgId, query, initial }: Options) {
   const latest = useRef(initial);
   latest.current = initial;
 
-  const fetchPage = useCallback(
-    async (page: number) => {
-      const separator = query ? "&" : "";
-      const response = await fetch(`/api/org/${orgId}/media?${query}${separator}page=${page}`);
-      if (!response.ok) throw await readApiError(response);
-      return (await response.json()) as { assets: MediaAssetDto[]; pagination: Pagination };
-    },
-    [orgId, query],
-  );
+  const fetchPage = useCallback((page: number) => orgMediaApiClient.page(orgId, query, page), [orgId, query]);
 
   // The server rendered a fresh first page — after an upload or a retire refreshed the route —
   // so the list starts over from it. Client re-renders keep the same object, so this is quiet.

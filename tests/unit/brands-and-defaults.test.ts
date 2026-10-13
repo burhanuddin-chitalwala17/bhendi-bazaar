@@ -15,7 +15,7 @@ vi.mock("@server/catalog/brand.repository", () => ({
     markDefault: vi.fn(),
   },
 }));
-vi.mock("@server/catalog/org-listing-defaults.repository", () => ({
+vi.mock("@server/listing/org-listing-defaults.repository", () => ({
   orgListingDefaultsRepository: { findByOrgId: vi.fn(), upsert: vi.fn() },
 }));
 
@@ -28,11 +28,11 @@ import {
   taxCodesFromColumn,
   taxCodesToColumn,
   toListingDefaultsDto,
-} from "@server/catalog/org-listing-defaults.types";
+} from "@server/listing/org-listing-defaults.types";
 import { brandRepository } from "@server/catalog/brand.repository";
 import { brandService } from "@server/catalog/brand.service";
-import { orgListingDefaultsRepository } from "@server/catalog/org-listing-defaults.repository";
-import { orgListingDefaultsService } from "@server/catalog/org-listing-defaults.service";
+import { orgListingDefaultsRepository } from "@server/listing/org-listing-defaults.repository";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 
 const row = (overrides: Partial<Brand> = {}): Brand => ({

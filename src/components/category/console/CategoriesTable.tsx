@@ -7,11 +7,12 @@ import { Edit, MoveDown, MoveUp, Trash2 } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminCategoryApiClient } from "@/services/admin/categoryApiClient";
+import { adminCategoryApiClient } from "@/components/category/console/categoryApiClient";
 import type { AdminCategory } from "@/domain/admin";
 import { CATEGORY_ACCENTS } from "@/lib/category-accent";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { formatShortDate } from "@/lib/format";
 
 interface Props {
   categories: AdminCategory[];
@@ -146,7 +147,7 @@ export function CategoriesTable({ categories, page, pageSize, totalPages, total 
       key: "createdAt",
       label: "Created",
       sortable: true,
-      render: (category) => new Date(category.createdAt).toLocaleDateString(),
+      render: (category) => formatShortDate(category.createdAt),
     },
     {
       key: "actions",

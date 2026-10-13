@@ -7,11 +7,17 @@
 
 "use client";
 
-import { useState } from "react";
-import { toast } from "sonner";
+import { useId } from "react";
 import { Package, Truck, Link as LinkIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useServerForm } from "@/hooks/core/useServerForm";
+import { shipmentTrackingApiClient } from "@/components/shipping/shipmentTrackingApiClient";
+import {
+  updateTrackingSchema,
+  type UpdateTrackingInput,
+} from "@/lib/validation/schemas/shipment-tracking.schema";
 
 interface ShipmentTrackingFormProps {
   shipmentId: string;
@@ -24,6 +30,10 @@ interface ShipmentTrackingFormProps {
   onSuccess?: () => void;
 }
 
+// A cleared box is "no URL" rather than an invalid one, so the derived link can stand in.
+const trimmed = (value: string) => value.trim();
+const optional = (value: string) => value.trim() || undefined;
+
 export function ShipmentTrackingForm({
   shipmentId,
   shipmentCode,
@@ -31,61 +41,31 @@ export function ShipmentTrackingForm({
   existingTracking,
   onSuccess,
 }: ShipmentTrackingFormProps) {
-  const [awb, setAwb] = useState(existingTracking?.trackingNumber || "");
-  const [courierName, setCourierName] = useState(initialCourier || "");
-  const [trackingUrl, setTrackingUrl] = useState(
-    existingTracking?.trackingUrl || "",
-  );
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!awb.trim() || !courierName.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    setIsUpdating(true);
-
-    try {
-      const response = await fetch(
-        `/api/admin/shipments/${shipmentId}/tracking`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            trackingNumber: awb.trim(),
-            courierName: courierName.trim(),
-            trackingUrl:
-              trackingUrl.trim() || generateTrackingUrl(courierName, awb),
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update tracking");
-      }
-
-      toast.success("Tracking updated successfully!");
-
-      // Call success callback
-      onSuccess?.();
-    } catch (error) {
-      console.error("Failed to update tracking:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update tracking",
-      );
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const id = useId();
+  const {
+    register,
+    onSubmit,
+    formState: { errors, isSubmitting: isUpdating },
+  } = useServerForm<UpdateTrackingInput>({
+    schema: updateTrackingSchema,
+    defaultValues: {
+      trackingNumber: existingTracking?.trackingNumber || "",
+      courierName: initialCourier || "",
+      trackingUrl: existingTracking?.trackingUrl || undefined,
+    },
+    submit: (data) =>
+      shipmentTrackingApiClient.updateTracking(shipmentId, {
+        ...data,
+        trackingUrl: data.trackingUrl || generateTrackingUrl(data.courierName, data.trackingNumber),
+      }),
+    successMessage: "Tracking updated successfully!",
+    fallbackMessage: "Failed to update tracking",
+    onSuccess: () => onSuccess?.(),
+  });
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(event) => void onSubmit(event).catch(() => {})}
       className="space-y-4 bg-background p-4 rounded-lg border border-border"
     >
       {/* Header */}
@@ -96,14 +76,14 @@ export function ShipmentTrackingForm({
 
       {/* AWB Number */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
+        <Label htmlFor={`${id}-trackingNumber`}>
           AWB / Tracking Number <span className="text-destructive">*</span>
-        </label>
+        </Label>
         <div className="relative">
           <Input
+            id={`${id}-trackingNumber`}
             type="text"
-            value={awb}
-            onChange={(e) => setAwb(e.target.value)}
+            {...register("trackingNumber", { setValueAs: trimmed })}
             placeholder="Enter AWB from Shiprocket"
             className="w-full pl-9"
             required
@@ -111,18 +91,23 @@ export function ShipmentTrackingForm({
           />
           <Package className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground/70" />
         </div>
+        {errors.trackingNumber && (
+          <p role="alert" className="mt-1 text-xs text-destructive">
+            {errors.trackingNumber.message}
+          </p>
+        )}
       </div>
 
       {/* Courier Name */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
+        <Label htmlFor={`${id}-courierName`}>
           Courier Name <span className="text-destructive">*</span>
-        </label>
+        </Label>
         <div className="relative">
           <Input
+            id={`${id}-courierName`}
             type="text"
-            value={courierName}
-            onChange={(e) => setCourierName(e.target.value)}
+            {...register("courierName", { setValueAs: trimmed })}
             placeholder="e.g., Blue Dart, Delhivery"
             className="w-full pl-9"
             required
@@ -130,25 +115,35 @@ export function ShipmentTrackingForm({
           />
           <Truck className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground/70" />
         </div>
+        {errors.courierName && (
+          <p role="alert" className="mt-1 text-xs text-destructive">
+            {errors.courierName.message}
+          </p>
+        )}
       </div>
 
       {/* Tracking URL (Optional) */}
       <div>
-        <label className="block text-sm font-medium text-foreground/80 mb-1">
+        <Label htmlFor={`${id}-trackingUrl`}>
           Tracking URL{" "}
           <span className="text-muted-foreground/70 text-xs">(optional)</span>
-        </label>
+        </Label>
         <div className="relative">
           <Input
+            id={`${id}-trackingUrl`}
             type="url"
-            value={trackingUrl}
-            onChange={(e) => setTrackingUrl(e.target.value)}
+            {...register("trackingUrl", { setValueAs: optional })}
             placeholder="Auto-generated if left empty"
             className="w-full pl-9"
             disabled={isUpdating}
           />
           <LinkIcon className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground/70" />
         </div>
+        {errors.trackingUrl && (
+          <p role="alert" className="mt-1 text-xs text-destructive">
+            {errors.trackingUrl.message}
+          </p>
+        )}
       </div>
 
       {/* Submit Button */}

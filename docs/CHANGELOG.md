@@ -10,6 +10,2107 @@
 
 ## Entries
 
+## 2026-10-08 — Edit form keeps measurements; "On its own" family saves (BF-014, BF-015) [CONTRACT]
+
+- **BF-014 — measurements blank on edit.** The admin products DAL read the `measurements`
+  column through `parseStoredFacts`, whose keys are *facts*. Every measurement key (`bust`,
+  `hip`, …) failed it, the defensive parse returned `{}`, and the edit form opened empty although
+  the values were saved. Added `parseStoredMeasurements` (keyed by `measureKeySchema`) in
+  `server/listing/listing-facts.ts` and used it in `src/data-access-layer/admin/products.dal.ts`.
+- **BF-015 — "Too small: expected string to have >=1 characters".** The family picker's
+  "On its own" option submits `""`, which `familyId: z.string().min(1)` refused. `kind`, `familyId`
+  and `brandId` now read an unselected picker as `null` (`unselectedIsNull` in
+  `product.schema.ts`), so `kind` no longer stores `""` either. No existing rows held `""`.
+  Additive contract change, recorded under *Listing vocabulary* in CONTRACTS.md.
+- Tests: `tests/unit/stored-measurements.test.ts` (parser + a scan that nothing feeds a
+  measurements column to the fact parser) and two cases in `product-schema.test.ts`. Both
+  mutation-tested; reverting the schema reproduces the exact message the user saw.
+
+## 2026-10-08 — Dates and counts formatted in one locale and zone (BF-013)
+
+- **Root cause**: tables called `toLocaleDateString()` with no locale, so the server (UTC, en-US)
+  rendered `10/8/2026` and the browser (IST, en-IN) `08/10/2026`, failing React hydration. It
+  recurred in the orders, categories, users and carts tables. Pinning only the locale (BF-006)
+  still left a different *day* near midnight, because the zones differ.
+- **Fix**: `src/lib/format.ts` pins `en-IN` and `Asia/Kolkata` in `formatDay`, plus new
+  `formatShortDate`, `formatDateTime`, `formatDate(value, options)` and `formatCount`. All 24
+  call sites across `src/` route through them.
+- **Gate**: `tests/unit/locale-formatting.test.ts` fails on any `toLocale*String(` outside
+  `format.ts`. Mutation-tested.
+- Fixture category hero image is now a local file, so the admin categories table can render it.
+- Side fixes: "seller" → "org" in two strings (retired vocabulary); the tracking gate compares
+  against `ORDER_STATUS` rather than bare strings.
+
+## 2026-10-08 — Integration tests no longer write to real data (BF-012)
+
+- **Root cause**: `ensureFixtures()` (`tests/helpers/test-db.ts`) borrowed the first real org,
+  category, user and carrier with an unscoped `findFirst`. Suites then mutated those rows on the
+  dev database: category product types reset to null (4 suites), the org's sales channels deleted
+  (3 suites), its colour values and enhancement policy deleted. The stop hook ran these suites
+  after every edit, which is why category product types kept disappearing.
+- **Fix**: `ensureFixtures()` now owns its world. Every row is found or created by a fixed test
+  key (`FIXTURE_KEYS`), so suites mutate only test rows and reruns reuse them rather than leak.
+- Three suites that touched shared reference data now leave it as found:
+  `channel-readiness-service` used the real `ethnic-wear/abaya` node (now stamped);
+  `product-type-table` restores each type's prior `retiredAt` in `finally`;
+  `product-family-service` restores `islamic-wear`'s prior variant axis, not a guessed one.
+  `bulk-upload` uses the fixture category instead of a random real one.
+- **Guard**: `test-integrity.test.ts` fails if the fixture helper or any integration suite reads
+  with an unscoped `findFirst`. Mutation-tested: restoring the old borrow fails it.
+- Verified: real categories, product types, org channels, listing values, attribute maps and
+  enhancement policies are byte-identical before and after a full 32-suite run.
+
+## 2026-10-08 — Buyer product specs and variant switcher (BL-007, BL-008)
+
+- **Specifications section** on buyer product page: facts (colour, material, sleeve length)
+  and measurements (length, bust, waist) now render below the description. Added `facts`
+  and `measurements` to buyer `Product` type and DAL mapping.
+- **Variant switcher**: when a product belongs to a family, an "Also available" row shows
+  sibling products with thumbnails. Clicking navigates to that variant's page.
+  Added `getFamilySiblings` to `product.read.repository.ts` and `siblings` to `Product`.
+
+## 2026-10-08 — Blocked user session revocation (BF-002, BL-005)
+
+- `requireSession` now checks `isBlocked` on every authenticated request (one PK lookup).
+  A blocked user with an active JWT is stopped immediately — not just at next sign-in.
+  Resolves BF-002 and BL-005. `requireActiveSession` removed (redundant).
+- Admin self-block prevented: `toggleBlockUser` refuses `id === adminId` (BF-001).
+
+## 2026-10-08 — Org blocking: API guard and location confirm dialog (B-007 follow-up)
+
+- **API guard**: `resolveOrgScope` (`src/lib/org-auth.ts`) now checks `org.isBlocked`
+  before granting a scope. All `withOrg` route handlers and `requireOrgMember` server
+  components reject blocked orgs with "This organisation has been suspended".
+  `findMembership` joins the org row to carry `orgBlocked`.
+- **Location delete**: Replaced browser `confirm()` with a proper Dialog component
+  in `LocationsManager`.
+
+## 2026-10-08 — Tracker bug fixes: seller orders improvements (B-016)
+
+- **Search and filter**: Seller orders page now has a search bar (by order code)
+  and a status filter dropdown (confirmed/processing/packed/shipped/delivered).
+  Extended `adminOrderRepository.getOrdersForOrg` and `orgOrdersDAL.getOrders`
+  with `filters` parameter.
+- **Mark as Packed**: Seller order detail page shows a "Mark as Packed" button
+  when order status is `processing`. New API route
+  `PATCH /api/org/[orgId]/orders/[orderId]/transition` accepting `{ status: "packed" }`,
+  with org ownership verification through `adminOrderService.transitionForOrg`.
+- No "Mark as Shipped" — shipping is the delivery partner's responsibility.
+
+## 2026-10-08 — Tracker bug fixes: admin org detail page (B-013)
+
+- New page at `/admin/orgs/[orgId]` — read-only portal mirror with horizontal tabs.
+  Five tabs live (Dashboard, Products, Orders, Earnings, Reviews); six more
+  (Storefront, Listing, Library, Offers, Bidding, Locations) show "coming soon"
+  pending `readOnly` prop additions to their interactive components.
+- Org rows in the admin orgs table are now clickable (Link on the name column).
+- Added `AdminOrgTabs` component for horizontal tab navigation.
+- Added `OrgBlockToggle` client component for block/unblock on the detail page.
+- Added `getById` to `orgsDAL`.
+- Fixed pre-existing `product-family.test.ts` teardown FK constraint error.
+
+## 2026-10-08 — Tracker bug fixes: admin user detail page (B-012)
+
+- New page at `/admin/users/[userId]` — read-only detail view showing profile
+  (name, email, mobile, role, joined date), activity stats (orders, total spent,
+  last active), and a block/unblock action.
+- User rows in the admin users table are now clickable (Link on the name column).
+- Added `UserBlockToggle` client component and `getById` to `adminUsersDAL`.
+
+## 2026-10-08 — Tracker bug fixes: product flag derivation (B-015)
+
+- ON_OFFER and NEW_ARRIVAL are now computed, not stored. ON_OFFER is derived from
+  whether the product has an active sale price; NEW_ARRIVAL from `createdAt` (14 days).
+  FEATURED, HERO, CLEARANCE_SALE remain manual checkboxes.
+- Removed ON_OFFER and NEW_ARRIVAL from the product form (`ProductFlagsFields.tsx`);
+  only `MANUAL_FLAGS` are shown.
+- Added `isNewArrival()` helper and `MANUAL_FLAGS` constant to `src/types/product.ts`.
+- Product list table badges now derive ON_OFFER and NEW_ARRIVAL at display time.
+- Shrunk the shape-legacy allowlist by one entry (`ProductFlagsFields.tsx` → `rounded-card`).
+
+## 2026-10-08 — Tracker bug fixes: buyer order tracking display (B-009)
+
+- Added order status badge and tracking info to buyer order detail page
+  (`src/components/order/order-client.tsx`). Shows order fulfilment status
+  (confirmed/processing/packed/shipped/delivered), delivery address, and per-shipment
+  tracking cards with courier name, AWB number, tracking URL, and estimated delivery.
+  Data already flowed from DB through DAL — just was not rendered.
+
+## 2026-10-08 — Tracker bug fixes: org blocking replaces deletion (B-007) [MIGRATION] [CONTRACT]
+
+- Replaced hard-delete route with block/unblock. `DELETE /api/admin/orgs/[id]` removed;
+  `PATCH /api/admin/orgs/[id]` added accepting `{ action: "block" | "unblock" }`.
+  Aligns with ADR-0032 (records people authored are retired, never deleted) and
+  ADR-0020 (money-bearing records never cascade).
+- **Migration**: Added `isBlocked Boolean @default(false)` to Org model with index.
+- **Portal guard**: Org layout shows a suspended page when `isBlocked` is true.
+- **Buyer-facing**: `FROM_ACTIVE_ORG` visibility filter now excludes blocked orgs
+  (`server/catalog/product.visibility.ts`).
+- **UI**: Delete button → block/unblock toggle in admin orgs table. Browser `confirm()`
+  removed. Blocked badge shown in status column.
+- `src/domain/org.ts`: `Org` interface gains `isBlocked: boolean`.
+- `orgApiClient`: `deleteOrg` → `blockOrg` / `unblockOrg`.
+
+## 2026-10-07 — Tracker bug fixes: ADR-0053 compliance and error pulse (B-002, B-003, side-note)
+
+- **Button pulse**: Added `data-[error]` classes to Button (`src/components/ui/button.tsx`).
+  Any `<Button data-error>` now pulses with a destructive ring — global error signal.
+- **B-002**: Checkout button no longer disabled when cart is empty. Clicking shows an
+  inline message + pulse effect instead (ADR-0053).
+- **B-003**: Location delete button no longer disabled. Server `DomainError` reaches the
+  user as a toast via the existing mutation handler (ADR-0053).
+- **Side-note**: Product form error banner moved from top of form to directly above the
+  submit button, where it's visible on long forms.
+
+## 2026-10-07 — Tracker bug fixes: admin sidebar nav (B-014)
+
+- Added Product Types and Media to admin sidebar navigation
+  (`src/components/layout/AdminSidebar.tsx`). Both pages existed but were only
+  reachable by typing the URL directly.
+
+## 2026-10-07 — Tracker bug fixes: Instagram share (B-008)
+
+- Replaced browser `alert()` with a sonner toast in the Instagram share handler
+  (`src/components/shared/ShareDialog.tsx`). Also fixed the handler copying a
+  relative path instead of the resolved full URL.
+
+## 2026-10-07 — Tracker bug fixes: code cleanup (B-004, B-005, B-006, B-010, B-011)
+
+- **B-004**: Removed debug `console.log` statements and `setTimeout` debug wrapper from
+  `src/store/cartStore.ts`. Kept `console.warn` for corrupted-item detection.
+- **B-005**: Deleted dead `CartService` interface from `src/domain/cart.ts` (zero imports).
+  Not a contract change — the interface was never implemented or consumed.
+- **B-006**: Removed scaffolding comments (`ADD THIS`) from `prisma/schema.prisma`
+  and Prisma marketing boilerplate. Comment-only — no structural schema change, no migration.
+- **B-010/B-011**: Deleted dead `getTopProducts` and `getRevenueChart` functions from
+  `server/analytics/dashboard.service.ts`, `dashboard.repository.ts`, and their types
+  (`TopProduct`, `RevenueChart`) from `dashboard.types.ts` and `src/domain/admin.ts`.
+  Both returned placeholder/zero data and had zero callers. Not a contract change —
+  no route handler served these types and no client consumed them.
+
+## [PR-286] 2026-10-06 — FormDialog, dead code, and the docs match the tree
+
+- **FormDialog** (`src/components/shared/overlays/form-dialog.tsx`): the fifth overlay surface
+  (ADR-0040) — a bottom sheet on phone, a centred dialog from tablet. Today's 17 raw
+  `DialogContent` form sites are ratcheted in `overlay-surfaces.test.ts` with their case;
+  a new one fails unless it goes through `FormDialog`, `TaskDialog` or is listed with a reason.
+  Mutation-tested.
+- **Dead code removed**: `AdminAccessButton` (0 importers), `useStockCheck` (0 importers).
+  Two single-domain hooks moved to their component: `useCategoryForm` → `components/category/`,
+  `useListingValues` → `components/shared/forms/product/`.
+- **Docs corrected**: ARCHITECTURE.md no longer claims every handler uses `toErrorResponse`;
+  TESTING.md counts and dead-directory paragraph fixed; OPERATIONS.md local DB recipe uses
+  the real Docker container on port 5433 and `.env.example`. Verified dates bumped.
+
+## [PR-285] 2026-10-06 — The aggregate's repository carries the aggregate's name
+
+`admin.product.repository.ts` held every product write while `product.repository.ts` was
+read-only. That named the write side for the console instead of for the table it owns.
+Swapped: `product.repository.ts` is the aggregate repository (writes), `product.read.repository.ts`
+is the storefront read model. Same for category. Export names stay (`productsRepository`,
+`adminProductsRepository`) so the 56 import sites change their path, not their code.
+
+The `ADMIN_WRITERS` ratchet in `one-repository.test.ts` is now empty: no `admin.*` file writes,
+and the test refuses a new one. The rule that held this together — "an admin listing is a query
+on its domain, kept as `admin.*` files" — and the rule that held it accountable — "a write in
+an `admin.*` file fails the build" — both hold outright.
+
+## [PR-284] 2026-10-05 — Money, page titles and touch targets through the wrappers
+
+- `shared/Money.tsx` replaces inline `formatCurrency` in table/summary contexts —
+  `OrderDetailAside`, `OrdersTable`, `ShipmentsPanel`, `SettleEntries`, `CartsTable`.
+- `SectionHeader` gains an `as` prop (`h1`/`h2`/`h3`); 17 portal pages' hand-rolled `<h1>`
+  converted to `<SectionHeader as="h1" />` with their description.
+- `Button size="sm"` is phone-first: `min-h-10` at base (40px touch target), `md:h-8` from
+  tablet. The 36 sites that were 32px on a phone are fixed by the primitive, not per-file.
+- Skills refreshed: `/bb-review` gains the listing/channel checks (readiness, facts origin,
+  reference data, jobs); `/bb-sdlc`'s Gates touched gains one-repository and the visibility
+  census; `/bb-brainstorm` knows about fal.run.
+
+## [PR-283] 2026-10-05 — The listing vocabulary becomes its own domain
+
+`server/catalog/` was 43% of `server/` at 14k LOC. Twenty-three files — facts, product types,
+families, channel registry, readiness, listing values, org channels, listing defaults, size labels
+— had zero outward imports and formed a clean cluster. They now live in `server/listing/`, the
+fourteenth bounded context.
+
+Cross-domain calls go through services: `fact-correction.service.ts` used to reach catalog's
+product repository directly for the three methods that rewrite a product's facts; those became
+`productService.countProductsWhere`/`listProductFactsWhere`/`replaceProductFacts`. `listing-fill`
+reaches `brand.repository` and `category.repository` through catalog's declared public surface.
+
+`module-boundaries.test.ts` gains a `listing` entry in `PUBLIC_SURFACE`; the product-visibility
+census, the file-cohesion records and the domain table in root `CLAUDE.md` are all updated.
+
+## [PR-282] 2026-10-05 — The pipeline that decides quality, written down and wired in
+
+A review across architecture, the design system, the rules, the ADRs, the process and the docs
+found the same thing from six directions: the guards are strong and voluntary. Nothing ran until an
+agent chose to run it, review was self-review, and the owner's decisions lived in specs and in one
+assistant's memory. This unit is the process half of the answer; the code halves are PR-279 to
+PR-281.
+
+- **Ten ADRs** record decisions that were only spec prose or habit: facts as one JSON column with
+  an origin per entry (0051), a product type as a row over facts declared in code (0052), readiness
+  advises and never gates (0053, superseding 0045 D3), mappings carry a date and source (0054),
+  admin modules read and the aggregate's one repository writes (0055), the ratchet pattern (0056),
+  one shared hooks home (0057), media as one aggregate (0058), pixel identity (0059), and route
+  handlers with an Origin check instead of Server Actions (0060, correcting 0048's CSRF premise).
+  Twelve older ADRs gain Status notes saying which decision a later one amended; 0032's heading
+  used an em dash the index generator could not read, so the index showed its filename.
+- **Hooks, committed in `.claude/settings.json`.** Every `Edit`/`Write` to source runs the
+  scanning gates on the spot (`scripts/hooks/post-edit.sh`, ~5s); a schema edit regenerates the
+  client and refuses to pass without a migration folder; a docs or skill edit runs `docs:check`.
+  The turn cannot end (`scripts/hooks/stop.sh`) with a failing typecheck, failing related tests, a
+  changed wire type without `CONTRACTS.md`, or changed code without a CHANGELOG entry. `git push`
+  and `gh` are denied for this repo: the owner pushes.
+- **`/bb-build`**, the implementation skill the cycle never had: refuses a Draft TRD, plans units
+  from Delivery mapped to R/A/D ids, writes the failing test for each acceptance id first,
+  mutation-tests and *records* every new guard, reviews in a fresh subagent, flips spec and TRD
+  Status together, and ends with an acceptance report the owner walks on a phone.
+- **Five docs gates** for what `docs:check` could not see: a spec and its TRD agree on Status (nine
+  TRDs said Draft under Implemented specs), CHANGELOG numbers are unique with the newest highest
+  (eight historical collisions stay, append-only), every directory rulebook carries `Covers:` and is
+  a living doc (`server/shipping/ARCHITECTURE.md` said `Scope:` and had dodged the date gate since
+  August), every npm script a doc names exists, and every API route a doc names exists with that
+  verb (README named ~20 that were gone). Each broken on purpose once and seen red.
+- Root `CLAUDE.md` re-read against the tree: catalog's "Owns" cell, content's, shared's, the admin
+  paragraph, Invariants 5–7 and the cycle corrected; the commit rule and the spec-stays-uncommitted
+  rule move out of memory into the file; ten index lines added and the skills table folded into one
+  line, so it sits at 195 of its 200.
+
+## [PR-281] 2026-10-05 — Every form field's label reaches its control, and a dropped column says whose data goes
+
+`FormField` rendered a raw `<label>` with no `htmlFor` and never gave its control an `id`, so the
+102 fields built on `FormInput`/`FormSelect`/`FormTextarea` had labels a click did nothing with
+and a screen reader read as "edit text". It now uses `useId()` and the `Label` primitive, passes
+`id`, `aria-invalid` and `aria-describedby` to the control, and the hint and error carry the ids
+they are described by. Eleven raw labels elsewhere were given `htmlFor`. `labelled-controls.test`
+holds both: render tests that the `for` matches the control and the error is announced for it
+(all five fail when `htmlFor` is dropped), and a scan for a raw `<label>` without `htmlFor`
+outside `ui/` (red on a planted one).
+
+The variants TRD promised (D7) a migration that copied `sizes`/`colors` into the new shape before
+the drop. None did, and the drop shipped. The owner confirmed on 2026-10-05 that both were free text
+no reader used and are safe to drop in production too; D7 now says so, dated, and the migration's
+header carries the confirmation beside the one it already had for `BiddingEvent`. The rule that
+makes this a check rather than a memory: `migration-drops.test` requires every `DROP COLUMN`/
+`DROP TABLE` migration to state, with a date, that the data was confirmed disposable — older
+migrations are on a dated ratchet. Red when both confirmations were removed from the header.
+
+## [PR-280] 2026-10-05 — Credentials stop at the server, and a mutating request must come from here [CONTRACT]
+
+- **Carrier credentials never reached the browser on purpose and did anyway.** The admin provider
+  reads returned whole rows — `authToken`, `tokenExpiresAt`, encrypted `accountInfo` — under a
+  comment saying "no sensitive config", and the connect response and its audit record carried the
+  live Shiprocket JWT and the encrypted password. Every read that answers a request is now
+  `ShippingProviderSummary` with `accountInfo` narrowed to `{ email }`; only the provider's own
+  auth path may call `findWithCredentials`. `provider-dto.test` holds the projection at type level
+  (red on `authToken: true` in the select, and on a mapper that spreads the row) — the test
+  shipping ADR-0002 D3 asked for in August.
+- **`User` has one writer.** `admin.user.repository` is a read model; its one write became
+  `profileRepository.updateAdminFields`. `orgMember.addMember` had no callers and is gone, so
+  `org.repository.createWithOwner` is that table's only writer.
+- **A cross-site page cannot mutate anything.** `src/middleware.ts` refuses `POST`/`PUT`/`PATCH`/
+  `DELETE` to `/api/**` whose `Origin` (or `Referer`) is not ours, computed the way `appUrl()`
+  computes it; `Sec-Fetch-Site: same-origin` is accepted; the signed webhooks and `/api/auth` are
+  the named exemptions. The predicate is `src/lib/same-origin.ts`, with 27 cases including the
+  forwarded-host deploy and lookalike paths; flipping the comparison fails ten of them.
+  `src/lib/csrf.ts`, which nothing called and ADR-0048 cited as protection, is deleted (ADR-0060).
+
+## [PR-279] 2026-10-05 — Stock has one writer, and an admin cannot move an order where the table forbids [CONTRACT]
+
+`ProductStock` had five writers across three domains — checkout's reserve, two restocks, bidding's
+lock-and-take, and the admin save, which replaced every row from the form and silently overwrote a
+reservation taken mid-edit. `server/catalog/stock.repository.ts` is now the only module that
+touches the table, through commands that carry their own guard — `reserve`, `release`,
+`restockShipment`, `lockAll`/`takeOne`, `adjust`, `setForImport`, `dropEmptyAt` — and checkout and
+shipping call them through `stockService` on their own transaction, the way the sale gate is
+called. The admin form sends the quantity it saw (`seenQuantity`, hence [CONTRACT]) and `adjust` is
+a compare-and-set: stock that moved answers 409 "reload", which `useServerForm` shows. Bulk import
+sets absolute quantities and says so.
+
+Orders: `orderRepository.transition` moves a fulfilment status only where the table allows;
+`admin.order.repository` is a read model and its unconditional write — any string, no table — is
+gone with `bulkUpdateStatus`, which nothing called. The order transaction's direct `tx.*` writes
+moved into named repository methods; `server/checkout/reservation.ts` is what it takes from the
+catalogue.
+
+`one-repository.test` now reads every file for `prisma.`, `tx.`, `db.` and `client.` model calls:
+no write outside a `*.repository.ts`, no write in an `admin.*` file (two catalogue files ratcheted
+with their reason — they are the write path misnamed, fixed by the rename the catalog restructuring
+carries), and the two-writer list is empty. Red on a planted `prisma.user.update` in an admin file.
+Integration: a stale `adjust` is refused and leaves the row unchanged; delivered→processing is
+refused; the order, bidding and shipment suites pass unchanged (ADR-0055).
+
+## [PR-278] 2026-10-04 — develop's new code, brought under the new rules
+
+Merging `develop` into the design branch brought in 35 commits written before ADR-0048 and the
+Invariant 5 ratchet existed, and the guards caught exactly that code:
+
+- `src/services/admin/productTypeApiClient.ts` re-created the dissolved `src/services/`. It splits
+  into `src/components/product-type/productTypeApiClient.ts` (the console) and
+  `src/components/product/listingApiClient.ts` (the product form's listing values and families).
+- Three new components called `fetch` themselves (`unmapped-value-row`, `where-you-sell`, and from
+  the second merge `not-sold-button`); all now go through
+  `src/components/channel/channelsApiClient.ts`, the last with `useMutation`.
+- `fact-correction.service.ts` read and wrote products directly. Its queries are now
+  `admin.product.repository.ts` methods, and the predicate stays in the service so the preview
+  and the update still share it.
+- The bulk import's new update-by-SKU path joined the repository move: `listLiveSkus` and
+  `importBulk` (creates and full-replace updates in one transaction). The wizard's new "updated"
+  count is carried through the shared `useBulkImport` hook.
+
+Numbering: this branch's entries were PR-233 to PR-239 while `develop` reached PR-270, so they are
+renumbered PR-271 to PR-277. ADR-0048 to ADR-0050 did not collide.
+
+## [PR-277] 2026-10-02 — Every table is reached through a repository
+
+PR-276's ratchet listed nineteen files calling `prisma.<model>` outside a repository. All of them
+have moved, and its allowlist is now empty:
+
+- **Identity:** auth config, the NextAuth adapter's account creation, admin re-reads (still on
+  every request, ADR-0021), password and verification tokens, signup, and the profile picture
+  now go through `profile.repository.ts`. Callers outside identity use the new
+  `accountService`; notifications reaches its token rows through it too.
+- **Shipping and checkout:** `Shipment` gets its first repository
+  (`server/shipping/repositories/shipment.repository.ts`). The tracking route and the Shiprocket
+  webhook call a new `trackingService`. The webhook's order write — the worst entry — is now
+  `orderService.markDelivered`, so only checkout writes order state.
+- **Catalog:** bulk import, stock check, wishlist availability and the media backfill go through
+  catalog's repositories. The allocate route's body became
+  `server/checkout/parcel-preview.service.ts`, so the route reaches one domain.
+- **Analytics:** the dashboard widgets' reads moved to `server/analytics/widgets.repository.ts`.
+
+The NextAuth adapter is still handed the Prisma client, because the library works that way.
+
+Measuring this found the harder half of Invariant 5. Four tables are *written* by more than one
+repository: `ProductStock`, `User`, `OrgMember` and `Order`. Most are a storefront repository
+beside an `admin.*` one, which "no admin domain" sanctions and Invariant 5 forbids. That
+contradiction needs a decision, not a move. `one-repository.test.ts` gains a second ratchet that
+records the four and fails a fifth.
+
+Every query moved with its where, select and include unchanged. Verified with the integration
+suite against a freshly migrated local database — 103 tests, the seeded-data suite skipped — as
+well as the unit suite.
+
+## [PR-276] 2026-10-02 — Invariant 5 gets the guard it never had
+
+"One aggregate, one repository" was a hard block with no test. Measured today: nineteen files
+outside a repository call `prisma.<model>` directly — six route handlers among them, and a
+shipping webhook writing `prisma.order`. `tests/unit/one-repository.test.ts` is a ratchet over
+them: each entry says why it has not moved, a new direct call fails, and a fixed file must leave
+the list. Broken once on purpose to confirm it fails. The webhook entry is marked the most urgent.
+
+## [PR-275] 2026-10-02 — The rules say what the tests check, where the code is written
+
+An audit of the rules and skills against the tests found the server's rules stated where code is
+written, and the front end's mostly not: several gates (row-shaped buttons, overlay choice, portal
+guards, `cn` registration) had no rule anywhere, and were met only when a test went red. Root
+`CLAUDE.md` was also 232 lines against its own 200-line limit, four rules stated twice.
+
+- `src/components/CLAUDE.md` and `src/app/api/CLAUDE.md` are new and load lazily. Each rule names
+  the test that enforces it, or says it has none.
+- Root `CLAUDE.md` is back under 200 lines: duplicates removed, the repository tree replaced by a
+  pointer to `docs/README.md`, and an implementation step that names the directory's rules. When
+  a rule, skill and ADR disagree, the newest ADR now wins, instead of the skill.
+- `/bb-review`:
+  - scopes to the PR-sized unit instead of `main...HEAD`;
+  - its mobile-first grep no longer uses a lookahead `grep -E` rejects;
+  - its image section describes R2, not Blob;
+  - it drops a stale note about `Float` money and adds `slug` to the server-owned fields;
+  - it gains front-end layering, portal guards, allowlist edits and mutation-testing a new guard.
+- `/bb-sdlc`:
+  - drops `<domain>/CHANGELOG.md`;
+  - names `lint:boundary` and `docs:check`;
+  - matches the commit policy;
+  - its TRD template gains a per-form-factor UI section and "Gates touched".
+- `/bb-brainstorm` no longer assumes Vercel serverless or offers Upstash (ADR-0037, ADR-0038).
+- `docs:check` now scans skills (every path a skill names must exist) and the new `CLAUDE.md`
+  files, and fails if root `CLAUDE.md` passes 200 lines.
+- Small fixes: `ui-primitives.test.ts` cited the wrong ADR, `server/notifications/CLAUDE.md`
+  carried a second, older `Verified:` date, and the empty `src/probe-tmp.ts` is deleted.
+
+## [PR-274] 2026-10-02 — The browser calls our API through one door
+
+Fifty-seven inline `fetch` calls — 49 in 42 components, 8 in hooks — each re-implemented "check
+`ok`, read the envelope, parse", and API clients lived in three places under two names. Now a
+component renders, a hook holds state, and an API client makes the call (ADR-0048):
+
+- `src/lib/api-client.ts` (`apiRequest`) is the one place the browser calls our API; a failure is
+  always an `ApiError` with its field details.
+- Every request lives in a `<thing>ApiClient.ts` beside its domain under `src/components/`. Clients
+  never toast or navigate. `src/services/` is dissolved into those folders.
+- Components call clients through `useServerForm`, `useMutation` and `useAsyncData`. `useAsyncData`
+  now hands the fetcher an `AbortSignal` and aborts the stale run, which `useDebouncedSearch`
+  builds on for the two product pickers.
+- `tests/unit/api-clients.test.ts` enforces it with no allowlist: every site was classified first
+  and none needed to own its request. Each of its four rules was broken once to confirm it fails.
+
+Defects closed by the move: the cart's stock check parsed an error body as stock rows; both
+checkout stock checks did the same and crashed; two search pickers let an older reply overwrite a
+newer one, and ignored failures; the media sheet could show one asset's details on another; the
+bulk wizards rebuilt their error and dropped its details; `orgService.createOrg` threw on its own
+error path; the shipping-provider client checked `!response` instead of `!response.ok`; four
+components read the envelope by hand; three hand-rolled forms (`CommercialTerms`, both
+`BidLadder` dialogs) dropped field errors and now use `useServerForm` with their existing schemas;
+the shipment-tracking schema moved out of its route into `src/lib/validation/schemas/` so its form
+can share it.
+
+Review of the conversion found one regression it had made reachable: a payment-order refusal with
+field details left checkout on "Processing" with the Pay button disabled. Fixed, with
+`tests/unit/checkout-payment-errors.test.ts`, seen to fail without the fix.
+
+## [PR-273] 2026-10-02 — Three form factors, and the tablet gets the image it shows
+
+The breakpoints now have meanings (ADR-0050): phone at base, with `sm:` only refining it;
+tablet from `md:`; desktop from `lg:`. Tailwind's defaults, not a custom scale. Scripts read
+the same two queries from `FORM_FACTOR_QUERY`, and `useIsDesktop` — which matched at 768px,
+the tablet — is now `useIsTabletUp`. `video-player.tsx`'s second copy of that query is gone.
+
+`tests/unit/form-factors.test.ts` requires every hand-written media query to name a declared
+breakpoint, and its first run found a real defect. The product gallery's image hint said
+half-width from 768px and a third from 1200px; the page is full width until `lg` and half the
+72rem column after. A tablet was downloading every gallery image at half the size it showed
+it. The hint is now declared once as `GALLERY_SLIDE_SIZES` and shared by the gallery, the
+video poster and the YouTube thumbnail, which had copied the same string.
+
+## [PR-272] 2026-10-02 — Colour is a palette the themes pick from
+
+`globals.css` spelled out 52 colour values across 152 declarations, the warm charcoal ink seven
+times. They now live once, in a primitive palette (`--emerald-550`, `--charcoal-220`, …) at the
+top of the file, and every semantic token in every theme is a `var()` to one of them
+(ADR-0049). Every declaration resolves to the value it had before — checked one by one — so
+nothing on screen moved. The near-duplicates the repetition was hiding are now visible as
+`-soft` twins, left for a deliberate design pass rather than merged here.
+
+`tests/unit/design-tokens.test.ts` guards it: no raw colour outside the palette, no unused
+primitive, and no file in `src/` naming one. Each was broken on purpose once to confirm it fails.
+
+## [PR-271] 2026-10-02 — The orders table is handed the row it shows, not the order
+
+`OrdersTable` was typed by `@prisma/client`'s `Order`, so the admin orders page sent every column
+of every order to the browser to render seven of them. The boundary test missed it twice: it
+looked for the Prisma *client*, never `@prisma/client`, and it exempted type-only imports — an
+exemption written for imports between server domains (ADR-0033 D5), where a type really is just
+a type.
+
+`adminOrderService.getOrders` now returns `AdminOrderRow` (`server/checkout/admin.order.types.ts`),
+and `OrgLocation` moved out of the repository into `server/catalog/org.address.types.ts`, which
+three components were importing it from. The component rule in
+`tests/unit/module-boundaries.test.ts` now forbids `@prisma/client` and repositories outright,
+types included — broken on purpose once to confirm it fails.
+## [PR-270] 2026-10-04 — A dev catalogue shaped like the real one
+
+The seed was broken and the dev database could not exercise any of the listing work. Both fixed.
+
+**`db seed` had failed since the media library landed.** Six models point at a `MediaAsset` with
+Restrict and none of them was in the teardown, so clearing the database threw on the first org.
+An asset also points at the one it was derived from and at its poster, so the self-references are
+cleared before the set goes.
+
+**The seeded categories now carry a product type.** The live catalogue's types were assigned by a
+migration keyed on its own slugs, which a seeded database does not have — so locally every
+category asked nothing and the whole vocabulary looked broken while working in production.
+
+**The catalogue is now shaped like the real one**: ridas with four children — formal, semi-formal,
+casual, ohbat — that share one product type. That is the case worth having in dev, because nothing
+else shows as plainly that a browsing category is not a question set.
+
+Three products exist to make a surface reachable: a rida answered in plain `nida`, which Flipkart
+has no word for, so the worklist is not empty; a half-answered rida, because a catalogue where
+everything is complete never shows what incomplete looks like; and a masalla bag, whose type is
+decided against, so the "not sold here" list is not empty either.
+
+Every seeded answer is checked against the vocabulary a migration ships —
+`tests/integration/seed-vocabulary.test.ts`, mutation-tested four ways. Writing it caught two
+values I had invented: `plating: 925-silver` and `shape: rectangle`, where the real keys are
+`sterling-silver` and `rectangular`.
+
+**And a test that was eating reference data.** `channel-readiness-service` used the real values
+`maroon` and `ochre` as fixtures and deleted them in its teardown, so every full-suite run removed
+the platform's own seeded mapping for maroon. The same class of fault as the billed-operations
+instrument in PR-257: a suite quietly spending something it did not own. Its fixtures are now
+stamped and collide with nothing.
+
+## [PR-269] 2026-10-04 — The channel contracts, recorded [CONTRACT]
+
+Found by running `/bb-review` over the thirteen commits: the TRD said `[CONTRACT]` and that
+`CONTRACTS.md` would move in the same PR. It never did, and no entry carried the flag.
+
+Three shapes cross the boundary — a shop's channel choice, a value mapping, a not-sold decision —
+and they are now recorded with the reasoning that is easy to lose: the channel set is sent whole
+so silence is never read as "off", `theirValue` is free text because it is somebody else's
+vocabulary, and both register writes upsert so a repeat is a correction rather than a duplicate.
+
+**And one the TRD promised that does not exist.** It anticipated a readiness DTO per product and
+channel. Building it showed a route handler would be a round trip for a read the server already
+does, so readiness is computed and rendered server-side and never crosses the wire. Recorded as
+an absence with its reason, because a contract document that lists a shape nobody sends is worse
+than one that is merely incomplete.
+
+The review also caught a numbering collision — the owner committed PR-266 between two of mine and
+I reused the number — and a commit that shipped with no changelog entry at all. Both corrected in
+PR-268 above.
+
+## [PR-268] 2026-10-04 — How much of the catalogue each channel would take
+
+The last of the channel registry's delivery list, and the spec moves to Implemented.
+
+**A count per channel above the product list, not a column on it.** The list pages and refetches
+on the client, so a per-row verdict would be blank on page two unless it travelled through a
+route handler — a round trip for a read the server already does. The number answers the question
+a shop has, which is how much is left; the product page already says what.
+
+**The register is read for every product type at once** rather than once per type, so a catalogue
+of nine types costs what one does. Budgeted exactly, and watched going from 5 queries to 14 when
+the read was moved back inside the loop.
+
+Numbering correction: this entry and the one below it were first written as a second PR-266,
+colliding with the entry above. Both are same-day and unpushed; what happened is unchanged.
+
+## [PR-267] 2026-10-04 — Not sold here, on purpose [MIGRATION]
+
+The register could not tell a decision from a blank, so it listed 18 masalla bags as work to do.
+
+Combos sell on this store only — the owner's call on 2026-10-04 — and that was recorded by
+writing no mapping. But no mapping is also what *nobody has chosen yet* looks like, so the
+worklist named a settled question every time it was opened. A to-do list that keeps telling you
+to do something you have already done is a list that stops being read, which costs more than the
+one entry it was wrong about.
+
+**A third answer to the same question.** Where does this type go on this channel — their word for
+it, the nearest they have, or nowhere. All three sit on the category mapping and obey the same
+kind precedence, so a type can be not sold while one kind of it is. A database CHECK keeps a row
+from claiming both a category and none; a second table would have been a second copy of
+`categoryFor`, which is already tested.
+
+**Listed, not hidden, and reversible from where it is read.** Marked types move into a "Not sold
+on X" section beside the nearest-fits, with the button that undoes it on the row itself. Hiding
+them would have traded a nagging list for a decision nobody could find again — the worse of the
+two problems. Undoing deletes the row rather than blanking it, so the type reads as undecided
+again and the choice is genuinely back.
+
+A product whose type is not sold on a channel simply does not appear for that channel in the
+readiness panel — the same silence as a channel the shop never enabled, rather than a ready
+verdict that reads as an invitation.
+
+The decision itself is now data: one row per publishable channel for `combo`. Four mutations were
+watched turning the guards red, including one that only a direct caller of the pure function can
+reach — `readinessByChannel` filters those channels out first, so the guard inside it had no test
+until the mutation said so.
+
+## [PR-266] 2026-10-04 — Every hero piece on the home page, loaded as you scroll
+
+The home page showed the six newest `HERO` products and silently dropped the rest. It now shows
+all of them: nine on first paint (three rows of the phone grid), then the rest through the same
+`PaginatedProductGrid` and `/api/products` route every other listing uses, via a new `heroOnly`
+filter (`?hero=1`). The section is hidden when there are no heroes. `productsDAL.getHeroProducts`
+is gone — nothing called it any more.
+
+## [PR-265] 2026-10-04 — How this would list elsewhere, on the product itself
+
+The readiness panel, on the org's product page. Per channel: the band, where it would be listed,
+and every reason it would not go cleanly — in the shop's words rather than the schema's.
+
+**It advises and never gates** (D10). Nothing is disabled and nothing is refused. The panel says
+so in as many words: *"if a channel disagrees with us, it is the channel that is right."* We have
+never watched a publish succeed, so the gate's idea of required is untested, and the panel is
+honest about being a prediction rather than a verdict.
+
+**A shop selling nowhere else sees nothing at all** — not an empty panel, no panel (spec A6).
+Channels are off until a shop says otherwise, so this is most shops until they opt in.
+
+A nearest fit reads as what it is, with its note, every time rather than once: *"This is the
+nearest they have, not their own word for it. Flipkart has no rida node…"*. An unmapped value says
+what it costs to fix and that fixing it once serves every product that shares it, which is the
+same sentence the register's worklist is built on.
+
+A read, so a server component does it and no route handler exists for it: a client fetch here
+would be a round trip bought for data the server already had ([ADR-0034](adr/0034-render-on-the-server-by-default.md)).
+
+## [PR-264] 2026-10-04 — The register, and a worklist that shortens
+
+The platform owner's screen: what each channel has mapped, and what this catalogue still needs
+decided. `/admin/channels`, one page per channel.
+
+**Both worklists are built from what products actually answer, never from the vocabulary.** There
+are 186 colours in the list and 35 on Flipkart; mapping the other 151 before anybody sells one is
+work with no buyer. A value arrives on the list when a product answers it, carries how many
+products share it, and leaves the moment a decision is recorded — which is what makes a long job
+finite rather than endless (spec A3, the fourth hazard).
+
+The same row corrects a mapping that already exists. Everything seeded over the last few commits
+is a starting point, not a fixture: `setValue` upserts on the natural key, so recording a
+different word is a correction rather than a second mapping, and the owner's rows carry
+"Decided in the channel register" where the seeded ones name a template and a date.
+
+**One field and one button per row, deliberately.** A single form saving the whole list would
+make a long job all-or-nothing, when the point is that it can be done a few at a time.
+
+A second list names product types that sell here and have no category on that channel — which is
+how a newly added type surfaces without anybody remembering to check.
+
+Nearest fits are listed apart from both, because they are not work. They are decisions already
+taken, shown with the note every affected product keeps displaying (D6, D12).
+
+Audited: a mapping decides where somebody else's listing goes, so recording one writes to the
+admin trail ([ADR-0021](adr/0021-audit-trail-never-fails-the-action.md)).
+
+Five mutations of the worklist were each watched turning its guard red — including a mapped
+category still reading as unmapped, which the first pass did not catch because the test only ever
+asserted the negative. The positive assertion came from the mutation, not the other way round.
+
+## [PR-263] 2026-10-04 — What Google asks for, read rather than remembered [MIGRATION]
+
+Google's and Meta's attribute mappings, from Google's own product data specification fetched on
+the day. Reading it rather than recalling it changed the answer, which is the whole point of
+[ADR-0046](adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md).
+
+**From memory this would have marked `gender`, `age_group` and `size` required for apparel.** The
+specification says they are required only for products targeted to **Brazil, France, Germany,
+Japan, the UK and the US**. This shop sells in India, so Google asks for none of the three. A gate
+built on recall would have told a seller to answer three questions nobody was asking.
+
+**What it does require, country-independently, is `color` for free listings on every Apparel &
+Accessories product.** Six of the eleven nodes this shop maps to sit under that branch — clothing,
+pants, socks, scarves, rings and handbags — and five do not: perfume, incense, religious items,
+backpacks and toiletry bags. So the same fact is required on some nodes and optional on others,
+which is the per-node key from PR-262 earning itself a second time.
+
+**A channel can now say its field takes any text.** Google's colour, material and pattern are free
+text; Flipkart's are closed lists of 35, 140 and 56 words. Without somewhere to record that, the
+gate reported every colour as having no Google equivalent — on a channel that needs no equivalent.
+`freeText` on the attribute mapping says so, and it is a property of the channel's own field, which
+is where it sits.
+
+**Meta carries the field names and nothing required.** It accepts Google's RSS namespace so the
+names hold, but Meta's own specification has not been read. Marking its fields required would be
+claiming knowledge we have not checked, so Meta can warn and will never call a product incomplete
+— honest about what has been verified rather than tidy.
+
+Absent on purpose: `condition`, a constant until this store sells anything used; `item_group_id`,
+which is the family and is derived; `gender` and `age_group`, which the audience fact answers in
+the adapter the day a target country needs them.
+
+A black nida rida now reads warned on Google and Meta and incomplete on Flipkart, where `nida` is
+still unmapped — Flipkart spells it "Nida Matte", which is one decision for the owner rather than
+a guess for the code.
+
+## [PR-262] 2026-10-04 — What Flipkart calls our facts and our answers [MIGRATION]
+
+Sixty attribute mappings and 474 value mappings, derived from the twelve template workbooks
+rather than typed, so a mapping cannot claim Flipkart asks something it does not.
+
+**An attribute mapping is now keyed by their node, not our product type.** Found while seeding,
+before a single row existed. Flipkart's `bag` asks Number of Compartments and Waterproof;
+`sling-bag` and `hand-messenger-bag` carry neither field — and all three are our `bag`. Keyed by
+our type, a sling bag would have been told to answer a question Flipkart never asks, which is the
+readiness-that-disagrees-with-the-channel hazard the spec names second. One template file per
+node is also how the data arrives, so the table now has the shape its source already had.
+
+`material` is seeded as "Fabric" on cloth nodes and "Material" on the rest — one question, two
+names, which is what a per-node key makes expressible.
+
+**Thirty-three mandatory Flipkart fields are deliberately absent**, and the migration lists each.
+`Type` (mandatory in eleven nodes) is answered by the product's kind, and `Size` by the stored
+measurements — both derived by the adapter, never asked of a shop. `With Hijab`, `Features`, the
+five Diamond grades and the kids' age bands are channel extras the shop cannot answer by looking
+at the product, so they belong to the adapter's own schema. Neither group is a gap: a fact is
+admitted because a shop can answer it, never because a platform asks.
+
+**468 values matched exactly; 366 did not and carry no row.** Our vocabulary is the union of what
+Flipkart and Meesho permit, so a colour Meesho has and Flipkart does not is expected. Nothing is
+guessed — "Baby Pink" is reported as having no Flipkart word rather than quietly listed as Pink.
+Six more were mapped by hand where only the wording differs (their waist rise drops the word
+"Rise"), recorded under their own `checkedSource` so a reader can tell which rows a person decided.
+
+Walked end to end against the seeded register: a fully answered rida reads warned on Google and
+incomplete on Flipkart, naming its nearest-fit category, one unanswered optional fact, and one
+unmapped value — `nida`, which Flipkart spells "Nida Matte". That is one decision serving all 36
+ridas, and the worklist is where it belongs.
+
+Google's attribute mappings are **not** seeded. Its taxonomy was fetched and read; its product-data
+specification was not, and seeding required fields from memory is the thing ADR-0046 forbids.
+
+## [PR-261] 2026-10-04 — Where each thing is listed on Flipkart, Google and Meta [MIGRATION]
+
+Forty-four category mappings, seeded as a data migration because without them the register is
+empty and every product reads as having nowhere to go. The owner's calls, taken 2026-10-04.
+
+Google's node ids come from its published taxonomy, fetched on the day and named in every row's
+`checkedSource`. Flipkart's come from the template workbooks downloaded on 2026-10-01. **Meta
+carries Google's values as its own rows** rather than sharing them: they are two channels that
+agree on categories today and already disagree on values — Google writes `in_stock`, Meta
+`in stock` — so separate rows are what let one move without the other, with no code change.
+
+**Two of them stopped being compromises.** Flipkart's `trouser` node has a mandatory `Type` field
+whose values include "Palazzos", and its `mat` node's `Type` includes "Prayer" — so a palazzo and
+a prayer mat are exact matches, not nearest fits. The category is never the only slot a channel
+gives you, and reading the permitted values rather than the field names is what showed it.
+
+**Six are nearest fits, each with a note shown on every product it touches.** A rida has no node
+on Flipkart and is listed as an abaya; bakhoor is neither perfume nor incense stick and goes with
+incense; Google has no node for Islamic outerwear, so Clothing is its nearest parent.
+
+**The inferred one is marked inferred.** Flipkart has an attar category whose template was never
+downloaded, so its slug and required fields are unverified. It is seeded as a nearest fit whose
+source reads "Inferred. No template obtained." rather than left out — the product still publishes,
+and the note is visible every time until the sheet arrives.
+
+**Combos are deliberately absent.** Gift, prayer and masalla sets sell on this store only. No row
+is the truth about that rather than a gap, which is why a test asserts it rather than ignoring it.
+
+A consistency guard checks every row names a product type and a kind that exist, that every
+nearest fit carries a note, and that Meta has not drifted from Google. Six mutations of the seed
+were each watched turning it red, including a combo appearing and a rida quietly moving.
+
+## [PR-260] 2026-10-04 — Readiness advises; it never gates
+
+Owner's decision, taken before the panel was built and while it still cost a rename. Nothing in
+the channel registry refuses a publish, and nothing disables a control.
+
+The reasoning is the spec's own second hazard, read in the direction it was not read the first
+time: readiness that disagrees with the channel is worse than none — and it will disagree in
+**both** directions until publishing has actually been watched. "Required" here is our reading of
+a downloaded template, not something seen to fail. Refusing on it would stop listings that would
+have gone through, and the rejection we would need in order to learn better is exactly the one we
+prevented. A listing that goes and comes back refused teaches us something; one we never sent
+teaches us nothing.
+
+**The band is renamed `blocked` → `incomplete`.** If we never block, `blocked` is a name that
+lies, and a lying name is an invitation to wire a refusal in later and call it consistent. The
+three bands are kept, because the severity is real advice — "they mark this compulsory" is
+different from "this is our nearest guess at a category" — but they now say what we expect the
+channel to think, never what we will do about it.
+
+A gate may still be right. The evidence for it will be real rejections, and there are none yet.
+Recorded as D10, replacing a draft that refused with a `DomainError`; R7 and A2 move with it.
+
+Costed nothing but a rename because the readiness panel had not been built — the pure function
+and the register reads were in, with no caller that could have refused anything.
+
+## [PR-259] 2026-10-04 — Where you sell, on the page that already asks what you sell
+
+A "Where you sell" section on the org's listing screen: one row per channel, a switch, and a
+sentence saying what turning it on actually buys. This storefront is not among them — a shop does
+not opt into the place it already is.
+
+Without this the registry was inert. Channels are off by default and nothing could turn one on,
+so readiness could never appear anywhere, which made the rest of the feature undemonstrable.
+That is why it comes before the readiness panel rather than after it.
+
+**Off is a complete answer, and no row is written to say so.** A shop that has never been asked
+reads as selling nowhere else rather than as having declined — the difference matters the first
+time a channel is added to the set, because silence must not become a decision taken on the
+shop's behalf.
+
+**A channel the request does not mention is left alone, never switched off.** The form sends what
+it showed; treating silence as "off" would turn off whatever a later release adds the moment a
+page loaded before it posted.
+
+Turning one on buys exactly one thing today: this shop starts hearing whether its products are
+ready for that channel. No credential is asked for and nothing is sent anywhere.
+
+## [PR-258] 2026-10-04 — The register, read: what a channel says about a product
+
+The reads behind the gate. Two repositories and a service that assembles them into the shape the
+pure function already takes, so every judgement stays where it was tested.
+
+**The three maps are one repository**, because a register is a category, its attributes and their
+values together and nothing reads one without the others. The shop's own enablement is a second
+repository: the maps are the platform's dictionary, shared by every shop, and `OrgChannel` is one
+shop's choice. They are written by different people for different reasons.
+
+**The register is read per product type, not per product.** A listing screen asking per row would
+read the same dictionary once per row; the type is what the mappings are keyed by, so products
+are grouped by it and each group costs the five queries one product would. Asserted as an exact
+query count, not a bound — and the count was watched going from 5 to 122 when the read was moved
+inside the loop.
+
+**A catch-all category mapping cannot go through `upsert`.** Prisma's compound-unique input will
+not take a null, because a unique index does not constrain NULLs — so that one path matches by
+hand, with the partial index from PR-255 as the real guard: a concurrent second create fails
+there rather than quietly becoming a second answer. Correcting one twice makes one row, which is
+checked against Postgres rather than reasoned about.
+
+A mapping naming a fact this codebase no longer declares is ignored rather than cast through, so
+a dictionary outliving a renamed fact degrades to silence instead of a wrong attribute.
+
+## [PR-257] 2026-10-04 — The billed-operations budgets were measuring nothing
+
+Found while writing a budget for new code. Every assertion in
+`tests/integration/db-ops-budget.test.ts` is an upper bound, and the instrument behind them was
+counting zero — so all eight read `expect(0).toBeLessThanOrEqual(n)` and could not fail.
+
+The cause is import order. `PRISMA_LOG_QUERIES` has to be set before the Prisma client is
+constructed, because the query event listener is attached at construction. The suite sets it at
+the top of the file, but `tests/helpers/test-db.ts` imported the client at module scope, and an
+import is evaluated before any statement in the file importing it. Asking whether a database is
+disposable was enough to build a client that would never report a query.
+
+The helper now reaches the client through a lazy accessor, and the budget suite's first test
+asserts the instrument is live before any budget is checked. An upper bound over a dead
+instrument is an assertion that cannot fail, which is worse than no assertion.
+
+The budgets themselves were honest: with real counts, all eight still pass unchanged. What was
+missing was the enforcement, not the performance — a query regression at any point in the last
+two months would have gone through.
+
+## [PR-256] 2026-10-04 — Whether a product could be listed, answered without asking anyone
+
+The channel registry's gate, as a pure function with no caller yet. It takes the product's stored
+facts, the channel's three mappings and what that channel calls required, and answers in the three
+bands the TRD names: blocked, warned, ready.
+
+**A nearest-fit category warns rather than blocks.** Blocking it would make this store's largest
+line unlistable — a rida is 36 of 94 products and has no exact node on either marketplace. The
+point of recording the fit was never to stop the listing; it was to show the shop, every time,
+what it will be listed as and why, instead of approving it once and forgetting.
+
+**A value the channel has no word for blocks, and is never guessed.** Google and Meta are the
+closest pair in this space and still disagree on values; a tool that guessed would be wrong at
+exactly the rate its guesses looked plausible. So an unmapped answer blocks that channel only,
+and the worklist is keyed by value rather than by product — one mapping for "maroon" clears every
+product that answers maroon, which is what keeps a long job finite rather than endless.
+
+**Every problem is reported, not the first.** A shop fixing one, saving, and only then learning
+of the next is the slow loop this phase exists to shorten.
+
+An absent `OrgChannel` row is off, and a shop that has enabled nothing is asked nothing and warned
+about nothing. A stored key that is no longer a declared channel is dropped rather than honoured,
+so the `instagram` → `meta` rename cannot re-enable something nothing can publish to.
+
+Purity is the point: twelve mutations of the rules were each confirmed to turn the suite red.
+`fill-facts` now exports its rule for what counts as blank, because a second spelling of it is how
+a fact comes to be answered in one place and missing in the other.
+
+## [PR-255] 2026-10-04 — The channel set, declared, and the four tables under it [MIGRATION]
+
+The channel registry's first piece. No behaviour changes: this is the vocabulary and the storage
+the rest of [channel-registry](specs/channel-registry/) is built on.
+
+**The channel set is now the real one.** `instagram` is gone and `meta` replaces it — one feed
+serves Facebook and Instagram — and `google` and `meesho` join. Each channel now carries its kind
+([ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)), which is what decides
+whether it gets a feed or the full marketplace machinery.
+
+**A channel is declared in code, not stored as a row.** This corrects the spec's D1, which said
+the opposite when it was committed yesterday. Reading the code settled it: a channel does nothing
+until it has an image rule, a readiness rule and an adapter, all three of them code — so a row an
+admin could add would be a row that sits there inert. What a *shop* chooses is data, and that is
+`OrgChannel`. The TRD now says so; the entry above, written before, does not.
+
+**One label, not two.** `onboarding-card.tsx` carried its own copy of the channel names beside
+the one in the server types. Two spellings of one closed set is the drift Invariant 5 exists for,
+and this set is the one every adapter, mapping and readiness answer keys on.
+
+**Four tables:** `OrgChannel`, and the three maps — category, attribute and value — each keyed on
+the channel plus what it maps, and each dated with what it was checked against
+([ADR-0045](adr/0045-channel-mappings-are-versioned-data.md)).
+
+**A partial unique index closes a hole that would have shipped.** `ChannelCategoryMap.kind` is
+nullable, meaning "every kind of this type", and NULLs are distinct to a unique index — so the
+declared `@@unique` permitted two of those for one channel and type. That is two answers to which
+of their nodes a product publishes to, settled by whichever row the query returned first. Prisma's
+schema language cannot say the rule, so the migration does, and a database test mutation-tested
+against each of the four constraints is what keeps it honest.
+
+Also fixed, on contact: `enhancement-settings` asserted absolute usage counts against a shared
+dev database, so it passed the first run and failed every one after — it read 11 for a month it
+had put one run into. It now measures the change it causes.
+
+## [PR-254] 2026-10-04 — The channel registry, specified
+
+What each selling channel is, what it calls the things this shop sells, and whether a product is
+ready to go there. It publishes nothing: it is the dictionary and the pre-flight check that
+`shopfront-feeds`, `channel-connectors` and `marketplace-publish` all need first, because none of
+them would otherwise know what to send.
+
+Most of it records decisions already taken rather than making new ones —
+[ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md) for what a channel is,
+[ADR-0045](adr/0045-channel-mappings-are-versioned-data.md) for mappings as versioned data. Four
+decisions are this spec's own.
+
+**Three mapping tables, not one.** Category, attribute and value are filled at different times
+and by different effort, so a shop can publish with categories mapped and values half-done, and
+the gate says exactly which values are missing. One table would have made the job all-or-nothing,
+which is how a mapping job never finishes.
+
+**Readiness answers in three bands** — blocked, warned, ready — so a half-mapped register still
+reports usefully rather than refusing everything.
+
+**A nearest fit is a warning every time, not an approval once.** This store's largest line is the
+case: a rida is 36 of 94 products and has no exact match on either marketplace. Shown once and
+accepted, the mapping would then apply silently to every later product, including ones it suits
+far less.
+
+**The gate never disables a control**, per the owner's standing preference: the publish action
+refuses with a message naming what is missing, through the error envelope this project already
+has. A disabled button explains nothing.
+
+D12 records what the owner closed today: a nearest fit is the **platform's** decision, shown to
+every shop it affects. Choosing that a rida lists as an abaya is a commercial judgement, which
+argued for the shop — but one mapping serves every shop selling that type, so a seller's choice
+would silently change another's listings. It reopens the first time two shops want different
+answers.
+
+## [PR-253] 2026-10-04 — Where a value came from, and correcting it where it came from [MIGRATION]
+
+The last two pieces of [inherited-facts](specs/listing-vocabulary/inherited-facts/). The fill
+step has been recording which level answered each fact since PR-227; nothing showed it and
+nothing acted on it.
+
+**The form now says so.** A value filled in from the family, the brand or the shop's defaults
+carries "from your brand" beneath it, and stays editable — editing makes it the product's own.
+Only inherited values get the note: an answer marked as the product's own is the shop's, and
+saying where it came from would be saying "from yourself".
+
+**A correction at brand or family level offers to correct what took its answer from there.** The
+preview says how many will change *and* how many are left alone, because the second number is
+the reassurance — a product somebody deliberately edited keeps its answer. The preview and the
+update are one predicate evaluated twice, so a shop cannot confirm one figure and have a
+different set change.
+
+**A column was missing and the typechecker could not see it.** `Product` had no `brandId`: a
+brand answered what a product left blank at save time and was then forgotten, so a brand-level
+correction would have matched nothing and reported zero — working, silent, useless. It survived
+review because the `where` clause built it through an object spread, which TypeScript does not
+check for unknown keys. Found by reading the schema rather than trusting the build.
+
+`Product.brandId` is `Restrict`: a brand is retired rather than deleted, and a retired brand
+still answers for the products that named it.
+
+The correction reaches archived products deliberately, which the ADR-0029 census now records: an
+archived product keeps the answer it inherited and can be restored, so skipping it would bring it
+back carrying a value its brand has since corrected.
+
+Mutation-tested three ways — ignoring the stored origin, letting the preview and the update
+diverge, and marking a corrected answer as the product's own each turn it red. The first attempt
+at the divergence mutation was logically equivalent and passed; it was rewritten until it
+actually diverged rather than recorded as caught.
+
+## [PR-252] 2026-10-04 — `sizes` and `colors` are gone, and bidding stops naming a variant [MIGRATION]
+
+The two columns this whole phase replaced. They were free text: a colour typed three ways was
+three colours to a marketplace. A colour is now chosen from a list and stored by its key, and a
+size is derived from stored measurements rather than typed.
+
+Dropped in a **later** migration than the one that replaced them, which is
+[variants](specs/listing-vocabulary/variants/) D8 — if the new shape had read something wrong,
+the old data was still there to re-read. Nothing had read either column since the product form
+and the bulk sheet stopped offering them.
+
+**Bidding was the last reader, and its rule is obsolete rather than broken.** An event named
+exactly one item, so a product with options could not be auctioned without saying which. Every
+colour is its own product with its own stock now
+([ADR-0043](adr/0043-a-variant-is-a-product-in-a-family.md)), so "a product with options" no
+longer exists: the guard could never fire and `BiddingEvent.size`/`color` could never be filled.
+The step is gone from the form, the fields from the payload, and the columns from the table. The
+owner confirmed production holds no bidding events, so nothing recorded is lost.
+
+**Checkout lost a check it could no longer answer.** It refused a cart line naming a size the
+product never offered. With no options list there is nothing to check against — the product *is*
+the choice. The order line still records which size and colour were bought, and that record
+stays: an order is history and never loses what was sold
+([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). Only the validation went.
+
+Worth being plain about what this costs: a cart line's `size` and `colour` are now recorded as
+given, unchecked. They are vestigial for anything listed under the new model, and the honest
+place to remove them is whenever `order-and-cart-lines` is next opened — not in a migration that
+would rewrite order history.
+
+## [PR-251] 2026-10-04 — A sheet row with a known SKU updates the product
+
+The `sku` column's note has said this since PR-249; now it is true. A row whose SKU matches a
+**live** product of this org replaces it, and anything else creates one. `planProductRows` says
+which is which, so a person sees it before confirming — and the wizard reports both numbers,
+because they are not the same event: a wrong create leaves a product to archive, a wrong update
+has overwritten something.
+
+Three things an update does deliberately. It **keeps the slug**, which is frozen at creation
+because changing one 404s every link to the product. It **replaces the gallery and the stock**
+rather than adding to them, the same semantics the admin form's edit has. And it **still refuses
+an archived product's SKU**: an archived product holds its code, and an import must never
+silently restore one.
+
+That last rule is now the only SKU conflict left, which meant rewriting the all-or-nothing test.
+It had doomed its row with a duplicate SKU — a legal update now — so it dooms with an archived
+one instead, which is the real remaining case.
+
+Mutation-tested three ways: regenerating a slug on update, adding media instead of replacing it,
+and treating a live SKU as a conflict again each turn it red.
+
+## [PR-250] 2026-10-04 — The bulk import reads the vocabulary, and two silent bugs with it
+
+The sheet grew its question columns in PR-249; nothing read them. `bulk-vocabulary.ts` now turns
+what a row said into what a product stores, and the import writes `productType`, `kind`, `facts`
+and `measurements` alongside everything else. `sizes` and `colors` are gone from the row shape —
+the sheet stopped offering them a PR ago.
+
+A **label** becomes a **key**: the dropdowns offer "Maroon" and the product stores `maroon`,
+because renaming a colour must not rewrite products. A key typed directly is accepted too, since
+a sheet round-tripped through an export carries keys and refusing one would punish whoever did
+the tidier thing. An answer matching nothing is kept as flagged free text rather than dropped —
+a shop's data is not ours to discard for not fitting a list written afterwards.
+
+A row is only asked what its type asks: an answer for a fact the type never asks is dropped
+rather than stored, since it would answer a question this product was never put. The type comes
+from the row when it names one — that is what lets one workbook span several — and from the
+category otherwise. A row naming a type its category does not resolve to is **refused**: that is
+the one case where guessing would publish a product under the wrong marketplace category.
+
+A family named in the sheet is created once and reused by every later row naming it, so four
+colours of one abaya arrive as four rows and one family.
+
+**Two silent bugs, both found by tests rather than by the compiler.**
+
+`sheet.ts` lower-cases every header, and fact keys are camelCase — so `sleeveLength` arrived as
+`sleevelength` and a direct lookup dropped it. **Every camelCase question would have imported as
+blank**: sleeve, pack quantity, scent family, waist rise. Only all-lowercase ones like `colour`
+worked. Matching is case-insensitive now.
+
+`categoryRepository.listTree()` returned `(id, parentId, slug)` and nothing else, so
+`resolveProductType` walking it found no type on any node — **every bulk-uploaded product would
+have been untyped**, which looks exactly like a catalogue nobody has typed yet. The tree carries
+`productType` now. Both were mutation-tested after fixing: reintroducing either turns four tests
+red.
+
+## [PR-249] 2026-10-04 — The bulk sheet is built from what exists, not from a template
+
+The sample sheet's columns came from a hard-coded list that still read `sizes` and `colors` — the
+two the whole phase replaces. They now come from the product types the sheet is generated for,
+its dropdowns from the permitted answers in the database, its stock columns from the org's real
+locations and its category examples from current slugs.
+
+**Nothing in it is fixed**, which the owner asked for and which matters more than it sounds: a
+template written down once goes stale the first time a type or a colour is added, and the drift
+is invisible until somebody's upload is rejected for a column that no longer exists. A test gives
+the builder a `footwear` type this codebase has never seen and asserts its columns appear.
+
+One workbook spanning several types — Amazon's shape rather than Flipkart's and Meesho's
+one-sheet-per-category, so an org listing bags and attar fills one file rather than two.
+`?types=a,b` narrows it; omitted, it spans every live type. A `Types` sheet says which columns
+belong to which type, and the notes carry each type's own wording — cloth is asked its Fabric.
+
+**A measurement column names its unit, because one measure takes two.** `length` is inches for a
+garment and centimetres for a mat, so a single `length` column across both would mean two things
+and the person filling it would have no way to tell which. They are separate columns and a row
+fills the one its type uses. Checked against the real rows rather than assumed: six types declare
+`length`, in two different units.
+
+The sheet also now says that **a row whose SKU matches an existing product updates it** — the
+import side of that is the next PR; the column and its note come first so the sheet is not
+promising something before it exists.
+
+**A bug found by reading the file rather than the code.** Applying the dropdowns materialises
+every row down to 500, so `addRow` appended the two example rows at 501 — below five hundred
+blanks, where nobody opening the sheet would ever see them. The examples are written first now.
+It compiled, it passed every column test, and it was only visible by generating a workbook and
+looking at row 2. `tests/unit/bulk-sheet-build.test.ts` builds one and reads it back, so the
+regression is caught; verified by re-introducing the ordering and watching it go red.
+
+## [PR-248] 2026-10-04 — A family can be made, which is what variants was waiting for
+
+`ProductFamily` existed since PR-229 with nothing creating one. The owner's correction is why
+this came first: *"my father will list his first variant as soon as this feature lands."*
+
+`productFamilyService` makes a family from a category, which is where its type and its axis come
+from — the same walk the product form does, so a family asks what its members will be asked. The
+axis is **copied rather than referenced**, so reordering a type's declaration later cannot
+silently regroup a shop's products. A family for a category with no type is legitimate and
+carries no axis: the siblings still share a description even where nothing has named what makes
+them differ.
+
+The picker sits on the product form with **"On its own" as the default**, because that is the
+normal case — one abaya in one colour is one product, and nothing asks a shop to declare a family
+of one. A new family is made without leaving the form, since the moment one is wanted is the
+moment a second colour is being listed.
+
+**"Products" is two numbers now** (variants D6). The stats tile already said "Available" rather
+than "Total", which avoided one ambiguity; it now reads "in 20 families" beside it once any
+exist. Twenty abayas in five colours is twenty families and a hundred sellable things, and a
+figure that does not say which it counts is the ambiguous one.
+
+`POST /api/org/[orgId]/families` is under `/api/org`, not `/api/admin` — a family belongs to a
+shop. `productType` and `variantAxis` are absent from its payload deliberately: both are resolved
+from the category, so a request cannot group products by a fact their type never asks about.
+
+Nine tests, mutation-tested three ways — referencing the axis instead of copying it, dropping the
+org scope, and accepting a blank name each turn it red.
+
+**One of those mutations poisoned the suite**, which is worth recording. The axis test mutated
+reference data every other test reads and restored it on the line after the assertion — so when
+the assertion failed, the restore never ran and two more tests failed for a reason that had
+nothing to do with them. The restore is now in a `finally`, and that was verified by breaking the
+assertion on purpose and checking the row came back.
+
+## [PR-247] 2026-10-04 — The product form asks the type's questions
+
+The screen the vocabulary was for. `ProductAttributeFields` — the free-text sizes and colours
+boxes — is deleted, and `ProductFactFields` puts the questions this product's type actually asks
+in its place. A colour typed three ways was three colours to a marketplace; now it is chosen from
+a list.
+
+The type is resolved **in the form the same way the server resolves it**, by walking the category
+tree the form already carries for the gallery's slots. So what is asked is what will be stored,
+without a second notion of the rules living in the client.
+
+The answers for the category a page renders with are read **by the page**; changing the category
+fetches the rest through `GET /api/org/[orgId]/listing-values`. That is a fetch triggered by an
+interaction, which is what earns a route handler — the first load costs no round trip
+([ADR-0034](adr/0034-render-on-the-server-by-default.md)). `useListingValues` does that one
+thing, and tracks which lists it has asked for in a ref rather than state, so the effect never
+depends on what it sets.
+
+A category with no product type says so plainly rather than rendering an empty section: the
+product saves and sells here, and cannot be published until a type is set. That is the untyped
+part of this store's catalogue — masalla bags, beauty and health, kitchen and dining.
+
+**Four gates caught four real things**, which is the part worth recording:
+
+- `portal-boundary` refused the route: I had put an org-scoped read under `/api/admin`, guarded
+  by org membership rather than platform admin. Moved to `/api/org/[orgId]/`, where the shop's
+  own added answers belong.
+- `form-error-display` refused the `kind` select and the fact fields: a field bound without an
+  error output makes a form that refuses to submit while saying nothing. All of them now bind.
+- `design-tokens` refused a stale `SHAPE_LEGACY` entry for the file I had just deleted.
+- `react-hooks/set-state-in-effect` refused the first version of the fetching, which depended on
+  the state it set — each fetch would have scheduled the next.
+
+Both of the first two were mutation-tested afterwards: moving the route back under `/api/admin`
+and unbinding the `kind` error each turn their gate red.
+
+## [PR-246] 2026-10-04 — One value per concept, one spelling per value [MIGRATION]
+
+The duplicate-values problem recorded on the backlog yesterday, closed. Twenty-one values
+retired, none deleted.
+
+**Where it was a judgement, the owner made it**: *"full sleeves is the correct term."* Not the
+shorter word or the longer one — the trade's. The other two sleeve pairs follow it, so the list
+reads Sleeveless, Full Sleeves, Half Sleeves, Roll-up Sleeves, Three-Quarter Sleeves: five values
+where there were eight. `waistRise` goes from six to three, keeping High Rise, Low Rise and Mid
+Rise, because an entry in a dropdown has to read on its own. `fit` keeps the `Fit` suffix it
+already used for Athletic, Skinny and Slim.
+
+**Where it was not a judgement, a stated convention settled it.** Thirteen more collisions were
+one word spelled two ways — Cut-Outs beside Cutouts, Polka Dot beside Polka Dots, Aloe Vera
+beside Aloevera. The rule, written down so it can be applied again: the spaced form and the
+plural where the thing is naturally countable, except where one word is the established trade
+term — Polycotton, Cutwork — which keeps its own spelling.
+
+**Retired, not deleted**, and that is the part that matters. Every discarded form is what some
+platform writes, and the mapping layer will need it: our Full Sleeves is Meesho's Long Sleeves.
+Retiring hides it from every picker, keeps it readable on anything that stored it, and leaves the
+word where [ADR-0045](adr/0045-channel-mappings-are-versioned-data.md)'s mappings can find it.
+Deleting would have thrown away the evidence that made the mapping possible.
+
+Checked afterwards rather than assumed: no spelling collision remains in any list, and 1,001
+values are offered where 1,026 were.
+
+## [PR-245] 2026-10-03 — One list was holding two questions [MIGRATION]
+
+`listingValueRepository` is the one way to reach the permitted answers
+([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — always **by list**, never all of them,
+since there are over a thousand rows and a form needs the handful its own type asks about.
+
+Exercising it against the seeded rows found a defect in PR-230's generator. It mapped Flipkart's
+`Sling Strap` and Meesho's `Shoulder Strap` onto one `strap` list, on the assumption they were
+two platforms' words for one question. They are not: Flipkart asks whether the strap **comes
+off** — Detachable or Non-Detachable — and Meesho asks whether it is **padded**. Merged, a seller
+was offered four options to one question, two of which answered a different one.
+
+Both are facts a shop can answer by looking at the bag, so both stay — as two facts, which is
+what [ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)
+admits them as. `strapPadding` is now its own fact and its own list, and the bag type asks both.
+Nothing stored either, so the migration moves rows rather than answers.
+
+**A second, milder problem is recorded on the backlog rather than fixed**, because the fix is a
+judgement. The union of two vocabularies gives one concept two entries wherever the platforms use
+different words: `waistRise` holds High and High Rise, Low and Low Rise, Mid and Mid Rise;
+`sleeveLength` holds Full Sleeve beside Long Sleeves. That is harmless for colour, where 188
+values are genuinely different shades, and poor for a list of six that is really three. The
+answer is one canonical value with each platform's word as a mapping — which is what the mapping
+layer exists for — but choosing which word is canonical is the owner's call, not something to
+decide quietly in a migration.
+
+Worth stating plainly: neither of these was caught by a test or a review. Both came out of
+running the repository against the real rows and reading what came back.
+
+## [PR-244] 2026-10-03 — The product payload learns the vocabulary [CONTRACT]
+
+`ProductFormInput` accepts five more fields, all optional: `kind`, `familyId`, `brandId`, `facts`
+and `measurements`. Without them the route stripped everything the fill step was wired up to
+receive, so PR-243's work could not be reached from a browser.
+
+The answers travel as **bare values** — `{ "colour": "black" }` — never the stored
+`{value, origin}` shape. Origin is the server's word for where a value came from, and a request
+that could set it could claim a shop typed something it inherited, which is exactly what the
+brand-level correction then skips.
+
+**`productType` is absent deliberately**, like `slug` and `thumbnail`. It is resolved from the
+category tree on save, so accepting it would let a payload put a product under a type its
+category does not use. Both exclusions are tested, and both mutation-tested: adding `productType`
+to the schema, and widening the answer map to `z.any()`, each turn a test red.
+
+`PRODUCT_FORM_FIELDS` gains the five names too. A field missing from that list has its
+server-side error routed nowhere, so the person sees no message against the input they have to
+correct — the failure [ADR-0013](adr/0013-one-error-envelope-and-useserverform.md) exists to
+prevent. A test now holds the list and the schema in step.
+
+`docs/CONTRACTS.md` gains a listing-vocabulary section covering the wire shape, the separate
+`ProductPersistInput` the repository writes, the category envelopes becoming factories, and the
+new admin surface — where `DELETE` retires rather than deletes and answers with the usage counts,
+because "it is in use" without a number is not something anybody can act on.
+
+## [PR-243] 2026-10-03 — The fill step gets its caller
+
+`fill-facts.ts` was written pure in PR-227 with nothing calling it. `listing-fill.service.ts` is
+now that caller: it resolves the type from the category tree, gathers the levels — the family,
+the brand, the org's defaults — and asks the pure step to walk them. The walking stays pure; what
+lives here is the reading.
+
+Wired into `createProduct` and `updateProduct`, so a product saved through the service comes back
+carrying its resolved type and its answers, each marked with the level that supplied it. Nothing
+here refuses a save: a product with facts unanswered still sells on this storefront and is told
+what is missing.
+
+**Two shapes that genuinely differ stopped sharing a type.** `ProductFormInput` is what a form
+sends; `ProductPersistInput` is what the repository writes — the same fields plus a
+`productType` the form never sends and answers carrying their origin. Forcing both through one
+type is how a server-owned field comes to look like something a request may set (Invariant 4).
+`syncMarkdown` now takes only the four scalars it reads, so it serves either.
+
+**A bug the tests found rather than the compiler**: a family stores its facts the way a product
+does, each with the level that supplied it, so reading one *as a level* has to take the value
+back out. Passing the stored entry straight through made the inherited answer
+`{value: "crepe", origin: "product"}` rather than `crepe`. It typechecked, because both sides are
+JSON.
+
+**A second gap the mutation testing found rather than the tests.** Breaking the type scoping —
+asking every fact the vocabulary declares rather than the ones this type declares — left all nine
+tests green. That is the central claim of the whole feature, untested. Two tests now cover it: an
+abaya is never asked about plating, and an answer for a fact its type does not ask is dropped
+rather than stored.
+
+Eleven integration tests. Mutation-tested three ways, all caught once the gap was closed.
+
+## [PR-242] 2026-10-03 — This store's catalogue gets its types [MIGRATION]
+
+**The first migration in this programme that writes to the live catalogue.** Everything before it
+added columns and reference rows; this one points the twelve existing categories at a product
+type and copies the resolved type onto the ninety-four products under them.
+
+The mapping was agreed against the survey of the live catalogue: hand bags to `bag`, the RIDAS
+parent to `islamic-wear`, bottom wear to `trousers`, bukhoor and attar to `fragrance`, jewellery
+to `jewellery`. Seventy-two of ninety-four products typed.
+
+**Three categories are deliberately left untyped** — masalla bags, beauty and health, kitchen and
+dining. Twenty-two products. A masalla bag is a combo and the owner points it there; the other
+two have no type that fits and inventing one would be guessing at questions. Their products save
+and sell on the storefront and are not publishable to a marketplace, which is what was chosen for
+all three.
+
+The four rida categories are not named anywhere in the migration. A recursive CTE expresses the
+same walk `resolveProductType` does in code — a category's own type, else the nearest ancestor's
+— so formal, semi-formal, casual and ohbat inherit from their parent. Verified against a replica
+of the live tree rather than assumed: all four resolved to `islamic-wear`, and the three
+intentional nulls stayed null.
+
+Two safety properties, both checked rather than claimed. It is **idempotent** — re-running leaves
+every row byte-identical. And every statement is guarded on the column still being NULL, so it
+**never overwrites a choice an admin made later**: a product reassigned by hand keeps the hand
+assignment when the migration runs again.
+
+It is keyed by slug, so it is a no-op on the dev and CI databases, which carry fixtures rather
+than this catalogue.
+
+## [PR-241] 2026-10-03 — Rida, and a masalla bag that is a combo [MIGRATION]
+
+The first change that would have needed a release and does not. Both are rows, written through
+the path PR-236 to PR-240 built.
+
+**`rida` is a kind of Islamic wear, not a type of its own.** It is thirty-five of this store's
+ninety-four products and its largest line, which argued for a type. The mapping cost settles it:
+`(type, kind)` resolves a platform node in either shape, so the number of mapping rows is
+identical, and the questions are the same — the owner had already been mapping abaya and burqa
+fields onto rida fields. One question set, one more kind.
+
+The four rida categories — formal, semi-formal, casual, ohbat — stay categories. They are not
+kinds, because all four hold the same kind and map to the same node. And they need no `style`
+fact: neither Flipkart's `abaya-burqa` nor Meesho's `Abayas` asks for one, and the category
+already says it. Recording it on the product would store the same fact twice.
+
+**A masalla bag is a combo, not a bag.** A handbag and a prayer mat sold together; mapping it to
+a bag node would send a buyer a mat they never read about. Eighteen products, the second largest
+line. They stay typeless until the owner points the category at `combo` — the kind exists first
+so that is one click rather than a release, which is the whole point of the four PRs before this.
+
+One thing worth stating plainly: `rida` has no exact match on either platform. Flipkart's
+`abaya-burqa` permits Abaya, Burqa and Naqab; Meesho has Abayas, Burqa, Niqab, Hijab and Other
+Islamic Wear. So this store's largest line will publish under a **nearest-fit** mapping, which is
+the case the readiness gate must show rather than resolve silently.
+
+## [PR-240] 2026-10-03 — An admin builds a question set
+
+The screen the whole product-types spec was for. `/admin/product-types` lists the types with what
+each one costs to change, and the form creates and edits them: which facts it asks, what it
+measures and in which unit, what makes two of its products sell separately, and the kinds it
+holds.
+
+**Every fact says which marketplaces demand it**, measured from the templates rather than
+asserted — colour by all three, sleeve styling and stitch by Meesho alone, care by nobody. That
+is spec R7's "the screen shows what each choice will demand", and it is the difference between
+leaving a fact out as a decision and leaving it out as an omission discovered at the first
+rejection. It refuses nothing on that basis: a type we would not have built may be a line we
+have not met.
+
+**Four coherence rules are enforced at the write**, the same four the integration suite makes of
+the rows that shipped. There they catch a bad migration; here they catch a bad admin, which is
+the case that starts mattering now the screen exists. A type may not vary on something it never
+asks about, rename a fact it does not ask, read a size label from a measurement it does not take,
+or ask one fact twice.
+
+`key` is absent from the update envelope entirely. Products and categories store it, so renaming
+one would orphan every row that named it — frozen after creation, exactly as a slug is.
+
+Three gates caught things worth catching. Route reachability refused two handlers with no named
+caller until the client wrapper existed. The primitives gate refused a raw `<select>` and four
+raw inputs — `Checkbox` already carries its own label and 40px target, which is the thing the
+hand-rolled version got wrong. And the vocabulary gate had caught "seller" for "org" a commit
+earlier.
+
+Twenty tests, mutation-tested three ways: dropping the axis rule, letting the update envelope
+default its fields, and allowing a key to be renamed each turn it red.
+
+## [PR-239] 2026-10-03 — Two decisions closed: the colour list, and what the bulk sheet does
+
+**The colour list is the union**, which is what PR-230 already shipped: 188 values with the 31
+both platforms spell identically sorted first. It was held open on a concern that turned out to
+be overstated twice over.
+
+The concern was that a wide list commits somebody to mapping 154 values onto Flipkart's narrower
+vocabulary. But only the colours a shop *actually uses* ever need mapping — tens, not hundreds —
+and [ADR-0045](adr/0045-channel-mappings-are-versioned-data.md) decision 3 already has them
+decided lazily: an unmapped value fails readiness and the shop is asked to choose at the moment
+it first blocks a publish. There was never an upfront session to dread. The narrow list, by
+contrast, would leave a colour the shop genuinely sells unrecordable, which is the failure that
+cannot be undone later.
+
+That closes the last open question across all five listing-vocabulary specs.
+
+**The bulk sheet creates and updates, keyed by SKU** (owner, 2026-10-03). The existing importer
+is create-only, so a catalogue already listed can only be corrected one form at a time — ninety-four
+of them here. Update-by-SKU turns that into one upload, and it is nearly free once the sheet
+exists.
+
+Its shape follows Amazon rather than Flipkart and Meesho: those publish one sheet per node, so a
+seller in twelve categories downloads twelve files. Amazon lets several product types be selected
+and returns one workbook. That is the better shape and it is far cheaper here — Amazon's costs 390
+columns because it spans everything; ours spans a vocabulary of twenty-eight facts, so three types
+is roughly twenty-five columns. Each choice column carries its permitted values as a dropdown read
+from `ListingValue`, which stops "Maroon / maroon / Marron" at the source rather than cleaning it
+up afterwards.
+
+Recorded on the backlog as `product-form/bulk-sheet` rather than built now; the current importer's
+headers still carry `sizes` and `colors`, the two columns this phase replaces, so it is rewritten
+rather than extended.
+
+## [PR-238] 2026-10-03 — The category pages hand the form the types that exist
+
+PR-237 turned the schema into a factory and left the two category pages still calling the form
+without any types to build it from. The prop defaulted to an empty list, so the resolver would
+have refused every product type a shop chose — a silent bug introduced by the previous commit and
+caught by reading the call sites rather than by any test.
+
+Both pages now read the options server-side alongside the parents they already read, and
+`adminCategoriesDAL.getProductTypeOptions` is `cache`d per request like its neighbours. A server
+component reads and a client component receives ([ADR-0034](adr/0034-render-on-the-server-by-default.md)),
+and the two reads go out together rather than in sequence.
+
+The prop is **required rather than optional**, which is the part worth keeping. An optional one
+with an empty default is how this bug happened: a page that forgets it compiles, renders, and
+refuses every choice at submit. Required, the omission is a type error at the call site.
+Verified by removing it from one page and watching the compiler object.
+
+## [PR-237] 2026-10-03 — The types are read from the table, and the constants are gone [MIGRATION]
+
+The second product-types PR, and the one where the table becomes authoritative.
+`PRODUCT_TYPE_DECLARATIONS` is deleted. `server/catalog/product-type.ts` keeps only what stays
+pure — the tree walk, the key parsing and the schema factory — and `product-type.repository.ts`
+is now the one way to reach a type ([ADR-0003](adr/0003-one-repository-per-aggregate.md)).
+
+**A second migration, because the first dropped something.** Emitting the nine as rows lost the
+per-type relabelling: Flipkart asks cloth its `Fabric` and everything else its `Material`, which
+is one question with two labels rather than two facts. `factLabels` carries it, backfilled onto
+Islamic wear, trousers and socks. The test now asserts both halves — those three say Fabric, and
+bag, prayer mat and jewellery say Material — because the omission was silent the first time.
+
+**The zod schema is a factory**, which is how the runtime-known set keeps ADR-0013's property.
+`categoryFormSchemaFor(keys)` is built by the form from the options it was handed and by the
+route from `productTypeRepository.keys()`. Same function, same rules, both sides, with the
+foreign key as the backstop underneath. A widened set widens what is accepted, which is the test
+that proves it is a factory rather than a constant in disguise.
+
+**`sizeLabelFor` now takes the type's row**, so the ring diameter-to-size table is nine rows
+rather than a constant and nearest-match is the only code. A test builds a shoe type with a
+UK-size scale the codebase has never seen and the derivation follows it — which is what
+"configurable" has to mean to be worth the word.
+
+The declaration-integrity checks moved from unit to integration, because they changed meaning.
+They used to check constants the compiler already checked; they now check **rows**, which nothing
+checks — a type naming a fact that does not exist, varying on something it never asks about,
+relabelling a fact it does not ask, or reading a size label from a measurement it does not take.
+That is the check on a type an admin creates, which is the case that will matter once the screen
+exists. Mutation-tested: an axis on an unasked fact and a label on an unasked fact each turn it
+red.
+
+A vocabulary gate caught "never per seller" in a comment — this codebase says org — which is the
+kind of thing only a test notices.
+
+## [PR-236] 2026-10-03 — The nine product types become rows [MIGRATION]
+
+The first product-types PR. `ProductType` exists, the nine declarations are carried across
+unchanged, and both `Product.productType` and `Category.productType` now reference it. No
+behaviour changes: the code still reads the constants, and this PR is what lets the next one stop.
+
+**The foreign key references `key`, not `id`**, which is the decision that makes this free.
+Postgres permits a foreign key against any unique column, so every existing row keeps the exact
+string it holds and simply gains integrity — no backfill, no id rewrite, no touching the ninety-four
+products. Null stays legal, because a foreign key never constrains one, which is what the untyped
+categories need: masalla bags, beauty and health, kitchen and dining.
+
+Before this, `Product.productType` was a loose string. The compiler checked it only where a
+constant was used, so a typo written through any other path would have been stored and later
+published. Now the database refuses it.
+
+The rows are inserted **before** the constraints are added, in the same migration, so a database
+where a `productType` had already been set during testing does not fail the moment the key
+appears. Idempotent on the unique key.
+
+`labelScale` carries the ring diameter-to-size table, and `labelFrom` which measurements each type
+reads a label from — both of which were claimed un-configurable when this was first assessed and
+turn out to be data. Only jewellery has a scale, which the test asserts.
+
+Eleven tests against a real schema. Mutation-tested three ways: dropping the foreign key, changing
+its `RESTRICT` to `CASCADE`, and corrupting a carried fact list each turn it red. Worth recording
+that the `CASCADE` mutation genuinely deleted a type and its product before the restore — a
+mutation that lets a delete through does delete, and the fixture had to be rebuilt from the
+migration's own insert.
+
+## [PR-235] 2026-10-03 — Product types become something an admin creates
+
+The nine types were written as a TypeScript object, which made adding one a release. The owner's
+own frequency estimate inverted the recommendation to leave it that way: for the first hundred
+sellers a new product line arrives often enough that a developer in the loop is a bottleneck on
+onboarding, which is the main growth activity. Later it becomes rare again, but the expensive
+period is now.
+
+[product-types](specs/listing-vocabulary/product-types/) specifies the move. The split is between
+the **vocabulary** and the **selection**: a fact carries a way of being answered and a validation
+rule, so it stays in code; a type is a list of fact keys, so it becomes a row. Both reference
+implementations draw the line in the same place —
+[Akeneo](https://help.akeneo.com/v7-build-your-catalog/v7-manage-your-attributes) creates
+attributes and families in the UI with only the attribute *types* fixed, and
+[Shopify](https://shopify.dev/docs/apps/build/metafields/definitions) ships a standard taxonomy
+filled in and lets merchants add definitions with only the *data types* fixed.
+
+The decision that makes this cheap is the foreign key: `ProductType.key` is unique and both
+`Product.productType` and `Category.productType` reference it, so every existing row keeps the
+exact string it holds and simply gains integrity — no backfill, no id rewrite. That the columns
+were `String?` rather than a Postgres enum turns out to be what makes it free, and an enum would
+have been exactly wrong, since adding a value needs a migration.
+
+Three costs raised when this was first assessed are resolved rather than accepted. The zod schema
+becomes a factory so form and route still build from one function. The form costs two indexed
+queries in a render that already reads the category, with value lists fetched only for the lists
+that type uses — no cache, which this project deliberately does not have. And the ring-size scale
+turns out to be data after all: nearest-match is generic, so a type is fully configurable rather
+than half, which was a modelling error on first assessment.
+
+D11 records what the owner closed today: a type belongs to the platform, never to a seller. The
+permitted *answers* stay org-scopeable, because a shop knowing a colour the platform does not is
+harmless where a shop knowing a different question set would break publishing.
+
+## [PR-234] 2026-10-03 — Checked the vocabulary against the channel that publishes first
+
+The vocabulary was derived from thirty-four Amazon, Flipkart and Meesho templates. The owner asked
+whether Google and Meta had been considered, and they had not — which is a real gap in the order
+the checking was done, because those are the channels that publish *first*. A feed file at a URL
+needs nobody's approval ([ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)),
+while every marketplace needs an account, an approval, or partner status. The vocabulary was
+verified against the channels that come last.
+
+Checked now, and it holds. Google demands more of apparel than of any other category and a single
+missing attribute is an immediate disapproval: `color`, `size`, `gender`, `age_group`, and
+`item_group_id` on every variant. Eight of the ten are already carried.
+
+The interesting result is that **`Ideal For` answers two of Google's questions at once.** The
+marketplaces ask one question whose values are Men, Women, Boys, Girls, Baby Boys, Baby Girls,
+Kids and Unisex; Google splits that into `gender` and `age_group`. So `age_group` is a mapping of
+an answer already held rather than a fact that was missing — one canonical question, two channel
+fields, which is exactly what [ADR-0045](adr/0045-channel-mappings-are-versioned-data.md) exists
+for. That the marketplace-derived vocabulary happened to cover a channel it was not derived from
+is evidence for the answerability test in
+[ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md): a fact
+admitted because the shop can answer it tends to serve channels nobody checked.
+
+`size` is required for apparel and is derived rather than stored; `Free Size` is an accepted value
+and is what everything this store sells resolves to. `condition` is required only when a product
+is not new, so for this store it is a constant in the Google adapter rather than a product fact —
+recorded so it becomes one the day anything used is sold.
+
+The ordering lesson is worth more than the finding: the first channel to publish is the one to
+verify against first, and it was checked last because it was the least documented in templates.
+
+## [PR-233] 2026-10-03 — A category with no product type says what that costs
+
+The product-type field on the category form was optional with a neutral hint, which made it a
+blank somebody skips rather than a decision somebody takes. Leaving it empty is legitimate —
+three of this store's twelve categories have no type that fits, and a wrong type is worse than
+none because it asks the seller the wrong questions — but the consequence was invisible.
+
+The hint now states it while the field is empty: products here save and sell on the storefront,
+and cannot be published to a marketplace. It returns to the short wording once a type is chosen,
+so the warning is not permanent furniture.
+
+Still optional rather than required, deliberately. Forcing a choice on a mixed category — one
+holding a mat, a Quran cover and a tasbih — would make somebody guess, and the guess would be
+stored.
+
+## [PR-232] 2026-10-02 — A read-only survey, because the dev database is not evidence
+
+The listing-vocabulary migration was being designed against the dev database, and the owner
+pointed out it is not evidence: it was seeded from the old product form, so it shows what the
+seed invented rather than what the shop typed.
+
+`scripts/survey-catalogue.sql` asks the live catalogue seven questions instead, `SELECT` only —
+it writes nothing, locks nothing and prints no credential. How much there is; the category tree
+and what hangs off each node; what `sizes` and `colors` actually hold per category; how many
+stored colours the new vocabulary already knows the word for; how many products a colour-axis
+migration would produce; how many vary on both axes at once; and what `ProductStock` holds.
+
+That last one is the part no migration can derive. One stock number covers every colour today, so
+splitting twelve units of an abaya across black and maroon is a decision somebody makes, not a
+sum. Any plan that quietly divides or duplicates it would be inventing inventory.
+
+The shape of the problem is already visible in the seeded data even if the numbers are not
+trustworthy: `sizes` carries four different kinds of thing — garment letters, a capacity in
+millilitres, a physical dimension like `110x70cm`, and free-size words — so one migration rule
+cannot read it. A capacity belongs in `measurements`, a dimension becomes two measurements, and
+only the letters were ever a size. The TRD's D7 assumed one rule and will be rewritten once the
+survey comes back.
+
+## [PR-231] 2026-10-02 — An admin says which product type a category uses
+
+The question was whether adding categories stays something the admin can do. It already was:
+`src/app/(admin)/admin/categories/` has create, edit, delete, a bulk importer and a tree with
+cycle checks, all audited, and `Category.shotList` is already a per-category setting an admin
+edits. So no new module and no new spec — `productType` is the same shape as `shotList` and
+joins the same form.
+
+One select on the category form, defaulting to "Inherit from parent". `productTypeSchema` lives
+beside the declarations so the enum has one spelling; the form's resolver and the route's parser
+are the same schema, so what a shop is shown inline is what the server enforces
+([ADR-0013](adr/0013-one-error-envelope-and-useserverform.md)).
+
+Twelve tests, three of them on the symmetry Invariant 4 asks for: create and update accept the
+same types and refuse the same rubbish, and `slug` is still refused on both. The update envelope
+stays `.optional()` rather than `.default()` — in zod v4 a default fires inside a PATCH and
+rewrites what the caller never mentioned, which is the bug the schema's own comment already
+warned about for `description` and `parentId`. Mutation-tested: widening the type to any string
+turns three tests red, and giving the update envelope a default turns the PATCH one red.
+
+## [PR-230] 2026-10-02 — The permitted answers, read off the templates [MIGRATION]
+
+1,026 `ListingValue` rows across twenty-two lists, generated from the platforms' own bulk-upload
+templates rather than typed: 188 colours, 195 materials, 145 patterns, 125 scent families, and
+the smaller lists for sleeve, stitch, fit, plating, purity, gemstone and the rest.
+
+A data migration rather than the seed, which is the project's own rule for reference data
+(Invariant 7): `prisma/seed.ts` is permanently dev-only and deletes every table, while
+`vercel.json` runs `prisma migrate deploy` before every build — so a migration reaches every
+environment on merge and the seed reaches none. The test is whether production breaks without it,
+and without these a product form has empty dropdowns.
+
+**The union, not the intersection**, which settles the TRD's open question in the direction
+already recommended. The platforms do not disagree about what to call a colour — 31 of the 35
+Flipkart publishes appear on Meesho spelled identically — they disagree about how many exist, 35
+against 185. The narrower list would mean a colour the shop genuinely sells could not be recorded
+at all, and the mapping work is the same either way. Values both platforms name sort first, so
+the common ones sit at the top of a list and the long tail is below them.
+
+Idempotent on the partial unique index from PR-228, so replaying it is a no-op rather than a
+duplicate-key failure — checked by running it twice.
+
+`baseMaterial` is its own fact with its own list, so "base metal" was removed from the sources
+feeding `material`; without that the material list carried the jewellery metals as well.
+
+## [PR-229] 2026-10-02 — ProductFamily, which cannot be sold [MIGRATION]
+
+The fifth listing-vocabulary PR. `ProductFamily` is a new aggregate with its own repository
+([ADR-0003](adr/0003-one-repository-per-aggregate.md)), carrying what a set of separately-selling
+products share — the description, the facts, the measurements — and `Product` gains a nullable
+`familyId`. Nullable because one abaya in one colour is one product and nothing asks a shop to
+declare a family of one, and because requiring it would refuse every row that exists.
+
+No behaviour changes yet: nothing creates a family, and every existing product keeps a null
+`familyId`.
+
+**The family holds no price, no stock and no `ProductStock` relation**, and that is enforced by
+the columns not existing rather than by a check — the only way it cannot be forgotten. If a
+family kept a stock number at all, something would eventually sell it and the four real counts
+would not move. `tests/integration/product-family.test.ts` asserts the absence against
+`information_schema`, because a later migration adding such a column is exactly how the leak
+would reopen silently. Adding a `stock` column turns it red, which was checked.
+
+`Product.familyId` is `Restrict`, not `Cascade`: a family carries no money but its members do
+([ADR-0020](adr/0020-money-bearing-records-never-cascade.md)). Deleting a family with members is
+refused and the real operation is retirement
+([ADR-0032](adr/0032-records-people-authored-are-retired-not-deleted.md)), which leaves every
+member reading exactly as before. Switching the constraint to `Cascade` turns that test red too.
+
+The repository scopes every read and write by `orgId`, writes through `updateMany` so the scope
+is part of the write rather than a read-then-write two requests can interleave, and whitelists
+field by field so create and update stay symmetric (Invariant 4). It gains the two counts
+variants D6 requires — families and sellable things are different numbers, and a screen saying
+"Products" has to say which it means.
+
+It also joins the ADR-0029 census in `tests/unit/product-visibility.test.ts`, which caught the
+new file reading products and required it classified. The sellable count spreads `AVAILABLE`
+rather than respelling `archivedAt: null`; `memberCount` deliberately counts archived members,
+because it previews which products a family-level correction would change and an archived product
+can be restored.
+
+## [PR-228] 2026-10-02 — The listing vocabulary's schema [MIGRATION]
+
+`Category` gains a nullable `productType`, inherited down the tree like `shotList`. `Product`
+gains `productType` and `kind` as columns and `facts` and `measurements` as JSON, each entry
+holding its value and the level that supplied it. `ListingValue` holds the permitted answers.
+Every column is nullable and the migration is purely additive; no existing row changes.
+
+**Only the discriminators earn columns, and that is a decision reading the code changed.** The
+TRD said what is filtered, sorted or searched on earns a column, and named colour among them.
+Nothing filters on `colors` or `sizes` — they are selected and written and appear in no `where`
+clause anywhere in `server/` or `src/`. So colour, material and pattern are answers like any
+other, in JSON with their origin. `productType` is a column because it says how to read the rest
+of the row, and `kind` because the channel mapping will resolve a platform node from the pair. A
+column added for a filter nobody has written is a second place for a value to live.
+
+**The unique index Prisma generated had a hole.** `@@unique([list, key, orgId])` does not
+constrain rows whose `orgId` is NULL, because Postgres treats NULLs as distinct — so two
+platform-provided answers could share a list and a key, which is the drift a single global list
+exists to prevent. The migration adds a partial unique index over `(list, key) WHERE orgId IS
+NULL`, which Prisma's schema language cannot declare, so nothing in `schema.prisma` shows it.
+`tests/integration/listing-value-uniqueness.test.ts` is what keeps it honest: dropping the index
+turns that test red, which was checked rather than assumed.
+
+A value is retired rather than deleted, because products already store its key and a deleted
+answer would leave them reading as unlisted text
+([ADR-0032](adr/0032-records-people-authored-are-retired-not-deleted.md)). A shop's own answer
+carries its `orgId` and cascades with the org, so one shop's vocabulary cannot widen another's.
+
+Generated against a throwaway database created and dropped for the purpose; the local dev
+database was left alone, being twelve migrations behind and holding whatever it holds.
+
+## [PR-227] 2026-10-02 — The fill step, as an ordered list of levels
+
+The third listing-vocabulary PR, and the last pure one. `server/catalog/fill-facts.ts` fills a
+fact the shop left blank from the family, then the brand, then the shop's defaults, and records
+which level answered.
+
+Precedence lives in the order of a list rather than inside branching code, so adding a level is
+inserting an entry rather than editing every fact's fallback — and so that *which level answered*
+survives, which is what the brand-level correction acts on. It is generic over its key type, so
+one implementation serves both the columns and the type-specific tail.
+
+Three behaviours worth naming. **Blank is not an answer**: an empty or whitespace string is a
+field somebody cleared, so the step keeps looking rather than inheriting it; `NaN` is likewise a
+blank number input rather than a number. A meaningful zero and a `false` are answers and are kept.
+**An answer on the product always records as the product's**, which is what later leaves it alone
+when a brand is corrected. And **editing clears the mark even where the new value equals the
+inherited one**, because the choice was still deliberate and leaving the mark would let the next
+correction silently revert it.
+
+`takeOwnership` takes its edited keys as `NoInfer`, so the key set comes from the stored answers
+rather than from whichever handful was edited — without it, editing one field narrowed the
+returned type to that one field.
+
+Twenty-two tests. Mutation-tested four ways: reordering the levels, counting a blank as an
+answer, not clearing the mark on an edit, and recording the product's own answer as inherited
+each go red.
+
+## [PR-226] 2026-10-02 — A size label is worked out, never stored
+
+The second listing-vocabulary PR. Still pure, still no schema and no caller.
+
+`server/catalog/size-label.ts` works a size label out from a product's measurements. For
+everything this store sells the answer is `Free`, which is a permitted value on every category it
+sells into, and the measurements it came from travel with it so a screen can show its reasoning.
+Jewellery is the exception: a ring's inner diameter maps to a real scale, nearest step wins, and
+beyond either end it clamps rather than inventing a size.
+
+It is derived and not stored, which is the decision worth stating. A label held in a column
+alongside the measurements it came from is two facts that can disagree, and the stale one wins,
+because whatever reads the column never learns a fresher answer existed. Measurements are stored
+because a measurement derives a label and a label derives no measurement.
+
+Also here: the measurements a type requires and a product has not given, which is what readiness
+will report. It reports rather than refuses — nothing in this feature blocks saving.
+
+Eighteen tests. Mutation-tested three ways: returning a constant label, taking the first ring
+step rather than the nearest, and never reporting a missing measurement each go red.
+
+## [PR-225] 2026-10-02 — The listing vocabulary's declarations
+
+The first of the listing-vocabulary PRs. Pure declarations and one pure function, no schema
+change, no caller yet — so nothing in the product's behaviour moves.
+
+`server/catalog/listing-facts.ts` declares the facts a product type may ask beyond the spine,
+each with how it is answered and which value list it draws on, plus the measurements and their
+units. A fact is in it because the shop can answer it from the product without knowing which
+platform is asking, which is the only admission test
+([ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md)).
+Flipkart's procurement terms and Meesho's returns price fail that test and are absent.
+
+`server/catalog/product-type.ts` declares the nine types, the kinds each holds, the facts it
+asks, its measurements and the axis its members vary on. `resolveProductType` walks the category
+tree for the nearest ancestor that declares one, mirroring `resolveShotList` — same tree, same
+walk, same `seen` set, because a self-referencing tree can hold a cycle.
+
+Three details the templates decided rather than we did. The variant axis can be a measurement
+rather than a fact, because the same attar in 6 ml and 100 ml is two sellable things and no fact
+expresses that. `Material` and `Fabric` are one question with a per-type label, because that is
+all Flipkart's two words are. And a stored answer carries the level that supplied it in the same
+entry, so origin costs no second column.
+
+Twenty-eight tests, of which eight are the declaration-integrity checks: a type may not ask for a
+fact that does not exist, may not vary on something it never asks about, may not relabel a fact
+it does not ask, and a choice fact must point at a list that exists. Mutation-tested — varying on
+an unasked fact and dropping a required mat dimension each go red, and removing the cycle guard
+hangs the suite until it is killed, which is the guard's point.
+
+`docs/ARCHITECTURE.md` gains the new test file in its count, and loses its claim that there is no
+background job runner, which the worker made false three PRs ago and nothing noticed.
+
+## [PR-224] 2026-10-02 — A product type is not a browsing category
+
+Reading the schema before implementing found the vocabulary spec conflating two things. It said a
+product "sits in one of nine categories", and `Category` already exists as the buyer's
+merchandising tree — hero image, accent, ordering, arbitrary depth, reorganised whenever
+merchandising wants. Had that been built as written, moving an abaya under a seasonal heading
+would have changed the questions asked of it.
+
+They are separate concerns and the codebase already separates them correctly once:
+`Category.shotList` declares the photo slots its products fill, inherited down the tree from the
+nearest ancestor that sets one (`server/catalog/shot-list.ts`). The product type now attaches the
+same way. A category says which type its products use, a category that says nothing inherits, and
+the tree stays free to be reorganised.
+
+The resolved type is stored on the product on save rather than read through the category, so a
+product read stays one row and merchandising cannot move a product's stored answers. Re-pointing
+a category at a different type becomes an explicit migration of its products, with a count and a
+confirmation, reusing the correction mechanism the inherited facts already need.
+
+Named `productType` because that is what Amazon names it, and it is the same concept: the thing
+that decides which attributes apply. Flipkart calls it a vertical, Meesho a category. Naming ours
+after the dominant published vocabulary costs nothing and makes every adapter's mapping read as a
+mapping ([ADR-0046](adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md)).
+
+Caught by reading the schema rather than by review, which is the order ADR-0046 asks for and the
+reason the first implementation PR has not been written yet.
+
+## [PR-223] 2026-10-02 — The listing vocabulary, specified as three features
+
+Drafting it produced 156 readable lines against a 100-line cap, which
+[ADR-0010](adr/0010-spec-convention.md) treats as the signal that a feature is more than one
+feature. It was three: what a category asks, what makes two things sell separately, and what gets
+filled in from elsewhere. Each is independently demoable and each carries its own hazards.
+
+The field set is read off thirty-four platform templates rather than from our own product model,
+which was written without market knowledge and would otherwise have been the thing the new model
+was shaped to fit.
+
+What the templates changed, against the draft that preceded them. The variant axis is declared per
+category rather than assumed to be size, because Flipkart declares axes per node and no two of its
+twelve agree. Measurements are stored and size labels derived, because twelve of Meesho's nineteen
+nodes require a measurement and none requires a label without one. A kind — abaya, burqa, niqab —
+is a fact on the product rather than a category, because Flipkart holds the three as one node with
+a field while Meesho holds three categories, and only a stored fact serves both. A combo is an
+ordinary product with its own stock, because the shop counts it that way.
+
+Two questions closed during review, both by the owner reading the draft. Whether a member needs
+its own description: it does, and the family holds it as the answer to fill from so it is typed
+once. Whether the fill step needs cycle protection: it does not, the levels being a fixed list of
+three, and the guard was removed as the over-engineering it was.
+
+One question stays open and needs the owner: how rich the colour list should be. Implementation
+proceeds on the recommendation — the union, 31 of whose values Flipkart and Meesho already spell
+identically — because the choice seeds data rather than shaping the model, and seeded data is
+cheap to revisit.
+
+## [PR-222] 2026-10-02 — Correction: the reader was dropping empty cells, and two figures were inflated
+
+The stdlib xlsx reader appended cells in document order without reading each cell's own column
+reference. A spreadsheet omits empty cells from a sparse row, so every value after a gap shifted
+left. Dense sheets were unaffected, which is why the Amazon extract re-reads byte-identical and its
+18 required of 390 stands. Sparse sheets were silently wrong.
+
+Meesho's `Validation Sheet` is sparse, which is why it looked like noise and was reported as
+Meesho publishing no value lists. It publishes all of them, and they are the richest source in the
+set: 185 distinct colours against Flipkart's 35, plus fabric, pattern, sleeve, stitch, size and the
+measurement ranges, per category. `listing-node-templates/extracted/meesho.json` now carries them.
+
+Two figures in [PR-220] and [PR-221] were inflated by a second fault in the same extraction: two
+template files for one node — Socks and Deodorant—Fragrances each ship twice — had their field
+lists concatenated rather than replaced. **Meesho requires 23 to 40 compulsory fields per node,
+not 23 to 56**, and **twelve of nineteen nodes require a measurement, not thirteen**. Both
+corrections leave the conclusions standing: Meesho is still the binding constraint against
+Amazon's 18, measurements are still required twice as often as labels, and **no node requires a
+size label without also requiring measurements**, which is what
+[ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md) decision 4
+rests on.
+
+The colour question this settles: for an abaya, sixteen of Flipkart's seventeen colours appear on
+Meesho spelled identically. Across all nodes, thirty-one values are common and spelled the same.
+The platforms do not disagree about what to call a colour; they disagree about how many colours
+exist. That makes an unmapped value a question of granularity rather than of vocabulary, and it is
+answered once per value rather than per product.
+
+An extraction bug is invisible in a way a code bug is not — nothing fails, the mapping is simply
+built on a wrong list. The reader now places each cell by its own reference, and the rule that
+follows is that a sheet which looks like noise is a reading to check before it is a finding to
+report.
+
+## [PR-221] 2026-10-01 — What the platform templates actually ask for, measured
+
+[INTEGRATIONS.md](INTEGRATIONS.md) carried an estimate of the cross-platform core written on
+2026-09-29 from the published specifications, before any template had been read. It named colour
+and size as part of the shared core and closed with the per-category value lists being "a
+dependency on access, not a gap in research".
+
+The access arrived and the estimate was wrong on both counts, so the section is replaced with what
+thirty-four templates measure rather than what the specifications implied. Colour and size are not
+in the three-platform core. The core is thirteen fields and it is barely descriptive — the seller's
+own code, description, maximum retail price, stock, brand, images, tax code, country of origin,
+manufacturer, packer, importer, net weight and a variant key — of which nine are stated once by
+the shop rather than per product.
+
+Also now recorded there, each of which bears on a design decision rather than being trivia:
+
+Required counts, not field counts, are the constraint, and Meesho is the binding one at 23 to 56
+compulsory per category against Amazon's 18 of 390. Flipkart encodes requirement level as a cell
+colour decoded from each workbook's own legend. A platform's category sometimes holds what another
+keeps in a field, so the mapping is many-to-many and must be allowed to resolve to nothing. Variant
+axes are declared per node and no two of Flipkart's twelve agree. And sizes are asked for as
+measurements more often than as labels — thirteen of Meesho's nineteen nodes require a measurement
+and none requires a label without one.
+
+The "field name agreeing is not its values agreeing" finding survives and is strengthened: it holds
+inside a single platform, where Flipkart's own colour list differs per node and its `Size` is three
+incompatible scales under one label.
+
+Dated and sourced, because the previous version of this section was neither, and a confident
+estimate in a reference doc is worse than an absent one.
+
+## [PR-220] 2026-10-01 — A canonical fact is admitted by answerability, not by agreement
+
+[ADR-0042](adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md)
+set the right criterion and then added a clause that said something narrower: that "Amazon
+requires it" is never a reason for a canonical field. Read strictly, that excludes a fact only one
+platform asks for even when the shop can answer it without being told who is asking.
+
+The templates made the cost concrete. Meesho's `Abayas` node requires `Bust Size` and
+`Length Size`; Flipkart's `abaya-burqa` asks for neither. A shop measuring an abaya can answer
+both. Under the intersection they are one platform's demand and would have been left out of the
+vocabulary, and the first abaya published to Meesho would have been rejected.
+
+The asymmetry behind it was named by the owner: sending a fact a platform ignores costs nothing,
+and omitting one a platform requires stops the listing. Two errors of different sizes do not want
+a criterion balanced between them.
+
+[ADR-0047](adr/0047-a-canonical-fact-is-admitted-by-answerability-not-by-agreement.md) therefore
+keeps ADR-0042's answerability test as the only admission test — can the shop answer it from the
+product, without knowing which platform it is for — and drops the requirement that more than one
+platform ask. One is enough and none is enough. ADR-0042's decisions 2 to 5 stand: a fact the
+shop cannot answer is still a channel extra declared by its adapter as a schema, never a bag.
+
+It also records two things the templates settled. **Store the fact that derives the other**: a
+measurement derives a size label and a label derives no measurement, so a garment's length and
+bust are stored and `Free` is computed. Thirteen of Meesho's nineteen nodes require a
+measurement, six require none, and none requires a size label without also requiring
+measurements — so the deriving fact is also the one asked for more often. And **the burden is on
+the extra**: the listing form is one form, because a per-platform section on it means the seller
+fills three, which is the cost this phase exists to remove.
+
+ADR-0042 is immutable, so its decision 1 is not edited. Its Status line and a note above its
+Alternatives point at the refinement, and the two are read together.
+
+Also added: Meesho's `Trousers---Pants` node, which confirms Meesho asks for no size label on
+trousers either — only `Length`. The Meesho core holds at 32 fields across all nineteen nodes.
+
+## [PR-219] 2026-10-01 — Correction: Flipkart names the size scale as a field of its own
+
+The extract committed in PR-218 read Flipkart's `Brand Size` wrongly for two nodes. In `trouser`
+and `salwar` that column is not a list — it is a three-column lookup of Ideal For, then a
+Qualifier, then the allowed value, and the extraction kept only the first column. So the data
+said the permitted sizes were "Baby Boys, Baby Boys, Baby Girls…" repeated, and said those two
+nodes had no free size.
+
+Both claims were wrong. `Free` is permitted for women's trousers and salwars, under the `Regular`
+qualifier, which matters because this store sells free size throughout.
+
+The Qualifier is the more interesting half. Flipkart names the *scale* explicitly — Regular
+letters, Number, Euro, UK, US, or Kids age bands — and the allowed values depend on it and on
+Ideal For together. That is the same conclusion the vocabulary reached from the other direction,
+reading three incompatible size lists under one label and deciding a category must declare its
+scale. One platform already does exactly that, so the design is matching an established shape
+rather than inventing one.
+
+Also recorded from the same pass, since they bear on the category mapping: Flipkart's `mat` node
+carries `Type = Prayer`, so a prayer mat is that node rather than a category of its own.
+`Tote` appears in the Type list of both `hand-messenger-bag` and `sling-bag`, so one of our kinds
+can have two candidate nodes and the mapping has to choose. And a standalone hijab has no
+Flipkart node in this set — `abaya-burqa` permits only Abaya, Burqa and Naqab — so a mapping must
+be able to say a product has nowhere to go on a platform without that being an error.
+
+The extract is data derived from someone else's files, so a reading error in it is silent in a
+way a code bug is not: nothing fails, the mapping is just built on a wrong list. Worth stating
+plainly that the remaining 31 files were extracted by the same code and only these two were
+checked by hand against the source.
+
+## [PR-218] 2026-10-01 — The platform templates, and what thirty-three of them agree on
+
+The vocabulary was being designed against two sheets and our own product model. Thirty-three real
+bulk-upload templates now sit behind it: Amazon's single workbook covering ten product types,
+twelve Flipkart verticals, and eighteen Meesho categories — every node this store actually sells
+into.
+
+The binaries are not committed. Nineteen megabytes of another company's undiffable spreadsheets,
+on an account that is not ours to publish them from, and git never forgets a blob. What is
+committed is `listing-node-templates/extracted/`: field names, requirement levels, variant axes
+and permitted value lists, one JSON per platform, which a diff can actually show. The manifest
+carries a checksum and a date per file so the extract can be traced to its source.
+
+Flipkart marks a field's requirement level as a cell colour rather than a value, decoded against
+the legend each workbook carries on its summary sheet: blue mandatory, purple conditional, yellow
+recommended, green optional, grey filled by Flipkart.
+
+What the extract shows, which the two sheets did not:
+
+Amazon declares 390 fields and requires 18 of them, 187 being conditional on other answers.
+Flipkart requires 19 to 32 per node out of 66 to 132. Meesho is the strict one, at 23 to 56
+compulsory per node — so the binding constraint on a listing form is Meesho, not Amazon.
+
+The three platforms agree, in every node, on thirteen fields, and they are almost all identity,
+money, stock and statutory compliance rather than description. The descriptive tail that two
+platforms agree on is one to six fields per category, and across all eight of this store's
+product groups it is the same handful: colour, pattern, material or fabric, size, net quantity,
+occasion.
+
+A field name agreeing is still not its values agreeing, and the templates show this inside a
+single platform. Flipkart's own colour list differs per node — sixteen values in all eleven that
+have one, nineteen more in only some. Its size list is three incompatible scales under one label:
+thirty-seven mixed age bands and letters for an abaya, five words for a mat, forty-five numbers
+for a ring. `Fabric` and `Material` are the same question asked of cloth and of everything else.
+
+[ADR-0043](adr/0043-a-variant-is-a-product-in-a-family.md) said a variant is a product in a
+family and left the axis open. The templates close it in the direction of per-category: Flipkart
+declares the axes per node and no two of the twelve agree — size for an abaya, capacity and
+colour for a bag, plating and size and colour for a ring, set and quantity for incense. The axis
+cannot be assumed, which is why the category declares it.
+
+## [PR-217] 2026-09-29 — Check a new model against the field, not against ourselves
+
+Drafting the listing vocabulary produced a design for storing a product's variable facts as one
+row per attribute. It was internally sound and consistent with this codebase, which already holds
+declared shapes as validated data in eighteen places. It was also entity-attribute-value, the
+model Magento built its catalogue on and the one PostgreSQL's own community advises against by
+name, where a JSON column is a fraction of the storage and a large multiple of the read speed.
+
+Consistency with the house pattern produced the wrong answer, because the pattern was read at the
+wrong level of abstraction. Nothing in the process caught it. Every gate here checks our code
+against our rules, and none of them checks our rules against anybody else's experience. It was
+caught because the owner asked whether it was standard.
+
+So the TRD template now has a required **Prior art** section: name what the field does, with a
+source, and say whether we follow it. Departing is allowed and argued. An existing pattern in
+this repository is evidence and never authority — consistency is a reason to match and never a
+reason not to check. A wrong pattern found already in the code gets written down rather than
+quietly avoided, because working around one silently is how the next person copies it.
+
+The spike's "verify, don't recall" rule already covered external services and now covers the
+shape of a solution too.
+
+No gate enforces this and none can: no test knows that a schema resembles an anti-pattern, and
+one that tried would encode a fixed list of bad ideas and go stale. The section's presence in the
+template is the whole of the enforcement, which is weaker than this project usually accepts and
+is recorded as such.
+
+## [PR-216] 2026-09-29 — The first spec of the new phase: one description of a product
+
+`listing-vocabulary` is drafted. It is the phase's foundation and the only part of it that
+depends on nobody outside: one declared attribute set, variants as real products in a family, and
+one resolver that answers a product's facts by walking product, family, brand, then the shop's
+defaults, returning each value with the level that supplied it.
+
+Its shape is borrowed rather than invented. The shot list already declares a template as
+validated JSON, parses defensively and resolves by walking to the nearest ancestor that answers.
+This is that pattern with a different subject.
+
+The spec names five hazards so the technical approach cannot pass over them, which is what the
+convention asks of it. Two are worth repeating here. A vocabulary that still accepts free text is
+not a vocabulary, and today's colours already contain three spellings of maroon. And "products"
+stops meaning one thing the moment a garment in five sizes becomes five rows, so every screen
+that counts them has to say which count it means — the dashboard, the listing grid and the
+low-stock alert do not currently agree by accident.
+
+The migration deliberately keeps values it cannot map, as free text against the product. A shop's
+data is not ours to discard because it does not fit a list we wrote afterwards, and the leftovers
+are what tell us which values the list is missing.
+
+## [PR-215] 2026-09-29 — Five decisions, and a phase re-sequenced around what it costs to prove
+
+The spike into what the marketplaces actually require turned five questions into decisions, each
+recorded with the alternative it beat.
+
+A channel is classed by where the sale completes, because Google and Meta never hold an order and
+Amazon and Flipkart always do, and one abstraction would have given the first group machinery it
+has no use for. The shared vocabulary is the intersection of what a shop knows, with each channel
+declaring its own extras as a schema rather than a bag — which is the same pattern the photo shot
+list already proves, and which is what lets a per-channel form generate itself. A variant is a
+product in a family, because every marketplace needs a size to have its own stock and ours cannot
+give it one. A marketplace order's money is reported rather than computed, which is Invariant 2's
+shape rather than an exception to Invariant 1. And the three mapping layers are versioned data,
+because the thing most likely to change under us is the thing that must not need a release.
+
+The phase is re-sequenced to match. It now runs vocabulary, form, registry, feeds, connectors,
+marketplace publishing, sync, reporting, with subscriptions beside the line rather than in it.
+Two entries in it are scheduling dependencies rather than engineering ones and are named as such:
+Amazon needs a Professional selling account and a public site before any API conversation, and
+Meesho whitelists integrators by relationship.
+
+The ordering principle changed too. It was ambition; it is now cost to prove. Shopfront feeds come
+third not because they are the most valuable but because Google and Meta fetch a file and need
+approval from nobody, which makes them the honest test of whether the mapping layer works before
+anything is staked on it.
+
+## [PR-214] 2026-09-29 — Where a shop can sell, named once instead of twice
+
+`CHANNEL` was declared in two modules with identical members and nothing between them: beside the
+image rules in content, and beside the readiness states in catalog. Neither imported the other.
+That is the drift [ADR-0003](adr/0003-one-repository-per-aggregate.md) decision 5 forbids, and it
+had gone unnoticed because two copies of the same four strings behave identically right up until
+one of them gains a fifth.
+
+The set now lives in `server/shared/channels.ts`, because it genuinely spans both domains and is
+about to span more — catalog asks whether a shop is ready for a channel, content asks whether a
+photograph meets one, and neither owns the vocabulary. Both former homes import it and re-export
+it, so every existing caller is untouched.
+
+A refactor with no behaviour change, done before the multi-channel work rather than during it,
+because that vocabulary is the thing the whole of it keys on.
+
 ## [PR-213] 2026-09-29 — The media backfill has been run against dev
 
 Recorded because the runbook asks for it, and to close the pair with the production run.

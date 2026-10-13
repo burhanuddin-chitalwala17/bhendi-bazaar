@@ -1,14 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminUserApiClient } from "@/services/admin/userApiClient";
+import { adminUserApiClient } from "@/components/profile/console/adminUserApiClient";
 import type { AdminUser } from "@/domain/admin";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import { Button } from "@/components/ui/button";
 
@@ -56,13 +57,13 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
       key: "name",
       label: "User",
       render: (user) => (
-        <div>
+        <Link href={`/admin/users/${user.id}`} className="block hover:underline">
           <p className="font-medium">{user.name || "N/A"}</p>
           <p className="text-sm text-muted-foreground">{user.email}</p>
           {user.mobile && (
             <p className="text-sm text-muted-foreground">{formatPhone(user.mobile)}</p>
           )}
-        </div>
+        </Link>
       ),
     },
     {
@@ -91,7 +92,7 @@ export function UsersTable({ users, page, pageSize, totalPages, total }: Props) 
       key: "createdAt",
       label: "Joined",
       sortable: true,
-      render: (user) => new Date(user.createdAt).toLocaleDateString(),
+      render: (user) => formatShortDate(user.createdAt),
     },
     {
       key: "isBlocked",

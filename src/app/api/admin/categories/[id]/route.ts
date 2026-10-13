@@ -12,7 +12,8 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminCategoryService } from "@server/catalog/admin.category.service";
 import type { UpdateCategoryInput } from "@server/catalog/admin.category.types";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { updateCategorySchema } from "@/lib/validation/schemas/category.schema";
+import { updateCategorySchemaFor } from "@/lib/validation/schemas/category.schema";
+import { productTypeRepository } from "@server/listing/product-type.repository";
 
 export async function PATCH(
   request: NextRequest,
@@ -21,7 +22,7 @@ export async function PATCH(
   try {
     const session = await requirePlatformAdmin();
     const { id } = await params;
-    const body = updateCategorySchema.parse(await request.json());
+    const body = updateCategorySchemaFor(await productTypeRepository.keys()).parse(await request.json());
 
     const category = await adminCategoryService.updateCategory(
       id,

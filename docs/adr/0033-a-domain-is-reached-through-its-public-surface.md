@@ -1,7 +1,7 @@
 # ADR-0033: A domain is reached through its declared public surface
 
 - **Date:** 2026-09-23
-- **Status:** Accepted
+- **Status:** Accepted (D5 type-only exemption narrowed for components by [ADR-0048](0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md))
 
 ## Context
 

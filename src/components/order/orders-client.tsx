@@ -8,6 +8,7 @@ import { ChevronRight, Package } from "lucide-react";
 import { EmptyState } from "../shared/states/EmptyState";
 import { SectionHeader } from "../shared/SectionHeader";
 import { PriceDisplay } from "../shared/PriceDisplay";
+import { formatDate } from "@/lib/format";
 
 /**
  * The search box, and the list it filters. Orders arrive as props from the server
@@ -71,7 +72,7 @@ export function OrdersClient({ orders }: { orders: Order[] }) {
                 <div className="space-y-1">
                   <p className="font-semibold">
                     {order.code} ·{" "}
-                    {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                    {formatDate(order.createdAt, {
                       day: "numeric",
                       month: "short",
                     })}

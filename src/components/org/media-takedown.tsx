@@ -3,13 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { TaskDialog } from "@/components/shared/overlays/task-dialog";
 import { FormTextarea } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { mediaTakedownApiClient } from "@/components/org/mediaTakedownApiClient";
 import {
   platformRetireSchema,
   type PlatformRetireInput,
@@ -43,17 +42,11 @@ export function MediaTakedown({
   } = useServerForm<PlatformRetireInput>({
     schema: platformRetireSchema,
     defaultValues: { reason: "" },
-    submit: async (data) => {
-      const response = await fetch(`/api/admin/media/${assetId}/retire`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      toast.success("Taken down. The shop can see why.");
+    submit: (data) => mediaTakedownApiClient.retire(assetId, data),
+    successMessage: "Taken down. The shop can see why.",
+    onSuccess: () => {
       setOpen(false);
       router.refresh();
-      return response.json();
     },
   });
 

@@ -4,7 +4,7 @@
  * This service encapsulates all business logic related to categories.
  */
 
-import { categoryRepository } from "@server/catalog/category.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import type { ServerCategory } from "@server/catalog/category.types";
 import {
   collectAncestorIds,

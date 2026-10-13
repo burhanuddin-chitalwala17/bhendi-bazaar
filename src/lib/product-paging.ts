@@ -45,6 +45,7 @@ export interface ProductPageQuery {
   category?: string;
   search?: string;
   offersOnly?: boolean;
+  heroOnly?: boolean;
   /** Absent means `newest` — the default a shopper gets without asking. */
   sort?: ProductSort;
 }
@@ -59,6 +60,7 @@ export const productPageParams = z.object({
   category: z.string().trim().min(1).max(120).optional(),
   q: z.string().trim().min(1).max(120).optional(),
   offers: z.literal("1").optional(),
+  hero: z.literal("1").optional(),
   sort: z.enum(PRODUCT_SORTS).default("newest"),
 });
 
@@ -72,6 +74,7 @@ export function productPageUrl(
   if (query.category) params.set("category", query.category);
   if (query.search) params.set("q", query.search);
   if (query.offersOnly) params.set("offers", "1");
+  if (query.heroOnly) params.set("hero", "1");
   // Omitted when it is the default, so a plain listing's URL stays plain.
   if (query.sort && query.sort !== "newest") params.set("sort", query.sort);
   return `/api/products?${params}`;

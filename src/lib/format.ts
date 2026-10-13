@@ -9,6 +9,11 @@
 // client code has one import for all things money.
 export { rupeesToPaise, paiseToRupees } from "@server/shared/money";
 
+/** 1250 → 12.5. Rates are stored as integer basis points; this is the one way back to a percent. */
+export function bpsToPercent(bps: number): number {
+  return bps / 100;
+}
+
 /** 120050 → "₹1,200.50"; whole-rupee amounts drop the decimals: 120000 → "₹1,200". */
 export function formatCurrency(paise: number, currency: "INR" = "INR") {
   const wholeRupees = paise % 100 === 0;
@@ -39,11 +44,40 @@ export function formatDuration(durationMs: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-/** A plain day, as this store writes one. Declared here because three screens print it. */
+/**
+ * Every date and count is formatted in one locale and one zone. Left to the runtime, the server
+ * (UTC, en-US) and the browser (IST, en-IN) print different text and React's hydration fails:
+ * `10/8/2026` against `08/10/2026`, or a different day near midnight.
+ */
+const LOCALE = "en-IN";
+const TIME_ZONE = "Asia/Kolkata";
+
+/** A plain day, as this store writes one: "8 Oct 2026". */
 export function formatDay(value: string | Date): string {
-  return new Date(value).toLocaleDateString("en-IN", {
+  return new Date(value).toLocaleDateString(LOCALE, {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: TIME_ZONE,
   });
+}
+
+/** Any other date shape, still in the store's locale and zone. */
+export function formatDate(value: string | Date, options: Intl.DateTimeFormatOptions): string {
+  return new Date(value).toLocaleDateString(LOCALE, { ...options, timeZone: TIME_ZONE });
+}
+
+/** A day in a table column: "08/10/2026". */
+export function formatShortDate(value: string | Date): string {
+  return new Date(value).toLocaleDateString(LOCALE, { timeZone: TIME_ZONE });
+}
+
+/** A moment: "8/10/2026, 1:47:00 am". */
+export function formatDateTime(value: string | Date): string {
+  return new Date(value).toLocaleString(LOCALE, { timeZone: TIME_ZONE });
+}
+
+/** 100000 → "1,00,000". */
+export function formatCount(value: number): string {
+  return value.toLocaleString(LOCALE);
 }

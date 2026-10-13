@@ -56,7 +56,7 @@ describe("the visible-review predicate", () => {
       "src/data-access-layer/org/reviews.dal.ts",
       "src/app/(admin)/admin/reviews/page.tsx",
       "src/app/(org)/org/[orgId]/reviews/page.tsx",
-      "src/services/admin/reviewApiClient.ts",
+      "src/components/product/console/reviews/adminReviewApiClient.ts",
     ]) {
       expect(source(path), `${path} still mentions isApproved`).not.toMatch(
         /isApproved/,

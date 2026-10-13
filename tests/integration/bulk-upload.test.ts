@@ -54,7 +54,7 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
     ).rejects.toMatchObject({ code: "P2002" });
   });
 
-  it("validation names the product already wearing a SKU, and the sheet row repeating one", async () => {
+  it("treats a SKU already in use as an update, and still refuses one repeated in the sheet", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { validateProductRows } = await import("@server/catalog/bulk/bulk-product.service");
     const existing = await prisma.product.findFirstOrThrow({
@@ -68,8 +68,8 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
       categorySlug: existing.category.slug,
       sku,
       weight: 1,
-      sizes: [],
-      colors: [],
+      factLabels: {},
+      measurements: {},
       tags: [],
       images: ["a.jpg"],
       stock: {},
@@ -83,12 +83,22 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
       ],
       ["a.jpg"]
     );
-    expect(errors).toContainEqual(
-      expect.objectContaining({ row: 2, field: "sku", message: expect.stringContaining("already used by") })
-    );
+    // Row 2 names a live product's SKU, which is how a sheet says "update this one" rather
+    // than a conflict (bulk-sheet). Row 4 repeats row 3's, which is still an error: two rows
+    // cannot both be the same product.
+    expect(errors.filter((error) => error.row === 2)).toEqual([]);
     expect(errors).toContainEqual(
       expect.objectContaining({ row: 4, field: "sku", message: expect.stringContaining("row 3") })
     );
+
+    // And the plan says which it is, so a person sees it before confirming.
+    const { planProductRows } = await import("@server/catalog/bulk/bulk-product.service");
+    const plan = await planProductRows(existing.orgId, [
+      { rowNumber: 2, row: row(TEST_SKU) },
+      { rowNumber: 3, row: row("BULK-FRESH-1") },
+    ]);
+    expect(plan.updates.size).toBe(1);
+    expect(plan.creates).toBe(1);
   });
 
   it("two products may each have their own front.jpg, named by folder (R2)", async () => {
@@ -103,8 +113,8 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
       price: 10,
       categorySlug: category.slug,
       weight: 1,
-      sizes: [],
-      colors: [],
+      factLabels: {},
+      measurements: {},
       tags: [],
       images,
       stock: {},
@@ -150,6 +160,10 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
     });
     const category = { slug: fixtures.categorySlug, id: fixtures.categoryId };
     const template = { thumbnail: "https://example.invalid/x.webp" };
+    // The row is doomed by an **archived** product's SKU, not a live one: a live SKU is now
+    // how a sheet says "update this", so it is no longer a conflict. An archived product still
+    // holds its code (ADR-0029), so creating against it violates the unique pair — which is
+    // also why validation refuses such a row with a message naming the product.
     const doomedSku = "BULK-TEST-DOOMED";
     await prisma.product.create({
       data: {
@@ -163,6 +177,7 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
         weight: 1,
         sku: doomedSku,
         orgId: location.orgId,
+        archivedAt: new Date(),
       },
     });
 
@@ -173,8 +188,8 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
       categorySlug: category.slug,
       sku,
       weight: 1,
-      sizes: [],
-      colors: [],
+      factLabels: {},
+      measurements: {},
       tags: [],
       images: ["a.jpg"],
       stock: { [location.name]: 3 },
@@ -192,6 +207,109 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
     expect(await prisma.product.count()).toBe(before);
   });
 
+  /**
+   * The point of update-by-SKU: an existing catalogue is corrected in one upload rather than one
+   * form at a time. What must survive is the slug — it is frozen at creation, because changing
+   * one 404s every link to the product.
+   */
+  it("a row whose SKU matches a live product replaces it, keeping its slug", async () => {
+    const { prisma } = await import("@server/shared/prisma");
+    const { createProducts } = await import("@server/catalog/bulk/bulk-product.service");
+    const fixtures = await ensureFixtures();
+    const location = await prisma.orgAddress.findUniqueOrThrow({
+      where: { id: fixtures.orgAddressId },
+      select: { name: true, orgId: true },
+    });
+
+    const sku = `${TEST_PREFIX}update-me`;
+    const before = await prisma.product.create({
+      data: {
+        name: `${TEST_PREFIX}old-name`,
+        slug: `${TEST_PREFIX}frozen-slug`,
+        description: "the old description",
+        price: 10000,
+        currency: "INR",
+        categoryId: fixtures.categoryId,
+        thumbnail: "https://example.invalid/old.webp",
+        weight: 1,
+        sku,
+        orgId: location.orgId,
+      },
+      select: { id: true, slug: true },
+    });
+
+    const countBefore = await prisma.product.count();
+    const result = await createProducts(location.orgId, [
+      {
+        rowNumber: 2,
+        row: {
+          name: `${TEST_PREFIX}new-name`,
+          description: "the new description",
+          price: 250,
+          categorySlug: fixtures.categorySlug,
+          sku,
+          weight: 2,
+          factLabels: {},
+          measurements: {},
+          tags: ["updated"],
+          images: ["a.jpg"],
+          stock: { [location.name]: 7 },
+          imageUrls: { "a.jpg": BLOB },
+        },
+      },
+    ]);
+
+    expect(result).toEqual({ created: 0, updated: 1 });
+    // No second product: an update replaces rather than adds.
+    expect(await prisma.product.count()).toBe(countBefore);
+
+    const after = await prisma.product.findUniqueOrThrow({
+      where: { id: before.id },
+      select: { name: true, slug: true, description: true, price: true, tags: true },
+    });
+    expect(after.name).toBe(`${TEST_PREFIX}new-name`);
+    expect(after.description).toBe("the new description");
+    expect(after.price).toBe(25000); // rupees to paise, once (Invariant 3)
+    expect(after.tags).toEqual(["updated"]);
+    // The one thing an update must not touch.
+    expect(after.slug).toBe(before.slug);
+  });
+
+  it("an update replaces the gallery and the stock rather than adding to them", async () => {
+    const { prisma } = await import("@server/shared/prisma");
+    const { createProducts } = await import("@server/catalog/bulk/bulk-product.service");
+    const fixtures = await ensureFixtures();
+    const location = await prisma.orgAddress.findUniqueOrThrow({
+      where: { id: fixtures.orgAddressId },
+      select: { name: true, orgId: true },
+    });
+    const sku = `${TEST_PREFIX}replace-media`;
+    const row = (name: string) => ({
+      rowNumber: 2,
+      row: {
+        name,
+        description: "d",
+        price: 10,
+        categorySlug: fixtures.categorySlug,
+        sku,
+        weight: 1,
+        factLabels: {},
+        measurements: {},
+        tags: [],
+        images: ["a.jpg"],
+        stock: { [location.name]: 3 },
+        imageUrls: { "a.jpg": BLOB },
+      },
+    });
+
+    await createProducts(location.orgId, [row(`${TEST_PREFIX}media-first`)]);
+    const created = await prisma.product.findFirstOrThrow({ where: { orgId: location.orgId, sku } });
+    await createProducts(location.orgId, [row(`${TEST_PREFIX}media-second`)]);
+
+    expect(await prisma.productMedia.count({ where: { productId: created.id } })).toBe(1);
+    expect(await prisma.productStock.count({ where: { productId: created.id } })).toBe(1);
+  });
+
   it("a clean sheet creates products with media, stock and paise prices", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { createProducts } = await import("@server/catalog/bulk/bulk-product.service");
@@ -200,7 +318,7 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
       where: { id: fixtures.orgAddressId },
       select: { name: true, orgId: true },
     });
-    const category = await prisma.category.findFirstOrThrow({ select: { slug: true } });
+    const category = { slug: fixtures.categorySlug };
     const result = await createProducts(location.orgId, [
       {
         rowNumber: 2,
@@ -210,8 +328,8 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
           price: 499.5,
           categorySlug: category.slug,
           weight: 0.5,
-          sizes: ["M"],
-          colors: [],
+          factLabels: {},
+          measurements: {},
           tags: ["test"],
           images: ["a.jpg", "b.jpg"],
           cover: "b.jpg",

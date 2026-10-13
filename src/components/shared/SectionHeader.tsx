@@ -13,6 +13,7 @@ interface SectionHeaderProps {
     href?: string;
     onClick?: () => void;
   };
+  as?: "h1" | "h2" | "h3";
   className?: string;
 }
 
@@ -22,6 +23,7 @@ export function SectionHeader({
   description,
   action,
   className,
+  as: Heading = "h2",
 }: SectionHeaderProps) {
   return (
     <header className={cn("space-y-1", className)}>
@@ -32,9 +34,9 @@ export function SectionHeader({
       )}
       <div className="flex items-baseline justify-between gap-3 sm:gap-4">
         <div className="space-y-0.5 sm:space-y-1">
-          <h2 className="font-heading text-base font-semibold tracking-tight sm:text-2xl">
+          <Heading className="font-heading text-base font-semibold tracking-tight sm:text-2xl">
             {title}
-          </h2>
+          </Heading>
           {description && (
             <p className="text-2xs text-muted-foreground sm:text-sm">
               {description}

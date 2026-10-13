@@ -63,8 +63,6 @@ export class AdminBiddingService {
         name: row.product.name,
         thumbnail: row.product.thumbnail,
         referencePricePaise: row.referencePricePaise,
-        size: row.size,
-        color: row.color,
       },
     };
   }
@@ -128,7 +126,7 @@ export class AdminBiddingService {
       // Conditional, in the same transaction (Invariant 6, ADR-0007): recording a sale
       // of something no longer there would leave the ledger owing money for stock the
       // organisation still holds.
-      const taken = await stockService.takeOneFromLocation(
+      const taken = await stockService.takeOne(
         event.productId,
         input.orgAddressId,
         tx

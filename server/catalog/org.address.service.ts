@@ -1,5 +1,5 @@
 import { orgAddressRepository } from "@server/catalog/org.address.repository";
-import type { OrgLocation, OrgLocationWrite } from "@server/catalog/org.address.repository";
+import type { OrgLocation, OrgLocationWrite } from "@server/catalog/org.address.types";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
 /**

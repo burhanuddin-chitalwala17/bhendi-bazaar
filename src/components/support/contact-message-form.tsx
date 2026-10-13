@@ -8,7 +8,7 @@ import {
   guestContactMessageSchema,
   type GuestContactMessageFormValues,
 } from "@/lib/validation/schemas/contact.schema";
-import { sendContactMessage } from "@/services/contactApiClient";
+import { sendContactMessage } from "@/components/support/contactApiClient";
 
 interface ContactMessageFormProps {
   /** True when a session with an email exists — the reply address is then the account's. */

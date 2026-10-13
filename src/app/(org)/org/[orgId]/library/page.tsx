@@ -6,6 +6,7 @@ import { MediaLibraryFilters, type FilterOption } from "@/components/org/media-l
 import { MediaLibraryGrid } from "@/components/org/media-library-grid";
 import { MediaLibraryUpload } from "@/components/org/media-library-upload";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = {
   title: "Library",
@@ -59,12 +60,7 @@ export default async function OrgLibraryPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Library</h1>
-          <p className="text-muted-foreground">
-            Every photo and video your shop has, where each is used, and what can go.
-          </p>
-        </div>
+        <SectionHeader as="h1" title="Library" description="Every photo and video your shop has, where each is used, and what can go." />
         {org && <MediaLibraryUpload orgId={scope.orgId} orgCode={org.code} />}
       </div>
 

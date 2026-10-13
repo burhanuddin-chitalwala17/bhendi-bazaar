@@ -124,6 +124,14 @@ describe.skipIf(!isDisposableDb)("the platform's enhancement settings (local db)
     const now = new Date();
     const thisMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 12));
     const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 15, 12));
+
+    // Measured as a delta, because a dev database holds whatever the owner enhanced by hand and
+    // this suite owns none of it. Asserting an absolute count passes once and fails every run
+    // after — which is how it read 11 for a month it had put one run into.
+    const before = (month: Date) =>
+      service.listOrgUsage({ month }).then((rows) => rows.find((row) => row.orgId === orgId));
+    const [was, wasLastMonth] = await Promise.all([before(now), before(lastMonth)]);
+
     await recordRun(thisMonth, 300);
     await recordRun(thisMonth, 200);
     await recordRun(lastMonth, 900);
@@ -134,16 +142,20 @@ describe.skipIf(!isDisposableDb)("the platform's enhancement settings (local db)
     // Two runs, one org: a listing that grew a row per run would be a join gone wrong, and one
     // that grew a query per row is the N+1 this shape exists to rule out.
     expect(mine).toHaveLength(1);
-    expect(mine[0].used).toBeGreaterThanOrEqual(2);
-    expect(mine[0].spentPaise).toBeGreaterThanOrEqual(500);
-    expect(mine[0].spentPaise).toBeLessThan(1400);
+    expect(mine[0].used).toBe((was?.used ?? 0) + 2);
+    expect(mine[0].spentPaise).toBe((was?.spentPaise ?? 0) + 500);
     expect(mine[0].name).toEqual(expect.any(String));
     expect(mine[0].code).toEqual(expect.any(String));
     expect(mine[0].monthlyAllowance).toBe(222);
     expect(mine[0].monthlyAllowanceOverride).toBeNull();
     expect(mine[0].paused).toBe(false);
 
+    // The month is a window, not a filter applied afterwards: last month's run is not in this
+    // month's count, and this month's two are not in last month's.
     const lastMonthRows = await service.listOrgUsage({ month: lastMonth });
-    expect(lastMonthRows.find((row) => row.orgId === orgId)?.used).toBe(1);
+    const mineLastMonth = lastMonthRows.filter((row) => row.orgId === orgId);
+    expect(mineLastMonth).toHaveLength(1);
+    expect(mineLastMonth[0].used).toBe((wasLastMonth?.used ?? 0) + 1);
+    expect(mineLastMonth[0].spentPaise).toBe((wasLastMonth?.spentPaise ?? 0) + 900);
   });
 });

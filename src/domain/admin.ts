@@ -1,13 +1,6 @@
-/**
- * Client-side Admin Domain Types
- * Simplified types for admin frontend
- */
-
-// Re-export server types for client use
 export type {
   DashboardStats,
   RecentActivity,
-  RevenueChart,
 } from "@server/analytics/dashboard.types";
 
 export type {

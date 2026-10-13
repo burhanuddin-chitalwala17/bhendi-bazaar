@@ -1,5 +1,3 @@
-// src/components/admin/orgsContainer/index.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -9,7 +7,7 @@ import { AddOrgModal } from "./components/AddOrgModal";
 import { useOrgs } from "./hooks/useOrgs";
 import type { OrgWithStats } from "@/domain/org";
 import type { OrgFormInput } from "@/lib/validation/schemas/org.schema";
-import type { OrgListFilters } from "@/services/admin/orgService";
+import type { OrgListFilters } from "./orgApiClient";
 import { DEFAULT_PAGE_SIZE } from "@server/shared/pagination";
 
 import { PageHeader } from "@/components/shared/page-shell";
@@ -18,8 +16,6 @@ import { Select } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
 export function OrgsContainer() {
-  // Search and status narrow the query, not the page that came back — so they live
-  // here beside page and limit and are sent together.
   const [filters, setFilters] = useState<OrgListFilters>({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
@@ -33,7 +29,8 @@ export function OrgsContainer() {
     error,
     createOrg,
     updateOrg,
-    deleteOrg,
+    blockOrg,
+    unblockOrg,
     refetch,
   } = useOrgs(filters);
 
@@ -42,16 +39,14 @@ export function OrgsContainer() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit" | "view">(
     "create",
-  ); // ⭐ NEW
+  );
 
-  // Typed but not yet submitted — searching is a fetch, so it waits for Enter.
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearch = () => {
     setFilters({ ...filters, search: searchTerm.trim() || undefined, page: 1 });
   };
 
-  // ⭐ NEW: Handle view
   const handleView = (org: OrgWithStats) => {
     setEditingOrg(org);
     setModalMode("view");
@@ -98,11 +93,12 @@ export function OrgsContainer() {
     setModalMode("create");
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) {
-      return;
+  const handleToggleBlock = async (org: OrgWithStats) => {
+    if (org.isBlocked) {
+      await unblockOrg(org.id);
+    } else {
+      await blockOrg(org.id);
     }
-    await deleteOrg(id);
   };
 
   return (
@@ -197,7 +193,7 @@ export function OrgsContainer() {
         onPageSizeChange={(limit) => setFilters({ ...filters, limit, page: 1 })}
         onView={handleView}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onToggleBlock={handleToggleBlock}
       />
 
       {/* Modal */}

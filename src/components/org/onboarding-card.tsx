@@ -4,11 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  CHANNEL,
+  CHANNEL_LABELS,
   ONBOARDING_STEP,
   READINESS_STATE,
   STORE_MISSING,
-  type Channel,
   type ChannelReadiness,
   type OnboardingStatus,
   type OnboardingStep,
@@ -51,20 +50,13 @@ const STEP_COPY: Record<OnboardingStep, StepCopy> = {
   },
 };
 
-const CHANNEL_LABEL: Record<Channel, string> = {
-  [CHANNEL.STORE]: "Store",
-  [CHANNEL.AMAZON]: "Amazon",
-  [CHANNEL.FLIPKART]: "Flipkart",
-  [CHANNEL.INSTAGRAM]: "Instagram",
-};
-
 /** Where each thing the store is missing gets done. Keyed by the wording the server chose. */
 const MISSING_HREF: Record<string, ((orgId: string) => string) | undefined> = {
   [STORE_MISSING.LOCATION]: (orgId) => `/org/${orgId}/locations`,
   [STORE_MISSING.PRODUCT]: (orgId) => `/org/${orgId}/products/new`,
 };
 
-/** "Amazon, Flipkart and Instagram" — one sentence, however many channels are still unknown. */
+/** "Amazon, Flipkart and Meesho" — one sentence, however many channels are still unknown. */
 function joinNames(names: string[]): string {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
@@ -118,7 +110,7 @@ export function OnboardingCard({ status, orgId, page }: OnboardingCardProps) {
           ))}
           {unknown.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              {joinNames(unknown.map((entry) => CHANNEL_LABEL[entry.channel]))} readiness arrives
+              {joinNames(unknown.map((entry) => CHANNEL_LABELS[entry.channel]))} readiness arrives
               with the listing rules.
             </p>
           )}
@@ -181,7 +173,7 @@ function StepRow({ copy, done, orgId }: { copy: StepCopy; done: boolean; orgId: 
 }
 
 function ReadinessLine({ entry, orgId }: { entry: ChannelReadiness; orgId: string }) {
-  const label = CHANNEL_LABEL[entry.channel];
+  const label = CHANNEL_LABELS[entry.channel];
   if (entry.state === READINESS_STATE.READY) {
     return (
       <p className="flex items-center gap-2 text-sm">

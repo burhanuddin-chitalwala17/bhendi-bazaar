@@ -15,6 +15,8 @@ export interface AdminCategory {
   order: number;
   /** This category's own list, null when it inherits (media-library D4). */
   shotList: ShotList | null;
+  /** Which listing questions its products are asked, null when it inherits (categories D1a). */
+  productType: string | null;
   createdAt: Date;
   updatedAt: Date;
   productsCount?: number;
@@ -46,6 +48,7 @@ export interface CreateCategoryInput {
   order?: number;
   /** null clears to inheritance; absent leaves it alone. */
   shotList?: ShotList | null;
+  productType?: string | null;
 }
 
 export interface UpdateCategoryInput {
@@ -57,6 +60,7 @@ export interface UpdateCategoryInput {
   accent?: CategoryAccent;
   order?: number;
   shotList?: ShotList | null;
+  productType?: string | null;
 }
 
 

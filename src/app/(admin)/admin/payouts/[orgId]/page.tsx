@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { CommercialTerms } from "@/components/payouts/CommercialTerms";
 import { SettleEntries } from "@/components/payouts/SettleEntries";
 import { SettlementList } from "@/components/payouts/SettlementList";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export default async function AdminOrgPayoutPage({
   params,
@@ -43,10 +44,7 @@ export default async function AdminOrgPayoutPage({
         >
           ← All payouts
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{org.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {org.code} · default commission {org.commissionBps / 100}%
-        </p>
+        <SectionHeader as="h1" title="{org.name}" description="{org.code} · default commission {org.commissionBps / 100}%" />
       </div>
 
       {/* Two figures because they differ and both matter (D7). */}

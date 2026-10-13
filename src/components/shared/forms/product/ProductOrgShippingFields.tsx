@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { LocationForm } from "@/components/org/location-form";
 import type { ProductFormInput } from "@/components/product/console/types";
 import type { OrgSummary } from "@/domain/org";
-import type { OrgLocation } from "@server/catalog/org.address.repository";
+import type { OrgLocation } from "@server/catalog/org.address.types";
 
 export interface LocationOption {
   id: string;

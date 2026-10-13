@@ -32,15 +32,11 @@ export default async function AdminBiddingDetailPage({
   });
   const locations = await adminBiddingService.stockLocations(id);
 
-  const variant = [event.product.size, event.product.color]
-    .filter(Boolean)
-    .join(" · ");
-
   return (
     <PageShell width="default">
       <PageHeader
         title={event.product.name}
-        description={`${event.orgName}${variant ? ` · ${variant}` : ""}`}
+        description={event.orgName}
         back={{ href: "/admin/bidding", label: "Back to bidding" }}
         actions={
           <CopyLinkButton

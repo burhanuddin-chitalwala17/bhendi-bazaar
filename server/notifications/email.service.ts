@@ -8,7 +8,7 @@
  * - Sending purchase confirmations
  */
 
-import { prisma } from "@server/shared/prisma";
+import { accountService } from "@server/identity/account.service";
 import { appUrl } from "@server/shared/app-url";
 import crypto from "crypto";
 import { Resend } from "resend";
@@ -81,13 +81,7 @@ class EmailService {
     const token = crypto.randomBytes(32).toString("hex");
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    await prisma.verificationToken.create({
-      data: {
-        identifier: userId,
-        token,
-        expires,
-      },
-    });
+    await accountService.createEmailVerificationToken(userId, token, expires);
 
     const verificationUrl = `${appUrl()}/api/auth/verify-email?token=${token}`;
 
@@ -105,32 +99,20 @@ class EmailService {
     token: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const verificationToken = await prisma.verificationToken.findUnique({
-        where: { token },
-      });
+      const verificationToken = await accountService.findVerificationToken(token);
 
       if (!verificationToken) {
         return { success: false, error: "Invalid verification token" };
       }
 
       if (verificationToken.expires < new Date()) {
-        await prisma.verificationToken.deleteMany({
-          where: { token },
-        });
+        await accountService.deleteVerificationToken(token);
         return { success: false, error: "Verification token has expired" };
       }
 
-      await prisma.user.update({
-        where: { id: verificationToken.identifier },
-        data: {
-          isEmailVerified: true,
-          emailVerified: new Date(),
-        },
-      });
+      await accountService.markEmailVerified(verificationToken.identifier);
 
-      await prisma.verificationToken.deleteMany({
-        where: { token },
-      });
+      await accountService.deleteVerificationToken(token);
 
       return { success: true };
     } catch (error) {
@@ -143,10 +125,7 @@ class EmailService {
    * Resend verification email
    */
   async resendVerificationEmail(userId: string): Promise<void> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true, isEmailVerified: true },
-    });
+    const user = await accountService.findVerificationStatus(userId);
 
     if (!user) {
       throw new NotFoundError("User not found");
@@ -160,9 +139,7 @@ class EmailService {
       throw new DomainError("No email associated with this account");
     }
 
-    await prisma.verificationToken.deleteMany({
-      where: { identifier: userId },
-    });
+    await accountService.deleteEmailVerificationTokens(userId);
 
     await this.sendVerificationEmail(userId, user.email);
   }
@@ -174,10 +151,7 @@ class EmailService {
     isVerified: boolean;
     email: string | null;
   }> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { isEmailVerified: true, email: true },
-    });
+    const user = await accountService.findVerificationStatus(userId);
 
     return {
       isVerified: user?.isEmailVerified ?? false,

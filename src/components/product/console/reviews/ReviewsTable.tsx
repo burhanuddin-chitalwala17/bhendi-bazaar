@@ -6,7 +6,7 @@ import { CheckCircle, XCircle } from "lucide-react";
 
 import { DataTable, Column } from "@/components/shared/data-table";
 import { useMutation } from "@/hooks/core/useMutation";
-import { adminReviewApiClient } from "@/services/admin/reviewApiClient";
+import { adminReviewApiClient } from "@/components/product/console/reviews/adminReviewApiClient";
 import { ReviewMedia } from "@/components/product/review-media";
 import type { AdminReview } from "@/domain/admin";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Stars, stateOf } from "./review-state";
+import { formatShortDate } from "@/lib/format";
 
 interface Props {
   reviews: AdminReview[];
@@ -119,7 +120,7 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
       key: "createdAt",
       label: "Date",
       sortable: true,
-      render: (review) => new Date(review.createdAt).toLocaleDateString("en-IN"),
+      render: (review) => formatShortDate(review.createdAt),
     },
     {
       key: "actions",
@@ -169,7 +170,7 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
                 <DialogTitle>{opened.title || "Review"}</DialogTitle>
                 <DialogDescription>
                   {opened.userName} on {opened.productName} ·{" "}
-                  {new Date(opened.createdAt).toLocaleDateString("en-IN")}
+                  {formatShortDate(opened.createdAt)}
                 </DialogDescription>
               </DialogHeader>
 
@@ -191,7 +192,7 @@ export function ReviewsTable({ reviews, page, pageSize, totalPages, total }: Pro
                 {opened.deletedAt && (
                   <p className="text-xs text-muted-foreground">
                     The author deleted this on{" "}
-                    {new Date(opened.deletedAt).toLocaleDateString("en-IN")}. It is kept here and
+                    {formatShortDate(opened.deletedAt)}. It is kept here and
                     shown to nobody else.
                   </p>
                 )}

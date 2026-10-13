@@ -1,7 +1,3 @@
-/**
- * Admin Dashboard Domain Types
- */
-
 export interface DashboardStats {
   revenue: {
     today: number;
@@ -37,19 +33,4 @@ export interface RecentActivity {
   timestamp: Date;
   metadata?: any;
 }
-
-export interface TopProduct {
-  id: string;
-  name: string;
-  thumbnail: string;
-  salesCount: number;
-  revenue: number;
-}
-
-export interface RevenueChart {
-  date: string; // YYYY-MM-DD
-  revenue: number;
-  orders: number;
-}
-
 

@@ -20,8 +20,6 @@ export interface PricingProduct {
   price: number; // paise — the list price; reductions are offers (ADR-0018)
   weight: number | null; // kg
   orgId: string;
-  sizes: string[];
-  colors: string[];
 }
 
 export interface UnpricedItem {
@@ -75,14 +73,14 @@ export function priceGroupItems(
       // The parcel would be attributed (and its revenue owed) to the wrong org.
       throw new DomainError("An item in this order does not belong to the shipping organisation");
     }
-    // The order line records which size to pack (order-and-cart-lines D5); a variant
-    // the product never offered would be an unfulfillable instruction.
-    if (size && !product.sizes.includes(size)) {
-      throw new DomainError(`"${product.name}" is not available in size ${size}`);
-    }
-    if (color && !product.colors.includes(color)) {
-      throw new DomainError(`"${product.name}" is not available in ${color}`);
-    }
+    // The order line still records which size and colour were bought (order-and-cart-lines D5),
+    // and that record stays — an order is history and never loses what was sold
+    // ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)).
+    //
+    // What is gone is the check that the choice was one the product offered. A product has no
+    // options any more: every colour is its own product with its own stock
+    // ([ADR-0043](../../docs/adr/0043-a-variant-is-a-product-in-a-family.md)), so there is no
+    // list to check a choice against. The product *is* the choice.
 
     const unit = catalogueUnitPrice(product);
     itemsTotal += unit * quantity;
@@ -123,12 +121,6 @@ export function priceLines(
     const product = products.get(productId);
     if (!product) {
       throw new NotFoundError("One of the items in your order is no longer available");
-    }
-    if (size && !product.sizes.includes(size)) {
-      throw new DomainError(`"${product.name}" is not available in size ${size}`);
-    }
-    if (color && !product.colors.includes(color)) {
-      throw new DomainError(`"${product.name}" is not available in ${color}`);
     }
 
     const unit = catalogueUnitPrice(product);

@@ -8,17 +8,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@server/shared/prisma";
-import { z } from "zod";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { applyStatus } from "@server/shipping/shipment-status.service";
+import { trackingService } from "@server/shipping/tracking.service";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
-const updateTrackingSchema = z.object({
-  trackingNumber: z.string().min(5, "AWB/Tracking number is required"),
-  courierName: z.string().min(2, "Courier name is required"),
-  trackingUrl: z.string().url("Invalid tracking URL").optional(),
-});
+import { updateTrackingSchema } from "@/lib/validation/schemas/shipment-tracking.schema";
+import { ORDER_STATUS } from "@server/checkout/order.types";
+
+/** A courier is booked once the org has packed; before that there is no parcel to track. */
+const TRACKABLE = new Set<string>([ORDER_STATUS.PACKED, ORDER_STATUS.SHIPPED, ORDER_STATUS.DELIVERED]);
 
 export async function PATCH(
   request: NextRequest,
@@ -53,11 +52,7 @@ export async function PATCH(
 
     const { trackingNumber, courierName, trackingUrl } = validation.data;
 
-    // Check if shipment exists
-    const shipment = await prisma.shipment.findUnique({
-      where: { id: shipmentId },
-      include: { order: true },
-    });
+    const shipment = await trackingService.findShipmentWithOrder(shipmentId);
 
     if (!shipment) {
       return NextResponse.json(
@@ -66,22 +61,24 @@ export async function PATCH(
       );
     }
 
-    // Update shipment with tracking details
-    const updatedShipment = await prisma.shipment.update({
-      where: { id: shipmentId },
-      data: { trackingNumber, courierName, trackingUrl, updatedAt: new Date() },
+    if (!TRACKABLE.has(shipment.order?.status ?? "")) {
+      return NextResponse.json(
+        { error: "Tracking can only be added after the org marks the order as packed" },
+        { status: 400 },
+      );
+    }
+
+    const updatedShipment = await trackingService.updateTracking(shipmentId, {
+      trackingNumber,
+      courierName,
+      trackingUrl,
     });
 
-    // An AWB means the courier has it. The status moves through the one writer that owns the
-    // column, so the transition table decides whether the move is legal — it used to be the
-    // literal `"shipped"`, a value `ShipmentStatus` did not contain (shipment-lifecycle D12).
-    await applyStatus(shipmentId, SHIPMENT_STATUS.PICKED_UP);
-
-    // Log the update
-    console.log(`✅ Tracking updated for shipment ${shipment.code}`);
-    console.log(`   AWB: ${trackingNumber}`);
-    console.log(`   Courier: ${courierName}`);
-    console.log(`   Updated by: ${session.user.email}`);
+    try {
+      await applyStatus(shipmentId, SHIPMENT_STATUS.PICKED_UP);
+    } catch {
+      // Status transition may fail if shipment is already past packing — tracking is saved regardless
+    }
 
     return NextResponse.json({
       success: true,

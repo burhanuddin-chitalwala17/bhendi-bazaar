@@ -3,8 +3,8 @@
  * Business logic for category management
  */
 
-import { adminCategoryRepository } from "@server/catalog/admin.category.repository";
-import { categoryRepository } from "@server/catalog/category.repository";
+import { adminCategoryRepository } from "@server/catalog/category.repository";
+import { categoryRepository } from "@server/catalog/category.read.repository";
 import { wouldCreateCycle } from "@server/catalog/category.tree";
 import { recordAdminAction } from "@server/shared/audit/audit.service";
 import type {

@@ -133,6 +133,19 @@ export class OrgProfileRepository {
       select: { orgId: true },
     });
   }
+
+  /** Profiles with a logo or hero that predates the asset record — the media backfill's input. */
+  async listUnlinkedImages(take?: number) {
+    return await prisma.orgProfile.findMany({
+      where: { OR: [{ logoAssetId: null, logoUrl: { not: null } }, { heroAssetId: null, heroUrl: { not: null } }] },
+      select: { orgId: true, logoUrl: true, logoAssetId: true, heroUrl: true, heroAssetId: true },
+      ...(take === undefined ? {} : { take }),
+    });
+  }
+
+  async linkImageAssets(orgId: string, data: { logoAssetId?: string; heroAssetId?: string }): Promise<void> {
+    await prisma.orgProfile.update({ where: { orgId }, data });
+  }
 }
 
 export const orgProfileRepository = new OrgProfileRepository();

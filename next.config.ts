@@ -56,6 +56,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "shiprocket.in",
       },
+      {
+        // Google OAuth profile pictures.
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
     ],
   },
 };

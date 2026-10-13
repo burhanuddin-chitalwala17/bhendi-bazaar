@@ -5,12 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ProductGrid } from "@/components/shared/product-grid";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/domain/product";
-import {
-  PRODUCT_PAGE_SIZE,
-  productPageUrl,
-  type ProductPageQuery,
-} from "@/lib/product-paging";
-import { readApiError } from "@/lib/api-error";
+import { PRODUCT_PAGE_SIZE, type ProductPageQuery } from "@/lib/product-paging";
+import { productPagesApiClient } from "@/components/product/productPagesApiClient";
 
 /**
  * The one product listing that loads as you scroll.
@@ -55,6 +51,7 @@ export function PaginatedProductGrid({
     query.category ?? "",
     query.search ?? "",
     query.offersOnly ? "1" : "",
+    query.heroOnly ? "1" : "",
   ].join("\u0000");
 
   const [products, setProducts] = useState(initial);
@@ -82,13 +79,10 @@ export function PaginatedProductGrid({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(
-        productPageUrl(queryRef.current, products.length),
+      const page = await productPagesApiClient.next(
+        queryRef.current,
+        products.length,
       );
-      if (!response.ok) throw await readApiError(response);
-
-      const page: { products: Product[]; done: boolean } =
-        await response.json();
       // Filtered by id rather than concatenated blindly: a product added while someone
       // is scrolling shifts every later row by one, and an offset page would then
       // repeat whichever row moved across the boundary.

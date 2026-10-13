@@ -7,9 +7,10 @@
  */
 import { requireOrgMember } from "@/lib/org-auth";
 import { payoutsDAL } from "@/data-access-layer/payouts.dal";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export default async function OrgEarningsPage({
   params,
@@ -31,12 +32,7 @@ export default async function OrgEarningsPage({
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Earnings</h1>
-        <p className="text-sm text-muted-foreground">
-          What you have earned, and what is due.
-        </p>
-      </div>
+      <SectionHeader as="h1" title="Earnings" description="What you have earned, and what is due." />
 
       {/* Leads with the figure they came for. */}
       <Card className="p-5">
@@ -148,7 +144,7 @@ export default async function OrgEarningsPage({
                   <p className="font-mono text-xs">{settlement.code}</p>
                   <p className="text-xs text-muted-foreground">
                     {settlement.status === "PAID" && settlement.paidAt
-                      ? `Paid ${settlement.paidAt.toLocaleDateString("en-IN")}`
+                      ? `Paid ${formatShortDate(settlement.paidAt)}`
                       : settlement.status.toLowerCase()}
                     {settlement.reference ? ` · ${settlement.reference}` : ""}
                   </p>

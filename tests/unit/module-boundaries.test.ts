@@ -44,6 +44,32 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
     // media-library D4: the editor and the server resolve a category's slots with one function,
     // and enhancement refuses the label slot by the same role constant (image-enhancement R5).
     "shot-list",
+    // listing-fill reads brand defaults and category trees to fill a product's blanks.
+    "brand.repository",
+    "category.read.repository",
+  ],
+  listing: [
+    // ADR-0051/0052: the vocabulary, types and readiness are listing's public answers.
+    "product-type",
+    "product-type.types",
+    "listing-facts",
+    "size-label",
+    "fill-facts",
+    "listing-fill.service",
+    "listing-value.repository",
+    "channel-readiness",
+    "channel-readiness.service",
+    "channel-register.service",
+    "channel-map.repository",
+    "org-channel.service",
+    "org-listing-defaults.service",
+    "org-listing-defaults.types",
+    "product-family.service",
+    "fact-correction.service",
+    "admin.product-type.service",
+    "admin.product-type.types",
+    "product-readiness.repository",
+    "org-channel.repository",
   ],
   promotions: [
     // ADR-0018: every surface that needs a price calls this resolver.
@@ -216,14 +242,13 @@ describe("layers do not reach past each other", () => {
 
   it("a component never imports Prisma or a repository", () => {
     // Components know nothing about Prisma; repositories know nothing about HTTP.
-    // Type-only is exempt (ADR-0033 D5): it is erased at compile time and carries no
-    // behaviour. `locations-manager.tsx` imports one such type from a repository — a mild
-    // smell, since the type belongs in `.types`, but not a layering breach.
-    const offenders = componentFiles.filter((f) => {
-      const t = readFileSync(f, "utf8");
-      const valueImport = /(?<!import type )import\s+(?!type\s)[^"']*?from\s+"(@server\/shared\/prisma|@server\/[a-z-]+\/[^"]*repository)"/;
-      return valueImport.test(t);
-    });
+    // Type-only imports count here, unlike between server domains (ADR-0033 D5): a component
+    // typed by a row renders the row's shape and is handed every column of it.
+    const offenders = componentFiles.filter((f) =>
+      /from\s+"(@prisma\/client|@server\/shared\/prisma|@server\/[a-z-]+\/[^"]*repository)"/.test(
+        readFileSync(f, "utf8"),
+      ),
+    );
     expect([...new Set(offenders.map((f) => relative(ROOT, f)))]).toEqual([]);
   });
 

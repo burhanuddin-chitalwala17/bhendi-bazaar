@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { ImageIcon, ImageOff, Loader2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/shared/forms/FormField";
 import { BANNER_IMAGE } from "@/lib/config";
-import { readApiError } from "@/lib/api-error";
+import { useMutation } from "@/hooks/core/useMutation";
+import { uploadApiClient } from "@/components/shared/uploadApiClient";
 import { isRenderableImageUrl } from "@server/catalog/image-paths";
 import { BANNER_IMAGE_HINT, checkBannerImage } from "./banner-image-check";
 
@@ -26,8 +27,14 @@ export function BannerImageField({
   disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const inputId = useId();
   const [error, setError] = useState<string | null>(null);
+  // Said in the field, not toasted: the field is where the admin is looking.
+  const upload = useMutation(
+    (file: File) => uploadApiClient.uploadFiles("/api/admin/upload", "banners", [file], { identifier: "banner" }),
+    { showToast: false },
+  );
+  const uploading = upload.isLoading;
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -40,30 +47,21 @@ export function BannerImageField({
       return;
     }
 
-    setUploading(true);
     try {
-      const body = new FormData();
-      body.append("files", file);
-      body.append("identifier", "banner");
-      const response = await fetch("/api/admin/upload?type=banners", {
-        method: "POST",
-        body,
-      });
-      if (!response.ok) throw await readApiError(response);
-      const { urls } = (await response.json()) as { urls: string[] };
+      const urls = await upload.mutate(file);
       onChange(urls[0] ?? null);
     } catch (uploadError) {
       setError(
         uploadError instanceof Error ? uploadError.message : "Upload failed.",
       );
     } finally {
-      setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
     }
   }
 
   return (
     <FormField
+      id={inputId}
       label="Background image"
       hint={BANNER_IMAGE_HINT}
       error={error ?? undefined}
@@ -135,8 +133,10 @@ export function BannerImageField({
 
         <input
           ref={inputRef}
+          id={inputId}
           type="file"
           accept="image/*"
+          disabled={disabled || uploading}
           className="hidden"
           onChange={(event) => handleFile(event.target.files?.[0])}
         />

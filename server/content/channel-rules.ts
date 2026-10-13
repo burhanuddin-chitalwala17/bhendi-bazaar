@@ -13,13 +13,11 @@ import { ENHANCEMENT_TOOL, type EnhancementTool } from "@server/content/enhancem
  * because a number typed twice is a number that disagrees with itself.
  */
 
-export const CHANNEL = {
-  STORE: "store",
-  AMAZON: "amazon",
-  FLIPKART: "flipkart",
-  INSTAGRAM: "instagram",
-} as const;
-export type Channel = (typeof CHANNEL)[keyof typeof CHANNEL];
+import { CHANNEL, CHANNELS, isChannel, type Channel } from "@server/shared/channels";
+
+// Re-exported, not re-declared: every caller that already imported the set from this module
+// keeps working, and there is still exactly one place the members are written down.
+export { CHANNEL, CHANNELS, isChannel, type Channel };
 
 /** What a channel found wanting in an image. A closed set, so the copy for each is written once. */
 export const CHANNEL_IMAGE_PROBLEM = { TOO_SMALL: "too-small", WRONG_ASPECT: "wrong-aspect" } as const;
@@ -48,8 +46,13 @@ export const CHANNEL_IMAGE_RULES: Record<Channel, ChannelImageRule | null> = {
   [CHANNEL.AMAZON]: { minLongEdgePx: 1000, bestLongEdgePx: 1600, aspect: null },
   // Flipkart: 1000px on the longest side for a listing image; no shape of its own.
   [CHANNEL.FLIPKART]: { minLongEdgePx: 1000, bestLongEdgePx: null, aspect: null },
-  // Instagram: a feed post is delivered at 1080px, and a square is the shape it is composed in.
-  [CHANNEL.INSTAGRAM]: { minLongEdgePx: 1080, bestLongEdgePx: null, aspect: 1 },
+  // Meesho: 1000px on the longest side, and the same free shape as Flipkart.
+  [CHANNEL.MEESHO]: { minLongEdgePx: 1000, bestLongEdgePx: null, aspect: null },
+  // Google Shopping: at least 100px for apparel, which nothing a phone takes will fail — so the
+  // rule that bites is the 1000px its own guidance recommends for a usable listing image.
+  [CHANNEL.GOOGLE]: { minLongEdgePx: 1000, bestLongEdgePx: null, aspect: null },
+  // Meta: the feed is Google's, and a square is the shape a post is composed in.
+  [CHANNEL.META]: { minLongEdgePx: 1080, bestLongEdgePx: null, aspect: 1 },
 };
 
 /**

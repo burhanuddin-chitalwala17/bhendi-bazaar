@@ -39,9 +39,10 @@ export function AuthenticatedAddress({
     <div className="space-y-6">
       {/* Address Selection */}
       <div className="space-y-3">
-        <label className="text-xs font-medium uppercase tracking-eyebrow text-muted-foreground/80">
+        {/* A caption over a group of controls, not a label for one of them. */}
+        <span className="text-xs font-medium uppercase tracking-eyebrow text-muted-foreground/80">
           Delivery Address
-        </label>
+        </span>
         <AddressSelector
           selectedAddress={selectedAddress}
           addresses={addresses}

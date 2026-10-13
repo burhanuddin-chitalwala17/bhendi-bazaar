@@ -4,8 +4,11 @@
 // that `.optional()` does not rescue. See CHANGELOG PR-22.
 import { describe, expect, it } from "vitest";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
-import { categoryFormSchema } from "@/lib/validation/schemas/category.schema";
+import { categoryFormSchemaFor } from "@/lib/validation/schemas/category.schema";
 
+
+/** The schemas are factories now; these are the keys a caller would hand them (product-types D6). */
+const categoryFormSchema = categoryFormSchemaFor(["islamic-wear", "trousers", "bag", "fragrance", "jewellery"]);
 /** What the form sends when a user fills only the fields marked required. */
 const filledForm = (overrides: Record<string, unknown> = {}) => ({
   name: "Cream Rida",
@@ -137,5 +140,17 @@ describe("the category form shares the optional-number fix", () => {
   it("still rejects a fractional display order", () => {
     const result = categoryFormSchema.safeParse({ name: "Ridas", order: 1.5 });
     expect(result.error?.issues[0]?.message).toBe("Order must be a whole number");
+  });
+});
+
+describe("a picker's none option is no choice, not an empty one", () => {
+  // "On its own" submits "": it failed `min(1)` with "Too small: expected string to have >=1 characters".
+  it("reads an unselected family, brand or kind as null", () => {
+    const parsed = productFormSchema.parse(filledForm({ familyId: "", brandId: "", kind: "" }));
+    expect([parsed.familyId, parsed.brandId, parsed.kind]).toEqual([null, null, null]);
+  });
+
+  it("keeps a chosen family", () => {
+    expect(productFormSchema.parse(filledForm({ familyId: "fam-1" })).familyId).toBe("fam-1");
   });
 });

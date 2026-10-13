@@ -29,7 +29,7 @@ export const seedReviews: SeedReview[] = [
   // 1 — user-1's first word on prod-1. Superseded for the average by #2 below.
   {
     id: "review-1",
-    productId: "prod-1",
+    productId: "prod-rida-1",
     userId: "user-1",
     rating: 5,
     title: "Absolutely stunning abaya",
@@ -45,7 +45,7 @@ export const seedReviews: SeedReview[] = [
   // 2 — the same shopper, months later. Both show; only this one counts (R8, R10).
   {
     id: "review-2",
-    productId: "prod-1",
+    productId: "prod-rida-1",
     userId: "user-1",
     rating: 3,
     title: "Still good, but the colour has faded",
@@ -61,7 +61,7 @@ export const seedReviews: SeedReview[] = [
   // 3 — a second voice on the same product, with photographs on it.
   {
     id: "review-3",
-    productId: "prod-1",
+    productId: "prod-rida-1",
     userId: "user-2",
     rating: 5,
     title: "Worth every rupee",
@@ -80,7 +80,7 @@ export const seedReviews: SeedReview[] = [
   // 4 — withdrawn by the platform. Gone from the storefront, visible to admin and org.
   {
     id: "review-4",
-    productId: "prod-4",
+    productId: "prod-attar-1",
     userId: "user-3",
     rating: 1,
     title: "Nothing to do with the product",
@@ -96,7 +96,7 @@ export const seedReviews: SeedReview[] = [
   // 5 — retracted by its author. Visible only in the moderation queue.
   {
     id: "review-5",
-    productId: "prod-4",
+    productId: "prod-attar-1",
     userId: "user-2",
     rating: 4,
     title: "Changed my mind about posting this",

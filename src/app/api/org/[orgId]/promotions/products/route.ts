@@ -6,7 +6,7 @@
  */
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
-import { productsRepository } from "@server/catalog/product.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 
 export const GET = withOrg(async (request, scope) => {
   const search = new URL(request.url).searchParams.get("q") ?? undefined;

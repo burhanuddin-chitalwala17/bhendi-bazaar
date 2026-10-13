@@ -1,0 +1,2356 @@
+{
+ "fields": [
+  {
+   "field": "contribution_sku#1.value",
+   "group": "Listing Identity",
+   "label": "SKU",
+   "req": "Required"
+  },
+  {
+   "field": "product_type#1.value",
+   "group": "Listing Identity",
+   "label": "Product Type",
+   "req": "Required"
+  },
+  {
+   "field": "::record_action",
+   "group": "Listing Identity",
+   "label": "Listing Action",
+   "req": "Optional"
+  },
+  {
+   "field": "parentage_level[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Variations",
+   "label": "Parentage Level",
+   "req": "Optional"
+  },
+  {
+   "field": "child_parent_sku_relationship[marketplace_id=A21TJRUUN4KGV]#1.parent_sku",
+   "group": "Variations",
+   "label": "Parent SKU",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "variation_theme#1.name",
+   "group": "Variations",
+   "label": "Variation Theme Name",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_name[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Identity",
+   "label": "Item Name",
+   "req": "Required"
+  },
+  {
+   "field": "title_differentiation[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Identity",
+   "label": "Item Highlight",
+   "req": "Recommended"
+  },
+  {
+   "field": "brand[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Identity",
+   "label": "Brand Name",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "recommended_browse_nodes[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Identity",
+   "label": "Recommended Browse Nodes",
+   "req": "Optional"
+  },
+  {
+   "field": "package_level[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Identity",
+   "label": "Package Level",
+   "req": "Optional"
+  },
+  {
+   "field": "package_contains_sku[marketplace_id=A21TJRUUN4KGV]#1.quantity",
+   "group": "Product Identity",
+   "label": "Package Contains SKU Quantity",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "package_contains_sku[marketplace_id=A21TJRUUN4KGV]#1.sku",
+   "group": "Product Identity",
+   "label": "Package Contains SKU Identifier",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "target_audience_keyword[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Identity",
+   "label": "Target Audience Keyword",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "model_name[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Identity",
+   "label": "Model Name",
+   "req": "Recommended"
+  },
+  {
+   "field": "manufacturer[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Identity",
+   "label": "Manufacturer",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "model_number[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Identity",
+   "label": "Model Number",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "target_audience[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Identity",
+   "label": "Target Audience",
+   "req": "Recommended"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_type",
+   "group": "Product Identity",
+   "label": "Product Id Type",
+   "req": "Required"
+  },
+  {
+   "field": "amzn1.volt.ca.product_id_value",
+   "group": "Product Identity",
+   "label": "Product Id",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "main_product_image_locator[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Main Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_1[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_2[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_3[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_4[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_5[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_6[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_7[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "other_product_image_locator_8[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Other Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "swatch_product_image_locator[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Images",
+   "label": "Swatch Image URL",
+   "req": "Optional"
+  },
+  {
+   "field": "product_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Product Description",
+   "req": "Required"
+  },
+  {
+   "field": "bullet_point[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Bullet Point",
+   "req": "Required"
+  },
+  {
+   "field": "generic_keyword[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Generic Keyword",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "special_feature[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Special Features",
+   "req": "Recommended"
+  },
+  {
+   "field": "lifestyle[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Lifestyle",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "target_gender[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Target Gender",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "age_range_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Age Range Description",
+   "req": "Recommended"
+  },
+  {
+   "field": "number_of_items[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Items",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_type_name[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Item Type Name",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "size[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Size",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "part_number[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Part Number",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "theme[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Theme",
+   "req": "Recommended"
+  },
+  {
+   "field": "rtip_manufacturer_contact_information#1.value",
+   "group": "Product Details",
+   "label": "Manufacturer Contact Information",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "product_benefit[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Product Benefits",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "material_feature[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Material Features",
+   "req": "Recommended"
+  },
+  {
+   "field": "material_type_free[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Material Type Free",
+   "req": "Recommended"
+  },
+  {
+   "field": "ingredients[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Ingredients",
+   "req": "Optional"
+  },
+  {
+   "field": "short_product_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Short Product Description",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "orientation[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Orientation",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "allergen_information[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Allergen Information",
+   "req": "Recommended"
+  },
+  {
+   "field": "is_expiration_dated_product[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Is Product Expirable",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "product_expiration_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Product Expiration Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "fc_shelf_life[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Fulfillment Center Shelf Life",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "fc_shelf_life[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Fulfillment Center Shelf Life Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_form[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Item Form",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "unit_count[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Unit Count",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "unit_count[marketplace_id=A21TJRUUN4KGV]#1.type[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Unit Count Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "product_site_launch_date[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Product Site Launch Date",
+   "req": "Optional"
+  },
+  {
+   "field": "specific_uses_for_product[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Specific Uses for Product",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "league_name[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "League Name",
+   "req": "Optional"
+  },
+  {
+   "field": "team_name[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Team Name",
+   "req": "Optional"
+  },
+  {
+   "field": "scent[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Scent",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "bottle[marketplace_id=A21TJRUUN4KGV]#1.color[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Bottle Color",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "external_product_information[marketplace_id=A21TJRUUN4KGV]#1.entity",
+   "group": "Product Details",
+   "label": "External Product Information Entity",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "external_product_information[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "External Product Information",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "package_size_name[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Package Size Name",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "importer_contact_information[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Importer Contact Information",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "packer_contact_information[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Packer Contact Information",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "fragrance_concentration[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Fragrance Concentration",
+   "req": "Recommended"
+  },
+  {
+   "field": "scent_duration[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Scent Duration",
+   "req": "Recommended"
+  },
+  {
+   "field": "scent_duration[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Scent Duration Unit",
+   "req": "Recommended"
+  },
+  {
+   "field": "set_name[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Set Name",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "application_mode[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Application Mode",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_weight[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Item Weight",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_weight[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Item Weight Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "style[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Style",
+   "req": "Optional"
+  },
+  {
+   "field": "department[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Department Name",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "material[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Material",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "color[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Color",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "metal_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Metal Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "metals[marketplace_id=A21TJRUUN4KGV]#1.id",
+   "group": "Product Details",
+   "label": "Metal ID",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "metals[marketplace_id=A21TJRUUN4KGV]#1.metal_type[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Metal Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "metals[marketplace_id=A21TJRUUN4KGV]#1.metal_stamp[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Metal Stamp",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "metals[marketplace_id=A21TJRUUN4KGV]#1.metal_weight.value",
+   "group": "Product Details",
+   "label": "Metal Weight",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "metals[marketplace_id=A21TJRUUN4KGV]#1.metal_weight.unit",
+   "group": "Product Details",
+   "label": "Metal Weight Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "setting_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Setting Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.id",
+   "group": "Product Details",
+   "label": "Stone ID",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.type[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Stone Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.number_of_stones",
+   "group": "Product Details",
+   "label": "Number of Stones per Type",
+   "req": "Optional"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.creation_method[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Stone Creation Method",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.treatment_method[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Stone Treatment Method",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.clarity[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Stone Clarity",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.color[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Stone Color",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.cut[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Stone Cut",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "stones[marketplace_id=A21TJRUUN4KGV]#1.shape[language_tag=en_IN].value",
+   "group": "Product Details",
+   "label": "Stone Shape",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pearl[marketplace_id=A21TJRUUN4KGV]#1.lustre[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Lustre",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pearl[marketplace_id=A21TJRUUN4KGV]#1.minimum_color[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Color",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pearl[marketplace_id=A21TJRUUN4KGV]#1.shape[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Shape",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pearl[marketplace_id=A21TJRUUN4KGV]#1.stringing_method[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Stringing Method",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pearl[marketplace_id=A21TJRUUN4KGV]#1.surface_blemishes[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Surface Blemishes",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pearl[marketplace_id=A21TJRUUN4KGV]#1.type[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pearl[marketplace_id=A21TJRUUN4KGV]#1.uniformity[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Uniformity",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "number_of_pearls[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Pearls",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "size_per_pearl[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pearl Size",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "occasion_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Occasion",
+   "req": "Optional"
+  },
+  {
+   "field": "number_of_wheels[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Wheels",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "wheel[marketplace_id=A21TJRUUN4KGV]#1.type[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Wheel Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "water_resistance_level[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Water Resistance Level",
+   "req": "Recommended"
+  },
+  {
+   "field": "subject_character[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Subject Character",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "color[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.standardized_values#1",
+   "group": "Product Details",
+   "label": "Color Map",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_shape[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Item Shape",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "form_factor[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Form Factor",
+   "req": "Recommended"
+  },
+  {
+   "field": "pattern[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pattern",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "recommended_uses_for_product[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Recommended Uses For Product",
+   "req": "Recommended"
+  },
+  {
+   "field": "closure[marketplace_id=A21TJRUUN4KGV]#1.type[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Closure Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width_height[marketplace_id=A21TJRUUN4KGV]#1.height.value",
+   "group": "Product Details",
+   "label": "Height base to top",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width_height[marketplace_id=A21TJRUUN4KGV]#1.height.unit",
+   "group": "Product Details",
+   "label": "Height Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width_height[marketplace_id=A21TJRUUN4KGV]#1.length.value",
+   "group": "Product Details",
+   "label": "Length longer horizontal edge",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width_height[marketplace_id=A21TJRUUN4KGV]#1.length.unit",
+   "group": "Product Details",
+   "label": "Length Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width_height[marketplace_id=A21TJRUUN4KGV]#1.width.value",
+   "group": "Product Details",
+   "label": "Width shorter horizontal edge",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width_height[marketplace_id=A21TJRUUN4KGV]#1.width.unit",
+   "group": "Product Details",
+   "label": "Width Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "zipper_color[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Zipper Color",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "number_of_packs[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Packs",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "letter_character[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Letter Character",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "hardware_color[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Hardware Color",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "collection_item[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Collection Item",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "outer[marketplace_id=A21TJRUUN4KGV]#1.material[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Outer Material",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "construction_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Construction Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "number_of_pieces[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Pieces",
+   "req": "Recommended"
+  },
+  {
+   "field": "collection[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Collection Name",
+   "req": "Optional"
+  },
+  {
+   "field": "warranty_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Warranty Type",
+   "req": "Recommended"
+  },
+  {
+   "field": "weave_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Weave Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "care_instructions[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Care Instructions",
+   "req": "Recommended"
+  },
+  {
+   "field": "surface_recommendation[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Surface Recommendation",
+   "req": "Optional"
+  },
+  {
+   "field": "pile_height[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pile Height",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "finish_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Finish Type",
+   "req": "Optional"
+  },
+  {
+   "field": "is_stain_resistant[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Is Stain Resistant",
+   "req": "Recommended"
+  },
+  {
+   "field": "back[marketplace_id=A21TJRUUN4KGV]#1.material[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Back Material Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "embellishment_feature[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Embellishment Feature",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "room_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Room Type",
+   "req": "Recommended"
+  },
+  {
+   "field": "item_thickness[marketplace_id=A21TJRUUN4KGV]#1.decimal_value",
+   "group": "Product Details",
+   "label": "Item Thickness Decimal Value",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_thickness[marketplace_id=A21TJRUUN4KGV]#1.string_value",
+   "group": "Product Details",
+   "label": "Item Thickness",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_thickness[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Item Thickness Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "indoor_outdoor_usage[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Indoor Outdoor Usage",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "animal_theme[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Animal Theme",
+   "req": "Optional"
+  },
+  {
+   "field": "item_length_width[marketplace_id=A21TJRUUN4KGV]#1.length.value",
+   "group": "Product Details",
+   "label": "Item Length Longer Edge",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width[marketplace_id=A21TJRUUN4KGV]#1.length.unit",
+   "group": "Product Details",
+   "label": "Item Length Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width[marketplace_id=A21TJRUUN4KGV]#1.width.value",
+   "group": "Product Details",
+   "label": "Item Width Shorter Edge",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length_width[marketplace_id=A21TJRUUN4KGV]#1.width.unit",
+   "group": "Product Details",
+   "label": "Item Width Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "rug_form_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Rug Form Type",
+   "req": "Recommended"
+  },
+  {
+   "field": "high_traffic_area_use[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "High Traffic Area Use",
+   "req": "Optional"
+  },
+  {
+   "field": "texture[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Texture",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Item Length End to End",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_length[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Item Length Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "fabric_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Fabric Type",
+   "req": "Required"
+  },
+  {
+   "field": "special_size_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Special Size",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "apparel_size[marketplace_id=A21TJRUUN4KGV]#1.size_system",
+   "group": "Product Details",
+   "label": "Apparel Size System",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "apparel_size[marketplace_id=A21TJRUUN4KGV]#1.size_class",
+   "group": "Product Details",
+   "label": "Apparel Size Class",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "apparel_size[marketplace_id=A21TJRUUN4KGV]#1.size",
+   "group": "Product Details",
+   "label": "Apparel Size Value",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "apparel_size[marketplace_id=A21TJRUUN4KGV]#1.size_to",
+   "group": "Product Details",
+   "label": "Apparel Size To Value",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_quantity[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Item Package Quantity",
+   "req": "Optional"
+  },
+  {
+   "field": "fit_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Fit Type",
+   "req": "Optional"
+  },
+  {
+   "field": "rise[marketplace_id=A21TJRUUN4KGV]#1.style[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Rise Style",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "toe_style[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Toe Style",
+   "req": "Recommended"
+  },
+  {
+   "field": "height_map[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Height Map",
+   "req": "Recommended"
+  },
+  {
+   "field": "sport_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Sport Type",
+   "req": "Recommended"
+  },
+  {
+   "field": "athlete[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Athlete",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "socks_form[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Socks Form",
+   "req": "Recommended"
+  },
+  {
+   "field": "apparel_fabric_weight_class[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Apparel Fabric Weight Class",
+   "req": "Optional"
+  },
+  {
+   "field": "apparel_fabric_stretch[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Apparel Fabric Stretch",
+   "req": "Optional"
+  },
+  {
+   "field": "fit_to_size_sentiment[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Fit to Size Sentiment",
+   "req": "Recommended"
+  },
+  {
+   "field": "merch_manufacturing_method[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Merch Manufacturing Method",
+   "req": "Optional"
+  },
+  {
+   "field": "bottoms_size[marketplace_id=A21TJRUUN4KGV]#1.size_system",
+   "group": "Product Details",
+   "label": "Bottoms Size System",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "bottoms_size[marketplace_id=A21TJRUUN4KGV]#1.size_class",
+   "group": "Product Details",
+   "label": "Bottoms Size Class",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "bottoms_size[marketplace_id=A21TJRUUN4KGV]#1.size",
+   "group": "Product Details",
+   "label": "Bottoms Size Value",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "bottoms_size[marketplace_id=A21TJRUUN4KGV]#1.size_to",
+   "group": "Product Details",
+   "label": "Bottoms Size To Range",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "bottoms_size[marketplace_id=A21TJRUUN4KGV]#1.body_type",
+   "group": "Product Details",
+   "label": "Bottoms Body Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "lining_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Lining Description",
+   "req": "Optional"
+  },
+  {
+   "field": "item_length_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Item Length Description",
+   "req": "Recommended"
+  },
+  {
+   "field": "front_style[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Front Style",
+   "req": "Optional"
+  },
+  {
+   "field": "leg[marketplace_id=A21TJRUUN4KGV]#1.style[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Leg Style",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "pocket_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Pocket Description",
+   "req": "Optional"
+  },
+  {
+   "field": "fabric_wash[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Fabric Wash",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "rise[marketplace_id=A21TJRUUN4KGV]#1.height#1.value",
+   "group": "Product Details",
+   "label": "Rise Height",
+   "req": "Optional"
+  },
+  {
+   "field": "rise[marketplace_id=A21TJRUUN4KGV]#1.height#1.unit",
+   "group": "Product Details",
+   "label": "Rise Height Unit",
+   "req": "Optional"
+  },
+  {
+   "field": "inseam[marketplace_id=A21TJRUUN4KGV]#1.length#1.value",
+   "group": "Product Details",
+   "label": "Inseam Length",
+   "req": "Recommended"
+  },
+  {
+   "field": "inseam[marketplace_id=A21TJRUUN4KGV]#1.length#1.unit",
+   "group": "Product Details",
+   "label": "Inseam Length Unit",
+   "req": "Recommended"
+  },
+  {
+   "field": "waist[marketplace_id=A21TJRUUN4KGV]#1.size#1.value",
+   "group": "Product Details",
+   "label": "Waist Size",
+   "req": "Optional"
+  },
+  {
+   "field": "waist[marketplace_id=A21TJRUUN4KGV]#1.size#1.unit",
+   "group": "Product Details",
+   "label": "Waist Size Unit",
+   "req": "Optional"
+  },
+  {
+   "field": "seasons[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Seasons",
+   "req": "Recommended"
+  },
+  {
+   "field": "number_of_pockets[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Pockets",
+   "req": "Optional"
+  },
+  {
+   "field": "apparel_closure_orientation[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Apparel Closure Orientation",
+   "req": "Optional"
+  },
+  {
+   "field": "fabric_stretchability[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Fabric Stretchability",
+   "req": "Optional"
+  },
+  {
+   "field": "pants_form_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Pants Form Type",
+   "req": "Recommended"
+  },
+  {
+   "field": "ultraviolet_protection_factor[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Ultraviolet Protection Factor",
+   "req": "Optional"
+  },
+  {
+   "field": "has_pockets[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Has Pockets",
+   "req": "Optional"
+  },
+  {
+   "field": "front_pocket_count[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Front Pocket Count",
+   "req": "Optional"
+  },
+  {
+   "field": "fashion_decade[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Fashion Decade",
+   "req": "Optional"
+  },
+  {
+   "field": "fabric_distressing[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Fabric Distressing",
+   "req": "Optional"
+  },
+  {
+   "field": "leg_hem_opening_width[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Leg Hem Opening Width",
+   "req": "Optional"
+  },
+  {
+   "field": "leg_hem_opening_width[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Leg Opening Width Unit",
+   "req": "Optional"
+  },
+  {
+   "field": "garment_size_country[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Garment Size Country",
+   "req": "Optional"
+  },
+  {
+   "field": "formality_level[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Formality Level",
+   "req": "Optional"
+  },
+  {
+   "field": "strap_type[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Strap Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "size_info[marketplace_id=A21TJRUUN4KGV]#1.display_name[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Size Display Name",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "capacity[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Capacity",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "capacity[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Capacity Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "handle[marketplace_id=A21TJRUUN4KGV]#1.material[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Handle Material",
+   "req": "Recommended"
+  },
+  {
+   "field": "included_feature[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Included Features",
+   "req": "Optional"
+  },
+  {
+   "field": "number_of_compartments[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Compartments",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "strap_length[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Strap Length",
+   "req": "Recommended"
+  },
+  {
+   "field": "strap_length[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Product Details",
+   "label": "Strap Length",
+   "req": "Recommended"
+  },
+  {
+   "field": "material_composition[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Material Composition",
+   "req": "Optional"
+  },
+  {
+   "field": "frame[marketplace_id=A21TJRUUN4KGV]#1.color[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Frame Color",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "handle[marketplace_id=A21TJRUUN4KGV]#1.length#1.decimal_value",
+   "group": "Product Details",
+   "label": "Handle Length",
+   "req": "Optional"
+  },
+  {
+   "field": "handle[marketplace_id=A21TJRUUN4KGV]#1.length#1.unit",
+   "group": "Product Details",
+   "label": "Handle Length Unit",
+   "req": "Optional"
+  },
+  {
+   "field": "handle[marketplace_id=A21TJRUUN4KGV]#1.type[language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Handle Type",
+   "req": "Recommended"
+  },
+  {
+   "field": "number_of_handles[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Handles",
+   "req": "Optional"
+  },
+  {
+   "field": "fill_material[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Fill Material",
+   "req": "Optional"
+  },
+  {
+   "field": "product_grade[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Product Grade",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "included_components[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Included Components",
+   "req": "Recommended"
+  },
+  {
+   "field": "number_of_sections[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Number of Sections",
+   "req": "Optional"
+  },
+  {
+   "field": "handbag_silhouette[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Handbag Silhouette",
+   "req": "Recommended"
+  },
+  {
+   "field": "zippered_compartment_count[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Product Details",
+   "label": "Zippered Compartment Count",
+   "req": "Optional"
+  },
+  {
+   "field": "strap_color[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Product Details",
+   "label": "Strap Color",
+   "req": "Optional"
+  },
+  {
+   "field": "skip_offer[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Offer",
+   "label": "Skip Offer",
+   "req": "Optional"
+  },
+  {
+   "field": "condition_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Offer",
+   "label": "Item Condition",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "condition_note[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Offer",
+   "label": "Offer Condition Note",
+   "req": "Optional"
+  },
+  {
+   "field": "product_tax_code#1.value",
+   "group": "Offer",
+   "label": "Product Tax Code",
+   "req": "Optional"
+  },
+  {
+   "field": "merchant_release_date[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Offer",
+   "label": "Merchant Release Date",
+   "req": "Optional"
+  },
+  {
+   "field": "max_order_quantity[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Offer",
+   "label": "Maximum Order Quantity",
+   "req": "Optional"
+  },
+  {
+   "field": "gift_options[marketplace_id=A21TJRUUN4KGV]#1.can_be_messaged",
+   "group": "Offer",
+   "label": "Offering Can Be Gift Messaged",
+   "req": "Optional"
+  },
+  {
+   "field": "gift_options[marketplace_id=A21TJRUUN4KGV]#1.can_be_wrapped",
+   "group": "Offer",
+   "label": "Is Gift Wrap Available",
+   "req": "Optional"
+  },
+  {
+   "field": "main_offer_image_locator[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Offer",
+   "label": "Main Image Location",
+   "req": "Optional"
+  },
+  {
+   "field": "other_offer_image_locator_1[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Offer",
+   "label": "Other Image Location",
+   "req": "Optional"
+  },
+  {
+   "field": "other_offer_image_locator_2[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Offer",
+   "label": "Other Image Location",
+   "req": "Optional"
+  },
+  {
+   "field": "other_offer_image_locator_3[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Offer",
+   "label": "Other Image Location",
+   "req": "Optional"
+  },
+  {
+   "field": "other_offer_image_locator_4[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Offer",
+   "label": "Other Image Location",
+   "req": "Optional"
+  },
+  {
+   "field": "other_offer_image_locator_5[marketplace_id=A21TJRUUN4KGV]#1.media_location",
+   "group": "Offer",
+   "label": "Other Image Location",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.accessories",
+   "group": "Offer",
+   "label": "Accessories",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.battery_life_percentage",
+   "group": "Offer",
+   "label": "Battery Life Percentage",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.cosmetic",
+   "group": "Offer",
+   "label": "Cosmetic",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.features#1",
+   "group": "Offer",
+   "label": "Features",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.functional_condition",
+   "group": "Offer",
+   "label": "Functional Condition",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.packaging",
+   "group": "Offer",
+   "label": "Packaging",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.renewed_grade",
+   "group": "Offer",
+   "label": "Renewed Grade",
+   "req": "Optional"
+  },
+  {
+   "field": "supplemental_condition_information[marketplace_id=A21TJRUUN4KGV]#1.source_type",
+   "group": "Offer",
+   "label": "Source Type",
+   "req": "Optional"
+  },
+  {
+   "field": "import_designation[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Offer",
+   "label": "Import Designation",
+   "req": "Recommended"
+  },
+  {
+   "field": "fulfillment_availability#1.fulfillment_channel_code",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Fulfillment Channel Code (IN)",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "fulfillment_availability#1.quantity",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Quantity (IN)",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "fulfillment_availability#1.lead_time_to_ship_max_days",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Handling Time (IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "fulfillment_availability#1.restock_date",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Restock Date (IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "fulfillment_availability#1.is_inventory_available",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Inventory Always Available (IN)",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.our_price#1.schedule#1.value_with_tax",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Your Price INR (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.maximum_retail_price#1.schedule#1.value_with_tax",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Maximum Retail Price (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.automated_pricing_merchandising_rule_plan#1.merchandising_rule.rule_id",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Pricing Rule (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.minimum_seller_allowed_price#1.schedule#1.value_with_tax",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Minimum Seller Allowed Price (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.maximum_seller_allowed_price#1.schedule#1.value_with_tax",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Maximum Seller Allowed Price (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.discounted_price#1.schedule#1.value_with_tax",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Sale Price INR (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.discounted_price#1.schedule#1.start_at",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Sale Start Date (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.discounted_price#1.schedule#1.end_at",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Sale End Date (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.start_at.value",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Offering Release Date (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "purchasable_offer[marketplace_id=A21TJRUUN4KGV][audience=ALL]#1.end_at.value",
+   "group": "Offer (IN) - (Sell on Amazon)",
+   "label": "Stop Selling Date (Sell on Amazon, IN)",
+   "req": "Optional"
+  },
+  {
+   "field": "item_dimensions[marketplace_id=A21TJRUUN4KGV]#1.length.value",
+   "group": "Shipping",
+   "label": "Item Length",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_dimensions[marketplace_id=A21TJRUUN4KGV]#1.length.unit",
+   "group": "Shipping",
+   "label": "Item Length Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_dimensions[marketplace_id=A21TJRUUN4KGV]#1.width.value",
+   "group": "Shipping",
+   "label": "Item Width",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_dimensions[marketplace_id=A21TJRUUN4KGV]#1.width.unit",
+   "group": "Shipping",
+   "label": "Item Width Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_dimensions[marketplace_id=A21TJRUUN4KGV]#1.height.value",
+   "group": "Shipping",
+   "label": "Item Height",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_dimensions[marketplace_id=A21TJRUUN4KGV]#1.height.unit",
+   "group": "Shipping",
+   "label": "Item Height Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_dimensions[marketplace_id=A21TJRUUN4KGV]#1.length.value",
+   "group": "Shipping",
+   "label": "Item Package Length",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_dimensions[marketplace_id=A21TJRUUN4KGV]#1.length.unit",
+   "group": "Shipping",
+   "label": "Package Length Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_dimensions[marketplace_id=A21TJRUUN4KGV]#1.width.value",
+   "group": "Shipping",
+   "label": "Item Package Width",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_dimensions[marketplace_id=A21TJRUUN4KGV]#1.width.unit",
+   "group": "Shipping",
+   "label": "Package Width Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_dimensions[marketplace_id=A21TJRUUN4KGV]#1.height.value",
+   "group": "Shipping",
+   "label": "Item Package Height",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_dimensions[marketplace_id=A21TJRUUN4KGV]#1.height.unit",
+   "group": "Shipping",
+   "label": "Package Height Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_weight[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Shipping",
+   "label": "Package Weight",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_package_weight[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Shipping",
+   "label": "Package Weight Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_volume[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Shipping",
+   "label": "Item Volume",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "item_volume[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Shipping",
+   "label": "Item Volume Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "master_pack_layers_per_pallet_quantity[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Shipping",
+   "label": "Master Pack Layers per Pallet Quantity",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "master_packs_per_layer_quantity[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Shipping",
+   "label": "Master Packs Per Layer Quantity",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "number_of_boxes[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Shipping",
+   "label": "Number of Boxes",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "safety_warning[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Safety Warning",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "country_of_origin[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Country of Origin",
+   "req": "Required"
+  },
+  {
+   "field": "batteries_required[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Are batteries required?",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "batteries_included[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Are batteries included?",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "battery[marketplace_id=A21TJRUUN4KGV]#1.cell_composition#1.value",
+   "group": "Safety & Compliance",
+   "label": "Battery Cell Composition",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "battery[marketplace_id=A21TJRUUN4KGV]#1.cell_composition_other_than_listed[language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Battery Cell Composition Other Than Listed",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "battery[marketplace_id=A21TJRUUN4KGV]#1.weight#1.value",
+   "group": "Safety & Compliance",
+   "label": "Battery Weight",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "battery[marketplace_id=A21TJRUUN4KGV]#1.weight#1.unit",
+   "group": "Safety & Compliance",
+   "label": "Battery Weight Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "num_batteries[marketplace_id=A21TJRUUN4KGV]#1.quantity",
+   "group": "Safety & Compliance",
+   "label": "Number of Batteries",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "num_batteries[marketplace_id=A21TJRUUN4KGV]#1.type",
+   "group": "Safety & Compliance",
+   "label": "Battery Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "number_of_lithium_metal_cells[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Number of Lithium Metal Cells",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "number_of_lithium_ion_cells[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Number of Lithium-ion Cells",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "lithium_battery[marketplace_id=A21TJRUUN4KGV]#1.energy_content#1.value",
+   "group": "Safety & Compliance",
+   "label": "Lithium Battery Energy Content",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "lithium_battery[marketplace_id=A21TJRUUN4KGV]#1.energy_content#1.unit",
+   "group": "Safety & Compliance",
+   "label": "Lithium Battery Energy Content Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "lithium_battery[marketplace_id=A21TJRUUN4KGV]#1.packaging#1.value",
+   "group": "Safety & Compliance",
+   "label": "Lithium Battery Packaging",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "lithium_battery[marketplace_id=A21TJRUUN4KGV]#1.weight#1.value",
+   "group": "Safety & Compliance",
+   "label": "Lithium Battery Weight",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "lithium_battery[marketplace_id=A21TJRUUN4KGV]#1.weight#1.unit",
+   "group": "Safety & Compliance",
+   "label": "Lithium Battery Weight Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "contains_liquid_contents[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Contains Liquid Contents?",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "liquid_volume[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Liquid Volume",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "liquid_volume[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Safety & Compliance",
+   "label": "Liquid Volume Unit",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "is_liquid_double_sealed[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Is the liquid product double sealed?",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "directions[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Directions",
+   "req": "Optional"
+  },
+  {
+   "field": "is_this_product_subject_to_buyer_age_restrictions[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Is This Product Subject To Buyer Age Restrictions",
+   "req": "Optional"
+  },
+  {
+   "field": "dsa_responsible_party_address[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Responsible Person's Email or Electronic Address",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=application_guide]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Application Guide)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=biobased_biodegradable_substantiation]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, ECGT - Bio-based & Biodegradable Claims - Substantiation Document)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=certificate_of_analysis]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Certificate of Analysis)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=certificate_of_compliance]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Certificate of Compliance)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=compatibility_guide]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Compatibility Guide)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=data_transparency_declaration]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Data Act Transparency Declaration)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=emergency_use_authorization]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Emergency Use Authorization)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=emergency_use_authorization_amendment]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Emergency Use Authorization Amendment)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=energy_efficiency_claim_substantiation]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, ECGT - Energy Efficiency Claims - Substantiation Document)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=installation_manual]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Installation Manual)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=instructions_for_use]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Instructions for Use)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=patient_fact_sheet]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Patient Fact Sheet)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=pfas_free_claim_substantiation]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, ECGT - PFAS-Free Claims - Substantiation Document)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=product_certificate_of_conformity]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Product Certificate of Conformity)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=provider_fact_sheet]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Provider Fact Sheet)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=recyclability_claim_substantiation]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, ECGT - Recyclability Claims - Substantiation Document)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=repairability_claim_substantiation]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, ECGT - Durability & Repairability Claims - Substantiation Document)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=repairability_index_calculation_sheet]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Repairability Index Calculation Sheet)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=safety_data_sheet]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Safety Data Sheet)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=safety_information]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Safety Information)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=specification_sheet]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Specification Sheet)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=troubleshooting_guide]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Troubleshooting Guide)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=user_guide]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, User Guide)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=user_manual]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, User Manual)",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_media[marketplace_id=A21TJRUUN4KGV][content_language=en_IN][content_type=warranty]#1.source_location",
+   "group": "Safety & Compliance",
+   "label": "Compliance Media Source Location (en_IN, Warranty)",
+   "req": "Optional"
+  },
+  {
+   "field": "gpsr_safety_attestation[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Safety Attestation",
+   "req": "Optional"
+  },
+  {
+   "field": "gpsr_manufacturer_reference[marketplace_id=A21TJRUUN4KGV]#1.gpsr_manufacturer_email_address",
+   "group": "Safety & Compliance",
+   "label": "Manufacturer\u2019s Email or Electronic Address",
+   "req": "Optional"
+  },
+  {
+   "field": "ships_globally[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Ships Globally",
+   "req": "Optional"
+  },
+  {
+   "field": "has_less_than_30_percent_state_of_charge[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Has Less than 30 Percent State of Charge",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "ghs_chemical_h_code[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "GHS Chemical H Code",
+   "req": "Optional"
+  },
+  {
+   "field": "supplier_declared_dg_hz_regulation[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Dangerous Goods Regulations",
+   "req": "Required"
+  },
+  {
+   "field": "ghs[marketplace_id=A21TJRUUN4KGV]#1.classification#1.class",
+   "group": "Safety & Compliance",
+   "label": "GHS Class",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "hazmat[marketplace_id=A21TJRUUN4KGV]#1.aspect",
+   "group": "Safety & Compliance",
+   "label": "Hazmat Aspect",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "hazmat[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Hazmat",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "safety_data_sheet_url[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Safety Data Sheet (SDS or MSDS) URL",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "regulatory_compliance_certification[marketplace_id=A21TJRUUN4KGV]#1.regulation_type",
+   "group": "Safety & Compliance",
+   "label": "Compliance Regulation Type",
+   "req": "Optional"
+  },
+  {
+   "field": "regulatory_compliance_certification[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Regulatory Identification",
+   "req": "Optional"
+  },
+  {
+   "field": "battery[marketplace_id=A21TJRUUN4KGV]#1.iec_code#1.value",
+   "group": "Safety & Compliance",
+   "label": "Battery IEC Code",
+   "req": "Optional"
+  },
+  {
+   "field": "inner[marketplace_id=A21TJRUUN4KGV]#1.material[language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Inner Material",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "has_multiple_battery_powered_components[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Has Multiple Battery Powered Components",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "contains_battery_or_cell[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Contains Battery or Cell",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "battery_contains_free_unabsorbed_liquid[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Battery Contains free Unabsorbed Liquid",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "is_battery_non_spillable[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Is Battery Non Spillable",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "non_lithium_battery_packaging[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Non-Lithium Battery Packaging",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "has_replaceable_battery[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Has Replaceable Battery",
+   "req": "Optional"
+  },
+  {
+   "field": "non_lithium_battery_energy_content[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Non-Lithium Battery Energy Content",
+   "req": "Optional"
+  },
+  {
+   "field": "non_lithium_battery_energy_content[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Safety & Compliance",
+   "label": "Non-Lithium Battery Energy Content Unit",
+   "req": "Optional"
+  },
+  {
+   "field": "battery_installation_device_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Battery Installation Device Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "is_oem_sourced_product[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Is OEM Sourced Product",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_fabric_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Fabric Type",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_is_handmade[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Is Handmade",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_age_range[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Age Range",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_weave_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance Weave Type",
+   "req": "Conditionally Required"
+  },
+  {
+   "field": "compliance_embellishment_feature[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Embellishment Feature",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_printing_method[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Printing method",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_outer_surface_material[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Outer Surface Material",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_fastening_method[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Fastening Method",
+   "req": "Optional"
+  },
+  {
+   "field": "warranty_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Warranty Description",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_animal_leather[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Animal Leather",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_construction_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Construction Type",
+   "req": "Optional"
+  },
+  {
+   "field": "compliance_handbag_type[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Compliance - Handbag Type",
+   "req": "Optional"
+  },
+  {
+   "field": "base_product_mfg_warranty_period[marketplace_id=A21TJRUUN4KGV]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Base Product Manufacturer Warranty Period",
+   "req": "Optional"
+  },
+  {
+   "field": "base_product_mfg_warranty_period[marketplace_id=A21TJRUUN4KGV]#1.unit",
+   "group": "Safety & Compliance",
+   "label": "Base Product Warranty Manufacturer Period Unit",
+   "req": "Optional"
+  },
+  {
+   "field": "base_product_mfg_warranty_tnc_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Base Product Manufacturer Warranty Terms and Conditions",
+   "req": "Optional"
+  },
+  {
+   "field": "steps_to_avail_mfg_warranty_description[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Steps To Avail Warranty",
+   "req": "Optional"
+  },
+  {
+   "field": "warranty_provider_contact_information[marketplace_id=A21TJRUUN4KGV][language_tag=en_IN]#1.value",
+   "group": "Safety & Compliance",
+   "label": "Warranty Provider Contact Information",
+   "req": "Optional"
+  }
+ ],
+ "product_types": [
+  "PERSONAL_FRAGRANCE",
+  "FASHION_JEWELRY",
+  "COSMETIC_CASE",
+  "RUG",
+  "INCENSE",
+  "ETHNIC_WEAR",
+  "SOCKS",
+  "PANTS",
+  "TOTE_BAG",
+  "HANDBAG"
+ ]
+}

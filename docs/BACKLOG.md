@@ -1,6 +1,6 @@
 # BACKLOG.md — phased status map
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-09-29
 - **Covers:** `docs/specs/*/`
 
 Where the product is, phase by phase. This is the **milestone map**, not a task list — per-feature detail lives in [specs/](specs/), decisions in [adr/](adr/), and history in [CHANGELOG.md](CHANGELOG.md).
@@ -177,19 +177,69 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [media-library/renditions](specs/media-library/renditions/) | Surfaces declared once; a rendition made on demand from the source or the seller's crop, kept as a derived image | ✅ Implemented — PR-211 (2026-09-29) |
 | [media-library/video-hosting](specs/media-library/video-hosting/) | A short video uploads from the phone like a photograph; the worker makes the sizes that play, and it is an image's peer in the library | ✅ Implemented — 2026-09-27 (PR-180, PR-181, PR-183) |
 | [image-enhancement](specs/image-enhancement/) | A phone photo becomes a marketplace-grade image on demand — cut out, on white, in a studio, in a scene, brightened, enlarged — each a tool applied alone, each result accepted or discarded | ✅ Implemented — PR-185, PR-190, PR-191, PR-193, PR-198 (2026-09-28) |
-| listing-schema | A canonical vocabulary, per-channel mappings held as data, product families, one effective-attribute resolver, per-value provenance, and readiness per channel | planned |
-| product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | planned |
-| instagram-post | A post draft generated only on explicit intent, replaceable, regenerable, skippable; manual share first | planned |
-| channel-files | Export a valid marketplace flat-file row; import an existing Seller Central catalogue at onboarding | planned |
-| instagram-publish | Automatic publishing through the Graph API, on the worker | planned |
+| [listing-vocabulary](specs/listing-vocabulary/) | One description of a product that every surface and every channel reads — split into three subfeatures below | ✅ Implemented — PR-236…PR-253 (2026-10-04) |
+| [listing-vocabulary/categories](specs/listing-vocabulary/categories/) | Nine categories, each naming the kinds it holds and the few questions it asks; measurements stored, size labels derived | ✅ Implemented — PR-236…PR-246 (2026-10-03) |
+| [listing-vocabulary/variants](specs/listing-vocabulary/variants/) | Anything that sells on its own is its own product with its own stock; the category declares what varies | ✅ Implemented — PR-247, PR-249, PR-250 (2026-10-04) |
+| [listing-vocabulary/inherited-facts](specs/listing-vocabulary/inherited-facts/) | A blank fact filled from the family, the brand or the shop's defaults, stored on the product and shown with its origin | ✅ Implemented — PR-227, PR-253 (2026-10-04) |
+| [listing-vocabulary/product-types](specs/listing-vocabulary/product-types/) | The question sets become rows an admin creates and edits, so onboarding a seller with a new product line does not wait for a developer | ✅ Implemented — PR-236, PR-237, PR-238, PR-240, PR-241 (2026-10-03) |
+| product-form | Minimum to save, inherited values marked with their source, facts asked at the point of need and written back to the brand, photo-derived suggestions confirmed before use | ⚠️ Mostly built — the form asks the type's questions and marks inherited values (PR-244, PR-253); photo-derived suggestions remain, unspecified |
+| product-form/bulk-sheet | One sheet for several product types at once, Amazon's shape rather than Flipkart's one-per-node; permitted values as dropdowns; **creates and updates by SKU**, so an existing catalogue is fixed in one upload rather than one form at a time | ✅ Implemented — PR-248, PR-251, PR-252 (2026-10-04) |
+| [channel-registry](specs/channel-registry/) | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; readiness answered before publishing rather than after a rejection, advising and never gating | ✅ Implemented — PR-255…PR-267 (2026-10-04) |
+| shopfront-feeds | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | planned |
+| channel-connectors | Per-seller authorisation and encrypted credentials — the foundation publishing, orders and reporting all share | planned |
+| marketplace-publish | Listings pushed under the shop's own account, Flipkart first as the most accessible real API | planned |
+| inventory-sync | Marketplace orders ingested and stock reconciled across every channel. On a subscription this is the product, not a late phase | planned |
+| channel-reporting | What sold where, per channel and consolidated, each figure naming the channels it covers and when each last reported | planned |
+| instagram-post | A post draft generated only on explicit intent, replaceable, regenerable, skippable; manual share first. Separate from the Meta catalogue, which is a shopfront feed | planned |
+| subscriptions | One flat price per shop, no tiers and no per-seat. Independent of the line above; needed before anyone is charged | planned |
 
-Sequenced so that the three foundations run in parallel and the demo lands next: worker-foundation, seller-profile and media-library touch different tables and start together — the worker was pulled forward on 2026-09-25 because the library's sweep, pre-rendering and video transcoding are its first jobs; image-enhancement needs the library and the worker ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)); listing-schema needs brands and the marketplace templates; everything after needs listing-schema. Two rules from earlier phases bind the whole of it: the server stays the sole authority on money ([Invariant 1](../CLAUDE.md)) whatever a channel says a price is, and the host constrains operations, never design ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)).
+The four foundations are done: the worker, the shop's profile, the media library and photo
+enhancement. What follows was re-sequenced on 2026-09-29 after a spike into what the platforms
+actually require ([INTEGRATIONS.md](INTEGRATIONS.md)), and it is ordered by what it costs to prove
+rather than by ambition.
+
+`listing-vocabulary` first, because it improves the listing form itself and depends on nobody
+outside. Then `channel-registry`, which makes "is this ready for Amazon" answerable without
+publishing anything. Then `shopfront-feeds`, the first real publishing, chosen third because
+Google and Meta come and fetch a file and so need approval from no one — which makes it the
+honest test of whether the mapping layer works. Only then `channel-connectors`, and marketplace
+publishing behind it.
+
+`inventory-sync` and `channel-reporting` sit late in the line and are not late in importance. The
+revenue is a flat subscription ([ADR-0044](adr/0044-a-marketplace-orders-money-is-reported-not-computed.md)),
+so nobody renews for having listed once; they renew because their stock stayed right across five
+platforms and one screen told them what sold. Publishing is what makes those two possible.
+
+Two things run on other people's calendars and should start before the code that needs them.
+Amazon requires a **Professional** selling account before any API conversation, and its public
+developer registration wants a publicly reachable site describing the service to sellers. Meesho
+has no public API at all: an integrator is whitelisted by relationship, then each shop is enabled
+by email. Both are scheduling dependencies rather than engineering ones.
+
+Three rules from earlier phases bind the whole of it: the server stays the sole authority on money
+([Invariant 1](../CLAUDE.md)) wherever we run the checkout, and where we do not the amount is
+reported rather than computed ([ADR-0044](adr/0044-a-marketplace-orders-money-is-reported-not-computed.md));
+the host constrains operations, never design ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md)).
 
 ---
 
 ## Cross-cutting watch list
 
 Not a phase, but tracked:
+
+- **The seeded listing values held near-duplicates** — resolved 2026-10-04 (PR-246). The union
+  of two platforms' vocabularies gave one concept two entries wherever they worded or spelled it
+  differently. The owner chose the trade's word where it was a judgement ("full sleeves is the
+  correct term"); the rest followed a stated convention. Discarded forms are retired rather than
+  deleted, because each is what one platform writes and the mapping layer will need it.
+
+- **The existing models have never been checked against current practice** —
+  [ADR-0046](adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md) requires it
+  of anything new, and everything built before it was reasoned from this codebase alone. Worth one
+  focused pass over the stored shapes in the schema, the job queue, the caching approach, the
+  image pipeline and the auth handling, asking of each what the field does now. Deferred by
+  decision on 2026-09-29 so it does not swallow the listing phase; it is a piece of work in its
+  own right, not a line item inside another.
 
 - **The client/server contract** ([CONTRACTS.md](CONTRACTS.md)) — consolidating duplicate DTO declarations is a precondition for several specs above. Changes carry `[CONTRACT]`.
 - **Repository consolidation** ([ADR-0003](adr/0003-one-repository-per-aggregate.md)) — the *structural* half is done: `server/` is now one directory per domain ([ADR-0012](adr/0012-modules-are-vertical-slices-by-domain.md), CHANGELOG PR-02), so each aggregate has exactly one home. What remains is merging the duplicate repository *modules* that now sit side by side inside a domain — e.g. `catalog/product.repository.ts` and `catalog/admin.product.repository.ts` both read `prisma.product`. That is a behaviour-affecting merge, so it belongs with whichever spec touches the aggregate.
@@ -240,7 +290,7 @@ Not a phase, but tracked:
 - **Existing products all weigh 0.5 kg** — weight was collected and never persisted until PR-22, so every row created before it carries the schema default. [product-weight-and-rates](specs/product-weight-and-rates/) R6; rates are wrong in both directions until the catalogue is corrected.
 - ~~**`Product.categoryId` cascades on delete**~~ ✅ Closed — the `category_tree` migration moved it to `onDelete: Restrict` on 2026-08-10 (`prisma/migrations/20260810120000_category_tree/`); this entry stayed open for six days afterwards because the fix was a local judgement with nothing to check the watch list against. Now a stated rule: [ADR-0020](adr/0020-money-bearing-records-never-cascade.md).
 
-- **Documentation system** — see [CHANGELOG.md](CHANGELOG.md) PR-01. Remaining: mine and delete [_archive/](_archive/); delete `src/lib/csrf.ts` (still dead).
+- **Documentation system** — see [CHANGELOG.md](CHANGELOG.md) PR-01. Remaining: mine and delete [_archive/](_archive/). The dead CSRF helper was deleted on 2026-10-05; the Origin check in `src/middleware.ts` is the protection ([ADR-0060](adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)).
 
 ---
 

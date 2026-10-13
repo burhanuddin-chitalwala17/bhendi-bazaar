@@ -1,5 +1,6 @@
 import { ReviewStars } from "@/components/product/review-stars";
 import type { BrandProof } from "@server/catalog/storefront.types";
+import { formatCount } from "@/lib/format";
 
 /**
  * The compact stats under the tagline (brand-page R1, R3, R4): the rating with its count and
@@ -31,7 +32,7 @@ export function ProofStrip({ proof }: { proof: BrandProof | null }) {
         <li className="flex flex-1 items-center justify-center rounded-card border border-border bg-card px-3 py-2">
           <p className="text-2xs text-muted-foreground sm:text-xs">
             <span className="font-heading text-lg font-semibold text-foreground">
-              {ordersFulfilled.toLocaleString("en-IN")}
+              {formatCount(ordersFulfilled)}
             </span>{" "}
             orders fulfilled
           </p>

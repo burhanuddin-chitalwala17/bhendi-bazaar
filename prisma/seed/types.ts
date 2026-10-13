@@ -61,6 +61,17 @@ export interface SeedCategory {
   heroImage: string;
   accent: SeedCategoryAccent;
   order: number;
+  /** A category under another, so the dev tree has the shape the live one has. */
+  parentId?: string;
+  /**
+   * Which question set this category's products get, inherited by its children
+   * ([categories](../../docs/specs/listing-vocabulary/categories/) D1a).
+   *
+   * Without it a seeded category asks nothing and the whole listing vocabulary looks broken
+   * locally — the live catalogue's types were assigned by a migration keyed on its own slugs,
+   * which this database does not have.
+   */
+  productType?: string;
 }
 
 export interface SeedProduct {
@@ -79,11 +90,15 @@ export interface SeedProduct {
   thumbnail: string;
   /** Optional YouTube id, appended to the gallery after the photographs (ADR-0017). */
   video?: string;
-  sizes: string[];
-  colors: string[];
+  /** The kind within the category's product type — rida, attar, handbag. */
+  kind?: string;
+  /** Answers to the type's questions, as bare values; the seed stores them with their origin. */
+  facts?: Record<string, string | number | boolean>;
+  /** Measurements in the unit the type fixes. A size label is derived, never stored. */
+  measurements?: Record<string, number>;
   stock: number; // seeded as a ProductStock row at the org's pickup location
   sku?: string;
-  lowStockThreshold: number;
+  lowStockThreshold?: number;
   weight?: number; // ⭐ Weight in kg
 }
 

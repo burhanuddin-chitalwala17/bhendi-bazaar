@@ -13,6 +13,8 @@ import type {
   DeliveryAddress
 } from "@server/identity/profile.types";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+import { ADMIN_USER_INCLUDE, toAdminUser } from "@server/identity/admin.user.repository";
+import type { AdminUser, UpdateUserInput } from "@server/identity/admin.user.types";
 
 export class ProfileRepository {
   /** An account's login email — nothing else. For notifying the account holder. */
@@ -179,6 +181,183 @@ export class ProfileRepository {
     await prisma.profile.delete({
       where: { userId },
     });
+  }
+
+  // --- User: sign-in, sign-up and session claims ---
+
+  /** The whole row, for the credentials check. */
+  async findByEmail(email: string) {
+    return await prisma.user.findUnique({ where: { email } });
+  }
+
+  async findIdByEmail(email: string) {
+    return await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  }
+
+  async findSignInStateByEmail(email: string) {
+    return await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, isBlocked: true, isEmailVerified: true },
+    });
+  }
+
+  async findSessionClaims(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: { platformRole: true, isEmailVerified: true },
+    });
+  }
+
+  async findIsEmailVerified(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isEmailVerified: true },
+    });
+  }
+
+  async findVerificationStatus(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, isEmailVerified: true },
+    });
+  }
+
+  async findAdminStanding(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: { platformRole: true, isBlocked: true },
+    });
+  }
+
+  async findWithProfile(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true },
+    });
+  }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isEmailVerified: true, emailVerified: new Date() },
+    });
+  }
+
+  async createPasswordAccount(input: {
+    name: string | undefined;
+    email: string;
+    mobile: string | undefined;
+    passwordHash: string;
+  }) {
+    return await prisma.user.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        mobile: input.mobile,
+        passwordHash: input.passwordHash,
+        isEmailVerified: false,
+        profile: { create: {} },
+      },
+    });
+  }
+
+  /** The caller vouches the address is provider-verified; the row is created verified. */
+  async createVerifiedOAuthAccount(input: {
+    name: string | null | undefined;
+    email: string;
+    image: string | null | undefined;
+  }) {
+    return await prisma.user.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        emailVerified: new Date(),
+        isEmailVerified: true,
+        profile: { create: { profilePic: input.image ?? null } },
+      },
+    });
+  }
+
+  // --- User: what the admin console may set ---
+
+  /**
+   * Name, platform role and blocked flag, which the console sets through one command.
+   * Lives here so `admin.user.repository.ts` stays read-only and the table keeps one writer.
+   */
+  async updateAdminFields(userId: string, data: UpdateUserInput): Promise<AdminUser> {
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data,
+      include: ADMIN_USER_INCLUDE,
+    });
+    return toAdminUser(updated);
+  }
+
+  // --- User: passwords ---
+
+  async findPasswordHash(userId: string) {
+    return await prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+  }
+
+  async findPasswordResetCandidate(email: string) {
+    return await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, passwordHash: true, name: true },
+    });
+  }
+
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+  }
+
+  // --- Profile picture ---
+
+  async setProfilePic(userId: string, profilePic: string): Promise<void> {
+    await prisma.profile.upsert({
+      where: { userId },
+      create: { userId, profilePic },
+      update: { profilePic },
+    });
+  }
+
+  async clearProfilePic(userId: string): Promise<void> {
+    await prisma.profile.update({
+      where: { userId },
+      data: { profilePic: null },
+    });
+  }
+
+  // --- VerificationToken: email verification and password reset share the table ---
+
+  async createVerificationToken(identifier: string, token: string, expires: Date): Promise<void> {
+    await prisma.verificationToken.create({
+      data: { identifier, token, expires },
+    });
+  }
+
+  async findVerificationToken(token: string) {
+    return await prisma.verificationToken.findUnique({ where: { token } });
+  }
+
+  async findTokenWithIdentifierPrefix(token: string, prefix: string) {
+    return await prisma.verificationToken.findFirst({
+      where: { token, identifier: { startsWith: prefix } },
+    });
+  }
+
+  /** deleteMany, not delete: concurrent requests may consume the same token. */
+  async deleteVerificationToken(token: string): Promise<void> {
+    await prisma.verificationToken.deleteMany({ where: { token } });
+  }
+
+  async deleteVerificationTokensFor(identifier: string): Promise<void> {
+    await prisma.verificationToken.deleteMany({ where: { identifier } });
   }
 }
 

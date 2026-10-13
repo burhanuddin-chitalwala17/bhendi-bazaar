@@ -1,7 +1,9 @@
 // components/shared/forms/FormField.tsx
 
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -17,6 +19,8 @@ import {
 } from "react-hook-form";
 
 interface FormFieldProps {
+  /** The control's id; the label points at it and the messages are named from it. */
+  id?: string;
   label?: string;
   required?: boolean;
   error?: string;
@@ -26,7 +30,24 @@ interface FormFieldProps {
   disabled?: boolean;
 }
 
+/** The ids of the hint and error `FormField` renders for a control, for `aria-describedby`. */
+export function fieldMessageIds(id: string) {
+  return { hint: `${id}-hint`, error: `${id}-error` };
+}
+
+/** Only the message actually rendered is referenced: the hint hides while an error shows. */
+function describedBy(
+  id: string,
+  { hint, error }: { hint?: string; error?: string },
+  existing?: string,
+): string | undefined {
+  const ids = fieldMessageIds(id);
+  const own = error ? ids.error : hint ? ids.hint : undefined;
+  return [existing, own].filter(Boolean).join(" ") || undefined;
+}
+
 export function FormField({
+  id,
   label,
   required = false,
   error,
@@ -35,22 +56,30 @@ export function FormField({
   className,
   disabled = false,
 }: FormFieldProps) {
+  const ids = id ? fieldMessageIds(id) : undefined;
   return (
     <div className={cn("space-y-1", className)}>
-      <label
-        className={cn(
-          "text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground",
-          disabled && "text-muted-foreground",
-        )}
+      <Label
+        variant="eyebrow"
+        htmlFor={id}
+        required={required}
+        // `disabled` used to add the same colour the label already has; kept as a prop, no-op.
+        className="text-muted-foreground"
+        data-disabled={disabled || undefined}
       >
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
-      </label>
+      </Label>
       {children}
       {hint && !error && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+        <p id={ids?.hint} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
       )}
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && (
+        <p id={ids?.error} role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -62,10 +91,17 @@ export function FormInput({
   error,
   hint,
   ...inputProps
-}: Omit<FormFieldProps, "children"> & React.ComponentProps<typeof Input>) {
+}: Omit<FormFieldProps, "children" | "id"> & React.ComponentProps<typeof Input>) {
+  const generated = useId();
+  const id = inputProps.id ?? generated;
   return (
-    <FormField label={label} required={required} error={error} hint={hint}>
-      <Input {...inputProps} aria-invalid={!!error} />
+    <FormField id={id} label={label} required={required} error={error} hint={hint}>
+      <Input
+        {...inputProps}
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={describedBy(id, { hint, error }, inputProps["aria-describedby"])}
+      />
     </FormField>
   );
 }
@@ -76,10 +112,17 @@ export function FormTextarea({
   error,
   hint,
   ...textareaProps
-}: Omit<FormFieldProps, "children"> & React.ComponentProps<typeof Textarea>) {
+}: Omit<FormFieldProps, "children" | "id"> & React.ComponentProps<typeof Textarea>) {
+  const generated = useId();
+  const id = textareaProps.id ?? generated;
   return (
-    <FormField label={label} required={required} error={error} hint={hint}>
-      <Textarea {...textareaProps} aria-invalid={!!error} />
+    <FormField id={id} label={label} required={required} error={error} hint={hint}>
+      <Textarea
+        {...textareaProps}
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={describedBy(id, { hint, error }, textareaProps["aria-describedby"])}
+      />
     </FormField>
   );
 }
@@ -92,23 +135,30 @@ export function FormSelect({
   className,
   children,
   ...selectProps
-}: Omit<FormFieldProps, "children"> &
+}: Omit<FormFieldProps, "children" | "id"> &
   React.ComponentProps<typeof Select> & { children: React.ReactNode }) {
+  const generated = useId();
+  const id = selectProps.id ?? generated;
   return (
     <FormField
+      id={id}
       label={label}
       required={required}
       error={error}
       hint={hint}
       className={className}
     >
-      <Select {...selectProps} aria-invalid={!!error}>
+      <Select
+        {...selectProps}
+        id={id}
+        aria-invalid={!!error}
+        aria-describedby={describedBy(id, { hint, error }, selectProps["aria-describedby"])}
+      >
         {children}
       </Select>
     </FormField>
   );
 }
-// In FormField.tsx, update the FormController:
 
 interface FormControllerProps<T extends FieldValues> {
   name: Path<T>;
@@ -119,10 +169,12 @@ interface FormControllerProps<T extends FieldValues> {
   hint?: string;
   className?: string;
   rules?: RegisterOptions<T>;
+  /** `id` is what the label points at; the rendered control should carry it. */
   render: (props: {
     field: ControllerRenderProps<T, Path<T>>;
     fieldState: ControllerFieldState;
     formState: UseFormStateReturn<T>;
+    id: string;
   }) => React.ReactElement;
   disabled?: boolean;
 }
@@ -139,8 +191,10 @@ export function FormController<T extends FieldValues>({
   render,
   disabled = false,
 }: FormControllerProps<T>) {
+  const id = useId();
   return (
     <FormField
+      id={id}
       label={label}
       required={required}
       error={error}
@@ -152,7 +206,7 @@ export function FormController<T extends FieldValues>({
         name={name}
         control={control}
         rules={rules}
-        render={(props) => render(props)} // Pass the entire props object
+        render={(props) => render({ ...props, id })}
       />
     </FormField>
   );
@@ -180,12 +234,14 @@ export function FormPhoneInput<T extends FieldValues>({
   disabled,
   className,
 }: FormPhoneInputProps<T>) {
+  const id = useId();
   return (
     <Controller
       name={name}
       control={control}
       render={({ field, fieldState }) => (
         <FormField
+          id={id}
           label={label}
           required={required}
           hint={hint}
@@ -194,6 +250,7 @@ export function FormPhoneInput<T extends FieldValues>({
           disabled={disabled}
         >
           <PhoneInput
+            id={id}
             value={typeof field.value === "string" ? field.value : ""}
             onChange={field.onChange}
             onBlur={field.onBlur}
@@ -202,6 +259,7 @@ export function FormPhoneInput<T extends FieldValues>({
             placeholder={placeholder}
             disabled={disabled}
             aria-invalid={!!fieldState.error}
+            aria-describedby={describedBy(id, { hint, error: fieldState.error?.message })}
           />
         </FormField>
       )}

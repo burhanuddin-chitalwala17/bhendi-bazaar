@@ -46,3 +46,10 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Listing node templates: 19MB of another company's binary spreadsheets, which git cannot
+# diff and never forgets. The manifest and the data extracted from them are committed;
+# the payloads are not. See listing-node-templates/README.md.
+/listing-node-templates/**/*.xls
+/listing-node-templates/**/*.xlsx
+/listing-node-templates/**/*.xlsm

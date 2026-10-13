@@ -1,8 +1,3 @@
-/**
- * Admin Sidebar Component
- * Navigation sidebar for admin panel
- */
-
 "use client";
 
 import { PortalSidebar } from "@/components/layout/PortalSidebar";
@@ -12,6 +7,7 @@ import {
   ShoppingCart,
   Users,
   FolderTree,
+  Radio,
   Star,
   ShoppingBag,
   Truck,
@@ -21,6 +17,8 @@ import {
   GalleryHorizontal,
   Gavel,
   Sparkles,
+  Layers,
+  Images,
 } from "lucide-react";
 
 const navItems = [
@@ -43,6 +41,21 @@ const navItems = [
     title: "Categories",
     href: "/admin/categories",
     icon: FolderTree,
+  },
+  {
+    title: "Product Types",
+    href: "/admin/product-types",
+    icon: Layers,
+  },
+  {
+    title: "Media",
+    href: "/admin/media",
+    icon: Images,
+  },
+  {
+    title: "Channels",
+    href: "/admin/channels",
+    icon: Radio,
   },
   {
     title: "Banners",

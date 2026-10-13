@@ -1,8 +1,8 @@
 import { prisma } from "@server/shared/prisma";
-import { OrgRole } from "@prisma/client";
 
 /**
- * The only module that writes `OrgMember` (Invariant 5).
+ * Reads of `OrgMember`. The table's one writer is `org.repository.ts` (`createWithOwner`):
+ * the first owner is part of creating the org, and no other membership write exists yet.
  *
  * Deliberately small: `findMembership` is the primitive every org-scoped request needs,
  * and the rest of the team surface — listing, changing a role, removing someone — waits
@@ -17,10 +17,12 @@ export class OrgMemberRepository {
    * revoked between sign-in and now, and a token would keep asserting it.
    */
   async findMembership(userId: string, orgId: string) {
-    return prisma.orgMember.findUnique({
+    const row = await prisma.orgMember.findUnique({
       where: { userId_orgId: { userId, orgId } },
-      select: { id: true, orgId: true, role: true },
+      select: { id: true, orgId: true, role: true, org: { select: { isBlocked: true } } },
     });
+    if (!row) return null;
+    return { id: row.id, orgId: row.orgId, role: row.role, orgBlocked: row.org.isBlocked };
   }
 
   /** The orgs this person can act for — the org switcher's list, and "do you have one at all". */
@@ -36,6 +38,7 @@ export class OrgMemberRepository {
             name: true,
             handle: true,
             isActive: true,
+            isBlocked: true,
           },
         },
       },
@@ -43,19 +46,6 @@ export class OrgMemberRepository {
     });
 
     return memberships.map(({ org, role }) => ({ ...org, role }));
-  }
-
-  /**
-   * Add a person to an org.
-   *
-   * The unique constraint decides whether they are already a member; asking first would
-   * be a race the database already arbitrates (same reasoning as slug generation).
-   */
-  async addMember(userId: string, orgId: string, role: OrgRole) {
-    return prisma.orgMember.create({
-      data: { userId, orgId, role },
-      select: { id: true, orgId: true, role: true },
-    });
   }
 }
 

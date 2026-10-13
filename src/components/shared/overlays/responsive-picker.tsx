@@ -12,7 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useIsDesktop } from "@/hooks/core/useMediaQuery";
+import { useIsTabletUp } from "@/hooks/core/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 interface ResponsivePickerProps {
@@ -42,9 +42,9 @@ export function ResponsivePicker({
   children,
   className,
 }: ResponsivePickerProps) {
-  const isDesktop = useIsDesktop();
+  const isWide = useIsTabletUp();
 
-  if (isDesktop) {
+  if (isWide) {
     return (
       <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>{trigger}</PopoverTrigger>

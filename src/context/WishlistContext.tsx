@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useAuthSheet } from "@/context/AuthSheetContext";
-import { wishlistApiClient } from "@/services/wishlistApiClient";
+import { wishlistApiClient } from "@/components/wishlist/wishlistApiClient";
 
 interface WishlistContextValue {
   isSaved: (productId: string) => boolean;

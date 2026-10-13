@@ -5,9 +5,10 @@
 import {
   productsRepository,
   type ProductWithRelations,
-} from "@server/catalog/product.repository";
+} from "@server/catalog/product.read.repository";
 import { productService } from "@server/catalog/product.service";
 import { Product, ProductFilter, effectivePrice } from "@/domain/product";
+import type { ProductSibling } from "@/domain/product";
 import { PRODUCT_PAGE_SIZE, type ProductSort } from "@/lib/product-paging";
 import { toProductFlags } from "@/types/product";
 
@@ -80,8 +81,6 @@ const mapProduct = (
     stock: totalStock,
     lowStockThreshold: product.lowStockThreshold,
     options: {
-      sizes: product.sizes,
-      colors: product.colors,
     },
     shippingFromPincode: mainRow?.orgAddress.address.pincode || "",
     org: {
@@ -92,9 +91,34 @@ const mapProduct = (
     },
     // One memoised query per request answers this for every product on the page
     // (bidding D8). The product itself carries no mark that it is up for bidding.
+    facts: parseFacts(product.facts),
+    measurements: parseMeasurements(product.measurements),
     biddingSlug: biddingLockFor(locks, product.id) ?? undefined,
   };
 };
+
+function parseFacts(raw: unknown): Record<string, string | number | boolean> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const result: Record<string, string | number | boolean> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!v || typeof v !== "object" || !("value" in (v as Record<string, unknown>))) continue;
+    const val = (v as { value: unknown }).value;
+    if (typeof val === "string" && val !== "") result[k] = val;
+    else if (typeof val === "number") result[k] = val;
+    else if (typeof val === "boolean") result[k] = val;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseMeasurements(raw: unknown): Record<string, number> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const result: Record<string, number> = {};
+  for (const [key, stored] of Object.entries(raw as Record<string, unknown>)) {
+    const value = stored && typeof stored === "object" ? (stored as { value?: unknown }).value : undefined;
+    if (typeof value === "number" && value > 0) result[key] = value;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
 
 /** The reduced price a buyer sees, or undefined when nothing applies. */
 const offerPrice = (
@@ -165,11 +189,30 @@ export const productsDAL = {
         loadPriceContext(),
         loadBiddingLockContext(),
       ]);
-      // console.log("Product: ", JSON.stringify(product, null, 2));
       if (!product) {
         throw new NotFoundError(`No product with slug ${JSON.stringify(slug)}`);
       }
-      return mapProduct(product, context, locks, await ratingsFor([product]));
+      const mapped = mapProduct(product, context, locks, await ratingsFor([product]));
+
+      if (product.familyId) {
+        const siblings = await productsRepository.getFamilySiblings(product.familyId);
+        mapped.siblings = siblings.map((s): ProductSibling => {
+          const resolved = resolveProductPrice(
+            { id: s.id, price: s.price, categoryId: s.categoryId, orgId: "" },
+            context,
+          );
+          return {
+            slug: s.slug,
+            name: s.name,
+            thumbnail: isRenderableImageUrl(s.thumbnail) ? s.thumbnail : LOGO.ICON,
+            price: s.price,
+            salePrice: resolved.offerPricePaise ?? undefined,
+            isCurrent: s.slug === slug,
+          };
+        });
+      }
+
+      return mapped;
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw new Error("Failed to fetch product", { cause: error });
@@ -182,17 +225,6 @@ export const productsDAL = {
   ): Promise<Product[]> => {
     const [products, context, locks] = await Promise.all([
       productsRepository.getSimilarProducts(slug, count),
-      loadPriceContext(),
-      loadBiddingLockContext(),
-    ]);
-    const rows = products.filter((p) => p !== null);
-    const ratings = await ratingsFor(rows);
-    return rows.map((product) => mapProduct(product, context, locks, ratings));
-  },
-
-  getHeroProducts: async (limit: number): Promise<Product[]> => {
-    const [products, context, locks] = await Promise.all([
-      productsRepository.getHeroProducts(limit),
       loadPriceContext(),
       loadBiddingLockContext(),
     ]);

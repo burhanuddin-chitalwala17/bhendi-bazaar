@@ -34,8 +34,6 @@ const EVENT_SELECT = {
   /// Not bidder identity: the owning org is what tells a bid whether the bidder is one
   /// of its own members (spec R25), so it travels with every read.
   orgId: true,
-  size: true,
-  color: true,
   startAt: true,
   endAt: true,
   startingBidPaise: true,
@@ -86,8 +84,6 @@ function toSummary(row: EventRow, now: Date): OrgBiddingSummary {
       name: row.product.name,
       thumbnail: row.product.thumbnail,
       referencePricePaise: row.referencePricePaise,
-      size: row.size,
-      color: row.color,
     },
   };
 }
@@ -265,8 +261,6 @@ export class BiddingRepository {
         productId: input.productId,
         orgId: input.orgId,
         createdById: input.createdById,
-        size: input.size,
-        color: input.color,
         startAt: input.startAt,
         endAt: input.endAt,
         startingBidPaise: input.startingBidPaise,

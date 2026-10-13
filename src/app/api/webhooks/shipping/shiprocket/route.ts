@@ -6,12 +6,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
 import { shippingOrchestrator } from "@server/shipping";
-import { prisma } from "@server/shared/prisma";
 import { applyProviderStatus } from "@server/shipping/shipment-status.service";
+import { trackingService } from "@server/shipping/tracking.service";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
-import { ORDER_STATUS } from "@server/checkout/order.types";
+import { orderService } from "@server/checkout/order.service";
 import { shiprocketWebhookSchema } from "@/lib/validation/schemas/webhook.schema";
 
 export async function POST(request: NextRequest) {
@@ -25,10 +24,7 @@ export async function POST(request: NextRequest) {
     console.log("Shiprocket webhook received:", payload);
 
     // Confirm the carrier is configured before trusting the payload
-    const provider = await prisma.shippingProvider.findUnique({
-      where: { code: "shiprocket" },
-      select: { id: true, code: true },
-    });
+    const provider = await trackingService.configuredProvider("shiprocket");
 
     if (!provider) {
       console.error("Shiprocket provider not found in database");
@@ -45,10 +41,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Find shipment by tracking number
-    const shipment = await prisma.shipment.findFirst({
-      where: { trackingNumber: webhookEvent.trackingNumber },
-      include: { order: true },
-    });
+    const shipment = await trackingService.findShipmentByTrackingNumber(webhookEvent.trackingNumber);
 
     if (!shipment) {
       console.warn(
@@ -70,42 +63,25 @@ export async function POST(request: NextRequest) {
       webhookEvent.status.providerStatus ?? webhookEvent.status.status,
     );
 
-    // Derived, never written beside the parcels (D10): an order is delivered when every parcel
-    // is. Recomputed from the rows rather than inferred from this one event, so a webhook
-    // arriving out of order cannot conclude it alone.
-    if (outcome.kind === "moved" && outcome.to === SHIPMENT_STATUS.DELIVERED) {
-      const siblings = await prisma.shipment.findMany({
-        where: { orderId: shipment.orderId },
-        select: { status: true },
-      });
-      if (siblings.every((s) => s.status === SHIPMENT_STATUS.DELIVERED)) {
-        await prisma.order.update({
-          where: { id: shipment.orderId },
-          data: { status: ORDER_STATUS.DELIVERED },
-        });
-      }
+    // Derived, never written beside the parcels (D10): an order is delivered when every parcel is.
+    if (
+      outcome.kind === "moved" &&
+      outcome.to === SHIPMENT_STATUS.DELIVERED &&
+      (await trackingService.allShipmentsDelivered(shipment.orderId))
+    ) {
+      await orderService.markDelivered(shipment.orderId);
     }
 
     // Log webhook event
-    await prisma.shippingEvent.create({
-      data: {
-        order: {
-          connect: { id: shipment.orderId },
-        },
-        shipment: {
-          connect: { id: shipment.id },
-        },
-        provider: {
-          connect: { id: provider.id },
-        },
-        eventType: "webhook_received",
-        status: "success",
-        response: payload,
-        metadata: {
-          trackingNumber: webhookEvent.trackingNumber,
-          status: outcome.kind,
-          providerStatus: webhookEvent.status.providerStatus,
-        },
+    await trackingService.logWebhookReceived({
+      orderId: shipment.orderId,
+      shipmentId: shipment.id,
+      providerId: provider.id,
+      response: payload,
+      metadata: {
+        trackingNumber: webhookEvent.trackingNumber,
+        status: outcome.kind,
+        providerStatus: webhookEvent.status.providerStatus,
       },
     });
 

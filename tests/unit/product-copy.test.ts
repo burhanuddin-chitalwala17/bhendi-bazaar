@@ -14,7 +14,7 @@ const listCopyOptions = vi.fn();
 
 // Neighbouring modules import the client at load; nothing on the copy path queries it.
 vi.mock("@server/shared/prisma", () => ({ prisma: {} }));
-vi.mock("@server/catalog/admin.product.repository", () => ({
+vi.mock("@server/catalog/product.repository", () => ({
   adminProductsRepository: {
     getProductById: (id: string) => getProductById(id),
     listCopyOptions: (orgId: string) => listCopyOptions(orgId),
@@ -36,8 +36,6 @@ const source = {
   org: { id: "org-1", name: "Shop", code: "SHP" },
   tags: ["festive"],
   flags: ["NEW_ARRIVAL"],
-  sizes: ["S", "M"],
-  colors: ["Maroon"],
   media: [{ id: "m-1", kind: "IMAGE", ref: "https://img/1.webp", isThumbnail: true }],
   stockLocations: [{ orgAddressId: "a-1", quantity: 5, orgAddress: { name: "Main" } }],
   weight: 400,
@@ -49,7 +47,7 @@ beforeEach(() => {
 });
 
 describe("getCopySource", () => {
-  it("carries description, category, attributes and flags — and nothing else", async () => {
+  it("carries description, category, tags and flags — and nothing else", async () => {
     expect(await productsService.getCopySource("p-1", "org-1")).toEqual({
       id: "p-1",
       name: "Velvet Kurta",
@@ -57,8 +55,6 @@ describe("getCopySource", () => {
       categoryId: "c-1",
       tags: ["festive"],
       flags: ["NEW_ARRIVAL"],
-      sizes: ["S", "M"],
-      colors: ["Maroon"],
     });
   });
 

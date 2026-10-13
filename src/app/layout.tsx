@@ -32,6 +32,10 @@ const bodyFont = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  verification: {
+    google: process.env.GOOGLE_VERIFICATION_TOKEN,
+  },
+
   // Makes the root-relative brand paths below absolute, which is what a scraper needs —
   // without it Next resolves them against the deployment URL, not the custom domain.
   metadataBase: new URL(appUrl()),

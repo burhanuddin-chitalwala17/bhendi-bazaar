@@ -4,9 +4,14 @@ import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { FormInput, FormSelect, FormTextarea } from "../FormField";
 import type { CreateCategoryInput } from "@/domain/admin";
 
+
 interface CategoryBasicFieldsProps {
   register: UseFormRegister<CreateCategoryInput>;
   errors: FieldErrors<CreateCategoryInput>;
+  /** The chosen type, so the field can say what leaving it empty costs. */
+  watchedProductType?: string | null;
+  /** The types that exist, passed in rather than imported — they are rows now, not constants. */
+  productTypeOptions?: Array<{ key: string; label: string }>;
   /** Valid parents — the form excludes self and descendants; the server re-checks. */
   parentOptions: Array<{ id: string; name: string }>;
 }
@@ -15,6 +20,8 @@ export function CategoryBasicFields({
   register,
   errors,
   parentOptions,
+  watchedProductType,
+  productTypeOptions = [],
 }: CategoryBasicFieldsProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-6">
@@ -53,6 +60,30 @@ export function CategoryBasicFields({
           {parentOptions.map((option) => (
             <option key={option.id} value={option.id}>
               {option.name}
+            </option>
+          ))}
+        </FormSelect>
+
+        {/*
+          Which listing questions this category's products are asked. Separate from the browsing
+          tree on purpose: merchandising reorganises categories, and the questions asked of an
+          abaya must not change because somebody moved it under a seasonal heading
+          (listing-vocabulary/categories D1a).
+        */}
+        <FormSelect
+          label="Product type"
+          {...register("productType")}
+          error={errors.productType?.message}
+          hint={
+            watchedProductType
+              ? "Decides which listing questions its products are asked."
+              : "Decides which listing questions its products are asked. Left empty, this category inherits from its parent — and if no ancestor sets one either, products here save and sell on the storefront but cannot be published to a marketplace."
+          }
+        >
+          <option value="">Inherit from parent</option>
+          {productTypeOptions.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
             </option>
           ))}
         </FormSelect>

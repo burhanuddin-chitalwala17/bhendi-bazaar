@@ -17,7 +17,7 @@ import {
 import { FormInput } from "@/components/shared/forms/FormField";
 import { ImageUpload } from "@/components/shared/image-upload";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { orgStorefrontApiClient } from "@/components/org/orgStorefrontApiClient";
 import {
   orgBannerSchema,
   type OrgBannerFormInput,
@@ -70,19 +70,12 @@ export function AddPromotionDialog({
       isActive: true,
     },
     successMessage: "Promotion added — it is live on your shop now.",
-    submit: async (data) => {
-      const response = await fetch(`/api/org/${orgId}/storefront/banners`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, imageUrl: imageUrl || null }),
-      });
-      if (!response.ok) throw await readApiError(response);
-      const created = await response.json();
+    submit: (data) => orgStorefrontApiClient.addBanner(orgId, { ...data, imageUrl: imageUrl || null }),
+    onSuccess: () => {
       reset();
       setImageUrl("");
       setOpen(false);
       router.refresh();
-      return created;
     },
   });
 

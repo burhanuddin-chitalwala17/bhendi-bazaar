@@ -1,7 +1,7 @@
 # ADR-0003: One aggregate, one repository
 
 - **Date:** 2026-08-03
-- **Status:** Accepted
+- **Status:** Accepted (D2 layout superseded by [ADR-0012](0012-modules-are-vertical-slices-by-domain.md); caller-split writes resolved by [ADR-0055](0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md))
 - **Context:** Three repository layouts coexisted — `server/repositories/`, `server/repositories/admin/`, and `server/admin/repository/` — and several aggregates were reachable through more than one. None was dead, which is worse than abandonment: every layout had real callers, and two modules writing the same table returned *differently shaped objects for the same row* because their `select`/`include` projections had diverged.
 
   The pattern repeated above the repository layer: duplicated class and singleton names, and closed sets declared more than once. The compiler cannot help here — duplicate names in different modules are simply different symbols, and separately declared string enums with matching values are mutually assignable — so this class of drift is invisible to `tsc` and only surfaces as a behavioural difference depending on which import path a caller happened to type.

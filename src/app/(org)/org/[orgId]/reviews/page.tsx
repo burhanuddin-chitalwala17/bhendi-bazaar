@@ -6,6 +6,8 @@ import { ReviewMedia } from "@/components/product/review-media";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SectionHeader } from "@/components/shared/SectionHeader";
+import { formatShortDate } from "@/lib/format";
 
 export const metadata = {
   title: "Reviews",
@@ -34,13 +36,7 @@ export default async function OrgReviewsPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Reviews</h1>
-        <p className="text-muted-foreground">
-          What buyers say about your products. Moderation is handled by the
-          platform.
-        </p>
-      </div>
+      <SectionHeader as="h1" title="Reviews" description="What buyers say about your products. Moderation is handled by the platform." />
 
       {reviews.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-10 text-center text-muted-foreground">
@@ -79,7 +75,7 @@ export default async function OrgReviewsPage({
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <p className="text-xs text-muted-foreground">
                         {review.reviewerName} ·{" "}
-                        {new Date(review.createdAt).toLocaleDateString("en-IN")}
+                        {formatShortDate(review.createdAt)}
                       </p>
                       {review.isVerified && (
                         <Badge variant="secondary">Verified purchase</Badge>

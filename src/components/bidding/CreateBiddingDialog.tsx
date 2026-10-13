@@ -12,9 +12,11 @@
  * choice that cannot be taken is worse than a shorter list.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Gavel, Search } from "lucide-react";
+import { useDebouncedSearch } from "@/hooks/core/useDebouncedSearch";
+import { productSearchApiClient } from "@/components/promotions/productSearchApiClient";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,11 +27,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-
-interface PickerProduct {
-  id: string;
-  name: string;
-}
 
 export function CreateBiddingDialog({
   /** Where the create flow continues — `/org/<id>/bidding`. */
@@ -43,37 +40,18 @@ export function CreateBiddingDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
-  const [results, setResults] = useState<PickerProduct[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Searched at the server rather than filtered in the browser, for the reason the
   // offer picker gives: a capped fetch stops finding things with nothing on screen to
   // say so. Debounced, so typing a word is one query.
-  useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(
-      async () => {
-        setIsLoading(true);
-        try {
-          const query = term ? `?q=${encodeURIComponent(term)}` : "";
-          const response = await fetch(`${searchPath}${query}`);
-          if (response.ok) {
-            const data = (await response.json()) as {
-              products: PickerProduct[];
-              total: number;
-            };
-            setResults(data.products);
-            setTotal(data.total);
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      },
-      term ? 250 : 0,
-    );
-    return () => clearTimeout(timer);
-  }, [term, open, searchPath]);
+  const search = useDebouncedSearch(
+    term,
+    (query, signal) => productSearchApiClient.search(searchPath, query, signal),
+    { enabled: open, dependencies: [searchPath] },
+  );
+  const results = search.data?.products ?? [];
+  const total = search.data?.total ?? 0;
+  const isLoading = search.isSearching;
 
   const choose = (productId: string) => {
     setOpen(false);
@@ -127,7 +105,9 @@ export function CreateBiddingDialog({
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">
               {isLoading
                 ? "Searching…"
-                : term
+                : search.error
+                  ? search.error
+                  : term
                   ? "Nothing matches that."
                   : "Nothing here can go up for bidding right now."}
             </p>

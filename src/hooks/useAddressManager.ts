@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { DeliveryAddress } from "@/domain/profile";
-import { addressApiClient } from "@/services/addressApiClient";
+import { addressApiClient } from "@/components/profile/addressApiClient";
 
 type UseAddressManagerOptions = {
     userId?: string;           // For authenticated users

@@ -1,10 +1,10 @@
-// NEW VERSION - product-details.tsx
-
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/domain/product";
 import { PriceDisplay } from "@/components/shared/PriceDisplay";
+import { cn } from "@/lib/utils";
 import { StockStatus } from "@/components/shared/StockStatus";
 import { ProductActions } from "@/components/shared/button-groups/ProductActions";
 import { ShareButton } from "@/components/shared/ShareButton";
@@ -106,6 +106,64 @@ export function ProductDetails(product: Product) {
       <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
         {product.description}
       </p>
+
+      {/* Variants */}
+      {product.siblings && product.siblings.length > 1 && (
+        <div className="space-y-2">
+          <p className="text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground sm:text-xs">
+            Also available
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {product.siblings.map((sibling) => (
+              <Link
+                key={sibling.slug}
+                href={`/product/${sibling.slug}`}
+                prefetch={false}
+                className={cn(
+                  "flex items-center gap-2 rounded-field border px-2 py-1.5 text-xs transition-colors",
+                  sibling.isCurrent
+                    ? "border-primary bg-primary/5 font-medium"
+                    : "border-border/70 hover:border-primary/40",
+                )}
+              >
+                <Image
+                  src={sibling.thumbnail}
+                  alt={sibling.name}
+                  width={32}
+                  height={32}
+                  className="rounded-field object-cover"
+                />
+                <span className="max-w-24 truncate">{sibling.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Specifications */}
+      {(product.facts || product.measurements) && (
+        <div className="space-y-2">
+          <p className="text-3xs font-medium uppercase tracking-eyebrow text-muted-foreground sm:text-xs">
+            Specifications
+          </p>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+            {product.facts &&
+              Object.entries(product.facts).map(([key, value]) => (
+                <div key={key} className="flex justify-between col-span-2 sm:col-span-1">
+                  <dt className="text-muted-foreground capitalize">{key.replace(/-/g, " ")}</dt>
+                  <dd className="font-medium text-right">{String(value)}</dd>
+                </div>
+              ))}
+            {product.measurements &&
+              Object.entries(product.measurements).map(([key, value]) => (
+                <div key={key} className="flex justify-between col-span-2 sm:col-span-1">
+                  <dt className="text-muted-foreground capitalize">{key.replace(/-/g, " ")}</dt>
+                  <dd className="font-medium text-right">{value}&quot;</dd>
+                </div>
+              ))}
+          </dl>
+        </div>
+      )}
 
       {/* Sizes (if available) */}
       {product.options?.sizes && (

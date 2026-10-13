@@ -16,6 +16,23 @@ import type {
 } from "@server/shipping/domain/shipping.types";
 import type { AdminConnectionResult } from "@server/shipping/services/connection.types";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
+
+/**
+ * The carrier's result carries the live token and the encrypted password, because the
+ * repository needs them. The console does not: it learns connection state and the account's
+ * email, nothing that could be replayed against the carrier (shipping ADR-0002 D3).
+ */
+export function toAdminConnectionResult(result: ProviderConnectionResult): AdminConnectionResult {
+  const account = { ...result.accountInfo };
+  delete account.password;
+  return {
+    success: result.success,
+    ...(result.error !== undefined && { error: result.error }),
+    ...(result.lastAuthAt !== undefined && { lastAuthAt: result.lastAuthAt }),
+    ...(result.accountInfo !== undefined && { accountInfo: account }),
+  };
+}
+
 export class AdminConnectionService {
   /**
    * Connect a provider account (Admin operation)
@@ -26,7 +43,7 @@ export class AdminConnectionService {
     adminId: string
   ): Promise<AdminConnectionResult> {
     // 1. Validate provider exists
-    const provider = await shippingProviderRepository.getById(providerId);
+    const provider = await shippingProviderRepository.findSummaryById(providerId);
     if (!provider) {
       throw new NotFoundError("Provider not found");
     }
@@ -100,7 +117,7 @@ export class AdminConnectionService {
           resourceId: providerId,
           metadata: {
             providerCode: provider.code,
-            accountInfo: connectionResult.accountInfo,
+            accountInfo: toAdminConnectionResult(connectionResult).accountInfo,
           },
         });
       } else {
@@ -115,7 +132,7 @@ export class AdminConnectionService {
           },
         });
       }
-      return connectionResult;
+      return toAdminConnectionResult(connectionResult);
     } catch (error) {
       await recordAdminAction({
         adminId,
@@ -139,7 +156,7 @@ export class AdminConnectionService {
     providerId: string,
     adminId: string
   ): Promise<{ success: boolean; error?: string }> {
-    const provider = await shippingProviderRepository.getById(providerId);
+    const provider = await shippingProviderRepository.findSummaryById(providerId);
     if (!provider) {
       throw new NotFoundError("Provider not found");
     }

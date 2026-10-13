@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-10-03
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -93,6 +93,142 @@ Its lesson outlives it, and applies to any metered store: Blob meters **data tra
 the free tier an overrun *blocks* rather than bills — every product image goes blank, including your
 own ability to read the store, which is what makes exporting after the fact impossible. A row may
 still hold one of those dead URLs; [OPERATIONS.md](OPERATIONS.md) has the query and the remedy.
+
+## Marketplaces and feeds (nothing integrated yet)
+
+Checked 2026-09-29 while spiking `listing-schema`. Recorded because the four routes are four
+different kinds of thing, and the difference decides the order they are worth building in.
+
+- **A feed file at a URL serves Google and Meta together.** Both fetch a file on a schedule
+  rather than being pushed to, and Meta accepts XML in Google's own RSS namespace, so one
+  artefact feeds both. No approval, no credentials, no partner agreement — the cheapest
+  publishing route by a wide margin. Meta requires images of at least 500×500 and prefers
+  square, which `MEDIA_SURFACES.social` already produces. Google's Content API for Shopping
+  shuts down on 18 August 2026 and the Merchant API replaces it, but that affects programmatic
+  integrations only: a scheduled fetch of a hosted file is unaffected.
+- **Flipkart is self-service.** A registered seller creates an application in the Seller
+  Dashboard, receives an application id and secret, and takes a token through client
+  credentials. Listing management is publicly documented.
+- **Amazon is gated on a paid account.** The Selling Partner API requires a **Professional**
+  selling account; an Individual account cannot use it at all. After that a private developer
+  registration and a self-authorised draft application are enough — no public listing needed.
+- **Meesho has no public publishing API.** Catalogues go up through the supplier panel as a
+  per-category bulk template, with a quality check of roughly 72 hours. Third-party
+  integrators hold partner access; nothing is documented for us to use.
+- **ONDC is not a channel in this sense.** A seller does not publish to it: one either joins
+  the network as a seller participant speaking the Beckn protocol, or lists through one that
+  already has. For this platform that is a question about the platform, not about pushing one
+  product, and it belongs in its own decision.
+### What each platform asks for in a listing
+
+Read off thirty-four of the platforms' own bulk-upload templates on 2026-10-01, for the categories
+this store sells. The templates and the data extracted from them are in
+[listing-node-templates](../listing-node-templates/); this section is the conclusions. An earlier
+version of it, written from the published specifications alone on 2026-09-29, estimated a shared
+core that included colour and size. The templates disagreed, and what follows is measured rather
+than inferred.
+
+**Field counts are theatre; required counts are the constraint.** Amazon declares 390 fields
+across the ten product types in one workbook and requires 18, with 187 conditional on other
+answers. Flipkart declares 66 to 132 per vertical and requires 19 to 32. Meesho declares 35 to 84
+per category and requires 23 to 40, so **Meesho is the binding constraint on a listing form, not
+Amazon.** Flipkart encodes a field's requirement level as a cell *colour* rather than a value —
+blue mandatory, purple conditional, yellow recommended, green optional, grey filled by Flipkart —
+decoded against the legend each workbook carries on its own summary sheet.
+
+**The three-platform core is thirteen fields, and it is barely descriptive.** Present in every
+node on all three: the seller's own code, description, maximum retail price, stock, brand, images,
+tax code, country of origin, manufacturer, packer, importer, net weight, and a key grouping
+variants together. Colour and size are *not* in it. Nine of the thirteen are things a shop states
+once rather than per product, which is why they belong to the seller profile.
+
+**A field name agreeing is not its values agreeing — and that holds inside one platform.**
+Flipkart's own colour list differs per node: sixteen values in all eleven nodes that have one,
+nineteen more in only some. Its `Size` is three incompatible scales under one label — thirty-seven
+mixed age bands and letters for an abaya, five words for a mat, forty-five numbers for a ring.
+`Fabric` and `Material` are the same question asked of cloth and of everything else. Across
+platforms Google and Meta remain the closest pair, Meta accepting feeds in Google's namespace and
+still disagreeing on values: Google writes `in_stock`, Meta `in stock`; Google offers five age
+groups, Meta seven. Only a barcode, an HSN code and an ISO-2 country genuinely agree
+([ADR-0045](adr/0045-channel-mappings-are-versioned-data.md)).
+
+**A platform's category sometimes holds what another keeps in a field.** Flipkart has one
+`abaya-burqa` node with `Type` in {Abaya, Burqa, Naqab}; Meesho has four separate categories. Bags
+are the same — Flipkart splits `bag`, `hand-messenger-bag` and `sling-bag` with `Type` values
+inside each, Meesho splits Backpacks, Handbags and Cross-Body. The mapping is therefore
+many-to-many and must be allowed to resolve to nothing: `Tote` appears in the `Type` list of two
+Flipkart nodes, and a standalone hijab appears in none. Flipkart's `mat` node carries
+`Type = Prayer`, so a prayer mat is that node rather than a category.
+
+**Variant axes are declared per node and no two agree.** Flipkart: size for an abaya; capacity and
+colour for a bag; plating, size and colour for a ring; set and quantity for incense; brand size
+and brand colour for a trouser. An axis assumed in code would be wrong for most categories.
+
+**Sizes are asked for as measurements more often than as labels.** Meesho requires `Bust Size` and
+`Length Size` on an abaya and offers no size field at all on palazzos or trousers, where it asks
+`Length` instead. Across its nineteen nodes, twelve require a measurement, seven require none, and
+**none requires a size label without also requiring measurements.** Flipkart's `trouser` node
+resolves a size through Ideal For, then a `Qualifier` naming the scale — Regular, Number, Euro, UK,
+US, Kids — then the allowed value, so it treats "which scale" as its own field. `Free` is a
+permitted value on every category this store sells.
+
+**Checked against Google and Meta too, on 2026-10-03, because they publish first.** The
+vocabulary was derived from the three marketplaces' templates, and the shopfront channels are the
+ones that reach a buyer first — a feed file needs nobody's approval
+([ADR-0041](adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)). Google requires more
+of apparel than of any other category, and a single missing attribute is an immediate
+disapproval: `color`, `size`, `gender`, `age_group`, plus `item_group_id` on every variant.
+
+Eight of the ten are already carried. The interesting one is that **`Ideal For` answers two of
+Google's questions at once**: the marketplaces ask a single question whose values are Men, Women,
+Boys, Girls, Baby Boys, Baby Girls, Kids and Unisex, which Google splits into `gender`
+(male/female/unisex) and `age_group` (newborn/infant/toddler/kids/adult). So `age_group` is a
+mapping of an answer we already hold, not a fact we are missing — one canonical question, two
+channel fields, which is what the adapters are for.
+
+`size` is required for apparel and we derive rather than store it; `Free Size` is an accepted
+value and is what everything this store sells resolves to. `condition` is required only when a
+product is *not* new, so for this store it is a constant in the Google adapter rather than a
+product fact — it becomes one the day anything used or refurbished is sold.
+
+**Two gaps remain, both access rather than research: Meesho publishes no bakhoor or incense
+template in the set downloaded, and Flipkart's attar node was not exported. Everything else the
+Indian marketplaces keep behind a seller login, which is why the templates had to come from the
+owner's own accounts — the public Flipkart listing API is offer and logistics only, and Myntra the
+same shape. Meesho publishes no API schema but its templates carry a `Validation Sheet` holding
+every permitted value, which is the richest value source in the set: 185 distinct colours against
+Flipkart's 35. Its `Brand` field is optional and drawn from a per-category registry of brands
+already enrolled, so a shop's own brand must be registered with Meesho before it can be named. Amazon publishes the mechanism rather than the schemas:
+a JSON schema fetched per product type, whose stated required list is not the real one because
+conditional rules add requirements as attributes are filled.
+
+### What it takes to act for many sellers
+
+Checked 2026-09-29. The distinction that decides the cost is **acting for our own one account** versus
+**software many sellers each authorise against their own account**. The second is what a connector is,
+and it is a different licence class on every platform that has one.
+
+| Platform | Multi-seller | The gate |
+|---|---|---|
+| Google Merchant | Yes, two shapes | Self-serve. An OAuth verification review, 3–5 business days. Google names marketplaces as an eligible profile and recommends *account relationships with services*, a two-sided handshake where the merchant keeps their own account, over sub-account aggregation |
+| Flipkart | Yes, documented | A separate *Third Party Access* programme from the seller's own *Self Access*. Register at the partner portal, verification call within 72 hours. Sharing a seller's own credentials with a partner is a permanent ban |
+| Meta | Yes, the "tech provider" model | App Review plus Business Verification. Free, deterministic, rejection-prone. Until verified, other businesses cannot grant the permission at all |
+| Amazon | Yes, a *public* application | Solution Provider Portal registration: business registration number, government ID, a video identity call, a security questionnaire, and a **publicly reachable website describing the service**. Sellers must be on the **Professional** plan. Restricted roles touching buyer data add an architecture review and a security assessment measured in months |
+| Meesho | In practice only | No public API, no self-serve, no OAuth. An integrator is whitelisted by relationship, then each seller is enabled by email. A calendar dependency, not an engineering one |
+| Myntra | No programme found | Real public API docs, but per-seller shared secrets and no partner tier. Behind a curated brand approval of two to six weeks |
+| Ajio, Nykaa | No | No public developer programme. Per-seller username and password issued by the platform |
+
+The Amazon developer fee announced in November 2025 was **cancelled on 12 May 2026**; access is free
+again. Re-check before committing to a plan that depends on it.
+
+Two facts that shape the machinery rather than the paperwork. **Amazon pushes notifications only to an
+Amazon queue or event bus, never to a plain HTTP endpoint**, so consuming its order events means holding
+an AWS account and either polling that queue from our worker or bridging it back to an endpoint.
+**Flipkart posts to a URL we host**, signature-authenticated, but enabling it is a support ticket per
+seller that asks for a security test certificate for the receiving URL. Everything else polls.
+
+- **Myntra, Ajio and Nykaa** are invite-only partner programmes. Relevant to what this store
+  sells, worth a name in the vocabulary, not worth chasing.
 
 ## YouTube (product video)
 

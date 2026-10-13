@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { productsRepository } from "@server/catalog/product.repository";
+import { productsRepository } from "@server/catalog/product.read.repository";
 import { promotionService } from "@server/promotions/promotion.service";
 import { catalogueUnitPrice } from "@server/checkout/pricing";
 import {

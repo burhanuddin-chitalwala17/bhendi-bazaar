@@ -6,7 +6,7 @@
 
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
-import { orgListingDefaultsService } from "@server/catalog/org-listing-defaults.service";
+import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { listingDefaultsSchema } from "@/lib/validation/schemas/listing-defaults.schema";
 
 export const PUT = withOrg(async (request, scope) => {

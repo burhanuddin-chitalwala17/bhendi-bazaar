@@ -1,302 +1,349 @@
 /**
- * Seed data for Products
- * Note: image URLs will need to be updated after uploading to Vercel Blob
+ * The dev catalogue, shaped like the live one and answered like a real listing.
+ *
+ * Every fact and measurement below is a key the vocabulary actually permits, checked against the
+ * seeded `ListingValue` rows — a seed that invents answers would make the readiness gate agree
+ * with nothing and look correct while proving nothing.
+ *
+ * Three things here exist to make the whole chain reachable on a developer's machine:
+ *
+ * - **A rida answered in plain `nida`**, which Flipkart has no word for — it lists only "Nida
+ *   Matte". That is the unmapped-value worklist with something real in it.
+ * - **A masalla bag**, whose type is deliberately not sold on any channel, so the "decided
+ *   against" list is not empty either.
+ * - **One rida left half-answered**, because a catalogue where everything is complete never
+ *   shows what incomplete looks like.
  */
 
 import type { SeedProduct } from "./types";
 import { seedOrgs } from "./orgs.seed";
 
-// Helper function to randomly assign a org
-const getRandomOrg = (): string => {
-  const randomIndex = Math.floor(Math.random() * seedOrgs.length);
-  return seedOrgs[randomIndex].id;
-};
+const org = (n: number): string => seedOrgs[n % seedOrgs.length].id;
+
+const img = (colour: string, text: string) =>
+  `https://placehold.co/800x800/${colour}/ffffff.png?text=${encodeURIComponent(text)}`;
 
 export const seedProducts: SeedProduct[] = [
-  // ABAYAS CATEGORY (3 products)
+  // ── Ridas ────────────────────────────────────────────────────────────────────────────────
   {
-    id: "prod-1",
-    slug: "emerald-satin-abaya",
-    name: "Emerald Satin Abaya",
+    id: "prod-rida-1",
+    slug: "black-nida-rida-formal",
+    name: "Black Nida Rida — Formal",
     description:
-      "Luxurious satin cotton abaya in rich emerald green. Features elegant draping and a comfortable fit perfect for both everyday wear and special occasions. Comes with authentic Kutchhi belt detailing.\n\nCare: First wash dry cleaning recommended. No machine wash.",
+      "An occasion rida in matte nida with worked borders on the pardi. Falls straight without clinging.\n\nCare: dry clean only.",
     price: 420000,
     salePrice: 369000,
     currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-abayas",
-    tags: ["abaya", "evening", "satin", "emerald", "special-occasion"],
-    flags: ["FEATURED", "HERO", "ON_OFFER"],
-    images: [
-      "https://placehold.co/800x800/10b981/ffffff.png?text=Emerald+Abaya+1",
-      "https://placehold.co/800x800/10b981/ffffff.png?text=Emerald+Abaya+2",
-    ],
-    thumbnail: "https://placehold.co/800x800/10b981/ffffff.png?text=Emerald+Abaya",
-    // One seeded product carries video so the gallery's mixed case is reachable in dev
-    // without anyone having to paste a link first.
+    orgId: org(0),
+    categoryId: "cat-ridas-formal",
+    tags: ["rida", "formal", "nida"],
+    flags: ["FEATURED", "HERO"],
+    images: [img("111827", "Black Rida 1"), img("111827", "Black Rida 2")],
+    thumbnail: img("111827", "Black Rida"),
+    // One seeded product carries video so the gallery's mixed case is reachable in dev.
     video: "aqz-KE-bpKQ",
-    sizes: ["S", "M", "L", "XL"],
-    colors: ["Emerald Green", "Deep Teal"],
-    stock: 45,
-    sku: "ABY-EMR-001",
-    lowStockThreshold: 10,
-    weight: 0.4, // ⭐ Clothing weight
-  },
-  {
-    id: "prod-2",
-    slug: "classic-black-jilbab",
-    name: "Classic Black Jilbab",
-    description:
-      "Timeless black jilbab with fluid drape and minimalist design. Perfect for everyday comfort in the old city. Made from breathable fabric that keeps you cool in Mumbai's climate.",
-    price: 320000,
-    salePrice: 288000,
-    currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-abayas",
-    tags: ["jilbab", "everyday", "black", "classic", "breathable"],
-    flags: ["ON_OFFER"],
-    images: ["https://placehold.co/800x800/000000/ffffff.png?text=Black+Jilbab"],
-    thumbnail: "https://placehold.co/800x800/000000/ffffff.png?text=Black+Jilbab",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    colors: ["Jet Black"],
-    stock: 28,
-    sku: "JIL-BLK-001",
-    lowStockThreshold: 10,
-    weight: 0.35, // ⭐ Lighter fabric
-  },
-  {
-    id: "prod-3",
-    slug: "embroidered-maroon-abaya",
-    name: "Embroidered Maroon Abaya",
-    description:
-      "Stunning maroon abaya with intricate gold thread embroidery on the sleeves and hem. A statement piece that combines tradition with contemporary style. Perfect for weddings and festive occasions.",
-    price: 580000,
-    currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-abayas",
-    tags: ["abaya", "embroidered", "maroon", "wedding", "festive"],
-    flags: ["FEATURED"],
-    images: [
-      "https://placehold.co/800x800/800020/ffffff.png?text=Maroon+Abaya+1",
-      "https://placehold.co/800x800/800020/ffffff.png?text=Maroon+Abaya+2",
-    ],
-    thumbnail: "https://placehold.co/800x800/800020/ffffff.png?text=Maroon+Abaya",
-    sizes: ["M", "L", "XL"],
-    colors: ["Maroon", "Burgundy"],
     stock: 12,
-    sku: "ABY-MAR-001",
-    lowStockThreshold: 10,
-    weight: 0.5, // ⭐ Heavier due to embroidery
-  },
-
-  // ATTARS CATEGORY (3 products)
-  {
-    id: "prod-4",
-    slug: "royal-oud-attar",
-    name: "Royal Oud Attar",
-    description:
-      "Premium oud attar from the finest agarwood. Deep, woody fragrance with hints of musk and amber. Long-lasting scent that evolves throughout the day. Alcohol-free and skin-safe.\n\nSize: 12ml concentrated oil",
-    price: 240000,
-    salePrice: 192000,
-    currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-attars",
-    tags: ["attar", "oud", "woody", "premium", "long-lasting"],
-    flags: ["FEATURED", "HERO", "ON_OFFER"],
-    images: ["https://placehold.co/800x800/f59e0b/ffffff.png?text=Oud+Attar"],
-    thumbnail: "https://placehold.co/800x800/f59e0b/ffffff.png?text=Oud+Attar",
-    sizes: ["12ml"],
-    colors: ["Golden"],
-    stock: 65,
-    sku: "ATT-OUD-001",
-    lowStockThreshold: 15,
-    weight: 0.05, // ⭐ Small perfume bottle
+    kind: "rida",
+    facts: {
+      colour: "black",
+      material: "nida-matte",
+      pattern: "embroidered",
+      sleeveLength: "full-sleeves",
+      stitchType: "stitched",
+      audience: "women",
+      occasion: "formal",
+      care: "dry-clean-only",
+    },
+    measurements: { length: 54, bust: 40, waist: 38, hip: 42, shoulder: 15, sleeve: 22 },
   },
   {
-    id: "prod-5",
-    slug: "rose-musk-blend",
-    name: "Rose & Musk Blend",
-    description:
-      "Delicate blend of Bulgarian rose and white musk. Floral yet sophisticated fragrance perfect for daily wear. Gentle on skin and suitable for all occasions.",
-    price: 120000,
+    // Answered in plain `nida`, which Flipkart does not list. Readiness reports it and the
+    // register's worklist asks the owner once, for every product that shares the answer.
+    id: "prod-rida-2",
+    slug: "maroon-nida-rida-semi-formal",
+    name: "Maroon Nida Rida — Semi-formal",
+    description: "A lighter nida rida for a majlis or a visit. Plain pardi, no work.",
+    price: 310000,
     currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-attars",
-    tags: ["attar", "rose", "musk", "floral", "everyday"],
-    flags: [],
-    images: ["https://placehold.co/800x800/f59e0b/ffffff.png?text=Rose+Musk"],
-    thumbnail: "https://placehold.co/800x800/f59e0b/ffffff.png?text=Rose+Musk",
-    sizes: ["8ml", "12ml"],
-    colors: ["Rose Gold"],
-    stock: 0,
-    sku: "ATT-RSM-001",
-    lowStockThreshold: 10,
-    weight: 0.04, // ⭐ Small perfume bottle
-  },
-  {
-    id: "prod-6",
-    slug: "sandalwood-amber-attar",
-    name: "Sandalwood Amber Attar",
-    description:
-      "Warm and inviting blend of sandalwood and amber. Traditional fragrance with modern refinement. Perfect for evening wear and special occasions.",
-    price: 180000,
-    salePrice: 153000,
-    currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-attars",
-    tags: ["attar", "sandalwood", "amber", "warm", "evening"],
-    flags: ["ON_OFFER"],
-    images: [
-      "https://placehold.co/800x800/f59e0b/ffffff.png?text=Sandalwood+Amber",
-    ],
-    thumbnail:
-      "https://placehold.co/800x800/f59e0b/ffffff.png?text=Sandalwood+Amber",
-    sizes: ["12ml"],
-    colors: ["Amber"],
-    stock: 38,
-    sku: "ATT-SAN-001",
-    lowStockThreshold: 10,
-    weight: 0.05, // ⭐ Small perfume bottle
-  },
-
-  // JEWELLERY CATEGORY (3 products)
-  {
-    id: "prod-7",
-    slug: "gold-filigree-earrings",
-    name: "Gold Filigree Earrings",
-    description:
-      "Exquisite gold-toned filigree earrings featuring intricate traditional patterns. Lightweight despite their elaborate design. Perfect for weddings and festive celebrations.\n\nMaterial: Gold-plated brass with anti-tarnish coating",
-    price: 150000,
-    currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-jewellery",
-    tags: ["earrings", "gold", "filigree", "traditional", "wedding"],
+    orgId: org(0),
+    categoryId: "cat-ridas-semi-formal",
+    tags: ["rida", "semi-formal"],
     flags: ["FEATURED"],
-    images: [
-      "https://placehold.co/800x800/eab308/ffffff.png?text=Gold+Earrings+1",
-      "https://placehold.co/800x800/eab308/ffffff.png?text=Gold+Earrings+2",
-    ],
-    thumbnail: "https://placehold.co/800x800/eab308/ffffff.png?text=Gold+Earrings",
-    sizes: ["One Size"],
-    colors: ["Gold"],
-    stock: 22,
-    sku: "JWL-EAR-001",
-    lowStockThreshold: 8,
-    weight: 0.02, // ⭐ Very light jewelry
-  },
-  {
-    id: "prod-8",
-    slug: "emerald-stone-necklace",
-    name: "Emerald Stone Necklace",
-    description:
-      "Statement necklace adorned with emerald-green stones and gold detailing. Contemporary design inspired by Mughal jewelry. Adjustable chain length.",
-    price: 320000,
-    salePrice: 256000,
-    currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-jewellery",
-    tags: ["necklace", "emerald", "statement", "contemporary", "stones"],
-    flags: ["FEATURED", "ON_OFFER"],
-    images: [
-      "https://placehold.co/800x800/eab308/ffffff.png?text=Emerald+Necklace",
-    ],
-    thumbnail:
-      "https://placehold.co/800x800/eab308/ffffff.png?text=Emerald+Necklace",
-    sizes: ["Adjustable"],
-    colors: ["Gold & Emerald"],
+    images: [img("7f1d1d", "Maroon Rida")],
+    thumbnail: img("7f1d1d", "Maroon Rida"),
     stock: 8,
-    sku: "JWL-NCK-001",
-    lowStockThreshold: 10,
-    weight: 0.08, // ⭐ Heavier with stones
+    kind: "rida",
+    facts: {
+      colour: "maroon",
+      material: "nida",
+      pattern: "plain",
+      sleeveLength: "full-sleeves",
+      audience: "women",
+      occasion: "casual",
+    },
+    measurements: { length: 52, bust: 38, waist: 36, hip: 40, shoulder: 14, sleeve: 21 },
   },
   {
-    id: "prod-9",
-    slug: "pearl-jhumka-set",
-    name: "Pearl Jhumka Set",
-    description:
-      "Classic jhumka earrings with pearl drops. Traditional design that never goes out of style. Comes with matching tikka. Perfect for traditional attire.",
-    price: 220000,
+    // Deliberately half-answered: no material, no audience. A catalogue where everything is
+    // complete never shows what the incomplete band looks like.
+    id: "prod-rida-3",
+    slug: "cotton-rida-casual",
+    name: "Cotton Rida — Casual",
+    description: "An everyday cotton rida, cut for wearing all day.",
+    price: 185000,
     currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-jewellery",
-    tags: ["jhumka", "pearls", "traditional", "set", "classic"],
+    orgId: org(1),
+    categoryId: "cat-ridas-casual",
+    tags: ["rida", "casual", "cotton"],
     flags: [],
-    images: ["https://placehold.co/800x800/eab308/ffffff.png?text=Pearl+Jhumka"],
-    thumbnail: "https://placehold.co/800x800/eab308/ffffff.png?text=Pearl+Jhumka",
-    sizes: ["One Size"],
-    colors: ["Gold & Pearl"],
-    stock: 5,
-    sku: "JWL-JHM-001",
-    lowStockThreshold: 8,
-    weight: 0.03, // ⭐ Light jewelry set
+    images: [img("1e3a5f", "Cotton Rida")],
+    thumbnail: img("1e3a5f", "Cotton Rida"),
+    stock: 20,
+    kind: "rida",
+    facts: { colour: "dark-blue", pattern: "plain" },
+    measurements: { length: 52, bust: 38 },
+  },
+  {
+    id: "prod-rida-4",
+    slug: "ohbat-rida-plain",
+    name: "Ohbat Rida — Plain",
+    description: "Light and easy to move in, cut for ohbat.",
+    price: 165000,
+    currency: "INR",
+    orgId: org(1),
+    categoryId: "cat-ridas-ohbat",
+    tags: ["rida", "ohbat"],
+    flags: [],
+    images: [img("065f46", "Ohbat Rida")],
+    thumbnail: img("065f46", "Ohbat Rida"),
+    stock: 15,
+    kind: "rida",
+    facts: {
+      colour: "green",
+      material: "cotton",
+      pattern: "plain",
+      sleeveLength: "full-sleeves",
+      audience: "women",
+      occasion: "casual",
+    },
+    measurements: { length: 50, bust: 38, waist: 36, hip: 40, shoulder: 14, sleeve: 20 },
   },
 
-  // PRAYER ESSENTIALS CATEGORY (3 products)
+  // ── Bags ─────────────────────────────────────────────────────────────────────────────────
   {
-    id: "prod-10",
-    slug: "velvet-prayer-mat",
-    name: "Velvet Prayer Mat",
-    description:
-      "Premium velvet prayer mat with cushioned base for comfort during long prayers. Features beautiful Kaaba design. Includes matching carry bag for travel.\n\nSize: 110cm x 70cm",
-    price: 180000,
-    salePrice: 144000,
+    id: "prod-bag-1",
+    slug: "structured-handbag-black",
+    name: "Structured Handbag — Black",
+    description: "A structured handbag with a detachable strap and two compartments.",
+    price: 145000,
+    salePrice: 119000,
     currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-prayer",
-    tags: ["prayer-mat", "velvet", "travel", "cushioned", "kaaba"],
-    flags: ["FEATURED", "ON_OFFER"],
-    images: [
-      "https://placehold.co/800x800/0ea5e9/ffffff.png?text=Prayer+Mat+1",
-      "https://placehold.co/800x800/0ea5e9/ffffff.png?text=Prayer+Mat+2",
-    ],
-    thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff.png?text=Prayer+Mat",
-    sizes: ["110x70cm"],
-    colors: ["Emerald", "Maroon", "Navy Blue"],
-    stock: 42,
-    sku: "PRY-MAT-001",
-    lowStockThreshold: 10,
-    weight: 0.6, // ⭐ Prayer mat with cushioning
+    orgId: org(0),
+    categoryId: "cat-hand-bags",
+    tags: ["handbag", "black"],
+    flags: ["ON_OFFER"],
+    images: [img("581c87", "Handbag")],
+    thumbnail: img("581c87", "Handbag"),
+    stock: 10,
+    kind: "handbag",
+    facts: {
+      colour: "black",
+      material: "genuine-leather",
+      pattern: "plain",
+      closure: "zip",
+      strap: "detachable-strap",
+      compartments: 2,
+      waterResistant: false,
+      audience: "women",
+      occasion: "formal",
+    },
+    measurements: { length: 30, width: 12, height: 24 },
   },
   {
-    id: "prod-11",
-    slug: "wooden-tasbih-99-beads",
-    name: "Wooden Tasbih (99 Beads)",
-    description:
-      "Handcrafted tasbih made from premium sandalwood. 99 beads with divider markers. Smooth finish and pleasant natural fragrance. Comes in decorative box.",
-    price: 45000,
+    // A sling reaches a different Flipkart node from a handbag, and that node asks different
+    // fields — the case the per-node attribute key exists for.
+    id: "prod-bag-2",
+    slug: "sling-bag-tan",
+    name: "Sling Bag — Tan",
+    description: "A small cross-body sling for a phone, a purse and keys.",
+    price: 89000,
     currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-prayer",
-    tags: ["tasbih", "wooden", "sandalwood", "99-beads", "handcrafted"],
+    orgId: org(1),
+    categoryId: "cat-hand-bags",
+    tags: ["sling", "tan"],
     flags: [],
-    images: ["https://placehold.co/800x800/0ea5e9/ffffff.png?text=Tasbih"],
-    thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff.png?text=Tasbih",
-    sizes: ["Standard"],
-    colors: ["Natural Wood", "Dark Brown"],
-    stock: 78,
-    sku: "PRY-TSB-001",
-    lowStockThreshold: 20,
-    weight: 0.03, // ⭐ Wooden beads
+    images: [img("92400e", "Sling Bag")],
+    thumbnail: img("92400e", "Sling Bag"),
+    stock: 14,
+    kind: "sling",
+    facts: {
+      colour: "khaki",
+      material: "artificial-leather",
+      pattern: "plain",
+      strap: "non-detachable-strap",
+      audience: "women",
+      occasion: "casual",
+    },
+    measurements: { length: 20, width: 7, height: 16 },
+  },
+
+  // ── Attar and bakhoor ────────────────────────────────────────────────────────────────────
+  {
+    id: "prod-attar-1",
+    slug: "oud-attar-12ml",
+    name: "Oud Attar — 12ml",
+    description: "A deep oud attar, oil-based and alcohol-free. Lasts the day on cloth.",
+    price: 95000,
+    currency: "INR",
+    orgId: org(0),
+    categoryId: "cat-attars",
+    tags: ["attar", "oud"],
+    flags: ["FEATURED", "HERO"],
+    images: [img("b45309", "Oud Attar")],
+    thumbnail: img("b45309", "Oud Attar"),
+    stock: 30,
+    kind: "attar",
+    facts: { scentFamily: "oud", shelfLifeMonths: 36, packQuantity: 1 },
+    measurements: { capacity: 12 },
   },
   {
-    id: "prod-12",
-    slug: "quran-cover-embroidered",
-    name: "Embroidered Quran Cover",
-    description:
-      "Protective Quran cover with beautiful gold embroidery. Soft padded interior to protect your holy book. Zipper closure for secure storage.\n\nFits standard Quran sizes (25cm x 18cm)",
-    price: 65000,
+    id: "prod-attar-2",
+    slug: "rose-attar-6ml",
+    name: "Rose Attar — 6ml",
+    description: "Rose attar pressed from petals, light enough for every day.",
+    price: 52000,
     currency: "INR",
-    orgId: getRandomOrg(),
-    categoryId: "cat-prayer",
-    tags: ["quran-cover", "embroidered", "protective", "zipper"],
+    orgId: org(0),
+    categoryId: "cat-attars",
+    tags: ["attar", "rose"],
     flags: [],
-    images: ["https://placehold.co/800x800/0ea5e9/ffffff.png?text=Quran+Cover"],
-    thumbnail: "https://placehold.co/800x800/0ea5e9/ffffff.png?text=Quran+Cover",
-    sizes: ["Standard", "Large"],
-    colors: ["Green", "Maroon", "Navy"],
-    stock: 33,
-    sku: "PRY-QCR-001",
-    lowStockThreshold: 15,
-    weight: 0.15, // ⭐ Padded fabric cover
+    images: [img("be123c", "Rose Attar")],
+    thumbnail: img("be123c", "Rose Attar"),
+    stock: 25,
+    kind: "attar",
+    facts: { scentFamily: "rose", shelfLifeMonths: 24, packQuantity: 1 },
+    measurements: { capacity: 6 },
+  },
+  {
+    // Bakhoor is the nearest-fit case on both channels: Flipkart has only Incense Bricks, and
+    // Google files it under Incense though it is bought as a fragrance.
+    id: "prod-bakhoor-1",
+    slug: "bakhoor-chips-50g",
+    name: "Bakhoor Chips — 50g",
+    description: "Scented wood chips for the burner. Sandalwood base with a musk finish.",
+    price: 68000,
+    currency: "INR",
+    orgId: org(1),
+    categoryId: "cat-attars",
+    tags: ["bakhoor", "sandalwood"],
+    flags: ["FEATURED"],
+    images: [img("78350f", "Bakhoor")],
+    thumbnail: img("78350f", "Bakhoor"),
+    stock: 18,
+    kind: "bakhoor",
+    facts: { scentFamily: "sandalwood", shelfLifeMonths: 48, packQuantity: 1 },
+  },
+
+  // ── Masalla bags: the type the owner decided sells here only ─────────────────────────────
+  {
+    id: "prod-masalla-1",
+    slug: "ladies-masalla-bag-maroon",
+    name: "Ladies Masalla Bag — Maroon",
+    description: "A prayer set in one bag: masalla, topi and tasbih.",
+    price: 125000,
+    currency: "INR",
+    orgId: org(0),
+    categoryId: "cat-masalla",
+    tags: ["masalla", "prayer", "combo"],
+    flags: ["FEATURED"],
+    images: [img("9f1239", "Masalla Bag")],
+    thumbnail: img("9f1239", "Masalla Bag"),
+    stock: 22,
+    kind: "masalla-set",
+    facts: { contents: "Masalla, topi and tasbih", colour: "maroon", packQuantity: 3 },
+  },
+
+  // ── Bottom wear ──────────────────────────────────────────────────────────────────────────
+  {
+    // A palazzo reaches Flipkart's trouser node with Type = Palazzos, which is an exact match
+    // rather than a nearest fit — the second slot a channel gives you.
+    id: "prod-bottom-1",
+    slug: "black-palazzo",
+    name: "Black Palazzo",
+    description: "Wide-leg palazzo with an elasticated waist, cut to fall under a rida.",
+    price: 72000,
+    currency: "INR",
+    orgId: org(1),
+    categoryId: "cat-bottom-wear",
+    tags: ["palazzo", "black"],
+    flags: [],
+    images: [img("1f2937", "Palazzo")],
+    thumbnail: img("1f2937", "Palazzo"),
+    stock: 26,
+    kind: "palazzo",
+    facts: {
+      colour: "black",
+      material: "crepe",
+      pattern: "plain",
+      fit: "culottes",
+      waistRise: "mid-rise",
+      audience: "women",
+      occasion: "casual",
+    },
+    measurements: { length: 38, waist: 30 },
+  },
+
+  // ── Jewellery ────────────────────────────────────────────────────────────────────────────
+  {
+    id: "prod-ring-1",
+    slug: "silver-ring-plain",
+    name: "Silver Ring — Plain band",
+    description: "A plain sterling band, sized to Indian ring sizes.",
+    price: 185000,
+    currency: "INR",
+    orgId: org(0),
+    categoryId: "cat-jewellery",
+    tags: ["ring", "silver"],
+    flags: [],
+    images: [img("a16207", "Silver Ring")],
+    thumbnail: img("a16207", "Silver Ring"),
+    stock: 6,
+    kind: "ring",
+    facts: {
+      colour: "silver",
+      plating: "sterling-silver",
+      baseMaterial: "sterling-silver",
+      purity: "s-925",
+      audience: "women",
+      occasion: "casual",
+    },
+    measurements: { diameter: 17 },
+  },
+
+  // ── Prayer mats ──────────────────────────────────────────────────────────────────────────
+  {
+    // On Flipkart this is their `mat` node with Type = Prayer — exact, not a compromise.
+    id: "prod-mat-1",
+    slug: "velvet-janamaz-green",
+    name: "Velvet Janamaz — Green",
+    description: "A cotton-velvet janamaz with a woven mihrab, padded enough to kneel on.",
+    price: 98000,
+    currency: "INR",
+    orgId: org(1),
+    categoryId: "cat-prayer-mats",
+    tags: ["janamaz", "prayer-mat"],
+    flags: ["FEATURED"],
+    images: [img("166534", "Janamaz")],
+    thumbnail: img("166534", "Janamaz"),
+    stock: 16,
+    kind: "mat",
+    facts: {
+      colour: "green",
+      material: "velvet",
+      pattern: "embroidered",
+      shape: "rectangular",
+      packQuantity: 1,
+    },
+    measurements: { length: 110, width: 65 },
   },
 ];

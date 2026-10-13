@@ -1,8 +1,9 @@
 import { CreditCard, Mail, MapPin, Phone, User } from "lucide-react";
 
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatShortDate } from "@/lib/format";
 import { formatPhone } from "@server/shared/phone";
 import type { AdminOrderDetail } from "@server/checkout/admin.order.types";
+import { Money } from "@/components/shared/Money";
 
 /** Everything about an order that is only ever read: who, where, and what it came to. */
 export function OrderDetailAside({ order }: { order: AdminOrderDetail }) {
@@ -53,12 +54,12 @@ export function OrderDetailAside({ order }: { order: AdminOrderDetail }) {
         )}
         <div className="flex justify-between border-t pt-2 text-base font-semibold">
           <span>Grand total</span>
-          <span>{formatCurrency(order.grandTotal)}</span>
+          <span><Money paise={order.grandTotal} /></span>
         </div>
       </Card>
 
       <div className="space-y-3 rounded-card border border-border bg-card p-6 text-sm">
-        <Row label="Order date" value={order.createdAt.toLocaleDateString("en-IN")} />
+        <Row label="Order date" value={formatShortDate(order.createdAt)} />
         <Row label="Payment method" value={order.paymentMethod || "—"} />
         {order.paymentId && (
           <div className="flex justify-between text-xs">

@@ -1,6 +1,7 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { PrismaClient } from "@prisma/client";
 import type { Adapter, AdapterUser } from "next-auth/adapters";
+import { accountService } from "@server/identity/account.service";
 
 /**
  * PrismaAdapter with `createUser` overridden.
@@ -17,17 +18,9 @@ export function bhendiPrismaAdapter(prisma: PrismaClient): Adapter {
     createUser: async (data: Omit<AdapterUser, "id"> & { id?: string }) => {
       const { image, name, email } = data;
 
-      const user = await prisma.user.create({
-        data: {
-          name,
-          email,
-          // signIn() rejects any Google profile whose email_verified is not true, so
-          // anything reaching createUser holds a provider-verified address.
-          emailVerified: new Date(),
-          isEmailVerified: true,
-          profile: { create: { profilePic: image ?? null } },
-        },
-      });
+      // signIn() rejects any Google profile whose email_verified is not true, so
+      // anything reaching createUser holds a provider-verified address.
+      const user = await accountService.createVerifiedOAuthAccount({ name, email, image });
 
       return { ...user, image: image ?? null } as AdapterUser;
     },

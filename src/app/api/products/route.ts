@@ -25,7 +25,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET(request: Request) {
   try {
-    const { offset, handle, category, q, offers, sort } =
+    const { offset, handle, category, q, offers, hero, sort } =
       productPageParams.parse(
         Object.fromEntries(new URL(request.url).searchParams),
       );
@@ -50,6 +50,7 @@ export async function GET(request: Request) {
         categorySlug: category,
         search: q,
         offerOnly: offers === "1",
+        heroOnly: hero === "1",
       },
       { sort, offset, limit: PRODUCT_PAGE_SIZE },
     );

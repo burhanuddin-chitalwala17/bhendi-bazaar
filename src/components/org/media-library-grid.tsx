@@ -17,12 +17,14 @@ import { VideoPlayer } from "@/components/product/video-player";
 import { MediaLibraryPicker } from "@/components/product/media-library-picker";
 import { LoadMore } from "@/components/shared/load-more";
 import { useMediaLibraryPages } from "@/hooks/product/useMediaLibraryPages";
-import { readApiError } from "@/lib/api-error";
+import { useAsyncData } from "@/hooks/core/useAsyncData";
+import { useMutation } from "@/hooks/core/useMutation";
+import { orgMediaApiClient } from "@/components/org/orgMediaApiClient";
 import { CropDialog } from "@/components/product/crop-dialog";
 import { ImproveDialog } from "@/components/product/improve-dialog";
 import type { CropTransform } from "@/lib/image/crop-transform";
 import { formatDay, formatDuration } from "@/lib/format";
-import { describeUses, type MediaAssetDetailDto, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
+import { describeUses, type MediaAssetDto, type MediaUseDto } from "@server/catalog/media-library.types";
 import type { Pagination } from "@server/shared/pagination";
 
 interface MediaLibraryGridProps {
@@ -66,76 +68,69 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
   const router = useRouter();
   const { assets, total, loading, done, error, loadMore, remove } = useMediaLibraryPages({ orgId, query, initial });
   const [open, setOpen] = useState<MediaAssetDto | null>(null);
-  const [detail, setDetail] = useState<MediaAssetDetailDto | null>(null);
-  const [isRetiring, setIsRetiring] = useState(false);
   /** The photograph being reframed, if any. The one it came from stays exactly as it is (spec R8a). */
   const [reframing, setReframing] = useState<MediaAssetDto | null>(null);
-  const [isCropping, setIsCropping] = useState(false);
   /** The photograph being improved (image-enhancement spec R2). No slot here: the library has none. */
   const [improving, setImproving] = useState<MediaAssetDto | null>(null);
   const [showUses, setShowUses] = useState(false);
   const [isPosterPickerOpen, setPosterPickerOpen] = useState(false);
-  const [isSavingPoster, setIsSavingPoster] = useState(false);
+
+  const openId = open?.id ?? null;
+  const loaded = useAsyncData((signal) => orgMediaApiClient.detail(orgId, openId!, signal), {
+    enabled: openId !== null,
+    refetchDependencies: [orgId, openId],
+    onError: (cause) => toast.error(cause.message),
+  });
+  // Matched by id, so a reply for the asset opened before this one is never shown as this one's.
+  const detail = loaded.data && loaded.data.asset.id === openId ? loaded.data : null;
   const uses = detail?.uses ?? [];
 
-  const show = async (asset: MediaAssetDto) => {
+  const show = (asset: MediaAssetDto) => {
+    loaded.reset();
     setOpen(asset);
-    setDetail(null);
     setShowUses(false);
-    const response = await fetch(`/api/org/${orgId}/media/${asset.id}`);
-    if (!response.ok) {
-      toast.error((await readApiError(response)).message);
-      return;
-    }
-    setDetail((await response.json()) as MediaAssetDetailDto);
   };
 
   // The photograph that stands in for a video, or null for the frame the worker cut (video-hosting
   // spec R8). The sheet shows the answer at once; the page re-reads so the tile follows.
+  const posterMutation = useMutation(
+    ({ video, posterAssetId }: { video: MediaAssetDto; posterAssetId: string | null }) =>
+      orgMediaApiClient.setPoster(orgId, video.id, posterAssetId),
+  );
   const savePoster = async (video: MediaAssetDto, posterAssetId: string | null) => {
-    setIsSavingPoster(true);
+    let saved: MediaAssetDto;
     try {
-      const response = await fetch(`/api/org/${orgId}/media/${video.id}/poster`, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ posterAssetId }),
-      });
-      if (!response.ok) {
-        toast.error((await readApiError(response)).message);
-        return;
-      }
-      setOpen((await response.json()) as MediaAssetDto);
-      setPosterPickerOpen(false);
-      toast.success(posterAssetId === null ? "The video shows its own frame again" : "Poster changed");
-      router.refresh();
-    } finally {
-      setIsSavingPoster(false);
+      saved = await posterMutation.mutate({ video, posterAssetId });
+    } catch {
+      return;
     }
+    setOpen(saved);
+    setPosterPickerOpen(false);
+    toast.success(posterAssetId === null ? "The video shows its own frame again" : "Poster changed");
+    router.refresh();
   };
 
   // A refusal is said, not greyed out: a disabled button with no reason is a dead end (spec R7, A3).
   // A crop of something already stored is cut where its bytes already are, and arrives as its own
   // picture beside the one it came from (trd D6a).
-  const reframe = async (asset: MediaAssetDto, transform: CropTransform) => {
-    setIsCropping(true);
-    try {
-      const response = await fetch(`/api/org/${orgId}/media/${asset.id}/crop`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(transform),
-      });
-      if (!response.ok) {
-        toast.error((await readApiError(response)).message);
-        return;
-      }
-      toast.success("Cropped. The photo you started from is untouched.");
-      setReframing(null);
-      setOpen(null);
-      router.refresh();
-    } finally {
-      setIsCropping(false);
-    }
-  };
+  const cropMutation = useMutation(
+    ({ asset, transform }: { asset: MediaAssetDto; transform: CropTransform }) =>
+      orgMediaApiClient.crop(orgId, asset.id, transform),
+    {
+      successMessage: "Cropped. The photo you started from is untouched.",
+      onSuccess: () => {
+        setReframing(null);
+        setOpen(null);
+        router.refresh();
+      },
+    },
+  );
+  const reframe = (asset: MediaAssetDto, transform: CropTransform) =>
+    void cropMutation.mutate({ asset, transform }).catch(() => {});
+
+  const retireMutation = useMutation((asset: MediaAssetDto) => orgMediaApiClient.retire(orgId, asset.id), {
+    successMessage: "Image retired",
+  });
 
   const retire = async (asset: MediaAssetDto) => {
     if (detail === null) {
@@ -147,21 +142,19 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
       return;
     }
     if (!confirm("Retire this image? It leaves the library now and its file is deleted after thirty days.")) return;
-    setIsRetiring(true);
     try {
-      const response = await fetch(`/api/org/${orgId}/media/${asset.id}/retire`, { method: "POST" });
-      if (!response.ok) {
-        toast.error((await readApiError(response)).message);
-        return;
-      }
-      toast.success("Image retired");
-      setOpen(null);
-      remove(asset.id);
-      router.refresh();
-    } finally {
-      setIsRetiring(false);
+      await retireMutation.mutate(asset);
+    } catch {
+      return;
     }
+    setOpen(null);
+    remove(asset.id);
+    router.refresh();
   };
+
+  const isSavingPoster = posterMutation.isLoading;
+  const isCropping = cropMutation.isLoading;
+  const isRetiring = retireMutation.isLoading;
 
   if (assets.length === 0 && done) {
     return (
@@ -188,7 +181,7 @@ export function MediaLibraryGrid({ orgId, initial, query }: MediaLibraryGridProp
             <Button
               type="button"
               variant="ghost"
-              onClick={() => void show(asset)}
+              onClick={() => show(asset)}
               className="relative aspect-square h-auto w-full overflow-hidden rounded-card bg-muted p-0"
               aria-label={isVideoKind(asset.kind) ? KIND_LABELS[asset.kind] : `Photo ${asset.width ?? "?"} by ${asset.height ?? "?"}`}
             >

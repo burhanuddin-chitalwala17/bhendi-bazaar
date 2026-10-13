@@ -27,41 +27,21 @@ const READ_CALL = /\b(?:prisma|tx|db)\.product\.(?:findMany|findFirst|findUnique
  * `deliberate` — reads archived products on purpose; the reason is the note.
  */
 const CENSUS: Record<string, { reads: number; note: string }> = {
+  "server/catalog/product.read.repository.ts": {
+    reads: 23,
+    note: "filtered — `checkoutFacts` prices an order's lines inside its transaction and deliberately sees archived rows: `assertNotArchived` is the refusal and it runs after the stock reservation (sale-gates.ts). Otherwise the storefront's own reads carry AVAILABLE and FROM_ACTIVE_ORG together, categoryIdsForOrg and isOnSale (which decides whether a product may be reviewed) included, plus archivedAmong and fromWithdrawnOrgAmong (which back the two sale gates and must therefore see the rows they refuse) and two ownership/pricing lookups that must see every row. isAvailable (wishlist's save) spreads AVAILABLE: an archived product cannot be newly saved, and wishes already saved are left alone so a restore brings them back. Two are deliberate: listForStockCheck selects archivedAt so an archived product comes back unavailable by name, letting the cart say which line is the problem, and listForAllocation is a parcel preview — the order transaction is what refuses, so it must still resolve the row it is asked about. getFamilySiblings filters archivedAt: null — a variant taken off sale does not appear in the switcher",
+  },
   "server/catalog/product.repository.ts": {
-    reads: 18,
-    note: "filtered — the storefront's own reads carry AVAILABLE and FROM_ACTIVE_ORG together, categoryIdsForOrg and isOnSale (which decides whether a product may be reviewed) included, plus archivedAmong and fromWithdrawnOrgAmong (which back the two sale gates and must therefore see the rows they refuse) and two ownership/pricing lookups that must see every row",
-  },
-  "server/catalog/admin.product.repository.ts": {
-    reads: 11,
-    note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code",
-  },
-  "server/catalog/bulk/bulk-product.service.ts": {
-    reads: 2,
-    note: "deliberate — an import checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product",
+    reads: 16,
+    note: "the org portal: the list takes a shelf, the detail read sees archived products so they can be restored, the stats split the two figures, the copy picker lists the available shelf only, and the categories-sold-by read (which keys the listing defaults) excludes archived products so a shelf the org left stops asking for a tax code. The bulk import's two reads are deliberate — it checks SKUs and slugs against every row, archived included, so it cannot reuse a reserved code or silently restore a product; the third, `listLiveSkus`, asks the opposite question and so excludes archived rows: a live SKU names the product a sheet row updates, and an archived one must never be restored by an import. `countWhere` and `listFactsWhere` serve the fact correction, which deliberately reaches archived products too: an archived product keeps the answer it inherited and could be restored carrying a value its brand has since corrected; the preview and the update share one predicate so they cannot disagree (inherited-facts D5)",
   },
   "server/analytics/dashboard.repository.ts": {
-    reads: 2,
-    note: "filtered — inventory and top-products are about what is sellable; the revenue and order aggregates beside them are history and touch no product row",
+    reads: 1,
+    note: "filtered — sellable inventory only; the revenue and order aggregates beside it are history and touch no product row",
   },
-  "server/analytics/widgets.ts": {
+  "server/analytics/widgets.repository.ts": {
     reads: 1,
     note: "filtered — sellable inventory only",
-  },
-  "src/app/api/products/check-stock/route.ts": {
-    reads: 1,
-    note: "deliberate — selects archivedAt so an archived product comes back unavailable by name, which is what lets the cart say which line is the problem",
-  },
-  "src/app/api/checkout/allocate/route.ts": {
-    reads: 1,
-    note: "deliberate — a parcel preview; the order transaction is what refuses, so this must still resolve the row it is asked about",
-  },
-  "server/wishlist/wishlist.service.ts": {
-    reads: 1,
-    note: "filtered — an archived product cannot be newly saved; wishes already saved are left alone so a restore brings them back",
-  },
-  "server/checkout/order.service.ts": {
-    reads: 1,
-    note: "deliberate — prices the lines from the catalogue inside the transaction; assertNotArchived is the refusal, and it runs after the stock reservation",
   },
   "server/catalog/org.repository.ts": {
     reads: 1,
@@ -70,6 +50,18 @@ const CENSUS: Record<string, { reads: number; note: string }> = {
   "server/cart/cart.repository.ts": {
     reads: 1,
     note: "deliberate — drops lines whose product no longer exists; filtering here would delete a cart line for a withdrawn product, and a removed line cannot come back on restore",
+  },
+  "server/listing/product-family.repository.ts": {
+    reads: 2,
+    note: "filtered — families include AVAILABLE so only sellable products appear in a family listing",
+  },
+  "server/listing/product-readiness.repository.ts": {
+    reads: 1,
+    note: "filtered — readiness is computed for available products only",
+  },
+  "server/listing/product-type.repository.ts": {
+    reads: 1,
+    note: "filtered — type resolution includes available products only",
   },
 };
 

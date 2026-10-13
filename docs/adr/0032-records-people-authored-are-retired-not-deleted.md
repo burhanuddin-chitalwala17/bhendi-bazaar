@@ -1,7 +1,7 @@
-# ADR-0032 — A record a person authored is retired, never deleted
+# ADR-0032: A record a person authored is retired, never deleted
 
-- **Status:** Accepted
 - **Date:** 2026-09-23
+- **Status:** Accepted
 - **Supersedes:** —
 - **Related:** [ADR-0020](0020-money-bearing-records-never-cascade.md), [ADR-0029](0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0021](0021-audit-trail-never-fails-the-action.md), [product-reviews](../specs/product-reviews/spec.md)
 

@@ -7,6 +7,7 @@ import { ProductsContainer } from "@/components/product/console/productsList";
 import { ProductsTableSkeleton } from "@/components/product/console/productsList/components/ProductsTableSkeleton";
 import type { Metadata } from "next";
 import { resolvePageNumber, resolvePageSize } from "@server/shared/pagination";
+import { SectionHeader } from "@/components/shared/SectionHeader";
 
 // ⚡ ISR - Revalidate every 5 minutes
 export const revalidate = 300;
@@ -40,13 +41,7 @@ export default async function ProductsPage({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">
-            Every organisation&apos;s catalogue, for support — products are
-            managed in each org&apos;s own portal
-          </p>
-        </div>
+        <SectionHeader as="h1" title="Products" description="Every organisation's catalogue, for support — products are managed in each org's own portal" />
       </div>
 
       {/* ⚡ Suspense for streaming */}

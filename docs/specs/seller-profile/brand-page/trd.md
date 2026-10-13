@@ -1,6 +1,6 @@
 # TRD — brand-page
 
-- **Status:** 🔨 In progress — PR-182, PR-184 (a and c of a–c)
+- **Status:** ✅ Implemented — PR-182, PR-184, PR-208 (2026-09-28)
 - **Domain:** catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-09-27

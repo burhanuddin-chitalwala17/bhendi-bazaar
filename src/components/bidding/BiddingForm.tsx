@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormInput, FormSelect } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { readApiError } from "@/lib/api-error";
+import { biddingApiClient } from "@/components/bidding/biddingApiClient";
 import { formatCurrency, paiseToRupees } from "@/lib/format";
 import {
   biddingFormSchema,
@@ -34,8 +34,6 @@ interface BiddingFormProduct {
   id: string;
   name: string;
   pricePaise: number;
-  sizes: string[];
-  colors: string[];
   unitsOnHand: number;
 }
 
@@ -62,23 +60,13 @@ export function BiddingForm({
     schema: biddingFormSchema,
     defaultValues: {
       productId: product.id,
-      size: product.sizes[0],
-      color: product.colors[0],
       startAt: opensIn,
       endAt: closesIn,
       startingBid: paiseToRupees(product.pricePaise),
       maxIncrease: 1000,
       quickBids: [50, 100],
     } as never,
-    submit: async (data) => {
-      const response = await fetch(action, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw await readApiError(response);
-      return response.json();
-    },
+    submit: (data) => biddingApiClient.create(action, data),
     successMessage: "Bidding is set up — share the link",
     onSuccess: () => {
       router.push(returnTo);
@@ -144,38 +132,7 @@ export function BiddingForm({
         )}
       </Card>
 
-      {(product.sizes.length > 0 || product.colors.length > 0) && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {product.sizes.length > 0 && (
-            <FormSelect
-              label="Size being auctioned"
-              required
-              error={errors.size?.message}
-              {...register("size")}
-            >
-              {product.sizes.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </FormSelect>
-          )}
-          {product.colors.length > 0 && (
-            <FormSelect
-              label="Colour being auctioned"
-              required
-              error={errors.color?.message}
-              {...register("color")}
-            >
-              {product.colors.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </FormSelect>
-          )}
-        </div>
-      )}
+
 
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput

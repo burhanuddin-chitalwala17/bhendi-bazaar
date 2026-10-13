@@ -17,8 +17,19 @@ import type {
 import { CopyFromPicker } from "./CopyFromPicker";
 
 import { PageHeader } from "@/components/shared/page-shell";
+import type { ProductTypeRecord } from "@server/listing/product-type.types";
 interface ProductAddContainerProps {
-  categories: { id: string; name: string; parentId?: string | null; shotList?: unknown }[];
+  categories: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    shotList?: unknown;
+    productType?: unknown;
+  }[];
+  /** The question sets and the answers for the category rendered with — read by the page. */
+  productTypes?: ProductTypeRecord[];
+  listingValues?: Record<string, Array<{ key: string; label: string; orgId: string | null }>>;
+  families?: Array<{ id: string; name: string }>;
   orgs: OrgSummary[];
   locations: LocationOption[];
   /** The product this one is being copied from, already scoped to the org. */
@@ -31,6 +42,9 @@ interface ProductAddContainerProps {
 
 export function ProductAddContainer({
   categories,
+  productTypes,
+  listingValues,
+  families,
   orgs,
   locations,
   copySource,
@@ -73,13 +87,6 @@ export function ProductAddContainer({
         </div>
       )}
 
-      {/* Messages */}
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>{error}</p>
-        </div>
-      )}
       {successMessage && (
         <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
           <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -87,12 +94,13 @@ export function ProductAddContainer({
         </div>
       )}
 
-      {/* Keyed on the source: defaults are read once, so picking another product
-          must remount the form rather than leave the previous copy in place. */}
       <ProductForm
         key={copySource?.id ?? "blank"}
         copySource={copySource}
         categories={categories}
+        productTypes={productTypes}
+        listingValues={listingValues}
+        families={families}
         orgs={orgs}
         locations={locations}
         onSubmit={createProduct}
@@ -101,6 +109,13 @@ export function ProductAddContainer({
         readOnly={false}
         uploadEndpoints={uploadEndpoints}
       />
+
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p>{error}</p>
+        </div>
+      )}
     </div>
   );
 }
