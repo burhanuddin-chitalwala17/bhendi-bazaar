@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { CheckCircle2, Mail, MessageCircle, X } from "lucide-react";
+import { CheckCircle2, FileText, Mail, MessageCircle, X } from "lucide-react";
 
 import {
   Sheet,
@@ -122,6 +123,21 @@ export function ContactSheet({
                 </span>
               </span>
             </Button>
+
+            {/* The footer that carries these links is hidden on a phone (store-policies D4). */}
+            <Link
+              href="/policies"
+              onClick={() => handleOpenChange(false)}
+              className={OPTION_ROW}
+            >
+              <FileText className="size-5 shrink-0 text-muted-foreground" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">Store policies</span>
+                <span className="block text-2xs text-muted-foreground">
+                  Shipping, returns, refunds and privacy
+                </span>
+              </span>
+            </Link>
           </div>
         )}
 

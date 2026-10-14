@@ -28,7 +28,7 @@ import { RAZORPAY_NOTES_ORDER_KEY } from "@server/payments/notes";
  * happened first, and an attempt still moving reports `in-flight` and is left alone
  * (checkout-abandonment R2/D1). The old hour existed to compensate for not asking.
  */
-const ABANDONED_HOLD_MINUTES = 15;
+export const ABANDONED_HOLD_MINUTES = 15;
 
 export class PaymentService {
   /**

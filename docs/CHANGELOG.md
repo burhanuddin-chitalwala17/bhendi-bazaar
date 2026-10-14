@@ -34,6 +34,19 @@
   `bhendi_bazaar_ci` (only the known `channel-registry` index failure), `lint:boundary`, `docs:check`.
   Reviewed in a fresh context; its findings are fixed here. No migration.
 
+## 2026-10-14 — Store policies page (store-policies)
+
+- `/policies`: one page, twelve anchored sections — shipping, cancellation, returns (7 days),
+  refunds (7 business days), payments, privacy, terms, reviews, bidding, grievances, contact. Copy
+  describes the manual process where the store has no feature (cancel, return, refund).
+- `LEGAL` in `src/lib/config.ts` holds the legal name, address, jurisdiction and grievance officer;
+  unset values render as `[TO FILL: …]`. `ABANDONED_HOLD_MINUTES` exported so the page states the
+  real hold.
+- Reached from the footer (desktop) and a third row in Contact us (phone); added to the sitemap.
+- No test: the page is copy. Checked by rendering `/policies` on a dev server — all twelve anchors
+  present, the hold, return window, India-only shipping, no-COD line and `[TO FILL]` markers shown.
+  Ran `tsc --noEmit`, `tests/unit` (all), `lint:boundary`, `docs:check`.
+
 ## 2026-10-14 — Google and Meta product feeds (shopfront-feeds)
 
 - `GET /feeds/google.xml` and `GET /feeds/meta.xml`: RSS 2.0 with the `g:` namespace, built on

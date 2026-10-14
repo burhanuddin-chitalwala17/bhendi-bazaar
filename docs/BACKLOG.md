@@ -156,6 +156,7 @@ A new phase, added 2026-09-19. Phases 1–9 built a marketplace and gave its sel
 | Spec | Requirement | Status |
 |---|---|---|
 | [seo](specs/seo/) | Every public page describes itself, every product is machine-readable at the price it is actually sold for, and every URL answers with the status that is true of it | 📝 Draft |
+| [store-policies](specs/store-policies/) | One public page states how the store ships, cancels, returns, refunds and handles data, in words that match what it actually does | 📝 Draft |
 
 Sequenced after Phase 9 rather than before it, because storefronts add a public URL namespace and the rules for what gets indexed should be settled once, across both. The overlap is deliberate and bounded: [storefront-discovery](specs/org-storefront/storefront-discovery/) owns `/store/<handle>`, [seo](specs/seo/) owns the marketplace, and the two state the same rules for their own surfaces rather than one importing the other.
 

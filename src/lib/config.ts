@@ -16,6 +16,21 @@ export const SUPPORT_WHATSAPP = {
 } as const;
 
 /** The opening line a buyer arrives in WhatsApp with, theirs to edit before sending. */
+/**
+ * Who the store legally is, as India's E-Commerce Rules 2020 require a marketplace to publish
+ * (store-policies R4). A `[TO FILL: …]` value is shown as written, so a gap cannot pass for done.
+ */
+export const LEGAL = {
+  entityName: "[TO FILL: registered business name]",
+  address: "[TO FILL: registered business address]",
+  jurisdiction: "Mumbai, Maharashtra",
+  grievanceOfficer: {
+    name: "[TO FILL: grievance officer name]",
+    designation: "Grievance Officer",
+    email: "[TO FILL: grievance email]",
+  },
+} as const;
+
 export const SUPPORT_WHATSAPP_MESSAGE = `Hello ${APP_NAME}, I need some help.`;
 /**
  * Brand assets ship with the app, in `public/brand/` — they are not user content.

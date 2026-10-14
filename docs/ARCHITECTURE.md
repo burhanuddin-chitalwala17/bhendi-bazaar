@@ -11,7 +11,7 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 
 ```
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
-            ├── (main)  storefront    12 pages     ──▶ Cloudflare R2   (images and video — ADR-0028, ADR-0039)
+            ├── (main)  storefront    13 pages     ──▶ Cloudflare R2   (images and video — ADR-0028, ADR-0039)
             ├── (admin) console       33 pages     ──▶ Razorpay         (payments)
             ├── (org)   seller portal 21 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
