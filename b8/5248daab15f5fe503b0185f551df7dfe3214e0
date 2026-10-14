@@ -1,0 +1,14 @@
+src/lib/config.ts
+  h_b67201bb58135f 24-25,28,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "b85248daab15f5fe503b0185f551df7dfe3214e0",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
