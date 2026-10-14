@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-07
+- **Verified:** 2026-10-14
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -82,6 +82,8 @@ Order creation answers **409** for a sold-out item since PR-104, where it previo
 `rejection` is a shape, not a string — `{ code, reason, message, shortfallPaise? }` — because the four reasons a code does nothing are acted on differently by the UI. **A code that would take nothing off is a rejection, never a success**: reporting one as applied means the buyer only finds out on the payment screen.
 
 Order creation gains an optional **`couponCode`** — a string, normalised to upper case, and the only promotional input a request may carry (PR-67). Discount amounts, percentages and promotion ids are server-owned in exactly the way `paymentStatus` is; the amount is computed inside the order transaction from the persisted offer.
+
+**Shipping is a signed quote, not a figure.** Each rate from `POST /api/shipping/rates` carries `quote`, a server signature over the courier, the charge in paise, the origin and destination pincodes, the billable weight and a 30-minute expiry. Order creation's `shippingGroups[].selectedRate` is `{ quote }` and nothing else (2026-10-14): the charge, courier and provider are read from the signature and checked against the parcel the server allocated, so an edited price, a quote for another address or weight, or an expired one is refused with a 409.
 
 **`salePrice` is no longer a column.** It survives as a field name on the product and cart wire shapes, where it now means *the offer-adjusted price*, resolved server-side through the one function checkout prices with (ADR-0018). The name is retained because every consumer already reads it as "the reduced price"; renaming it is a follow-up, and until then the comment on each producer says what it is. Nothing accepts it inbound except `ProductFormInput`, where it is the seller's markdown and is stored as an offer rather than on the product.
 

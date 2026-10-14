@@ -102,16 +102,10 @@ const shipmentItemSchema = z.object({
   color: z.string().trim().min(1).max(50).optional(),
 });
 
-// Selected shipping rate schema
+// The chosen rate is its signed quote alone: a price, courier or provider beside it would be a
+// figure the browser chose (Invariant 1). The server reads all of them from the signature.
 const selectedRateSchema = z.object({
-  providerId: z.string().min(1, "Provider ID required"),
-  providerName: z.string().min(1, "Provider name required"),
-  courierName: z.string().min(1, "Courier name required"),
-  courierCode: z.string().optional(),
-  rate: z.number().int().min(0, "Shipping rate cannot be negative"), // paise
-  estimatedDays: z.number().int().min(0),
-  mode: z.string().min(1),
-  etd: z.string().optional(),
+  quote: z.string().min(1).max(4000),
 });
 
 // Shipping group schema

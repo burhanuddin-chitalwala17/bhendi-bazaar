@@ -148,7 +148,17 @@ export function useMultiShippingRates(): UseMultiShippingRatesReturn {
           })
         );
         
-        setGroups(updatedGroups);
+        // Fresh quotes after a refused payment keep the courier the buyer picked
+        // when it is still offered, rather than silently switching them to the default.
+        setGroups((previous) =>
+          updatedGroups.map((group) => {
+            const picked = previous.find((p) => p.groupId === group.groupId)?.selectedRate;
+            const same = picked
+              ? group.rates.find((r) => r.courierCode === picked.courierCode && r.courierName === picked.courierName)
+              : undefined;
+            return same ? { ...group, selectedRate: same } : group;
+          }),
+        );
       } finally {
         setIsLoading(false);
       }

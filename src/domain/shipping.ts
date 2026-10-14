@@ -21,7 +21,9 @@ export interface ShippingRate {
   courierCode?: string; // Provider's internal courier code (e.g., "459245934")
 
   // Pricing
-  rate: number; // Shipping cost in INR
+  rate: number; // Shipping cost in paise
+  /** The server's signed quote for this rate; checkout sends it back instead of the figures. */
+  quote: string;
 
   // Delivery info
   estimatedDays: number; // Estimated delivery days

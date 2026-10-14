@@ -10,6 +10,30 @@
 
 ## Entries
 
+## 2026-10-14 — Shipping is charged from a signed quote, never from the request [CONTRACT]
+
+- **Invariant 1 violation fixed.** Checkout charged `shippingGroups[].selectedRate.rate` as the
+  browser sent it, rejecting only a negative number; an edited request could ship for ₹0. Done as a
+  defect fix under ADR-0002, with no TRD: the rule existed, the code did not obey it.
+- `POST /api/shipping/rates` adds `quote` to every rate and to `defaultRate`: an HMAC
+  (`server/shipping/rate-quote.service.ts`, key derived from `NEXTAUTH_SECRET` for this purpose
+  only) over courier, provider, charge in paise, origin and destination pincode, billable weight and
+  a 30-minute expiry. A stateless signed quote is the field's usual answer (carrier rate handles at
+  checkout); re-quoting the carrier inside the order transaction was rejected — it holds row locks
+  across an HTTP call and can charge a price the buyer never saw.
+- Order creation's `selectedRate` is `{ quote }` only; the old fields are stripped. Checkout reads
+  courier, provider and charge from the signature and requires its origin, destination and weight
+  to equal the parcel it allocated. An edited, expired or wrong-parcel quote is a 409.
+- A refused payment re-quotes the checkout's shipping, keeping the buyer's courier where it is
+  still offered, so an expired quote does not refuse every retry.
+- Mutation-tested, each red then restored: signature check removed (unit + integration);
+  destination check removed (unit + integration); expiry, weight checks removed (unit); checkout
+  passing a fixed pincode instead of the address (integration); the key ignoring the secret (unit).
+- Tests: `tests/unit/rate-quote.test.ts` (6), `tests/integration/order-transaction.test.ts` (+2,
+  fixture now signs its quote). Ran `tsc --noEmit`, `tests/unit` (all), `tests/integration` against
+  `bhendi_bazaar_ci` (only the known `channel-registry` index failure), `lint:boundary`, `docs:check`.
+  Reviewed in a fresh context; its findings are fixed here. No migration.
+
 ## 2026-10-14 — Google and Meta product feeds (shopfront-feeds)
 
 - `GET /feeds/google.xml` and `GET /feeds/meta.xml`: RSS 2.0 with the `g:` namespace, built on

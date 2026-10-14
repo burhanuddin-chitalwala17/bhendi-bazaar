@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — shipping domain, current state
 
-- **Verified:** 2026-10-05
+- **Verified:** 2026-10-14
 - **Covers:** `server/shipping/**`. Product-wide architecture is [`/docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
 Describes what exists now. Update after a structural change, never before.
@@ -14,7 +14,7 @@ Describes what exists now. Update after a structural change, never before.
               │        │                      │
    strategy selection  └── ShippingRateCache   └── (future carriers register here)
               │
-        selected rate ──▶ checkout (as an input to pricing, never a write)
+        selected rate ──▶ checkout, as a signed quote (an input to pricing, never a write)
 ```
 
 Status updates arrive independently, by webhook, and are normalised before they touch the database.
@@ -33,6 +33,7 @@ Status updates arrive independently, by webhook, and are normalised before they 
 | `repositories/shipment.repository.ts` | The one module that reaches the `Shipment` table ([ADR-0003](../../docs/adr/0003-one-repository-per-aggregate.md)). |
 | `shipment-status.service.ts` | The single writer of `Shipment.status`, through a transition table; a terminal event that returns goods asks catalog's stock commands to restock, once. |
 | `tracking.service.ts` | What the admin tracking form and the carrier webhooks read and record; an order's delivered state is checkout's to write, so it is asked for. |
+| `rate-quote.service.ts` | Signs each quoted rate with its origin, destination, billable weight and a 30-minute expiry; checkout charges only what a valid signature vouches for, for the parcel it allocated itself (Invariant 1). Stateless: no quote table, no carrier call inside the order transaction. |
 | `billable-weight.ts` | What a parcel is billed as: real weights summed, settled to grams, rounded up to the next kilogram, floor 1 kg ([product-weight-and-rates](../../docs/specs/product-weight-and-rates/)). |
 | `services/connection.types.ts` | The shapes the connection flow exchanges. |
 | `providers/_placeholder/` | The mock booking — see *Quoting vs booking*. |

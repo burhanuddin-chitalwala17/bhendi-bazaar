@@ -12,16 +12,8 @@ export interface ShippingGroupPayload {
   fromCity: string;
   fromState: string;
   items: Array<{ productId: string; quantity: number }>;
-  selectedRate: {
-    providerId: string;
-    providerName: string;
-    courierName: string;
-    courierCode?: string;
-    rate: number; // paise
-    estimatedDays: number;
-    mode?: string;
-    etd?: string;
-  };
+  /** The chosen rate's signed quote; the server charges what it signed, not what the page shows. */
+  selectedRate: { quote: string };
 }
 
 export interface CreateOrderWithShipmentsInput {

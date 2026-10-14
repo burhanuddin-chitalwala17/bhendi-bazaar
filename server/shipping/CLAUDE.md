@@ -1,6 +1,6 @@
 # CLAUDE.md — shipping domain
 
-- **Verified:** 2026-10-05
+- **Verified:** 2026-10-14
 - **Covers:** `server/shipping/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC, the seven Project Invariants, and the conventions index. This file covers what applies only to the **shipping** domain.
@@ -24,6 +24,7 @@ Shipping owns everything between "a customer has an address" and "a parcel is mo
 - **Carrier credentials are encrypted at rest** and never leave the server — every read that answers a request is `ShippingProviderSummary`, and `tests/unit/provider-dto.test.ts` fails a select that widens it. A response that includes `authToken`, `accountInfo`, or an auth error violates the projection rule in [CONTRACTS.md](../../docs/CONTRACTS.md). Use an explicit `select`.
 - **A carrier's status vocabulary is normalised on entry, and an unmapped one is reported rather than guessed.** `utils/statusNormalizer.ts` maps a provider's strings into `SHIPMENT_STATUS` and returns `null` when it cannot — the caller then leaves the shipment where it is and keeps the raw wording, because a wrong status is worse than an unknown one: only the unknown one gets looked at. Adding a carrier is a table in that file ([shipment-lifecycle](../../docs/specs/shipment-lifecycle/)).
 - **`Shipment.status` has exactly one writer**, `shipment-status.service.ts`, and the transition table is the guard. One recorded exception: the fulfilment pipeline's `"confirmed"`/`"failed"` booking outcomes (`repositories/shipment.repository.ts`) predate the table and are removed by [shipping-fulfilment](../../docs/specs/shipping-fulfilment/). That is what gives "cancel only before pickup" and "never move backwards" from one mechanism, and makes a retried or late webhook a no-op instead of a parcel walking backwards. A literal written straight to the column is how that column came to hold three vocabularies at once.
+- **A rate reaches checkout only as a signed quote** (`rate-quote.service.ts`). The rates route signs it for an origin, destination and billable weight; checkout verifies it against the parcel it allocated. A rate figure in a request is never charged.
 - **Weight comes from the persisted shipment**, not recomputed at call time, so what is booked matches what was quoted and charged.
 - **Every external call has a timeout and a bounded, idempotent retry.** A retry that can produce a second parcel is worse than a failure. `server/shared/retry.ts` provides the mechanism; idempotency is the caller's responsibility.
 - **Webhooks are verified before they are trusted, and fail loudly.** Returning 2xx on a payload you could not match is forbidden — see the reasoning in [ADR-0005](../../docs/adr/0005-payment-state-server-only.md), which exists because a silently-succeeding webhook hid a broken payment path for months.

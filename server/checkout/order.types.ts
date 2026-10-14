@@ -156,17 +156,8 @@ export interface ShippingGroupInput {
   /** Unpriced on purpose: the server prices every line from the catalogue (Invariant 1). */
   items: Array<{ productId: string; quantity: number; size?: string; color?: string }>;
 
-  // Selected shipping rate
-  selectedRate: {
-    providerId: string;
-    providerName: string;
-    courierName: string;
-    courierCode?: string;
-    rate: number;
-    estimatedDays: number;
-    mode?: string;
-    etd?: string;
-  };
+  /** The signed quote of the chosen rate; the server reads courier and charge from it, nothing else. */
+  selectedRate: { quote: string };
 }
 
 export interface CreateOrderWithShipmentsInput {

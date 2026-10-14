@@ -81,6 +81,16 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
     }
   }, [selectedAddress?.pincode, checkoutItems.length, fetchAllRates]);
 
+  // A refused payment may be an expired shipping quote (30 minutes) or a changed price; either
+  // way the next attempt needs fresh quotes, or every retry is refused the same way.
+  useEffect(() => {
+    if (paymentError && selectedAddress && checkoutItems.length > 0) {
+      fetchAllRates(checkoutItems, selectedAddress.pincode);
+    }
+    // Only a new error re-quotes; the basket and address effects above cover the rest.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentError]);
+
   // Validation logic - MUST be called before any returns
   const validationErrors = useMemo(() => {
     const errors: string[] = [];

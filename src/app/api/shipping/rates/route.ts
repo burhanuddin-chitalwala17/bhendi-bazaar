@@ -14,6 +14,7 @@ import {
 import { z } from "zod";
 import { postalCodeSchema } from "@/lib/validation/schemas/common.schemas";
 import { billableWeightKg } from "@server/shipping/billable-weight";
+import { signRateQuote } from "@server/shipping/rate-quote.service";
 
 // Validation schema
 const getRatesSchema = z.object({
@@ -74,11 +75,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Each rate carries a signed quote for exactly this origin, destination and weight: the quote,
+    // not the figures beside it, is what checkout charges (Invariant 1).
+    const scope = {
+      fromPincode: validated.fromPincode,
+      toPincode: validated.toPincode,
+      billableWeightKg: rateRequest.weight,
+    };
+    const rates = response.rates.map((rate) => ({ ...rate, quote: signRateQuote(rate, scope) }));
+
     // Return best rates (one per delivery day group)
     return NextResponse.json({
       success: true,
-      rates: response.rates, // Array of best rates (one per delivery day)
-      defaultRate: response.rates[0], // First one is fastest/cheapest
+      rates, // Array of best rates (one per delivery day)
+      defaultRate: rates[0], // First one is fastest/cheapest
       fromPincode: response.fromPincode,
       toPincode: response.toPincode,
       metadata: response.metadata,

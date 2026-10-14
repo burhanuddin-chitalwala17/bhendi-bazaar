@@ -116,7 +116,7 @@ export function useCheckoutPayment() {
                 color: item.color || undefined,
               }),
             ),
-            selectedRate: group.selectedRate,
+            selectedRate: { quote: group.selectedRate.quote },
           };
         }),
         displayedGrandTotal: orderData.totals.grandTotal,

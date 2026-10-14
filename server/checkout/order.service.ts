@@ -18,6 +18,8 @@ import {
   recordBooking,
   recordBookingFailure,
 } from "@server/shipping/shipment-status.service";
+import { billableWeightKg } from "@server/shipping/billable-weight";
+import { verifyRateQuote } from "@server/shipping/rate-quote.service";
 import type {
   CreateOrderWithShipmentsInput,
   ServerOrderWithShipments,
@@ -259,10 +261,17 @@ export class OrderService {
             0
           );
           const parcelItemsTotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+          const location = locationInfo.get(parcel.orgAddressId) as NonNullable<ReturnType<typeof locationInfo.get>>;
           return {
             orgAddressId: parcel.orgAddressId,
-            location: locationInfo.get(parcel.orgAddressId) as NonNullable<ReturnType<typeof locationInfo.get>>,
-            rate: group.selectedRate,
+            location,
+            // The charge is what the server quoted for this origin, address and weight, read
+            // from its own signature — never a figure the request carried (Invariant 1).
+            rate: verifyRateQuote(group.selectedRate.quote, {
+              fromPincode: location.address.pincode,
+              toPincode: input.address.pincode,
+              billableWeightKg: billableWeightKg(weight),
+            }),
             parcel,
             lines,
             weight,
@@ -624,17 +633,9 @@ export class OrderService {
         // No price check: items arrive unpriced and are priced from the catalogue.
       }
 
-      // Validate shipping rate selection
-      if (!group.selectedRate) {
+      // What it charges is read from the quote's signature, inside the transaction.
+      if (!group.selectedRate?.quote) {
         throw new DomainError(`Shipping group ${group.groupId} has no selected rate`);
-      }
-
-      if (!group.selectedRate.providerId || !group.selectedRate.courierName) {
-        throw new DomainError(`Invalid shipping rate for group ${group.groupId}`);
-      }
-
-      if (group.selectedRate.rate < 0) {
-        throw new DomainError("Shipping rate cannot be negative");
       }
     }
 

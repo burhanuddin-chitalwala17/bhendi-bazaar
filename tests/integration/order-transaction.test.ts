@@ -17,9 +17,13 @@ import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import type { CreateOrderWithShipmentsInput } from "@server/checkout/order.types";
 import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 import { OutOfStockError } from "@server/shared/domain-error";
+import { billableWeightKg } from "@server/shipping/billable-weight";
+import { signRateQuote } from "@server/shipping/rate-quote.service";
 
 
 const TEST_MOBILE = "9000000031";
+/** Paise. What the fixture's signed quote charges, and so what the expected total adds. */
+const QUOTED_SHIPPING = 5000;
 
 const address = {
   id: "test-address",
@@ -59,6 +63,7 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
   });
 
   const TEST_PREFIX = "order-tx-test-";
+  const PRODUCT_WEIGHT_KG = 0.5;
 
   /**
    * Three products stocked at ONE location, created here rather than found in the seed.
@@ -106,7 +111,7 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
           description: "fixture",
           price: spec.price,
           thumbnail: "https://example.invalid/fixture.webp",
-          weight: 0.5,
+          weight: PRODUCT_WEIGHT_KG,
           categoryId: category.id,
           orgId: location.orgId,
           stockLocations: { create: { orgAddressId: location.id, quantity: options.stock ?? 100 } },
@@ -133,12 +138,25 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
             fromCity: location.address.city,
             fromState: location.address.state,
             items: lines,
+            // Signed for exactly this parcel, as the rates route signs it (Invariant 1).
             selectedRate: {
-              providerId: provider.id,
-              providerName: provider.name,
-              courierName: "Test Courier",
-              rate: 5000,
-              estimatedDays: 3,
+              quote: signRateQuote(
+                {
+                  providerId: provider.id,
+                  providerName: provider.name,
+                  courierName: "Test Courier",
+                  rate: QUOTED_SHIPPING,
+                  estimatedDays: 3,
+                  mode: "surface",
+                },
+                {
+                  fromPincode: location.address.pincode,
+                  toPincode: address.pincode,
+                  billableWeightKg: billableWeightKg(
+                    specs.reduce((sum, spec) => sum + PRODUCT_WEIGHT_KG * spec.quantity, 0),
+                  ),
+                },
+              ),
             },
           },
         ],
@@ -169,7 +187,7 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
       (sum, item) => sum + (prices.get(item.productId) ?? 0) * item.quantity,
       0
     );
-    return assembleOrderTotals([{ itemsTotal, shippingRate: group.selectedRate.rate }]).grandTotal;
+    return assembleOrderTotals([{ itemsTotal, shippingRate: QUOTED_SHIPPING }]).grandTotal;
   }
 
   async function createOrder(input: CreateOrderWithShipmentsInput) {
@@ -244,6 +262,34 @@ describe.skipIf(!isDisposableDb)("createOrderWithShipments (local seeded db)", (
       expect(item.unitPrice, `unitPrice for ${item.productId}`).toBe(catalogue.get(item.productId));
       expect(Number.isInteger(item.unitPrice), "money is integer paise (ADR-0004)").toBe(true);
     }
+  });
+
+  it("charges the shipping the server quoted, and refuses a quote edited in the request (Invariant 1)", async () => {
+    const { input } = await buildInput();
+    const order = await createOrder(input);
+    const shipment = await prisma.shipment.findFirstOrThrow({
+      where: { orderId: order.id },
+      select: { shippingCost: true },
+    });
+    expect(shipment.shippingCost).toBe(QUOTED_SHIPPING);
+
+    // The browser rewrites the price inside the quote and keeps the signature.
+    const { input: edited } = await buildInput();
+    const [body, signature] = edited.shippingGroups[0].selectedRate.quote.split(".");
+    const free = { ...JSON.parse(Buffer.from(body, "base64url").toString()), rate: 0 };
+    edited.shippingGroups[0].selectedRate.quote =
+      `${Buffer.from(JSON.stringify(free)).toString("base64url")}.${signature}`;
+    await expect(
+      orderService.createOrderWithShipments({ ...edited, displayedGrandTotal: 0 }),
+    ).rejects.toThrow(/Shipping options changed/);
+  });
+
+  it("refuses a genuine quote for another delivery address (Invariant 1)", async () => {
+    const { input } = await buildInput();
+    const elsewhere = { ...input, address: { ...input.address, pincode: "110001" } };
+    await expect(
+      orderService.createOrderWithShipments({ ...elsewhere, displayedGrandTotal: 0 }),
+    ).rejects.toThrow(/Shipping options changed/);
   });
 
   it("stays within its statement budget", async () => {
