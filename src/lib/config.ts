@@ -21,13 +21,13 @@ export const SUPPORT_WHATSAPP = {
  * (store-policies R4). A `[TO FILL: …]` value is shown as written, so a gap cannot pass for done.
  */
 export const LEGAL = {
-  entityName: "[TO FILL: registered business name]",
-  address: "[TO FILL: registered business address]",
+  entityName: "Bhendi-Bazaar.com",
+  address: "204 Najmi Building, Bhoirwadi, Dombivli (east), Thane, Maharashtra,India. 421201",
   jurisdiction: "Mumbai, Maharashtra",
   grievanceOfficer: {
-    name: "[TO FILL: grievance officer name]",
+    name: "Burhanuddin Chitalwala",
     designation: "Grievance Officer",
-    email: "[TO FILL: grievance email]",
+    email: "burhanuddinchital25151@gmail.com",
   },
 } as const;
 
