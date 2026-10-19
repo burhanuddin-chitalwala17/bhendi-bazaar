@@ -1,7 +1,7 @@
 # Tracker
 
 - **Created:** 2026-10-07
-- **Updated:** 2026-10-09
+- **Updated:** 2026-10-15
 - **Source:** Platform audit (full sweep of buyer, seller, admin surfaces)
 
 Status key: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` on hold / parked / merged
@@ -603,7 +603,7 @@ F-019 → F-015. F-003, F-007, F-009, F-010, F-022, F-023, F-025 slot in between
 - **Business reason:** Cheapest channel: a feed file, no orders coming back.
 - **Owner setup:** Google Merchant Center and Meta Commerce Manager, both with domain verification. Decide one platform account vs one per seller (shops share one domain, so likely one).
 - **What it needs:** Feed with brand, condition, availability, price, image, gender, age group, colour, size, `item_group_id` (needs F-006), refreshed on a schedule. Gated by F-004.
-- **Status:** `[ ]`
+- **Status:** `[x]` — [shopfront-feeds](specs/shopfront-feeds/) implemented 2026-10-14
 
 
 
@@ -611,11 +611,13 @@ F-019 → F-015. F-003, F-007, F-009, F-010, F-022, F-023, F-025 slot in between
 
 - **Priority:** Tier 3
 - **Surface:** Seller, Admin
-- **Business reason:** "List once, sell everywhere." **The base is channel-neutral** for Flipkart, Amazon and Meesho; Flipkart is first only because it is quickest.
+- **Business reason:** "List once, sell everywhere." **The base is channel-neutral** for Flipkart, Amazon and Meesho. Built together with F-014 (owner, 2026-10-15).
 - **What it needs:** Channel-neutral connector seam (credentials, listing push, order import, status), then the Flipkart adapter: seller authorisation, listing push through channel mappings, order import, labels. Sellers pushed to a marketplace must have a GSTIN.
-- **Owner setup now:** apply for Flipkart third-party API access — approval is the long pole. Flipkart has a sandbox.
-- **Depends on:** F-004, F-006, channel-connectors spec
-- **Status:** `[ ]`
+- **Owner setup:** done 2026-10-15 — Flipkart Partner Services Network approval; third-party app created, credentials in env, redirect `https://bhendi-bazaar.com/api/channels/flipkart/callback`. A sandbox is **not** confirmed in current docs.
+- **Plan (locked 2026-10-20):** [marketplace-integration](specs/marketplace-integration/), six subfeatures in order — channel-connectors, channel-import, product-merge, channel-listings, inventory-sync, marketplace-publish — with every decision in its [decisions.md](specs/marketplace-integration/decisions.md). F-014 and F-019 are delivered by the same subfeatures. API behaviour is in [INTEGRATIONS.md](INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do).
+- **Known limits:** the public API cannot create a product (lists against an existing FSN only; new products go up by the seller's template); Flipkart does not say which seller authorised; location ids come from an unpublished API. Catalogue-creation access requested of Flipkart, unanswered.
+- **Depends on:** F-004, F-006
+- **Status:** `[~]` — partner access done; roadmap locked; channel-connectors UX stage next
 
 
 
@@ -624,7 +626,9 @@ F-019 → F-015. F-003, F-007, F-009, F-010, F-022, F-023, F-025 slot in between
 - **Priority:** Tier 3
 - **Surface:** Seller, Admin
 - **What it needs:** SP-API registration, per-seller auth, an adapter on the F-013 base.
-- **Status:** `[-]` — parked until F-012 and F-013 are done end to end (owner, 2026-10-09)
+- **Owner setup:** done 2026-10-15 — public developer approved (after an appeal adding a written incident response plan); app client created in Draft with Product Listing, Pricing, Inventory and Order Tracking, no restricted roles. Redirects `https://bhendi-bazaar.com/api/channels/amazon/callback` and the `dev.` equivalent.
+- **Known limits:** 25 seller authorisations until the app is listed on the Appstore (required of public apps; 3–4 week review). Sellers must re-authorise every 365 days. Orders API v0 is removed 27 March 2027, so order import targets v2026-01-01. Notifications need AWS, so orders are polled. New products need a GTIN or a brand exemption. No Amazon category mappings exist yet.
+- **Status:** `[~]` — unparked by owner 2026-10-15; delivered by the marketplace-integration subfeatures with F-013 (Amazon end to end first, Q4)
 
 
 
@@ -670,8 +674,9 @@ F-019 → F-015. F-003, F-007, F-009, F-010, F-022, F-023, F-025 slot in between
 - **Surface:** Seller
 - **Business reason:** A sale on one channel must reduce stock everywhere, or overselling causes cancellations and marketplace penalties. **Channel-neutral, separate from F-013.**
 - **What it needs:** Stock events (sale, cancel, return, restock) from any channel propagate to all connected channels through the job queue (ADR-0038), with retries. Needs order import from each channel even without reporting. **Channel returns restock us:** only when received in good condition; RTO (undelivered) and customer returns are different events.
+- **Approach (locked 2026-10-20, see [decisions](specs/marketplace-integration/decisions.md)):** one quantity on the master, identical on every platform, no buffer (Q24); push the absolute quantity on every change; poll orders every 5 minutes (needs the scheduler's one-hour floor lowered, Q30); cancellations before dispatch restock (Q38); a daily resync finds differences, quantity corrected and the rest settled by the seller (Q31, Q39, Q40); an oversold sale is recorded, not refused (Q32).
 - **Depends on:** F-013 base
-- **Status:** `[ ]`
+- **Status:** `[ ]` — subfeature 5 of [marketplace-integration](specs/marketplace-integration/)
 
 
 

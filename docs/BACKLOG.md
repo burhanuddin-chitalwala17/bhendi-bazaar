@@ -187,9 +187,13 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | product-form/bulk-sheet | One sheet for several product types at once, Amazon's shape rather than Flipkart's one-per-node; permitted values as dropdowns; **creates and updates by SKU**, so an existing catalogue is fixed in one upload rather than one form at a time | ✅ Implemented — PR-248, PR-251, PR-252 (2026-10-04) |
 | [channel-registry](specs/channel-registry/) | Channels classed by where the sale completes; category, attribute and value mappings as versioned data; readiness answered before publishing rather than after a rejection, advising and never gating | ✅ Implemented — PR-255…PR-267 (2026-10-04) |
 | [shopfront-feeds](specs/shopfront-feeds/) | One feed file at a URL that Google Shopping and Meta both fetch. First real publishing, and it needs approval from nobody | ✅ Implemented — 2026-10-14 |
-| channel-connectors | Per-seller authorisation and encrypted credentials — the foundation publishing, orders and reporting all share | planned |
-| marketplace-publish | Listings pushed under the shop's own account, Flipkart first as the most accessible real API | planned |
-| inventory-sync | Marketplace orders ingested and stock reconciled across every channel. On a subscription this is the product, not a late phase | planned |
+| [marketplace-integration](specs/marketplace-integration/) | Overview: one master product per item, one stock figure, Flipkart and Amazon run from here. Six subfeatures below, in order; decisions in its decisions.md | 📝 Draft — 2026-10-20 |
+| [marketplace-integration/channel-connectors](specs/marketplace-integration/channel-connectors/) | Connect an Amazon or Flipkart account by consent and see its health. The trial of ADR-0061 | 📝 Draft — UX stage next |
+| marketplace-integration/channel-import | Every listing on a connected marketplace arrives in an inbox; exact-SKU matches link themselves | planned |
+| marketplace-integration/product-merge | The owner decides which products are the same, whose content wins, and the real quantity | planned |
+| marketplace-integration/channel-listings | Each platform's listing on its own screen, filled from the master, editable except the strict fields | planned |
+| marketplace-integration/inventory-sync | A sale or cancellation anywhere moves one stock figure; daily resync finds differences. On a subscription this is the product, not a late phase | planned |
+| marketplace-integration/marketplace-publish | Publish from the platform listing screen; status comes back. Flipkart waits on a new-product API | planned |
 | channel-reporting | What sold where, per channel and consolidated, each figure naming the channels it covers and when each last reported | planned |
 | instagram-post | A post draft generated only on explicit intent, replaceable, regenerable, skippable; manual share first. Separate from the Meta catalogue, which is a shopfront feed | planned |
 | subscriptions | One flat price per shop, no tiers and no per-seat. Independent of the line above; needed before anyone is charged | planned |

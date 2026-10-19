@@ -516,7 +516,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 | Concern | Provider | Notes |
 |---|---|---|
 | Hosting | **Vercel** | Project `bhendi-bazaar`; deployed from GitHub Actions, not the Git integration — see [Deploy](#deploy) |
-| Domain | **GoDaddy** (registrar) | `bhendi-bazaar.com`; DNS points at Vercel |
+| Domain | **GoDaddy** (registrar), **Cloudflare** (DNS) | `bhendi-bazaar.com`; nameservers at Cloudflare, records there point at Vercel. Add any DNS record in Cloudflare, never GoDaddy |
 | Database | **Prisma Postgres** (`db.prisma.io`), **Mumbai region** | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story. Anything that talks to it constantly — the worker of [worker-foundation](specs/worker-foundation/) — is placed in the same region |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
 | Redis (rate limiting) | **Upstash** — *not currently wired* | Intended provider, via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*`. No live code reads it |

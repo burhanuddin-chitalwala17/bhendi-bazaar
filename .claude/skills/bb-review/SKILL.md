@@ -213,6 +213,8 @@ git diff $RANGE | grep -nE 'useForm\(|NextResponse\.json\(\s*\{\s*error|error\.(
 - **`[MIGRATION]` flag** if `prisma/migrations/` gained a file.
 - **Tests for changed logic.** No exception. If the change touches an Invariant, the test is the deliverable — see [TESTING.md](../../../docs/TESTING.md) for the 100% targets.
 - **A TRD** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
+- **UX followed** ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)). For each screen the diff adds or changes, open the feature's `ux.md`: every state in its matrix has code that renders it (empty, loading, error, refused and the rest), and the user-facing strings match the copy deck. A missing state is a finding; so is a screen absent from `ux.md`.
+- **Scope held.** Work no `R`, `A` or `D` id covers is a finding, as is a decision the code made that `decisions.md` does not record.
 - **`ARCHITECTURE.md` updated** only if structure changed — and *after* the change, never as a plan.
 - **`DEPENDENCIES.md` row** if a package was added.
 

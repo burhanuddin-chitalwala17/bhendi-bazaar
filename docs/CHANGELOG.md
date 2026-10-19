@@ -10,6 +10,34 @@
 
 ## Entries
 
+## 2026-10-18 — SDLC gains a scope cut, a decision log and a UX stage (ADR-0061)
+
+- New cycle: spike → spec → **UX** → TRD → build → review. Recorded in
+  [ADR-0061](adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md),
+  with one line in CLAUDE.md's conventions index and the cycle block rewritten.
+- `/bb-sdlc spec-start` now cuts a feature to one outcome, with a **Scope** section split into In
+  and Later, and opens `decisions.md` (append-only: Q id, answer, who decided, why). The spec
+  template's "Out of scope" becomes Scope plus Q ids for open questions. The TRD's Gates list,
+  previously pasted into its Packages section, is put back.
+- New `/bb-sdlc ux-start`: journeys, screen inventory, a state matrix for every screen (first use
+  through phone, tablet and desktop), copy deck, phone-first prototype and the owner's dated sign-off.
+- `/bb-build` refuses open decisions and UI without a signed-off `ux.md`, and its acceptance report
+  walks every state. `/bb-review` and `pr-finish` check screens against `ux.md` and scope against
+  the ids. `/bb-brainstorm` turns options into open Qs and parks anything beyond its question.
+- docs/README.md and docs/specs/README.md describe the two new files. Docs only; `docs:check` ran.
+
+## 2026-10-15 — Worker machine bans repeated SSH failures (fail2ban)
+
+- `infra/worker/provision.sh` gains `intrusion_prevention`: fail2ban's `sshd` jail on the systemd
+  journal (Ubuntu 24.04's sshd does not write `auth.log`), banning through ufw so the firewall stays
+  one rule set — 5 failures in 10 minutes earns a 1-hour ban.
+- Why now: the Amazon SP-API developer profile attests to intrusion detection and prevention; the
+  machine had a firewall and key-only SSH but nothing watching for repeated attempts.
+- Applied to the live worker 2026-10-15 by running only this step (not the whole script, which would
+  reset ufw and overwrite the deployed `compose.yml`): fail2ban 1.0.2-3ubuntu0.1 active, the `sshd`
+  jail reading the journal, and its first ban already a ufw `REJECT` rule; worker container still
+  healthy. No test covers the provisioning script; `bash -n` checks its syntax.
+
 ## 2026-10-14 — Shipping is charged from a signed quote, never from the request [CONTRACT]
 
 - **Invariant 1 violation fixed.** Checkout charged `shippingGroups[].selectedRate.rate` as the

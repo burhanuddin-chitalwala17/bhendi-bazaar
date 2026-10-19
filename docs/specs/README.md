@@ -1,8 +1,8 @@
 # Specs
 
-- **Verified:** 2026-09-25
+- **Verified:** 2026-10-18
 
-Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach) and a `trd.md` (technical approach and decisions, no code), plus any supporting artifacts.
+Feature-based specs. **One folder per feature**, `kebab-case`, named for the feature — no numbering. Each holds a `spec.md` (requirements and product approach), a `decisions.md` (every decision, open or made), a `ux.md` when it has UI, and a `trd.md` (technical approach, no code), plus any supporting artifacts.
 
 This is the home for per-feature detail. The phased status map is [../BACKLOG.md](../BACKLOG.md); decisions are in [../adr/](../adr/).
 
@@ -12,6 +12,9 @@ This is the home for per-feature detail. The phased status map is [../BACKLOG.md
 - **`spec.md`** = requirements and product approach **only** — no technical approach, package choices, or data-model decisions.
 - **`trd.md`** = technical approach and decisions; **no code**, only references to *existing* code to justify a decision ([ADR-0009](../adr/0009-docs-reference-code-never-copy-it.md)).
 - **≤100 readable lines** each. *Readable content* = body prose (sentences, bullets); **excludes** front-matter, headings, tables, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures, each with its own `spec.md`, plus a short overview in the parent.
+- **One outcome per feature** ([ADR-0061](../adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)): the spec's **Scope** section lists *In* and *Later*; Later items go to `decisions.md` and BACKLOG.
+- **`decisions.md`** is append-only and uncapped: `Q<n>`, question, answer, who decided, date, why — *open*, *decided* or *parked*. Other documents cite `Q` ids instead of restating questions.
+- **`ux.md`** (features with UI, before the TRD): journeys, screen inventory, a state matrix per screen, exact copy, a link to the prototype and the owner's dated sign-off. ≤100 readable lines; tables uncapped. Scaffold with `/bb-sdlc ux-start <feature>`.
 - **Supporting artifacts** live in the folder, named for their purpose (`rate-comparison.md`, `weight-audit.md`); never named `spec` or `trd`; not line-capped.
 - **Cross-reference by relative path and feature name.** Numbering is never used.
 - **Header on each:** `Summary · Status · Domain · Phase · Verified · References`. `Summary` is one line and is the row the tables below are generated from — `npm run docs:index`; the tables are never typed by hand and `docs:check` fails while they are stale.
@@ -51,6 +54,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [channel-registry](channel-registry/) | What each selling channel is, what it calls the things this shop sells, and whether a product is ready to go there — answered before publishing rather than after a rejection | 11 | catalog, with a seam each channel adapter implements | ✅ Implemented |
 | [image-enhancement](image-enhancement/) | A phone photo becomes a marketplace-grade image on demand — cut out, on white, on a studio backdrop, in a scene, brightened, or enlarged — each a tool applied alone, each result a proposal the org accepts or discards | 11 | content (enhancement), reading catalog (assets); runs on the worker | ✅ Implemented — PR-185, PR-190, PR-191, PR-193, PR-198 (2026-09-28) |
 | [listing-vocabulary](listing-vocabulary/) | Describe a product once, in the words this shop uses, so every fact is stated where it is known and anything that sells on its own has its own stock | 11 | catalog | ✅ Implemented — PR-236…PR-253 (2026-10-04) |
+| [marketplace-integration](marketplace-integration/) | A shop runs its Flipkart and Amazon business from one master product per item: connect the accounts, bring the catalogue in, settle duplicates, tune each platform's listing, keep one stock figure, and publish | 11 | channels (new), with catalog and listing | Draft |
 | [media-library](media-library/) | Every stored image is a record with dimensions, source and uses; galleries fill by named slot; capture is guided on the phone | 11 | catalog (assets, slots), content (renditions, capture checks) | ✅ Implemented — PR-152, PR-161, PR-163, PR-177, PR-178, PR-209, PR-211 (2026-09-29) |
 | [seller-profile](seller-profile/) | An organisation's profile has a private face for what listing needs and a public face for what a buyer may see, and nothing is demanded before it is needed | 11 | catalog | ✅ Implemented — PR-151, PR-162, PR-175, PR-182, PR-184, PR-208 (2026-09-28) |
 | [shopfront-feeds](shopfront-feeds/) | Two feeds at public URLs — one Google Merchant Center fetches, one Meta Commerce Manager fetches — each listing every product a shop has sent to that channel at the price and availability a buyer would see | 11 | cross-domain (catalog, listing, promotions, bidding) | Implemented |
@@ -89,6 +93,7 @@ A spec describes a **requirement** — what must be true. It is not a defect rep
 | [listing-vocabulary/inherited-facts](listing-vocabulary/inherited-facts/) | A fact left blank is filled in from the family, the brand or the shop's defaults, stored on the product, and shown with where it came from | 11 | catalog | ✅ Implemented — PR-227, PR-253 (2026-10-04) |
 | [listing-vocabulary/product-types](listing-vocabulary/product-types/) | An admin creates and edits the question sets themselves, so onboarding a seller with a new product line does not wait for a developer | 11 | catalog | ✅ Implemented — PR-236, PR-237, PR-238, PR-240, PR-241 (2026-10-03) |
 | [listing-vocabulary/variants](listing-vocabulary/variants/) | Anything that sells on its own is its own product with its own stock, and the category says what makes two things different | 11 | catalog | ✅ Implemented — PR-247, PR-249, PR-250 (2026-10-04) |
+| [marketplace-integration/channel-connectors](marketplace-integration/channel-connectors/) | A shop connects its own Amazon and Flipkart seller accounts by consenting on the marketplace's own page, and sees on one Channels page where it sells and whether each connection is healthy | 11 | channels (new) | Draft |
 | [media-library/renditions](media-library/renditions/) | Every surface that needs its own size or shape gets a derived image made once from a declared recipe, and the source never changes | 11 | content, reading catalog | ✅ Implemented — PR-211 (2026-09-29) |
 | [media-library/video-hosting](media-library/video-hosting/) | A seller uploads a short video from the phone as they would a photograph; the platform stores it, makes it playable everywhere, and treats it as an image is treated | 11 | catalog (assets), content (renditions) | ✅ Implemented — PR-180, PR-181, PR-183 (2026-09-27); accepted 2026-09-27 with the defaults 90 s, 200 MB, 1080p and 720p |
 | [seller-profile/brand-page](seller-profile/brand-page/) | The shop's about page is a brand landing page, drawn from what the platform knows and finished when the seller has written one line | 11 | catalog | ✅ Implemented — PR-182, PR-184, PR-208 (2026-09-28) |

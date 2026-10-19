@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-10-05
+- **Verified:** 2026-10-20
 - **Covers:** `server/*/`, `src/components/*/`, `src/app/api/`, `docs/adr/*.md`, `.claude/`
 
 ## Purpose
@@ -10,7 +10,7 @@ Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-comme
 ## How to use this file
 - Always-on **project-wide** rules live here.
 - Always-on **domain-specific** rules live in that domain's `CLAUDE.md` (e.g. `server/shipping/CLAUDE.md`). These load **lazily** — only when a file in that directory is read — so they cost nothing until relevant.
-- Workflows are skills, invoked rather than remembered: `/bb-brainstorm <topic>` (spike, no code), `/bb-sdlc spec-start|adr-new|pr-finish`, `/bb-build <feature>` (implement an accepted TRD, unit by unit, gates recorded), `/bb-review` (before any unit is done).
+- Workflows are skills, invoked rather than remembered: `/bb-brainstorm <topic>` (spike, no code), `/bb-sdlc spec-start|ux-start|adr-new|pr-finish`, `/bb-build <feature>` (implement an accepted TRD, unit by unit, gates recorded), `/bb-review` (before any unit is done).
 - When a rule, a skill and an ADR disagree, the newest ADR wins; fix the stale one in the same change.
 - The **canonical index of standing conventions** is the *Documentation & Process Conventions* section below. Each entry is a one-line pointer to its ADR; detail lives there so it cannot drift.
 
@@ -91,8 +91,10 @@ Stock moves only through catalog's stock commands (`server/catalog/stock.service
 ### Cycle per feature
 ```
 SPIKE            /bb-brainstorm <topic>           research only, no code
-SPEC + TRD       /bb-sdlc spec-start <feature>    spec.md + trd.md, ≤100 readable lines each
-IMPLEMENTATION   /bb-build <feature>              units from the TRD's Delivery; failing test per A id first; gates per unit
+SPEC             /bb-sdlc spec-start <feature>    one outcome; Scope In/Later cut by Claude; decisions.md opened
+UX               /bb-sdlc ux-start <feature>      ux.md: journeys, state matrix, copy; prototype; owner signs off
+TRD              trd.md                           cites ux.md and Q ids; ≤100 readable lines each document
+IMPLEMENTATION   /bb-build <feature>              refuses open decisions or unsigned UX; failing test per A id first
 REVIEW           /bb-review                       in a fresh context, not by the author
 DOCS             ARCHITECTURE.md only if structure changed; CHANGELOG.md always
 MERGE            /bb-sdlc pr-finish walks the gate
@@ -122,6 +124,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **ADRs are append-only** — supersede, never edit. [ADR-0001](docs/adr/0001-monorepo-doc-structure.md), [index](docs/adr/README.md)
 - **ADRs are for genuine decisions** — real alternatives, the rejected one often conventional. [docs/adr/README.md](docs/adr/README.md)
 - **Specs are `spec.md` + `trd.md`, ≤100 lines each, no code.** [ADR-0010](docs/adr/0010-spec-convention.md)
+- **A feature is one outcome, its decisions are logged, its UX is signed off before the TRD** — Claude cuts scope into In/Later and defaults reversible decisions; `decisions.md` holds every Q; `ux.md` holds every state. [ADR-0061](docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)
 - **CHANGELOG is append-only, newest first, one entry per unit, unique numbers** — `[CONTRACT]` when a DTO or schema changes and `CONTRACTS.md` moves with it; `[MIGRATION]` when `prisma/migrations/` gains a folder. `docs:check` holds the numbering.
 - **Docs reference code by path, never copy it.** [ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md)
 - **A doc's `Verified:` date is a gate** — declare `Covers:`; `npm run docs:check` fails on drift. [ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md)

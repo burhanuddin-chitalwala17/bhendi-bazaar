@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-14
+- **Verified:** 2026-10-15
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -240,6 +240,71 @@ seller that asks for a security test certificate for the receiving URL. Everythi
 
 - **Myntra, Ajio and Nykaa** are invite-only partner programmes. Relevant to what this store
   sells, worth a name in the vocabulary, not worth chasing.
+
+### Connecting a seller: what the two APIs actually do
+
+Checked 2026-10-15 against the providers' own docs, with both partner approvals in hand (Flipkart
+third-party app; Amazon public developer, app in Draft). This is the behaviour a connector has to
+absorb; sources are [Flipkart's FMSAPI](https://seller.flipkart.com/api-docs/FMSAPI.html) and
+[listings v3](https://seller.flipkart.com/api-docs/listing-api-docs/LMAPIRef.html), and Amazon's
+[website authorization](https://developer-docs.amazon/sp-api/docs/website-authorization-workflow),
+[Listings Items](https://developer-docs.amazon/sp-api/docs/building-listings-management-workflows-guide)
+and [deprecations](https://developer-docs.amazon/sp-api/docs/sp-api-deprecations) pages.
+
+**Authorisation.**
+
+| | Flipkart | Amazon |
+|---|---|---|
+| Consent | `api.flipkart.net/oauth-service/oauth/authorize`, `scope=Seller_Api`, `state` | `sellercentral.amazon.in/apps/authorize/consent?application_id&state`, plus `version=beta` while the app is Draft |
+| Exchange | **GET** `/oauth-service/oauth/token?grant_type=authorization_code&code&redirect_uri&state`, Basic auth `appId:secret` | POST `api.amazon.com/auth/o2/token`; the code lives 5 minutes |
+| Lifetimes | Access 60 days, refresh 180; a refresh within 21 days of expiry returns a **new** refresh token, which must replace the old | Access 1 hour; the refresh token must be **re-authorised every 365 days** (Amazon emails the seller 30 days ahead), and again whenever a role is added |
+| Who authorised | **Not returned.** No documented identity endpoint, so the seller must be bound to `state` before the redirect | `selling_partner_id` arrives on the redirect |
+| Revoke | No endpoint documented | The seller revokes in Seller Central |
+
+Amazon no longer requires AWS IAM or SigV4 signing (since 2 October 2023); India is the **Europe**
+endpoint, `sellingpartnerapi-eu.amazon.com`. An unlisted public app may hold **25** seller
+authorisations; Appstore listing, which Amazon requires of public apps, lifts the cap and takes three
+to four weeks.
+
+**Listing.**
+
+- **Flipkart cannot create a product.** `POST /listings/v3` lists against an existing `product_id`
+  (FSN); no catalogue API is public. A new product goes up through the seller's own dashboard
+  template, and the listing is linked afterwards. Separately: `POST /listings/v3` silently overwrites
+  an existing SKU, while `/listings/v3/update` errors on a missing one; price and stock each have their
+  own update endpoint; every call takes at most 10 SKUs and returns 200 with a result **per SKU**, so a
+  partial failure is never an HTTP error. `POST /listings/v3/search` pages a seller's whole catalogue
+  with FSN and SKU, 500 at a time, which is how existing listings are found.
+- **Flipkart location ids come from an unpublished "Onboarding API".** Stock is set per `location_id`;
+  the practical source is an existing listing's details or a shipment.
+- **Amazon can create a product.** `putListingsItem` with `requirements=LISTING` creates one;
+  `LISTING_OFFER_ONLY` sells against an existing ASIN. The required attributes come from the Product
+  Type Definitions schema, which grows conditional requirements as fields are filled.
+  `mode=VALIDATION_PREVIEW` validates without persisting, which is the only realistic test: the
+  sandbox is static for this API.
+- **Amazon accepts now and decides later.** A submission returns `ACCEPTED`; issues found downstream
+  arrive by notification or by polling `getListingsItem(includedData=issues)`. Time to live is not
+  documented.
+- **Amazon wants a GTIN** unless the brand holds an exemption, approved in Seller Central, after which
+  the listing must name exactly the approved brand and set
+  `supplier_declared_has_product_identifier_exemption`. Images are public URLs, so ours qualify.
+- **Amazon's XML and flat-file feeds were removed on 31 July 2025.** Bulk goes through
+  `JSON_LISTINGS_FEED`; per-item calls suit under about 1,500 items per five minutes. Listings calls
+  run at 5 requests per second per seller-and-app pair; a 429 is retryable with back-off.
+
+**Detecting a sale.**
+
+- **Flipkart** polls `POST /v3/shipments/filter`, or receives signed webhooks (`X_Authorization:
+  FKLOGIN`, SHA-1 over date, URL, method and secret) delivered **at least once**. Enabling webhooks is
+  a support ticket asking for a VAPT certificate and an NDA.
+- **Amazon's Orders API v0 is deprecated** (28 January 2026) and is removed on **27 March 2027**. New
+  code uses `searchOrders` (2026-01-01), which returns SKU and quantity under the roles we hold and
+  needs no Restricted Data Token; buyer details need restricted roles we did not request.
+  Notifications go only to SQS or EventBridge, so without an AWS account a sale is found by polling.
+
+**Paid.** Flipkart's Reports API (settlement and fulfilment reports) is a paid partner service;
+nothing public marks listings, inventory or shipments as paid, and the partner dashboard's metered
+plans should be confirmed with `api-partner-support@flipkart.com` before relying on them.
 
 ## YouTube (product video)
 
