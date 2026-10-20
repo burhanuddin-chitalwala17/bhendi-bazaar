@@ -1,0 +1,61 @@
+docs/specs/marketplace-integration/channel-connectors/decisions.md
+  s_0972fb7ac9c18b::t_c2a112ae6e3e36 24-25
+  s_0972fb7ac9c18b::t_009397cf0004e1 5,18-19
+  s_0972fb7ac9c18b::t_7052793e7abc14 15,23
+  s_0972fb7ac9c18b::t_bff016dffad4af 20,26
+.claude/skills/bb-review/SKILL.md
+  s_0972fb7ac9c18b::t_fe4f86446cf140 218-219
+CLAUDE.md
+  s_0972fb7ac9c18b::t_fe4f86446cf140 127
+docs/adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md
+  s_0972fb7ac9c18b::t_72d19600ee5320 1-18
+docs/adr/README.md
+  s_0972fb7ac9c18b::t_46e0a1cbaacbda 101-102
+docs/specs/marketplace-integration/decisions.md
+  s_0972fb7ac9c18b::t_46e0a1cbaacbda 5
+docs/specs/marketplace-integration/channel-connectors/ux.md
+  s_0972fb7ac9c18b::t_26070b34c302a3 3,113
+  s_0972fb7ac9c18b::t_009397cf0004e1 74,85
+docs/specs/marketplace-integration/channel-connectors/trd.md
+  s_0972fb7ac9c18b::t_1a2153ca70645b 80,96
+  s_0972fb7ac9c18b::t_c2a112ae6e3e36 132
+  s_0972fb7ac9c18b::t_597754415e8cdb 100
+  s_0972fb7ac9c18b::t_bff016dffad4af 67,69-70
+  s_0972fb7ac9c18b::t_a02405c49d6cc6 3,6-7,10,13-18,21-27,30-66,71-73,79,81-92,95,97-99,103-106,109-110,113-121,123,125-129
+  s_0972fb7ac9c18b::t_2a4b1c9645a4d9 68
+docs/specs/marketplace-integration/channel-connectors/spec.md
+  s_0972fb7ac9c18b::t_009397cf0004e1 55
+  s_0972fb7ac9c18b::t_7052793e7abc14 76
+.claude/skills/bb-build/SKILL.md
+  s_0972fb7ac9c18b::t_fe4f86446cf140 13,32-35
+.claude/skills/bb-sdlc/SKILL.md
+  s_0972fb7ac9c18b::t_84f974459a5c8d 16,19-24
+  s_0972fb7ac9c18b::t_fe4f86446cf140 17-18,25-28,56-57,62
+docs/specs/README.md
+  s_0972fb7ac9c18b::t_fe4f86446cf140 16
+docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md
+  s_0972fb7ac9c18b::t_fe4f86446cf140 4
+.env.example
+  s_0972fb7ac9c18b::t_bff016dffad4af 108-122
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "a2a6a6e1ed32482dfb72bb41fa1082a0464e0654",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
