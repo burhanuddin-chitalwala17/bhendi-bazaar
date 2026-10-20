@@ -1,0 +1,226 @@
+src/app/api/CLAUDE.md
+  s_0972fb7ac9c18b::t_b1e0823e318248 3
+src/lib/validation/schemas/org-channels.schema.ts
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 25-26
+  s_0972fb7ac9c18b::t_6a81105cda561a 3,6-9,11,16,20
+tests/unit/channel-connect-state.test.ts
+  s_0972fb7ac9c18b::t_0cdebd864f12a5 1-51
+src/components/shared/badges/StatusBadge.tsx
+  s_0972fb7ac9c18b::t_b9d63d1525cb91 24-28
+src/components/channel/feed-toggle.tsx
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 9,15,27
+  s_0972fb7ac9c18b::t_2e3434c4cc15e5 1-8,10-14,16-26,28-35
+server/channels/channel-connection.service.ts
+  s_0972fb7ac9c18b::t_549426c19dc51a 1-37,39-185,187-194,196-314,316,335-336,338-339,341-357,359-368,376,380-382
+  s_0972fb7ac9c18b::t_f3979eb6ec963f 38
+  s_0972fb7ac9c18b::t_6a81105cda561a 315,317-334,337,340,358
+  s_0972fb7ac9c18b::t_c7a668ef5524cf 186,195,369-375,377-379
+src/components/channel/still-loading.tsx
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 1-13
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_28cb2ecced8333 588-589,680,1976-2014
+server/shared/crypto.ts
+  s_0972fb7ac9c18b::t_f16296885f296d 12-13,41-42
+  s_0972fb7ac9c18b::t_31ff44a9424e5a 1-11,14-40,43-72
+src/components/channel/channelsApiClient.ts
+  s_0972fb7ac9c18b::t_cd0ab92774605b 21-38
+src/app/(org)/org/[orgId]/page.tsx
+  s_0972fb7ac9c18b::t_0200c7e09b134e 10-11,50,53,60
+server/channels/connect-state.ts
+  s_0972fb7ac9c18b::t_c4496faa60c58a 1-26,28-75
+  s_0972fb7ac9c18b::t_304d56152a9c43 27
+tests/setup.ts
+  s_0972fb7ac9c18b::t_46a9d6ea170ec9 17
+server/channels/channel-connection.repository.ts
+  s_0972fb7ac9c18b::t_6a81105cda561a 200-201,206,208-209
+  s_0972fb7ac9c18b::t_c7a668ef5524cf 184,186-191,194-196
+  s_0972fb7ac9c18b::t_8917aab7ee696f 1-183,185,192-193,197-199,202-205,207,210-221
+src/app/api/org/[orgId]/channels/[channel]/connect/route.ts
+  s_0972fb7ac9c18b::t_cd0ab92774605b 1-19
+.env.production.example
+  s_0972fb7ac9c18b::t_f16296885f296d 60-61
+src/components/channel/channel-attention-banner.tsx
+  s_0972fb7ac9c18b::t_9df9eecf6fdc8b 17,36
+  s_0972fb7ac9c18b::t_80602185a00d3e 1-16,18-35,37-41
+.github/workflows/staging-worker.yml
+  s_0972fb7ac9c18b::t_828670d842e05d 40,49-53,60-61,86
+src/components/channel/channel-card-shell.tsx
+  s_0972fb7ac9c18b::t_e1b5258c2483f7 1-34
+docs/specs/marketplace-integration/channel-connectors/trd.md
+  s_0972fb7ac9c18b::t_1af8f19877ea30 3
+server/channels/channel-availability.ts
+  s_0972fb7ac9c18b::t_3dd540b445ea82 1-18
+src/app/api/org/[orgId]/channels/[channel]/connection/route.ts
+  s_0972fb7ac9c18b::t_cd0ab92774605b 1-15
+src/components/channel/channel-copy.ts
+  s_0972fb7ac9c18b::t_7e2eb491836fc9 90
+  s_0972fb7ac9c18b::t_dbb6aad5b2cc08 1-2,4-38,40-86,89,91-135
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 3,39,87-88
+server/listing/org-channel.service.ts
+  s_0972fb7ac9c18b::t_ac1aeaad2631c8 10-12,53-60
+tests/unit/route-reachability.test.ts
+  s_0972fb7ac9c18b::t_cd0ab92774605b 33
+tests/unit/credential-crypto.test.ts
+  s_0972fb7ac9c18b::t_f16296885f296d 15-18,20-21,50-54
+  s_0972fb7ac9c18b::t_74b35a94f763f6 60
+  s_0972fb7ac9c18b::t_a8b63f4df97fa7 1-14,19,22-49,55-59,61-106
+.env.worker.example
+  s_0972fb7ac9c18b::t_f16296885f296d 25-27
+  s_0972fb7ac9c18b::t_ca5555e530c993 28-32
+infra/worker/compose-env.sh
+  s_0972fb7ac9c18b::t_9e5ff74986a2a5 1-30
+server/shipping/CLAUDE.md
+  s_0972fb7ac9c18b::t_d8c5200699f024 3
+  s_0972fb7ac9c18b::t_f638831c9d89e1 43
+src/app/(org)/org/[orgId]/channels/loading.tsx
+  s_0972fb7ac9c18b::t_9df9eecf6fdc8b 2,14
+  s_0972fb7ac9c18b::t_0200c7e09b134e 1,3-13,15-17
+docs/specs/marketplace-integration/decisions.md
+  s_0972fb7ac9c18b::t_ea1536f1876e6d 14,17-24
+src/app/(org)/org/[orgId]/channels/page.tsx
+  s_0972fb7ac9c18b::t_0200c7e09b134e 1-25,27-40,42-44
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 26,41
+.github/workflows/ci.yml
+  s_0972fb7ac9c18b::t_828670d842e05d 226-227,278-279,285-287,294
+docs/specs/marketplace-integration/channel-connectors/ux.md
+  s_0972fb7ac9c18b::t_516a16a11fa988 59-60,108
+src/components/channel/marketplace-card-actions.tsx
+  s_0972fb7ac9c18b::t_06dbc2e1bf78bc 1-67,83-86,93,100-125,127-132
+  s_0972fb7ac9c18b::t_9df9eecf6fdc8b 68-82,87-92,94-99,126
+docs/specs/marketplace-integration/channel-connectors/decisions.md
+  s_0972fb7ac9c18b::t_ea1536f1876e6d 11-12,14-23,26
+  s_0972fb7ac9c18b::t_0a8021b6bd9441 27-28
+server/listing/org-channel.repository.ts
+  s_0972fb7ac9c18b::t_ac1aeaad2631c8 24-26,42-43
+src/data-access-layer/channels.dal.ts
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 9,15-16,25-26
+  s_0972fb7ac9c18b::t_57a317182dc6a0 1-8,10-14,17-24,27-38
+src/app/api/channels/[channel]/callback/route.ts
+  s_0972fb7ac9c18b::t_6a81105cda561a 11,39-40,42
+  s_0972fb7ac9c18b::t_cd0ab92774605b 1-10,12-38,41,43-50
+server/channels/providers/flipkart/flipkart.provider.ts
+  s_0972fb7ac9c18b::t_304d56152a9c43 13
+  s_0972fb7ac9c18b::t_f3979eb6ec963f 45
+  s_0972fb7ac9c18b::t_119db23b1281e8 1-12,14-44,46-111
+server/channels/providers/marketplace-provider.ts
+  s_0972fb7ac9c18b::t_c7a668ef5524cf 32
+  s_0972fb7ac9c18b::t_2f41a392c6c644 1-19,21,23-31,33-39,41-63
+  s_0972fb7ac9c18b::t_f3979eb6ec963f 20,22,40
+tests/unit/channel-providers.test.ts
+  s_0972fb7ac9c18b::t_1855a8c582284d 1-129
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_b71f1ede29dc9f 233
+  s_0972fb7ac9c18b::t_f387b2ad4d8385 3,213-232
+server/shipping/providers/shiprocket/shiprocket.provider.ts
+  s_0972fb7ac9c18b::t_f638831c9d89e1 17,114,349
+tests/unit/channel-cards.test.tsx
+  s_0972fb7ac9c18b::t_9ba7f97e87dec6 1-10,12-89,105-144
+  s_0972fb7ac9c18b::t_12a288837ffc84 11,90-104
+tests/unit/vocabulary.test.ts
+  s_0972fb7ac9c18b::t_c859fed7a7b5bd 16-20,24-25
+  s_0972fb7ac9c18b::t_f3979eb6ec963f 15,21,26
+  s_0972fb7ac9c18b::t_0a8021b6bd9441 22-23,61-62
+src/components/channel/expandable-line.tsx
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 1-21
+tests/unit/channel-callback-route.test.ts
+  s_0972fb7ac9c18b::t_bbadbb520f9d36 1-89
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_24a893252c6644 16
+  s_0972fb7ac9c18b::t_602016ad797b02 61
+  s_0972fb7ac9c18b::t_b71f1ede29dc9f 75
+  s_0972fb7ac9c18b::t_f387b2ad4d8385 41
+  s_0972fb7ac9c18b::t_d8c5200699f024 56
+  s_0972fb7ac9c18b::t_74b35a94f763f6 3
+  s_0972fb7ac9c18b::t_b1e0823e318248 18
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_49f622e10269f2 13-24
+  s_0972fb7ac9c18b::t_47421c26374765 48-108
+  s_0972fb7ac9c18b::t_65ce5a5605e958 109-120,124-125
+  s_0972fb7ac9c18b::t_b71f1ede29dc9f 25-47
+  s_0972fb7ac9c18b::t_9875740d528bae 121-123
+src/app/(org)/org/[orgId]/channels/error.tsx
+  s_0972fb7ac9c18b::t_0200c7e09b134e 1-16
+tests/unit/module-boundaries.test.ts
+  s_0972fb7ac9c18b::t_b098a92e78dc88 95-96
+server/shipping/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_d8c5200699f024 3
+tests/integration/channel-connections.test.ts
+  s_0972fb7ac9c18b::t_0beb62e75d5b67 1-216
+CLAUDE.md
+  s_0972fb7ac9c18b::t_602016ad797b02 7
+  s_0972fb7ac9c18b::t_d26273ac67800f 42
+server/channels/channel-connection.types.ts
+  s_0972fb7ac9c18b::t_83fd61227a0548 1-22,24-28,30-96
+  s_0972fb7ac9c18b::t_f3979eb6ec963f 23,29
+server/channels/providers/amazon/amazon.provider.ts
+  s_0972fb7ac9c18b::t_176202168b44d7 1-11,13-49,51-105
+  s_0972fb7ac9c18b::t_f3979eb6ec963f 12,50
+src/components/channel/marketplace-card.tsx
+  s_0972fb7ac9c18b::t_9df9eecf6fdc8b 6,41
+  s_0972fb7ac9c18b::t_7c157d382a68a5 1-5,7-40,42-58
+src/app/(org)/org/[orgId]/listing/page.tsx
+  s_0972fb7ac9c18b::t_0200c7e09b134e 22
+src/components/channel/connect-result-note.tsx
+  s_0972fb7ac9c18b::t_9df9eecf6fdc8b 3,8,12,34,49,51,54-61
+  s_0972fb7ac9c18b::t_176ae5efe687d8 1-2,4-7,9-11,13-33,35-48,50,52-53,62-65
+server/shipping/repositories/provider.repository.ts
+  s_0972fb7ac9c18b::t_f638831c9d89e1 12,176
+server/shipping/adr/0002-credentials-via-admin-not-env.md
+  s_0972fb7ac9c18b::t_d8c5200699f024 4
+server/channels/channels.jobs.ts
+  s_0972fb7ac9c18b::t_58b3039474e24a 1-3,5-22,24-36
+  s_0972fb7ac9c18b::t_a12b5a0830d238 4,23
+prisma/migrations/20261020000000_channel_connections/migration.sql
+  s_0972fb7ac9c18b::t_28cb2ecced8333 1-44
+src/components/CLAUDE.md
+  s_0972fb7ac9c18b::t_24a893252c6644 3
+src/app/api/org/[orgId]/channels/[channel]/connection/check/route.ts
+  s_0972fb7ac9c18b::t_cd0ab92774605b 1-14
+docs/specs/README.md
+  s_0972fb7ac9c18b::t_9a9f1e0a6649e1 96
+src/lib/org-auth.ts
+  s_0972fb7ac9c18b::t_6a81105cda561a 22
+src/components/channel/disconnect-dialog.tsx
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 50
+  s_0972fb7ac9c18b::t_0200c7e09b134e 13,69
+  s_0972fb7ac9c18b::t_b3931f2fb49223 1-12,14-49,51-68,70-81
+src/components/channel/channel-card-list.tsx
+  s_0972fb7ac9c18b::t_14cb1bae0ff517 5,10,18-19,26,32-33,35,44
+  s_0972fb7ac9c18b::t_bdb705fa5b6392 1-4,6-9,11-17,20-25,27-31,34,36-43,45-61
+docs/OPERATIONS.md
+  s_0972fb7ac9c18b::t_49f622e10269f2 3,448-449,472
+  s_0972fb7ac9c18b::t_74b35a94f763f6 44,49
+  s_0972fb7ac9c18b::t_602016ad797b02 45-48
+server/channels/providers/index.ts
+  s_0972fb7ac9c18b::t_1507a2feb57935 1-11
+server/channels/CLAUDE.md
+  s_0972fb7ac9c18b::t_9fd4f950b8c251 1-35
+docs/specs/marketplace-integration/channel-connectors/spec.md
+  s_0972fb7ac9c18b::t_74b35a94f763f6 4
+  s_0972fb7ac9c18b::t_1af8f19877ea30 53,55,57,59,61
+src/components/layout/OrgSidebar.tsx
+  s_0972fb7ac9c18b::t_0200c7e09b134e 15,36
+worker/main.ts
+  s_0972fb7ac9c18b::t_58b3039474e24a 33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "5f2daeabc9750264a2d6292efe96d525ceed03ea",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
