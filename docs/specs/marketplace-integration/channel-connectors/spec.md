@@ -52,7 +52,7 @@ marketplaces, and makes "where you sell" a fact rather than a setting.
   simultaneous renewals can keep the old one and lose the new, disconnecting the shop silently.
 - **A connection that is never used can lapse.** Flipkart's renewal credential lasts 180 days.
 - **A forged or replayed return** connecting someone else's marketplace account to a shop.
-- **Reconnecting with a different account** than before (Q8).
+- **Reconnecting with a different account** than before: refused; switching is disconnect then connect (Q8).
 - **The encryption key leaks or is lost.** Replacement must not need every shop to reconnect.
 
 ## Product acceptance
@@ -73,4 +73,4 @@ marketplaces, and makes "where you sell" a fact rather than a setting.
   starting from Amazon's Appstore (parent Q36); email reminders (parent Q10).
 
 ## Open questions
-See decisions.md: Q5.
+None. Q5 decided by the owner 2026-10-20.

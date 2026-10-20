@@ -1,134 +1,132 @@
 # TRD — channel-connectors
 
-- **Status:** Draft
+- **Status:** Draft — awaiting the owner's reading
 - **Domain:** channels (new)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-10-15
-- **References:** [spec.md](spec.md), the 2026-10-15 connector spike ([INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do)), [channel-registry trd](../../channel-registry/trd.md), [ADR-0033](../../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [ADR-0036](../../../adr/0036-a-files-reasons-to-change-are-a-decision.md), [ADR-0037](../../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0041](../../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md)
+- **Verified:** 2026-10-20
+- **References:** [spec.md](spec.md), [ux.md](ux.md) (signed off 2026-10-20), [decisions.md](decisions.md), parent [decisions](../decisions.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do), [ADR-0033](../../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [ADR-0037](../../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
-> **Revision pending (2026-10-20):** the spec was re-cut under ADR-0061. Listing import and matching
-> (D9, D10, the linked-listings UI and delivery unit 5) moved to channel-import; the admin view moved
-> to Later. This TRD is rewritten against ux.md once the owner signs it off.
+> Screens, states and copy are ux.md's; this says how they are built.
 
 ## Approach
-A new `channels` domain owns everything that talks to a marketplace on a shop's behalf: the
-connection and its credentials, a provider per marketplace behind one small interface, and the
-record of which listing there is which product here. `listing` keeps the vocabulary and readiness;
-it does not learn about tokens. This spec builds the interface's first four verbs — consent URL,
-code exchange, renewal, list listings — and the two later specs add their verbs to the same seam.
-OAuth runs in two route handlers; renewal and listing import run on the worker.
+A new `channels` domain owns the connection between a shop and a marketplace: the consent round
+trip, the encrypted tokens, their renewal and a daily health check. Each marketplace is a provider
+behind one small interface whose verbs are only what this subfeature needs: consent URL, code
+exchange, renew, identify, check. Later subfeatures add verbs to the same interface and ask the
+domain for a valid token; they never see a credential. OAuth runs in two route handlers; renewal
+and health checks run on the worker. Nothing here changes anything on a marketplace (Q13).
 
 ## Prior art
-- **Authorisation** follows each platform's documented authorization-code flow (RFC 6749 §4.1) with
-  `state` bound to the user's session against CSRF (§10.12), as both docs prescribe.
-- **Credential storage**: Amazon's data-protection guidance asks for AES-256 and describes envelope
-  encryption under a KMS. Nango, which brokers OAuth for many SaaS apps, encrypts tokens with one
-  app-level AES-256-GCM key and serialises refreshes per connection. We follow Nango, not the KMS:
-  no cloud key service is in our stack (ADR-0037), and versioned keys give rotation (D3). The
-  existing helper in `server/shipping/utils/encryption.ts` has no key version and a fixed-salt
-  fallback; it is wrong for this, and D3 fixes it rather than copying it.
-- **Linking existing listings by SKU before creating anything** is what Unicommerce, EasyEcom and
-  Shopify Marketplace Connect do: auto-match on exact SKU, show unmatched, let the seller decide.
+- **Authorisation** is each platform's documented authorization-code flow (RFC 6749 §4.1), with
+  `state` bound to the user's session against forged returns (§10.12), as both docs prescribe.
+- **Credential storage**: Amazon's data-protection guidance asks for AES-256; Nango, which brokers
+  OAuth for many apps, encrypts tokens with app-level AES-256-GCM and serialises refreshes per
+  connection. We follow Nango rather than a cloud key service, which our stack does not have
+  (ADR-0037). `server/shipping/utils/encryption.ts` has no key version and a fixed-salt fallback;
+  D3 replaces it rather than copying it, and moves shipping onto the replacement.
 
 ## Technical decisions
-- **D1 — New domain `server/channels/`.** Public surface: `channel-connection.service`,
-  `channel-listing.service` and their `.types`. Providers live in `providers/flipkart/` and
-  `providers/amazon/`, each implementing one `MarketplaceProvider` interface with only the verbs
-  this spec needs. Plain `fetch`; no SDK (the official SDKs are large and we call six endpoints).
-- **D2 — One connection row per (org, channel), retired, not deleted:** disconnect nulls the
-  credentials and keeps who connected when. States `CONNECTED`, `NEEDS_REAUTH`, `DISCONNECTED`.
-- **D3 — Encryption moves to `server/shared/crypto` and gains a key version.** Ciphertext is
-  prefixed `v<n>:`; keys come from `CREDENTIAL_KEYS` (version → 32-byte hex) and the current version
-  from `CREDENTIAL_KEY_CURRENT`. Unprefixed values are decrypted by the old derivation so shipping's
-  stored token keeps working. Rotation is a worker job re-encrypting every row under the current key.
-  A missing or malformed key fails at first use, never silently falls back.
-- **D4 — `state` is a signed, ten-minute token**, made like the rate quote
-  (`server/shipping/rate-quote.service.ts`): HMAC with a purpose-bound key derived from
-  `NEXTAUTH_SECRET`, carrying org, user, channel and a nonce. The callback requires a session whose
-  user equals the token's and who is still a member of the org. A replayed code fails at the marketplace,
-  which spends it once; no state table is needed (hazard 4).
-- **D5 — Routes.** `GET /api/org/[orgId]/channels/[channel]/connect` (`withOrg`, any member) answers a
-  302 to the consent page. `GET /api/channels/[channel]/callback` is the URL registered with both
-  marketplaces; it resolves the org from `state` alone, exchanges the code in the request (Amazon's
-  lives five minutes), and redirects to the settings page with an outcome. `DELETE
-  /api/org/[orgId]/channels/[channel]/connection` disconnects. Amazon's consent URL carries
-  `version=beta` while `AMAZON_SPAPI_DRAFT` is set; registered redirect hosts come from `appUrl()`.
-- **D6 — Renewal is lazy and serialised.** Any call first takes the connection row `FOR UPDATE` in a
-  transaction, renews if the access token has under five minutes left, and writes access token,
-  refresh token and expiries in that one update (hazard 1). `invalid_grant` or a 401 on renewal sets
-  `NEEDS_REAUTH` with the reason and is not retried.
-- **D7 — A daily maintenance schedule** (`channels.maintain`, one of the two free slots) renews
-  Flipkart connections within 30 days of the refresh token's end, so a quiet shop never lapses
-  (hazard 3), and marks Amazon connections within 30 days of their yearly date for the warning (R5).
-- **D8 — Identity.** Amazon's `selling_partner_id` is stored as `externalAccountId`, unique per
-  channel among connected rows, so a second shop is refused in the callback (R3). Flipkart returns
-  none, so its account is recognised by its listings: the first import that finds an FSN and SKU
-  already linked to another shop's connection stops, marks this connection `NEEDS_REAUTH` with the
-  reason, and deletes its credentials (hazard 2).
-- **D9 — Listing import is a worker job** enqueued in the connect transaction and on "re-read".
-  It pages Flipkart `POST /listings/v3/search` and Amazon `searchListingsItems` for marketplace
-  `A21TJRUUN4KGV`, upserting one `ChannelListing` per (connection, SKU); it is idempotent, so
-  at-least-once delivery is harmless. 429s back off through `server/shared/retry.ts`.
-- **D10 — Matching.** A listing auto-matches the org's product whose SKU equals it after trimming and
-  ignoring case, marked `SKU` and unconfirmed. No SKU, several candidates, or several listings
-  for one product leave it under "needs a decision" (hazard 5). A confirmed or manual match is
-  never overwritten by a re-read.
-- **D11 — Connected is selling.** Connect and disconnect set listing's `OrgChannel` through
-  `orgChannelService` in the same transaction, so the feeds and readiness keep reading one answer.
-  Google and Meta "connect" by that write alone. `where-you-sell.tsx` and its card on the listing
-  page are removed (R8). Each change is audited by `recordAdminActionIn`, credentials never in it.
+- **D1 — Domain `server/channels/`.** Public surface: `channel-connection.service` and its `.types`.
+  Providers in `providers/amazon/` and `providers/flipkart/` implement `MarketplaceProvider`. Plain
+  `fetch` with a 10-second timeout; no SDK, for five endpoints. Marketplace response bodies are
+  never logged, since a token can appear in them.
+- **D2 — One `ChannelConnection` row per (shop, channel)**, stored states `CONNECTED`,
+  `NEEDS_RECONNECT`, `DISCONNECTED`. "Renewal due", "unavailable" and "full" are derived on read,
+  never stored. Disconnect nulls the tokens and keeps who connected and when (Q4).
+- **D3 — `server/shared/crypto`, versioned.** `CREDENTIAL_KEYS` holds `version:64-hex` pairs; the
+  highest version encrypts, any listed version decrypts; ciphertext is prefixed `v<n>:`. An
+  unprefixed value decrypts by the old shipping derivation, so its stored token keeps working. A
+  missing or malformed key throws at first use. Rows under an older version are re-encrypted by
+  the daily job (D7), so replacing a key needs nobody to reconnect (R4).
+- **D4 — `state` is a signed ten-minute token**, made like the rate quote
+  (`server/shipping/rate-quote.service.ts`): HMAC under a key derived from `NEXTAUTH_SECRET` for
+  this purpose, carrying shop, user, channel, purpose (connect or reconnect) and a nonce. The
+  callback requires the same signed-in user, still a member of the shop. A replayed code fails at
+  the marketplace, which spends it once; no state table (R2).
+- **D5 — Routes.** `GET /api/org/[orgId]/channels/[channel]/connect` (`withOrg`) answers 302 to the
+  consent page, or straight back with an outcome when the channel is unavailable or full.
+  `GET /api/channels/[channel]/callback` is the registered redirect: it exchanges the code inside
+  the request (Amazon's lives five minutes) and answers 302 to `/org/[orgId]/channels?result=<code>`.
+  `DELETE /api/org/[orgId]/channels/[channel]/connection` disconnects; `POST …/connection/check` is
+  "Check now". Google and Meta keep the existing `PUT /api/org/[orgId]/channels`.
+- **D6 — Outcomes are a closed set** (`CONNECT_RESULT`, compared by constant): connected, cancelled,
+  expired, other-session, other-shop, different-account, unreachable, full, unavailable. The page
+  maps each to ux.md's copy; no marketplace error text reaches the screen.
+- **D7 — A daily schedule, `channels.maintain`** (the third of four slots), per connection: a health
+  check (Amazon `getMarketplaceParticipations`, Flipkart's token-expiry endpoint) that sets "last
+  checked"; Flipkart renewal when its refresh token has under 30 days left; re-encryption under the
+  current key. Suspended shops are skipped (Q11).
+- **D8 — Renewal is lazy and serialised.** A caller takes the row `FOR UPDATE` in a transaction,
+  renews when the access token has under five minutes left, and writes both tokens and expiries in
+  that one update. `invalid_grant` or a 401 on renewal sets `NEEDS_RECONNECT` with a reason code and
+  is not retried.
+- **D9 — Identity.** Amazon's `selling_partner_id` is stored, unique per channel among connected
+  rows: another shop's is refused (R3); on a reconnect, a different one is refused (Q8). Flipkart
+  returns none; its check is channel-import's (Q2).
+- **D10 — One switch, outside the architecture.** `CHANNELS_CONNECT` lists the marketplaces open to
+  connect; one not listed, or without credentials, is unavailable (Q10), read in one place. Amazon's app being
+  unlisted is a fact in its provider, not a switch: it adds `version=beta` and the 25-shop cap
+  (R10), and changes once, when Amazon lists the app (Q16).
+- **D11 — Connected is selling.** Connect and disconnect write listing's `OrgChannel` through
+  `orgChannelService` in the same transaction, audited by `recordAdminActionIn` with no credential
+  in it. `where-you-sell.tsx` and its section on What you sell are removed (R8).
 
 ## Packages
 None.
 
 ## UI approach
-- **A new Channels page** in the shop menu, `/org/[orgId]/channels`. **Phone first:** a card per channel — name, state chip,
-  connected-by and date, the Amazon renewal date — with one primary action: Connect, Reconnect, or
-  a Disconnect behind `FormDialog` confirmation. Buttons are never disabled; the Amazon cap (R12)
-  answers on tap. `md:` and `lg:` place cards two and three across.
-- **Linked listings** page per connection: three tabs, a row per listing with the product picker in
-  a picker overlay (ADR-0040). Server-rendered list; the row's actions are the client leaf, through
-  `channelsApiClient` and `useMutation`. Props are DTOs only.
+Every layer from src/components/CLAUDE.md, top to bottom:
+- **Page:** a new `channels` page under the org portal's routes, a server component reading one DAL call,
+  `channels.dal.ts`, which returns `ChannelsOverviewDTO`: one card DTO per channel, derived state
+  included. The dashboard page reads `attention` from the same DAL for its banner.
+- **Composites,** in `src/components/channel/`: `ChannelCardList` (one column, `md:` two, `lg:` three),
+  `MarketplaceCard`, `FeedCard`, `StoreCard` and `ChannelAttentionBanner` render on the server.
+  Client leaves only where there is behaviour: `MarketplaceCardActions`, `DisconnectDialog` on the
+  shared `FormDialog` (bottom sheet on phone, dialog from `md:`), `FeedToggle`, and `ConnectResultNote`,
+  which shows the outcome once and clears `?result=`.
+- **Wrappers and primitives:** state chips on `StatusBadge`, buttons and links on `ui/button`,
+  skeletons on `LoadingSkeleton`. Connect is a link to the connect route, not a request.
+- **Behaviour:** `channelsApiClient` gains `disconnect` and `checkNow`, called through `useMutation`.
+  ux.md's strings live in one `channel-copy.ts` beside the composites.
+- **Chrome:** "Channels" in `OrgSidebar`, directly under Products (Q5). No new design token.
 
 ## Gates touched
-- `module-boundaries` — `channels` declared in `PUBLIC_SURFACE`; `shared/crypto` replaces the import
-  of shipping's helper.
-- `docs-integrity` — the new domain's own CLAUDE.md in `LIVING_DOCS`; the root CLAUDE.md domain table.
-- `route-reachability` — the callback in `EXTERNALLY_CALLED` (the marketplaces' redirect).
-- `portal-boundary` — the `/api/org/**` routes use `withOrg`.
-- `one-repository` — `ChannelConnection` and `ChannelListing` each written by one repository.
-- `file-cohesion` — the import service reaches catalog (product by SKU) and listing; within two.
+- `module-boundaries` — `channels` in `PUBLIC_SURFACE`; shipping imports `shared/crypto`.
+- `docs-integrity` — the new domain's CLAUDE.md in `LIVING_DOCS`; the root CLAUDE.md domain table.
+- `route-reachability` — the callback in `EXTERNALLY_CALLED`, called by the marketplaces' redirect.
+- `portal-boundary` — the three `/api/org/**` routes use `withOrg`.
+- `one-repository` — `ChannelConnection` written only by its repository.
+- `file-cohesion` — the service reaches listing only; `api-clients`, `ui-primitives`, `overlay-surfaces`, `rendering-strategy`, `design-tokens` met as written.
 
 ## Data model [MIGRATION]
-- `ChannelConnection`: org, channel, state, external account id, encrypted access and refresh
-  tokens, their expiries, authorised-at, connected-by user, last renewal, last error and when.
-  Unique (org, channel); unique (channel, external account id) where connected.
-- `ChannelListing`: connection, channel SKU, external id (FSN or ASIN), external status, product
-  (nullable), how matched, confirmed-at, last seen. Unique (connection, channel SKU).
+`ChannelConnection`: shop, channel, state, external account id, encrypted access and refresh
+tokens, their expiries, authorised-at, connected-by and disconnected-by users with times, last
+checked, last error code and when. Unique (shop, channel); unique (channel, external account id)
+among connected rows. Never cascades from a shop (ADR-0020).
 
 ## API / contract changes [CONTRACT]
-`ChannelConnectionDTO` and `ChannelListingDTO`; the connect, callback, disconnect, re-read and
-match routes. CONTRACTS.md gains a "Channel connections" section in the same change.
+`ChannelCardDTO`, `ChannelsOverviewDTO`, `CONNECT_RESULT`; the connect, callback, disconnect and check
+routes. CONTRACTS.md gains a "Channel connections" section in the same change.
 
 ## Test plan
-- Unit: state token tampered, expired, other user; versioned and legacy decryption; each provider's
-  token and listings responses parsed; renewal keeps the new refresh token; `invalid_grant` sets
-  `NEEDS_REAUTH`; matcher on case, spaces, no SKU, duplicates.
-- Integration: forged state connects nothing; a second shop with the same Amazon seller refused;
-  disconnect nulls credentials and turns the channel off; import twice yields one row per SKU;
-  a confirmed match survives a re-read. Marketplace HTTP stubbed at `fetch`.
-- Manual (A7): both connections on the owner's own accounts, before any other shop.
+- Unit: state token tampered, expired, other user, other purpose; versioned, legacy and missing-key
+  decryption; each provider's token, identity and check responses parsed; renewal keeps the new
+  refresh token; `invalid_grant` sets `NEEDS_RECONNECT`; derived states (renewal due, unavailable,
+  full) at their boundaries; every `CONNECT_RESULT` maps to ux.md's copy.
+- Integration: forged state connects nothing; another shop's Amazon account refused; a different
+  account on reconnect refused; disconnect nulls tokens and turns the channel off; two concurrent
+  renewals leave one valid refresh token; the daily job skips suspended shops. HTTP stubbed at `fetch`.
+- Manual (A8, Q15): Amazon on dev.bhendi-bazaar.com and Flipkart on production, on the owner's
+  shop, at 360px, walking every reachable state in ux.md.
 
-## Delivery (PRs)
+## Delivery (units)
 1. `shared/crypto` with versions; shipping moved onto it — no behaviour change.
-2. Schema, domain, connection repository and service, state token — no route yet.
-3. Flipkart connect, callback, renewal, disconnect, settings card — behaviour-changing.
-4. Amazon the same, plus the draft flag and the cap message — behaviour-changing.
-5. Listing import, matching, linked-listings page — behaviour-changing.
-6. Maintenance schedule, admin view, rotation job.
+2. Schema and migration; the domain's repository, service, state token, switches — no route.
+3. Amazon provider; connect, callback, disconnect, check routes — behaviour-changing.
+4. Flipkart provider on the same routes — behaviour-changing.
+5. Channels page, sidebar item, feed cards, outcome notes, disconnect dialog; Where you sell removed.
+6. Daily `channels.maintain` and the dashboard banner.
 
 ## Open questions
-None. Closed 2026-10-15 by the owner: credentials in `FLIPKART_APP_ID`/`_SECRET`, `AMAZON_APP_ID`/`_SECRET`
-(the Login with Amazon client) and `AMAZON_SOLUTION_ID` (the consent URL's app id); one shop per account
-(R3, D8); any member connects, no roles being in use; the Amazon renewal warning is in the app only.
+None. `CREDENTIAL_KEYS` is set in `.env`; the owner pastes `AMAZON_SOLUTION_ID`.

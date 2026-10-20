@@ -13,6 +13,19 @@ Four subcommands. Pick the one matching the invocation. The cycle they serve is 
 
 **Log every decision, and decide the small ones yourself.** Every question goes in the feature's `decisions.md` the moment it comes up, and every answer the moment it is given, including answers given in chat. You decide anything reversible that sits within an existing ADR, marked `Claude · reversible`, with one line of why. The owner decides money, marketplace or legal policy, irreversible data, external commitments and matters of taste. Ask those in batches of at most five, each with your recommendation first. Before ending any planning turn, check that nothing said in the conversation is missing from the log.
 
+**Read a decision's State before relying on it**, every time, in planning, writing a TRD, building or reviewing:
+- `decided` — binding; act on it. Not yet built.
+- `implemented` — binding, and code depends on it.
+- `superseded by Qn` — void; follow Qn, and read *its* State too.
+- `open` — not decided; do not act on a guess. Ask, or default it if it is yours to decide.
+- `parked` — out of this feature's scope; do not build it.
+
+A document that cites a Q id (spec, ux, TRD, code comment) inherits that Q's State: citing a superseded Q is a defect to fix in the same change.
+
+**Changing a decision** ([ADR-0062](../../../docs/adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)):
+- **Not yet implemented** (`open`, `decided`, `parked`): replace it **in place**. Overwrite answer, decider, date and why; end the why with `was: <old answer>`. Same id, no new row, so every citation stays right.
+- **Implemented**: never edit it. Add a new row with the new answer and set the old row's State to `superseded by Qn`.
+
 ## Where docs live
 
 - **Project-wide:** `docs/` — `ARCHITECTURE.md`, `CONTRACTS.md`, `BACKLOG.md`, `CHANGELOG.md`, `DEPENDENCIES.md`, `TESTING.md`, `OPERATIONS.md`, `INTEGRATIONS.md`, `adr/`, `specs/`.
@@ -40,12 +53,13 @@ Scaffolds a feature folder under `docs/specs/`. Convention: [ADR-0010](../../../
 
 - **Verified:** YYYY-MM-DD
 
-> Append-only. Owner decides money, policy, irreversible data, external commitments, taste.
+> Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones (ADR-0062).
+> Owner decides money, policy, irreversible data, external commitments, taste.
 > Claude decides the rest, marked `Claude · reversible`. Other documents cite Q ids.
 
 | Q | Question | Answer | Decided by | Date | Why | State |
 |---|---|---|---|---|---|---|
-| Q1 | … | … | Owner / Claude · reversible | YYYY-MM-DD | one line | decided / open / parked |
+| Q1 | … | … | Owner / Claude · reversible | YYYY-MM-DD | one line | open / decided / implemented / superseded by Qn / parked |
 
 ## Parked (Later)
 - Q<n> — what was cut, why, and where it now lives (a BACKLOG row or a future feature).

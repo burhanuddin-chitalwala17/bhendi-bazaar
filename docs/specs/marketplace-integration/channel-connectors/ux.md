@@ -1,6 +1,6 @@
 # UX — channel-connectors
 
-- **Status:** Draft — awaiting the owner's sign-off
+- **Status:** Signed off
 - **Verified:** 2026-10-20
 - **Prototype:** https://claude.ai/artifact/UcvpXaYM2wiTr6zrWoze9K (private to the owner)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [src/components/CLAUDE.md](../../../../src/components/CLAUDE.md), [ADR-0050](../../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)
@@ -71,7 +71,7 @@
 | Outcome | Tone | Text | Action |
 |---|---|---|---|
 | Connected | Success toast | "Amazon connected." | — |
-| Connected, different account (Q8) | Info note | "Connected to a different Amazon account than before. The old one is no longer linked." | — |
+| Different account on reconnect (Q8) | Warning note | "That's a different Amazon account from the one connected here. To switch accounts, disconnect this one first, then connect the new one." | Disconnect |
 | Cancelled (Q7) | Neutral note | "Nothing was connected. You can connect Amazon any time." | Connect Amazon |
 | Link expired or altered (R2) | Warning note | "That link has expired. Start again from here." | Connect Amazon |
 | Started by someone else | Warning note | "This connection was started from another sign-in. Start again from here." | Connect Amazon |
@@ -82,7 +82,7 @@
 ## State matrix — Disconnect dialog
 | State | What the person sees | Action |
 |---|---|---|
-| Default | Title "Disconnect Amazon?" · "We'll stop updating Amazon and delete our access. Your listings on Amazon stay as they are. To remove us completely, also revoke Bhendi Bazaar in Seller Central → Apps." | Disconnect · Keep connected |
+| Default | Title "Disconnect Amazon?" · **Stops:** "Stock, prices and orders stop updating between Bhendi Bazaar and Amazon." · **Stays:** "Your listings on Amazon stay live as they are. Your products and their Amazon links stay here, and pick up again if you reconnect this account." · **Watch out:** "Amazon will keep selling at the stock it last had. Pause listings in Seller Central if you don't want that." · "To remove us completely, also revoke Bhendi Bazaar in Seller Central → Apps." (Q9) | Disconnect · Keep connected |
 | Working | Button spinner "Disconnecting…" | — |
 | Success | Dialog closes; card Not connected; toast "Amazon disconnected." | — |
 | Retryable error | Inside the dialog: "Couldn't disconnect. Try again." | Try again |
@@ -110,4 +110,4 @@ Every string above ships as written. Shared words: a marketplace is "connected",
 "20 Oct 2026".
 
 ## Sign-off
-Pending. Open for the owner: decisions.md Q5.
+Signed off by the owner, 2026-10-20, as the prototype stands (version 3).

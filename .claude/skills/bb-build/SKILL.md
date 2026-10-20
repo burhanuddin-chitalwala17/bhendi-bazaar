@@ -10,7 +10,7 @@ The owner writes specifications; this skill is what makes the code that follows 
 ## 0. Refuse what cannot be built yet
 
 Read `docs/specs/<feature>/spec.md`, `decisions.md`, `ux.md` and `trd.md`. Stop and say why if:
-- `decisions.md` has an entry still **open** that a unit depends on ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md));
+- `decisions.md` has an entry still **open** that a unit depends on, or the spec, ux or TRD cites a Q whose State is `superseded` (follow the chain to the binding Q and fix the citation first). Read every Q's State before building on it; `decided` and `implemented` bind, `parked` is not built ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md));
 - the feature has UI and `ux.md` is missing, has a blank state-matrix row, or lacks the owner's dated sign-off;
 - the TRD's **Status** is Draft with open questions, or it has no **Delivery** list;
 - an acceptance id (`A<n>`) is not observable from outside — "works correctly" is not a criterion; given/when/then on a named surface is;
@@ -29,9 +29,10 @@ Emit the unit list as the TRD's Delivery section states it — one commit each �
 2. **Implement**, following the layer the file sits in. A screen implements every row of its `ux.md` state matrix, with the copy exactly as written; a new state found while building goes back into `ux.md` first. Layers: a route handler authorizes, parses, delegates, answers; a component renders, a hook holds state, an `*ApiClient` makes the call; a write is a named command on the aggregate's one repository ([ADR-0055](../../../docs/adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)). The PostToolUse hook runs the scanning gates on every save — read its output as a finding, never silence it.
 3. **A new guard is mutation-tested before it is trusted.** Break the rule once in the source, watch the test go red, restore. Write the mutation into the CHANGELOG entry: what was broken, that it failed. "Mutation-tested" without the mutation is a claim ([ADR-0056](../../../docs/adr/0056-a-gate-against-existing-debt-is-a-ratchet.md) D4). A test that cannot be made to fail by a realistic change is not worth keeping.
 4. **Run the gates:** `npx tsc --noEmit -p .`, `npx vitest run tests/unit`, and the integration suite against the disposable database (`DATABASE_URL` pointing at `bhendi_bazaar_ci` on the local Postgres — see [docs/TESTING.md](../../../docs/TESTING.md)); `npm run lint:boundary`; `npm run docs:check`. Never seed or migrate a database that is not disposable.
-5. **Write the CHANGELOG entry** — newest first, `[CONTRACT]` when a DTO or schema in `server/*/*.types.ts`, `src/lib/validation/schemas/` changed (and `CONTRACTS.md` moved in the same unit), `[MIGRATION]` when `prisma/migrations/` gained a folder (and its header says whose data a `DROP` discards). Name the suites that ran.
-6. **Review in a fresh context.** Spawn a subagent that has not seen the implementation, hand it `.claude/skills/bb-review/SKILL.md` and the unit's range, and fix every finding before committing. The author's own review is step 2's hook, not this.
-7. **Commit** the unit on the working branch. Never push; the owner pushes ([CLAUDE.md](../../../CLAUDE.md) SDLC).
+5. **Mark the decisions it shipped.** Every Q the unit implements moves from `decided` to `implemented (unit n)` in its `decisions.md`. From then on it is superseded, never edited ([ADR-0062](../../../docs/adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
+6. **Write the CHANGELOG entry** — newest first, `[CONTRACT]` when a DTO or schema in `server/*/*.types.ts`, `src/lib/validation/schemas/` changed (and `CONTRACTS.md` moved in the same unit), `[MIGRATION]` when `prisma/migrations/` gained a folder (and its header says whose data a `DROP` discards). Name the suites that ran.
+7. **Review in a fresh context.** Spawn a subagent that has not seen the implementation, hand it `.claude/skills/bb-review/SKILL.md` and the unit's range, and fix every finding before committing. The author's own review is step 2's hook, not this.
+8. **Commit** the unit on the working branch. Never push; the owner pushes ([CLAUDE.md](../../../CLAUDE.md) SDLC).
 
 ## 3. Close the feature
 

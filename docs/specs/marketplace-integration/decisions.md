@@ -2,7 +2,7 @@
 
 - **Verified:** 2026-10-20
 
-> Append-only ([ADR-0061](../../adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)).
+> Replaced in place until implemented, superseded after ([ADR-0062](../../adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)).
 > The owner decides money, policy, irreversible data, external commitments and taste. Claude
 > decides the rest, marked `Claude · reversible`. A subfeature's own decisions go in its own
 > decisions.md and cite these ids. Decisions made 2026-10-15 to 2026-10-20 in planning sessions.
