@@ -21,6 +21,9 @@ export interface OrgChannelRow {
 
 const SELECT = { channel: true, enabled: true } as const;
 
+/** Enough of a client to write the row: `prisma` or a caller's `$transaction` client. */
+export type OrgChannelDb = Pick<typeof prisma, "orgChannel">;
+
 export const orgChannelRepository = {
   async forOrg(orgId: string): Promise<OrgChannelRow[]> {
     return await prisma.orgChannel.findMany({ where: { orgId }, select: SELECT });
@@ -36,8 +39,8 @@ export const orgChannelRepository = {
   },
 
   /** Turn a channel on or off for a shop. The row is created the first time either is said. */
-  async set(orgId: string, channel: Channel, enabled: boolean): Promise<OrgChannelRow> {
-    return await prisma.orgChannel.upsert({
+  async set(orgId: string, channel: Channel, enabled: boolean, db: OrgChannelDb = prisma): Promise<OrgChannelRow> {
+    return await db.orgChannel.upsert({
       where: { orgId_channel: { orgId, channel } },
       create: { orgId, channel, enabled },
       update: { enabled },

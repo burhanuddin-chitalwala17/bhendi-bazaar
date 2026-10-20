@@ -223,7 +223,8 @@ jobs:
   # arm64 and amd64 so either free shape can run it, pushed to this repository's container
   # registry on every push, and started on the machine only from main. The machine is reached
   # over SSH with a key that lives in this repository's secrets; the env file the worker reads
-  # is written from a secret on each deploy and never lives in git or in the image.
+  # is written from secrets on each deploy and never lives in git or in the image: one secret per
+  # variable, `WORKER_ENV_<NAME>`, over the optional base `WORKER_ENV_FILE` (infra/worker/compose-env.sh).
   deploy-worker:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -274,19 +275,23 @@ jobs:
           WORKER_HOST: ${{ secrets.WORKER_HOST }}
           WORKER_SSH_USER: ${{ secrets.WORKER_SSH_USER }}
           WORKER_SSH_KEY: ${{ secrets.WORKER_SSH_KEY }}
-          WORKER_ENV_FILE: ${{ secrets.WORKER_ENV_FILE }}
+          BASE_ENV_FILE: ${{ secrets.WORKER_ENV_FILE }}
+          SECRETS_JSON: ${{ toJSON(secrets) }}
           GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         run: |
           set -euo pipefail
           test -n "$WORKER_HOST" || { echo "WORKER_HOST is not set; the machine does not exist yet, so there is nothing to start." ; exit 0; }
+          # One secret per variable over the optional whole-file base, so changing a value is one edit.
+          WORKER_ENV=$(infra/worker/compose-env.sh WORKER_ENV_)
+          printf '%s\n' "$WORKER_ENV" | grep -q '^DATABASE_URL=' || { echo "::error::No DATABASE_URL for the worker: set WORKER_ENV_DATABASE_URL (or WORKER_ENV_FILE)."; exit 1; }
           mkdir -p ~/.ssh
           printf '%s\n' "$WORKER_SSH_KEY" > ~/.ssh/worker
           chmod 600 ~/.ssh/worker
           SSH="ssh -i ~/.ssh/worker -o StrictHostKeyChecking=accept-new $WORKER_SSH_USER@$WORKER_HOST"
           # The env file and the compose file travel over the same connection; the image
           # reference is fixed to this commit so a rollback is a redeploy of an older SHA.
-          printf '%s\n' "$WORKER_ENV_FILE" | $SSH 'umask 077 && cat > /opt/worker/.env'
+          printf '%s\n' "$WORKER_ENV" | $SSH 'umask 077 && cat > /opt/worker/.env'
           scp -i ~/.ssh/worker -o StrictHostKeyChecking=accept-new infra/worker/compose.yml "$WORKER_SSH_USER@$WORKER_HOST:/opt/worker/compose.yml"
           $SSH "echo '$GHCR_PULL_TOKEN' | docker login ghcr.io -u '$GHCR_PULL_USER' --password-stdin && \
             cd /opt/worker && \

@@ -30,6 +30,7 @@ import "@server/catalog/media.jobs";
 import "@server/catalog/video.jobs";
 import "@server/content/enhancement.jobs";
 import "@server/payments/payment.jobs";
+import "@server/channels/channels.jobs";
 
 const VERSION = process.env.WORKER_VERSION ?? "dev";
 

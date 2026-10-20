@@ -4,8 +4,7 @@
 - **Covers:** `server/*/`, `src/components/*/`, `src/app/api/`, `docs/adr/*.md`, `.claude/`
 
 ## Purpose
-Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-commerce store.
-**Claude Code reads this at the start of every session.** Keep it under 200 lines.
+Single source of rules for **bhendi-bazaar** — a Next.js 16 + Prisma 7 e-commerce store. **Claude Code reads this at the start of every session.** Keep it under 200 lines.
 
 ## How to use this file
 - Always-on **project-wide** rules live here.
@@ -40,6 +39,7 @@ Each is a directory under `server/`, owning its own service, repository, and typ
 | bidding | `server/bidding/` | Timed auctions on a single item, and the gate that suspends it from normal sale |
 | analytics | `server/analytics/` | Aggregating read-model for the admin dashboard. **Read-only**, and the one documented exception to the no-cross-domain-reads rule |
 | wishlist | `server/wishlist/` | Saved products, and the demand signal an org reads off them |
+| channels | `server/channels/` | A shop's authorised connections to marketplaces: consent, encrypted tokens, renewal, health. Tokens never leave it |
 | content | `server/content/` | What is made from an image: enhancement proposals and their ledger, renditions, what each channel asks of a photograph. Reads catalog's assets through catalog's public surface, never its repositories |
 | *(shared)* | `server/shared/` | Prisma client, audit log, pagination, retry, the job-queue seam, the closed set of channels, and the one writer of `Address`. Only what genuinely spans domains — not a dumping ground |
 

@@ -56,8 +56,8 @@
 | Not connected (first use) | Not connected | "List, update stock and get orders from your Amazon seller account." | Connect Amazon |
 | Redirecting | — | Button shows a spinner and "Opening Amazon…" | — |
 | Connected | ● Connected | "Connected by Farida · 20 Oct 2026" · "Last checked 2 min ago" · Amazon only: "Re-approve by 20 Oct 2027" | Disconnect (secondary, red text) |
-| Renewal due (Amazon, ≤30 days) | Renew by 12 Nov | "Amazon asks sellers to re-approve apps once a year. It takes one tap; nothing is lost." | Renew now |
-| Needs reconnecting | Needs reconnecting | Reason, one of: "Amazon stopped accepting our access." · "Flipkart's approval expired." · "Access was removed from Seller Central." | Reconnect |
+| Renewal due (Amazon, ≤30 days) | Renew by 12 Nov | "Amazon asks sellers to re-approve apps once a year. It takes one tap; nothing is lost." | Renew now · Disconnect (secondary) |
+| Needs reconnecting | Needs reconnecting | Reason, one of: "Amazon stopped accepting our access." · "Flipkart's approval expired." · "Access was removed from Seller Central." | Reconnect · Disconnect (secondary) |
 | Disconnected (before) | Not connected | "Disconnected by Farida · 18 Oct 2026." | Connect Amazon |
 | Unavailable (switched off / not set up) | Coming soon | "Connecting Flipkart isn't open yet. We'll show it here when it is." | Tell me more (explains, never disabled) |
 | Refused: limit reached (Amazon) | Full for now | "Amazon allows 25 shops until it approves our app listing. We'll tell you here when it opens." | — (tap explains) |
@@ -105,7 +105,7 @@
 | Own store | "Always on · bhendi-bazaar.com/store/<handle>" | View store |
 
 ## Copy deck
-Every string above ships as written. Shared words: a marketplace is "connected", never "linked" or
+Every string above ships as written. For Flipkart, the dialog's last line reads "To remove us completely, also remove Bhendi Bazaar from your Flipkart account's apps." and the feed card for Meta mirrors Google's ("Show your products on Facebook and Instagram. No account needed; Meta reads your catalogue."), both added while building, 2026-10-20. Also added while building, 2026-10-20: the own store card is titled "Your store"; a connection whose member was deleted reads "Connected by a member"; the Full card's button is "Why?"; Check now answers "Checked just now. All good.", "That connection needs reconnecting." or "Amazon didn't respond. Try again in a minute."; a long name truncates to one line and a tap shows it in full; the Channels page adds "Still loading…" after 3 s of loading; Disconnect also sits as a secondary action on Renewal due and Needs reconnecting, so the different-account note's Disconnect has somewhere to lead (review, 2026-10-20). Shared words: a marketplace is "connected", never "linked" or
 "authorised"; "Re-approve" is Amazon's yearly step, "Reconnect" is any lost connection; dates read
 "20 Oct 2026".
 

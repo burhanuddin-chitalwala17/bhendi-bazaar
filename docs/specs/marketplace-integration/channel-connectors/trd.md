@@ -1,6 +1,6 @@
 # TRD — channel-connectors
 
-- **Status:** Draft — awaiting the owner's reading
+- **Status:** Accepted — by the owner, 2026-10-20
 - **Domain:** channels (new)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-20

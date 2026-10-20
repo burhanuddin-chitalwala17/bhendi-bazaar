@@ -12,6 +12,18 @@ const ROOTS = ["src", "server", "prisma"];
 const SKIP_DIRS = new Set(["migrations", "node_modules", ".next"]);
 const EXTS = [".ts", ".tsx"];
 
+/**
+ * A marketplace's own names, which we must spell as it does (channel-connectors): Amazon's consent
+ * host and Sellers API path, Flipkart's OAuth scope, and, in the signed-off copy, the marketplace's
+ * product "Seller Central", its "seller account", and Amazon's own wording that it "asks sellers"
+ * to re-approve. Removed from a line before it is scanned, so the retired word in our own prose
+ * beside them is still caught. Our own word for a shop stays "org" or "shop".
+ */
+/** Only where the channel code lives; anywhere else the retired word is caught as before. */
+const EXTERNAL_IDENTIFIER_FILES = /(^|\/)(server\/channels\/|src\/components\/channel\/channel-copy\.ts$)/;
+const EXTERNAL_IDENTIFIERS =
+  /sellercentral\.amazon\.[a-z.]+|\/sellers\/v1\/|"Seller_Api"|Seller Central|seller account|asks sellers/gi;
+
 /** Retired words, and what replaced them. */
 const RETIRED: Record<string, string> = {
   seller: "org",
@@ -46,7 +58,8 @@ describe("retired vocabulary does not come back", () => {
           readFileSync(file, "utf8")
             .split("\n")
             .forEach((line, i) => {
-              if (pattern.test(line)) offenders.push(`${file}:${i + 1}`);
+              const scanned = EXTERNAL_IDENTIFIER_FILES.test(file) ? line.replace(EXTERNAL_IDENTIFIERS, "") : line;
+              if (pattern.test(scanned)) offenders.push(`${file}:${i + 1}`);
             });
         }
       }

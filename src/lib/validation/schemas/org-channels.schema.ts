@@ -1,24 +1,26 @@
 import { z } from "zod";
 
-import { PUBLISHABLE_CHANNELS, type Channel } from "@server/shared/channels";
+import { CHANNEL } from "@server/shared/channels";
 
 /**
- * Where a shop has said it sells ([channel-registry](../../../../docs/specs/channel-registry/) R9).
- *
- * The whole set is sent every time, so a channel left out of the body is a channel the form did
- * not show rather than one being switched off. This storefront is not among them: it is where
- * the shop already is, not somewhere it opts into.
+ * The channels a shop turns on with a tap: Google and Meta, which read our feed and need no account.
+ * A marketplace is on only by connecting it (channel-connectors D11), so Amazon and Flipkart are
+ * refused here; accepting them would let a request switch a marketplace on with no connection, or
+ * undo a disconnect. A channel left out of the body is left as it was.
  */
+const FEED_CHANNELS = [CHANNEL.GOOGLE, CHANNEL.META] as const;
 export const orgChannelsSchema = z.object({
   channels: z
     .array(
       z.object({
-        channel: z.enum(PUBLISHABLE_CHANNELS as unknown as [Channel, ...Channel[]]),
+        channel: z.enum(FEED_CHANNELS),
         enabled: z.boolean(),
       }),
     )
-    .max(PUBLISHABLE_CHANNELS.length),
+    .max(FEED_CHANNELS.length),
 });
 
 export type OrgChannelsFormValues = z.input<typeof orgChannelsSchema>;
 export type OrgChannelsParsed = z.output<typeof orgChannelsSchema>;
+export type FeedChannel = (typeof FEED_CHANNELS)[number];
+export const isFeedChannel = (value: string): value is FeedChannel => (FEED_CHANNELS as readonly string[]).includes(value);

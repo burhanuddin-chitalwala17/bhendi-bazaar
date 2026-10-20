@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — shipping domain, current state
 
-- **Verified:** 2026-10-14
+- **Verified:** 2026-10-20
 - **Covers:** `server/shipping/**`. Product-wide architecture is [`/docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
 Describes what exists now. Update after a structural change, never before.
@@ -37,7 +37,6 @@ Status updates arrive independently, by webhook, and are normalised before they 
 | `billable-weight.ts` | What a parcel is billed as: real weights summed, settled to grams, rounded up to the next kilogram, floor 1 kg ([product-weight-and-rates](../../docs/specs/product-weight-and-rates/)). |
 | `services/connection.types.ts` | The shapes the connection flow exchanges. |
 | `providers/_placeholder/` | The mock booking — see *Quoting vs booking*. |
-| `utils/encryption.ts` | AES-256-GCM, random IV per message, PBKDF2 key derivation. |
 | `utils/statusNormalizer.ts` | Carrier status vocabulary → ours. |
 | `utils/weightCalculator.ts` | Shipment weight from its contents, with a fallback when a weight is absent. |
 | `init.ts` | Registers providers. Imported for side effects via `index.ts`. |

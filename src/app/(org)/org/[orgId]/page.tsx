@@ -7,6 +7,8 @@ import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { storefrontService } from "@server/catalog/storefront.service";
 import type { BrandPage } from "@/data-access-layer/storefront.dal";
 import { SectionHeader } from "@/components/shared/SectionHeader";
+import { ChannelAttentionBanner } from "@/components/channel/channel-attention-banner";
+import { channelsDAL } from "@/data-access-layer/channels.dal";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -45,14 +47,17 @@ export default async function OrgDashboard({
 }) {
   const { orgId } = await params;
   const scope = await requireOrgMember(orgId);
-  const [onboarding, brandPage] = await Promise.all([
+  const [onboarding, brandPage, attention] = await Promise.all([
     readOnboarding(scope.orgId),
     readBrandPage(scope.orgId),
+    channelsDAL.attention(scope.orgId),
   ]);
 
   return (
     <div className="space-y-6">
       <SectionHeader as="h1" title="Dashboard" description="An overview of your organisation" />
+
+      <ChannelAttentionBanner orgId={scope.orgId} attention={attention} />
 
       {onboarding && (
         <OnboardingCard status={onboarding} orgId={scope.orgId} page={brandPage} />

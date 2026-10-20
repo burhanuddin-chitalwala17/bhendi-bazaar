@@ -18,4 +18,22 @@ export const channelsApiClient = {
   saveOrgChannels(orgId: string, data: OrgChannelsParsed) {
     return apiRequest(`/api/org/${orgId}/channels`, { method: "PUT", body: data });
   },
+
+  /** A link, not a request: the browser follows it to the marketplace's consent page (connectors D5). */
+  connectUrl(orgId: string, channel: Channel) {
+    return `/api/org/${orgId}/channels/${channel}/connect`;
+  },
+
+  /** Stop acting for the shop on this marketplace (connectors R7). */
+  disconnect(orgId: string, channel: Channel) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/connection`, { method: "DELETE" });
+  },
+
+  /** "Check now": one read against the marketplace, recorded (connectors D7). */
+  checkNow(orgId: string, channel: Channel) {
+    return apiRequest<{ result: "ok" | "needs_reconnect" | "unreachable" }>(
+      `/api/org/${orgId}/channels/${channel}/connection/check`,
+      { method: "POST" },
+    );
+  },
 };

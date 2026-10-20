@@ -11,17 +11,17 @@
 |---|---|---|---|---|---|---|
 | Q1 | What is the shape of the sync? | Bhendi Bazaar is the hub: import once, changes go out, orders and status come back | Owner | 2026-10-19 | Two systems both editing a title cannot be reconciled safely | decided |
 | Q2 | How is the work cut? | Six subfeatures, in the order in spec.md | Owner | 2026-10-20 | Each is one outcome and ships alone | decided |
-| Q3 | Where does the code live? | A new `channels` domain: connections, platform listings, marketplace orders | Owner | 2026-10-15 | Keeps tokens and HTTP out of `listing`'s vocabulary | decided |
+| Q3 | Where does the code live? | A new `channels` domain: connections, platform listings, marketplace orders | Owner | 2026-10-15 | Keeps tokens and HTTP out of `listing`'s vocabulary | implemented (channel-connectors) |
 | Q4 | What if Flipkart lacks an API? | Amazon end to end; channel-neutral code; each Flipkart capability behind a switch | Owner | 2026-10-19 | Flipkart's catalogue API is unconfirmed (Q33) | decided |
 | Q5 | Which process? | ADR-0061, with channel-connectors as its trial | Owner | 2026-10-18 | Scope, decisions and UX were being lost | decided |
-| Q6 | Where does a shop manage channels? | A Channels page replacing "Where you sell"; what is connected is where it sells | Owner | 2026-10-15 | One answer instead of a toggle and a connection | decided |
-| Q7 | What of channels with no account? | The own store is always on; Google and Meta turn on with one tap | Claude · reversible | 2026-10-15 | They read our feed and need no consent | decided |
-| Q8 | May two shops share a marketplace account? | No: one account, one shop; the second is refused with the reason | Owner | 2026-10-15 | Shared listings double-count sales and fight over stock | decided |
-| Q9 | Who may connect? | Any member of the shop | Owner | 2026-10-15 | Roles are not in use yet | decided |
-| Q10 | How is Amazon's yearly renewal announced? | In the app only | Owner | 2026-10-15 | Email is not needed yet | decided |
-| Q11 | Where are app credentials? | `FLIPKART_APP_ID/SECRET`, `AMAZON_APP_ID/SECRET` (Login with Amazon client), `AMAZON_SOLUTION_ID` (consent URL app id) | Owner | 2026-10-15 | Names already in `.env` | decided |
-| Q12 | How are seller tokens stored? | Encrypted under a versioned key, rotatable without reconnecting anyone | Claude · reversible | 2026-10-15 | The shipping helper has no key version | decided |
-| Q13 | Which redirect URLs? | Amazon: live and `dev.`; Flipkart: live until a dev app is needed | Claude · reversible | 2026-10-15 | Flipkart allows one redirect per app | decided |
+| Q6 | Where does a shop manage channels? | A Channels page replacing "Where you sell"; what is connected is where it sells | Owner | 2026-10-15 | One answer instead of a toggle and a connection | implemented (channel-connectors) |
+| Q7 | What of channels with no account? | The own store is always on; Google and Meta turn on with one tap | Claude · reversible | 2026-10-15 | They read our feed and need no consent | implemented (channel-connectors) |
+| Q8 | May two shops share a marketplace account? | No: one account, one shop; the second is refused with the reason | Owner | 2026-10-15 | Shared listings double-count sales and fight over stock | implemented (channel-connectors) |
+| Q9 | Who may connect? | Any member of the shop | Owner | 2026-10-15 | Roles are not in use yet | implemented (channel-connectors) |
+| Q10 | How is Amazon's yearly renewal announced? | In the app only | Owner | 2026-10-15 | Email is not needed yet | implemented (channel-connectors) |
+| Q11 | Where are app credentials? | `FLIPKART_APP_ID/SECRET`, `AMAZON_APP_ID/SECRET` (Login with Amazon client), `AMAZON_SOLUTION_ID` (consent URL app id) | Owner | 2026-10-15 | Names already in `.env` | implemented (channel-connectors) |
+| Q12 | How are seller tokens stored? | Encrypted under a versioned key, rotatable without reconnecting anyone | Claude · reversible | 2026-10-15 | The shipping helper has no key version | implemented (channel-connectors) |
+| Q13 | Which redirect URLs? | Amazon: live and `dev.`; Flipkart: live until a dev app is needed | Claude · reversible | 2026-10-15 | Flipkart allows one redirect per app | implemented (channel-connectors) |
 | Q14 | What comes in on connect? | Every product on that marketplace | Owner | 2026-10-19 | The shop starts from what it already sells | decided |
 | Q15 | How are duplicates found? | By SKU and by name | Owner | 2026-10-19 | The identifiers both platforms share | decided |
 | Q16 | Who decides two products are one? | The owner | Owner | 2026-10-19 | A wrong merge mixes two products' stock | decided |

@@ -37,6 +37,7 @@ jobs:
           WORKER_SSH_KEY: ${{ secrets.WORKER_SSH_KEY }}
           WORKER_ENV_FILE: ${{ secrets.WORKER_ENV_FILE }}
           WORKER_STAGING_ENV_FILE: ${{ secrets.WORKER_STAGING_ENV_FILE }}
+          SECRETS_JSON: ${{ toJSON(secrets) }}
           GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
           IMAGE: ghcr.io/${{ github.repository_owner }}/bhendi-bazaar-worker:develop
@@ -45,15 +46,19 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$WORKER_HOST" || { echo "::error::WORKER_HOST is not set; there is no machine to reach."; exit 1; }
-          test -n "$WORKER_STAGING_ENV_FILE" || { echo "::error::WORKER_STAGING_ENV_FILE is not set. It is the dev database and the dev bucket, and without it this would have nothing to run against."; exit 1; }
+          # Each file is one secret per variable (WORKER_ENV_<NAME>, WORKER_STAGING_ENV_<NAME>) over an
+          # optional whole-file base (infra/worker/compose-env.sh), so a value changes with one edit.
+          PROD_ENV=$(BASE_ENV_FILE="$WORKER_ENV_FILE" infra/worker/compose-env.sh WORKER_ENV_)
+          STAGING_ENV=$(BASE_ENV_FILE="$WORKER_STAGING_ENV_FILE" infra/worker/compose-env.sh WORKER_STAGING_ENV_)
+          printf '%s\n' "$STAGING_ENV" | grep -q '^DATABASE_URL=' || { echo "::error::No staging DATABASE_URL: set WORKER_STAGING_ENV_DATABASE_URL (or WORKER_STAGING_ENV_FILE). It is the dev database, and without it this would have nothing to run against."; exit 1; }
 
           # The whole risk of a staging worker is which database it names. The two env files
           # differ in exactly that, so a staging file carrying the production string would
           # quietly point a test worker at real orders. Refused here rather than discovered
           # later, and the strings themselves never reach the log.
           reads_database_url() { printf '%s\n' "$1" | grep -m1 '^DATABASE_URL=' | cut -d= -f2- || true; }
-          if [ -n "$WORKER_ENV_FILE" ]; then
-            if [ "$(reads_database_url "$WORKER_STAGING_ENV_FILE")" = "$(reads_database_url "$WORKER_ENV_FILE")" ]; then
+          if [ -n "$PROD_ENV" ]; then
+            if [ "$(reads_database_url "$STAGING_ENV")" = "$(reads_database_url "$PROD_ENV")" ]; then
               echo "::error::The staging env file names the same database as production. Point it at dev before running this."
               exit 1
             fi
@@ -78,7 +83,7 @@ jobs:
             exit 0
           fi
 
-          printf '%s\n' "$WORKER_STAGING_ENV_FILE" | $SSH 'umask 077 && cat > /opt/worker-staging/.env'
+          printf '%s\n' "$STAGING_ENV" | $SSH 'umask 077 && cat > /opt/worker-staging/.env'
           $SSH "echo '$GHCR_PULL_TOKEN' | docker login ghcr.io -u '$GHCR_PULL_USER' --password-stdin && \
             cd /opt/worker-staging && \
             WORKER_IMAGE='${IMAGE}' docker compose -p worker-staging pull && \

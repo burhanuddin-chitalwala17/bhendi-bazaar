@@ -1,7 +1,7 @@
 # Spec — channel-connectors
 
 - **Summary:** A shop connects its own Amazon and Flipkart seller accounts by consenting on the marketplace's own page, and sees on one Channels page where it sells and whether each connection is healthy
-- **Status:** Draft
+- **Status:** Accepted
 - **Domain:** channels (new)
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-20
@@ -50,10 +50,15 @@ marketplaces, and makes "where you sell" a fact rather than a setting.
 ## Hazards the TRD must answer
 - **Two renewals at once.** Flipkart replaces the renewal credential near its expiry; two
   simultaneous renewals can keep the old one and lose the new, disconnecting the shop silently.
+  *Answered by D8.*
 - **A connection that is never used can lapse.** Flipkart's renewal credential lasts 180 days.
+  *Answered by D7.*
 - **A forged or replayed return** connecting someone else's marketplace account to a shop.
+  *Answered by D4.*
 - **Reconnecting with a different account** than before: refused; switching is disconnect then connect (Q8).
+  *Answered by D9.*
 - **The encryption key leaks or is lost.** Replacement must not need every shop to reconnect.
+  *Answered by D3.*
 
 ## Product acceptance
 - A1 — On a phone (~360px), a member taps Connect Amazon, approves on Amazon, and lands back on the

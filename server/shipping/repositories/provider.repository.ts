@@ -9,7 +9,7 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { ShippingProvider, Prisma } from "@prisma/client";
-import { encryptionService } from "../utils/encryption";
+import { encryptSecret } from "@server/shared/crypto";
 
 /** The columns a browser may never see. Named once, so the test and the projection agree. */
 export const PROVIDER_CREDENTIAL_FIELDS = [
@@ -173,7 +173,7 @@ export class ShippingProviderRepository {
         tokenExpiresAt: data.tokenExpiresAt,
         accountInfo: {
           ...data.accountInfo,
-          password: encryptionService.encrypt(data.password), // Encrypt password
+          password: encryptSecret(data.password),
         },
       },
     });
