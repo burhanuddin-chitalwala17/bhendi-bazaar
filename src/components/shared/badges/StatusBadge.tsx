@@ -21,6 +21,11 @@ const statusBadgeVariants = cva(
         pending: "bg-warning/15 text-warning",
         paid: "bg-success/15 text-success",
         failed: "bg-destructive/15 text-destructive",
+        // A marketplace connection's health (channel-connectors ux.md).
+        connected: "bg-success/15 text-success",
+        attention: "bg-warning/15 text-warning",
+        problem: "bg-destructive/15 text-destructive",
+        muted: "bg-muted text-muted-foreground",
       },
     },
     defaultVariants: {

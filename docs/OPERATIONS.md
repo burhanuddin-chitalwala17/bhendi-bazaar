@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-10-06
+- **Verified:** 2026-10-20
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -41,7 +41,12 @@ npm run dev                 # http://localhost:3000
 | `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development. The same key buys the **scene** improvement, which has no free route at all — no key, no scenes anywhere, and the account behind it needs a *balance* as well as a key (see [A scene costs money](#a-scene-costs-money)) |
 | `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
-| `ENCRYPTION_KEY` | ✅ | AES-256-GCM key for stored shipping credentials. Use 32 bytes of hex |
+| `ENCRYPTION_KEY` | ○ | Decrypts shipping credentials stored before 2026-10-20 only (`server/shared/crypto.ts`). Keep it set while any such row exists; new values use `CREDENTIAL_KEYS` |
+| `CHANNELS_CONNECT` | ○ | Marketplaces open to connect, comma-separated (`amazon,flipkart`); empty or unset means none (`server/channels/channel-availability.ts`). The only switch for marketplace connections |
+| `AMAZON_APP_ID` / `AMAZON_APP_SECRET` | ○ | Amazon SP-API Login with Amazon client id and secret (Developer Central → app → LWA credentials). Unset means Amazon shows as unavailable |
+| `AMAZON_SOLUTION_ID` | ○ | The Amazon app's own id, `amzn1.sp.solution…`, used in the consent link |
+| `FLIPKART_APP_ID` / `FLIPKART_APP_SECRET` | ○ | Flipkart third-party app (Partner portal → Manage API Access). Unset means Flipkart shows as unavailable |
+| `CREDENTIAL_KEYS` | ✅ | Encrypts secrets at rest (carrier passwords, marketplace tokens): comma-separated `version:64-hex` pairs; the highest version encrypts, every listed one decrypts. Generate with `openssl rand -hex 32`. Same value on the site and the worker; losing it means every shop reconnects. To rotate, add a higher version and keep the old until the daily job has re-encrypted |
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
@@ -440,7 +445,8 @@ That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not
 | `WORKER_HOST` | The reserved public IP |
 | `WORKER_SSH_USER` | `ubuntu` on that image |
 | `WORKER_SSH_KEY` | A private key whose public half is in the machine's `authorized_keys`. Generate one for the pipeline alone; never reuse a personal key |
-| `WORKER_ENV_FILE` | The whole env file, from `.env.worker.example` with values — `DATABASE_URL` is the **direct** string of the production database |
+| `WORKER_ENV_<NAME>` | **One secret per worker variable**, named for it: `WORKER_ENV_DATABASE_URL` (the **direct** string of the production database), `WORKER_ENV_CREDENTIAL_KEYS`, and so on for every name in `.env.worker.example`. The deploy writes `NAME=value` for each (`infra/worker/compose-env.sh`), so changing a value is editing one secret |
+| `WORKER_ENV_FILE` | Optional, the old whole-file form. Still read as the base; an individual `WORKER_ENV_<NAME>` replaces its line. Move values out of it one at a time, then delete it |
 | `GHCR_PULL_USER` / `GHCR_PULL_TOKEN` | A GitHub user and a personal access token with `read:packages`, so the machine can pull the private image |
 
 **Redeploys and the dev domain.** `dev.bhendi-bazaar.com` is moved onto a deployment by the pipeline's
@@ -462,6 +468,8 @@ mkdir -p ~/worker-staging && cp infra/worker/compose.yml ~/worker-staging/ && cd
 WORKER_IMAGE=ghcr.io/<owner>/bhendi-bazaar-worker:develop docker compose -p worker-staging up -d
 docker compose -p worker-staging down   # when done: an idle worker still bills polls
 ```
+
+The staging worker reads `WORKER_STAGING_ENV_<NAME>` the same way, over the optional base `WORKER_STAGING_ENV_FILE`, and refuses to start when its `DATABASE_URL` equals production's.
 
 **Or press the button.** `.github/workflows/staging-worker.yml` is a manually triggered workflow
 in the Actions tab with two choices: up or down, and how long before it stops itself. It reaches
@@ -516,7 +524,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 | Concern | Provider | Notes |
 |---|---|---|
 | Hosting | **Vercel** | Project `bhendi-bazaar`; deployed from GitHub Actions, not the Git integration — see [Deploy](#deploy) |
-| Domain | **GoDaddy** (registrar) | `bhendi-bazaar.com`; DNS points at Vercel |
+| Domain | **GoDaddy** (registrar), **Cloudflare** (DNS) | `bhendi-bazaar.com`; nameservers at Cloudflare, records there point at Vercel. Add any DNS record in Cloudflare, never GoDaddy |
 | Database | **Prisma Postgres** (`db.prisma.io`), **Mumbai region** | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story. Anything that talks to it constantly — the worker of [worker-foundation](specs/worker-foundation/) — is placed in the same region |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
 | Redis (rate limiting) | **Upstash** — *not currently wired* | Intended provider, via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*`. No live code reads it |

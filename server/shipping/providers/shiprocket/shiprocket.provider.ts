@@ -14,7 +14,7 @@ import type {
 } from "./shiprocket.types";
 import { SHIPROCKET_CONFIG, SHIPROCKET_ENDPOINTS } from "./shiprocket.config";
 import { shippingProviderRepository } from "../../repositories/provider.repository";
-import { encryptionService } from "../../utils/encryption";
+import { decryptSecret, encryptSecret } from "@server/shared/crypto";
 import type {
   ConnectionRequestBody,
   GetShippingRatesResponse,
@@ -111,7 +111,7 @@ export class ShiprocketProvider extends BaseShippingProvider {
     }
 
     const email = accountInfo.email;
-    const password = encryptionService.decrypt(accountInfo.password);
+    const password = decryptSecret(accountInfo.password);
 
     // A DNS blip or a slow response shouldn't fail the whole quote on the first
     // try — bounded retry with a timeout on each attempt (shipping CLAUDE.md).
@@ -346,7 +346,7 @@ export class ShiprocketProvider extends BaseShippingProvider {
         firstName: data.first_name,
         lastName: data.last_name,
         email: data.email,
-        password: encryptionService.encrypt(password),
+        password: encryptSecret(password),
         companyId: data.company_id,
       },
     };

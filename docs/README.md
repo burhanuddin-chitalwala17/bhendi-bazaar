@@ -1,6 +1,6 @@
 # Documentation
 
-- **Verified:** 2026-10-08
+- **Verified:** 2026-10-20
 - **Covers:** `docs/*.md`, `docs/adr/*.md`, `docs/specs/*/`
 
 A map of this directory. Every link here points at a file that exists — if one does not, that is a defect ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
@@ -54,12 +54,12 @@ The remaining domains (`catalog`, `listing`, `cart`, `identity`, `analytics`, `p
 
 - **No pasted implementation code.** Reference `path/file.ts` plus a symbol name. Exceptions: shell commands, env-var names, wire-format JSON, diagrams ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)).
 - **Every doc carries `Verified: YYYY-MM-DD`** — the date its claims were last checked against the code. Stale is tolerable; silently stale is not.
-- **Specs are feature folders**, `kebab-case`, no numbering; `spec.md` (product) + `trd.md` (technical, no code); ≤100 readable lines each ([ADR-0010](adr/0010-spec-convention.md)).
+- **Specs are feature folders**, `kebab-case`, no numbering; `spec.md` (product) + `trd.md` (technical, no code); ≤100 readable lines each ([ADR-0010](adr/0010-spec-convention.md)). Each also holds `decisions.md` (every question, who decided, why) and, for a feature with UI, `ux.md` (journeys, state matrix, copy, signed off before the TRD) ([ADR-0061](adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)).
 - **ADRs are immutable.** Supersede, never edit.
 
 ## Workflows
 
-Invoke these rather than recalling the steps: `/bb-brainstorm <topic>` (research before a TRD), `/bb-sdlc spec-start|adr-new|pr-finish`, `/bb-review` (before any PR is done — checks the Invariants).
+Invoke these rather than recalling the steps: `/bb-brainstorm <topic>` (research before a TRD), `/bb-sdlc spec-start|ux-start|adr-new|pr-finish`, `/bb-build <feature>`, `/bb-review` (before any PR is done — checks the Invariants).
 
 ## [_archive/](_archive/) — ⚠️ do not trust
 

@@ -92,6 +92,8 @@ const PUBLIC_SURFACE: Record<string, string[]> = {
   analytics: [],
   wishlist: [],
   content: [],
+  // channel-connectors D1: the connection service and its types only. Tokens never leave.
+  channels: [],
 };
 
 /** Always public, in every domain. */

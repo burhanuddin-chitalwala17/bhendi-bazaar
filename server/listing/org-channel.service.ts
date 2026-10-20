@@ -7,7 +7,9 @@ import {
   type ChannelKind,
 } from "@server/shared/channels";
 
-import { orgChannelRepository } from "./org-channel.repository";
+import { orgChannelRepository, type OrgChannelDb } from "./org-channel.repository";
+
+export type { OrgChannelDb };
 
 /**
  * Where a shop sells, read and written
@@ -48,6 +50,14 @@ export const orgChannelService = {
    * what it showed, and treating silence as "off" would turn off whatever a later release adds
    * the moment an older page posted.
    */
+  /**
+   * One channel on or off, inside the caller's transaction. Connecting a marketplace is how a shop
+   * starts selling there (channel-connectors D11), so the two commit together.
+   */
+  async setIn(db: OrgChannelDb, orgId: string, channel: Channel, enabled: boolean): Promise<void> {
+    await orgChannelRepository.set(orgId, channel, enabled, db);
+  },
+
   async save(orgId: string, choices: readonly { channel: Channel; enabled: boolean }[]) {
     await orgChannelRepository.setMany(
       orgId,

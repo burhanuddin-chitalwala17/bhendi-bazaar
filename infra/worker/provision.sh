@@ -5,7 +5,7 @@
 #   sudo ./provision.sh
 #
 # What it sets up on a fresh Ubuntu 24.04: automatic security updates, a firewall that allows
-# SSH only, Docker with the compose plugin, log rotation, the /opt/worker directory the deploy
+# SSH only, fail2ban on SSH, Docker with the compose plugin, log rotation, the /opt/worker directory the deploy
 # writes into, and the compose stack as a service that starts on boot. It never contains a
 # secret and never names the cloud it runs on; the deploy supplies the env file and the image.
 set -euo pipefail
@@ -60,6 +60,23 @@ KbdInteractiveAuthentication no
 PermitRootLogin no
 CONF
   systemctl reload ssh || systemctl reload sshd
+}
+
+intrusion_prevention() {
+  log "fail2ban: ban addresses that keep failing SSH"
+  apt_install fail2ban
+  # Ubuntu 24.04's sshd logs to the journal, not auth.log; bans go through ufw so there is one rule set.
+  cat >/etc/fail2ban/jail.d/60-worker.local <<'CONF'
+[sshd]
+enabled = true
+backend = systemd
+banaction = ufw
+maxretry = 5
+findtime = 10m
+bantime = 1h
+CONF
+  systemctl enable fail2ban
+  systemctl restart fail2ban
 }
 
 docker_engine() {
@@ -147,6 +164,7 @@ require_root
 security_updates
 firewall
 ssh_hardening
+intrusion_prevention
 docker_engine
 worker_directory
 worker_service

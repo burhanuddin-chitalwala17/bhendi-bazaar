@@ -12,6 +12,7 @@ import {
   Wallet,
   Tags,
   Images,
+  Plug,
 } from "lucide-react";
 import { PortalSidebar } from "@/components/layout/PortalSidebar";
 import { OrgSwitcher, type SwitcherOrg } from "@/components/org/org-switcher";
@@ -32,6 +33,7 @@ export function OrgSidebar({
         { title: "Dashboard", href: base, icon: LayoutDashboard, exact: true },
         { title: "Storefront", href: `${base}/storefront`, icon: Store },
         { title: "Products", href: `${base}/products`, icon: Package },
+        { title: "Channels", href: `${base}/channels`, icon: Plug },
         { title: "What you sell", href: `${base}/listing`, icon: Tags },
         { title: "Library", href: `${base}/library`, icon: Images },
         { title: "Orders", href: `${base}/orders`, icon: ShoppingCart },

@@ -19,7 +19,7 @@ export interface OrgScope {
   userId: string;
 }
 
-async function resolveOrgScope(orgId: string): Promise<OrgScope> {
+export async function resolveOrgScope(orgId: string): Promise<OrgScope> {
   const session = await requireSession();
 
   const membership = await orgMemberRepository.findMembership(session.user.id, orgId);

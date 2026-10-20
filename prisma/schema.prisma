@@ -585,6 +585,8 @@ model User {
   bids                 Bid[]          @relation("UserBids")
   biddingEventsCreated BiddingEvent[] @relation("BiddingCreatedBy")
   biddingEventsSettled BiddingEvent[] @relation("BiddingSettledBy")
+  channelsConnected    ChannelConnection[] @relation("ChannelConnectedBy")
+  channelsDisconnected ChannelConnection[] @relation("ChannelDisconnectedBy")
 
   @@index([platformRole])
   @@index([isBlocked])
@@ -675,6 +677,7 @@ model Org {
   listingValues ListingValue[]
   productFamilies ProductFamily[]
   channels OrgChannel[]
+  channelConnections ChannelConnection[]
 }
 
 /// The public face of an organisation: what a storefront or an advertisement may show, and
@@ -1968,6 +1971,47 @@ model OrgChannel {
 
   @@id([orgId, channel])
   @@index([channel])
+}
+
+/// A shop's authorised connection to one marketplace (channel-connectors TRD D2). Tokens are
+/// `server/shared/crypto.ts` ciphertext and never leave the channels domain. Disconnecting nulls them
+/// and keeps who connected and when (decision Q4), so the row is retired, never deleted.
+/// One connected row per marketplace account: a partial unique index in the migration (D9).
+model ChannelConnection {
+  id      String @id @default(cuid())
+  orgId   String
+  org     Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  /// A marketplace `CHANNEL` key.
+  channel String
+  /// `CONNECTION_STATE`: CONNECTED, NEEDS_RECONNECT, DISCONNECTED.
+  state   String
+
+  /// The marketplace's own id for the seller (Amazon's selling_partner_id). Flipkart gives none.
+  externalAccountId     String?
+  accessToken           String?
+  accessTokenExpiresAt  DateTime?
+  refreshToken          String?
+  refreshTokenExpiresAt DateTime?
+  /// When the seller last consented; Amazon asks again 365 days later.
+  authorizedAt          DateTime?
+
+  connectedById    String?
+  connectedBy      User?     @relation("ChannelConnectedBy", fields: [connectedById], references: [id], onDelete: SetNull)
+  connectedAt      DateTime?
+  disconnectedById String?
+  disconnectedBy   User?     @relation("ChannelDisconnectedBy", fields: [disconnectedById], references: [id], onDelete: SetNull)
+  disconnectedAt   DateTime?
+
+  lastCheckedAt DateTime?
+  /// A `CONNECTION_ERROR` code, never marketplace text.
+  lastErrorCode String?
+  lastErrorAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orgId, channel])
+  @@index([channel, state])
 }
 
 /// Which of a channel's categories a product type and kind list under

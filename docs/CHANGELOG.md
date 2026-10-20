@@ -10,6 +10,147 @@
 
 ## Entries
 
+## 2026-10-20 — Worker env from one secret per variable
+
+- The deploy no longer needs the whole worker env file re-pasted to change one value. Every GitHub
+  secret named `WORKER_ENV_<NAME>` becomes `NAME=value` (`infra/worker/compose-env.sh`, read through
+  `toJSON(secrets)`); `WORKER_ENV_FILE` stays as an optional base whose lines an individual secret
+  replaces, so the move can be gradual. The staging worker does the same with
+  `WORKER_STAGING_ENV_<NAME>` over `WORKER_STAGING_ENV_FILE`, and still refuses to run when its
+  database equals production's, now compared on the composed files.
+- Both workflows fail with a named error when the composed file has no `DATABASE_URL`.
+- Checked locally: base plus overrides, overrides only, and the staging prefix ignoring production
+  secrets. OPERATIONS.md's secrets table and staging note describe it.
+
+## 2026-10-20 — channel-connectors: fixes from the fresh-context review [CONTRACT]
+
+- **The different-account way out:** Disconnect now sits beside Renew now and Reconnect, and on the
+  different-account note, so "disconnect, then connect" (Q8) can be done from the screen.
+- **A marketplace cannot be switched on without connecting it:** `org-channels.schema.ts` accepts
+  only `google` and `meta`; a `PUT` naming Amazon or Flipkart is refused (D11). CONTRACTS.md notes it.
+- **The callback** refuses a state signed for another marketplace's channel, and checks membership
+  with the uncached `resolveOrgScope` (now exported from `org-auth.ts`).
+- **The daily job survives a bad row:** each connection is maintained in its own try/catch and
+  counted as `failed`, logged by id only. "Needs reconnecting" and "checked" are conditional writes
+  (`state = CONNECTED`), so a disconnect mid-check is never undone.
+- Recorded as decisions rather than changed: Amazon's `selling_partner_id` is trusted from the
+  redirect as Amazon documents it (Q17); the 25-shop count can be passed by one in a race, which
+  Amazon itself refuses (Q18).
+- UI: touch targets `min-h-10`; closed sets compared by constant; the store card's host comes from
+  `appUrl()`; "Still loading…" after 3 s; long names expand on a tap; the vocabulary exemption now
+  applies only to `server/channels/` and `channel-copy.ts`. ux.md records each added string.
+- Mutation-tested: dropping the callback's channel check — "never spends an Amazon state on
+  Flipkart's callback" red; dropping its same-user check — "refuses a return finished in another
+  sign-in" red. Restored.
+- Tests: `tests/unit/channel-callback-route.test.ts` (6), `channel-cards.test.tsx` (+3). Ran
+  `tsc --noEmit`, `tests/unit` (all), the channel integration suites, `lint:boundary`, `docs:check`.
+
+## 2026-10-20 — channel-connectors unit 6: daily maintenance and the dashboard banner
+
+- `channels.maintain` (`server/channels/channels.jobs.ts`, the third of four schedule slots, every
+  24 h): per live connection, Flipkart renewal when under 30 days of refresh token remain, a health
+  check behind "Last checked", and re-sealing under the newest `CREDENTIAL_KEYS` version inside the
+  row lock. Suspended shops are skipped (Q11). Registered in `worker/main.ts`; `.env.worker.example`
+  gains `CREDENTIAL_KEYS`, which the worker must share with the site.
+- The org dashboard shows `ChannelAttentionBanner`: one line for renewal due or needs reconnecting,
+  "2 channels need attention." for both (spec R9). Its read fails alone, like the other cards.
+- Tests: `tests/integration/channel-connections.test.ts` "the daily pass … skips a suspended shop";
+  `tests/unit/channel-cards.test.tsx` banner cases.
+
+## 2026-10-20 — channel-connectors unit 5: the Channels page
+
+- New page `/org/[orgId]/channels`, "Channels" in the sidebar under Products (Q5): own store, Amazon,
+  Flipkart, Google, Meta; one column, two from `md:`, three from `lg:`. Server-rendered from
+  `channelsDAL`; client leaves are only the card actions, the disconnect sheet (shared `FormDialog`),
+  the feed toggles and the return note. Requests go through `channelsApiClient` (`connectUrl`,
+  `disconnect`, `checkNow`) with `useMutation`. Every string is ux.md's, in `channel-copy.ts`; two
+  lines added while building (Flipkart's revoke line, Meta's feed text) are recorded in ux.md.
+- "Where you sell" is removed from What you sell, and `where-you-sell.tsx` deleted (R8). `StatusBadge`
+  gains `connected`, `attention`, `problem`, `muted` on existing semantic tokens; no new token.
+- Allowlist edit, `tests/unit/vocabulary.test.ts`: lines are scanned with the marketplaces' own names
+  removed (Amazon's consent host and Sellers API path, Flipkart's `Seller_Api` scope, "Seller
+  Central", "seller account", "asks sellers"), because the signed-off copy and the APIs must spell
+  them as the marketplaces do. Mutation-tested: "the seller signs in here" beside the consent URL —
+  red; restored.
+- Tests: `tests/unit/channel-cards.test.tsx` (13, every card state's copy and action; every
+  `CONNECT_RESULT` has copy).
+
+## 2026-10-20 — channel-connectors units 3–4: Amazon and Flipkart, and the routes [CONTRACT]
+
+- Providers `server/channels/providers/amazon/` (Seller Central India consent with `version=beta`
+  and a 25-shop cap while the app is unlisted — a fact in the provider, Q16; Login with Amazon
+  tokens; `getMarketplaceParticipations` as the health read) and `providers/flipkart/` (GET token
+  calls with Basic auth; the token-expiry endpoint as the health read). Ten-second timeouts;
+  failures classed as reconnect (`MarketplaceAuthError`) or try later (`MarketplaceUnavailableError`).
+- Routes: `GET …/channels/[channel]/connect`, `GET /api/channels/[channel]/callback` (in
+  `EXTERNALLY_CALLED`: the marketplaces' redirect), `DELETE …/connection`, `POST …/connection/check`.
+  CONTRACTS.md gains "Channel connections".
+- Tests: `tests/unit/channel-providers.test.ts` (14).
+
+## 2026-10-20 — channel-connectors unit 2: the channels domain [MIGRATION]
+
+- Migration `20261020000000_channel_connections`: `ChannelConnection`, unique per (shop, channel), a
+  partial unique index making one live connection per marketplace account a database fact (Q8), and
+  CHECKs on state and on tokens matching state. No data dropped. Never cascades from a shop.
+- `server/channels/`: types and closed sets, the one switch `CHANNELS_CONNECT`, the signed ten-minute
+  `state`, the repository, and `channel-connection.service` (overview cards with derived renewal-due,
+  unavailable and full; connect; disconnect; lazy renewal under `FOR UPDATE`; check; the daily pass).
+  Connect and disconnect write listing's `OrgChannel` in the same transaction through the new
+  `orgChannelService.setIn`, audited. New domain: `PUBLIC_SURFACE` (`channels: []`), root CLAUDE.md
+  table, `server/channels/CLAUDE.md` in `LIVING_DOCS`, ARCHITECTURE.md's domain list and counts.
+- Mutation-tested: removing the row lock — "two renewals at once" went red (renewed twice);
+  removing the service's other-shop check alone stayed green (the partial index refused it);
+  removing the index handling as well — "refuses an Amazon account already connected to another
+  shop" went red. Restored.
+- Tests: `tests/unit/channel-connect-state.test.ts` (6), `tests/integration/channel-connections.test.ts`
+  (14). Ran `tsc --noEmit`, `tests/unit` (all, 2057), `tests/integration` against `bhendi_bazaar_ci`
+  (only the known `channel-registry` index failure), `lint:boundary`, `docs:check`.
+
+## 2026-10-20 — channel-connectors unit 1: secrets at rest under a versioned key
+
+- New `server/shared/crypto.ts`: AES-256-GCM under `CREDENTIAL_KEYS` (`version:64-hex` pairs; the
+  highest encrypts, any listed decrypts), ciphertext prefixed `v<n>:`, `needsReencryption` for the
+  daily re-encrypt in unit 6 ([TRD](specs/marketplace-integration/channel-connectors/trd.md) D3).
+  A missing or malformed key throws and never echoes key material.
+- Shipping moved onto it; `server/shipping/utils/encryption.ts` removed. Values written before this
+  (no prefix) still decrypt from `ENCRYPTION_KEY`, so stored carrier passwords keep working; new
+  writes need `CREDENTIAL_KEYS`, which the deployment must now set (OPERATIONS.md). Shipping's
+  ADR-0002 status records the amended key handling.
+- Mutation-tested: decrypting with the current key when the named version is missing — "refuses to
+  open once its key is removed" went red; restored.
+- Review fixes: the GCM tag length is pinned to 16 bytes, and a truncated tag is refused; production
+  and worker env templates list `CREDENTIAL_KEYS`.
+- Tests: `tests/unit/credential-crypto.test.ts` (14). Ran `tsc --noEmit`, `tests/unit` (all, 2020),
+  `lint:boundary`, `docs:check`.
+
+## 2026-10-18 — SDLC gains a scope cut, a decision log and a UX stage (ADR-0061)
+
+- New cycle: spike → spec → **UX** → TRD → build → review. Recorded in
+  [ADR-0061](adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md),
+  with one line in CLAUDE.md's conventions index and the cycle block rewritten.
+- `/bb-sdlc spec-start` now cuts a feature to one outcome, with a **Scope** section split into In
+  and Later, and opens `decisions.md` (append-only: Q id, answer, who decided, why). The spec
+  template's "Out of scope" becomes Scope plus Q ids for open questions. The TRD's Gates list,
+  previously pasted into its Packages section, is put back.
+- New `/bb-sdlc ux-start`: journeys, screen inventory, a state matrix for every screen (first use
+  through phone, tablet and desktop), copy deck, phone-first prototype and the owner's dated sign-off.
+- `/bb-build` refuses open decisions and UI without a signed-off `ux.md`, and its acceptance report
+  walks every state. `/bb-review` and `pr-finish` check screens against `ux.md` and scope against
+  the ids. `/bb-brainstorm` turns options into open Qs and parks anything beyond its question.
+- docs/README.md and docs/specs/README.md describe the two new files. Docs only; `docs:check` ran.
+
+## 2026-10-15 — Worker machine bans repeated SSH failures (fail2ban)
+
+- `infra/worker/provision.sh` gains `intrusion_prevention`: fail2ban's `sshd` jail on the systemd
+  journal (Ubuntu 24.04's sshd does not write `auth.log`), banning through ufw so the firewall stays
+  one rule set — 5 failures in 10 minutes earns a 1-hour ban.
+- Why now: the Amazon SP-API developer profile attests to intrusion detection and prevention; the
+  machine had a firewall and key-only SSH but nothing watching for repeated attempts.
+- Applied to the live worker 2026-10-15 by running only this step (not the whole script, which would
+  reset ufw and overwrite the deployed `compose.yml`): fail2ban 1.0.2-3ubuntu0.1 active, the `sshd`
+  jail reading the journal, and its first ban already a ufw `REJECT` rule; worker container still
+  healthy. No test covers the provisioning script; `bash -n` checks its syntax.
+
 ## 2026-10-14 — Shipping is charged from a signed quote, never from the request [CONTRACT]
 
 - **Invariant 1 violation fixed.** Checkout charged `shippingGroups[].selectedRate.rate` as the

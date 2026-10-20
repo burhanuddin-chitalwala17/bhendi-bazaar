@@ -14,6 +14,7 @@ process.env.NEXTAUTH_SECRET ??= "test-secret";
 process.env.NEXTAUTH_URL ??= "http://localhost:3000";
 process.env.ENCRYPTION_KEY ??=
   "0000000000000000000000000000000000000000000000000000000000000000";
+process.env.CREDENTIAL_KEYS ??= `1:${"0".repeat(64)}`;
 
 // Fail loudly on network access; tests never call a live service.
 vi.stubGlobal(

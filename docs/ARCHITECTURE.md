@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — current state
 
-- **Verified:** 2026-10-06
+- **Verified:** 2026-10-20
 - **Covers:** `src/app/*/`, `server/*/`, `prisma/schema.prisma`, `src/lib/rate-limit/**`
 
 Describes what **exists now**, at HLD level. Not a plan — planned work is in [BACKLOG.md](BACKLOG.md) and [specs/](specs/). Update *after* a structural change, never before ([../CLAUDE.md](../CLAUDE.md) Golden Rules). Domain-internal detail belongs in `<domain>/CLAUDE.md`, co-located with the code.
@@ -13,9 +13,9 @@ A single Next.js 16 application — one deployable, one database. Not a service 
 Browser ──▶ Next.js 16 (App Router, React 19)      ──▶ PostgreSQL (Prisma 7 + adapter-pg)
             ├── (main)  storefront    13 pages     ──▶ Cloudflare R2   (images and video — ADR-0028, ADR-0039)
             ├── (admin) console       33 pages     ──▶ Razorpay         (payments)
-            ├── (org)   seller portal 21 pages     ──▶ Shiprocket       (shipping rates)
+            ├── (org)   seller portal 22 pages     ──▶ Shiprocket       (shipping rates)
             ├── (auth)  sign-in flow   4 pages     ──▶ Resend           (email)
-            └── api/                  114 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
+            └── api/                  118 handlers  ──▶ YouTube          (embedded video; hosted video plays natively from R2)
 ```
 
 Deployed on Vercel; every route is server-rendered on demand. There is no static generation and no ISR.
@@ -38,7 +38,7 @@ Images and video each have a delivery layer of their own. For images: uploads ar
 
 Two entry paths into data, by rendering mode: server components read through `src/data-access-layer/`, while client components call a hook, which calls an API client, which calls a route handler. Both converge on the same domain services.
 
-Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `notifications`, `analytics`, `promotions`, `payouts`, `bidding`, `wishlist`, `content` (what is made from an image: enhancement, renditions, capture rules, and what each channel asks of a photograph — reading catalog's assets through catalog's public surface), plus `shared` for what genuinely spans them. Each owns its aggregate's repository ([ADR-0003](adr/0003-one-repository-per-aggregate.md)). External systems sit behind an interface in `<domain>/providers/<name>/`. Admin-facing reads are `admin.*` files inside the owning domain — there is no separate admin tree.
+Domains are `catalog`, `cart`, `checkout`, `payments`, `shipping`, `identity`, `notifications`, `analytics`, `promotions`, `payouts`, `bidding`, `wishlist`, `content` (what is made from an image: enhancement, renditions, capture rules, and what each channel asks of a photograph — reading catalog's assets through catalog's public surface), `channels` (a shop's authorised marketplace connections: consent, encrypted tokens, renewal and a daily health check, with each marketplace behind `providers/<name>/`; tokens never leave it — [server/channels/CLAUDE.md](../server/channels/CLAUDE.md)), plus `shared` for what genuinely spans them. Each owns its aggregate's repository ([ADR-0003](adr/0003-one-repository-per-aggregate.md)). External systems sit behind an interface in `<domain>/providers/<name>/`. Admin-facing reads are `admin.*` files inside the owning domain — there is no separate admin tree.
 
 `bidding` is the only domain whose stored state deliberately answers less than the question asked of it: an event's status records whether it was cancelled or settled, and *when* it is — scheduled, running, finished — is derived from its timestamps against the clock on every read. Nothing in the feature runs on a schedule as a result, and no read can be stale, because nothing was cached to go stale. See [server/bidding/CLAUDE.md](../server/bidding/CLAUDE.md).
 
@@ -53,12 +53,12 @@ No route handler reaches Prisma, and no service writes through a transaction cli
 - **Cart state** — Zustand store (`src/store/cartStore.ts`) with localStorage persistence, synced to the `Cart` table for signed-in users via `src/hooks/cart/useCartSync.ts`, which must be mounted exactly once above the router. On sign-in the local cart wins on quantity conflicts, items whose product no longer exists are dropped, and price and thumbnail are refreshed from the database.
 - **Rate limiting** — **detached, and says so.** `src/lib/rate-limit/` is one seam that allows everything and reports `RATE_LIMITING_ENABLED === false`; the Upstash and in-memory implementations sit beside it unimported, because no cache is wired. `tests/unit/rate-limit-detached.test.ts` fails the moment the live path grows a cache dependency again, so this cannot quietly become half-true. Nothing may be designed on the assumption that a limiter is protecting it — see [rate-limiting](specs/rate-limiting/) and the watch-list entry in [BACKLOG.md](BACKLOG.md).
 - **Response security headers** — `src/lib/security-headers.ts` holds both halves: a per-request Content-Security-Policy built in `src/middleware.ts` around a fresh nonce, and the invariant set (HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) applied in `next.config.ts` so it reaches static assets too. `script-src` carries no `'unsafe-inline'` — Next stamps the nonce onto its own inline scripts — and the gateway is admitted by name on `script-src`, `frame-src`, `form-action` and `connect-src`. `CSP_REPORT_ONLY=1` downgrades enforcement to reporting without a code change. `tests/unit/security-headers.test.ts` asserts the properties rather than the string.
-- **Encryption** — AES-256-GCM, per-message random IV, PBKDF2 key derivation (`server/shipping/utils/encryption.ts`). Used for stored shipping-provider credentials.
+- **Encryption** — AES-256-GCM, per-message random IV, under a versioned key from `CREDENTIAL_KEYS` (`server/shared/crypto.ts`); values written before versioning still decrypt from `ENCRYPTION_KEY`. Used for stored shipping-provider credentials and, with channel-connectors, marketplace tokens.
 - **Email** — Resend, templates under `server/notifications/templates/`. One of them goes to the store rather than a buyer: Contact us emails a subject and message to the support inbox with the sender as Reply-To, and stores nothing ([contact-us](specs/contact-us/)). The other Contact us option, WhatsApp, is a `wa.me` link with no server side.
 
 ## Data
 
-PostgreSQL via Prisma 7 with the `pg` driver adapter. 87 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 56 models, 19 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
+PostgreSQL via Prisma 7 with the `pg` driver adapter. 88 migrations; **`prisma/schema.prisma` is the authoritative schema reference** — there is no separate schema document, by design ([ADR-0009](adr/0009-docs-reference-code-never-copy-it.md)). 57 models, 19 enums. Money is integer paise ([ADR-0004](adr/0004-money-as-integer-paise.md), landed in PR-37); the only remaining `Float` columns are weights, which are not money — `Product.rating` was the other one and is gone, because a rating is now computed from the reviews rather than stored. The Prisma client is a dev-mode global singleton in `server/shared/prisma.ts`; the `pg` Pool is constructed per module evaluation.
 
 **Several constraints live in migration SQL rather than in the schema**, because Prisma's schema language cannot express them. On `ProductMedia`: a partial unique index and a row-level `CHECK`, which together make "exactly one cover per product, and it is a photograph" a database fact rather than a convention. They are re-stated in a doc comment on the model and asserted against the migration text in `tests/unit/product-media.test.ts` — a constraint whose only home is a migration file is otherwise invisible to anyone reading the schema ([product-video](specs/product-video/) D4/D13a).
 
@@ -72,7 +72,7 @@ The one pluggable subsystem. `server/shipping/domain/provider.interface.ts` defi
 
 ## Testing
 
-206 Vitest files (172 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
+212 Vitest files (177 of them under `tests/unit/`), run with `npm run test:run`. The file count is asserted by `tests/unit/docs-integrity.test.ts`; a test count is not, because nothing can check it without running the suite — which is why the number this paragraph used to carry drifted 518 → 983 unnoticed. Strategy and per-layer targets are in [TESTING.md](TESTING.md). In CI (`.github/workflows/ci.yml`) `tsc --noEmit` and the test run are blocking gates; **lint is not** — it carries `continue-on-error: true` and reports 37 errors, 35 of them `no-explicit-any`. None of those is in a route handler any more: `src/app/api/**` is at zero, so the rule holds where CLAUDE.md calls it a defect. What remains is in admin pages, hooks and the shipping provider layer ([BACKLOG.md](BACKLOG.md)).
 
 ## Intentionally absent
 

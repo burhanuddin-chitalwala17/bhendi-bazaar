@@ -46,6 +46,6 @@ Findings, written for the user to decide from. Structure that fits the question,
 
 - Durable external-service behaviour → add it to `docs/INTEGRATIONS.md`.
 - A decision the spike makes obvious → `/bb-sdlc adr-new`.
-- A feature ready to specify → `/bb-sdlc spec-start`.
+- A feature ready to specify → `/bb-sdlc spec-start`. Each option the user must choose between becomes an open `Q` in that feature's `decisions.md`, with the spike's recommendation. Anything the spike surfaced beyond the question asked is parked there, not folded into the feature ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)).
 
 Do **not** write findings into a project doc as a standing record of problems. A spike's output belongs in a TRD, an ADR, or `INTEGRATIONS.md` — never as a bug list that will go stale.

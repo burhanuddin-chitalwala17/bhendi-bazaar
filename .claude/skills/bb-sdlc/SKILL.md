@@ -1,11 +1,30 @@
 ---
 name: bb-sdlc
-description: Operational SDLC flows for bhendi-bazaar. Three subcommands — spec-start (scaffold a feature folder with spec.md + trd.md in docs/specs/), adr-new (add a decision record to docs/adr/ or a domain's adr/), pr-finish (walk the pre-merge checklist). Invoke during the SDLC cycle. Examples — "/bb-sdlc spec-start order-cancellation", "/bb-sdlc adr-new switch product search to pg_trgm", "/bb-sdlc pr-finish".
+description: Operational SDLC flows for bhendi-bazaar. Four subcommands — spec-start (cut a feature to one outcome and scaffold spec.md, decisions.md and trd.md in docs/specs/), ux-start (journeys, a state matrix for every screen, exact copy and a phone-first prototype, signed off by the owner before the TRD), adr-new (add a decision record to docs/adr/ or a domain's adr/), pr-finish (walk the pre-merge checklist). Invoke during the SDLC cycle. Examples — "/bb-sdlc spec-start order-cancellation", "/bb-sdlc ux-start channel-connectors", "/bb-sdlc adr-new switch product search to pg_trgm", "/bb-sdlc pr-finish".
 ---
 
 # /bb-sdlc — operational SDLC flows
 
-Three subcommands. Pick the one matching the invocation.
+Four subcommands. Pick the one matching the invocation. The cycle they serve is spike → spec → UX → TRD → build → review ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)).
+
+## Two rules that run through every subcommand
+
+**Stop the feature growing.** A feature is one outcome a person can see, shippable alone in about six units. You draw the cut; do not ask the owner where it goes. Something is *In* only if an acceptance criterion needs it. A new capability, screen, persona or external dependency is *Later*. Anything waiting on an outside party (an approval, a ticket, a contract) is its own feature. Edge cases and states of what is In are never scope creep: they are required. When a conversation proposes something new mid-feature, say "parked as Q<n>", log it, and carry on. Do not redesign the feature around it.
+
+**Log every decision, and decide the small ones yourself.** Every question goes in the feature's `decisions.md` the moment it comes up, and every answer the moment it is given, including answers given in chat. You decide anything reversible that sits within an existing ADR, marked `Claude · reversible`, with one line of why. The owner decides money, marketplace or legal policy, irreversible data, external commitments and matters of taste. Ask those in batches of at most five, each with your recommendation first. Before ending any planning turn, check that nothing said in the conversation is missing from the log.
+
+**Read a decision's State before relying on it**, every time, in planning, writing a TRD, building or reviewing:
+- `decided` — binding; act on it. Not yet built.
+- `implemented` — binding, and code depends on it.
+- `superseded by Qn` — void; follow Qn, and read *its* State too.
+- `open` — not decided; do not act on a guess. Ask, or default it if it is yours to decide.
+- `parked` — out of this feature's scope; do not build it.
+
+A document that cites a Q id (spec, ux, TRD, code comment) inherits that Q's State: citing a superseded Q is a defect to fix in the same change.
+
+**Changing a decision** ([ADR-0062](../../../docs/adr/0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)):
+- **Not yet implemented** (`open`, `decided`, `parked`): replace it **in place**. Overwrite answer, decider, date and why; end the why with `was: <old answer>`. Same id, no new row, so every citation stays right.
+- **Implemented**: never edit it. Add a new row with the new answer and set the old row's State to `superseded by Qn`.
 
 ## Where docs live
 
@@ -26,7 +45,27 @@ Scaffolds a feature folder under `docs/specs/`. Convention: [ADR-0010](../../../
 1. **Name it.** `kebab-case`, descriptive, **no number**. One feature per folder.
 2. **Check for overlap.** Scan `docs/specs/` for an existing or obviously adjacent folder. If the work belongs to an existing feature, add a **subfeature subfolder** rather than a second top-level folder.
 3. **Confirm it is a requirement, not a defect.** A spec states what must be true. If the rule is already stated in an ADR and the work is simply making the code obey it, **no spec is needed** — that is a PR. Push back rather than scaffolding a spec whose content would be a bug report; a spec should still read correctly after the work lands.
-4. **Write `spec.md` — requirements and product approach only.** No technical approach, package choices, data-model or algorithm decisions. Those go in the TRD. Frame requirements as properties of the product, in language that survives the implementation.
+4. **Cut the scope** by the rule above, before writing anything. Write the outcome as one sentence. If it needs "and" to join two outcomes, it is two features; scaffold the first and park the second.
+5. **Open `decisions.md`** with every question already raised, including in the conversation that led here:
+
+```markdown
+# Decisions — <feature>
+
+- **Verified:** YYYY-MM-DD
+
+> Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones (ADR-0062).
+> Owner decides money, policy, irreversible data, external commitments, taste.
+> Claude decides the rest, marked `Claude · reversible`. Other documents cite Q ids.
+
+| Q | Question | Answer | Decided by | Date | Why | State |
+|---|---|---|---|---|---|---|
+| Q1 | … | … | Owner / Claude · reversible | YYYY-MM-DD | one line | open / decided / implemented / superseded by Qn / parked |
+
+## Parked (Later)
+- Q<n> — what was cut, why, and where it now lives (a BACKLOG row or a future feature).
+```
+
+6. **Write `spec.md` — requirements and product approach only.** No technical approach, package choices, data-model or algorithm decisions. Those go in the TRD. Frame requirements as properties of the product, in language that survives the implementation.
 
 ```markdown
 # Spec — <feature>
@@ -53,11 +92,17 @@ The product or user reason it exists. Not "X is broken" — what should be true 
 - A1 — how we know it works, from the outside. If the feature has UI, acceptance
   is judged on a phone first (~360px) — most buyers are mobile ([ADR-0015](../../adr/0015-mobile-first-design.md)).
 
-## Out of scope (this feature)
-What belongs to other features or phases, with links.
+## Scope
+- **Outcome:** one sentence.
+- **In:** each item tied to an R or A id.
+- **Later:** each item with its Q id in decisions.md. This replaces an "out of scope" list.
+
+## Open questions
+Q ids from decisions.md that are still open. Never restate them here.
 ```
 
-5. **Confirm a spike exists before the TRD.** A TRD captures technical decisions and should rest on something — a `/bb-brainstorm`, an existing ADR, or a genuine constraint. If the feature is non-trivial and nothing has been investigated, offer `/bb-brainstorm` first.
+7. **If the feature has UI, run `ux-start` next.** The TRD waits for the owner's UX sign-off.
+8. **Confirm a spike exists before the TRD.** A TRD captures technical decisions and should rest on something — a `/bb-brainstorm`, an existing ADR, or a genuine constraint. If the feature is non-trivial and nothing has been investigated, offer `/bb-brainstorm` first.
 
 ```markdown
 # TRD — <feature>
@@ -86,13 +131,10 @@ this change or record why it stays.
 - D1 — decision + rationale (+ reference).
 
 ## Packages
-New dependencies, cross-referenced to DEPENDENCIES.md. - a new `prisma.<model>` write outside a `*.repository.ts` → `one-repository`;
-- a listing fact or product-type change → `product-visibility` CENSUS.
-
-"None" if none.
+New dependencies, cross-referenced to DEPENDENCIES.md. "None" if none.
 
 ## UI approach
-Only if the feature has UI, else "None". Rules: [src/components/CLAUDE.md](../../../src/components/CLAUDE.md).
+Only if the feature has UI, else "None". **Cite `ux.md` for screens, states and copy; do not redesign them here.** This section says how the signed-off UX is built. Rules: [src/components/CLAUDE.md](../../../src/components/CLAUDE.md).
 - **Per form factor** ([ADR-0050](../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)): the ~360px phone layout first (content order, primary actions, touch affordances), then what `md:` (tablet) and `lg:` (desktop) add. A TRD that describes only desktop is not done.
 - **Rendering:** which parts are server components reading through the data-access layer, and which leaf earns `"use client"`.
 - **Behaviour:** each request's `*ApiClient` and the hook that calls it (`useServerForm`, `useMutation`, `useAsyncData`); the DTO each component is handed.
@@ -104,7 +146,9 @@ Which source-scanning tests this change meets, and any allowlist entry it adds w
 - a new `CLAUDE.md` → `LIVING_DOCS` (docs-integrity);
 - a new route → its caller and its portal guard (route-reachability, portal-boundary);
 - a file reaching a third domain → `RECORDED` (file-cohesion);
-- a sheet → `MAY_USE_SHEET` (overlay-surfaces).
+- a sheet → `MAY_USE_SHEET` (overlay-surfaces);
+- a new `prisma.<model>` write outside a `*.repository.ts` → `one-repository`;
+- a listing fact or product-type change → `product-visibility` CENSUS.
 
 "None" if none.
 
@@ -121,11 +165,62 @@ The tests that will exist when done, cross-referenced to TESTING.md.
 Small PRs, each independently verifiable. Say which one changes behaviour.
 
 ## Open questions
-Must be closed before Draft → Accepted.
+Q ids from decisions.md. All must be decided or parked before Draft → Accepted.
 ```
 
-6. **Enforce the cap.** ≤100 **readable** lines each — prose only, excluding front-matter, headings, table rows, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures. Count it; don't estimate.
-7. **Index it.** Give the spec header a one-line `Summary`, run `npm run docs:index` (the specs tables are generated from headers; never type a row), and add the row to `docs/BACKLOG.md` under its phase by hand.
+9. **Enforce the cap.** ≤100 **readable** lines each (spec, ux, TRD; decisions.md is uncapped) — prose only, excluding front-matter, headings, table rows, fenced blocks, link-only lines, and blanks. Over the cap → split into subfeatures. Count it; don't estimate.
+10. **Index it.** Give the spec header a one-line `Summary`, run `npm run docs:index` (the specs tables are generated from headers; never type a row), and add the row to `docs/BACKLOG.md` under its phase by hand. Add each parked item to BACKLOG too, so a cut is never a loss.
+
+---
+
+## Subcommand: `ux-start <feature-name>`
+
+The UX stage. It runs after the spec and before the TRD, for any feature a person sees. It exists so the owner meets the experience, edge cases included, on paper rather than in code ([ADR-0061](../../../docs/adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md)). A feature with no UI writes "No UI — UX stage skipped" in its spec's Scope and goes straight to the TRD.
+
+### Steps
+
+1. **Read first:** the spec, `decisions.md`, [src/components/CLAUDE.md](../../../src/components/CLAUDE.md), the design tokens in `src/app/globals.css`, and the existing pages the feature touches. A new screen should look like it already belongs in the app.
+2. **Write the journeys:** one per thing a person sets out to do, as numbered steps from the screen they start on to the screen that confirms it. Include the journey where it goes wrong.
+3. **List every screen:** new or changed, its route, how a person reaches it, and the spec ids it serves.
+4. **Fill a state matrix for every screen.** Each row is a state, with what the person sees, the exact copy, and the one action offered. Mark a state that cannot occur "n/a — why". Never leave a row blank. The rows:
+
+| State | Ask |
+|---|---|
+| First use | Nothing set up yet. What explains the screen and offers the first step? |
+| Empty | Set up, but no items. |
+| Loading | First load, and a background refresh. |
+| Partial | Some items done or failed, some not. |
+| Success | Done. What confirms it, and where does the person go next? |
+| Retryable error | Network, timeout or a 429 from a provider. Retry offered. |
+| Terminal error | Cannot succeed without a change. What to change, and where. |
+| Refused | Not allowed, a limit reached, or a conflict with another record. Why, and what to do. |
+| Stale | Data older than it should be. How old, and how to refresh. |
+| Long content | The longest realistic name or value. Truncate or wrap? |
+| Many items | Hundreds of rows. Search, filter, paginate? |
+| Slow | A response slower than three seconds. What shows meanwhile? |
+| Phone / tablet / desktop | What `md:` and `lg:` change ([ADR-0050](../../../docs/adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md)). |
+
+5. **Write the copy deck:** every button, toast, banner, empty state and error, as it will appear. Use plain words a seller would use, and say what to do next. Buttons are never disabled; an unavailable action explains itself on tap ([ADR-0053](../../../docs/adr/0053-readiness-advises-and-never-gates.md)).
+6. **Build the prototype:** a private artifact of phone-width screens, with every journey and the important states drawn, using the app's own tokens. Link it from `ux.md`.
+7. **Log what the UX raised.** Every new question goes in `decisions.md`; decide the reversible ones. Ask the owner the rest, at most five, with a recommendation each.
+8. **Get the sign-off.** The owner reviews the prototype. Record their changes, then the line `Signed off by <owner>, YYYY-MM-DD` in `ux.md`. The TRD may be written as a draft before this, but cannot be Accepted without it.
+
+```markdown
+# UX — <feature>
+
+- **Status:** Draft / Signed off
+- **Verified:** YYYY-MM-DD
+- **Prototype:** <artifact link>
+- **References:** spec.md, decisions.md
+
+## Journeys
+## Screens
+## State matrix — <screen>   (one table per screen)
+## Copy deck
+## Sign-off
+```
+
+9. **Enforce the cap:** ≤100 readable lines of prose. The tables are uncapped, so put the states in tables.
 
 ---
 
@@ -168,8 +263,9 @@ Walks the pre-merge gate. Report each item as pass, fail, or not-applicable — 
 5. **CHANGELOG entry** added — newest at top, one per PR, append-only. `[CONTRACT]` if a DTO changed, `[MIGRATION]` if a migration was added.
 6. **A TRD exists** if the PR changes architecture or data flow, adds a package, starts a feature, or changes a contract.
 7. **Docs updated** where they are now wrong: the relevant `ARCHITECTURE.md` if structure changed, `CONTRACTS.md` if a DTO changed, `DEPENDENCIES.md` if a package was added, `OPERATIONS.md` if setup or deploy changed. Bump each touched doc's `Verified:` date.
-8. **Spec status moved** if this PR completed one — `Draft` → `Implemented` in the spec and in `docs/specs/README.md`, and the row in `BACKLOG.md`.
-9. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the CHANGELOG records what changed, and that is enough.
-10. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Never push or open a PR unless the user asks in this conversation.
+8. **UX and decisions honoured.** A screen this PR adds or changes appears in `ux.md` with its states and copy. No decision the PR depends on is still open in `decisions.md`.
+9. **Spec status moved** if this PR completed one — `Draft` → `Implemented` in the spec and in `docs/specs/README.md`, and the row in `BACKLOG.md`.
+10. **No findings written into docs.** Defects fixed in this PR should leave no trace as documentation; the CHANGELOG records what changed, and that is enough.
+11. **Branch is not `main`.** Commit each PR-sized unit on `develop` (or the branch the user named). Never push or open a PR unless the user asks in this conversation.
 
 Report the checklist with its verdicts, then state plainly whether the PR is ready.

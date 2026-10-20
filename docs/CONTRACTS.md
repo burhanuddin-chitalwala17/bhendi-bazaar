@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-14
+- **Verified:** 2026-10-20
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -209,6 +209,28 @@ there ([ADR-0034](adr/0034-render-on-the-server-by-default.md)); there is no rea
 no readiness DTO. The TRD anticipated one, and building it showed a route handler would be a
 round trip for a read the server already does. Nothing in the browser decides whether a product
 is ready, which also means nothing in the browser can disagree with what gets published.
+
+### Channel connections
+
+Since channel-connectors ([spec](specs/marketplace-integration/channel-connectors/)) the org portal
+reads **`ChannelsOverviewDTO`** (`server/channels/channel-connection.types.ts`) on the server: `cards`
+(one **`ChannelCardDTO`** per channel — `channel`, `label`, `state` from `CARD_STATE`, who connected
+or disconnected and when, `lastCheckedAt`, `stale`, `reapproveBy`, `reason` from `CONNECTION_ERROR`)
+and `attention` for the dashboard banner. **No token, external account id or marketplace text is
+in any of them** ([server/channels/CLAUDE.md](../server/channels/CLAUDE.md)).
+
+Four routes, none with a request body:
+- `GET /api/org/[orgId]/channels/[channel]/connect` — a link the browser follows; answers 302 to
+  the marketplace's consent page, or back to `/org/[orgId]/channels?result=<CONNECT_RESULT>&channel=…`.
+- `GET /api/channels/[channel]/callback` — the marketplaces' redirect; always answers 302 to the
+  same Channels URL with one `CONNECT_RESULT` code, never an error body.
+- `DELETE /api/org/[orgId]/channels/[channel]/connection` — `{ ok: true }`; 404 in the envelope
+  when there is nothing to disconnect.
+- `POST /api/org/[orgId]/channels/[channel]/connection/check` — `{ result: "ok" | "needs_reconnect" | "unreachable" }`.
+
+`CONNECT_RESULT` is a closed set (connected, cancelled, expired, other_session, other_shop,
+different_account, unreachable, full, unavailable); a client renders each with ux.md's copy and
+nothing else. Google and Meta still turn on and off through `PUT /api/org/[orgId]/channels` above; since channel-connectors that schema accepts only `google` and `meta`, because a marketplace is on only by connecting it (D11).
 
 ### Image enhancement
 
