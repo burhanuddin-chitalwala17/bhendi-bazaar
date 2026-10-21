@@ -23,6 +23,8 @@ const MAY_USE_SHEET: Record<string, string> = {
     "Decision 1: the picker pair's phone half. A popover from `md`, this below it.",
   "src/components/org/media-library-grid.tsx":
     "Decision 3: the details of a selected item, beside a list that stays visible and whose selection moves.",
+  "src/components/channel/listing-details-panel.tsx":
+    "Decision 3: a marketplace listing's details beside the list it was opened from (channel-import Q17).",
   "src/components/shared/overlays/form-dialog.tsx":
     "Decision 5: the short-form pair's phone half — a bottom sheet below md, a centred dialog above it.",
   "src/components/auth/auth-sheet.tsx":

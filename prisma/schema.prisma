@@ -342,6 +342,7 @@ model Product {
   /// to model, and "since when" is worth having for free. It is server-owned and
   /// never accepted from a request body (Invariant 4).
   archivedAt DateTime?
+  channelListings ChannelListing[]
 
   // A SKU is the org's own identifier; two orgs may legitimately use the same one.
   // It stays taken while the product is archived — a restore must find its own code
@@ -2007,11 +2008,74 @@ model ChannelConnection {
   lastErrorCode String?
   lastErrorAt   DateTime?
 
+  /// The listing read (channel-import D2). `READ_STATE`: RUNNING, DONE, STOPPED.
+  readState      String?
+  readTotal      Int?
+  readDone       Int?
+  readStartedAt  DateTime?
+  readFinishedAt DateTime?
+  /// Touched as a read makes progress; a RUNNING read silent for 30 minutes may be claimed again (D3).
+  readTouchedAt  DateTime?
+  /// A `READ_ERROR` code, never marketplace text.
+  readErrorCode  String?
+
+  listings ChannelListing[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([orgId, channel])
   @@index([channel, state])
+}
+
+/// One listing a shop has on a marketplace, as the marketplace reported it (channel-import D1).
+/// Read-only mirror plus one link to the shop's product. Never deleted: a listing gone from the
+/// marketplace is marked so (Q12), and rows survive a disconnect (Q11).
+model ChannelListing {
+  id           String            @id @default(cuid())
+  connectionId String
+  connection   ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  orgId        String
+  channel      String
+
+  /// The marketplace's SKU exactly as it spells it, and trimmed lower-case for matching (Q3).
+  sku           String
+  skuKey        String
+  /// ASIN or FSN.
+  externalId    String?
+  title         String?
+  imageUrl      String?
+  /// `LISTING_STATUS`: LIVE, INACTIVE, INCOMPLETE.
+  status        String?
+  /// Paise, converted from what the marketplace reported (Invariant 3).
+  pricePaise    Int?
+  quantity      Int?
+
+  /// The variation parent this listing belongs to, when the marketplace says (Q9).
+  parentSku     String?
+  parentTitle   String?
+  variationAxis String?
+
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  /// `LINK_SOURCE`: SKU (by a read, or restored by Link back); OWNER is product-merge's manual link.
+  linkSource String?
+  linkedAt   DateTime?
+  /// Set when the owner unlinks; a read never links this row again on its own (Q5).
+  unlinkedAt   DateTime?
+  unlinkedById String?
+
+  /// The start of the last read that saw this listing; earlier than a finished read means gone (D8).
+  lastSeenAt DateTime
+  goneAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([connectionId, sku])
+  @@index([orgId, channel])
+  @@index([productId])
+  @@index([orgId, skuKey])
 }
 
 /// Which of a channel's categories a product type and kind list under

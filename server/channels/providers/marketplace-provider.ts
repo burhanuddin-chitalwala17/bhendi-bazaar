@@ -1,4 +1,5 @@
 import type { MarketplaceChannel } from "../channel-connection.types";
+import type { ListingSink, TokenSource } from "./listing-read";
 
 /**
  * One marketplace, behind the verbs channel-connectors needs (TRD D1). Later subfeatures add their
@@ -35,6 +36,11 @@ export interface MarketplaceProvider {
   check(accessToken: string): Promise<void>;
   /** At most this many connected shops, while a marketplace limits an unlisted app (R10). */
   readonly connectionCap: number | null;
+  /**
+   * Read every listing the shop has (channel-import). Changes nothing on the marketplace. Reports the
+   * account id when it learns it and each batch as it arrives, through the sink.
+   */
+  readListings(token: TokenSource, externalAccountId: string | null, sink: ListingSink): Promise<void>;
 }
 
 /** The marketplace refused our credentials; retrying will not help. The shop must reconnect. */

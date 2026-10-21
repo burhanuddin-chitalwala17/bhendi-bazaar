@@ -16,13 +16,14 @@ const EXTS = [".ts", ".tsx"];
  * A marketplace's own names, which we must spell as it does (channel-connectors): Amazon's consent
  * host and Sellers API path, Flipkart's OAuth scope, and, in the signed-off copy, the marketplace's
  * product "Seller Central", its "seller account", and Amazon's own wording that it "asks sellers"
- * to re-approve. Removed from a line before it is scanned, so the retired word in our own prose
+ * to re-approve; and the listing reads' field names: Amazon's `seller-sku` report column, Flipkart's
+ * `/sellers` API root and its `sellerId` field. Removed from a line before it is scanned, so the retired word in our own prose
  * beside them is still caught. Our own word for a shop stays "org" or "shop".
  */
 /** Only where the channel code lives; anywhere else the retired word is caught as before. */
 const EXTERNAL_IDENTIFIER_FILES = /(^|\/)(server\/channels\/|src\/components\/channel\/channel-copy\.ts$)/;
 const EXTERNAL_IDENTIFIERS =
-  /sellercentral\.amazon\.[a-z.]+|\/sellers\/v1\/|"Seller_Api"|Seller Central|seller account|asks sellers/gi;
+  /sellercentral\.amazon\.[a-z.]+|\/sellers\/v1\/|"Seller_Api"|Seller Central|seller account|asks sellers|"seller-sku"|api\.flipkart\.net\/sellers|item\.sellerId/gi;
 
 /** Retired words, and what replaced them. */
 const RETIRED: Record<string, string> = {

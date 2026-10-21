@@ -1,7 +1,7 @@
 # Tracker
 
 - **Created:** 2026-10-07
-- **Updated:** 2026-10-15
+- **Updated:** 2026-10-21
 - **Source:** Platform audit (full sweep of buyer, seller, admin surfaces)
 
 Status key: `[ ]` open, `[~]` in progress, `[x]` done, `[-]` on hold / parked / merged
@@ -617,7 +617,7 @@ F-019 → F-015. F-003, F-007, F-009, F-010, F-022, F-023, F-025 slot in between
 - **Plan (locked 2026-10-20):** [marketplace-integration](specs/marketplace-integration/), six subfeatures in order — channel-connectors, channel-import, product-merge, channel-listings, inventory-sync, marketplace-publish — with every decision in its [decisions.md](specs/marketplace-integration/decisions.md). F-014 and F-019 are delivered by the same subfeatures. API behaviour is in [INTEGRATIONS.md](INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do).
 - **Known limits:** the public API cannot create a product (lists against an existing FSN only; new products go up by the seller's template); Flipkart does not say which seller authorised; location ids come from an unpublished API. Catalogue-creation access requested of Flipkart, unanswered.
 - **Depends on:** F-004, F-006
-- **Status:** `[~]` — partner access done; roadmap locked; channel-connectors UX stage next
+- **Status:** `[~]` — channel-connectors implemented 2026-10-21 (Amazon and Flipkart connected on the owner's accounts); channel-import next
 
 
 

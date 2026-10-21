@@ -1,9 +1,14 @@
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { CARD_STATE, type ChannelCardDTO } from "@server/channels/channel-connection.types";
 import type { MarketplaceChannel } from "@server/channels/channel-connection.types";
 
 import { ChannelCardShell } from "./channel-card-shell";
 import { CARD, CHIP, MARKETPLACE_PITCH, REASON, lastChecked } from "./channel-copy";
 import { ExpandableLine } from "./expandable-line";
+import { LISTINGS, cardReadLine } from "./listing-copy";
 import { MarketplaceCardActions } from "./marketplace-card-actions";
 
 const chipFor = (card: ChannelCardDTO) => {
@@ -26,14 +31,16 @@ const chipFor = (card: ChannelCardDTO) => {
 /** One marketplace (ux.md "State matrix — Marketplace card"). Renders on the server; the buttons are a leaf. */
 export function MarketplaceCard({ orgId, card }: { orgId: string; card: ChannelCardDTO }) {
   const live = card.state === CARD_STATE.CONNECTED || card.state === CARD_STATE.RENEWAL_DUE;
+  const reading = live ? cardReadLine(card.read, card.listings, card.label) : null;
 
   return (
     <ChannelCardShell label={card.label} chip={chipFor(card)}>
       <div className="flex flex-col gap-1 text-sm text-muted-foreground">
         {card.state === CARD_STATE.NOT_CONNECTED && !card.disconnectedAt && <p>{MARKETPLACE_PITCH(card.label)}</p>}
-        {card.state === CARD_STATE.NOT_CONNECTED && card.disconnectedAt && (
+        {card.state === CARD_STATE.NOT_CONNECTED && card.disconnectedAt && !card.reason && (
           <p>{CARD.disconnectedBy(card.disconnectedBy, card.disconnectedAt)}</p>
         )}
+        {card.state === CARD_STATE.NOT_CONNECTED && card.reason && <p>{REASON[card.reason](card.label)}</p>}
         {card.state === CARD_STATE.UNAVAILABLE && <p>{CARD.unavailable(card.label)}</p>}
         {card.state === CARD_STATE.FULL && <p>{CARD.full(card.label)}</p>}
         {card.state === CARD_STATE.RENEWAL_DUE && <p>{CARD.renewalWhy}</p>}
@@ -45,7 +52,27 @@ export function MarketplaceCard({ orgId, card }: { orgId: string; card: ChannelC
             {card.reapproveBy && card.state === CARD_STATE.CONNECTED ? ` · ${CARD.reapproveBy(card.reapproveBy)}` : ""}
           </p>
         )}
+        {reading && (
+          <div className="flex flex-col gap-1">
+            <p className={cn(reading.tone === "warning" && "font-medium text-warning", reading.tone === "error" && "font-medium text-destructive")}>
+              {reading.text}
+            </p>
+            {reading.running && card.read?.total ? (
+              <div className="h-1 w-full overflow-hidden rounded-full bg-muted" aria-hidden>
+                <div
+                  className="h-full bg-primary"
+                  style={{ width: `${Math.min(100, Math.round(((card.read.done ?? 0) / card.read.total) * 100))}%` }}
+                />
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
+      {live && (
+        <Button asChild variant="link" className="min-h-10 self-start px-0">
+          <Link href={`/org/${orgId}/channels/${card.channel}/listings`}>{LISTINGS.seeListings}</Link>
+        </Button>
+      )}
       <MarketplaceCardActions
         orgId={orgId}
         channel={card.channel as MarketplaceChannel}

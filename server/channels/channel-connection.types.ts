@@ -28,6 +28,8 @@ export const CONNECTION_ERROR = {
   EXPIRED: "expired",
   /** The shop removed our app on the marketplace. */
   REVOKED: "revoked",
+  /** The marketplace account is already connected to another shop (channel-import Q10). */
+  OTHER_SHOP: "other_shop",
 } as const;
 export type ConnectionError = (typeof CONNECTION_ERROR)[keyof typeof CONNECTION_ERROR];
 
@@ -74,6 +76,9 @@ export interface ChannelCardDTO {
   lastCheckedAt: string | null;
   /** True when the last successful contact is older than a day (ux.md "Stale"). */
   stale: boolean;
+  /** The listing read, and what it found (channel-import). Null for channels with no listings. */
+  read: ChannelReadDTO | null;
+  listings: { total: number; linked: number } | null;
   /** Amazon only: the date its yearly re-approval falls due (ISO). */
   reapproveBy: string | null;
   reason: ConnectionError | null;
@@ -94,3 +99,107 @@ export interface ChannelsOverviewDTO {
 
 /** Where a connect attempt goes next: to the marketplace, or straight back with an outcome. */
 export type ConnectStart = { redirectTo: string } | { result: ConnectResult };
+
+/** A listing read's progress, stored on the connection (channel-import D2). */
+export const READ_STATE = { RUNNING: "RUNNING", DONE: "DONE", STOPPED: "STOPPED" } as const;
+export type ReadState = (typeof READ_STATE)[keyof typeof READ_STATE];
+
+/**
+ * A running read silent this long is taken to have died with its worker: another job may claim it,
+ * and the owner is offered Read again. Readers report in every few seconds, so this is generous.
+ */
+export const READ_STALL_MS = 5 * 60_000;
+
+/** Why a read stopped. A code, never marketplace text. */
+export const READ_ERROR = {
+  /** The marketplace was busy or unreachable; the job retries by itself. */
+  BUSY: "busy",
+  /** The marketplace refused our access; the shop must reconnect. */
+  AUTH: "auth",
+  /** The Flipkart account is already connected to another shop (Q10). */
+  OTHER_SHOP: "other_shop",
+  /** The account read is not the one this connection was made with (ux.md: different account). */
+  DIFFERENT_ACCOUNT: "different_account",
+} as const;
+export type ReadError = (typeof READ_ERROR)[keyof typeof READ_ERROR];
+
+/** A listing's status on its marketplace, in our three words. */
+export const LISTING_STATUS = { LIVE: "LIVE", INACTIVE: "INACTIVE", INCOMPLETE: "INCOMPLETE" } as const;
+export type ListingStatus = (typeof LISTING_STATUS)[keyof typeof LISTING_STATUS];
+
+/** How a listing came to be linked. */
+export const LINK_SOURCE = { SKU: "SKU", OWNER: "OWNER" } as const;
+export type LinkSource = (typeof LINK_SOURCE)[keyof typeof LINK_SOURCE];
+
+export interface ChannelReadDTO {
+  state: ReadState | null;
+  total: number | null;
+  done: number | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: ReadError | null;
+  /** Running, but silent past `READ_STALL_MS`. */
+  stalled: boolean;
+}
+
+export interface ChannelListingDTO {
+  id: string;
+  sku: string;
+  externalId: string | null;
+  title: string | null;
+  imageUrl: string | null;
+  status: ListingStatus | null;
+  pricePaise: number | null;
+  quantity: number | null;
+  parentSku: string | null;
+  parentTitle: string | null;
+  variationAxis: string | null;
+  product: { id: string; name: string; sku: string | null; archived: boolean } | null;
+  linkSource: LinkSource | null;
+  unlinkedByOwner: boolean;
+  gone: boolean;
+}
+
+/** A listing beside the product it is (or was) linked to, for the details panel (channel-import Q17). */
+export interface ChannelListingDetailDTO {
+  listing: ChannelListingDTO;
+  /** The linked product's own values; null when not linked. */
+  product: {
+    id: string;
+    name: string;
+    sku: string | null;
+    pricePaise: number;
+    imageUrl: string | null;
+    stock: number;
+    archived: boolean;
+  } | null;
+  /** For a listing the owner unlinked: the product its SKU names, which Link back restores. */
+  linkBackTo: { id: string; name: string } | null;
+}
+
+/** One marketplace's listings for the Listings page. */
+export interface ChannelListingsPageDTO {
+  channel: MarketplaceChannel;
+  label: string;
+  connected: boolean;
+  read: ChannelReadDTO;
+  counts: { linked: number; notLinked: number };
+  listings: ChannelListingDTO[];
+  hasMore: boolean;
+}
+
+/** One connected marketplace on a product's "On marketplaces" block (channel-import R11). */
+export interface ProductMarketplaceLinkDTO {
+  channel: MarketplaceChannel;
+  label: string;
+  needsReconnect: boolean;
+  /** The listing linked to this product there, or null: "Not linked". */
+  listing: {
+    id: string;
+    externalId: string | null;
+    status: ListingStatus | null;
+    pricePaise: number | null;
+    quantity: number | null;
+    gone: boolean;
+  } | null;
+}

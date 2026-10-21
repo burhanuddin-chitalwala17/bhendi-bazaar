@@ -113,6 +113,30 @@ export class ProductService {
   }
 
   /**
+   * A shop's products that have a SKU, archived included: what a marketplace listing can link to
+   * (channel-import D7, decision Q4).
+   */
+  async listWithSku(orgId: string): Promise<Array<{ id: string; sku: string | null; name: string; archived: boolean }>> {
+    const rows = await adminProductsRepository.listWithSku(orgId);
+    return rows.map((row) => ({ id: row.id, sku: row.sku, name: row.name, archived: row.archivedAt !== null }));
+  }
+
+  /** One product's own values, beside a marketplace listing's (channel-import Q17). Null when not this org's. */
+  async compareFacts(orgId: string, id: string) {
+    const row = await adminProductsRepository.compareFacts(orgId, id);
+    if (!row) return null;
+    return {
+      id: row.id,
+      name: row.name,
+      sku: row.sku,
+      pricePaise: row.price,
+      imageUrl: row.thumbnail,
+      stock: row.stockLocations.reduce((sum, location) => sum + location.quantity, 0),
+      archived: row.archivedAt !== null,
+    };
+  }
+
+  /**
    * One org's products, as a picker offers them — id, name and enough to recognise a row.
    *
    * On the service rather than reachable through the repository because `bidding` asks it when

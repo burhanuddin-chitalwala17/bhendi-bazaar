@@ -57,6 +57,11 @@ const ALLOWLIST: Record<string, { rules: readonly string[]; reason: string }> = 
     reason:
       "A carrier's own logo, hotlinked from shiprocket.in by a data migration. Already sized at 32px and not our asset: optimizing spends a transformation to save bytes we do not pay for.",
   },
+  "src/components/channel/listing-image.tsx": {
+    rules: ["optimization bypasses"],
+    reason:
+      "A marketplace's own listing picture, hotlinked from Amazon or Flipkart (channel-import Q14), shown at 48px in a row and 96px in the details panel. Not our asset to optimize; the bypass is conditional, and the product's own picture through the same component is optimized.",
+  },
   "src/components/product/youtube-poster.tsx": {
     rules: ["optimization bypasses"],
     reason:

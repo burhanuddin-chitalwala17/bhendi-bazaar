@@ -1,9 +1,9 @@
 # TRD — channel-connectors
 
-- **Status:** Accepted — by the owner, 2026-10-20
+- **Status:** Implemented
 - **Domain:** channels (new)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-10-20
+- **Verified:** 2026-10-21
 - **References:** [spec.md](spec.md), [ux.md](ux.md) (signed off 2026-10-20), [decisions.md](decisions.md), parent [decisions](../decisions.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do), [ADR-0033](../../../adr/0033-a-domain-is-reached-through-its-public-surface.md), [ADR-0037](../../../adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.

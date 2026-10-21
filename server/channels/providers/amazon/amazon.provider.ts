@@ -6,6 +6,7 @@ import {
   type MarketplaceProvider,
   type TokenGrant,
 } from "../marketplace-provider";
+import { readAmazonListings } from "./amazon.listings";
 
 /**
  * Amazon's Selling Partner API, as INTEGRATIONS.md records it: website authorization through
@@ -63,6 +64,7 @@ async function lwaToken(form: Record<string, string>, refreshed: boolean): Promi
 export const amazonProvider: MarketplaceProvider = {
   channel: "amazon",
   connectionCap: APP_LISTED ? null : UNLISTED_CAP,
+  readListings: readAmazonListings,
 
   configured() {
     const { clientId, clientSecret, solutionId } = env();

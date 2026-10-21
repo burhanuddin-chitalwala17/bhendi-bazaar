@@ -6,6 +6,7 @@ import {
   type MarketplaceProvider,
   type TokenGrant,
 } from "../marketplace-provider";
+import { readFlipkartListings } from "./flipkart.listings";
 
 /**
  * Flipkart's third-party authorization, as INTEGRATIONS.md records it: the token call is a GET with
@@ -59,6 +60,7 @@ async function token(params: Record<string, string>, previousRefresh: string | n
 export const flipkartProvider: MarketplaceProvider = {
   channel: "flipkart",
   connectionCap: null,
+  readListings: readFlipkartListings,
 
   configured() {
     const { appId, appSecret } = env();

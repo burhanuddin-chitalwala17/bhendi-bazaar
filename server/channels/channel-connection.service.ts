@@ -6,6 +6,7 @@ import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { CHANNEL, CHANNEL_LABELS, type Channel } from "@server/shared/channels";
 import { NotFoundError } from "@server/shared/domain-error";
 import { orgChannelService } from "@server/listing/org-channel.service";
+import { enqueue } from "@server/shared/jobs/jobs.enqueue";
 
 import { isOpen } from "./channel-availability";
 import {
@@ -14,6 +15,8 @@ import {
   CONNECTION_ERROR,
   CONNECTION_STATE,
   MARKETPLACE_CHANNELS,
+  READ_STALL_MS,
+  READ_STATE,
   isMarketplaceChannel,
   type CardState,
   type ChannelAttentionDTO,
@@ -21,13 +24,18 @@ import {
   type ChannelsOverviewDTO,
   type ConnectResult,
   type ConnectStart,
+  type ChannelReadDTO,
   type ConnectionError,
   type MarketplaceChannel,
+  type ReadError,
+  type ReadState,
 } from "./channel-connection.types";
 import { channelConnectionRepository, type ConnectionRow, type SealedGrant } from "./channel-connection.repository";
 import { CONNECT_PURPOSE, signConnectState, verifyConnectState, type ConnectState } from "./connect-state";
 import { MarketplaceAuthError, MarketplaceUnavailableError, type TokenGrant } from "./providers/marketplace-provider";
 import { providerFor } from "./providers";
+import { channelListingRepository } from "./channel-listing.repository";
+import { listingReadSpec } from "./listing-read.job";
 
 /**
  * A shop's connections to the marketplaces (channel-connectors). The only public surface of the
@@ -71,11 +79,30 @@ const asReason = (error: MarketplaceAuthError): ConnectionError =>
       ? CONNECTION_ERROR.REVOKED
       : CONNECTION_ERROR.REJECTED;
 
+function readOf(row: ConnectionRow): ChannelReadDTO | null {
+  if (!row.readState) return null;
+  return {
+    state: row.readState as ReadState,
+    total: row.readTotal,
+    done: row.readDone,
+    startedAt: row.readStartedAt?.toISOString() ?? null,
+    finishedAt: row.readFinishedAt?.toISOString() ?? null,
+    error: (row.readErrorCode as ReadError | null) ?? null,
+    stalled: isStalled(row),
+  };
+}
+
+/** Running, but silent long enough that its worker is presumed gone (channel-import D3). */
+export function isStalled(row: { readState: string | null; readTouchedAt: Date | null }, now = Date.now()): boolean {
+  return row.readState === READ_STATE.RUNNING && (!row.readTouchedAt || now - row.readTouchedAt.getTime() > READ_STALL_MS);
+}
+
 function marketplaceCard(
   channel: MarketplaceChannel,
   row: ConnectionRow | undefined,
   liveCount: number,
   now: Date,
+  listings: { total: number; linked: number } | null,
 ): ChannelCardDTO {
   const provider = providerFor(channel);
   const live = row !== undefined && row.state !== CONNECTION_STATE.DISCONNECTED;
@@ -100,7 +127,14 @@ function marketplaceCard(
     lastCheckedAt: live ? (row?.lastCheckedAt?.toISOString() ?? null) : null,
     stale: live && (!row?.lastCheckedAt || now.getTime() - row.lastCheckedAt.getTime() > DAY_MS),
     reapproveBy: live && due ? due.toISOString() : null,
-    reason: row?.state === CONNECTION_STATE.NEEDS_RECONNECT ? (row.lastErrorCode as ConnectionError | null) : null,
+    read: live && row ? readOf(row) : null,
+    listings: live ? listings : null,
+    // A refused account (channel-import Q10) says why even after it was disconnected.
+    reason:
+      row?.state === CONNECTION_STATE.NEEDS_RECONNECT ||
+      (row?.state === CONNECTION_STATE.DISCONNECTED && row.lastErrorCode === CONNECTION_ERROR.OTHER_SHOP)
+        ? (row.lastErrorCode as ConnectionError | null)
+        : null,
   };
 }
 
@@ -115,6 +149,8 @@ function plainCard(channel: Channel, state: CardState): ChannelCardDTO {
     disconnectedAt: null,
     lastCheckedAt: null,
     stale: false,
+    read: null,
+    listings: null,
     reapproveBy: null,
     reason: null,
   };
@@ -131,8 +167,16 @@ export const channelConnectionService = {
     const byChannel = new Map(rows.map((row) => [row.channel, row]));
     const enabled = new Set(choices.filter((choice) => choice.enabled).map((choice) => choice.channel));
 
+    const listingCounts = await Promise.all(
+      MARKETPLACE_CHANNELS.map(async (channel) => {
+        const row = byChannel.get(channel);
+        if (!row || row.state === CONNECTION_STATE.DISCONNECTED) return null;
+        const { total, linked } = await channelListingRepository.counts(row.id);
+        return { total, linked };
+      }),
+    );
     const marketplaces = MARKETPLACE_CHANNELS.map((channel, i) =>
-      marketplaceCard(channel, byChannel.get(channel), counts[i], now),
+      marketplaceCard(channel, byChannel.get(channel), counts[i], now, listingCounts[i]),
     );
     const cards = [
       plainCard(CHANNEL.STORE, CARD_STATE.ALWAYS_ON),
@@ -222,12 +266,18 @@ export const channelConnectionService = {
         const { id } = await channelConnectionRepository.connect(tx, {
           orgId,
           channel,
-          externalAccountId: consent.externalAccountId,
+          // Flipkart's consent names no account; a reconnect keeps the one its reads learned, so a
+          // read can still tell a different account (channel-import D6). A fresh connect starts clean.
+          externalAccountId:
+            consent.externalAccountId ??
+            (purpose === CONNECT_PURPOSE.RECONNECT ? (existing?.externalAccountId ?? null) : null),
           grant: seal(grant),
           userId,
           now,
         });
         await orgChannelService.setIn(tx, orgId, channel, true);
+        // Connecting reads the shop's listings straight away (channel-import R1).
+        await enqueue(tx, listingReadSpec, { connectionId: id, orgId });
         await recordAdminActionIn(tx, {
           adminId: userId,
           action: purpose === CONNECT_PURPOSE.RECONNECT ? "channel.reconnect" : "channel.connect",
@@ -258,6 +308,17 @@ export const channelConnectionService = {
         resourceId: done.id,
         metadata: { orgId, channel },
       });
+    });
+  },
+
+  /**
+   * A read found the account already connected to another shop (channel-import D6): the newcomer is
+   * disconnected and its channel turned off, as a disconnect would, with the reason kept for the card.
+   */
+  async refuseOtherShop(connectionId: string, orgId: string, channel: MarketplaceChannel, now = new Date()): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      await channelConnectionRepository.refuseOtherShop(tx, connectionId, CONNECTION_ERROR.OTHER_SHOP, now);
+      await orgChannelService.setIn(tx, orgId, channel, false);
     });
   },
 

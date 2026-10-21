@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-20
+- **Verified:** 2026-10-21
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -231,6 +231,32 @@ Four routes, none with a request body:
 `CONNECT_RESULT` is a closed set (connected, cancelled, expired, other_session, other_shop,
 different_account, unreachable, full, unavailable); a client renders each with ux.md's copy and
 nothing else. Google and Meta still turn on and off through `PUT /api/org/[orgId]/channels` above; since channel-connectors that schema accepts only `google` and `meta`, because a marketplace is on only by connecting it (D11).
+
+### Marketplace listings
+
+Since channel-import ([spec](specs/marketplace-integration/channel-import/)) each `ChannelCardDTO`
+also carries `read` — a **`ChannelReadDTO`** (`state` from `READ_STATE`, `total`, `done`,
+`startedAt`, `finishedAt`, `error` from `READ_ERROR`) — and `listings` (`{ total, linked }`), both
+null unless the marketplace is connected; `reason` may now be `other_shop` on a card that is not
+connected, when a read found the account already in another shop.
+
+The Listings page and the product page read on the server, through `channelListingsDAL`:
+**`ChannelListingsPageDTO`** (`channel`, `label`, `connected`, `read`, `counts { linked, notLinked }`,
+`listings`, `hasMore`), whose rows are **`ChannelListingDTO`** (the marketplace's `sku`, `externalId`,
+`title`, `imageUrl`, `status` from `LISTING_STATUS`, `pricePaise` in integer paise, `quantity`, the
+variation `parentSku`/`parentTitle`/`variationAxis`, the linked `product { id, name, sku, archived }`
+or null, `linkSource`, `unlinkedByOwner`, `gone`); **`ChannelListingDetailDTO`** for the details
+panel (`listing`, the linked product's own values, `linkBackTo`); and
+**`ProductMarketplaceLinkDTO[]`** for a product — one per connected marketplace, its `listing` null
+when not linked. Price and stock are what the marketplace last reported; nothing in them is charged.
+
+Three routes, all `withOrg`, none with a request body:
+- `POST /api/org/[orgId]/channels/[channel]/listings/read` — `{ ok: true }`; 409 in the envelope
+  when the marketplace needs reconnecting.
+- `POST /api/org/[orgId]/channels/[channel]/listings/[id]/unlink` — `{ ok: true }`; 404 when the
+  listing is not this shop's or not linked.
+- `POST /api/org/[orgId]/channels/[channel]/listings/[id]/link-back` — `{ listing }`; 404 when it
+  was not unlinked by the owner, 409 when no product has its SKU any more.
 
 ### Image enhancement
 
