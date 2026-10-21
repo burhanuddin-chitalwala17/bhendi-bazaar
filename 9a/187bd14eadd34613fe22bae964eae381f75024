@@ -1,0 +1,230 @@
+docs/specs/marketplace-integration/channel-import/spec.md
+  s_0972fb7ac9c18b::t_7f5697cc3f8075 44-45
+  s_0972fb7ac9c18b::t_d6eb440cf2bb05 4
+  s_0972fb7ac9c18b::t_6c8806b43545a5 46-47,90
+  s_0972fb7ac9c18b::t_93bba76c9de45f 54-55,58-59,61-62,64-65,68
+  s_0972fb7ac9c18b::t_7f441201c74e19 36-37
+  s_0972fb7ac9c18b::t_ff89e50b3aa259 30-31,48-49,79
+  s_0972fb7ac9c18b::t_e3fc8815303e6e 1-3,5-29,32-35,38-43,50-53,56-57,60,63,69-78,80-89
+  s_0972fb7ac9c18b::t_49925572a357e4 66-67
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_e25ff4e5301bb5 3,235-259
+tests/unit/overlay-surfaces.test.ts
+  s_0972fb7ac9c18b::t_f8a8d3bac120a1 26-27
+src/components/CLAUDE.md
+  s_0972fb7ac9c18b::t_7d1010520463fd 3
+server/channels/listing-read.job.ts
+  s_0972fb7ac9c18b::t_9f34fbaec01dc6 1-15
+src/components/channel/listing-list.tsx
+  s_0972fb7ac9c18b::t_bc778e7c826427 1-34,36-38,40-48
+  s_0972fb7ac9c18b::t_0fb32b5ef86c7c 35,39
+docs/specs/marketplace-integration/channel-connectors/trd.md
+  s_0972fb7ac9c18b::t_0737f522b0c014 3,6
+docs/specs/marketplace-integration/channel-import/ux.md
+  s_0972fb7ac9c18b::t_5854a8736e7c12 1-2,4,6-23,26-32,34-46,48-59,61-63,77,89-95
+  s_0972fb7ac9c18b::t_2fd2d1487f9db9 33,47,97-98
+  s_0972fb7ac9c18b::t_5357927cac5c18 5
+  s_0972fb7ac9c18b::t_ff89e50b3aa259 64-65
+  s_0972fb7ac9c18b::t_d0485ece72a661 99-101
+  s_0972fb7ac9c18b::t_6c8806b43545a5 24,78-88
+  s_0972fb7ac9c18b::t_7f441201c74e19 60
+  s_0972fb7ac9c18b::t_7f5697cc3f8075 25,66-76
+  s_0972fb7ac9c18b::t_d6eb440cf2bb05 3,96
+tests/unit/product-visibility.test.ts
+  s_0972fb7ac9c18b::t_809639146fa849 35-36
+src/components/channel/marketplace-card.tsx
+  s_0972fb7ac9c18b::t_dd748680f49779 1-4,11,34,55-68,72-75
+  s_0972fb7ac9c18b::t_291e0a4008c176 40,43
+  s_0972fb7ac9c18b::t_62bc6faa98fd19 71
+src/app/(org)/org/[orgId]/products/[id]/page.tsx
+  s_0972fb7ac9c18b::t_999ad11a22b1c9 7-8,23-30,40
+src/components/channel/listing-link-action.tsx
+  s_0972fb7ac9c18b::t_94d8e33e836944 1-60
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_4142c5351b5cad 345,2011-2023,2031-2060,2062-2078
+  s_0972fb7ac9c18b::t_d0485ece72a661 2061
+server/channels/channel-connection.repository.ts
+  s_0972fb7ac9c18b::t_9202474afefbdd 5
+  s_0972fb7ac9c18b::t_63ad69f1a2131d 3-4,7-11,37-41,43,70-74,76,236-237,239-240,242-265,271-294,296-300,303-313,315-316
+  s_0972fb7ac9c18b::t_fe15a9039e832f 314
+  s_0972fb7ac9c18b::t_7fd3b5be5f0251 42
+  s_0972fb7ac9c18b::t_9913849ba293c5 6,75,238,241,266-270
+  s_0972fb7ac9c18b::t_2e2e431197613e 295
+  s_0972fb7ac9c18b::t_291e0a4008c176 301-302
+src/components/channel/product-marketplaces.tsx
+  s_0972fb7ac9c18b::t_999ad11a22b1c9 1-71
+server/channels/channel-import.service.ts
+  s_0972fb7ac9c18b::t_291e0a4008c176 135
+  s_0972fb7ac9c18b::t_dc9a5d16ac7188 232,234-259
+  s_0972fb7ac9c18b::t_62bc6faa98fd19 175
+  s_0972fb7ac9c18b::t_dbc07c0054c46d 25,101,119-120,185
+  s_0972fb7ac9c18b::t_ea1cd43a08fcab 14,171,176,202-214
+  s_0972fb7ac9c18b::t_3375fdfa44587a 1-13,15-24,26-100,102-118,121-134,136-170,172-174,177-184,186-201,215-231,233,260-261
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_0737f522b0c014 62-70
+  s_0972fb7ac9c18b::t_cbc4b4efa1bdae 32-61
+  s_0972fb7ac9c18b::t_727dd449a3e48d 13-31
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/unlink/route.ts
+  s_0972fb7ac9c18b::t_99745591a5c070 1-14
+src/lib/security-headers.ts
+  s_0972fb7ac9c18b::t_cd3780c777cd68 45
+  s_0972fb7ac9c18b::t_f8a8d3bac120a1 46-47,50
+server/channels/providers/marketplace-provider.ts
+  s_0972fb7ac9c18b::t_ca51080cbe4be1 2,39-43
+src/data-access-layer/channel-listings.dal.ts
+  s_0972fb7ac9c18b::t_bc778e7c826427 1-51
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_7d1010520463fd 3,16,18,61,75
+server/channels/CLAUDE.md
+  s_0972fb7ac9c18b::t_d0485ece72a661 19
+  s_0972fb7ac9c18b::t_7d1010520463fd 3,13,24,36-40
+server/catalog/product.repository.ts
+  s_0972fb7ac9c18b::t_da1a12676415d7 429,605-612
+  s_0972fb7ac9c18b::t_bf57d6aa9f8887 597-604,613-615
+docs/specs/README.md
+  s_0972fb7ac9c18b::t_0737f522b0c014 96
+  s_0972fb7ac9c18b::t_7d1010520463fd 97
+src/components/channel/listing-copy.ts
+  s_0972fb7ac9c18b::t_ce2a72ab461cb5 1-32,34,36-56,58-167
+  s_0972fb7ac9c18b::t_62bc6faa98fd19 33,35,57
+docs/BACKLOG.md
+  s_0972fb7ac9c18b::t_7eb5e863e38f33 192
+  s_0972fb7ac9c18b::t_0737f522b0c014 191
+src/app/(org)/org/[orgId]/channels/[channel]/listings/loading.tsx
+  s_0972fb7ac9c18b::t_0fb32b5ef86c7c 1-21
+docs/specs/marketplace-integration/channel-import/trd.md
+  s_0972fb7ac9c18b::t_9aa9de9cb11c46 1-2,4-36,39-42,46-52,57-58,62-88,93-109,112-113,115-121
+  s_0972fb7ac9c18b::t_bde3c8d15de49e 43-45,53-54,59-61,89-92,110-111,114
+  s_0972fb7ac9c18b::t_3468e7e8fd8a19 55-56
+  s_0972fb7ac9c18b::t_d0485ece72a661 37-38
+  s_0972fb7ac9c18b::t_d6eb440cf2bb05 3
+docs/TRACKER.md
+  s_0972fb7ac9c18b::t_0737f522b0c014 4,620
+tests/unit/channel-listing-read.test.ts
+  s_0972fb7ac9c18b::t_b2fa32a426b3c9 1-27,29-75,77-186
+  s_0972fb7ac9c18b::t_3d0db2d5bbe520 76
+  s_0972fb7ac9c18b::t_7fd3b5be5f0251 28
+docs/specs/marketplace-integration/channel-import/decisions.md
+  s_0972fb7ac9c18b::t_21d20baa39b586 13-17,19-25
+  s_0972fb7ac9c18b::t_d6e8f002f5a04f 1-10,36,38-39
+  h_b67201bb58135f 11-12,18,32-35,37,40
+  s_0972fb7ac9c18b::t_d0485ece72a661 26-31
+server/channels/providers/flipkart/flipkart.listings.ts
+  s_0972fb7ac9c18b::t_7efe0e014904d2 1-12,14-50,53-55,57,59-61,63-64,66-103,106-108,110-123,125-128,131-146
+  s_0972fb7ac9c18b::t_dbc07c0054c46d 109,124,129-130
+  s_0972fb7ac9c18b::t_2e2e431197613e 13,51-52,56,58,62,65,104-105
+src/components/channel/channelsApiClient.ts
+  s_0972fb7ac9c18b::t_99745591a5c070 4,40-54
+tests/integration/channel-import.test.ts
+  s_0972fb7ac9c18b::t_3468e7e8fd8a19 230-248
+  s_0972fb7ac9c18b::t_3d0db2d5bbe520 138,140,144,154,214
+  s_0972fb7ac9c18b::t_ae77ecf5d9ff35 1-137,139,141-143,145-153,155-213,215-223,225-229,249-256
+  s_0972fb7ac9c18b::t_7e058fbe8bb407 224
+server/channels/channel-connection.types.ts
+  s_0972fb7ac9c18b::t_9913849ba293c5 107-112,141-142
+  s_0972fb7ac9c18b::t_dc9a5d16ac7188 121,191,196-204
+  s_0972fb7ac9c18b::t_9f34fbaec01dc6 31-32,79-81,122
+  s_0972fb7ac9c18b::t_ea1cd43a08fcab 163-179
+  s_0972fb7ac9c18b::t_bf57d6aa9f8887 102-106,113-120,123-140,143-162,180-190,192-195,205
+src/app/(org)/org/[orgId]/channels/[channel]/listings/error.tsx
+  s_0972fb7ac9c18b::t_0fb32b5ef86c7c 1-17
+src/components/channel/read-progress-refresher.tsx
+  s_0972fb7ac9c18b::t_94d8e33e836944 1-17
+src/app/api/org/[orgId]/channels/[channel]/listings/read/route.ts
+  s_0972fb7ac9c18b::t_99745591a5c070 1-14
+docs/INTEGRATIONS.md
+  s_0972fb7ac9c18b::t_5357927cac5c18 302-317
+  s_0972fb7ac9c18b::t_0737f522b0c014 3,269-274
+server/channels/listing-match.ts
+  s_0972fb7ac9c18b::t_bf57d6aa9f8887 1-38
+server/channels/providers/amazon/amazon.provider.ts
+  s_0972fb7ac9c18b::t_9f34fbaec01dc6 9,67
+src/components/channel/read-again-button.tsx
+  s_0972fb7ac9c18b::t_94d8e33e836944 1-36
+server/channels/providers/listing-read.ts
+  s_0972fb7ac9c18b::t_ca51080cbe4be1 1-8,11-63
+  s_0972fb7ac9c18b::t_dbc07c0054c46d 9-10
+tests/unit/channel-cards.test.tsx
+  s_0972fb7ac9c18b::t_383b7e2eed4025 26-27
+src/components/channel/listing-image.tsx
+  s_0972fb7ac9c18b::t_f8a8d3bac120a1 4-5,7-17,26
+  s_0972fb7ac9c18b::t_94d8e33e836944 1-3,6,18-25,27-39
+src/components/channel/listing-details-panel.tsx
+  s_0972fb7ac9c18b::t_f8a8d3bac120a1 73
+  s_0972fb7ac9c18b::t_77e57509d6760d 1-72,74-130
+server/channels/channel-listing.repository.ts
+  s_0972fb7ac9c18b::t_dc9a5d16ac7188 187,194-195
+  s_0972fb7ac9c18b::t_63ad69f1a2131d 4
+  s_0972fb7ac9c18b::t_da2a62453c0d67 1-3,5-90,93,95-140,142-149,151-156,159,161-162,173-186,188-193,196-198
+  s_0972fb7ac9c18b::t_57feef80ee0601 141
+  s_0972fb7ac9c18b::t_ea1cd43a08fcab 150,157-158,160
+  s_0972fb7ac9c18b::t_dbc07c0054c46d 91-92,94
+  s_0972fb7ac9c18b::t_62bc6faa98fd19 163-172
+docs/specs/marketplace-integration/channel-connectors/decisions.md
+  s_0972fb7ac9c18b::t_0737f522b0c014 24-25,29
+prisma/migrations/20261021000000_channel_listings/migration.sql
+  s_0972fb7ac9c18b::t_ca59aa5b0ea2f0 1-55
+server/channels/channel-connection.service.ts
+  s_0972fb7ac9c18b::t_383b7e2eed4025 9,27,30-31,37-38,82-90,92-94,105,130-137,152-153,170-177,179,279-280
+  s_0972fb7ac9c18b::t_291e0a4008c176 315-324
+  s_0972fb7ac9c18b::t_dbc07c0054c46d 18-19
+  s_0972fb7ac9c18b::t_9913849ba293c5 91,95-99,269-273
+src/app/(org)/org/[orgId]/channels/[channel]/listings/page.tsx
+  s_0972fb7ac9c18b::t_62bc6faa98fd19 53-60,66,69,90
+  s_0972fb7ac9c18b::t_e645a5247143e5 131
+  s_0972fb7ac9c18b::t_0fb32b5ef86c7c 1-52,61-65,67-68,70-89,91-130,132-157
+docs/specs/marketplace-integration/channel-connectors/spec.md
+  s_0972fb7ac9c18b::t_0737f522b0c014 4,7
+src/app/api/org/[orgId]/channels/[channel]/listings/[id]/link-back/route.ts
+  s_0972fb7ac9c18b::t_99745591a5c070 1-13
+server/channels/providers/flipkart/flipkart.provider.ts
+  s_0972fb7ac9c18b::t_9f34fbaec01dc6 9,63
+server/catalog/admin.product.service.ts
+  s_0972fb7ac9c18b::t_da1a12676415d7 55,62
+src/components/channel/listing-group.tsx
+  s_0972fb7ac9c18b::t_b35e8534bf1bff 1-33
+tests/unit/image-delivery.test.ts
+  s_0972fb7ac9c18b::t_62bc6faa98fd19 63
+  s_0972fb7ac9c18b::t_f8a8d3bac120a1 60-62,64
+tests/unit/delete-refusal.test.ts
+  s_0972fb7ac9c18b::t_1a863fdd325b5e 108,128,138-139
+src/app/api/CLAUDE.md
+  s_0972fb7ac9c18b::t_7d1010520463fd 3
+server/channels/providers/amazon/amazon.listings.ts
+  s_0972fb7ac9c18b::t_dbc07c0054c46d 96,128,203
+  s_0972fb7ac9c18b::t_2e2e431197613e 76,178,191,198,200-201,217,219
+  s_0972fb7ac9c18b::t_8f9f91e03d067b 1-75,77-95,97-127,129-177,179-190,192-197,199,202,204-216,218,220-240
+server/channels/channels.jobs.ts
+  s_0972fb7ac9c18b::t_d1d63e117fbb0f 7-20
+src/components/channel/listing-row.tsx
+  s_0972fb7ac9c18b::t_b35e8534bf1bff 1-42,44-81
+  s_0972fb7ac9c18b::t_62bc6faa98fd19 43
+src/components/channel/channel-copy.ts
+  s_0972fb7ac9c18b::t_383b7e2eed4025 56-57
+server/catalog/product.service.ts
+  s_0972fb7ac9c18b::t_9352fe28b0e9b1 116-123
+  s_0972fb7ac9c18b::t_da1a12676415d7 124-138
+tests/unit/vocabulary.test.ts
+  s_0972fb7ac9c18b::t_2e2e431197613e 19-20,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "9a187bd14eadd34613fe22bae964eae381f75024",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
