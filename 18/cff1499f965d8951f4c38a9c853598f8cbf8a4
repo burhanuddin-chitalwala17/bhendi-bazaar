@@ -1,0 +1,60 @@
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_c699b6b097c6ee 239-240
+server/channels/providers/marketplace-provider.ts
+  s_0972fb7ac9c18b::t_5384c99563f0ad 62-75
+src/components/channel/listing-copy.ts
+  s_0972fb7ac9c18b::t_5384c99563f0ad 41,61,77-78
+server/channels/providers/amazon/amazon.listings.ts
+  s_0972fb7ac9c18b::t_5384c99563f0ad 8,34,45,100,111,118,192
+scripts/README.md
+  s_0972fb7ac9c18b::t_27b8eb8da0e0b0 4
+docs/specs/marketplace-integration/channel-import/spec.md
+  s_0972fb7ac9c18b::t_a533ff96422777 29,43
+server/channels/channel-connection.types.ts
+  s_0972fb7ac9c18b::t_5384c99563f0ad 121-122
+server/channels/channel-import.service.ts
+  s_0972fb7ac9c18b::t_5384c99563f0ad 29,150-153
+tests/integration/channel-import.test.ts
+  s_0972fb7ac9c18b::t_8a3be79d9c668d 19,40-42,50,205-215
+docs/specs/marketplace-integration/channel-import/ux.md
+  s_0972fb7ac9c18b::t_5384c99563f0ad 33,46,103
+  s_0972fb7ac9c18b::t_779eab777c7f7f 101-102
+tests/unit/channel-listing-read.test.ts
+  s_0972fb7ac9c18b::t_8a3be79d9c668d 14,163,168-169
+  s_0972fb7ac9c18b::t_0582a6fa088c3c 164-167,170-187
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_779eab777c7f7f 13-24
+  s_0972fb7ac9c18b::t_27b8eb8da0e0b0 25-37
+docs/specs/marketplace-integration/channel-import/decisions.md
+  s_0972fb7ac9c18b::t_a533ff96422777 20,22,32
+docs/specs/marketplace-integration/channel-import/trd.md
+  s_0972fb7ac9c18b::t_779eab777c7f7f 47,49-50,52-53
+server/channels/providers/flipkart/flipkart.listings.ts
+  s_0972fb7ac9c18b::t_5384c99563f0ad 6,32
+  s_0972fb7ac9c18b::t_669334183a0923 99-100,103,105,107-117,143-144
+scripts/flipkart-listing-probe.ts
+  s_0972fb7ac9c18b::t_2b278b3c51b848 1-87
+docs/INTEGRATIONS.md
+  s_0972fb7ac9c18b::t_779eab777c7f7f 315-317
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "18cff1499f965d8951f4c38a9c853598f8cbf8a4",
+  "prompts": {},
+  "humans": {
+    "h_b67201bb58135f": {
+      "author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
