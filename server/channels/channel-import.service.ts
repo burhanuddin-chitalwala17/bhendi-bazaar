@@ -26,7 +26,7 @@ import { channelConnectionService, isStalled } from "./channel-connection.servic
 import { channelListingRepository, type ListingFilter, type ListingRow } from "./channel-listing.repository";
 import { indexBySkuKey, productForListing, skuKey } from "./listing-match";
 import { listingReadSpec } from "./listing-read.job";
-import { MarketplaceAuthError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
+import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import { providerFor } from "./providers";
 
 /**
@@ -146,6 +146,11 @@ export const channelImportService = {
           at,
         );
         return { claimed: true as const, stopped: READ_ERROR.AUTH };
+      }
+      if (error instanceof MarketplaceRequestError) {
+        // Not retried: the same request is refused the same way. The step and status go to the job log.
+        await channelConnectionRepository.stopRead(connectionId, READ_ERROR.NOT_ALLOWED, at);
+        return { claimed: true as const, stopped: READ_ERROR.NOT_ALLOWED, step: error.step, status: error.status };
       }
       if (error instanceof MarketplaceUnavailableError) {
         // The job's own retries resume it; rows already read stay, and nothing is marked gone (D8, D9).

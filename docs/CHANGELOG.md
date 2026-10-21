@@ -10,6 +10,31 @@
 
 ## Entries
 
+## 2026-10-21 — channel-import: Flipkart reads without product search (Q20)
+
+- The production probe (`scripts/flipkart-listing-probe.ts`, run on the owner's request) showed
+  Flipkart answers our app 404 on `listings/v3/product/search` and 200 on listing search, listing
+  details and the SKU lookup. The Flipkart reader now skips product search on a 404 and reads every
+  listing from search and details: no picture (the initial tile) and no one-shop account check on
+  Flipkart. Decision Q20 supersedes Q8 (Flipkart pictures) and Q10; spec, TRD, ux.md and
+  INTEGRATIONS.md say so. Amazon is unchanged.
+- **Mutation-tested:** treating product search's 404 as fatal again → the new Q20 test red.
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit`, the integration suite on the local dev
+  database, `lint:boundary`, `docs:check`.
+
+## 2026-10-21 — channel-import: a refused request stops the read instead of retrying [CONTRACT]
+
+- The first live Flipkart read failed with HTTP 404 on every attempt and the page said "Flipkart is
+  busy". A 4xx other than auth or rate limit is now `MarketplaceRequestError`: not retried, the read
+  stops as `not_allowed` ("Flipkart doesn't let us read your listings yet…", a new ux.md row), and
+  the job's log line names the call and status (`flipkart /listings/v3/product/search`, `404`).
+  Amazon's calls carry a step name the same way.
+- `scripts/flipkart-listing-probe.ts` asks each Flipkart listing call once with the stored token
+  and prints status and field names, to find which calls our app may use. Not run by Claude.
+- **Mutation-tested:** classing a 404 as busy again → the new unit test red (five calls, not one).
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit`, the integration suite on the local dev
+  database, `lint:boundary`, `docs:check`.
+
 ## 2026-10-21 — channel-import: fixes from the fresh-context review [CONTRACT]
 
 - **A read could stay "running" forever** after a worker restart or a slow Amazon report: the

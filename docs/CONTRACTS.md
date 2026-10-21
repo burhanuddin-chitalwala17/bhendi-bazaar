@@ -236,7 +236,8 @@ nothing else. Google and Meta still turn on and off through `PUT /api/org/[orgId
 
 Since channel-import ([spec](specs/marketplace-integration/channel-import/)) each `ChannelCardDTO`
 also carries `read` — a **`ChannelReadDTO`** (`state` from `READ_STATE`, `total`, `done`,
-`startedAt`, `finishedAt`, `error` from `READ_ERROR`) — and `listings` (`{ total, linked }`), both
+`startedAt`, `finishedAt`, `error` from `READ_ERROR` — busy, auth, other_shop, not_allowed,
+different_account — and `stalled`) — and `listings` (`{ total, linked }`), both
 null unless the marketplace is connected; `reason` may now be `other_shop` on a card that is not
 connected, when a read found the account already in another shop.
 

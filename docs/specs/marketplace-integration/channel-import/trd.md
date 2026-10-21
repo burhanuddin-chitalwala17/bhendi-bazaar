@@ -44,11 +44,13 @@ marketplace, and no product is created (Q2).
   backs off through `providers/listing-read.ts`'s `retryBusy`, never a refused credential (built:
   `server/shared/retry.ts` retries every error). One path for any catalogue size.
 - **D5 — Flipkart reads in three passes.** `product/search` first, which names the `sellerId`
-  (Q10); then `listings/v3/search` (500 a page) for every SKU and FSN; then `listings/v3/details` (10
+  (Q10); answered 404 for our app, it is skipped and the read goes on (Q20). Then `listings/v3/search` (500 a page) for every SKU and FSN; then `listings/v3/details` (10
   a call) for title, price, status and stock, summing stock over locations; images from the
-  `product/search` pages. Flipkart does not document price units; they are read as rupees and turned
+  `product/search` pages when it answers. A 4xx other than auth or 429 stops the read as
+  `not_allowed`, not retried. Flipkart does not document price units; they are read as rupees and turned
   into paise, and the owner's catalogue confirms it at A8.
-- **D6 — Flipkart's account check happens before any row is written.** The `sellerId` becomes the
+- **D6 — Flipkart's account check happens before any row is written,** when product search names
+  the account; without it (Q20) no check is made. The `sellerId` becomes the
   connection's external account id; the partial unique index (connectors D9) refuses a second
   shop's, and the connection is then disconnected with reason `other_shop`, its tokens deleted and
   its channel turned off, as a disconnect does. An id differing from the stored one stops the read

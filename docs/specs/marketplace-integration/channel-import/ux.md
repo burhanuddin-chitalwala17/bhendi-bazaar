@@ -30,6 +30,7 @@
 | Connected, first read running | "Reading your listings… 212 of 480" with a thin progress bar | See listings |
 | Connected, read done | "480 listings · 402 linked" | See listings |
 | Connected, read stopped | "Reading stopped at 212 of 480. We'll pick up where it left off." | See listings |
+| Connected, read not allowed | "Flipkart doesn't let us read your listings yet. We're working on it; nothing on Flipkart has changed." | See listings |
 | Connected, read refused: a different account | "That's a different Flipkart account from the one connected here. To switch accounts, disconnect this one first, then connect the new one." | See listings |
 | Refused: Flipkart account in another shop | Chip "Not connected"; "This Flipkart account is already connected to another shop. An account can belong to one shop only; disconnect it there first." | Connect Flipkart |
 
@@ -42,6 +43,7 @@
 | Partial (read running) | Rows read so far, counts updating, line "Reading… 212 of 480" | — |
 | Success | Tabs "Linked 402" · "Not linked 78"; line "Read 2 min ago" | Read again |
 | Retryable error | "Reading stopped at 212 of 480. Amazon is busy; we'll try again in a few minutes." Rows so far stay | Read again |
+| Not allowed | "Flipkart doesn't let us read your listings yet. We're working on it; nothing on Flipkart has changed." Rows so far stay | Read again |
 | Terminal error | "Amazon stopped accepting our access, so we can't read your listings. Reconnect on Channels." | Go to Channels |
 | Refused | Flipkart account in another shop: the page says so and shows no rows | Go to Channels |
 | Different account | "That's a different Flipkart account from the one connected here. To switch accounts, disconnect this one first, then connect the new one." Rows so far stay | Go to Channels |
@@ -96,6 +98,8 @@ marketplace last said, and the line "As Amazon last reported" sits under the tab
 Signed off by the owner, 2026-10-21, as the prototype stands (version 5).
 
 Added while building, 2026-10-21: the "different account" rows (a reconnect that consents with another
-Flipkart account than the one this connection read before), using the copy already agreed in chat. Removed while building: the "No SKU on the
+Flipkart account than the one this connection read before), using the copy already agreed in chat. Not reached while decisions Q20 holds: the refused-Flipkart-account rows (no Flipkart call our app
+may use names the account), and Flipkart pictures, which show the initial tile. Added after the first live read, 2026-10-21: "not allowed", for a
+marketplace that answers our read with a 4xx (Flipkart returned 404). Removed while building: the "No SKU on the
 marketplace" row, which cannot occur — Amazon's report and Flipkart's listings both key every
 listing by its SKU.

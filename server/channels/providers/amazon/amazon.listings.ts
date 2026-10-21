@@ -5,6 +5,7 @@ import type { ReadListing } from "../../channel-listing.repository";
 import { skuKey } from "../../listing-match";
 import {
   MarketplaceAuthError,
+  MarketplaceRequestError,
   MarketplaceUnavailableError,
   marketplaceFetch,
 } from "../marketplace-provider";
@@ -30,7 +31,7 @@ const REPORT_POLL_MS = 15_000;
 const REPORT_TIMEOUT_MS = 30 * 60_000;
 const ENRICH_BATCH = 20;
 
-async function spApi(token: TokenSource, path: string, init: RequestInit = {}): Promise<unknown> {
+async function spApi(token: TokenSource, step: string, path: string, init: RequestInit = {}): Promise<unknown> {
   const response = await marketplaceFetch(`${HOST}${path}`, {
     ...init,
     headers: {
@@ -41,7 +42,7 @@ async function spApi(token: TokenSource, path: string, init: RequestInit = {}): 
   });
   if (response.status === 401 || response.status === 403) throw new MarketplaceAuthError("rejected");
   if (response.status === 429 || response.status >= 500) throw new MarketplaceUnavailableError(response.status);
-  if (!response.ok) throw new MarketplaceUnavailableError(response.status);
+  if (!response.ok) throw new MarketplaceRequestError(response.status, `amazon ${step}`);
   return await response.json();
 }
 
@@ -96,7 +97,7 @@ export function listingFromReportRow(row: Record<string, string>): ReadListing |
 async function downloadReport(token: TokenSource, sink: ListingSink): Promise<string> {
   const created = obj(
     await retryBusy(() =>
-      spApi(token, "/reports/2021-06-30/reports", {
+      spApi(token, "reports/create", "/reports/2021-06-30/reports", {
         method: "POST",
         body: JSON.stringify({ reportType: REPORT_TYPE, marketplaceIds: [AMAZON_IN] }),
       }),
@@ -107,14 +108,14 @@ async function downloadReport(token: TokenSource, sink: ListingSink): Promise<st
 
   const deadline = Date.now() + REPORT_TIMEOUT_MS;
   for (;;) {
-    const report = obj(await retryBusy(() => spApi(token, `/reports/2021-06-30/reports/${encodeURIComponent(reportId)}`)));
+    const report = obj(await retryBusy(() => spApi(token, "reports/get", `/reports/2021-06-30/reports/${encodeURIComponent(reportId)}`)));
     const status = str(report.processingStatus);
     // Amazon cancels a report with nothing in it: an account with no listings.
     if (status === "CANCELLED") return "";
     if (status === "FATAL") throw new MarketplaceUnavailableError(null);
     const documentId = str(report.reportDocumentId);
     if (status === "DONE" && documentId) {
-      const document = obj(await retryBusy(() => spApi(token, `/reports/2021-06-30/documents/${encodeURIComponent(documentId)}`)));
+      const document = obj(await retryBusy(() => spApi(token, "documents/get", `/reports/2021-06-30/documents/${encodeURIComponent(documentId)}`)));
       const url = str(document.url);
       if (!url) throw new MarketplaceUnavailableError(null);
       // A pre-signed address: no token goes with it.
@@ -188,7 +189,7 @@ async function enrich(token: TokenSource, accountId: string, skus: string[], pac
     });
     await pace();
     const body = obj(
-      await retryBusy(() => spApi(token, `/listings/2021-08-01/items/${encodeURIComponent(accountId)}?${query.toString()}`)),
+      await retryBusy(() => spApi(token, "listings/search", `/listings/2021-08-01/items/${encodeURIComponent(accountId)}?${query.toString()}`)),
     );
     for (const [sku, data] of enrichmentFromItems(body.items)) all.set(sku, data);
   }

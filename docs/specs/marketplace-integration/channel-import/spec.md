@@ -26,7 +26,7 @@ the shop's own SKU is that first step, and it changes nothing on the marketplace
   leave the page while it runs and sees progress when it returns (Q7).
 - R2 — "Read again" repeats the read at any time. A read changes nothing on the marketplace.
 - R3 — Each listing appears once, with what the marketplace says about it: title, SKU, its id
-  there (ASIN or FSN), status, price, stock, and an image when the marketplace gives one (Q8).
+  there (ASIN or FSN), status, price, stock, and an image when the marketplace gives one (Q8; Flipkart gives none to our app, Q20).
   Variants show as the marketplace groups them: an Amazon parent is a header over its sizes or
   colours, each still its own row and link; Flipkart says nothing about grouping (Q9, Q15).
 - R4 — A listing whose SKU equals a product's SKU, ignoring case and surrounding spaces, links to
@@ -40,7 +40,7 @@ the shop's own SKU is that first step, and it changes nothing on the marketplace
 - R7 — A listing that is gone from the marketplace is marked so on the next read, keeping its link
   (Q12). Listing rows and links stay when the shop disconnects (Q11).
 - R8 — A Flipkart account already connected in another shop is refused when its listings are
-  read: the connection is ended, and the card says why (Q10).
+  read: the connection is ended, and the card says why (Q10; on Flipkart only once a call names the account, Q20).
 - R10 — Tapping a listing opens its details beside the linked product's, differences marked, saying
   plainly that linking changes nothing on the product (Q17). Choosing what wins is product-merge's (Q18).
 - R11 — A linked product's editor shows, read-only, where it is linked: per marketplace its id, status

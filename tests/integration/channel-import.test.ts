@@ -16,7 +16,7 @@ const fake = vi.hoisted(() => {
     account: "ACCOUNT-A" as string,
     listings: [] as ReadListing[],
     /** Throw this after the first batch, to stand for a read cut short. */
-    failAfterFirst: null as null | "busy" | "auth",
+    failAfterFirst: null as null | "busy" | "auth" | "refused",
     /** Holds a read open until released, so a second read can try to start meanwhile. */
     gate: null as null | Promise<void>,
   };
@@ -37,7 +37,9 @@ const fake = vi.hoisted(() => {
     },
     check: async () => undefined,
     readListings: async (token: () => Promise<string>, _known: string | null, sink: ListingSink) => {
-      const { MarketplaceAuthError, MarketplaceUnavailableError } = await import("@server/channels/providers/marketplace-provider");
+      const { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError } = await import(
+        "@server/channels/providers/marketplace-provider"
+      );
       await token();
       await sink.account(state.account);
       if (state.gate) await state.gate;
@@ -45,6 +47,7 @@ const fake = vi.hoisted(() => {
       await sink.batch(state.listings.slice(0, half), { done: half, total: state.listings.length });
       if (state.failAfterFirst === "busy") throw new MarketplaceUnavailableError(503);
       if (state.failAfterFirst === "auth") throw new MarketplaceAuthError("revoked");
+      if (state.failAfterFirst === "refused") throw new MarketplaceRequestError(404, "flipkart /listings/v3/search");
       await sink.batch(state.listings.slice(half), { done: state.listings.length, total: state.listings.length });
     },
   };
@@ -197,6 +200,19 @@ describe.skipIf(!isDisposableDb)("marketplace listing reads (local db)", () => {
     expect(row).toMatchObject({ state: "DISCONNECTED", accessToken: null, refreshToken: null, lastErrorCode: "other_shop" });
     const sells = await prisma.orgChannel.findFirst({ where: { orgId, channel: "flipkart" } });
     expect(sells?.enabled ?? false).toBe(false);
+  });
+
+  it("stops without a job retry when the marketplace refuses the request itself, keeping what it read", async () => {
+    const id = await connect(orgId);
+    fake.state.listings = [listing("KRT-1"), listing("NEW-2")];
+    fake.state.failAfterFirst = "refused";
+    expect(await imports.runRead(id)).toMatchObject({ stopped: "not_allowed", step: "flipkart /listings/v3/search", status: 404 });
+    expect(await prisma.channelConnection.findUniqueOrThrow({ where: { id } })).toMatchObject({
+      state: "CONNECTED",
+      readState: "STOPPED",
+      readErrorCode: "not_allowed",
+    });
+    expect((await rows(id)).map((r) => [r.sku, r.goneAt])).toEqual([["KRT-1", null]]);
   });
 
   it("stops as needs-reconnecting when the marketplace refuses our access (D9)", async () => {

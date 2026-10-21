@@ -59,6 +59,20 @@ export class MarketplaceUnavailableError extends Error {
   }
 }
 
+/**
+ * The marketplace refused this request itself (a 4xx other than auth or rate limit): the same call
+ * fails the same way however often it is retried. `step` names the call, never its ids or body.
+ */
+export class MarketplaceRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly step: string,
+  ) {
+    super(`Marketplace refused the request (${step}, HTTP ${status})`);
+    this.name = "MarketplaceRequestError";
+  }
+}
+
 /** A `fetch` that gives up after ten seconds (D1) and turns network failure into "unavailable". */
 export async function marketplaceFetch(url: string, init: RequestInit): Promise<Response> {
   try {

@@ -3,6 +3,7 @@ import type { ReadListing } from "../../channel-listing.repository";
 import { skuKey } from "../../listing-match";
 import {
   MarketplaceAuthError,
+  MarketplaceRequestError,
   MarketplaceUnavailableError,
   marketplaceFetch,
 } from "../marketplace-provider";
@@ -28,7 +29,7 @@ async function call(token: TokenSource, path: string, body: unknown): Promise<un
   });
   if (response.status === 401 || response.status === 403) throw new MarketplaceAuthError("rejected");
   if (response.status === 429 || response.status >= 500) throw new MarketplaceUnavailableError(response.status);
-  if (!response.ok) throw new MarketplaceUnavailableError(response.status);
+  if (!response.ok) throw new MarketplaceRequestError(response.status, `flipkart ${path}`);
   return await response.json();
 }
 
@@ -95,12 +96,25 @@ export function listingsFromDetails(body: unknown, catalogue: Map<string, Catalo
 }
 
 export async function readFlipkartListings(token: TokenSource, _known: string | null, sink: ListingSink): Promise<void> {
-  // 1. Product search: the account first (Q10), and every image and name it offers.
+  // 1. Product search: the account first, and every image and name it offers. Our app is answered
+  // 404 here (checked 2026-10-21), so without it the read goes on with no account and no images (Q20).
   const catalogue = new Map<string, CatalogueEntry>();
   let accountReported = false;
+  let productSearch = true;
   for (const state of PRODUCT_STATES) {
+    if (!productSearch) break;
     for (let batchNo = 0; batchNo < MAX_PAGES; batchNo++) {
-      const page = readProductPage(await retryBusy(() => call(token, "/listings/v3/product/search", { batchNo, internalState: state })));
+      let body: unknown;
+      try {
+        body = await retryBusy(() => call(token, "/listings/v3/product/search", { batchNo, internalState: state }));
+      } catch (error) {
+        if (error instanceof MarketplaceRequestError && error.status === 404) {
+          productSearch = false;
+          break;
+        }
+        throw error;
+      }
+      const page = readProductPage(body);
       if (page.accountId && !accountReported) {
         await sink.account(page.accountId);
         accountReported = true;
@@ -126,8 +140,8 @@ export async function readFlipkartListings(token: TokenSource, _known: string | 
     if (body.has_more !== true || !pageId) break;
   }
   const skus = [...new Set([...fsnBySku.keys(), ...catalogue.keys()])];
-  // No account named, no row written: the one-shop check must come first (D6). Retried as busy.
-  if (!accountReported && skus.length > 0) throw new MarketplaceUnavailableError(null);
+  // Product search answered but named no account: no row is written before the one-shop check (D6).
+  if (productSearch && !accountReported && skus.length > 0) throw new MarketplaceUnavailableError(null);
   const total = skus.length;
   await sink.batch([], { done: 0, total });
 

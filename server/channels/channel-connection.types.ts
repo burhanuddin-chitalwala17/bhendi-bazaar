@@ -118,6 +118,8 @@ export const READ_ERROR = {
   AUTH: "auth",
   /** The Flipkart account is already connected to another shop (Q10). */
   OTHER_SHOP: "other_shop",
+  /** The marketplace refused the read's request itself (a 4xx); retrying will not change it. */
+  NOT_ALLOWED: "not_allowed",
   /** The account read is not the one this connection was made with (ux.md: different account). */
   DIFFERENT_ACCOUNT: "different_account",
 } as const;

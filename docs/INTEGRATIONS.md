@@ -312,7 +312,9 @@ and new credentials. Register the host the app actually uses, before the first t
   500 per page, by `next_page_id` while `has_more`; `POST /listings/v3/details` gives title, price, tax,
   status and per-location stock, 10 SKUs at a time, with no image; `POST /listings/v3/product/search`
   (20 per batch, by `internalState`) is the only one returning an image URL and the **`sellerId`** —
-  the one way to recognise the same Flipkart account in two shops. Price units (rupees or paise) are
+  the one way to recognise the same Flipkart account in two shops. **Checked on production, 2026-10-21:** our third-party app gets 404 from
+  `product/search`; `listings/v3/search`, `listings/v3/details` and `GET /listings/v3/{sku}` answer 200
+  (channel-import Q20). Price units (rupees or paise) are
   not documented, and no rate limit is published.
 
 **Detecting a sale.**

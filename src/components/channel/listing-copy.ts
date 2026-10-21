@@ -38,6 +38,7 @@ export function pageReadLine(read: ChannelReadDTO, label: string, hasRows: boole
     if (read.error === READ_ERROR.AUTH) return { text: READ_REFUSED.auth(label), tone: "error", running: false };
     if (read.error === READ_ERROR.OTHER_SHOP) return { text: READ_REFUSED.otherShop(label), tone: "error", running: false };
     if (read.error === READ_ERROR.DIFFERENT_ACCOUNT) return { text: READ_REFUSED.differentAccount(label), tone: "error", running: false };
+    if (read.error === READ_ERROR.NOT_ALLOWED) return { text: READ_REFUSED.notAllowed(label), tone: "error", running: false };
     return { text: `Reading stopped at ${of(read)}. ${label} is busy; we'll try again in a few minutes.`, tone: "warning", running: false };
   }
   if (read.state === READ_STATE.DONE && read.finishedAt) {
@@ -57,6 +58,7 @@ export function cardReadLine(
   if (read.state === READ_STATE.RUNNING) return { text: `Reading your listings… ${of(read)}`, tone: "muted", running: !read.stalled };
   if (read.state === READ_STATE.STOPPED) {
     if (read.error === READ_ERROR.DIFFERENT_ACCOUNT) return { text: READ_REFUSED.differentAccount(label), tone: "error", running: false };
+    if (read.error === READ_ERROR.NOT_ALLOWED) return { text: READ_REFUSED.notAllowed(label), tone: "error", running: false };
     if (read.error === READ_ERROR.BUSY) {
       return { text: `Reading stopped at ${of(read)}. We'll pick up where it left off.`, tone: "warning", running: false };
     }
@@ -72,6 +74,8 @@ export const READ_REFUSED = {
   auth: (label: string) => `${label} stopped accepting our access, so we can't read your listings. Reconnect on Channels.`,
   otherShop: (label: string) =>
     `This ${label} account is already connected to another shop. An account can belong to one shop only; disconnect it there first.`,
+  notAllowed: (label: string) =>
+    `${label} doesn't let us read your listings yet. We're working on it; nothing on ${label} has changed.`,
   differentAccount: (label: string) =>
     `That's a different ${label} account from the one connected here. To switch accounts, disconnect this one first, then connect the new one.`,
 } as const;

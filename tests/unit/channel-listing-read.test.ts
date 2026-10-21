@@ -11,7 +11,7 @@ import {
 } from "@server/channels/providers/amazon/amazon.listings";
 import { listingsFromDetails, readFlipkartListings } from "@server/channels/providers/flipkart/flipkart.listings";
 import { paiseFromRupees, retryBusy, type ListingSink } from "@server/channels/providers/listing-read";
-import { MarketplaceAuthError } from "@server/channels/providers/marketplace-provider";
+import { MarketplaceAuthError, MarketplaceRequestError } from "@server/channels/providers/marketplace-provider";
 import { indexBySkuKey, productForListing, skuKey } from "@server/channels/listing-match";
 import type { ReadListing } from "@server/channels/channel-listing.repository";
 
@@ -157,6 +157,34 @@ describe("Flipkart's three passes (D5, D6)", () => {
     await readFlipkartListings(async () => "TOKEN", null, sink);
     expect(events[0]).toEqual({ account: "FK-SHOP" });
     expect(rows().map((r) => r.sku)).toEqual(["KRT-1"]);
+  });
+});
+
+describe("a request the marketplace refuses is a stop, not a busy retry", () => {
+  it("names the call and its status, and calls it once", async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url.endsWith("/listings/v3/product/search") ? json({ listingData: [] }) : json({ error: "bad" }, 400),
+    );
+    const failure = readFlipkartListings(async () => "TOKEN", null, recordingSink().sink);
+    await expect(failure).rejects.toBeInstanceOf(MarketplaceRequestError);
+    await expect(failure).rejects.toThrow(/flipkart \/listings\/v3\/search, HTTP 400/);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/listings/v3/search"))).toHaveLength(1);
+  });
+
+  it("reads Flipkart through search and details when product search is refused, as it is for our app (Q20)", async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.endsWith("/listings/v3/product/search")) return json({ errors: [{ code: 10000 }] }, 404);
+      if (url.endsWith("/listings/v3/search")) return json({ listings: [{ sku_id: "KRT-1", product_id: "FSN1" }], has_more: false });
+      if (url.endsWith("/listings/v3/details")) {
+        return json({ available: { "KRT-1": { listing_id: "L1", product_id: "FSN1", product_title: "Kurta", listing_status: "ACTIVE", price: { selling_price: 799 } } } });
+      }
+      throw new Error(`unexpected ${url}`);
+    });
+    const { sink, events, rows } = recordingSink();
+    await readFlipkartListings(async () => "TOKEN", null, sink);
+    expect(events.some((e) => "account" in e)).toBe(false);
+    expect(rows()).toEqual([expect.objectContaining({ sku: "KRT-1", title: "Kurta", imageUrl: null, pricePaise: 79900 })]);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/product/search"))).toHaveLength(1);
   });
 });
 
