@@ -7,7 +7,7 @@
 - **Verified:** 2026-10-20
 - **References:** [decisions.md](decisions.md), [channel-connectors](channel-connectors/), [INTEGRATIONS.md](../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do), [ADR-0041](../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0042](../../adr/0042-the-shared-vocabulary-is-the-intersection-and-a-channel-declares-its-own-extras.md), [ADR-0061](../../adr/0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md), TRACKER F-013
 
-> The parent of six subfeatures. Each has its own spec, decisions, UX and TRD; this file holds only
+> The parent of eight subfeatures. Each has its own spec, decisions, UX and TRD; this file holds only
 > the model they share and their order. Every decision, with who made it, is in decisions.md.
 
 ## What this is
@@ -41,15 +41,18 @@ Each is one outcome, ships alone, and needs the one before it.
    matches link to existing products by themselves, undoably (Q14, Q17).
 3. **product-merge** — the owner decides which products are the same, whose content wins, and the
    real quantity (Q15–Q20).
-4. **channel-listings** — each platform's listing has its own screen, filled from the master,
+4. **marketplace-facts** — a listing's attributes fill its product's facts through the reverse of
+   the channel mappings; Amazon's mappings are built here (product-merge Q3).
+5. **family-merge** — an item's sizes become one family on Bhendi Bazaar (product-merge Q2).
+6. **channel-listings** — each platform's listing has its own screen, filled from the master,
    editable except for the strict fields (Q22, Q28, Q29).
-5. **inventory-sync** — a sale or a cancellation anywhere moves the one stock figure, and every
+7. **inventory-sync** — a sale or a cancellation anywhere moves the one stock figure, and every
    platform shows it (Q30, Q32, Q38).
-6. **marketplace-publish** — a product is published to a platform from its listing screen, and
+8. **marketplace-publish** — a product is published to a platform from its listing screen, and
    its status comes back. Flipkart waits on a new-product API (Q33).
 
 ## Scope
-- **In:** the six subfeatures above, for Amazon.in and Flipkart.
+- **In:** the eight subfeatures above, for Amazon.in and Flipkart.
 - **Later:** instant sale notifications (Q34), the Amazon Appstore listing (Q36), returns as their
   own feature, Meesho, sales reporting, and matching by barcode or image (Q37).
 

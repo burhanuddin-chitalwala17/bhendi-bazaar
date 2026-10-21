@@ -10,7 +10,7 @@
 | Q | Question | Answer | Decided by | Date | Why | State |
 |---|---|---|---|---|---|---|
 | Q1 | What is the shape of the sync? | Bhendi Bazaar is the hub: import once, changes go out, orders and status come back | Owner | 2026-10-19 | Two systems both editing a title cannot be reconciled safely | decided |
-| Q2 | How is the work cut? | Six subfeatures, in the order in spec.md | Owner | 2026-10-20 | Each is one outcome and ships alone | decided |
+| Q2 | How is the work cut? | Eight subfeatures, in the order in spec.md: marketplace-facts and family-merge join after product-merge | Owner | 2026-10-21 | Owner, 2026-10-21: a listing's attributes should fill the product at merge time, not wait for publish. was: Six subfeatures, in the order in spec.md | decided |
 | Q3 | Where does the code live? | A new `channels` domain: connections, platform listings, marketplace orders | Owner | 2026-10-15 | Keeps tokens and HTTP out of `listing`'s vocabulary | implemented (channel-connectors) |
 | Q4 | What if Flipkart lacks an API? | Amazon end to end; channel-neutral code; each Flipkart capability behind a switch | Owner | 2026-10-19 | Flipkart's catalogue API is unconfirmed (Q33) | decided |
 | Q5 | Which process? | ADR-0061, with channel-connectors as its trial | Owner | 2026-10-18 | Scope, decisions and UX were being lost | decided |
@@ -36,7 +36,7 @@
 | Q25 | How complete is the master? | The most complete version: every fact any connected platform needs | Owner | 2026-10-19 | The richest listing serves the store and every new channel | decided |
 | Q26 | Does that make the master form long? | It asks only what the product's type and the connected platforms need, when needed | Claude · reversible | 2026-10-19 | The product-form rule already in use | decided |
 | Q27 | Where does MRP live? | On the master only | Claude · reversible | 2026-10-19 | The printed legal price cannot differ by platform | decided |
-| Q28 | Which fields are locked on a platform listing? | Quantity, MRP, SKU, barcode, HSN and tax code, brand, legal label, net quantity | Owner | 2026-10-20 | Identity and legal facts must match everywhere | decided |
+| Q28 | Which fields are locked on a platform listing? | Quantity, MRP, barcode, HSN and tax code, brand, legal label, net quantity. SKU: the product has one, and each existing marketplace listing keeps its own (product-merge Q10) | Owner | 2026-10-21 | Identity and legal facts must match everywhere An existing Amazon SKU cannot be renamed. was: Quantity, MRP, SKU, barcode, HSN and tax code, brand, legal label, net quantity | decided |
 | Q29 | What may a platform listing change? | Everything else: title, description, photos (choice and order), selling price, listed/paused, platform-only fields | Owner | 2026-10-20 | Each marketplace rewards different content | decided |
 | Q30 | How often are orders checked? | Every 5 minutes; instant notifications later (Q34) | Owner | 2026-10-20 | Amazon allows about one order search per three minutes per shop | decided |
 | Q31 | How is drift corrected? | A daily resync reads every linked listing and compares it with ours. Replaces the hourly re-push proposed 2026-10-20 | Owner | 2026-10-20 | Changes made on the marketplace are found, not overwritten | decided |
