@@ -1,7 +1,7 @@
 # Spec — channel-import
 
 - **Summary:** After a shop connects Amazon or Flipkart, every listing it has there appears in an inbox on Bhendi Bazaar, and listings whose SKU equals one of its products link to that product by themselves, undoably
-- **Status:** Accepted
+- **Status:** Implemented
 - **Domain:** channels
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-21

@@ -1,6 +1,6 @@
 # TRD — channel-import
 
-- **Status:** Accepted — by the owner, 2026-10-21
+- **Status:** Implemented
 - **Domain:** channels, with a read from catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-21

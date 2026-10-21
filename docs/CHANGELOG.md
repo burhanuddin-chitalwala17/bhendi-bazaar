@@ -10,6 +10,13 @@
 
 ## Entries
 
+## 2026-10-21 — channel-import implemented
+
+- Acceptance A1, A7 and A8 checked by the owner on production: Amazon and Flipkart listings read
+  and linked by SKU, the variant group, Unlink / Undo / Link back, the details panel on a phone,
+  and Flipkart's prices read as rupees. Spec and TRD move to Implemented; Q20 is implemented;
+  BACKLOG and TRACKER follow. Next: product-merge.
+
 ## 2026-10-21 — channel-import: Flipkart reads without product search (Q20)
 
 - The production probe (`scripts/flipkart-listing-probe.ts`, run on the owner's request) showed
