@@ -10,6 +10,64 @@
 
 ## Entries
 
+## 2026-10-21 — channel-import: fixes from the fresh-context review [CONTRACT]
+
+- **A read could stay "running" forever** after a worker restart or a slow Amazon report: the
+  queue retried within the 30-minute takeover window and gave up. Readers now report in while they
+  wait (`ListingSink.alive`), the takeover window is 5 minutes (`READ_STALL_MS`), and
+  `ChannelReadDTO.stalled` brings Read again back for a silent read.
+- **Different account:** a Flipkart reconnect no longer wipes the account id its reads learned, so
+  the different-account stop can fire; a fresh connect after Disconnect still starts clean. The page
+  sends that state to Channels, as ux.md says.
+- **"See listings"** shows on every live card, so a connection made before this feature has a way in.
+- **Flipkart** stops before writing any row if product search named no account (D6 cannot be skipped).
+- Tab numbers count what the tab lists (gone rows included); "Reading… n of m" shows once rows
+  exist; linking looks only at the batch's SKUs; the unreachable "No SKU" row left ux.md.
+- Docs: decisions Q14–Q19 back in the table; channels CLAUDE.md names `channel-import.service` as
+  public; the image-delivery allowlist reason corrected; no audit row on a refused account, noted in D6.
+- **Mutation-tested:** dropping the different-account stop → the new D6 test red; restored.
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit` and the integration suite on the local dev
+  database (all green, `channel-import.test.ts` now 9 tests), `lint:boundary`, `docs:check`.
+
+## 2026-10-21 — channel-import: listings read, linked by SKU [CONTRACT] [MIGRATION]
+
+- **Units 1–5 of the accepted TRD**, built in one pass and left uncommitted for the owner.
+  `ChannelListing` (migration `20261021000000_channel_listings`, no drops) holds one row per
+  marketplace SKU; `ChannelConnection` gains the read-state columns. The worker job
+  `channels.read-listings` runs on connect and on "Read again": Amazon through the all-listings
+  report then the Listings API for pictures and variation parents; Flipkart in three passes, naming
+  the account first so a second shop's is refused before a row is written.
+- **Screens:** the Listings page per marketplace (tabs, search, Show more, variant groups, details
+  panel with Unlink / Link back), the card's reading line and "See listings", and the product page's
+  "On marketplaces" block. Copy is ux.md's; one row was added there while building: a read that
+  meets a different account than the connection's.
+- **Catalog:** `listWithSku` and `compareFacts` reads; a product a listing links to cannot be
+  deleted, and the refusal says so and points at Archive.
+- **CONTRACTS.md** — Marketplace listings: `ChannelReadDTO`, `ChannelListingDTO`,
+  `ChannelListingsPageDTO`, `ChannelListingDetailDTO`, `ProductMarketplaceLinkDTO`, the card's
+  `read` and `listings`, three routes.
+- **Allowlists, each with its reason:** overlay-surfaces (details panel, decision 3), image-delivery
+  (marketplace pictures, not our asset), vocabulary (`seller-sku`, Flipkart's `/sellers` and
+  `sellerId`), product-visibility (two reads that see archived products on purpose). CSP `img-src`
+  gains Amazon's and Flipkart's image hosts.
+- **Mutation-tested:** paise from floats instead of digits → red; keeping an Amazon variation parent
+  as a row → red; relinking a listing the owner unlinked → red; claiming a read with no condition →
+  the one-at-a-time test red; marking gone on a stopped read → red. Each restored.
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit` (178 files, 2,078 tests), the integration
+  suite on the local dev database (35 files, 274 tests, `channel-import.test.ts` new),
+  `lint:boundary`, `docs:check`.
+- **Still to do:** A1, A7 and A8 on the owner's own Amazon and Flipkart accounts at 360px, including
+  Flipkart's price units. Spec and TRD move to Implemented after that.
+
+## 2026-10-21 — channel-connectors implemented
+
+- Acceptance A8 passed on the owner's accounts: Amazon connected on production and Flipkart on
+  production. Spec and TRD move to Implemented; BACKLOG and TRACKER (F-013) follow.
+- What the first live connect taught, recorded in INTEGRATIONS.md and decision Q19: redirects match
+  character for character, and production's origin is `www`. Amazon gained the `www` callback;
+  Flipkart, whose single redirect cannot be edited, got a new third-party app.
+- Still to watch: the worker's first daily `channels.maintain` run moving "Last checked".
+
 ## 2026-10-20 — Worker env from one secret per variable
 
 - The deploy no longer needs the whole worker env file re-pasted to change one value. Every GitHub

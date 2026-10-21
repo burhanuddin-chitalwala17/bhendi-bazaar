@@ -23,6 +23,8 @@ const base: ChannelCardDTO = {
   disconnectedAt: null,
   lastCheckedAt: null,
   stale: false,
+  read: null,
+  listings: null,
   reapproveBy: null,
   reason: null,
 };

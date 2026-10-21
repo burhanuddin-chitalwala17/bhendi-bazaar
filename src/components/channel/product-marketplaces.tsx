@@ -1,0 +1,71 @@
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+import type { ProductMarketplaceLinkDTO } from "@server/channels/channel-connection.types";
+
+import { ID_NAME, ON_MARKETPLACES, STATUS_TEXT, priceAndStock } from "./listing-copy";
+
+/**
+ * Where this product is linked on each connected marketplace, read-only (channel-import Q19, ux.md
+ * "Product editor: On marketplaces"). Not shown when no marketplace is connected.
+ */
+export function ProductMarketplaces({ orgId, links }: { orgId: string; links: ProductMarketplaceLinkDTO[] }) {
+  if (links.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-3 rounded-card border bg-card p-4 text-card-foreground">
+      <h2 className="text-base font-semibold">{ON_MARKETPLACES.title}</h2>
+      <ul className="flex flex-col gap-3">
+        {links.map((link) => (
+          <li key={link.channel} className="flex flex-col gap-2 text-sm md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="flex flex-wrap gap-x-2">
+                <span className="font-medium">{link.label}</span>
+                <span className="text-muted-foreground">·</span>
+                <Summary link={link} />
+              </p>
+              {link.listing && link.needsReconnect && (
+                <p className="text-xs font-medium text-warning">{ON_MARKETPLACES.needsReconnect(link.label)}</p>
+              )}
+            </div>
+            {link.listing && (
+              <div className="flex flex-wrap gap-2">
+                {link.needsReconnect && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/org/${orgId}/channels`}>{ON_MARKETPLACES.goToChannels}</Link>
+                  </Button>
+                )}
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/org/${orgId}/channels/${link.channel}/listings?tab=linked&listing=${link.listing.id}`}>
+                    {ON_MARKETPLACES.seeListing}
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Summary({ link }: { link: ProductMarketplaceLinkDTO }) {
+  const listing = link.listing;
+  if (!listing) return <span className="text-muted-foreground">{ON_MARKETPLACES.notLinked}</span>;
+  if (listing.gone) return <span className="text-muted-foreground">{ON_MARKETPLACES.gone(link.label)}</span>;
+  const parts = [
+    listing.externalId ? `${ID_NAME[link.channel]} ${listing.externalId}` : null,
+    listing.status ? STATUS_TEXT[listing.status] : null,
+    priceAndStock(listing.pricePaise, listing.quantity),
+  ].filter((part): part is string => part !== null);
+  return (
+    <>
+      <span className="text-success">{ON_MARKETPLACES.linkedBySku}</span>
+      {parts.map((part) => (
+        <span key={part} className="flex gap-x-2">
+          <span className="text-muted-foreground">·</span>
+          <span className="tabular-nums">{part}</span>
+        </span>
+      ))}
+    </>
+  );
+}

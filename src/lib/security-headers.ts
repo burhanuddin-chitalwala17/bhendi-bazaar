@@ -42,9 +42,12 @@ function storeHost(): string[] {
   }
 }
 
+/** Listing pictures hotlinked from the marketplaces, not run through the optimizer (channel-import Q14). */
+const MARKETPLACE_IMAGE_HOSTS = ["https://m.media-amazon.com", "https://*.ssl-images-amazon.com", "https://*.flixcart.com"];
+
 /** Hosts `next/image` is allowed to render from — kept beside `next.config.ts`'s list. */
 function imageHosts(): string[] {
-  return ["https://i.ytimg.com", "https://placehold.co", "https://shiprocket.in", ...storeHost()];
+  return ["https://i.ytimg.com", "https://placehold.co", "https://shiprocket.in", ...MARKETPLACE_IMAGE_HOSTS, ...storeHost()];
 }
 
 /**

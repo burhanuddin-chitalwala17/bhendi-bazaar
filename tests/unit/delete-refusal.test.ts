@@ -105,7 +105,7 @@ describe("toErrorResponse — what the org is told", () => {
 });
 
 describe("describeDeleteBlockers", () => {
-  const none = { orderItems: 0, promotionTargets: 0, biddingEvents: 0 };
+  const none = { orderItems: 0, promotionTargets: 0, biddingEvents: 0, channelListings: 0 };
 
   it("returns null when the product has never been sold, promoted or bid on", () => {
     expect(describeDeleteBlockers(none)).toBeNull();
@@ -125,6 +125,7 @@ describe("describeDeleteBlockers", () => {
       orderItems: 3,
       promotionTargets: 1,
       biddingEvents: 2,
+      channelListings: 0,
     });
     expect(message).toContain("3 orders, 1 promotion and 2 bidding events");
   });
@@ -132,6 +133,10 @@ describe("describeDeleteBlockers", () => {
   it("refuses on a promotion or a bidding event alone, not only on orders", () => {
     expect(describeDeleteBlockers({ ...none, promotionTargets: 1 })).toContain("1 promotion");
     expect(describeDeleteBlockers({ ...none, biddingEvents: 1 })).toContain("1 bidding event");
+  });
+
+  it("refuses on a linked marketplace listing, whose key on the product never cascades (channel-import D1)", () => {
+    expect(describeDeleteBlockers({ ...none, channelListings: 2 })).toContain("2 marketplace listings");
   });
 
   it("names Archive as the way through, since the refusal is otherwise a dead end", () => {

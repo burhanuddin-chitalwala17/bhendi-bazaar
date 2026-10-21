@@ -1,6 +1,14 @@
 import { prisma } from "@server/shared/prisma";
 
-import { CONNECTION_STATE, type ConnectionError, type MarketplaceChannel } from "./channel-connection.types";
+import {
+  CONNECTION_STATE,
+  READ_ERROR,
+  READ_STALL_MS,
+  READ_STATE,
+  type ConnectionError,
+  type MarketplaceChannel,
+  type ReadError,
+} from "./channel-connection.types";
 
 /**
  * The one way to reach `ChannelConnection` (Invariant 5). Tokens arrive and leave here already
@@ -26,6 +34,13 @@ export interface ConnectionRow {
   disconnectedAt: Date | null;
   lastCheckedAt: Date | null;
   lastErrorCode: string | null;
+  readState: string | null;
+  readTotal: number | null;
+  readDone: number | null;
+  readStartedAt: Date | null;
+  readFinishedAt: Date | null;
+  readTouchedAt: Date | null;
+  readErrorCode: string | null;
   connectedBy: { name: string | null; email: string | null } | null;
   disconnectedBy: { name: string | null; email: string | null } | null;
 }
@@ -52,6 +67,13 @@ const ROW = {
   disconnectedAt: true,
   lastCheckedAt: true,
   lastErrorCode: true,
+  readState: true,
+  readTotal: true,
+  readDone: true,
+  readStartedAt: true,
+  readFinishedAt: true,
+  readTouchedAt: true,
+  readErrorCode: true,
   ...PEOPLE,
 } as const;
 
@@ -208,6 +230,90 @@ export const channelConnectionRepository = {
     await prisma.channelConnection.updateMany({
       where: { id, state: CONNECTION_STATE.CONNECTED },
       data: { state: CONNECTION_STATE.NEEDS_RECONNECT, lastErrorCode: reason, lastErrorAt: now },
+    });
+  },
+
+  /**
+   * Claim the listing read (channel-import D3): only when no read is running, or the running one has
+   * been silent past `READ_STALL_MS`. The count is the verdict; a second job finds 0 and exits.
+   */
+  async claimRead(id: string, now: Date): Promise<boolean> {
+    const silent = new Date(now.getTime() - READ_STALL_MS);
+    const result = await prisma.channelConnection.updateMany({
+      where: {
+        id,
+        state: CONNECTION_STATE.CONNECTED,
+        OR: [{ readState: null }, { readState: { not: READ_STATE.RUNNING } }, { readTouchedAt: { lt: silent } }],
+      },
+      data: {
+        readState: READ_STATE.RUNNING,
+        readTotal: null,
+        readDone: 0,
+        readStartedAt: now,
+        readFinishedAt: null,
+        readTouchedAt: now,
+        readErrorCode: null,
+      },
+    });
+    return result.count === 1;
+  },
+
+  async touchRead(id: string, progress: { total?: number | null; done: number }, now: Date): Promise<void> {
+    await prisma.channelConnection.updateMany({
+      where: { id, readState: READ_STATE.RUNNING },
+      data: { ...(progress.total !== undefined ? { readTotal: progress.total } : {}), readDone: progress.done, readTouchedAt: now },
+    });
+  },
+
+  /** A read is still alive while it waits on a marketplace (a report being built, a long page walk). */
+  async heartbeatRead(id: string, now: Date): Promise<void> {
+    await prisma.channelConnection.updateMany({ where: { id, readState: READ_STATE.RUNNING }, data: { readTouchedAt: now } });
+  },
+
+  async finishRead(id: string, done: number, now: Date): Promise<void> {
+    await prisma.channelConnection.updateMany({
+      where: { id, readState: READ_STATE.RUNNING },
+      data: { readState: READ_STATE.DONE, readDone: done, readTotal: done, readFinishedAt: now, readTouchedAt: now },
+    });
+  },
+
+  async stopRead(id: string, error: ReadError, now: Date): Promise<void> {
+    await prisma.channelConnection.updateMany({
+      where: { id, readState: READ_STATE.RUNNING },
+      data: { readState: READ_STATE.STOPPED, readErrorCode: error, readTouchedAt: now },
+    });
+  },
+
+  /** The read state of one connection, and what the read job needs to act. */
+  async forRead(id: string) {
+    return await prisma.channelConnection.findUnique({
+      where: { id },
+      select: { id: true, orgId: true, channel: true, state: true, externalAccountId: true, readStartedAt: true },
+    });
+  },
+
+  /** Record the account id a read learned (Flipkart's account id, D6). The partial unique index decides a clash. */
+  async setExternalAccountId(id: string, externalAccountId: string): Promise<void> {
+    await prisma.channelConnection.update({ where: { id }, data: { externalAccountId }, select: { id: true } });
+  },
+
+  /** End a connection whose account belongs to another shop (D6): tokens gone, the reason kept. */
+  async refuseOtherShop(db: ConnectionDb, id: string, reason: ConnectionError, now: Date): Promise<void> {
+    await db.channelConnection.update({
+      where: { id },
+      data: {
+        state: CONNECTION_STATE.DISCONNECTED,
+        accessToken: null,
+        accessTokenExpiresAt: null,
+        refreshToken: null,
+        refreshTokenExpiresAt: null,
+        disconnectedAt: now,
+        lastErrorCode: reason,
+        lastErrorAt: now,
+        readState: READ_STATE.STOPPED,
+        readErrorCode: READ_ERROR.OTHER_SHOP,
+      },
+      select: { id: true },
     });
   },
 

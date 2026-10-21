@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-15
+- **Verified:** 2026-10-21
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -266,6 +266,13 @@ endpoint, `sellingpartnerapi-eu.amazon.com`. An unlisted public app may hold **2
 authorisations; Appstore listing, which Amazon requires of public apps, lifts the cap and takes three
 to four weeks.
 
+**Redirects match character for character.** Both marketplaces compare the `redirect_uri` we send with
+the registered list exactly: scheme, host (`www` or not), path. Ours is built from `NEXT_PUBLIC_APP_URL`,
+which in production is `https://www.bhendi-bazaar.com`, so the first live connect (2026-10-21) failed
+with Amazon's `MD5101` until the `www` callback was registered. Amazon takes several redirect URIs and
+lets you add one; **Flipkart takes one and does not let you edit it**, so a wrong one means a new app
+and new credentials. Register the host the app actually uses, before the first test.
+
 **Listing.**
 
 - **Flipkart cannot create a product.** `POST /listings/v3` lists against an existing `product_id`
@@ -291,6 +298,22 @@ to four weeks.
 - **Amazon's XML and flat-file feeds were removed on 31 July 2025.** Bulk goes through
   `JSON_LISTINGS_FEED`; per-item calls suit under about 1,500 items per five minutes. Listings calls
   run at 5 requests per second per seller-and-app pair; a 429 is retryable with back-off.
+
+**Reading a shop's listings** (checked 2026-10-21, for channel-import).
+
+- **Amazon** `searchListingsItems` needs only the Product Listing role (ours), takes `marketplaceIds`
+  and `includedData` (summaries, offers, fulfillmentAvailability, relationships, issues…), pages 20 at
+  a time at 5 requests per second, and **stops at 1,000 results**; paging tokens expire in 24 hours
+  and break if a filter changes between pages. A full catalogue comes from the
+  `GET_MERCHANT_LISTINGS_ALL_DATA` report, which our roles may request, one marketplace per report.
+  Variation parents carry `childSkus` under `relationships`. Stock is per fulfilment channel:
+  `DEFAULT` is seller-fulfilled, `AMAZON_IN` is FBA. `status` may be empty.
+- **Flipkart** has no single call with everything. `POST /listings/v3/search` walks every SKU and FSN,
+  500 per page, by `next_page_id` while `has_more`; `POST /listings/v3/details` gives title, price, tax,
+  status and per-location stock, 10 SKUs at a time, with no image; `POST /listings/v3/product/search`
+  (20 per batch, by `internalState`) is the only one returning an image URL and the **`sellerId`** —
+  the one way to recognise the same Flipkart account in two shops. Price units (rupees or paise) are
+  not documented, and no rate limit is published.
 
 **Detecting a sale.**
 

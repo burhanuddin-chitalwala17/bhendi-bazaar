@@ -426,7 +426,7 @@ export class AdminProductsRepository {
             where: { id },
             select: {
                 _count: {
-                    select: { orderItems: true, promotionTargets: true, biddingEvents: true },
+                    select: { orderItems: true, promotionTargets: true, biddingEvents: true, channelListings: true },
                 },
             },
         });
@@ -592,6 +592,25 @@ export class AdminProductsRepository {
     await prisma.$transaction(
       rows.map(({ id, facts }) => prisma.product.update({ where: { id }, data: { facts: facts as never } })),
     );
+  }
+
+  /**
+   * Every product of a shop that has a SKU, archived included (ADR-0029): what a marketplace listing
+   * can link to by SKU (channel-import D7). A shop's catalogue, not the platform's.
+   */
+  async listWithSku(orgId: string) {
+    return await prisma.product.findMany({
+      where: { orgId, sku: { not: null } },
+      select: { id: true, sku: true, name: true, archivedAt: true },
+    });
+  }
+
+  /** One product as a marketplace listing is compared against (channel-import Q17). */
+  async compareFacts(orgId: string, id: string) {
+    return await prisma.product.findFirst({
+      where: { id, orgId },
+      select: { id: true, name: true, sku: true, price: true, thumbnail: true, archivedAt: true, stockLocations: { select: { quantity: true } } },
+    });
   }
 
   /** The live products holding these SKUs: the rows a bulk import updates rather than creates. */

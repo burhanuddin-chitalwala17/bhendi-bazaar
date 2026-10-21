@@ -53,6 +53,8 @@ export const REASON: Record<ConnectionError, (label: string) => string> = {
   rejected: (label) => `${label} stopped accepting our access.`,
   expired: (label) => `${label}'s approval expired.`,
   revoked: () => "Access was removed from Seller Central.",
+  other_shop: (label) =>
+    `This ${label} account is already connected to another shop. An account can belong to one shop only; disconnect it there first.`,
 };
 
 export const ACTION = {

@@ -1,10 +1,10 @@
 # Spec — channel-connectors
 
 - **Summary:** A shop connects its own Amazon and Flipkart seller accounts by consenting on the marketplace's own page, and sees on one Channels page where it sells and whether each connection is healthy
-- **Status:** Accepted
+- **Status:** Implemented
 - **Domain:** channels (new)
 - **Phase:** 11 — Listing: one entry, every channel
-- **Verified:** 2026-10-20
+- **Verified:** 2026-10-21
 - **References:** [decisions.md](decisions.md), [ux.md](ux.md), [trd.md](trd.md), parent [marketplace-integration](../spec.md) and its [decisions](../decisions.md), [ADR-0041](../../../adr/0041-a-channel-is-classed-by-where-the-sale-completes.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [INTEGRATIONS.md](../../../INTEGRATIONS.md#connecting-a-seller-what-the-two-apis-actually-do), TRACKER F-013, F-014
 
 > Requirements and product approach only. Technical approach lives in trd.md. Subfeature 1 of

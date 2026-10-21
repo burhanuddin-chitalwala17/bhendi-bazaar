@@ -4,6 +4,20 @@ import { registerSchedule } from "@server/shared/jobs/jobs.schedule";
 import { adminOrgService } from "@server/catalog/org.service";
 
 import { channelConnectionService } from "./channel-connection.service";
+import { channelImportService } from "./channel-import.service";
+import { listingReadSpec } from "./listing-read.job";
+
+/**
+ * A shop's listing read (channel-import D3): one per connection at a time, claimed inside the
+ * service. A busy marketplace throws, so the queue's retries resume it; rows already read stay.
+ */
+export const listingReadJob = registerJob({
+  ...listingReadSpec,
+  handler: async ({ jobId, payload }) => {
+    const outcome = await channelImportService.runRead(payload.connectionId);
+    console.log(`[jobs] channels.read-listings ${jobId}: ${JSON.stringify({ connection: payload.connectionId, ...outcome })}`);
+  },
+});
 
 /** Once a day (channel-connectors D7): connections change on a scale of days, not minutes. */
 export const CHANNELS_MAINTAIN_INTERVAL_SECONDS = 86_400;

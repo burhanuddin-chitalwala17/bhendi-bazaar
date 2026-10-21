@@ -52,12 +52,14 @@ export type DeleteBlockers = {
   orderItems: number;
   promotionTargets: number;
   biddingEvents: number;
+  channelListings: number;
 };
 
 const BLOCKER_NOUNS: Array<[keyof DeleteBlockers, string, string]> = [
   ["orderItems", "order", "orders"],
   ["promotionTargets", "promotion", "promotions"],
   ["biddingEvents", "bidding event", "bidding events"],
+  ["channelListings", "marketplace listing", "marketplace listings"],
 ];
 
 /**
