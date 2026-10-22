@@ -52,7 +52,7 @@ export function MatchPicker({ orgId, listingId, label, addNewHref, trigger }: Ma
   const pick = (product: SettlePickerProductDTO) => {
     if (product.linkedHere) return toast.info(PICKER.linkedHereWhy(label));
     setOpen(false);
-    router.push(`/org/${orgId}/channels/settle?listing=${listingId}&product=${product.id}`);
+    router.push(`/org/${orgId}/channels/settle?listing=${listingId}&productId=${product.id}`);
   };
 
   const row = (product: SettlePickerProductDTO) => (

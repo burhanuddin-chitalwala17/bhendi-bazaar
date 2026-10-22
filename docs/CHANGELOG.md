@@ -10,6 +10,14 @@
 
 ## Entries
 
+## 2026-10-23 — product-merge: the Settle page's match link was blocked at the edge
+
+- Clicking a match opened a Vercel "This request was blocked" page (403, `x-vercel-mitigated: deny`):
+  the edge firewall refuses any `product=` or `p=` query parameter, whatever its value, even on
+  other pages. The Settle page now reads `productId`, which passes. Nothing in our app returned it.
+- **Suites run:** `tsc --noEmit`, the docs check. The edge rule is in the Vercel firewall, not the
+  repository; if it is ever changed, this parameter name can come back.
+
 ## 2026-10-21 — product-merge: fixes from the fresh-context review [CONTRACT]
 
 - **"Add product" could not submit:** the form validated before its choices (title, photo source)

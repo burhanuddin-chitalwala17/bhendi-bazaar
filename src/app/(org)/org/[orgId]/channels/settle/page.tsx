@@ -22,13 +22,14 @@ export default async function SettleListingPage({
   searchParams,
 }: {
   params: Promise<{ orgId: string }>;
-  searchParams: Promise<{ listing?: string; product?: string }>;
+  /** `productId`, not `product`: the edge firewall refuses any `product=` or `p=` query (2026-10-23). */
+  searchParams: Promise<{ listing?: string; productId?: string }>;
 }) {
   const { orgId } = await params;
-  const { listing, product } = await searchParams;
+  const { listing, productId } = await searchParams;
   if (!listing) notFound();
   const scope = await requireOrgMember(orgId);
-  const data = await channelSettleDAL.page(scope.orgId, listing, product ?? null);
+  const data = await channelSettleDAL.page(scope.orgId, listing, productId ?? null);
   if (!data) notFound();
   const { detail } = data;
   const backHref = `/org/${scope.orgId}/channels/${detail.primary.channel}/listings?tab=notLinked`;
