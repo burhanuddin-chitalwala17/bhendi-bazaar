@@ -1,0 +1,25 @@
+src/app/api/CLAUDE.md
+  s_0972fb7ac9c18b::t_6fbecf8d03c0f1 3
+server/channels/CLAUDE.md
+  s_0972fb7ac9c18b::t_6fbecf8d03c0f1 3
+src/components/CLAUDE.md
+  s_0972fb7ac9c18b::t_6fbecf8d03c0f1 3
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_6fbecf8d03c0f1 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "d524e43bf928351f8b17261c3002fef03b2ebb9c",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
