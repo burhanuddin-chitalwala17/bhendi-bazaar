@@ -1,0 +1,23 @@
+src/components/channel/match-picker.tsx
+  s_0972fb7ac9c18b::t_968197c5c8e9a8 55
+src/app/(org)/org/[orgId]/channels/settle/page.tsx
+  s_0972fb7ac9c18b::t_968197c5c8e9a8 25-26,29,32
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_ddc8a5ce933293 13-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "2c1aeb20ee194646fbbc502a9b09be902d8a5299",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
