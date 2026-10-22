@@ -10,6 +10,57 @@
 
 ## Entries
 
+## 2026-10-21 — product-merge: fixes from the fresh-context review [CONTRACT]
+
+- **"Add product" could not submit:** the form validated before its choices (title, photo source)
+  were in its values, and showed no field. Choices are now written into the values as they change;
+  a component test submits the real form (`settle-form.test.tsx`).
+- **The listings are locked first** (`SELECT … FOR UPDATE`, D4's order), so two identical taps make
+  one product and the second is told "This listing was just linked to …", not "SKU in use".
+- **A match checks its stock locations** belong to the shop, as the add path does.
+- **Try again keeps the copy's mode** (`photoMode`, added to the unpushed migration): a match still
+  replaces its gallery only when every photo arrives. A copy whose re-read fails counts every
+  photo as failed, so Try again shows instead of "Copying…" forever.
+- **Link back** leaves a left-off row alone and names a product already linked on that marketplace.
+- **The page:** the photo-copy error shows with Try again and Add photo; "settled meanwhile" offers
+  Back to listings; descriptions have Show all; the read failure has Try again; the load error says
+  it could not read the listing; the Settle page uses `PageShell`; Undo on Leave off says "Brought
+  back.". SKU and description limits match the product form. Weight logged as Q30.
+- **Mutation-tested:** the form without the choice sync → the component test red; no lock first →
+  the identical-taps test red; retry always appending → red; no location check → red. Each restored.
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit` (180 files), the integration suite on the
+  local dev database (`product-merge.test.ts` now 14 tests), `lint:boundary`, `docs:check`.
+
+## 2026-10-21 — product-merge: settle every marketplace listing [CONTRACT] [MIGRATION]
+
+- **Units 1–5 of the accepted TRD**, built in one pass and left uncommitted for the owner. A
+  not-linked listing is added as a new product, matched to one the shop has, or left off; the same
+  item on the other marketplace is suggested (same SKU, then a similar name) and settled with it.
+  Migration `20261022000000_listing_settlement` adds `leftOffAt`/`leftOffById`, photo-copy counts
+  and a partial unique index of one listing per connection per product; it drops nothing.
+- **One transaction per settle (D4):** catalog creates the product inside it (the insert split from
+  `createProduct`; the slug is chosen free first, since a duplicate aborts a Postgres transaction),
+  or updates only the chosen fields and sets counted stock against what the page saw; every listing
+  is linked conditionally, and a short count rolls the product back. Photos: the main one is copied
+  before the save (a failure writes nothing); the rest by `channels.copy-listing-photos`, which
+  re-reads them from Amazon's catalogue (Q26), accepts only Amazon's image hosts, at most nine, and
+  stores them through the new `mediaImportService`. Flipkart gives no photos or description.
+- **Screens:** the details panel's three choices, the match picker, the Settle page, "Show left
+  off" on Not linked, the row's suggestion line, "Linked by you", photo progress with Try again on
+  the product, and the card's "to settle". Built-time ux.md changes: "settled meanwhile" names the
+  product but not the person (who linked is not stored), and rows for left off meanwhile, loading
+  the listing and a failed read.
+- **CONTRACTS.md** — Settling marketplace listings. **Gates:** the product-visibility census gains
+  four reads that see archived products on purpose, each with its reason.
+- **Mutation-tested:** the settle link without its condition → the two-taps test red (the first
+  version of that test passed under the mutation, because the second tap was refused for its SKU;
+  it was rewritten so only the link can stop it); a read linking a left-off listing → red; never
+  archiving → red; any https host accepted for photos → red. Each restored.
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit` (179 files), the integration suite on the
+  local dev database (36 files, 286 tests; `product-merge.test.ts` new), `lint:boundary`,
+  `docs:check`.
+- **Still to do:** A7 and A8 on the owner's catalogue at 360px, including photos against Amazon.
+
 ## 2026-10-21 — channel-import implemented
 
 - Acceptance A1, A7 and A8 checked by the owner on production: Amazon and Flipkart listings read

@@ -15,7 +15,7 @@ import {
 /** A read older than this reads as stale (ux.md "Stale"). */
 const STALE_MS = 2 * 24 * 60 * 60_000;
 
-const ago = (iso: string, now: number): string => {
+export const ago = (iso: string, now: number): string => {
   const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60_000));
   if (minutes < 1) return "just now";
   if (minutes < 60) return `${minutes} min ago`;
@@ -51,7 +51,7 @@ export function pageReadLine(read: ChannelReadDTO, label: string, hasRows: boole
 /** The card's line (ux.md "State matrix — Marketplace card (additions only)"). */
 export function cardReadLine(
   read: ChannelReadDTO | null,
-  listings: { total: number; linked: number } | null,
+  listings: { total: number; linked: number; toSettle: number } | null,
   label: string,
 ): ReadLine | null {
   if (!read) return null;
@@ -65,7 +65,10 @@ export function cardReadLine(
     return null;
   }
   if (read.state === READ_STATE.DONE && listings) {
-    return { text: `${listings.total} listings · ${listings.linked} linked`, tone: "muted", running: false };
+    // product-merge ux.md "Card, to settle" / "Card, all settled".
+    if (listings.total > 0 && listings.toSettle === 0) return { text: `${listings.total} listings · all settled`, tone: "muted", running: false };
+    const toSettle = listings.toSettle > 0 ? ` · ${listings.toSettle} to settle` : "";
+    return { text: `${listings.total} listings · ${listings.linked} linked${toSettle}`, tone: "muted", running: false };
   }
   return null;
 }

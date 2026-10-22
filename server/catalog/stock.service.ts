@@ -55,6 +55,13 @@ export const stockService = {
    */
   lockAll: (productId: string, tx?: ProductStockDb) => stockRepository.lockAll(productId, tx),
 
+  /**
+   * Set counted stock per location against the counts the editor saw (Invariant 6): a sale in
+   * between refuses the whole write. A location with no row yet has no seen count.
+   */
+  setCounted: (productId: string, rows: readonly StockAdjustment[], tx?: ProductStockDb) =>
+    stockRepository.adjust(productId, rows, tx),
+
   /** Take one unit from a named location, conditionally. `false` means nothing was there. */
   takeOne: (productId: string, orgAddressId: string, tx?: ProductStockDb) =>
     stockRepository.takeOne(productId, orgAddressId, tx),

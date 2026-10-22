@@ -6,6 +6,8 @@ import { adminOrgService } from "@server/catalog/org.service";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelImportService } from "./channel-import.service";
 import { listingReadSpec } from "./listing-read.job";
+import { channelSettleService } from "./channel-settle.service";
+import { listingPhotosSpec } from "./listing-photos.job";
 
 /**
  * A shop's listing read (channel-import D3): one per connection at a time, claimed inside the
@@ -48,3 +50,12 @@ export const channelsMaintainJob = registerJob({
 });
 
 registerSchedule(channelsMaintainJob, {}, CHANNELS_MAINTAIN_INTERVAL_SECONDS);
+
+/** A settled listing's photos onto its product (product-merge D6). A photo that fails is counted, not retried here. */
+export const listingPhotosJob = registerJob({
+  ...listingPhotosSpec,
+  handler: async ({ jobId, payload }) => {
+    const outcome = await channelSettleService.copyPhotos(payload);
+    console.log(`[jobs] channels.copy-listing-photos ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
+  },
+});

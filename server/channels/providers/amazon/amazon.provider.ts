@@ -6,7 +6,7 @@ import {
   type MarketplaceProvider,
   type TokenGrant,
 } from "../marketplace-provider";
-import { readAmazonListings } from "./amazon.listings";
+import { readAmazonListings, amazonListingDetail } from "./amazon.listings";
 
 /**
  * Amazon's Selling Partner API, as INTEGRATIONS.md records it: website authorization through
@@ -65,6 +65,7 @@ export const amazonProvider: MarketplaceProvider = {
   channel: "amazon",
   connectionCap: APP_LISTED ? null : UNLISTED_CAP,
   readListings: readAmazonListings,
+  listingDetail: amazonListingDetail,
 
   configured() {
     const { clientId, clientSecret, solutionId } = env();

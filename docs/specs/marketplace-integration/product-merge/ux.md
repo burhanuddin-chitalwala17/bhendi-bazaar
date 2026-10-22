@@ -20,7 +20,7 @@
    row leaves the to-do; "Show left off" on Not linked lists it, with "Bring back".
 4. **It goes wrong.** "Add product" with a SKU another product already has → the Settle page says
    which product and offers "Match to it instead". Someone else settled it meanwhile → the page says
-   who, and nothing is changed.
+   what happened, and nothing is changed.
 
 ## Screens
 | Screen | Route / place | New or changed | Serves |
@@ -79,7 +79,11 @@
 | Retryable error | "Couldn't save. Nothing was changed. Try again." | Try again |
 | Refused: SKU taken | "SKU ABY-BLK-M is already used by Black Nida Abaya – M (archived). Pick another SKU, or match to that product." | Match to it instead |
 | Refused: stock changed | "The stock of Brass Bakhoor Burner changed while you were here. Check the numbers and save again." with the new counts filled in | Link and save |
-| Refused: settled meanwhile | "This listing was just linked to Black Nida Abaya – M by Farida. Nothing was changed." | Back to listings |
+| Refused: settled meanwhile | "This listing was just linked to Black Nida Abaya – M. Nothing was changed." | Back to listings |
+| Refused: left off meanwhile | "This listing was just left off Bhendi Bazaar. Nothing was changed." | Back to listings |
+| Loading the listing | Header at once, field skeletons; after 3 s "Still loading…" | — |
+| Couldn't read the listing | "Couldn't read this listing from Amazon. Try again in a minute." | Try again |
+| Page couldn't load | "Couldn't read this listing. Try again in a minute." | Try again |
 | Stale | "As Amazon reported 3 days ago." under the header | Read again (on Listings) |
 | Phone / tablet / desktop | One column, docked button / sides as columns from `md:` / same, wider | — |
 
@@ -101,3 +105,7 @@ back." A product is "on Bhendi Bazaar"; a listing is "on Amazon" or "on Flipkart
 
 ## Sign-off
 Signed off by the owner, 2026-10-21, as the prototype stands (version 6).
+
+Changed while building, 2026-10-21, for the owner to confirm: "settled meanwhile" names the product
+but not the person (who linked is not stored); added rows for left off meanwhile, loading the listing,
+a failed read and a page that could not load.

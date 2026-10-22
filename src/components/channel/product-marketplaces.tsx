@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import type { ProductMarketplaceLinkDTO } from "@server/channels/channel-connection.types";
 
 import { ID_NAME, ON_MARKETPLACES, STATUS_TEXT, priceAndStock } from "./listing-copy";
+import { RetryPhotosButton } from "./retry-photos-button";
+import { PRODUCT_PHOTOS } from "./settle-copy";
+import { LINK_SOURCE } from "@server/channels/channel-connection.types";
 
 /**
  * Where this product is linked on each connected marketplace, read-only (channel-import Q19, ux.md
@@ -26,9 +29,13 @@ export function ProductMarketplaces({ orgId, links }: { orgId: string; links: Pr
               {link.listing && link.needsReconnect && (
                 <p className="text-xs font-medium text-warning">{ON_MARKETPLACES.needsReconnect(link.label)}</p>
               )}
+              {link.listing?.photos && <PhotoLine link={link} />}
             </div>
             {link.listing && (
               <div className="flex flex-wrap gap-2">
+                {link.listing.photos && link.listing.photos.failed > 0 && link.listing.photos.done + link.listing.photos.failed >= link.listing.photos.total && (
+                  <RetryPhotosButton orgId={orgId} channel={link.channel} listingId={link.listing.id} />
+                )}
                 {link.needsReconnect && (
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/org/${orgId}/channels`}>{ON_MARKETPLACES.goToChannels}</Link>
@@ -48,6 +55,17 @@ export function ProductMarketplaces({ orgId, links }: { orgId: string; links: Pr
   );
 }
 
+/** Photos copying onto the product, or some that failed (product-merge ux.md "product and card"). */
+function PhotoLine({ link }: { link: ProductMarketplaceLinkDTO }) {
+  const photos = link.listing?.photos;
+  if (!photos || photos.total === 0) return null;
+  if (photos.done + photos.failed < photos.total) {
+    return <p className="text-xs text-muted-foreground">{PRODUCT_PHOTOS.copying(photos.total, link.label)}</p>;
+  }
+  if (photos.failed === 0) return null;
+  return <p className="text-xs font-medium text-warning">{PRODUCT_PHOTOS.partly(photos.failed, photos.total, link.label)}</p>;
+}
+
 function Summary({ link }: { link: ProductMarketplaceLinkDTO }) {
   const listing = link.listing;
   if (!listing) return <span className="text-muted-foreground">{ON_MARKETPLACES.notLinked}</span>;
@@ -59,7 +77,9 @@ function Summary({ link }: { link: ProductMarketplaceLinkDTO }) {
   ].filter((part): part is string => part !== null);
   return (
     <>
-      <span className="text-success">{ON_MARKETPLACES.linkedBySku}</span>
+      <span className="text-success">
+        {listing.linkSource === LINK_SOURCE.OWNER ? PRODUCT_PHOTOS.linkedByYou : ON_MARKETPLACES.linkedBySku}
+      </span>
       {parts.map((part) => (
         <span key={part} className="flex gap-x-2">
           <span className="text-muted-foreground">·</span>

@@ -259,6 +259,29 @@ Three routes, all `withOrg`, none with a request body:
 - `POST /api/org/[orgId]/channels/[channel]/listings/[id]/link-back` — `{ listing }`; 404 when it
   was not unlinked by the owner, 409 when no product has its SKU any more.
 
+### Settling marketplace listings
+
+Since product-merge ([spec](specs/marketplace-integration/product-merge/)) `ChannelListingDTO` also
+carries `leftOff`, a `suggestion` (`{ kind: SUGGESTION_KIND, text }`, same SKU elsewhere or a similar
+product) and `photos` (`{ total, done, failed }` while copying); `ChannelListingsPageDTO.counts`
+gains `leftOff` and the page `showingLeftOff`; the card's `listings` gains `toSettle`; a product's
+`ProductMarketplaceLinkDTO.listing` gains `linkSource` and `photos`. The Settle page reads
+**`SettleDetailDTO`** on the server (`primary` and an optional `pair`, each a **`SettleSideDTO`** read
+live from its marketplace; the `product` being matched with its stock per location; `locations`,
+`defaultCategoryId`, `readFinishedAt`).
+
+Routes, all `withOrg`:
+- `POST /api/org/[orgId]/channels/settle` — body `settle-listing.schema.ts`: `listingIds` (one or
+  two, one per marketplace), `productId` when matching, `name`/`description` when chosen,
+  `photosFrom` (a listing id, never a photo address) or `uploadedPhoto` (a ready asset's URL), `sku`
+  (one of the listings' own), `price` in rupees (stored as paise), `categoryId`, `stock` per location
+  with `seenQuantity` when matching, `onSale`. Answers `{ result: SettleResultDTO }`; 409 in the
+  envelope when settled meanwhile, a SKU is taken, the stock moved or the product is already linked
+  on that marketplace; 502 when the main photo could not be copied.
+- `GET /api/org/[orgId]/channels/settle/products?listing=…&q=…` — `{ similar, all }` of
+  **`SettlePickerProductDTO`** (`linkedHere` when already linked on that marketplace).
+- `POST …/channels/[channel]/listings/[id]/leave-off`, `…/bring-back`, `…/photos/retry` — `{ ok: true }`.
+
 ### Image enhancement
 
 Since PR-185 the org portal speaks **`EnhancementDto`** (`server/content/enhancement.types.ts`): `id`, `tool`, `preset`, `state`, `sourceAssetId`, `sourceRef`, `proposalUrl` (null unless the state is `PROPOSED`), `resultAssetId`, `resultRef`, `error`, `costPaise` (integer paise, [Invariant 3](../CLAUDE.md)), `createdAt`, `proposedAt`, `decidedAt` — beside **`EnhancementUsage`** (`used`, `allowance`, `paused`, `pauseReason`), which every answer carries so the sheet can say where the shop stands. Four routes, all `withOrg` and parsed by `src/lib/validation/schemas/enhancement.schema.ts`: `POST /api/org/:orgId/enhancements` (`{ sourceAssetId? | sourceRef?, tool, preset?, slot?, slotRole? }`, exactly one of the first two: the library names a photo by its asset id, the gallery editor knows only the URL of one it has just put up, and a request carrying both or neither is a 400) → `{ enhancement, usage }`; `GET …/:id` → `{ enhancement }`, which the sheet polls while the worker runs; `POST …/:id/accept` → `{ enhancement }` with `resultRef`, the derived image's URL; `POST …/:id/discard` → `{ enhancement }`. A refusal is a `DomainError` with the reason the org member reads ([image-enhancement](specs/image-enhancement/) R7, R10). Since PR-198 `preset` is **not free text**: it is one of the keys in `server/content/scene-presets.ts`, required when `tool` is `SCENE` and refused on every other tool, so a request carrying a description nobody approved is a 400 rather than a row (R11).

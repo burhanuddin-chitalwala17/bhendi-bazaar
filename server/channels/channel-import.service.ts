@@ -12,6 +12,8 @@ import {
   isMarketplaceChannel,
   type ChannelListingDTO,
   type ChannelListingDetailDTO,
+  type ListingSuggestionDTO,
+  SUGGESTION_KIND,
   type ChannelListingsPageDTO,
   type ChannelReadDTO,
   type LinkSource,
@@ -24,7 +26,7 @@ import {
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService, isStalled } from "./channel-connection.service";
 import { channelListingRepository, type ListingFilter, type ListingRow } from "./channel-listing.repository";
-import { indexBySkuKey, productForListing, skuKey } from "./listing-match";
+import { indexBySkuKey, mostSimilar, productForListing, skuKey } from "./listing-match";
 import { listingReadSpec } from "./listing-read.job";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import { providerFor } from "./providers";
@@ -42,7 +44,7 @@ class ReadRefused extends Error {
   }
 }
 
-const toDto = (row: ListingRow): ChannelListingDTO => ({
+const toDto = (row: ListingRow, suggestion: ListingSuggestionDTO | null = null): ChannelListingDTO => ({
   id: row.id,
   sku: row.sku,
   externalId: row.externalId,
@@ -59,8 +61,34 @@ const toDto = (row: ListingRow): ChannelListingDTO => ({
     : null,
   linkSource: row.linkSource as LinkSource | null,
   unlinkedByOwner: row.unlinkedAt !== null,
+  leftOff: row.leftOffAt !== null,
   gone: row.goneAt !== null,
+  suggestion,
+  photos:
+    row.photoTotal !== null ? { total: row.photoTotal, done: row.photoDone ?? 0, failed: row.photoFailed ?? 0 } : null,
 });
+
+/** The hint on each unsettled row (product-merge D3, Q24): the same SKU elsewhere first, then a similar name. */
+async function suggestionsFor(orgId: string, connectionId: string, rows: readonly ListingRow[]) {
+  const open = rows.filter((row) => !row.product && !row.leftOffAt && !row.goneAt);
+  const out = new Map<string, ListingSuggestionDTO>();
+  if (open.length === 0) return out;
+  const [elsewhere, products] = await Promise.all([
+    channelListingRepository.unsettledElsewhere(orgId, connectionId),
+    productService.listForMatching(orgId),
+  ]);
+  const elsewhereBySku = new Map(elsewhere.map((row) => [row.skuKey, row]));
+  for (const row of open) {
+    const twin = elsewhereBySku.get(row.skuKey);
+    if (twin && isMarketplaceChannel(twin.channel)) {
+      out.set(row.id, { kind: SUGGESTION_KIND.SAME_SKU, text: CHANNEL_LABELS[twin.channel] });
+      continue;
+    }
+    const [best] = row.title ? mostSimilar(row.title, products, 1) : [];
+    if (best) out.set(row.id, { kind: SUGGESTION_KIND.SIMILAR_NAME, text: best.name });
+  }
+  return out;
+}
 
 async function connectionFor(orgId: string, channel: string) {
   if (!isMarketplaceChannel(channel)) throw new NotFoundError("Channel");
@@ -180,6 +208,7 @@ export const channelImportService = {
       channelListingRepository.tabCounts(row.id),
       channelListingRepository.page(row.id, filter, search?.trim() || null, Math.min(Math.max(1, pages), 40)),
     ]);
+    const suggestions = filter === "notLinked" ? await suggestionsFor(orgId, row.id, listing.rows) : new Map<string, ListingSuggestionDTO>();
     const read: ChannelReadDTO = {
       state: (row.readState as ReadState | null) ?? null,
       total: row.readTotal,
@@ -194,10 +223,21 @@ export const channelImportService = {
       label: CHANNEL_LABELS[marketplace],
       connected: row.state === CONNECTION_STATE.CONNECTED,
       read,
-      counts: { linked: counts.linked, notLinked: counts.notLinked },
-      listings: listing.rows.map(toDto),
+      counts,
+      showingLeftOff: filter === "leftOff",
+      listings: listing.rows.map((r) => toDto(r, suggestions.get(r.id) ?? null)),
       hasMore: listing.hasMore,
     };
+  },
+
+  /** The owner leaves an unsettled listing off Bhendi Bazaar (product-merge Q9). */
+  async leaveOff(orgId: string, userId: string, id: string): Promise<void> {
+    if (!(await channelListingRepository.leaveOff(id, orgId, userId, new Date()))) throw new NotFoundError("Unsettled listing");
+  },
+
+  /** Back to the to-do (Q9). */
+  async bringBack(orgId: string, id: string): Promise<void> {
+    if (!(await channelListingRepository.bringBack(id, orgId))) throw new NotFoundError("Left-off listing");
   },
 
   async listing(orgId: string, id: string): Promise<ChannelListingDTO> {
@@ -230,7 +270,15 @@ export const channelImportService = {
     if (!row || !row.unlinkedAt) throw new NotFoundError("Unlinked listing");
     const productId = indexBySkuKey(await productService.listWithSku(orgId)).get(skuKey(row.sku));
     if (!productId) throw new ConflictError("No product here has this SKU any more, so there is nothing to link back to.");
-    await channelListingRepository.linkBack(id, orgId, productId, new Date());
+    try {
+      if (!(await channelListingRepository.linkBack(id, orgId, productId, new Date()))) throw new NotFoundError("Unlinked listing");
+    } catch (error) {
+      // One listing per marketplace per product (product-merge Q22): settled to another meanwhile.
+      if (uniqueViolationFields(error) !== null) {
+        throw new ConflictError("That product is already linked to another listing on this marketplace. Unlink that one first.");
+      }
+      throw error;
+    }
     return await this.listing(orgId, id);
   },
 
@@ -258,6 +306,11 @@ export const channelImportService = {
                 pricePaise: row.pricePaise,
                 quantity: row.quantity,
                 gone: row.goneAt !== null,
+                linkSource: row.linkSource as LinkSource | null,
+                photos:
+                  row.photoTotal !== null
+                    ? { total: row.photoTotal, done: row.photoDone ?? 0, failed: row.photoFailed ?? 0 }
+                    : null,
               }
             : null,
         };

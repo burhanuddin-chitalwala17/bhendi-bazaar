@@ -13,8 +13,11 @@ import { NotFoundError } from "@server/shared/domain-error";
 
 export type ListingsTab = "linked" | "notLinked";
 
+/** What the page lists: a tab, or the left-off listings behind Not linked (product-merge Q23). */
+export type ListingsView = ListingsTab | "leftOff";
+
 export interface ListingsPageQuery {
-  tab: ListingsTab;
+  tab: ListingsView;
   search: string | null;
   pages: number;
   listingId: string | null;

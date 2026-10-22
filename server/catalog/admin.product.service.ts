@@ -1,5 +1,6 @@
 // server/services/admin/productService.ts
 
+import type { Prisma } from "@prisma/client";
 import { adminProductsRepository } from "@server/catalog/product.repository";
 import { resolveShotList, unknownSlots } from "@server/catalog/shot-list";
 import { fillListing } from "@server/listing/listing-fill.service";
@@ -186,6 +187,21 @@ export class ProductsService {
     const product = await adminProductsRepository.createProduct(priced);
     await this.syncMarkdown(product.id, priced);
     return product;
+  }
+
+  /**
+   * A product made from a marketplace listing, inside the caller's transaction (product-merge D5).
+   * The price arrives in paise already; type and facts are filled as any save fills them.
+   */
+  async createForListingIn(tx: Prisma.TransactionClient, data: ProductFormInput, archived: boolean) {
+    await this.checkLocations(data);
+    const filled = { ...data, ...(await this.fill(data)) };
+    return await adminProductsRepository.createInTransaction(tx, filled, archived ? new Date() : null);
+  }
+
+  /** Name or description taken from a marketplace listing at a merge (product-merge Q6, Q13). */
+  async updateNamedFieldsIn(tx: Prisma.TransactionClient, id: string, orgId: string, fields: { name?: string; description?: string }) {
+    if (!(await adminProductsRepository.updateNamedFieldsIn(tx, id, orgId, fields))) throw new NotFoundError("Product not found");
   }
 
   async getProductById({ id }: { id: string }) {

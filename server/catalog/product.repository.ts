@@ -298,8 +298,111 @@ export class AdminProductsRepository {
     }
 
     private async insertProduct(slug: string, data: ProductPersistInput) {
+        return await prisma.$transaction(async (tx) => await this.insertProductIn(tx, slug, data, null));
+    }
+
+    /**
+     * Create a product inside a caller's transaction (product-merge D5). The slug is chosen free
+     * first: a duplicate aborts a Postgres transaction, so the retry `createProduct` does cannot
+     * happen in here, and a rare race fails the whole save as retryable instead.
+     */
+    async createInTransaction(tx: Prisma.TransactionClient, data: ProductPersistInput, archivedAt: Date | null) {
+        const candidates = slugCandidates(data.name);
+        const base = candidates.next().value as string;
+        const taken = new Set(
+            (await tx.product.findMany({ where: { slug: { startsWith: base } }, select: { slug: true } })).map((row) => row.slug),
+        );
+        let slug = base;
+        while (taken.has(slug)) slug = candidates.next().value as string;
+        try {
+            return await this.insertProductIn(tx, slug, data, archivedAt);
+        } catch (error) {
+            if (isUniqueViolation(error, "sku")) throw await this.skuConflictError(data.orgId, data.sku);
+            if (isUniqueViolation(error, "slug")) throw new ConflictError("Couldn't save. Nothing was changed. Try again.");
+            throw error;
+        }
+    }
+
+    /** The two fields a merge may take from a marketplace listing (product-merge Q6, Q13). */
+    async updateNamedFieldsIn(
+        tx: Prisma.TransactionClient,
+        id: string,
+        orgId: string,
+        fields: { name?: string; description?: string },
+    ): Promise<boolean> {
+        if (fields.name === undefined && fields.description === undefined) return true;
+        const result = await tx.product.updateMany({
+            where: { id, orgId },
+            data: {
+                ...(fields.name !== undefined ? { name: fields.name } : {}),
+                ...(fields.description !== undefined ? { description: fields.description } : {}),
+            },
+        });
+        return result.count === 1;
+    }
+
+    /**
+     * Put copied photos on a product (product-merge D6): appended after what it has, or replacing
+     * its images (videos stay). The first image becomes the main photo when replacing.
+     */
+    async setImages(productId: string, orgId: string, refs: string[], mode: "append" | "replace") {
+        if (refs.length === 0) return;
+        await prisma.$transaction(async (tx) => {
+            const product = await tx.product.findFirst({ where: { id: productId, orgId }, select: { id: true } });
+            if (!product) return;
+            if (mode === "replace") await tx.productMedia.deleteMany({ where: { productId, kind: "IMAGE" } });
+            const existing = await tx.productMedia.findMany({
+                where: { productId },
+                select: { ref: true, position: true },
+                orderBy: { position: "asc" },
+            });
+            const have = new Set(existing.map((row) => row.ref));
+            const fresh = refs.filter((ref) => !have.has(ref));
+            if (fresh.length === 0) return;
+            const start = existing.length === 0 ? 0 : existing[existing.length - 1].position + 1;
+            const rows = await withAssetIds(
+                fresh.map((ref) => ({ kind: "IMAGE" as const, ref })),
+                orgId,
+                tx,
+            );
+            const makesCover = mode === "replace" || existing.length === 0;
+            if (makesCover) await tx.productMedia.updateMany({ where: { productId }, data: { isThumbnail: false } });
+            await tx.productMedia.createMany({
+                data: rows.map((row, index) => ({
+                    productId,
+                    kind: row.kind,
+                    ref: row.ref,
+                    assetId: row.assetId,
+                    position: start + index,
+                    isThumbnail: makesCover && index === 0,
+                })),
+            });
+            if (makesCover) await tx.product.update({ where: { id: productId }, data: { thumbnail: rows[0].ref } });
+        });
+    }
+
+    /** What the Settle page shows of a product being matched (product-merge R4). */
+    async settleFacts(orgId: string, id: string) {
+        return await prisma.product.findFirst({
+            where: { id, orgId },
+            select: {
+                id: true,
+                name: true,
+                sku: true,
+                description: true,
+                price: true,
+                thumbnail: true,
+                archivedAt: true,
+                categoryId: true,
+                media: { where: { kind: "IMAGE" }, select: { ref: true }, orderBy: { position: "asc" } },
+                stockLocations: { select: { orgAddressId: true, quantity: true } },
+            },
+        });
+    }
+
+    private async insertProductIn(tx: Prisma.TransactionClient, slug: string, data: ProductPersistInput, archivedAt: Date | null) {
         const media = mediaWrite(data.media);
-        return await prisma.$transaction(async (tx) => {
+        {
         const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
         const product = await tx.product.create({
             data: {
@@ -325,6 +428,7 @@ export class AdminProductsRepository {
                 brandId: data.brandId ?? null,
                 facts: data.facts as never,
                 measurements: data.measurements as never,
+                archivedAt,
             },
             include: {
                 category: {
@@ -338,7 +442,7 @@ export class AdminProductsRepository {
         // nothing, so every row is a creation and zero rows are dropped ("not stocked here").
         await stockRepository.adjust(product.id, data.stockLocations, tx);
         return product;
-        });
+        }
     }
 
     async getProductById(id: string) {
@@ -602,6 +706,15 @@ export class AdminProductsRepository {
     return await prisma.product.findMany({
       where: { orgId, sku: { not: null } },
       select: { id: true, sku: true, name: true, archivedAt: true },
+    });
+  }
+
+  /** Every product of a shop by name, archived included: what a listing may be matched to (product-merge D3). */
+  async listForMatching(orgId: string) {
+    return await prisma.product.findMany({
+      where: { orgId },
+      select: { id: true, name: true, sku: true, price: true, thumbnail: true, archivedAt: true },
+      orderBy: { name: "asc" },
     });
   }
 

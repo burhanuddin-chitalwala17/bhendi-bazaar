@@ -10,13 +10,14 @@ import type { MarketplaceChannel } from "@server/channels/channel-connection.typ
 
 import { channelsApiClient } from "./channelsApiClient";
 import { ROW } from "./listing-copy";
+import { SETTLE_ACTION, SETTLE_TOAST } from "./settle-copy";
 
 interface ListingLinkActionProps {
   orgId: string;
   channel: MarketplaceChannel;
   listingId: string;
-  /** Unlink a linked row (Q5), or Link back one the owner unlinked (Q16). */
-  kind: "unlink" | "linkBack";
+  /** Unlink a linked row (Q5), Link back one the owner unlinked (Q16), or Bring back one left off (product-merge Q9). */
+  kind: "unlink" | "linkBack" | "bringBack";
 }
 
 /** The row's one action. Never disabled; the toast's Undo is Link back (ux.md journey 3). */
@@ -44,7 +45,17 @@ export function ListingLinkAction({ orgId, channel, listingId, kind }: ListingLi
     onError: () => toast.error(ROW.failed),
   });
 
-  const action = kind === "unlink" ? unlink : linkBack;
+  const bringBack = useMutation(() => channelsApiClient.bringBackListing(orgId, channel, listingId), {
+    showToast: false,
+    onSuccess: () => {
+      toast.success(SETTLE_TOAST.broughtBack);
+      router.refresh();
+    },
+    onError: () => toast.error(SETTLE_TOAST.failed),
+  });
+
+  const action = kind === "unlink" ? unlink : kind === "linkBack" ? linkBack : bringBack;
+  const label = kind === "unlink" ? ROW.unlink : kind === "linkBack" ? ROW.linkBack : SETTLE_ACTION.bringBack;
   return (
     <Button
       variant="outline"
@@ -54,7 +65,7 @@ export function ListingLinkAction({ orgId, channel, listingId, kind }: ListingLi
       aria-busy={action.isLoading}
     >
       {action.isLoading && <Loader2 className="size-4 animate-spin" aria-hidden />}
-      {kind === "unlink" ? ROW.unlink : ROW.linkBack}
+      {label}
     </Button>
   );
 }

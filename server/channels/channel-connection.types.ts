@@ -78,7 +78,7 @@ export interface ChannelCardDTO {
   stale: boolean;
   /** The listing read, and what it found (channel-import). Null for channels with no listings. */
   read: ChannelReadDTO | null;
-  listings: { total: number; linked: number } | null;
+  listings: { total: number; linked: number; toSettle: number } | null;
   /** Amazon only: the date its yearly re-approval falls due (ISO). */
   reapproveBy: string | null;
   reason: ConnectionError | null;
@@ -159,7 +159,22 @@ export interface ChannelListingDTO {
   product: { id: string; name: string; sku: string | null; archived: boolean } | null;
   linkSource: LinkSource | null;
   unlinkedByOwner: boolean;
+  /** The owner chose not to sell it on Bhendi Bazaar (product-merge Q9). */
+  leftOff: boolean;
   gone: boolean;
+  /** A hint on an unsettled row (product-merge D3): the same SKU elsewhere, or a similar product. */
+  suggestion: ListingSuggestionDTO | null;
+  /** Photos being copied from this listing onto its product (product-merge D6). */
+  photos: { total: number; done: number; failed: number } | null;
+}
+
+export const SUGGESTION_KIND = { SAME_SKU: "same_sku", SIMILAR_NAME: "similar_name" } as const;
+export type SuggestionKind = (typeof SUGGESTION_KIND)[keyof typeof SUGGESTION_KIND];
+
+export interface ListingSuggestionDTO {
+  kind: SuggestionKind;
+  /** The other marketplace's label for a same-SKU listing, or the similar product's name. */
+  text: string;
 }
 
 /** A listing beside the product it is (or was) linked to, for the details panel (channel-import Q17). */
@@ -185,7 +200,9 @@ export interface ChannelListingsPageDTO {
   label: string;
   connected: boolean;
   read: ChannelReadDTO;
-  counts: { linked: number; notLinked: number };
+  /** `notLinked` is the to-do: unsettled and not left off. */
+  counts: { linked: number; notLinked: number; leftOff: number };
+  showingLeftOff: boolean;
   listings: ChannelListingDTO[];
   hasMore: boolean;
 }
@@ -203,5 +220,84 @@ export interface ProductMarketplaceLinkDTO {
     pricePaise: number | null;
     quantity: number | null;
     gone: boolean;
+    linkSource: LinkSource | null;
+    /** Photos being copied from this listing onto the product (product-merge D6). */
+    photos: { total: number; done: number; failed: number } | null;
   } | null;
+}
+
+/** One listing as the Settle page shows it, read live from its marketplace (product-merge D1, D2). */
+export interface SettleSideDTO {
+  listingId: string;
+  channel: MarketplaceChannel;
+  label: string;
+  sku: string;
+  externalId: string | null;
+  status: ListingStatus | null;
+  /** Live there and still listed: a new product made from it goes on sale (Q12). */
+  live: boolean;
+  pricePaise: number | null;
+  quantity: number | null;
+  title: string | null;
+  description: string | null;
+  /** Hotlinked for display; the copy re-reads them on the server (D6). */
+  photoUrls: string[];
+  /** The live read failed; the row's stored values stand in. */
+  readFailed: boolean;
+}
+
+/** Everything the Settle page needs (product-merge ux.md "Settle page"). */
+export interface SettleDetailDTO {
+  mode: "new" | "match";
+  primary: SettleSideDTO;
+  /** The same item on the shop's other marketplace (Q4): by SKU, kept on; by name, off. */
+  pair: { side: SettleSideDTO; reason: SuggestionKind } | null;
+  product: {
+    id: string;
+    name: string;
+    sku: string | null;
+    description: string;
+    pricePaise: number;
+    photoUrls: string[];
+    archived: boolean;
+    stock: Array<{ locationId: string; quantity: number }>;
+  } | null;
+  locations: Array<{ id: string; name: string }>;
+  defaultCategoryId: string | null;
+  /** When the inbox was last read: the "As Amazon reported 3 days ago" line. */
+  readFinishedAt: string | null;
+}
+
+/** A settle as the channels domain takes it, after the route has parsed it (product-merge D4, D10). */
+export interface SettleInput {
+  listingIds: string[];
+  productId?: string;
+  name?: string;
+  description?: string;
+  photosFrom?: string;
+  uploadedPhoto?: string;
+  sku?: string;
+  pricePaise?: number;
+  categoryId?: string;
+  stock: Array<{ locationId: string; quantity: number; seenQuantity?: number }>;
+  onSale?: boolean;
+}
+
+export interface SettleResultDTO {
+  productId: string;
+  productName: string;
+  archived: boolean;
+  mode: "new" | "match";
+}
+
+/** A product the match picker offers (product-merge ux.md "Match picker"). */
+export interface SettlePickerProductDTO {
+  id: string;
+  name: string;
+  sku: string | null;
+  pricePaise: number;
+  imageUrl: string | null;
+  archived: boolean;
+  /** Already linked to another listing on this marketplace (Q22). */
+  linkedHere: boolean;
 }

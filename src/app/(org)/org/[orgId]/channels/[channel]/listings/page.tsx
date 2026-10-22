@@ -12,6 +12,7 @@ import { ListingDetailsPanel } from "@/components/channel/listing-details-panel"
 import { ReadAgainButton } from "@/components/channel/read-again-button";
 import { ReadProgressRefresher } from "@/components/channel/read-progress-refresher";
 import { LISTINGS, pageReadLine } from "@/components/channel/listing-copy";
+import { LISTINGS_SETTLE } from "@/components/channel/settle-copy";
 import { cn } from "@/lib/utils";
 import { READ_ERROR, READ_STATE } from "@server/channels/channel-connection.types";
 import { CHANNEL } from "@server/shared/channels";
@@ -21,7 +22,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-type Search = { tab?: string; q?: string; more?: string; listing?: string };
+type Search = { tab?: string; q?: string; more?: string; listing?: string; left?: string };
 
 /** One marketplace's listings and their links (channel-import spec R1–R7, R10, ux.md "Listings page"). */
 export default async function ChannelListingsPage({
@@ -38,19 +39,32 @@ export default async function ChannelListingsPage({
   const q = search.q?.trim() || null;
   const pages = Math.max(1, Number.parseInt(search.more ?? "1", 10) || 1);
 
-  const data = await channelListingsDAL.page(scope.orgId, channel, { tab, search: q, pages, listingId: search.listing ?? null });
+  const showLeftOff = tab === "notLinked" && search.left === "1";
+  const data = await channelListingsDAL.page(scope.orgId, channel, {
+    tab: showLeftOff ? "leftOff" : tab,
+    search: q,
+    pages,
+    listingId: search.listing ?? null,
+  });
   if (!data) notFound();
   const { page, detail } = data;
   const { label, read } = page;
 
   const base = `/org/${scope.orgId}/channels/${page.channel}/listings`;
   const hrefWith = (next: Partial<Record<keyof Search, string | null>>) => {
-    const merged: Record<string, string | null> = { tab, q, more: pages > 1 ? String(pages) : null, listing: null, ...next };
+    const merged: Record<string, string | null> = {
+      tab,
+      q,
+      more: pages > 1 ? String(pages) : null,
+      listing: null,
+      left: showLeftOff ? "1" : null,
+      ...next,
+    };
     const qs = new URLSearchParams(Object.entries(merged).filter((e): e is [string, string] => !!e[1])).toString();
     return qs ? `${base}?${qs}` : base;
   };
 
-  const rowsSoFar = page.counts.linked + page.counts.notLinked;
+  const rowsSoFar = page.counts.linked + page.counts.notLinked + page.counts.leftOff;
   const line = pageReadLine(read, label, rowsSoFar > 0);
   const refused =
     read.state === READ_STATE.STOPPED &&
@@ -58,6 +72,13 @@ export default async function ChannelListingsPage({
   const running = read.state === READ_STATE.RUNNING && !read.stalled;
   const firstRead = running && rowsSoFar === 0;
   const empty = read.state === READ_STATE.DONE && rowsSoFar === 0;
+  const emptyText = q
+    ? LISTINGS.noMatches
+    : showLeftOff
+      ? LISTINGS_SETTLE.leftOffEmpty
+      : tab === "notLinked"
+        ? LISTINGS_SETTLE.allSettled(label)
+        : null;
   const showRows = !refused && !empty && !firstRead;
   const canRead = page.connected && !refused;
 
@@ -115,12 +136,20 @@ export default async function ChannelListingsPage({
           <nav className="flex gap-2" aria-label={LISTINGS.title(label)}>
             {(["linked", "notLinked"] as const).map((t) => (
               <Button key={t} asChild variant={t === tab ? "default" : "outline"} className="min-h-10 flex-1 md:flex-none">
-                <Link href={hrefWith({ tab: t, more: null })} aria-current={t === tab ? "page" : undefined} scroll={false}>
+                <Link href={hrefWith({ tab: t, more: null, left: null })} aria-current={t === tab ? "page" : undefined} scroll={false}>
                   {t === "linked" ? LISTINGS.tabLinked(page.counts.linked) : LISTINGS.tabNotLinked(page.counts.notLinked)}
                 </Link>
               </Button>
             ))}
           </nav>
+
+          {tab === "notLinked" && (
+            <Button asChild variant={showLeftOff ? "secondary" : "ghost"} size="sm" className="self-start">
+              <Link href={hrefWith({ left: showLeftOff ? null : "1", more: null })} aria-pressed={showLeftOff} scroll={false}>
+                {LISTINGS_SETTLE.showLeftOff(page.counts.leftOff)}
+              </Link>
+            </Button>
+          )}
 
           <div className="flex flex-col gap-1 text-xs text-muted-foreground">
             <p>{LISTINGS.lastReported(label)}</p>
@@ -128,7 +157,7 @@ export default async function ChannelListingsPage({
           </div>
 
           {page.listings.length === 0 ? (
-            q && <p className="rounded-card border bg-card p-4 text-sm text-muted-foreground">{LISTINGS.noMatches}</p>
+            emptyText && <p className="rounded-card border bg-card p-4 text-sm text-muted-foreground">{emptyText}</p>
           ) : (
             <ListingList
               orgId={scope.orgId}

@@ -1,7 +1,8 @@
 import { apiRequest } from "@/lib/api-client";
 import type { ChannelValueMappingInput } from "@/lib/validation/schemas/channel-mapping.schema";
 import type { OrgChannelsParsed } from "@/lib/validation/schemas/org-channels.schema";
-import type { ChannelListingDTO } from "@server/channels/channel-connection.types";
+import type { ChannelListingDTO, SettlePickerProductDTO, SettleResultDTO } from "@server/channels/channel-connection.types";
+import type { SettleListingFormValues } from "@/lib/validation/schemas/settle-listing.schema";
 import type { Channel } from "@server/shared/channels";
 
 export const channelsApiClient = {
@@ -54,5 +55,34 @@ export const channelsApiClient = {
       `/api/org/${orgId}/channels/${channel}/listings/${id}/link-back`,
       { method: "POST" },
     );
+  },
+
+  /** Leave a listing off Bhendi Bazaar (product-merge Q9). */
+  leaveOffListing(orgId: string, channel: Channel, id: string) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/listings/${id}/leave-off`, { method: "POST" });
+  },
+
+  /** Back to the to-do (product-merge Q9). */
+  bringBackListing(orgId: string, channel: Channel, id: string) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/listings/${id}/bring-back`, { method: "POST" });
+  },
+
+  /** Add listings as a new product, or match them to one (product-merge D4). */
+  settle(orgId: string, body: SettleListingFormValues) {
+    return apiRequest<{ result: SettleResultDTO }>(`/api/org/${orgId}/channels/settle`, { method: "POST", body });
+  },
+
+  /** The match picker's products: similar names first, then the search (product-merge Q22). */
+  settlePickerProducts(orgId: string, listingId: string, search: string, signal?: AbortSignal) {
+    const query = new URLSearchParams({ listing: listingId, ...(search ? { q: search } : {}) });
+    return apiRequest<{ similar: SettlePickerProductDTO[]; all: SettlePickerProductDTO[] }>(
+      `/api/org/${orgId}/channels/settle/products?${query.toString()}`,
+      { signal },
+    );
+  },
+
+  /** Copy a listing's photos onto its product again (product-merge Q21). */
+  retryListingPhotos(orgId: string, channel: Channel, id: string) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/listings/${id}/photos/retry`, { method: "POST" });
   },
 };

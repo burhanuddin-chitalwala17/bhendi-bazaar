@@ -121,6 +121,42 @@ export class ProductService {
     return rows.map((row) => ({ id: row.id, sku: row.sku, name: row.name, archived: row.archivedAt !== null }));
   }
 
+  /** A product being matched to a listing, for the Settle page (product-merge R4). Null when not this org's. */
+  async settleFacts(orgId: string, id: string) {
+    const row = await adminProductsRepository.settleFacts(orgId, id);
+    if (!row) return null;
+    return {
+      id: row.id,
+      name: row.name,
+      sku: row.sku,
+      description: row.description,
+      pricePaise: row.price,
+      imageUrl: row.thumbnail,
+      photoUrls: row.media.map((m) => m.ref),
+      archived: row.archivedAt !== null,
+      categoryId: row.categoryId,
+      stock: row.stockLocations.map((l) => ({ locationId: l.orgAddressId, quantity: l.quantity })),
+    };
+  }
+
+  /** Put copied photos on a product, appended or replacing its images (product-merge D6). */
+  async setImages(productId: string, orgId: string, refs: string[], mode: "append" | "replace") {
+    await adminProductsRepository.setImages(productId, orgId, refs, mode);
+  }
+
+  /** A shop's products by name, archived included, for matching a marketplace listing (product-merge D3). */
+  async listForMatching(orgId: string) {
+    const rows = await adminProductsRepository.listForMatching(orgId);
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      sku: row.sku,
+      pricePaise: row.price,
+      imageUrl: row.thumbnail,
+      archived: row.archivedAt !== null,
+    }));
+  }
+
   /** One product's own values, beside a marketplace listing's (channel-import Q17). Null when not this org's. */
   async compareFacts(orgId: string, id: string) {
     const row = await adminProductsRepository.compareFacts(orgId, id);

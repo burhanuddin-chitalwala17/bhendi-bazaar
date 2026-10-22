@@ -2064,6 +2064,17 @@ model ChannelListing {
   /// Set when the owner unlinks; a read never links this row again on its own (Q5).
   unlinkedAt   DateTime?
   unlinkedById String?
+  /// The owner chose not to sell it on Bhendi Bazaar; a read never links it while set (product-merge Q9).
+  leftOffAt    DateTime?
+  leftOffById  String?
+
+  /// The marketplace's photos being copied onto the linked product (product-merge D6).
+  /// `PHOTO_COPY_MODE`: a new product gains them; a match replaces its gallery. Try again repeats it.
+  photoMode      String?
+  photoTotal     Int?
+  photoDone      Int?
+  photoFailed    Int?
+  photoUpdatedAt DateTime?
 
   /// The start of the last read that saw this listing; earlier than a finished read means gone (D8).
   lastSeenAt DateTime

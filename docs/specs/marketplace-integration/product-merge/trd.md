@@ -49,7 +49,9 @@ columns on `ChannelListing`. Suggestions are computed on the server from one sho
   `LINK_SOURCE.OWNER` ("Linked by you", Q18). The photo job is enqueued last, in the same
   transaction (ADR-0038).
 - **D5 — Catalog gains three commands, through its service:** create a product inside a caller's
-  transaction (today's insert opens its own; it is split so both paths share one), update named
+  transaction (today's insert opens its own; it is split so both paths share one; built: the slug is
+  chosen free before the insert, because a duplicate aborts a Postgres transaction and cannot be
+  retried inside it, so a rare race fails the save as retryable), update named
   fields of one product, and set counted stock (wrapping the existing compare-and-set). A SKU in use,
   archived included, is the existing conflict, now naming the product (journey 4). A new product is
   archived when no included listing is live and the switch is off (Q12).
@@ -59,7 +61,7 @@ columns on `ChannelListing`. Suggestions are computed on the server from one sho
   at most nine, each under a size cap and a timeout, and hands each to a new catalog command that
   downloads, normalises (`image-upload.ts`), stores and records the asset, deduplicated by hash,
   then attaches it in order. Progress and failures are counted on the listing row; Try again
-  re-enqueues the failed ones (Q21). Matching with the marketplace's photos replaces the gallery
+  re-enqueues the copy (Q21; built: it runs again and adds what is missing, reusing stored copies by hash). Matching with the marketplace's photos replaces the gallery
   only when every copy succeeded.
 - **D7 — Left off.** `leftOffAt` and `leftOffById` on `ChannelListing`; the read's link-by-SKU skips
   such rows (Q9), the to-do count and Not linked exclude them, and `?left=1` lists them (Q23).

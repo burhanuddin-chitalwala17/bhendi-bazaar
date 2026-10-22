@@ -7,7 +7,7 @@ import {
   MarketplaceUnavailableError,
   marketplaceFetch,
 } from "../marketplace-provider";
-import { nonNegativeInt, paiseFromRupees, retryBusy, type ListingSink, type TokenSource } from "../listing-read";
+import { nonNegativeInt, paiseFromRupees, retryBusy, type ListingDetail, type ListingSink, type TokenSource } from "../listing-read";
 
 /**
  * Reading every Flipkart listing (channel-import D5): its product search first, which names the
@@ -157,4 +157,15 @@ export async function readFlipkartListings(token: TokenSource, _known: string | 
     done += slice.length;
     await sink.batch(rows, { done, total });
   }
+}
+
+/** Flipkart's listing details carry a title but no description or photos (checked 2026-10-21; Q20, Q27). */
+export async function flipkartListingDetail(
+  token: TokenSource,
+  _accountId: string | null,
+  listing: { sku: string; externalId: string | null },
+): Promise<ListingDetail> {
+  const body = obj(await retryBusy(() => call(token, "/listings/v3/details", { sku_ids: [listing.sku] })));
+  const item = obj(obj(body.available)[listing.sku]);
+  return { title: str(item.product_title), description: null, photoUrls: [] };
 }

@@ -1,5 +1,7 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
+
+import { uniqueViolationFields } from "@server/shared/constraint";
 
 import { LINK_SOURCE, type MarketplaceChannel } from "./channel-connection.types";
 
@@ -41,18 +43,28 @@ const ROW = {
   productId: true,
   linkSource: true,
   unlinkedAt: true,
+  leftOffAt: true,
   goneAt: true,
+  photoTotal: true,
+  photoDone: true,
+  photoFailed: true,
+  photoMode: true,
   product: PRODUCT,
 } as const;
 
 export type ListingRow = Prisma.ChannelListingGetPayload<{ select: typeof ROW }>;
 
-export type ListingFilter = "linked" | "notLinked";
+/** `notLinked` is the to-do; `leftOff` lists what the owner ruled out (product-merge Q23). */
+export type ListingFilter = "linked" | "notLinked" | "leftOff";
 
 const PAGE_SIZE = 50;
 
 const filterWhere = (filter: ListingFilter): Prisma.ChannelListingWhereInput =>
-  filter === "linked" ? { productId: { not: null } } : { productId: null };
+  filter === "linked"
+    ? { productId: { not: null } }
+    : filter === "leftOff"
+      ? { productId: null, leftOffAt: { not: null } }
+      : { productId: null, leftOffAt: null };
 
 const searchWhere = (search: string | null): Prisma.ChannelListingWhereInput =>
   search
@@ -91,22 +103,47 @@ export const channelListingRepository = {
   /** The rows among these SKUs that may link: not linked, not unlinked by the owner (Q5). */
   async linkable(connectionId: string, skuKeys: readonly string[]): Promise<Array<{ id: string; skuKey: string }>> {
     return await prisma.channelListing.findMany({
-      where: { connectionId, productId: null, unlinkedAt: null, skuKey: { in: [...skuKeys] } },
+      where: { connectionId, productId: null, unlinkedAt: null, leftOffAt: null, skuKey: { in: [...skuKeys] } },
       select: { id: true, skuKey: true },
     });
   },
 
-  /** Link rows automatically. Conditional, so a row the owner touched meanwhile is left alone. */
+  /**
+   * Link rows automatically. Conditional, so a row the owner touched meanwhile is left alone; a
+   * product already linked to another listing here is skipped, not a failed batch (product-merge D8).
+   */
   async linkBySku(links: ReadonlyArray<{ id: string; productId: string }>, now: Date): Promise<number> {
     let linked = 0;
     for (const link of links) {
-      const result = await prisma.channelListing.updateMany({
-        where: { id: link.id, productId: null, unlinkedAt: null },
-        data: { productId: link.productId, linkSource: LINK_SOURCE.SKU, linkedAt: now },
-      });
-      linked += result.count;
+      try {
+        const result = await prisma.channelListing.updateMany({
+          where: { id: link.id, productId: null, unlinkedAt: null, leftOffAt: null },
+          data: { productId: link.productId, linkSource: LINK_SOURCE.SKU, linkedAt: now },
+        });
+        linked += result.count;
+      } catch (error) {
+        if (uniqueViolationFields(error) === null) throw error;
+      }
     }
     return linked;
+  },
+
+  /** The owner leaves an unsettled listing off Bhendi Bazaar (product-merge Q9). */
+  async leaveOff(id: string, orgId: string, userId: string, now: Date): Promise<boolean> {
+    const result = await prisma.channelListing.updateMany({
+      where: { id, orgId, productId: null, leftOffAt: null },
+      data: { leftOffAt: now, leftOffById: userId },
+    });
+    return result.count === 1;
+  },
+
+  /** Back to the to-do, where a read may link it by SKU again (Q9). */
+  async bringBack(id: string, orgId: string): Promise<boolean> {
+    const result = await prisma.channelListing.updateMany({
+      where: { id, orgId, leftOffAt: { not: null } },
+      data: { leftOffAt: null, leftOffById: null },
+    });
+    return result.count === 1;
   },
 
   /** A finished read marks what it did not see as gone (D8). A stopped read never calls this. */
@@ -137,7 +174,7 @@ export const channelListingRepository = {
   /** Restore the SKU match the owner removed (Q16): only to the product that SKU names. */
   async linkBack(id: string, orgId: string, productId: string, now: Date): Promise<boolean> {
     const result = await prisma.channelListing.updateMany({
-      where: { id, orgId, productId: null, unlinkedAt: { not: null } },
+      where: { id, orgId, productId: null, unlinkedAt: { not: null }, leftOffAt: null },
       data: { productId, linkSource: LINK_SOURCE.SKU, linkedAt: now, unlinkedAt: null, unlinkedById: null },
     });
     return result.count === 1;
@@ -161,21 +198,131 @@ export const channelListingRepository = {
   },
 
   /** What each tab lists, gone rows included, so a tab's number matches its rows. */
-  async tabCounts(connectionId: string): Promise<{ linked: number; notLinked: number }> {
-    const [linked, all] = await Promise.all([
-      prisma.channelListing.count({ where: { connectionId, productId: { not: null } } }),
-      prisma.channelListing.count({ where: { connectionId } }),
+  async tabCounts(connectionId: string): Promise<{ linked: number; notLinked: number; leftOff: number }> {
+    const [linked, notLinked, leftOff] = await Promise.all([
+      prisma.channelListing.count({ where: { connectionId, ...filterWhere("linked") } }),
+      prisma.channelListing.count({ where: { connectionId, ...filterWhere("notLinked") } }),
+      prisma.channelListing.count({ where: { connectionId, ...filterWhere("leftOff") } }),
     ]);
-    return { linked, notLinked: all - linked };
+    return { linked, notLinked, leftOff };
   },
 
   /** What is on the marketplace now, for the card: gone rows left out. */
-  async counts(connectionId: string): Promise<{ linked: number; notLinked: number; total: number }> {
-    const [linked, total] = await Promise.all([
+  async counts(connectionId: string): Promise<{ linked: number; toSettle: number; total: number }> {
+    const [linked, toSettle, total] = await Promise.all([
       prisma.channelListing.count({ where: { connectionId, productId: { not: null }, goneAt: null } }),
+      prisma.channelListing.count({ where: { connectionId, productId: null, leftOffAt: null, goneAt: null } }),
       prisma.channelListing.count({ where: { connectionId, goneAt: null } }),
     ]);
-    return { linked, notLinked: total - linked, total };
+    return { linked, toSettle, total };
+  },
+
+  /** The listings a settle names, with what it needs of their connections (product-merge D4). */
+  async forSettle(ids: readonly string[], orgId: string) {
+    return await prisma.channelListing.findMany({
+      where: { id: { in: [...ids] }, orgId },
+      select: {
+        id: true,
+        connectionId: true,
+        channel: true,
+        sku: true,
+        skuKey: true,
+        externalId: true,
+        title: true,
+        imageUrl: true,
+        status: true,
+        pricePaise: true,
+        quantity: true,
+        productId: true,
+        leftOffAt: true,
+        goneAt: true,
+        photoMode: true,
+        photoTotal: true,
+        product: { select: { name: true } },
+        connection: { select: { externalAccountId: true, state: true } },
+      },
+    });
+  },
+
+  /**
+   * Lock the listings a settle names, first, while they are still unsettled (product-merge D4). A
+   * second settle of the same listings waits here, then finds them taken and is told so, before it
+   * makes a product of its own. The count is the verdict.
+   */
+  async lockUnsettled(tx: Prisma.TransactionClient, ids: readonly string[], orgId: string): Promise<number> {
+    const rows = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "ChannelListing"
+      WHERE id IN (${Prisma.join([...ids])}) AND "orgId" = ${orgId} AND "productId" IS NULL AND "leftOffAt" IS NULL
+      FOR UPDATE`;
+    return rows.length;
+  },
+
+  /**
+   * Link the settled listings to their product, in the settle's transaction. Conditional: a row
+   * linked or left off meanwhile is not touched, and the short count rolls the settle back (D4).
+   */
+  async settleLink(
+    tx: Prisma.TransactionClient,
+    ids: readonly string[],
+    orgId: string,
+    productId: string,
+    now: Date,
+  ): Promise<number> {
+    const result = await tx.channelListing.updateMany({
+      where: { id: { in: [...ids] }, orgId, productId: null, leftOffAt: null },
+      data: { productId, linkSource: LINK_SOURCE.OWNER, linkedAt: now, unlinkedAt: null, unlinkedById: null },
+    });
+    return result.count;
+  },
+
+  /** Photos about to be copied from this listing (D6). */
+  async startPhotoCopy(
+    tx: Prisma.TransactionClient | typeof prisma,
+    id: string,
+    total: number,
+    mode: string | null,
+    now: Date,
+  ): Promise<void> {
+    await tx.channelListing.update({
+      where: { id },
+      data: { photoTotal: total, photoDone: 0, photoFailed: 0, photoUpdatedAt: now, ...(mode ? { photoMode: mode } : {}) },
+      select: { id: true },
+    });
+  },
+
+  async photoProgress(id: string, done: number, failed: number, now: Date): Promise<void> {
+    await prisma.channelListing.update({
+      where: { id },
+      data: { photoDone: done, photoFailed: failed, photoUpdatedAt: now },
+      select: { id: true },
+    });
+  },
+
+  /** Products already linked to a listing on this connection (product-merge Q22). */
+  async productIdsLinkedOn(connectionId: string): Promise<Set<string>> {
+    const rows = await prisma.channelListing.findMany({
+      where: { connectionId, productId: { not: null } },
+      select: { productId: true },
+    });
+    return new Set(rows.map((row) => row.productId as string));
+  },
+
+  /** The product the shop most recently linked by hand: its category starts the next add (D9). */
+  async latestOwnerLinkedProductId(orgId: string): Promise<string | null> {
+    const row = await prisma.channelListing.findFirst({
+      where: { orgId, linkSource: LINK_SOURCE.OWNER, productId: { not: null } },
+      orderBy: { linkedAt: "desc" },
+      select: { productId: true },
+    });
+    return row?.productId ?? null;
+  },
+
+  /** The shop's unsettled listings on its other marketplaces, for same-item suggestions (product-merge D3). */
+  async unsettledElsewhere(orgId: string, connectionId: string) {
+    return await prisma.channelListing.findMany({
+      where: { orgId, connectionId: { not: connectionId }, productId: null, leftOffAt: null, goneAt: null },
+      select: { id: true, connectionId: true, channel: true, sku: true, skuKey: true, title: true, externalId: true, pricePaise: true, quantity: true, status: true },
+    });
   },
 
   /** Where one product is linked, across the shop's connections (R11). */
@@ -190,6 +337,10 @@ export const channelListingRepository = {
         pricePaise: true,
         quantity: true,
         goneAt: true,
+        linkSource: true,
+        photoTotal: true,
+        photoDone: true,
+        photoFailed: true,
       },
       // A product has at most one live listing per connection; the newest link wins the block.
       orderBy: { linkedAt: "desc" },

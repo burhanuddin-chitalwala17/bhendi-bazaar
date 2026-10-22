@@ -2,11 +2,18 @@ import Link from "next/link";
 
 import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { cn } from "@/lib/utils";
-import { LISTING_STATUS, type ChannelListingDTO, type MarketplaceChannel } from "@server/channels/channel-connection.types";
+import {
+  LINK_SOURCE,
+  LISTING_STATUS,
+  SUGGESTION_KIND,
+  type ChannelListingDTO,
+  type MarketplaceChannel,
+} from "@server/channels/channel-connection.types";
 
 import { ListingImage } from "./listing-image";
 import { ListingLinkAction } from "./listing-link-action";
 import { ID_NAME, ROW, STATUS_TEXT, priceAndStock } from "./listing-copy";
+import { LISTINGS_SETTLE } from "./settle-copy";
 
 interface ListingRowProps {
   orgId: string;
@@ -55,9 +62,10 @@ export function ListingRow({ orgId, channel, label, listing, href, indented }: L
       {!listing.gone && listing.product && (
         <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="unlink" />
       )}
-      {!listing.gone && !listing.product && listing.unlinkedByOwner && (
+      {!listing.gone && !listing.product && listing.unlinkedByOwner && !listing.leftOff && (
         <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="linkBack" />
       )}
+      {listing.leftOff && <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="bringBack" />}
     </li>
   );
 }
@@ -67,15 +75,29 @@ function LinkLine({ listing, label }: { listing: ChannelListingDTO; label: strin
   if (listing.product) {
     return (
       <p className="flex flex-wrap items-center gap-x-2 text-xs text-success">
-        <span className="truncate">{ROW.linkedBySku(listing.product.name)}</span>
+        <span className="truncate">
+          {listing.linkSource === LINK_SOURCE.OWNER
+            ? LISTINGS_SETTLE.linkedByYou(listing.product.name)
+            : ROW.linkedBySku(listing.product.name)}
+        </span>
         {listing.product.archived && <span className="text-warning">{ROW.archivedHere}</span>}
       </p>
     );
   }
+  if (listing.leftOff) return <p className="text-xs font-medium text-muted-foreground">{LISTINGS_SETTLE.leftOffByYou}</p>;
   return (
-    <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-      <span>{ROW.notOnBb}</span>
-      {listing.unlinkedByOwner && <span className="font-medium">{ROW.unlinkedByYou}</span>}
-    </p>
+    <>
+      <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+        <span>{ROW.notOnBb}</span>
+        {listing.unlinkedByOwner && <span className="font-medium">{ROW.unlinkedByYou}</span>}
+      </p>
+      {listing.suggestion && (
+        <p className="truncate text-xs font-medium text-warning">
+          {listing.suggestion.kind === SUGGESTION_KIND.SAME_SKU
+            ? LISTINGS_SETTLE.sameSku(listing.suggestion.text)
+            : LISTINGS_SETTLE.looksLike(listing.suggestion.text)}
+        </p>
+      )}
+    </>
   );
 }

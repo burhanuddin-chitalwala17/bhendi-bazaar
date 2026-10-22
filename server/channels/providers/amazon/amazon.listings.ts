@@ -15,6 +15,7 @@ import {
   paiseFromRupees,
   retryBusy,
   sleepFor,
+  type ListingDetail,
   type ListingSink,
   type TokenSource,
 } from "../listing-read";
@@ -238,4 +239,59 @@ export async function readAmazonListings(token: TokenSource, accountId: string |
     done += slice.length;
     await sink.batch(out, { done, total });
   }
+}
+
+const PHOTO_ORDER = ["MAIN", "PT01", "PT02", "PT03", "PT04", "PT05", "PT06", "PT07", "PT08"];
+
+/** The listing's own text: `item_name`, and `product_description` with its `bullet_point`s. */
+export function textFromAttributes(attributes: unknown): { title: string | null; description: string | null } {
+  const attrs = obj(attributes);
+  const values = (key: string) =>
+    (Array.isArray(attrs[key]) ? (attrs[key] as unknown[]) : []).map((entry) => str(obj(entry).value)).filter((v): v is string => v !== null);
+  const bullets = values("bullet_point");
+  const parts = [values("product_description")[0] ?? null, bullets.length > 0 ? bullets.map((b) => `• ${b}`).join("\n") : null];
+  const description = parts.filter((p): p is string => p !== null).join("\n\n");
+  return { title: values("item_name")[0] ?? null, description: description || null };
+}
+
+/** Every image on the product page (Q26): the largest of each variant, main first, at most nine. */
+export function photosFromCatalog(body: unknown): string[] {
+  const forMarket = (Array.isArray(obj(body).images) ? (obj(body).images as unknown[]) : [])
+    .map(obj)
+    .find((entry) => entry.marketplaceId === AMAZON_IN);
+  const best = new Map<string, { link: string; area: number }>();
+  for (const raw of Array.isArray(forMarket?.images) ? (forMarket.images as unknown[]) : []) {
+    const image = obj(raw);
+    const variant = str(image.variant);
+    const link = str(image.link);
+    if (!variant || !link) continue;
+    const area = (Number(image.width) || 0) * (Number(image.height) || 0);
+    const current = best.get(variant);
+    if (!current || area > current.area) best.set(variant, { link, area });
+  }
+  return PHOTO_ORDER.flatMap((variant) => {
+    const hit = best.get(variant);
+    return hit ? [hit.link] : [];
+  });
+}
+
+export async function amazonListingDetail(
+  token: TokenSource,
+  accountId: string | null,
+  listing: { sku: string; externalId: string | null },
+): Promise<ListingDetail> {
+  if (!accountId) throw new MarketplaceAuthError("rejected");
+  const query = new URLSearchParams({ marketplaceIds: AMAZON_IN, includedData: "summaries,attributes" });
+  const item = obj(
+    await retryBusy(() =>
+      spApi(token, "listings/get", `/listings/2021-08-01/items/${encodeURIComponent(accountId)}/${encodeURIComponent(listing.sku)}?${query.toString()}`),
+    ),
+  );
+  const asin = str(obj(Array.isArray(item.summaries) ? item.summaries[0] : null).asin) ?? listing.externalId;
+  const text = textFromAttributes(item.attributes);
+  if (!asin) return { ...text, photoUrls: [] };
+  const catalog = await retryBusy(() =>
+    spApi(token, "catalog/get", `/catalog/2022-04-01/items/${encodeURIComponent(asin)}?${new URLSearchParams({ marketplaceIds: AMAZON_IN, includedData: "images" }).toString()}`),
+  );
+  return { ...text, photoUrls: photosFromCatalog(catalog) };
 }

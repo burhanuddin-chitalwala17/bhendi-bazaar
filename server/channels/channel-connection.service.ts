@@ -102,7 +102,7 @@ function marketplaceCard(
   row: ConnectionRow | undefined,
   liveCount: number,
   now: Date,
-  listings: { total: number; linked: number } | null,
+  listings: { total: number; linked: number; toSettle: number } | null,
 ): ChannelCardDTO {
   const provider = providerFor(channel);
   const live = row !== undefined && row.state !== CONNECTION_STATE.DISCONNECTED;
@@ -171,8 +171,8 @@ export const channelConnectionService = {
       MARKETPLACE_CHANNELS.map(async (channel) => {
         const row = byChannel.get(channel);
         if (!row || row.state === CONNECTION_STATE.DISCONNECTED) return null;
-        const { total, linked } = await channelListingRepository.counts(row.id);
-        return { total, linked };
+        const { total, linked, toSettle } = await channelListingRepository.counts(row.id);
+        return { total, linked, toSettle };
       }),
     );
     const marketplaces = MARKETPLACE_CHANNELS.map((channel, i) =>

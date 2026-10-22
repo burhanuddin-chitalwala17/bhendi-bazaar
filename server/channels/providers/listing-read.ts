@@ -14,6 +14,14 @@ export interface ListingSink {
   batch(rows: ReadListing[], progress: { done: number; total: number | null }): Promise<void>;
 }
 
+/** One listing's content, read live for the Settle page and the photo copy (product-merge D1). */
+export interface ListingDetail {
+  title: string | null;
+  description: string | null;
+  /** Every photo on the marketplace's product page, main first; empty when it shares none. */
+  photoUrls: string[];
+}
+
 /** A fresh access token, renewed by the domain when it is about to lapse. A read can outlive one. */
 export type TokenSource = () => Promise<string>;
 

@@ -11,6 +11,7 @@ import type { ChannelListingDetailDTO, MarketplaceChannel } from "@server/channe
 
 import { ListingImage } from "./listing-image";
 import { ListingLinkAction } from "./listing-link-action";
+import { ListingSettleActions } from "./listing-settle-actions";
 import { ID_NAME, PANEL, ROW, STATUS_TEXT } from "./listing-copy";
 
 interface ListingDetailsPanelProps {
@@ -98,10 +99,14 @@ export function ListingDetailsPanel({ orgId, channel, label, detail, closeHref }
           {!listing.gone && product && (
             <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="unlink" />
           )}
-          {!listing.gone && !product && listing.unlinkedByOwner && linkBackTo && (
+          {!listing.gone && !product && listing.unlinkedByOwner && linkBackTo && !listing.leftOff && (
             <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="linkBack" />
           )}
+          {listing.leftOff && <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="bringBack" />}
         </div>
+        {!product && !listing.leftOff && (
+          <ListingSettleActions orgId={orgId} channel={channel} label={label} listingId={listing.id} />
+        )}
       </SheetContent>
     </Sheet>
   );
