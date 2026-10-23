@@ -1,6 +1,6 @@
 # TRD — product-merge
 
-- **Status:** Accepted — by the owner, 2026-10-21
+- **Status:** Implemented
 - **Domain:** channels, with commands and reads from catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-21

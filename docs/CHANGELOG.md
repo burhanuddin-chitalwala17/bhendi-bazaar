@@ -10,6 +10,11 @@
 
 ## Entries
 
+## 2026-10-23 — product-merge implemented
+
+- The owner checked merging on production: adding a new product, matching, and leaving off all work.
+  Spec and TRD move to Implemented; BACKLOG follows. Next: marketplace-facts.
+
 ## 2026-10-23 — product-merge: the Settle page's match link was blocked at the edge
 
 - Clicking a match opened a Vercel "This request was blocked" page (403, `x-vercel-mitigated: deny`):

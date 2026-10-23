@@ -1,7 +1,7 @@
 # Spec — product-merge
 
 - **Summary:** The owner settles every marketplace listing that is not linked: matches it to an existing product, adds it as a new product with its photos and the real quantity, or leaves it off; an item sold on both marketplaces becomes one product
-- **Status:** Accepted
+- **Status:** Implemented
 - **Domain:** channels, with catalog
 - **Phase:** 11 — Listing: one entry, every channel
 - **Verified:** 2026-10-21
