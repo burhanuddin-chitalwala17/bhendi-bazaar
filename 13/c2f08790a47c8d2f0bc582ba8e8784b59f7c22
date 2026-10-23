@@ -1,0 +1,29 @@
+docs/specs/marketplace-integration/product-merge/trd.md
+  s_0972fb7ac9c18b::t_ef5731780e7ecf 3
+docs/specs/README.md
+  s_0972fb7ac9c18b::t_ef5731780e7ecf 98
+docs/specs/marketplace-integration/product-merge/spec.md
+  s_0972fb7ac9c18b::t_ef5731780e7ecf 4
+docs/specs/marketplace-integration/decisions.md
+  s_0972fb7ac9c18b::t_9443df4780b69c 53
+docs/BACKLOG.md
+  s_0972fb7ac9c18b::t_ef5731780e7ecf 193
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_ef5731780e7ecf 13-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "13c2f08790a47c8d2f0bc582ba8e8784b59f7c22",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-haiku-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
