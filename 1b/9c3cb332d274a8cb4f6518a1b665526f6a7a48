@@ -1,0 +1,73 @@
+server/channels/channel-facts.types.ts
+  s_0972fb7ac9c18b::t_efa6f08c7e8117 75-91
+docs/specs/marketplace-integration/marketplace-facts/ux.md
+  s_0972fb7ac9c18b::t_eb92d9de3262f2 13-16,57-68,99
+tests/integration/marketplace-facts.test.ts
+  s_0972fb7ac9c18b::t_5eab08fc6d0601 357-365
+  s_0972fb7ac9c18b::t_871d8db82274b2 312-328,330-344,346-356
+  s_0972fb7ac9c18b::t_321a6ce16230f6 329,345
+src/components/channel/settle-copy.ts
+  s_0972fb7ac9c18b::t_443e08532a1867 74
+server/channels/channel-settle.service.ts
+  s_0972fb7ac9c18b::t_443e08532a1867 186,325-326
+  s_0972fb7ac9c18b::t_529f44fe3ca824 100,106,108-109,133
+  s_0972fb7ac9c18b::t_6ff234552331e8 222,226
+  s_0972fb7ac9c18b::t_c75b8953f582d0 220-221,223-225,227-229,289-290
+src/components/channel/settle-form.tsx
+  s_0972fb7ac9c18b::t_21a4478969c297 30,395-407
+  s_0972fb7ac9c18b::t_443e08532a1867 348-350,353,356
+docs/specs/marketplace-integration/product-merge/decisions.md
+  s_0972fb7ac9c18b::t_85208696fcd488 3,23,44
+server/channels/channel-facts.service.ts
+  s_0972fb7ac9c18b::t_c240e812313b64 8,23,25,178-181,183-188,197,201-231,233-243,246-249,251-252,261-276,280-288
+  s_0972fb7ac9c18b::t_321a6ce16230f6 244-245,277-279
+  s_0972fb7ac9c18b::t_c75b8953f582d0 250,253-260
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_72962703880d9f 294-298
+  s_0972fb7ac9c18b::t_51d222bc8542bf 277
+tests/unit/settle-form.test.tsx
+  s_0972fb7ac9c18b::t_85208696fcd488 128-138
+  s_0972fb7ac9c18b::t_871d8db82274b2 139-172
+  s_0972fb7ac9c18b::t_529f44fe3ca824 47
+server/channels/channel-listing.repository.ts
+  s_0972fb7ac9c18b::t_529f44fe3ca824 246-247
+server/catalog/product.service.ts
+  s_0972fb7ac9c18b::t_c75b8953f582d0 154-155
+docs/CHANGELOG.md
+  s_0972fb7ac9c18b::t_51d222bc8542bf 30-37
+  s_0972fb7ac9c18b::t_72962703880d9f 13-29
+docs/specs/marketplace-integration/marketplace-facts/trd.md
+  s_0972fb7ac9c18b::t_eb92d9de3262f2 59-64,125
+src/lib/validation/schemas/settle-listing.schema.ts
+  s_0972fb7ac9c18b::t_efa6f08c7e8117 34-38
+  s_0972fb7ac9c18b::t_443e08532a1867 46
+src/components/channel/facts-copy.ts
+  s_0972fb7ac9c18b::t_21a4478969c297 42-45
+src/components/channel/settle-facts.tsx
+  s_0972fb7ac9c18b::t_21a4478969c297 1-106
+server/channels/channel-connection.types.ts
+  s_0972fb7ac9c18b::t_efa6f08c7e8117 2,276-277,295-296
+docs/specs/marketplace-integration/product-merge/ux.md
+  s_0972fb7ac9c18b::t_443e08532a1867 66
+server/catalog/product.repository.ts
+  s_0972fb7ac9c18b::t_c75b8953f582d0 400-401,431-433
+docs/specs/marketplace-integration/marketplace-facts/decisions.md
+  s_0972fb7ac9c18b::t_72962703880d9f 48
+  s_0972fb7ac9c18b::t_eb92d9de3262f2 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "1b9c3cb332d274a8cb4f6518a1b665526f6a7a48",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
