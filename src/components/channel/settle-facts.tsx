@@ -31,6 +31,8 @@ export function SettleFacts({
 
   const body = () => {
     if (facts.saysNothing) return <p className="text-sm text-muted-foreground">{FACTS.noAnswers(label)}</p>;
+    // A matched product with no type, or a category with none: nothing applies until the category has a type.
+    if (facts.matching ? !typeKey : categoryId && !typeKey) return <p className="text-sm text-muted-foreground">{FACTS.noType(label)}</p>;
     if (!typeKey || !view) return <p className="text-sm text-muted-foreground">{FACTS.pickCategory(label)}</p>;
     if (view.noMapping) return <p className="text-sm text-muted-foreground">{FACTS.noMapping(label)}</p>;
     if (view.fills.length === 0 && view.questions.length === 0) return <p className="text-sm text-muted-foreground">{FACTS.nothingNew(label)}</p>;

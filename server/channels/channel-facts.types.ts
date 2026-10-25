@@ -84,7 +84,8 @@ export interface SettleFactsDTO {
   /** Each category's type key; a category with none is absent. */
   typeOfCategory: Record<string, string>;
   byType: Record<string, SettleTypeFactsDTO>;
-  /** Matching keeps the product's own type. */
+  /** Matching keeps the product's own type, which may be none. */
+  matching: boolean;
   fixedType: string | null;
   saysNothing: boolean;
 }

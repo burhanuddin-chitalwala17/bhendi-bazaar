@@ -354,6 +354,23 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
       }
     });
 
+    it("matching saves the page's facts only into the product's empty ones (Q35)", async () => {
+      const { channelSettleService } = await import("@server/channels/channel-settle.service");
+      const { id } = await product({ sku: `MF-${stamp}-match`, facts: { colour: { value: "red", origin: "product" } } });
+      const listing = await prisma.channelListing.create({
+        data: { connectionId, orgId, channel: "amazon", sku: `MF-${stamp}-match-l`, skuKey: `mf-${stamp}-match-l`, title: "Mat", status: "LIVE", lastSeenAt: new Date() },
+        select: { id: true },
+      });
+      const detail = await channelSettleService.page(orgId, listing.id, id);
+      expect(detail?.facts).toMatchObject({ matching: true, fixedType: "prayer-mat" });
+      expect(detail?.facts?.byType["prayer-mat"].fills.map((f) => f.fact)).not.toContain("colour");
+      await channelSettleService.settle(orgId, userId, { listingIds: [listing.id], productId: id, stock: [], answers: { material: "cotton" } });
+      const row = await prisma.product.findUniqueOrThrow({ where: { id }, select: { facts: true } });
+      expect(row.facts).toMatchObject({ colour: { value: "red", origin: "product" }, material: { value: "cotton", origin: "marketplace" } });
+      const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
+      await prisma.$executeRawUnsafe(`DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'listingId' = $2`, JOBS_QUEUE, listing.id);
+    });
+
     it("keeps an answer only when it is one of ours for a fact still asked (Q35)", async () => {
       const row = { channel: "amazon", attributes: read(), attributesReadAt: new Date() };
       const target = { productType: "prayer-mat", facts: null, measurements: null };

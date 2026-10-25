@@ -10,6 +10,26 @@
 
 ## Entries
 
+## 2026-10-25 — marketplace-facts unit 6 and product-merge Q31: fixes from the fresh-context review [CONTRACT]
+
+- **Matching saved none of the page's facts:** a matched product also carries `categoryId`, so the
+  save took it for a new product and found no type. Told apart by `productType` now; a match-mode
+  test proves only the product's empty facts fill and its own answers stay.
+- **A typed SKU differing only in case or spaces is refused**, as listings are matched (`skuKey`),
+  naming the product that holds it. Two settles typing the same SKU at once make one product; the
+  other is told it is used (already mapped; now tested).
+- **The Settle page reads the marketplace beside its other loads**, and a failure planning the facts
+  costs the section, never the page.
+- **No type:** a matched product with none, or a category with none, says "This product has no
+  product type…" instead of "Pick a category"; ux.md gains that row and "Couldn't read the
+  marketplace". `SettleFactsDTO.matching` added.
+- **Kept as is:** when the page's read fails, a save may still fill the clear facts from an earlier
+  stored read; only empty facts fill, and the worker would fill them anyway.
+- **Mutation-tested:** the SKU compare back to exact → the case test red; restored. The unit test now
+  answers then skips, proving the skip clears the answer.
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit`, the integration suite on
+  `bhendi_bazaar_ci`, `lint:boundary`, `docs:check`, `next build`.
+
 ## 2026-10-25 — marketplace-facts unit 6: facts filled and answered on the Settle page [CONTRACT]
 
 - **The owner's call (Q35, superseding Q3):** the attributes are read when the Settle page opens, so

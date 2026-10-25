@@ -65,6 +65,8 @@
 | No mapping for the type | "No Amazon mapping yet for this type. Nothing to fill." | — |
 | No answers from the marketplace | "Amazon didn't share any answers for this listing, so there's nothing to fill." | — |
 | Matching a product | Only that product's empty facts show | Same |
+| No type (a matched product with none, or a category with none) | "This product has no product type, so there are no Amazon facts to fill. Set its category first." | — |
+| Couldn't read the marketplace | The section is not shown; the page still opens, and the product page's card fills after saving | — |
 
 ## State matrix — Choose a fact
 | State | What the person sees | Action |

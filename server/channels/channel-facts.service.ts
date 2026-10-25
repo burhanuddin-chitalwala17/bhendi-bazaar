@@ -180,23 +180,44 @@ export const channelFactsService = {
    * them at once. Matching plans only the product's own type and empty facts. Nulls when the
    * marketplace cannot be read; the page still opens.
    */
-  async settleRead(
-    row: { id: string; channel: string; orgId?: string; connectionId: string; sku: string; externalId: string | null; connection: { externalAccountId: string | null } },
-    orgId: string,
-    product: { productType: string | null; facts: unknown; measurements: unknown } | null,
-  ): Promise<{ type: SettleTypeDTO | null; facts: SettleFactsDTO | null }> {
-    if (!isMarketplaceChannel(row.channel)) return { type: null, facts: null };
-    let read: ListingAttributes;
+  async readNow(row: { id: string; channel: string; connectionId: string; sku: string; externalId: string | null; connection: { externalAccountId: string | null } }): Promise<ListingAttributes | null> {
+    if (!isMarketplaceChannel(row.channel)) return null;
     try {
-      read = await providerFor(row.channel).listingAttributes(
+      const read = await providerFor(row.channel).listingAttributes(
         () => channelConnectionService.accessToken(row.connectionId),
         row.connection.externalAccountId,
         { sku: row.sku, externalId: row.externalId },
       );
+      await channelListingRepository.saveAttributes(row.id, read, new Date());
+      return read;
     } catch {
+      return null;
+    }
+  },
+
+  /** The Settle page's questions from a read; anything that fails here costs the section, never the page. */
+  async settlePlan(
+    row: { channel: string },
+    orgId: string,
+    product: { productType: string | null; facts: unknown; measurements: unknown } | null,
+    read: ListingAttributes | null,
+  ): Promise<{ type: SettleTypeDTO | null; facts: SettleFactsDTO | null }> {
+    if (!read || !isMarketplaceChannel(row.channel)) return { type: null, facts: null };
+    try {
+      return await this.settleRead(row.channel, orgId, product, read);
+    } catch (error) {
+      console.error("[Settle] marketplace facts plan failed:", error);
       return { type: null, facts: null };
     }
-    await channelListingRepository.saveAttributes(row.id, read, new Date());
+  },
+
+  async settleRead(
+    channel: MarketplaceChannel,
+    orgId: string,
+    product: { productType: string | null; facts: unknown; measurements: unknown } | null,
+    read: ListingAttributes,
+  ): Promise<{ type: SettleTypeDTO | null; facts: SettleFactsDTO | null }> {
+    const row = { channel };
     const [mapping, choices] = await Promise.all([channelMapService.forFill(row.channel), channelMapService.typeChoices()]);
     const keys = product ? (product.productType ? [product.productType] : []) : choices.map((c) => c.key);
     const views = await Promise.all(keys.map((key) => channelMapService.typeForFill(key, orgId)));
@@ -225,6 +246,7 @@ export const channelFactsService = {
     const facts: SettleFactsDTO = {
       typeOfCategory: Object.fromEntries(choices.flatMap((c) => c.categories.map((cat) => [cat.id, c.key]))),
       byType,
+      matching: product !== null,
       fixedType: product?.productType ?? null,
       saysNothing: !read.type && Object.keys(read.attributes).length === 0,
     };
@@ -250,8 +272,9 @@ export const channelFactsService = {
     target: { productType: string | null; facts: unknown; measurements: unknown } | { categoryId: string },
     answers: Readonly<Record<string, string>>,
   ): Promise<MarketplaceFill | null> {
+    // A matched product carries its own type (and a categoryId too), so the shape is told by `productType`.
     const product =
-      "categoryId" in target
+      !("productType" in target)
         ? {
             productType: (await channelMapService.typeChoices()).find((c) => c.categories.some((cat) => cat.id === target.categoryId))?.key ?? null,
             facts: null,

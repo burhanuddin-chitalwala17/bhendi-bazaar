@@ -281,4 +281,23 @@ describe.skipIf(!isDisposableDb)("settling marketplace listings (local db)", () 
     // A read linking by SKU skips the row the index refuses rather than failing its batch.
     expect(await listings.linkBySku([{ id: dup.id, productId: made.productId }], new Date())).toBe(0);
   });
+
+  it("refuses a typed SKU that differs from another product's only in case or spaces (Q31)", async () => {
+    const a = await listing(amazon, "amazon", `PM-${stamp}-case-a`);
+    const b = await listing(amazon, "amazon", `PM-${stamp}-case-b`);
+    await settle.settle(orgId, userId, newProduct([a.id], `PM-${stamp}-CASE`));
+    await expect(settle.settle(orgId, userId, newProduct([b.id], `  pm-${stamp}-case `.trim()))).rejects.toThrow(/is already used by/);
+  });
+
+  it("makes one product when two settles type the same new SKU at once; the other is told (Q31)", async () => {
+    const a = await listing(amazon, "amazon", `PM-${stamp}-dup-a`);
+    const b = await listing(flipkart, "flipkart", `PM-${stamp}-dup-b`);
+    const outcomes = await Promise.allSettled([
+      settle.settle(orgId, userId, { ...newProduct([a.id], `PM-${stamp}-SAME`), name: `Abaya ${stamp}` }),
+      settle.settle(orgId, userId, { ...newProduct([b.id], `PM-${stamp}-SAME`), name: `Rida ${stamp}` }),
+    ]);
+    expect(outcomes.filter((o) => o.status === "fulfilled")).toHaveLength(1);
+    const refused = outcomes.find((o) => o.status === "rejected") as PromiseRejectedResult;
+    expect(String(refused.reason?.message)).toMatch(/already used by/);
+  });
 });

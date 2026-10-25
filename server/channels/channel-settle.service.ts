@@ -27,7 +27,7 @@ import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
 import { channelFactsService } from "./channel-facts.service";
-import { mostSimilar } from "./listing-match";
+import { mostSimilar, skuKey } from "./listing-match";
 import { copyablePhotos } from "./listing-photos";
 import { PHOTO_COPY_MODE, listingPhotosSpec, type ListingPhotosPayload } from "./listing-photos.job";
 import { providerFor } from "./providers";
@@ -97,16 +97,18 @@ export const channelSettleService = {
     if (!row || !isMarketplaceChannel(row.channel)) return null;
     const connection = await channelConnectionRepository.find(orgId, row.channel);
 
-    const [primary, product, locations, pair, latest, owned] = await Promise.all([
+    // The live attribute read runs beside the other loads (marketplace-facts Q35).
+    const [primary, product, locations, pair, latest, owned, read] = await Promise.all([
       sideOf(row),
       productId ? productService.settleFacts(orgId, productId) : Promise.resolve(null),
       orgAddressService.listLocations(orgId),
       productId ? Promise.resolve(null) : this.pairFor(orgId, row),
       channelListingRepository.latestOwnerLinkedProductId(orgId),
       productId ? productService.marketplaceFacts(orgId, productId) : Promise.resolve(null),
+      channelFactsService.readNow(row),
     ]);
     if (productId && (!product || !owned)) return null;
-    const { type, facts } = await channelFactsService.settleRead(row, orgId, owned);
+    const { type, facts } = await channelFactsService.settlePlan(row, orgId, owned, read);
     // The mapped type's one category starts the add (marketplace-facts D9); else the shop's last one (product-merge D9).
     const typed = type?.kind === "mapped" && type.types[0]?.categories.length === 1 ? type.types[0].categories[0].id : null;
     const lastCategory = typed ?? (latest ? (await productService.settleFacts(orgId, latest))?.categoryId ?? null : null);
@@ -324,10 +326,11 @@ export const channelSettleService = {
 
   /** A SKU another product holds, archived included, refuses with that product named (journey 4). Any SKU otherwise (Q31). */
   async assertSkuFree(orgId: string, sku: string): Promise<void> {
-    const owner = (await productService.listForMatching(orgId)).find((p) => p.sku === sku);
+    // Compared as listings are matched, ignoring case and spaces: "aby-blk-l" beside "ABY-BLK-L" would split a read's links.
+    const owner = (await productService.listForMatching(orgId)).find((p) => p.sku !== null && skuKey(p.sku) === skuKey(sku));
     if (owner) {
       throw new ConflictError(
-        `SKU ${sku} is already used by ${owner.name}${owner.archived ? " (archived)" : ""}. Pick another SKU, or match to that product.`,
+        `SKU ${owner.sku} is already used by ${owner.name}${owner.archived ? " (archived)" : ""}. Pick another SKU, or match to that product.`,
         { field: "sku" },
       );
     }

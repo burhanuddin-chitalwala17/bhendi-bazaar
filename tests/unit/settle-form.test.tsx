@@ -145,6 +145,7 @@ describe("the Settle page's form (product-merge D10)", () => {
         defaultCategoryId: null,
         facts: {
           typeOfCategory: { "cat-abayas": "islamic-wear" },
+          matching: false,
           fixedType: null,
           saysNothing: false,
           byType: {
@@ -164,6 +165,8 @@ describe("the Settle page's form (product-merge D10)", () => {
     fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "cat-abayas" } });
     expect(await screen.findByText("Black")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Nida" }));
+    // Answered, then skipped: the skip clears the answer.
+    fireEvent.click(screen.getByRole("button", { name: "Full" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Skip for now" })[1]);
     expect(screen.getByText("Sleeve · skipped")).toBeInTheDocument();
     press("Add product");

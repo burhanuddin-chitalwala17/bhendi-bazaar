@@ -293,7 +293,8 @@ integer paise, filled only when empty. `ChannelListingDTO` gains `waitingForType
 (`{ marketplaceType }` when parked with reason `no_type`); `SettleDetailDTO` gains `type`, a
 **`SettleTypeDTO`** (`kind` mapped / choose / none, `marketplaceType`, `types`) and, since Q35, `facts`,
 a **`SettleFactsDTO`** (`typeOfCategory` category id → type key, `byType` type key → `fills`,
-`questions`, `noMapping`; `fixedType` when matching; `saysNothing`). The settle body takes
+`questions`, `noMapping`; `matching`, and `fixedType` when matching; `saysNothing`). A typed SKU is
+refused when another product's matches it ignoring case and spaces. The settle body takes
 `answers` (fact → our answer's key, at most 60); the server re-plans from the listing's stored read
 and keeps an answer only for a fact still asked and one of our answers to it. The product page
 reads **`ProductMarketplaceFactsDTO`** per linked listing (`server/channels/channel-facts.types.ts`):
