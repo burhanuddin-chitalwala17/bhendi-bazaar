@@ -6,6 +6,7 @@
  * it is not work — it is a decision already taken that every affected product keeps showing
  * (channel-registry D6, D12).
  */
+import { ChannelTypesEditor } from "@/components/channel/channel-types-editor";
 import { notFound } from "next/navigation";
 
 import { PageHeader } from "@/components/shared/page-shell";
@@ -172,6 +173,12 @@ export default async function AdminChannelPage({
           </Card>
         </section>
       )}
+      <ChannelTypesEditor
+        channel={channel}
+        label={view.label}
+        types={view.types}
+        suggestions={[...new Set(view.types.flatMap((t) => t.rows.map((r) => r.theirCategory)))].sort()}
+      />
     </div>
   );
 }

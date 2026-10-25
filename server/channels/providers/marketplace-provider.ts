@@ -1,5 +1,5 @@
 import type { MarketplaceChannel } from "../channel-connection.types";
-import type { ListingDetail, ListingSink, TokenSource } from "./listing-read";
+import type { ListingAttributes, ListingDetail, ListingSink, TokenSource } from "./listing-read";
 
 /**
  * One marketplace, behind the verbs channel-connectors needs (TRD D1). Later subfeatures add their
@@ -41,6 +41,13 @@ export interface MarketplaceProvider {
    * account id when it learns it and each batch as it arrives, through the sink.
    */
   readListings(token: TokenSource, externalAccountId: string | null, sink: ListingSink): Promise<void>;
+
+  /** One listing's type, attributes and product details, read now (marketplace-facts D1). */
+  listingAttributes(
+    token: TokenSource,
+    externalAccountId: string | null,
+    listing: { sku: string; externalId: string | null },
+  ): Promise<ListingAttributes>;
 
   /** One listing's title, description and photos, read now (product-merge D1). */
   listingDetail(

@@ -7,7 +7,17 @@ import {
   MarketplaceUnavailableError,
   marketplaceFetch,
 } from "../marketplace-provider";
-import { nonNegativeInt, paiseFromRupees, retryBusy, type ListingDetail, type ListingSink, type TokenSource } from "../listing-read";
+import {
+  NO_DETAILS,
+  nonNegativeInt,
+  paiseFromRupees,
+  retryBusy,
+  type ListingAttributes,
+  type ListingDetail,
+  type ListingProductDetails,
+  type ListingSink,
+  type TokenSource,
+} from "../listing-read";
 
 /**
  * Reading every Flipkart listing (channel-import D5): its product search first, which names the
@@ -168,4 +178,50 @@ export async function flipkartListingDetail(
   const body = obj(await retryBusy(() => call(token, "/listings/v3/details", { sku_ids: [listing.sku] })));
   const item = obj(obj(body.available)[listing.sku]);
   return { title: str(item.product_title), description: null, photoUrls: [] };
+}
+
+/** Text from a value that may be a string, a list of strings or a list of objects with a name. */
+function labelText(v: unknown): string | null {
+  if (typeof v === "string") return v.trim() || null;
+  if (Array.isArray(v)) {
+    const parts = v.map((x) => (typeof x === "string" ? x : str(obj(x).name) ?? str(obj(x).value) ?? str(obj(x).address))).filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : null;
+  }
+  const o = obj(v);
+  return str(o.name) ?? str(o.value) ?? str(o.address) ?? null;
+}
+
+/**
+ * Flipkart's product details from a listing (Q4, Q17): its listing details carry MRP, HSN, the parcel
+ * and the label (manufacturer, importer, packer, origin), though no type or attributes.
+ */
+export function flipkartDetails(item: unknown): ListingProductDetails {
+  const i = obj(item);
+  const label = obj(i.address_label);
+  const pkg = obj(Array.isArray(i.packages) ? i.packages[0] : null);
+  const weight = Number(pkg.weight);
+  const dims = obj(pkg.dimensions);
+  const [length, width, height] = ["length", "breadth", "height"].map((k) => Number(dims[k]));
+  const countries = labelText(label.countries_of_origin);
+  return {
+    ...NO_DETAILS,
+    weightKg: Number.isFinite(weight) && weight > 0 ? weight : null,
+    dimensionsCm: [length, width, height].every((n) => Number.isFinite(n) && n > 0) ? { length, width, height } : null,
+    hsn: str(obj(i.tax).hsn),
+    mrpPaise: paiseFromRupees(obj(i.price).mrp),
+    countryOfOrigin: countries && /^[A-Z]{2}$/.test(countries) ? countries : null,
+    manufacturer: labelText(label.manufacturer_details),
+    packer: labelText(label.packer_details),
+    importer: labelText(label.importer_details),
+  };
+}
+
+export async function flipkartListingAttributes(
+  token: TokenSource,
+  _accountId: string | null,
+  listing: { sku: string; externalId: string | null },
+): Promise<ListingAttributes> {
+  const body = obj(await retryBusy(() => call(token, "/listings/v3/details", { sku_ids: [listing.sku] })));
+  // No type and no attributes: Flipkart keeps those on the product, which our app cannot read yet (Q4).
+  return { type: null, attributes: {}, details: flipkartDetails(obj(obj(body.available)[listing.sku])) };
 }

@@ -1,0 +1,3376 @@
+{
+ "checkedOn": "2026-10-23",
+ "checkedSource": "Amazon SP-API Product Type Definitions 2020-09-01, marketplace A21TJRUUN4KGV, locale en_IN, requirements LISTING",
+ "categories": [
+  {
+   "productType": "bag",
+   "kind": "handbag",
+   "theirCategory": "HANDBAG",
+   "publishes": true,
+   "label": "Handbag",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "handbag",
+   "theirCategory": "COSMETIC_CASE",
+   "publishes": false,
+   "label": "Cosmetic Case",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "handbag",
+   "theirCategory": "CARRIER_BAG_CASE",
+   "publishes": false,
+   "label": "Carrier Bag Case",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "tote",
+   "theirCategory": "TOTE_BAG",
+   "publishes": true,
+   "label": "Tote Bag",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "backpack",
+   "theirCategory": "BACKPACK",
+   "publishes": true,
+   "label": "Backpack",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "backpack",
+   "theirCategory": "SPORT_EQUIPMENT_BAG_CASE",
+   "publishes": false,
+   "label": "Sport Equipment Bag Case",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "sling",
+   "theirCategory": "HANDBAG",
+   "publishes": true,
+   "label": "Handbag",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "sling",
+   "theirCategory": "CARRIER_BAG_CASE",
+   "publishes": false,
+   "label": "Carrier Bag Case",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "bag",
+   "kind": "messenger",
+   "theirCategory": "CARRIER_BAG_CASE",
+   "publishes": true,
+   "label": "Carrier Bag Case",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "travel-pouch",
+   "kind": "pouch",
+   "theirCategory": "COIN_PURSE_POUCH",
+   "publishes": true,
+   "label": "Coin Purse Pouch",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "travel-pouch",
+   "kind": "pouch",
+   "theirCategory": "COSMETIC_CASE",
+   "publishes": false,
+   "label": "Cosmetic Case",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "travel-pouch",
+   "kind": "toiletry-kit",
+   "theirCategory": "COSMETIC_CASE",
+   "publishes": true,
+   "label": "Cosmetic Case",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "abaya",
+   "theirCategory": "APPAREL",
+   "publishes": true,
+   "label": "Apparel",
+   "fit": "NEAREST",
+   "note": "Amazon files most clothing under Apparel; it is the nearest type, not a specific one."
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "abaya",
+   "theirCategory": "DRESS",
+   "publishes": false,
+   "label": "Dress",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "burqa",
+   "theirCategory": "APPAREL",
+   "publishes": true,
+   "label": "Apparel",
+   "fit": "NEAREST",
+   "note": "Amazon files most clothing under Apparel; it is the nearest type, not a specific one."
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "rida",
+   "theirCategory": "APPAREL",
+   "publishes": true,
+   "label": "Apparel",
+   "fit": "NEAREST",
+   "note": "Amazon files most clothing under Apparel; it is the nearest type, not a specific one."
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "other",
+   "theirCategory": "APPAREL",
+   "publishes": true,
+   "label": "Apparel",
+   "fit": "NEAREST",
+   "note": "Amazon files most clothing under Apparel; it is the nearest type, not a specific one."
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "hijab",
+   "theirCategory": "APPAREL_HEAD_NECK_COVERING",
+   "publishes": true,
+   "label": "Apparel Head Neck Covering",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "hijab",
+   "theirCategory": "SCARF",
+   "publishes": false,
+   "label": "Scarf",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "islamic-wear",
+   "kind": "niqab",
+   "theirCategory": "APPAREL_HEAD_NECK_COVERING",
+   "publishes": true,
+   "label": "Apparel Head Neck Covering",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "trousers",
+   "kind": "trouser",
+   "theirCategory": "PANTS",
+   "publishes": true,
+   "label": "Pants",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "trousers",
+   "kind": "trouser",
+   "theirCategory": "APPAREL",
+   "publishes": false,
+   "label": "Apparel",
+   "fit": "NEAREST",
+   "note": "Amazon files most clothing under Apparel; it is the nearest type, not a specific one."
+  },
+  {
+   "productType": "trousers",
+   "kind": "trouser",
+   "theirCategory": "PAJAMAS",
+   "publishes": false,
+   "label": "Pajamas",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "trousers",
+   "kind": "palazzo",
+   "theirCategory": "PANTS",
+   "publishes": true,
+   "label": "Pants",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "trousers",
+   "kind": "palazzo",
+   "theirCategory": "APPAREL",
+   "publishes": false,
+   "label": "Apparel",
+   "fit": "NEAREST",
+   "note": "Amazon files most clothing under Apparel; it is the nearest type, not a specific one."
+  },
+  {
+   "productType": "trousers",
+   "kind": "salwar",
+   "theirCategory": "PANTS",
+   "publishes": true,
+   "label": "Pants",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "trousers",
+   "kind": "salwar",
+   "theirCategory": "APPAREL",
+   "publishes": false,
+   "label": "Apparel",
+   "fit": "NEAREST",
+   "note": "Amazon files most clothing under Apparel; it is the nearest type, not a specific one."
+  },
+  {
+   "productType": "prayer-mat",
+   "kind": "mat",
+   "theirCategory": "RUG",
+   "publishes": true,
+   "label": "Rug",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "prayer-mat",
+   "kind": "mat",
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "publishes": false,
+   "label": "Home Furniture And Decor",
+   "fit": "NEAREST",
+   "note": "A general home type the shop uses for some prayer mats and masalla bags; nearest, not specific."
+  },
+  {
+   "productType": "prayer-mat",
+   "kind": "carpet",
+   "theirCategory": "RUG",
+   "publishes": true,
+   "label": "Rug",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "prayer-mat",
+   "kind": "carpet",
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "publishes": false,
+   "label": "Home Furniture And Decor",
+   "fit": "NEAREST",
+   "note": "A general home type the shop uses for some prayer mats and masalla bags; nearest, not specific."
+  },
+  {
+   "productType": "fragrance",
+   "kind": "attar",
+   "theirCategory": "PERSONAL_FRAGRANCE",
+   "publishes": true,
+   "label": "Personal Fragrance",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "fragrance",
+   "kind": "attar",
+   "theirCategory": "HEALTH_PERSONAL_CARE",
+   "publishes": false,
+   "label": "Health Personal Care",
+   "fit": "NEAREST",
+   "note": "A general personal-care type the shop uses for attars; Personal Fragrance is the specific one."
+  },
+  {
+   "productType": "fragrance",
+   "kind": "bakhoor",
+   "theirCategory": "INCENSE",
+   "publishes": true,
+   "label": "Incense",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "fragrance",
+   "kind": "incense",
+   "theirCategory": "INCENSE",
+   "publishes": true,
+   "label": "Incense",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "socks",
+   "kind": "ankle",
+   "theirCategory": "SOCKS",
+   "publishes": true,
+   "label": "Socks",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "socks",
+   "kind": "crew",
+   "theirCategory": "SOCKS",
+   "publishes": true,
+   "label": "Socks",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "socks",
+   "kind": "knee-high",
+   "theirCategory": "SOCKS",
+   "publishes": true,
+   "label": "Socks",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "socks",
+   "kind": "no-show",
+   "theirCategory": "SOCKS",
+   "publishes": true,
+   "label": "Socks",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "jewellery",
+   "kind": "ring",
+   "theirCategory": "RING",
+   "publishes": true,
+   "label": "Ring",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "jewellery",
+   "kind": "ring-set",
+   "theirCategory": "RING",
+   "publishes": true,
+   "label": "Ring",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "jewellery",
+   "kind": "toe-ring",
+   "theirCategory": "RING",
+   "publishes": true,
+   "label": "Ring",
+   "fit": "EXACT",
+   "note": null
+  },
+  {
+   "productType": "combo",
+   "kind": "masalla-set",
+   "theirCategory": "RUG",
+   "publishes": false,
+   "label": "Rug",
+   "fit": "EXACT",
+   "note": "Read only: combos sell on this store only (owner, 2026-10-04); an Amazon listing of one is still recognised."
+  },
+  {
+   "productType": "combo",
+   "kind": "masalla-set",
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "publishes": false,
+   "label": "Home Furniture And Decor",
+   "fit": "NEAREST",
+   "note": "Read only: combos sell on this store only (owner, 2026-10-04); an Amazon listing of one is still recognised."
+  },
+  {
+   "productType": "combo",
+   "kind": "prayer-set",
+   "theirCategory": "RUG",
+   "publishes": false,
+   "label": "Rug",
+   "fit": "EXACT",
+   "note": "Read only: combos sell on this store only (owner, 2026-10-04); an Amazon listing of one is still recognised."
+  },
+  {
+   "productType": "combo",
+   "kind": "prayer-set",
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "publishes": false,
+   "label": "Home Furniture And Decor",
+   "fit": "NEAREST",
+   "note": "Read only: combos sell on this store only (owner, 2026-10-04); an Amazon listing of one is still recognised."
+  },
+  {
+   "productType": "combo",
+   "kind": "gift-set",
+   "theirCategory": "HEALTH_PERSONAL_CARE",
+   "publishes": false,
+   "label": "Health Personal Care",
+   "fit": "NEAREST",
+   "note": "Read only: combos sell on this store only (owner, 2026-10-04); an Amazon listing of one is still recognised."
+  }
+ ],
+ "attributes": [
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "closure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "strap",
+   "theirAttribute": "strap_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "compartments",
+   "theirAttribute": "number_of_compartments",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "waterResistant",
+   "theirAttribute": "water_resistance_level",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "HANDBAG",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "COSMETIC_CASE",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COSMETIC_CASE",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COSMETIC_CASE",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COSMETIC_CASE",
+   "fact": "closure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COSMETIC_CASE",
+   "fact": "waterResistant",
+   "theirAttribute": "water_resistance_level",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "COSMETIC_CASE",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "CARRIER_BAG_CASE",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "CARRIER_BAG_CASE",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "CARRIER_BAG_CASE",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "CARRIER_BAG_CASE",
+   "fact": "closure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "CARRIER_BAG_CASE",
+   "fact": "strap",
+   "theirAttribute": "strap_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "CARRIER_BAG_CASE",
+   "fact": "compartments",
+   "theirAttribute": "number_of_compartments",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "CARRIER_BAG_CASE",
+   "fact": "waterResistant",
+   "theirAttribute": "water_resistance_level",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "closure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "strap",
+   "theirAttribute": "strap_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "compartments",
+   "theirAttribute": "number_of_compartments",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "waterResistant",
+   "theirAttribute": "water_resistance_level",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "TOTE_BAG",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "closure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "strap",
+   "theirAttribute": "strap_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "compartments",
+   "theirAttribute": "number_of_compartments",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "waterResistant",
+   "theirAttribute": "water_resistance_level",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "BACKPACK",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "SPORT_EQUIPMENT_BAG_CASE",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SPORT_EQUIPMENT_BAG_CASE",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SPORT_EQUIPMENT_BAG_CASE",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SPORT_EQUIPMENT_BAG_CASE",
+   "fact": "closure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SPORT_EQUIPMENT_BAG_CASE",
+   "fact": "strap",
+   "theirAttribute": "strap_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SPORT_EQUIPMENT_BAG_CASE",
+   "fact": "compartments",
+   "theirAttribute": "number_of_compartments",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COIN_PURSE_POUCH",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COIN_PURSE_POUCH",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COIN_PURSE_POUCH",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COIN_PURSE_POUCH",
+   "fact": "closure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COIN_PURSE_POUCH",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "COSMETIC_CASE",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "sleeveLength",
+   "theirAttribute": "sleeve.length_description",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "occasion",
+   "theirAttribute": "occasion_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "care",
+   "theirAttribute": "care_instructions",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "DRESS",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "DRESS",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "DRESS",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "DRESS",
+   "fact": "sleeveLength",
+   "theirAttribute": "sleeve.length_description",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "DRESS",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "DRESS",
+   "fact": "occasion",
+   "theirAttribute": "occasion_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "DRESS",
+   "fact": "care",
+   "theirAttribute": "care_instructions",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL_HEAD_NECK_COVERING",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL_HEAD_NECK_COVERING",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL_HEAD_NECK_COVERING",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL_HEAD_NECK_COVERING",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "APPAREL_HEAD_NECK_COVERING",
+   "fact": "care",
+   "theirAttribute": "care_instructions",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SCARF",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SCARF",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SCARF",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SCARF",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "SCARF",
+   "fact": "care",
+   "theirAttribute": "care_instructions",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "fit",
+   "theirAttribute": "fit_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "waistRise",
+   "theirAttribute": "rise",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "waistClosure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "surfaceStyling",
+   "theirAttribute": "embellishment_feature",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "PANTS",
+   "fact": "care",
+   "theirAttribute": "care_instructions",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "fit",
+   "theirAttribute": "fit_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "APPAREL",
+   "fact": "waistClosure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "fit",
+   "theirAttribute": "fit_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "waistRise",
+   "theirAttribute": "rise",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "waistClosure",
+   "theirAttribute": "closure.type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "surfaceStyling",
+   "theirAttribute": "embellishment_feature",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "PAJAMAS",
+   "fact": "care",
+   "theirAttribute": "care_instructions",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RUG",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RUG",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RUG",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RUG",
+   "fact": "shape",
+   "theirAttribute": "item_shape",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RUG",
+   "fact": "care",
+   "theirAttribute": "care_instructions",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RUG",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "fact": "shape",
+   "theirAttribute": "item_shape",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PERSONAL_FRAGRANCE",
+   "fact": "scentFamily",
+   "theirAttribute": "scent",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "PERSONAL_FRAGRANCE",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HEALTH_PERSONAL_CARE",
+   "fact": "scentFamily",
+   "theirAttribute": "scent",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HEALTH_PERSONAL_CARE",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "INCENSE",
+   "fact": "scentFamily",
+   "theirAttribute": "scent",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "INCENSE",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SOCKS",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SOCKS",
+   "fact": "material",
+   "theirAttribute": "material",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SOCKS",
+   "fact": "pattern",
+   "theirAttribute": "pattern",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "SOCKS",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "SOCKS",
+   "fact": "packQuantity",
+   "theirAttribute": "number_of_items",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RING",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RING",
+   "fact": "baseMaterial",
+   "theirAttribute": "metal_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RING",
+   "fact": "purity",
+   "theirAttribute": "metal_stamp",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RING",
+   "fact": "gemstone",
+   "theirAttribute": "gem_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RING",
+   "fact": "certification",
+   "theirAttribute": "certificate",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RING",
+   "fact": "occasion",
+   "theirAttribute": "occasion_type",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "RING",
+   "fact": "audience",
+   "theirAttribute": "target_gender",
+   "required": false,
+   "freeText": false
+  },
+  {
+   "theirCategory": "HOME_FURNITURE_AND_DECOR",
+   "fact": "contents",
+   "theirAttribute": "included_components",
+   "required": false,
+   "freeText": true
+  },
+  {
+   "theirCategory": "HEALTH_PERSONAL_CARE",
+   "fact": "colour",
+   "theirAttribute": "color",
+   "required": false,
+   "freeText": true
+  }
+ ],
+ "values": [
+  {
+   "list": "colour",
+   "valueKey": "beige",
+   "theirValue": "Beige",
+   "theirLabel": "Beige",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "black",
+   "theirValue": "Black",
+   "theirLabel": "Black",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "blue",
+   "theirValue": "Blue",
+   "theirLabel": "Blue",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "brown",
+   "theirValue": "Brown",
+   "theirLabel": "Brown",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "gold",
+   "theirValue": "Gold",
+   "theirLabel": "Gold",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "green",
+   "theirValue": "Green",
+   "theirLabel": "Green",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "grey",
+   "theirValue": "Grey",
+   "theirLabel": "Grey",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "multicolor",
+   "theirValue": "Multicolor",
+   "theirLabel": "Multicolor",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "orange",
+   "theirValue": "Orange",
+   "theirLabel": "Orange",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "pink",
+   "theirValue": "Pink",
+   "theirLabel": "Pink",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "purple",
+   "theirValue": "Purple",
+   "theirLabel": "Purple",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "red",
+   "theirValue": "Red",
+   "theirLabel": "Red",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "silver",
+   "theirValue": "Silver",
+   "theirLabel": "Silver",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "white",
+   "theirValue": "White",
+   "theirLabel": "White",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "yellow",
+   "theirValue": "Yellow",
+   "theirLabel": "Yellow",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "bronze",
+   "theirValue": "Bronze",
+   "theirLabel": "Bronze",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "clear",
+   "theirValue": "Clear",
+   "theirLabel": "Clear",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "metallic",
+   "theirValue": "Metallic",
+   "theirLabel": "Metallic",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "colour",
+   "valueKey": "turquoise",
+   "theirValue": "Turquoise",
+   "theirLabel": "Turquoise",
+   "how": "exact",
+   "attribute": "color"
+  },
+  {
+   "list": "material",
+   "valueKey": "acrylic",
+   "theirValue": "Acrylic",
+   "theirLabel": "Acrylic",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "art-silk",
+   "theirValue": "Art Silk",
+   "theirLabel": "Art Silk",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "bamboo",
+   "theirValue": "Bamboo",
+   "theirLabel": "Bamboo",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "canvas",
+   "theirValue": "Canvas",
+   "theirLabel": "Canvas",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "coir",
+   "theirValue": "Coir",
+   "theirLabel": "Coir",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "cotton",
+   "theirValue": "Cotton",
+   "theirLabel": "Cotton",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "cotton-blend",
+   "theirValue": "Cotton Blend",
+   "theirLabel": "Cotton Blend",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "denim",
+   "theirValue": "Denim",
+   "theirLabel": "Denim",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "fabric",
+   "theirValue": "Fabric",
+   "theirLabel": "Fabric",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "jute",
+   "theirValue": "Jute",
+   "theirLabel": "Jute",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "leather",
+   "theirValue": "Leather",
+   "theirLabel": "Leather",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "nylon",
+   "theirValue": "Nylon",
+   "theirLabel": "Nylon",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "plastic",
+   "theirValue": "Plastic",
+   "theirLabel": "Plastic",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "polycotton",
+   "theirValue": "Polycotton",
+   "theirLabel": "Polycotton",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "polyester",
+   "theirValue": "Polyester",
+   "theirLabel": "Polyester",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "rayon",
+   "theirValue": "Rayon",
+   "theirLabel": "Rayon",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "rubber",
+   "theirValue": "Rubber",
+   "theirLabel": "Rubber",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "satin",
+   "theirValue": "Satin",
+   "theirLabel": "Satin",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "silk",
+   "theirValue": "Silk",
+   "theirLabel": "Silk",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "silk-blend",
+   "theirValue": "Silk Blend",
+   "theirLabel": "Silk Blend",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "suede",
+   "theirValue": "Suede",
+   "theirLabel": "Suede",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "wool",
+   "theirValue": "Wool",
+   "theirLabel": "Wool",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "acrylic-blend",
+   "theirValue": "Acrylic Blend",
+   "theirLabel": "Acrylic Blend",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "corduroy",
+   "theirValue": "Corduroy",
+   "theirLabel": "Corduroy",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "faux-fur",
+   "theirValue": "Faux Fur",
+   "theirLabel": "Faux Fur",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "faux-leather",
+   "theirValue": "Faux Leather",
+   "theirLabel": "Faux Leather",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "foam",
+   "theirValue": "Foam",
+   "theirLabel": "Foam",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "latex",
+   "theirValue": "Latex",
+   "theirLabel": "Latex",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "linen",
+   "theirValue": "Linen",
+   "theirLabel": "Linen",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "linen-blend",
+   "theirValue": "Linen Blend",
+   "theirLabel": "Linen Blend",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "memory-foam",
+   "theirValue": "Memory Foam",
+   "theirLabel": "Memory Foam",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "metal",
+   "theirValue": "Metal",
+   "theirLabel": "Metal",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "microfiber",
+   "theirValue": "Microfiber",
+   "theirLabel": "Microfiber",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "nylon-blend",
+   "theirValue": "Nylon Blend",
+   "theirLabel": "Nylon Blend",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "paper",
+   "theirValue": "Paper",
+   "theirLabel": "Paper",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "polycarbonate",
+   "theirValue": "Polycarbonate",
+   "theirLabel": "Polycarbonate",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "polyester-blend",
+   "theirValue": "Polyester Blend",
+   "theirLabel": "Polyester Blend",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "polypropylene",
+   "theirValue": "Polypropylene",
+   "theirLabel": "Polypropylene",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "raw-silk",
+   "theirValue": "Raw Silk",
+   "theirLabel": "Raw Silk",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "resin",
+   "theirValue": "Resin",
+   "theirLabel": "Resin",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "silicone",
+   "theirValue": "Silicone",
+   "theirLabel": "Silicone",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "spandex",
+   "theirValue": "Spandex",
+   "theirLabel": "Spandex",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "stone",
+   "theirValue": "Stone",
+   "theirLabel": "Stone",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "wood",
+   "theirValue": "Wood",
+   "theirLabel": "Wood",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "material",
+   "valueKey": "wool-blend",
+   "theirValue": "Wool Blend",
+   "theirLabel": "Wool Blend",
+   "how": "exact",
+   "attribute": "material"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "argyle",
+   "theirValue": "Argyle",
+   "theirLabel": "Argyle",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "camouflage",
+   "theirValue": "Camouflage",
+   "theirLabel": "Camouflage",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "cartoon",
+   "theirValue": "Cartoon",
+   "theirLabel": "Cartoon",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "checked",
+   "theirValue": "Plaid",
+   "theirLabel": "Plaid",
+   "how": "synonym",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "checkered",
+   "theirValue": "Checkered",
+   "theirLabel": "Checkered",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "chevron",
+   "theirValue": "Chevron",
+   "theirLabel": "Chevron",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "floral",
+   "theirValue": "Floral",
+   "theirLabel": "Floral",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "geometric",
+   "theirValue": "Geometric",
+   "theirLabel": "Geometric",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "herringbone",
+   "theirValue": "Herringbone",
+   "theirLabel": "Herringbone",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "houndstooth",
+   "theirValue": "Houndstooth",
+   "theirLabel": "Houndstooth",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "paisley",
+   "theirValue": "Paisley",
+   "theirLabel": "Paisley",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "solid",
+   "theirValue": "Solid",
+   "theirLabel": "Solid",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "striped",
+   "theirValue": "Striped",
+   "theirLabel": "Striped",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "animal-print",
+   "theirValue": "Animal Print",
+   "theirLabel": "Animal Print",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "braided",
+   "theirValue": "Braided",
+   "theirLabel": "Braided",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "checks",
+   "theirValue": "Plaid",
+   "theirLabel": "Plaid",
+   "how": "synonym",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "graphic",
+   "theirValue": "Graphic",
+   "theirLabel": "Graphic",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "patchwork",
+   "theirValue": "Patchwork",
+   "theirLabel": "Patchwork",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "plaid",
+   "theirValue": "Plaid",
+   "theirLabel": "Plaid",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "plain",
+   "theirValue": "Solid",
+   "theirLabel": "Solid",
+   "how": "synonym",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "polka-dots",
+   "theirValue": "Polka Dots",
+   "theirLabel": "Polka Dots",
+   "how": "exact",
+   "attribute": "pattern"
+  },
+  {
+   "list": "pattern",
+   "valueKey": "stripes",
+   "theirValue": "Striped",
+   "theirLabel": "Striped",
+   "how": "synonym",
+   "attribute": "pattern"
+  },
+  {
+   "list": "closure",
+   "valueKey": "buckle",
+   "theirValue": "Buckle",
+   "theirLabel": "Buckle",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "button",
+   "theirValue": "Button",
+   "theirLabel": "Button",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "drawstring",
+   "theirValue": "Drawstring",
+   "theirLabel": "Drawstring",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "push-lock",
+   "theirValue": "Push Lock",
+   "theirLabel": "Push Lock",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "velcro",
+   "theirValue": "Hook and Loop",
+   "theirLabel": "Hook and Loop",
+   "how": "synonym",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "zip",
+   "theirValue": "Zipper",
+   "theirLabel": "Zipper",
+   "how": "synonym",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "flap",
+   "theirValue": "Flap",
+   "theirLabel": "Flap",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "magnetic-button",
+   "theirValue": "Magnetic",
+   "theirLabel": "Magnetic",
+   "how": "synonym",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "magnetic-snap",
+   "theirValue": "Magnetic",
+   "theirLabel": "Magnetic",
+   "how": "synonym",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "press-button",
+   "theirValue": "Snap",
+   "theirLabel": "Snap",
+   "how": "synonym",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "push-button",
+   "theirValue": "Snap",
+   "theirLabel": "Snap",
+   "how": "synonym",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "toggle",
+   "theirValue": "Toggle",
+   "theirLabel": "Toggle",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "turn-lock",
+   "theirValue": "Turn Lock",
+   "theirLabel": "Turn Lock",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "closure",
+   "valueKey": "zipper",
+   "theirValue": "Zipper",
+   "theirLabel": "Zipper",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "audience",
+   "valueKey": "boys",
+   "theirValue": "male",
+   "theirLabel": "Male",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "girls",
+   "theirValue": "female",
+   "theirLabel": "Female",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "men",
+   "theirValue": "male",
+   "theirLabel": "Male",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "unisex",
+   "theirValue": "unisex",
+   "theirLabel": "Unisex",
+   "how": "exact",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "women",
+   "theirValue": "female",
+   "theirLabel": "Female",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "baby-boys",
+   "theirValue": "male",
+   "theirLabel": "Male",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "baby-boys-baby-girls",
+   "theirValue": "unisex",
+   "theirLabel": "Unisex",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "baby-girls",
+   "theirValue": "female",
+   "theirLabel": "Female",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "boys-girls",
+   "theirValue": "unisex",
+   "theirLabel": "Unisex",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "kids",
+   "theirValue": "unisex",
+   "theirLabel": "Unisex",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "kids-boys",
+   "theirValue": "male",
+   "theirLabel": "Male",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "kids-girls",
+   "theirValue": "female",
+   "theirLabel": "Female",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "audience",
+   "valueKey": "men-women",
+   "theirValue": "unisex",
+   "theirLabel": "Unisex",
+   "how": "synonym",
+   "attribute": "target_gender"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "anniversary",
+   "theirValue": "Anniversary",
+   "theirLabel": "Anniversary",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "birthday",
+   "theirValue": "Birthday",
+   "theirLabel": "Birthday",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "christmas",
+   "theirValue": "Christmas",
+   "theirLabel": "Christmas",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "diwali",
+   "theirValue": "Diwali",
+   "theirLabel": "Diwali",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "father-s-day",
+   "theirValue": "Father's Day",
+   "theirLabel": "Father's Day",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "independence-day",
+   "theirValue": "Independence Day",
+   "theirLabel": "Independence Day",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "mother-s-day",
+   "theirValue": "Mother's Day",
+   "theirLabel": "Mother's Day",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "rakhi",
+   "theirValue": "Rakhi",
+   "theirLabel": "Rakhi",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "valentine-s-day",
+   "theirValue": "Valentine's Day",
+   "theirLabel": "Valentine's Day",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "wedding",
+   "theirValue": "Wedding",
+   "theirLabel": "Wedding",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "occasion",
+   "valueKey": "women-s-day",
+   "theirValue": "Women's Day",
+   "theirLabel": "Women's Day",
+   "how": "exact",
+   "attribute": "occasion_type"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "aloe-vera",
+   "theirValue": "Aloe Vera",
+   "theirLabel": "Aloe Vera",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "aquatic",
+   "theirValue": "Aquatic",
+   "theirLabel": "Aquatic",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "bamboo",
+   "theirValue": "Bamboo",
+   "theirLabel": "Bamboo",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "citrus",
+   "theirValue": "Citrus",
+   "theirLabel": "Citrus",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "coconut",
+   "theirValue": "Coconut",
+   "theirLabel": "Coconut",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "coffee",
+   "theirValue": "Coffee",
+   "theirLabel": "Coffee",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "eucalyptus",
+   "theirValue": "Eucalyptus",
+   "theirLabel": "Eucalyptus",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "floral",
+   "theirValue": "Floral",
+   "theirLabel": "Floral",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "fruity",
+   "theirValue": "Fruity",
+   "theirLabel": "Fruity",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "honey",
+   "theirValue": "Honey",
+   "theirLabel": "Honey",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "lavender",
+   "theirValue": "Lavender",
+   "theirLabel": "Lavender",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "lemon",
+   "theirValue": "Lemon",
+   "theirLabel": "Lemon",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "mint",
+   "theirValue": "Mint",
+   "theirLabel": "Mint",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "musk",
+   "theirValue": "Musk",
+   "theirLabel": "Musk",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "peach",
+   "theirValue": "Peach",
+   "theirLabel": "Peach",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "pineapple",
+   "theirValue": "Pineapple",
+   "theirLabel": "Pineapple",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "pistachio",
+   "theirValue": "Pistachio",
+   "theirLabel": "Pistachio",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "rose",
+   "theirValue": "Rose",
+   "theirLabel": "Rose",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "sandalwood",
+   "theirValue": "Sandalwood",
+   "theirLabel": "Sandalwood",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "spicy",
+   "theirValue": "Spicy",
+   "theirLabel": "Spicy",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "vanilla",
+   "theirValue": "Vanilla",
+   "theirLabel": "Vanilla",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "scentFamily",
+   "valueKey": "wood",
+   "theirValue": "Wood",
+   "theirLabel": "Wood",
+   "how": "exact",
+   "attribute": "scent"
+  },
+  {
+   "list": "sleeveLength",
+   "valueKey": "sleeveless",
+   "theirValue": "sleeveless",
+   "theirLabel": "Sleeveless",
+   "how": "exact",
+   "attribute": "sleeve.length_description"
+  },
+  {
+   "list": "sleeveLength",
+   "valueKey": "full-sleeves",
+   "theirValue": "long_sleeve",
+   "theirLabel": "Long Sleeve",
+   "how": "synonym",
+   "attribute": "sleeve.length_description"
+  },
+  {
+   "list": "sleeveLength",
+   "valueKey": "half-sleeves",
+   "theirValue": "half_sleeve",
+   "theirLabel": "Half Sleeve",
+   "how": "synonym",
+   "attribute": "sleeve.length_description"
+  },
+  {
+   "list": "sleeveLength",
+   "valueKey": "roll-up-sleeves",
+   "theirValue": "long_sleeve",
+   "theirLabel": "Long Sleeve",
+   "how": "synonym",
+   "attribute": "sleeve.length_description"
+  },
+  {
+   "list": "sleeveLength",
+   "valueKey": "three-quarter-sleeves",
+   "theirValue": "3_4_sleeve",
+   "theirLabel": "3/4 Sleeve",
+   "how": "synonym",
+   "attribute": "sleeve.length_description"
+  },
+  {
+   "list": "care",
+   "valueKey": "dry-clean-only",
+   "theirValue": "Dry Clean Only",
+   "theirLabel": "Dry Clean Only",
+   "how": "exact",
+   "attribute": "care_instructions"
+  },
+  {
+   "list": "care",
+   "valueKey": "gentle-machine-wash",
+   "theirValue": "Machine Wash",
+   "theirLabel": "Machine Wash",
+   "how": "synonym",
+   "attribute": "care_instructions"
+  },
+  {
+   "list": "care",
+   "valueKey": "hand-wash",
+   "theirValue": "Hand Wash Only",
+   "theirLabel": "Hand Wash Only",
+   "how": "synonym",
+   "attribute": "care_instructions"
+  },
+  {
+   "list": "care",
+   "valueKey": "hand-wash-with-small-amount-of-mild-detergent",
+   "theirValue": "Hand Wash Only",
+   "theirLabel": "Hand Wash Only",
+   "how": "synonym",
+   "attribute": "care_instructions"
+  },
+  {
+   "list": "care",
+   "valueKey": "machine-wash-as-per-tag",
+   "theirValue": "Machine Wash",
+   "theirLabel": "Machine Wash",
+   "how": "synonym",
+   "attribute": "care_instructions"
+  },
+  {
+   "list": "care",
+   "valueKey": "regular-machine-wash",
+   "theirValue": "Machine Wash",
+   "theirLabel": "Machine Wash",
+   "how": "synonym",
+   "attribute": "care_instructions"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "alloy",
+   "theirValue": "Alloy",
+   "theirLabel": "Alloy",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "brass",
+   "theirValue": "Brass",
+   "theirLabel": "Brass",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "bronze",
+   "theirValue": "Bronze",
+   "theirLabel": "Bronze",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "copper",
+   "theirValue": "Copper",
+   "theirLabel": "Copper",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "stainless-steel",
+   "theirValue": "Stainless Steel",
+   "theirLabel": "Stainless Steel",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "sterling-silver",
+   "theirValue": "Sterling Silver",
+   "theirLabel": "Sterling Silver",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "aluminum",
+   "theirValue": "Aluminum",
+   "theirLabel": "Aluminum",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "cobalt",
+   "theirValue": "Cobalt",
+   "theirLabel": "Cobalt",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "nickel",
+   "theirValue": "Nickel",
+   "theirLabel": "Nickel",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "tungsten",
+   "theirValue": "Tungsten",
+   "theirLabel": "Tungsten",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "baseMaterial",
+   "valueKey": "zinc",
+   "theirValue": "Zinc",
+   "theirLabel": "Zinc",
+   "how": "exact",
+   "attribute": "metal_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "agate",
+   "theirValue": "Agate",
+   "theirLabel": "Agate",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "alexandrite",
+   "theirValue": "Alexandrite",
+   "theirLabel": "Alexandrite",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "amber",
+   "theirValue": "Amber",
+   "theirLabel": "Amber",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "amethyst",
+   "theirValue": "Amethyst",
+   "theirLabel": "Amethyst",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "aquamarine",
+   "theirValue": "Aquamarine",
+   "theirLabel": "Aquamarine",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "beryl",
+   "theirValue": "Beryl",
+   "theirLabel": "Beryl",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "carnelian",
+   "theirValue": "Carnelian",
+   "theirLabel": "Carnelian",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "cat-s-eye",
+   "theirValue": "Cat's Eye",
+   "theirLabel": "Cat's Eye",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "chalcedony",
+   "theirValue": "Chalcedony",
+   "theirLabel": "Chalcedony",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "citrine",
+   "theirValue": "Citrine",
+   "theirLabel": "Citrine",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "coral",
+   "theirValue": "Coral",
+   "theirLabel": "Coral",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "crystal",
+   "theirValue": "Crystal",
+   "theirLabel": "Crystal",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "cubic-zirconia",
+   "theirValue": "Cubic Zirconia",
+   "theirLabel": "Cubic Zirconia",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "diamond",
+   "theirValue": "Diamond",
+   "theirLabel": "Diamond",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "emerald",
+   "theirValue": "Emerald",
+   "theirLabel": "Emerald",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "garnet",
+   "theirValue": "Garnet",
+   "theirLabel": "Garnet",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "jade",
+   "theirValue": "Jade",
+   "theirLabel": "Jade",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "lapis-lazuli",
+   "theirValue": "Lapis Lazuli",
+   "theirLabel": "Lapis Lazuli",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "malachite",
+   "theirValue": "Malachite",
+   "theirLabel": "Malachite",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "moissanite",
+   "theirValue": "Moissanite",
+   "theirLabel": "Moissanite",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "moonstone",
+   "theirValue": "Moonstone",
+   "theirLabel": "Moonstone",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "onyx",
+   "theirValue": "Onyx",
+   "theirLabel": "Onyx",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "opal",
+   "theirValue": "Opal",
+   "theirLabel": "Opal",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "pearl",
+   "theirValue": "Pearl",
+   "theirLabel": "Pearl",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "peridot",
+   "theirValue": "Peridot",
+   "theirLabel": "Peridot",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "quartz",
+   "theirValue": "Quartz",
+   "theirLabel": "Quartz",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "ruby",
+   "theirValue": "Ruby",
+   "theirLabel": "Ruby",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "sapphire",
+   "theirValue": "Sapphire",
+   "theirLabel": "Sapphire",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "spinel",
+   "theirValue": "Spinel",
+   "theirLabel": "Spinel",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "tanzanite",
+   "theirValue": "Tanzanite",
+   "theirLabel": "Tanzanite",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "topaz",
+   "theirValue": "Topaz",
+   "theirLabel": "Topaz",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "tourmaline",
+   "theirValue": "Tourmaline",
+   "theirLabel": "Tourmaline",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "tsavorite",
+   "theirValue": "Tsavorite",
+   "theirLabel": "Tsavorite",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "turquoise",
+   "theirValue": "Turquoise",
+   "theirLabel": "Turquoise",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "gemstone",
+   "valueKey": "zircon",
+   "theirValue": "Zircon",
+   "theirLabel": "Zircon",
+   "how": "exact",
+   "attribute": "gem_type"
+  },
+  {
+   "list": "shape",
+   "valueKey": "oval",
+   "theirValue": "Oval",
+   "theirLabel": "Oval",
+   "how": "exact",
+   "attribute": "item_shape"
+  },
+  {
+   "list": "shape",
+   "valueKey": "rectangular",
+   "theirValue": "Rectangular",
+   "theirLabel": "Rectangular",
+   "how": "exact",
+   "attribute": "item_shape"
+  },
+  {
+   "list": "shape",
+   "valueKey": "square",
+   "theirValue": "Square",
+   "theirLabel": "Square",
+   "how": "exact",
+   "attribute": "item_shape"
+  },
+  {
+   "list": "fit",
+   "valueKey": "loose-fit",
+   "theirValue": "Loose",
+   "theirLabel": "Loose",
+   "how": "synonym",
+   "attribute": "fit_type"
+  },
+  {
+   "list": "fit",
+   "valueKey": "regular-fit",
+   "theirValue": "Regular",
+   "theirLabel": "Regular",
+   "how": "synonym",
+   "attribute": "fit_type"
+  },
+  {
+   "list": "fit",
+   "valueKey": "relaxed",
+   "theirValue": "Relaxed",
+   "theirLabel": "Relaxed",
+   "how": "exact",
+   "attribute": "fit_type"
+  },
+  {
+   "list": "fit",
+   "valueKey": "slim-fit",
+   "theirValue": "Slim",
+   "theirLabel": "Slim",
+   "how": "synonym",
+   "attribute": "fit_type"
+  },
+  {
+   "list": "fit",
+   "valueKey": "straight-fit",
+   "theirValue": "Straight",
+   "theirLabel": "Straight",
+   "how": "synonym",
+   "attribute": "fit_type"
+  },
+  {
+   "list": "waistClosure",
+   "valueKey": "button",
+   "theirValue": "Button",
+   "theirLabel": "Button",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "waistClosure",
+   "valueKey": "drawstring",
+   "theirValue": "Drawstring",
+   "theirLabel": "Drawstring",
+   "how": "exact",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "waistClosure",
+   "valueKey": "zip",
+   "theirValue": "Zipper",
+   "theirLabel": "Zipper",
+   "how": "synonym",
+   "attribute": "closure.type"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "bow",
+   "theirValue": "Bow",
+   "theirLabel": "Bow",
+   "how": "exact",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "ruffles",
+   "theirValue": "Ruffle",
+   "theirLabel": "Ruffle",
+   "how": "plural",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "beads",
+   "theirValue": "Bead",
+   "theirLabel": "Bead",
+   "how": "plural",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "fringes",
+   "theirValue": "Fringe",
+   "theirLabel": "Fringe",
+   "how": "plural",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "glitter",
+   "theirValue": "Glitter",
+   "theirLabel": "Glitter",
+   "how": "exact",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "laces",
+   "theirValue": "Lace",
+   "theirLabel": "Lace",
+   "how": "plural",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "mirror-work",
+   "theirValue": "Mirror Work",
+   "theirLabel": "Mirror Work",
+   "how": "exact",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "pearl",
+   "theirValue": "Pearl",
+   "theirLabel": "Pearl",
+   "how": "exact",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "pom-pom",
+   "theirValue": "Pom Pom",
+   "theirLabel": "Pom Pom",
+   "how": "exact",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "sequins",
+   "theirValue": "Sequin",
+   "theirLabel": "Sequin",
+   "how": "plural",
+   "attribute": "embellishment_feature"
+  },
+  {
+   "list": "surfaceStyling",
+   "valueKey": "tassels",
+   "theirValue": "Tassel",
+   "theirLabel": "Tassel",
+   "how": "plural",
+   "attribute": "embellishment_feature"
+  }
+ ],
+ "unmatched": {
+  "colour": {
+   "strict": false,
+   "amazonValues": 20,
+   "ourValues": 186,
+   "unmatched": 167,
+   "sample": [
+    "Copper",
+    "Cream",
+    "Dark Blue",
+    "Dark Brown",
+    "Dark Green",
+    "Dark Grey",
+    "Khaki",
+    "Lavender",
+    "Light Blue",
+    "Light Brown",
+    "Light Green",
+    "Maroon"
+   ]
+  },
+  "material": {
+   "strict": false,
+   "amazonValues": 184,
+   "ourValues": 194,
+   "unmatched": 149,
+   "sample": [
+    "Chambray",
+    "Chiffon",
+    "Cotton Silk",
+    "Crepe",
+    "Dupion Silk",
+    "Genuine Leather",
+    "Georgette",
+    "Jacquard",
+    "Khadi Cotton",
+    "Khadi Silk",
+    "Lace",
+    "Modal"
+   ]
+  },
+  "pattern": {
+   "strict": false,
+   "amazonValues": 66,
+   "ourValues": 139,
+   "unmatched": 117,
+   "sample": [
+    "3D Printed",
+    "Abstract",
+    "All Over Print",
+    "Animal",
+    "Applique",
+    "Damask",
+    "Embellished",
+    "Embroidered",
+    "Mesh",
+    "Motifs",
+    "Ombre",
+    "Polka"
+   ]
+  },
+  "closure": {
+   "strict": false,
+   "amazonValues": 43,
+   "ourValues": 26,
+   "unmatched": 12,
+   "sample": [
+    "Button Loop",
+    "Carabiner",
+    "Catch Tuck",
+    "Combination Lock",
+    "Flap Closure",
+    "Lobster",
+    "Mag Dot",
+    "No Closure",
+    "Press Lock",
+    "Push Pin",
+    "Twist",
+    "Twist Clasp"
+   ]
+  },
+  "strap": {
+   "strict": false,
+   "amazonValues": 36,
+   "ourValues": 2,
+   "unmatched": 2,
+   "sample": [
+    "Detachable Strap",
+    "Non-Detachable Strap"
+   ]
+  },
+  "audience": {
+   "strict": true,
+   "amazonValues": 3,
+   "ourValues": 13,
+   "unmatched": 0,
+   "sample": []
+  },
+  "occasion": {
+   "strict": false,
+   "amazonValues": 44,
+   "ourValues": 48,
+   "unmatched": 37,
+   "sample": [
+    "Casual",
+    "Festive",
+    "Formal",
+    "Party",
+    "Sports",
+    "April Fool'S Day",
+    "Beach Wear",
+    "Bridal",
+    "Children'S Day",
+    "College",
+    "Daughter'S Day",
+    "Ethnic"
+   ]
+  },
+  "scentFamily": {
+   "strict": false,
+   "amazonValues": 38,
+   "ourValues": 123,
+   "unmatched": 101,
+   "sample": [
+    "Almond",
+    "Amla",
+    "Apple Cider Vinegar",
+    "Apricot",
+    "Argan Oil",
+    "Arnica",
+    "Aromatic",
+    "Avacado",
+    "Banana",
+    "Basil",
+    "Beer",
+    "Beetroot"
+   ]
+  },
+  "sleeveLength": {
+   "strict": true,
+   "amazonValues": 6,
+   "ourValues": 5,
+   "unmatched": 0,
+   "sample": []
+  },
+  "care": {
+   "strict": false,
+   "amazonValues": 8,
+   "ourValues": 32,
+   "unmatched": 26,
+   "sample": [
+    "Coated",
+    "Cold water wash only",
+    "Convertible",
+    "Do not bleach",
+    "Do not dry clean",
+    "Do not dry in direct sunlight",
+    "Do not iron",
+    "Do not Iron on print/embroidery/embellishment",
+    "Do not steam iron",
+    "Do not tumble dry",
+    "Do not wring",
+    "Dry flat"
+   ]
+  },
+  "baseMaterial": {
+   "strict": false,
+   "amazonValues": 125,
+   "ourValues": 48,
+   "unmatched": 37,
+   "sample": [
+    "Fabric",
+    "Glass",
+    "Plastic",
+    "Shell",
+    "Silver",
+    "Steel",
+    "Wood",
+    "Acrylic",
+    "Bentex",
+    "Bone",
+    "Brass & Copper",
+    "Ceramic"
+   ]
+  },
+  "purity": {
+   "strict": false,
+   "amazonValues": 32,
+   "ourValues": 5,
+   "unmatched": 5,
+   "sample": [
+    "S 550",
+    "S 700",
+    "S 925",
+    "S 995",
+    "S 999"
+   ]
+  },
+  "gemstone": {
+   "strict": false,
+   "amazonValues": 192,
+   "ourValues": 40,
+   "unmatched": 5,
+   "sample": [
+    "Beads",
+    "Mother of Pearl",
+    "Neeli Lolite",
+    "Swarovski Crystal",
+    "Swarovski Zirconia"
+   ]
+  },
+  "shape": {
+   "strict": false,
+   "amazonValues": 32,
+   "ourValues": 9,
+   "unmatched": 6,
+   "sample": [
+    "Abstract",
+    "Circle",
+    "Curved",
+    "Hexagon",
+    "Pentagon",
+    "Right Angle"
+   ]
+  },
+  "fit": {
+   "strict": false,
+   "amazonValues": 13,
+   "ourValues": 23,
+   "unmatched": 18,
+   "sample": [
+    "Athletic Fit",
+    "Bell Bottoms",
+    "Cargo",
+    "Chino",
+    "Cigarette",
+    "Comfort Fit",
+    "Culottes",
+    "Drop-Crotch",
+    "Flared",
+    "Flat-Front",
+    "Harem Pants",
+    "Jogger Pants"
+   ]
+  },
+  "waistClosure": {
+   "strict": false,
+   "amazonValues": 43,
+   "ourValues": 4,
+   "unmatched": 1,
+   "sample": [
+    "Elastic Waistband"
+   ]
+  },
+  "surfaceStyling": {
+   "strict": false,
+   "amazonValues": 21,
+   "ourValues": 46,
+   "unmatched": 35,
+   "sample": [
+    "Applique",
+    "Layered",
+    "Buttons",
+    "Carabiner",
+    "Cut-Outs",
+    "Cutwork",
+    "Distressed",
+    "Embellishments",
+    "Embroidery",
+    "Gota Patti",
+    "Knots & Tie-ups",
+    "Lace Panel"
+   ]
+  }
+ }
+}

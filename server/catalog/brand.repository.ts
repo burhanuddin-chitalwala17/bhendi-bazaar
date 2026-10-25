@@ -43,6 +43,28 @@ export class BrandRepository {
     ]);
   }
 
+  /** The brand a marketplace's brand name names, by name, ignoring case; retired ones never (marketplace-facts Q29). */
+  async findForMarketplace(orgId: string, name: string | null) {
+    return await prisma.brand.findFirst({
+      where: { orgId, retiredAt: null, ...(name ? { name: { equals: name, mode: "insensitive" } } : { isDefault: true }) },
+      select: { id: true },
+    });
+  }
+
+  /** Each field only where it is still empty, so what the shop wrote meanwhile wins (marketplace-facts D7). */
+  async fillEmpty(orgId: string, id: string, fields: Partial<Pick<BrandData, "manufacturer" | "packerOrImporter" | "countryOfOrigin">>) {
+    const filled: string[] = [];
+    for (const [field, value] of Object.entries(fields)) {
+      if (!value) continue;
+      const result = await prisma.brand.updateMany({
+        where: { id, orgId, retiredAt: null, OR: [{ [field]: null }, { [field]: "" }] },
+        data: { [field]: value },
+      });
+      if (result.count === 1) filled.push(field);
+    }
+    return filled;
+  }
+
   async retire(orgId: string, id: string, now: Date = new Date()) {
     const result = await prisma.brand.updateMany({
       where: { id, orgId, retiredAt: null },

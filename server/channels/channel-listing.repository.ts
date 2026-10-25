@@ -3,7 +3,8 @@ import { prisma } from "@server/shared/prisma";
 
 import { uniqueViolationFields } from "@server/shared/constraint";
 
-import { LINK_SOURCE, type MarketplaceChannel } from "./channel-connection.types";
+import { LINK_SOURCE, type LeftOffReason, type MarketplaceChannel } from "./channel-connection.types";
+import type { ListingAttributes } from "./providers/listing-read";
 
 /**
  * The one way to reach `ChannelListing` (Invariant 5). A read-only mirror of what a marketplace
@@ -44,6 +45,7 @@ const ROW = {
   linkSource: true,
   unlinkedAt: true,
   leftOffAt: true,
+  leftOffReason: true,
   goneAt: true,
   photoTotal: true,
   photoDone: true,
@@ -128,11 +130,14 @@ export const channelListingRepository = {
     return linked;
   },
 
-  /** The owner leaves an unsettled listing off Bhendi Bazaar (product-merge Q9). */
-  async leaveOff(id: string, orgId: string, userId: string, now: Date): Promise<boolean> {
+  /**
+   * The owner leaves an unsettled listing off Bhendi Bazaar (product-merge Q9), with why when it is
+   * "we have no type for this" (marketplace-facts Q6).
+   */
+  async leaveOff(id: string, orgId: string, userId: string, now: Date, reason: LeftOffReason | null = null): Promise<boolean> {
     const result = await prisma.channelListing.updateMany({
       where: { id, orgId, productId: null, leftOffAt: null },
-      data: { leftOffAt: now, leftOffById: userId },
+      data: { leftOffAt: now, leftOffById: userId, leftOffReason: reason },
     });
     return result.count === 1;
   },
@@ -141,7 +146,7 @@ export const channelListingRepository = {
   async bringBack(id: string, orgId: string): Promise<boolean> {
     const result = await prisma.channelListing.updateMany({
       where: { id, orgId, leftOffAt: { not: null } },
-      data: { leftOffAt: null, leftOffById: null },
+      data: { leftOffAt: null, leftOffById: null, leftOffReason: null },
     });
     return result.count === 1;
   },
@@ -322,6 +327,59 @@ export const channelListingRepository = {
     return await prisma.channelListing.findMany({
       where: { orgId, connectionId: { not: connectionId }, productId: null, leftOffAt: null, goneAt: null },
       select: { id: true, connectionId: true, channel: true, sku: true, skuKey: true, title: true, externalId: true, pricePaise: true, quantity: true, status: true },
+    });
+  },
+
+  /** What a marketplace said about one listing, stored as read (marketplace-facts D6). */
+  async saveAttributes(id: string, read: ListingAttributes, now: Date): Promise<void> {
+    await prisma.channelListing.update({
+      where: { id },
+      data: { attributes: read as unknown as Prisma.InputJsonValue, attributesReadAt: now },
+      select: { id: true },
+    });
+  },
+
+  /** The marketplace's own type for each parked listing, from its stored read, without the rest of it (Q13). */
+  async marketplaceTypes(ids: readonly string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map();
+    const rows = await prisma.$queryRaw<Array<{ id: string; type: string | null }>>`
+      SELECT id, attributes->>'type' AS type FROM "ChannelListing" WHERE id IN (${Prisma.join([...ids])})`;
+    return new Map(rows.filter((r) => r.type).map((r) => [r.id, r.type as string]));
+  },
+
+  /** "Skip for now" on one fact, or asking it again (marketplace-facts D6). */
+  async setSkip(id: string, orgId: string, fact: string, skipped: boolean): Promise<boolean> {
+    // One statement each, so two quick skips on different facts both stay.
+    const count = skipped
+      ? await prisma.$executeRaw`
+          UPDATE "ChannelListing" SET "attributeSkips" = array_append(array_remove("attributeSkips", ${fact}), ${fact})
+          WHERE id = ${id} AND "orgId" = ${orgId}`
+      : await prisma.$executeRaw`
+          UPDATE "ChannelListing" SET "attributeSkips" = array_remove("attributeSkips", ${fact})
+          WHERE id = ${id} AND "orgId" = ${orgId}`;
+    return count === 1;
+  },
+
+  /** A linked listing as filling and its card need it: where to read it, and what was read. */
+  async forFacts(orgId: string, where: { id: string } | { productId: string }) {
+    return await prisma.channelListing.findMany({
+      where: { orgId, ...where, productId: "productId" in where ? where.productId : { not: null } },
+      select: {
+        id: true,
+        orgId: true,
+        channel: true,
+        connectionId: true,
+        sku: true,
+        title: true,
+        externalId: true,
+        productId: true,
+        attributes: true,
+        attributesReadAt: true,
+        attributeSkips: true,
+        goneAt: true,
+        connection: { select: { externalAccountId: true, state: true } },
+      },
+      orderBy: { linkedAt: "desc" },
     });
   },
 

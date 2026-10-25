@@ -6,6 +6,8 @@ import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { productService } from "@server/catalog/product.service";
 
 import {
+  LEFT_OFF_REASON,
+  type LeftOffReason,
   CONNECTION_ERROR,
   CONNECTION_STATE,
   READ_ERROR,
@@ -44,7 +46,7 @@ class ReadRefused extends Error {
   }
 }
 
-const toDto = (row: ListingRow, suggestion: ListingSuggestionDTO | null = null): ChannelListingDTO => ({
+const toDto = (row: ListingRow, suggestion: ListingSuggestionDTO | null = null, marketplaceType: string | null = null): ChannelListingDTO => ({
   id: row.id,
   sku: row.sku,
   externalId: row.externalId,
@@ -62,6 +64,10 @@ const toDto = (row: ListingRow, suggestion: ListingSuggestionDTO | null = null):
   linkSource: row.linkSource as LinkSource | null,
   unlinkedByOwner: row.unlinkedAt !== null,
   leftOff: row.leftOffAt !== null,
+  waitingForType:
+    row.leftOffAt !== null && row.leftOffReason === LEFT_OFF_REASON.NO_TYPE
+      ? { marketplaceType: marketplaceType ?? "" }
+      : null,
   gone: row.goneAt !== null,
   suggestion,
   photos:
@@ -209,6 +215,8 @@ export const channelImportService = {
       channelListingRepository.page(row.id, filter, search?.trim() || null, Math.min(Math.max(1, pages), 40)),
     ]);
     const suggestions = filter === "notLinked" ? await suggestionsFor(orgId, row.id, listing.rows) : new Map<string, ListingSuggestionDTO>();
+    const parked = listing.rows.filter((r) => r.leftOffReason === LEFT_OFF_REASON.NO_TYPE).map((r) => r.id);
+    const types = await channelListingRepository.marketplaceTypes(parked);
     const read: ChannelReadDTO = {
       state: (row.readState as ReadState | null) ?? null,
       total: row.readTotal,
@@ -225,14 +233,14 @@ export const channelImportService = {
       read,
       counts,
       showingLeftOff: filter === "leftOff",
-      listings: listing.rows.map((r) => toDto(r, suggestions.get(r.id) ?? null)),
+      listings: listing.rows.map((r) => toDto(r, suggestions.get(r.id) ?? null, types.get(r.id) ?? null)),
       hasMore: listing.hasMore,
     };
   },
 
   /** The owner leaves an unsettled listing off Bhendi Bazaar (product-merge Q9). */
-  async leaveOff(orgId: string, userId: string, id: string): Promise<void> {
-    if (!(await channelListingRepository.leaveOff(id, orgId, userId, new Date()))) throw new NotFoundError("Unsettled listing");
+  async leaveOff(orgId: string, userId: string, id: string, reason: LeftOffReason | null = null): Promise<void> {
+    if (!(await channelListingRepository.leaveOff(id, orgId, userId, new Date(), reason))) throw new NotFoundError("Unsettled listing");
   },
 
   /** Back to the to-do (Q9). */

@@ -18,6 +18,8 @@ export type Answerable = string | number | boolean;
 export interface FilledAnswer {
   value: Answerable;
   origin: Origin;
+  /** What a marketplace said, when it supplied or once supplied this answer (marketplace-facts Q31). */
+  source?: { channel: string; value: string; readAt: string; chosen?: boolean };
 }
 
 export interface Level<K extends string> {
@@ -99,6 +101,26 @@ export function takeOwnership<K extends string>(
   for (const key of edited) {
     const current = next[key];
     if (current) next[key] = { value: current.value, origin: ORIGIN.PRODUCT };
+  }
+  return next;
+}
+
+/**
+ * After a save, a marketplace's answer keeps its mark where the shop left it unchanged, and its
+ * words stay beside an answer the shop changed (marketplace-facts Q31). The form sends every answer
+ * back, so without this the first save would turn every marketplace answer into the product's own.
+ */
+export function keepMarketplace<K extends string>(filled: Filled<K>, stored: Partial<Record<K, FilledAnswer>> | null | undefined): Filled<K> {
+  if (!stored) return filled;
+  const next: Filled<K> = { ...filled };
+  for (const key of Object.keys(stored) as K[]) {
+    const before = stored[key];
+    const now = next[key];
+    if (!before?.source || !now) continue;
+    next[key] =
+      before.origin === ORIGIN.MARKETPLACE && now.origin === ORIGIN.PRODUCT && now.value === before.value
+        ? before
+        : { ...now, source: before.source };
   }
   return next;
 }

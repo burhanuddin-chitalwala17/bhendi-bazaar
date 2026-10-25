@@ -4,10 +4,13 @@
  */
 
 import { prisma } from "@server/shared/prisma";
-import type {
-    ProductFilters,
-    ProductFormInput,
-    ProductPersistInput,
+import {
+    DEFAULT_WEIGHT_KG,
+    type MarketplaceFill,
+    type MarketplaceFilled,
+    type ProductFilters,
+    type ProductFormInput,
+    type ProductPersistInput,
 } from "@server/catalog/admin.product.types";
 import { ProductFlag } from "@server/catalog/product.flags";
 import { Prisma } from "@prisma/client";
@@ -136,6 +139,15 @@ function withStockTotal<P extends { stockLocations: Array<{ quantity: number }> 
     const { stockLocations, ...rest } = product;
     return { ...rest, stock: stockLocations.reduce((sum, row) => sum + row.quantity, 0) };
 }
+
+const asEntries = (value: unknown): Record<string, unknown> =>
+    value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+
+/** An answer nobody gave: absent, or blank. */
+const isEmptyEntry = (entry: unknown) => {
+    const value = (entry as { value?: unknown } | undefined)?.value;
+    return value === undefined || value === null || String(value).trim() === "";
+};
 
 export class AdminProductsRepository {
     /**
@@ -378,6 +390,84 @@ export class AdminProductsRepository {
                 })),
             });
             if (makesCover) await tx.product.update({ where: { id: productId }, data: { thumbnail: rows[0].ref } });
+        });
+    }
+
+    /**
+     * A marketplace listing's answers onto a product (marketplace-facts D7): under the row's lock,
+     * only what is still empty, so an edit made meanwhile wins. Returns what it filled.
+     */
+    async fillFromMarketplace(orgId: string, id: string, fill: MarketplaceFill): Promise<MarketplaceFilled | null> {
+        return await prisma.$transaction(async (tx) => {
+            const [row] = await tx.$queryRaw<Array<{ facts: unknown; measurements: unknown; weight: number | null; mrpPaise: number | null; brandId: string | null }>>`
+                SELECT facts, measurements, weight, "mrpPaise", "brandId" FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
+            if (!row) return null;
+            const facts = { ...asEntries(row.facts) };
+            const measurements = { ...asEntries(row.measurements) };
+            const filled: MarketplaceFilled = { facts: [], measurements: [], weight: false, mrp: false, brand: false };
+            for (const [key, entry] of Object.entries(fill.facts)) {
+                if (isEmptyEntry(facts[key])) (facts[key] = entry), filled.facts.push(key);
+            }
+            for (const [key, entry] of Object.entries(fill.measurements)) {
+                if (isEmptyEntry(measurements[key])) (measurements[key] = entry), filled.measurements.push(key);
+            }
+            // Every product starts at the default weight, so it counts as unset (marketplace-facts Q28).
+            filled.weight = fill.weightKg !== null && (row.weight === null || row.weight === DEFAULT_WEIGHT_KG);
+            filled.mrp = fill.mrpPaise !== null && row.mrpPaise === null;
+            filled.brand = fill.brandId !== null && row.brandId === null;
+            if (!filled.facts.length && !filled.measurements.length && !filled.weight && !filled.mrp && !filled.brand) return filled;
+            await tx.product.update({
+                where: { id },
+                data: {
+                    ...(filled.facts.length ? { facts: facts as Prisma.InputJsonValue } : {}),
+                    ...(filled.measurements.length ? { measurements: measurements as Prisma.InputJsonValue } : {}),
+                    ...(filled.weight ? { weight: fill.weightKg } : {}),
+                    ...(filled.mrp ? { mrpPaise: fill.mrpPaise } : {}),
+                    ...(filled.brand ? { brandId: fill.brandId } : {}),
+                },
+                select: { id: true },
+            });
+            return filled;
+        });
+    }
+
+    /**
+     * One answer set from the marketplace card (marketplace-facts D8): chosen, changed or reset; null
+     * clears it. An answer is refused when the shop answered meanwhile, naming what it answered.
+     */
+    async setMarketplaceAnswer(
+        orgId: string,
+        id: string,
+        column: "facts" | "measurements",
+        key: string,
+        entry: Record<string, unknown> | null,
+        onlyIfEmpty: boolean,
+    ): Promise<{ saved: true } | { saved: false; current: unknown } | null> {
+        return await prisma.$transaction(async (tx) => {
+            const [row] = column === "facts"
+                ? await tx.$queryRaw<Array<{ value: unknown }>>`SELECT facts AS value FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`
+                : await tx.$queryRaw<Array<{ value: unknown }>>`SELECT measurements AS value FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
+            if (!row) return null;
+            const entries = { ...asEntries(row.value) };
+            if (onlyIfEmpty && !isEmptyEntry(entries[key])) return { saved: false, current: (entries[key] as { value?: unknown }).value };
+            if (entry) entries[key] = entry;
+            else delete entries[key];
+            await tx.product.update({ where: { id }, data: { [column]: entries as Prisma.InputJsonValue }, select: { id: true } });
+            return { saved: true };
+        });
+    }
+
+    /** The category a marketplace's type led the shop to choose; the product's type follows it (marketplace-facts Q25, Q27). */
+    async setCategoryFromMarketplace(orgId: string, id: string, categoryId: string, productType: string | null): Promise<boolean> {
+        const result = await prisma.product.updateMany({ where: { id, orgId }, data: { categoryId, productType, kind: null } });
+        return result.count === 1;
+    }
+
+    /** What filling from a marketplace needs of a product, and what its card shows (marketplace-facts D5, D6). */
+    async marketplaceFacts(orgId: string, id: string) {
+        return await prisma.product.findFirst({
+            where: { id, orgId },
+            select: { id: true, categoryId: true, productType: true, kind: true, brandId: true, facts: true, measurements: true, weight: true, mrpPaise: true },
         });
     }
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListingList } from "@/components/channel/listing-list";
+import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { ListingDetailsPanel } from "@/components/channel/listing-details-panel";
 import { ReadAgainButton } from "@/components/channel/read-again-button";
 import { ReadProgressRefresher } from "@/components/channel/read-progress-refresher";
@@ -40,12 +41,12 @@ export default async function ChannelListingsPage({
   const pages = Math.max(1, Number.parseInt(search.more ?? "1", 10) || 1);
 
   const showLeftOff = tab === "notLinked" && search.left === "1";
-  const data = await channelListingsDAL.page(scope.orgId, channel, {
+  const [data, org] = await Promise.all([channelListingsDAL.page(scope.orgId, channel, {
     tab: showLeftOff ? "leftOff" : tab,
     search: q,
     pages,
     listingId: search.listing ?? null,
-  });
+  }), orgsDAL.getOrgSummary(scope.orgId)]);
   if (!data) notFound();
   const { page, detail } = data;
   const { label, read } = page;
@@ -161,6 +162,7 @@ export default async function ChannelListingsPage({
           ) : (
             <ListingList
               orgId={scope.orgId}
+              shopName={org?.name ?? ""}
               channel={page.channel}
               label={label}
               listings={page.listings}

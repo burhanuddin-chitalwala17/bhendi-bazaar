@@ -5,6 +5,7 @@ import { ListingRow } from "./listing-row";
 
 interface ListingListProps {
   orgId: string;
+  shopName: string;
   channel: MarketplaceChannel;
   label: string;
   listings: ChannelListingDTO[];
@@ -29,16 +30,16 @@ function blocks(listings: ChannelListingDTO[]): Block[] {
   return out;
 }
 
-export function ListingList({ orgId, channel, label, listings, hrefFor }: ListingListProps) {
+export function ListingList({ orgId, shopName, channel, label, listings, hrefFor }: ListingListProps) {
   return (
     <ul className="rounded-card border bg-card px-4">
       {blocks(listings).map((block, i) =>
         block.parent === null ? (
-          <ListingRow key={block.row.id} orgId={orgId} channel={channel} label={label} listing={block.row} href={hrefFor(block.row.id)} />
+          <ListingRow key={block.row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={block.row} href={hrefFor(block.row.id)} />
         ) : (
           <ListingGroup key={`group-${block.parent}-${i}`} title={block.title} count={block.rows.length} axis={block.axis} label={label}>
             {block.rows.map((row) => (
-              <ListingRow key={row.id} orgId={orgId} channel={channel} label={label} listing={row} href={hrefFor(row.id)} indented />
+              <ListingRow key={row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={row} href={hrefFor(row.id)} indented />
             ))}
           </ListingGroup>
         ),

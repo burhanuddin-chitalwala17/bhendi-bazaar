@@ -26,6 +26,20 @@ export class OrgListingDefaultsRepository {
       update: { countryOfOrigin: data.countryOfOrigin, taxRateBps: data.taxRateBps, taxCodeByCategory },
     });
   }
+
+  /** One category's tax code, only when it has none, under the row's lock (marketplace-facts Q21, D7). */
+  async fillTaxCode(orgId: string, categoryId: string, taxCode: string): Promise<boolean> {
+    return await prisma.$transaction(async (tx) => {
+      await tx.orgListingDefaults.upsert({ where: { orgId }, create: { orgId }, update: {}, select: { orgId: true } });
+      const [row] = await tx.$queryRaw<Array<{ codes: unknown }>>`
+        SELECT "taxCodeByCategory" AS codes FROM "OrgListingDefaults" WHERE "orgId" = ${orgId} FOR UPDATE`;
+      const codes = row?.codes && typeof row.codes === "object" && !Array.isArray(row.codes) ? (row.codes as Record<string, unknown>) : {};
+      const have = codes[categoryId];
+      if (typeof have === "string" && have.trim() !== "") return false;
+      await tx.orgListingDefaults.update({ where: { orgId }, data: { taxCodeByCategory: { ...codes, [categoryId]: taxCode } as Prisma.InputJsonValue } });
+      return true;
+    });
+  }
 }
 
 export const orgListingDefaultsRepository = new OrgListingDefaultsRepository();

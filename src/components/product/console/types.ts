@@ -76,8 +76,8 @@ export interface ProductDetails {
   productType?: string | null;
   kind?: string | null;
   familyId?: string | null;
-  facts?: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean }>;
-  measurements?: Record<string, { value: number; origin: string }>;
+  facts?: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean; source?: { channel: string; value: string; readAt: string; chosen?: boolean } }>;
+  measurements?: Record<string, { value: number; origin: string; source?: { channel: string; value: string; readAt: string; chosen?: boolean } }>;
   /** Per-location breakdown (stock-locations R9/A7); `stock` stays the total. */
   stockLocations: Array<{
     orgAddressId: string;

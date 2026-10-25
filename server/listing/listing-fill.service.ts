@@ -1,6 +1,6 @@
 import { brandRepository } from "@server/catalog/brand.repository";
 import { categoryRepository } from "@server/catalog/category.read.repository";
-import { fillFacts, levelsOf, type Answers, type Filled } from "./fill-facts";
+import { fillFacts, keepMarketplace, levelsOf, type Answers, type Filled, type FilledAnswer } from "./fill-facts";
 import { FACT_DECLARATIONS, type FactKey, type MeasureKey } from "./listing-facts";
 import { orgListingDefaultsRepository } from "./org-listing-defaults.repository";
 import { productFamilyRepository } from "./product-family.repository";
@@ -29,6 +29,8 @@ export interface ListingFillInput {
   /** What the shop answered on the product itself. Anything blank is filled from the levels. */
   facts?: Answers<FactKey>;
   measurements?: Answers<MeasureKey>;
+  /** What the product stored before this save, so a marketplace's answers keep their mark (Q31). */
+  stored?: { facts?: Partial<Record<string, FilledAnswer>> | null; measurements?: Partial<Record<string, FilledAnswer>> | null };
 }
 
 export interface ListingFillResult {
@@ -136,11 +138,12 @@ export async function fillListing(input: ListingFillInput): Promise<ListingFillR
     type.measures.map((m) => m.key),
   );
 
+  const keptFacts = keepMarketplace<FactKey>(facts, input.stored?.facts as Partial<Record<FactKey, FilledAnswer>> | undefined);
   return {
     productType,
-    facts,
-    measurements,
-    unanswered: type.facts.filter((fact) => facts[fact] === undefined),
+    facts: keptFacts,
+    measurements: keepMarketplace<MeasureKey>(measurements, input.stored?.measurements as Partial<Record<MeasureKey, FilledAnswer>> | undefined),
+    unanswered: type.facts.filter((fact) => keptFacts[fact] === undefined),
   };
 }
 

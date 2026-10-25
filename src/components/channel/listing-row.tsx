@@ -14,9 +14,13 @@ import { ListingImage } from "./listing-image";
 import { ListingLinkAction } from "./listing-link-action";
 import { ID_NAME, ROW, STATUS_TEXT, priceAndStock } from "./listing-copy";
 import { LISTINGS_SETTLE } from "./settle-copy";
+import { AskAdminPicker } from "./ask-admin-picker";
+import { ASK_ADMIN } from "./facts-copy";
 
 interface ListingRowProps {
   orgId: string;
+  /** For the message a parked listing asks the admin with (marketplace-facts Q13). */
+  shopName: string;
   channel: MarketplaceChannel;
   label: string;
   listing: ChannelListingDTO;
@@ -29,7 +33,7 @@ interface ListingRowProps {
  * One marketplace listing (ux.md "State matrix — Listing row"). Rendered on the server; a tap opens
  * the details panel through the URL, and the one action is a client leaf.
  */
-export function ListingRow({ orgId, channel, label, listing, href, indented }: ListingRowProps) {
+export function ListingRow({ orgId, shopName, channel, label, listing, href, indented }: ListingRowProps) {
   const money = priceAndStock(listing.pricePaise, listing.quantity);
   const status = listing.status ? STATUS_TEXT[listing.status] : null;
 
@@ -65,6 +69,11 @@ export function ListingRow({ orgId, channel, label, listing, href, indented }: L
       {!listing.gone && !listing.product && listing.unlinkedByOwner && !listing.leftOff && (
         <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="linkBack" />
       )}
+      {listing.waitingForType && (
+        <AskAdminPicker
+          message={ASK_ADMIN.message(shopName, label, listing.title ?? listing.sku, listing.sku, listing.waitingForType.marketplaceType)}
+        />
+      )}
       {listing.leftOff && <ListingLinkAction orgId={orgId} channel={channel} listingId={listing.id} kind="bringBack" />}
     </li>
   );
@@ -84,6 +93,7 @@ function LinkLine({ listing, label }: { listing: ChannelListingDTO; label: strin
       </p>
     );
   }
+  if (listing.waitingForType) return <p className="text-xs font-medium text-warning">{ASK_ADMIN.parked}</p>;
   if (listing.leftOff) return <p className="text-xs font-medium text-muted-foreground">{LISTINGS_SETTLE.leftOffByYou}</p>;
   return (
     <>

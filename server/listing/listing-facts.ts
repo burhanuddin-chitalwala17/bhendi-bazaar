@@ -376,15 +376,31 @@ export const ORIGIN = {
   FAMILY: "family",
   BRAND: "brand",
   DEFAULTS: "defaults",
+  /** Filled from a linked marketplace listing (marketplace-facts Q7). */
+  MARKETPLACE: "marketplace",
 } as const;
 export const ORIGINS = Object.values(ORIGIN);
 export type Origin = (typeof ORIGINS)[number];
+
+/**
+ * What a marketplace said, kept beside the answer (marketplace-facts Q7, Q31): the marketplace, its
+ * words, when it was read, and whether the owner chose this answer among several. It stays when the
+ * owner changes the answer, so "was Crepe from Amazon" and "Reset to Amazon's answer" still work.
+ */
+export const marketplaceSourceSchema = z.object({
+  channel: z.string().min(1).max(40),
+  value: z.string().max(500),
+  readAt: z.string().max(40),
+  chosen: z.boolean().optional(),
+});
+export type MarketplaceSource = z.infer<typeof marketplaceSourceSchema>;
 
 export const storedFactSchema = z.object({
   value: z.union([z.string(), z.number(), z.boolean()]),
   origin: z.enum(ORIGINS as unknown as [Origin, ...Origin[]]),
   /** True when the answer matched no permitted value and was kept rather than discarded (categories D8). */
   unlisted: z.boolean().optional(),
+  source: marketplaceSourceSchema.optional(),
 });
 
 export type StoredFact = z.infer<typeof storedFactSchema>;
@@ -409,7 +425,7 @@ export function parseStoredFacts(value: unknown): StoredFacts {
 /** Measurements keyed by measure, not fact: read through the fact schema, every entry fails and the whole column reads as empty. */
 export const storedMeasurementsSchema = z.partialRecord(
   measureKeySchema,
-  z.object({ value: z.number(), origin: z.enum(ORIGINS as unknown as [Origin, ...Origin[]]) }),
+  z.object({ value: z.number(), origin: z.enum(ORIGINS as unknown as [Origin, ...Origin[]]), source: marketplaceSourceSchema.optional() }),
 );
 export type StoredMeasurements = z.infer<typeof storedMeasurementsSchema>;
 

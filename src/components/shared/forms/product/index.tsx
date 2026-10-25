@@ -101,10 +101,13 @@ export function ProductForm({
   const origins = useMemo(() => {
     const stored = { ...(product?.facts ?? {}), ...(product?.measurements ?? {}) };
     const words: Record<string, string> = { family: "family", brand: "brand", defaults: "defaults" };
+    // A marketplace's answer reads "from your Amazon listing" (marketplace-facts Q7).
+    const listing = (entry: { source?: { channel: string } }) =>
+      entry.source ? `${entry.source.channel.charAt(0).toUpperCase()}${entry.source.channel.slice(1)} listing` : "marketplace listing";
     return Object.fromEntries(
       Object.entries(stored)
         .filter(([, entry]) => entry.origin !== "product")
-        .map(([key, entry]) => [key, words[entry.origin] ?? entry.origin]),
+        .map(([key, entry]) => [key, entry.origin === "marketplace" ? listing(entry) : (words[entry.origin] ?? entry.origin)]),
     );
   }, [product]);
   const copy = isEdit ? null : (copySource ?? null);

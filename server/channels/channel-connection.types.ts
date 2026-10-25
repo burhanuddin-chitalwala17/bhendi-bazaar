@@ -1,4 +1,5 @@
 import { CHANNEL, type Channel } from "@server/shared/channels";
+import type { SettleTypeDTO } from "./channel-facts.types";
 
 /**
  * The shapes the channels domain answers with (channel-connectors TRD). Nothing here carries a
@@ -133,6 +134,10 @@ export type ListingStatus = (typeof LISTING_STATUS)[keyof typeof LISTING_STATUS]
 export const LINK_SOURCE = { SKU: "SKU", OWNER: "OWNER" } as const;
 export type LinkSource = (typeof LINK_SOURCE)[keyof typeof LINK_SOURCE];
 
+/** Why a listing was left off, when it is not simply the owner's choice (marketplace-facts Q6). The database checks the set. */
+export const LEFT_OFF_REASON = { NO_TYPE: "no_type" } as const;
+export type LeftOffReason = (typeof LEFT_OFF_REASON)[keyof typeof LEFT_OFF_REASON];
+
 export interface ChannelReadDTO {
   state: ReadState | null;
   total: number | null;
@@ -161,6 +166,8 @@ export interface ChannelListingDTO {
   unlinkedByOwner: boolean;
   /** The owner chose not to sell it on Bhendi Bazaar (product-merge Q9). */
   leftOff: boolean;
+  /** Parked until a product type exists (marketplace-facts Q6): the marketplace's type, for the message to the admin. */
+  waitingForType: { marketplaceType: string } | null;
   gone: boolean;
   /** A hint on an unsettled row (product-merge D3): the same SKU elsewhere, or a similar product. */
   suggestion: ListingSuggestionDTO | null;
@@ -264,6 +271,8 @@ export interface SettleDetailDTO {
   } | null;
   locations: Array<{ id: string; name: string }>;
   defaultCategoryId: string | null;
+  /** The type question a new product starts with, when the marketplace names its type (marketplace-facts D9). */
+  type: SettleTypeDTO | null;
   /** When the inbox was last read: the "As Amazon reported 3 days ago" line. */
   readFinishedAt: string | null;
 }

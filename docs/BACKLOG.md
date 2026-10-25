@@ -191,8 +191,8 @@ A new phase, added 2026-09-25. The seller's real cost is not the storefront; it 
 | [marketplace-integration/channel-connectors](specs/marketplace-integration/channel-connectors/) | Connect an Amazon or Flipkart account by consent and see its health. The trial of ADR-0061 | ✅ Implemented — 2026-10-21, both connected on the owner's accounts |
 | [marketplace-integration/channel-import](specs/marketplace-integration/channel-import/) | Every listing on a connected marketplace arrives in an inbox; exact-SKU matches link themselves | ✅ Implemented — 2026-10-21, Amazon and Flipkart listings read on the owner's accounts |
 | [marketplace-integration/product-merge](specs/marketplace-integration/product-merge/) | The owner settles every not-linked listing: match, add as new, or leave off; one product per item across both marketplaces | ✅ Implemented — 2026-10-23, Settle, match, leave off and photo copy checked by the owner |
-| marketplace-integration/marketplace-facts *(product-merge Q3)* | A listing's attributes fill its product's facts through the reverse of the channel mappings; Amazon's mappings built | 💤 Next after product-merge |
-| marketplace-integration/family-merge *(product-merge Q2)* | Variant groups into families, Flipkart sizes grouped | 💤 Later, after marketplace-facts |
+| [marketplace-integration/marketplace-facts](specs/marketplace-integration/marketplace-facts/) | A listing's attributes and details fill its product where empty, the rest asked once per product; Amazon's mappings built | 🔨 Built 2026-10-25, uncommitted; waiting for the owner's check on a phone |
+| marketplace-integration/family-merge *(product-merge Q2)* | Variant groups into families, Flipkart sizes grouped | 💤 Next after marketplace-facts |
 | marketplace-integration/product-merge | The owner decides which products are the same, whose content wins, and the real quantity | planned |
 | marketplace-integration/channel-listings | Each platform's listing on its own screen, filled from the master, editable except the strict fields | planned |
 | marketplace-integration/inventory-sync | A sale or cancellation anywhere moves one stock figure; daily resync finds differences. On a subscription this is the product, not a late phase | planned |
@@ -234,6 +234,12 @@ the host constrains operations, never design ([ADR-0037](adr/0037-the-host-is-a-
 ## Cross-cutting watch list
 
 Not a phase, but tracked:
+
+- **Public contact and brand facts are hardcoded in `src/lib/config.ts`** — the support email and
+  WhatsApp number that "Contact us" and the admin links use, from the 2026-10-23 marketplace-facts
+  decisions (Q12). `config.ts` keeps public brand facts in code by design. Decide whether to move the
+  contact details to environment variables, so they can change without a redeploy, and whether the
+  support email should be a business address rather than a personal one. Owner's call.
 
 - **The seeded listing values held near-duplicates** — resolved 2026-10-04 (PR-246). The union
   of two platforms' vocabularies gave one concept two entries wherever they worded or spelled it

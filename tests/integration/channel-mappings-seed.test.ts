@@ -22,6 +22,7 @@ interface Row {
   theirCategory: string | null;
   fit: "EXACT" | "NEAREST";
   notSold: boolean;
+  publishes: boolean;
   note: string | null;
   checkedOn: Date;
   checkedSource: string | null;
@@ -41,6 +42,7 @@ describe.skipIf(!isDisposableDb)("the seeded channel mappings (local db)", () =>
         theirCategory: true,
         fit: true,
         notSold: true,
+        publishes: true,
         note: true,
         checkedOn: true,
         checkedSource: true,
@@ -142,13 +144,20 @@ describe.skipIf(!isDisposableDb)("the seeded channel mappings (local db)", () =>
      * bags as work. Every publishable channel carries the row, and none carries a category.
      */
     it("records combos as not sold anywhere, rather than merely unmapped", () => {
-      const combos = seeded().filter((row) => row.productType === "combo");
+      // The decision is where a combo publishes; Amazon's combo rows are read only (marketplace-facts Q18).
+      const combos = seeded().filter((row) => row.productType === "combo" && row.publishes);
       expect(combos.length).toBe(PUBLISHABLE_CHANNELS.length);
       for (const row of combos) {
         expect(row.notSold, row.channel).toBe(true);
         expect(row.theirCategory, row.channel).toBeNull();
         expect(row.note).toMatch(/this store only/i);
       }
+    });
+
+    it("reads a combo listed on Amazon without ever publishing one there (marketplace-facts Q18)", () => {
+      const read = seeded().filter((row) => row.productType === "combo" && !row.notSold);
+      expect(read.length).toBeGreaterThan(0);
+      for (const row of read) expect(row.publishes, `${row.channel} ${row.kind} ${row.theirCategory}`).toBe(false);
     });
 
     it("sends a palazzo to Flipkart's trouser node, which carries Palazzos in its Type", () => {

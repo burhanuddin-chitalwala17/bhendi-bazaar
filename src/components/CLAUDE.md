@@ -1,6 +1,6 @@
 # CLAUDE.md — the front end
 
-- **Verified:** 2026-10-22
+- **Verified:** 2026-10-25
 - **Covers:** `src/components/**`, `src/hooks/**`, `src/app/globals.css`
 
 > Read the root [`/CLAUDE.md`](../../CLAUDE.md) first. This file loads when a component is read, so its rules are in front of you while you write one. Each rule names the test that enforces it; a rule with no test says so.

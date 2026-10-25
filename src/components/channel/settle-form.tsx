@@ -13,24 +13,29 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/shared/forms/FormField";
 import { useServerForm } from "@/hooks/core/useServerForm";
+import { useMutation } from "@/hooks/core/useMutation";
 import { formatCurrency } from "@/lib/format";
 import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 import { uploadBatch } from "@/lib/image/upload-batch";
 import { cn } from "@/lib/utils";
 import { buildImagePath } from "@server/catalog/image-paths";
 import { settleListingSchema, type SettleListingFormValues } from "@/lib/validation/schemas/settle-listing.schema";
-import { SUGGESTION_KIND, type SettleDetailDTO, type SettleResultDTO, type SettleSideDTO } from "@server/channels/channel-connection.types";
+import { LEFT_OFF_REASON, SUGGESTION_KIND, type SettleDetailDTO, type SettleResultDTO, type SettleSideDTO } from "@server/channels/channel-connection.types";
 
 import { channelsApiClient } from "./channelsApiClient";
 import { ListingImage } from "./listing-image";
 import { MatchPicker } from "./match-picker";
 import { SETTLE, SETTLE_ACTION, SETTLE_TOAST } from "./settle-copy";
+import { SettleTypeQuestion } from "./settle-type-question";
+import { ASK_ADMIN, FACTS_TOAST } from "./facts-copy";
 
 const PRODUCT = "product";
 const UPLOAD = "upload";
 
 interface SettleFormProps {
   orgId: string;
+  /** For the message a listing with no type of ours asks the admin with (marketplace-facts Q13). */
+  shopName: string;
   orgCode: string;
   detail: SettleDetailDTO;
   categories: Array<{ id: string; name: string }>;
@@ -52,7 +57,7 @@ const sizeOf = (side: SettleSideDTO, field: Field) => {
  * The Settle page's form (product-merge ux.md "Settle page"): which listings, whose content per
  * field, then price, SKU, category and stock. One request; the server decides everything else.
  */
-export function SettleForm({ orgId, orgCode, detail, categories, backHref }: SettleFormProps) {
+export function SettleForm({ orgId, shopName, orgCode, detail, categories, backHref }: SettleFormProps) {
   const router = useRouter();
   const { primary, pair, product, mode } = detail;
   const [includePair, setIncludePair] = useState(pair?.reason === SUGGESTION_KIND.SAME_SKU);
@@ -127,6 +132,16 @@ export function SettleForm({ orgId, orgCode, detail, categories, backHref }: Set
     },
   });
   const { register, setValue, watch, formState } = form;
+
+  // No type of ours fits: out of the to-do until one exists (marketplace-facts Q6).
+  const park = useMutation(() => channelsApiClient.leaveOffListing(orgId, primary.channel, primary.listingId, LEFT_OFF_REASON.NO_TYPE), {
+    showToast: false,
+    onSuccess: () => {
+      toast.success(FACTS_TOAST.parked);
+      router.push(`${backHref}&left=1`);
+    },
+    onError: () => toast.error(SETTLE_TOAST.failed),
+  });
   const errors = formState.errors;
 
   // What the owner chose becomes what is sent: listings, title, description and photo source.
@@ -352,6 +367,16 @@ export function SettleForm({ orgId, orgCode, detail, categories, backHref }: Set
             />
           )}
 
+          {detail.type && (
+            <SettleTypeQuestion
+              label={primary.label}
+              type={detail.type}
+              categoryId={watch("categoryId")}
+              message={ASK_ADMIN.message(shopName, primary.label, primary.title ?? primary.sku, primary.sku, detail.type.marketplaceType)}
+              onCategory={(id) => setValue("categoryId", id, { shouldValidate: formState.isSubmitted })}
+              onPark={() => void park.mutate().catch(() => undefined)}
+            />
+          )}
           <FormField id="settle-category" label={SETTLE.category} required error={errors.categoryId?.message}>
             <Select id="settle-category" {...register("categoryId")}>
               <option value="">—</option>

@@ -253,6 +253,8 @@ model Product {
   name        String
   description String @db.Text
   price       Int // paise (Invariant 3). A reduction is an offer, never a column
+  /// The printed maximum retail price, in paise (Invariant 3; parent Q27). Filled from a marketplace when empty.
+  mrpPaise    Int?
   // on the product — see Promotion (ADR-0018 decision 4, promotions D9).
   currency    String @default("INR")
 
@@ -2067,6 +2069,14 @@ model ChannelListing {
   /// The owner chose not to sell it on Bhendi Bazaar; a read never links it while set (product-merge Q9).
   leftOffAt    DateTime?
   leftOffById  String?
+  /// Why it was left off: null for the owner's own choice, `no_type` when parked for want of a type (marketplace-facts Q6).
+  leftOffReason String?
+
+  /// The marketplace's last read of this listing's type, attributes and details (marketplace-facts D6).
+  attributes       Json?
+  attributesReadAt DateTime?
+  /// Facts the owner chose to skip for now on this listing's card (marketplace-facts D6).
+  attributeSkips   String[] @default([])
 
   /// The marketplace's photos being copied onto the linked product (product-merge D6).
   /// `PHOTO_COPY_MODE`: a new product gains them; a match replaces its gallery. Try again repeats it.
@@ -2109,6 +2119,9 @@ model ChannelCategoryMap {
   /// absent row means nobody has chosen yet, and the register must tell the two apart or it keeps
   /// listing a settled question as work. Reversible — clearing it puts the choice back.
   notSold       Boolean @default(false)
+  /// The one row of this type and kind that publishes here. Others are read when filling a
+  /// product from a listing, never published to (marketplace-facts Q18).
+  publishes     Boolean @default(true)
   /// How the channel labels it, so a screen can show something a person recognises.
   theirLabel    String?
 
@@ -2127,10 +2140,9 @@ model ChannelCategoryMap {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // A null `kind` means every kind of the type, and NULLs are distinct to a unique index — so a
-  // partial index in the migration is what stops two of those, which would be two answers to
-  // which node an untyped product publishes to.
-  @@unique([channel, productType, kind])
+  // Several rows per type and kind may be read when filling (marketplace-facts Q18); one of them
+  // publishes. Both rules are partial and expression indexes in the migrations, which Prisma's
+  // schema language cannot declare; `tests/integration/channel-registry.test.ts` keeps them honest.
   @@index([channel])
 }
 

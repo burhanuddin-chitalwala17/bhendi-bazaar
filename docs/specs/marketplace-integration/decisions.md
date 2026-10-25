@@ -51,6 +51,7 @@
 | Q40 | Is a quantity difference corrected without asking? | Yes: the master quantity is pushed at once and the correction is recorded for the seller to see | Owner | 2026-10-20 | Waiting lets a marketplace sell stock that does not exist | decided |
 | Q41 | What is the parent spec called? | `marketplace-integration`; it was briefly `marketplace-sync` | Owner | 2026-10-20 | "Sync" is one subfeature's job (inventory-sync), so the parent must not sound like it | decided |
 | Q42 | When a marketplace attribute maps to several of our answers, who picks the product's answer? | The owner, per product. Nothing is filled from a guess; the product shows the marketplace's answer and our options, and the owner chooses | Owner | 2026-10-22 | The marketplace answer is too coarse to say which of ours it was; a wrong guess is worse than a blank the owner fills in one tap. Applies to marketplace-facts (reverse mapping) | decided |
+| Q43 | Can a decision the owner has confirmed be changed later? | Yes, always, in every subfeature. A confirmed choice (a fact, an answer, a match, a settle choice) can be reopened and changed from where it was made, and the change is marked. Nothing confirmed is locked | Owner | 2026-10-23 | The shop must never be stuck with a choice it made in a hurry or with less information later | decided |
 
 ## Parked (Later)
 - Q34 — instant sale notifications; inventory-sync layers them on its one order-recording step.

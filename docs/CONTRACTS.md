@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-22
+- **Verified:** 2026-10-25
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -281,6 +281,32 @@ Routes, all `withOrg`:
 - `GET /api/org/[orgId]/channels/settle/products?listing=…&q=…` — `{ similar, all }` of
   **`SettlePickerProductDTO`** (`linkedHere` when already linked on that marketplace).
 - `POST …/channels/[channel]/listings/[id]/leave-off`, `…/bring-back`, `…/photos/retry` — `{ ok: true }`.
+
+### Facts from a marketplace
+
+Since marketplace-facts ([spec](specs/marketplace-integration/marketplace-facts/)) a stored fact or
+measurement entry may carry `source` — `{ channel, value, readAt, chosen? }`, the marketplace and
+its own words — beside `origin`, which gains `"marketplace"` (`server/listing/listing-facts.ts`). The
+entry keeps `source` when the shop changes the answer, so "was Crepe from Amazon" can be shown; the
+product form's DTOs (`admin.product.types.ts`, `console/types.ts`) carry it. `Product.mrpPaise` is
+integer paise, filled only when empty. `ChannelListingDTO` gains `waitingForType`
+(`{ marketplaceType }` when parked with reason `no_type`); `SettleDetailDTO` gains `type`, a
+**`SettleTypeDTO`** (`kind` mapped / choose / none, `marketplaceType`, `types`). The product page
+reads **`ProductMarketplaceFactsDTO`** per linked listing (`server/channels/channel-facts.types.ts`):
+`state` from `FACTS_STATE`, `readAt`, `marketplaceType`, `filled` (**`MarketplaceFactRowDTO`**: label,
+value, the marketplace's words, `chosen`, `changed`, `options`), `questions`, `staleCheckedOn`,
+`types` (**`TypeChoiceDTO`** with its categories), `sku`, `title`.
+
+Routes:
+- `POST /api/org/[orgId]/channels/[channel]/listings/[id]/facts` (`withOrg`) — body
+  `marketplace-facts.schema.ts`, one of `fill`, `answer` / `change` (`fact`, `value` a key of our
+  list), `reset` (`fact`), `skip` (`fact`, `skipped`), `category` (`categoryId`). Answers
+  `{ ok: true, outcome? }`, `outcome` on `fill` only: `filled`, `busy`, `reconnect` or `not_linked`;
+  409 in the envelope when the fact was answered meanwhile, naming the answer.
+- `POST …/listings/[id]/leave-off` takes an optional body `{ reason: "no_type" }`.
+- `PUT /api/admin/channels/types` (`requirePlatformAdminId`) — `channelTypeChangeSchema`: `add`
+  (`channel`, `productType`, `kind`, `theirCategory`), `publish` (`id`), `remove` (`id`,
+  `typeLabel`); 409 when removing the publishing type or adding one already listed.
 
 ### Image enhancement
 

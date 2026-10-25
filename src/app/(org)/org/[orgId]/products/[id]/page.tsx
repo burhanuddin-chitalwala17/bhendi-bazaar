@@ -6,6 +6,7 @@ import { orgChannelReadinessDAL } from "@/data-access-layer/org/channel-readines
 import { ListingReadinessPanel } from "@/components/channel/listing-readiness-panel";
 import { channelListingsDAL } from "@/data-access-layer/channel-listings.dal";
 import { ProductMarketplaces } from "@/components/channel/product-marketplaces";
+import { MarketplaceFactsCard } from "@/components/channel/marketplace-facts-card";
 
 export default async function OrgProductViewPage({
   params,
@@ -20,13 +21,14 @@ export default async function OrgProductViewPage({
   if (!product || product.org.id !== orgId) notFound();
 
   // Silent for a shop that sells nowhere else, which is most of them until they say otherwise.
-  const [verdicts, marketplaces] = await Promise.all([
+  const [verdicts, marketplaces, facts] = await Promise.all([
     orgChannelReadinessDAL.forProduct(orgId, {
       productType: product.productType ?? null,
       kind: product.kind ?? null,
       facts: product.facts,
     }),
     channelListingsDAL.forProduct(orgId, id),
+    channelListingsDAL.factsForProduct(orgId, id),
   ]);
 
   return (
@@ -38,6 +40,9 @@ export default async function OrgProductViewPage({
           org={product.org}
         />
         <ProductMarketplaces orgId={orgId} links={marketplaces} />
+        {facts.map((card) => (
+          <MarketplaceFactsCard key={card.listingId} orgId={orgId} productId={id} shopName={product.org.name} card={card} />
+        ))}
         <ListingReadinessPanel verdicts={verdicts} />
       </div>
     </Suspense>

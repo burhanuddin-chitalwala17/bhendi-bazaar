@@ -6,7 +6,7 @@ import {
   type MarketplaceProvider,
   type TokenGrant,
 } from "../marketplace-provider";
-import { readFlipkartListings, flipkartListingDetail } from "./flipkart.listings";
+import { readFlipkartListings, flipkartListingDetail, flipkartListingAttributes } from "./flipkart.listings";
 
 /**
  * Flipkart's third-party authorization, as INTEGRATIONS.md records it: the token call is a GET with
@@ -62,6 +62,7 @@ export const flipkartProvider: MarketplaceProvider = {
   connectionCap: null,
   readListings: readFlipkartListings,
   listingDetail: flipkartListingDetail,
+  listingAttributes: flipkartListingAttributes,
 
   configured() {
     const { appId, appSecret } = env();

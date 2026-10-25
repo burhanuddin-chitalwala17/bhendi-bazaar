@@ -10,6 +10,110 @@
 
 ## Entries
 
+## 2026-10-25 — marketplace-facts: fixes from the fresh-context review [MIGRATION]
+
+- **A long marketplace answer could empty a product's facts:** a stored entry caps the marketplace's
+  words at 500 characters and the column reads as empty when one entry fails. The fill now caps
+  them and writes only entries the stored schema accepts.
+- **Amazon's water codes left the shared fill:** Amazon's provider says them as `yes` / `no` beside
+  its code; the fill reads yes or no for any marketplace (Q4).
+- **The card:** a skipped question is listed with "Ask … again"; a read that fills nothing new says
+  so instead of "All facts filled".
+- **Skips are one statement each** (`array_append` / `array_remove`), so two quick skips both stay.
+- **A product save reads its marks scoped by shop.** A fill landing between that read and the save
+  can still be overwritten by the save; the shop's own answers never are, and "Fill from" restores it.
+- **The Amazon data migration** (unpushed) inserts a type's row read only when that type already
+  publishes elsewhere on Amazon, instead of dropping it; local checksums refreshed.
+- **The row lock is proven:** fill and the shop's answer at the same moment keep both; with the
+  locks removed that test went red three runs in three. Restored.
+- **Suites run:** `tsc --noEmit`, `vitest run tests/unit`, the integration suite on
+  `bhendi_bazaar_ci`, `lint:boundary`, `docs:check`, `next build`.
+
+## 2026-10-25 — marketplace-facts unit 5: type and category, park and ask the admin [CONTRACT]
+
+- **Settle's starting category** comes from the listing's own marketplace type (D9): the Settle page
+  reads it when it opens and stores it; a mapped type with one category starts there, several ask
+  "Amazon lists this as Rug, our Prayer mat. Which category does it go in?", several types ask which
+  type first. `SettleDetailDTO.type` added.
+- **No type of ours fits:** the Settle page offers our types, "Park it" (Left off with reason
+  `no_type`, Q6) and "Ask the admin" (WhatsApp and mail links with ux.md's message; nothing is sent
+  by us, Q12, Q13). A parked row reads "Waiting for a product type." with Ask the admin and Bring
+  back, which clears the reason. `ChannelListingDTO.waitingForType` added; the leave-off route takes
+  an optional `reason`.
+- **The card** asks an untyped product's type and category; the choice sets the product's category,
+  its type follows (Q25, Q27), and the stored read fills at once. Kind is left to the owner (Q34);
+  the card never parks a linked listing (Q33).
+- **Tests:** `settle-form.test.tsx` (category tap sent; park with reason), `marketplace-facts.test.ts`
+  (park and bring back; the reason refused off Left off by the database check; the Settle page's
+  type, mapped and none; category choice types and fills the product).
+
+## 2026-10-25 — marketplace-facts unit 4: the "Facts from {marketplace}" card [CONTRACT]
+
+- **One card per linked listing** on the product page, the same for every marketplace, computed
+  from the stored read, today's mapping and the product (D6): filled facts marked "from Amazon",
+  "from Amazon · you chose" or "changed by you (was Crepe from Amazon)", questions with our answers
+  as chips (more in the Choose sheet, `ResponsivePicker`), Skip for now, Reset, Show all, the
+  90-day "Check the mapping" note (Q8), and every ux.md state's copy (`facts-copy.ts`).
+- **Commands** on `POST /api/org/[orgId]/channels/[channel]/listings/[id]/facts` (fill, answer,
+  change, reset, skip, category), through `channelsApiClient` and `useMarketplaceFacts`. "Fill from"
+  reads in the request so busy and reconnect show at once (Q32). Answering a fact the shop answered
+  meanwhile is refused with "You already answered this: Crepe. Nothing was changed."
+- New `ProductMarketplaceFactsDTO` (`channel-facts.types.ts`); CONTRACTS.md moved with it.
+- **Mutation-tested:** the answer without its empty check → "answered meanwhile" red. Restored.
+- **Tests:** `marketplace-facts-card.test.tsx` (7: questions, changed and reset, no type, no answers,
+  busy, category, stale), `marketplace-facts.test.ts` (answer once, change keeps Amazon's words and
+  reset restores them, skip and ask again).
+
+## 2026-10-25 — marketplace-facts unit 3: the fill, on settle and on Fill [CONTRACT]
+
+- **One fill for every marketplace** (`server/channels/fact-fill.ts`, pure, D5): our type (the
+  product's own, else mapped, several to choose, or none), then each empty fact: an exact mapped
+  value or our answer's words fills, two or none is a question ranked by name similarity, numbers
+  parse, the water code is the boolean; dimensions fill length, width and height in the type's unit.
+- **Catalog's conditional commands** (D7): `fillFromMarketplace` locks the product row and writes
+  only empty facts and measurements (each with its marketplace and words), weight when unset or
+  0.5 kg (Q28), MRP when empty; brand label details fill the product's brand, a same-name brand or
+  the default brand for "Generic", only where empty, and never create one (Q29); HSN fills the
+  category's tax code in the listing defaults only when it has none (Q21).
+- **The job** `channels.fill-facts` reads one listing, stores the read and fills; a settle enqueues
+  it in its transaction for each listing (Q3). Listing's `channelMapService` serves the mapping
+  backwards (D2). A form save keeps marketplace marks (Q31); measurements carry `source` too.
+- **Mutation-tested:** the planner filling an answered fact → red; filling on two named answers →
+  red (a test added for it); catalog writing over a set fact → red; weight always replaced → red;
+  brand fields always written → red. Each restored.
+- **Tests:** `fact-fill.test.ts` (10), `marketplace-facts.test.ts` (fills only empty; an edit made
+  meanwhile wins; Generic brand; HSN once; no answers; settle queues the job). Product read census
+  +1 (`marketplaceFacts`, deliberate).
+
+## 2026-10-25 — marketplace-facts unit 2: each listing's attributes, read [CONTRACT] [MIGRATION]
+
+- `MarketplaceProvider.listingAttributes` returns a listing's marketplace type, its attributes
+  flattened to `name` / `name.part` paths, and its product details in our units (D1). Amazon reads
+  `getListingsItem` (parcel then item weight in kg, dimensions in cm, HSN, MRP in paise, ISO origin,
+  brand, manufacturer, packer, importer); Flipkart reads its listing details (MRP, HSN, parcel,
+  label) and no attributes, the "no answers" case (Q4).
+- Migration `20261025000200_listing_attributes_and_mrp`: `ChannelListing.attributes`,
+  `attributesReadAt`, `attributeSkips`, `leftOffReason` (checked: `no_type`, only when left off),
+  `Product.mrpPaise` (checked ≥ 0). Adds columns only.
+- **Tests:** `listing-attributes.test.ts` (5).
+
+## 2026-10-25 — marketplace-facts unit 1: several marketplace types per type, and Amazon's mapping [CONTRACT] [MIGRATION]
+
+- `ChannelCategoryMap.publishes`: a type of ours may be read from several marketplace types, with
+  one publishing (Q18, D3). Readiness and the register read only publishing rows; undoing "not
+  sold" removes only the publishing row. Migration `20261025000000_channel_types_read_and_publish`
+  replaces the unique with partial uniques.
+- Amazon's mapping ships as data, migration `20261025000100_amazon_mappings` generated from
+  `amazon-mapping.json` (47 types, 124 attributes, 225 values), each row dated with its source.
+  Combo rows read only (combos are not sold on any channel).
+- The admin's types control on `/admin/channels/[channel]` (`PUT /api/admin/channels/types`): add,
+  remove, "Publishes here"; the publishing one cannot be removed until another is marked (Q26).
+- **Mutation-tested:** readiness reading every row → red; undoing "not sold" deleting read rows →
+  red; the conditional delete removed → red. Each restored.
+- **Tests:** `channel-type-mapping.test.ts` (5), `channel-mappings-seed.test.ts` (read-only combos).
+- **Suites run for units 1–5:** `tsc --noEmit`; `vitest run tests/unit`; the integration suite on
+  the local `bhendi_bazaar_ci` database (304 passed); `lint:boundary`; `docs:check`; `next build`.
+
 ## 2026-10-23 — product-merge implemented
 
 - The owner checked merging on production: adding a new product, matching, and leaving off all work.

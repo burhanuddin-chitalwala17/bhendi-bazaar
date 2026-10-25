@@ -5,6 +5,7 @@ import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import { productService } from "@server/catalog/product.service";
 import { productsService } from "@server/catalog/admin.product.service";
+import { DEFAULT_WEIGHT_KG } from "@server/catalog/admin.product.types";
 import { stockService } from "@server/catalog/stock.service";
 import { mediaImportService } from "@server/catalog/media-import.service";
 import { mediaAssetService } from "@server/catalog/media-asset.service";
@@ -25,6 +26,7 @@ import {
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService } from "./channel-connection.service";
 import { channelListingRepository } from "./channel-listing.repository";
+import { channelFactsService } from "./channel-facts.service";
 import { mostSimilar } from "./listing-match";
 import { copyablePhotos } from "./listing-photos";
 import { PHOTO_COPY_MODE, listingPhotosSpec, type ListingPhotosPayload } from "./listing-photos.job";
@@ -95,15 +97,18 @@ export const channelSettleService = {
     if (!row || !isMarketplaceChannel(row.channel)) return null;
     const connection = await channelConnectionRepository.find(orgId, row.channel);
 
-    const [primary, product, locations, pair, latest] = await Promise.all([
+    const [primary, product, locations, pair, latest, type] = await Promise.all([
       sideOf(row),
       productId ? productService.settleFacts(orgId, productId) : Promise.resolve(null),
       orgAddressService.listLocations(orgId),
       productId ? Promise.resolve(null) : this.pairFor(orgId, row),
       channelListingRepository.latestOwnerLinkedProductId(orgId),
+      productId ? Promise.resolve(null) : channelFactsService.settleType(row),
     ]);
     if (productId && !product) return null;
-    const lastCategory = latest ? (await productService.settleFacts(orgId, latest))?.categoryId ?? null : null;
+    // The mapped type's one category starts the add (marketplace-facts D9); else the shop's last one (product-merge D9).
+    const typed = type?.kind === "mapped" && type.types[0]?.categories.length === 1 ? type.types[0].categories[0].id : null;
+    const lastCategory = typed ?? (latest ? (await productService.settleFacts(orgId, latest))?.categoryId ?? null : null);
 
     return {
       mode: product ? "match" : "new",
@@ -123,6 +128,7 @@ export const channelSettleService = {
         : null,
       locations: locations.filter((l) => l.isActive).map((l) => ({ id: l.id, name: l.name })),
       defaultCategoryId: lastCategory,
+      type,
       readFinishedAt: connection?.readFinishedAt?.toISOString() ?? null,
     };
   },
@@ -248,7 +254,7 @@ export const channelSettleService = {
               media: [{ kind: "IMAGE", ref: mainPhoto!, isThumbnail: true }],
               stockLocations: input.stock.map((s) => ({ orgAddressId: s.locationId, quantity: s.quantity })),
               sku: input.sku,
-              weight: 0.5,
+              weight: DEFAULT_WEIGHT_KG,
             },
             archived,
           );
@@ -267,6 +273,9 @@ export const channelSettleService = {
         }
         // Two members, or two taps: the second finds the rows taken and rolls back its product.
         if (linked !== input.listingIds.length) throw new TakenMeanwhile();
+
+        // Each settled listing fills its product's empty facts, on the worker (marketplace-facts Q3).
+        await channelFactsService.enqueueIn(tx, orgId, input.listingIds);
 
         if (photoSource && queued.length > 0) {
           await channelListingRepository.startPhotoCopy(

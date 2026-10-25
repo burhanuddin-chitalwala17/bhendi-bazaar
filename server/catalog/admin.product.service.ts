@@ -241,7 +241,10 @@ export class ProductsService {
     await this.checkLocations(data);
     await this.checkSlots(data);
     await this.checkKind(data);
-    const priced = { ...this.moneyToPaise(data), ...(await this.fill(data)) };
+    // What it stored before, so a marketplace's answers keep their mark on this save (marketplace-facts Q31).
+    const before = await adminProductsRepository.marketplaceFacts(data.orgId, id);
+    const stored = before ? { facts: before.facts as never, measurements: before.measurements as never } : undefined;
+    const priced = { ...this.moneyToPaise(data), ...(await this.fill(data, stored)) };
     const product = await adminProductsRepository.updateProduct(id, priced);
     if (!product) {
       throw new NotFoundError("Product not found");
@@ -256,7 +259,7 @@ export class ProductsService {
    * refuses a save: a product with facts unanswered still sells on this storefront and is told
    * what is missing instead (listing-vocabulary spec R5).
    */
-  private async fill(data: ProductFormInput) {
+  private async fill(data: ProductFormInput, stored?: { facts?: never; measurements?: never }) {
     const filled = await fillListing({
       categoryId: data.categoryId,
       orgId: data.orgId,
@@ -264,6 +267,7 @@ export class ProductsService {
       brandId: data.brandId ?? null,
       facts: data.facts as never,
       measurements: data.measurements as never,
+      stored,
     });
     return {
       productType: filled.productType,

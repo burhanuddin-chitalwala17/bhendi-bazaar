@@ -15,7 +15,10 @@ import {
   paiseFromRupees,
   retryBusy,
   sleepFor,
+  NO_DETAILS,
+  type ListingAttributes,
   type ListingDetail,
+  type ListingProductDetails,
   type ListingSink,
   type TokenSource,
 } from "../listing-read";
@@ -294,4 +297,112 @@ export async function amazonListingDetail(
     spApi(token, "catalog/get", `/catalog/2022-04-01/items/${encodeURIComponent(asin)}?${new URLSearchParams({ marketplaceIds: AMAZON_IN, includedData: "images" }).toString()}`),
   );
   return { ...text, photoUrls: photosFromCatalog(catalog) };
+}
+
+/** Amazon's strict yes-or-no codes, said as `yes` or `no` beside them so the shared fill needs no Amazon words (Q4). */
+const YES_NO: Record<string, Record<string, "yes" | "no">> = {
+  water_resistance_level: { water_resistant: "yes", waterproof: "yes", water_repellent: "yes", not_water_resistant: "no" },
+};
+
+/** Keys inside an Amazon attribute entry that are bookkeeping, not part of the answer. */
+const ENTRY_META = new Set(["marketplace_id", "language_tag"]);
+
+const scalar = (v: unknown): string | null =>
+  typeof v === "string" ? (v.trim() || null) : typeof v === "number" || typeof v === "boolean" ? String(v) : null;
+
+/**
+ * Amazon's attributes as `name` or `name.part` paths and their values (marketplace-facts D1). An
+ * entry's `value` is the answer as written; a nested part (`closure.type`, `sleeve.length_description`)
+ * becomes its own path; `standardized_values` are kept beside the value for the fill to try.
+ */
+export function flattenAmazonAttributes(attributes: unknown): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  const push = (path: string, value: string | null) => {
+    if (value === null) return;
+    (out[path] ??= []).includes(value) || out[path].push(value);
+  };
+  for (const [name, raw] of Object.entries(obj(attributes))) {
+    for (const entry of Array.isArray(raw) ? raw : []) {
+      const e = obj(entry);
+      push(name, scalar(e.value));
+      for (const [part, inner] of Object.entries(e)) {
+        if (part === "value" || ENTRY_META.has(part)) continue;
+        if (part === "standardized_values") {
+          for (const v of Array.isArray(inner) ? inner : []) push(`${name}.standardized_values`, scalar(v));
+          continue;
+        }
+        for (const nested of Array.isArray(inner) ? inner : []) push(`${name}.${part}`, scalar(obj(nested).value));
+      }
+    }
+  }
+  for (const [name, codes] of Object.entries(YES_NO)) {
+    for (const code of out[name] ?? []) push(`${name}.standardized_values`, codes[code] ?? null);
+  }
+  return out;
+}
+
+const KG: Record<string, number> = { grams: 0.001, kilograms: 1, pounds: 0.453592, ounces: 0.0283495, milligrams: 0.000001 };
+const CM: Record<string, number> = { centimeters: 1, millimeters: 0.1, meters: 100, inches: 2.54, feet: 30.48 };
+const first = (raw: unknown) => obj(Array.isArray(raw) ? raw[0] : null);
+
+function weightKg(raw: unknown): number | null {
+  const w = first(raw);
+  const value = Number(w.value);
+  const factor = KG[String(w.unit ?? "").toLowerCase()];
+  return Number.isFinite(value) && value > 0 && factor ? Math.round(value * factor * 1000) / 1000 : null;
+}
+
+function dimensionsCm(raw: unknown): ListingProductDetails["dimensionsCm"] {
+  const d = first(raw);
+  const side = (k: string) => {
+    const p = obj(d[k]);
+    const factor = CM[String(p.unit ?? "").toLowerCase()];
+    const value = Number(p.value);
+    return Number.isFinite(value) && value > 0 && factor ? Math.round(value * factor * 10) / 10 : null;
+  };
+  const [length, width, height] = [side("length"), side("width"), side("height")];
+  return length !== null && width !== null && height !== null ? { length, width, height } : null;
+}
+
+/** Amazon's product details in our units (Q17, Q21): parcel weight first, MRP to paise, HSN, origin, label. */
+export function amazonDetails(attributes: unknown): ListingProductDetails {
+  const a = obj(attributes);
+  const text = (name: string) => scalar(first(a[name]).value);
+  const hsn = (Array.isArray(a.external_product_information) ? a.external_product_information : [])
+    .map(obj)
+    .find((e) => /hsn/i.test(String(e.entity ?? "")));
+  const mrp = first(first(a.purchasable_offer).maximum_retail_price);
+  const mrpValue = obj(Array.isArray(mrp.schedule) ? mrp.schedule[0] : null).value_with_tax;
+  const country = text("country_of_origin");
+  return {
+    ...NO_DETAILS,
+    weightKg: weightKg(a.item_package_weight) ?? weightKg(a.item_weight),
+    dimensionsCm: dimensionsCm(a.item_dimensions),
+    hsn: scalar(hsn?.value),
+    mrpPaise: mrpValue === undefined ? null : paiseFromRupees(mrpValue),
+    countryOfOrigin: country && /^[A-Z]{2}$/.test(country) ? country : null,
+    brand: text("brand"),
+    manufacturer: text("rtip_manufacturer_contact_information") ?? text("manufacturer"),
+    packer: text("packer_contact_information"),
+    importer: text("importer_contact_information"),
+  };
+}
+
+export async function amazonListingAttributes(
+  token: TokenSource,
+  accountId: string | null,
+  listing: { sku: string; externalId: string | null },
+): Promise<ListingAttributes> {
+  if (!accountId) throw new MarketplaceAuthError("rejected");
+  const query = new URLSearchParams({ marketplaceIds: AMAZON_IN, includedData: "summaries,attributes" });
+  const item = obj(
+    await retryBusy(() =>
+      spApi(token, "listings/get", `/listings/2021-08-01/items/${encodeURIComponent(accountId)}/${encodeURIComponent(listing.sku)}?${query.toString()}`),
+    ),
+  );
+  return {
+    type: str(obj(Array.isArray(item.summaries) ? item.summaries[0] : null).productType),
+    attributes: flattenAmazonAttributes(item.attributes),
+    details: amazonDetails(item.attributes),
+  };
 }

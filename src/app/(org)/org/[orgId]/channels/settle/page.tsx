@@ -51,7 +51,7 @@ export default async function SettleListingPage({
           <RefreshButton label={SETTLE_ACTION.tryAgain} />
         </div>
       )}
-      <SettleForm orgId={scope.orgId} orgCode={data.orgCode} detail={detail} categories={data.categories} backHref={backHref} />
+      <SettleForm orgId={scope.orgId} shopName={data.shopName} orgCode={data.orgCode} detail={detail} categories={data.categories} backHref={backHref} />
     </PageShell>
   );
 }

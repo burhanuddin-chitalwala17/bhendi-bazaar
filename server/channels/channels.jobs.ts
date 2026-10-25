@@ -8,6 +8,8 @@ import { channelImportService } from "./channel-import.service";
 import { listingReadSpec } from "./listing-read.job";
 import { channelSettleService } from "./channel-settle.service";
 import { listingPhotosSpec } from "./listing-photos.job";
+import { channelFactsService } from "./channel-facts.service";
+import { listingFactsSpec } from "./listing-facts.job";
 
 /**
  * A shop's listing read (channel-import D3): one per connection at a time, claimed inside the
@@ -57,5 +59,14 @@ export const listingPhotosJob = registerJob({
   handler: async ({ jobId, payload }) => {
     const outcome = await channelSettleService.copyPhotos(payload);
     console.log(`[jobs] channels.copy-listing-photos ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
+  },
+});
+
+/** A linked listing's facts onto its product (marketplace-facts D7): only what is still empty. */
+export const listingFactsJob = registerJob({
+  ...listingFactsSpec,
+  handler: async ({ jobId, payload }) => {
+    const outcome = await channelFactsService.run(payload);
+    console.log(`[jobs] channels.fill-facts ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
   },
 });

@@ -76,8 +76,8 @@ export interface ProductFormInput {
 export interface ProductPersistInput
   extends Omit<ProductFormInput, "facts" | "measurements"> {
   productType: string | null;
-  facts: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean }>;
-  measurements: Record<string, { value: string | number | boolean; origin: string }>;
+  facts: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean; source?: { channel: string; value: string; readAt: string; chosen?: boolean } }>;
+  measurements: Record<string, { value: string | number | boolean; origin: string; source?: { channel: string; value: string; readAt: string; chosen?: boolean } }>;
 }
 
 /**
@@ -94,4 +94,30 @@ export interface ProductCopyOption {
   id: string;
   name: string;
   sku: string | null;
+}
+
+/** Every product starts at this weight in kilograms, so a marketplace's weight replaces it (marketplace-facts Q28). */
+export const DEFAULT_WEIGHT_KG = 0.5;
+
+/** What a marketplace listing would fill on a product; catalog writes only what is still empty (marketplace-facts D7). */
+export interface MarketplaceFill {
+  facts: Record<string, MarketplaceEntry>;
+  measurements: Record<string, MarketplaceEntry>;
+  weightKg: number | null;
+  mrpPaise: number | null;
+  brandId: string | null;
+}
+
+export interface MarketplaceEntry {
+  value: string | number | boolean;
+  origin: "marketplace";
+  source: { channel: string; value: string; readAt: string; chosen?: boolean };
+}
+
+export interface MarketplaceFilled {
+  facts: string[];
+  measurements: string[];
+  weight: boolean;
+  mrp: boolean;
+  brand: boolean;
 }

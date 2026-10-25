@@ -5,6 +5,36 @@ import { productTypeRepository } from "./product-type.repository";
 import { listingValueRepository } from "./listing-value.repository";
 import { categoryFor } from "./channel-readiness";
 import { ANSWER, FACT_DECLARATIONS, type FactKey } from "./listing-facts";
+import type { CategoryMapRow } from "./channel-map.repository";
+import type { ChannelTypeMapping } from "./channel-map.types";
+
+export type { ChannelTypeMapping };
+import { uniqueViolationFields } from "@server/shared/constraint";
+import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
+
+/** Our types and kinds, each with its marketplace types, publishing first (Q26). */
+async function typeMappings(categories: readonly CategoryMapRow[], typeLabels: Map<string, string>) {
+  const types = await productTypeRepository.list();
+  const out: ChannelTypeMapping[] = [];
+  for (const type of types) {
+    for (const kind of [null, ...(type.kinds ?? []).map((k) => k.key)]) {
+      const rows = categories
+        .filter((r) => r.productType === type.key && r.kind === kind && r.theirCategory !== null)
+        .sort((a, b) => Number(b.publishes) - Number(a.publishes))
+        .map((r) => ({
+          id: r.id,
+          theirCategory: r.theirCategory as string,
+          theirLabel: r.theirLabel,
+          publishes: r.publishes,
+          checkedOn: r.checkedOn.toISOString(),
+        }));
+      // A kind with nothing of its own is covered by the type-wide row; list it only when it has rows.
+      if (kind !== null && rows.length === 0) continue;
+      out.push({ productType: type.key, typeLabel: typeLabels.get(type.key) ?? type.label, kind, rows });
+    }
+  }
+  return out;
+}
 
 /**
  * The platform owner's view of one channel's dictionary, and what is still missing from it
@@ -55,6 +85,8 @@ export interface ChannelRegisterView {
   }[];
   unmappedValues: UnmappedValue[];
   unmappedCategories: UnmappedCategory[];
+  /** Every type and kind with its marketplace types, read and publishing, for the types control. */
+  types: ChannelTypeMapping[];
 }
 
 export const channelRegisterService = {
@@ -105,7 +137,8 @@ export const channelRegisterService = {
     const unmappedCategories: UnmappedCategory[] = [];
     const notSold: NotSoldHere[] = [];
     for (const inUse of typesInUse) {
-      const rows = maps.categories.filter((row) => row.productType === inUse.productType);
+      // Where it publishes decides the worklist; rows read only for filling do not (marketplace-facts D3).
+      const rows = maps.categories.filter((row) => row.productType === inUse.productType && row.publishes);
       const resolved = categoryFor(rows, inUse.kind);
       // A decision already taken is not work. It is listed separately so it stays findable and
       // reversible — hiding it would trade one problem for a worse one.
@@ -137,7 +170,7 @@ export const channelRegisterService = {
       },
       notSold: notSold.sort((a, b) => b.products - a.products),
       nearestFits: maps.categories
-        .filter((row) => row.fit === "NEAREST" && !row.notSold)
+        .filter((row) => row.fit === "NEAREST" && !row.notSold && row.publishes)
         .map((row) => ({
           productType: row.productType,
           kind: row.kind,
@@ -148,7 +181,42 @@ export const channelRegisterService = {
         (a, b) => b.products - a.products || a.list.localeCompare(b.list),
       ),
       unmappedCategories: unmappedCategories.sort((a, b) => b.products - a.products),
+      types: await typeMappings(maps.categories, typeLabels),
     };
+  },
+
+  /** Add a marketplace type that one of our types and kinds is read from (Q26). */
+  async addType(input: { channel: Channel; productType: string; kind: string | null; theirCategory: string }) {
+    const type = await productTypeRepository.byKey(input.productType);
+    if (!type) throw new NotFoundError("Product type");
+    if (input.kind && !(type.kinds ?? []).some((k) => k.key === input.kind)) {
+      throw new DomainError("That kind is not one of this type's kinds.", { status: 400, field: "kind" });
+    }
+    try {
+      return await channelMapRepository.addReadType({
+        ...input,
+        theirLabel: input.theirCategory.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+        checkedOn: new Date(),
+        checkedSource: "Added in the channel register",
+      });
+    } catch (error) {
+      if (uniqueViolationFields(error) !== null) throw new ConflictError("That type is already listed here.");
+      throw error;
+    }
+  },
+
+  /** Make one marketplace type the one this type and kind publishes to (Q26). */
+  async markPublishing(id: string) {
+    const row = await channelMapRepository.setPublishing(id, new Date());
+    if (!row) throw new NotFoundError("Type mapping");
+    return row;
+  },
+
+  /** Remove a marketplace type; the publishing one is refused until another is marked (Q26). */
+  async removeType(id: string, typeLabel: string) {
+    const outcome = await channelMapRepository.removeReadType(id);
+    if (outcome === "missing") throw new NotFoundError("Type mapping");
+    if (outcome === "publishing") throw new ConflictError(`${typeLabel} needs one type it publishes to. Mark another first.`);
   },
 
   /** Every channel, with how much of each is still to do — the register's front page. */

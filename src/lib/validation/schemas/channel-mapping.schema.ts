@@ -33,3 +33,26 @@ export const channelNotSoldSchema = z.object({
 });
 
 export type ChannelNotSoldInput = z.output<typeof channelNotSoldSchema>;
+
+/**
+ * The marketplace types one of our types and kinds is read from, and the one it publishes to
+ * (marketplace-facts Q26). One request is one change, so each is audited on its own.
+ */
+export const channelTypeChangeSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("add"),
+    channel: z.enum(PUBLISHABLE_CHANNELS as unknown as [Channel, ...Channel[]]),
+    productType: z.string().trim().min(1).max(60),
+    kind: z.string().trim().min(1).max(60).nullable(),
+    theirCategory: z
+      .string()
+      .trim()
+      .min(1, "Name the marketplace's type")
+      .max(120)
+      .regex(/^[A-Za-z0-9_ -]+$/, "Use the type's name as the marketplace writes it"),
+  }),
+  z.object({ action: z.literal("publish"), id: z.string().min(1).max(64) }),
+  z.object({ action: z.literal("remove"), id: z.string().min(1).max(64), typeLabel: z.string().trim().min(1).max(80) }),
+]);
+
+export type ChannelTypeChangeInput = z.input<typeof channelTypeChangeSchema>;

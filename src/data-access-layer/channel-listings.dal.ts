@@ -4,6 +4,8 @@
  */
 
 import { channelImportService } from "@server/channels/channel-import.service";
+import { channelFactsService } from "@server/channels/channel-facts.service";
+import type { ProductMarketplaceFactsDTO } from "@server/channels/channel-facts.types";
 import type {
   ChannelListingDetailDTO,
   ChannelListingsPageDTO,
@@ -48,6 +50,16 @@ export const channelListingsDAL = {
       return await channelImportService.linksForProduct(orgId, productId);
     } catch (error) {
       console.error("[ProductPage] marketplace links read failed:", error);
+      return [];
+    }
+  },
+
+  /** A product's "Facts from {marketplace}" cards (marketplace-facts); like the block, they fail alone. */
+  async factsForProduct(orgId: string, productId: string): Promise<ProductMarketplaceFactsDTO[]> {
+    try {
+      return await channelFactsService.cards(orgId, productId);
+    } catch (error) {
+      console.error("[ProductPage] marketplace facts read failed:", error);
       return [];
     }
   },

@@ -3,6 +3,9 @@ import { toBrandDto, type BrandDto } from "@server/catalog/brand.types";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { isUniqueViolation } from "@server/shared/constraint";
 
+/** Marketplaces' word for an unbranded item: it belongs to the shop's default brand (marketplace-facts Q29). */
+const GENERIC = /^(generic|unbranded|no brand)$/i;
+
 /**
  * The write seam for an org's brands (org-profile trd D7). Every call is scoped by an orgId
  * that came from a verified membership. Nothing here judges completeness: a brand with only a
@@ -32,6 +35,33 @@ export class BrandService {
     const retired = await brandRepository.retire(orgId, id);
     if (!retired) throw new NotFoundError("Brand not found");
     return this.read(orgId, id);
+  }
+
+  /**
+   * A marketplace's label details onto a product's brand (marketplace-facts Q21, Q29): the brand
+   * it has, else the shop's brand of that name, else the default brand for a "Generic" listing.
+   * No brand is ever made. Returns the brand used, so the product can take it when it had none.
+   */
+  async fillFromMarketplace(
+    orgId: string,
+    productBrandId: string | null,
+    details: { brand: string | null; manufacturer: string | null; packerOrImporter: string | null; countryOfOrigin: string | null },
+  ): Promise<{ brandId: string | null; filled: string[] }> {
+    const brandId = productBrandId ?? (await this.brandNamed(orgId, details.brand?.trim() || null));
+    if (!brandId) return { brandId: null, filled: [] };
+    const filled = await brandRepository.fillEmpty(orgId, brandId, {
+      manufacturer: details.manufacturer,
+      packerOrImporter: details.packerOrImporter,
+      countryOfOrigin: details.countryOfOrigin,
+    });
+    return { brandId, filled };
+  }
+
+  private async brandNamed(orgId: string, name: string | null): Promise<string | null> {
+    if (!name) return null;
+    const named = await brandRepository.findForMarketplace(orgId, name);
+    if (named) return named.id;
+    return GENERIC.test(name) ? ((await brandRepository.findForMarketplace(orgId, null))?.id ?? null) : null;
   }
 
   private async read(orgId: string, id: string): Promise<BrandDto> {

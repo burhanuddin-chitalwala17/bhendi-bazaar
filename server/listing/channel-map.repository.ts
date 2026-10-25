@@ -29,6 +29,8 @@ export interface CategoryMapRow {
   theirLabel: string | null;
   fit: ChannelMapFit;
   notSold: boolean;
+  /** The row this type and kind publishes to; others are only read when filling (marketplace-facts Q18). */
+  publishes: boolean;
   note: string | null;
   checkedOn: Date;
   checkedSource: string | null;
@@ -65,6 +67,7 @@ const CATEGORY_SELECT = {
   theirLabel: true,
   fit: true,
   notSold: true,
+  publishes: true,
   note: true,
   checkedOn: true,
   checkedSource: true,
@@ -158,8 +161,9 @@ export const channelMapRepository = {
     const lists = [...new Set(input.lists.filter(Boolean))];
 
     const [categories, values] = await Promise.all([
+      // Readiness asks where a product publishes, so only the publishing rows (marketplace-facts D3).
       prisma.channelCategoryMap.findMany({
-        where: { channel: { in: channels }, productType: { in: productTypes } },
+        where: { channel: { in: channels }, productType: { in: productTypes }, publishes: true },
         select: CATEGORY_SELECT,
       }),
       lists.length === 0
@@ -259,31 +263,71 @@ export const channelMapRepository = {
       checkedOn: input.checkedOn,
       checkedSource: input.checkedSource ?? null,
     };
-    // Prisma's compound-unique input will not take a null `kind`, so the catch-all is matched by
-    // hand. The partial index is the real guard: a concurrent second create fails there.
-    if (kind === null) {
-      const changed = await prisma.channelCategoryMap.updateMany({
-        where: { channel, productType, kind: null },
-        data: rest,
-      });
-      if (changed.count > 0) {
-        return await prisma.channelCategoryMap.findFirstOrThrow({
-          where: { channel, productType, kind: null },
-          select: CATEGORY_SELECT,
-        });
-      }
-      return await prisma.channelCategoryMap.create({
-        data: { channel, productType, kind: null, ...rest },
+    // This sets the publishing row (marketplace-facts D3); rows read only for filling are left. The
+    // partial index is the real guard: a concurrent second create fails there.
+    const changed = await prisma.channelCategoryMap.updateMany({
+      where: { channel, productType, kind, publishes: true },
+      data: rest,
+    });
+    if (changed.count > 0) {
+      return await prisma.channelCategoryMap.findFirstOrThrow({
+        where: { channel, productType, kind, publishes: true },
         select: CATEGORY_SELECT,
       });
     }
-
-    return await prisma.channelCategoryMap.upsert({
-      where: { channel_productType_kind: { channel, productType, kind } },
-      create: { channel, productType, kind, ...rest },
-      update: rest,
+    return await prisma.channelCategoryMap.create({
+      data: { channel, productType, kind, publishes: true, ...rest },
       select: CATEGORY_SELECT,
     });
+  },
+
+  /** Every type row of a channel, read rows included, for filling a product from a listing (D2). */
+  async typesForFill(channel: Channel): Promise<CategoryMapRow[]> {
+    return await prisma.channelCategoryMap.findMany({
+      where: { channel, theirCategory: { not: null } },
+      select: CATEGORY_SELECT,
+    });
+  },
+
+  /** Add a marketplace type that this type and kind is read from (Q26). Read only until marked. */
+  async addReadType(input: {
+    channel: Channel;
+    productType: string;
+    kind: string | null;
+    theirCategory: string;
+    theirLabel: string | null;
+    checkedOn: Date;
+    checkedSource: string;
+  }): Promise<CategoryMapRow> {
+    return await prisma.channelCategoryMap.create({
+      data: { ...input, fit: "EXACT", notSold: false, publishes: false },
+      select: CATEGORY_SELECT,
+    });
+  },
+
+  /** Make one row the publishing one for its type and kind, in one transaction (Q26). */
+  async setPublishing(id: string, checkedOn: Date): Promise<CategoryMapRow | null> {
+    return await prisma.$transaction(async (tx) => {
+      const row = await tx.channelCategoryMap.findUnique({ where: { id }, select: CATEGORY_SELECT });
+      if (!row || row.theirCategory === null) return null;
+      await tx.channelCategoryMap.updateMany({
+        where: { channel: row.channel, productType: row.productType, kind: row.kind, publishes: true },
+        data: { publishes: false },
+      });
+      return await tx.channelCategoryMap.update({
+        where: { id },
+        data: { publishes: true, checkedOn },
+        select: CATEGORY_SELECT,
+      });
+    });
+  },
+
+  /** Remove a read-only type row (Q26). The publishing row is refused here: mark another first. */
+  async removeReadType(id: string): Promise<"removed" | "publishing" | "missing"> {
+    // Conditional, so the publishing row cannot be removed however the request races a "Publishes here".
+    const result = await prisma.channelCategoryMap.deleteMany({ where: { id, publishes: false } });
+    if (result.count === 1) return "removed";
+    return (await prisma.channelCategoryMap.count({ where: { id } })) === 0 ? "missing" : "publishing";
   },
 
   /**
@@ -297,7 +341,8 @@ export const channelMapRepository = {
     productType: string;
     kind: string | null;
   }): Promise<void> {
-    await prisma.channelCategoryMap.deleteMany({ where: input });
+    // The publishing row only: rows read when filling stay (marketplace-facts D3).
+    await prisma.channelCategoryMap.deleteMany({ where: { ...input, publishes: true } });
   },
 
   async setAttribute(input: {

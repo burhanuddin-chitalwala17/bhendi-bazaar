@@ -11,8 +11,9 @@ import type { SettleDetailDTO, SettleSideDTO } from "@server/channels/channel-co
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push }) }));
 const settle = vi.fn();
+const leaveOff = vi.fn();
 vi.mock("@/components/channel/channelsApiClient", () => ({
-  channelsApiClient: { settle: (...args: unknown[]) => settle(...args), settlePickerProducts: vi.fn() },
+  channelsApiClient: { settle: (...args: unknown[]) => settle(...args), leaveOffListing: (...args: unknown[]) => leaveOff(...args), settlePickerProducts: vi.fn() },
 }));
 
 const side = (over: Partial<SettleSideDTO>): SettleSideDTO => ({
@@ -42,6 +43,7 @@ const detail = (over: Partial<SettleDetailDTO> = {}): SettleDetailDTO => ({
   product: null,
   locations: [{ id: "loc-1", name: "Mumbai shop" }],
   defaultCategoryId: "cat-abayas",
+  type: null,
   readFinishedAt: null,
   ...over,
 });
@@ -54,7 +56,7 @@ const press = (name: string) => {
 };
 
 const renderForm = (d: SettleDetailDTO) =>
-  render(<SettleForm orgId="org_1" orgCode="NQB" detail={d} categories={[{ id: "cat-abayas", name: "Abayas" }]} backHref="/org/org_1/channels/amazon/listings?tab=notLinked" />);
+  render(<SettleForm orgId="org_1" shopName="Niqab Boutique" orgCode="NQB" detail={d} categories={[{ id: "cat-abayas", name: "Abayas" }]} backHref="/org/org_1/channels/amazon/listings?tab=notLinked" />);
 
 describe("the Settle page's form (product-merge D10)", () => {
   it("adds a new product with the fuller title and photos, both listings, the lowest price and count (spec A1, A3)", async () => {
@@ -99,5 +101,27 @@ describe("the Settle page's form (product-merge D10)", () => {
     press("Add product");
     await waitFor(() => expect(screen.getByText("Please fix the highlighted fields and try again.")).toBeInTheDocument());
     expect(settle).not.toHaveBeenCalled();
+  });
+
+  const prayerMat = { key: "prayer-mat", label: "Prayer mat", categories: [{ id: "cat-mats", name: "Prayer mats" }, { id: "cat-travel", name: "Travel mats" }] };
+
+  it("asks which category a mapped type goes in, and the tap is what is sent (marketplace-facts Q25)", async () => {
+    settle.mockReset().mockResolvedValue({ result: { productId: "p1", productName: "Mat", archived: false, mode: "new" } });
+    renderForm(detail({ pair: null, defaultCategoryId: null, type: { kind: "mapped", marketplaceType: "RUG", types: [prayerMat] } }));
+    expect(screen.getByText("Amazon lists this as RUG, our Prayer mat. Which category does it go in?")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Travel mats" }));
+    press("Add product");
+    await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+    expect(settle.mock.calls[0][1]).toMatchObject({ categoryId: "cat-travel" });
+  });
+
+  it("parks a listing no type of ours fits, with why, and offers to ask the admin (marketplace-facts Q6, Q12)", async () => {
+    leaveOff.mockReset().mockResolvedValue({ ok: true });
+    renderForm(detail({ pair: null, type: { kind: "none", marketplaceType: "SHOES", types: [prayerMat] } }));
+    expect(screen.getByText("Amazon lists this as SHOES, which isn't one of our product types. Nothing is filled.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ask the admin" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Park it" }));
+    await waitFor(() => expect(leaveOff).toHaveBeenCalledWith("org_1", "amazon", "l-az", "no_type"));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/org/org_1/channels/amazon/listings?tab=notLinked&left=1"));
   });
 });

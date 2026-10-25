@@ -22,6 +22,45 @@ export interface ListingDetail {
   photoUrls: string[];
 }
 
+/** A listing's product details, in our units, where the marketplace states them (marketplace-facts Q17, Q21). */
+export interface ListingProductDetails {
+  /** Kilograms, as a product's weight is stored; the parcel weight when the marketplace gives one. */
+  weightKg: number | null;
+  /** Centimetres. */
+  dimensionsCm: { length: number; width: number; height: number } | null;
+  hsn: string | null;
+  mrpPaise: number | null;
+  /** ISO 3166-1 alpha-2, as brands and listing defaults store it. */
+  countryOfOrigin: string | null;
+  brand: string | null;
+  manufacturer: string | null;
+  packer: string | null;
+  importer: string | null;
+}
+
+/**
+ * What a marketplace says about one listing's product, in one shape for every marketplace
+ * (marketplace-facts D1, Q4): its own type, its attributes flattened to `name` or `name.part`
+ * paths with their values as written, and its product details. Empty where it says nothing.
+ */
+export interface ListingAttributes {
+  type: string | null;
+  attributes: Record<string, string[]>;
+  details: ListingProductDetails;
+}
+
+export const NO_DETAILS: ListingProductDetails = {
+  weightKg: null,
+  dimensionsCm: null,
+  hsn: null,
+  mrpPaise: null,
+  countryOfOrigin: null,
+  brand: null,
+  manufacturer: null,
+  packer: null,
+  importer: null,
+};
+
 /** A fresh access token, renewed by the domain when it is about to lapse. A read can outlive one. */
 export type TokenSource = () => Promise<string>;
 

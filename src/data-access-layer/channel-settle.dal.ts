@@ -13,6 +13,7 @@ export interface SettlePageData {
   detail: SettleDetailDTO;
   categories: Array<{ id: string; name: string }>;
   orgCode: string;
+  shopName: string;
 }
 
 export const channelSettleDAL = {
@@ -29,6 +30,6 @@ export const channelSettleDAL = {
     const named = categories.categories
       .map((c: AdminCategory) => ({ id: c.id, name: c.parentId && byId.get(c.parentId) ? `${byId.get(c.parentId)!.name} › ${c.name}` : c.name }))
       .sort((a, b) => a.name.localeCompare(b.name));
-    return { detail, categories: named, orgCode: org.code };
+    return { detail, categories: named, orgCode: org.code, shopName: org.name };
   },
 };

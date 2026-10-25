@@ -1,9 +1,12 @@
 import { apiRequest } from "@/lib/api-client";
 import type { ChannelValueMappingInput } from "@/lib/validation/schemas/channel-mapping.schema";
 import type { OrgChannelsParsed } from "@/lib/validation/schemas/org-channels.schema";
-import type { ChannelListingDTO, SettlePickerProductDTO, SettleResultDTO } from "@server/channels/channel-connection.types";
+import type { ChannelListingDTO, LeftOffReason, SettlePickerProductDTO, SettleResultDTO } from "@server/channels/channel-connection.types";
 import type { SettleListingFormValues } from "@/lib/validation/schemas/settle-listing.schema";
+import type { ChannelTypeChangeInput } from "@/lib/validation/schemas/channel-mapping.schema";
 import type { Channel } from "@server/shared/channels";
+import type { MarketplaceFactsChangeInput } from "@/lib/validation/schemas/marketplace-facts.schema";
+import type { FillNowOutcome } from "@server/channels/channel-facts.types";
 
 export const channelsApiClient = {
   /** Records what a channel calls one of our values (ADR-0045). */
@@ -57,9 +60,17 @@ export const channelsApiClient = {
     );
   },
 
+  /** One command on a product's "Facts from {marketplace}" card (marketplace-facts D8). */
+  changeMarketplaceFacts(orgId: string, channel: Channel, listingId: string, change: MarketplaceFactsChangeInput) {
+    return apiRequest<{ ok: true; outcome?: FillNowOutcome }>(`/api/org/${orgId}/channels/${channel}/listings/${listingId}/facts`, {
+      method: "POST",
+      body: change,
+    });
+  },
+
   /** Leave a listing off Bhendi Bazaar (product-merge Q9). */
-  leaveOffListing(orgId: string, channel: Channel, id: string) {
-    return apiRequest(`/api/org/${orgId}/channels/${channel}/listings/${id}/leave-off`, { method: "POST" });
+  leaveOffListing(orgId: string, channel: Channel, id: string, reason?: LeftOffReason) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/listings/${id}/leave-off`, { method: "POST", body: reason ? { reason } : {} });
   },
 
   /** Back to the to-do (product-merge Q9). */
@@ -84,5 +95,10 @@ export const channelsApiClient = {
   /** Copy a listing's photos onto its product again (product-merge Q21). */
   retryListingPhotos(orgId: string, channel: Channel, id: string) {
     return apiRequest(`/api/org/${orgId}/channels/${channel}/listings/${id}/photos/retry`, { method: "POST" });
+  },
+
+  /** Add, remove or mark the publishing marketplace type for one of our types (marketplace-facts Q26). */
+  changeChannelType(change: ChannelTypeChangeInput) {
+    return apiRequest<{ id?: string; ok?: boolean }>("/api/admin/channels/types", { method: "PUT", body: change });
   },
 };

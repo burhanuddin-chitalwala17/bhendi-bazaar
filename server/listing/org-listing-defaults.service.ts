@@ -24,6 +24,11 @@ export class OrgListingDefaultsService {
     });
     return toListingDefaultsDto(row);
   }
+
+  /** A marketplace's HSN as this category's tax code, when the shop has none for it (marketplace-facts Q21). */
+  async fillTaxCode(orgId: string, categoryId: string, taxCode: string): Promise<boolean> {
+    return await orgListingDefaultsRepository.fillTaxCode(orgId, categoryId, taxCode.trim());
+  }
 }
 
 export const orgListingDefaultsService = new OrgListingDefaultsService();

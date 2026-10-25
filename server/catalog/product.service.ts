@@ -10,6 +10,7 @@ import { productsRepository, type ProductDb } from "@server/catalog/product.read
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { collectSubtreeIds } from "@server/catalog/category.tree";
 import type { ProductFilter, ProductSuggestion } from "@server/catalog/product.types";
+import type { MarketplaceEntry, MarketplaceFill, MarketplaceFilled } from "@server/catalog/admin.product.types";
 import {
   resolveProductPrice,
   type PriceContext,
@@ -142,6 +143,33 @@ export class ProductService {
   /** Put copied photos on a product, appended or replacing its images (product-merge D6). */
   async setImages(productId: string, orgId: string, refs: string[], mode: "append" | "replace") {
     await adminProductsRepository.setImages(productId, orgId, refs, mode);
+  }
+
+  /** What filling from a marketplace and its card read of a product (marketplace-facts D5, D6). Null when not this org's. */
+  async marketplaceFacts(orgId: string, id: string) {
+    return await adminProductsRepository.marketplaceFacts(orgId, id);
+  }
+
+  /** Only what is still empty, under the row's lock (marketplace-facts D7). Null when not this org's. */
+  async fillFromMarketplace(orgId: string, id: string, fill: MarketplaceFill): Promise<MarketplaceFilled | null> {
+    return await adminProductsRepository.fillFromMarketplace(orgId, id, fill);
+  }
+
+  /** The owner's choice, change or reset of one answer from the card (marketplace-facts D8). */
+  async setMarketplaceAnswer(
+    orgId: string,
+    id: string,
+    column: "facts" | "measurements",
+    key: string,
+    entry: MarketplaceEntry | Record<string, unknown> | null,
+    onlyIfEmpty: boolean,
+  ) {
+    return await adminProductsRepository.setMarketplaceAnswer(orgId, id, column, key, entry as Record<string, unknown> | null, onlyIfEmpty);
+  }
+
+  /** The category the card's type question chose; the type follows it (marketplace-facts Q25, Q27). */
+  async setCategoryFromMarketplace(orgId: string, id: string, categoryId: string, productType: string | null): Promise<boolean> {
+    return await adminProductsRepository.setCategoryFromMarketplace(orgId, id, categoryId, productType);
   }
 
   /** A shop's products by name, archived included, for matching a marketplace listing (product-merge D3). */
