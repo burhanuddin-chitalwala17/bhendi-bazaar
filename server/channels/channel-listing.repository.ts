@@ -243,6 +243,8 @@ export const channelListingRepository = {
         goneAt: true,
         photoMode: true,
         photoTotal: true,
+        attributes: true,
+        attributesReadAt: true,
         product: { select: { name: true } },
         connection: { select: { externalAccountId: true, state: true } },
       },

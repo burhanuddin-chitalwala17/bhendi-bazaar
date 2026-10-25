@@ -397,8 +397,8 @@ export class AdminProductsRepository {
      * A marketplace listing's answers onto a product (marketplace-facts D7): under the row's lock,
      * only what is still empty, so an edit made meanwhile wins. Returns what it filled.
      */
-    async fillFromMarketplace(orgId: string, id: string, fill: MarketplaceFill): Promise<MarketplaceFilled | null> {
-        return await prisma.$transaction(async (tx) => {
+    async fillFromMarketplace(orgId: string, id: string, fill: MarketplaceFill, within?: Prisma.TransactionClient): Promise<MarketplaceFilled | null> {
+        const run = async (tx: Prisma.TransactionClient): Promise<MarketplaceFilled | null> => {
             const [row] = await tx.$queryRaw<Array<{ facts: unknown; measurements: unknown; weight: number | null; mrpPaise: number | null; brandId: string | null }>>`
                 SELECT facts, measurements, weight, "mrpPaise", "brandId" FROM "Product" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
             if (!row) return null;
@@ -428,7 +428,9 @@ export class AdminProductsRepository {
                 select: { id: true },
             });
             return filled;
-        });
+        };
+        // In a settle's transaction, the facts are saved with the product (marketplace-facts Q35).
+        return within ? await run(within) : await prisma.$transaction(run);
     }
 
     /**

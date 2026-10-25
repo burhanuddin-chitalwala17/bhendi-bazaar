@@ -274,7 +274,7 @@ Routes, all `withOrg`:
 - `POST /api/org/[orgId]/channels/settle` — body `settle-listing.schema.ts`: `listingIds` (one or
   two, one per marketplace), `productId` when matching, `name`/`description` when chosen,
   `photosFrom` (a listing id, never a photo address) or `uploadedPhoto` (a ready asset's URL), `sku`
-  (one of the listings' own), `price` in rupees (stored as paise), `categoryId`, `stock` per location
+  (any SKU of 1–64 characters, since product-merge Q31; each listing keeps its own), `price` in rupees (stored as paise), `categoryId`, `stock` per location
   with `seenQuantity` when matching, `onSale`. Answers `{ result: SettleResultDTO }`; 409 in the
   envelope when settled meanwhile, a SKU is taken, the stock moved or the product is already linked
   on that marketplace; 502 when the main photo could not be copied.
@@ -291,7 +291,11 @@ entry keeps `source` when the shop changes the answer, so "was Crepe from Amazon
 product form's DTOs (`admin.product.types.ts`, `console/types.ts`) carry it. `Product.mrpPaise` is
 integer paise, filled only when empty. `ChannelListingDTO` gains `waitingForType`
 (`{ marketplaceType }` when parked with reason `no_type`); `SettleDetailDTO` gains `type`, a
-**`SettleTypeDTO`** (`kind` mapped / choose / none, `marketplaceType`, `types`). The product page
+**`SettleTypeDTO`** (`kind` mapped / choose / none, `marketplaceType`, `types`) and, since Q35, `facts`,
+a **`SettleFactsDTO`** (`typeOfCategory` category id → type key, `byType` type key → `fills`,
+`questions`, `noMapping`; `fixedType` when matching; `saysNothing`). The settle body takes
+`answers` (fact → our answer's key, at most 60); the server re-plans from the listing's stored read
+and keeps an answer only for a fact still asked and one of our answers to it. The product page
 reads **`ProductMarketplaceFactsDTO`** per linked listing (`server/channels/channel-facts.types.ts`):
 `state` from `FACTS_STATE`, `readAt`, `marketplaceType`, `filled` (**`MarketplaceFactRowDTO`**: label,
 value, the marketplace's words, `chosen`, `changed`, `options`), `questions`, `staleCheckedOn`,

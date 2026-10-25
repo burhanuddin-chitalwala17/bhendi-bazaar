@@ -151,8 +151,8 @@ export class ProductService {
   }
 
   /** Only what is still empty, under the row's lock (marketplace-facts D7). Null when not this org's. */
-  async fillFromMarketplace(orgId: string, id: string, fill: MarketplaceFill): Promise<MarketplaceFilled | null> {
-    return await adminProductsRepository.fillFromMarketplace(orgId, id, fill);
+  async fillFromMarketplace(orgId: string, id: string, fill: MarketplaceFill, tx?: Prisma.TransactionClient): Promise<MarketplaceFilled | null> {
+    return await adminProductsRepository.fillFromMarketplace(orgId, id, fill, tx);
   }
 
   /** The owner's choice, change or reset of one answer from the card (marketplace-facts D8). */

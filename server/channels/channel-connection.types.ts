@@ -1,5 +1,5 @@
 import { CHANNEL, type Channel } from "@server/shared/channels";
-import type { SettleTypeDTO } from "./channel-facts.types";
+import type { SettleFactsDTO, SettleTypeDTO } from "./channel-facts.types";
 
 /**
  * The shapes the channels domain answers with (channel-connectors TRD). Nothing here carries a
@@ -273,6 +273,8 @@ export interface SettleDetailDTO {
   defaultCategoryId: string | null;
   /** The type question a new product starts with, when the marketplace names its type (marketplace-facts D9). */
   type: SettleTypeDTO | null;
+  /** Amazon's facts per type, to fill and answer before saving (marketplace-facts Q35). */
+  facts: SettleFactsDTO | null;
   /** When the inbox was last read: the "As Amazon reported 3 days ago" line. */
   readFinishedAt: string | null;
 }
@@ -290,6 +292,8 @@ export interface SettleInput {
   categoryId?: string;
   stock: Array<{ locationId: string; quantity: number; seenQuantity?: number }>;
   onSale?: boolean;
+  /** The owner's answers to the primary listing's unclear facts, fact → our answer's key (marketplace-facts Q35). */
+  answers?: Record<string, string>;
 }
 
 export interface SettleResultDTO {

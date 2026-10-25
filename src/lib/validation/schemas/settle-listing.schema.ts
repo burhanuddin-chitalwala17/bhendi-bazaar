@@ -31,6 +31,11 @@ export const settleListingSchema = z
       .max(50),
     /** "Put it on sale here" when nothing being settled is live (Q12). */
     onSale: z.boolean().optional(),
+    /** Answers to the listing's unclear facts, fact → our answer's key; checked against the question on the server (marketplace-facts Q35). */
+    answers: z
+      .record(z.string().min(1).max(60), z.string().min(1).max(120))
+      .refine((a) => Object.keys(a).length <= 60, "Too many answers.")
+      .optional(),
   })
   .superRefine((value, ctx) => {
     if (new Set(value.listingIds).size !== value.listingIds.length) {
@@ -38,7 +43,7 @@ export const settleListingSchema = z
     }
     if (value.productId) return;
     if (!value.name) ctx.addIssue({ code: "custom", path: ["name"], message: "Give the product a name." });
-    if (!value.sku) ctx.addIssue({ code: "custom", path: ["sku"], message: "Pick the SKU for this product." });
+    if (!value.sku) ctx.addIssue({ code: "custom", path: ["sku"], message: "Enter a SKU for this product." });
     if (value.price === undefined) ctx.addIssue({ code: "custom", path: ["price"], message: "Enter a price." });
     if (!value.categoryId) ctx.addIssue({ code: "custom", path: ["categoryId"], message: "Pick a category." });
     if (!value.photosFrom && !value.uploadedPhoto) {

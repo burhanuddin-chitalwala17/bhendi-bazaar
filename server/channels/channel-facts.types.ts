@@ -72,6 +72,23 @@ export interface SettleTypeDTO {
   types: TypeChoiceDTO[];
 }
 
+/** One type's facts from the listing, as the Settle page shows them once that type's category is chosen (Q35). */
+export interface SettleTypeFactsDTO {
+  fills: Array<{ fact: string; label: string; value: string }>;
+  questions: MarketplaceQuestionDTO[];
+  noMapping: boolean;
+}
+
+/** The Settle page's facts for every type, so choosing a category shows its facts at once (Q35). */
+export interface SettleFactsDTO {
+  /** Each category's type key; a category with none is absent. */
+  typeOfCategory: Record<string, string>;
+  byType: Record<string, SettleTypeFactsDTO>;
+  /** Matching keeps the product's own type. */
+  fixedType: string | null;
+  saysNothing: boolean;
+}
+
 /** What a "Fill from" tap answers; the card's copy is chosen by the outcome. */
 export type FillNowOutcome = "filled" | "busy" | "reconnect" | "not_linked";
 

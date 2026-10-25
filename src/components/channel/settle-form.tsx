@@ -27,6 +27,7 @@ import { ListingImage } from "./listing-image";
 import { MatchPicker } from "./match-picker";
 import { SETTLE, SETTLE_ACTION, SETTLE_TOAST } from "./settle-copy";
 import { SettleTypeQuestion } from "./settle-type-question";
+import { SettleFacts } from "./settle-facts";
 import { ASK_ADMIN, FACTS_TOAST } from "./facts-copy";
 
 const PRODUCT = "product";
@@ -344,14 +345,15 @@ export function SettleForm({ orgId, shopName, orgCode, detail, categories, backH
           </FormField>
 
           <FormField id="settle-sku" label={SETTLE.sku} required hint={SETTLE.skuHelp} error={errors.sku?.message}>
-            <Select id="settle-sku" {...register("sku")}>
+            {/* Any SKU the shop likes; each listing keeps its own, so its SKUs are only suggestions (product-merge Q31). */}
+            <Input id="settle-sku" list="settle-sku-options" autoComplete="off" {...register("sku")} />
+            <datalist id="settle-sku-options">
               {skus.map((sku) => (
                 <option key={sku} value={sku}>
-                  {sku}
-                  {sides.length > 1 && sides.every((s) => s.sku === sku) ? ` · ${SETTLE.skuBoth}` : ` · ${sides.find((s) => s.sku === sku)?.label}`}
+                  {sides.length > 1 && sides.every((s) => s.sku === sku) ? SETTLE.skuBoth : sides.find((s) => s.sku === sku)?.label}
                 </option>
               ))}
-            </Select>
+            </datalist>
           </FormField>
           {errors.sku && (
             <MatchPicker
@@ -388,6 +390,21 @@ export function SettleForm({ orgId, shopName, orgCode, detail, categories, backH
             </Select>
           </FormField>
         </>
+      )}
+
+      {detail.facts && (
+        <SettleFacts
+          label={primary.label}
+          facts={detail.facts}
+          categoryId={watch("categoryId")}
+          answers={watch("answers") ?? {}}
+          onAnswer={(fact, key) => {
+            const next = { ...(form.getValues("answers") ?? {}) };
+            if (key) next[fact] = key;
+            else delete next[fact];
+            setValue("answers", next);
+          }}
+        />
       )}
 
       <fieldset className="flex flex-col gap-2">

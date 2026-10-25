@@ -63,7 +63,7 @@
 | Match | Header "Match to Black Nida Abaya – M"; each field: product's value kept unless switched | Link and save |
 | Field comparison | Per field (Title, Description, Photos): a choice per side; "More complete" on the default | Switch |
 | Price | "Price on Bhendi Bazaar" pre-filled ₹1,899; "Amazon ₹1,999 · Flipkart ₹1,899. Each marketplace keeps its own price." | Edit |
-| SKU, sides differ | "SKU for this product": one choice per side; "Each marketplace listing keeps its own SKU." | Pick |
+| SKU, sides differ | "SKU for this product": a text field starting at the listing's SKU, suggesting each side's; "Starts as the marketplace's SKU; use any you like. Each marketplace listing keeps its own SKU." (Q31, 2026-10-25) | Type or pick |
 | Category | "Category" picker, pre-filled with the last one chosen here | Pick |
 | Quantity | "How many do you actually have?" pre-filled with the lowest; "Amazon says 9, Flipkart says 7." and "Amazon and Flipkart keep their own count until stock sync is on. Change it there too if it's different." | Edit |
 | Nothing live on the marketplace | Under the header: "Inactive on Amazon, so it goes on your Archived shelf." with a switch "Put it on sale here", off | Switch |

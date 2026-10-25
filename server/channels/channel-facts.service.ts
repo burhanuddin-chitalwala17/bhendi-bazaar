@@ -5,7 +5,7 @@ import { CHANNEL_LABELS } from "@server/shared/channels";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 import { productService } from "@server/catalog/product.service";
 import { brandService } from "@server/catalog/brand.service";
-import type { MarketplaceEntry } from "@server/catalog/admin.product.types";
+import type { MarketplaceEntry, MarketplaceFill } from "@server/catalog/admin.product.types";
 import { channelMapService } from "@server/listing/channel-map.service";
 import { orgListingDefaultsService } from "@server/listing/org-listing-defaults.service";
 import { storedFactSchema } from "@server/listing/listing-facts";
@@ -20,7 +20,9 @@ import {
   type MarketplaceFactRowDTO,
   type MarketplaceFactsChange,
   type ProductMarketplaceFactsDTO,
+  type SettleFactsDTO,
   type SettleTypeDTO,
+  type SettleTypeFactsDTO,
   type TypeChoiceDTO,
 } from "./channel-facts.types";
 import { listingFactsSpec, type ListingFactsPayload } from "./listing-facts.job";
@@ -173,11 +175,17 @@ export const channelFactsService = {
   },
 
   /**
-   * The Settle page's type question (D9): the listing read now and stored, its marketplace type
-   * mapped back to ours. Null when the marketplace names no type or cannot be read; the page still opens.
+   * What the Settle page asks and fills (D9, Q35): the listing read now and stored, its marketplace
+   * type mapped back to ours, and its facts planned for every type, so choosing a category shows
+   * them at once. Matching plans only the product's own type and empty facts. Nulls when the
+   * marketplace cannot be read; the page still opens.
    */
-  async settleType(row: { id: string; channel: string; connectionId: string; sku: string; externalId: string | null; connection: { externalAccountId: string | null } }): Promise<SettleTypeDTO | null> {
-    if (!isMarketplaceChannel(row.channel)) return null;
+  async settleRead(
+    row: { id: string; channel: string; orgId?: string; connectionId: string; sku: string; externalId: string | null; connection: { externalAccountId: string | null } },
+    orgId: string,
+    product: { productType: string | null; facts: unknown; measurements: unknown } | null,
+  ): Promise<{ type: SettleTypeDTO | null; facts: SettleFactsDTO | null }> {
+    if (!isMarketplaceChannel(row.channel)) return { type: null, facts: null };
     let read: ListingAttributes;
     try {
       read = await providerFor(row.channel).listingAttributes(
@@ -186,15 +194,98 @@ export const channelFactsService = {
         { sku: row.sku, externalId: row.externalId },
       );
     } catch {
-      return null;
+      return { type: null, facts: null };
     }
     await channelListingRepository.saveAttributes(row.id, read, new Date());
-    if (!read.type) return null;
     const [mapping, choices] = await Promise.all([channelMapService.forFill(row.channel), channelMapService.typeChoices()]);
+    const keys = product ? (product.productType ? [product.productType] : []) : choices.map((c) => c.key);
+    const views = await Promise.all(keys.map((key) => channelMapService.typeForFill(key, orgId)));
+    const byType: Record<string, SettleTypeFactsDTO> = {};
+    views.forEach((view, index) => {
+      if (!view) return;
+      const plan = planFill({
+        read,
+        mapping,
+        product: { productType: keys[index], facts: entriesOf(product?.facts), measurements: entriesOf(product?.measurements) },
+        type: view,
+        lists: view.lists,
+        skips: [],
+      });
+      const labelOf = (fact: string) => view.facts.find((f) => f.key === fact)?.label ?? fact;
+      byType[keys[index]] = {
+        fills: plan.facts.map((f) => ({
+          fact: f.key,
+          label: labelOf(f.key),
+          value: shown(f.value, view.facts.find((x) => x.key === f.key), undefined, view),
+        })),
+        questions: plan.questions.map((q) => ({ fact: q.fact, label: labelOf(q.fact), said: q.said, options: q.options })),
+        noMapping: plan.oldestCheck === null,
+      };
+    });
+    const facts: SettleFactsDTO = {
+      typeOfCategory: Object.fromEntries(choices.flatMap((c) => c.categories.map((cat) => [cat.id, c.key]))),
+      byType,
+      fixedType: product?.productType ?? null,
+      saysNothing: !read.type && Object.keys(read.attributes).length === 0,
+    };
+    if (product || !read.type) return { type: null, facts };
     const outcome = typeFor({ productType: null, facts: {}, measurements: {} }, read.type, mapping);
-    if (outcome.kind === "mapped") return { kind: "mapped", marketplaceType: read.type, types: choices.filter((c) => c.key === outcome.productType) };
-    if (outcome.kind === "choose") return { kind: "choose", marketplaceType: read.type, types: choices.filter((c) => outcome.productTypes.includes(c.key)) };
-    return { kind: "none", marketplaceType: read.type, types: choices };
+    const type: SettleTypeDTO =
+      outcome.kind === "mapped"
+        ? { kind: "mapped", marketplaceType: read.type, types: choices.filter((c) => c.key === outcome.productType) }
+        : outcome.kind === "choose"
+          ? { kind: "choose", marketplaceType: read.type, types: choices.filter((c) => outcome.productTypes.includes(c.key)) }
+          : { kind: "none", marketplaceType: read.type, types: choices };
+    return { type, facts };
+  },
+
+  /**
+   * What a settle writes from the Settle page (Q35): re-planned from the listing's stored read for
+   * the type being saved, never from the browser; each answer is kept only when the fact is still
+   * asked and the answer is one of ours for it. Empty when the listing was never read.
+   */
+  async settleFill(
+    row: { channel: string; attributes: unknown; attributesReadAt: Date | null },
+    orgId: string,
+    target: { productType: string | null; facts: unknown; measurements: unknown } | { categoryId: string },
+    answers: Readonly<Record<string, string>>,
+  ): Promise<MarketplaceFill | null> {
+    const product =
+      "categoryId" in target
+        ? {
+            productType: (await channelMapService.typeChoices()).find((c) => c.categories.some((cat) => cat.id === target.categoryId))?.key ?? null,
+            facts: null,
+            measurements: null,
+          }
+        : target;
+    const read = storedRead(row.attributes);
+    if (!read || !product.productType || !isMarketplaceChannel(row.channel)) return null;
+    const [mapping, view] = await Promise.all([channelMapService.forFill(row.channel), channelMapService.typeForFill(product.productType, orgId)]);
+    if (!view) return null;
+    const plan = planFill({
+      read,
+      mapping,
+      product: { productType: product.productType, facts: entriesOf(product.facts), measurements: entriesOf(product.measurements) },
+      type: view,
+      lists: view.lists,
+      skips: [],
+    });
+    const at = (row.attributesReadAt ?? new Date()).toISOString();
+    const channel = row.channel;
+    const chosen = plan.questions.flatMap((q): Array<[string, MarketplaceEntry]> => {
+      const key = answers[q.fact];
+      const list = view.facts.find((f) => f.key === q.fact)?.list;
+      // Any of our answers to that fact, not only the ones suggested first.
+      if (!key || !list || !(view.lists[list] ?? []).some((o) => o.key === key)) return [];
+      return [[q.fact, { ...entry(channel, key, q.said, at), source: { channel, value: q.said.slice(0, SAID_MAX), readAt: at, chosen: true } }]];
+    });
+    return {
+      facts: parsed([...plan.facts.map((f): [string, MarketplaceEntry] => [f.key, entry(channel, f.value, f.said, at)]), ...chosen]),
+      measurements: parsed(plan.measurements.map((m): [string, MarketplaceEntry] => [m.key, entry(channel, m.value, m.said, at)])),
+      weightKg: null,
+      mrpPaise: null,
+      brandId: null,
+    };
   },
 
   /** One card per linked listing on the product page (ux.md "Facts from Amazon card"), computed from the stored read (D6). */

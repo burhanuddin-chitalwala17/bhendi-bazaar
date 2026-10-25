@@ -71,7 +71,7 @@ export const SETTLE = {
   priceHelp: (parts: string) => `${parts}. Each marketplace keeps its own price.`,
   sku: "SKU for this product",
   skuBoth: "both",
-  skuHelp: "Each marketplace listing keeps its own SKU.",
+  skuHelp: "Starts as the marketplace's SKU; use any you like. Each marketplace listing keeps its own SKU.",
   category: "Category",
   quantity: "How many do you actually have?",
   says: (parts: string) => `${parts}.`,

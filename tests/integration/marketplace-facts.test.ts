@@ -309,6 +309,60 @@ describe.skipIf(!isDisposableDb)("filling a product from its marketplace listing
       ).rejects.toThrow(/left_off_reason_check/);
     });
 
+    it("saves the page's facts with the product: the clear ones and only valid answers (Q35)", async () => {
+      const { channelSettleService } = await import("@server/channels/channel-settle.service");
+      const category = await prisma.category.create({
+        data: { slug: `mf-q35-${stamp}`, name: `Mats Q35 ${stamp}`, description: "", heroImage: "/brand/bhendi-bazaar.png", productType: "prayer-mat" },
+        select: { id: true },
+      });
+      const listing = await prisma.channelListing.create({
+        data: { connectionId, orgId, channel: "amazon", sku: `MF-${stamp}-q35`, skuKey: `mf-${stamp}-q35`, title: "Mat", status: "LIVE", lastSeenAt: new Date() },
+        select: { id: true },
+      });
+      try {
+        const detail = await channelSettleService.page(orgId, listing.id, null);
+        const shown = detail?.facts?.byType["prayer-mat"];
+        expect(detail?.facts?.typeOfCategory[category.id]).toBe("prayer-mat");
+        expect(shown?.fills.map((f) => f.fact)).toEqual(expect.arrayContaining(["colour", "packQuantity"]));
+        expect(shown?.questions.map((q) => q.fact)).toEqual(["material"]);
+
+        // An answer to a fact that is not asked (colour, care) is kept out, whatever the browser sends.
+        const result = await channelSettleService.settle(orgId, userId, {
+          listingIds: [listing.id],
+          name: `Mat ${stamp}`,
+          description: "A mat",
+          photosFrom: listing.id,
+          sku: `MF-${stamp}-q35`,
+          pricePaise: 99_900,
+          categoryId: category.id,
+          stock: [{ locationId, quantity: 1 }],
+          answers: { material: "cotton", colour: "red", care: "anything" },
+        });
+        const row = await prisma.product.findUniqueOrThrow({ where: { id: result.productId }, select: { facts: true } });
+        expect(row.facts).toMatchObject({
+          colour: { value: "green", origin: "marketplace" },
+          material: { value: "cotton", origin: "marketplace", source: { chosen: true } },
+          care: { value: "hand-wash", origin: "marketplace" },
+        });
+      } finally {
+        const { JOBS_QUEUE, JOBS_SCHEMA } = await import("@server/shared/jobs/jobs.config");
+        await prisma.$executeRawUnsafe(`DELETE FROM ${JOBS_SCHEMA}.job WHERE name = $1 AND data->'payload'->>'listingId' = $2`, JOBS_QUEUE, listing.id);
+        const linkedTo = (await prisma.channelListing.findUniqueOrThrow({ where: { id: listing.id }, select: { productId: true } })).productId;
+        await prisma.channelListing.deleteMany({ where: { id: listing.id } });
+        if (linkedTo) await prisma.product.deleteMany({ where: { id: linkedTo } });
+        await prisma.category.delete({ where: { id: category.id } });
+      }
+    });
+
+    it("keeps an answer only when it is one of ours for a fact still asked (Q35)", async () => {
+      const row = { channel: "amazon", attributes: read(), attributesReadAt: new Date() };
+      const target = { productType: "prayer-mat", facts: null, measurements: null };
+      expect((await facts.settleFill(row, orgId, target, { material: "not-a-material" }))?.facts).not.toHaveProperty("material");
+      expect((await facts.settleFill(row, orgId, target, { material: "cotton" }))?.facts.material).toMatchObject({ value: "cotton" });
+      const answered = { ...target, facts: { material: { value: "silk", origin: "product" } } };
+      expect((await facts.settleFill(row, orgId, answered, { material: "cotton" }))?.facts).not.toHaveProperty("material");
+    });
+
     it("starts the Settle page on the mapped type's question, and stores the read (D9)", async () => {
       const { channelSettleService } = await import("@server/channels/channel-settle.service");
       const listing = await prisma.channelListing.create({

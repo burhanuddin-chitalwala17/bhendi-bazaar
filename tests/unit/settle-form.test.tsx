@@ -44,6 +44,7 @@ const detail = (over: Partial<SettleDetailDTO> = {}): SettleDetailDTO => ({
   locations: [{ id: "loc-1", name: "Mumbai shop" }],
   defaultCategoryId: "cat-abayas",
   type: null,
+  facts: null,
   readFinishedAt: null,
   ...over,
 });
@@ -123,5 +124,50 @@ describe("the Settle page's form (product-merge D10)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Park it" }));
     await waitFor(() => expect(leaveOff).toHaveBeenCalledWith("org_1", "amazon", "l-az", "no_type"));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/org/org_1/channels/amazon/listings?tab=notLinked&left=1"));
+  });
+
+  it("takes any SKU the shop types, starting from the listing's (product-merge Q31)", async () => {
+    settle.mockReset().mockResolvedValue({ result: { productId: "p2", productName: "Abaya", archived: false, mode: "new" } });
+    renderForm(detail({ pair: null }));
+    const sku = screen.getByLabelText(/SKU for this product/i);
+    expect(sku).toHaveValue("ABY-BLK-L");
+    fireEvent.change(sku, { target: { value: "NQB-ABAYA-01" } });
+    press("Add product");
+    await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+    expect(settle.mock.calls[0][1]).toMatchObject({ sku: "NQB-ABAYA-01" });
+  });
+
+  it("shows the chosen category's facts, and sends the answers tapped, not the skipped (marketplace-facts Q35)", async () => {
+    settle.mockReset().mockResolvedValue({ result: { productId: "p3", productName: "Abaya", archived: false, mode: "new" } });
+    renderForm(
+      detail({
+        pair: null,
+        defaultCategoryId: null,
+        facts: {
+          typeOfCategory: { "cat-abayas": "islamic-wear" },
+          fixedType: null,
+          saysNothing: false,
+          byType: {
+            "islamic-wear": {
+              noMapping: false,
+              fills: [{ fact: "colour", label: "Colour", value: "Black" }],
+              questions: [
+                { fact: "material", label: "Fabric", said: "Other", options: [{ key: "nida", label: "Nida" }, { key: "crepe", label: "Crepe" }] },
+                { fact: "sleeveLength", label: "Sleeve", said: "Long", options: [{ key: "full", label: "Full" }] },
+              ],
+            },
+          },
+        },
+      }),
+    );
+    expect(screen.getByText("Pick a category to see Amazon's facts for it.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Category/i), { target: { value: "cat-abayas" } });
+    expect(await screen.findByText("Black")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Nida" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Skip for now" })[1]);
+    expect(screen.getByText("Sleeve · skipped")).toBeInTheDocument();
+    press("Add product");
+    await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
+    expect(settle.mock.calls[0][1].answers).toEqual({ material: "nida" });
   });
 });

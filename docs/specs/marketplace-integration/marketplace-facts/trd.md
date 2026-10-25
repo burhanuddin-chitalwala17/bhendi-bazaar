@@ -56,8 +56,12 @@ aggregate's repository, so a fill never overwrites what the owner set meanwhile.
 - **D6 — The read is stored on the listing** (`attributes`, `attributesReadAt`); "Skip for now" is a
   list of skipped facts there. The card computes filled, to confirm and changed from the read, the
   mapping and the product, so a fixed mapping or a later edit shows at once.
-- **D7 — Filling runs on the worker,** job `channels.fill-facts`, one listing per job, enqueued in
-  the settle transaction (Q3). "Fill from {marketplace}" runs the same read in the request, so the
+- **D7 — Filling on the Settle page (Q35):** the page's stored read is planned for every type, so
+  choosing a category shows its facts at once; the owner's answers travel with the settle, and the
+  server re-plans from the stored read (never trusting values from the browser), checks each answer
+  against the question's options, and writes them in the settle transaction through catalog's
+  conditional command. The worker job `channels.fill-facts`, one listing per job, still follows
+  each settle for the details and the paired listing. "Fill from {marketplace}" runs the same read in the request, so the
   card can show loading, busy and reconnect as they happen (Q32). Catalog's new `fillFromMarketplace`
   locks the product row and writes only keys still empty, each entry carrying its marketplace and
   the value read (ADR-0051), so an owner's edit made meanwhile wins and "was Crepe from Amazon" can
@@ -118,6 +122,7 @@ CONTRACTS.md moves with them.
 3. The fill, catalog's conditional commands and `mrpPaise`, the job, on settle and on Fill.
 4. The card and its routes: answer, skip, reset, the stale note.
 5. Type and category: Settle's starting category, the type and category questions, park and ask.
+6. Facts on the Settle page (Q35): planned per type when the page opens, answered or skipped there, saved with the settle.
 
 ## Open questions
 None.

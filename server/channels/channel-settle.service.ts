@@ -97,15 +97,16 @@ export const channelSettleService = {
     if (!row || !isMarketplaceChannel(row.channel)) return null;
     const connection = await channelConnectionRepository.find(orgId, row.channel);
 
-    const [primary, product, locations, pair, latest, type] = await Promise.all([
+    const [primary, product, locations, pair, latest, owned] = await Promise.all([
       sideOf(row),
       productId ? productService.settleFacts(orgId, productId) : Promise.resolve(null),
       orgAddressService.listLocations(orgId),
       productId ? Promise.resolve(null) : this.pairFor(orgId, row),
       channelListingRepository.latestOwnerLinkedProductId(orgId),
-      productId ? Promise.resolve(null) : channelFactsService.settleType(row),
+      productId ? productService.marketplaceFacts(orgId, productId) : Promise.resolve(null),
     ]);
-    if (productId && !product) return null;
+    if (productId && (!product || !owned)) return null;
+    const { type, facts } = await channelFactsService.settleRead(row, orgId, owned);
     // The mapped type's one category starts the add (marketplace-facts D9); else the shop's last one (product-merge D9).
     const typed = type?.kind === "mapped" && type.types[0]?.categories.length === 1 ? type.types[0].categories[0].id : null;
     const lastCategory = typed ?? (latest ? (await productService.settleFacts(orgId, latest))?.categoryId ?? null : null);
@@ -129,6 +130,7 @@ export const channelSettleService = {
       locations: locations.filter((l) => l.isActive).map((l) => ({ id: l.id, name: l.name })),
       defaultCategoryId: lastCategory,
       type,
+      facts,
       readFinishedAt: connection?.readFinishedAt?.toISOString() ?? null,
     };
   },
@@ -181,7 +183,7 @@ export const channelSettleService = {
     const target = matching ? await productService.settleFacts(orgId, input.productId!) : null;
     if (matching && !target) throw new NotFoundError("Product");
 
-    if (!matching) await this.assertSkuFree(orgId, rows, input.sku!);
+    if (!matching) await this.assertSkuFree(orgId, input.sku!);
     if (target) await this.assertNotLinkedHere(rows, target.id, target.name);
 
     const photoSource = input.photosFrom ? rows.find((r) => r.id === input.photosFrom) : null;
@@ -214,6 +216,16 @@ export const channelSettleService = {
     if (input.stock.some((s) => !owned.has(s.locationId))) {
       throw new DomainError("One of the chosen pickup locations does not belong to this organisation", { status: 400, field: "stock" });
     }
+
+    // The facts shown on the page, re-planned from the stored read for the type being saved (marketplace-facts Q35).
+    const primaryRow = rows.find((r) => r.id === input.listingIds[0])!;
+    const matched = target ? await productService.marketplaceFacts(orgId, target.id) : null;
+    const factFill = await channelFactsService.settleFill(
+      primaryRow,
+      orgId,
+      matched ?? { categoryId: input.categoryId! },
+      input.answers ?? {},
+    );
 
     const result = await prisma.$transaction(
       async (tx) => {
@@ -274,7 +286,8 @@ export const channelSettleService = {
         // Two members, or two taps: the second finds the rows taken and rolls back its product.
         if (linked !== input.listingIds.length) throw new TakenMeanwhile();
 
-        // Each settled listing fills its product's empty facts, on the worker (marketplace-facts Q3).
+        if (factFill) await productService.fillFromMarketplace(orgId, productId, factFill, tx);
+        // Then each listing, re-read on the worker, fills what is still empty: details, and a paired listing's facts (D7).
         await channelFactsService.enqueueIn(tx, orgId, input.listingIds);
 
         if (photoSource && queued.length > 0) {
@@ -309,9 +322,8 @@ export const channelSettleService = {
     return { ...result, archived, mode: matching ? "match" : "new" };
   },
 
-  /** A SKU another product holds, archived included, refuses with that product named (journey 4). */
-  async assertSkuFree(orgId: string, rows: readonly SettleRow[], sku: string): Promise<void> {
-    if (!rows.some((r) => r.sku === sku)) throw new DomainError("Pick the SKU of one of these listings.", { status: 400, field: "sku" });
+  /** A SKU another product holds, archived included, refuses with that product named (journey 4). Any SKU otherwise (Q31). */
+  async assertSkuFree(orgId: string, sku: string): Promise<void> {
     const owner = (await productService.listForMatching(orgId)).find((p) => p.sku === sku);
     if (owner) {
       throw new ConflictError(

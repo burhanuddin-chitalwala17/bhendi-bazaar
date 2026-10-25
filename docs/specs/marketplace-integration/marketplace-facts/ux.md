@@ -10,9 +10,10 @@
 > never disabled. Every string below is the string that ships.
 
 ## Journeys
-1. **Making a product from a listing.** Settle → "Add product" → the product page opens with a card
-   "Facts from Amazon": the clear facts are already filled, each marked "from Amazon", and any
-   unclear ones are listed to confirm → the owner taps an option or skips.
+1. **Making a product from a listing.** Settle → choose a category → "Facts from Amazon" on the
+   Settle page shows the clear facts already filled, each marked "from Amazon", and the unclear
+   ones with our answers → the owner taps one or skips → "Add product" saves them with the product
+   (Q35). The product page's card shows the same facts afterwards, for any change.
 2. **Answering a question.** The card lists "Amazon says Fabric: Other. Which fits?" → the owner
    taps one of its own answers → the fact fills, marked "from Amazon · you chose", and the count drops.
 3. **Filling an older linked product.** Product page → "Facts from Amazon" → "Fill from Amazon" → the
@@ -53,6 +54,18 @@
 | Slow | Skeleton rows; after 3 s "Still reading Amazon…" | — |
 | Phone / tablet / desktop | Stacked rows / two columns from `md:` / a table from `lg:` | — |
 
+## State matrix — Settle page: Facts from Amazon (Q35)
+| State | What the person sees | Action |
+|---|---|---|
+| No category yet | "Pick a category to see Amazon's facts for it." | — |
+| Filled and to confirm | "These fill when you add it. Answer the rest or skip them; you can change any later." then the filled facts, each "Colour · Green · from Amazon", and each unclear one: "Amazon says Fabric: Other. Which fits this product?" with our answers | Tap one · Skip for now |
+| Answered here | The tapped answer shows selected; tapping it again clears it | Tap again to clear |
+| Skipped | The question folds to "Fabric · skipped" | Ask again |
+| Nothing to fill | "Nothing new to fill from Amazon: the facts it answers are already filled." | — |
+| No mapping for the type | "No Amazon mapping yet for this type. Nothing to fill." | — |
+| No answers from the marketplace | "Amazon didn't share any answers for this listing, so there's nothing to fill." | — |
+| Matching a product | Only that product's empty facts show | Same |
+
 ## State matrix — Choose a fact
 | State | What the person sees | Action |
 |---|---|---|
@@ -83,4 +96,4 @@ Amazon listing: {title} (SKU {sku}). Amazon lists it as {amazon type}. Please ad
 Signed off by the owner, 2026-10-23, as the prototype stands (version 2). Changed after sign-off at the
 owner's request, 2026-10-23: one card per marketplace through one path, and "No answers from the
 marketplace" replaces "Flipkart only" (Q4, Q14). Added 2026-10-24 at the owner's request: "Category to confirm" (Q25) and the admin's types control on the channel register (Q26).
-Changed while building, 2026-10-25: "Adding" suggests known types instead of searching the marketplace, because the admin has no marketplace account to search with. The card's "No matching type" offers "Ask the admin" instead of "Park it", since a linked listing cannot be parked without unlinking it (Q33); the type and category questions also show on the Settle page above the category field; choosing a category toasts "{category} chosen. Facts are filling."; the Choose sheet lists our answers without examples, as no examples are stored. From the fresh-context review: skipped questions are listed as "Skipped for now:" with "Ask Fabric again", and a read that fills nothing new says "Nothing new to fill from Amazon: the facts it answers are already filled." instead of claiming success.
+Changed while building, 2026-10-25: "Adding" suggests known types instead of searching the marketplace, because the admin has no marketplace account to search with. The card's "No matching type" offers "Ask the admin" instead of "Park it", since a linked listing cannot be parked without unlinking it (Q33); the type and category questions also show on the Settle page above the category field; choosing a category toasts "{category} chosen. Facts are filling."; the Choose sheet lists our answers without examples, as no examples are stored. Changed 2026-10-25 at the owner's direction (Q35): facts fill and are answered on the Settle page as soon as a category is chosen, and save with the product; the card remains for later changes. From the fresh-context review: skipped questions are listed as "Skipped for now:" with "Ask Fabric again", and a read that fills nothing new says "Nothing new to fill from Amazon: the facts it answers are already filled." instead of claiming success.

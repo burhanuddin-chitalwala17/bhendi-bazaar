@@ -10,6 +10,31 @@
 
 ## Entries
 
+## 2026-10-25 — marketplace-facts unit 6: facts filled and answered on the Settle page [CONTRACT]
+
+- **The owner's call (Q35, superseding Q3):** the attributes are read when the Settle page opens, so
+  choosing a category shows its type's facts at once: the clear ones filled "from Amazon", the
+  unclear ones as Amazon's words with our answers to tap, or Skip for now (Ask again brings one
+  back). They are saved with "Add product" or "Link and save", in the same transaction, only into
+  empty facts. The product page card stays for later changes and older products.
+- **Nothing is trusted from the browser:** the server re-plans from the stored read for the type
+  being saved, and keeps an answer only for a fact still asked and one of our answers to it.
+  `SettleDetailDTO.facts` and the settle body's `answers` added; CONTRACTS.md moved with them.
+- **Mutation-tested:** the answer check removed → the "one of ours" test red. Restored.
+- **Tests:** `settle-form.test.tsx` (the chosen category's facts; tapped answers sent, skipped
+  ones not), `marketplace-facts.test.ts` (the page's facts per type; the settle saves the clear ones
+  and valid answers; answers to unasked facts or not ours are kept out).
+- **Docs:** decisions Q35, ux.md's "Settle page: Facts from Amazon" states and journey 1, TRD D7
+  and unit 6.
+
+## 2026-10-25 — product-merge: the product's SKU is typed freely [CONTRACT]
+
+- The Settle page's SKU was a choice among the listings' SKUs. It is now a text field that starts
+  at the listing's SKU and suggests the listings' SKUs (product-merge Q31, superseding Q10, owner).
+  The settle route no longer refuses a SKU that no listing has; a SKU another product holds is
+  still refused by name. Each listing keeps its own SKU. CONTRACTS.md's `sku` line moved with it.
+- **Tests:** `settle-form.test.tsx` (a typed SKU is what is sent).
+
 ## 2026-10-25 — marketplace-facts: fixes from the fresh-context review [MIGRATION]
 
 - **A long marketplace answer could empty a product's facts:** a stored entry caps the marketplace's
