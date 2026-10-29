@@ -7,6 +7,7 @@ import {
   type TokenGrant,
 } from "../marketplace-provider";
 import { readAmazonListings, amazonListingDetail, amazonListingAttributes } from "./amazon.listings";
+import { amazonLocations, amazonReadOrders, amazonReadStock, amazonSetStock } from "./amazon.stock";
 
 /**
  * Amazon's Selling Partner API, as INTEGRATIONS.md records it: website authorization through
@@ -67,6 +68,10 @@ export const amazonProvider: MarketplaceProvider = {
   readListings: readAmazonListings,
   listingDetail: amazonListingDetail,
   listingAttributes: amazonListingAttributes,
+  readLocations: amazonLocations,
+  readStock: amazonReadStock,
+  setStock: amazonSetStock,
+  readOrders: amazonReadOrders,
 
   configured() {
     const { clientId, clientSecret, solutionId } = env();

@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { CategoryBreadcrumb } from "@/components/category/category-breadcrumb";
 import { CategoryHero } from "@/components/category/category-hero";
 import { CategoryLanes } from "@/components/category/category-lanes";
@@ -6,10 +8,44 @@ import { EmptyState } from "@/components/shared/states/EmptyState";
 import { Package } from "lucide-react";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
-import { Suspense } from "react";
-import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
+import { appUrl } from "@server/shared/app-url";
+import { NotFoundError } from "@server/shared/domain-error";
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
+}
+
+/** An unknown slug is a 404, never an empty page that answers 200 (seo R7). */
+const getCategory = (slug: string) =>
+  categoriesDAL.getCategoryBySlug(slug).catch((error) => {
+    if (error instanceof NotFoundError) notFound();
+    throw error;
+  });
+
+export async function generateMetadata({
+  params,
+}: CategoryPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const category = await getCategory(slug);
+
+  const url = `${appUrl()}/category/${category.slug}`;
+  const title = `${category.name} — ${APP_NAME}`;
+  const description = category.description?.trim().slice(0, 200) || APP_DESCRIPTION;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      url,
+      siteName: APP_NAME,
+      title,
+      description,
+      ...(category.heroImage ? { images: [{ url: category.heroImage, alt: category.name }] } : {}),
+    },
+  };
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
@@ -19,7 +55,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   // category shapes all resolve against the same request-memoised tree, so they add no
   // queries; lanes are below this one only, and the ancestor trail points back up.
   const [category, page, lanes, ancestors] = await Promise.all([
-    categoriesDAL.getCategoryBySlug(slug),
+    getCategory(slug),
     productsDAL.getPage({ categorySlug: slug }),
     categoriesDAL.getDescendants(slug),
     categoriesDAL.getAncestors(slug),
@@ -27,26 +63,22 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="space-y-4">
-      <Suspense fallback={<LoadingSkeleton />}>
-        {category && page ? (
-          <>
-            <CategoryBreadcrumb ancestors={ancestors} current={category} />
-            <CategoryHero category={category} />
-            <CategoryLanes categories={lanes} />
-            <PaginatedProductGrid
-              initial={page.products}
-              initiallyDone={page.done}
-              query={{ category: slug }}
-            />
-          </>
+      <CategoryBreadcrumb ancestors={ancestors} current={category} />
+      <CategoryHero category={category} />
+      <CategoryLanes categories={lanes} />
+      {page.products.length > 0 ? (
+          <PaginatedProductGrid
+            initial={page.products}
+            initiallyDone={page.done}
+            query={{ category: slug }}
+          />
         ) : (
           <EmptyState
             icon={Package}
-            title="No category or products found"
-            description="Try different keywords or browse categories"
+            title="No products in this category yet"
+            description="Browse the other categories meanwhile"
           />
         )}
-      </Suspense>
     </div>
   );
 }

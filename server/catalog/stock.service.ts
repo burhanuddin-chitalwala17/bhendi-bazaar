@@ -62,6 +62,10 @@ export const stockService = {
   setCounted: (productId: string, rows: readonly StockAdjustment[], tx?: ProductStockDb) =>
     stockRepository.adjust(productId, rows, tx),
 
+  /** A marketplace sale: up to `quantity` from a location, never below zero; returns what was taken (inventory-sync D4). */
+  takeUpTo: (productId: string, orgAddressId: string, quantity: number, tx?: ProductStockDb) =>
+    stockRepository.takeUpTo(productId, orgAddressId, quantity, tx),
+
   /** Take one unit from a named location, conditionally. `false` means nothing was there. */
   takeOne: (productId: string, orgAddressId: string, tx?: ProductStockDb) =>
     stockRepository.takeOne(productId, orgAddressId, tx),

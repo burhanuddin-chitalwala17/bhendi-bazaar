@@ -10,6 +10,12 @@ import { channelSettleService } from "./channel-settle.service";
 import { listingPhotosSpec } from "./listing-photos.job";
 import { channelFactsService } from "./channel-facts.service";
 import { listingFactsSpec } from "./listing-facts.job";
+import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
+import { channelStockService } from "./channel-stock.service";
+import { channelOrdersService } from "./channel-orders.service";
+import { checkOrdersSpec, checkStockSpec, ORDERS_CHECK_EVERY_SECONDS } from "./stock-checks.job";
+import { enqueue, enqueueLater } from "@server/shared/jobs/jobs.enqueue";
+import { prisma } from "@server/shared/prisma";
 
 /**
  * A shop's listing read (channel-import D3): one per connection at a time, claimed inside the
@@ -43,6 +49,9 @@ export const channelsMaintainJob = registerJob({
         return true;
       }
     });
+    // Stock sync's daily check, and a restart of the order check if its chain stopped (inventory-sync Q23).
+    await enqueue(prisma, checkStockSpec, {});
+    await enqueueLater(prisma, checkOrdersSpec, {}, { afterSeconds: 0, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS });
     console.log(
       `[jobs] channels.maintain ${jobId}: checked ${summary.checked}, renewed ${summary.renewed}, ` +
         `resealed ${summary.resealed}, needs reconnect ${summary.needsReconnect}, ` +
@@ -68,5 +77,37 @@ export const listingFactsJob = registerJob({
   handler: async ({ jobId, payload }) => {
     const outcome = await channelFactsService.run(payload);
     console.log(`[jobs] channels.fill-facts ${jobId}: ${JSON.stringify({ listing: payload.listingId, ...outcome })}`);
+  },
+});
+
+/** A product's stock changed: its count goes to every marketplace with sync on (inventory-sync D2, D3). */
+export const pushStockJob = registerJob({
+  ...pushStockSpec,
+  handler: async ({ jobId, payload }) => {
+    const outcome = await channelStockService.push(payload.productId);
+    if (outcome.sent > 0) console.log(`[jobs] channels.push-stock ${jobId}: ${JSON.stringify({ product: payload.productId, ...outcome })}`);
+  },
+});
+
+/**
+ * Sales and cancellations on each marketplace with stock sync on (inventory-sync D4). A run claims
+ * the connections due, enqueues the next run before checking them, and stops when none was due (Q23).
+ */
+export const checkOrdersJob = registerJob({
+  ...checkOrdersSpec,
+  handler: async ({ jobId }) => {
+    const checked = await channelOrdersService.checkDue(() =>
+      enqueueLater(prisma, checkOrdersSpec, {}, { afterSeconds: ORDERS_CHECK_EVERY_SECONDS, onePerSeconds: ORDERS_CHECK_EVERY_SECONDS }),
+    );
+    if (checked > 0) console.log(`[jobs] channels.check-orders ${jobId}: ${checked} connections`);
+  },
+});
+
+/** Every linked listing's count read and put back where it was changed by hand (inventory-sync D5). */
+export const checkStockJob = registerJob({
+  ...checkStockSpec,
+  handler: async ({ jobId }) => {
+    const checked = await channelStockService.dailyCheckAll();
+    if (checked > 0) console.log(`[jobs] channels.check-stock ${jobId}: ${checked} connections`);
   },
 });

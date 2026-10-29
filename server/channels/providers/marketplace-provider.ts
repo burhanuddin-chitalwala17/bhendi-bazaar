@@ -1,5 +1,6 @@
 import type { MarketplaceChannel } from "../channel-connection.types";
 import type { ListingAttributes, ListingDetail, ListingSink, TokenSource } from "./listing-read";
+import type { ListingStock, LocationCount, MarketplaceLocation, OrdersPage, StockListingRef } from "./stock";
 
 /**
  * One marketplace, behind the verbs channel-connectors needs (TRD D1). Later subfeatures add their
@@ -48,6 +49,18 @@ export interface MarketplaceProvider {
     externalAccountId: string | null,
     listing: { sku: string; externalId: string | null },
   ): Promise<ListingAttributes>;
+
+  /** The account's pickup locations (inventory-sync D1). */
+  readLocations(token: TokenSource, externalAccountId: string | null): Promise<MarketplaceLocation[]>;
+
+  /** One listing's counts as the marketplace holds them now (inventory-sync D5, D6). */
+  readStock(token: TokenSource, externalAccountId: string | null, listing: StockListingRef): Promise<ListingStock>;
+
+  /** Order lines changed since the cursor, and the cursor to start from next (inventory-sync D4). */
+  readOrders(token: TokenSource, externalAccountId: string | null, cursor: string | null): Promise<OrdersPage>;
+
+  /** Send our counts for one listing, per marketplace location (inventory-sync D3). */
+  setStock(token: TokenSource, externalAccountId: string | null, listing: StockListingRef, counts: readonly LocationCount[]): Promise<void>;
 
   /** One listing's title, description and photos, read now (product-merge D1). */
   listingDetail(

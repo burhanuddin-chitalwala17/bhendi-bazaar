@@ -109,6 +109,10 @@ export const channelSettleService = {
     ]);
     if (productId && (!product || !owned)) return null;
     const { type, facts } = await channelFactsService.settlePlan(row, orgId, owned, read);
+    // One of a variation group, settled alone: the page offers the whole group as one family (family-merge Q22).
+    const siblings = !productId && row.parentSku ? await channelListingRepository.groupsFor(row.connectionId, [row.parentSku]) : [];
+    const open = siblings.filter((s) => !s.productId);
+    const group = open.length >= 2 ? { listingIds: siblings.map((s) => s.id), total: siblings.length, axis: row.variationAxis, name: row.parentTitle ?? row.title ?? row.sku } : null;
     // The mapped type's one category starts the add (marketplace-facts D9); else the shop's last one (product-merge D9).
     const typed = type?.kind === "mapped" && type.types[0]?.categories.length === 1 ? type.types[0].categories[0].id : null;
     const lastCategory = typed ?? (latest ? (await productService.settleFacts(orgId, latest))?.categoryId ?? null : null);
@@ -133,6 +137,7 @@ export const channelSettleService = {
       defaultCategoryId: lastCategory,
       type,
       facts,
+      group,
       readFinishedAt: connection?.readFinishedAt?.toISOString() ?? null,
     };
   },

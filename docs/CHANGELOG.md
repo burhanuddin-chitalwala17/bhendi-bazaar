@@ -10,6 +10,227 @@
 
 ## Entries
 
+## 2026-10-29 — inventory-sync: the five-minute order check costs little when nothing changes
+
+- A marketplace reports every order still waiting on every check (Flipkart's waiting shipments,
+  Amazon's last order again). Each was a transaction of three or four operations per line, every
+  five minutes. Now one read finds the lines already recorded; only a new line, or one whose state
+  moved, opens a transaction. Locations and listings are read only when something is new.
+- Due connections are claimed in one `UPDATE … RETURNING`, and the connection is read once. The
+  cursor is written only when it moved and something came in, or hourly.
+- A quiet run is now about 3 database operations plus the queue's own (was about 10, plus about 3.5
+  per waiting order line).
+- **Mutation-tested:** every reported line processed again → the quiet-check test red; the cursor
+  written on every run → red. Each restored.
+- **Tests:** `stock-sync.test.ts` (18).
+
+## 2026-10-29 — inventory-sync and family-merge: fixes from the self-review [CONTRACT]
+
+- **Amazon's first order check after turning sync on** no longer asks for orders updated within
+  two minutes of now, which Amazon refuses; the start is held back two minutes.
+- **A listing the marketplace turns down** is recorded on the listing and named on the section
+  ("turned down n listings"), instead of "Sending… 119 of 120" for ever; it is sent again on its
+  next change (Q25, which supersedes Q12's last clause).
+- **An order whose listing had no product** reads "Not linked to a product: stock not taken".
+- **Match locations:** Save with nothing picked says "Pick a location first."
+- **Family form:** the price is shown through `paiseToRupees` (Invariant 3), checked with the shared
+  `rupeeAmount` (at most two decimals), and SKU and price stack on a phone (ADR-0015).
+- **Not changed:** every stock change still enqueues its push in the business transaction,
+  checkout's included (ADR-0038); whether to enqueue only for linked products is the owner's call.
+- **Mutation-tested:** the two-minute clamp removed → `stock-providers.test.ts` red; the refusal
+  record removed → the turned-down test red. Each restored.
+- **Tests:** `stock-providers.test.ts` (5), `stock-sync.test.ts` (17).
+
+## 2026-10-29 — A missing product or category answers 404; categories get their own title and canonical
+
+- Search Console listed dead product slugs and unknown categories as soft 404s: both answered
+  200. The root layout's `<Suspense>` around every page started the stream before `notFound()`
+  could set a status; it is gone, and boundaries stay inside pages. A category's DAL read now
+  throws `NotFoundError` (it threw a plain `Error`), and the page calls `notFound()` on it.
+- The category page gains `generateMetadata`: its name, description and canonical (seo D6), which
+  ends every category sharing the site title. A real category with no products now says so
+  ("No products in this category yet") instead of showing an empty grid.
+- `/semi-formal-ridas` redirects permanently to `/category/semi-formal-rida` (`next.config.ts`).
+- **Tests:** `honest-status.test.ts` — no layout wraps `children` in Suspense; no `loading.tsx`
+  above a storefront page that calls `notFound()`. **Mutation-tested:** the root layout's original
+  line (`fallback={<LoadingSkeleton />}`) put back, and a `loading.tsx` added above the product
+  page → both red. Checked against `next dev`: unknown
+  product and category 404, real ones 200 with their own title and canonical; `next build` passes.
+
+## 2026-10-29 — inventory-sync: fixes from the fresh-context review [MIGRATION] [CONTRACT]
+
+- **The worker no longer fails at boot.** The five-minute order check was a schedule under the
+  hour floor (and a fifth schedule over the cap of four), which throws when the worker loads, taking
+  every job type down. It is now a job that enqueues its next run only while a connection has sync
+  on, each run claiming the connections due (`ordersCheckedAt`), so a second chain stops (Q23). The
+  daily stock check is enqueued by the daily maintain pass. `enqueueLater` added to the job seam.
+- **A push reads what was last sent inside its lock**, so one waiting on another never compares
+  against a stale send. The daily check compares with what was last sent and sends again through
+  the push, under the same lock (D5).
+- **Older sales are not taken again:** turning on starts the order check from now; a sale from
+  before sync is recorded, not taken (Q24, `MarketplaceOrder.beforeSync`). Flipkart's dispatched
+  orders are read too, so a sale dispatched between checks still counts.
+- **Matching locations sends what waited** (Q16). A location matched to a closed shop location
+  is sent 0 and asks for a new match; deleting a shop location clears its match (`ON DELETE SET
+  NULL`) instead of being refused.
+- **The section's missing states:** "Sending… n of m", "Couldn't reach…", "…doesn't let us send
+  stock yet", from `stockProblem` (D7, reworded in the TRD: a refusal is recorded, not predeclared).
+  A product stocked by the marketplace says so; an oversold line clears once shipped or cancelled;
+  "today" is India's day. Orders rows show "Before stock sync" and a guessed location (Q18).
+- Migration `20261029000500_stock_sync_checks`: adds `ChannelConnection.ordersCheckedAt`,
+  `stockProblem` (checked set), `MarketplaceOrder.beforeSync`; swaps one foreign key's delete rule.
+  Drops no data.
+- **Mutation-tested:** the worker loading a 300-second schedule → `worker-registrations.test.ts` red
+  (the test that would have caught this); listings read before the lock → the waiting-push test red;
+  the before-sync rule removed → red; the chain continuing with nothing due → red; no push after
+  matching → red; the cursor not reset on turn-on → red. Each restored.
+- **Tests:** `worker-registrations.test.ts` (2, new), `stock-sync.test.ts` (16).
+
+## 2026-10-29 — Search results leave the index; the old site's other WordPress addresses answer 410
+
+- `/s` is out of the sitemap and carries `noindex, follow` (seo R8, the `/s` part of TRD delivery 1).
+- `src/middleware.ts` answers `/wp-*`, `/xmlrpc.php`, `/feed`, `/comments/feed`, `/tag/` and
+  `/author/` with 410, beside the dated permalinks. `/category/` is excluded because the app serves it.
+- **Tests:** `portal-guards.test.ts` (the new shapes are gone; `/feeds/*` and `/category/feed` are not).
+  **Mutation-tested:** the rule narrowed back to dated paths → the new test red.
+
+## 2026-10-29 — inventory-sync units 4–5: the daily check, the product's stock line and every section state [MIGRATION] [CONTRACT]
+
+- A daily check reads every linked listing's counts, sends ours where they differ and records a
+  `StockCorrection` (migration `20261029000400_stock_corrections`, adds a table only); the section
+  lists today's (Q9). A product's On marketplaces block shows what was last sent and an oversold
+  order; a marketplace that stocks every listing itself (FBA) says so and sends nothing (Q5, Q20).
+- **Tests:** `stock-sync.test.ts` (the daily check records a correction; FBA skipped).
+
+## 2026-10-29 — inventory-sync unit 3: the order check, oversold and cancellations [MIGRATION] [CONTRACT]
+
+- `channels.check-orders` every five minutes per connection with sync on: Amazon's Orders API v0
+  (Q21; moving to `searchOrders` is in BACKLOG, due before 2027-03-27), Flipkart's shipment search.
+  Each line is a `MarketplaceOrder` once (migration `20261029000300_marketplace_orders`, adds a table,
+  unique on connection, order and line; claimed with `createMany … skipDuplicates`, since a unique
+  violation inside the transaction would abort it). Stock is taken through catalog's new `takeUpTo`,
+  never below zero; what could not be taken flags the line oversold (Q7). A line cancelled before
+  dispatch restocks once, claimed by a conditional update (Q8). Orders gains a Marketplace orders tab.
+- **Mutation-tested:** the claim's skip removed → the re-reported order test red; `takeUpTo`'s
+  minimum removed → the oversold test red; `restockedAt: null` removed from `claimRestock` → the
+  three-checks-at-once test red 3/3. Each restored.
+- **Allowlist edit (vocabulary.test.ts):** `item\.SellerSKU` — Amazon's own field name in its
+  orders response, read in `amazon.stock.ts`; the word is theirs, not our vocabulary.
+- **Tests:** `stock-providers.test.ts` (4), `stock-sync.test.ts`.
+
+## 2026-10-29 — inventory-sync unit 2: the switch, the preview and the push [MIGRATION] [CONTRACT]
+
+- Stock sync is off, on or paused per connection (migration `20261029000200_stock_sync`, adds
+  columns only). Turning on shows a preview of every linked listing's count, theirs and ours, then
+  sends (Q4). Every stock write in catalog (reserve, release, restock, adjust, takeOne, import) and
+  archiving enqueue `channels.push-stock` in their transaction, through `server/shared/jobs`, so
+  catalog does not import channels; a count reaching 0 goes first (Q19). The push reads the count
+  under a lock per product and skips counts already sent (Q22). `JobSpec` gains `priority`.
+- `PUT /api/org/[orgId]/channels/[channel]/stock-sync` (`stockSyncChangeSchema`).
+- **Mutation-tested:** the already-sent skip removed → the repeat-send test red. Restored.
+- Product read census +1 (`stockForPush`, archived included to send 0); product repository +1.
+- **Tests:** `stock-plan.test.ts` (4), `stock-sync.test.ts`, `payment-failed-restock.test.ts` (mock
+  gains `aggregate` and the enqueue).
+
+## 2026-10-29 — inventory-sync unit 1: marketplace locations and Match locations [MIGRATION] [CONTRACT]
+
+- `ChannelLocation` (migration `20261029000100_channel_locations`, adds a table only): each
+  marketplace's pickup locations, read on connect and Read again, matched once to one of the shop's
+  or marked not used; a pincode match is suggested; a new one or a closed match flags the section
+  (Q15–Q17). Amazon without multi-location is one location (Q12, from the production read of
+  2026-10-29). `PUT …/channels/[channel]/locations` (`locationMatchSchema`).
+- **Tests:** `stock-sync.test.ts` (matching, the closed and new flags).
+- **Suites run (all units):** `tsc --noEmit`, `vitest run tests/unit`, the integration suite on
+  `bhendi_bazaar_ci`, `lint:boundary`, `docs:check`, `next build` — 2150 unit, 336 integration,
+  all green.
+
+## 2026-10-29 — family-merge: fixes from the fresh-context review
+
+- **Adding to a family checks against its members:** the family's members are planned with the new
+  listings, so a second "Black" is refused naming the one already in it; a new member inherits the
+  family's own facts, not ones worked out among the new listings only.
+- **Leftovers of a large group:** listings already in the family no longer fill the page's 30, so
+  "Add to family" shows the rest (Q19).
+- **A member whose listing says nothing on an axis is asked**, with every answer of ours; a length
+  is answered with its number (Q18).
+- **The page plans as the save does**, with existing products' own answers.
+- **One type per family:** a product of another type is refused by name; a category is checked
+  against the family's type; more than six axes is refused (the type rule's limit).
+- **Locked axis widening** (`FOR UPDATE`), so two adds at once keep both. A shared fact the shop
+  typed is kept as the shop's on the family, not as the listing's.
+- **Suggestions:** trigrams computed once per listing; only a SKU of three parts or more has a stem,
+  so "HJB-001" and "HJB-002" no longer chain different items; at most 300 listings looked at.
+- **The form:** three columns from `lg:`, members grouped under the first of two differences,
+  existing members listed when adding, Try again on a failed read, a cleared price no longer blocks
+  a member left out.
+- **Mutation-tested:** the family's members left out of the plan → red; the type check removed → red;
+  leftovers not filtered → red. Each restored.
+- **Tests:** `family-plan.test.ts` (12), `family-suggest.test.ts`, `family-merge.test.ts` (15: a
+  failure inside the transaction rolls back members already made; a duplicate against the family;
+  32 listings in parts; another type; a silent listing answered). Product read census +1
+  (`familyMembers`, deliberate). **Suites run:** `tsc --noEmit`, `vitest run tests/unit` (2142),
+  the integration suite on `bhendi_bazaar_ci` (325), `lint:boundary`, `docs:check`, `next build`.
+
+## 2026-10-29 — family-merge unit 5: Flipkart, suggested and picked by hand [MIGRATION] [CONTRACT]
+
+- Listings with no marketplace grouping that look like one item (a SKU differing only at the end, or
+  titles this close) are suggested together on Not linked, three at a time, never grouped by
+  themselves (Q5). "Not one item" is remembered on the listings (`familyHintDismissedAt`, migration
+  `20261029000000_family_hint_dismissed`, adds a column only) and the suggestion stays away (Q21).
+  "Group listings" ticks listings by hand; Continue with fewer than two says why.
+- **Mutation-tested:** the dismissed filter removed → the dismissal test red. Restored.
+- **Tests:** `family-suggest.test.ts` (3), the picker in `family-form.test.tsx`, `family-merge.test.ts`.
+
+## 2026-10-29 — family-merge unit 4: the Listings page's group entry points [CONTRACT]
+
+- Each variation group's header offers its one action across tabs: "Settle as one family",
+  "Make one family" (all settled separately), "Add to family" (some outside it) or "See family".
+  The first group explains itself until the shop has made a family from that marketplace, and a
+  group member's Settle page offers "Settle all n as one family" (Q22).
+- **Tests:** `family-merge.test.ts` (each state, settle → family → add; make), `settle-form.test.tsx`.
+
+## 2026-10-29 — family-merge unit 3: the save, its routes and the form [CONTRACT]
+
+- `POST /api/org/[orgId]/channels/family`: the server plans again from the stored reads and refuses,
+  before writing, two members alike, an unanswered one, no product type, a SKU in use (ignoring case)
+  or a product in another family not moved; main photos are copied first (one failure saves
+  nothing); then one transaction locks the listings in id order, makes or reuses the family (widening
+  its axes, Q16, Q20), creates each new member with its own SKU, price, stock and photos queued,
+  joins existing products conditionally, links each listing, and writes facts: shared ones on the
+  family and on members as `family`, each member's own as the marketplace's (D4). A member whose
+  listing is not live is added off sale (Q24). The family page and form implement ux.md's states.
+- **Found while building:** an answer the browser sent for a fact the listing already answered
+  replaced it; answers now count only for a fact that member was asked (a test for it added).
+- **Mutation-tested:** moving without the owner's say-so → red. The lock verdict, the conditional
+  link and the SKU unique index each stop a second save on their own (removing two of them still
+  leaves the third rolling it back whole); recorded as layered, not missing.
+- **Tests:** `family-merge.test.ts` (11), `family-form.test.tsx` (4).
+
+## 2026-10-29 — family-merge unit 2: the family page's read [CONTRACT]
+
+- `channelFamilyService.page`: this shop's listings on one connection, none left off, the first 30
+  (Q19, Q23), each read live at two a time and stored, a failed read standing on the last one;
+  Amazon's parent gives the family's name and description (Q2, Q10). Every type is planned, so a
+  category choice shows its axes and shared facts at once. `FamilyPageDTO` in
+  `channel-family.types.ts`; CONTRACTS.md moved with it.
+
+## 2026-10-29 — family-merge unit 1: the planner
+
+- `server/channels/family-plan.ts` (pure): each member planned as one product (marketplace-facts D5);
+  the axes are the type's plus any asked fact or measurement the members differ on (Q16); shared
+  facts fill the family once (Q7); duplicates (Q8) and unanswered values (Q18) are found; an existing
+  product's answers win (D4).
+- **Mutation-tested:** duplicates never found → red; every attribute an axis → red; the listing over
+  an existing product's answer → red; answers not of ours accepted → red. Each restored.
+- **Tests:** `family-plan.test.ts` (9). **Suites run for units 1–5:** `tsc --noEmit`, `vitest run
+  tests/unit`, the integration suite on `bhendi_bazaar_ci` (321 passed), `lint:boundary`,
+  `docs:check`, `next build`.
+
+## 2026-10-25 — marketplace-facts implemented
+
+- The owner checked it: facts fill and are answered on the Settle page, the product card shows,
+  changes and resets them, and the review fixes hold. BACKLOG follows. Next: family-merge.
+
 ## 2026-10-25 — marketplace-facts unit 6 and product-merge Q31: fixes from the fresh-context review [CONTRACT]
 
 - **Matching saved none of the page's facts:** a matched product also carries `categoryId`, so the

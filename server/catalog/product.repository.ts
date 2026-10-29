@@ -20,6 +20,8 @@ import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { ARCHIVED, AVAILABLE, shelfFilter } from "@server/catalog/product.visibility";
 import { PRODUCT_MEDIA_ASSET_SELECT } from "@server/catalog/product.read.repository";
 import { stockRepository } from "@server/catalog/stock.repository";
+import { enqueue } from "@server/shared/jobs/jobs.enqueue";
+import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
 import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
@@ -459,10 +461,28 @@ export class AdminProductsRepository {
         });
     }
 
+    /**
+     * An existing product joins a family made from its marketplace listings (family-merge D3):
+     * only while it is in no family, or in the one the owner chose to move it from. The count is the verdict.
+     */
+    async setFamilyIn(tx: Prisma.TransactionClient, orgId: string, id: string, familyId: string, fromFamilyId: string | null): Promise<boolean> {
+        const result = await tx.product.updateMany({ where: { id, orgId, familyId: fromFamilyId }, data: { familyId } });
+        return result.count === 1;
+    }
+
     /** The category a marketplace's type led the shop to choose; the product's type follows it (marketplace-facts Q25, Q27). */
     async setCategoryFromMarketplace(orgId: string, id: string, categoryId: string, productType: string | null): Promise<boolean> {
         const result = await prisma.product.updateMany({ where: { id, orgId }, data: { categoryId, productType, kind: null } });
         return result.count === 1;
+    }
+
+    /** A family's members, archived included, for adding to it (family-merge Q20): what each answers, to tell new ones apart. */
+    async familyMembers(orgId: string, familyId: string) {
+        return await prisma.product.findMany({
+            where: { orgId, familyId },
+            select: { id: true, name: true, sku: true, categoryId: true, productType: true, facts: true, measurements: true },
+            orderBy: { name: "asc" },
+        });
     }
 
     /** What filling from a marketplace needs of a product, and what its card shows (marketplace-facts D5, D6). */
@@ -603,6 +623,8 @@ export class AdminProductsRepository {
                 resourceId: id,
                 metadata: { name: product.name },
             });
+            // Archived sells nowhere, restored sells again: its marketplaces hear either way (inventory-sync Q6).
+            await enqueue(tx, pushStockSpec, { productId: id, soldOut: archivedAt !== null });
             return product;
         });
     }

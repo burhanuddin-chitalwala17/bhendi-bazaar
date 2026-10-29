@@ -212,6 +212,26 @@ export interface ChannelListingsPageDTO {
   showingLeftOff: boolean;
   listings: ChannelListingDTO[];
   hasMore: boolean;
+  /** Each variation group on the page, across tabs: what its header offers (family-merge D6). */
+  groups: Record<string, ListingGroupDTO>;
+  /** No family has been made from this marketplace yet: the first group explains itself (Q22). */
+  firstFamily: boolean;
+  /** Listings that look like one item, where the marketplace does not group them (family-merge Q5). */
+  sameItem: Array<{ listingIds: string[]; titles: string[] }>;
+}
+
+export const GROUP_STATE = { SETTLE: "settle", MAKE: "make", ADD: "add", FAMILY: "family" } as const;
+export type GroupState = (typeof GROUP_STATE)[keyof typeof GROUP_STATE];
+
+export interface ListingGroupDTO {
+  state: GroupState;
+  /** Every member's listing id, for the family page. */
+  listingIds: string[];
+  total: number;
+  settled: number;
+  family: { id: string; name: string; productId: string } | null;
+  /** Members outside the family, when it exists. */
+  outside: number;
 }
 
 /** One connected marketplace on a product's "On marketplaces" block (channel-import R11). */
@@ -230,6 +250,8 @@ export interface ProductMarketplaceLinkDTO {
     linkSource: LinkSource | null;
     /** Photos being copied from this listing onto the product (product-merge D6). */
     photos: { total: number; done: number; failed: number } | null;
+    /** Stock sync for this listing (inventory-sync ux.md "Product and Marketplace orders"); null when sync is off. */
+    stock: { sent: number | null; sentAt: string | null; heldByMarketplace: boolean; oversold: { orderId: string } | null } | null;
   } | null;
 }
 
@@ -273,6 +295,8 @@ export interface SettleDetailDTO {
   defaultCategoryId: string | null;
   /** The type question a new product starts with, when the marketplace names its type (marketplace-facts D9). */
   type: SettleTypeDTO | null;
+  /** The listing is one of a variation group: settle them all as one family instead (family-merge Q22). */
+  group: { listingIds: string[]; total: number; axis: string | null; name: string } | null;
   /** Amazon's facts per type, to fill and answer before saving (marketplace-facts Q35). */
   facts: SettleFactsDTO | null;
   /** When the inbox was last read: the "As Amazon reported 3 days ago" line. */

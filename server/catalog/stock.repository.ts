@@ -14,10 +14,24 @@ import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
 import { ConflictError } from "@server/shared/domain-error";
 import { uniqueViolationFields } from "@server/shared/constraint";
+import { enqueue } from "@server/shared/jobs/jobs.enqueue";
+import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
 
 /** `prisma`, or the `tx` of a `$transaction` — enough of either to move stock. */
-export type ProductStockDb = Pick<typeof prisma, "productStock">;
-export type ShipmentStockDb = Pick<typeof prisma, "productStock" | "shipment">;
+export type ProductStockDb = Pick<typeof prisma, "productStock" | "$queryRawUnsafe">;
+export type ShipmentStockDb = Pick<typeof prisma, "productStock" | "shipment" | "$queryRawUnsafe">;
+
+/**
+ * Every changed product's new count goes to its marketplaces (inventory-sync D2): enqueued here, in
+ * the same transaction as the change, so a rolled-back sale sends nothing. A product now at nothing
+ * goes first (Q19). Products not linked anywhere cost one empty job.
+ */
+async function stockChanged(db: ProductStockDb, productIds: Iterable<string>): Promise<void> {
+  for (const productId of new Set(productIds)) {
+    const total = await db.productStock.aggregate({ where: { productId }, _sum: { quantity: true } });
+    await enqueue(db, pushStockSpec, { productId, soldOut: (total._sum.quantity ?? 0) === 0 });
+  }
+}
 
 export interface StockLine {
   productId: string;
@@ -93,6 +107,7 @@ export class StockRepository {
       });
       if (reserved.count === 0) return productId;
     }
+    await stockChanged(tx, lines.map((l) => l.productId));
     return null;
   }
 
@@ -130,6 +145,7 @@ export class StockRepository {
         create: { productId: line.productId, orgAddressId: target, quantity: line.quantity },
       });
     }
+    await stockChanged(tx, lines.map((l) => l.productId));
   }
 
   /**
@@ -157,6 +173,7 @@ export class StockRepository {
         data: { quantity: { increment: item.quantity } },
       });
     }
+    await stockChanged(tx, shipment.items.map((i) => i.orderItem.productId));
   }
 
   /**
@@ -175,12 +192,32 @@ export class StockRepository {
     return locked.count;
   }
 
+  /**
+   * A marketplace sale (inventory-sync D4, Q7): take up to `quantity` from a location, never below
+   * zero, behind the row's lock. Returns what was taken; less than asked is an oversell the caller
+   * records, never refuses: the sale already happened there.
+   */
+  async takeUpTo(productId: string, orgAddressId: string, quantity: number, tx: ProductStockDb = prisma): Promise<number> {
+    const [row] = await tx.$queryRawUnsafe<Array<{ quantity: number }>>(
+      `SELECT quantity FROM "ProductStock" WHERE "productId" = $1 AND "orgAddressId" = $2 FOR UPDATE`,
+      productId,
+      orgAddressId,
+    );
+    const taken = Math.min(row?.quantity ?? 0, quantity);
+    if (taken > 0) {
+      await tx.productStock.updateMany({ where: { productId, orgAddressId, quantity: { gte: taken } }, data: { quantity: { decrement: taken } } });
+    }
+    await stockChanged(tx, [productId]);
+    return taken;
+  }
+
   /** Take one unit from a named location, conditionally. `false` means nothing was there to take. */
   async takeOne(productId: string, orgAddressId: string, tx: ProductStockDb = prisma): Promise<boolean> {
     const taken = await tx.productStock.updateMany({
       where: { productId, orgAddressId, quantity: { gte: 1 } },
       data: { quantity: { decrement: 1 } },
     });
+    if (taken.count === 1) await stockChanged(tx, [productId]);
     return taken.count === 1;
   }
 
@@ -210,16 +247,18 @@ export class StockRepository {
     }
 
     const fresh = rows.filter((row) => row.seenQuantity === undefined && row.quantity > 0);
-    if (fresh.length === 0) return;
-    try {
-      await tx.productStock.createMany({
-        data: fresh.map((row) => ({ productId, orgAddressId: row.orgAddressId, quantity: row.quantity })),
-      });
-    } catch (error) {
-      // A row appeared at a location the editor saw as empty — the same staleness, found by the key.
-      if (uniqueViolationFields(error)) throw new ConflictError(STOCK_CHANGED_MESSAGE, { field: "stock" });
-      throw error;
+    if (fresh.length > 0) {
+      try {
+        await tx.productStock.createMany({
+          data: fresh.map((row) => ({ productId, orgAddressId: row.orgAddressId, quantity: row.quantity })),
+        });
+      } catch (error) {
+        // A row appeared at a location the editor saw as empty — the same staleness, found by the key.
+        if (uniqueViolationFields(error)) throw new ConflictError(STOCK_CHANGED_MESSAGE, { field: "stock" });
+        throw error;
+      }
     }
+    if (rows.length > 0) await stockChanged(tx, [productId]);
   }
 
   /**
@@ -236,6 +275,7 @@ export class StockRepository {
       await tx.productStock.deleteMany({ where: { productId: { in: [...replaceForProductIds] } } });
     }
     if (rows.length) await tx.productStock.createMany({ data: [...rows] });
+    await stockChanged(tx, [...replaceForProductIds, ...rows.map((r) => r.productId)]);
   }
 
   /**

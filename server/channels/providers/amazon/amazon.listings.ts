@@ -35,7 +35,7 @@ const REPORT_POLL_MS = 15_000;
 const REPORT_TIMEOUT_MS = 30 * 60_000;
 const ENRICH_BATCH = 20;
 
-async function spApi(token: TokenSource, step: string, path: string, init: RequestInit = {}): Promise<unknown> {
+export async function spApi(token: TokenSource, step: string, path: string, init: RequestInit = {}): Promise<unknown> {
   const response = await marketplaceFetch(`${HOST}${path}`, {
     ...init,
     headers: {

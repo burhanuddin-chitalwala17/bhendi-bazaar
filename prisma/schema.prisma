@@ -1221,8 +1221,9 @@ model OrgAddress {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  productStock ProductStock[]
-  shipments    Shipment[]
+  productStock     ProductStock[]
+  shipments        Shipment[]
+  channelLocations ChannelLocation[]
 
   @@index([orgId])
 }
@@ -2021,7 +2022,21 @@ model ChannelConnection {
   /// A `READ_ERROR` code, never marketplace text.
   readErrorCode  String?
 
-  listings ChannelListing[]
+  /// Stock sync per marketplace (inventory-sync D6, Q4): off until the shop turns it on after the
+  /// preview; paused stops every send and check. Sent and checked times are the section's line.
+  stockSync          String    @default("off")
+  stockSyncChangedAt DateTime?
+  stockSentAt        DateTime?
+  stockCheckedAt     DateTime?
+  /// Where the next order check starts, as the marketplace understands it.
+  ordersCursor       String?
+  /// Claimed by each order check, so only one chain of checks runs (inventory-sync Q23).
+  ordersCheckedAt    DateTime?
+  /// The last problem a send met, `STOCK_PROBLEM`, cleared by the next send that goes (D7).
+  stockProblem       String?
+
+  listings  ChannelListing[]
+  locations ChannelLocation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2077,6 +2092,14 @@ model ChannelListing {
   attributesReadAt DateTime?
   /// Facts the owner chose to skip for now on this listing's card (marketplace-facts D6).
   attributeSkips   String[] @default([])
+
+  /// "Not one item" on a suggested group (family-merge Q21): the suggestion stays away.
+  familyHintDismissedAt DateTime?
+
+  /// The counts last sent to the marketplace, per its location id (inventory-sync D3): a send of the
+  /// same counts is skipped, so a burst of changes costs one call.
+  stockSent   Json?
+  stockSentAt DateTime?
 
   /// The marketplace's photos being copied onto the linked product (product-merge D6).
   /// `PHOTO_COPY_MODE`: a new product gains them; a match replaces its gallery. Try again repeats it.
@@ -2205,4 +2228,92 @@ model ChannelValueMap {
 
   @@unique([channel, list, valueKey])
   @@index([channel, list])
+}
+
+/// A pickup location a marketplace knows for one connected account, and the shop's own location it
+/// stands for (inventory-sync D1, Q15). Read on connecting and on Read again; matched once by the
+/// owner and changed only by the owner. A location the marketplace stops reporting is marked gone,
+/// never deleted.
+model ChannelLocation {
+  id           String            @id @default(cuid())
+  connectionId String
+  connection   ChannelConnection @relation(fields: [connectionId], references: [id], onDelete: Restrict)
+  orgId        String
+
+  /// The marketplace's own id; Amazon without multi-location is one location of ours to name.
+  externalId String
+  name       String
+  pincode    String?
+
+  orgAddressId String?
+  orgAddress   OrgAddress? @relation(fields: [orgAddressId], references: [id], onDelete: SetNull)
+  /// "Not used": nothing of ours stands behind it, so it is sent 0 (Q16).
+  notUsed   Boolean   @default(false)
+  matchedAt DateTime?
+
+  firstSeenAt DateTime
+  lastSeenAt  DateTime
+  goneAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([connectionId, externalId])
+  @@index([orgId])
+  @@index([orgAddressId])
+}
+
+/// One line of an order placed on a marketplace, recorded once however often it is reported
+/// (inventory-sync D4, ADR-0044): the stock it took here, whether it was oversold, and its restock
+/// when cancelled before dispatch. Amounts as the marketplace reported them; never in payouts.
+model MarketplaceOrder {
+  id           String  @id @default(cuid())
+  connectionId String
+  orgId        String
+  channel      String
+
+  orderId String
+  lineId  String
+  sku     String
+
+  listingId    String?
+  productId    String?
+  /// The marketplace location it ships from, and the shop's location it was taken from.
+  locationExternalId String?
+  orgAddressId       String?
+  /// The shop's location was not certain (an unmatched marketplace location): flagged for the owner (Q18).
+  locationGuessed Boolean @default(false)
+  /// Sold before stock sync was on: recorded, stock not taken (inventory-sync Q24).
+  beforeSync      Boolean @default(false)
+
+  quantity   Int
+  /// What was taken from our stock; less than `quantity` is an oversell (Q7).
+  taken      Int     @default(0)
+  oversold   Boolean @default(false)
+  amountPaise Int?
+  state      String
+  restockedAt DateTime?
+
+  orderedAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([connectionId, orderId, lineId])
+  @@index([orgId, orderedAt])
+  @@index([productId])
+}
+
+/// A count the daily check found different on a marketplace and put back to ours (inventory-sync D5,
+/// Q9): shown on the stock sync section; a record, never a decision.
+model StockCorrection {
+  id           String   @id @default(cuid())
+  connectionId String
+  orgId        String
+  listingId    String
+  title        String
+  theirs       Int
+  ours         Int
+  correctedAt  DateTime @default(now())
+
+  @@index([connectionId, correctedAt])
 }

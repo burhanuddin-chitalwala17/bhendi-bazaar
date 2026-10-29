@@ -45,6 +45,7 @@ const detail = (over: Partial<SettleDetailDTO> = {}): SettleDetailDTO => ({
   defaultCategoryId: "cat-abayas",
   type: null,
   facts: null,
+  group: null,
   readFinishedAt: null,
   ...over,
 });
@@ -172,5 +173,11 @@ describe("the Settle page's form (product-merge D10)", () => {
     press("Add product");
     await waitFor(() => expect(settle).toHaveBeenCalledTimes(1));
     expect(settle.mock.calls[0][1].answers).toEqual({ material: "nida" });
+  });
+
+  it("points a listing that is one of a group to settling the whole group (family-merge Q22)", () => {
+    renderForm(detail({ pair: null, group: { listingIds: ["l-az", "l-2", "l-3", "l-4"], total: 4, axis: "colour", name: "Nida Abaya" } }));
+    expect(screen.getByText("This listing is one of 4 colours of Nida Abaya.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Settle all 4 as one family" })).toHaveAttribute("href", "/org/org_1/channels/family?listings=l-az,l-2,l-3,l-4");
   });
 });

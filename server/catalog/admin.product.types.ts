@@ -110,8 +110,9 @@ export interface MarketplaceFill {
 
 export interface MarketplaceEntry {
   value: string | number | boolean;
-  origin: "marketplace";
-  source: { channel: string; value: string; readAt: string; chosen?: boolean };
+  /** `family` for a fact a family made from listings shares with its members (family-merge D4). */
+  origin: "marketplace" | "family";
+  source?: { channel: string; value: string; readAt: string; chosen?: boolean };
 }
 
 export interface MarketplaceFilled {

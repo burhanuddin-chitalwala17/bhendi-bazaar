@@ -8,6 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListingList } from "@/components/channel/listing-list";
+import { StockSyncSection } from "@/components/channel/stock-sync-section";
+import { channelStockDAL } from "@/data-access-layer/channel-stock.dal";
+import { SameItemCard } from "@/components/channel/same-item-card";
+import { GroupPicker } from "@/components/channel/group-picker";
+import { GROUP } from "@/components/channel/family-copy";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { ListingDetailsPanel } from "@/components/channel/listing-details-panel";
 import { ReadAgainButton } from "@/components/channel/read-again-button";
@@ -23,7 +28,7 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-type Search = { tab?: string; q?: string; more?: string; listing?: string; left?: string };
+type Search = { tab?: string; q?: string; more?: string; listing?: string; left?: string; pick?: string };
 
 /** One marketplace's listings and their links (channel-import spec R1–R7, R10, ux.md "Listings page"). */
 export default async function ChannelListingsPage({
@@ -41,12 +46,13 @@ export default async function ChannelListingsPage({
   const pages = Math.max(1, Number.parseInt(search.more ?? "1", 10) || 1);
 
   const showLeftOff = tab === "notLinked" && search.left === "1";
-  const [data, org] = await Promise.all([channelListingsDAL.page(scope.orgId, channel, {
+  const picking = tab === "notLinked" && search.pick === "1";
+  const [data, org, stock] = await Promise.all([channelListingsDAL.page(scope.orgId, channel, {
     tab: showLeftOff ? "leftOff" : tab,
     search: q,
     pages,
     listingId: search.listing ?? null,
-  }), orgsDAL.getOrgSummary(scope.orgId)]);
+  }), orgsDAL.getOrgSummary(scope.orgId), channelStockDAL.section(scope.orgId, channel)]);
   if (!data) notFound();
   const { page, detail } = data;
   const { label, read } = page;
@@ -127,6 +133,9 @@ export default async function ChannelListingsPage({
         </div>
       )}
 
+      {/* Stock sync sits above the listings it keeps right (inventory-sync ux.md). */}
+      {stock && showRows && <StockSyncSection orgId={scope.orgId} section={stock.section} locations={stock.locations} />}
+
       {showRows && (
         <>
           <form action={base} method="get" className="flex gap-2">
@@ -157,7 +166,21 @@ export default async function ChannelListingsPage({
             {page.channel === CHANNEL.FLIPKART && <p>{LISTINGS.flipkartUngrouped}</p>}
           </div>
 
-          {page.listings.length === 0 ? (
+          {/* Listings that look like one item, and picking them by hand (family-merge D6). */}
+          {tab === "notLinked" && !showLeftOff && !picking && page.sameItem.map((s) => (
+            <SameItemCard key={s.listingIds.join(",")} orgId={scope.orgId} channel={page.channel} listingIds={s.listingIds} titles={s.titles} />
+          ))}
+          {tab === "notLinked" && !showLeftOff && !picking && page.counts.notLinked >= 2 && (
+            <Button asChild variant="outline" size="sm" className="min-h-10 self-start">
+              <Link href={hrefWith({ pick: "1", listing: null })} scroll={false}>
+                {GROUP.groupListings}
+              </Link>
+            </Button>
+          )}
+
+          {picking ? (
+            <GroupPicker orgId={scope.orgId} listings={page.listings} cancelHref={hrefWith({ pick: null })} />
+          ) : page.listings.length === 0 ? (
             emptyText && <p className="rounded-card border bg-card p-4 text-sm text-muted-foreground">{emptyText}</p>
           ) : (
             <ListingList
@@ -167,6 +190,8 @@ export default async function ChannelListingsPage({
               label={label}
               listings={page.listings}
               hrefFor={(id) => hrefWith({ listing: id })}
+              groups={page.groups}
+              firstFamily={page.firstFamily}
             />
           )}
 

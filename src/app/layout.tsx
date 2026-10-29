@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { Suspense } from "react";
-import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
 import { FloatingAdminButton } from "@/components/layout/FloatingAdminButton";
 import {
   APP_DESCRIPTION,
@@ -91,7 +89,9 @@ export default async function RootLayout({
         className={`${headingFont.variable} ${bodyFont.variable} antialiased`}
       >
         <Providers session={session}>
-          <Suspense fallback={<LoadingSkeleton />}>{children}</Suspense>
+          {/* No Suspense here: one above every page streams a 200 before notFound() can
+              set a 404 (Next's loading.md "Status codes"). Boundaries belong in pages. */}
+          {children}
           <FloatingAdminButton />
           <SpeedInsights />
           <Analytics />

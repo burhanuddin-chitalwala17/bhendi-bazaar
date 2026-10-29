@@ -19,6 +19,13 @@ const nextConfig: NextConfig = {
 
     return [{ source: "/:path*", headers }];
   },
+  async redirects() {
+    // Addresses Google still holds from before categories lived under /category/
+    // (Search Console 404 report, 2026-10-29). Permanent, so the link's standing moves.
+    return [
+      { source: "/semi-formal-ridas", destination: "/category/semi-formal-rida", permanent: true },
+    ];
+  },
   images: {
     // A year, matching the `immutable, max-age=31536000` that object-store.ts writes.
     // buildImagePath timestamps every stored path, so a URL's bytes never change and

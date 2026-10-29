@@ -14,8 +14,11 @@ const stockUpsert = vi.fn();
 const tx = {
   order: { updateMany: orderUpdateMany },
   shipment: { findMany: shipmentFindMany },
-  productStock: { upsert: stockUpsert, findFirst: vi.fn() },
+  productStock: { upsert: stockUpsert, findFirst: vi.fn(), aggregate: vi.fn(async () => ({ _sum: { quantity: 1 } })) },
 };
+
+// A restock enqueues the new count for the marketplaces (inventory-sync D2); not under test here.
+vi.mock("@server/shared/jobs/jobs.enqueue", () => ({ enqueue: vi.fn(async () => "job") }));
 
 vi.mock("@server/shared/prisma", () => ({
   prisma: {

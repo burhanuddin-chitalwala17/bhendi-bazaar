@@ -120,6 +120,12 @@ export const ROW = {
   failed: "Couldn't do that. Try again.",
 } as const;
 
+/** The word a group counts in: "sizes", "colours", else "variants" (family-merge's first-group line). */
+export function axisWord(axis: string | null, count: number): string {
+  if (!axis) return count === 1 ? "variant" : "variants";
+  return axisNoun(axis, count);
+}
+
 /** "size" → "4 sizes"; anything with "and" in it stays "4 variants". */
 function axisNoun(axis: string, count: number): string {
   if (axis.includes(" and ")) return count === 1 ? "variant" : "variants";
