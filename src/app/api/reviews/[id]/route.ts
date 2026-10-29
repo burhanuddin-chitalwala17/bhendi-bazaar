@@ -11,6 +11,7 @@
  * `/api/admin/reviews/[id]` (R15, R17).
  */
 
+import { limitRequest } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
@@ -29,6 +30,8 @@ export async function PATCH(
     if (!session?.user?.id) {
       throw new UnauthorizedError("Sign in to edit your review");
     }
+    const limited = await limitRequest(request, "PATCH /api/reviews/[id]", { userId: session.user.id });
+    if (limited) return limited;
 
     const { id } = await params;
     const input = reviewSubmissionSchema.parse(await request.json());
@@ -41,7 +44,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -49,6 +52,8 @@ export async function DELETE(
     if (!session?.user?.id) {
       throw new UnauthorizedError("Sign in to delete your review");
     }
+    const limited = await limitRequest(request, "DELETE /api/reviews/[id]", { userId: session.user.id });
+    if (limited) return limited;
 
     const { id } = await params;
     await reviewService.remove(id, session.user.id);

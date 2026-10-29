@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
 import { passwordService } from "@server/identity/password.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { resetPasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 
 export async function POST(request: NextRequest) {
   try {
+    const limited = await limitRequest(request, "POST /api/auth/reset-password");
+    if (limited) return limited;
     const { token, password, confirmPassword } = resetPasswordSchema.parse(
       await request.json(),
     );

@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-10-29
 - **Covers:** `package.json`
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
@@ -27,7 +27,7 @@
 | `bcryptjs` | `^3.0.3` | Password hashing. Cost 10 | `server/identity/password.service.ts` | 2026-08-03 |
 | `zod` | `^4.2.1` | Runtime validation at the HTTP boundary — the mechanism behind [Invariant 4](../CLAUDE.md) | `src/lib/validation/**` | 2026-08-03 |
 | `zustand` | `^5.0.9` | Cart state with localStorage persistence. Chosen for size and minimal boilerplate | `src/store/cartStore.ts` | 2026-08-03 |
-| `@upstash/ratelimit` + `@upstash/redis` | `^2.0.7` / `^1.36.0` | Distributed rate limiting. Required because Vercel runs many instances, so in-memory counters do not hold. **Reads `KV_REST_API_*`, not `UPSTASH_REDIS_REST_*`** | `src/lib/rate-limit/index.ts` | 2026-08-03 |
+| `@upstash/ratelimit` + `@upstash/redis` | `^2.0.7` / `^1.36.0` | Distributed rate limiting. Required because Vercel runs many instances, so in-memory counters do not hold. **Reads `RATE_LIMIT_STORE_*`, falling back to `KV_REST_API_*`; never `UPSTASH_REDIS_REST_*`** | `src/lib/rate-limit/upstash.ts` | 2026-08-03 |
 | `aws4fetch` | `^1.0.20` | Signs S3 requests to Cloudflare R2 — server-side PUT/DELETE and the presigned PUT a browser uploads with ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). Chosen over `@aws-sdk/client-s3` + `s3-request-presigner`: two packages and several MB, against one file, for two verbs | `server/catalog/object-store.ts` | 2026-09-17 |
 | `sharp` | `^0.35.4` | Downscale and re-encode uploads before they reach R2 ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)). Present as a Next transitive dependency before this; declared so the version we rely on is ours. **Note:** ships a platform binary, so nothing that calls it may leave the Node.js runtime — which now includes the **worker**, not only the upload routes | `server/catalog/image-upload.ts`, `server/catalog/media-asset.service.ts`, `server/catalog/media-backfill.ts`, and the seven tools in `server/content/tools/` | 2026-09-28 |
 | `exceljs` | `^4.4.0` | Reads and writes the bulk-upload sheets (.xlsx/.csv) and generates the per-org sample. Chosen over npm `xlsx`/SheetJS, whose free build is unmaintained with unfixed parser advisories — this parses user-supplied files | `server/catalog/bulk/**` | 2026-08-21 |

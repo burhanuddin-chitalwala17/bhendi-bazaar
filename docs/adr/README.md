@@ -100,4 +100,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0060](0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md) | Mutations stay on route handlers, and a mutating request must come from our origin | Accepted. Corrects the CSRF premise in [ADR-0048](0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)'s alternatives. | 2026-10-05 |
 | [0061](0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md) | A feature is cut to one outcome, its decisions are logged, and its UX is signed off before the TRD | Accepted (D2 amended by [ADR-0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)) | 2026-10-18 |
 | [0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md) | A decision is replaced until it is implemented, and superseded after | Accepted | 2026-10-20 |
+| [0063](0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md) | Every public route is classified for rate limiting in one registry | Accepted | 2026-10-29 |
 <!-- generated:adr-index:end -->

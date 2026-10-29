@@ -1,6 +1,6 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-10-06
+- **Verified:** 2026-10-29
 - **Covers:** `tests/*/`, `.github/workflows/ci.yml`, `vitest.config.ts`
 
 ## Stack
@@ -102,7 +102,8 @@ thing it guards had already gone wrong silently:
 | `design-tokens`, `ui-primitives`, `image-delivery` | [ADR-0022](adr/0022-design-decisions-go-through-tokens.md), [ADR-0031](adr/0031-one-components-home-organised-by-domain.md), [ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md) |
 | `overlay-surfaces` | That an overlay's surface is chosen rather than inherited ([ADR-0040](adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md)): only the declared files reach for a sheet, each entry naming which of the four cases it answers, and an entry that stops being a sheet is removed |
 | `channel-gate` | That a channel's size rule is applied only where the channel is known, so a marketplace's floor cannot quietly become every photograph's floor |
-| `portal-guards`, `rate-limit-detached`, `seed-guard` | The edge gate reaches every portal path; no cache dependency creeps back into the request path; the seed's allowlist |
+| `portal-guards`, `seed-guard` | The edge gate reaches every portal path; the seed's allowlist |
+| `rate-limit-registry` | That every public route method is classified for rate limiting, limited or exempt with a reason, and a limited one calls the limiter with its own key ([ADR-0063](adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)). Mutation-tested: an entry removed, a call removed or re-keyed, an unclassified route added |
 | `labelled-controls` | That every form label names its control: `FormField` renders a `<label for>` matching the control's `id` and points `aria-describedby` at the hint or error it shows, and no raw `<label>` outside `ui/` is left unassociated — `htmlFor`, or wrapping the control |
 | `migration-drops` | That a column or table is never dropped without the file saying whose data goes: every migration with a `DROP COLUMN` or `DROP TABLE` carries a dated statement that the data was confirmed disposable, and the migrations that predate the rule are listed, shrink-only |
 

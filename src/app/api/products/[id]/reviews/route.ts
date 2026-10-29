@@ -15,7 +15,7 @@ import { authOptions } from "@/lib/auth-config";
 import { reviewService } from "@server/catalog/review.service";
 import { UnauthorizedError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 import {
   reviewPageQuerySchema,
   reviewSubmissionSchema,
@@ -54,14 +54,8 @@ export async function POST(
       throw new UnauthorizedError("Sign in to write a review");
     }
 
-    // Wired while `RATE_LIMITING_ENABLED` is false (trd.md D12): the helper costs one
-    // call, so this route needs no revisit when the flag becomes real. R10 is what caps
-    // a repeat reviewer's influence meanwhile, which is a different job from volume.
-    const limited = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 10 },
-      () => getRateLimitIdentifier(request, session.user.id),
-    );
+    // Volume only; R10 is what caps a repeat reviewer's influence, a different job.
+    const limited = await limitRequest(request, "POST /api/products/[id]/reviews", { userId: session.user.id });
     if (limited) return limited;
 
     const { id } = await params;

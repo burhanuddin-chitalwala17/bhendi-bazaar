@@ -1,41 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { accountService } from "@server/identity/account.service";
 import { hash } from "bcryptjs";
-import {
-  authRateLimit,
-  getClientIp,
-  formatTimeRemaining,
-} from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 import { validateRequest } from "@/lib/validation/utils";
 import { signupSchema } from "@/lib/validation/schemas/auth.schemas";
 import { emailService } from "@server/notifications/email.service";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(request: NextRequest) {
-  // Rate limit check
-  const ip = getClientIp(request);
-  const { success, limit, remaining, reset } = await authRateLimit.limit(ip);
-
-  if (!success) {
-    const timeRemaining = reset - Date.now();
-    return NextResponse.json(
-      {
-        error: `Too many signup attempts. Please try again in ${formatTimeRemaining(
-          timeRemaining,
-        )}.`,
-        retryAfter: Math.ceil(timeRemaining / 1000),
-      },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": limit.toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-          "X-RateLimit-Reset": reset.toString(),
-          "Retry-After": Math.ceil(timeRemaining / 1000).toString(),
-        },
-      },
-    );
-  }
+  const limited = await limitRequest(request, "POST /api/auth/signup");
+  if (limited) return limited;
 
   // Validate request body
   const validation = await validateRequest(request, signupSchema);

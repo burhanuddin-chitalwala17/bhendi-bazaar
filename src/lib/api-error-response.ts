@@ -7,6 +7,7 @@ import {
 } from "@server/shared/constraint";
 import { isDomainError } from "@server/shared/domain-error";
 import type { ApiErrorBody, ApiErrorDetail } from "@/lib/api-error";
+import { RateLimitedError } from "@/lib/rate-limit/refusal";
 
 /**
  * Convert anything thrown in a route handler into the standard envelope
@@ -56,9 +57,9 @@ export function toErrorResponse(
     return json({ error: "Please correct the highlighted fields", details }, 400);
   }
 
-  // 2. Domain code opted in to being shown.
+  // 2. Domain code opted in to being shown. A rate-limit refusal also says when to retry.
   if (isDomainError(error)) {
-    return json(
+    const response = json(
       {
         error: error.message,
         ...(error.field
@@ -67,6 +68,10 @@ export function toErrorResponse(
       },
       error.status
     );
+    if (error instanceof RateLimitedError) {
+      for (const [name, value] of Object.entries(error.headers())) response.headers.set(name, value);
+    }
+    return response;
   }
 
   // 3. Uniqueness — knowable only at the database, so no client validation replaces it.

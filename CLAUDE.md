@@ -1,6 +1,6 @@
 # CLAUDE.md — Project-Wide Rules & SDLC
 
-- **Verified:** 2026-10-20
+- **Verified:** 2026-10-29
 - **Covers:** `server/*/`, `src/components/*/`, `src/app/api/`, `docs/adr/*.md`, `.claude/`
 
 ## Purpose
@@ -113,8 +113,6 @@ Not required for typo fixes, no-behaviour config tweaks, single-function refacto
 2. **/bb-review runs before any unit is done.** The rest — append-only changelog, immutable ADRs, no pasted code, `Verified:` dates — is in the index below.
 3. **Commit each unit on the working branch; never push.** `git push` and `gh` are denied in `.claude/settings.json`; the owner pushes and does every GitHub action. A new spec or TRD stays uncommitted until the owner has read it.
 
----
-
 ## Documentation & Process Conventions
 
 Canonical index of *how we work*. **Each line is a pointer** — the rule's statement and its ADR, nothing more. Detail lives in the ADR so it has exactly one wording ([ADR-0009](docs/adr/0009-docs-reference-code-never-copy-it.md) D6), and this file is loaded into every session, so a paragraph here is a paragraph paid for on every task. **A new convention adds a line here and an ADR to point at**, or it will not be followed.
@@ -174,6 +172,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **Media is one aggregate; a derivative is lineage, not a use; usage is a query, never a counter.** [ADR-0058](docs/adr/0058-media-is-one-aggregate-a-derivative-is-lineage-not-a-use-and-usage-is-derived.md)
 - **An enhancement never changes the product's pixels, proven before encoding.** [ADR-0059](docs/adr/0059-an-enhancement-never-changes-the-products-pixels-proven-before-encoding.md)
 - **Mutations stay on route handlers, and a mutating request must come from our origin** — `src/middleware.ts` refuses cross-site `POST`/`PUT`/`PATCH`/`DELETE` to `/api/**`; signed webhooks and `/api/auth` are the named exemptions. [ADR-0060](docs/adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)
+- **Every public route is classified for rate limiting** — one registry: a named policy or an exemption with its reason; an unclassified route fails the suite. [ADR-0063](docs/adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
 - **A dropped column names whose data goes** — a `DROP COLUMN`/`DROP TABLE` migration states who confirmed the data disposable, and when. `tests/unit/migration-drops.test.ts`
 - **The tests are audited like the code** — a suite that cannot run, or passes over an empty scan, is not a passing suite. `tests/unit/test-integrity.test.ts`
 - **Every route handler has a caller, named in the repository or declared as external** — no compiler follows a string. `tests/unit/route-reachability.test.ts`

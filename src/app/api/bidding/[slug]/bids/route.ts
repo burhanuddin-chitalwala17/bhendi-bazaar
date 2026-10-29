@@ -10,11 +10,11 @@
  * a body cannot claim to be someone else (spec R21). Guest details are the only identity
  * a body may supply, and only when there is no session to take one from.
  *
- * Not rate limited, because rate limiting is parked while the cache is unwired
- * (`src/lib/rate-limit/`, spec H8). What caps a bad-faith bidder here is the organisation's
- * maximum increase, which bounds how far one bid can move the price.
+ * Limited under the `bid` policy, per account or address (rate-limiting Q8). The
+ * organisation's maximum increase still bounds how far one bid can move the price.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { biddingService } from "@server/bidding/bidding.service";
@@ -29,8 +29,10 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
-    const body = placeBidSchema.parse(await request.json());
     const session = await getServerSession(authOptions);
+    const limited = await limitRequest(request, "POST /api/bidding/[slug]/bids", { userId: session?.user?.id });
+    if (limited) return limited;
+    const body = placeBidSchema.parse(await request.json());
 
     const bidder: BidderIdentity = session?.user?.id
       ? { kind: "user", userId: session.user.id }

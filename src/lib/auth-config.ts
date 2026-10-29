@@ -5,6 +5,18 @@ import { prisma } from "@server/shared/prisma";
 import { accountService } from "@server/identity/account.service";
 import { bhendiPrismaAdapter } from "./auth-adapter";
 import { compare } from "bcryptjs";
+import { checkRateLimit, type HeaderSource } from "@/lib/rate-limit";
+
+/** next-auth hands `authorize` a plain header object; the address seam reads `get`. */
+function headersOf(raw: Record<string, unknown> | undefined): HeaderSource {
+  return {
+    get(name) {
+      const value = raw?.[name.toLowerCase()];
+      if (Array.isArray(value)) return value.join(",");
+      return typeof value === "string" ? value : null;
+    },
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: bhendiPrismaAdapter(prisma),
@@ -26,10 +38,17 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials.password) {
           return null;
         }
+
+        // Counted here, not at the route, because next-auth's client parses the route's own
+        // response (rate-limiting Q3). The message reaches the form as `result.error` (Q18).
+        const refused = await checkRateLimit("POST /api/auth/[...nextauth]", {
+          headers: headersOf(req?.headers),
+        });
+        if (refused) throw new Error(refused.message);
 
         const user = await accountService.findCredentialsUser(credentials.email);
 

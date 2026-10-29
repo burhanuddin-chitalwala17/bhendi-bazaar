@@ -5,6 +5,7 @@
  * They delegate business logic to the ProfileService.
  */
 
+import { limitRequest } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 import { requireSession } from "@/lib/admin-auth";
@@ -26,6 +27,8 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const session = await requireSession();
+    const limited = await limitRequest(req, "PUT /api/profile", { userId: session.user.id });
+    if (limited) return limited;
 
     const validation = await validateRequest(req, updateProfileSchema);
     if ("error" in validation) {

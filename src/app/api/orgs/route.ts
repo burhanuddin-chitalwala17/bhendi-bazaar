@@ -6,6 +6,7 @@
  * member of, which is why this is the one org write that `withOrg` cannot wrap.
  */
 
+import { limitRequest } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/admin-auth";
 import { adminOrgService } from "@server/catalog/org.service";
@@ -15,6 +16,8 @@ import { toErrorResponse } from "@/lib/api-error-response";
 export async function POST(request: NextRequest) {
   try {
     const session = await requireSession();
+    const limited = await limitRequest(request, "POST /api/orgs", { userId: session.user.id });
+    if (limited) return limited;
     const body = createOrgSchema.parse(await request.json());
     const org = await adminOrgService.createOrgWithOwner(body, session.user.id);
 

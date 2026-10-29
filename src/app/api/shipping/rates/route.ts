@@ -7,6 +7,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-config";
 import {
   initializeShippingModule,
   shippingOrchestrator,
@@ -26,6 +29,9 @@ const getRatesSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const limited = await limitRequest(request, "POST /api/shipping/rates", { userId: session?.user?.id });
+    if (limited) return limited;
     // ✅ Defensive check: ensure shipping is initialized
     if (shippingOrchestrator.getProviderCount() === 0) {
       console.warn("⚠️ Shipping not initialized, initializing now...");

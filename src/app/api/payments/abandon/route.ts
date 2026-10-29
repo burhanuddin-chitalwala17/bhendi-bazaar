@@ -7,6 +7,7 @@
  * the sweep reaches the same conclusion later.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { paymentService } from "@server/payments/payment.service";
@@ -15,8 +16,10 @@ import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = abandonPaymentSchema.parse(await request.json());
     const session = await getServerSession(authOptions);
+    const limited = await limitRequest(request, "POST /api/payments/abandon", { userId: session?.user?.id });
+    if (limited) return limited;
+    const body = abandonPaymentSchema.parse(await request.json());
 
     const result = await paymentService.releaseIfUnpaid(body.localOrderId, {
       userId: session?.user?.id ?? null,

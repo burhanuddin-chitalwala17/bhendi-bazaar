@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { cartService } from "@server/cart/cart.service";
 import { updateCartSchema, validateRequest } from "@/lib/validation";
-import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 
 /**
  * POST /api/cart/sync
@@ -19,12 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Apply rate limiting: 10 syncs per minute (strict for sync operations)
-    const rateLimitResult = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 10 },
-      () => getRateLimitIdentifier(request, session.user.id),
-    );
+    const rateLimitResult = await limitRequest(request, "POST /api/cart/sync", { userId: session.user.id });
     if (rateLimitResult) return rateLimitResult;
 
     const validation = await validateRequest(request, updateCartSchema);

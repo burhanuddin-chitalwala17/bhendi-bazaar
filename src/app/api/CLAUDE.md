@@ -1,6 +1,6 @@
 # CLAUDE.md — route handlers
 
-- **Verified:** 2026-10-25
+- **Verified:** 2026-10-29
 - **Covers:** `src/app/api/**`
 
 > Read the root [`/CLAUDE.md`](../../../CLAUDE.md) first. Its seven Invariants are hard blocks here more than anywhere: this is where an untrusted request becomes a write.
@@ -17,6 +17,10 @@ A route handler is the HTTP boundary and nothing else. It does four things, in t
 ## Every route has a caller
 
 A handler exists because a browser must call it: a mutation, or a read triggered by interaction ([ADR-0034](../../../docs/adr/0034-render-on-the-server-by-default.md)). Its caller is an `*ApiClient` in `src/components/<domain>/` ([ADR-0048](../../../docs/adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)). A caller outside the repository, such as a gateway webhook or a link in an email, is named in `EXTERNALLY_CALLED` with who calls it. `tests/unit/route-reachability.test.ts`
+
+## Every public route is classified for rate limiting
+
+A route outside `/api/admin` and `/api/org` has a line in `src/lib/rate-limit/registry.ts`: a policy, or `{ exempt: "<why>" }`. A limited handler calls `limitRequest(request, "<METHOD> /api/<path>", { userId })` once the session is read, and returns its 429 as is; the budget lives in the policy, never at the call site ([ADR-0063](../../../docs/adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)). `tests/unit/rate-limit-registry.test.ts`
 
 ## Money and payment
 

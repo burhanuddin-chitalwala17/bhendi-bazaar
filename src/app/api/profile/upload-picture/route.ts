@@ -1,3 +1,4 @@
+import { limitRequest } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 
 import { requireSession } from "@/lib/admin-auth";
@@ -12,6 +13,8 @@ export async function POST(request: Request) {
   try {
     // 1. Authenticate
     const userId = (await requireSession()).user.id;
+    const limited = await limitRequest(request, "POST /api/profile/upload-picture", { userId: userId });
+    if (limited) return limited;
 
     // 2. Parse form data
     const formData = await request.formData();
@@ -81,6 +84,8 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const userId = (await requireSession()).user.id;
+    const limited = await limitRequest(request, "DELETE /api/profile/upload-picture", { userId: userId });
+    if (limited) return limited;
 
     const user = await profileService.findUserWithProfile(userId);
 

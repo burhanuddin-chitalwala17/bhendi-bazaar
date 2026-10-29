@@ -1,14 +1,13 @@
 /**
- * The environment variables the app cannot start without.
+ * What the app checks when it starts, from `src/instrumentation.ts`.
  *
- * ⚠️ **`validateEnv()` is not wired to anything.** Nothing calls it, so this does not
- * currently fail a boot — it is read as documentation, and `docs/OPERATIONS.md` points
- * at it as the canonical list. Kept accurate for that reason, and flagged here so it is
- * not mistaken for an enforced check: a guard that silently does nothing is worse than
- * no guard, because it looks applied.
- *
- * To make it real, call it from `instrumentation.ts` (Next's startup hook).
+ * Two different strengths, on purpose (rate-limiting D2, decisions Q11): `APP_ENV` and the
+ * limiter's configuration are refused, because a deployed environment without them would
+ * run unlimited; the list below is reported, because it has not been checked against every
+ * Vercel environment and refusing on it could take a deploy down for an unrelated reason.
  */
+import { appEnv } from "@server/shared/app-env";
+import { assertRateLimitConfig } from "@/lib/rate-limit/config";
 
 const requiredEnvVars = [
   "DATABASE_URL",
@@ -27,14 +26,22 @@ const requiredEnvVars = [
   // Read by next.config.ts at build time for `remotePatterns` as well as at runtime; a
   // wrong value 404s every image at the optimizer with nothing in the logs.
   "R2_PUBLIC_BASE_URL",
-  "KV_REST_API_URL",
-  "KV_REST_API_TOKEN",
 ] as const;
 
-export function validateEnv() {
-  const missing = requiredEnvVars.filter((key) => !process.env[key]);
+export function missingEnvVars(env: Record<string, string | undefined> = process.env): string[] {
+  return requiredEnvVars.filter((key) => !env[key]);
+}
 
+/** Reports what is missing; never throws (Q11). */
+export function validateEnv(env: Record<string, string | undefined> = process.env): void {
+  const missing = missingEnvVars(env);
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+    console.warn(`[env] Missing environment variables: ${missing.join(", ")}`);
   }
+}
+
+/** Throws when this environment must not serve requests (spec R2). */
+export function checkBootEnvironment(env: Record<string, string | undefined> = process.env): void {
+  assertRateLimitConfig(appEnv(), env);
+  validateEnv(env);
 }

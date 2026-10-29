@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
 import { z } from "zod";
 import { productsRepository } from "@server/catalog/product.read.repository";
 import { promotionService } from "@server/promotions/promotion.service";
@@ -40,6 +41,16 @@ const quoteSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = quoteSchema.parse(await request.json());
+    // Signed in or not — a per-buyer limit is enforced only where there is a buyer
+    // to count, so the preview has to know which case this is.
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+
+    // Only a quote carrying a code can guess one; re-pricing a basket is not counted (Q5).
+    if (body.code) {
+      const limited = await limitRequest(request, "POST /api/checkout/promotions/quote", { userId });
+      if (limited) return limited;
+    }
     const productIds = [...new Set(body.items.map((item) => item.productId))];
 
     // Prices come from the catalogue, never from the request — the browser
@@ -77,11 +88,6 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
-
-    // Signed in or not — a per-buyer limit is enforced only where there is a buyer
-    // to count, so the preview has to know which case this is.
-    const session = await getServerSession(authOptions);
-    const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
     const quote = await promotionService.quote(lines, {
       code: body.code,

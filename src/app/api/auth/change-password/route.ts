@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
 import { requireSession } from "@/lib/admin-auth";
 import { passwordService } from "@server/identity/password.service";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -7,6 +8,8 @@ import { changePasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 export async function POST(request: NextRequest) {
   try {
     const session = await requireSession();
+    const limited = await limitRequest(request, "POST /api/auth/change-password", { userId: session.user.id });
+    if (limited) return limited;
 
     const { currentPassword, newPassword, confirmPassword } =
       changePasswordSchema.parse(await request.json());

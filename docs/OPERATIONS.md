@@ -1,7 +1,7 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-10-20
-- **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
+- **Verified:** 2026-10-29
+- **Covers:** `src/lib/rate-limit/**`, `src/instrumentation.ts`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
 Node 20.x (CI pins `20.x`) · PostgreSQL 14+ · npm · a Razorpay account (test mode for development).
@@ -40,7 +40,8 @@ npm run dev                 # http://localhost:3000
 | `IMAGE_SEGMENT_PROVIDER` | ○ | Which service cuts a product out of its background for the `cut out`, `on white` and `studio` improvements: `zone` — the image host's own delivery transform on the custom images domain, free to 5,000 a month — or `model`, the hosted vision model. **Defaults to `zone`**, and whichever is asked for, the other runs when it is not set up. An unrecognised value is the default rather than an error: it is a preference, not a credential |
 | `IMAGE_MODEL_API_KEY` | ○ | The key for that hosted vision model. Setting it is the whole of what makes `model` available; without it only the image host's transform can run, which means **on an `r2.dev` base nothing can**, since that host serves objects and transforms none. Set it locally, or background removal is unavailable in development. The same key buys the **scene** improvement, which has no free route at all — no key, no scenes anywhere, and the account behind it needs a *balance* as well as a key (see [A scene costs money](#a-scene-costs-money)) |
 | `IMAGE_MODEL_ENDPOINT` | ○ | Where those model requests go. Unset, the code uses the service's public host; set it to point at a proxy or a staging host without a release |
-| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | ➖ | **Read by nothing today.** Rate limiting is detached (`src/lib/rate-limit/index.ts`) — set these only when reconnecting it, and see the naming trap below |
+| `RATE_LIMIT_STORE_URL` / `RATE_LIMIT_STORE_TOKEN` | ✅ preview, production | The shared rate-limit store's REST URL and token (Upstash). **Required when `APP_ENV` is `preview` or `production`** — without them the build and the boot refuse. Unset locally, where limits are in-process. `KV_REST_API_URL` / `KV_REST_API_TOKEN` are read as a fallback for one release, so the Vercel integration's values work unrenamed; see [Rate limiting](#rate-limiting) |
+| `RATE_LIMIT_CLIENT_IP_HEADER` | ✅ preview, production | The header the edge sets with the caller's address: `x-vercel-forwarded-for` on Vercel. **Required when deployed**; never `x-forwarded-for` unless the edge overwrites it, because a caller can send that one. Unset locally |
 | `ENCRYPTION_KEY` | ○ | Decrypts shipping credentials stored before 2026-10-20 only (`server/shared/crypto.ts`). Keep it set while any such row exists; new values use `CREDENTIAL_KEYS` |
 | `CHANNELS_CONNECT` | ○ | Marketplaces open to connect, comma-separated (`amazon,flipkart`); empty or unset means none (`server/channels/channel-availability.ts`). The only switch for marketplace connections |
 | `AMAZON_APP_ID` / `AMAZON_APP_SECRET` | ○ | Amazon SP-API Login with Amazon client id and secret (Developer Central → app → LWA credentials). Unset means Amazon shows as unavailable |
@@ -59,7 +60,7 @@ npm run dev                 # http://localhost:3000
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 | `GOOGLE_VERIFICATION_TOKEN` | ○ | The content value of Google Search Console's HTML-meta verification tag. Rendered into the page `<head>` (`src/app/layout.tsx`) only when set; unset, no tag is emitted |
 
-`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
+`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. `src/instrumentation.ts` runs it at boot: `APP_ENV` and the rate-limit variables are **refused** (the instance will not start), the rest of the list is **reported** as a warning, not refused, until each is checked against every Vercel environment (rate-limiting Q11). It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
 
 ### Local development database
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
@@ -203,21 +204,37 @@ Images now live in Cloudflare R2, which has no egress meter at all ([ADR-0028](a
 
 Image *optimization* is a separate quota with its own limit. If images break again and Blob transfer looks healthy, look there next.
 
-### ⚠️ Rate limiting is detached — every endpoint is unthrottled
-`src/lib/rate-limit/index.ts` exports limiters that allow every request and a
-`RATE_LIMITING_ENABLED === false` flag. Call sites that read `apiRateLimit`, `authRateLimit`,
-`paymentRateLimit` or `withRateLimit` still compile and still *look* like protection in the
-handler source; none of them rejects anything. Nothing imports `@upstash/*`. This is deliberate —
-the previous arrangement failed open silently and keyed on a caller-supplied header — but it means
-**signup, password reset, verification resend, order lookup, payment-order creation, bid placement,
-shipping-rate quoting and stock checks are all unthrottled in production.** Treat that as a live
-exposure, not a backlog item; `tests/unit/rate-limit-detached.test.ts` asserts the state so it
-cannot quietly become half-true. Reconnecting is [rate-limiting](specs/rate-limiting/).
+### Rate limiting
+Every public route under `src/app/api/` (everything outside `/api/admin` and `/api/org`) is
+classified in `src/lib/rate-limit/registry.ts`: limited under a policy, or exempt with a reason
+([ADR-0063](adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)). Budgets
+live once, in `src/lib/rate-limit/policies.ts`; the reasoning per policy is in
+[decisions.md](specs/rate-limiting/decisions.md).
 
-**When you reconnect it — the Upstash naming trap.** Wire `./upstash`, which reads
-**`KV_REST_API_URL`** and **`KV_REST_API_TOKEN`** — the names Vercel's Upstash integration
-provisions. Upstash's own dashboard calls them `UPSTASH_REDIS_REST_URL` / `_TOKEN`; using those
-names leaves the limiter unconfigured. Use the names in the table.
+| `APP_ENV` | Limiter | Needs |
+|---|---|---|
+| `local` (or unset outside a production build) | In-process, per process; warns once on first use | Nothing |
+| `preview`, `production` | Shared Upstash store, identical in both | `RATE_LIMIT_STORE_URL`, `RATE_LIMIT_STORE_TOKEN` (or the `KV_REST_API_*` fallback), `RATE_LIMIT_CLIENT_IP_HEADER` |
+
+**A deploy without them does not go live.** `next.config.ts` throws during `next build` when
+`APP_ENV` is `preview` or `production` and a value is missing, so the Vercel build fails; the same
+check runs again at boot. `vercel.json` runs `prisma migrate deploy` *before* the build, so a
+refused deploy may already have applied its migrations — set the variables before merging.
+
+**A store outage does not take the store down.** The limiter fails open and logs
+`[rate-limit] <policy>: store unreachable, request allowed` on every request it could not count. A
+deployed request without the configured address header logs once per instance and is counted in a
+shared `unknown` bucket — check `RATE_LIMIT_CLIENT_IP_HEADER` if that line appears.
+
+**Adding a route.** A new `route.ts` outside the portals fails `tests/unit/rate-limit-registry.test.ts`
+until it has a line in the registry. Pick a policy and call
+`limitRequest(request, "<METHOD> /api/<path>", { userId })` in the handler (after the session is
+read, so a signed-in caller is counted by account), or write `{ exempt: "<why>" }`. A new policy is
+a constant and a budget in `policies.ts`, and a row in decisions.md.
+
+**The Upstash naming trap.** Vercel's Upstash integration provisions `KV_REST_API_URL` and
+`KV_REST_API_TOKEN`; Upstash's own dashboard calls them `UPSTASH_REDIS_REST_*`, which nothing
+reads. Prefer the neutral `RATE_LIMIT_STORE_*` names; the `KV_*` fallback is for one release.
 
 ### Two origin variables, two jobs
 `NEXTAUTH_URL` is **NextAuth's own** configuration — it builds OAuth callback URLs and nothing else should read it. `NEXT_PUBLIC_APP_URL` is the app's public origin, used for links that leave the server. They hold the same value locally and *must* diverge on Vercel previews, so keep the responsibilities separate.
@@ -527,7 +544,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 | Domain | **GoDaddy** (registrar), **Cloudflare** (DNS) | `bhendi-bazaar.com`; nameservers at Cloudflare, records there point at Vercel. Add any DNS record in Cloudflare, never GoDaddy |
 | Database | **Prisma Postgres** (`db.prisma.io`), **Mumbai region** | Provisioned through the Vercel marketplace integration. **Not** Vercel Postgres/Neon — a different dashboard, different connection limits, and its own backup story. Anything that talks to it constantly — the worker of [worker-foundation](specs/worker-foundation/) — is placed in the same region |
 | Connection pooling | **Prisma Accelerate** — provisioned, **not in use** | See below |
-| Redis (rate limiting) | **Upstash** — *not currently wired* | Intended provider, via the Vercel integration, hence the `KV_REST_API_*` names rather than Upstash's own `UPSTASH_REDIS_REST_*`. No live code reads it |
+| Redis (rate limiting) | **Upstash** | Required in preview and production ([Rate limiting](#rate-limiting)); provisioned through the Vercel integration, hence the `KV_REST_API_*` fallback names |
 | File storage | **Cloudflare R2** | `R2_*` variables; `R2_PUBLIC_BASE_URL` is read by `next.config.ts` at build time for `remotePatterns`. No egress meter ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)) |
 | Payments | **Razorpay** | Test keys locally (`rzp_test_*`) |
 | Email | **Resend** | |
@@ -538,7 +555,7 @@ Who owns what. Verified 2026-08-05 from `.vercel/project.json`, `.env`, and whic
 `PRISMA_DATABASE_URL` holds a `prisma+postgres://accelerate.prisma-data.net/…` URL, but **nothing reads it** — `server/shared/prisma.ts` connects via `DATABASE_URL` directly. Accelerate exists to pool connections and cache queries, which is exactly the pressure a serverless deployment puts on a single Postgres instance. Worth revisiting: routing through it would address per-instance connection limits more thoroughly than tuning `max` on the local pool.
 
 ### Unused environment variables
-The code reads only `DATABASE_URL` from the connection-string set — `KV_REST_API_URL` included, now that the limiter is detached. `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, and `PRISMA_DATABASE_URL` are read by nothing — leftovers from provisioning. Keeping several live connection strings in one `.env` is the hazard behind the seed guard ([Invariant 7](../CLAUDE.md)); prune them.
+The code reads only `DATABASE_URL` from the connection-string set, plus the rate-limit store's REST URL. `POSTGRES_URL`, `DB_URL`, `REDIS_URL`, `KV_URL`, and `PRISMA_DATABASE_URL` are read by nothing — leftovers from provisioning. Keeping several live connection strings in one `.env` is the hazard behind the seed guard ([Invariant 7](../CLAUDE.md)); prune them.
 
 ## Deploy
 
@@ -604,6 +621,7 @@ That rehearsal is what caught the `RAISE NOTICE` archive being invisible.
 | `@prisma/client did not initialize yet` | `npx prisma generate` |
 | `PrismaClientOptions` error in a script | Prisma 7 needs the `pg` adapter — construct the client the way `server/shared/prisma.ts` does, not bare |
 | Port 3000 in use | `lsof -ti:3000 \| xargs kill` or `npm run dev -- -p 3001` |
-| Rate limiting not applying | Expected: it is detached and allows everything, whatever `KV_REST_API_*` holds. Confirm with `RATE_LIMITING_ENABLED` in `src/lib/rate-limit/index.ts`. The [rate-limiting](specs/rate-limiting/) spec closes this properly |
+| Rate limiting not applying | Look for `[rate-limit] … store unreachable` (store down or wrong URL) or the missing-header line (`RATE_LIMIT_CLIENT_IP_HEADER` wrong for the host). Locally, limits are per process and reset on restart |
+| Build fails with `Rate limiting cannot be enforced` | `APP_ENV` is `preview` or `production` and a rate-limit variable is missing in that Vercel environment; the message names it |
 | Stale types or unexplained build errors | `rm -rf .next && npx prisma generate` |
 | Webhook not arriving locally | No tunnel, or the secret is unset. Check the gateway dashboard's delivery log first — it records attempts and responses |

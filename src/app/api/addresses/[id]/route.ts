@@ -6,6 +6,7 @@
  * DELETE /api/addresses/[id] - Delete address
  */
 
+import { limitRequest } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
@@ -29,6 +30,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
   }
 
   const userId = session.user.id;
+  const limited = await limitRequest(req, "PATCH /api/addresses/[id]", { userId: userId });
+  if (limited) return limited;
   const { id: addressId } = await params;
 
   // Validate request body
@@ -60,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
  * DELETE /api/addresses/[id]
  * Delete an address
  */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user || !session.user.id) {
@@ -68,6 +71,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   }
 
   const userId = session.user.id;
+  const limited = await limitRequest(request, "DELETE /api/addresses/[id]", { userId: userId });
+  if (limited) return limited;
   const { id: addressId } = await params;
 
   try {

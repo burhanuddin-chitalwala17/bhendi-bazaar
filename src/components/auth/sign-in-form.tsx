@@ -16,6 +16,7 @@ import {
   PRIMARY_BUTTON,
 } from "@/components/auth/auth-field";
 import { PasswordInput } from "@/components/auth/password-input";
+import { isRefusalMessage } from "@/lib/rate-limit/copy";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import type { SwitchAuthView } from "@/components/auth/auth-view";
 
@@ -65,7 +66,10 @@ export function SignInForm({
         email: data.email,
         password: data.password,
       });
-      if (!result || result.error) throw new Error(SIGN_IN_FAILED);
+      // A rate-limit refusal says when to retry; every other failure stays generic.
+      if (!result || result.error) {
+        throw new Error(isRefusalMessage(result?.error) ? result.error : SIGN_IN_FAILED);
+      }
       await onSuccess();
     },
     defaultValues: { email: defaultEmail, password: "" },

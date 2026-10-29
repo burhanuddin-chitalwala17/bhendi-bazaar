@@ -20,10 +20,7 @@ const service = {
 vi.mock("next-auth", () => ({ getServerSession: async () => session.value }));
 vi.mock("@/lib/auth-config", () => ({ authOptions: {} }));
 vi.mock("@server/catalog/review.service", () => ({ reviewService: service }));
-vi.mock("@/lib/rate-limit", () => ({
-  withRateLimit: async () => null,
-  getRateLimitIdentifier: () => "test",
-}));
+vi.mock("@/lib/rate-limit", () => ({ limitRequest: async () => null }));
 
 const productRoute = await import("@/app/api/products/[id]/reviews/route");
 const reviewRoute = await import("@/app/api/reviews/[id]/route");

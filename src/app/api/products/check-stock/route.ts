@@ -4,6 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-config";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { productService } from "@server/catalog/product.service";
 import { validateRequest } from "@/lib/validation";
@@ -11,6 +14,9 @@ import { stockCheckSchema } from "@/lib/validation/schemas/cart.schemas";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const limited = await limitRequest(request, "POST /api/products/check-stock", { userId: session?.user?.id });
+    if (limited) return limited;
     // Validate request body
     const validation = await validateRequest(request, stockCheckSchema);
 

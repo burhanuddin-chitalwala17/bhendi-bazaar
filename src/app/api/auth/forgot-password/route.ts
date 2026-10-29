@@ -1,30 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { passwordService } from "@server/identity/password.service";
-import {
-  authRateLimit,
-  getClientIp,
-  formatTimeRemaining,
-} from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { forgotPasswordSchema } from "@/lib/validation/schemas/auth.schemas";
 
 export async function POST(request: NextRequest) {
-  // Rate limit
-  const ip = getClientIp(request);
-  const { success, limit, remaining, reset } = await authRateLimit.limit(ip);
-
-  if (!success) {
-    const timeRemaining = reset - Date.now();
-    return NextResponse.json(
-      {
-        error: `Too many requests. Please try again in ${formatTimeRemaining(
-          timeRemaining,
-        )}.`,
-        retryAfter: Math.ceil(timeRemaining / 1000),
-      },
-      { status: 429 },
-    );
-  }
+  const limited = await limitRequest(request, "POST /api/auth/forgot-password");
+  if (limited) return limited;
 
   try {
     const { email } = forgotPasswordSchema.parse(await request.json());

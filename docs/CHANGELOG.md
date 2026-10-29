@@ -10,6 +10,47 @@
 
 ## Entries
 
+## 2026-10-29 — rate limiting enforced everywhere through one registry
+
+- **Why:** limiting was detached (PR-81) and, where it had existed, added handler by handler, so
+  password reset, payment confirmation, the coupon quote and a dozen more had never had a limit.
+  Owner, 2026-10-29: do it once, product-wide ([rate-limiting](specs/rate-limiting/) Q1,
+  [ADR-0063](adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)).
+- **Unit 1 — boot gate and seam (behaviour change).** `APP_ENV` picks the backend: in-process
+  (`src/lib/rate-limit/memory.ts`, bounded to 10,000 callers) locally, the shared Upstash store
+  (`upstash.ts`) in preview and production. `next.config.ts` fails a preview or production build
+  missing `RATE_LIMIT_STORE_URL`/`_TOKEN` (or `KV_REST_API_*`) or `RATE_LIMIT_CLIENT_IP_HEADER`;
+  `src/instrumentation.ts` checks again at boot and reports the rest of `validateEnv`'s list
+  (Q11). The address comes only from the configured header, last entry (Q12). A store fault fails
+  open and is logged per request. A refusal is `RateLimitedError`, a 429 in the envelope with
+  `Retry-After` and `X-RateLimit-*` (`src/lib/api-error-response.ts`).
+- **Unit 2 — registry, gate, helper.** `policies.ts` (11 policies, the only numbers),
+  `registry.ts` (44 public route methods: 35 limited, 9 exempt with a reason), `limitRequest`.
+  Every old call site moved onto it; the bespoke `{ error, retryAfter }` bodies are gone.
+- **Unit 3 — the unlimited routes.** Sign-in (inside the credentials provider; the form now shows
+  the refusal), reset, resend, change-password, verify-email (redirects with the message),
+  payment verify/confirm-free/abandon, coupon quote (only when a code is sent), allocate,
+  shipping rates, stock check, bids, addresses, profile, picture, reviews, shop creation.
+- **Retired:** `tests/unit/rate-limit-detached.test.ts`, `RATE_LIMITING_ENABLED`, `withRateLimit`,
+  `getClientIp`, `getRateLimitIdentifier`. `docs-integrity` now ignores Next's own `NEXT_RUNTIME`
+  and `NEXT_PHASE`.
+- **Tests:** `tests/unit/rate-limit.test.ts` (selection, config assertion, address, bound,
+  fail-open, envelope), `tests/unit/rate-limit-registry.test.ts` (A6),
+  `tests/unit/rate-limit-routes.test.ts` (A1, A2, A5, A7 through the real handlers).
+- **Mutations:** registry entry removed → gate red; allocate's call removed → red; re-keyed to
+  another route → red; a new unclassified `route.ts` → red, naming it; memory bound removed → red;
+  selector on key presence → 3 red; `x-forwarded-for` read first → red; fail-open rethrows → red;
+  preview left unasserted → red; codeless quotes counted → red. All restored.
+- **Review fixes (2026-10-30).** Payment verify/confirm-free/create-order, allocate, stock check and
+  shipping rates now read the session and key by account (R7); the registry gate fails a limited
+  route that never passes `userId`, short of a named anonymous list. Store keys carry `APP_ENV`
+  (Q19). The store gives up after 1000 ms, allows, and logs a timeout once per window (Q20).
+  Mutations: verify's `userId` dropped → gate red; env prefix dropped → 2 red; timeout unset → red;
+  timeout logged every request → red; never logged → red. All restored. Q21 parked.
+- **Not verified live:** the development store in the local `.env` does not resolve, so the
+  Upstash path is proven only against a stubbed client (CI proxy parked, Q13).
+- **Suites:** tsc, unit, integration, `lint:boundary`, `docs:check`, `next build`.
+
 ## 2026-10-29 — offers-hardening unit 6: the platform funds on the 30-day lowest price [MIGRATION]
 
 - **A shop could raise its price before a platform campaign and have the platform fund the rise**

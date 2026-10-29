@@ -5,12 +5,18 @@
  * zero — which the server checks itself. A non-zero order is refused.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { limitRequest } from "@/lib/rate-limit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-config";
 import { paymentService } from "@server/payments/payment.service";
 import { confirmFreeOrderSchema } from "@/lib/validation/schemas/payment.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    const limited = await limitRequest(request, "POST /api/payments/confirm-free", { userId: session?.user?.id });
+    if (limited) return limited;
     const body = confirmFreeOrderSchema.parse(await request.json());
     const result = await paymentService.confirmFreeOrder(body.localOrderId);
     return NextResponse.json(result);

@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 // Relative import: next.config loads before tsconfig path aliases exist.
 import { crawlersBlocked } from "./src/lib/crawl-block";
 import { STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
+import { assertRateLimitConfigAtBuild } from "./src/lib/rate-limit/config";
+
+// A preview or production build that cannot enforce rate limits fails here, so the deploy
+// never goes live (rate-limiting D2, spec A3).
+assertRateLimitConfigAtBuild();
 
 const nextConfig: NextConfig = {
   async headers() {

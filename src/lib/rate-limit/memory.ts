@@ -1,133 +1,60 @@
 /**
- * PARKED — not imported by anything. The live seam is `./index.ts`.
- *
- * An in-process Map, so on serverless each instance keeps its own counts and the real
- * limit is the window times the number of running instances. It also never evicts, so
- * the map grows for the life of the instance. Useful locally; not a production control.
+ * The in-process limiter for local development (rate-limiting D1a). Each process keeps its
+ * own counts, so it is never the deployed backend. Fixed windows, bounded (D7): at its
+ * maximum it sweeps expired windows, then evicts the oldest.
  */
-// src/lib/rateLimit.ts
+import type { Budget } from "./policies";
+import type { RateLimiter, RateLimitResult } from "./types";
 
-import { NextRequest, NextResponse } from "next/server";
+export const MEMORY_LIMITER_MAX_KEYS = 10_000;
 
-interface RateLimitConfig {
-  interval: number; // Time window in milliseconds
-  uniqueTokenPerInterval: number; // Max requests per interval
-}
-
-interface RateLimitStore {
+interface Window {
   count: number;
-  resetTime: number;
+  reset: number;
 }
 
-// In-memory store for rate limiting
-// In production, use Redis or similar
-const rateLimitStore = new Map<string, RateLimitStore>();
+export function memoryLimiter(
+  budget: Budget,
+  options: { maxKeys?: number; now?: () => number } = {}
+): RateLimiter & { size(): number } {
+  const maxKeys = options.maxKeys ?? MEMORY_LIMITER_MAX_KEYS;
+  const now = options.now ?? Date.now;
+  const windows = new Map<string, Window>();
 
-/**
- * Simple rate limiter using sliding window
- * For production, use Redis with proper TTL
- */
-export function rateLimit(config: RateLimitConfig) {
-  const { interval, uniqueTokenPerInterval } = config;
+  function makeRoom(at: number) {
+    if (windows.size < maxKeys) return;
+    for (const [key, window] of windows) if (window.reset <= at) windows.delete(key);
+    // Map iterates in insertion order and a window is re-inserted when it restarts, so the
+    // first key is the one whose window began longest ago.
+    while (windows.size >= maxKeys) {
+      const oldest = windows.keys().next().value;
+      if (oldest === undefined) break;
+      windows.delete(oldest);
+    }
+  }
 
   return {
-    check: (identifier: string): { success: boolean; remaining: number; reset: number } => {
-      const now = Date.now();
-      const store = rateLimitStore.get(identifier);
-
-      // Clean up old entries (simple garbage collection)
-      if (rateLimitStore.size > 10000) {
-        const expiredKeys: string[] = [];
-        rateLimitStore.forEach((value, key) => {
-          if (value.resetTime < now) {
-            expiredKeys.push(key);
-          }
-        });
-        expiredKeys.forEach((key) => rateLimitStore.delete(key));
+    size: () => windows.size,
+    async limit(key: string): Promise<RateLimitResult> {
+      const at = now();
+      const current = windows.get(key);
+      if (!current || current.reset <= at) {
+        windows.delete(key);
+        makeRoom(at);
+        const reset = at + budget.windowSeconds * 1000;
+        windows.set(key, { count: 1, reset });
+        return { success: true, limit: budget.requests, remaining: budget.requests - 1, reset };
       }
-
-      if (!store || store.resetTime < now) {
-        // First request or window expired
-        rateLimitStore.set(identifier, {
-          count: 1,
-          resetTime: now + interval,
-        });
-        return {
-          success: true,
-          remaining: uniqueTokenPerInterval - 1,
-          reset: now + interval,
-        };
+      if (current.count >= budget.requests) {
+        return { success: false, limit: budget.requests, remaining: 0, reset: current.reset };
       }
-
-      // Within window
-      if (store.count < uniqueTokenPerInterval) {
-        store.count++;
-        return {
-          success: true,
-          remaining: uniqueTokenPerInterval - store.count,
-          reset: store.resetTime,
-        };
-      }
-
-      // Rate limit exceeded
+      current.count += 1;
       return {
-        success: false,
-        remaining: 0,
-        reset: store.resetTime,
+        success: true,
+        limit: budget.requests,
+        remaining: budget.requests - current.count,
+        reset: current.reset,
       };
     },
   };
 }
-
-/**
- * Rate limit middleware for API routes
- */
-export async function withRateLimit(
-  request: NextRequest,
-  config: RateLimitConfig,
-  getIdentifier: (req: NextRequest) => string | Promise<string>
-): Promise<NextResponse | null> {
-  const limiter = rateLimit(config);
-  const identifier = await getIdentifier(request);
-
-  const result = limiter.check(identifier);
-
-  if (!result.success) {
-    const retryAfter = Math.ceil((result.reset - Date.now()) / 1000);
-    return NextResponse.json(
-      {
-        error: "Too many requests",
-        message: `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
-        retryAfter,
-      },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": config.uniqueTokenPerInterval.toString(),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": result.reset.toString(),
-          "Retry-After": retryAfter.toString(),
-        },
-      }
-    );
-  }
-
-  // Add rate limit headers to successful responses
-  return null; // Continue processing
-}
-
-/**
- * Get identifier for rate limiting
- * Uses user ID if authenticated, IP address otherwise
- */
-export function getRateLimitIdentifier(request: NextRequest, userId?: string): string {
-  if (userId) {
-    return `user:${userId}`;
-  }
-
-  // Fallback to IP address
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0] : request.headers.get("x-real-ip") || "unknown";
-  return `ip:${ip}`;
-}
-

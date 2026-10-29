@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-config";
 import { cartService } from "@server/cart/cart.service";
 import { validateRequest } from "@/lib/validation";
 import { updateCartSchema } from "@/lib/validation/schemas/cart.schemas";
-import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 /**
@@ -26,12 +26,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Apply rate limiting: 100 requests per minute
-    const rateLimitResult = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 100 },
-      () => getRateLimitIdentifier(request, session.user.id),
-    );
+    const rateLimitResult = await limitRequest(request, "PUT /api/cart", { userId: session.user.id });
     if (rateLimitResult) return rateLimitResult;
 
     // Validate request body
@@ -64,12 +59,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Apply rate limiting: 20 requests per minute
-    const rateLimitResult = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 20 },
-      () => getRateLimitIdentifier(request, session.user.id),
-    );
+    const rateLimitResult = await limitRequest(request, "DELETE /api/cart", { userId: session.user.id });
     if (rateLimitResult) return rateLimitResult;
 
     await cartService.clearCart(session.user.id);

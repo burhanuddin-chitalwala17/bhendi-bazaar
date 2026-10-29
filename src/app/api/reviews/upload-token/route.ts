@@ -22,7 +22,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 import { DomainError, UnauthorizedError } from "@server/shared/domain-error";
 import { presignUpload } from "@server/catalog/object-store";
 import { presignUploadSchema } from "@/lib/validation/schemas/upload.schema";
-import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,11 +31,7 @@ export async function POST(request: NextRequest) {
       throw new UnauthorizedError("Sign in to add a photo to your review");
     }
 
-    const limited = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 20 },
-      () => getRateLimitIdentifier(request, session.user.id),
-    );
+    const limited = await limitRequest(request, "POST /api/reviews/upload-token", { userId: session.user.id });
     if (limited) return limited;
 
     const { pathname, contentType, size } = presignUploadSchema.parse(

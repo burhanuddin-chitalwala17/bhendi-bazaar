@@ -17,42 +17,16 @@ import { orderService } from "@server/checkout/order.service";
 import { paymentService } from "@server/payments/payment.service";
 import { OutOfStockError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
-import {
-  orderRateLimit,
-  getClientIp,
-  formatTimeRemaining,
-} from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 import { validateRequest } from "@/lib/validation";
 import { createOrderWithShipmentsSchema } from "@/lib/validation/schemas/order.schemas";
 
 export async function POST(request: NextRequest) {
-  // Rate limit check
-  const ip = getClientIp(request);
-  const { success, limit, remaining, reset } = await orderRateLimit.limit(ip);
-
-  if (!success) {
-    const timeRemaining = reset - Date.now();
-    return NextResponse.json(
-      {
-        error: `Too many order requests. Please try again in ${formatTimeRemaining(
-          timeRemaining,
-        )}.`,
-        retryAfter: Math.ceil(timeRemaining / 1000),
-      },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": limit.toString(),
-          "X-RateLimit-Remaining": remaining.toString(),
-          "X-RateLimit-Reset": reset.toString(),
-          "Retry-After": Math.ceil(timeRemaining / 1000).toString(),
-        },
-      },
-    );
-  }
-
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
+
+  const limited = await limitRequest(request, "POST /api/orders/create-with-shipments", { userId });
+  if (limited) return limited;
 
   // Validate request body
   const validation = await validateRequest(

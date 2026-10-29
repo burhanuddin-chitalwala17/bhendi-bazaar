@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth-config";
 import { wishlistService } from "@server/wishlist/wishlist.service";
 import { validateRequest, validateQueryParams } from "@/lib/validation";
 import { wishlistItemSchema } from "@/lib/validation/schemas/wishlist.schema";
-import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
+import { limitRequest } from "@/lib/rate-limit";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 /**
@@ -30,11 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rateLimitResult = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 60 },
-      () => getRateLimitIdentifier(request, session.user.id),
-    );
+    const rateLimitResult = await limitRequest(request, "POST /api/wishlist", { userId: session.user.id });
     if (rateLimitResult) return rateLimitResult;
 
     const validation = await validateRequest(request, wishlistItemSchema);
@@ -65,11 +61,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const rateLimitResult = await withRateLimit(
-      request,
-      { interval: 60 * 1000, uniqueTokenPerInterval: 60 },
-      () => getRateLimitIdentifier(request, session.user.id),
-    );
+    const rateLimitResult = await limitRequest(request, "DELETE /api/wishlist", { userId: session.user.id });
     if (rateLimitResult) return rateLimitResult;
 
     const validation = validateQueryParams(

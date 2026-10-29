@@ -5,6 +5,7 @@
  * POST /api/addresses - Add a new address
  */
 
+import { limitRequest } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
   }
 
   const userId = session.user.id;
+  const limited = await limitRequest(req, "POST /api/addresses", { userId: userId });
+  if (limited) return limited;
 
   // Validate request body
   const validation = await validateRequest(req, addAddressSchema);
