@@ -2,14 +2,16 @@
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { productsRepository } from "@server/catalog/product.read.repository";
+import { commercialTermsService } from "@server/catalog/commercial-terms.service";
 import { OfferForm } from "@/components/promotions/OfferForm";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export default async function NewPlatformOfferPage() {
   await requirePlatformAdmin();
-  const [categories, products] = await Promise.all([
+  const [categories, products, lowestRateBps] = await Promise.all([
     categoryRepository.listForPicker(),
     productsRepository.listForPicker(),
+    commercialTermsService.lowestCommissionBps(),
   ]);
 
   return (
@@ -25,6 +27,7 @@ export default async function NewPlatformOfferPage() {
         products={products.products}
         productTotal={products.total}
         productSearchPath="/api/admin/promotions/products"
+        lossRule={{ lowestRateBps }}
       />
     </PageShell>
   );

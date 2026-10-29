@@ -211,33 +211,33 @@ enum EnhancementState {
 }
 
 model Category {
-  id          String         @id @default(cuid())
-  slug        String         @unique
-  name        String
+  id             String         @id @default(cuid())
+  slug           String         @unique
+  name           String
   /// Self-referencing tree (category-tree D1/D2): null = root. Restrict, so a parent
   /// with children cannot be deleted; cycles are refused on the write path.
-  parentId    String?
-  parent      Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children    Category[]     @relation("CategoryTree")
-  description String         @db.Text
-  heroImage   String // URL to hero image
-  heroAssetId String?
-  heroAsset   MediaAsset?    @relation("CategoryHero", fields: [heroAssetId], references: [id], onDelete: Restrict)
-  accent      CategoryAccent @default(EMERALD)
+  parentId       String?
+  parent         Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children       Category[]     @relation("CategoryTree")
+  description    String         @db.Text
+  heroImage      String // URL to hero image
+  heroAssetId    String?
+  heroAsset      MediaAsset?    @relation("CategoryHero", fields: [heroAssetId], references: [id], onDelete: Restrict)
+  accent         CategoryAccent @default(EMERALD)
   /// The named photo slots products in this category fill, inherited down the tree from the
   /// nearest ancestor that sets one; null means the platform's generic list (media-library D4).
-  shotList    Json?
+  shotList       Json?
   /// Which listing questions this category's products are asked, inherited down the tree from the
   /// nearest ancestor that sets one, exactly as `shotList` is (listing-vocabulary/categories D1a).
   /// Null everywhere means a product is asked the spine only — it still saves and still sells.
   /// A browsing category is reorganised for merchandising reasons; the resolved value is copied
   /// onto the product on save (D1b) so moving a category never moves a product's stored answers.
-  productType     String?
-  productTypeRef  ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
-  order       Int            @default(0)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  products    Product[]
+  productType    String?
+  productTypeRef ProductType?   @relation(fields: [productType], references: [key], onDelete: Restrict)
+  order          Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  products       Product[]
 
   promotionTargets PromotionTarget[]
   commissionRules  OrgCommissionRule[]
@@ -280,11 +280,11 @@ model Product {
   /// The product type resolved from the category tree at save time and kept here
   /// (listing-vocabulary/categories D1b). A column rather than a fact because it says how to
   /// read `facts` and `measurements`, so a row is interpretable without the tree.
-  productType String?
+  productType    String?
   /// Which kind within that type — abaya, burqa, attar, bakhoor (categories D1). A column
   /// because the channel mapping resolves a platform node from the type and the kind together,
   /// and because the platforms disagree about which of the two it is.
-  kind        String?
+  kind           String?
   /// Restrict: a type in use is retired, never deleted (product-types D8).
   productTypeRef ProductType? @relation(fields: [productType], references: [key], onDelete: Restrict)
 
@@ -343,7 +343,7 @@ model Product {
   /// A timestamp rather than a status enum because there is no third lifecycle state
   /// to model, and "since when" is worth having for free. It is server-owned and
   /// never accepted from a request body (Invariant 4).
-  archivedAt DateTime?
+  archivedAt      DateTime?
   channelListings ChannelListing[]
 
   // A SKU is the org's own identifier; two orgs may legitimately use the same one.
@@ -582,12 +582,13 @@ model User {
   addresses             UserAddress[]
   enhancementsRequested Enhancement[]
 
-  settlementsCreated Settlement[] @relation("SettlementCreatedBy")
-  settlementsUpdated Settlement[] @relation("SettlementUpdatedBy")
+  settlementsCreated       Settlement[] @relation("SettlementCreatedBy")
+  promotionLossesConfirmed Promotion[]  @relation("PromotionLossConfirmedBy")
+  settlementsUpdated       Settlement[] @relation("SettlementUpdatedBy")
 
-  bids                 Bid[]          @relation("UserBids")
-  biddingEventsCreated BiddingEvent[] @relation("BiddingCreatedBy")
-  biddingEventsSettled BiddingEvent[] @relation("BiddingSettledBy")
+  bids                 Bid[]               @relation("UserBids")
+  biddingEventsCreated BiddingEvent[]      @relation("BiddingCreatedBy")
+  biddingEventsSettled BiddingEvent[]      @relation("BiddingSettledBy")
   channelsConnected    ChannelConnection[] @relation("ChannelConnectedBy")
   channelsDisconnected ChannelConnection[] @relation("ChannelDisconnectedBy")
 
@@ -665,22 +666,22 @@ model Org {
   storefrontBanners OrgBanner[]
   handleHistory     OrgHandleHistory[]
 
-  promotions      Promotion[]
-  orderDiscounts  OrderDiscount[]
-  commissionRules OrgCommissionRule[]
-  ledgerEntries   OrgLedgerEntry[]
-  settlements     Settlement[]
-  biddingEvents   BiddingEvent[]
+  promotions         Promotion[]
+  orderDiscounts     OrderDiscount[]
+  commissionRules    OrgCommissionRule[]
+  ledgerEntries      OrgLedgerEntry[]
+  settlements        Settlement[]
+  biddingEvents      BiddingEvent[]
+  listingValues      ListingValue[]
+  productFamilies    ProductFamily[]
+  channels           OrgChannel[]
+  channelConnections ChannelConnection[]
 
   @@index([email])
   @@index([isActive])
   @@index([isBlocked])
   @@index([code])
   @@index([handle])
-  listingValues ListingValue[]
-  productFamilies ProductFamily[]
-  channels OrgChannel[]
-  channelConnections ChannelConnection[]
 }
 
 /// The public face of an organisation: what a storefront or an advertisement may show, and
@@ -770,10 +771,10 @@ model Brand {
   retiredAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  products  Product[]
 
   @@unique([orgId, name])
   @@index([orgId])
-  products Product[]
 }
 
 model Account {
@@ -1403,6 +1404,15 @@ model Promotion {
   usageCount   Int  @default(0)
   perUserLimit Int?
 
+  /// What a PLATFORM offer may cost the platform in total; spent by a conditional write in
+  /// the order transaction and given back on expiry (offers-hardening D5).
+  platformBudgetPaise   Int?
+  platformSpentPaise    Int       @default(0)
+  /// Set when an admin confirmed an offer that can cost more than commission (D6, own-store Q20).
+  lossConfirmedAt       DateTime?
+  lossConfirmedByUserId String?
+  lossConfirmedBy       User?     @relation("PromotionLossConfirmedBy", fields: [lossConfirmedByUserId], references: [id], onDelete: Restrict)
+
   targets        PromotionTarget[]
   orderDiscounts OrderDiscount[]
 
@@ -1467,6 +1477,9 @@ model OrderDiscount {
   buyerDiscountPaise  Int
   orgFundedPaise      Int
   platformFundedPaise Int
+  /// What this row charged the offer's budget (offers-hardening D5) — 0 when it had none, so
+  /// expiry gives back exactly what was taken, whatever the budget became since.
+  budgetChargedPaise  Int @default(0)
 
   createdAt DateTime @default(now())
 
@@ -1736,7 +1749,6 @@ model BiddingEvent {
   orgId     String
   org       Org     @relation(fields: [orgId], references: [id], onDelete: Restrict)
 
-
   startAt DateTime
   endAt   DateTime
 
@@ -1831,7 +1843,7 @@ model ListingValue {
   id String @id @default(cuid())
 
   /// Which list this belongs to — a `LIST` key from `server/catalog/listing-facts.ts`.
-  list String
+  list  String
   /// What is stored on a product. Renaming a label must not rewrite products, and two shops must
   /// not disagree about what maroon is (D4).
   key   String
@@ -1876,7 +1888,7 @@ model ProductFamily {
   orgId String
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Restrict)
 
-  name String
+  name        String
   /// Typed once here and copied onto each member on save; a member may override it (variants D10).
   description String? @db.Text
 
@@ -2053,34 +2065,34 @@ model ChannelListing {
   channel      String
 
   /// The marketplace's SKU exactly as it spells it, and trimmed lower-case for matching (Q3).
-  sku           String
-  skuKey        String
+  sku        String
+  skuKey     String
   /// ASIN or FSN.
-  externalId    String?
-  title         String?
-  imageUrl      String?
+  externalId String?
+  title      String?
+  imageUrl   String?
   /// `LISTING_STATUS`: LIVE, INACTIVE, INCOMPLETE.
-  status        String?
+  status     String?
   /// Paise, converted from what the marketplace reported (Invariant 3).
-  pricePaise    Int?
-  quantity      Int?
+  pricePaise Int?
+  quantity   Int?
 
   /// The variation parent this listing belongs to, when the marketplace says (Q9).
   parentSku     String?
   parentTitle   String?
   variationAxis String?
 
-  productId  String?
-  product    Product? @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productId     String?
+  product       Product?  @relation(fields: [productId], references: [id], onDelete: Restrict)
   /// `LINK_SOURCE`: SKU (by a read, or restored by Link back); OWNER is product-merge's manual link.
-  linkSource String?
-  linkedAt   DateTime?
+  linkSource    String?
+  linkedAt      DateTime?
   /// Set when the owner unlinks; a read never links this row again on its own (Q5).
-  unlinkedAt   DateTime?
-  unlinkedById String?
+  unlinkedAt    DateTime?
+  unlinkedById  String?
   /// The owner chose not to sell it on Bhendi Bazaar; a read never links it while set (product-merge Q9).
-  leftOffAt    DateTime?
-  leftOffById  String?
+  leftOffAt     DateTime?
+  leftOffById   String?
   /// Why it was left off: null for the owner's own choice, `no_type` when parked for want of a type (marketplace-facts Q6).
   leftOffReason String?
 
@@ -2088,7 +2100,7 @@ model ChannelListing {
   attributes       Json?
   attributesReadAt DateTime?
   /// Facts the owner chose to skip for now on this listing's card (marketplace-facts D6).
-  attributeSkips   String[] @default([])
+  attributeSkips   String[]  @default([])
 
   /// The marketplace's photos being copied onto the linked product (product-merge D6).
   /// `PHOTO_COPY_MODE`: a new product gains them; a match replaces its gallery. Try again repeats it.
@@ -2118,8 +2130,8 @@ model ChannelListing {
 /// Flipkart holds abaya, burqa and niqab as one node separated by a field, Meesho as three
 /// categories. A rida maps through the same pair, and has an exact match on neither.
 model ChannelCategoryMap {
-  id      String @id @default(cuid())
-  channel String
+  id          String  @id @default(cuid())
+  channel     String
   /// A `ProductType.key`; `kind` is one of that type's declared kinds, or null for all of them.
   productType String
   kind        String?
@@ -2165,8 +2177,8 @@ enum ChannelMapFit {
 
 /// What a channel calls one of our facts, within one of its categories.
 model ChannelAttributeMap {
-  id      String @id @default(cuid())
-  channel String
+  id            String @id @default(cuid())
+  channel       String
   /// **Their** category, matching `ChannelCategoryMap.theirCategory` — not our product type.
   /// A required-field set belongs to the channel's own node: Flipkart's `bag` asks Number of
   /// Compartments and Waterproof, while `sling-bag` has neither field, and both are our `bag`.
@@ -2201,8 +2213,8 @@ model ChannelAttributeMap {
 /// disagree — `in_stock` against `in stock`, five age groups against seven. An answer with no row
 /// here fails readiness and the shop is asked to choose, once, for every product using it.
 model ChannelValueMap {
-  id      String @id @default(cuid())
-  channel String
+  id       String @id @default(cuid())
+  channel  String
   /// A `LIST` key, and the stored key of one of its values.
   list     String
   valueKey String

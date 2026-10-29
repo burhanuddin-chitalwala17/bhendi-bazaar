@@ -40,6 +40,8 @@ const promo = (o: Partial<EnginePromotion> = {}): EnginePromotion => ({
   isActive: true,
   usageLimit: null,
   usageCount: 0,
+  platformBudgetPaise: null,
+  platformSpentPaise: 0,
   perUserLimit: null,
   targets: [],
   ...OPEN,

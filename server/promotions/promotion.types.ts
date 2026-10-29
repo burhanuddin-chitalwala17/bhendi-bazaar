@@ -45,6 +45,9 @@ export interface EnginePromotion {
    * signing in rather than silently not applying.
    */
   perUserLimit: number | null;
+  /** PLATFORM only: what it may cost the platform in total, and what it has (offers-hardening D5). */
+  platformBudgetPaise: number | null;
+  platformSpentPaise: number;
   /** Zero rows means "everything in scope" (promotions D3). */
   targets: PromotionTargetRow[];
 }

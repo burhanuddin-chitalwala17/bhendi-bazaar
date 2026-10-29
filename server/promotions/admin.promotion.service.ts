@@ -10,13 +10,33 @@
 import { rupeesToPaise } from "@server/shared/money";
 import { promotionRepository } from "@server/promotions/promotion.repository";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
-import type { PromotionFormInput } from "@/lib/validation/schemas/promotion.schema";
+import type {
+  PlatformPromotionFormInput,
+  PromotionFormInput,
+} from "@/lib/validation/schemas/promotion.schema";
 import { productService } from "@server/catalog/product.service";
 import { commercialTermsService } from "@server/catalog/commercial-terms.service";
 import { offerCeilingBreach } from "@server/promotions/ceiling";
+import {
+  CONFIRM_LOSS_ERROR,
+  CONFIRM_LOSS_PHRASE,
+  LOSS_BUDGET_REQUIRED,
+  couldCostMoreThanCommission,
+} from "@server/promotions/loss";
+import { formatCurrency } from "@server/shared/money";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 
 /** Who is creating the offer, and therefore who funds it. */
 export type PromotionOwner = { scope: "PLATFORM" } | { scope: "ORG"; orgId: string };
+
+/**
+ * Who is saving it. A platform save names the admin from the session, never the body, so a
+ * confirmed loss records who accepted it (offers-hardening D6, Q11).
+ */
+export type PromotionWriter = { scope: "PLATFORM"; userId: string } | { scope: "ORG"; orgId: string };
+
+/** Either audience's form; a shop's carries no budget or confirmation (the schema strips them). */
+type OfferInput = PromotionFormInput | PlatformPromotionFormInput;
 
 export class AdminPromotionService {
   /**
@@ -27,7 +47,7 @@ export class AdminPromotionService {
    * this line is integer (ADR-0004). Conversion is not a Zod transform because the
    * same schema validates on both sides and would run twice.
    */
-  private async toRow(input: PromotionFormInput, owner: PromotionOwner) {
+  private async toRow(input: OfferInput, owner: PromotionWriter) {
     if (owner.scope === "ORG") {
       await this.assertCodePrefixed(input, owner.orgId);
       // Ownership first: the ceiling message quotes a product's price.
@@ -35,24 +55,53 @@ export class AdminPromotionService {
       await this.assertWithinOrgCeiling(input, owner.orgId);
     }
 
+    const value = {
+      valueType: input.valueType,
+      percentBps: input.percent !== undefined ? Math.round(input.percent * 100) : null,
+      amountOffPaise: input.amountOff !== undefined ? rupeesToPaise(input.amountOff) : null,
+      fixedPricePaise: input.fixedPrice !== undefined ? rupeesToPaise(input.fixedPrice) : null,
+      minSubtotalPaise: input.minSubtotal !== undefined ? rupeesToPaise(input.minSubtotal) : 0,
+    };
+
     return {
+      ...value,
+      ...(owner.scope === "PLATFORM"
+        ? await this.budgetAndLoss(input as PlatformPromotionFormInput, value, owner.userId)
+        : { platformBudgetPaise: null }),
       label: input.label,
       scope: owner.scope,
       orgId: owner.scope === "ORG" ? owner.orgId : null,
       trigger: input.trigger,
       code: input.trigger === "CODE" ? (input.code ?? null) : null,
-      valueType: input.valueType,
-      percentBps: input.percent !== undefined ? Math.round(input.percent * 100) : null,
-      amountOffPaise: input.amountOff !== undefined ? rupeesToPaise(input.amountOff) : null,
-      fixedPricePaise: input.fixedPrice !== undefined ? rupeesToPaise(input.fixedPrice) : null,
       maxDiscountPaise: input.maxDiscount !== undefined ? rupeesToPaise(input.maxDiscount) : null,
-      minSubtotalPaise: input.minSubtotal !== undefined ? rupeesToPaise(input.minSubtotal) : 0,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
       isActive: input.isActive,
       usageLimit: input.usageLimit ?? null,
       perUserLimit: input.perUserLimit ?? null,
     };
+  }
+
+  /**
+   * A platform offer that can cost more than commission exists only once an admin has typed the
+   * phrase and set a budget (offers-hardening D6, own-store Q20). Run on every save, so an edit
+   * that deepens an offer asks again; the spend is never input and an edit never resets it.
+   */
+  private async budgetAndLoss(
+    input: PlatformPromotionFormInput,
+    value: Parameters<typeof couldCostMoreThanCommission>[0],
+    userId: string
+  ) {
+    const platformBudgetPaise = input.budget !== undefined ? rupeesToPaise(input.budget) : null;
+    // No loss possible: the confirmation fields are left out, so an edit keeps an earlier one (Q14).
+    if (!couldCostMoreThanCommission(value, await commercialTermsService.lowestCommissionBps())) {
+      return { platformBudgetPaise };
+    }
+    if (input.confirmLoss !== CONFIRM_LOSS_PHRASE) {
+      throw new DomainError(CONFIRM_LOSS_ERROR, { field: "confirmLoss" });
+    }
+    if (platformBudgetPaise === null) throw new DomainError(LOSS_BUDGET_REQUIRED, { field: "budget" });
+    return { platformBudgetPaise, lossConfirmedAt: new Date(), lossConfirmedByUserId: userId };
   }
 
   /**
@@ -64,7 +113,7 @@ export class AdminPromotionService {
    * fixed-price offer is checked only on the products it names; on a category or everything
    * the price is not knowable here, and the engine clamps instead (offers-hardening Q7).
    */
-  private async assertWithinOrgCeiling(input: PromotionFormInput, orgId: string) {
+  private async assertWithinOrgCeiling(input: OfferInput, orgId: string) {
     const org = await commercialTermsService.find(orgId);
     if (!org) throw new NotFoundError("Organisation not found");
 
@@ -99,7 +148,7 @@ export class AdminPromotionService {
    * and makes partial coverage self-explaining — a code that names its organisation
    * answers "why did this only apply to some items" without a support message.
    */
-  private async assertCodePrefixed(input: PromotionFormInput, orgId: string) {
+  private async assertCodePrefixed(input: OfferInput, orgId: string) {
     if (input.trigger !== "CODE" || !input.code) return;
     const org = await commercialTermsService.find(orgId);
     if (!org) throw new NotFoundError("Organisation not found");
@@ -112,7 +161,7 @@ export class AdminPromotionService {
   }
 
   /** An organisation's offer may only name its own goods (spec R1, R20). */
-  private async assertProductsBelongToOrg(input: PromotionFormInput, orgId: string) {
+  private async assertProductsBelongToOrg(input: OfferInput, orgId: string) {
     if (input.productIds.length === 0) return;
     const foreign = await productService.countOutsideOrg(input.productIds, orgId);
     if (foreign > 0) {
@@ -120,17 +169,19 @@ export class AdminPromotionService {
     }
   }
 
-  private targetRows(input: PromotionFormInput) {
+  private targetRows(input: OfferInput) {
     return [
       ...input.categoryIds.map((categoryId) => ({ categoryId })),
       ...input.productIds.map((productId) => ({ productId })),
     ];
   }
 
-  async create(input: PromotionFormInput, owner: PromotionOwner) {
+  async create(input: OfferInput, owner: PromotionWriter) {
     const data = await this.toRow(input, owner);
     try {
-      return await promotionRepository.createOffer(data, this.targetRows(input));
+      const created = await promotionRepository.createOffer(data, this.targetRows(input));
+      await this.auditLossConfirmation(created.id, data, owner);
+      return created;
     } catch (error) {
       // A code is one string typed by a buyer, so it resolves to exactly one offer.
       if (typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002") {
@@ -147,14 +198,52 @@ export class AdminPromotionService {
    * nothing rather than updating it, because the filter and the permission are the
    * same clause.
    */
-  async update(id: string, input: PromotionFormInput, owner: PromotionOwner) {
+  async update(id: string, input: OfferInput, owner: PromotionWriter) {
     const data = await this.toRow(input, owner);
     const scopeFilter = owner.scope === "ORG" ? { orgId: owner.orgId } : { scope: "PLATFORM" as const };
 
     const existing = await promotionRepository.findScoped(id, scopeFilter);
     if (!existing) throw new NotFoundError("Offer not found");
+    // The database refuses a budget below the spend; say so on the field instead.
+    if (data.platformBudgetPaise !== null && data.platformBudgetPaise < existing.platformSpentPaise) {
+      throw this.budgetBelowSpent(existing.platformSpentPaise);
+    }
 
-    return await promotionRepository.replaceOffer(id, data, this.targetRows(input));
+    try {
+      const updated = await promotionRepository.replaceOffer(id, data, this.targetRows(input));
+      await this.auditLossConfirmation(id, data, owner);
+      return updated;
+    } catch (error) {
+      // An order spent between the check above and this write; the database refused it.
+      if (String((error as { message?: unknown })?.message).includes("Promotion_spent_within_budget")) {
+        const now = await promotionRepository.findScoped(id, scopeFilter);
+        throw this.budgetBelowSpent(now?.platformSpentPaise ?? existing.platformSpentPaise);
+      }
+      throw error;
+    }
+  }
+
+  private budgetBelowSpent(spentPaise: number) {
+    return new DomainError(
+      `This offer has already spent ${formatCurrency(spentPaise)}. Set a budget of at least that.`,
+      { field: "budget" }
+    );
+  }
+
+  /** Every accepted loss is on the audit trail, after the write commits (ADR-0021, Q11). */
+  private async auditLossConfirmation(
+    promotionId: string,
+    data: { lossConfirmedAt?: Date; platformBudgetPaise: number | null },
+    owner: PromotionWriter
+  ) {
+    if (owner.scope !== "PLATFORM" || !data.lossConfirmedAt) return;
+    await recordAdminAction({
+      adminId: owner.userId,
+      action: "PROMOTION_LOSS_CONFIRMED",
+      resource: "Promotion",
+      resourceId: promotionId,
+      metadata: { platformBudgetPaise: data.platformBudgetPaise },
+    });
   }
 
   /**

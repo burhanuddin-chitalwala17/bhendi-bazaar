@@ -3,9 +3,9 @@
  * DELETE /api/admin/promotions/[id] — stop one (deactivates; offers are never deleted)
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { requirePlatformAdmin, requirePlatformAdminId } from "@/lib/admin-auth";
 import { adminPromotionService } from "@server/promotions/admin.promotion.service";
-import { promotionFormSchema } from "@/lib/validation/schemas/promotion.schema";
+import { platformPromotionSchema } from "@/lib/validation/schemas/promotion.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function PATCH(
@@ -13,14 +13,14 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requirePlatformAdmin();
+    const userId = await requirePlatformAdminId();
     const { id } = await context.params;
-    const body = promotionFormSchema.parse(await request.json());
+    const body = platformPromotionSchema.parse(await request.json());
     return NextResponse.json(
-      await adminPromotionService.update(id, body, { scope: "PLATFORM" }),
+      await adminPromotionService.update(id, body, { scope: "PLATFORM", userId }),
     );
   } catch (error) {
-    return toErrorResponse(error, "Could not update the offer");
+    return toErrorResponse(error, "Couldn't save. Try again.");
   }
 }
 

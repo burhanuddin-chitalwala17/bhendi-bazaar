@@ -7,9 +7,9 @@
  * an offer is decided by which door the request came through.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { requirePlatformAdmin } from "@/lib/admin-auth";
+import { requirePlatformAdmin, requirePlatformAdminId } from "@/lib/admin-auth";
 import { adminPromotionService } from "@server/promotions/admin.promotion.service";
-import { promotionFormSchema } from "@/lib/validation/schemas/promotion.schema";
+import { platformPromotionSchema } from "@/lib/validation/schemas/promotion.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function GET() {
@@ -25,13 +25,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    await requirePlatformAdmin();
-    const body = promotionFormSchema.parse(await request.json());
-    const promotion = await adminPromotionService.create(body, {
-      scope: "PLATFORM",
-    });
+    // The confirming admin is the session's, never the body's (offers-hardening D6).
+    const userId = await requirePlatformAdminId();
+    const body = platformPromotionSchema.parse(await request.json());
+    const promotion = await adminPromotionService.create(body, { scope: "PLATFORM", userId });
     return NextResponse.json(promotion, { status: 201 });
   } catch (error) {
-    return toErrorResponse(error, "Could not create the offer");
+    return toErrorResponse(error, "Couldn't save. Try again.");
   }
 }

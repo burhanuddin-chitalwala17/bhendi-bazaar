@@ -16,11 +16,20 @@
  */
 
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import {
+  platformPromotionSchema,
   promotionFormSchema,
-  type PromotionFormInput,
+  type PlatformPromotionFormInput,
 } from "@/lib/validation/schemas/promotion.schema";
+import {
+  CONFIRM_LOSS_PHRASE,
+  LOSS_BUDGET_REQUIRED,
+  couldCostMoreThanCommission,
+  lossWarning,
+} from "@server/promotions/loss";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormInput, FormSelect } from "@/components/shared/forms/FormField";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,7 +39,7 @@ import {
   type TargetOption,
 } from "@/components/promotions/ProductPicker";
 import { offersApiClient } from "@/components/promotions/offersApiClient";
-import { bpsToPercent, paiseToRupees } from "@/lib/format";
+import { bpsToPercent, paiseToRupees, rupeesToPaise } from "@/lib/format";
 
 /** An offer as stored, for editing. Paise and basis points — converted on the way in. */
 export interface OfferInitialValues {
@@ -48,6 +57,8 @@ export interface OfferInitialValues {
   isActive: boolean;
   usageLimit: number | null;
   perUserLimit: number | null;
+  /** Platform offers only (offers-hardening D5). */
+  platformBudgetPaise?: number | null;
   categoryIds: string[];
   productIds: string[];
 }
@@ -70,6 +81,11 @@ interface OfferFormProps {
   productSearchPath: string;
   /** An org's codes carry its own code as a prefix, so the field can say so up front. */
   codePrefix?: string;
+  /**
+   * Platform forms only: the lowest commission in force, so the loss panel shows from the rule
+   * the server refuses with (offers-hardening D6). Absent, there is no budget or panel.
+   */
+  lossRule?: { lowestRateBps: number };
 }
 
 /** A local date-time input's value, from a Date. */
@@ -77,6 +93,10 @@ function toLocalInput(date: Date): string {
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
+
+/** A typed number, or null while the field is empty (`valueAsNumber` gives NaN). */
+const typed = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 export function OfferForm({
   action,
@@ -89,6 +109,7 @@ export function OfferForm({
   selectedProducts = [],
   productSearchPath,
   codePrefix,
+  lossRule,
 }: OfferFormProps) {
   const isEdit = initial !== undefined;
   const router = useRouter();
@@ -96,8 +117,9 @@ export function OfferForm({
   const now = new Date();
   const inAMonth = new Date(now.getTime() + 30 * 86_400_000);
 
-  const form = useServerForm<PromotionFormInput>({
-    schema: promotionFormSchema,
+  // A shop's schema strips budget and confirmation, so the platform form is a superset.
+  const form = useServerForm<PlatformPromotionFormInput>({
+    schema: (lossRule ? platformPromotionSchema : promotionFormSchema) as typeof platformPromotionSchema,
     defaultValues: (initial
       ? {
           ...initial,
@@ -125,6 +147,10 @@ export function OfferForm({
               : undefined,
           usageLimit: initial.usageLimit ?? undefined,
           perUserLimit: initial.perUserLimit ?? undefined,
+          budget:
+            initial.platformBudgetPaise != null
+              ? paiseToRupees(initial.platformBudgetPaise)
+              : undefined,
           startsAt: toLocalInput(initial.startsAt),
           endsAt: toLocalInput(initial.endsAt),
         }
@@ -141,7 +167,8 @@ export function OfferForm({
           endsAt: toLocalInput(inAMonth),
         }) as never,
     submit: (data) => offersApiClient.save(action, method, data),
-    successMessage: isEdit ? "Offer updated" : "Offer created",
+    successMessage: "Offer saved.",
+    fallbackMessage: "Couldn't save. Try again.",
     onSuccess: () => {
       router.push(returnTo);
       router.refresh();
@@ -165,6 +192,26 @@ export function OfferForm({
   const isCoupon = trigger === "CODE";
   const isMarkdown = valueType === "FIXED_PRICE";
 
+  const [percent, amountOff, fixedPrice, minSubtotal] = watch([
+    "percent",
+    "amountOff",
+    "fixedPrice",
+    "minSubtotal",
+  ]).map(typed);
+  const couldLose =
+    lossRule !== undefined &&
+    couldCostMoreThanCommission(
+      {
+        valueType,
+        percentBps: percent !== null ? Math.round(percent * 100) : null,
+        amountOffPaise: amountOff !== null ? rupeesToPaise(amountOff) : null,
+        fixedPricePaise: fixedPrice !== null ? rupeesToPaise(fixedPrice) : null,
+        minSubtotalPaise:
+          isCoupon && minSubtotal !== null ? rupeesToPaise(minSubtotal) : 0,
+      },
+      lossRule.lowestRateBps,
+    );
+
   const toggle = (
     field: "categoryIds" | "productIds",
     id: string,
@@ -179,7 +226,11 @@ export function OfferForm({
     );
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    // The button stays enabled while saving (ADR-0053); a second press is ignored here instead.
+    <form
+      onSubmit={(event) => (isSubmitting ? event.preventDefault() : onSubmit(event))}
+      className="space-y-5"
+    >
       {formError && (
         <p className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
           {formError}
@@ -324,6 +375,41 @@ export function OfferForm({
             )}
           </div>
         )}
+
+        {/* Full width in the form column on every size (ux.md, loss panel). */}
+        {couldLose && lossRule && (
+          <Alert className="space-y-3 border-warning/40 bg-warning/10">
+            <AlertDescription>{lossWarning(lossRule.lowestRateBps)}</AlertDescription>
+            <FormInput
+              label="Confirm"
+              required
+              autoComplete="off"
+              autoCapitalize="characters"
+              placeholder={CONFIRM_LOSS_PHRASE}
+              {...register("confirmLoss")}
+              error={formState.errors.confirmLoss?.message}
+            />
+          </Alert>
+        )}
+
+        {lossRule && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormInput
+              label="Budget (₹)"
+              required={couldLose}
+              type="number"
+              step="0.01"
+              min="0"
+              hint={
+                couldLose
+                  ? LOSS_BUDGET_REQUIRED
+                  : "Stop the offer once it has cost this much. Optional."
+              }
+              {...register("budget", { valueAsNumber: true })}
+              error={formState.errors.budget?.message}
+            />
+          </div>
+        )}
       </section>
 
       <section className="space-y-4 rounded-lg border border-border bg-card p-4 md:p-6">
@@ -427,14 +513,11 @@ export function OfferForm({
         <div className="flex gap-3">
           <Button
             type="submit"
-            disabled={isSubmitting}
+            aria-busy={isSubmitting}
             className="flex-1 md:flex-none"
           >
-            {isSubmitting
-              ? "Saving…"
-              : isEdit
-                ? "Save changes"
-                : "Create offer"}
+            {isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
+            {isEdit ? "Save changes" : "Create offer"}
           </Button>
           <Button
             type="button"

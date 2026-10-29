@@ -7,7 +7,12 @@
  * whole store (ADR-0020).
  */
 
-import type { DiscountableLine, EnginePromotion, OrgCeilings } from "@server/promotions/promotion.types";
+import type {
+  DiscountableLine,
+  EnginePromotion,
+  OrgCeilings,
+  PromotionAttribution,
+} from "@server/promotions/promotion.types";
 
 /** `categoryId -> parentId`. Null parent is a root. */
 export type CategoryParents = ReadonlyMap<string, string | null>;
@@ -76,9 +81,34 @@ export function isLive(promotion: EnginePromotion, now: Date): boolean {
   return true;
 }
 
-/** Has a usage-limited offer been used up? The authoritative check is the conditional write. */
-export function isExhausted(promotion: EnginePromotion): boolean {
-  return promotion.usageLimit !== null && promotion.usageCount >= promotion.usageLimit;
+/**
+ * Has a usage-limited offer been used up, or a budgeted one spent (offers-hardening D5)? The
+ * authoritative checks are the conditional writes; this takes a spent offer off product pages.
+ */
+export function isExhausted(
+  promotion: Pick<EnginePromotion, "usageLimit" | "usageCount" | "platformBudgetPaise" | "platformSpentPaise">
+): boolean {
+  if (promotion.usageLimit !== null && promotion.usageCount >= promotion.usageLimit) return true;
+  return promotion.platformBudgetPaise !== null && promotion.platformSpentPaise >= promotion.platformBudgetPaise;
+}
+
+/**
+ * Budgeted platform offers whose share of this basket is more than they have left
+ * (offers-hardening Q4). The quote sets them aside, so the review shows the total the order
+ * will charge; only a race for the same budget can still refuse it.
+ */
+export function overBudget(
+  attributions: readonly PromotionAttribution[],
+  promotions: readonly EnginePromotion[]
+): Set<string> {
+  const share = new Map<string, number>();
+  for (const a of attributions) share.set(a.promotionId, (share.get(a.promotionId) ?? 0) + a.platformFundedPaise);
+  const short = new Set<string>();
+  for (const p of promotions) {
+    if (p.scope !== "PLATFORM" || p.platformBudgetPaise === null) continue;
+    if ((share.get(p.id) ?? 0) > p.platformBudgetPaise - p.platformSpentPaise) short.add(p.id);
+  }
+  return short;
 }
 
 export interface OfferCoverage {

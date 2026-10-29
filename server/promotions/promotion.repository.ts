@@ -38,6 +38,8 @@ const PROMOTION_SELECT = {
   usageLimit: true,
   usageCount: true,
   perUserLimit: true,
+  platformBudgetPaise: true,
+  platformSpentPaise: true,
   targets: { select: { categoryId: true, productId: true } },
 } satisfies Prisma.PromotionSelect;
 
@@ -120,6 +122,42 @@ export class PromotionRepository {
     });
   }
 
+  /**
+   * Spend part of a platform offer's budget, or refuse (offers-hardening D5).
+   *
+   * The budget check is the update's `WHERE`, exactly as `claimUse`'s is, so two orders racing
+   * for the last of it cannot both fit. `false` means it would pass the budget.
+   */
+  async spendBudget(promotionId: string, amountPaise: number, tx: PromotionTx): Promise<boolean> {
+    const updated = await tx.$executeRaw`
+      UPDATE "Promotion"
+      SET "platformSpentPaise" = "platformSpentPaise" + ${amountPaise}
+      WHERE id = ${promotionId}
+        AND "platformBudgetPaise" IS NOT NULL
+        AND "platformSpentPaise" + ${amountPaise} <= "platformBudgetPaise"`;
+    return updated === 1;
+  }
+
+  /**
+   * Give back exactly what an expiring order charged each budget — its rows' `budgetChargedPaise`,
+   * whatever the budget became since. The floor at zero is a backstop, not the rule.
+   */
+  async releaseBudgetForOrder(orderId: string, tx: PromotionTx): Promise<void> {
+    const charged = await tx.orderDiscount.groupBy({
+      by: ["promotionId"],
+      where: { orderId, budgetChargedPaise: { gt: 0 } },
+      _sum: { budgetChargedPaise: true },
+      orderBy: { promotionId: "asc" },
+    });
+    for (const row of charged) {
+      const amount = row._sum?.budgetChargedPaise ?? 0;
+      await tx.$executeRaw`
+        UPDATE "Promotion"
+        SET "platformSpentPaise" = GREATEST("platformSpentPaise" - ${amount}, 0)
+        WHERE id = ${row.promotionId}`;
+    }
+  }
+
   // ── Offer maintenance ─────────────────────────────────────────────────────
   // The only writer of `prisma.promotion` (ADR-0003). Callers pass a scope filter
   // rather than an id alone, so permission and query are the same clause: another
@@ -127,7 +165,7 @@ export class PromotionRepository {
 
   /** A promotion the given audience may act on, or null. */
   async findScoped(id: string, scope: Prisma.PromotionWhereInput, db: Db = prisma) {
-    return await db.promotion.findFirst({ where: { id, ...scope }, select: { id: true } });
+    return await db.promotion.findFirst({ where: { id, ...scope }, select: { id: true, platformSpentPaise: true } });
   }
 
   /** The same scoped lookup, with everything an edit form needs to prefill. */
@@ -158,6 +196,7 @@ export class PromotionRepository {
           },
         },
         _count: { select: { orderDiscounts: true } },
+        lossConfirmedBy: { select: { name: true } },
       },
       orderBy: { createdAt: "desc" },
       }),

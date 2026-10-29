@@ -31,6 +31,18 @@ export const commercialTermsService = {
     return new Map(rows.map((row) => [row.id, row.maxDiscountBps]));
   },
 
+  /**
+   * The lowest commission rate in force — any selling org's default or category rule
+   * (offers-hardening D6, Q2). With no selling org it is 0: nothing is earned, so any offer loses.
+   */
+  async lowestCommissionBps(db?: OrgDb): Promise<number> {
+    const rates = (await orgRepository.listCommissionFloors(db)).flatMap((org) => [
+      org.commissionBps,
+      ...org.commissionRules.map((rule) => rule.rateBps),
+    ]);
+    return rates.length === 0 ? 0 : Math.min(...rates);
+  },
+
   /** Every org's rate, for the console's comparison view. */
   list: () => orgRepository.listCommercialTerms(),
 

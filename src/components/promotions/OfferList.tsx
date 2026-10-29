@@ -23,6 +23,11 @@ export interface OfferRow {
   isActive: boolean;
   usageLimit: number | null;
   usageCount: number;
+  /** Platform offers only (offers-hardening D5, D6). */
+  platformBudgetPaise: number | null;
+  platformSpentPaise: number;
+  lossConfirmedAt: Date | null;
+  lossConfirmedBy: { name: string | null } | null;
   targets: Array<{
     category: { name: string } | null;
     product: { name: string } | null;
@@ -76,8 +81,12 @@ export function OfferList({
       {offers.map((offer) => {
         const live =
           offer.isActive && offer.startsAt <= now && offer.endsAt > now;
-        const exhausted =
+        const fullyClaimed =
           offer.usageLimit !== null && offer.usageCount >= offer.usageLimit;
+        const budgetUsedUp =
+          offer.platformBudgetPaise !== null &&
+          offer.platformSpentPaise >= offer.platformBudgetPaise;
+        const exhausted = fullyClaimed || budgetUsedUp;
 
         return (
           <li key={offer.id}>
@@ -99,9 +108,14 @@ export function OfferList({
                     Stopped
                   </Badge>
                 )}
-                {exhausted && (
+                {fullyClaimed && (
                   <Badge variant="outline" className="text-2xs">
                     Fully claimed
+                  </Badge>
+                )}
+                {budgetUsedUp && (
+                  <Badge variant="secondary" className="text-2xs">
+                    Budget used up
                   </Badge>
                 )}
                 {offer.isActive && offer.endsAt <= now && (
@@ -129,7 +143,16 @@ export function OfferList({
                   : formatShortDate(offer.endsAt)}
                 {offer.usageLimit !== null &&
                   ` · ${offer.usageCount}/${offer.usageLimit} used`}
+                {offer.platformBudgetPaise !== null &&
+                  ` · ${formatCurrency(offer.platformSpentPaise)} of ${formatCurrency(offer.platformBudgetPaise)} used`}
               </p>
+              {offer.lossConfirmedAt && (
+                <p className="mt-1 text-xs text-warning">
+                  Runs at a loss — confirmed by{" "}
+                  {offer.lossConfirmedBy?.name ?? "an admin"},{" "}
+                  {formatShortDate(offer.lossConfirmedAt)}
+                </p>
+              )}
 
               <OfferActions
                 editHref={`${basePath}/${offer.id}/edit`}

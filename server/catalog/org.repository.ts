@@ -4,6 +4,7 @@ import { prisma } from "@server/shared/prisma";
 import type { Org } from "@prisma/client";
 import { OrgRole, Prisma } from "@prisma/client";
 import type { CreateOrgInput } from "@server/catalog/org.types";
+import { FROM_ACTIVE_ORG } from "@server/catalog/product.visibility";
 
 /** The client or transaction a read may run on. */
 export type OrgDb = Pick<typeof prisma, "org">;
@@ -283,6 +284,22 @@ export class OrgRepository {
     return await db.org.findMany({
       where: { maxDiscountBps: { lt: 10_000 } },
       select: { id: true, maxDiscountBps: true },
+    });
+  }
+
+  /**
+   * Each selling org's default rate and its lowest category rule, through the org's own relation — one
+   * row per org, like the ceilings above (offers-hardening D6).
+   */
+  async listCommissionFloors(db: OrgDb = prisma) {
+    return await db.org.findMany({
+      relationLoadStrategy: "join",
+      // Only shops that can sell — the storefront's own predicate (`FROM_ACTIVE_ORG`).
+      where: FROM_ACTIVE_ORG.org,
+      select: {
+        commissionBps: true,
+        commissionRules: { select: { rateBps: true }, orderBy: { rateBps: "asc" }, take: 1 },
+      },
     });
   }
 

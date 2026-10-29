@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-25
+- **Verified:** 2026-10-29
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -82,6 +82,8 @@ Order creation answers **409** for a sold-out item since PR-104, where it previo
 `rejection` is a shape, not a string — `{ code, reason, message, shortfallPaise? }` — because the four reasons a code does nothing are acted on differently by the UI. **A code that would take nothing off is a rejection, never a success**: reporting one as applied means the buyer only finds out on the payment screen.
 
 Order creation gains an optional **`couponCode`** — a string, normalised to upper case, and the only promotional input a request may carry (PR-67). Discount amounts, percentages and promotion ids are server-owned in exactly the way `paymentStatus` is; the amount is computed inside the order transaction from the persisted offer.
+
+**A platform offer carries a budget and a loss confirmation (offers-hardening U5, 2026-10-29) `[CONTRACT]`.** `PlatformPromotionFormInput` (`platformPromotionSchema` in `src/lib/validation/schemas/promotion.schema.ts`, used by `POST /api/admin/promotions` and `PATCH /api/admin/promotions/[id]`) adds `budget?` (rupees, > 0) and `confirmLoss?` (empty, or exactly `"CONFIRM LOSS"`). When the offer could cost more than the lowest commission in force, both are required and refused on their fields otherwise. A shop's `PromotionFormInput` has neither and strips them. `platformSpentPaise`, `lossConfirmedAt` and `lossConfirmedByUserId` are never input: the spend is moved by the order transaction, the confirmer is the session's admin. The offer list (`GET /api/admin/promotions`, `OfferRow`) gains `platformBudgetPaise` (null = no budget), `platformSpentPaise`, `lossConfirmedAt` and `lossConfirmedBy: { name } | null`. A budgeted offer that cannot cover a basket's share is left out of the quote, so preview and charge agree; order creation is refused with a 409 "That offer has just ended. Please review your total." only when another order took the budget in between.
 
 **Shipping is a signed quote, not a figure.** Each rate from `POST /api/shipping/rates` carries `quote`, a server signature over the courier, the charge in paise, the origin and destination pincodes, the billable weight and a 30-minute expiry. Order creation's `shippingGroups[].selectedRate` is `{ quote }` and nothing else (2026-10-14): the charge, courier and provider are read from the signature and checked against the parcel the server allocated, so an edited price, a quote for another address or weight, or an expired one is refused with a 409.
 

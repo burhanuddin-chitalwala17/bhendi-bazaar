@@ -14,14 +14,19 @@ import {
   type PromotionTx,
 } from "@server/promotions/promotion.repository";
 import { normaliseCode, quoteDiscounts } from "@server/promotions/discount-engine";
-import { isExhausted, isLive } from "@server/promotions/targeting";
+import { isExhausted, isLive, overBudget } from "@server/promotions/targeting";
 import { saleFloorBreach } from "@server/promotions/ceiling";
 import { DomainError, ConflictError } from "@server/shared/domain-error";
 import {
   commercialTermsService,
   type CommercialTermsDb,
 } from "@server/catalog/commercial-terms.service";
-import type { DiscountQuote, DiscountableLine } from "@server/promotions/promotion.types";
+import type {
+  DiscountQuote,
+  DiscountableLine,
+  EnginePromotion,
+  PromotionAttribution,
+} from "@server/promotions/promotion.types";
 
 type Db = PromotionDb & CommercialTermsDb;
 
@@ -46,6 +51,14 @@ export class PromotionService {
     lines: readonly DiscountableLine[],
     options: { code?: string | null; userId?: string | null; now?: Date; db?: Db } = {}
   ): Promise<DiscountQuote> {
+    return (await this.quoteWithOffers(lines, options)).quote;
+  }
+
+  /** The quote and the offers it was decided from, so the order can spend what it used. */
+  private async quoteWithOffers(
+    lines: readonly DiscountableLine[],
+    options: { code?: string | null; userId?: string | null; now?: Date; db?: Db }
+  ): Promise<{ quote: DiscountQuote; promotions: EnginePromotion[] }> {
     const now = options.now ?? new Date();
     const db = options.db ?? prisma;
     const typed = options.code ? normaliseCode(options.code) : null;
@@ -58,7 +71,7 @@ export class PromotionService {
 
     // The typed code is fetched separately and unfiltered by the window, so an
     // expired coupon can be reported as expired rather than as unrecognised.
-    const promotions = [...live];
+    let promotions = [...live];
     if (typed !== null && !live.some((p) => p.code === typed)) {
       const coded = await promotionRepository.findByCode(typed, db);
       if (coded) promotions.push(coded);
@@ -75,16 +88,29 @@ export class PromotionService {
           )
         : 0;
 
-    return quoteDiscounts({
-      lines,
-      promotions,
-      categoryParents,
-      orgCeilings,
-      code: typed,
-      userId: options.userId ?? null,
-      priorRedemptions,
-      now,
-    });
+    const decide = () =>
+      quoteDiscounts({
+        lines,
+        promotions,
+        categoryParents,
+        orgCeilings,
+        code: typed,
+        userId: options.userId ?? null,
+        priorRedemptions,
+        now,
+      });
+    let quote = decide();
+    // An offer that cannot afford this basket is treated as spent and the basket priced again, as
+    // often as that changes the winner — at most once per offer (offers-hardening Q4).
+    for (let round = 0; round < promotions.length; round++) {
+      const short = overBudget(quote.attributions, promotions);
+      if (short.size === 0) break;
+      promotions = promotions.map((p) =>
+        short.has(p.id) ? { ...p, platformSpentPaise: p.platformBudgetPaise ?? p.platformSpentPaise } : p
+      );
+      quote = decide();
+    }
+    return { quote, promotions };
   }
 
   /**
@@ -99,11 +125,17 @@ export class PromotionService {
   async applyToOrder(
     lines: readonly DiscountableLine[],
     options: { code?: string | null; userId?: string | null; now: Date; tx: PromotionTx }
-  ): Promise<DiscountQuote & { claimedPromotionIds: string[] }> {
+  ): Promise<
+    Omit<DiscountQuote, "attributions"> & {
+      claimedPromotionIds: string[];
+      /** Each attribution with what it charged its offer's budget, for its `OrderDiscount` row. */
+      attributions: Array<PromotionAttribution & { budgetChargedPaise: number }>;
+    }
+  > {
     const { code, userId, now, tx } = options;
     // Locked before the per-buyer count, or two checkouts by one buyer both count zero (D3).
     if (code) await promotionRepository.lockByCode(normaliseCode(code), tx);
-    const quote = await this.quote(lines, { code, userId, now, db: tx });
+    const { quote, promotions } = await this.quoteWithOffers(lines, { code, userId, now, db: tx });
 
     // A coupon that stopped working between review and payment is refused with its reason — except
     // one a better offer overtook, which is set aside unclaimed at the lower price (offers-hardening D9).
@@ -130,7 +162,36 @@ export class PromotionService {
       }
     }
 
-    return { ...quote, claimedPromotionIds };
+    const attributions = await this.spendBudgets(quote, promotions, tx);
+
+    return { ...quote, attributions, claimedPromotionIds };
+  }
+
+  /**
+   * Charge each budgeted platform offer what this order costs it (offers-hardening D5, Q4).
+   * Sorted by id so two checkouts take the rows in one order; a miss ends the checkout rather
+   * than charge a total the buyer did not review (ADR-0018).
+   */
+  private async spendBudgets(quote: DiscountQuote, promotions: EnginePromotion[], tx: PromotionTx) {
+    const budgeted = new Set(
+      promotions.filter((p) => p.scope === "PLATFORM" && p.platformBudgetPaise !== null).map((p) => p.id)
+    );
+    const attributions = quote.attributions.map((a) => ({
+      ...a,
+      budgetChargedPaise: budgeted.has(a.promotionId) ? a.platformFundedPaise : 0,
+    }));
+    const cost = new Map<string, number>();
+    for (const a of attributions) {
+      if (a.budgetChargedPaise > 0) {
+        cost.set(a.promotionId, (cost.get(a.promotionId) ?? 0) + a.budgetChargedPaise);
+      }
+    }
+    for (const [promotionId, amount] of [...cost].sort(([a], [b]) => a.localeCompare(b))) {
+      if (!(await promotionRepository.spendBudget(promotionId, amount, tx))) {
+        throw new ConflictError("That offer has just ended. Please review your total.");
+      }
+    }
+    return attributions;
   }
 
   /**
@@ -221,12 +282,13 @@ export class PromotionService {
     return state?.isActive ? state.fixedPricePaise : null;
   }
 
-  /** Give back the coupon uses an expiring order was holding (D11). */
-  async releaseForOrder(orderId: string, db: Db = prisma): Promise<void> {
-    const promotionIds = await promotionRepository.codedDiscountsForOrder(orderId, db);
+  /** Give back the coupon uses and budget an expiring order was holding (D11, offers-hardening Q3). */
+  async releaseForOrder(orderId: string, tx: PromotionTx): Promise<void> {
+    const promotionIds = await promotionRepository.codedDiscountsForOrder(orderId, tx);
     for (const promotionId of promotionIds) {
-      await promotionRepository.releaseUse(promotionId, db);
+      await promotionRepository.releaseUse(promotionId, tx);
     }
+    await promotionRepository.releaseBudgetForOrder(orderId, tx);
   }
 
   /** Is this offer usable right now? Shared by the admin surfaces. */

@@ -424,6 +424,7 @@ export class OrderService {
             buyerDiscountPaise: attribution.buyerDiscountPaise,
             orgFundedPaise: attribution.orgFundedPaise,
             platformFundedPaise: attribution.platformFundedPaise,
+            budgetChargedPaise: attribution.budgetChargedPaise,
           })),
           tx,
         );

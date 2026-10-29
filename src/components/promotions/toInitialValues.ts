@@ -16,6 +16,7 @@ export function toInitialValues(offer: {
   isActive: boolean;
   usageLimit: number | null;
   perUserLimit: number | null;
+  platformBudgetPaise?: number | null;
   targets: Array<{ categoryId: string | null; productId: string | null }>;
 }): OfferInitialValues {
   return {

@@ -10,6 +10,44 @@
 
 ## Entries
 
+## 2026-10-29 — offers-hardening unit 5: a platform offer that can lose money needs a confirmation and a budget [MIGRATION] [CONTRACT]
+
+- **A platform offer could cost more than commission, unbounded.** Migration
+  `20261030000500_offer_budget_and_loss_confirmation`: `Promotion` gains `platformBudgetPaise`,
+  `platformSpentPaise`, `lossConfirmedAt`, `lossConfirmedByUserId` (FK `User`, Restrict), with CHECKs
+  budget > 0 and 0 ≤ spent ≤ budget.
+- **Spend (D5, Q3, Q4):** `applyToOrder` charges each budgeted PLATFORM offer its platform-funded
+  share with a conditional raw update (`spent + x ≤ budget`) in `promotion.repository`. The quote
+  (preview and order alike) first sets aside any budgeted offer whose share of the basket exceeds what
+  it has left and prices again, so the review shows the real total; the 409 "That offer has just
+  ended. Please review your total." fires only when another order took the budget in between.
+  `OrderDiscount.budgetChargedPaise` (CHECK ≥ 0) records what each row charged, and
+  `releaseForOrder` gives back exactly that on expiry (floor 0 as a backstop), before stock as
+  before. `isExhausted` treats a spent budget as exhausted, so the offer leaves product pages.
+- **Loss test at save (D6, Q2, Q5, Q11):** pure `server/promotions/loss.ts`, shared by the form and
+  `admin.promotion.service`, against `commercialTermsService.lowestCommissionBps()` (min of org
+  defaults and category rules). Possible loss needs `confirmLoss` "CONFIRM LOSS" and a budget; the
+  confirmer comes from the session. Only shops that can sell count toward the lowest rate. Rerun on
+  every edit; an edit the rule does not flag keeps the earlier confirmation (Q14), and every
+  confirmation goes to the admin audit trail. An edit never resets spent; a budget below spent is
+  refused on the field, including when an order spends between the check and the write (the
+  CHECK violation is turned into the same field error).
+- **Contract:** `platformPromotionSchema` adds `budget`, `confirmLoss` (admin routes only); the
+  offer list adds budget, spent and who confirmed. `CONTRACTS.md` moved with it.
+- **UI (ux.md):** amber loss panel and "Budget (₹)" on the admin form; the save button stays
+  enabled with a spinner; "Offer saved." / "Couldn't save. Try again."; the list shows "₹x of ₹y
+  used", "Budget used up" and "Runs at a loss — confirmed by …".
+- Tests: `offer-loss-rule` (rule per value type, equal is not a loss, schema mistakes),
+  `offer-form-loss-panel` (panel, list states), integration `offer-budget` (refusal copy, session
+  confirmer, spend, overrun refused with nothing spent, expiry release, spent offer off the product
+  page, two-order race, short budget left out of preview and order, budget added or cleared and
+  re-set around unpaid orders, kept confirmation and its audit, budget edit racing a spend,
+  withdrawn shop's rate ignored).
+- Mutations, each red: spend update without its budget condition (overrun and race tests);
+  `isExhausted` without the budget check (product page test); the confirm check skipped (refusal
+  test); no requote for a short budget (Q4 test); release by platform share instead of
+  `budgetChargedPaise` (both in-flight budget tests).
+
 ## 2026-10-29 — offers-hardening unit 4: a shop's discount ceiling holds for every kind of offer
 
 - **A 50%-capped shop could set ₹9,999 off a ₹10,000 item, or a ₹1 sale price.** The ceiling was

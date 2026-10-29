@@ -4,6 +4,7 @@ import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { adminPromotionService } from "@server/promotions/admin.promotion.service";
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { productsRepository } from "@server/catalog/product.read.repository";
+import { commercialTermsService } from "@server/catalog/commercial-terms.service";
 import { OfferForm } from "@/components/promotions/OfferForm";
 import { toInitialValues } from "@/components/promotions/toInitialValues";
 
@@ -15,10 +16,11 @@ export default async function EditPlatformOfferPage({
 }) {
   await requirePlatformAdmin();
   const { id } = await params;
-  const [offer, categories, products] = await Promise.all([
+  const [offer, categories, products, lowestRateBps] = await Promise.all([
     adminPromotionService.findForEdit(id, { scope: "PLATFORM" }),
     categoryRepository.listForPicker(),
     productsRepository.listForPicker(),
+    commercialTermsService.lowestCommissionBps(),
   ]);
   if (!offer) notFound();
 
@@ -45,6 +47,7 @@ export default async function EditPlatformOfferPage({
         productTotal={products.total}
         selectedProducts={selectedProducts}
         productSearchPath="/api/admin/promotions/products"
+        lossRule={{ lowestRateBps }}
       />
     </PageShell>
   );

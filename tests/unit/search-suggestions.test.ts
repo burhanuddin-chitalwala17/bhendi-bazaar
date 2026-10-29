@@ -36,6 +36,8 @@ const tenPercentOff: EnginePromotion = {
   isActive: true,
   usageLimit: null,
   usageCount: 0,
+  platformBudgetPaise: null,
+  platformSpentPaise: 0,
   perUserLimit: null,
   scope: "PLATFORM",
   orgId: null,
