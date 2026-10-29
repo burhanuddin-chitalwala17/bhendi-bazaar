@@ -108,6 +108,9 @@ async function offerFilter() {
 /** Enough of the client to read products — `prisma`, or a `$transaction` tx. */
 export type ProductDb = Pick<typeof prisma, "product">;
 
+/** Enough of the client to run a read the query builder cannot express. */
+export type RawDb = Pick<typeof prisma, "$queryRaw">;
+
 export class ProductsRepository {
   /**
    * What one product carries that decides whether it can be offered at all —
@@ -135,6 +138,26 @@ export class ProductsRepository {
         price: true, weight: true, orgId: true, categoryId: true,
       },
     });
+  }
+
+  /**
+   * Each product's lowest list price from `since` to now: the price in force at `since`, every
+   * price set after it, and today's (offers-hardening D7). One query, however many products.
+   * A product with no history at all (none yet backfilled) reads as its current price.
+   */
+  async lowestListPricesSince(productIds: string[], since: Date, db: RawDb = prisma): Promise<Map<string, number>> {
+    if (productIds.length === 0) return new Map();
+    const rows = await db.$queryRaw<Array<{ id: string; lowest: number }>>`
+      SELECT p.id, LEAST(
+        p.price,
+        (SELECT MIN(h."pricePaise") FROM "ProductPriceHistory" h
+          WHERE h."productId" = p.id AND h."recordedAt" > ${since}),
+        (SELECT h."pricePaise" FROM "ProductPriceHistory" h
+          WHERE h."productId" = p.id AND h."recordedAt" <= ${since}
+          ORDER BY h."recordedAt" DESC, h.id DESC LIMIT 1)
+      )::int AS lowest
+      FROM "Product" p WHERE p.id = ANY(${productIds})`;
+    return new Map(rows.map((row) => [row.id, row.lowest]));
   }
 
   /**

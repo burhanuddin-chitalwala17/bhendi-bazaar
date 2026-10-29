@@ -52,6 +52,9 @@ export interface EnginePromotion {
   targets: PromotionTargetRow[];
 }
 
+/** How far back the lowest list price the platform funds on reaches (own-store Q21, offers-hardening D7). */
+export const FUNDING_BASIS_DAYS = 30;
+
 /** Org id → its `maxDiscountBps` (offers-hardening D4). An org absent from the map is not clamped. */
 export type OrgCeilings = ReadonlyMap<string, number>;
 
@@ -68,6 +71,11 @@ export interface DiscountableLine {
   categoryId: string;
   unitPrice: number;
   quantity: number;
+  /**
+   * The lowest list price in the last 30 days, which the platform's share is worked out on
+   * (own-store Q21, offers-hardening D7). Missing means `unitPrice`; never above it.
+   */
+  fundingBasisUnitPaise?: number;
 }
 
 /** What one line ended up with, and who paid for it. */

@@ -102,9 +102,50 @@ function couponBaseDiscount(promotion: EnginePromotion, basePaise: number): numb
   return Math.min(discount, basePaise);
 }
 
+/** The line's funding basis per unit, never above its price (offers-hardening D7). */
+const basisOf = (line: DiscountableLine) =>
+  Math.max(0, Math.min(line.fundingBasisUnitPaise ?? line.unitPrice, line.unitPrice));
+
+/**
+ * Each line's platform share of a platform coupon (offers-hardening D7, Q15). The platform pays
+ * `min(total, the coupon on the basis base)`, judged once at order level with the same cap; the
+ * shortfall is charged only to lines whose basis is below their price, pro rata to the rise and
+ * never beyond a line's own share. Minimum spend is not re-judged: the buyer qualified at the
+ * shown price.
+ */
+function platformCouponShares(
+  match: EnginePromotion,
+  eligible: readonly DiscountableLine[],
+  shares: readonly number[],
+  total: number
+): number[] {
+  const basisBase = eligible.reduce((sum, l) => sum + basisOf(l) * l.quantity, 0);
+  let shortfall = total - Math.min(total, couponBaseDiscount(match, basisBase));
+  const charged = eligible.map(() => 0);
+  // Largest remainder over the rise, re-spread while a line is capped at its share; what no
+  // raised line can absorb stays with the platform.
+  while (shortfall > 0) {
+    const weights = eligible.map((l, i) =>
+      charged[i] < shares[i] ? (l.unitPrice - basisOf(l)) * l.quantity : 0
+    );
+    if (weights.every((w) => w === 0)) break;
+    const split = allocateLargestRemainder(shortfall, weights);
+    let absorbed = 0;
+    split.forEach((amount, i) => {
+      const take = Math.min(amount, shares[i] - charged[i]);
+      charged[i] += take;
+      absorbed += take;
+    });
+    shortfall -= absorbed;
+  }
+  return shares.map((share, i) => share - charged[i]);
+}
+
 interface Candidate {
   promotionId: string;
   amountPaise: number;
+  /** A platform offer's discount recomputed on the line's funding basis (offers-hardening D7). */
+  basisAmountPaise?: number;
 }
 
 /** The better of two candidates; the incumbent keeps a tie, so ordering is stable. */
@@ -221,7 +262,11 @@ export function quoteDiscounts(input: QuoteInput): DiscountQuote {
       const perUnit = automaticUnitDiscount(promotion, line.unitPrice, line.orgId, orgCeilings);
       if (perUnit <= 0) continue;
 
-      const candidate = { promotionId: promotion.id, amountPaise: perUnit * line.quantity };
+      const candidate: Candidate = { promotionId: promotion.id, amountPaise: perUnit * line.quantity };
+      if (promotion.scope === "PLATFORM") {
+        candidate.basisAmountPaise =
+          automaticUnitDiscount(promotion, basisOf(line), line.orgId, orgCeilings) * line.quantity;
+      }
       const bucket = promotion.scope === "ORG" ? orgAuto : platAuto;
       bucket.set(line.key, better(bucket.get(line.key) ?? null, candidate));
     }
@@ -290,12 +335,16 @@ export function quoteDiscounts(input: QuoteInput): DiscountQuote {
             total,
             eligible.map((l) => l.unitPrice * l.quantity)
           );
+          // What the platform pays for its coupon is what it is worth on the basis prices; only
+          // the lines whose price rose fund the difference (offers-hardening D7, Q15).
+          const platformShares =
+            match.scope === "PLATFORM" ? platformCouponShares(match, eligible, shares, total) : shares;
           eligible.forEach((line, i) => {
             const amountPaise = withinOrgCeiling(
               match, shares[i], line.unitPrice * line.quantity, line.orgId, orgCeilings
             );
             if (amountPaise > 0) {
-              couponShare.set(line.key, { promotionId: match.id, amountPaise });
+              couponShare.set(line.key, { promotionId: match.id, amountPaise, basisAmountPaise: platformShares[i] });
             }
             couponCoveredKeys.push(line.key);
           });
@@ -323,9 +372,11 @@ export function quoteDiscounts(input: QuoteInput): DiscountQuote {
     // The organisation always bears its own best offer; the platform covers only the
     // remainder needed to reach what the buyer got, floored at zero. That floor is
     // what makes the arrangement asymmetric — the platform tops up to a better offer,
-    // it never matches one (org-payouts D2a).
-    const orgFundedPaise = orgAmount;
-    const platformFundedPaise = buyerDiscountPaise - orgFundedPaise;
+    // it never matches one (org-payouts D2a). It tops up no more than its offer is worth on
+    // the 30-day lowest price; the shop funds what its own price rise added (D7, own-store Q21).
+    const platBasis = platBest?.basisAmountPaise ?? platAmount;
+    const platformFundedPaise = Math.min(buyerDiscountPaise - orgAmount, platBasis);
+    const orgFundedPaise = buyerDiscountPaise - platformFundedPaise;
 
     // On a tie the organisation's offer wins, because the platform contributed
     // nothing and attributing a cost to it would misreport the campaign.

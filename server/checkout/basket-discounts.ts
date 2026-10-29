@@ -1,6 +1,8 @@
 import type { Prisma } from "@prisma/client";
 
 import { promotionService } from "@server/promotions/promotion.service";
+import { productService } from "@server/catalog/product.service";
+import { FUNDING_BASIS_DAYS } from "@server/promotions/promotion.types";
 import { lineKey, type PricedLine } from "@server/checkout/pricing";
 
 /**
@@ -37,6 +39,11 @@ export async function applyOffersToBasket(args: {
 }) {
   const { pricedLines, products, couponCode, userId, now, tx } = args;
 
+  // Only the charge needs the basis: it moves who funds a discount, never what the buyer pays,
+  // so the preview and product pages price without it (offers-hardening D7, own-store Q21).
+  const since = new Date(now.getTime() - FUNDING_BASIS_DAYS * 24 * 60 * 60 * 1000);
+  const basis = await productService.lowestListPrices([...new Set(pricedLines.map((l) => l.productId))], since, tx);
+
   const discountableLines = pricedLines.map((line) => {
     const product = products.get(line.productId);
     if (!product) {
@@ -52,6 +59,7 @@ export async function applyOffersToBasket(args: {
       categoryId: product.categoryId,
       unitPrice: line.unitPrice,
       quantity: line.quantity,
+      fundingBasisUnitPaise: basis.get(line.productId),
     };
   });
 

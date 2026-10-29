@@ -711,3 +711,137 @@ describe("a shop's discount ceiling bounds its own offers (offers-hardening D4, 
     expectInternallyConsistent(deeper, [EARBUDS]);
   });
 });
+
+describe("the platform funds on the 30-day lowest price (offers-hardening D7, spec A6)", () => {
+  // ₹1,000 for 30 days, raised to ₹1,500 (own-store Q21).
+  const RAISED = line({ unitPrice: 150_000, fundingBasisUnitPaise: 100_000 });
+  const platform20 = promo({ id: "plat", percentBps: 2000 });
+  const own10 = promo({ id: "own", scope: "ORG", orgId: "abc", percentBps: 1000 });
+
+  it("a 20% platform offer: buyer pays ₹1,200, platform funds ₹200, the shop ₹100 (spec A6)", () => {
+    const result = quote([RAISED], [platform20]);
+    expect(result.lines[0]).toMatchObject({
+      buyerDiscountPaise: 30_000, platformFundedPaise: 20_000, orgFundedPaise: 10_000, winningPromotionId: "plat",
+    });
+    expect(result.attributions).toEqual([
+      expect.objectContaining({ promotionId: "plat", buyerDiscountPaise: 30_000, platformFundedPaise: 20_000, orgFundedPaise: 10_000 }),
+    ]);
+  });
+
+  it("with the shop's own 10% also running, the platform tops up no more than its basis amount (spec A6)", () => {
+    const l = quote([RAISED], [platform20, own10]).lines[0];
+    expect(l.buyerDiscountPaise).toBe(30_000);
+    expect(l.platformFundedPaise).toBe(15_000); // min(30,000 − 15,000, 20,000)
+    expect(l.orgFundedPaise).toBe(15_000);
+  });
+
+  it("a platform coupon's share is recomputed on the basis line totals (spec A6)", () => {
+    const coupon = promo({ id: "pc", trigger: "CODE", code: "PLAT20", percentBps: 2000 });
+    const other = line({ key: "kurta::::", productId: "kurta", unitPrice: 50_000, quantity: 2 }); // basis = price
+    const result = quote([{ ...RAISED, quantity: 2 }, other], [coupon], "PLAT20");
+    const [raised, flat] = result.lines;
+    expect(raised).toMatchObject({ buyerDiscountPaise: 60_000, platformFundedPaise: 40_000, orgFundedPaise: 20_000 });
+    expect(flat).toMatchObject({ buyerDiscountPaise: 20_000, platformFundedPaise: 20_000, orgFundedPaise: 0 });
+  });
+
+  // A raised ₹1,000 → ₹1,500, B steady at ₹500: a coupon the shops did not pay toward before.
+  const A = line({ key: "a::::", productId: "a", orgId: "shopA", unitPrice: 150_000, fundingBasisUnitPaise: 100_000 });
+  const B = line({ key: "b::::", productId: "b", orgId: "shopB", categoryId: "apparel", unitPrice: 50_000 });
+  const platformCoupon = (o: Partial<EnginePromotion>) => promo({ id: "pc", trigger: "CODE", code: "PC", ...o });
+
+  it("a fixed ₹200 coupon costs the platform ₹200 either way, so no shop funds any of it (offers-hardening Q15)", () => {
+    const result = quote([A, B], [platformCoupon({ valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 20_000 })], "PC");
+    expect(result.lines.map((l) => l.orgFundedPaise)).toEqual([0, 0]);
+    expect(result.lines.reduce((sum, l) => sum + l.platformFundedPaise, 0)).toBe(20_000);
+  });
+
+  it("a capped percent coupon: the platform pays its cap when the basis still reaches it, and the raiser the rest when not (offers-hardening Q15)", () => {
+    const at300 = quote([A, B], [platformCoupon({ percentBps: 2000, maxDiscountPaise: 30_000 })], "PC");
+    expect(at300.lines.map((l) => l.orgFundedPaise)).toEqual([0, 0]);
+    const at350 = quote([A, B], [platformCoupon({ percentBps: 2000, maxDiscountPaise: 35_000 })], "PC");
+    // Buyer ₹350 (A ₹262.50, B ₹87.50); on the basis it is worth ₹300, so A funds ₹50.
+    expect(at350.lines.map((l) => [l.buyerDiscountPaise, l.orgFundedPaise])).toEqual([[26_250, 5_000], [8_750, 0]]);
+  });
+
+  it("minimum spend is judged at the shown price; the shortfall lands on the raiser, never on B (offers-hardening Q15)", () => {
+    // ₹2,000 qualifies for a ₹1,800 minimum; on the basis it would be ₹1,500.
+    const result = quote([A, B], [platformCoupon({ percentBps: 2000, minSubtotalPaise: 180_000 })], "PC");
+    expect(result.rejection).toBeNull();
+    expect(result.lines.map((l) => [l.buyerDiscountPaise, l.platformFundedPaise, l.orgFundedPaise])).toEqual([
+      [30_000, 20_000, 10_000],
+      [10_000, 10_000, 0],
+    ]);
+  });
+
+  it("a platform coupon pays between its value on the basis and at the shown price; a line whose price did not move never funds it (offers-hardening Q15)", () => {
+    const coupons = [
+      platformCoupon({ percentBps: 2000 }),
+      platformCoupon({ percentBps: 3333, maxDiscountPaise: 41_111 }),
+      platformCoupon({ valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 77_777 }),
+      platformCoupon({ valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 77_777, minSubtotalPaise: 150_000 }),
+    ];
+    for (const coupon of coupons) {
+      for (const basis of [0, 1, 50_001, 99_999, 149_999, 150_000]) {
+        for (const quantity of [1, 2, 3]) {
+          const lines = [{ ...A, quantity, fundingBasisUnitPaise: basis }, { ...B, quantity: 4 - quantity }, { ...KURTA, fundingBasisUnitPaise: 99_999 }];
+          const result = quote(lines, [coupon], "PC");
+          if (result.rejection) continue;
+          expectInternallyConsistent(result, lines);
+          const shown = lines.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+          const basisBase = lines.reduce((sum, l) => sum + Math.min(l.fundingBasisUnitPaise ?? l.unitPrice, l.unitPrice) * l.quantity, 0);
+          const worth = (base: number) => {
+            const raw = coupon.valueType === "PERCENT" ? Math.floor((base * (coupon.percentBps ?? 0)) / 10_000) : coupon.amountOffPaise ?? 0;
+            return Math.min(coupon.maxDiscountPaise ?? Infinity, raw, base);
+          };
+          const platform = result.lines.reduce((sum, l) => sum + l.platformFundedPaise, 0);
+          expect(platform).toBeLessThanOrEqual(worth(shown));
+          expect(platform).toBeGreaterThanOrEqual(Math.min(worth(shown), worth(basisBase)));
+          expect(result.lines[1].orgFundedPaise).toBe(0); // B: basis = price
+        }
+      }
+    }
+  });
+
+  it("an equal or missing basis gives exactly today's split (spec A6)", () => {
+    const offers = [
+      [platform20],
+      [platform20, own10],
+      [promo({ id: "pc", trigger: "CODE", code: "PLAT20", percentBps: 2000 }), own10],
+      [promo({ id: "amt", valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 12_345 })],
+      [promo({ id: "fx", valueType: "FIXED_PRICE", percentBps: null, fixedPricePaise: 99_999 })],
+    ];
+    for (const set of offers) {
+      const today = quote([EARBUDS, KURTA], set, "PLAT20");
+      const equal = quote(
+        [{ ...EARBUDS, fundingBasisUnitPaise: EARBUDS.unitPrice }, { ...KURTA, fundingBasisUnitPaise: KURTA.unitPrice }],
+        set,
+        "PLAT20"
+      );
+      expect(equal).toEqual(today);
+    }
+  });
+
+  it("for any basis, org + platform = buyer, both ≥ 0, and the platform never funds more than at the shown price (spec A6)", () => {
+    const sets = [
+      [platform20],
+      [platform20, own10],
+      [promo({ id: "pc", trigger: "CODE", code: "PLAT20", valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 40_000 })],
+      [promo({ id: "amt", valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 70_000 }), own10],
+      [promo({ id: "fx", valueType: "FIXED_PRICE", percentBps: null, fixedPricePaise: 90_000 })],
+    ];
+    for (const set of sets) {
+      for (const basis of [0, 1, 33_333, 99_999, 100_000, 149_999, 150_000]) {
+        for (const quantity of [1, 3]) {
+          const lines = [{ ...RAISED, quantity, fundingBasisUnitPaise: basis }, { ...KURTA, fundingBasisUnitPaise: Math.min(basis, KURTA.unitPrice) }];
+          const atBasis = quote(lines, set, "PLAT20");
+          const atPrice = quote(lines.map((l) => ({ ...l, fundingBasisUnitPaise: undefined })), set, "PLAT20");
+          expectInternallyConsistent(atBasis, lines);
+          atBasis.lines.forEach((l, i) => {
+            expect(l.buyerDiscountPaise).toBe(atPrice.lines[i].buyerDiscountPaise);
+            expect(l.platformFundedPaise).toBeLessThanOrEqual(atPrice.lines[i].platformFundedPaise);
+          });
+        }
+      }
+    }
+  });
+});

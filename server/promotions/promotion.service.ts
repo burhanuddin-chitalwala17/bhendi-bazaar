@@ -88,9 +88,13 @@ export class PromotionService {
           )
         : 0;
 
-    const decide = () =>
+    // Which offers fit their budget is decided on the shown price, as the preview (which has no
+    // funding basis) decides it; otherwise the charge could keep an offer the review left out
+    // (ADR-0018). The basis then lowers what a kept offer spends (offers-hardening D7).
+    const atPrice = lines.map((line) => ({ ...line, fundingBasisUnitPaise: undefined }));
+    const decide = (quoted: readonly DiscountableLine[] = atPrice) =>
       quoteDiscounts({
-        lines,
+        lines: quoted,
         promotions,
         categoryParents,
         orgCeilings,
@@ -110,7 +114,7 @@ export class PromotionService {
       );
       quote = decide();
     }
-    return { quote, promotions };
+    return { quote: decide(lines), promotions };
   }
 
   /**

@@ -10,6 +10,33 @@
 
 ## Entries
 
+## 2026-10-29 — offers-hardening unit 6: the platform funds on the 30-day lowest price [MIGRATION]
+
+- **A shop could raise its price before a platform campaign and have the platform fund the rise**
+  (R5, own-store Q21). Migration `20261030000700_product_price_history`: table
+  `ProductPriceHistory` (FK `Product`, Cascade — it carries no money, and `OrderItem` already holds
+  any sold product), written only by the `Product_price_history` trigger on insert and on a changed
+  price, so no writer can skip it; backfilled with today's prices.
+- **Catalog:** `productService.lowestListPrices` — the price in force at the window's start, every
+  price since and today's, in one query (Q1: list price only).
+- **Engine (D7, Q15):** `DiscountableLine.fundingBasisUnitPaise`; window `FUNDING_BASIS_DAYS` (30) in
+  `promotion.types.ts`. The buyer's discount is unchanged; the platform funds at most its winning
+  automatic offer recomputed on the basis, the shop the rest. A platform coupon costs the platform
+  `min(total, its value on the basis total)`, judged once with the same cap; the shortfall falls only
+  on lines whose price rose, pro rata to the rise, capped at each line's share. Minimum spend stays
+  judged at the shown price. Equal basis gives today's split.
+- **Wiring:** only the order transaction passes the basis (`checkout/basket-discounts.ts`, through
+  catalog). Whether an offer fits its budget is still decided on the shown price, as the preview
+  decides it (ADR-0018); the basis only lowers what a kept offer spends.
+- **Tests:** `tests/unit/promotion-engine.test.ts` (A6 numbers, with a shop offer, platform coupon,
+  fixed ₹200 coupon with one shop raised, capped percent, minimum spend at the shown price, equal
+  basis, properties); `tests/integration/funding-basis.test.ts` (trigger, window,
+  A6 end to end, budget decided on the shown price).
+- **Mutations:** basis replaced by `unitPrice` → 4 A6 tests red; trigger dropped → 5 red; budget
+  decided on basis lines → budget test red; coupon shortfall spread over every line → 4 red;
+  shortfall zeroed → 3 red. All restored.
+- **Suites:** tsc, unit, integration, `lint:boundary`, `docs:check` green.
+
 ## 2026-10-29 — offers-hardening unit 5: a platform offer that can lose money needs a confirmation and a budget [MIGRATION] [CONTRACT]
 
 - **A platform offer could cost more than commission, unbounded.** Migration

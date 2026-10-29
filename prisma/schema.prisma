@@ -247,6 +247,20 @@ model Category {
   @@index([parentId])
 }
 
+/// Every list price a product has had and when it took effect (offers-hardening D7, own-store Q21).
+/// Written only by the `Product_price_history` trigger, so no writer can skip it; read through
+/// catalog (`lowestListPricesSince`). Cascade: it carries no money, and a product anything
+/// money-bearing references cannot be deleted anyway (OrderItem is Restrict).
+model ProductPriceHistory {
+  id         Int      @id @default(autoincrement())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pricePaise Int
+  recordedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([productId, recordedAt])
+}
+
 model Product {
   id          String @id @default(cuid())
   slug        String @unique
@@ -325,6 +339,7 @@ model Product {
   media            ProductMedia[]
   promotionTargets PromotionTarget[]
   biddingEvents    BiddingEvent[]
+  priceHistory     ProductPriceHistory[]
 
   // ⭐ Org Association (REQUIRED)
   orgId String

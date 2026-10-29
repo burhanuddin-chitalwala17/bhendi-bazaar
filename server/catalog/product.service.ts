@@ -6,7 +6,7 @@ import type { Prisma } from "@prisma/client";
  */
 
 import { adminProductsRepository } from "@server/catalog/product.repository";
-import { productsRepository, type ProductDb } from "@server/catalog/product.read.repository";
+import { productsRepository, type ProductDb, type RawDb } from "@server/catalog/product.read.repository";
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { collectSubtreeIds } from "@server/catalog/category.tree";
 import type { ProductFilter, ProductSuggestion } from "@server/catalog/product.types";
@@ -239,6 +239,14 @@ export class ProductService {
    */
   async checkoutFacts(productIds: string[], db?: ProductDb) {
     return await productsRepository.checkoutFacts(productIds, db);
+  }
+
+  /**
+   * Each product's lowest list price from `since` to now, which the platform's share of a discount
+   * is worked out on (offers-hardening D7, own-store Q21). Read on the order's `tx`.
+   */
+  async lowestListPrices(productIds: string[], since: Date, db?: RawDb) {
+    return await productsRepository.lowestListPricesSince(productIds, since, db);
   }
 
   /** The rows `/api/checkout/allocate` plans parcels from. Never sent to the browser as stock figures (A9). */
