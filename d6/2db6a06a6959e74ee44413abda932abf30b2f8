@@ -1,0 +1,44 @@
+server/promotions/promotion.service.ts
+  s_17ac7f5fca5021::t_f573e83bad7865 101-102
+  s_17ac7f5fca5021::t_4a81c29367a6cb 103
+tests/integration/offers-preview-charge.test.ts
+  s_17ac7f5fca5021::t_e3772a0561bc9d 1-42,45-188,192,194-196,200,202-204,213-215,217,219-221,223,225-227
+  s_17ac7f5fca5021::t_dd1bbc12931273 43-44
+  s_17ac7f5fca5021::t_afd766c922a538 198-199
+  s_17ac7f5fca5021::t_cd3aa0225d3bc7 190-191
+server/promotions/discount-engine.ts
+  s_17ac7f5fca5021::t_0316745accd5bc 170-176
+docs/CHANGELOG.md
+  s_17ac7f5fca5021::t_3f6c77e2af80bd 17-19
+  s_17ac7f5fca5021::t_74f791785ca6f6 13-16,20-24,26-29,31-35
+  s_17ac7f5fca5021::t_9aa7a2ab749347 30
+  s_17ac7f5fca5021::t_135b820481c6fa 25
+server/checkout/basket-discounts.ts
+  s_17ac7f5fca5021::t_57d34d2a02cfe6 4
+server/checkout/pricing.ts
+  s_17ac7f5fca5021::t_245ef7e076259c 36-39
+server/checkout/order.service.ts
+  s_17ac7f5fca5021::t_ae03e6b0ccf118 191
+  s_17ac7f5fca5021::t_61b568c355ec31 30-31
+  s_17ac7f5fca5021::t_0a0353d2d505e1 246
+  s_17ac7f5fca5021::t_c4d87aa704bfa5 256
+src/app/api/checkout/promotions/quote/route.ts
+  s_17ac7f5fca5021::t_764dddf5df88c7 16
+  s_17ac7f5fca5021::t_ef180c8a612423 50-59,64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "d62db6a06a6959e74ee44413abda932abf30b2f8",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
