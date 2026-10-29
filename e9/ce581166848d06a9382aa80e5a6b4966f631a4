@@ -1,0 +1,33 @@
+docs/specs/rate-limiting/spec.md
+  s_17ac7f5fca5021::t_394fd1e30e5b11 3,5,7-8,14,18,20-22,26,33,42-49,51,53
+src/instrumentation.ts
+  s_17ac7f5fca5021::t_528336984efbca 5-11
+docs/specs/rate-limiting/decisions.md
+  s_17ac7f5fca5021::t_18dd00265c7526 1-2,4-18,21-23,25-37
+docs/specs/rate-limiting/trd.md
+  s_17ac7f5fca5021::t_cb4bced06510f9 6-7,15,19-21,23-25,27-29,31-39,43-48,56,60,63,70,72-74,78
+tests/unit/rate-limit-registry.test.ts
+  s_17ac7f5fca5021::t_b91b7380810161 1-136
+tests/unit/rate-limit-routes.test.ts
+  s_17ac7f5fca5021::t_c95fd6dc267140 1-80,82-123
+tests/unit/rate-limit.test.ts
+  s_17ac7f5fca5021::t_a359eaad5747d8 1-20,23-84,86-129,131-258
+docs/adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md
+  s_17ac7f5fca5021::t_7d11a2a41f63c0 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "e9ce581166848d06a9382aa80e5a6b4966f631a4",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
