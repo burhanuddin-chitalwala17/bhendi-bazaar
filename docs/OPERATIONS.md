@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-10-29
+- **Verified:** 2026-10-30
 - **Covers:** `src/lib/rate-limit/**`, `src/instrumentation.ts`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -214,7 +214,7 @@ live once, in `src/lib/rate-limit/policies.ts`; the reasoning per policy is in
 | `APP_ENV` | Limiter | Needs |
 |---|---|---|
 | `local` (or unset outside a production build) | In-process, per process; warns once on first use | Nothing |
-| `preview`, `production` | Shared Upstash store, identical in both | `RATE_LIMIT_STORE_URL`, `RATE_LIMIT_STORE_TOKEN` (or the `KV_REST_API_*` fallback), `RATE_LIMIT_CLIENT_IP_HEADER` |
+| `preview`, `production` | Shared Upstash store; keys carry `APP_ENV`, so the two never share a budget even on one store | `RATE_LIMIT_STORE_URL`, `RATE_LIMIT_STORE_TOKEN` (or the `KV_REST_API_*` fallback), `RATE_LIMIT_CLIENT_IP_HEADER` |
 
 **A deploy without them does not go live.** `next.config.ts` throws during `next build` when
 `APP_ENV` is `preview` or `production` and a value is missing, so the Vercel build fails; the same
@@ -222,7 +222,8 @@ check runs again at boot. `vercel.json` runs `prisma migrate deploy` *before* th
 refused deploy may already have applied its migrations — set the variables before merging.
 
 **A store outage does not take the store down.** The limiter fails open and logs
-`[rate-limit] <policy>: store unreachable, request allowed` on every request it could not count. A
+`[rate-limit] <policy>: store unreachable, request allowed` on every request it could not count; a
+store slower than one second also lets the request through, logged once per policy per window. A
 deployed request without the configured address header logs once per instance and is counted in a
 shared `unknown` bucket — check `RATE_LIMIT_CLIENT_IP_HEADER` if that line appears.
 
