@@ -167,6 +167,13 @@ export function quoteDiscounts(input: QuoteInput): DiscountQuote {
   const { lines, promotions, categoryParents, now } = input;
   const typed = input.code ? normaliseCode(input.code) : null;
 
+  // Every per-line map below is keyed by `line.key`, so a repeated key would price each copy
+  // as the whole line. Callers merge first (offers-hardening D8); a duplicate here is their bug.
+  const keys = new Set(lines.map((line) => line.key));
+  if (keys.size !== lines.length) {
+    throw new Error("quoteDiscounts: duplicate line key — merge lines before quoting");
+  }
+
   const usable = promotions.filter((p) => isLive(p, now) && !isExhausted(p));
 
   // ── Automatic offers, per line, per funding scope ──────────────────────────

@@ -10,6 +10,29 @@
 
 ## Entries
 
+## 2026-10-29 — offers-hardening unit 3: preview equals charge, a beaten coupon steps aside, the database refuses impossible discounts [MIGRATION]
+
+- **The preview took ₹1,000 off where the charge took ₹600** (₹1,000 item as quantities 1 and 5,
+  10% off). The quote route now merges lines by `lineKey` and sums quantities, as the order
+  transaction does; `quoteDiscounts` throws on a duplicate line key (D8, R6). `lineKey` moved to
+  `server/checkout/pricing.ts`, a declared checkout seam (ADR-0033); the route, `basket-discounts`
+  and `order.service` all build keys with it (three inline copies removed).
+- **A coupon overtaken by a better automatic offer refused the order.** `applyToOrder` no longer
+  throws on `ALREADY_BETTER_OFF`: it claims nothing and the order goes through at the better price
+  (D9, R7). Other rejections are unchanged.
+- **Migration `20261030000300_offer_and_line_discount_checks`** (D10, R8): fixed price > 0 (was ≥ 0;
+  every writer already requires > 0), cap > 0, minimum spend ≥ 0, `usageCount` ≥ 0, limits > 0,
+  and `OrderItem.discountPaise ≤ unitPrice × quantity` (bigint product, no int4 overflow). Percent, amount-off, line split and
+  `OrderDiscount` checks already existed since 20260816 and are not repeated. The header carries
+  the pre-deploy queries for violating rows. The budget check (`0 ≤ spent ≤ budget`) moves to U5,
+  which adds those columns.
+- Tests: `tests/integration/offers-preview-charge.test.ts` (A7 through the route handler, A8,
+  A9 per constraint, each asserting the constraint's name); engine unit test for duplicate keys.
+- Mutations, each red then restored: no merge in the route (A7: 50000 vs 60000); throwing on
+  `ALREADY_BETTER_OFF` (A8); dropping `OrderItem_discount_within_line` (its A9 case).
+- `docs/ARCHITECTURE.md` counts: migrations 94 → 95, test files 225 → 226.
+- Suites: tsc, unit, integration, `lint:boundary`, `docs:check`.
+
 ## 2026-10-29 — offers-hardening unit 2: a once-per-customer code holds under simultaneous checkouts
 
 - **One buyer's two overlapping checkouts both spent a once-per-customer code.** The buyer's

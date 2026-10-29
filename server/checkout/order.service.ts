@@ -27,8 +27,8 @@ import type {
 import { Order, Prisma } from "@prisma/client";
 import { isValidPincode, PINCODE_MESSAGE } from "@server/shared/pincode";
 import { isValidPhone, PHONE_MESSAGE } from "@server/shared/phone";
-import { priceLines, assembleOrderTotals, type PricedLine } from "@server/checkout/pricing";
-import { applyOffersToBasket, lineKey } from "@server/checkout/basket-discounts";
+import { priceLines, assembleOrderTotals, lineKey, type PricedLine } from "@server/checkout/pricing";
+import { applyOffersToBasket } from "@server/checkout/basket-discounts";
 import { allocateAcrossOrgs } from "@server/checkout/allocation";
 import { assertLinesAreSaleable } from "@server/checkout/sale-gates";
 import { catalogueFacts, reserveStock, stockOnHand } from "@server/checkout/reservation";
@@ -188,7 +188,7 @@ export class OrderService {
         const mergedLines = new Map<string, { productId: string; quantity: number; size?: string; color?: string }>();
         for (const group of input.shippingGroups) {
           for (const item of group.items) {
-            const key = `${item.productId}::${item.size ?? ""}::${item.color ?? ""}`;
+            const key = lineKey(item);
             const existing = mergedLines.get(key);
             if (existing) existing.quantity += item.quantity;
             else mergedLines.set(key, { ...item });
@@ -243,7 +243,7 @@ export class OrderService {
         // than ship a parcel nobody priced.
         const groupsByLocation = new Map(input.shippingGroups.map((g) => [g.groupId, g]));
         const pricedByKey = new Map(
-          pricedLines.map((line) => [`${line.productId}::${line.size ?? ""}::${line.color ?? ""}`, line])
+          pricedLines.map((line) => [lineKey(line), line])
         );
         const plans = parcels.map((parcel) => {
           const group = groupsByLocation.get(parcel.orgAddressId);
@@ -253,7 +253,7 @@ export class OrderService {
             );
           }
           const lines = parcel.lines.map((line) => ({
-            ...(pricedByKey.get(`${line.productId}::${line.size ?? ""}::${line.color ?? ""}`) as PricedLine),
+            ...(pricedByKey.get(lineKey(line)) as PricedLine),
             quantity: line.quantity,
           }));
           const weight = lines.reduce(

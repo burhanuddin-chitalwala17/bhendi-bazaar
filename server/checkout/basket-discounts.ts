@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import { promotionService } from "@server/promotions/promotion.service";
-import type { PricedLine } from "@server/checkout/pricing";
+import { lineKey, type PricedLine } from "@server/checkout/pricing";
 
 /**
  * The bridge between a priced basket and the offer engine.
@@ -24,9 +24,6 @@ export interface DiscountableProduct {
   orgId: string;
   categoryId: string;
 }
-
-export const lineKey = (line: { productId: string; size?: string | null; color?: string | null }) =>
-  `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`;
 
 export async function applyOffersToBasket(args: {
   pricedLines: PricedLine[];

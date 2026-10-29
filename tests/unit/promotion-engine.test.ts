@@ -588,3 +588,11 @@ describe("quantities and rounding", () => {
     }
   });
 });
+
+describe("repeated lines (offers-hardening D8)", () => {
+  it("refuses two lines with one key, which would price the item twice (spec A7)", () => {
+    expect(() =>
+      quote([EARBUDS, line({ quantity: 5 })], [promo({ percentBps: 1000 })])
+    ).toThrow(/duplicate line key/i);
+  });
+});

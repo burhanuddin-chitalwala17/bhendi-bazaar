@@ -98,9 +98,9 @@ export class PromotionService {
     if (code) await promotionRepository.lockByCode(normaliseCode(code), tx);
     const quote = await this.quote(lines, { code, userId, now, db: tx });
 
-    // A code the buyer saw accepted must not silently become a no-op between review
-    // and payment: say which of the two happened.
-    if (code && quote.rejection) {
+    // A coupon that stopped working between review and payment is refused with its reason — except
+    // one a better offer overtook, which is set aside unclaimed at the lower price (offers-hardening D9).
+    if (code && quote.rejection && quote.rejection.reason !== "ALREADY_BETTER_OFF") {
       if (quote.rejection.reason === "NOT_LIVE") {
         throw new ConflictError("That offer expired while you were checking out.");
       }

@@ -33,6 +33,10 @@ export interface UnpricedItem {
 /** A wire line plus the figure the order line persists (order-and-cart-lines D2). */
 export type PricedLine = ShipmentItem & { unitPrice: number };
 
+/** One line per variant: the key the preview and the order both merge and discount by (offers-hardening D8). */
+export const lineKey = (line: { productId: string; size?: string | null; color?: string | null }) =>
+  `${line.productId}::${line.size ?? ""}::${line.color ?? ""}`;
+
 export interface PricedGroup {
   items: PricedLine[];
   itemsTotal: number; // paise

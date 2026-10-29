@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { productsRepository } from "@server/catalog/product.read.repository";
 import { promotionService } from "@server/promotions/promotion.service";
-import { catalogueUnitPrice } from "@server/checkout/pricing";
+import { catalogueUnitPrice, lineKey } from "@server/checkout/pricing";
 import {
   quantitySchema,
   couponCodeSchema,
@@ -47,12 +47,21 @@ export async function POST(request: NextRequest) {
     const products = await productsRepository.listForPricing(productIds);
     const byId = new Map(products.map((product) => [product.id, product]));
 
-    const lines = body.items.flatMap((item) => {
+    // The same item twice is one line, summed, exactly as the order transaction merges it —
+    // or the preview prices each copy as the whole line (offers-hardening D8).
+    const merged = new Map<string, (typeof body.items)[number]>();
+    for (const item of body.items) {
+      const existing = merged.get(lineKey(item));
+      if (existing) existing.quantity += item.quantity;
+      else merged.set(lineKey(item), { ...item });
+    }
+
+    const lines = [...merged.entries()].flatMap(([key, item]) => {
       const product = byId.get(item.productId);
       if (!product) return [];
       return [
         {
-          key: `${item.productId}::${item.size ?? ""}::${item.color ?? ""}`,
+          key,
           productId: product.id,
           orgId: product.orgId,
           categoryId: product.categoryId,
