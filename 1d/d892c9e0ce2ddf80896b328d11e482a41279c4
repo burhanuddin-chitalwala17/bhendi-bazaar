@@ -1,0 +1,28 @@
+server/promotions/loss.ts
+  s_17ac7f5fca5021::t_2486120626e74a 1-44
+tests/integration/offer-budget.test.ts
+  s_17ac7f5fca5021::t_dfede740ecdf75 1-95,97-100,102-283,285-315
+server/promotions/promotion.repository.ts
+  s_17ac7f5fca5021::t_a5d9a7ea077872 125-141,144-145,147,150-151,154-160
+tests/unit/offer-loss-rule.test.ts
+  s_17ac7f5fca5021::t_5d5f3d4ba72deb 1-86,89-98
+  s_17ac7f5fca5021::t_b95ead13bc6844 87-88
+tests/unit/offer-form-loss-panel.test.tsx
+  s_17ac7f5fca5021::t_88177fea545e22 1-11,13-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "1dd892c9e0ce2ddf80896b328d11e482a41279c4",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
