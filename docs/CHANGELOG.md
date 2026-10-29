@@ -10,7 +10,24 @@
 
 ## Entries
 
-## 2026-10-30 — offers-hardening unit 1: a parcel reverses only its own goods [MIGRATION]
+## 2026-10-29 — offers-hardening unit 2: a once-per-customer code holds under simultaneous checkouts
+
+- **One buyer's two overlapping checkouts both spent a once-per-customer code.** The buyer's
+  redemptions were counted before any lock. `promotionService.applyToOrder` now takes
+  `promotionRepository.lockByCode` (`SELECT … FOR UPDATE` on the typed code's row, a no-op for an
+  unknown code) before quoting, so the second checkout waits and counts the first's committed
+  `OrderDiscount` (D3). Its transaction is required and typed `PromotionTx`. The preview is unchanged.
+- Tests: `tests/integration/per-user-coupon-race.test.ts` — two concurrent orders by one buyer
+  through `createOrderWithShipments`, 4 rounds: one wins, the other is refused "You have already
+  used CODE." (A3); a second buyer can still use the code.
+- Mutation: removing the lock failed the A3 test in round 0 (the code spent twice). Restored.
+- Review fixes: order expiry now gives the coupon back before the stock, matching checkout's lock
+  order, so the two cannot deadlock; `PromotionTx` is `Prisma.TransactionClient`, so the plain client
+  no longer type-checks there. Unit 1's entry is re-dated to today (it said 2026-10-30).
+- `docs/ARCHITECTURE.md` test-file count 224 → 225.
+- Suites: tsc, unit, integration, `lint:boundary`, `docs:check`.
+
+## 2026-10-29 — offers-hardening unit 1: a parcel reverses only its own goods [MIGRATION]
 
 - **One cancelled parcel reversed every org's whole sale on the order.** `ledgerService.reverseShipment`
   replaces `reverseSale`: it reverses only the parcel's org and units, with each figure split by

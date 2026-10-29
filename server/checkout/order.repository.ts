@@ -315,6 +315,14 @@ export class OrderRepository {
       });
       if (expired.count === 0) return false;
 
+      // A coupon claim is held exactly like stock, so it comes back in the same
+      // transaction (promotions D11). Releasing it afterwards would leave a window
+      // where a "first 100" coupon had been spent by an order that no longer exists.
+      // Promotions' own surface does the work — this passes it the transaction so
+      // both releases commit or neither does. It goes first because checkout locks the
+      // promotion row before stock; the opposite order here could deadlock the two.
+      await promotionService.releaseForOrder(orderId, tx);
+
       // Stock goes back where it came from: each parcel's rows, at the location the
       // allocation persisted on it (stock-locations D6). Catalog's stock seam does the
       // movement on this same `tx`; a legacy shipment with no location is its concern too.
@@ -335,13 +343,6 @@ export class OrderRepository {
         ),
         tx,
       );
-
-      // A coupon claim is held exactly like stock, so it comes back in the same
-      // transaction (promotions D11). Releasing it afterwards would leave a window
-      // where a "first 100" coupon had been spent by an order that no longer exists.
-      // Promotions' own surface does the work — this passes it the transaction so
-      // both releases commit or neither does.
-      await promotionService.releaseForOrder(orderId, tx);
 
       return true;
     });

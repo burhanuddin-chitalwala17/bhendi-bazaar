@@ -16,6 +16,8 @@ import type { CategoryParents } from "@server/promotions/targeting";
  */
 export type PromotionDb = Pick<typeof prisma, "promotion" | "category" | "orderDiscount">;
 type Db = PromotionDb;
+/** A transaction handle — the only thing a row lock means anything inside. */
+export type PromotionTx = Prisma.TransactionClient;
 
 const PROMOTION_SELECT = {
   id: true,
@@ -68,6 +70,14 @@ export class PromotionRepository {
     return await db.promotion.findUnique({ where: { code }, select: PROMOTION_SELECT });
   }
 
+
+  /**
+   * Hold this code's row until the transaction ends; no-op for an unknown code (offers-hardening D3).
+   * A second checkout waits here, then counts the buyer's redemptions with the first one committed.
+   */
+  async lockByCode(code: string, tx: PromotionTx): Promise<void> {
+    await tx.$queryRaw`SELECT id FROM "Promotion" WHERE code = ${code} FOR UPDATE`;
+  }
 
   /** The whole category tree as `id -> parentId`. One small table; read whole. */
   async categoryParents(db: Db = prisma): Promise<CategoryParents> {

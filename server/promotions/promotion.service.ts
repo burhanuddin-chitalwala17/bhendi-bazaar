@@ -11,6 +11,7 @@ import { prisma } from "@server/shared/prisma";
 import {
   promotionRepository,
   type PromotionDb,
+  type PromotionTx,
 } from "@server/promotions/promotion.repository";
 import { normaliseCode, quoteDiscounts } from "@server/promotions/discount-engine";
 import { isExhausted, isLive } from "@server/promotions/targeting";
@@ -90,9 +91,11 @@ export class PromotionService {
    */
   async applyToOrder(
     lines: readonly DiscountableLine[],
-    options: { code?: string | null; userId?: string | null; now: Date; tx: Db }
+    options: { code?: string | null; userId?: string | null; now: Date; tx: PromotionTx }
   ): Promise<DiscountQuote & { claimedPromotionIds: string[] }> {
     const { code, userId, now, tx } = options;
+    // Locked before the per-buyer count, or two checkouts by one buyer both count zero (D3).
+    if (code) await promotionRepository.lockByCode(normaliseCode(code), tx);
     const quote = await this.quote(lines, { code, userId, now, db: tx });
 
     // A code the buyer saw accepted must not silently become a no-op between review
