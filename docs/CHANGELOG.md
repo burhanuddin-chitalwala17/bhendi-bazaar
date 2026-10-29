@@ -10,6 +10,34 @@
 
 ## Entries
 
+## 2026-10-30 — offers-hardening unit 1: a parcel reverses only its own goods [MIGRATION]
+
+- **One cancelled parcel reversed every org's whole sale on the order.** `ledgerService.reverseShipment`
+  replaces `reverseSale`: it reverses only the parcel's org and units, with each figure split by
+  cumulative floor so the parts of a line sum to its sale exactly (D1, D2). It locks the org's
+  SALE row `FOR UPDATE` and returns early if the parcel is already reversed, so concurrent
+  reversals neither lose a paisa nor abort the courier's transaction on the unique index.
+- **Migration `20261030000100_ledger_parcel_reversal`:** `OrgLedgerEntry.shipmentId` (Restrict),
+  `OrgLedgerEntryLine.quantity`; the `(orderId, orgId, kind)` unique becomes three partial unique
+  indexes — one sale per order and org, one legacy order-wide reversal, one reversal per parcel.
+  Drops no data. Order-wide reversals already written stand and count as the whole line (Q6).
+- Review fixes: a manually edited sale reverses its edited header pro rata, so a full return nets
+  the org to zero (Q12); soft-deleted entries count for nothing and a soft-deleted sale is not
+  reversed; shipping reads the parcel's scope (`shipmentRepository.reversalScope`) and passes it
+  in, so payouts no longer reads `Shipment` (ADR-0033); a parcel line absent from its org's sale
+  throws; the transaction is required. Q13 (parcel cancelled before payment) parked.
+- `shipmentRepository.findOrderId` removed: its only caller was the old reversal.
+- Tests: `tests/unit/parcel-reversal.test.ts` (A2, random splits, Q6),
+  `tests/integration/parcel-reversal.test.ts` (A1 two orgs, A2 3 + 2 split, replay, Q6, two
+  parcels at once, one parcel twice at once, edited sale, soft deletes, stray parcel line).
+  `shipment-effects` teardown deletes the ledger before parcels.
+- Mutations: per-parcel `floor(x·q/Q)` in place of the cumulative floor failed both A2 tests;
+  counting a legacy null quantity as 0 failed both Q6 tests; removing the lock failed both
+  concurrency tests, 3 runs of 3 (gross off by 2 paise; a unique violation); ignoring
+  `isManuallyEdited` failed the Q12 test; dropping the `deletedAt` filter failed both
+  soft-delete tests. Restored.
+- Suites: tsc, unit, integration, `lint:boundary`, `docs:check`.
+
 ## 2026-10-25 — marketplace-facts unit 6 and product-merge Q31: fixes from the fresh-context review [CONTRACT]
 
 - **Matching saved none of the page's facts:** a matched product also carries `categoryId`, so the

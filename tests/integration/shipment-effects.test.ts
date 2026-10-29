@@ -30,10 +30,11 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
 
   afterAll(async () => {
     if (madeOrderIds.length) {
-      await prisma.shipmentItem.deleteMany({ where: { shipment: { orderId: { in: madeOrderIds } } } });
-      await prisma.shipment.deleteMany({ where: { orderId: { in: madeOrderIds } } });
+      // Ledger first: a reversal holds its parcel (Restrict, offers-hardening D1).
       await prisma.orgLedgerEntryLine.deleteMany({ where: { entry: { orderId: { in: madeOrderIds } } } });
       await prisma.orgLedgerEntry.deleteMany({ where: { orderId: { in: madeOrderIds } } });
+      await prisma.shipmentItem.deleteMany({ where: { shipment: { orderId: { in: madeOrderIds } } } });
+      await prisma.shipment.deleteMany({ where: { orderId: { in: madeOrderIds } } });
       await prisma.orderItem.deleteMany({ where: { orderId: { in: madeOrderIds } } });
       await prisma.order.deleteMany({ where: { id: { in: madeOrderIds } } });
     }

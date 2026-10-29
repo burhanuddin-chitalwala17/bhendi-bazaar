@@ -9,8 +9,11 @@
 import {
   buyerPaidPaise,
   computeLedgerEntry,
+  computeParcelReversal,
   platformNetPaise,
   projectForOrg,
+  proRataHeader,
+  reversedQuantity,
   type LedgerLineInput,
 } from "@server/payouts/commission";
 import { ledgerRepository, type PayoutDb } from "@server/payouts/ledger.repository";
@@ -20,7 +23,14 @@ import { orderService } from "@server/checkout/order.service";
 import { promotionService } from "@server/promotions/promotion.service";
 import { commercialTermsService } from "@server/catalog/commercial-terms.service";
 import { categoryService } from "@server/catalog/category.service";
-import { isUniqueViolation } from "@server/shared/constraint";
+
+/** What a parcel reversal is scoped to, read by shipping from its own table (ADR-0033). */
+export interface ParcelScope {
+  shipmentId: string;
+  orgId: string;
+  orderId: string;
+  items: { orderItemId: string; quantity: number }[];
+}
 
 export class LedgerService {
   /**
@@ -116,35 +126,64 @@ export class LedgerService {
   }
 
   /**
-   * Undo what an order earned, because the goods came back.
+   * Undo what one parcel earned, because its goods came back or never left
+   * (offers-hardening R1). Scoped to the parcel's org and units: another org's sale on the same
+   * order, and this org's other parcels, are untouched.
    *
    * The org is credited at **payment**, not at delivery (`recordSale` runs from
-   * `payment-confirmed.ts`), and settlement is a manual claim over whatever is unsettled —
-   * so between a return and a payout there is a real window in which an entry for returned
-   * goods is sitting claimable. Reversing writes the mirror entry; it does not edit or delete
-   * the sale ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)).
+   * `payment-confirmed.ts`), and settlement is a manual claim over whatever is unsettled — so
+   * between a return and a payout an entry for returned goods sits claimable. Reversing writes a
+   * mirror entry; it does not edit or delete the sale
+   * ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)).
    *
-   * Safe to call twice: the unique key on `(orderId, orgId, kind)` refuses the second write, and
-   * a refusal here means the reversal already exists, which is the outcome the caller wanted.
+   * Safe to call twice, and concurrently, inside a transaction: the org's sale is locked first,
+   * so a second call for the parcel waits and then finds it reversed, and two parcels of one line
+   * read each other's quantities. Catching the unique violation instead would abort the caller's
+   * transaction.
    *
    * **It does not refund the buyer.** That stays a human decision (owner, 2026-09-24): a gateway
    * refund is irreversible, so the entitlement is recorded and someone presses the button.
    */
-  async reverseSale(orderId: string, reason: string, db: PayoutDb = prisma): Promise<number> {
-    const lines = await ledgerRepository.orderLines(orderId, db);
-    const orgIds = [...new Set(lines.map((line) => line.orgId))];
+  async reverseShipment(parcel: ParcelScope, reason: string, db: PayoutDb): Promise<number> {
+    await ledgerRepository.lockSale(parcel.orderId, parcel.orgId, db);
+    if (await ledgerRepository.parcelReversed(parcel.shipmentId, db)) return 0;
+    const sale = await ledgerRepository.reversibleSale(parcel.orderId, parcel.orgId, db);
+    if (!sale) return 0;
 
-    let reversed = 0;
-    for (const orgId of orgIds) {
-      try {
-        const entry = await ledgerRepository.createReversal({ orgId, orderId, note: reason }, db);
-        if (entry) reversed += 1;
-      } catch (error) {
-        // A unique-constraint refusal is this method already having run. Anything else is real.
-        if (!isUniqueViolation(error, "kind")) throw error;
+    const parcelUnits = new Map(parcel.items.map((i) => [i.orderItemId, i.quantity]));
+    for (const id of parcelUnits.keys()) {
+      // Shipments are split by org when the order is placed, so a parcel line missing from its
+      // org's sale is corrupt data; reversing around it would quietly under-reverse.
+      if (!sale.lines.has(id)) {
+        throw new Error(`Parcel ${parcel.shipmentId} carries order item ${id}, absent from its org's sale`);
       }
     }
-    return reversed;
+
+    const spans = [...sale.lines.values()].map(({ line, prior }) => {
+      const from = reversedQuantity(line.quantity, prior);
+      const q = parcelUnits.get(line.orderItemId) ?? 0;
+      return { line, from, q, to: Math.min(from + q, line.quantity) };
+    });
+    const reversal = computeParcelReversal(
+      spans
+        .filter((s) => parcelUnits.has(s.line.orderItemId))
+        .map((s) => ({ line: s.line, reversedQuantity: s.from, parcelQuantity: s.q }))
+    );
+    if (!reversal) return 0;
+
+    await ledgerRepository.createParcelReversal(
+      {
+        orgId: parcel.orgId,
+        orderId: parcel.orderId,
+        shipmentId: parcel.shipmentId,
+        note: reason,
+        reversal: sale.isManuallyEdited
+          ? { ...reversal, ...proRataHeader(sale.header, spans) }
+          : reversal,
+      },
+      db
+    );
+    return 1;
   }
 
   /**

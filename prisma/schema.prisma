@@ -976,6 +976,7 @@ model Shipment {
 
   // Relations
   shippingEvents ShippingEvent[]
+  ledgerEntries  OrgLedgerEntry[]
 
   @@index([orderId])
   @@index([orgId])
@@ -1546,6 +1547,11 @@ model OrgLedgerEntry {
   orderId String?
   order   Order?  @relation(fields: [orderId], references: [id], onDelete: Restrict)
 
+  /// The parcel a REVERSAL undoes (offers-hardening D1). Null on a SALE, an adjustment, and a
+  /// reversal written order-wide before parcels carried their own.
+  shipmentId String?
+  shipment   Shipment? @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+
   kind  LedgerEntryKind  @default(SALE)
   state LedgerEntryState @default(DRAFT)
 
@@ -1579,7 +1585,10 @@ model OrgLedgerEntry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([orderId, orgId, kind])
+  // Uniqueness is three partial indexes in the migration (offers-hardening D1): one SALE per
+  // order and org, one legacy order-wide REVERSAL per order and org, one REVERSAL per parcel.
+  @@index([shipmentId])
+  @@index([orderId, orgId])
   @@index([orgId, deletedAt])
   @@index([settlementId])
   @@index([isNegativeMargin])
@@ -1601,6 +1610,9 @@ model OrgLedgerEntryLine {
   basePaise       Int
   rateBps         Int
   commissionPaise Int
+  /// Units a parcel reversal undid on this line. Null on a sale, and on an order-wide reversal,
+  /// which counts as the whole line (offers-hardening Q6).
+  quantity        Int?
 
   @@index([entryId])
   @@index([orderItemId])

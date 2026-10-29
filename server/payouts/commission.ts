@@ -179,3 +179,120 @@ export function projectForOrg(entry: {
     rates: [...entry.lines],
   };
 }
+
+/** A sold line as a parcel reversal needs it: the order line's split and the sale line's figures. */
+export interface ReversibleLine {
+  orderItemId: string;
+  /** Units sold on the line. */
+  quantity: number;
+  orgFundedPaise: number;
+  platformFundedPaise: number;
+  /** The sale line's own figures, rate already applied — never recomputed (payouts R4). */
+  basePaise: number;
+  rateBps: number;
+  commissionPaise: number;
+}
+
+export interface ParcelReversalLine extends ComputedLedgerLine {
+  orderItemId: string;
+  quantity: number;
+}
+
+/** Positive figures; the repository writes them negated. */
+export interface ParcelReversal {
+  grossItemsPaise: number;
+  orgFundedDiscountPaise: number;
+  platformFundedDiscountPaise: number;
+  commissionBasePaise: number;
+  commissionPaise: number;
+  payablePaise: number;
+  lines: ParcelReversalLine[];
+}
+
+/** Units of a line already reversed. An order-wide reversal has no quantity: the whole line (Q6). */
+export function reversedQuantity(lineQuantity: number, prior: readonly (number | null)[]): number {
+  const sum = prior.reduce<number>((s, q) => s + (q ?? lineQuantity), 0);
+  return Math.min(sum, lineQuantity);
+}
+
+/** Cumulative floor: over any split of `total` units, the parts sum to `x` exactly (D2). */
+const share = (x: number, from: number, to: number, total: number) =>
+  Math.floor((x * to) / total) - Math.floor((x * from) / total);
+
+/**
+ * What one parcel undoes of an org's sale (offers-hardening D2). Gross is base plus org-funded,
+ * not floored on its own, so each part keeps `base = gross − orgFunded` and none goes negative.
+ * Null when every line is already fully reversed.
+ */
+export function computeParcelReversal(
+  items: readonly { line: ReversibleLine; reversedQuantity: number; parcelQuantity: number }[]
+): ParcelReversal | null {
+  const parts = items.flatMap(({ line, reversedQuantity: from, parcelQuantity }) => {
+    const to = Math.min(from + parcelQuantity, line.quantity);
+    if (to <= from) return [];
+    const Q = line.quantity;
+    const basePaise = share(line.basePaise, from, to, Q);
+    const orgFundedPaise = share(line.orgFundedPaise, from, to, Q);
+    return [{
+      line: {
+        orderItemId: line.orderItemId,
+        quantity: to - from,
+        basePaise,
+        rateBps: line.rateBps,
+        commissionPaise: share(line.commissionPaise, from, to, Q),
+      },
+      orgFundedPaise,
+      platformFundedPaise: share(line.platformFundedPaise, from, to, Q),
+    }];
+  });
+  if (parts.length === 0) return null;
+
+  const sum = (pick: (p: (typeof parts)[number]) => number) => parts.reduce((s, p) => s + pick(p), 0);
+  const commissionBasePaise = sum((p) => p.line.basePaise);
+  const orgFundedDiscountPaise = sum((p) => p.orgFundedPaise);
+  const commissionPaise = sum((p) => p.line.commissionPaise);
+  return {
+    grossItemsPaise: commissionBasePaise + orgFundedDiscountPaise,
+    orgFundedDiscountPaise,
+    platformFundedDiscountPaise: sum((p) => p.platformFundedPaise),
+    commissionBasePaise,
+    commissionPaise,
+    payablePaise: commissionBasePaise - commissionPaise,
+    lines: parts.map((p) => p.line),
+  };
+}
+
+/** An entry's six figures. */
+export type LedgerHeader = Omit<ParcelReversal, "lines">;
+
+/**
+ * A parcel's share of a manually edited sale's header (offers-hardening Q12): the admin's
+ * correction is what was owed, so each figure is split by the cumulative share of gross reversed
+ * and a full return sums to the edited header exactly. Lines stay as computed.
+ */
+export function proRataHeader(
+  header: LedgerHeader,
+  lines: readonly { line: ReversibleLine; from: number; to: number }[]
+): LedgerHeader {
+  const grossAt = (l: ReversibleLine, k: number) =>
+    share(l.basePaise, 0, k, l.quantity) + share(l.orgFundedPaise, 0, k, l.quantity);
+  const total = lines.reduce((s, { line }) => s + line.basePaise + line.orgFundedPaise, 0);
+  // Free goods have no gross to weigh by; units are the fallback.
+  const weigh = total > 0
+    ? (pick: "from" | "to") => lines.reduce((s, l) => s + grossAt(l.line, l[pick]), 0)
+    : (pick: "from" | "to") => lines.reduce((s, l) => s + l[pick], 0);
+  const whole = total > 0 ? total : lines.reduce((s, l) => s + l.line.quantity, 0);
+  const [before, after] = [weigh("from"), weigh("to")];
+  const part = (x: number) => share(x, before, after, whole);
+  const grossItemsPaise = part(header.grossItemsPaise);
+  const orgFundedDiscountPaise = part(header.orgFundedDiscountPaise);
+  return {
+    grossItemsPaise,
+    orgFundedDiscountPaise,
+    platformFundedDiscountPaise: part(header.platformFundedDiscountPaise),
+    // Derived, not split: the table checks base = gross − orgFunded on every row.
+    commissionBasePaise: grossItemsPaise - orgFundedDiscountPaise,
+    commissionPaise: part(header.commissionPaise),
+    payablePaise: part(header.payablePaise),
+  };
+}

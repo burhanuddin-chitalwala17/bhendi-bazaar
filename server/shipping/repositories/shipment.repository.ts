@@ -103,9 +103,16 @@ export class ShipmentRepository {
     await tx.shipment.update({ where: { id }, data });
   }
 
-  async findOrderId(id: string, tx: ShipmentDb = prisma): Promise<string | null> {
-    const row = await tx.shipment.findUnique({ where: { id }, select: { orderId: true } });
-    return row?.orderId ?? null;
+  /** The parcel's org, order and units: what payouts reverses when it fails (offers-hardening D1). */
+  async reversalScope(id: string, tx: ShipmentDb) {
+    return await tx.shipment.findUnique({
+      where: { id },
+      select: {
+        orgId: true,
+        orderId: true,
+        items: { select: { orderItemId: true, quantity: true } },
+      },
+    });
   }
 }
 

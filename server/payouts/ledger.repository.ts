@@ -7,11 +7,23 @@
 
 import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
-import type { ComputedLedgerLine, LedgerEntryComputation } from "@server/payouts/commission";
+import type {
+  ComputedLedgerLine,
+  LedgerEntryComputation,
+  LedgerHeader,
+  ParcelReversal,
+  ReversibleLine,
+} from "@server/payouts/commission";
 
 export type PayoutDb = Pick<
   typeof prisma,
-  "orgLedgerEntry" | "orgLedgerEntryLine" | "settlement" | "orgCommissionRule" | "org" | "orderItem"
+  | "orgLedgerEntry"
+  | "orgLedgerEntryLine"
+  | "settlement"
+  | "orgCommissionRule"
+  | "org"
+  | "orderItem"
+  | "$queryRaw"
 >;
 
 /** What one paid order contributes, per organisation. */
@@ -79,8 +91,8 @@ export class LedgerRepository {
 
   /** Has this order already produced an entry for this organisation? */
   async saleExists(orderId: string, orgId: string, db: PayoutDb = prisma): Promise<boolean> {
-    const found = await db.orgLedgerEntry.findUnique({
-      where: { orderId_orgId_kind: { orderId, orgId, kind: "SALE" } },
+    const found = await db.orgLedgerEntry.findFirst({
+      where: { orderId, orgId, kind: "SALE" },
       select: { id: true },
     });
     return found !== null;
@@ -119,46 +131,133 @@ export class LedgerRepository {
   }
 
   /**
-   * Undo one organisation's sale entry by writing its mirror, never by editing it.
-   *
-   * Every figure is negated, so the two sum to nothing and the history of both survives —
-   * [ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)'s rule that a
-   * money-bearing row is cancelled rather than deleted, applied to a row that has to change
-   * sign rather than disappear.
-   *
-   * Idempotent on the database rather than by checking first: `orderId_orgId_kind` is unique,
-   * so a second reversal for the same order and org cannot be written even if two courier
-   * events race. The caller treats the conflict as success.
+   * Lock the org's sale on an order until the transaction ends (offers-hardening D1). Two parcels
+   * of one line reversed at once would each read the same reversed quantity and lose a paisa;
+   * one parcel twice would hit the unique index and abort the shared transaction. Meaningless
+   * outside a transaction.
    */
-  async createReversal(
-    input: { orgId: string; orderId: string; note: string },
-    db: PayoutDb = prisma
-  ) {
-    const sale = await db.orgLedgerEntry.findUnique({
-      where: { orderId_orgId_kind: { orderId: input.orderId, orgId: input.orgId, kind: "SALE" } },
-      include: { lines: true },
+  async lockSale(orderId: string, orgId: string, db: PayoutDb): Promise<void> {
+    await db.$queryRaw`SELECT id FROM "OrgLedgerEntry"
+      WHERE "orderId" = ${orderId} AND "orgId" = ${orgId} AND kind = 'SALE' FOR UPDATE`;
+  }
+
+  async parcelReversed(shipmentId: string, db: PayoutDb = prisma): Promise<boolean> {
+    const found = await db.orgLedgerEntry.findFirst({
+      where: { shipmentId, kind: "REVERSAL" },
+      select: { id: true },
     });
+    return found !== null;
+  }
+
+  /**
+   * An org's live sale on an order — header, whether an admin edited it, and each line with the
+   * quantities already reversed. Null when there is no live sale. A soft-deleted entry no longer
+   * counts toward a balance, so it counts toward nothing here either.
+   */
+  async reversibleSale(
+    orderId: string,
+    orgId: string,
+    db: PayoutDb = prisma
+  ): Promise<{
+    header: LedgerHeader;
+    isManuallyEdited: boolean;
+    lines: Map<string, { line: ReversibleLine; prior: (number | null)[] }>;
+  } | null> {
+    const entries = await db.orgLedgerEntry.findMany({
+      where: { orderId, orgId, kind: { in: ["SALE", "REVERSAL"] }, deletedAt: null },
+      select: {
+        kind: true,
+        isManuallyEdited: true,
+        grossItemsPaise: true,
+        orgFundedDiscountPaise: true,
+        platformFundedDiscountPaise: true,
+        commissionBasePaise: true,
+        commissionPaise: true,
+        payablePaise: true,
+        lines: {
+          select: {
+            orderItemId: true,
+            basePaise: true,
+            rateBps: true,
+            commissionPaise: true,
+            quantity: true,
+            orderItem: {
+              select: { quantity: true, discountPaise: true, orgFundedPaise: true },
+            },
+          },
+        },
+      },
+    });
+    const sale = entries.find((e) => e.kind === "SALE");
     if (!sale) return null;
 
+    const byItem = new Map<string, { line: ReversibleLine; prior: (number | null)[] }>();
+    for (const l of sale.lines) {
+      if (!l.orderItemId || !l.orderItem) continue;
+      byItem.set(l.orderItemId, {
+        line: {
+          orderItemId: l.orderItemId,
+          quantity: l.orderItem.quantity,
+          orgFundedPaise: l.orderItem.orgFundedPaise,
+          platformFundedPaise: l.orderItem.discountPaise - l.orderItem.orgFundedPaise,
+          basePaise: l.basePaise,
+          rateBps: l.rateBps,
+          commissionPaise: l.commissionPaise,
+        },
+        prior: [],
+      });
+    }
+    for (const e of entries) {
+      if (e.kind !== "REVERSAL") continue;
+      for (const l of e.lines) {
+        if (l.orderItemId) byItem.get(l.orderItemId)?.prior.push(l.quantity);
+      }
+    }
+    return {
+      header: {
+        grossItemsPaise: sale.grossItemsPaise,
+        orgFundedDiscountPaise: sale.orgFundedDiscountPaise,
+        platformFundedDiscountPaise: sale.platformFundedDiscountPaise,
+        commissionBasePaise: sale.commissionBasePaise,
+        commissionPaise: sale.commissionPaise,
+        payablePaise: sale.payablePaise,
+      },
+      isManuallyEdited: sale.isManuallyEdited,
+      lines: byItem,
+    };
+  }
+
+  /**
+   * Write one parcel's reversal, every figure negated, never editing the sale
+   * ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)). The caller holds
+   * `lockSale`; the one-REVERSAL-per-`shipmentId` index is the backstop.
+   */
+  async createParcelReversal(
+    input: { orgId: string; orderId: string; shipmentId: string; note: string; reversal: ParcelReversal },
+    db: PayoutDb = prisma
+  ) {
+    const { reversal: r } = input;
     return await db.orgLedgerEntry.create({
       data: {
         orgId: input.orgId,
         orderId: input.orderId,
+        shipmentId: input.shipmentId,
         kind: "REVERSAL",
         state: "DRAFT",
-        grossItemsPaise: -sale.grossItemsPaise,
-        orgFundedDiscountPaise: -sale.orgFundedDiscountPaise,
-        platformFundedDiscountPaise: -sale.platformFundedDiscountPaise,
-        commissionBasePaise: -sale.commissionBasePaise,
-        commissionPaise: -sale.commissionPaise,
-        payablePaise: -sale.payablePaise,
+        grossItemsPaise: -r.grossItemsPaise,
+        orgFundedDiscountPaise: -r.orgFundedDiscountPaise,
+        platformFundedDiscountPaise: -r.platformFundedDiscountPaise,
+        commissionBasePaise: -r.commissionBasePaise,
+        commissionPaise: -r.commissionPaise,
+        payablePaise: -r.payablePaise,
         // A negated payable is not a negative *margin* — that flag describes a sale whose
         // commission exceeded what the org earned, which a reversal is not.
         isNegativeMargin: false,
         note: input.note,
         lines: {
-          create: sale.lines.map((line) => ({
+          create: r.lines.map((line) => ({
             orderItemId: line.orderItemId,
+            quantity: line.quantity,
             basePaise: -line.basePaise,
             rateBps: line.rateBps,
             commissionPaise: -line.commissionPaise,

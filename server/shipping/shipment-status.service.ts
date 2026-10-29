@@ -99,10 +99,8 @@ export async function applyStatus(
       // Deliberately no refund: a gateway refund is irreversible, so the entitlement is recorded
       // and a human presses the button (owner's decision, 2026-09-24).
       const { ledgerService } = await import("@server/payouts/ledger.service");
-      const orderId = await shipmentRepository.findOrderId(shipmentId, tx);
-      if (orderId) {
-        await ledgerService.reverseSale(orderId, `Parcel ${to}`, tx);
-      }
+      const scope = await shipmentRepository.reversalScope(shipmentId, tx);
+      if (scope) await ledgerService.reverseShipment({ shipmentId, ...scope }, `Parcel ${to}`, tx);
     }
   });
 
