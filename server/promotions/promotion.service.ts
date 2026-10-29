@@ -264,16 +264,26 @@ export class PromotionService {
    * Refuse a sale price deeper than the shop's discount ceiling, before anything is saved
    * (offers-hardening R3, Q7). The engine clamps one a later price edit breaches.
    */
-  async assertSalePriceWithinCeiling(orgId: string, pricePaise: number, salePricePaise: number): Promise<void> {
+  async assertSalePriceWithinCeiling(
+    orgId: string, pricePaise: number, salePricePaise: number, productId?: string,
+  ): Promise<void> {
     const terms = await commercialTermsService.find(orgId);
     if (!terms) return;
-    const breach = this.saleFloorBreach(pricePaise, salePricePaise, terms.maxDiscountBps);
+    const breach = await this.saleBreach({ productId, pricePaise, salePricePaise, ceilingBps: terms.maxDiscountBps });
     if (breach) throw new DomainError(breach, { field: "salePrice" });
   }
 
-  /** The same refusal as words, for a caller that reports rows rather than throwing (bulk sheet). */
-  saleFloorBreach(pricePaise: number, salePricePaise: number, ceilingBps: number): string | null {
-    return saleFloorBreach(pricePaise, salePricePaise, ceilingBps);
+  /**
+   * The refusal as words, for the form and for a caller that reports rows (bulk sheet). A sale
+   * price equal to the product's running markdown is not re-judged: `setProductMarkdown` writes
+   * nothing for it and the engine clamps it, so an old markdown cannot block a save.
+   */
+  async saleBreach(input: {
+    productId?: string; pricePaise: number; salePricePaise: number; ceilingBps: number;
+  }): Promise<string | null> {
+    const breach = saleFloorBreach(input.pricePaise, input.salePricePaise, input.ceilingBps);
+    if (!breach || !input.productId) return breach;
+    return (await this.productMarkdownPaise(input.productId)) === input.salePricePaise ? null : breach;
   }
 
   /**

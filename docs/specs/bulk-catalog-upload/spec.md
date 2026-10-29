@@ -4,7 +4,7 @@
 - **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
-- **Verified:** 2026-08-21
+- **Verified:** 2026-10-29
 - **References:** [trd.md](trd.md), [sheet-parsing-options.md](sheet-parsing-options.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [ADR-0017](../../adr/0017-video-is-embedded-not-hosted.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.
@@ -59,6 +59,12 @@ the cover — the same rule every existing surface applies.
 - R13 — Once the catalogue is re-onboarded through this feature, a deliberate,
 separately-triggered cleanup deletes old flat-layout product images from Blob — only
 files no product references, so a live page can never lose its picture.
+- R14 — A row whose SKU matches a live product of the org updates that product; any other row
+creates one. An archived product's SKU stays a row error (ADR-0029).
+- R15 — A row's sale price is saved as the product form saves it — the shop's own offer, refused
+past the shop's discount ceiling as a row error. On an updating row a blank cell keeps the
+product's current sale; the price itself, or 0, ends it (own-store Q24).
+
 ## Product acceptance
 
 - A1 — An org owner with a 50-product sheet and a folder of photos gets from zero
@@ -73,7 +79,6 @@ and re-uploads successfully with only its example values changed.
 
 ## Out of scope (this feature)
 
-- Updating existing products via sheet (create-only; editing stays on the form).
 - Product flags (HERO/FEATURED) as sheet columns — merchandising stays admin-curated.
 - Creating pickup locations from the sheet (the locations page owns that — R5).
 - Moving referenced old blobs into the new layout (R13 deletes the unreferenced;

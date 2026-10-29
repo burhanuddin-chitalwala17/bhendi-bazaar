@@ -57,7 +57,8 @@ const rowShape = z.object({
   productType: z.string().trim().max(40).optional(),
   kind: z.string().trim().max(40).optional(),
   familyName: z.string().trim().max(120).optional(),
-  salePrice: z.number().positive("Sale price must be greater than 0").optional(),
+  // 0 is how an updating row ends a sale (bulk-catalog-upload R15).
+  salePrice: z.number().nonnegative("Sale price cannot be negative").optional(),
   factLabels: z.record(z.string(), z.string()),
   measurements: z.record(z.string(), z.number()),
   images: z

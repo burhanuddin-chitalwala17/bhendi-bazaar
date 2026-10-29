@@ -3,7 +3,7 @@
 - **Status:** Implemented
 - **Domain:** catalog
 - **Phase:** 6 — Catalogue richness
-- **Verified:** 2026-09-28
+- **Verified:** 2026-10-29
 - **References:** [spec.md](spec.md), [sheet-parsing-options.md](sheet-parsing-options.md), [ADR-0002](../../adr/0002-server-holds-pricing-authority.md), [ADR-0015](../../adr/0015-mobile-first-design.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -80,6 +80,13 @@ upload-images.ts): list Blob under the flat `products/` prefix, keep anything
 referenced by any ProductMedia ref or Product.thumbnail, delete the rest. Dry-run
 by default; deletion behind an explicit flag, same two-intent pattern as the seed
 guard. Runs once per environment, after re-onboarding.
+- D12 — **A sale price is written through `promotionService.setProductMarkdown`**, the function the
+product form uses, after the import transaction commits, as the form writes it after its save
+(own-store Q24). `createProducts` re-checks the ceiling before writing anything, since validation
+is a separate request; both judge through `promotionService.saleBreach`, the form's rule, so an
+unchanged running markdown is not re-judged. A blank cell on an updating row writes nothing (R15); the sheet's note
+for `salePrice` says so.
+
 ## Packages
 
 - `exceljs` — read/write .xlsx server-side (parse uploads, generate sample sheets).
@@ -114,7 +121,9 @@ docs/CONTRACTS.md — PR flagged `[CONTRACT]`.
   referenced blob is never in the delete set.
 - Integration (local DB): org-scoped SKU — same SKU in two orgs succeeds, within one
   org refuses; all-or-nothing — one bad row creates zero products; ops budget rows
-  for the bulk create (tests/integration/db-ops-budget.test.ts).
+  for the bulk create (tests/integration/db-ops-budget.test.ts); sale price saved, over-cap
+  refused with nothing written, blank cell on an update keeps the sale
+  (tests/integration/bulk-sale-price-and-sibling-offers.test.ts).
 - Per docs/TESTING.md layer targets.
 
 ## Delivery (PRs)

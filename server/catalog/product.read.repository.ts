@@ -560,7 +560,7 @@ export class ProductsRepository {
   async getFamilySiblings(familyId: string) {
     return prisma.product.findMany({
       where: { familyId, archivedAt: null },
-      select: { id: true, slug: true, name: true, thumbnail: true, price: true, categoryId: true },
+      select: { id: true, slug: true, name: true, thumbnail: true, price: true, categoryId: true, orgId: true },
       orderBy: { name: "asc" },
     });
   }

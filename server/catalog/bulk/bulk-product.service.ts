@@ -18,7 +18,7 @@ import { orgAddressRepository } from "@server/catalog/org.address.repository";
 import { slugify } from "@server/shared/slug";
 import { isUniqueViolation } from "@server/shared/constraint";
 import { rupeesToPaise } from "@server/shared/money";
-import { ConflictError } from "@server/shared/domain-error";
+import { ConflictError, DomainError } from "@server/shared/domain-error";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import { adminProductsRepository } from "@server/catalog/product.repository";
@@ -90,6 +90,8 @@ export async function validateProductRows(
   const archivedSkus = new Set(
     taken.filter((p) => p.archivedAt).map((p) => p.sku as string)
   );
+  // A row updating a product may keep its running sale price, however deep (the form's rule).
+  const liveIdBySku = new Map(taken.filter((p) => !p.archivedAt).map((p) => [p.sku as string, p.id]));
   const seenInSheet = new Map<string, number>();
 
   for (const { row, rowNumber } of rows) {
@@ -146,11 +148,12 @@ export async function validateProductRows(
     }
     // The product form's refusal, as a row error (offers-hardening Q7).
     if (terms && row.salePrice !== undefined && row.salePrice > 0 && row.salePrice < row.price) {
-      const breach = promotionService.saleFloorBreach(
-        rupeesToPaise(row.price),
-        rupeesToPaise(row.salePrice),
-        terms.maxDiscountBps,
-      );
+      const breach = await promotionService.saleBreach({
+        productId: row.sku ? liveIdBySku.get(row.sku) : undefined,
+        pricePaise: rupeesToPaise(row.price),
+        salePricePaise: rupeesToPaise(row.salePrice),
+        ceilingBps: terms.maxDiscountBps,
+      });
       if (breach) errors.push({ row: rowNumber, field: "salePrice", message: breach });
     }
     if (row.cover && !row.images.includes(row.cover)) {
@@ -311,6 +314,7 @@ export async function createProducts(
     isThumbnail: boolean;
   }[] = [];
   const stock: { productId: string; orgAddressId: string; quantity: number }[] = [];
+  const productIds: string[] = [];
 
   rows.forEach(({ row, rowNumber }, index) => {
     // An updating row writes to the product it names rather than a new one, and keeps that
@@ -318,6 +322,7 @@ export async function createProducts(
     // for freezing a slug at creation).
     const existingId = plan.updates.get(rowNumber);
     const id = existingId ?? randomUUID();
+    productIds[index] = id;
     const coverName = row.cover ?? row.images[0];
     const thumbnail = row.imageUrls[coverName];
 
@@ -368,6 +373,8 @@ export async function createProducts(
     }
   });
 
+  const markdowns = await markdownsFor(orgId, rows, plan.updates, productIds);
+
   // Link each image row to the asset its upload registered (media-library trd D1).
   const assetIds = await mediaAssetRepository.idsByRefs(
     media.filter((row) => row.kind === "IMAGE").map((row) => row.ref),
@@ -392,5 +399,49 @@ export async function createProducts(
     throw error;
   }
 
+  // Written as the product form writes them, after the product (offers-hardening Q24) — so a
+  // failure here leaves the products saved without their sale prices (TRD D12).
+  try {
+    for (const markdown of markdowns) await promotionService.setProductMarkdown(markdown);
+  } catch (error) {
+    throw new DomainError(
+      "Your products were saved, but their sale prices were not. Upload the sheet again to set them — rows with a SKU update their product; rows without one would be created a second time, so add their sale prices on the product page instead.",
+      { status: 500, cause: error },
+    );
+  }
+
   return { created: products.length, updated: updates.length };
+}
+
+/**
+ * Each row's sale price as the markdown the product form would write. A blank cell on an
+ * updating row leaves the product's markdown as it is (the sheet's note says so); a filled one
+ * that is not below the price clears it, as the form does. The ceiling is re-checked here,
+ * before anything is written, because the route's validation is a separate call.
+ */
+async function markdownsFor(
+  orgId: string,
+  rows: RowWithNumber<BulkProductCreateRow>[],
+  updates: Map<number, string>,
+  productIds: string[],
+) {
+  const terms = await commercialTermsService.find(orgId);
+  const markdowns: Parameters<typeof promotionService.setProductMarkdown>[0][] = [];
+  for (const [index, { row, rowNumber }] of rows.entries()) {
+    const isUpdate = updates.has(rowNumber);
+    const productId = productIds[index];
+    if (row.salePrice === undefined) continue;
+    const price = rupeesToPaise(row.price);
+    const sale = rupeesToPaise(row.salePrice);
+    const isMarkdown = sale > 0 && sale < price;
+    if (!isMarkdown && !isUpdate) continue; // a new product has no markdown to clear
+    const breach = isMarkdown && terms
+      ? await promotionService.saleBreach({
+          productId: isUpdate ? productId : undefined, pricePaise: price, salePricePaise: sale, ceilingBps: terms.maxDiscountBps,
+        })
+      : null;
+    if (breach) throw new DomainError(`Row ${rowNumber}: ${breach}`, { field: "salePrice" });
+    markdowns.push({ productId, productName: row.name, orgId, fixedPricePaise: isMarkdown ? sale : null });
+  }
+  return markdowns;
 }

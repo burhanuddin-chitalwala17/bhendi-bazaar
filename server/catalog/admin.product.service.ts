@@ -330,8 +330,7 @@ export class ProductsService {
     productId?: string,
   ): Promise<void> {
     if (!isMarkdown(data)) return;
-    if (productId && (await promotionService.productMarkdownPaise(productId)) === data.salePrice) return;
-    await promotionService.assertSalePriceWithinCeiling(data.orgId, data.price, data.salePrice);
+    await promotionService.assertSalePriceWithinCeiling(data.orgId, data.price, data.salePrice, productId);
   }
 
   // Takes only what it reads, so it serves both the submitted shape and the persisted one.

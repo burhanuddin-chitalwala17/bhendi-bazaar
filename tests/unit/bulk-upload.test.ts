@@ -58,6 +58,15 @@ describe("parseBulkProductRow", () => {
     expect(parsed.row.price).toBe(499.5);
   });
 
+  it("accepts a 0 sale price, which ends a sale on an update, and refuses a negative one (R15)", () => {
+    const zero = parseBulkProductRow(raw({ ...validCells, saleprice: "0" }));
+    if (!("row" in zero)) throw new Error("expected a row");
+    expect(zero.row.salePrice).toBe(0);
+    const negative = parseBulkProductRow(raw({ ...validCells, saleprice: "-5" }, 4));
+    if (!("errors" in negative)) throw new Error("expected errors");
+    expect(negative.errors).toContainEqual(expect.objectContaining({ row: 4, field: "salePrice" }));
+  });
+
   it("rejects a bad video URL as a row error naming the field", () => {
     const parsed = parseBulkProductRow(raw({ ...validCells, video: "https://vimeo.com/12345" }, 7));
     if (!("errors" in parsed)) throw new Error("expected errors");

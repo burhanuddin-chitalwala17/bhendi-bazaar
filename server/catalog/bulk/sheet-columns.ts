@@ -132,7 +132,10 @@ const SPINE_NOTES: Record<(typeof SPINE_COLUMNS)[number], string> = {
   name: "Product name, 2+ characters.",
   description: "Required.",
   price: "Rupees, e.g. 2499 or 499.50.",
-  salePrice: "Optional. Below the price; it is stored as an offer, not as a second price.",
+  salePrice:
+    "Optional. Below the price; it is stored as an offer, not as a second price. On a row " +
+    "that updates a product, leave it empty to keep that product's current sale, or write " +
+    "the price itself (or 0) to end it.",
   category: "One of your category slugs. It is also what decides the product type if left blank.",
   family:
     "Optional: the name of a family this belongs to, for the same thing in several colours. " +

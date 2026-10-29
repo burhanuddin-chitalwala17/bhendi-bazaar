@@ -10,6 +10,31 @@
 
 ## Entries
 
+## 2026-10-29 — bulk sheet sale prices are saved; variant tiles show the shop's own offers
+
+- **Bulk sheet sale prices were parsed and dropped** (own-store Q24). `createProducts`
+  (`server/catalog/bulk/bulk-product.service.ts`) now writes each row's markdown through
+  `promotionService.setProductMarkdown`, as the product form does, for created and SKU-matched
+  updated rows; it re-checks the shop's ceiling before writing anything. A blank cell on an update
+  keeps the current sale; the price or 0 ends it — stated in the sheet's `salePrice` note.
+  An unchanged running markdown is not re-judged, by the form's own rule, now one helper
+  (`promotionService.saleBreach`, used by the form, sheet validation and `createProducts`).
+  A 0 cell now parses (was `positive()`) and deactivates the markdown, never writing a 0 price. A
+  markdown write failing after the import commits says the products were saved without their
+  sale prices, and how to re-upload safely.
+  bulk-catalog-upload spec R14/R15 (and the stale "create-only" line removed), TRD D12.
+- **Variant tiles were priced with `orgId: ""`** (own-store Q25), so a shop's own offers never
+  showed though checkout applied them (ADR-0018). `getFamilySiblings` selects `orgId`;
+  `products.dal.ts` passes it.
+- **Tests:** `tests/integration/bulk-sale-price-and-sibling-offers.test.ts`. Mutations, each red:
+  markdown write removed (2 fail); ceiling re-check disabled (over-cap fails); blank-cell skip
+  removed (update test fails); sibling `orgId` back to `""` (tile test fails); unchanged-markdown
+  skip removed from `saleBreach` (bulk re-upload test and offer-ceiling's form test both fail);
+  schema back to `positive()` (unit 0-cell test fails); 0 written as the price (CHECK violation, 0-cell
+  test fails); 0 skipped on updates (sale stays); post-commit catch rethrowing raw (message test fails).
+- **Gates:** tsc clean; unit 186 files / 2170 passed; integration 44 files / 364 passed (1 file
+  skipped); after these follow-ups, the affected unit and integration files rerun green (33 tests);
+  lint:boundary clean; docs:check 78 passed (ARCHITECTURE.md test-file count 231 → 232).
 ## 2026-10-29 — rate limiting enforced everywhere through one registry
 
 - **Why:** limiting was detached (PR-81) and, where it had existed, added handler by handler, so

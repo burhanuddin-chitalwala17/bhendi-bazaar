@@ -198,7 +198,7 @@ export const productsDAL = {
         const siblings = await productsRepository.getFamilySiblings(product.familyId);
         mapped.siblings = siblings.map((s): ProductSibling => {
           const resolved = resolveProductPrice(
-            { id: s.id, price: s.price, categoryId: s.categoryId, orgId: "" },
+            { id: s.id, price: s.price, categoryId: s.categoryId, orgId: s.orgId },
             context,
           );
           return {
