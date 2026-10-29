@@ -1,0 +1,26 @@
+tests/unit/parcel-reversal.test.ts
+  s_17ac7f5fca5021::t_e0d4f7773feb78 1-160
+tests/integration/parcel-reversal.test.ts
+  s_17ac7f5fca5021::t_3a13a8ac2fea33 1-184,186-198,247-327
+  s_17ac7f5fca5021::t_c9691e05ac681c 199-220,222-246
+prisma/migrations/20261030000100_ledger_parcel_reversal/migration.sql
+  s_17ac7f5fca5021::t_f8993489948d0f 1-23
+docs/CHANGELOG.md
+  s_17ac7f5fca5021::t_bdeb890574f47d 13-16,20-30,33-34,39-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "55292be08ae9b3a2cc1ae4930b5b7ad5cb14d17a",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
