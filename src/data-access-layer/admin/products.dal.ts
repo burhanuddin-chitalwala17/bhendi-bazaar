@@ -7,6 +7,7 @@ import type { Pagination } from "@/types/shared";
 import { ProductFlag } from "@/types/shared";
 import { loadPriceContext, resolveProductPrice } from "@server/promotions/price-context";
 import { wishlistService } from "@server/wishlist/wishlist.service";
+import { promotionService } from "@server/promotions/promotion.service";
 import { isRenderableImageUrl, renderableMedia } from "@server/catalog/image-paths";
 import { toProductMediaDto } from "@server/catalog/media";
 import { parseStoredFacts, parseStoredMeasurements } from "@server/listing/listing-facts";
@@ -15,11 +16,11 @@ import { NotFoundError } from "@server/shared/domain-error";
 import type { ProductCopyOption, ProductCopySource } from "@server/catalog/admin.product.types";
 
 /**
- * A product's sale price, read from its markdown offer rather than a column
- * (promotions D9). Admin sees what a buyer sees, resolved through the same function
- * — a console showing a stale figure is how an org edits the wrong number.
+ * What a buyer pays, for the product table — resolved through the same function the storefront
+ * uses (ADR-0018), platform campaigns included. Display only: the edit form reads the shop's own
+ * markdown instead, since saving a campaign's price would make the shop fund it.
  */
-const markdownOf = (
+const buyerPriceOf = (
   product: { id: string; price: number; orgId: string; categoryId: string },
   context: Awaited<ReturnType<typeof loadPriceContext>>
 ): number | undefined => {
@@ -54,7 +55,7 @@ class ProductsDAL {
         sku: product.sku || "",
         flags: product.flags as ProductFlag[],
         price: product.price,
-        salePrice: markdownOf(product, context),
+        salePrice: buyerPriceOf(product, context),
         currency: product.currency,
         stock: product.stock,
         lowStockThreshold: product.lowStockThreshold,
@@ -84,9 +85,9 @@ class ProductsDAL {
   });
 
   getProductById = cache(async (id: string): Promise<ProductDetails> => {
-    const [product, context] = await Promise.all([
+    const [product, markdown] = await Promise.all([
       productsService.getProductById({ id }),
-      loadPriceContext(),
+      promotionService.productMarkdownPaise(id),
     ]);
     if (!product) {
       throw new Error("Product not found");
@@ -97,7 +98,8 @@ class ProductsDAL {
       name: product.name,
       description: product.description,
       price: product.price,
-      salePrice: markdownOf(product, context),
+      // The shop's own markdown, never the resolved price (offers-hardening R3).
+      salePrice: markdown ?? undefined,
       currency: product.currency,
       category: product.category,
       tags: product.tags,

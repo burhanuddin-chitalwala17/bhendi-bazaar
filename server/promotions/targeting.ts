@@ -7,7 +7,7 @@
  * whole store (ADR-0020).
  */
 
-import type { DiscountableLine, EnginePromotion } from "@server/promotions/promotion.types";
+import type { DiscountableLine, EnginePromotion, OrgCeilings } from "@server/promotions/promotion.types";
 
 /** `categoryId -> parentId`. Null parent is a root. */
 export type CategoryParents = ReadonlyMap<string, string | null>;
@@ -103,9 +103,15 @@ export interface OfferCoverage {
  */
 export function offerCoverage(
   promotions: readonly EnginePromotion[],
-  parents: CategoryParents
+  parents: CategoryParents,
+  orgCeilings: OrgCeilings
 ): OfferCoverage {
-  const automatic = promotions.filter((promotion) => promotion.trigger === "AUTOMATIC");
+  // A shop capped at 0% has its own offers clamped to nothing, so they put nothing on offer (D4).
+  const automatic = promotions.filter(
+    (promotion) =>
+      promotion.trigger === "AUTOMATIC" &&
+      !(promotion.scope === "ORG" && orgCeilings.get(promotion.orgId ?? "") === 0)
+  );
 
   const productIds = new Set<string>();
   const orgIds = new Set<string>();

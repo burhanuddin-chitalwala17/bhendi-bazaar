@@ -49,6 +49,9 @@ export interface EnginePromotion {
   targets: PromotionTargetRow[];
 }
 
+/** Org id → its `maxDiscountBps` (offers-hardening D4). An org absent from the map is not clamped. */
+export type OrgCeilings = ReadonlyMap<string, number>;
+
 /**
  * A line the engine can discount. `unitPrice` is the catalogue price before any
  * offer — offers compete against each other from the same base (ADR-0019), so a

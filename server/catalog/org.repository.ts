@@ -5,6 +5,9 @@ import type { Org } from "@prisma/client";
 import { OrgRole, Prisma } from "@prisma/client";
 import type { CreateOrgInput } from "@server/catalog/org.types";
 
+/** The client or transaction a read may run on. */
+export type OrgDb = Pick<typeof prisma, "org">;
+
 /**
  * An org is born with its two one-to-one rows, so no read path ever meets an absent profile
  * (org-profile spec trd D4). The introduction a creator types is public face and lands there.
@@ -269,6 +272,17 @@ export class OrgRepository {
         commissionBps: true,
         maxDiscountBps: true,
       },
+    });
+  }
+
+  /**
+   * Each org's discount ceiling — on every storefront render, so two columns and no join. A 100%
+   * ceiling clamps nothing and is left out; the default is 50%, so in practice this is every org.
+   */
+  async listDiscountCeilings(db: OrgDb = prisma) {
+    return await db.org.findMany({
+      where: { maxDiscountBps: { lt: 10_000 } },
+      select: { id: true, maxDiscountBps: true },
     });
   }
 

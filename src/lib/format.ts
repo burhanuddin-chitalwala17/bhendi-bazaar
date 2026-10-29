@@ -7,22 +7,11 @@
 
 // Conversions live server-side (dependency direction is inward); re-exported here so
 // client code has one import for all things money.
-export { rupeesToPaise, paiseToRupees } from "@server/shared/money";
+export { rupeesToPaise, paiseToRupees, formatCurrency } from "@server/shared/money";
 
 /** 1250 → 12.5. Rates are stored as integer basis points; this is the one way back to a percent. */
 export function bpsToPercent(bps: number): number {
   return bps / 100;
-}
-
-/** 120050 → "₹1,200.50"; whole-rupee amounts drop the decimals: 120000 → "₹1,200". */
-export function formatCurrency(paise: number, currency: "INR" = "INR") {
-  const wholeRupees = paise % 100 === 0;
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: wholeRupees ? 0 : 2,
-    maximumFractionDigits: wholeRupees ? 0 : 2,
-  }).format(paise / 100);
 }
 
 /**

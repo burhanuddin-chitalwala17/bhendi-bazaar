@@ -13,6 +13,7 @@ import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain
 import type { PromotionFormInput } from "@/lib/validation/schemas/promotion.schema";
 import { productService } from "@server/catalog/product.service";
 import { commercialTermsService } from "@server/catalog/commercial-terms.service";
+import { offerCeilingBreach } from "@server/promotions/ceiling";
 
 /** Who is creating the offer, and therefore who funds it. */
 export type PromotionOwner = { scope: "PLATFORM" } | { scope: "ORG"; orgId: string };
@@ -28,9 +29,10 @@ export class AdminPromotionService {
    */
   private async toRow(input: PromotionFormInput, owner: PromotionOwner) {
     if (owner.scope === "ORG") {
-      await this.assertWithinOrgCeiling(input, owner.orgId);
       await this.assertCodePrefixed(input, owner.orgId);
+      // Ownership first: the ceiling message quotes a product's price.
       await this.assertProductsBelongToOrg(input, owner.orgId);
+      await this.assertWithinOrgCeiling(input, owner.orgId);
     }
 
     return {
@@ -58,7 +60,9 @@ export class AdminPromotionService {
    *
    * A guard against mis-keying a margin away, which is a real hazard with self-serve
    * signup — not a platform protection, since an organisation's own discount shrinks
-   * the platform's commission proportionally and can never drive it negative.
+   * the platform's commission proportionally and can never drive it negative. A flat or
+   * fixed-price offer is checked only on the products it names; on a category or everything
+   * the price is not knowable here, and the engine clamps instead (offers-hardening Q7).
    */
   private async assertWithinOrgCeiling(input: PromotionFormInput, orgId: string) {
     const org = await commercialTermsService.find(orgId);
@@ -73,6 +77,18 @@ export class AdminPromotionService {
         `Your organisation's offers are capped at ${org.maxDiscountBps / 100}%`,
         { field: "percent" }
       );
+    }
+
+    const flat = input.valueType === "AMOUNT_OFF" && input.amountOff !== undefined;
+    const fixed = input.valueType === "FIXED_PRICE" && input.fixedPrice !== undefined;
+    if ((!flat && !fixed) || input.productIds.length === 0) return;
+
+    for (const product of await productService.listForPricing(input.productIds)) {
+      const amountOff = flat
+        ? rupeesToPaise(input.amountOff as number)
+        : product.price - rupeesToPaise(input.fixedPrice as number);
+      const breach = offerCeilingBreach(product.price, amountOff, org.maxDiscountBps);
+      if (breach) throw new DomainError(breach, { field: flat ? "amountOff" : "fixedPrice" });
     }
   }
 

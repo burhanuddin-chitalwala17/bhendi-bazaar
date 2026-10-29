@@ -15,10 +15,15 @@ import {
 } from "@server/promotions/promotion.repository";
 import { normaliseCode, quoteDiscounts } from "@server/promotions/discount-engine";
 import { isExhausted, isLive } from "@server/promotions/targeting";
+import { saleFloorBreach } from "@server/promotions/ceiling";
 import { DomainError, ConflictError } from "@server/shared/domain-error";
+import {
+  commercialTermsService,
+  type CommercialTermsDb,
+} from "@server/catalog/commercial-terms.service";
 import type { DiscountQuote, DiscountableLine } from "@server/promotions/promotion.types";
 
-type Db = PromotionDb;
+type Db = PromotionDb & CommercialTermsDb;
 
 export class PromotionService {
   /**
@@ -45,9 +50,10 @@ export class PromotionService {
     const db = options.db ?? prisma;
     const typed = options.code ? normaliseCode(options.code) : null;
 
-    const [live, categoryParents] = await Promise.all([
+    const [live, categoryParents, orgCeilings] = await Promise.all([
       promotionRepository.listLive(now, db),
       promotionRepository.categoryParents(db),
+      commercialTermsService.allCeilings(db),
     ]);
 
     // The typed code is fetched separately and unfiltered by the window, so an
@@ -73,6 +79,7 @@ export class PromotionService {
       lines,
       promotions,
       categoryParents,
+      orgCeilings,
       code: typed,
       userId: options.userId ?? null,
       priorRedemptions,
@@ -186,6 +193,32 @@ export class PromotionService {
         isActive: true,
       }
     );
+  }
+
+  /**
+   * Refuse a sale price deeper than the shop's discount ceiling, before anything is saved
+   * (offers-hardening R3, Q7). The engine clamps one a later price edit breaches.
+   */
+  async assertSalePriceWithinCeiling(orgId: string, pricePaise: number, salePricePaise: number): Promise<void> {
+    const terms = await commercialTermsService.find(orgId);
+    if (!terms) return;
+    const breach = this.saleFloorBreach(pricePaise, salePricePaise, terms.maxDiscountBps);
+    if (breach) throw new DomainError(breach, { field: "salePrice" });
+  }
+
+  /** The same refusal as words, for a caller that reports rows rather than throwing (bulk sheet). */
+  saleFloorBreach(pricePaise: number, salePricePaise: number, ceilingBps: number): string | null {
+    return saleFloorBreach(pricePaise, salePricePaise, ceilingBps);
+  }
+
+  /**
+   * The sale price this product's own markdown sets, or null when it has none running. What the
+   * edit form shows — never the resolved price, which a platform campaign may have set and which
+   * saving would turn into a shop-funded markdown.
+   */
+  async productMarkdownPaise(productId: string): Promise<number | null> {
+    const state = await promotionRepository.findMarkdownState(`mkdn_${productId}`);
+    return state?.isActive ? state.fixedPricePaise : null;
   }
 
   /** Give back the coupon uses an expiring order was holding (D11). */

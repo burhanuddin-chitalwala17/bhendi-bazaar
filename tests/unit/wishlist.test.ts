@@ -50,6 +50,7 @@ const tenPercentOff: PriceContext = {
     } as EnginePromotion,
   ],
   categoryParents: new Map([["cat-1", null]]),
+  orgCeilings: new Map(),
   now: new Date("2026-09-01T00:00:00Z"),
 };
 

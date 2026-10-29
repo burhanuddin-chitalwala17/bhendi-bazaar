@@ -88,10 +88,11 @@ async function offerFilter() {
   // is request-memoised, so this costs nothing here — and the filter now shares the
   // context's clock, so a listing cannot filter by one offer set and label prices
   // with another across an offer boundary.
-  const { promotions, categoryParents } = await loadPriceContext();
+  const { promotions, categoryParents, orgCeilings } = await loadPriceContext();
   const { coversEverything, productIds, orgIds, categoryIds } = offerCoverage(
     promotions,
     categoryParents,
+    orgCeilings,
   );
   if (coversEverything) return {};
   const clauses = [

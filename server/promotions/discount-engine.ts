@@ -26,6 +26,7 @@ import type {
   DiscountableLine,
   EnginePromotion,
   LineDiscount,
+  OrgCeilings,
   PromotionAttribution,
 } from "@server/promotions/promotion.types";
 
@@ -42,15 +43,41 @@ export function normaliseCode(code: string): string {
  * line total — rounding the line instead would make them disagree by a paise, and
  * ADR-0018 does not allow the displayed price and the charged price to differ.
  */
-export function automaticUnitDiscount(promotion: EnginePromotion, unitPrice: number): number {
+export function automaticUnitDiscount(
+  promotion: EnginePromotion,
+  unitPrice: number,
+  orgId: string,
+  orgCeilings: OrgCeilings
+): number {
+  let discount: number;
   switch (promotion.valueType) {
     case "PERCENT":
-      return Math.min(unitPrice, applyBps(unitPrice, promotion.percentBps ?? 0));
+      discount = Math.min(unitPrice, applyBps(unitPrice, promotion.percentBps ?? 0));
+      break;
     case "AMOUNT_OFF":
-      return Math.min(unitPrice, Math.max(0, promotion.amountOffPaise ?? 0));
+      discount = Math.min(unitPrice, Math.max(0, promotion.amountOffPaise ?? 0));
+      break;
     case "FIXED_PRICE":
-      return Math.max(0, unitPrice - Math.max(0, promotion.fixedPricePaise ?? 0));
+      discount = Math.max(0, unitPrice - Math.max(0, promotion.fixedPricePaise ?? 0));
+      break;
   }
+  return withinOrgCeiling(promotion, discount, unitPrice, orgId, orgCeilings);
+}
+
+/**
+ * A shop's own offer never takes off more than its ceiling of `basePaise` (offers-hardening D4).
+ * Clamped here, not only refused at the form, because a later price edit can breach it (Q7).
+ */
+function withinOrgCeiling(
+  promotion: EnginePromotion,
+  discountPaise: number,
+  basePaise: number,
+  orgId: string,
+  orgCeilings: OrgCeilings
+): number {
+  if (promotion.scope !== "ORG") return discountPaise;
+  const bps = orgCeilings.get(orgId);
+  return bps === undefined ? discountPaise : Math.min(discountPaise, applyBps(basePaise, bps));
 }
 
 /** What one coupon takes off its eligible base, after its cap. */
@@ -98,7 +125,9 @@ export function automaticUnitPrice(
   line: Pick<DiscountableLine, "productId" | "orgId" | "categoryId" | "unitPrice">,
   promotions: readonly EnginePromotion[],
   categoryParents: CategoryParents,
-  now: Date
+  now: Date,
+  /** Org id → `maxDiscountBps`; an org absent from the map is not clamped. */
+  orgCeilings: OrgCeilings
 ): {
   effectivePaise: number;
   discountPerUnitPaise: number;
@@ -114,7 +143,7 @@ export function automaticUnitPrice(
     if (!isLive(promotion, now) || isExhausted(promotion)) continue;
     if (!promotionCoversLine(promotion, asLine, categoryParents)) continue;
 
-    const amountPaise = automaticUnitDiscount(promotion, line.unitPrice);
+    const amountPaise = automaticUnitDiscount(promotion, line.unitPrice, line.orgId, orgCeilings);
     if (amountPaise <= 0) continue;
 
     const candidate = { promotionId: promotion.id, amountPaise };
@@ -139,6 +168,8 @@ export interface QuoteInput {
   /** Every candidate offer, live or not — the engine decides, so it can say why. */
   promotions: readonly EnginePromotion[];
   categoryParents: CategoryParents;
+  /** Org id → `maxDiscountBps`, bounding each shop's own offers (offers-hardening D4). */
+  orgCeilings: OrgCeilings;
   /** What the buyer typed, if anything. A code, never an amount (Invariant 1). */
   code?: string | null;
   /** Null for a guest — an identity the per-buyer limit can be counted against. */
@@ -164,7 +195,7 @@ const REJECTION_MESSAGES: Record<string, string> = {
  * displayed for it" is then a property of that expression rather than a branch.
  */
 export function quoteDiscounts(input: QuoteInput): DiscountQuote {
-  const { lines, promotions, categoryParents, now } = input;
+  const { lines, promotions, categoryParents, orgCeilings, now } = input;
   const typed = input.code ? normaliseCode(input.code) : null;
 
   // Every per-line map below is keyed by `line.key`, so a repeated key would price each copy
@@ -187,7 +218,7 @@ export function quoteDiscounts(input: QuoteInput): DiscountQuote {
 
     for (const line of lines) {
       if (!promotionCoversLine(promotion, line, categoryParents)) continue;
-      const perUnit = automaticUnitDiscount(promotion, line.unitPrice);
+      const perUnit = automaticUnitDiscount(promotion, line.unitPrice, line.orgId, orgCeilings);
       if (perUnit <= 0) continue;
 
       const candidate = { promotionId: promotion.id, amountPaise: perUnit * line.quantity };
@@ -260,8 +291,11 @@ export function quoteDiscounts(input: QuoteInput): DiscountQuote {
             eligible.map((l) => l.unitPrice * l.quantity)
           );
           eligible.forEach((line, i) => {
-            if (shares[i] > 0) {
-              couponShare.set(line.key, { promotionId: match.id, amountPaise: shares[i] });
+            const amountPaise = withinOrgCeiling(
+              match, shares[i], line.unitPrice * line.quantity, line.orgId, orgCeilings
+            );
+            if (amountPaise > 0) {
+              couponShare.set(line.key, { promotionId: match.id, amountPaise });
             }
             couponCoveredKeys.push(line.key);
           });

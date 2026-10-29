@@ -114,10 +114,11 @@ describe.skipIf(!isDisposableDb)("db ops budgets", () => {
   });
 
   it("getOfferProducts stays within budget", async () => {
-    // 2 for the price context (no request dedupe in vitest) + 1 joined product
+    // 3 for the price context (no request dedupe in vitest) + 1 joined product
     // read. On a rendered page the context is request-shared, so the real
-    // marginal cost is the product read alone.
+    // marginal cost is the product read alone. Raised 3 → 4 by offers-hardening D4:
+    // the context now carries each shop's discount ceiling, one two-column read.
     const n = await countQueries(() => productsRepository.getOfferProducts(4));
-    expect(n).toBeLessThanOrEqual(3);
+    expect(n).toBeLessThanOrEqual(4);
   });
 });

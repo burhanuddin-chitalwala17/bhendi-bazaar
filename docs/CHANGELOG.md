@@ -10,6 +10,47 @@
 
 ## Entries
 
+## 2026-10-29 — offers-hardening unit 4: a shop's discount ceiling holds for every kind of offer
+
+- **A 50%-capped shop could set ₹9,999 off a ₹10,000 item, or a ₹1 sale price.** The ceiling was
+  checked only for percentage offers at creation. It is now an engine input (D4, R3): `quoteDiscounts`
+  and `automaticUnitPrice` take `orgCeilings` (org id → `maxDiscountBps`); an ORG offer's per-unit
+  discount is clamped to `applyBps(unitPrice, cap)` inside `automaticUnitDiscount`, so the product
+  page and the charge share it (ADR-0018), and an ORG coupon's line share to `applyBps(lineTotal, cap)`.
+  Platform offers are not clamped.
+- **Loading:** `commercialTermsService.allCeilings()` reads every org's ceiling in one two-column
+  query (one row per org, so it grows with the number of shops); `loadPriceContext` and
+  `promotionService.quote` load it beside the offers. The `getOfferProducts` query budget rises
+  3 → 4 for it, reason recorded beside the budget.
+- **The edit form could make a shop fund a platform campaign.** It pre-filled the sale price from
+  the resolved price, platform offers included, and saving turned that into a shop markdown — or,
+  with the ceiling, refused a description edit. The form now reads only the shop's own markdown
+  (`promotionService.productMarkdownPaise`); the product table still shows the buyer's price. A
+  sale price the save leaves unchanged is not re-judged, so an older over-cap markdown cannot block
+  an edit; the engine clamps it. Copy-product and the bulk template carry no sale price.
+- **A 0% ceiling:** `offerCoverage` takes the ceilings and leaves out a 0%-capped shop's offers, so
+  its products are not listed as "on offer" for a discount of nothing.
+- **Forms refuse what they can know (Q7):** an ORG flat or fixed-price offer naming products is
+  checked against each product's price, with ux.md's words on `amountOff`/`fixedPrice`; the product
+  form's sale price is refused before the product is saved, on `salePrice`; a bulk sheet row gets
+  the same words as a row error. Offers on categories or everything are clamped, not refused.
+- `formatCurrency` moved to `server/shared/money.ts` (re-exported unchanged from `src/lib/format.ts`)
+  so a refusal quotes rupees as the UI does. Ownership is now checked before the ceiling, since the
+  message quotes a price.
+- Tests: engine unit tests per value type, coupon share, platform unclamped, rounding, and
+  per-unit = line ÷ quantity (A4); `tests/integration/offer-ceiling.test.ts` (offer form, fixed
+  price, product form, bulk row, and a directly inserted over-cap offer at 50% on page and charge).
+- Also: engine tests pinning D2a under the clamp (deeper platform automatic vs clamped shop offer;
+  clamped shop coupon vs platform automatic); edit-form integration tests (60% campaign + 50% cap
+  description edit saves and makes no markdown; own markdown round-trips; old over-cap markdown
+  survives an edit); `offerCoverage` 0% case.
+- Mutations, each red then restored: clamp disabled (8 A4 tests red, unit and integration); clamp
+  applied to platform offers (2 red); each form refusal removed — offer, sale price, bulk row (4 red);
+  edit form fed the resolved price (2 red); no skip for an unchanged markdown (1 red); coupon share
+  unclamped (2 red, incl. D2a); 0%-ceiling filter removed from `offerCoverage` (1 red).
+- `docs/ARCHITECTURE.md` counts: test files 226 → 227.
+- Suites: tsc, unit, integration, `lint:boundary`, `docs:check`.
+
 ## 2026-10-29 — offers-hardening unit 3: preview equals charge, a beaten coupon steps aside, the database refuses impossible discounts [MIGRATION]
 
 - **The preview took ₹1,000 off where the charge took ₹600** (₹1,000 item as quantities 1 and 5,

@@ -50,16 +50,19 @@ const parents: CategoryParents = new Map([
   ["other", null],
 ]);
 
+const NO_CEILINGS: ReadonlyMap<string, number> = new Map();
+
 describe("offerCoverage", () => {
   it("an untargeted platform offer covers everything", () => {
-    const coverage = offerCoverage([promo({})], parents);
+    const coverage = offerCoverage([promo({})], parents, NO_CEILINGS);
     expect(coverage.coversEverything).toBe(true);
   });
 
   it("an untargeted org offer covers the org, not everything", () => {
     const coverage = offerCoverage(
       [promo({ scope: "ORG", orgId: "org-1" })],
-      parents
+      parents,
+      NO_CEILINGS
     );
     expect(coverage.coversEverything).toBe(false);
     expect(coverage.orgIds).toEqual(["org-1"]);
@@ -70,7 +73,8 @@ describe("offerCoverage", () => {
   it("a product target names exactly that product", () => {
     const coverage = offerCoverage(
       [promo({ targets: [target({ productId: "prod-1" })] })],
-      parents
+      parents,
+      NO_CEILINGS
     );
     expect(coverage.productIds).toEqual(["prod-1"]);
     expect(coverage.coversEverything).toBe(false);
@@ -79,7 +83,8 @@ describe("offerCoverage", () => {
   it("a category target reaches its whole subtree", () => {
     const coverage = offerCoverage(
       [promo({ targets: [target({ categoryId: "root" })] })],
-      parents
+      parents,
+      NO_CEILINGS
     );
     expect([...coverage.categoryIds].sort()).toEqual(["leaf", "mid", "root"]);
     expect(coverage.categoryIds).not.toContain("other");
@@ -88,7 +93,8 @@ describe("offerCoverage", () => {
   it("a mid-tree target reaches down, never up", () => {
     const coverage = offerCoverage(
       [promo({ targets: [target({ categoryId: "mid" })] })],
-      parents
+      parents,
+      NO_CEILINGS
     );
     expect([...coverage.categoryIds].sort()).toEqual(["leaf", "mid"]);
   });
@@ -96,7 +102,8 @@ describe("offerCoverage", () => {
   it("CODE offers never surface as automatic coverage", () => {
     const coverage = offerCoverage(
       [promo({ trigger: "CODE", code: "SAVE10" })],
-      parents
+      parents,
+      NO_CEILINGS
     );
     expect(coverage.coversEverything).toBe(false);
     expect(coverage.productIds).toEqual([]);
@@ -105,7 +112,7 @@ describe("offerCoverage", () => {
   });
 
   it("no live offers means empty coverage, never everything", () => {
-    const coverage = offerCoverage([], parents);
+    const coverage = offerCoverage([], parents, NO_CEILINGS);
     expect(coverage.coversEverything).toBe(false);
     expect(coverage.productIds).toEqual([]);
   });
@@ -117,10 +124,22 @@ describe("offerCoverage", () => {
         promo({ id: "p2", targets: [target({ categoryId: "other" })] }),
         promo({ id: "p3", scope: "ORG", orgId: "org-9" }),
       ],
-      parents
+      parents,
+      NO_CEILINGS
     );
     expect(coverage.productIds).toEqual(["prod-1"]);
     expect(coverage.categoryIds).toEqual(["other"]);
     expect(coverage.orgIds).toEqual(["org-9"]);
+  });
+
+  it("an org offer from a shop with a 0% ceiling discounts nothing, so covers nothing (offers-hardening D4)", () => {
+    const coverage = offerCoverage(
+      [promo({ scope: "ORG", orgId: "org-0", targets: [target({ productId: "prod-0" })] }),
+       promo({ id: "p2", scope: "ORG", orgId: "org-0" })],
+      parents,
+      new Map([["org-0", 0]])
+    );
+    expect(coverage.productIds).toEqual([]);
+    expect(coverage.orgIds).toEqual([]);
   });
 });

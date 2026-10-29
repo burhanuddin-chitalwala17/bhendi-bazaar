@@ -184,6 +184,7 @@ export class ProductsService {
     await this.checkSlots(data);
     await this.checkKind(data);
     const priced = { ...this.moneyToPaise(data), ...(await this.fill(data)) };
+    await this.checkMarkdown(priced);
     const product = await adminProductsRepository.createProduct(priced);
     await this.syncMarkdown(product.id, priced);
     return product;
@@ -245,6 +246,7 @@ export class ProductsService {
     const before = await adminProductsRepository.marketplaceFacts(data.orgId, id);
     const stored = before ? { facts: before.facts as never, measurements: before.measurements as never } : undefined;
     const priced = { ...this.moneyToPaise(data), ...(await this.fill(data, stored)) };
+    await this.checkMarkdown(priced, id);
     const product = await adminProductsRepository.updateProduct(id, priced);
     if (!product) {
       throw new NotFoundError("Product not found");
@@ -318,18 +320,30 @@ export class ProductsService {
    * Clearing the field deactivates the offer rather than deleting it, since it may
    * already be named by an order's discount record.
    */
+  /**
+   * A sale price is refused below the shop's discount ceiling before the product is saved
+   * (offers-hardening Q7). One the save leaves as it was is not re-judged: `setProductMarkdown`
+   * writes nothing for it, and the engine clamps it, so an old markdown cannot block an edit.
+   */
+  private async checkMarkdown(
+    data: Pick<ProductFormInput, "salePrice" | "price" | "orgId">,
+    productId?: string,
+  ): Promise<void> {
+    if (!isMarkdown(data)) return;
+    if (productId && (await promotionService.productMarkdownPaise(productId)) === data.salePrice) return;
+    await promotionService.assertSalePriceWithinCeiling(data.orgId, data.price, data.salePrice);
+  }
+
   // Takes only what it reads, so it serves both the submitted shape and the persisted one.
   private async syncMarkdown(
     productId: string,
     data: Pick<ProductFormInput, "salePrice" | "price" | "name" | "orgId">,
   ): Promise<void> {
-    const markdown = data.salePrice;
-    const valid = markdown !== undefined && markdown > 0 && markdown < data.price;
     await promotionService.setProductMarkdown({
       productId,
       productName: data.name,
       orgId: data.orgId,
-      fixedPricePaise: valid ? markdown : null,
+      fixedPricePaise: isMarkdown(data) ? data.salePrice : null,
     });
   }
 
@@ -349,3 +363,8 @@ export class ProductsService {
 }
 
 export const productsService = new ProductsService();
+
+/** A sale price that marks the product down; anything else clears the markdown. */
+function isMarkdown<T extends { salePrice?: number; price: number }>(data: T): data is T & { salePrice: number } {
+  return data.salePrice !== undefined && data.salePrice > 0 && data.salePrice < data.price;
+}

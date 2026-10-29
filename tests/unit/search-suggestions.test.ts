@@ -46,6 +46,7 @@ const tenPercentOff: EnginePromotion = {
 const withOffer: PriceContext = {
   promotions: [tenPercentOff],
   categoryParents: new Map([["veg", null]]),
+  orgCeilings: new Map(),
   now: new Date("2026-06-01"),
 };
 

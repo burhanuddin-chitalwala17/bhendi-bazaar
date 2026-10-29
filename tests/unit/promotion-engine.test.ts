@@ -56,6 +56,9 @@ const line = (o: Partial<DiscountableLine> = {}): DiscountableLine => ({
   ...o,
 });
 
+/** No org has a ceiling, so nothing is clamped — the engine's behaviour before offers-hardening D4. */
+const NO_CEILINGS: ReadonlyMap<string, number> = new Map();
+
 const EARBUDS = line();
 const KURTA = line({
   key: "kurta::::",
@@ -68,12 +71,14 @@ const quote = (
   lines: DiscountableLine[],
   promotions: EnginePromotion[],
   code?: string,
-  buyer: { userId?: string | null; priorRedemptions?: number } = {}
+  buyer: { userId?: string | null; priorRedemptions?: number } = {},
+  orgCeilings: ReadonlyMap<string, number> = NO_CEILINGS
 ) =>
   quoteDiscounts({
     lines,
     promotions,
     categoryParents: PARENTS,
+    orgCeilings,
     code,
     now: NOW,
     userId: buyer.userId,
@@ -477,7 +482,7 @@ describe("the worked example from the architecture note", () => {
 
 describe("automaticUnitPrice — what a product page shows (ADR-0018)", () => {
   it("returns the reduced price and the offer that set it", () => {
-    const result = automaticUnitPrice(EARBUDS, [promo({ id: "auto", label: "20% off", percentBps: 2000 })], PARENTS, NOW);
+    const result = automaticUnitPrice(EARBUDS, [promo({ id: "auto", label: "20% off", percentBps: 2000 })], PARENTS, NOW, NO_CEILINGS);
     expect(result.effectivePaise).toBe(160000);
     expect(result.discountPerUnitPaise).toBe(40000);
     expect(result.promotionId).toBe("auto");
@@ -489,7 +494,8 @@ describe("automaticUnitPrice — what a product page shows (ADR-0018)", () => {
       EARBUDS,
       [promo({ trigger: "CODE", code: "SUMMER20" })],
       PARENTS,
-      NOW
+      NOW,
+      NO_CEILINGS
     );
     expect(result.effectivePaise).toBe(200000);
     expect(result.promotionId).toBeNull();
@@ -500,7 +506,8 @@ describe("automaticUnitPrice — what a product page shows (ADR-0018)", () => {
       EARBUDS,
       [promo({ valueType: "FIXED_PRICE", percentBps: null, fixedPricePaise: 96000 })],
       PARENTS,
-      NOW
+      NOW,
+      NO_CEILINGS
     );
     expect(result.effectivePaise).toBe(96000);
     expect(result.discountPerUnitPaise).toBe(104000);
@@ -508,7 +515,7 @@ describe("automaticUnitPrice — what a product page shows (ADR-0018)", () => {
 
   it("agrees with the engine, so display and charge cannot diverge", () => {
     const offers = [promo({ id: "auto", scope: "ORG", orgId: "abc", percentBps: 1500 })];
-    const shown = automaticUnitPrice(EARBUDS, offers, PARENTS, NOW);
+    const shown = automaticUnitPrice(EARBUDS, offers, PARENTS, NOW, NO_CEILINGS);
     const charged = quote([{ ...EARBUDS, quantity: 3 }], offers);
     expect(charged.lines[0].buyerDiscountPaise).toBe(shown.discountPerUnitPaise * 3);
   });
@@ -594,5 +601,111 @@ describe("repeated lines (offers-hardening D8)", () => {
     expect(() =>
       quote([EARBUDS, line({ quantity: 5 })], [promo({ percentBps: 1000 })])
     ).toThrow(/duplicate line key/i);
+  });
+});
+
+describe("a shop's discount ceiling bounds its own offers (offers-hardening D4, spec A4)", () => {
+  const CAPPED = new Map([["abc", 5000]]); // org "abc" may take off at most 50%
+  const own = (o: Partial<EnginePromotion>) => promo({ id: "own", scope: "ORG", orgId: "abc", ...o });
+  const shown = (offers: EnginePromotion[], l = EARBUDS) =>
+    automaticUnitPrice(l, offers, PARENTS, NOW, CAPPED).discountPerUnitPaise;
+  const charged = (offers: EnginePromotion[], l: DiscountableLine, code?: string) =>
+    quote([l], offers, code, { userId: "u" }, CAPPED).lines[0];
+
+  it.each([
+    ["PERCENT over the cap", own({ percentBps: 8000 })],
+    ["AMOUNT_OFF", own({ valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 199_900 })],
+    ["FIXED_PRICE", own({ valueType: "FIXED_PRICE", percentBps: null, fixedPricePaise: 100 })],
+  ])("%s takes off at most the cap, shown and charged alike (spec A4)", (_, offer) => {
+    expect(shown([offer])).toBe(100_000);
+    const l = charged([offer], { ...EARBUDS, quantity: 3 });
+    expect(l.buyerDiscountPaise).toBe(300_000);
+    expect(l.orgFundedPaise).toBe(300_000);
+  });
+
+  it("rounds the cap down, so a clamped offer never exceeds it (spec A4)", () => {
+    const odd = line({ unitPrice: 199_999 });
+    const offer = own({ valueType: "FIXED_PRICE", percentBps: null, fixedPricePaise: 1 });
+    expect(shown([offer], odd)).toBe(99_999);
+    expect(charged([offer], { ...odd, quantity: 7 }).buyerDiscountPaise).toBe(99_999 * 7);
+  });
+
+  it("an ORG coupon's share of each line is clamped to the cap on that line (spec A4)", () => {
+    const coupon = own({
+      trigger: "CODE", code: "ABC-BIG", valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 300_000,
+    });
+    const result = quote([EARBUDS, KURTA], [coupon], "ABC-BIG", { userId: "u" }, CAPPED);
+    expect(result.lines.map((l) => l.buyerDiscountPaise)).toEqual([100_000, 75_000]);
+    expect(result.totalDiscountPaise).toBe(175_000);
+    expect(result.attributions[0].orgFundedPaise).toBe(175_000);
+    expectInternallyConsistent(result, [EARBUDS, KURTA]);
+  });
+
+  it("a platform offer is not clamped by a shop's ceiling (spec A4)", () => {
+    const platform = promo({ id: "plat", percentBps: 8000 });
+    expect(shown([platform])).toBe(160_000);
+    expect(charged([platform], EARBUDS).buyerDiscountPaise).toBe(160_000);
+  });
+
+  it("a deeper platform offer still tops up over the clamped one, funding only the difference (spec A4)", () => {
+    const offers = [own({ percentBps: 9000 }), promo({ id: "plat", percentBps: 6000 })];
+    const l = charged(offers, EARBUDS);
+    expect(l.buyerDiscountPaise).toBe(120_000);
+    expect(l.orgFundedPaise).toBe(100_000);
+    expect(l.platformFundedPaise).toBe(20_000);
+  });
+
+  it("an org with no ceiling loaded is not clamped", () => {
+    expect(automaticUnitPrice(EARBUDS, [own({ percentBps: 8000 })], PARENTS, NOW, NO_CEILINGS).discountPerUnitPaise)
+      .toBe(160_000);
+  });
+
+  it("automaticUnitPrice per unit equals quoteDiscounts line ÷ quantity for every kind (spec A4)", () => {
+    const kinds = [
+      own({ percentBps: 7777 }),
+      own({ valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 150_001 }),
+      own({ valueType: "FIXED_PRICE", percentBps: null, fixedPricePaise: 333 }),
+      own({ percentBps: 1234 }),
+    ];
+    for (const offer of kinds) {
+      for (const unitPrice of [1, 3, 999, 100_001, 199_999]) {
+        for (const quantity of [1, 2, 7]) {
+          const l = line({ unitPrice, quantity });
+          const perUnit = automaticUnitPrice(l, [offer], PARENTS, NOW, CAPPED).discountPerUnitPaise;
+          expect(charged([offer], l).buyerDiscountPaise).toBe(perUnit * quantity);
+          expect(perUnit).toBeLessThanOrEqual(Math.floor(unitPrice / 2));
+        }
+      }
+    }
+  });
+
+  it("D2a under the clamp: a deeper platform automatic offer funds only above the shop's cap (spec A4)", () => {
+    // Shop offers 90%, clamped to 50%; platform runs 70%. The platform funds 20%, never the clamped-away 40%.
+    const offers = [own({ percentBps: 9000 }), promo({ id: "plat", percentBps: 7000 })];
+    const l = charged(offers, { ...EARBUDS, quantity: 2 });
+    expect(l.buyerDiscountPaise).toBe(280_000);
+    expect(l.orgFundedPaise).toBe(200_000);
+    expect(l.platformFundedPaise).toBe(80_000);
+    expect(l.orgFundedPaise + l.platformFundedPaise).toBe(l.buyerDiscountPaise);
+  });
+
+  it("D2a under the clamp: a clamped shop coupon against a platform automatic offer (spec A4)", () => {
+    // Coupon would take ₹1,800 of ₹2,000, clamped to ₹1,000; platform automatic is 30% (₹600).
+    const coupon = own({
+      trigger: "CODE", code: "ABC-DEEP", valueType: "AMOUNT_OFF", percentBps: null, amountOffPaise: 180_000,
+    });
+    const result = quote([EARBUDS], [coupon, promo({ id: "plat", percentBps: 3000 })], "ABC-DEEP", { userId: "u" }, CAPPED);
+    const l = result.lines[0];
+    expect(l.buyerDiscountPaise).toBe(100_000);
+    expect(l.orgFundedPaise).toBe(100_000);
+    expect(l.platformFundedPaise).toBe(0);
+    expect(result.rejection).toBeNull();
+
+    // And when the platform's offer is deeper than the clamped coupon, it tops up only the difference.
+    const deeper = quote([EARBUDS], [coupon, promo({ id: "plat", percentBps: 6000 })], "ABC-DEEP", { userId: "u" }, CAPPED);
+    expect(deeper.lines[0].buyerDiscountPaise).toBe(120_000);
+    expect(deeper.lines[0].orgFundedPaise).toBe(100_000);
+    expect(deeper.lines[0].platformFundedPaise).toBe(20_000);
+    expectInternallyConsistent(deeper, [EARBUDS]);
   });
 });

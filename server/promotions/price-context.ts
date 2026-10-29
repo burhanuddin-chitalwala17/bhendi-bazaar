@@ -14,12 +14,15 @@
 import { cache } from "react";
 import { promotionRepository } from "@server/promotions/promotion.repository";
 import { automaticUnitPrice } from "@server/promotions/discount-engine";
-import type { EnginePromotion } from "@server/promotions/promotion.types";
+import { commercialTermsService } from "@server/catalog/commercial-terms.service";
+import type { EnginePromotion, OrgCeilings } from "@server/promotions/promotion.types";
 import type { CategoryParents } from "@server/promotions/targeting";
 
 export interface PriceContext {
   promotions: EnginePromotion[];
   categoryParents: CategoryParents;
+  /** Each shop's discount ceiling, which bounds its own offers here exactly as at checkout. */
+  orgCeilings: OrgCeilings;
   now: Date;
 }
 
@@ -31,17 +34,19 @@ export interface PriceContext {
  */
 export const loadPriceContext = cache(async (): Promise<PriceContext> => {
   const now = new Date();
-  const [promotions, categoryParents] = await Promise.all([
+  const [promotions, categoryParents, orgCeilings] = await Promise.all([
     promotionRepository.listLive(now),
     promotionRepository.categoryParents(),
+    commercialTermsService.allCeilings(),
   ]);
-  return { promotions, categoryParents, now };
+  return { promotions, categoryParents, orgCeilings, now };
 });
 
 /** A price context with no offers — for callers that must not hit the database. */
 export const EMPTY_PRICE_CONTEXT: PriceContext = {
   promotions: [],
   categoryParents: new Map(),
+  orgCeilings: new Map(),
   now: new Date(0),
 };
 
@@ -72,7 +77,8 @@ export function resolveProductPrice(
     },
     context.promotions,
     context.categoryParents,
-    context.now
+    context.now,
+    context.orgCeilings
   );
 
   return {

@@ -22,6 +22,8 @@ import { ConflictError } from "@server/shared/domain-error";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
 import { adminProductsRepository } from "@server/catalog/product.repository";
+import { commercialTermsService } from "@server/catalog/commercial-terms.service";
+import { promotionService } from "@server/promotions/promotion.service";
 import {
   BULK_MAX_ROWS,
   type BulkProductRow,
@@ -69,9 +71,10 @@ export async function validateProductRows(
     return errors;
   }
 
-  const [categories, locations] = await Promise.all([
+  const [categories, locations, terms] = await Promise.all([
     categoryRepository.list(),
     orgAddressRepository.listByOrg(orgId),
+    commercialTermsService.find(orgId),
   ]);
   const categorySlugs = new Set(categories.map((c) => c.slug));
   const locationByName = new Map(locations.map((l) => [l.name.trim().toLowerCase(), l]));
@@ -140,6 +143,15 @@ export async function validateProductRows(
           message: imageMatchMessage(reference, match),
         });
       }
+    }
+    // The product form's refusal, as a row error (offers-hardening Q7).
+    if (terms && row.salePrice !== undefined && row.salePrice > 0 && row.salePrice < row.price) {
+      const breach = promotionService.saleFloorBreach(
+        rupeesToPaise(row.price),
+        rupeesToPaise(row.salePrice),
+        terms.maxDiscountBps,
+      );
+      if (breach) errors.push({ row: rowNumber, field: "salePrice", message: breach });
     }
     if (row.cover && !row.images.includes(row.cover)) {
       errors.push({

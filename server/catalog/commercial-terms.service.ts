@@ -1,4 +1,7 @@
-import { orgRepository } from "@server/catalog/org.repository";
+import { orgRepository, type OrgDb } from "@server/catalog/org.repository";
+
+/** What a caller's transaction must reach for a commercial-terms read. */
+export type CommercialTermsDb = OrgDb;
 
 /**
  * What the platform charges an organisation.
@@ -18,6 +21,15 @@ import { orgRepository } from "@server/catalog/org.repository";
 export const commercialTermsService = {
   /** This org's rate and discount ceiling, or null if the org is gone. */
   find: (orgId: string) => orgRepository.findCommercialTerms(orgId),
+
+  /**
+   * Every org's discount ceiling, as the offer engine takes it (offers-hardening D4). One query
+   * per request, but one row per org — it grows with the number of shops, not of offers.
+   */
+  async allCeilings(db?: OrgDb): Promise<ReadonlyMap<string, number>> {
+    const rows = await orgRepository.listDiscountCeilings(db);
+    return new Map(rows.map((row) => [row.id, row.maxDiscountBps]));
+  },
 
   /** Every org's rate, for the console's comparison view. */
   list: () => orgRepository.listCommercialTerms(),

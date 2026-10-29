@@ -260,6 +260,11 @@ export class ProductService {
     return await productsRepository.countOutsideOrg(productIds, orgId);
   }
 
+  /** Price and owner of each product, for `promotions` to check an offer against a shop's ceiling. */
+  async listForPricing(productIds: string[]) {
+    return await productsRepository.listForPricing(productIds);
+  }
+
   /**
    * A suggestion row, priced through the one resolver checkout also uses
    * (ADR-0018). Kept pure and separate from the read so the dropdown's price
