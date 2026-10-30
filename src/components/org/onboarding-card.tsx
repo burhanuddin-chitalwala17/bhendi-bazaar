@@ -41,7 +41,7 @@ const STEP_COPY: Record<OnboardingStep, StepCopy> = {
   [ONBOARDING_STEP.DESCRIBE]: {
     title: "Describe your shop",
     hint: "A few lines buyers read on your storefront.",
-    href: (orgId) => `/org/${orgId}/storefront`,
+    href: (orgId) => `/org/${orgId}/shop/details`,
   },
   [ONBOARDING_STEP.SELL]: {
     title: "Say what you sell",
@@ -142,7 +142,7 @@ function PageShowingLine({ page, orgId }: { page: BrandPage; orgId: string }) {
         sections.
       </p>
       <Button asChild variant="ghost" size="sm">
-        <Link href={`/org/${orgId}/storefront`}>
+        <Link href={`/org/${orgId}/shop/details`}>
           {showing === total ? "Review it" : "Fill in the rest"}
         </Link>
       </Button>

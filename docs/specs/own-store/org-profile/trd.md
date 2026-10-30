@@ -3,7 +3,7 @@
 - **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; all decisions closed)
 - **Domain:** catalog (Org, OrgProfile); notifications (one email)
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-10-31
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [seller-onboarding trd](../seller-onboarding/trd.md), [storefront-themes](../storefront-themes/spec.md), [seller-profile trd](../../seller-profile/trd.md), [brand-page](../../seller-profile/brand-page/), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0013](../../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0030](../../../adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md), [ADR-0035](../../../adr/0035-every-response-carries-a-nonce-based-csp.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0063](../../../adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -58,7 +58,8 @@ forward.
   (`RETURNS_PRESET`: standard, 7-day exchange, no returns; default standard), plus `promiseNote` of
   up to 280 letters, saved in the promise section. Buyers stop seeing `deliveryPolicy` and
   `returnsPolicy` from U2. The columns are kept, and the shop sees its old text read-only beside the
-  presets with "Copy into note". Dispatch time is derived, not asked (Q19).
+  presets with "Copy into note". Dispatch time is derived, not asked (Q19). Buyers see "This shop's
+  terms" only for a non-standard preset or a note; the standard promise alone is the platform's (Q27).
 - **D7 — Name, mobile, email, link (R5; A3; Q15, Q16, Q23, Q25).** `PATCH /api/org/[orgId]/shop/contact`
   (`withOrg`, owner-only like the handle route) parses `shopContactSchema` (name, mobile, email,
   `expectedUpdatedAt`). The write is conditional on `Org.updatedAt`. Order emails read

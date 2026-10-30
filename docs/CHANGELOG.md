@@ -10,6 +10,60 @@
 
 ## Entries
 
+## 2026-10-31 — org-profile unit 2: Shop details, the buyer part [CONTRACT] [MIGRATION]
+
+- **One page for the shop's facts** (R1–R3, R10; A2; D2, D10; Q5, Q11–Q14): `/org/[orgId]/shop/details`,
+  a server page reading `ShopDetailsDto` through `shopDetailsService.get`. "Buyers see this — on your shop
+  page" heads it; the three essentials (name, logo, one line) come first, then "Add more to your shop
+  page" with each row saying what it adds. Every field carries the eye and a line naming where it shows.
+  "See as a buyer" opens `/store/[handle]`; at `lg:` a preview drawn from the storefront's own
+  `StorefrontIdentity` and `BrandStory`, fed the form's current values (never an iframe). Linked from
+  the sidebar, the onboarding "Describe your shop" step and the brand-page panel. The private part
+  (name, mobile, email, link, tax card) is U3.
+- **Per-section save, no clobbering** (R9; A6; D3; Q17, Q21): `PATCH /api/org/[orgId]/shop/details`
+  (`withOrg`, any member, Q23) parses `shopDetailsSectionSchema`, a strict union on `section`; each
+  section whitelists its own fields and carries `expectedUpdatedAt`. The repository writes only that
+  section's columns by `updateMany` on (orgId, updatedAt); a miss is a `ConflictError` with ux's
+  "Someone changed this N min ago. Load their version?". Every ux state of the buyer part: First use,
+  Empty, Loading (`loading.tsx`), Partial, Success toast, Retryable banner with "Try again", Stale banner
+  with "Load latest", Long content counter from 3,600, and Slow ("Still saving…" after 3 s). Save is never
+  disabled; a second tap while saving sends nothing.
+- **Storefront editor narrowed to looks** (D3, R7): `storefrontSettingsSchema` is strict over `heroUrl`,
+  `accent`, `pillars`, `hiddenSections`, and `saveSettings` writes only the fields it is sent, so it can
+  no longer null a fact Shop details owns. Logo, tagline, introduction, story, area, person, socials
+  and terms left the editor. Pillars and accent stay until U4.
+- **"About your shop" without loss** (R4; A5; D4; Q4, Q18): pure `aboutOf` in `storefront.types.ts`
+  joins the introduction and the longer story (blank line between) until the shop saves About, then
+  returns the saved text alone. The buyer page, the storefront metadata and the box all read it, so
+  buyers see the same words from deploy. The box opens prefilled with "We joined your introduction and
+  longer story. Check it and save." Saving stamps `storyMergedAt`; `story` is kept and never shown again.
+- **Delivery and returns** (R7; D6; Q7, Q19, Q27 new): `returnsPreset` (standard, 7-day exchange, no returns)
+  and `promiseNote` (280). Buyers no longer see `deliveryPolicy`/`returnsPolicy`; the shop sees its old
+  text read-only with "Copy into note". "This shop's terms" shows for a non-standard preset or a note.
+- **[CONTRACT]** `ShopDetailsDto`, `shopDetailsSectionSchema`, `RETURNS_PRESET`; `BrandPageDto.about` is
+  `aboutOf`, `story` always null, `deliveryPolicy`/`returnsPolicy` replaced by `returns: { preset, note }`;
+  `Storefront` loses both policies; `storefrontSettingsSchema` narrowed. `PUBLIC_PROFILE_SELECT` drops the
+  two policies and gains `storyMergedAt`, `returnsPreset`, `promiseNote` (allowlist test updated).
+  `FormField`'s `hint` takes a node, for the eye icon. CONTRACTS.md updated.
+- **[MIGRATION] `20261031100200_shop_details_buyer_part`**: enum `ReturnsPreset`; `OrgProfile.storyMergedAt`,
+  `returnsPreset` (default `STANDARD`), `promiseNote`. Additive; no text rewritten, nothing dropped.
+- **Mutations** (each made a test fail, then restored): M1 compare-and-set's `updatedAt` removed from the
+  where → the stale-version integration test failed. M2 essentials schema made non-strict → the
+  cross-section and forbidden-field tests failed. M3 `aboutOf` ignoring `storyMergedAt` → the merged case
+  failed. M4 `storefrontSettingsSchema` made non-strict → the looks-only test failed. M5 the place section
+  also writing `tagline` → three integration tests failed. M6 `saveSettings` back to writing unsent
+  fields as null → the narrowed-save integration test failed. M7 `OrgProfile.returnsPolicy` removed
+  from the schema → the kept-columns guard failed. M8 the section's `formError` line removed → the
+  403-refusal test failed.
+- **Review** (fresh context): a refusal other than stale or network (403, 404, 429, a fieldless 400)
+  was silent; now shown on the section. `RETURNS_PRESET` is typed against the Prisma enum. The
+  onboarding card's "Fill in the rest" link points at Shop details. The help line sits under the
+  title rather than in a "?" sheet, noted in ux.md.
+- **Tests:** `tests/unit/shop-details.test.tsx` (schemas, kept columns, A2, A6, every state),
+  `tests/integration/shop-details.test.ts` (A5, Q17, Q21, D4, D6), `storefront-public-dto` (`aboutOf` over
+  every case; returns), and the brand-page suites updated. Ran `tsc`, `vitest run tests/unit`,
+  `vitest run tests/integration` (local disposable DB), `lint:boundary`, `docs:check`.
+
 ## 2026-10-31 — product-form unit 2: readiness hints while filling [CONTRACT]
 
 - **What other places ask, before saving** (product-form R5, A3; D4; Q8, Q31): on Details the

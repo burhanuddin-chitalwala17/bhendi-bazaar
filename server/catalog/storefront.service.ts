@@ -40,21 +40,10 @@ import {
 } from "@server/shared/domain-error";
 import { isValidSlug } from "@server/shared/slug";
 
+/** Looks only since org-profile U2 (D3): the facts are Shop details', so two editors never share a column. */
 export interface StorefrontSettingsInput {
-  tagline?: string | null;
-  description?: string | null;
-  logoUrl?: string | null;
   heroUrl?: string | null;
   accent?: string | null;
-  deliveryPolicy?: string | null;
-  returnsPolicy?: string | null;
-  story?: string | null;
-  location?: string | null;
-  social?: Record<string, string> | null;
-  ownerName?: string | null;
-  ownerRole?: string | null;
-  ownerQuote?: string | null;
-  ownerPhotoUrl?: string | null;
   pillars?: BrandPillar[] | null;
   hiddenSections?: HideableBrandPageSection[] | null;
 }
@@ -87,13 +76,6 @@ function pillarsKept(pillars: { title: string; text: string }[] | null | undefin
   if (!pillars) return null;
   const kept = pillars.filter((pillar) => pillar.title.trim() !== "" && pillar.text.trim() !== "");
   return kept.length ? kept : null;
-}
-
-/** Blank means "remove this network", so an empty handle never reaches the column. */
-function handlesKept(social: Record<string, string> | null | undefined) {
-  if (!social) return null;
-  const kept = Object.entries(social).filter(([, handle]) => handle.trim() !== "");
-  return kept.length ? Object.fromEntries(kept) : null;
 }
 
 /** Whitelisted field by field — the payload is never spread into a write. */
@@ -148,31 +130,18 @@ export const storefrontService = {
   },
 
   /**
-   * Save what an org composed.
-   *
-   * Every field is whitelisted by name — the payload is never spread into the write,
-   * so a `handle` or a `commissionBps` arriving here reaches nothing (Invariant 4).
+   * Save the shop's looks. Whitelisted by name, and a field not sent is left as it is, so this
+   * save can never clear a column Shop details owns (org-profile D3, Q17).
    */
   async saveSettings(orgId: string, input: StorefrontSettingsInput) {
-    await orgProfileRepository.updateSettings(orgId, {
-      tagline: orNull(input.tagline),
-      description: orNull(input.description),
-      logoUrl: orNull(input.logoUrl),
-      heroUrl: orNull(input.heroUrl),
-      accent: orNull(input.accent),
-      deliveryPolicy: orNull(input.deliveryPolicy),
-      returnsPolicy: orNull(input.returnsPolicy),
-      story: orNull(input.story),
-      location: orNull(input.location),
-      // A JSON column is cleared with `JsonNull`, not with `null` — the second is Prisma's
-      // "leave this alone", so an org emptying its handles would keep the old ones forever.
-      social: jsonOrNull(handlesKept(input.social)),
-      ownerName: orNull(input.ownerName),
-      ownerRole: orNull(input.ownerRole),
-      ownerQuote: orNull(input.ownerQuote),
-      ownerPhotoUrl: orNull(input.ownerPhotoUrl),
-      pillars: jsonOrNull(pillarsKept(input.pillars)),
-      hiddenSections: jsonOrNull(input.hiddenSections?.length ? input.hiddenSections : null),
+    await orgProfileRepository.updateLooks(orgId, {
+      ...(input.heroUrl !== undefined && { heroUrl: orNull(input.heroUrl) }),
+      ...(input.accent !== undefined && { accent: orNull(input.accent) }),
+      // JSON is cleared with `JsonNull`; `null` is Prisma's "leave this alone".
+      ...(input.pillars !== undefined && { pillars: jsonOrNull(pillarsKept(input.pillars)) }),
+      ...(input.hiddenSections !== undefined && {
+        hiddenSections: jsonOrNull(input.hiddenSections?.length ? input.hiddenSections : null),
+      }),
     });
     return await this.getSettings(orgId);
   },

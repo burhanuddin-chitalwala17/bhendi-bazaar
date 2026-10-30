@@ -1,5 +1,5 @@
 import { prisma } from "@server/shared/prisma";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, ReturnsPreset } from "@prisma/client";
 
 /**
  * The one reader and writer of `OrgProfile` (ADR-0003): an organisation's public face.
@@ -15,9 +15,11 @@ export const PUBLIC_PROFILE_SELECT = {
   logoUrl: true,
   heroUrl: true,
   accent: true,
-  deliveryPolicy: true,
-  returnsPolicy: true,
+  // `story` is read only to join it into "About your shop" (org-profile D4); never shown alone.
   story: true,
+  storyMergedAt: true,
+  returnsPreset: true,
+  promiseNote: true,
   location: true,
   social: true,
   ownerName: true,
@@ -39,24 +41,45 @@ export const PUBLIC_ORG_IDENTITY_SELECT = {
   joinedAt: true,
 } as const satisfies Prisma.OrgSelect;
 
-export interface StorefrontSettingsData {
-  tagline: string | null;
-  description: string | null;
-  logoUrl: string | null;
-  heroUrl: string | null;
-  accent: string | null;
-  deliveryPolicy: string | null;
-  returnsPolicy: string | null;
-  story: string | null;
-  location: string | null;
-  social: Prisma.InputJsonValue | typeof Prisma.JsonNull;
-  ownerName: string | null;
-  ownerRole: string | null;
-  ownerQuote: string | null;
-  ownerPhotoUrl: string | null;
-  pillars: Prisma.InputJsonValue | typeof Prisma.JsonNull;
-  hiddenSections: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+/** The storefront editor's columns since org-profile U2: looks, never facts (D3). */
+export interface StorefrontLooksData {
+  heroUrl?: string | null;
+  accent?: string | null;
+  pillars?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
+  hiddenSections?: Prisma.InputJsonValue | typeof Prisma.JsonNull;
 }
+
+/**
+ * The columns one Shop details section writes (org-profile D3). Each member is one section's
+ * set, so no save can name a column outside its own section.
+ */
+export type ShopDetailsSectionData =
+  | { tagline: string | null; logoUrl: string | null }
+  | { description: string | null; storyMergedAt: Date }
+  | { location: string | null }
+  | { ownerName: string | null; ownerRole: string | null; ownerQuote: string | null; ownerPhotoUrl: string | null }
+  | { social: Prisma.InputJsonValue | typeof Prisma.JsonNull }
+  | { returnsPreset: ReturnsPreset; promiseNote: string | null };
+
+const SHOP_DETAILS_SELECT = {
+  updatedAt: true,
+  tagline: true,
+  logoUrl: true,
+  description: true,
+  story: true,
+  storyMergedAt: true,
+  location: true,
+  social: true,
+  ownerName: true,
+  ownerRole: true,
+  ownerQuote: true,
+  ownerPhotoUrl: true,
+  returnsPreset: true,
+  promiseNote: true,
+  deliveryPolicy: true,
+  returnsPolicy: true,
+  org: { select: { handle: true, name: true } },
+} as const satisfies Prisma.OrgProfileSelect;
 
 export class OrgProfileRepository {
   /** The storefront's read: an active org's profile plus its public identity. */
@@ -125,13 +148,40 @@ export class OrgProfileRepository {
    * Upsert rather than update: every org gets its row at creation, but a row is the kind of
    * thing a repair could lose, and the editor should heal it rather than 404.
    */
-  async updateSettings(orgId: string, data: StorefrontSettingsData) {
+  async updateLooks(orgId: string, data: StorefrontLooksData) {
     return await prisma.orgProfile.upsert({
       where: { orgId },
       create: { orgId, ...data },
       update: data,
       select: { orgId: true },
     });
+  }
+
+  /** What Shop details shows and edits (org-profile D2), with the version it read. */
+  async findShopDetails(orgId: string) {
+    return await prisma.orgProfile.findUnique({ where: { orgId }, select: SHOP_DETAILS_SELECT });
+  }
+
+  /**
+   * One section's columns, only if nobody saved since `expectedUpdatedAt` (Q21): a compare-and-set
+   * on the row's version. False is a stale write or a missing row; the caller tells them apart.
+   */
+  async updateSectionIfUnchanged(
+    orgId: string,
+    expectedUpdatedAt: Date,
+    data: ShopDetailsSectionData,
+  ): Promise<boolean> {
+    const { count } = await prisma.orgProfile.updateMany({
+      where: { orgId, updatedAt: expectedUpdatedAt },
+      data,
+    });
+    return count === 1;
+  }
+
+  /** When the row was last saved, for the "Someone changed this" message; null when there is none. */
+  async findUpdatedAt(orgId: string): Promise<Date | null> {
+    const row = await prisma.orgProfile.findUnique({ where: { orgId }, select: { updatedAt: true } });
+    return row?.updatedAt ?? null;
   }
 
   /** Profiles with a logo or hero that predates the asset record — the media backfill's input. */

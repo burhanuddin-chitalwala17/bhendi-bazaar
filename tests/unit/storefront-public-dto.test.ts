@@ -17,6 +17,7 @@ import {
   PUBLIC_PROFILE_SELECT,
 } from "@server/catalog/org-profile.repository";
 import {
+  aboutOf,
   brandNamesCarried,
   toBrandPageDto,
   type BrandPageDerived,
@@ -38,9 +39,10 @@ const PUBLIC_PROFILE_FIELDS = [
   "logoUrl",
   "heroUrl",
   "accent",
-  "deliveryPolicy",
-  "returnsPolicy",
   "story",
+  "storyMergedAt",
+  "returnsPreset",
+  "promiseNote",
   "location",
   "social",
   "ownerName",
@@ -81,8 +83,7 @@ const BRAND_PAGE_FIELDS = [
   "since",
   "about",
   "story",
-  "deliveryPolicy",
-  "returnsPolicy",
+  "returns",
   "brands",
   "social",
   "proof",
@@ -122,9 +123,10 @@ const fixture = {
   logoUrl: "https://img.example/logo.webp",
   heroUrl: "https://img.example/hero.webp",
   accent: "primary",
-  deliveryPolicy: "3 to 5 days",
-  returnsPolicy: "7 days",
   story: "A longer story.",
+  storyMergedAt: null as Date | null,
+  returnsPreset: "EXCHANGE_7_DAY" as const,
+  promiseNote: "Exchanges within a week.",
   location: "Bhendi Bazaar, Mumbai",
   social: { instagram: "silks" },
   ownerName: "Anisa Merchant",
@@ -183,13 +185,11 @@ describe("storefrontDAL.getByHandle after the profile split", () => {
       id: "org_1",
       handle: "silks",
       name: "Silks & Co",
-      about: "Who we are.",
+      about: "Who we are.\n\nA longer story.",
       tagline: "Silks since 1985",
       logoUrl: "https://img.example/logo.webp",
       heroUrl: "https://img.example/hero.webp",
       accent: "primary",
-      deliveryPolicy: "3 to 5 days",
-      returnsPolicy: "7 days",
     });
   });
 
@@ -242,7 +242,7 @@ describe("the brand page's DTO", () => {
 
   it("treats blank text as absent, so a section fed whitespace has nothing to show", () => {
     const dto = toBrandPageDto(
-      { ...fixture, description: "   ", story: "", tagline: " \n ", location: "  ", deliveryPolicy: " " },
+      { ...fixture, description: "   ", story: "", tagline: " \n ", location: "  ", promiseNote: " " },
       brands,
       NOTHING_DERIVED,
     );
@@ -250,7 +250,7 @@ describe("the brand page's DTO", () => {
     expect(dto.story).toBeNull();
     expect(dto.tagline).toBeNull();
     expect(dto.location).toBeNull();
-    expect(dto.deliveryPolicy).toBeNull();
+    expect(dto.returns?.note).toBeNull();
   });
 
   it("turns stored handles into composed links, and junk into nothing", () => {
@@ -449,8 +449,8 @@ describe("what a shop chose not to show", () => {
     const page = dto(["story", "policies", "brands", "social", "pillars"]);
     expect(page.story).toBeNull();
     expect(page.owner).toBeNull();
-    expect(page.deliveryPolicy).toBeNull();
-    expect(page.returnsPolicy).toBeNull();
+    expect(page.about).toBeNull();
+    expect(page.returns).toBeNull();
     expect(page.brands).toBeNull();
     expect(page.social).toBeNull();
     expect(page.pillars).toBeNull();
@@ -499,5 +499,59 @@ describe("the shapes the platform defined, read back from JSON", () => {
     expect(brandOwnerFrom({ ...row, ownerName: "   " })).toBeNull();
     // A quoted line with nobody behind it is copy, not a person.
     expect(brandOwnerFrom({ ...row, ownerName: null, ownerQuote: "Trust us." })).toBeNull();
+  });
+});
+
+describe("About your shop, without loss (org-profile D4, Q18)", () => {
+  const row = (description: string | null, story: string | null, storyMergedAt: Date | null = null) => ({
+    description,
+    story,
+    storyMergedAt,
+  });
+
+  it("joins an introduction and a longer story, introduction first, a blank line between (spec A5)", () => {
+    expect(aboutOf(row("Who we are.", "How it began."))).toBe("Who we are.\n\nHow it began.");
+  });
+
+  it("returns either half alone when the other is blank (spec A5)", () => {
+    expect(aboutOf(row("Who we are.", null))).toBe("Who we are.");
+    expect(aboutOf(row("Who we are.", "   "))).toBe("Who we are.");
+    expect(aboutOf(row(null, "How it began."))).toBe("How it began.");
+    expect(aboutOf(row(" ", "How it began."))).toBe("How it began.");
+  });
+
+  it("is null when both are blank (spec A5)", () => {
+    expect(aboutOf(row(null, null))).toBeNull();
+    expect(aboutOf(row(" ", ""))).toBeNull();
+  });
+
+  it("is the saved text alone once the shop has saved the box; the old story never comes back (spec A5)", () => {
+    const saved = new Date("2026-10-31T10:00:00Z");
+    expect(aboutOf(row("Who we are, rewritten.", "How it began.", saved))).toBe("Who we are, rewritten.");
+    expect(aboutOf(row(null, "How it began.", saved))).toBeNull();
+  });
+
+  it("is what the buyer page carries, and the old story never travels on its own (spec A5)", () => {
+    const dto = toBrandPageDto(fixture, brands, NOTHING_DERIVED);
+    expect(dto.about).toBe("Who we are.\n\nA longer story.");
+    expect(dto.story).toBeNull();
+  });
+});
+
+describe("delivery and returns on the buyer page (org-profile D6, Q19)", () => {
+  it("carries the preset and the note, never the old free text (spec R7)", () => {
+    const dto = toBrandPageDto(
+      { ...fixture, deliveryPolicy: "Old delivery words", returnsPolicy: "Old returns words" } as typeof fixture,
+      brands,
+      NOTHING_DERIVED,
+    );
+    expect(dto.returns).toEqual({ preset: "EXCHANGE_7_DAY", note: "Exchanges within a week." });
+    expect(JSON.stringify(dto)).not.toContain("Old delivery words");
+    expect(JSON.stringify(dto)).not.toContain("Old returns words");
+  });
+
+  it("the public select no longer reads the old free text at all", () => {
+    expect("deliveryPolicy" in PUBLIC_PROFILE_SELECT).toBe(false);
+    expect("returnsPolicy" in PUBLIC_PROFILE_SELECT).toBe(false);
   });
 });

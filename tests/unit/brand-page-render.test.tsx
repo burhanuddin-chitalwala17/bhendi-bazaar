@@ -65,8 +65,7 @@ const bare = (overrides: Partial<BrandPage> = {}): BrandPage => ({
   since: 2021,
   about: null,
   story: null,
-  deliveryPolicy: null,
-  returnsPolicy: null,
+  returns: { preset: "STANDARD", note: null },
   brands: null,
   social: null,
   proof: null,
@@ -103,9 +102,7 @@ describe("the brand page, rendered", () => {
           logoUrl: "/logo.webp",
           location: "Bhendi Bazaar, Mumbai",
           about: "Three generations of weavers.",
-          story: "It began with one loom.",
-          deliveryPolicy: "3 to 5 days",
-          returnsPolicy: "7 days",
+          returns: { preset: "EXCHANGE_7_DAY", note: "Dispatched in 3 to 5 days" },
           brands: ["Silks & Co", "Zari House"],
           social: [
             { network: "instagram", label: "Instagram", handle: "silks", href: "https://www.instagram.com/silks/" },
@@ -135,6 +132,8 @@ describe("the brand page, rendered", () => {
     expect(screen.getByText("Banarasi saree")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "Zari dupatta" })).toHaveLength(3);
     expect(screen.getByText("This shop's terms")).toBeInTheDocument();
+    expect(screen.getByText("7-day exchange only")).toBeInTheDocument();
+    expect(screen.getByText("Dispatched in 3 to 5 days")).toBeInTheDocument();
 
     const follow = screen.getByRole("link", { name: "Silks & Co on Instagram" });
     expect(follow).toHaveAttribute("href", "https://www.instagram.com/silks/");
@@ -200,7 +199,7 @@ describe("the brand page, rendered", () => {
       <BrandPageSections
         page={bare({
           about: "<script>alert(1)</script><img src=x onerror=alert(1)>",
-          deliveryPolicy: "<b>fast</b>",
+          returns: { preset: "STANDARD", note: "<b>fast</b>" },
         })}
       />,
     );

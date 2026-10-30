@@ -2,6 +2,7 @@
 
 import {
   Gavel,
+  IdCard,
   LayoutDashboard,
   MapPin,
   Package,
@@ -31,6 +32,7 @@ export function OrgSidebar({
       header={<OrgSwitcher orgs={orgs} currentOrgId={orgId} />}
       items={[
         { title: "Dashboard", href: base, icon: LayoutDashboard, exact: true },
+        { title: "Shop details", href: `${base}/shop/details`, icon: IdCard },
         { title: "Storefront", href: `${base}/storefront`, icon: Store },
         { title: "Products", href: `${base}/products`, icon: Package },
         { title: "Channels", href: `${base}/channels`, icon: Plug },

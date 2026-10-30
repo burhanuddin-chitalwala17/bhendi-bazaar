@@ -3,8 +3,8 @@ import type { HandleChangeInput, StorefrontSettingsInput } from "@/lib/validatio
 import type { OrgBannerFormInput } from "@/lib/validation/schemas/org-banner.schema";
 import type { ManagedBanner } from "@/components/org/storefront-banners-manager";
 
-/** The images are managed by `ImageUpload` outside the form, so they travel beside its fields. */
-type StorefrontSave = StorefrontSettingsInput & { logoUrl: string; heroUrl: string; ownerPhotoUrl: string };
+/** The cover is managed by `ImageUpload` outside the form, so it travels beside its fields. */
+type StorefrontSave = StorefrontSettingsInput & { heroUrl: string };
 
 const banners = (orgId: string) => `/api/org/${orgId}/storefront/banners`;
 

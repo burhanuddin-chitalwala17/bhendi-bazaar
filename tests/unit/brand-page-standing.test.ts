@@ -36,9 +36,8 @@ const full = (overrides: Partial<BrandPage> = {}): BrandPage =>
     location: "Mumbai",
     since: 2021,
     about: "Who we are.",
-    story: "The longer story.",
-    deliveryPolicy: "3 to 5 days",
-    returnsPolicy: "7 days",
+    story: null,
+    returns: { preset: "EXCHANGE_7_DAY", note: "Dispatched in 3 to 5 days" },
     brands: ["Silks & Co", "Zari House"],
     social: [
       { network: "instagram", label: "Instagram", handle: "silks", href: "https://x/" },
@@ -113,8 +112,7 @@ describe("what your page shows", () => {
       brands: null,
       social: null,
       buyersSay: null,
-      deliveryPolicy: null,
-      returnsPolicy: null,
+      returns: { preset: "STANDARD", note: null },
       categories: [],
       newest: [],
     });

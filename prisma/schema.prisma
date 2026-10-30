@@ -749,8 +749,24 @@ model OrgProfile {
   pillars        Json?
   hiddenSections Json?
 
+  /// When the shop saved "About your shop" (org-profile D4). Until then buyers read the
+  /// introduction and `story` joined; after it, `description` alone. `story` is kept, never dropped.
+  storyMergedAt DateTime?
+  /// The shop's returns promise, one of three the platform can honour (org-profile Q7, D6).
+  /// `deliveryPolicy` and `returnsPolicy` above are kept but no longer shown to buyers.
+  returnsPreset ReturnsPreset @default(STANDARD)
+  /// One optional line beside the preset, at most 280 letters (org-profile Q19).
+  promiseNote   String?       @db.Text
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Mirrored by `RETURNS_PRESET` in server/catalog/shop-details.types.ts.
+enum ReturnsPreset {
+  STANDARD
+  EXCHANGE_7_DAY
+  NO_RETURNS
 }
 
 /// The private listing context that does not belong to a brand (org-profile spec R4): what a

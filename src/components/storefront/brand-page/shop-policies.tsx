@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 
 import { APP_NAME } from "@/lib/config";
+import { RETURNS_PRESET_LABEL } from "@server/catalog/shop-details.types";
 import type { PoliciesSlice } from "./sections";
 
 /**
@@ -11,7 +12,7 @@ import type { PoliciesSlice } from "./sections";
  * Unambiguous whose promise this is (storefront-pages R3a): payment and fraud protection
  * stay the platform's and are not a shop's to disclaim.
  */
-export function ShopPolicies({ name, delivery, returns }: PoliciesSlice) {
+export function ShopPolicies({ name, preset, note }: PoliciesSlice) {
   return (
     <details className="group rounded-card border border-border bg-card">
       {/* min-h-11 keeps the tap target past 40px on a phone (ADR-0015). */}
@@ -26,21 +27,12 @@ export function ShopPolicies({ name, delivery, returns }: PoliciesSlice) {
         <p className="text-2xs text-muted-foreground">
           Set by {name}. Payment and fraud protection are {APP_NAME}&apos;s.
         </p>
-        {delivery && (
-          <div>
-            <h3 className="text-sm font-medium">Delivery</h3>
-            <p className="whitespace-pre-line break-words text-sm text-muted-foreground">
-              {delivery}
-            </p>
-          </div>
-        )}
-        {returns && (
-          <div>
-            <h3 className="text-sm font-medium">Returns</h3>
-            <p className="whitespace-pre-line break-words text-sm text-muted-foreground">
-              {returns}
-            </p>
-          </div>
+        <div>
+          <h3 className="text-sm font-medium">Returns</h3>
+          <p className="text-sm text-muted-foreground">{RETURNS_PRESET_LABEL[preset]}</p>
+        </div>
+        {note && (
+          <p className="whitespace-pre-line break-words text-sm text-muted-foreground">{note}</p>
         )}
       </div>
     </details>

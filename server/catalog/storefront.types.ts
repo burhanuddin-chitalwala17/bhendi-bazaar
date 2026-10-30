@@ -8,6 +8,7 @@ import {
   type BrandPillar,
   type HideableBrandPageSection,
 } from "@server/catalog/brand-page-sections";
+import type { ReturnsPreset } from "@server/catalog/shop-details.types";
 
 /**
  * The brand page's payload (brand-page D1): the public face, and nothing that is not.
@@ -32,12 +33,12 @@ export interface BrandPageDto {
   location: string | null;
   /** The year the shop joined, from the day it did. */
   since: number;
-  /** The introduction the storefront editor writes. */
+  /** "About your shop": `aboutOf` the profile (org-profile D4). */
   about: string | null;
-  /** The longer story, when one is written. */
-  story: string | null;
-  deliveryPolicy: string | null;
-  returnsPolicy: string | null;
+  /** Always null since org-profile U2: the longer story is read through `about`. */
+  story: null;
+  /** The shop's returns promise and its note (org-profile D6). Null only when hidden. */
+  returns: { preset: ReturnsPreset; note: string | null } | null;
   /** Names only, and only when the shop carries more than one (D8). */
   brands: string[] | null;
   social: SocialLink[] | null;
@@ -73,12 +74,13 @@ export interface PublicProfileRow {
   tagline: string | null;
   description: string | null;
   story: string | null;
+  storyMergedAt: Date | null;
   location: string | null;
   logoUrl: string | null;
   heroUrl: string | null;
   accent: string | null;
-  deliveryPolicy: string | null;
-  returnsPolicy: string | null;
+  returnsPreset: ReturnsPreset;
+  promiseNote: string | null;
   social: unknown;
   ownerName: string | null;
   ownerRole: string | null;
@@ -91,6 +93,23 @@ export interface PublicProfileRow {
 
 /** Blank is absent: a section fed whitespace would otherwise render an empty box (R2). */
 const text = (value: string | null | undefined): string | null => value?.trim() || null;
+
+/**
+ * "About your shop" (org-profile D4, Q18): the introduction alone once the shop has saved the
+ * joined box, or when there is no story; otherwise the two joined by a blank line. Buyers and
+ * the box read this one function, so neither sees different words.
+ */
+export function aboutOf(row: {
+  description: string | null;
+  story: string | null;
+  storyMergedAt: Date | null;
+}): string | null {
+  const intro = text(row.description);
+  if (row.storyMergedAt) return intro;
+  const story = text(row.story);
+  if (!story) return intro;
+  return intro ? `${intro}\n\n${story}` : story;
+}
 
 /**
  * Takes `{ name }` and nothing wider, so a brand's manufacturer cannot ride along even if a
@@ -130,12 +149,10 @@ export function toBrandPageDto(
     accent: row.accent,
     location: text(row.location),
     since: row.org.joinedAt.getFullYear(),
-    // The introduction and the longer story are one section, so hiding it hides both —
-    // and the person with them, since a name is part of the story rather than beside it.
-    about: shown("story", text(row.description)),
-    story: shown("story", text(row.story)),
-    deliveryPolicy: shown("policies", text(row.deliveryPolicy)),
-    returnsPolicy: shown("policies", text(row.returnsPolicy)),
+    // Hiding the story hides the person too: a name is part of the story, not beside it.
+    about: shown("story", aboutOf(row)),
+    story: null,
+    returns: shown("policies", { preset: row.returnsPreset, note: text(row.promiseNote) }),
     brands: shown("brands", brandNamesCarried(brands)),
     social: shown("social", socialLinksFrom(row.social)),
     proof: derived.proof,

@@ -13,7 +13,7 @@ import { orgProfileRepository } from "@server/catalog/org-profile.repository";
 import { productsRepository } from "@server/catalog/product.read.repository";
 import { orgBannerRepository } from "@server/catalog/org-banner.repository";
 import { storefrontService } from "@server/catalog/storefront.service";
-import type { BrandPageDto } from "@server/catalog/storefront.types";
+import { aboutOf, type BrandPageDto } from "@server/catalog/storefront.types";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
 import { isRenderableImageUrl } from "@server/catalog/image-paths";
 import { categoriesDAL } from "@/data-access-layer/categories.dal";
@@ -27,15 +27,13 @@ export interface Storefront {
   id: string;
   handle: string;
   name: string;
-  /** The long-form introduction; null until the owner writes one. */
+  /** "About your shop" (org-profile D4); null until the owner writes one. */
   about: string | null;
   tagline: string | null;
   logoUrl: string | null;
   heroUrl: string | null;
   /** A palette token name, never a colour literal (ADR-0022). */
   accent: string | null;
-  deliveryPolicy: string | null;
-  returnsPolicy: string | null;
 }
 
 /**
@@ -76,13 +74,11 @@ export const storefrontDAL = {
       id: profile.org.id,
       handle: profile.org.handle,
       name: profile.org.name,
-      about: profile.description,
+      about: aboutOf(profile),
       tagline: profile.tagline,
       logoUrl: profile.logoUrl,
       heroUrl: profile.heroUrl,
       accent: profile.accent,
-      deliveryPolicy: profile.deliveryPolicy,
-      returnsPolicy: profile.returnsPolicy,
     };
   }),
 

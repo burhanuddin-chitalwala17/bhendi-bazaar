@@ -51,7 +51,7 @@ const LABELS: Record<BrandPageSection, string> = {
 const WAITING: Partial<Record<BrandPageSection, { fact: string; to?: (orgId: string) => string }>> = {
   story: {
     fact: "a few lines about the shop, or the name of the person behind it",
-    to: (orgId) => `/org/${orgId}/storefront#about`,
+    to: (orgId) => `/org/${orgId}/shop/details#about`,
   },
   categories: {
     fact: "a product on sale, so there is a category to show",
@@ -67,12 +67,12 @@ const WAITING: Partial<Record<BrandPageSection, { fact: string; to?: (orgId: str
   },
   buyersSay: { fact: "enough published reviews to be worth quoting" },
   policies: {
-    fact: "your delivery or returns terms",
-    to: (orgId) => `/org/${orgId}/storefront#policies`,
+    fact: "your delivery and returns promise",
+    to: (orgId) => `/org/${orgId}/shop/details#promise`,
   },
   social: {
     fact: "a handle on one of the networks we link to",
-    to: (orgId) => `/org/${orgId}/storefront#social`,
+    to: (orgId) => `/org/${orgId}/shop/details#social`,
   },
 };
 

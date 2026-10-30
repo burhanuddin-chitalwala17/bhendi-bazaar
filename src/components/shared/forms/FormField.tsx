@@ -24,7 +24,7 @@ interface FormFieldProps {
   label?: string;
   required?: boolean;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
   disabled?: boolean;
@@ -38,7 +38,7 @@ export function fieldMessageIds(id: string) {
 /** Only the message actually rendered is referenced: the hint hides while an error shows. */
 function describedBy(
   id: string,
-  { hint, error }: { hint?: string; error?: string },
+  { hint, error }: { hint?: React.ReactNode; error?: string },
   existing?: string,
 ): string | undefined {
   const ids = fieldMessageIds(id);
@@ -166,7 +166,7 @@ interface FormControllerProps<T extends FieldValues> {
   label?: string;
   required?: boolean;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   className?: string;
   rules?: RegisterOptions<T>;
   /** `id` is what the label points at; the rendered control should carry it. */
@@ -217,7 +217,7 @@ interface FormPhoneInputProps<T extends FieldValues> {
   control: Control<T>;
   label?: string;
   required?: boolean;
-  hint?: string;
+  hint?: React.ReactNode;
   placeholder?: string;
   disabled?: boolean;
   className?: string;

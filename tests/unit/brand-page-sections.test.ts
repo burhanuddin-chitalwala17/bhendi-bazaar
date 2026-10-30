@@ -44,9 +44,8 @@ const full = (overrides: Partial<BrandPage> = {}): BrandPage => ({
   location: "Mumbai",
   since: 2021,
   about: "Who we are.",
-  story: "The longer story.",
-  deliveryPolicy: "3 to 5 days",
-  returnsPolicy: "7 days",
+  story: null,
+  returns: { preset: "EXCHANGE_7_DAY", note: "Dispatched in 3 to 5 days" },
   brands: ["Silks & Co", "Zari House"],
   social: [{ network: "instagram", label: "Instagram", handle: "silks", href: "https://www.instagram.com/silks/" }],
   proof: null,
@@ -73,8 +72,7 @@ const bare = (): BrandPage =>
     location: null,
     about: null,
     story: null,
-    deliveryPolicy: null,
-    returnsPolicy: null,
+    returns: { preset: "STANDARD", note: null },
     brands: null,
     social: null,
     buyersSay: null,
@@ -106,14 +104,13 @@ describe("brandPageSections", () => {
     expect(brandPageSections(bare())).toEqual(["hero", "newest"]);
   });
 
-  it("omits the story only when there is no introduction, no longer story and nobody named", () => {
+  it("omits the story only when there is no about and nobody named", () => {
     // The person is part of the story, not a section beside it (R5), so any one of the three
     // is enough to make the section real — and a shop that named somebody but wrote nothing
     // still has something worth showing.
     expect(brandPageSections(full({ about: null, story: null, owner: null }))).not.toContain("story");
     expect(brandPageSections(full({ about: null }))).toContain("story");
-    expect(brandPageSections(full({ story: null }))).toContain("story");
-    expect(brandPageSections(full({ about: null, story: null }))).toContain("story");
+    expect(brandPageSections(full({ owner: null }))).toContain("story");
     expect(storySlice(full({ about: null, story: null, owner: null }))).toBeNull();
   });
 
@@ -149,10 +146,11 @@ describe("brandPageSections", () => {
     expect(brandPageSections(full({ brands: brandNamesCarried([{ name: "A" }, { name: "B" }]) }))).toContain("brands");
   });
 
-  it("shows the terms when either policy is written, and neither when both are blank", () => {
-    expect(brandPageSections(full({ returnsPolicy: null }))).toContain("policies");
-    expect(brandPageSections(full({ deliveryPolicy: null }))).toContain("policies");
-    expect(brandPageSections(full({ deliveryPolicy: null, returnsPolicy: null }))).not.toContain("policies");
+  it("shows the terms for a promise of the shop's own or a note, and not for the platform's standard alone (org-profile D6)", () => {
+    expect(brandPageSections(full({ returns: { preset: "NO_RETURNS", note: null } }))).toContain("policies");
+    expect(brandPageSections(full({ returns: { preset: "STANDARD", note: "Dispatched in two days" } }))).toContain("policies");
+    expect(brandPageSections(full({ returns: { preset: "STANDARD", note: null } }))).not.toContain("policies");
+    expect(brandPageSections(full({ returns: null }))).not.toContain("policies");
   });
 
   it("omits the ways to follow when no handle survived the allowlist", () => {

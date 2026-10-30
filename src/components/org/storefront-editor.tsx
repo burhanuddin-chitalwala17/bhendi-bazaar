@@ -28,25 +28,12 @@ import {
   MAX_BRAND_PILLARS,
   type HideableBrandPageSection,
 } from "@server/catalog/brand-page-sections";
-import { SOCIAL_NETWORKS, SOCIAL_NETWORK_KEYS } from "@server/catalog/social-networks";
 
 export interface StorefrontSettings {
   handle: string;
   name: string;
-  tagline: string | null;
-  description: string | null;
-  logoUrl: string | null;
   heroUrl: string | null;
   accent: string | null;
-  deliveryPolicy: string | null;
-  returnsPolicy: string | null;
-  story: string | null;
-  location: string | null;
-  social: unknown;
-  ownerName: string | null;
-  ownerRole: string | null;
-  ownerQuote: string | null;
-  ownerPhotoUrl: string | null;
   pillars: unknown;
   hiddenSections: unknown;
 }
@@ -74,16 +61,6 @@ function storedPillars(value: unknown) {
       text: typeof entry.text === "string" ? entry.text : "",
     };
   });
-}
-
-function storedHandles(value: unknown): Record<string, string> {
-  const social = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
-  return Object.fromEntries(
-    SOCIAL_NETWORK_KEYS.map((network) => [
-      network,
-      typeof social[network] === "string" ? (social[network] as string) : "",
-    ]),
-  );
 }
 
 function storedHidden(value: unknown): HideableBrandPageSection[] {
@@ -115,9 +92,7 @@ export function StorefrontEditor({
   oldAddressWorksUntil: string;
 }) {
   const router = useRouter();
-  const [logoUrl, setLogoUrl] = useState(settings.logoUrl ?? "");
   const [heroUrl, setHeroUrl] = useState(settings.heroUrl ?? "");
-  const [ownerPhotoUrl, setOwnerPhotoUrl] = useState(settings.ownerPhotoUrl ?? "");
 
   const {
     register,
@@ -127,24 +102,13 @@ export function StorefrontEditor({
   } = useServerForm<StorefrontSettingsInput>({
     schema: storefrontSettingsSchema,
     defaultValues: {
-      tagline: settings.tagline ?? "",
-      description: settings.description ?? "",
       accent: (settings.accent ?? "") as StorefrontSettingsInput["accent"],
-      deliveryPolicy: settings.deliveryPolicy ?? "",
-      returnsPolicy: settings.returnsPolicy ?? "",
-      story: settings.story ?? "",
-      location: settings.location ?? "",
-      social: storedHandles(settings.social),
-      ownerName: settings.ownerName ?? "",
-      ownerRole: settings.ownerRole ?? "",
-      ownerQuote: settings.ownerQuote ?? "",
       pillars: storedPillars(settings.pillars),
       hiddenSections: storedHidden(settings.hiddenSections),
     },
     successMessage: "Storefront saved.",
-    // The images are managed outside the form's state by ImageUpload, so they are
-    // merged in here rather than registered as fields.
-    submit: (data) => orgStorefrontApiClient.saveSettings(orgId, { ...data, logoUrl, heroUrl, ownerPhotoUrl }),
+    // The cover is managed outside the form's state by ImageUpload, so it is merged in here.
+    submit: (data) => orgStorefrontApiClient.saveSettings(orgId, { ...data, heroUrl }),
     onSuccess: () => router.refresh(),
   });
 
@@ -180,7 +144,9 @@ export function StorefrontEditor({
 
       <form onSubmit={onSubmit} className="space-y-6">
         <p className="text-2xs text-muted-foreground">
-          Everything below is saved together by the button at the end.
+          Everything below is saved together by the button at the end. Your logo, the line about
+          your shop and everything buyers read about you are on{" "}
+          <Link href={`/org/${orgId}/shop/details`} className="underline">Shop details</Link>.
         </p>
         {formError && (
           <p className="rounded-field bg-destructive/10 p-3 text-sm text-destructive">
@@ -194,26 +160,11 @@ export function StorefrontEditor({
           </CardHeader>
           <CardContent className="space-y-4">
             <ImageUpload
-              label="Logo"
-              value={logoUrl ? [logoUrl] : []}
-              onChange={(urls) => setLogoUrl(urls[0] ?? "")}
-              maxImages={1}
-              endpoint={`/api/org/${orgId}/upload`}
-            />
-
-            <ImageUpload
               label="Cover image — the picture at the top of your About page"
               value={heroUrl ? [heroUrl] : []}
               onChange={(urls) => setHeroUrl(urls[0] ?? "")}
               maxImages={1}
               endpoint={`/api/org/${orgId}/upload`}
-            />
-
-            <FormInput
-              label="Tagline"
-              placeholder="A line about what you sell"
-              {...register("tagline")}
-              error={errors.tagline?.message}
             />
 
             <FormSelect
@@ -228,72 +179,6 @@ export function StorefrontEditor({
                 </option>
               ))}
             </FormSelect>
-          </CardContent>
-        </Card>
-
-        <Card id="about">
-          <CardHeader>
-            <CardTitle>About your shop</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormTextarea
-              label="Introduction"
-              rows={6}
-              placeholder="Who you are, what you make, how long you have been doing it."
-              {...register("description")}
-              error={errors.description?.message}
-            />
-            <FormTextarea
-              label="The longer story"
-              rows={5}
-              placeholder="How the shop started, what changed, what you are known for."
-              {...register("story")}
-              error={errors.story?.message}
-            />
-            <FormInput
-              label="Where you are"
-              placeholder="Bhendi Bazaar, Mumbai"
-              {...register("location")}
-              error={errors.location?.message}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>The person behind the shop</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-2xs text-muted-foreground">
-              Optional, and shown with your story. A buyer trusts a name more than a
-              paragraph. Leave it blank and the story stands on its own.
-            </p>
-            <FormInput
-              label="Name"
-              placeholder="Who a buyer would be dealing with"
-              {...register("ownerName")}
-              error={errors.ownerName?.message}
-            />
-            <FormInput
-              label="What they do here"
-              placeholder="Owner, second generation, head tailor"
-              {...register("ownerRole")}
-              error={errors.ownerRole?.message}
-            />
-            <FormTextarea
-              label="One line worth quoting"
-              rows={3}
-              placeholder="Something they would actually say to a customer."
-              {...register("ownerQuote")}
-              error={errors.ownerQuote?.message}
-            />
-            <ImageUpload
-              label="Photograph"
-              value={ownerPhotoUrl ? [ownerPhotoUrl] : []}
-              onChange={(urls) => setOwnerPhotoUrl(urls[0] ?? "")}
-              maxImages={1}
-              endpoint={`/api/org/${orgId}/upload`}
-            />
           </CardContent>
         </Card>
 
@@ -323,54 +208,6 @@ export function StorefrontEditor({
                 />
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        <Card id="social">
-          <CardHeader>
-            <CardTitle>Ways to follow you</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-2xs text-muted-foreground">
-              Your handle on each network, not a web address. We build the link, so a
-              buyer always lands where they expect.
-            </p>
-            {SOCIAL_NETWORK_KEYS.map((network) => (
-              <FormInput
-                key={network}
-                label={SOCIAL_NETWORKS[network].label}
-                placeholder="yourhandle"
-                {...register(`social.${network}` as const)}
-                error={errors.social?.[network]?.message}
-              />
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card id="policies">
-          <CardHeader>
-            <CardTitle>Your terms</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* R3a: unambiguous whose promise this is. */}
-            <p className="text-2xs text-muted-foreground">
-              Delivery and returns are yours to set. Payment and fraud
-              protection stay Bhendi Bazaar&apos;s, and cannot be signed away
-              here. Leave a field blank and the platform&apos;s own terms stand
-              in.
-            </p>
-            <FormTextarea
-              label="Delivery"
-              rows={4}
-              {...register("deliveryPolicy")}
-              error={errors.deliveryPolicy?.message}
-            />
-            <FormTextarea
-              label="Returns"
-              rows={4}
-              {...register("returnsPolicy")}
-              error={errors.returnsPolicy?.message}
-            />
           </CardContent>
         </Card>
 

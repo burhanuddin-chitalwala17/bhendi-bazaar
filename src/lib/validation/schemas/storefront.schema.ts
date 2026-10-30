@@ -17,16 +17,12 @@ import {
  */
 
 /** Lengths that make a shop page, not a pamphlet (storefront-branding R6). */
-const TAGLINE_MAX = 120;
-const ABOUT_MAX = 4000;
-const POLICY_MAX = 2000;
-/** The longer story sits under the introduction, so it gets the same room. */
-const STORY_MAX = 4000;
-const LOCATION_MAX = 120;
+export const TAGLINE_MAX = 120;
+export const LOCATION_MAX = 120;
 /** A person, not a biography: a name, what they do, and one line worth quoting. */
-const OWNER_NAME_MAX = 80;
-const OWNER_ROLE_MAX = 80;
-const OWNER_QUOTE_MAX = 280;
+export const OWNER_NAME_MAX = 80;
+export const OWNER_ROLE_MAX = 80;
+export const OWNER_QUOTE_MAX = 280;
 /** A block is a heading and a short paragraph; three of them are the whole section. */
 const PILLAR_TITLE_MAX = 60;
 const PILLAR_TEXT_MAX = 400;
@@ -44,7 +40,7 @@ export const STOREFRONT_ACCENTS = [
 export type StorefrontAccent = (typeof STOREFRONT_ACCENTS)[number];
 
 /** Blank means cleared. Trimmed so whitespace cannot masquerade as content. */
-const optionalText = (max: number) =>
+export const optionalText = (max: number) =>
   z.string().trim().max(max).or(z.literal("")).nullish();
 
 /**
@@ -68,8 +64,8 @@ const pillarSchema = z
  * (brand-page D7). A blank clears that network. A URL is refused here rather than dropped
  * later, so the shop is told, instead of quietly losing what it typed.
  */
-const socialSchema = z
-  .record(z.enum(SOCIAL_NETWORK_KEYS), z.string().trim().max(120))
+export const socialSchema = z
+  .partialRecord(z.enum(SOCIAL_NETWORK_KEYS), z.string().trim().max(120))
   .nullish()
   .superRefine((value, ctx) => {
     if (!value) return;
@@ -85,21 +81,13 @@ const socialSchema = z
     }
   });
 
-export const storefrontSettingsSchema = z.object({
-  tagline: optionalText(TAGLINE_MAX),
-  description: optionalText(ABOUT_MAX),
-  logoUrl: z.string().url().or(z.literal("")).nullish(),
+/**
+ * Looks only (org-profile D3): the shop's facts are written by Shop details, so a fact sent here
+ * is refused rather than silently landing in a column two editors share. Pillars stay until U4.
+ */
+export const storefrontSettingsSchema = z.strictObject({
   heroUrl: z.string().url().or(z.literal("")).nullish(),
   accent: z.enum(STOREFRONT_ACCENTS).or(z.literal("")).nullish(),
-  deliveryPolicy: optionalText(POLICY_MAX),
-  returnsPolicy: optionalText(POLICY_MAX),
-  story: optionalText(STORY_MAX),
-  location: optionalText(LOCATION_MAX),
-  social: socialSchema,
-  ownerName: optionalText(OWNER_NAME_MAX),
-  ownerRole: optionalText(OWNER_ROLE_MAX),
-  ownerQuote: optionalText(OWNER_QUOTE_MAX),
-  ownerPhotoUrl: z.string().url().or(z.literal("")).nullish(),
   pillars: z.array(pillarSchema).max(MAX_BRAND_PILLARS).nullish(),
   hiddenSections: z.array(z.enum(HIDEABLE_BRAND_PAGE_SECTIONS)).nullish(),
 });

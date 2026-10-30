@@ -147,6 +147,18 @@ shared `phoneSchema` to E.164) and `email`. Any other key is stripped, so contac
 PAN and description can no longer arrive through self-serve creation. The answer is unchanged
 (`201` with the org). `POST /api/admin/orgs` still parses `createOrgSchema` (Q22).
 
+Since org-profile unit 2, **`PATCH /api/org/[orgId]/shop/details`** (`withOrg`, any member) parses
+**`shopDetailsSectionSchema`** (`src/lib/validation/schemas/shop-details.schema.ts`): a union on `section`
+(`essentials`: `tagline`, `logoUrl` · `about`: `about` up to 4,000 · `place`: `location` · `person`: `ownerName`,
+`ownerRole`, `ownerQuote`, `ownerPhotoUrl` · `social`: `social` · `promise`: `returnsPreset`, `promiseNote` up to
+280), each strict, each carrying `expectedUpdatedAt` (ISO). It answers **`ShopDetailsDto`**
+(`server/catalog/shop-details.types.ts`), with no code, GST, PAN or business name. A stale version is `409` with
+"Someone changed this N min ago. Load their version?". `RETURNS_PRESET` is `STANDARD`, `EXCHANGE_7_DAY`,
+`NO_RETURNS`. `BrandPageDto.about` is now `aboutOf` the profile (introduction and longer story joined until the
+shop saves About); `story` is always null; `deliveryPolicy`/`returnsPolicy` are replaced by
+`returns: { preset, note } | null`. `Storefront` (`storefront.dal.ts`) loses `deliveryPolicy`/`returnsPolicy`.
+`storefrontSettingsSchema` is narrowed, strictly, to `heroUrl`, `accent`, `pillars`, `hiddenSections`.
+
 ### Listing vocabulary
 
 Since PR-243 `ProductFormInput` (`server/catalog/admin.product.types.ts`) accepts five more

@@ -47,18 +47,13 @@ describe.skipIf(!isDisposableDb)("seller profile (local db)", () => {
     expect(defaults).not.toBeNull();
   });
 
-  it("round-trips storefront settings through the profile", async () => {
-    const saved = await storefrontService.saveSettings(orgId, {
-      tagline: "  Silks since 1985 ",
-      description: "Who we are.",
-      accent: "primary",
-      deliveryPolicy: "",
-      returnsPolicy: null,
-    });
-    expect(saved.tagline).toBe("Silks since 1985");
-    expect(saved.deliveryPolicy).toBeNull();
+  it("round-trips storefront looks through the profile, leaving the facts alone (org-profile Q17)", async () => {
+    const saved = await storefrontService.saveSettings(orgId, { accent: "primary", heroUrl: "" });
+    expect(saved.accent).toBe("primary");
+    expect(saved.heroUrl).toBeNull();
+    expect(saved.description).toBe("Typed at creation");
     const publicRead = await orgProfileRepository.findPublicByHandle(`profile-test-${stamp}`);
-    expect(publicRead?.tagline).toBe("Silks since 1985");
+    expect(publicRead?.accent).toBe("primary");
     expect(publicRead?.org.name).toBe(`Profile Test ${stamp}`);
     expect(publicRead && "email" in publicRead.org).toBe(false);
   });

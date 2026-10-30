@@ -1,7 +1,7 @@
 # UX — own-store/org-profile
 
 - **Status:** Signed off
-- **Verified:** 2026-10-30
+- **Verified:** 2026-10-31
 - **Prototype:** `seller-portal-prototype.html`, section "Shop details" (shared with seller-onboarding; to be published as a private artifact)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [seller-onboarding ux](../seller-onboarding/ux.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
@@ -63,7 +63,7 @@ Each starts one step before the screen.
 | Terminal error | Field message under the field | "Use at least 3 letters." · "Enter a valid phone number for the selected country" · "Use the handle on its own, not a web address." | Fix field |
 | Refused | Staff editing name/contact; or link taken | "Only the shop owner can change this." · "That link is taken. Try {suggestion}." | Ask owner / use suggestion |
 | Stale | Another member saved meanwhile | "Someone changed this 2 min ago. Load their version?" | Load latest |
-| Long content | About up to 4,000 chars, counter from 3,600; name wraps | "3,812 / 4,000" | — |
+| Long content | About up to 4,000 chars, counter from 3,600; name wraps; over the limit the about save is refused | "3,812 / 4,000" · "Keep it to 4,000 letters. Cut a little and save again." · note: "Keep the note to 280 letters." | Cut and save |
 | Many items | n/a — fixed field set | — | — |
 | Slow | "Still saving…" after 3 s, button stays tappable once | — | — |
 | Phone / tablet / desktop | One column; `md:` same with wider fields; `lg:` live buyer preview on the right | — | — |
@@ -86,7 +86,8 @@ Each starts one step before the screen.
 | Phone / tablet / desktop | Bottom sheet; `lg:` centred dialog | — | — |
 
 ## Copy deck
-- Page: title "Shop details" · "?" sheet: "Your shop's facts. Buyers see the top part; only we
+- Page: title "Shop details" · under the title (built in U2 as the header's line, not a "?" sheet,
+  so a seller reads it without a tap): "Your shop's facts. Buyers see the top part; only we
   see the bottom part."
 - Part headers: "Buyers see this — on your shop page" · "Only Bhendi Bazaar sees this — to reach
   you about orders and payouts".

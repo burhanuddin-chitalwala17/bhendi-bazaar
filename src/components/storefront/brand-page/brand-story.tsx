@@ -11,18 +11,13 @@ import type { StorySlice } from "./sections";
  * The person comes last and is invited, never required (R5). A shop that named nobody shows
  * the words alone, with nothing to say a name is missing.
  */
-export function BrandStory({ name, about, story, owner }: StorySlice) {
+export function BrandStory({ name, about, owner }: StorySlice) {
   return (
     <section className="space-y-3">
       <SectionHeader overline="The shop" title={`About ${name}`} />
       {about && (
         <p className="whitespace-pre-line break-words text-base leading-relaxed text-foreground/90">
           {about}
-        </p>
-      )}
-      {story && (
-        <p className="whitespace-pre-line break-words text-sm leading-relaxed text-muted-foreground">
-          {story}
         </p>
       )}
       {owner && (

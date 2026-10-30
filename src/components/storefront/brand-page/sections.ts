@@ -9,6 +9,7 @@ import {
   type BrandPageSection,
   type BrandPillar,
 } from "@server/catalog/brand-page-sections";
+import { RETURNS_PRESET, type ReturnsPreset } from "@server/catalog/shop-details.types";
 
 export { BRAND_PAGE_SECTION_ORDER };
 export type { BrandPageSection };
@@ -29,7 +30,6 @@ export type { BrandPageSection };
 export interface StorySlice {
   name: string;
   about: string | null;
-  story: string | null;
   /** The person, when one is named — the story's own subject, not a section beside it (R5). */
   owner: BrandOwner | null;
 }
@@ -55,8 +55,8 @@ export interface NewestSlice {
 
 export interface PoliciesSlice {
   name: string;
-  delivery: string | null;
-  returns: string | null;
+  preset: ReturnsPreset;
+  note: string | null;
 }
 
 export interface SocialSlice {
@@ -65,9 +65,7 @@ export interface SocialSlice {
 }
 
 export const storySlice = (page: BrandPage): StorySlice | null =>
-  page.about || page.story || page.owner
-    ? { name: page.name, about: page.about, story: page.story, owner: page.owner }
-    : null;
+  page.about || page.owner ? { name: page.name, about: page.about, owner: page.owner } : null;
 
 /** Null rather than an empty list: a section with no blocks is absent, not blank (R2, D4). */
 export const pillarsSlice = (page: BrandPage): PillarsSlice | null =>
@@ -95,13 +93,13 @@ export const newestSlice = (page: BrandPage): NewestSlice => ({
   products: page.newest,
 });
 
+/**
+ * The standard promise with no note is the platform's own terms, which stand in anyway, so the
+ * section is absent rather than repeating them (Q7; R2: a section with nothing to add is absent).
+ */
 export const policiesSlice = (page: BrandPage): PoliciesSlice | null =>
-  page.deliveryPolicy || page.returnsPolicy
-    ? {
-        name: page.name,
-        delivery: page.deliveryPolicy,
-        returns: page.returnsPolicy,
-      }
+  page.returns && (page.returns.preset !== RETURNS_PRESET.STANDARD || page.returns.note)
+    ? { name: page.name, preset: page.returns.preset, note: page.returns.note }
     : null;
 
 export const socialSlice = (page: BrandPage): SocialSlice | null =>
