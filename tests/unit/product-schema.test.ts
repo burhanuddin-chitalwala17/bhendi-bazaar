@@ -126,7 +126,7 @@ describe("fields the form marks required are required in the schema", () => {
 
   it("attributes a sale price above the regular price to the sale price field", () => {
     expect(issuesFor(filledForm({ salePrice: 2000 }))).toEqual([
-      { path: "salePrice", message: "Sale price must be below the regular price" },
+      { path: "salePrice", message: "Sale price must be below the price" },
     ]);
   });
 });

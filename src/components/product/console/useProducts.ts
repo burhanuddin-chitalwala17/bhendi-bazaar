@@ -9,6 +9,8 @@ import { useProductsBasePath } from "./useProductsBasePath";
 
 interface UseProductsOptions {
   onSuccess?: () => void;
+  /** The stepped create shows its own success screen, so a create neither toasts nor leaves (product-form Q16). */
+  stayAfterCreate?: boolean;
 }
 
 export function useProducts(options?: UseProductsOptions) {
@@ -33,6 +35,11 @@ export function useProducts(options?: UseProductsOptions) {
 
     try {
       const product = await productsApiClient.createProduct(data);
+      if (options?.stayAfterCreate) {
+        router.refresh();
+        options.onSuccess?.();
+        return product;
+      }
 
       const successMsg = "Product created successfully!";
       setSuccessMessage(successMsg);

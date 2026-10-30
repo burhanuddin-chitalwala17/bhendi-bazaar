@@ -298,6 +298,6 @@ describe.skipIf(!isDisposableDb)("settling marketplace listings (local db)", () 
     ]);
     expect(outcomes.filter((o) => o.status === "fulfilled")).toHaveLength(1);
     const refused = outcomes.find((o) => o.status === "rejected") as PromiseRejectedResult;
-    expect(String(refused.reason?.message)).toMatch(/already used by/);
+    expect(String(refused.reason?.message)).toMatch(/already uses this code/);
   });
 });

@@ -111,12 +111,12 @@ export function ProductOrgShippingFields({
             <div className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
               <span>
                 {selectedOrgId
-                  ? "No pickup location yet — a product needs somewhere to sit before it can be saved."
+                  ? "Where is this kept? Add your shop address once."
                   : "Choose the organisation to see where its stock can sit."}
               </span>
               {selectedOrgId && onLocationAdded && !readOnly && (
                 <Button type="button" size="sm" variant="outline" onClick={() => setIsAddingLocation(true)}>
-                  <Plus className="mr-1 size-4" /> Add a location
+                  <Plus className="mr-1 size-4" /> Add location
                 </Button>
               )}
             </div>

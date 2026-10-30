@@ -54,6 +54,9 @@ const productMediaListSchema = z
     { message: "Each slot holds one photograph" },
   );
 
+/** An untouched price box is 0 or NaN; both mean the same thing to the shop. */
+const PRICE_MISSING = "Add the price buyers pay";
+
 /**
  * The accepted shape of an admin product payload.
  *
@@ -63,17 +66,18 @@ const productMediaListSchema = z
  */
 export const productFormSchema = z
   .object({
-    name: z.string().trim().min(2, "Name must be at least 2 characters").max(255),
+    // Field copy is product-form ux.md's copy deck: the shop reads it beside the field.
+    name: z.string().trim().min(2, "Name needs 2 or more letters").max(255),
     // Required to match the form, which has always enforced it.
     description: z.string().trim().min(1, "Description is required").max(5000),
 
     // Rupees as typed; the service converts to paise at its boundary (server/shared/money).
-    price: rupeeAmount("Price"),
+    price: z.number({ message: PRICE_MISSING }).positive(PRICE_MISSING).pipe(rupeeAmount("Price")),
     salePrice: optionalNumber(rupeeAmount("Sale price")),
     currency: z.string().length(3).optional(),
 
     orgId: z.string().min(1, "Organisation is required"),
-    categoryId: z.string().min(1, "Category is required"),
+    categoryId: z.string().min(1, "Pick a category"),
 
     tags: z.array(z.string()).optional(),
     flags: z.array(z.enum(ProductFlag)).optional(),
@@ -132,7 +136,7 @@ export const productFormSchema = z
   // A cross-field rule neither side could enforce alone, attributed to the field a
   // user would correct.
   .refine((d) => d.salePrice === undefined || d.salePrice < d.price, {
-    message: "Sale price must be below the regular price",
+    message: "Sale price must be below the price",
     path: ["salePrice"],
   });
 

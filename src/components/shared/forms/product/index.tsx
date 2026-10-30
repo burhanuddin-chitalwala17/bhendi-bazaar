@@ -26,6 +26,8 @@ import type {
   ProductDetails,
 } from "@/components/product/console/types";
 import { useFormPersist } from "@/hooks/forms/useFormPersist";
+import { ProductStepsForm } from "./ProductStepsForm";
+import { useProductSteps } from "./useProductSteps";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import { paiseToRupees } from "@/lib/format";
 import {
@@ -73,6 +75,8 @@ interface ProductFormProps {
    * The bytes go browser-to-store, so this route only signs (ADR-0028).
    */
   uploadEndpoints?: UploadEndpoints;
+  /** Create only: the "Copy from" control, shown at the top of Photos and video (product-form Q15). */
+  copyFrom?: React.ReactNode;
 }
 
 export function ProductForm({
@@ -90,8 +94,13 @@ export function ProductForm({
   listingValues = {},
   factOrigins,
   families = [],
+  copyFrom,
 }: ProductFormProps) {
   const isEdit = !!product;
+  // A new product is five steps (product-form U1); edit keeps the long form until its overview (U4).
+  const stepped = !isEdit && !readOnly;
+  const steps = useProductSteps();
+  const [created, setCreated] = useState<ProductDetails | null>(null);
 
   /**
    * Which level supplied each stored answer, in the words a shop would use — "from your brand".
@@ -144,9 +153,15 @@ export function ProductForm({
     submit: onSubmit,
     // Deferred: clearSaved is declared below. Without this the saved draft
     // prefills the next "new product" with the one just created.
-    onSuccess: () => {
+    onSuccess: (result) => {
       if (persistDraft) clearSaved();
+      if (stepped && result) setCreated(result as ProductDetails);
     },
+    // The stepped create opens the step holding the first problem (ProductStepsForm), not a banner (D2).
+    onInvalid: stepped ? () => {} : undefined,
+    fallbackMessage: stepped ? "Couldn't save. Your work is still here." : undefined,
+    // The stepped form shows the failure inline with "Try again"; a toast would say it twice.
+    toastErrors: !stepped,
     defaultValues: {
       name: product?.name || "",
       description: product?.description || copy?.description || "",
@@ -221,7 +236,7 @@ export function ProductForm({
   // Belt to the exclusion above: whatever restored or reset the form, the rows
   // always mirror the offered locations — typed quantities kept, ids re-asserted.
   const locationIds = locations.map((location) => location.id).join(",");
-  useEffect(() => {
+  const syncStockRows = () => {
     const current = getValues("stockLocations") ?? [];
     const typed = new Map(
       current
@@ -239,8 +254,37 @@ export function ProductForm({
         seenQuantity: stockByLocation.get(location.id),
       })),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationIds]);
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(syncStockRows, [locationIds]);
+
+  if (stepped) {
+    return (
+      <ProductStepsForm
+        form={form}
+        steps={steps}
+        categories={categories ?? []}
+        productTypes={productTypes}
+        listingValues={listingValues}
+        origins={origins}
+        families={families}
+        orgs={orgs}
+        locations={locations}
+        onLocationAdded={addLocation}
+        uploadEndpoints={uploadEndpoints}
+        copyFrom={copyFrom}
+        created={created}
+        onStartAnother={() => {
+          // Same route, so nothing remounts: the next product starts blank by hand.
+          // reset() restores the rows as first rendered; a location added since needs its row back.
+          form.reset();
+          syncStockRows();
+          steps.reset();
+          setCreated(null);
+        }}
+      />
+    );
+  }
 
   // The effect that mirrored the server's deriveThumbnail lived here until
   // product-video (D18). It re-asserted `thumbnail = images[0]` on every gallery change,

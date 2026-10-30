@@ -285,7 +285,7 @@ export class AdminProductsRepository {
             ? `SKU "${sku}" is already used by another product in this organisation`
             : taken.archivedAt
               ? `SKU "${sku}" is still held by "${taken.name}", which is archived. An archived product keeps its SKU so it can be restored — reuse the code by restoring and editing that product, or choose another.`
-              : `SKU "${sku}" is already used by "${taken.name}"`;
+              : `Your product '${taken.name}' already uses this code.`;
         return new ConflictError(message, { field: "sku" });
     }
 

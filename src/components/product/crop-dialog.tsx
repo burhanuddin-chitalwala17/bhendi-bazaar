@@ -139,11 +139,23 @@ function CropFrame({
     transform && natural && isIdentityTransform(transform, natural.naturalWidth, natural.naturalHeight),
   );
 
-  const applyCrop = () => {
-    if (!transform) return;
-    if (isUntouched && canUseAsIs) onUseAsIs();
-    else onUseCrop(transform);
+  // Nothing here is disabled (owner rule, ADR-0053): while an upload runs a tap is ignored and the
+  // spinner says why; an untouched reframe says there is nothing to apply.
+  const [hint, setHint] = useState<string | null>(null);
+  const whenFree = (action: () => void) => () => {
+    if (busy) return;
+    setHint(null);
+    action();
   };
+  const applyCrop = whenFree(() => {
+    if (!transform) {
+      setHint("Wait for the photo to load");
+      return;
+    }
+    if (isUntouched && canUseAsIs) onUseAsIs();
+    else if (isUntouched) setHint("Turn or move the frame first");
+    else onUseCrop(transform);
+  });
 
   return (
     <>
@@ -159,8 +171,7 @@ function CropFrame({
             size="sm"
             variant={preset === aspect ? "default" : "outline"}
             aria-pressed={preset === aspect}
-            onClick={() => setAspect(preset)}
-            disabled={busy}
+            onClick={whenFree(() => setAspect(preset))}
           >
             {labelOf(preset)}
           </Button>
@@ -191,8 +202,7 @@ function CropFrame({
             variant="outline"
             size="icon-lg"
             aria-label="Rotate left"
-            onClick={() => setRotation((current) => rotateBy(current, -90))}
-            disabled={busy}
+            onClick={whenFree(() => setRotation((current) => rotateBy(current, -90)))}
           >
             <RotateCcw />
           </Button>
@@ -201,14 +211,13 @@ function CropFrame({
             variant="outline"
             size="icon-lg"
             aria-label="Rotate right"
-            onClick={() => setRotation((current) => rotateBy(current, 90))}
-            disabled={busy}
+            onClick={whenFree(() => setRotation((current) => rotateBy(current, 90)))}
           >
             <RotateCw />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Pinch or scroll to zoom, drag to move.
+        <p className="text-xs text-muted-foreground" role={hint ? "status" : undefined}>
+          {hint ?? "Pinch or scroll to zoom, drag to move."}
         </p>
       </div>
 
@@ -218,8 +227,8 @@ function CropFrame({
             type="button"
             variant="ghost"
             size="lg"
-            onClick={onUseAllAsIs}
-            disabled={busy}
+            onClick={whenFree(onUseAllAsIs)}
+            aria-busy={busy}
           >
             Use all as is
           </Button>
@@ -229,8 +238,8 @@ function CropFrame({
             type="button"
             variant="outline"
             size="lg"
-            onClick={onUseAsIs}
-            disabled={busy}
+            onClick={whenFree(onUseAsIs)}
+            aria-busy={busy}
           >
             Use as is
           </Button>
@@ -239,10 +248,10 @@ function CropFrame({
           type="button"
           size="lg"
           onClick={applyCrop}
-          disabled={busy || !transform || (isUntouched && !canUseAsIs)}
+          aria-busy={busy}
         >
           {busy ? <Loader2 className="animate-spin" /> : <Check />}
-          Use this crop
+          {busy ? "Uploading…" : "Use this crop"}
         </Button>
       </div>
     </>

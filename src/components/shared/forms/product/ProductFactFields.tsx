@@ -31,6 +31,8 @@ interface ProductFactFieldsProps {
   /** Where a filled-in value came from, so the form can say so (inherited-facts R3). */
   origins?: Partial<Record<string, string>>;
   readOnly?: boolean;
+  /** False where the family is asked elsewhere — the stepped create keeps it in "What it is" (product-form Q7). */
+  withFamily?: boolean;
 }
 
 /**
@@ -62,6 +64,7 @@ export function ProductFactFields({
   initialValues = {},
   origins = {},
   readOnly = false,
+  withFamily = true,
 }: ProductFactFieldsProps) {
   const typeKey = useMemo(
     () => resolveProductType(categoryId, categories),
@@ -92,17 +95,19 @@ export function ProductFactFields({
         </p>
         {/* A family is still legitimate without a type: the siblings share a description even
             where nothing has named what makes them differ. */}
-        <div className="mt-4">
-          <ProductFamilyField
-            register={register}
-            setValue={setValue}
-            errors={errors}
-            orgId={orgId}
-            categoryId={categoryId}
-            families={families}
-            readOnly={readOnly}
-          />
-        </div>
+        {withFamily && (
+          <div className="mt-4">
+            <ProductFamilyField
+              register={register}
+              setValue={setValue}
+              errors={errors}
+              orgId={orgId}
+              categoryId={categoryId}
+              families={families}
+              readOnly={readOnly}
+            />
+          </div>
+        )}
       </section>
     );
   }
@@ -115,17 +120,19 @@ export function ProductFactFields({
         saves either way.
       </p>
 
-      <div className="mt-4">
-        <ProductFamilyField
-          register={register}
-          setValue={setValue}
-          errors={errors}
-          orgId={orgId}
-          categoryId={categoryId}
-          families={families}
-          readOnly={readOnly}
-        />
-      </div>
+      {withFamily && (
+        <div className="mt-4">
+          <ProductFamilyField
+            register={register}
+            setValue={setValue}
+            errors={errors}
+            orgId={orgId}
+            categoryId={categoryId}
+            families={families}
+            readOnly={readOnly}
+          />
+        </div>
+      )}
 
       {type.kinds.length > 0 && (
         <div className="mt-4">
@@ -275,7 +282,8 @@ function FactField({
   return (
     <FormSelect
       label={label}
-      disabled={readOnly || loading}
+      // Never disabled while the answers load (product-form A8): the hint says why it is empty.
+      disabled={readOnly}
       error={error}
       hint={loading ? "Loading the answers…" : hint}
       {...register(name as never)}

@@ -116,6 +116,9 @@ Per [TESTING.md](../../../TESTING.md); each new guard is mutation-tested and rec
 - **Integration:** a second save from one version writes nothing (A6; mutation: drop the version
   clause); a team save leaves one audit entry and the badge (A7), and saves when the audit fails.
 - **Component:** A2, A5, A8 (no `disabled` in the tree), A9, A10. **Walked:** A1, A3 (Q18).
+- **U1, verified manually at 360px:** the A9 Failed row and playback once ready (the worker's, unchanged
+  by U1); the `lg:` preview beside the steps. U1 asserts A8 over the create steps; the edit sections
+  are U4's.
 
 ## Delivery (PRs)
 | Unit | Closes | Migrates | Contract |

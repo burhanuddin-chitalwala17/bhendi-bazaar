@@ -82,7 +82,6 @@ const SHAPE_LEGACY = new Set([
   "src/components/payouts/CommercialTerms.tsx",
   "src/components/payouts/SettleEntries.tsx",
   "src/components/payouts/SettlementList.tsx",
-  "src/components/product/console/productAdd/index.tsx",
   "src/components/product/console/productEdit/index.tsx",
   "src/components/product/console/productsList/components/ProductsFilters.tsx",
   "src/components/product/console/productsList/components/ProductsTable.tsx",

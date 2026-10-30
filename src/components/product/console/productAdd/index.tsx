@@ -4,7 +4,7 @@
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
@@ -54,7 +54,8 @@ export function ProductAddContainer({
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
 
-  const { createProduct, isLoading, error, successMessage } = useProducts();
+  // The stepped form shows its own success screen (product-form Q16), so nothing navigates away.
+  const { createProduct, isLoading } = useProducts({ stayAfterCreate: true });
 
   const handleCancel = () => {
     router.push(productsBasePath);
@@ -62,37 +63,11 @@ export function ProductAddContainer({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         back={{ href: productsBasePath, label: "Back to products" }}
-        title="Create New Product"
-        description="Add a new product to your catalog"
-        actions={
-          <CopyFromPicker
-            options={copyOptions}
-            selectedId={copySource?.id}
-            newProductPath={`${productsBasePath}/new`}
-          />
-        }
+        title="Add product"
       />
-
-      {copySource && (
-        <div className="bg-info/10 border border-info/30 text-info px-4 py-3 rounded-lg flex items-start gap-3">
-          <Copy className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>
-            Copied from <strong>{copySource.name}</strong> — description,
-            category, attributes and flags. Add a name, price, photos and stock
-            for this product.
-          </p>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="bg-success/10 border border-success/30 text-success px-4 py-3 rounded-lg flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>{successMessage}</p>
-        </div>
-      )}
 
       <ProductForm
         key={copySource?.id ?? "blank"}
@@ -108,14 +83,28 @@ export function ProductAddContainer({
         isSubmitting={isLoading}
         readOnly={false}
         uploadEndpoints={uploadEndpoints}
+        copyFrom={
+          copyOptions.length > 0 && (
+            <div className="space-y-2 rounded-card border border-border bg-card p-3">
+              <p className="text-sm font-medium text-foreground">Start from a product you already sell</p>
+              <CopyFromPicker
+                options={copyOptions}
+                selectedId={copySource?.id}
+                newProductPath={`${productsBasePath}/new`}
+              />
+              {copySource && (
+                <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Copy className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  <span>
+                    Copied from <strong>{copySource.name}</strong> — description, category, details
+                    and flags. Add photos, a name, price and stock.
+                  </span>
+                </p>
+              )}
+            </div>
+          )
+        }
       />
-
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <p>{error}</p>
-        </div>
-      )}
     </div>
   );
 }

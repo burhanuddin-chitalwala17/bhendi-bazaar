@@ -19,7 +19,8 @@
  * A video is uploaded as picked (video-hosting trd D2): nothing here downscales, crops or judges
  * it, because the worker transcodes it into what a buyer gets. Whether that is done is not known
  * here; the saved gallery tells the row its state, and a fresh upload is processing until then.
- * A YouTube link stays a link ([ADR-0017](../../docs/adr/0017-video-is-embedded-not-hosted.md)).
+ * Video is hosted and transcoded ([ADR-0039](../../docs/adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md));
+ * a YouTube link stays an embed (its decision 5).
  * Why the cover is chosen rather than derived, and why nothing here pre-selects one:
  * docs/specs/product-video/trd.md D17/D17a.
  *
@@ -32,7 +33,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import NextImage from "next/image";
-import { Film, Images, Loader2, Upload, Youtube } from "lucide-react";
+import { Camera, Film, Images, Loader2, Plus, Upload, Youtube } from "lucide-react";
 import { useLocalPreviews } from "@/hooks/core/useLocalPreviews";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ import { SHOT_ROLE, unknownSlots, type ShotList, type ShotRole } from "@server/c
 import { judgeCapture, warningsForRole, type CaptureWarning } from "@server/catalog/capture-checks";
 import { analyseCapture } from "@/lib/image/capture-checks";
 import { MediaLibraryPicker } from "@/components/product/media-library-picker";
+import { ResponsivePicker } from "@/components/shared/overlays/responsive-picker";
 import type { MediaAssetDto } from "@server/catalog/media-library.types";
 import {
   assignSlotTo,
@@ -120,6 +122,12 @@ function releasePreviews(photos: readonly QueuedPhoto[]): void {
 }
 
 const CAPACITY_NOTICE = `A product can have at most ${MAX_MEDIA_PER_PRODUCT} gallery items`;
+const WAIT_NOTICE = "Wait for the upload to finish";
+
+/** "2 photos still uploading" (product-form ux "Slow"); a video batch says videos. */
+function stillUploading(left: number, kind: "photo" | "video"): string {
+  return `${left} ${kind}${left === 1 ? "" : "s"} still uploading`;
+}
 
 export function ProductMediaManager({
   value,
@@ -132,10 +140,17 @@ export function ProductMediaManager({
   savedMedia = [],
 }: ProductMediaManagerProps) {
   const media = value ?? [];
+  /**
+   * The gallery as last committed, read by every write. An upload resolves after renders have
+   * moved on, so a write built from the captured `media` would drop whatever landed meanwhile.
+   */
+  const latest = useRef<ProductMediaInput[]>(media);
+  latest.current = media;
   const [isUploading, setIsUploading] = useState(false);
   /** The slot whose button shows the spinner; null while the extras upload runs. */
   const [uploadingSlot, setUploadingSlot] = useState<string | null>(null);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [uploadingKind, setUploadingKind] = useState<"photo" | "video">("photo");
   const [linkDraft, setLinkDraft] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -154,6 +169,9 @@ export function ProductMediaManager({
   const [judgements, setJudgements] = useState<Record<string, CaptureWarning[]>>({});
   const [kept, setKept] = useState<ReadonlySet<string>>(() => new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const linkInputRef = useRef<HTMLInputElement>(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const extrasHeadingId = useId();
   const { remember, localPreview } = useLocalPreviews();
 
@@ -175,7 +193,30 @@ export function ProductMediaManager({
 
   // The array is what `position` is written from, so it is kept in the order the editor shows:
   // filled slots in shot-list order, then the extras as arranged (D4).
-  const commit = (next: ProductMediaInput[]) => onChange(orderGallery(next, shotList));
+  /**
+   * Every write goes through here as a function of the latest gallery, never a captured one. The
+   * ref moves at once, so two writes in one tick compose; the cap is re-checked on the result.
+   */
+  const commit = (update: (current: ProductMediaInput[]) => ProductMediaInput[]) => {
+    const next = orderGallery(update(latest.current), shotList);
+    latest.current = next;
+    onChange(next);
+  };
+  /** Adds what still fits, by the latest gallery; reports whether anything was turned away. */
+  const commitAdded = (added: ProductMediaInput[], arrange?: (next: ProductMediaInput[]) => ProductMediaInput[]) => {
+    let refused = false;
+    commit((current) => {
+      const fresh = added.filter(
+        (item, index) => added.findIndex((other) => other.ref === item.ref) === index && !current.some((row) => row.ref === item.ref),
+      );
+      const room = Math.max(0, MAX_MEDIA_PER_PRODUCT - current.length);
+      refused = fresh.length > room;
+      const next = [...current, ...fresh.slice(0, room)];
+      return arrange ? arrange(next) : next;
+    });
+    if (refused) setNotice(CAPACITY_NOTICE);
+    return !refused;
+  };
 
   // A slot key is only meaningful against the category's list, and the server refuses one
   // it does not declare (D4). Changing category therefore turns those photographs back into
@@ -184,8 +225,8 @@ export function ProductMediaManager({
   useEffect(() => {
     const stale = unknownSlots(media.map((item) => item.slot), shotList);
     if (stale.length === 0) return;
-    commit(
-      media.map((item) =>
+    commit((current) =>
+      current.map((item) =>
         item.slot && stale.includes(item.slot) ? { ...item, slot: null } : item,
       ),
     );
@@ -208,7 +249,7 @@ export function ProductMediaManager({
   const pathFor = (file: File) => buildImagePath("org", file.name, identifier, orgCode);
 
   const canAdd = (count: number): boolean => {
-    if (media.length + count > MAX_MEDIA_PER_PRODUCT) {
+    if (latest.current.length + count > MAX_MEDIA_PER_PRODUCT) {
       setNotice(CAPACITY_NOTICE);
       return false;
     }
@@ -227,19 +268,13 @@ export function ProductMediaManager({
   const place = (urls: string[], previews: File[], judged: File[], targetSlot: string | null) => {
     remember(previews, urls);
     // A repeat upload is answered with the org's existing image (D11), which may already sit
-    // in this gallery; one item per ref keeps the slot and warning bookkeeping honest.
-    const fresh = urls.filter(
-      (url, index) => urls.indexOf(url) === index && !media.some((item) => item.ref === url),
+    // in this gallery; commitAdded keeps one item per ref. No cover is designated, even for the
+    // very first upload: a default that stands in for a missing choice hides its absence (D17a).
+    const first = urls.find((url) => !latest.current.some((item) => item.ref === url));
+    commitAdded(
+      urls.map((url) => ({ kind: "IMAGE" as const, ref: url, isThumbnail: false, slot: null })),
+      (next) => (targetSlot && first && next.some((item) => item.ref === first) ? assignSlotTo(next, first, targetSlot) : next),
     );
-    // Deliberately does not designate a cover, even for the very first upload: a
-    // default that stands in for a missing choice is what makes its absence
-    // invisible (D17a). The org taps "Cover".
-    let next: ProductMediaInput[] = [
-      ...media,
-      ...fresh.map((url) => ({ kind: "IMAGE" as const, ref: url, isThumbnail: false, slot: null })),
-    ];
-    if (targetSlot && fresh[0]) next = assignSlotTo(next, fresh[0], targetSlot);
-    commit(next);
     void judge(judged, urls);
   };
 
@@ -248,6 +283,7 @@ export function ProductMediaManager({
 
     setIsUploading(true);
     setUploadingSlot(targetSlot);
+    setUploadingKind("photo");
     setNotice(null);
     setProgress({ done: 0, total: files.length });
     try {
@@ -300,13 +336,14 @@ export function ProductMediaManager({
 
     setIsUploading(true);
     setUploadingSlot(slot);
+    setUploadingKind("photo");
     setNotice(null);
-    setProgress({ done: 0, total: 2 });
+    // Two objects, one photo: the count the shop sees is the photo, not the uploads.
+    setProgress({ done: 0, total: 1 });
     try {
       const source = await uploadBatch([ready], { endpoints, pathFor });
       const sourceUrl = source.urls[0];
       if (!sourceUrl) throw new Error(source.firstError ?? "Upload failed");
-      setProgress({ done: 1, total: 2 });
 
       const cropFile = await renderCrop(ready, transform);
       const sourceAssetId = source.assetIds[0];
@@ -338,6 +375,7 @@ export function ProductMediaManager({
     if (files.length === 0 || !canAdd(files.length)) return;
     setIsUploading(true);
     setUploadingSlot(null);
+    setUploadingKind("video");
     setNotice(null);
     setProgress({ done: 0, total: files.length });
     const landed: string[] = [];
@@ -354,12 +392,11 @@ export function ProductMediaManager({
         }
         setProgress({ done: index + 1, total: files.length });
       }
-      const fresh = landed.filter((url, index) => landed.indexOf(url) === index && !media.some((item) => item.ref === url));
-      if (fresh.length > 0) {
-        commit([...media, ...fresh.map((url) => ({ kind: "VIDEO" as const, ref: url, isThumbnail: false, slot: null }))]);
+      if (landed.length > 0) {
+        commitAdded(landed.map((url) => ({ kind: "VIDEO" as const, ref: url, isThumbnail: false, slot: null })));
       }
       if (failed.length > 0) {
-        setNotice(`Could not upload ${failed.join(", ")} (${firstError}).` + (fresh.length > 0 ? " The rest were added." : ""));
+        setNotice(`Could not upload ${failed.join(", ")} (${firstError}).` + (landed.length > 0 ? " The rest were added." : ""));
       }
     } finally {
       setIsUploading(false);
@@ -447,7 +484,7 @@ export function ProductMediaManager({
     }
     setNotice(null);
     setLinkDraft("");
-    commit([...media, { kind: "YOUTUBE", ref, isThumbnail: false, slot: null }]);
+    commitAdded([{ kind: "YOUTUBE", ref, isThumbnail: false, slot: null }]);
   };
 
   const openPicker = (slot: string | null) => {
@@ -476,15 +513,14 @@ export function ProductMediaManager({
       isThumbnail: false,
       slot: null,
     };
-    let next: ProductMediaInput[] = [...media, picked];
-    if (pickerSlot && picked.kind === "IMAGE") {
-      next = assignSlotTo(next, picked.ref, pickerSlot);
+    const slot = pickerSlot;
+    commitAdded([picked], (next) => (slot && picked.kind === "IMAGE" ? assignSlotTo(next, picked.ref, slot) : next));
+    if (slot && picked.kind === "IMAGE") {
       // A slot holds one photograph, so the pick is the end of the errand.
       setPickerOpen(false);
-    } else if (pickerSlot) {
+    } else if (slot) {
       setNotice("A video is always an extra, so it was added below the slots");
     }
-    commit(next);
   };
 
   const unpickFromLibrary = (asset: MediaAssetDto) => remove(asset.ref);
@@ -497,33 +533,35 @@ export function ProductMediaManager({
       return;
     }
     setNotice(null);
-    commit(media.filter((item) => item.ref !== ref));
+    commit((current) => current.filter((item) => item.ref !== ref));
   };
 
   const move = (ref: string, delta: 1 | -1) => {
     setNotice(null);
     // Reordering moves nothing but position: the cover flag travels with its item, so
     // the card is untouched by a gallery rearrangement (R16).
-    onChange(moveExtra(media, ref, delta, shotList));
+    const next = moveExtra(latest.current, ref, delta, shotList);
+    latest.current = next;
+    onChange(next);
   };
 
   const setCover = (ref: string) => {
     setNotice(null);
-    commit(media.map((item) => ({ ...item, isThumbnail: item.ref === ref })));
+    commit((current) => current.map((item) => ({ ...item, isThumbnail: item.ref === ref })));
   };
 
   const assignSlot = (ref: string, slot: string) => {
     setNotice(null);
-    commit(assignSlotTo(media, ref, slot));
+    commit((current) => assignSlotTo(current, ref, slot));
   };
 
   const moveToExtra = (ref: string) => {
     setNotice(null);
-    commit(clearSlot(media, ref));
+    commit((current) => clearSlot(current, ref));
   };
 
   const describe = (ref: string, description: string) => {
-    commit(media.map((item) => (item.ref === ref ? { ...item, description } : item)));
+    commit((current) => current.map((item) => (item.ref === ref ? { ...item, description } : item)));
   };
 
   const keep = (ref: string) => setKept((current) => new Set(current).add(ref));
@@ -547,7 +585,30 @@ export function ProductMediaManager({
   const replaceRef = (sourceRef: string, result: EnhancementDto) => {
     closeImprove();
     if (!result.resultRef) return;
-    commit(media.map((item) => (item.ref === sourceRef ? { ...item, ref: result.resultRef ?? item.ref } : item)));
+    const resultRef = result.resultRef;
+    commit((current) => current.map((item) => (item.ref === sourceRef ? { ...item, ref: resultRef } : item)));
+  };
+
+  // "Add" is never disabled (product-form Q36, ADR-0053): at the cap, or while an upload runs, a
+  // tap says why instead of opening — the rule SlotRow follows.
+  const openAdd = (open: boolean) => {
+    if (open && isUploading) {
+      setNotice(WAIT_NOTICE);
+      return;
+    }
+    if (open && atCapacity) {
+      setNotice(CAPACITY_NOTICE);
+      return;
+    }
+    setIsAddOpen(open);
+  };
+
+  /** Each row of the Add sheet drives a control the editor already had (Q32); no new upload path. */
+  const addFrom = (source: "camera" | "files" | "link") => {
+    setIsAddOpen(false);
+    if (source === "camera") cameraInputRef.current?.click();
+    else if (source === "files") fileInputRef.current?.click();
+    else requestAnimationFrame(() => linkInputRef.current?.focus());
   };
 
   return (
@@ -563,10 +624,11 @@ export function ProductMediaManager({
               thumb={item ? <MediaThumb item={item} preview={localPreview(item.ref)} /> : null}
               warnings={item ? warningsFor(item) : []}
               uploading={isUploading && uploadingSlot === slot.key}
-              disabled={isUploading || atCapacity}
+              busy={isUploading}
+              onBusy={() => setNotice(WAIT_NOTICE)}
               canPickFromLibrary={!!orgId}
               onFiles={(files) => void queueForCrop(files, slot.key)}
-              onPickFromLibrary={() => openPicker(slot.key)}
+              onPickFromLibrary={() => (atCapacity ? setNotice(CAPACITY_NOTICE) : openPicker(slot.key))}
               onDescribe={(description) => item && describe(item.ref, description)}
               onCover={() => item && setCover(item.ref)}
               onMoveToExtra={() => item && moveToExtra(item.ref)}
@@ -599,7 +661,6 @@ export function ProductMediaManager({
                 key={`${item.kind}-${item.ref}`}
                 item={item}
                 index={index}
-                count={extras.length}
                 thumb={<MediaThumb item={item} preview={localPreview(item.ref)} poster={videoStatus(item)?.poster ?? null} />}
                 status={videoStatus(item)?.state ?? null}
                 shotList={shotList}
@@ -626,33 +687,59 @@ export function ProductMediaManager({
           </p>
         )}
 
+        {/* Uploads run in the background and "Next" still works (product-form ux "Slow"). */}
+        {isUploading && progress.total - progress.done > 0 && (
+          <p role="status" className="text-sm text-muted-foreground">
+            {stillUploading(progress.total - progress.done, uploadingKind)}
+          </p>
+        )}
+
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading || atCapacity}
-            className="sm:w-auto"
+          <ResponsivePicker
+            open={isAddOpen}
+            onOpenChange={openAdd}
+            title="Add"
+            className="w-64"
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                // Spinner while uploading; a tap then says to wait rather than opening (openAdd).
+                aria-busy={isUploading && uploadingSlot === null}
+                className="sm:w-auto"
+              >
+                {isUploading && uploadingSlot === null ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Plus />
+                )}
+                {isUploading && uploadingSlot === null
+                  ? progress.total > 1
+                    ? `Uploading ${progress.done}/${progress.total}…`
+                    : "Uploading…"
+                  : "Add"}
+              </Button>
+            }
           >
-            {isUploading && uploadingSlot === null ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Upload />
-            )}
-            {isUploading && uploadingSlot === null
-              ? progress.total > 1
-                ? `Uploading ${progress.done}/${progress.total}…`
-                : "Uploading…"
-              : "Upload photos or a video"}
-          </Button>
+            <div className="flex flex-col gap-1">
+              <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("camera")}>
+                <Camera /> Take photo
+              </Button>
+              <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("files")}>
+                <Upload /> Choose photos or video
+              </Button>
+              <Button type="button" variant="ghost" size="lg" className="h-auto justify-start whitespace-normal py-3" onClick={() => addFrom("link")}>
+                <Youtube /> Add YouTube link
+              </Button>
+            </div>
+          </ResponsivePicker>
           {orgId && (
             <Button
               type="button"
               variant="outline"
               size="lg"
-              onClick={() => openPicker(null)}
-              disabled={isUploading || atCapacity}
+              onClick={() => (atCapacity ? setNotice(CAPACITY_NOTICE) : openPicker(null))}
               className="sm:w-auto"
             >
               <Images /> From library
@@ -662,14 +749,14 @@ export function ProductMediaManager({
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <Input
+            ref={linkInputRef}
             value={linkDraft}
             onChange={(event) => setLinkDraft(event.target.value)}
             placeholder="Paste a YouTube link"
             aria-label="YouTube link"
-            disabled={atCapacity}
             className="h-10"
           />
-          <Button type="button" variant="outline" size="lg" onClick={addVideo} disabled={atCapacity}>
+          <Button type="button" variant="outline" size="lg" onClick={addVideo}>
             <Youtube /> Add video
           </Button>
         </div>
@@ -681,6 +768,16 @@ export function ProductMediaManager({
           multiple
           onChange={handleExtrasFileSelect}
           className="hidden"
+        />
+        {/* The phone's camera, straight into the same path a picked photo takes. */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleExtrasFileSelect}
+          className="hidden"
+          data-testid="camera-input"
         />
       </section>
 

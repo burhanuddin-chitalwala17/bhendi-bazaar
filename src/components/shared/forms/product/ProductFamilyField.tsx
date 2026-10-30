@@ -53,7 +53,13 @@ export function ProductFamilyField({
   const [error, setError] = useState<string | null>(null);
 
   async function onCreate() {
+    // Never disabled (product-form A8, ADR-0053): a second tap while creating is ignored, a short name is told why.
+    if (busy) return;
     setError(null);
+    if (name.trim().length < 2) {
+      setError("Name needs 2 or more letters");
+      return;
+    }
     if (!categoryId) {
       // The family takes its type and its axis from the category, so it cannot be made first.
       setError("Choose a category first — the family takes its questions from it");
@@ -79,7 +85,7 @@ export function ProductFamilyField({
         label="Part of a family"
         {...register("familyId")}
         error={errors.familyId?.message}
-        disabled={readOnly || creating}
+        disabled={readOnly}
         hint="For the same thing in several colours or sizes. Most products need none."
       >
         <option value="">On its own</option>
@@ -107,7 +113,7 @@ export function ProductFamilyField({
             hint="What the colours have in common, not one of them"
           />
           <div className="flex gap-2">
-            <Button type="button" onClick={onCreate} disabled={busy || name.trim().length < 2}>
+            <Button type="button" onClick={onCreate} aria-busy={busy}>
               {busy ? "Creating…" : "Create"}
             </Button>
             <Button

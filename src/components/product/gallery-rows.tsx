@@ -78,8 +78,13 @@ interface SlotRowProps {
   warnings: CaptureWarning[];
   /** This slot's own upload is in flight. */
   uploading: boolean;
-  /** Any upload is in flight, or the gallery is full. */
-  disabled: boolean;
+  /**
+   * Any upload is in flight, or the gallery is full. The buttons stay tappable (product-form A8):
+   * the manager's handlers answer a tap at the cap with the capacity notice.
+   */
+  busy: boolean;
+  /** Says why a tap did nothing while another upload runs. */
+  onBusy: () => void;
   canPickFromLibrary: boolean;
   onFiles: (files: File[]) => void;
   onPickFromLibrary: () => void;
@@ -101,7 +106,8 @@ export function SlotRow({
   thumb,
   warnings,
   uploading,
-  disabled,
+  busy,
+  onBusy,
   canPickFromLibrary,
   onFiles,
   onPickFromLibrary,
@@ -138,14 +144,18 @@ export function SlotRow({
             type="button"
             variant="outline"
             size="lg"
-            onClick={() => inputRef.current?.click()}
-            disabled={disabled}
+            onClick={() => {
+              // A tap while another upload runs says to wait rather than being greyed out (A8).
+              if (busy) onBusy();
+              else inputRef.current?.click();
+            }}
+            aria-busy={uploading}
           >
             {uploading ? <Loader2 className="animate-spin" /> : <Camera />}
             {uploading ? "Uploading…" : "Take or choose a photo"}
           </Button>
           {canPickFromLibrary && (
-            <Button type="button" variant="outline" size="lg" onClick={onPickFromLibrary} disabled={disabled}>
+            <Button type="button" variant="outline" size="lg" onClick={onPickFromLibrary}>
               <Images /> From library
             </Button>
           )}
@@ -214,7 +224,6 @@ interface ExtraRowProps {
   item: ProductMediaInput;
   /** Position among the extras, for the move buttons and the labels. */
   index: number;
-  count: number;
   thumb: ReactNode;
   /** A hosted video's readiness (video-hosting spec R3, R7); null for a photograph or a link. */
   status?: ProductMediaState | null;
@@ -233,7 +242,6 @@ interface ExtraRowProps {
 export function ExtraRow({
   item,
   index,
-  count,
   thumb,
   status = null,
   shotList,
@@ -299,8 +307,8 @@ export function ExtraRow({
           type="button"
           variant="outline"
           size="icon-lg"
+          // moveExtra is a no-op at the ends, so the button need not be greyed (A8).
           onClick={() => onMove(-1)}
-          disabled={index === 0}
           aria-label={`Move ${label} earlier`}
         >
           <ArrowUp />
@@ -310,7 +318,6 @@ export function ExtraRow({
           variant="outline"
           size="icon-lg"
           onClick={() => onMove(1)}
-          disabled={index === count - 1}
           aria-label={`Move ${label} later`}
         >
           <ArrowDown />

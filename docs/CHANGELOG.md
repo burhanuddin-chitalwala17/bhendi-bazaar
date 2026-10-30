@@ -67,6 +67,61 @@
   needs a populated catalogue), `lint:boundary`, `docs:check`.
 - **Legacy order statuses:** a paid order left at `partially_fulfilled` or `fulfillment_failed` (written by the deleted `fulfillOrder`) becomes `confirmed`, so its parcels can move it on; unpaid ones are untouched. Checked on fixture rows in a throwaway database built to the state before this migration.
 
+## 2026-10-30 — product-form unit 1: listing in five short steps
+
+- **New product is five steps** (product-form R1–R4, R13; D1, D2; Q2, Q5–Q7, Q15, Q16, Q20):
+  `ProductStepsForm.tsx` over the one `ProductForm`, `productFormSchema` and `useServerForm` save.
+  Photos and video → What it is → Price & stock → Details → Review, with "Step n of 5", chips with
+  error counts, "More options" (SKU, low-stock alert; tags, flags, family), a sticky bar
+  ("{n} things to fix · Show"), a searchable category sheet with recent picks, a buyer preview
+  (beside the form at `lg:`), Review problem lines that open their step, and the success screen.
+  The step map (`product-steps.ts`) is typed over `PRODUCT_FORM_FIELDS`. Every step stays mounted,
+  so an upload survives "Next". Edit and read-only keep the long form until U4.
+- **`useServerForm` gains `onInvalid`** (D2): a stepped form opens the step holding the first error
+  instead of the banner. A network `TypeError` now shows the fallback message, not "Failed to fetch".
+- **Photos and video** (R14–R16; D3; Q30, Q32, Q34, Q36): `product-media-manager.tsx` gains the
+  "Add" sheet (Take photo · Choose photos or video · Add YouTube link) driving its existing inputs.
+  At the 10-item cap, Add stays tappable and shows `CAPACITY_NOTICE`, and so do the slot, library
+  and YouTube controls (Q36 updated). `gallery-rows.tsx` loses every `disabled`: a slot tap during
+  an upload is ignored, and a move at the end is a no-op. Its stale header comment now cites
+  ADR-0039, not ADR-0017.
+- **Review fixes (fresh-context /bb-review):** saving a pickup location no longer moves the outer
+  form to the next step. "Add another" clears the step ticks. "Put on sale" ignores a second tap
+  through a ref, not render state. A failed save is shown once, inline with "Try again"
+  (`useServerForm` `toastErrors`). Review problems are parsed only while Review shows.
+- **Copy from ux.md:** schema messages "Name needs 2 or more letters", "Pick a category", "Add the
+  price buyers pay", "Sale price must be below the price". The SKU refusal now reads "Your product
+  '{name}' already uses this code." (`product.repository.ts`), and `product-merge.test.ts`'s Q31
+  assertion follows it. The empty-location notice reads "Where is this kept? Add your shop address
+  once." with "Add location". The family "Create" and the fact select are no longer `disabled`
+  (A8). A first-load skeleton is `products/new/loading.tsx`.
+- **Tests:** `tests/unit/product-form-steps.test.tsx` (A2, A8, A9, A10, R1–R4, Q32, Q36).
+  Mutations, each red: `onInvalid` never called (2 fail); Add `disabled` at the cap (1 fails);
+  "Add video" `disabled` at the cap (1 fails); a row's Remove `disabled` (2 fail);
+  `price` mapped to Details (2 fail); "Next" disabled until the step is valid (4 fail); the SKU
+  copy reverted (`product-merge` Q31 fails). `design-tokens` SHAPE_LEGACY shrinks by
+  `productAdd/index.tsx`.
+- **Second review fixes:** every gallery write in `product-media-manager.tsx` is now a function
+  of the latest gallery (a ref), and the cap is re-checked when it commits. Before this, an upload
+  that resolved after a second pick overwrote the gallery and could pass 10. Add, or a slot, tapped
+  mid-upload shows "Wait for the upload to finish" and stays enabled. The step opens from an
+  effect keyed on the save attempt, so a server SKU refusal opens Price & stock. ux "Slow" copy
+  "{n} photos still uploading" is shown. "Add another" re-syncs the stock rows. `crop-dialog.tsx`
+  loses every `disabled`: a tap while busy is ignored, and the button reads "Uploading…". The
+  unused `count` prop in `gallery-rows.tsx` is removed.
+- **Tests added:** two picks overlapping never lose an item or pass 10; SKU refusal opens Price &
+  stock; a location added mid-form survives "Add another" (`tests/unit/product-form-save.test.tsx`);
+  the crop sheet disables nothing and ignores busy taps (`tests/unit/crop-dialog.test.tsx`).
+  Mutations: commits read the captured `media` (1 fails); the cap is dropped (1 fails); the
+  wait note is removed (1 fails); the step effect is removed (3 fail); the crop busy guard is
+  removed (1 fails). Removing the `syncStockRows()` call in "Add another" **survived**: the
+  registered stock inputs already restore the row on `reset()`. The call is kept as a backstop, and
+  the test pins the outcome.
+- **Gates:** tsc clean for this unit; the only errors are order-fulfilment's `parcelEvent`, from an
+  in-progress client. Unit 200 files / 2272 passed; integration 47 files / 411 passed (1 skipped);
+  lint:boundary clean; docs:check 78 passed. ARCHITECTURE.md test-file count follows the tree.
+  `src/components/CLAUDE.md` was re-read and re-verified; nothing in it changed. Decisions Q2, Q5,
+  Q6, Q7, Q15, Q16, Q20, Q30, Q32, Q34, Q36 → implemented (unit 1).
 
 ## 2026-10-30 — org-profile unit 1: a shop starts with three fields
 

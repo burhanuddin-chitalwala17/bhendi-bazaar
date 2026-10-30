@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useForm, type DefaultValues, type FieldValues, type Path } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldErrors, type FieldValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { ZodType } from "zod";
@@ -16,6 +16,14 @@ interface Options<T extends FieldValues> {
   successMessage?: string;
   /** Shown when the server reports a failure it could not attribute to a field, or the request never arrived. */
   fallbackMessage?: string;
+  /**
+   * Called when client validation stops a submit, so a form that hides some fields (a step, a
+   * closed section) can open the one holding the first error. Given it, the hook leaves the
+   * summary to the form (product-form D2).
+   */
+  onInvalid?: (errors: FieldErrors<T>) => void;
+  /** False when the form shows its own failure inline, so the message is not said twice. */
+  toastErrors?: boolean;
 }
 
 /**
@@ -35,6 +43,8 @@ export function useServerForm<T extends FieldValues>({
   onSuccess,
   successMessage,
   fallbackMessage = "Could not save. Please try again.",
+  onInvalid,
+  toastErrors = true,
 }: Options<T>) {
   const form = useForm<T>({
     // Cast contained here: zod v4's ZodType and the resolver's expected input/output
@@ -67,13 +77,13 @@ export function useServerForm<T extends FieldValues>({
         if (showSummary) {
           const message = leftover.length ? leftover.join(" ") : error.message;
           setFormError(message);
-          toast.error(message);
+          if (toastErrors) toast.error(message);
         }
       } else {
         // A TypeError here is fetch failing to reach us; "Failed to fetch" tells nobody anything.
         const message = error instanceof Error && !(error instanceof TypeError) ? error.message : fallbackMessage;
         setFormError(message);
-        toast.error(message);
+        if (toastErrors) toast.error(message);
       }
       throw error;
     }
@@ -81,7 +91,8 @@ export function useServerForm<T extends FieldValues>({
     // A failed submit must never be silent: a field that cannot render its error
     // (a hidden input, an unmounted section) otherwise makes the button "do nothing".
     console.warn("[useServerForm] validation blocked submit:", validationErrors);
-    setFormError("Please fix the highlighted fields and try again.");
+    if (onInvalid) onInvalid(validationErrors);
+    else setFormError("Please fix the highlighted fields and try again.");
   });
 
   const clearFormError = useCallback(() => setFormError(null), []);
