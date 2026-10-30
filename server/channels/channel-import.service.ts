@@ -7,6 +7,8 @@ import { productService } from "@server/catalog/product.service";
 
 import {
   LEFT_OFF_REASON,
+  GROUP_STATE,
+  type ListingGroupDTO,
   type LeftOffReason,
   CONNECTION_ERROR,
   CONNECTION_STATE,
@@ -28,8 +30,12 @@ import {
 import { channelConnectionRepository } from "./channel-connection.repository";
 import { channelConnectionService, isStalled } from "./channel-connection.service";
 import { channelListingRepository, type ListingFilter, type ListingRow } from "./channel-listing.repository";
-import { indexBySkuKey, mostSimilar, productForListing, skuKey } from "./listing-match";
+import { indexBySkuKey, mostSimilar, productForListing, skuKey, suggestGroups } from "./listing-match";
 import { listingReadSpec } from "./listing-read.job";
+import { channelLocationService } from "./channel-location.service";
+import { marketplaceOrderRepository } from "./marketplace-order.repository";
+import { STOCK_SYNC } from "./channel-stock.types";
+import { lastSent } from "./stock-plan";
 import { MarketplaceAuthError, MarketplaceRequestError, MarketplaceUnavailableError } from "./providers/marketplace-provider";
 import { providerFor } from "./providers";
 
@@ -73,6 +79,25 @@ const toDto = (row: ListingRow, suggestion: ListingSuggestionDTO | null = null, 
   photos:
     row.photoTotal !== null ? { total: row.photoTotal, done: row.photoDone ?? 0, failed: row.photoFailed ?? 0 } : null,
 });
+
+/** What each variation group's header offers (family-merge D6): settle, make, add, or see its family. */
+async function groupsOf(connectionId: string, rows: readonly ListingRow[]): Promise<Record<string, ListingGroupDTO>> {
+  const parents = [...new Set(rows.map((r) => r.parentSku).filter((p): p is string => !!p))];
+  const members = await channelListingRepository.groupsFor(connectionId, parents);
+  const out: Record<string, ListingGroupDTO> = {};
+  for (const parent of parents) {
+    const mine = members.filter((m) => m.parentSku === parent);
+    if (mine.length < 2) continue;
+    const settled = mine.filter((m) => m.productId).length;
+    const inFamily = mine.find((m) => m.product?.family);
+    const family = inFamily?.product?.family ? { ...inFamily.product.family, productId: inFamily.productId! } : null;
+    const outside = family ? mine.filter((m) => m.product?.familyId !== family.id).length : 0;
+    const state =
+      family ? (outside > 0 ? GROUP_STATE.ADD : GROUP_STATE.FAMILY) : settled === mine.length ? GROUP_STATE.MAKE : GROUP_STATE.SETTLE;
+    out[parent] = { state, listingIds: mine.map((m) => m.id), total: mine.length, settled, family, outside };
+  }
+  return out;
+}
 
 /** The hint on each unsettled row (product-merge D3, Q24): the same SKU elsewhere first, then a similar name. */
 async function suggestionsFor(orgId: string, connectionId: string, rows: readonly ListingRow[]) {
@@ -198,6 +223,10 @@ export const channelImportService = {
     const at = new Date();
     const gone = await channelListingRepository.markGone(connectionId, startedAt, at);
     await channelConnectionRepository.finishRead(connectionId, seen, at);
+    // Locations ride along with each read (inventory-sync Q15); a failure here never fails the read.
+    await channelLocationService.refresh(connectionId, at).catch((error: unknown) => {
+      console.error(`[channels] location read failed for ${connectionId}: ${error instanceof Error ? error.name : "error"}`);
+    });
     return { claimed: true as const, seen, linked, gone };
   },
 
@@ -217,6 +246,15 @@ export const channelImportService = {
     const suggestions = filter === "notLinked" ? await suggestionsFor(orgId, row.id, listing.rows) : new Map<string, ListingSuggestionDTO>();
     const parked = listing.rows.filter((r) => r.leftOffReason === LEFT_OFF_REASON.NO_TYPE).map((r) => r.id);
     const types = await channelListingRepository.marketplaceTypes(parked);
+    const [groups, anyFamily, ungrouped] = await Promise.all([
+      groupsOf(row.id, listing.rows),
+      channelListingRepository.anyInFamily(row.id),
+      filter === "notLinked" && !search ? channelListingRepository.ungroupedUnsettled(row.id) : Promise.resolve([]),
+    ]);
+    // A few at a time: suggestions are a nudge, not a second to-do list (family-merge Q5).
+    const sameItem = suggestGroups(ungrouped)
+      .slice(0, 3)
+      .map((g) => ({ listingIds: g.map((r) => r.id), titles: g.map((r) => r.title ?? r.sku) }));
     const read: ChannelReadDTO = {
       state: (row.readState as ReadState | null) ?? null,
       total: row.readTotal,
@@ -235,12 +273,20 @@ export const channelImportService = {
       showingLeftOff: filter === "leftOff",
       listings: listing.rows.map((r) => toDto(r, suggestions.get(r.id) ?? null, types.get(r.id) ?? null)),
       hasMore: listing.hasMore,
+      groups,
+      firstFamily: !anyFamily,
+      sameItem,
     };
   },
 
   /** The owner leaves an unsettled listing off Bhendi Bazaar (product-merge Q9). */
   async leaveOff(orgId: string, userId: string, id: string, reason: LeftOffReason | null = null): Promise<void> {
     if (!(await channelListingRepository.leaveOff(id, orgId, userId, new Date(), reason))) throw new NotFoundError("Unsettled listing");
+  },
+
+  /** "Not one item" on a suggested group (family-merge Q21). */
+  async dismissFamilyHint(orgId: string, listingIds: readonly string[]): Promise<void> {
+    if ((await channelListingRepository.dismissFamilyHint(listingIds, orgId, new Date())) === 0) throw new NotFoundError("Listing");
   },
 
   /** Back to the to-do (Q9). */
@@ -292,9 +338,10 @@ export const channelImportService = {
 
   /** A product's "On marketplaces" block (R11): every connected marketplace, linked or not. */
   async linksForProduct(orgId: string, productId: string): Promise<ProductMarketplaceLinkDTO[]> {
-    const [connections, rows] = await Promise.all([
+    const [connections, rows, oversold] = await Promise.all([
       channelConnectionRepository.forOrg(orgId),
       channelListingRepository.forProduct(orgId, productId),
+      marketplaceOrderRepository.latestOversold(productId),
     ]);
     return connections
       .filter((c) => c.state !== CONNECTION_STATE.DISCONNECTED && isMarketplaceChannel(c.channel))
@@ -318,6 +365,15 @@ export const channelImportService = {
                 photos:
                   row.photoTotal !== null
                     ? { total: row.photoTotal, done: row.photoDone ?? 0, failed: row.photoFailed ?? 0 }
+                    : null,
+                stock:
+                  c.stockSync === STOCK_SYNC.ON
+                    ? {
+                        sent: lastSent(row.stockSent).counts?.reduce((n, x) => n + x.quantity, 0) ?? null,
+                        heldByMarketplace: lastSent(row.stockSent).held,
+                        sentAt: row.stockSentAt?.toISOString() ?? null,
+                        oversold: oversold && oversold.channel === channel ? { orderId: oversold.orderId } : null,
+                      }
                     : null,
               }
             : null,

@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-21
+- **Verified:** 2026-10-29
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -326,6 +326,14 @@ and new credentials. Register the host the app actually uses, before the first t
   code uses `searchOrders` (2026-01-01), which returns SKU and quantity under the roles we hold and
   needs no Restricted Data Token; buyer details need restricted roles we did not request.
   Notifications go only to SQS or EventBridge, so without an AWS account a sale is found by polling.
+
+**Stock and orders, checked on production 2026-10-29 (inventory-sync Q12, read-only).** Flipkart:
+`GET /locations/allLocations` answers (the shop has one location), listing details carry stock per
+location id, `POST /v3/shipments/filter` answers, and `POST /listings/v3/update/inventory` accepts
+our app (an empty body is accepted and changes nothing). Amazon: `orders/v0/orders` and
+`orders/2026-01-01/orders` answer under our roles; `supplySources` is refused (403), so multi-location
+inventory is not ours to use and a listing has one seller-fulfilled (`DEFAULT`) quantity;
+`patchListingsItem` with `mode=VALIDATION_PREVIEW` returns `VALID` for a quantity patch.
 
 **Paid.** Flipkart's Reports API (settlement and fulfilment reports) is a paid partner service;
 nothing public marks listings, inventory or shipments as paid, and the partner dashboard's metered

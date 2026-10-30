@@ -5,6 +5,11 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { Suspense } from "react";
 import { ProductGridSkeleton } from "@/components/shared/states/LoadingSkeleton";
+import type { Metadata } from "next";
+
+// Every query is a new address; indexing them would flood the index with thin
+// duplicates. Followed, so the products listed still gain from the link (seo R8).
+export const metadata: Metadata = { robots: { index: false, follow: true } };
 
 export default async function SearchPage({
   searchParams,

@@ -315,6 +315,53 @@ Routes:
   (`channel`, `productType`, `kind`, `theirCategory`), `publish` (`id`), `remove` (`id`,
   `typeLabel`); 409 when removing the publishing type or adding one already listed.
 
+### Families from marketplace listings
+
+Since family-merge ([spec](specs/marketplace-integration/family-merge/)) the family page reads
+**`FamilyPageDTO`** on the server (`server/channels/channel-family.types.ts`): the marketplace, the family
+being added to (or null), a starting `name` and `description`, `members` (**`FamilyMemberDTO`**: the
+listing, its live read's state, and the product it already is, with that product's other family),
+`more` beyond the page's 30, the type question, `typeOfCategory`, and `byType`, a
+**`FamilyTypePlanDTO`** per type (its axes, each marked `added` when beyond the type's own, each
+member's values and questions, the shared facts and questions, and duplicates). The Listings page's
+`ChannelListingsPageDTO` gains `groups` (**`ListingGroupDTO`** per variation group: `state` from
+`GROUP_STATE`, every member's listing id, totals, the family and how many sit outside it),
+`firstFamily` and `sameItem` (suggested groups); `SettleDetailDTO` gains `group`.
+
+Routes, both `withOrg`:
+- `POST /api/org/[orgId]/channels/family` — body `family-settle.schema.ts`: `listingIds` (up to 30),
+  `familyId` when adding, `name`, `description`, `categoryId`, `removedAxes`, `answers` (listing id →
+  fact → our answer's key; the family's under `"*"`), and per member `include`, `move`, `sku`, `price`
+  in rupees (stored as paise) and `stock`. Answers `{ result: FamilySettleResultDTO }` (`familyId`,
+  `familyName`, `members`, `axisWord`); 400 in the envelope for two members alike, an unanswered one,
+  a missing type or a price; 409 for a SKU in use, a product in another family not moved, or listings
+  settled meanwhile; 502 when a member's main photo cannot be copied. Everything is planned again on
+  the server; an answer counts only for a fact that member was asked.
+- `POST …/channels/[channel]/listings/dismiss-group` — `{ listingIds }`; `{ ok: true }`.
+
+### Stock sync and marketplace orders
+
+Since inventory-sync ([spec](specs/marketplace-integration/inventory-sync/)) channels reads, on the
+server, from `server/channels/channel-stock.types.ts`: **`StockSyncSectionDTO`** (the marketplace's
+`state` from `STOCK_SYNC`, whether locations need matching and which one is new, last sent and checked
+times, whether every listing is stocked by the marketplace, today's corrections), **`StockPreviewDTO`**
+(a **`StockPreviewRowDTO`** per linked listing: their count or null when unread, ours, whether it
+changes), **`LocationMatchDTO`** (each **`ChannelLocationDTO`** with its match, "not used", a
+pincode suggestion, gone and closed flags, plus the shop's locations) and **`MarketplaceOrderDTO`**
+(order and SKU, quantity, the amount in paise as reported, `state` from `ORDER_LINE_STATE`,
+oversold, `locationGuessed`, `beforeSync`, `unlinked`). The section also carries `problem` (`STOCK_PROBLEM`: busy
+or refused), `sending` (sent of total since sync went on) and `refused` (listings turned down). A product's marketplace link gains
+`stock`: last sent, when, `heldByMarketplace`, and an oversold order still waiting to ship, or null
+while sync is off.
+
+Routes, both `withOrg`:
+- `PUT /api/org/[orgId]/channels/[channel]/stock-sync` — body `stock-sync.schema.ts`
+  (`stockSyncChangeSchema`): `{ action: "on" | "pause" | "off" }`; "on" is sent from the preview and
+  enqueues a send for every linked product. Answers `{ ok: true }`; 409 when not connected.
+- `PUT /api/org/[orgId]/channels/[channel]/locations` — `locationMatchSchema`: `matches`, each
+  marketplace location to one of the shop's active locations or not used, never both. `{ ok: true }`;
+  400 for a location not the shop's or closed.
+
 ### Image enhancement
 
 Since PR-185 the org portal speaks **`EnhancementDto`** (`server/content/enhancement.types.ts`): `id`, `tool`, `preset`, `state`, `sourceAssetId`, `sourceRef`, `proposalUrl` (null unless the state is `PROPOSED`), `resultAssetId`, `resultRef`, `error`, `costPaise` (integer paise, [Invariant 3](../CLAUDE.md)), `createdAt`, `proposedAt`, `decidedAt` — beside **`EnhancementUsage`** (`used`, `allowance`, `paused`, `pauseReason`), which every answer carries so the sheet can say where the shop stands. Four routes, all `withOrg` and parsed by `src/lib/validation/schemas/enhancement.schema.ts`: `POST /api/org/:orgId/enhancements` (`{ sourceAssetId? | sourceRef?, tool, preset?, slot?, slotRole? }`, exactly one of the first two: the library names a photo by its asset id, the gallery editor knows only the URL of one it has just put up, and a request carrying both or neither is a 400) → `{ enhancement, usage }`; `GET …/:id` → `{ enhancement }`, which the sheet polls while the worker runs; `POST …/:id/accept` → `{ enhancement }` with `resultRef`, the derived image's URL; `POST …/:id/discard` → `{ enhancement }`. A refusal is a `DomainError` with the reason the org member reads ([image-enhancement](specs/image-enhancement/) R7, R10). Since PR-198 `preset` is **not free text**: it is one of the keys in `server/content/scene-presets.ts`, required when `tool` is `SCENE` and refused on every other tool, so a request carrying a description nobody approved is a 400 rather than a row (R11).

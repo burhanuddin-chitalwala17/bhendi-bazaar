@@ -9,6 +9,7 @@ import {
   type MarketplaceChannel,
   type ReadError,
 } from "./channel-connection.types";
+import { STOCK_SYNC, type StockProblem, type StockSyncState } from "./channel-stock.types";
 
 /**
  * The one way to reach `ChannelConnection` (Invariant 5). Tokens arrive and leave here already
@@ -41,6 +42,13 @@ export interface ConnectionRow {
   readFinishedAt: Date | null;
   readTouchedAt: Date | null;
   readErrorCode: string | null;
+  /** inventory-sync D6: off, on or paused, and its times. */
+  stockSync: string;
+  stockSyncChangedAt: Date | null;
+  stockProblem: string | null;
+  stockSentAt: Date | null;
+  stockCheckedAt: Date | null;
+  ordersCursor: string | null;
   connectedBy: { name: string | null; email: string | null } | null;
   disconnectedBy: { name: string | null; email: string | null } | null;
 }
@@ -74,6 +82,12 @@ const ROW = {
   readFinishedAt: true,
   readTouchedAt: true,
   readErrorCode: true,
+  stockSync: true,
+  stockSyncChangedAt: true,
+  stockProblem: true,
+  stockSentAt: true,
+  stockCheckedAt: true,
+  ordersCursor: true,
   ...PEOPLE,
 } as const;
 
@@ -223,6 +237,66 @@ export const channelConnectionRepository = {
       where: { id, state: CONNECTION_STATE.CONNECTED },
       data: { lastCheckedAt: now, lastErrorCode: null, lastErrorAt: null },
     });
+  },
+
+  /**
+   * Stock sync's switch (inventory-sync D6, Q4). Turning on starts the order check from `ordersFrom`,
+   * so sales from before sync, already counted by the shop, are not taken again.
+   */
+  async setStockSync(
+    db: Pick<typeof prisma, "channelConnection">,
+    id: string,
+    orgId: string,
+    state: StockSyncState,
+    now: Date,
+    ordersFrom?: string,
+  ): Promise<boolean> {
+    const result = await db.channelConnection.updateMany({
+      where: { id, orgId },
+      data: { stockSync: state, stockSyncChangedAt: now, stockProblem: null, ...(ordersFrom ? { ordersCursor: ordersFrom } : {}) },
+    });
+    return result.count === 1;
+  },
+
+  /**
+   * Claim every connection due an order check, in one statement (inventory-sync Q23): sync on and
+   * none checked in the last `gapMs`. A second chain of checks finds none claimed and stops.
+   */
+  async claimDueOrdersChecks(now: Date, gapMs: number): Promise<string[]> {
+    const rows = await prisma.$queryRaw<{ id: string }[]>`
+      UPDATE "ChannelConnection" SET "ordersCheckedAt" = ${now}
+      WHERE "state" = ${CONNECTION_STATE.CONNECTED} AND "stockSync" = ${STOCK_SYNC.ON}
+        AND ("ordersCheckedAt" IS NULL OR "ordersCheckedAt" < ${new Date(now.getTime() - gapMs)})
+      RETURNING "id"`;
+    return rows.map((r) => r.id);
+  },
+
+  /** What one order check needs of its connection, in one read (inventory-sync D4). */
+  async forOrders(id: string) {
+    return await prisma.channelConnection.findUnique({
+      where: { id },
+      select: { id: true, orgId: true, channel: true, state: true, externalAccountId: true, stockSync: true, stockSyncChangedAt: true, ordersCursor: true },
+    });
+  },
+
+  /** The last problem a send met, or null once one goes (D7). */
+  async setStockProblem(db: Pick<typeof prisma, "channelConnection">, id: string, problem: StockProblem | null): Promise<void> {
+    await db.channelConnection.updateMany({ where: { id, stockProblem: problem === null ? { not: null } : { not: problem } }, data: { stockProblem: problem } });
+  },
+
+  /** Connections with stock sync on, for the order check and the daily check (inventory-sync D4, D5). */
+  async syncedConnections(): Promise<string[]> {
+    const rows = await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, stockSync: STOCK_SYNC.ON }, select: { id: true } });
+    return rows.map((r) => r.id);
+  },
+
+  /** Where the next order check starts (inventory-sync D4). */
+  async setOrdersCursor(id: string, cursor: string): Promise<void> {
+    await prisma.channelConnection.updateMany({ where: { id }, data: { ordersCursor: cursor } });
+  },
+
+  async touchStock(db: Pick<typeof prisma, "channelConnection">, id: string, field: "stockSentAt" | "stockCheckedAt", now: Date): Promise<void> {
+    await db.channelConnection.updateMany({ where: { id }, data: { [field]: now } });
   },
 
   /** Conditional, so a disconnect that landed mid-check is never turned back into a live row. */

@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
 import { categoryRepository } from "@server/catalog/category.read.repository";
@@ -53,6 +54,24 @@ export class ProductFamilyService {
       // description, and its members simply differ in ways nothing has named yet.
       variantAxis: type?.variantAxis ?? [],
     });
+  }
+
+  /** A family made from marketplace listings, inside their settle (family-merge D3, D4). */
+  async createFromMarketplaceIn(
+    tx: Prisma.TransactionClient,
+    input: { orgId: string; name: string; description: string | null; productType: string; variantAxis: readonly string[]; facts: unknown; measurements: unknown },
+  ): Promise<FamilyRow> {
+    const name = input.name.trim();
+    if (!name) throw new DomainError("Give the family a name", { field: "name" });
+    return productFamilyRepository.createIn(tx, { ...input, name });
+  }
+
+  /** New members that differ on more widen the family's axes (family-merge Q16). */
+  async addAxesIn(tx: Prisma.TransactionClient, orgId: string, id: string, axes: readonly string[]): Promise<void> {
+    const next = await productFamilyRepository.addAxesIn(tx, orgId, id, axes);
+    if (!next) throw new NotFoundError("Family not found");
+    // The product-type rule's limit (admin.product-type): a family varies by at most six things.
+    if (next.length > 6) throw new DomainError("A family can vary by at most 6 things. Remove one, or leave a member out.", { field: "members" });
   }
 
   async update(

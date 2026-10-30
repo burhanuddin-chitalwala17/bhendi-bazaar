@@ -1,4 +1,4 @@
-import type { ChannelListingDTO, MarketplaceChannel } from "@server/channels/channel-connection.types";
+import type { ChannelListingDTO, ListingGroupDTO, MarketplaceChannel } from "@server/channels/channel-connection.types";
 
 import { ListingGroup } from "./listing-group";
 import { ListingRow } from "./listing-row";
@@ -10,6 +10,9 @@ interface ListingListProps {
   label: string;
   listings: ChannelListingDTO[];
   hrefFor: (listingId: string) => string;
+  /** What each group's header offers (family-merge D6). */
+  groups?: Record<string, ListingGroupDTO>;
+  firstFamily?: boolean;
 }
 
 type Block = { parent: null; row: ChannelListingDTO } | { parent: string; title: string; axis: string | null; rows: ChannelListingDTO[] };
@@ -30,14 +33,26 @@ function blocks(listings: ChannelListingDTO[]): Block[] {
   return out;
 }
 
-export function ListingList({ orgId, shopName, channel, label, listings, hrefFor }: ListingListProps) {
+export function ListingList({ orgId, shopName, channel, label, listings, hrefFor, groups = {}, firstFamily = false }: ListingListProps) {
+  const all = blocks(listings);
+  // The first group that can be settled explains itself, until a family exists (family-merge Q22).
+  const introParent = firstFamily ? all.find((b) => b.parent !== null && groups[b.parent])?.parent ?? null : null;
   return (
     <ul className="rounded-card border bg-card px-4">
-      {blocks(listings).map((block, i) =>
+      {all.map((block, i) =>
         block.parent === null ? (
           <ListingRow key={block.row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={block.row} href={hrefFor(block.row.id)} />
         ) : (
-          <ListingGroup key={`group-${block.parent}-${i}`} title={block.title} count={block.rows.length} axis={block.axis} label={label}>
+          <ListingGroup
+            key={`group-${block.parent}-${i}`}
+            orgId={orgId}
+            title={block.title}
+            count={block.rows.length}
+            axis={block.axis}
+            label={label}
+            group={groups[block.parent] ?? null}
+            intro={block.parent === introParent}
+          >
             {block.rows.map((row) => (
               <ListingRow key={row.id} orgId={orgId} shopName={shopName} channel={channel} label={label} listing={row} href={hrefFor(row.id)} indented />
             ))}

@@ -38,6 +38,7 @@ export const channelMapService = {
     const lists = await listingValueRepository.byLists(facts.map((f) => f.list ?? ""), orgId);
     return {
       label: type.label,
+      variantAxis: [...type.variantAxis],
       facts,
       measures: type.measures.map((m) => ({ key: m.key, label: m.label, unit: m.unit })),
       lists: Object.fromEntries(Object.entries(lists).map(([list, options]) => [list, options.map((o) => ({ key: o.key, label: o.label }))])),

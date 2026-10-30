@@ -167,6 +167,21 @@ export class ProductService {
     return await adminProductsRepository.setMarketplaceAnswer(orgId, id, column, key, entry as Record<string, unknown> | null, onlyIfEmpty);
   }
 
+  /** A product's counts per location, archived included (inventory-sync D3): an archived product sends 0 (Q6). */
+  async stockForPush(productId: string, db?: ProductDb) {
+    return await productsRepository.stockForPush(productId, db);
+  }
+
+  /** A family's members with what each answers, for adding to it (family-merge Q20). */
+  async familyMembers(orgId: string, familyId: string) {
+    return await adminProductsRepository.familyMembers(orgId, familyId);
+  }
+
+  /** An existing product joins a family, conditionally (family-merge D3). */
+  async setFamilyIn(tx: Prisma.TransactionClient, orgId: string, id: string, familyId: string, fromFamilyId: string | null): Promise<boolean> {
+    return await adminProductsRepository.setFamilyIn(tx, orgId, id, familyId, fromFamilyId);
+  }
+
   /** The category the card's type question chose; the type follows it (marketplace-facts Q25, Q27). */
   async setCategoryFromMarketplace(orgId: string, id: string, categoryId: string, productType: string | null): Promise<boolean> {
     return await adminProductsRepository.setCategoryFromMarketplace(orgId, id, categoryId, productType);

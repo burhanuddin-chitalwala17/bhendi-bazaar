@@ -36,10 +36,11 @@ function toSignIn(request: NextRequest, pathname: string) {
  * `/2022/05/27/some-post` — the dated permalink shape of the WordPress site this
  * domain used to serve. Bing is still working through that index years on, and a 404
  * invites it to keep trying: 404 means "not here right now", 410 means "gone, stop
- * asking", and crawlers retire a 410 far sooner. Nothing this app serves begins with a
- * four-digit year, so the shape is unambiguous.
+ * asking", and crawlers retire a 410 far sooner. The other WordPress shapes (`/wp-*`,
+ * `/feed`, `/tag/`, `/author/`) go too. `/category/` cannot: this app serves it.
  */
-const DEAD_PERMALINK = /^\/\d{4}\/\d{1,2}\/\d{1,2}\//;
+const DEAD_PERMALINK =
+  /^\/(\d{4}\/\d{1,2}\/\d{1,2}\/|wp-|xmlrpc\.php|(comments\/)?feed(\/|$)|tag\/|author\/)/;
 
 /** Exported so the rule is tested against real paths, not against this file's text. */
 export const isDeadPermalink = (pathname: string) => DEAD_PERMALINK.test(pathname);

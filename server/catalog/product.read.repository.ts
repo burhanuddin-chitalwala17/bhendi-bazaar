@@ -130,6 +130,17 @@ export class ProductsRepository {
    * price charged is the price checked (Invariant 1). `categoryId` because offers target
    * categories and commission rates resolve by ancestry (ADR-0019).
    */
+  /**
+   * A product's counts per location and whether it is archived, for sending to its marketplaces
+   * (inventory-sync D3). Read on the push's transaction, behind its lock, so it is the count now.
+   */
+  async stockForPush(productId: string, db: ProductDb = prisma) {
+    return db.product.findUnique({
+      where: { id: productId },
+      select: { id: true, archivedAt: true, stockLocations: { select: { orgAddressId: true, quantity: true } } },
+    });
+  }
+
   async checkoutFacts(productIds: string[], db: ProductDb = prisma) {
     return await db.product.findMany({
       where: { id: { in: productIds } },

@@ -245,6 +245,9 @@ export const channelListingRepository = {
         photoTotal: true,
         attributes: true,
         attributesReadAt: true,
+        parentSku: true,
+        parentTitle: true,
+        variationAxis: true,
         product: { select: { name: true } },
         connection: { select: { externalAccountId: true, state: true } },
       },
@@ -341,6 +344,141 @@ export const channelListingRepository = {
     });
   },
 
+  /** Unsettled listings with no marketplace grouping, for same-item suggestions (family-merge D6). */
+  async ungroupedUnsettled(connectionId: string) {
+    return await prisma.channelListing.findMany({
+      where: { connectionId, productId: null, leftOffAt: null, goneAt: null, parentSku: null, familyHintDismissedAt: null },
+      select: { id: true, sku: true, title: true },
+      orderBy: { title: "asc" },
+      take: 300,
+    });
+  },
+
+  /** "Not one item": these listings are not suggested together again (family-merge Q21). */
+  async dismissFamilyHint(ids: readonly string[], orgId: string, now: Date): Promise<number> {
+    const result = await prisma.channelListing.updateMany({ where: { id: { in: [...ids] }, orgId }, data: { familyHintDismissedAt: now } });
+    return result.count;
+  },
+
+  /** Whether any listing here is linked to a product in a family: once one is, the first group stops explaining itself (Q22). */
+  async anyInFamily(connectionId: string): Promise<boolean> {
+    return (await prisma.channelListing.count({ where: { connectionId, product: { familyId: { not: null } } }, take: 1 })) > 0;
+  },
+
+  /** Every live member of these variation groups, in any tab, with their products' families (family-merge D6). */
+  async groupsFor(connectionId: string, parentSkus: readonly string[]) {
+    if (parentSkus.length === 0) return [];
+    return await prisma.channelListing.findMany({
+      where: { connectionId, parentSku: { in: [...parentSkus] }, goneAt: null, leftOffAt: null },
+      select: { id: true, parentSku: true, productId: true, product: { select: { familyId: true, family: { select: { id: true, name: true } } } } },
+      orderBy: [{ title: "asc" }, { sku: "asc" }],
+    });
+  },
+
+  /** Every live listing linked to a product, with what a stock push needs (inventory-sync D3). */
+  async linkedForPush(productId: string, db: Pick<typeof prisma, "channelListing"> = prisma) {
+    return await db.channelListing.findMany({
+      where: { productId, goneAt: null },
+      select: {
+        id: true,
+        connectionId: true,
+        channel: true,
+        sku: true,
+        externalId: true,
+        attributes: true,
+        stockSent: true,
+        connection: { select: { state: true, stockSync: true, externalAccountId: true } },
+      },
+    });
+  },
+
+  /** The listings these SKUs name on a connection, for matching an order line to its product (D4). */
+  async bySkus(connectionId: string, skus: readonly string[]) {
+    return await prisma.channelListing.findMany({ where: { connectionId, sku: { in: [...skus] } }, select: { id: true, sku: true, productId: true } });
+  },
+
+  /** Every live linked listing on a connection, for the preview and the daily check (D5, D6). */
+  async linkedOn(connectionId: string) {
+    return await prisma.channelListing.findMany({
+      where: { connectionId, productId: { not: null }, goneAt: null },
+      select: { id: true, productId: true, sku: true, externalId: true, title: true, attributes: true, stockSent: true, product: { select: { name: true } } },
+      orderBy: { title: "asc" },
+    });
+  },
+
+  /** What was last sent, or that the marketplace holds this listing's stock itself (FBA, Q5). */
+  async recordStockSent(
+    id: string,
+    sent: { counts?: Array<{ externalId: string; quantity: number }>; heldByMarketplace?: boolean; refused?: boolean },
+    now: Date,
+    db: Pick<typeof prisma, "channelListing"> = prisma,
+  ): Promise<void> {
+    await db.channelListing.update({ where: { id }, data: { stockSent: sent as Prisma.InputJsonValue, stockSentAt: now }, select: { id: true } });
+  },
+
+  /** A count changed by hand on the marketplace: forget what was sent, so the next push sends again (D5). */
+  async forgetStockSent(id: string): Promise<void> {
+    await prisma.channelListing.update({ where: { id }, data: { stockSent: Prisma.DbNull }, select: { id: true } });
+  },
+
+  /** Turning sync on sends every listing again from scratch, keeping only what the marketplace stocks itself. */
+  async resetStockSent(connectionId: string): Promise<void> {
+    await prisma.$executeRaw`
+      UPDATE "ChannelListing" SET "stockSent" = NULL
+      WHERE "connectionId" = ${connectionId} AND ("stockSent" IS NULL OR NOT ("stockSent" ? 'heldByMarketplace'))`;
+  },
+
+  /** The listings a family page names, with their products and those products' families (family-merge D2). */
+  async forFamily(ids: readonly string[], orgId: string) {
+    return await prisma.channelListing.findMany({
+      where: { id: { in: [...ids] }, orgId },
+      select: {
+        id: true,
+        connectionId: true,
+        channel: true,
+        sku: true,
+        skuKey: true,
+        externalId: true,
+        title: true,
+        imageUrl: true,
+        status: true,
+        pricePaise: true,
+        quantity: true,
+        parentSku: true,
+        parentTitle: true,
+        productId: true,
+        leftOffAt: true,
+        goneAt: true,
+        attributes: true,
+        attributesReadAt: true,
+        connection: { select: { externalAccountId: true, state: true } },
+        product: { select: { id: true, name: true, sku: true, price: true, archivedAt: true, categoryId: true, productType: true, facts: true, measurements: true, familyId: true, family: { select: { id: true, name: true } } } },
+      },
+      orderBy: [{ title: "asc" }, { sku: "asc" }],
+    });
+  },
+
+  /**
+   * Lock a family's listings first, while each is unsettled or still linked to the product the
+   * page named (family-merge D3). A second save of the same group waits here and finds them taken.
+   */
+  async lockForFamily(
+    tx: Prisma.TransactionClient,
+    rows: ReadonlyArray<{ id: string; productId: string | null }>,
+    orgId: string,
+  ): Promise<number> {
+    let locked = 0;
+    for (const row of rows) {
+      const found = row.productId
+        ? await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM "ChannelListing" WHERE id = ${row.id} AND "orgId" = ${orgId} AND "productId" = ${row.productId} FOR UPDATE`
+        : await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM "ChannelListing" WHERE id = ${row.id} AND "orgId" = ${orgId} AND "productId" IS NULL AND "leftOffAt" IS NULL FOR UPDATE`;
+      locked += found.length;
+    }
+    return locked;
+  },
+
   /** The marketplace's own type for each parked listing, from its stored read, without the rest of it (Q13). */
   async marketplaceTypes(ids: readonly string[]): Promise<Map<string, string>> {
     if (ids.length === 0) return new Map();
@@ -401,6 +539,8 @@ export const channelListingRepository = {
         photoTotal: true,
         photoDone: true,
         photoFailed: true,
+        stockSent: true,
+        stockSentAt: true,
       },
       // A product has at most one live listing per connection; the newest link wins the block.
       orderBy: { linkedAt: "desc" },

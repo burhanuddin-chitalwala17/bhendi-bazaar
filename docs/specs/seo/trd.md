@@ -101,8 +101,11 @@ not 200. Cross-reference [TESTING.md](../../TESTING.md).
 
 1. **Crawl health** — `notFound()` on absence, the two boundaries, `metadataBase`, `/s` not-indexed and out of
    the sitemap, alt text. **Changes behaviour:** status codes move from 200 to 404 on retired addresses.
+   *Shipped early (2026-10-29): `/s` not-indexed and out of the sitemap; `notFound()` answering a real
+   404 for products and categories, the root Suspense removed.*
 2. **Page metadata** — `generateMetadata` and canonicals for the home, category and search routes, plus the
    route-sweep test. Closes the duplicate-title problem, which is the largest single ranking gap.
+   *Shipped early (2026-10-29): the category route's.*
 3. **Structured data** — the builder module and the product, breadcrumb, organisation and site emitters.
 4. **Sitemap freshness** — `updatedAt` through the DAL into `lastModified`.
 

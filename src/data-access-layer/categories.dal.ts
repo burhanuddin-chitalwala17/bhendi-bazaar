@@ -4,6 +4,7 @@ import { cache } from "react";
 import { categoryRepository } from "@server/catalog/category.read.repository";
 import { categoryService } from "@server/catalog/category.service";
 import { Category } from "@/domain/category";
+import { NotFoundError } from "@server/shared/domain-error";
 
 class CategoriesDAL {
     
@@ -23,7 +24,8 @@ class CategoriesDAL {
     getCategoryBySlug = cache(async (slug: string): Promise<Category> => {
         const category = await categoryRepository.findBySlug(slug);
         if (!category) {
-            throw new Error("Category not found");
+            // Distinct from failure, so the page can answer 404 rather than 500.
+            throw new NotFoundError("Category not found");
         }
         return category;
     });

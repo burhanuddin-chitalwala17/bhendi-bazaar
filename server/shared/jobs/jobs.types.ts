@@ -13,6 +13,8 @@ export interface JobDefinition<TPayload> {
   schema: ZodType<TPayload>;
   /** The organisation this job belongs to, for per-org concurrency. Omit for platform work. */
   group?: (payload: TPayload) => string | undefined;
+  /** Higher runs first; omit for the queue's default order. */
+  priority?: (payload: TPayload) => number | undefined;
   handler: (job: { jobId: string; payload: TPayload }) => Promise<void>;
 }
 
@@ -22,7 +24,7 @@ export interface JobDefinition<TPayload> {
  * registers the spec plus a handler only where the worker imports it, so the web process runs
  * no handler code and registers nothing.
  */
-export type JobSpec<TPayload> = Pick<JobDefinition<TPayload>, "type" | "schema" | "group">;
+export type JobSpec<TPayload> = Pick<JobDefinition<TPayload>, "type" | "schema" | "group" | "priority">;
 
 /** What travels inside a queue row: the type, and the payload the type's schema owns. */
 export interface JobEnvelope {

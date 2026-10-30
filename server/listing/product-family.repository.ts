@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
 
 import { AVAILABLE } from "@server/catalog/product.visibility";
@@ -73,6 +74,33 @@ export const productFamilyRepository = {
       },
       select: SELECT,
     });
+  },
+
+  /** A family made in a marketplace settle's transaction, with its members (family-merge D3). */
+  async createIn(tx: Prisma.TransactionClient, input: CreateFamilyInput): Promise<FamilyRow> {
+    return tx.productFamily.create({
+      data: {
+        orgId: input.orgId,
+        name: input.name,
+        description: input.description ?? null,
+        productType: input.productType ?? null,
+        facts: (input.facts ?? undefined) as never,
+        measurements: (input.measurements ?? undefined) as never,
+        variantAxis: [...(input.variantAxis ?? [])],
+      },
+      select: SELECT,
+    });
+  },
+
+  /** Widen a family's axes when new members differ on more (family-merge Q16); never narrows it. */
+  async addAxesIn(tx: Prisma.TransactionClient, orgId: string, id: string, axes: readonly string[]): Promise<string[] | null> {
+    // Locked, so two adds at once cannot each write the axes they read and lose the other's.
+    const [row] = await tx.$queryRaw<Array<{ variantAxis: string[] }>>`
+      SELECT "variantAxis" FROM "ProductFamily" WHERE id = ${id} AND "orgId" = ${orgId} FOR UPDATE`;
+    if (!row) return null;
+    const next = [...row.variantAxis, ...axes.filter((a) => !row.variantAxis.includes(a))];
+    if (next.length !== row.variantAxis.length) await tx.productFamily.updateMany({ where: { id, orgId }, data: { variantAxis: next } });
+    return next;
   },
 
   async update(orgId: string, id: string, input: UpdateFamilyInput): Promise<FamilyRow | null> {

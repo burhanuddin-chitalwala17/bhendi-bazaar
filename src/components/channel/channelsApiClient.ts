@@ -7,6 +7,9 @@ import type { ChannelTypeChangeInput } from "@/lib/validation/schemas/channel-ma
 import type { Channel } from "@server/shared/channels";
 import type { MarketplaceFactsChangeInput } from "@/lib/validation/schemas/marketplace-facts.schema";
 import type { FillNowOutcome } from "@server/channels/channel-facts.types";
+import type { FamilySettleFormValues } from "@/lib/validation/schemas/family-settle.schema";
+import type { FamilySettleResultDTO } from "@server/channels/channel-family.types";
+import type { LocationMatchInput, StockSyncChangeInput } from "@/lib/validation/schemas/stock-sync.schema";
 
 export const channelsApiClient = {
   /** Records what a channel calls one of our values (ADR-0045). */
@@ -66,6 +69,26 @@ export const channelsApiClient = {
       method: "POST",
       body: change,
     });
+  },
+
+  /** Make one family of several listings, or add them to one (family-merge D3). */
+  settleFamily(orgId: string, body: FamilySettleFormValues) {
+    return apiRequest<{ result: FamilySettleResultDTO }>(`/api/org/${orgId}/channels/family`, { method: "POST", body });
+  },
+
+  /** "Not one item" on a suggested group (family-merge Q21). */
+  dismissGroup(orgId: string, channel: Channel, listingIds: string[]) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/listings/dismiss-group`, { method: "POST", body: { listingIds } });
+  },
+
+  /** Stock sync's switch (inventory-sync D6). */
+  changeStockSync(orgId: string, channel: Channel, change: StockSyncChangeInput) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/stock-sync`, { method: "PUT", body: change });
+  },
+
+  /** The owner's location matches (inventory-sync Q15). */
+  matchLocations(orgId: string, channel: Channel, body: LocationMatchInput) {
+    return apiRequest(`/api/org/${orgId}/channels/${channel}/locations`, { method: "PUT", body });
   },
 
   /** Leave a listing off Bhendi Bazaar (product-merge Q9). */

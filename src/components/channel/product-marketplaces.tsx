@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { ProductMarketplaceLinkDTO } from "@server/channels/channel-connection.types";
 
-import { ID_NAME, ON_MARKETPLACES, STATUS_TEXT, priceAndStock } from "./listing-copy";
+import { ID_NAME, ON_MARKETPLACES, STATUS_TEXT, ago, priceAndStock } from "./listing-copy";
+import { PRODUCT_STOCK } from "./stock-copy";
 import { RetryPhotosButton } from "./retry-photos-button";
 import { PRODUCT_PHOTOS } from "./settle-copy";
 import { LINK_SOURCE } from "@server/channels/channel-connection.types";
@@ -30,6 +31,7 @@ export function ProductMarketplaces({ orgId, links }: { orgId: string; links: Pr
                 <p className="text-xs font-medium text-warning">{ON_MARKETPLACES.needsReconnect(link.label)}</p>
               )}
               {link.listing?.photos && <PhotoLine link={link} />}
+              {link.listing?.stock && !link.listing.gone && <StockLine stock={link.listing.stock} label={link.label} />}
             </div>
             {link.listing && (
               <div className="flex flex-wrap gap-2">
@@ -39,6 +41,11 @@ export function ProductMarketplaces({ orgId, links }: { orgId: string; links: Pr
                 {link.needsReconnect && (
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/org/${orgId}/channels`}>{ON_MARKETPLACES.goToChannels}</Link>
+                  </Button>
+                )}
+                {link.listing.stock?.oversold && (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/org/${orgId}/orders?tab=marketplace`}>{PRODUCT_STOCK.seeOrder}</Link>
                   </Button>
                 )}
                 <Button asChild variant="outline" size="sm">
@@ -53,6 +60,14 @@ export function ProductMarketplaces({ orgId, links }: { orgId: string; links: Pr
       </ul>
     </section>
   );
+}
+
+/** Stock sync's line for one marketplace (inventory-sync ux.md): sent, sending, or oversold. */
+function StockLine({ stock, label }: { stock: NonNullable<NonNullable<ProductMarketplaceLinkDTO["listing"]>["stock"]>; label: string }) {
+  if (stock.oversold) return <p className="text-xs font-medium text-destructive">{PRODUCT_STOCK.oversold(label)}</p>;
+  if (stock.heldByMarketplace) return <p className="text-xs text-muted-foreground">{PRODUCT_STOCK.held(label)}</p>;
+  if (stock.sent === null || !stock.sentAt) return <p className="text-xs text-muted-foreground">{PRODUCT_STOCK.sending}</p>;
+  return <p className="text-xs text-muted-foreground">{PRODUCT_STOCK.sent(stock.sent, ago(stock.sentAt, Date.now()))}</p>;
 }
 
 /** Photos copying onto the product, or some that failed (product-merge ux.md "product and card"). */

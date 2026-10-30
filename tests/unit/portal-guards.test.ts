@@ -91,7 +91,23 @@ describe("the previous site's permalinks are gone, not missing", () => {
     }
   });
 
-  // Nothing this app serves begins with a four-digit year, and nothing that does
+  it("recognises the previous site's other WordPress shapes", () => {
+    for (const path of [
+      "/wp-content/uploads/2021/08/slot.jpg",
+      "/wp-login.php",
+      "/wp-json/wp/v2/posts",
+      "/xmlrpc.php",
+      "/feed",
+      "/feed/",
+      "/comments/feed/",
+      "/tag/judi-online/",
+      "/author/admin/",
+    ]) {
+      expect(isDeadPermalink(path), path).toBe(true);
+    }
+  });
+
+  // Nothing this app serves has an old WordPress shape, and nothing that does
   // should ever start doing so without this test objecting.
   it("leaves every real route alone", () => {
     for (const path of [
@@ -108,6 +124,11 @@ describe("the previous site's permalinks are gone, not missing", () => {
       "/admin/banners",
       "/org/org-1/products",
       "/api/admin/banners",
+      "/feeds/google.xml",
+      "/feeds/meta.xml",
+      "/category/feed",
+      "/tags/abaya",
+      "/authors/x",
     ]) {
       expect(isDeadPermalink(path), path).toBe(false);
     }
