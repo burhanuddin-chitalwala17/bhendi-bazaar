@@ -1,0 +1,31 @@
+src/components/shared/forms/product/BuyerPreview.tsx
+  s_17ac7f5fca5021::t_4afd152f250919 1-74
+src/components/shared/forms/product/ProductStepsForm.tsx
+  s_17ac7f5fca5021::t_00fd0614740fa2 1-558
+tests/unit/product-form-save.test.tsx
+  s_17ac7f5fca5021::t_e5c561ccdd8551 1-105
+tests/unit/product-form-steps.test.tsx
+  s_17ac7f5fca5021::t_bc472a309c70b3 1-275
+src/components/shared/forms/product/product-steps.ts
+  s_17ac7f5fca5021::t_ca3be6d9510f11 1-91
+src/components/shared/forms/product/useProductSteps.ts
+  s_17ac7f5fca5021::t_dfb5d91b9ebe14 1-57
+src/components/shared/forms/product/CategoryPicker.tsx
+  s_17ac7f5fca5021::t_e3d42a26037fa4 1-151
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "d186e3a461f9d229f498f977fee7e25d97a06806",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
