@@ -10,6 +10,39 @@
 
 ## Entries
 
+## 2026-10-30 — org-profile unit 1: a shop starts with three fields
+
+- **[CONTRACT]** `POST /api/orgs` parses the new `openShopSchema` (`src/lib/validation/schemas/org.schema.ts`):
+  shop name, mobile (required, any country, stored E.164), email. Contact person, business
+  name, GST, PAN and description are stripped (org-profile R3, R6, A1; D1; Q2, Q3). The admin's
+  `createOrgSchema` and form are unchanged (Q22). `adminOrgService.createOrgWithOwner` takes
+  `OpenShopInput`. CONTRACTS.md "Seller profile" updated.
+- **Form:** `src/components/org/open-shop-form.tsx` replaces `create-org.tsx` (which reused the
+  admin form) on `/org/new`: three fields with the ux labels, hints and placeholders, the account
+  email prefilled, "Create my shop", and the ux field copy "Use at least 3 letters." / "Enter a
+  10-digit mobile number.". The page's heading and the rest of the create screen's states are
+  seller-onboarding U2's. No new route; the registry entry (`ACCOUNT`) is unchanged.
+- **Tests:** `tests/unit/open-shop.test.tsx` (spec A1: schema, route, form). Mutations, each red:
+  route parsing `createOrgSchema` again (2 fail); mobile made optional (2 fail); `z.object` →
+  `z.looseObject` (2 fail); mobile passed to `normalizePhone` un-stripped (prefix test fails);
+  normaliser replaced by `+91`+digits (1 fails); mobile-prefix (6–9) check removed, so a landline
+  passes (1 fails). A 10-digit length check survived its mutation
+  (libphonenumber already refuses those numbers) and was removed.
+- **Gates:** tsc clean; unit 196 files / 2236 passed; integration 46 files / 400 passed (1 file
+  skipped); lint:boundary clean; docs:check passed (ARCHITECTURE.md test-file count 243 → 244;
+  `src/components/CLAUDE.md` re-verified, nothing in it changed). Decisions Q2, Q3, Q22 →
+  implemented (unit 1).
+- **Review fixes (2026-10-31):** a double tap opened two shops. The submit is now guarded while it
+  runs and after it succeeds; the button stays tappable and reads "Opening your shop…" (ADR-0053).
+  The mobile accepts any country (owner, Q26; international-phone R1): it uses the shared
+  `FormPhoneInput` with India selected first and the shared `phoneSchema`, so the India-only 6–9
+  rule and the "10-digit" copy are gone (ux, TRD D1 and seller-onboarding ux corrected, with one
+  mobile hint across both). The ux copy for a failed request and for success now comes through
+  `useServerForm` props. The test that only restated a message constant is deleted. New
+  mutations, each red: guard removed (double-tap test fails); guard reopened after success
+  (tap-before-navigate fails); fallback copy removed (offline test fails); phone made optional
+  (2 fail). The earlier mutations of the deleted India-only parser no longer apply.
+
 ## 2026-10-29 — bulk sheet sale prices are saved; variant tiles show the shop's own offers
 
 - **Bulk sheet sale prices were parsed and dropped** (own-store Q24). `createProducts`

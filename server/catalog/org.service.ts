@@ -3,7 +3,10 @@
 import { orgRepository } from "@server/catalog/org.repository";
 import { orgProfileRepository } from "@server/catalog/org-profile.repository";
 import type { CreateOrgInput } from "@server/catalog/org.types";
-import type { CreateOrgInput as CreateOrgSchemaInput } from "@/lib/validation/schemas/org.schema";
+import type {
+  CreateOrgInput as CreateOrgSchemaInput,
+  OpenShopInput,
+} from "@/lib/validation/schemas/org.schema";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 import { orgCodeCandidates } from "@server/catalog/org.code";
 import { handleCandidates } from "@server/catalog/org.handle";
@@ -65,9 +68,10 @@ export class AdminOrgService {
 
   /**
    * Create an org with the caller as its owner. Self-serve, so unlike `createOrg` this
-   * is reachable by anyone signed in.
+   * is reachable by anyone signed in, and takes only the three fields a shop opens with
+   * (org-profile D1).
    */
-  async createOrgWithOwner(data: CreateOrgSchemaInput, userId: string) {
+  async createOrgWithOwner(data: OpenShopInput, userId: string) {
     return await this.insertWithGeneratedCode(
       (row) => orgRepository.createWithOwner(row, userId),
       data

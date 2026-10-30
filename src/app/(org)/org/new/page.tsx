@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/admin-auth";
-import { CreateOrg } from "@/components/org/create-org";
+import { OpenShopForm } from "@/components/org/open-shop-form";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export const metadata = {
@@ -12,7 +12,7 @@ export const metadata = {
  * be a member of yet. Signed in is the only requirement.
  */
 export default async function NewOrgPage() {
-  await requireSession();
+  const session = await requireSession();
 
   return (
     <PageShell width="narrow" className="px-6 py-12">
@@ -20,7 +20,7 @@ export default async function NewOrgPage() {
         title="Create an organisation"
         description="Selling happens through an organisation. You will be its first owner."
       />
-      <CreateOrg />
+      <OpenShopForm accountEmail={session.user.email} />
     </PageShell>
   );
 }

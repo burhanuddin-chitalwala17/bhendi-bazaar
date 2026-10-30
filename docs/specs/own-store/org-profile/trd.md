@@ -28,7 +28,7 @@ forward.
 
 ## Technical decisions
 - **D1 — Create asks three things (R3, R6; A1; Q2, Q3, Q22).** A new `openShopSchema` (name, required
-  10-digit mobile, email) in `src/lib/validation/schemas/org.schema.ts` is what `POST /api/orgs`
+  mobile from any country through the shared `phoneSchema`, email; Q26) in `src/lib/validation/schemas/org.schema.ts` is what `POST /api/orgs`
   parses. Its registry entry (`ACCOUNT`) is unchanged. Contact person, business name, GST, PAN and
   description are no longer accepted there. The admin's `createOrgSchema` and form stay (Q22), and
   so do the columns.

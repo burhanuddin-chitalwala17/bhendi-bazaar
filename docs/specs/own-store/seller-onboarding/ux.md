@@ -50,7 +50,7 @@ Each starts one step before the screen.
 | Partial | n/a — one form, one save | — | — |
 | Success | Home | "Your shop is open" | — |
 | Retryable error | Banner over the form, values kept | "Couldn't open your shop. Check your internet and try again." | Try again |
-| Terminal error | Field message | "Use at least 3 letters." / "Enter a 10-digit mobile number." | Fix field |
+| Terminal error | Field message | "Use at least 3 letters." / "Enter a valid phone number for the selected country" | Fix field |
 | Refused | Not signed in → sign-in sheet, returns here | "Sign in to open your shop." | Sign in |
 | Stale | n/a — nothing loaded | — | — |
 | Long content | Name wraps; link preview truncates mid with "…" | — | — |
@@ -145,8 +145,8 @@ Each starts one step before the screen.
 
 ## Copy deck
 - Create: title "Open your shop" · "Shop name" hint "Buyers see this on your shop and every
-  product." · "Your mobile number" hint "We call this about orders and pickups. Buyers never see
-  it." · "Your link: {url}" · button "Create my shop".
+  product." · "Your mobile number" hint "We'll call or message you about orders and pickups. Buyers
+  never see it." (any country, India selected first; org-profile Q26) · "Your link: {url}" · button "Create my shop".
 - Setup list: "Set up your shop · {n} of 5 done" · "Hide for now" · steps: "Your shop is open" ·
   "Add your first product" · "Add a pickup address" · "Add your logo and a line about your shop"
   · "Share your shop link" · done: "Your shop is set up."

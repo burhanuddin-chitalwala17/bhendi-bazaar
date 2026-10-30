@@ -1,7 +1,7 @@
 // src/lib/validation/schemas/org.schemas.ts
 
 import { z } from "zod";
-import { postalCodeSchema, optionalPhoneSchema } from "./common.schemas";
+import { emailSchema, optionalPhoneSchema, phoneSchema } from "./common.schemas";
 
 // `code` is absent deliberately: it is server-generated at creation and then frozen,
 // like a slug — an identifier a user invents collides and can never change once
@@ -43,6 +43,18 @@ export const createOrgSchema = z.object({
 
   description: z.string().max(1000).optional(),
 });
+
+/**
+ * What opening a shop asks (org-profile D1, Q2): three things. Everything else is asked later
+ * on Shop details or at first payout; the admin keeps `createOrgSchema` (Q22).
+ */
+export const openShopSchema = z.object({
+  name: z.string().trim().min(3, "Use at least 3 letters.").max(100, "Use at most 100 letters."),
+  // Any country, as every phone field (international-phone R1; org-profile Q26).
+  phone: phoneSchema,
+  email: emailSchema,
+});
+export type OpenShopInput = z.infer<typeof openShopSchema>;
 
 export const updateOrgSchema = createOrgSchema.partial().extend({
   id: z.string().min(1),

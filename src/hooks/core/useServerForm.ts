@@ -14,7 +14,7 @@ interface Options<T extends FieldValues> {
   submit: (data: T) => Promise<unknown>;
   onSuccess?: (result: unknown) => void;
   successMessage?: string;
-  /** Shown when the server reports a failure it could not attribute to a field. */
+  /** Shown when the server reports a failure it could not attribute to a field, or the request never arrived. */
   fallbackMessage?: string;
 }
 
@@ -70,7 +70,8 @@ export function useServerForm<T extends FieldValues>({
           toast.error(message);
         }
       } else {
-        const message = error instanceof Error ? error.message : fallbackMessage;
+        // A TypeError here is fetch failing to reach us; "Failed to fetch" tells nobody anything.
+        const message = error instanceof Error && !(error instanceof TypeError) ? error.message : fallbackMessage;
         setFormError(message);
         toast.error(message);
       }

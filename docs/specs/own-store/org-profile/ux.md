@@ -34,7 +34,7 @@ Each starts one step before the screen.
 | Organisation Code (admin form) | hidden from the shop | — | R8 |
 | Organisation Name | Shop name — "Buyers see this on your shop and every product." | Buyers + at create | Q12 |
 | Email · "org@example.com" | Email for order updates — "We send new orders here." | Only us + at create, prefilled | Q2 |
-| Phone | Your mobile number — "We call this about pickups. Buyers never see it." | Only us + at create | Q8 |
+| Phone | Your mobile number — "We'll call or message you about orders and pickups. Buyers never see it." Any country, India selected first | Only us + at create | Q8, Q26 |
 | Contact Person · "John Doe" | removed | — | Q3 |
 | Business Name · "ABC Traders Pvt Ltd" | moved to first payout as "Name on your GST or bank papers" | — | Q9 |
 | GST Number, PAN Number | moved to first payout | — | own-store Q14 |
@@ -60,7 +60,7 @@ Each starts one step before the screen.
 | Partial | Essentials 2 of 3, each optional row says what it adds | "About your shop · adds the 'About' section" | Add |
 | Success | Toast, section stays open | "Saved. Buyers see this on your shop page now." | See as a buyer |
 | Retryable error | Banner on the section, values kept | "Couldn't save. What you typed is still here." | Try again |
-| Terminal error | Field message under the field | "Use at least 3 letters." · "Enter a 10-digit mobile number." · "Use the handle on its own, not a web address." | Fix field |
+| Terminal error | Field message under the field | "Use at least 3 letters." · "Enter a valid phone number for the selected country" · "Use the handle on its own, not a web address." | Fix field |
 | Refused | Staff editing name/contact; or link taken | "Only the shop owner can change this." · "That link is taken. Try {suggestion}." | Ask owner / use suggestion |
 | Stale | Another member saved meanwhile | "Someone changed this 2 min ago. Load their version?" | Load latest |
 | Long content | About up to 4,000 chars, counter from 3,600; name wraps | "3,812 / 4,000" | — |

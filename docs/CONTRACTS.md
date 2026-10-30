@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-29
+- **Verified:** 2026-10-30
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -140,6 +140,12 @@ because they are one section. What a shop may hide is what it wrote. Reviews, or
 and the goods are not offered, because proof is derived and never typed and a page whose
 reviews vanish when they turn unflattering is not proof. `storefrontSettingsSchema` grows to
 match, so the same rules the page enforces are the ones the editor shows inline.
+
+Since [org-profile](specs/own-store/org-profile/) unit 1, `POST /api/orgs` parses **`openShopSchema`**
+(`src/lib/validation/schemas/org.schema.ts`): `name` (3–100), `phone` (required, any country, parsed by the
+shared `phoneSchema` to E.164) and `email`. Any other key is stripped, so contact person, business name, GST,
+PAN and description can no longer arrive through self-serve creation. The answer is unchanged
+(`201` with the org). `POST /api/admin/orgs` still parses `createOrgSchema` (Q22).
 
 ### Listing vocabulary
 
