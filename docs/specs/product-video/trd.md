@@ -1,12 +1,14 @@
 # TRD — product video
 
-- **Status:** 📝 Draft
+- **Status:** ✅ Implemented — PR-63 (2026-08-13); hosted upload added by [video-hosting](../media-library/video-hosting/) PR-180, PR-181, PR-183, PR-199. R2 narrowed: a video is always an extra, so it can lead the gallery only when no named slot is filled (media-library D4); R10 narrowed: the gallery row goes, but the asset stays in the shop's library until retired (media-library R7)
 - **Domain:** catalog, checkout
 - **Phase:** 6 — Catalogue richness
-- **Verified:** 2026-08-13
+- **Verified:** 2026-10-30
 - **References:** [spec.md](spec.md), [ADR-0003](../../adr/0003-one-repository-per-aggregate.md), [ADR-0015](../../adr/0015-mobile-first-design.md), [Invariant 4](../../../CLAUDE.md), [CONTRACTS.md](../../CONTRACTS.md), [INTEGRATIONS.md](../../INTEGRATIONS.md)
 
 > Technical approach and decisions. No code — references to existing code only, to justify a decision.
+
+> **D1, D10 and D15 describe the YouTube path only.** They held when written; since 2026-09-27 a video may also be uploaded, stored in our object store and transcoded by the worker ([ADR-0039](../../adr/0039-video-is-stored-in-our-object-store-and-transcoded-by-the-worker.md) supersedes [ADR-0017](../../adr/0017-video-is-embedded-not-hosted.md)). That path's decisions live in [video-hosting trd](../media-library/video-hosting/trd.md); D2's storage-agnostic `kind` + `ref` is what let it land as a third `MediaKind`, `VIDEO`, without reshaping this model.
 
 ## Approach
 
@@ -110,4 +112,4 @@ Closed 2026-08-13 by the product owner. Each is now carried by a decision above;
 - **Q7 — Should an order line snapshot its picture?** Yes, and it comes into this feature rather than waiting for [order-and-cart-lines](../multi-vendor-marketplace/order-and-cart-lines/) — carried by D19, D19a, and D20. It was raised as pre-existing behaviour, but R12 turns it from latent into live: once an org member has a control that changes the cover, a completed order silently changing appearance stops being theoretical. Doing it here also avoids changing the order DTO twice, since PR 2 is already a `[CONTRACT]` change.
 
 ## Open questions
-None. Draft → Accepted is unblocked once this reads correctly to the product owner.
+None. Implemented in PR-63; hosted video followed in video-hosting.

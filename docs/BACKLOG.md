@@ -7,6 +7,16 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 
 > Ordering principle: **transaction integrity before new capability.** The store's money path is the thing customers touch and the thing that is hardest to correct after the fact, so it leads.
 
+## Three tracks
+
+What the platform solves for a small business, and where each lives. Every phase below serves one of these.
+
+| Track | Problem solved | Lives in | Status |
+|---|---|---|---|
+| **1 — Own store** | A store and landing page the shop hands out on WhatsApp, cards and pamphlets, run from a phone | Phases 7, 9, 12 — [own-store](specs/own-store/) | 🔨 Phase 12: offers-hardening implemented 2026-10-29; order-fulfilment next |
+| **2 — Photos made ready** | A phone photo becomes an image fit for every platform | Phase 11 — [media-library](specs/media-library/), [image-enhancement](specs/image-enhancement/) | 🔨 In progress |
+| **3 — Sell everywhere** | One product, listed and stocked on Amazon, Flipkart, Google and Meta; WhatsApp and Instagram later | Phase 11 — [marketplace-integration](specs/marketplace-integration/), [channel-registry](specs/channel-registry/), [shopfront-feeds](specs/shopfront-feeds/) | 🔨 In progress |
+
 ---
 
 ## Phase status
@@ -24,6 +34,7 @@ Where the product is, phase by phase. This is the **milestone map**, not a task 
 | **9** — Seller storefronts | Every selling organisation gets a public storefront of its own, at a link it can promote | catalog | ✅ **Done** — 7 subfeatures |
 | **10** — Discoverability | The store is findable: every public page describes itself, every product is machine-readable, every URL answers honestly | catalog, *(cross-domain)* | ⏳ Not started — 1 spec drafted (seo) |
 | **11** — Listing: one entry, every channel | A product is described once, from its photographs, and is ready for the store, Amazon, Flipkart and Instagram from that one entry | catalog, content, listing, social, *(cross-domain)* | 🔨 In progress — 3 of 9 specs accepted (worker-foundation, seller-profile, media-library) plus 2 subfeatures accepted and 1 drafted (video-hosting); ADR-0037, ADR-0038, ADR-0039 |
+| **12** — The shop's own store | A small shop runs a store it is proud to hand out, from its phone, and no offer or order costs the platform money it did not choose to spend | catalog, checkout, promotions, shipping, notifications, payouts | 🔨 In progress — offers-hardening implemented 2026-10-29 (units 1–6); six verticals to come |
 
 ---
 
@@ -164,6 +175,24 @@ Two of this phase's constraints come from earlier decisions rather than from sea
 
 It also closes the **soft 404** entry on the watch list below, which has been open since it was recorded: the fix is one of four PRs here rather than a standalone commit, because the missing `not-found.tsx` and `error.tsx` boundaries are what make 404 and 500 separable at all.
 
+
+## Phase 12 — The shop's own store
+
+Added 2026-10-29: track 1 of three (see *Three tracks*). Programme overview: [own-store](specs/own-store/); every decision in its decisions.md.
+
+| Spec | Requirement | Status |
+|---|---|---|
+| [own-store/offers-hardening](specs/own-store/offers-hardening/) | No offer costs the platform more than it chose to spend | ✅ Implemented — 2026-10-29, units 1–6 on branch offers-hardening |
+| [own-store/order-fulfilment](specs/own-store/order-fulfilment/) | Shop marks a parcel ready, the platform books pickup, buyer and shop see one timeline; cancellation; one email matrix | 🔨 UX signed off 2026-10-30; TRD and build next |
+| own-store/product-form | Create and edit in short steps on a phone; admin can help a shop | planned |
+| own-store/bulk-sheet | Template with instructions and dropdowns, version-stamped; errors returned in the seller's own file | planned |
+| own-store/seller-onboarding | Task home, setup list, grouped navigation, phone tab bar, in-place creation | planned |
+| own-store/org-profile | Essentials only; contact and legal editable; tax and bank asked at first payout | planned |
+| own-store/storefront-themes | Four templates, own header with the platform's logo and contacts, shared cart, "Visit {Shop name}" | planned |
+| offers-hardening Q8 *(later)* | A shop ending its own markdown just before a platform campaign | parked |
+| offers-hardening Q10, Q13 *(later)* | Coupon use and ledger reversal for an order cancelled before dispatch or before payment | parked, order-fulfilment |
+
+---
 
 ## Phase 11 — Listing: one entry, every channel
 

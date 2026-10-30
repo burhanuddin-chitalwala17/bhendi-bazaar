@@ -151,6 +151,7 @@ Canonical index of *how we work*. **Each line is a pointer** — the rule's stat
 - **A phone number is contact data, not an identity key.** [ADR-0024](docs/adr/0024-phone-is-contact-data-not-an-identity-key.md)
 - **The audit trail records an action; it never decides whether it happened.** [ADR-0021](docs/adr/0021-audit-trail-never-fails-the-action.md)
 - **An org storefront is a scoped projection of the marketplace, on one domain.** [ADR-0030](docs/adr/0030-org-storefronts-are-scoped-projections-on-one-domain.md)
+- **A storefront theme is a token set and a section composition declared in code** — one section library, three palettes each, the shop stores keys only, every palette contrast-tested. [ADR-0064](docs/adr/0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md)
 - **Images live in Cloudflare R2, behind one seam.** [ADR-0028](docs/adr/0028-images-live-in-cloudflare-r2.md)
 - **Images are stored small and delivered through the optimizer.** [ADR-0026](docs/adr/0026-images-are-delivered-through-the-optimizer.md)
 - **A zoomable surface declares the size it zooms to; the stored ceiling clears it.** [ADR-0027](docs/adr/0027-zoomable-surfaces-declare-the-size-they-zoom-to.md)

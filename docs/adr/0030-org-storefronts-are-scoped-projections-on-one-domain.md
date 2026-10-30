@@ -1,7 +1,7 @@
 # ADR-0030: An org storefront is a scoped projection of the marketplace, on one domain
 
 - **Date:** 2026-09-15
-- **Status:** Accepted
+- **Status:** Accepted (D8 superseded by [ADR-0064](0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md))
 
 ## Context
 

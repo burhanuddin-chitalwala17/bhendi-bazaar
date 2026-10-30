@@ -67,7 +67,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0027](0027-zoomable-surfaces-declare-the-size-they-zoom-to.md) | A zoomable surface declares the size it zooms to, and the stored ceiling clears it | Accepted | 2026-09-17 |
 | [0028](0028-images-live-in-cloudflare-r2.md) | Images live in Cloudflare R2, reached through one seam | Accepted (D6 historical — Blob is gone; the confirm-time check is [media-library](../specs/media-library/) D2) | 2026-09-17 |
 | [0029](0029-a-product-leaves-sale-by-archiving-not-deletion.md) | A product leaves sale by archiving, not deletion | Accepted | 2026-09-16 |
-| [0030](0030-org-storefronts-are-scoped-projections-on-one-domain.md) | An org storefront is a scoped projection of the marketplace, on one domain | Accepted | 2026-09-15 |
+| [0030](0030-org-storefronts-are-scoped-projections-on-one-domain.md) | An org storefront is a scoped projection of the marketplace, on one domain | Accepted (D8 superseded by [ADR-0064](0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md)) | 2026-09-15 |
 | [0031](0031-one-components-home-organised-by-domain.md) | One components home, organised by domain, with controls through the primitives | Accepted (D4 hooks home refined by [ADR-0057](0057-shared-hooks-live-in-one-core-folder-and-every-other-hook-travels-with-its-component.md)) | 2026-09-19 |
 | [0032](0032-records-people-authored-are-retired-not-deleted.md) | A record a person authored is retired, never deleted | Accepted | 2026-09-23 |
 | [0033](0033-a-domain-is-reached-through-its-public-surface.md) | A domain is reached through its declared public surface | Accepted (D5 type-only exemption narrowed for components by [ADR-0048](0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md)) | 2026-09-23 |
@@ -101,4 +101,5 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 | [0061](0061-a-feature-is-cut-to-one-outcome-its-decisions-are-logged-and-its-ux-is-signed-off-before-the-trd.md) | A feature is cut to one outcome, its decisions are logged, and its UX is signed off before the TRD | Accepted (D2 amended by [ADR-0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md)) | 2026-10-18 |
 | [0062](0062-a-decision-is-replaced-until-it-is-implemented-and-superseded-after.md) | A decision is replaced until it is implemented, and superseded after | Accepted | 2026-10-20 |
 | [0063](0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md) | Every public route is classified for rate limiting in one registry | Accepted | 2026-10-29 |
+| [0064](0064-a-storefront-theme-is-a-token-set-and-a-section-composition-declared-in-code.md) | A storefront theme is a token set and a section composition declared in code | Accepted | 2026-10-30 |
 <!-- generated:adr-index:end -->
