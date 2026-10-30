@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api-client";
+import type { ChannelVerdict, UnsavedReadinessInput } from "@server/listing/channel-readiness.service";
 
 /** What the product form fetches on interaction; the page serves the first load (ADR-0034). */
 export const listingApiClient = {
@@ -16,6 +17,15 @@ export const listingApiClient = {
     return apiRequest<{ id: string; name: string }>(`/api/org/${encodeURIComponent(orgId)}/families`, {
       method: "POST",
       body: input,
+    });
+  },
+
+  /** What each place the shop sells on would still ask of the unsaved product (product-form D4). */
+  readiness(orgId: string, input: UnsavedReadinessInput, signal?: AbortSignal) {
+    return apiRequest<ChannelVerdict[]>(`/api/org/${encodeURIComponent(orgId)}/products/readiness`, {
+      method: "POST",
+      body: input,
+      signal,
     });
   },
 };

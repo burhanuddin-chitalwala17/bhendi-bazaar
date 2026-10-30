@@ -14,7 +14,9 @@ import { channelMapRepository } from "./channel-map.repository";
 import { orgChannelRepository } from "./org-channel.repository";
 import { productReadinessRepository } from "./product-readiness.repository";
 import { productTypeRepository } from "./product-type.repository";
+import { fillListing } from "./listing-fill.service";
 import { FACT_DECLARATIONS, ANSWER, parseStoredFacts, type FactKey } from "./listing-facts";
+import type { Answers } from "./fill-facts";
 import type { ProductTypeRecord } from "./product-type.types";
 
 /**
@@ -39,6 +41,15 @@ export interface ChannelVerdict {
   report: ListingReadinessReport;
 }
 
+/** The unsaved answers a hint is judged on; the org comes from the caller's scope, never this. */
+export interface UnsavedReadinessInput {
+  categoryId: string;
+  kind?: string | null;
+  familyId?: string | null;
+  brandId?: string | null;
+  facts?: Record<string, string | number | boolean | null | undefined>;
+}
+
 export const channelReadinessService = {
   /**
    * How every channel this shop sells on would receive this product.
@@ -56,6 +67,24 @@ export const channelReadinessService = {
 
     const registers = (await registersForTypes(channels, [type])).get(type.key)!;
     return readinessByChannel(subjectOf(subject), registers);
+  },
+
+  /**
+   * The verdict a product would get if saved as it stands in the form (product-form D4, Q8).
+   *
+   * Filled exactly as a save fills it, so the hint and the later verdict cannot disagree; nothing
+   * is written. It advises and never gates (ADR-0053).
+   */
+  async forUnsaved(orgId: string, input: UnsavedReadinessInput): Promise<ChannelVerdict[]> {
+    if (!input.categoryId) return [];
+    const filled = await fillListing({
+      categoryId: input.categoryId,
+      orgId,
+      familyId: input.familyId ?? null,
+      brandId: input.brandId ?? null,
+      facts: input.facts as Answers<FactKey> | undefined,
+    });
+    return this.forProduct(orgId, { productType: filled.productType, kind: input.kind ?? null, facts: filled.facts });
   },
 
   /**

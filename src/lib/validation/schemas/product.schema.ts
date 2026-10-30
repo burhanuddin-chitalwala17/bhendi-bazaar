@@ -57,6 +57,17 @@ const productMediaListSchema = z
 /** An untouched price box is 0 or NaN; both mean the same thing to the shop. */
 const PRICE_MISSING = "Add the price buyers pay";
 
+/** The listing answers a product carries, shared by the save and the readiness preview. */
+const listingAnswerFields = {
+  kind: unselectedIsNull(z.string().trim().max(40)),
+  familyId: unselectedIsNull(z.string().trim().min(1)),
+  brandId: unselectedIsNull(z.string().trim().min(1)),
+  facts: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+    .optional(),
+  measurements: z.record(z.string(), z.union([z.number(), z.null()])).optional(),
+};
+
 /**
  * The accepted shape of an admin product payload.
  *
@@ -125,13 +136,7 @@ export const productFormSchema = z
      * shape — origin is the server's word for where a value came from, and a request that could
      * set it could claim a shop typed something it inherited.
      */
-    kind: unselectedIsNull(z.string().trim().max(40)),
-    familyId: unselectedIsNull(z.string().trim().min(1)),
-    brandId: unselectedIsNull(z.string().trim().min(1)),
-    facts: z
-      .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
-      .optional(),
-    measurements: z.record(z.string(), z.union([z.number(), z.null()])).optional(),
+    ...listingAnswerFields,
   })
   // A cross-field rule neither side could enforce alone, attributed to the field a
   // user would correct.
@@ -163,3 +168,17 @@ export const productArchiveSchema = z.object({
 });
 
 export type ProductArchiveInput = z.infer<typeof productArchiveSchema>;
+
+/**
+ * The unsaved answers a readiness hint is judged on (product-form D4). Only what readiness reads:
+ * no price, stock or org, and a blank category is allowed — it simply has nothing to say yet.
+ */
+export const productReadinessSchema = z.object({
+  categoryId: z.string().trim().max(64).default(""),
+  kind: listingAnswerFields.kind,
+  familyId: listingAnswerFields.familyId,
+  brandId: listingAnswerFields.brandId,
+  facts: listingAnswerFields.facts,
+});
+
+export type ProductReadinessInput = z.infer<typeof productReadinessSchema>;

@@ -10,6 +10,37 @@
 
 ## Entries
 
+## 2026-10-31 — product-form unit 2: readiness hints while filling [CONTRACT]
+
+- **What other places ask, before saving** (product-form R5, A3; D4; Q8, Q31): on Details the
+  stepped create shows "{Channel} also asks: {fact}" in the type's own words ("Amazon also asks:
+  Fabric"); Review shows "Ready for your store", "{Channel} will also ask: {fact}" with "Add
+  {fact}" opening Details, "Ready for {Channel}", and "Checking…" while it re-checks. Re-checked
+  each time the step changes. A shop selling nowhere else, or a category with no type, sees nothing
+  and nothing is fetched. Photos and video says nothing about video (Q31). Advice only: a failed or
+  slow check shows nothing, and "Put on sale" is never disabled or delayed (ADR-0053, A8).
+- **One rule set** (D4): `channelReadinessService.forUnsaved` fills the unsaved answers through
+  `fillListing` as a save would (family, brand, shop defaults), then calls `forProduct`. It writes
+  nothing. Only unanswered facts become hints; a missing mapping is the platform's work and stays on
+  the product page panel.
+- **[CONTRACT]** `POST /api/org/[orgId]/products/readiness` (`withOrg`; org from the membership),
+  body `productReadinessSchema` (`categoryId`, `kind`, `familyId`, `brandId`, `facts`), answer the
+  existing `ChannelVerdict[]`. `productFormSchema` and the new schema share one declaration of the
+  listing answers. `listingApiClient.readiness`, `useReadinessHints` (`useAsyncData`, aborts the
+  stale check) and `readiness-hints.ts` (verdict → words) sit beside the form. `CONTRACTS.md`
+  Channels section updated: readiness of a *saved* product still never crosses the boundary.
+- **Tests:** `tests/unit/product-form-readiness.test.tsx` (A3, R5, ux Review Partial/Loading, A8
+  with a failing and a hanging check); `tests/integration/product-readiness-preview.test.ts`
+  (A3 through the route on a real schema, family fill, nothing written, a shop with no channel, a
+  caller with no seat refused 403, a bad body in the envelope). Mutations, each red: the preview
+  judges the raw answers instead of the filled ones (family test fails); the re-check keyed only on
+  the type, not the step (Q8 test fails); "Put on sale" `disabled` while checking (A8 test fails).
+- **Gates:** tsc clean; unit 201 files / 2279 passed; integration 48 files, 417 passed — one
+  failure, `jobs-enqueue` drift, is this tree's database carrying another unit's columns for the
+  shared Prisma client, not this unit (no migration here); lint:boundary clean; docs:check passed.
+  `src/app/api/CLAUDE.md` re-read against the new handler; nothing drifted. ARCHITECTURE.md
+  handler and test-file counts follow the tree. Q8, Q31 → implemented (unit 2).
+
 ## 2026-10-30 — order-fulfilment unit 1: one parcel vocabulary [MIGRATION]
 
 - **Two new parcel states** (R1, R2; D1; Q2): `ready_for_pickup` and `pickup_booked` sit between

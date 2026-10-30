@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-30
+- **Verified:** 2026-10-31
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -212,11 +212,15 @@ it already is.
 because it is somebody else's vocabulary, which goes stale on their release schedule rather than
 ours. Both upsert on the natural key, so sending one again is a correction and not a second row.
 
-**Readiness never crosses the boundary.** The verdict is computed on the server and rendered
-there ([ADR-0034](adr/0034-render-on-the-server-by-default.md)); there is no readiness route and
-no readiness DTO. The TRD anticipated one, and building it showed a route handler would be a
-round trip for a read the server already does. Nothing in the browser decides whether a product
-is ready, which also means nothing in the browser can disagree with what gets published.
+**Readiness of a saved product never crosses the boundary.** The verdict is computed on the
+server and rendered there ([ADR-0034](adr/0034-render-on-the-server-by-default.md)). The one
+exception is the unsaved product form ([product-form](specs/own-store/product-form/) D4):
+`POST /api/org/[orgId]/products/readiness` takes `productReadinessSchema`
+(`src/lib/validation/schemas/product.schema.ts`) — `categoryId` (blank answers nothing), `kind`,
+`familyId`, `brandId`, `facts` as bare answers — fills them as a save would and answers the
+existing `ChannelVerdict[]` (`server/listing/channel-readiness.service.ts`). The org is the
+membership's, never the body's; nothing is written, and nothing of the answer reaches the save.
+The browser only words the verdict; the server still decides it.
 
 ### Channel connections
 
