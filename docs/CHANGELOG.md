@@ -10,6 +10,25 @@
 
 ## Entries
 
+## 2026-10-31 — product-form unit 3: a category change names what it leaves behind
+
+- **Category-change sheet** (R6; A4; D5; Q9): on What it is, picking a category whose product type does
+  not ask some answered facts, measurements or the kind opens a `FormDialog` (bottom sheet on a phone)
+  in ux.md's words: "Change to Ring?" · "Fabric, Sleeve length, Length won't apply to a ring." ·
+  "Keep Abaya" / "Change to Ring". "Keep" (or closing the sheet) leaves the category as it was; a pick
+  that loses nothing applies at once. Nothing is disabled. Pure `category-change.ts` (`answersLost`,
+  `keepAsked`, the copy) and `useCategoryChange` sit beside the form; `CategoryChangeSheet` renders.
+- **Answers kept until save** (Q9): answers stay in form state across category changes, so switching back
+  restores them, the kind included (the Kind select remounts per type). The form's submit sends only
+  what the chosen type asks (`keepAsked`) and drops a kind that type cannot hold, which the save would
+  refuse. A category with no type keeps every answer, as `fillListing` does.
+- **Tests:** `tests/unit/product-form-category-change.test.tsx` (A4: three answers listed, "Keep Abaya"
+  changes nothing, switch back restores; kind kept; no sheet when nothing is lost; the save sends only
+  Ring's answers; ux copy). Mutations, each restored: the picker wired straight to `field.onChange`
+  (4 failed); submit sending `data` without `keepAsked` (1 failed); `answersLost` counting blank answers
+  as lost (4 failed); the Kind select's `key={type.key}` removed (1 failed).
+- **Suites run:** `tsc`, `vitest tests/unit`, `vitest tests/integration`, `lint:boundary`, `docs:check`.
+
 ## 2026-10-31 — org-profile unit 2: Shop details, the buyer part [CONTRACT] [MIGRATION]
 
 - **One page for the shop's facts** (R1–R3, R10; A2; D2, D10; Q5, Q11–Q14): `/org/[orgId]/shop/details`,

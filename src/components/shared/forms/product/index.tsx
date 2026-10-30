@@ -29,6 +29,8 @@ import { useFormPersist } from "@/hooks/forms/useFormPersist";
 import { ProductStepsForm } from "./ProductStepsForm";
 import { useProductSteps } from "./useProductSteps";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { resolveProductType } from "@server/listing/product-type";
+import { keepAsked } from "./category-change";
 import { paiseToRupees } from "@/lib/format";
 import {
   youtubePosterUrl,
@@ -150,7 +152,11 @@ export function ProductForm({
   // field-attributed server errors land on their fields with no code here.
   const form = useServerForm<ProductFormInput>({
     schema: productFormSchema,
-    submit: onSubmit,
+    // Answers for a category the shop moved away from stay in the form until here (D5).
+    submit: (data) => {
+      const key = resolveProductType(data.categoryId, categories ?? []);
+      return onSubmit(keepAsked(data, productTypes.find((type) => type.key === key) ?? null));
+    },
     // Deferred: clearSaved is declared below. Without this the saved draft
     // prefills the next "new product" with the one just created.
     onSuccess: (result) => {

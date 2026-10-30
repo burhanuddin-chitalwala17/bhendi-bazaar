@@ -19,6 +19,8 @@ import type { ProductDetails, ProductFormInput } from "@/components/product/cons
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import type { useServerForm } from "@/hooks/core/useServerForm";
 import { CategoryPicker } from "./CategoryPicker";
+import { CategoryChangeSheet } from "./CategoryChangeSheet";
+import { useCategoryChange } from "./useCategoryChange";
 import { BuyerPreview } from "./BuyerPreview";
 import { ProductFactFields } from "./ProductFactFields";
 import { ProductFamilyField } from "./ProductFamilyField";
@@ -130,6 +132,10 @@ export function ProductStepsForm({
   // Readiness hints (D4): advice from the unsaved values, re-checked as the shop moves between steps.
   const readiness = useReadinessHints(orgId, typeKey, steps.current, form.getValues);
   const hints = hintsFrom(readiness.verdicts, productType);
+  // A category of another type names the answers it would leave behind first (D5, R6).
+  const categoryChange = useCategoryChange(categories, productTypes, form.getValues, (id) =>
+    setValue("categoryId", id, { shouldDirty: true, shouldValidate: !!errors.categoryId }),
+  );
 
   // A field under "More options" with an error opens it, or the refusal would sit out of sight.
   const moreHasError = (step: ProductStepKey) =>
@@ -277,7 +283,7 @@ export function ProductStepsForm({
                   <CategoryPicker
                     id={`${id}-picker`}
                     value={(field.value as string) ?? ""}
-                    onChange={field.onChange}
+                    onChange={categoryChange.request}
                     categories={categories}
                     error={errors.categoryId?.message}
                   />
@@ -310,6 +316,11 @@ export function ProductStepsForm({
                   families={families}
                 />
               </MoreOptions>
+              <CategoryChangeSheet
+                pending={categoryChange.pending}
+                onKeep={categoryChange.keep}
+                onChange={categoryChange.confirm}
+              />
           </section>
 
           <section hidden={current !== "price"} className="space-y-4">

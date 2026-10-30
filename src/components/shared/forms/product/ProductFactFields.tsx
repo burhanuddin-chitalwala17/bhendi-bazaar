@@ -137,6 +137,8 @@ export function ProductFactFields({
       {type.kinds.length > 0 && (
         <div className="mt-4">
           <FormSelect
+            // Remounted per type, so a kind kept from an earlier category shows when switched back (D5).
+            key={type.key}
             label="Kind"
             {...register("kind")}
             error={errors.kind?.message}
