@@ -1,6 +1,6 @@
 import { prisma } from "@server/shared/prisma";
 import { AVAILABLE } from "@server/catalog/product.visibility";
-import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import { LIVE_PARCEL_WHERE, PAID_ORDER_WHERE as PAID_ORDER, PARCEL_WITH_SHOP } from "@server/checkout/order.types";
 
 /**
  * The dashboard widgets' reads. Analytics is the documented read-only exception to
@@ -18,7 +18,7 @@ export const widgetsRepository = {
 
   paidOrderTotals() {
     return prisma.order.aggregate({
-      where: { paymentStatus: PAYMENT_STATUS.PAID },
+      where: PAID_ORDER,
       _sum: { grandTotal: true },
       _count: true,
     });
@@ -28,8 +28,8 @@ export const widgetsRepository = {
     return prisma.shipment.count({
       where: {
         ...(orgId === null ? {} : { orgId }),
-        status: { in: ["pending", "processing"] },
-        order: { paymentStatus: PAYMENT_STATUS.PAID },
+        status: { in: [...PARCEL_WITH_SHOP] },
+        order: PAID_ORDER,
       },
     });
   },
@@ -37,7 +37,7 @@ export const widgetsRepository = {
   paidOrderCount(orgId: string | null) {
     return prisma.order.count({
       where: {
-        paymentStatus: PAYMENT_STATUS.PAID,
+        ...PAID_ORDER,
         ...(orgId === null ? {} : { shipments: { some: { orgId } } }),
       },
     });
@@ -46,7 +46,7 @@ export const widgetsRepository = {
   /** This org's parcel lines at the unit price actually paid; shipping is excluded (TRD D5). */
   paidLinesForOrg(orgId: string) {
     return prisma.shipmentItem.findMany({
-      where: { shipment: { orgId, order: { paymentStatus: PAYMENT_STATUS.PAID } } },
+      where: { shipment: { orgId, ...LIVE_PARCEL_WHERE, order: PAID_ORDER } },
       select: { quantity: true, orderItem: { select: { unitPrice: true } } },
     });
   },

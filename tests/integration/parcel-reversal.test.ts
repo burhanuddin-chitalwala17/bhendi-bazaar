@@ -13,15 +13,18 @@ const PREFIX = "parcel-reversal-";
 
 describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let applyStatus: typeof import("@server/shipping/shipment-status.service").applyStatus;
+  let moveParcel: typeof import("@server/checkout/fulfilment.service").moveParcel;
   let SHIPMENT_STATUS: typeof import("@server/shipping/domain/shipping.types").SHIPMENT_STATUS;
+  let PARCEL_ACTOR: typeof import("@server/shipping/domain/shipping.types").PARCEL_ACTOR;
+  let PAYMENT_STATUS: typeof import("@server/checkout/order.types").PAYMENT_STATUS;
   let ledgerService: typeof import("@server/payouts/ledger.service").ledgerService;
   const madeOrderIds: string[] = [];
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ applyStatus } = await import("@server/shipping/shipment-status.service"));
-    ({ SHIPMENT_STATUS } = await import("@server/shipping/domain/shipping.types"));
+    ({ moveParcel } = await import("@server/checkout/fulfilment.service"));
+    ({ SHIPMENT_STATUS, PARCEL_ACTOR } = await import("@server/shipping/domain/shipping.types"));
+    ({ PAYMENT_STATUS } = await import("@server/checkout/order.types"));
     ({ ledgerService } = await import("@server/payouts/ledger.service"));
   });
 
@@ -30,6 +33,7 @@ describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
       const inOrders = { orderId: { in: madeOrderIds } };
       await prisma.orgLedgerEntryLine.deleteMany({ where: { entry: inOrders } });
       await prisma.orgLedgerEntry.deleteMany({ where: inOrders });
+      await prisma.parcelEvent.deleteMany({ where: { shipment: { orderId: { in: madeOrderIds } } } });
       await prisma.shipmentItem.deleteMany({ where: { shipment: inOrders } });
       await prisma.shipment.deleteMany({ where: inOrders });
       await prisma.orderItem.deleteMany({ where: inOrders });
@@ -56,7 +60,8 @@ describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
 
   async function anOrder() {
     const order = await prisma.order.create({
-      data: { code: `BB-${unique().slice(-8).toUpperCase()}`, address: {}, grandTotal: 0 },
+      // Paid: only a paid parcel can be cancelled (order-fulfilment Q9).
+      data: { code: `BB-${unique().slice(-8).toUpperCase()}`, address: {}, grandTotal: 0, paymentStatus: PAYMENT_STATUS.PAID },
       select: { id: true },
     });
     madeOrderIds.push(order.id);
@@ -80,7 +85,7 @@ describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
     return shipment.id;
   }
 
-  /** The call `applyStatus` makes, without moving the parcel: shipping reads the scope, payouts reverses. */
+  /** The call the move makes, without moving the parcel: shipping reads the scope, payouts reverses. */
   const reverse = (shipmentId: string, reason = "test") =>
     prisma.$transaction(async (tx) => {
       const { shipmentRepository } = await import("@server/shipping/repositories/shipment.repository");
@@ -112,7 +117,7 @@ describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
     });
     await ledgerService.recordSale(orderId);
 
-    await applyStatus(parcelA, SHIPMENT_STATUS.CANCELLED);
+    await moveParcel(parcelA, SHIPMENT_STATUS.CANCELLED, { actor: PARCEL_ACTOR.SYSTEM });
 
     const entries = await entriesOf(orderId);
     const of = (orgId: string, kind: string) => entries.filter((e) => e.orgId === orgId && e.kind === kind);
@@ -146,8 +151,8 @@ describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
     await ledgerService.recordSale(orderId);
 
     for (const parcel of [first, second]) {
-      await applyStatus(parcel, SHIPMENT_STATUS.RTO_IN_TRANSIT);
-      await applyStatus(parcel, SHIPMENT_STATUS.RTO_DELIVERED);
+      await moveParcel(parcel, SHIPMENT_STATUS.RTO_IN_TRANSIT, { actor: PARCEL_ACTOR.SYSTEM });
+      await moveParcel(parcel, SHIPMENT_STATUS.RTO_DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
     }
 
     const entries = await entriesOf(orderId);
@@ -179,7 +184,7 @@ describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
       items: [{ orderItemId: item.id, quantity: 1 }],
     });
     await ledgerService.recordSale(orderId);
-    await applyStatus(parcel, SHIPMENT_STATUS.LOST);
+    await moveParcel(parcel, SHIPMENT_STATUS.LOST, { actor: PARCEL_ACTOR.SYSTEM });
     const before = await entriesOf(orderId);
 
     expect(await reverse(parcel, "replay")).toBe(0);
@@ -269,7 +274,7 @@ describe.skipIf(!isDisposableDb)("a parcel reverses only its own goods", () => {
       },
     });
 
-    await applyStatus(parcel, SHIPMENT_STATUS.LOST);
+    await moveParcel(parcel, SHIPMENT_STATUS.LOST, { actor: PARCEL_ACTOR.SYSTEM });
     expect(await entriesOf(orderId)).toHaveLength(2);
   });
   const netOf = async (orderId: string) =>

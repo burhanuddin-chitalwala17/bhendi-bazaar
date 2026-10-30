@@ -14,6 +14,7 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   [ORDER_STATUS.PACKED]: { label: "Packed", className: "bg-primary text-primary-foreground" },
   [ORDER_STATUS.SHIPPED]: { label: "Shipped", className: "bg-primary text-primary-foreground" },
   [ORDER_STATUS.DELIVERED]: { label: "Delivered", className: "bg-success text-success-foreground" },
+  [ORDER_STATUS.CANCELLED]: { label: "Cancelled", className: "bg-muted text-muted-foreground" },
   [ORDER_STATUS.FAILED]: { label: "Payment Failed", className: "bg-destructive text-destructive-foreground" },
 };
 

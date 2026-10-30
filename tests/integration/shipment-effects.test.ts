@@ -18,14 +18,15 @@ const PREFIX = "ship-effects-";
 
 describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => {
   let prisma: typeof import("@server/shared/prisma").prisma;
-  let applyStatus: typeof import("@server/shipping/shipment-status.service").applyStatus;
+  let moveParcel: typeof import("@server/checkout/fulfilment.service").moveParcel;
   let SHIPMENT_STATUS: typeof import("@server/shipping/domain/shipping.types").SHIPMENT_STATUS;
+  let PARCEL_ACTOR: typeof import("@server/shipping/domain/shipping.types").PARCEL_ACTOR;
   const madeOrderIds: string[] = [];
 
   beforeAll(async () => {
     ({ prisma } = await import("@server/shared/prisma"));
-    ({ applyStatus } = await import("@server/shipping/shipment-status.service"));
-    ({ SHIPMENT_STATUS } = await import("@server/shipping/domain/shipping.types"));
+    ({ moveParcel } = await import("@server/checkout/fulfilment.service"));
+    ({ SHIPMENT_STATUS, PARCEL_ACTOR } = await import("@server/shipping/domain/shipping.types"));
   });
 
   afterAll(async () => {
@@ -33,6 +34,7 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
       // Ledger first: a reversal holds its parcel (Restrict, offers-hardening D1).
       await prisma.orgLedgerEntryLine.deleteMany({ where: { entry: { orderId: { in: madeOrderIds } } } });
       await prisma.orgLedgerEntry.deleteMany({ where: { orderId: { in: madeOrderIds } } });
+      await prisma.parcelEvent.deleteMany({ where: { shipment: { orderId: { in: madeOrderIds } } } });
       await prisma.shipmentItem.deleteMany({ where: { shipment: { orderId: { in: madeOrderIds } } } });
       await prisma.shipment.deleteMany({ where: { orderId: { in: madeOrderIds } } });
       await prisma.orderItem.deleteMany({ where: { orderId: { in: madeOrderIds } } });
@@ -93,23 +95,23 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
     const p = await aDispatchedParcel();
     expect(await stockOf(p.productId, p.locationId)).toBe(7);
 
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT, { actor: PARCEL_ACTOR.SYSTEM });
     // Still on its way back — nothing is in the shop yet, so nothing is sellable yet.
     expect(await stockOf(p.productId, p.locationId)).toBe(7);
 
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
     expect(await stockOf(p.productId, p.locationId)).toBe(10);
   });
 
   it("does not put them back twice, even if the transition guard is bypassed", async () => {
     const p = await aDispatchedParcel();
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT);
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT, { actor: PARCEL_ACTOR.SYSTEM });
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
     expect(await stockOf(p.productId, p.locationId)).toBe(10);
 
     // Repeating the call proves little on its own: `from === to` is answered as a no-op before
     // restocking is reached, so the transition table is what refuses it, not `restockedAt`.
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
     expect(await stockOf(p.productId, p.locationId)).toBe(10);
 
     // So reach the restock path a second time for real, by putting the parcel back on its
@@ -119,14 +121,14 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
       where: { id: p.shipmentId },
       data: { status: SHIPMENT_STATUS.RTO_IN_TRANSIT },
     });
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
     expect(await stockOf(p.productId, p.locationId)).toBe(10);
   });
 
   it("a delivered parcel does not put anything back", async () => {
     const p = await aDispatchedParcel();
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.OUT_FOR_DELIVERY);
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.DELIVERED);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.OUT_FOR_DELIVERY, { actor: PARCEL_ACTOR.SYSTEM });
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
     expect(await stockOf(p.productId, p.locationId)).toBe(7);
   });
 
@@ -134,7 +136,7 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
     // The owner's decision of 2026-09-24. Crediting these would invent inventory the shop
     // does not have; they are written off against the courier claim instead.
     const p = await aDispatchedParcel();
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.LOST);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.LOST, { actor: PARCEL_ACTOR.SYSTEM });
     expect(await stockOf(p.productId, p.locationId)).toBe(7);
     // But the shipment is still marked handled, so nothing sweeps it up later.
     const row = await prisma.shipment.findUniqueOrThrow({
@@ -164,8 +166,8 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
     const earned = afterSale.owedPaise - before.owedPaise;
     expect(earned, "the sale should have increased what is owed").toBeGreaterThan(0);
 
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT);
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT, { actor: PARCEL_ACTOR.SYSTEM });
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
 
     const afterReturn = await ledgerRepository.balancesFor(org.orgId);
     // Back to exactly where it started: the reversal nets the sale off, and `balancesFor` sums
@@ -185,8 +187,8 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
     });
     expect(sale, "the fixture should have produced a sale entry").not.toBeNull();
 
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT);
-    await applyStatus(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED);
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_IN_TRANSIT, { actor: PARCEL_ACTOR.SYSTEM });
+    await moveParcel(p.shipmentId, SHIPMENT_STATUS.RTO_DELIVERED, { actor: PARCEL_ACTOR.SYSTEM });
 
     const entries = await prisma.orgLedgerEntry.findMany({
       where: { orderId: p.orderId },

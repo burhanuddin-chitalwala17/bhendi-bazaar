@@ -48,11 +48,11 @@ describe("the canonical set is complete", () => {
 });
 
 describe("the forward journey, and the two ways back", () => {
-  const { PACKING, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERY_FAILED, DELIVERED,
-          RTO_IN_TRANSIT, RTO_DELIVERED, CANCELLED, LOST } = SHIPMENT_STATUS;
+  const { PACKING, READY_FOR_PICKUP, PICKUP_BOOKED, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY,
+          DELIVERY_FAILED, DELIVERED, RTO_IN_TRANSIT, RTO_DELIVERED, CANCELLED, LOST } = SHIPMENT_STATUS;
 
-  it("walks packing → picked_up → in_transit → out_for_delivery → delivered", () => {
-    const path = [PACKING, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED];
+  it("walks packing → ready → booked → picked_up → in_transit → out_for_delivery → delivered", () => {
+    const path = [PACKING, READY_FOR_PICKUP, PICKUP_BOOKED, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED];
     for (let i = 0; i < path.length - 1; i++) {
       expect(canTransition(path[i], path[i + 1]), `${path[i]} -> ${path[i + 1]}`).toBe(true);
     }

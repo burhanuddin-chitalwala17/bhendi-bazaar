@@ -1,3 +1,4 @@
+import type { ShipmentStatus } from "../../server/shipping/domain/shipping.types";
 /**
  * Type definitions for seed data
  */
@@ -111,7 +112,7 @@ export interface SeedOrder {
   shippingTotal: number; // ⭐ New field
   discount: number; // ⭐ Changed from totals.discount
   grandTotal: number; // ⭐ Changed from totals.total
-  status: "processing" | "packed" | "shipped" | "delivered";
+  status: "confirmed" | "shipped" | "delivered"; // summarised from parcels (order-fulfilment D4)
   address: SeedAddress;
   notes?: string;
   paymentMethod: string;
@@ -135,7 +136,7 @@ export interface SeedShipment {
   trackingNumber?: string;
   courierName?: string;
   trackingUrl?: string;
-  status: "pending" | "confirmed" | "shipped" | "delivered" | "failed";
+  status: ShipmentStatus;
   packageWeight?: number;
   estimatedDelivery?: Date;
   createdAt: Date;

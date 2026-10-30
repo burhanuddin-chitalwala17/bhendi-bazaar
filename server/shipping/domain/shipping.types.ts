@@ -16,8 +16,12 @@
  * the event log, not in a column decisions branch on.
  */
 export const SHIPMENT_STATUS = {
-  /** Accepted, being packed at the origin. Nothing has moved; the only state `CANCELLED` follows. */
+  /** Accepted, being packed at the origin. Nothing has moved yet. */
   PACKING: "packing",
+  /** The shop has packed it and is waiting for the admin to book a courier (order-fulfilment D1). */
+  READY_FOR_PICKUP: "ready_for_pickup",
+  /** A courier is booked for a date; nobody has collected it yet. */
+  PICKUP_BOOKED: "pickup_booked",
   /** Handed to the courier. From here the only way back is a return, never a cancellation. */
   PICKED_UP: "picked_up",
   IN_TRANSIT: "in_transit",
@@ -51,6 +55,8 @@ export type ShipmentStatus = (typeof SHIPMENT_STATUS)[keyof typeof SHIPMENT_STAT
  */
 export const SHIPMENT_STATUS_LABELS: Record<ShipmentStatus, string> = {
   [SHIPMENT_STATUS.PACKING]: "Packing",
+  [SHIPMENT_STATUS.READY_FOR_PICKUP]: "Ready for pickup",
+  [SHIPMENT_STATUS.PICKUP_BOOKED]: "Pickup booked",
   [SHIPMENT_STATUS.PICKED_UP]: "Picked up",
   [SHIPMENT_STATUS.IN_TRANSIT]: "In transit",
   [SHIPMENT_STATUS.OUT_FOR_DELIVERY]: "Out for delivery",
@@ -86,6 +92,8 @@ export interface StatusEffects {
 
 export const SHIPMENT_STATUS_EFFECTS: Record<ShipmentStatus, StatusEffects> = {
   packing:           { restocks: false, refundOwed: false, settlement: "unchanged", terminal: false },
+  ready_for_pickup:  { restocks: false, refundOwed: false, settlement: "unchanged", terminal: false },
+  pickup_booked:     { restocks: false, refundOwed: false, settlement: "unchanged", terminal: false },
   picked_up:         { restocks: false, refundOwed: false, settlement: "unchanged", terminal: false },
   in_transit:        { restocks: false, refundOwed: false, settlement: "unchanged", terminal: false },
   out_for_delivery:  { restocks: false, refundOwed: false, settlement: "unchanged", terminal: false },
@@ -106,8 +114,11 @@ export const SHIPMENT_STATUS_EFFECTS: Record<ShipmentStatus, StatusEffects> = {
  * applied — the common case with retried and out-of-order webhooks, not an error.
  */
 export const SHIPMENT_TRANSITIONS: Record<ShipmentStatus, readonly ShipmentStatus[]> = {
-  // Cancellation is reachable from here and nowhere else (spec R4).
-  packing:          ["picked_up", "cancelled"],
+  // Hand booking (own-store Q18) has two waits; picked_up comes only after a booking, and
+  // cancellation only before the courier collects (order-fulfilment D1).
+  packing:          ["ready_for_pickup", "cancelled"],
+  ready_for_pickup: ["pickup_booked", "cancelled"],
+  pickup_booked:    ["picked_up", "cancelled"],
   picked_up:        ["in_transit", "rto_in_transit", "lost", "damaged"],
   in_transit:       ["out_for_delivery", "rto_in_transit", "lost", "damaged"],
   out_for_delivery: ["delivered", "delivery_failed", "lost", "damaged"],
@@ -121,10 +132,44 @@ export const SHIPMENT_TRANSITIONS: Record<ShipmentStatus, readonly ShipmentStatu
   damaged:          [],
 };
 
+/** ux.md's "Stale" copy: a person's move refused because the parcel has already moved on. */
+export const alreadyMessage = (current: ShipmentStatus) =>
+  `This parcel is already ${(SHIPMENT_STATUS_LABELS[current] ?? current).toLowerCase()}.`;
+
+/** Who moves a parcel, as the timeline records it (order-fulfilment D5). */
+export const PARCEL_ACTOR = {
+  BUYER: "buyer",
+  SHOP: "shop",
+  ADMIN: "admin",
+  COURIER: "courier",
+  SYSTEM: "system",
+} as const;
+
+export type ParcelActor = (typeof PARCEL_ACTOR)[keyof typeof PARCEL_ACTOR];
+
+/**
+ * Where each person may cancel from (order-fulfilment Q9): buyer and shop until the parcel is
+ * marked ready, the admin until it is collected. Each list sits inside the transition table.
+ */
+export const CANCELLABLE_FROM: Record<"buyer" | "shop" | "admin", readonly ShipmentStatus[]> = {
+  buyer: [SHIPMENT_STATUS.PACKING],
+  shop: [SHIPMENT_STATUS.PACKING],
+  admin: [SHIPMENT_STATUS.PACKING, SHIPMENT_STATUS.READY_FOR_PICKUP, SHIPMENT_STATUS.PICKUP_BOOKED],
+};
+
 /** Whether this move is allowed. A repeat of the current state is a no-op, not a failure. */
 export function canTransition(from: ShipmentStatus, to: ShipmentStatus): boolean {
-  return from === to || SHIPMENT_TRANSITIONS[from].includes(to);
+  return from === to || (SHIPMENT_TRANSITIONS[from]?.includes(to) ?? false);
 }
+
+/** Whether a stored value is in the vocabulary. A row outside it has no transitions at all. */
+export function isShipmentStatus(value: string): value is ShipmentStatus {
+  return Object.prototype.hasOwnProperty.call(SHIPMENT_TRANSITIONS, value);
+}
+
+/** Said when a parcel holds a status outside the vocabulary: refused, never guessed past. */
+export const offListMessage = (current: string) =>
+  `This parcel has a status we don't recognise ("${current}"). Ask the admin to check it.`;
 
 // ============================================================================
 // PROVIDER CONNECTION

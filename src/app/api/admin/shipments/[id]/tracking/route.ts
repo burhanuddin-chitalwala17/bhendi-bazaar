@@ -10,13 +10,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { applyStatus } from "@server/shipping/shipment-status.service";
 import { trackingService } from "@server/shipping/tracking.service";
-import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
+import { PARCEL_ACTOR, SHIPMENT_STATUS, alreadyMessage } from "@server/shipping/domain/shipping.types";
+import { ConflictError } from "@server/shared/domain-error";
 import { updateTrackingSchema } from "@/lib/validation/schemas/shipment-tracking.schema";
 import { ORDER_STATUS } from "@server/checkout/order.types";
+import { moveParcel } from "@server/checkout/fulfilment.service";
 
-/** A courier is booked once the org has packed; before that there is no parcel to track. */
+/** Until unit 2's per-parcel "ready", the org's order-wide "packed" is the only signal that it is. */
 const TRACKABLE = new Set<string>([ORDER_STATUS.PACKED, ORDER_STATUS.SHIPPED, ORDER_STATUS.DELIVERED]);
 
 export async function PATCH(
@@ -61,11 +62,24 @@ export async function PATCH(
       );
     }
 
-    if (!TRACKABLE.has(shipment.order?.status ?? "")) {
+    if (shipment.status === SHIPMENT_STATUS.PACKING && !TRACKABLE.has(shipment.order?.status ?? "")) {
       return NextResponse.json(
         { error: "Tracking can only be added after the org marks the order as packed" },
         { status: 400 },
       );
+    }
+
+    // An AWB means a pickup is booked, not that the courier came (order-fulfilment Q4). Unit 3
+    // replaces this route with booking; until then it walks the parcel there through the one
+    // guarded move. A courier's later event moves it on; a parcel already past is left alone.
+    if (shipment.status === SHIPMENT_STATUS.PACKING) {
+      await moveParcel(shipmentId, SHIPMENT_STATUS.READY_FOR_PICKUP, { actor: PARCEL_ACTOR.ADMIN, refuse: true });
+    }
+    // A cancelled parcel is refused (409) rather than given an AWB; one the courier already has keeps its status.
+    if (shipment.status === SHIPMENT_STATUS.PACKING || shipment.status === SHIPMENT_STATUS.READY_FOR_PICKUP) {
+      await moveParcel(shipmentId, SHIPMENT_STATUS.PICKUP_BOOKED, { actor: PARCEL_ACTOR.ADMIN, refuse: true });
+    } else if (shipment.status === SHIPMENT_STATUS.CANCELLED) {
+      throw new ConflictError(alreadyMessage(SHIPMENT_STATUS.CANCELLED));
     }
 
     const updatedShipment = await trackingService.updateTracking(shipmentId, {
@@ -73,12 +87,6 @@ export async function PATCH(
       courierName,
       trackingUrl,
     });
-
-    try {
-      await applyStatus(shipmentId, SHIPMENT_STATUS.PICKED_UP);
-    } catch {
-      // Status transition may fail if shipment is already past packing — tracking is saved regardless
-    }
 
     return NextResponse.json({
       success: true,

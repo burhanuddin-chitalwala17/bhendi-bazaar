@@ -4,6 +4,7 @@ import { prisma } from "@server/shared/prisma";
 
 /** `prisma`, or the `tx` of the transaction a caller holds. */
 type ShipmentDb = Pick<typeof prisma, "shipment" | "shipmentItem">;
+type ParcelEventDb = Pick<typeof prisma, "parcelEvent">;
 
 /**
  * The Shipment table's repository (Invariant 5). `status` is written only on
@@ -11,10 +12,10 @@ type ShipmentDb = Pick<typeof prisma, "shipment" | "shipmentItem">;
  * service holds no Prisma call of its own; the transition table in the service is still the guard.
  */
 export class ShipmentRepository {
-  async findStatus(id: string) {
-    return prisma.shipment.findUnique({
+  async findStatus(id: string, db: ShipmentDb = prisma) {
+    return db.shipment.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: { id: true, orderId: true, status: true },
     });
   }
 
@@ -32,8 +33,8 @@ export class ShipmentRepository {
     });
   }
 
-  async listStatusesForOrder(orderId: string) {
-    return prisma.shipment.findMany({
+  async listStatusesForOrder(orderId: string, db: ShipmentDb = prisma) {
+    return db.shipment.findMany({
       where: { orderId },
       select: { status: true },
     });
@@ -53,22 +54,6 @@ export class ShipmentRepository {
     return prisma.shipment.update({
       where: { id },
       data: { ...data, updatedAt: new Date() },
-    });
-  }
-
-  // "confirmed"/"failed" are outside SHIPMENT_STATUS, kept as found: they belong to the
-  // placeholder booking that shipping-fulfilment removes.
-  async markBooked(id: string, booking: { trackingNumber?: string; trackingUrl?: string }): Promise<void> {
-    await prisma.shipment.update({
-      where: { id },
-      data: { ...booking, status: "confirmed", updatedAt: new Date() },
-    });
-  }
-
-  async markBookingFailed(id: string, shippingMeta: Prisma.InputJsonValue): Promise<void> {
-    await prisma.shipment.update({
-      where: { id },
-      data: { status: "failed", shippingMeta, updatedAt: new Date() },
     });
   }
 
@@ -94,13 +79,29 @@ export class ShipmentRepository {
     return claimed.count === 1;
   }
 
-  /** The status move `shipment-status.service.ts` decided, with the courier's wording and the delivery stamp. */
+  /**
+   * The status move `shipment-status.service.ts` decided, conditional on the parcel still being
+   * where the caller saw it (order-fulfilment D2). `false` means another move won.
+   */
   async recordTransition(
     id: string,
+    from: string,
     data: { status: string; shipmentStatus?: string; deliveredAt?: Date },
     tx: ShipmentDb,
+  ): Promise<boolean> {
+    const moved = await tx.shipment.updateMany({ where: { id, status: from }, data });
+    return moved.count === 1;
+  }
+
+  /** One timeline row, in the transaction that moved the parcel (order-fulfilment D5). */
+  async recordEvent(
+    data: {
+      shipmentId: string; fromStatus: string | null; toStatus: string;
+      actor: string; reason?: string | null; courierWording?: string | null;
+    },
+    tx: ParcelEventDb,
   ): Promise<void> {
-    await tx.shipment.update({ where: { id }, data });
+    await tx.parcelEvent.create({ data });
   }
 
   /** The parcel's org, order and units: what payouts reverses when it fails (offers-hardening D1). */

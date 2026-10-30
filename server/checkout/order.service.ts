@@ -10,14 +10,11 @@
 import { orderRepository } from "@server/checkout/order.repository";
 import { generateOrderCode } from "@server/checkout/order-code";
 import { prisma, toJsonColumn } from "@server/shared/prisma";
-import { retryWithBackoff, NonRetryableError } from "@server/shared/retry";
-import { createShipmentWithProvider } from "@server/shipping/providers/_placeholder/mock.booking";
 import {
   createShipmentForOrder,
   createShipmentItemsForOrder,
-  recordBooking,
-  recordBookingFailure,
 } from "@server/shipping/shipment-status.service";
+import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { billableWeightKg } from "@server/shipping/billable-weight";
 import { verifyRateQuote } from "@server/shipping/rate-quote.service";
 import type {
@@ -156,11 +153,8 @@ export class OrderService {
    * Flow:
    * 1. Validate input
    * 2. Create Order record (status: pending_payment)
-   * 3. Create Shipment records (status: pending)
+   * 3. Create Shipment records (status: packing)
    * 4. Return order with shipments
-   * 
-   * Note: Provider integration (AWB, pickup) happens AFTER payment
-   * via fulfillOrder() method
    */
   async createOrderWithShipments(
     input: CreateOrderWithShipmentsInput,
@@ -352,7 +346,7 @@ export class OrderService {
               shippingProviderId: plan.rate.providerId,
               courierName: plan.rate.courierName,
               packageWeight: plan.weight,
-              status: "pending", // Pending until fulfillment
+              status: SHIPMENT_STATUS.PACKING, // the table's first state (order-fulfilment D3)
               shippingMeta: {
                 courierCode: plan.rate.courierCode,
                 providerName: plan.rate.providerName,
@@ -487,123 +481,6 @@ export class OrderService {
       }
       console.error("Failed to create order with shipments:", error);
       throw error;
-    }
-  }
-
-  /** Every parcel has arrived. The caller (the carrier webhook) decides that from the shipment rows. */
-  async markDelivered(orderId: string): Promise<void> {
-    await orderRepository.markDelivered(orderId);
-  }
-
-  /**
-   * Fulfill order after successful payment
-   * 
-   * This method is called AFTER payment confirmation to:
-   * 1. Create shipments with shipping providers
-   * 2. Generate AWB numbers
-   * 3. Schedule pickups
-   * 4. Update shipment tracking info
-   * 
-   * Uses retry logic for resilience against provider API failures
-   */
-  async fulfillOrder(orderId: string): Promise<void> {
-    // Get order with shipments
-    const order = await orderRepository.findForFulfilment(orderId);
-
-    if (!order) {
-      throw new NotFoundError(`Order not found: ${orderId}`);
-    }
-
-    // Verify payment is confirmed
-    if (order.paymentStatus !== PAYMENT_STATUS.PAID) {
-      throw new NonRetryableError(
-        `Cannot fulfill order ${order.code}: Payment not confirmed (status: ${order.paymentStatus})`
-      );
-    }
-
-    const fulfillmentResults = {
-      successful: [] as string[],
-      failed: [] as { shipmentId: string; code: string; error: string }[],
-    };
-
-    // Process each shipment
-    for (const shipment of order.shipments) {
-      try {
-        // Call provider API with retry logic
-        const providerResult = await retryWithBackoff(
-          async () => {
-            return await createShipmentWithProvider(
-              shipment.id,
-              shipment.shippingProviderId!,
-              {
-                courierCode: (shipment.shippingMeta as { courierCode?: string } | null)?.courierCode,
-                weight: shipment.packageWeight!,
-                fromPincode: shipment.fromPincode,
-                toPincode: (order.address as { pincode: string }).pincode,
-              }
-            );
-          },
-          {
-            maxRetries: 3,
-            baseDelay: 1000,
-            exponentialBackoff: true,
-            onRetry: (error, attempt) => {
-              console.log(`   ⚠️  Retry ${attempt}/3: ${error.message}`);
-            },
-          }
-        );
-
-        // Update shipment with tracking info
-        await recordBooking(shipment.id, {
-          trackingNumber: providerResult.awb,
-          trackingUrl: providerResult.trackingUrl,
-        });
-
-        fulfillmentResults.successful.push(shipment.code);
-
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
-        fulfillmentResults.failed.push({
-          shipmentId: shipment.id,
-          code: shipment.code,
-          error: errorMessage,
-        });
-
-        // Update shipment to failed state (requires manual intervention)
-        await recordBookingFailure(
-          shipment.id,
-          toJsonColumn({
-            ...(shipment.shippingMeta as Record<string, unknown> | null),
-            fulfillmentError: errorMessage,
-            requiresManualIntervention: true,
-            failedAt: new Date().toISOString(),
-          }),
-        );
-      }
-    }
-
-    // Update order status based on fulfillment results
-    let finalOrderStatus: string;
-
-    if (fulfillmentResults.failed.length === 0) {
-      // All shipments fulfilled successfully
-      finalOrderStatus = "confirmed";
-    } else if (fulfillmentResults.successful.length === 0) {
-      // All shipments failed
-      finalOrderStatus = "fulfillment_failed";
-    } else {
-      // Partial fulfillment
-      finalOrderStatus = "partially_fulfilled";
-    }
-
-    await orderRepository.recordFulfilmentStatus(orderId, finalOrderStatus);
-
-    // If there are failures, log them for monitoring/alerting
-    if (fulfillmentResults.failed.length > 0) {
-      fulfillmentResults.failed.forEach(f => {
-        console.error(`   - ${f.code}: ${f.error}`);
-      });
     }
   }
 

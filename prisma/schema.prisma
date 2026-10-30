@@ -993,6 +993,7 @@ model Shipment {
   // Relations
   shippingEvents ShippingEvent[]
   ledgerEntries  OrgLedgerEntry[]
+  parcelEvents   ParcelEvent[]
 
   @@index([orderId])
   @@index([orgId])
@@ -1084,6 +1085,26 @@ model ShippingRateCache {
 }
 
 // Tracks all shipping-related events for debugging and analytics
+/// One row per parcel move: the timeline all three readers see (order-fulfilment D5).
+/// Written only in the transaction that moved the parcel. Not money: it goes with its parcel.
+model ParcelEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  /// What happened — `move` today; booking, date and ETA changes join it later (D5).
+  kind       String   @default("move")
+  fromStatus String?
+  toStatus   String
+  /// One of PARCEL_ACTOR (server/shipping/domain/shipping.types.ts).
+  actor      String
+  reason     String?
+  /// The courier's own wording, when a courier caused it.
+  courierWording String?
+  createdAt  DateTime @default(now())
+
+  @@index([shipmentId, createdAt])
+}
+
 model ShippingEvent {
   id String @id @default(cuid())
 

@@ -1,9 +1,9 @@
 # TRD — own-store/order-fulfilment
 
-- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build)
+- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30
 - **Domain:** cross-domain — checkout (orchestrates), shipping, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-10-31
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [shipment-lifecycle](../../shipment-lifecycle/trd.md), [offers-hardening](../offers-hardening/trd.md), [rate-limiting](../../rate-limiting/trd.md), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0005](../../../adr/0005-payment-state-server-only.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0055](../../../adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md), [ADR-0060](../../../adr/0060-mutations-stay-on-route-handlers-and-a-mutating-request-must-come-from-our-origin.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -37,9 +37,10 @@ Emails are rows sent by the worker; nudges come from one hourly sweep.
   `markBookingFailed`, `recordBooking*`. Migration: `pending`/`confirmed`/`failed` become `picked_up` with
   an AWB and a courier event, else `packing`.
 - **D4 — Order status derived (Q5, Q30).** Pure `summariseParcels`; `ORDER_STATUS.CANCELLED` added;
-  `orderRepository.syncSummary` (conditional) runs in every move and replaces `markDelivered`. Deleted:
-  `ORDER_TRANSITIONS`, `transitionForOrg`, the org transition route and the admin status `PATCH`. The migration
-  recomputes paid orders; paid counts and revenue exclude `CANCELLED`.
+  `orderRepository.syncSummary` (conditional) runs in every move and replaces `markDelivered`. Deleted
+  (Q36: with U2 and U3, whose contracts replace them): `ORDER_TRANSITIONS`, `transitionForOrg`, the org
+  transition route and the admin status `PATCH`. The migration recomputes paid orders; paid counts and
+  revenue exclude `CANCELLED`.
 - **D5 — Timeline (R7; A14).** `ParcelEvent` (shipping), one row per move, booking, date or ETA change, with
   actor, reason and courier wording; seeded. Shown via a new India-time helper in server/shared; dates are `@db.Date`.
 - **D6 — Ready (R3; A1).** `POST /api/org/[orgId]/shipments/[id]/ready` (`withOrg`) moves only a paid

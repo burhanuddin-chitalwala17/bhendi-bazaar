@@ -125,7 +125,7 @@ export const seedShipments: SeedShipment[] = [
     trackingNumber: "BD2345678901234",
     courierName: "Blue Dart Surface",
     trackingUrl: "https://www.bluedart.com/tracking/BD2345678901234",
-    status: "shipped",
+    status: "in_transit",
     packageWeight: 0.81, // 0.6 + 0.06 + 0.15
     estimatedDelivery: addDays(daysAgo(20), 5),
     createdAt: daysAgo(20),
@@ -151,7 +151,7 @@ export const seedShipments: SeedShipment[] = [
     fromCity: seedOrgs[1].pickup.city,
     fromState: seedOrgs[1].pickup.state,
     shippingCost: 6000,
-    status: "pending", // ⭐ Awaiting manual tracking update
+    status: "packing", // awaiting the shop's "ready" (order-fulfilment D3)
     packageWeight: 0.08,
     estimatedDelivery: addDays(new Date(), 7),
     createdAt: daysAgo(2),
@@ -185,7 +185,7 @@ export const seedShipments: SeedShipment[] = [
     fromCity: seedOrgs[0].pickup.city,
     fromState: seedOrgs[0].pickup.state,
     shippingCost: 7000,
-    status: "pending", // ⭐ Awaiting manual tracking update
+    status: "packing", // awaiting the shop's "ready" (order-fulfilment D3)
     packageWeight: 0.08, // 0.05 + 0.03
     estimatedDelivery: addDays(new Date(), 7),
     createdAt: daysAgo(1),

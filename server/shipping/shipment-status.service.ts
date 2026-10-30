@@ -1,13 +1,15 @@
 import type { Prisma } from "@prisma/client";
 
-import { prisma } from "@server/shared/prisma";
-
 import {
   SHIPMENT_STATUS,
   SHIPMENT_STATUS_EFFECTS,
+  alreadyMessage,
   canTransition,
+  isShipmentStatus,
+  type ParcelActor,
   type ShipmentStatus,
 } from "@server/shipping/domain/shipping.types";
+import { ConflictError } from "@server/shared/domain-error";
 import { normalizeShipmentStatus } from "@server/shipping/utils/statusNormalizer";
 import { shipmentRepository } from "@server/shipping/repositories/shipment.repository";
 import { stockService } from "@server/catalog/stock.service";
@@ -29,6 +31,8 @@ export type TransitionOutcome =
   | { kind: "ignored"; current: ShipmentStatus; reason: "same-status" | "not-allowed" }
   /** This courier said something nobody has mapped. Recorded, never guessed at. */
   | { kind: "unmapped"; current: ShipmentStatus; raw: string }
+  /** The row holds a value outside the vocabulary; nothing can move it until a person looks. */
+  | { kind: "off-list"; current: string }
   | { kind: "not-found" };
 
 
@@ -49,95 +53,106 @@ async function restock(shipmentId: string, tx: Prisma.TransactionClient): Promis
   await stockService.restockShipment(shipmentId, tx);
 }
 
-async function currentStatus(shipmentId: string) {
-  return shipmentRepository.findStatus(shipmentId);
-}
-
 /**
- * Move a shipment, if the move is legal.
+ * Move a shipment, if the move is legal, on the caller's transaction (order-fulfilment D2).
  *
- * A transition that is not in the table is **ignored rather than rejected**. Couriers retry
- * webhooks and occasionally deliver them late, so a `in_transit` arriving after `delivered` is
- * the normal case, not a fault — and applying it would walk the parcel backwards.
+ * The caller is checkout's fulfilment service, which holds the order's row lock, so two moves on
+ * one order run one after the other. A transition that is not in the table is **ignored rather
+ * than rejected**: couriers retry and arrive late, and applying a stale event would walk the parcel
+ * backwards. The write is still conditional on the status read, as a backstop to the lock.
  */
 export async function applyStatus(
   shipmentId: string,
   to: ShipmentStatus,
-  raw?: string,
+  by: { actor: ParcelActor; reason?: string; raw?: string },
+  tx: Prisma.TransactionClient,
 ): Promise<TransitionOutcome> {
-  const shipment = await currentStatus(shipmentId);
+  const shipment = await shipmentRepository.findStatus(shipmentId, tx);
   if (!shipment) return { kind: "not-found" };
 
-  const from = shipment.status as ShipmentStatus;
+  if (!isShipmentStatus(shipment.status)) {
+    console.warn(`[shipping] shipment ${shipmentId} holds off-list status "${shipment.status}"; move to ${to} refused`);
+    return { kind: "off-list", current: shipment.status };
+  }
+  const from = shipment.status;
   if (from === to) return { kind: "ignored", current: from, reason: "same-status" };
   if (!canTransition(from, to)) return { kind: "ignored", current: from, reason: "not-allowed" };
 
-  const effects = SHIPMENT_STATUS_EFFECTS[to];
+  const moved = await shipmentRepository.recordTransition(
+    shipmentId,
+    from,
+    {
+      status: to,
+      // The courier's own wording is kept whether or not we mapped it: it is the evidence for
+      // adding a mapping, and the only record of what they actually said.
+      ...(by.raw ? { shipmentStatus: by.raw } : {}),
+      ...(to === SHIPMENT_STATUS.DELIVERED ? { deliveredAt: new Date() } : {}),
+    },
+    tx,
+  );
+  if (!moved) {
+    const now = await shipmentRepository.findStatus(shipmentId, tx);
+    throw new ConflictError(alreadyMessage((now?.status ?? to) as ShipmentStatus));
+  }
 
+  await shipmentRepository.recordEvent(
+    { shipmentId, fromStatus: from, toStatus: to, actor: by.actor, reason: by.reason ?? null, courierWording: by.raw ?? null },
+    tx,
+  );
+
+  const effects = SHIPMENT_STATUS_EFFECTS[to];
   // The status change and its consequences are one transaction: a parcel recorded as returned
   // while its units stayed decremented is inventory the shop has and cannot sell.
-  await prisma.$transaction(async (tx) => {
-    await shipmentRepository.recordTransition(
-      shipmentId,
-      {
-        status: to,
-        // The courier's own wording is kept whether or not we mapped it: it is the evidence for
-        // adding a mapping, and the only record of what they actually said.
-        ...(raw ? { shipmentStatus: raw } : {}),
-        ...(to === SHIPMENT_STATUS.DELIVERED ? { deliveredAt: new Date() } : {}),
-      },
-      tx,
-    );
+  if (effects.restocks) await restock(shipmentId, tx);
 
-    if (effects.restocks) await restock(shipmentId, tx);
-
-    if (effects.settlement === "reverse") {
-      // The org is credited at payment, not at delivery, and settlement is a manual claim over
-      // whatever is unsettled — so between a return and a payout there is a real window where an
-      // entry for returned goods is claimable. The mirror entry closes it.
-      //
-      // Deliberately no refund: a gateway refund is irreversible, so the entitlement is recorded
-      // and a human presses the button (owner's decision, 2026-09-24).
-      const { ledgerService } = await import("@server/payouts/ledger.service");
-      const scope = await shipmentRepository.reversalScope(shipmentId, tx);
-      if (scope) await ledgerService.reverseShipment({ shipmentId, ...scope }, `Parcel ${to}`, tx);
-    }
-  });
+  if (effects.settlement === "reverse") {
+    // The org is credited at payment and settlement claims whatever is unsettled, so a returned
+    // sale stays claimable until this mirror entry. No refund here: a person presses that button.
+    const { ledgerService } = await import("@server/payouts/ledger.service");
+    const scope = await shipmentRepository.reversalScope(shipmentId, tx);
+    if (scope) await ledgerService.reverseShipment({ shipmentId, ...scope }, `Parcel ${to}`, tx);
+  }
 
   return { kind: "moved", from, to };
 }
 
+/** Which order a parcel belongs to — what the caller locks before moving it. Never changes. */
+export async function parcelOrderId(shipmentId: string): Promise<string | null> {
+  return (await shipmentRepository.findStatus(shipmentId))?.orderId ?? null;
+}
+
+/** Every parcel status of an order, on the caller's transaction — the input to its summary. */
+export async function parcelStatusesOf(orderId: string, tx: Prisma.TransactionClient): Promise<ShipmentStatus[]> {
+  return (await shipmentRepository.listStatusesForOrder(orderId, tx)).map((s) => s.status as ShipmentStatus);
+}
+
+export type CourierReading =
+  | { kind: "mapped"; status: ShipmentStatus; raw: string }
+  | Extract<TransitionOutcome, { kind: "unmapped" | "not-found" }>;
+
 /**
- * Apply what a courier just told us, in its own words.
- *
- * An unmapped status leaves the shipment exactly where it is and says so. Guessing — which the
- * old normalizer did, by matching substrings and defaulting to `pending` — is how a lost parcel
- * looks healthy for a week: a wrong status is worse than an unknown one, because only the
- * unknown one gets looked at.
+ * What a courier just told us, in our vocabulary. An unmapped status leaves the shipment where it
+ * is and keeps the wording: a wrong status is worse than an unknown one, because only the unknown
+ * one gets looked at.
  */
-export async function applyProviderStatus(
+export async function readCourierStatus(
   shipmentId: string,
   provider: string,
   providerStatus: string,
-): Promise<TransitionOutcome> {
+): Promise<CourierReading> {
   const { status, raw } = normalizeShipmentStatus(provider, providerStatus);
+  if (status !== null) return { kind: "mapped", status, raw };
 
-  if (status === null) {
-    const shipment = await currentStatus(shipmentId);
-    if (!shipment) return { kind: "not-found" };
-    // Keep the wording even though the status does not move — it is what an operator needs to
-    // see to add the table entry.
-    await shipmentRepository.recordProviderWording(shipmentId, raw);
-    console.warn(`[shipping] unmapped ${provider} status "${raw}" on shipment ${shipmentId}`);
-    return { kind: "unmapped", current: shipment.status as ShipmentStatus, raw };
-  }
-
-  return applyStatus(shipmentId, status, raw);
+  const shipment = await shipmentRepository.findStatus(shipmentId);
+  if (!shipment) return { kind: "not-found" };
+  await shipmentRepository.recordProviderWording(shipmentId, raw);
+  console.warn(`[shipping] unmapped ${provider} status "${raw}" on shipment ${shipmentId}`);
+  return { kind: "unmapped", current: shipment.status as ShipmentStatus, raw };
 }
 
 /**
  * A new order's parcels, on the order's own transaction — checkout reaches shipping here rather
- * than through its repository (ADR-0033). Born `pending`, outside the transition table like booking.
+ * than through its repository (ADR-0033). Born `packing`, the table's first state (order-fulfilment D3).
  */
 export async function createShipmentForOrder(
   data: Parameters<typeof shipmentRepository.createForOrder>[0],
@@ -151,22 +166,6 @@ export async function createShipmentItemsForOrder(
   tx: Prisma.TransactionClient,
 ): Promise<void> {
   await shipmentRepository.createItemsForOrder(rows, tx);
-}
-
-/** The carrier accepted the parcel. Bypasses the transition table, as the booking path always has. */
-export async function recordBooking(
-  shipmentId: string,
-  booking: { trackingNumber?: string; trackingUrl?: string },
-): Promise<void> {
-  await shipmentRepository.markBooked(shipmentId, booking);
-}
-
-/** Booking failed and needs a human; `shippingMeta` carries why. */
-export async function recordBookingFailure(
-  shipmentId: string,
-  shippingMeta: Prisma.InputJsonValue,
-): Promise<void> {
-  await shipmentRepository.markBookingFailed(shipmentId, shippingMeta);
 }
 
 /** What this status means for stock, money and settlement — one answer, read from one table. */

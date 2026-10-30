@@ -7,6 +7,7 @@
 
 import { Order } from "@prisma/client";
 import { DeliveryAddress } from "@server/identity/profile.types";
+import { SHIPMENT_STATUS, type ShipmentStatus } from "@server/shipping/domain/shipping.types";
 
 // ============================================
 // Order status — the closed set, declared once
@@ -20,15 +21,18 @@ import { DeliveryAddress } from "@server/identity/profile.types";
 export const ORDER_STATUS = {
   /** Created, stock reserved, nothing paid yet. */
   PENDING_PAYMENT: "pending_payment",
-  /** Paid, and — once fulfilment has run — booked with a carrier. */
+  /**
+   * Paid. From here the status is a summary of the parcels (`summariseParcels`, order-fulfilment
+   * D4): confirmed while every parcel is with its shop, then shipped, delivered or cancelled.
+   */
   CONFIRMED: "confirmed",
-  PROCESSING: "processing",
-  PACKED: "packed",
   SHIPPED: "shipped",
   DELIVERED: "delivered",
-  /** Paid, but the carrier booking failed for some or all parcels. */
-  PARTIALLY_FULFILLED: "partially_fulfilled",
-  FULFILLMENT_FAILED: "fulfillment_failed",
+  /** Every parcel was cancelled after payment. Not `expired`, which is an unpaid checkout. */
+  CANCELLED: "cancelled",
+  /** Hand statuses, written only by `ORDER_TRANSITIONS` until units 2 and 3 delete it (Q36). */
+  PROCESSING: "processing",
+  PACKED: "packed",
   /** A payment attempt failed. Not terminal: the buyer may still retry. */
   FAILED: "failed",
   /** Abandoned or expired: the reservation has been released (checkout-abandonment). */
@@ -38,11 +42,35 @@ export const ORDER_STATUS = {
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 /**
- * The fulfilment moves an operator may make by hand, and nothing else: the table is the guard,
- * as `SHIPMENT_TRANSITIONS` is for a parcel. Payment-driven states (`confirmPaid`,
- * `expireAndRestock`, `markPaymentFailed`) and the booking pipeline's outcomes have their own
- * conditional writers in `order.repository.ts` and are deliberately absent here — an admin
- * dropdown must not be a second way to reach them. `delivered` is terminal.
+ * How far along a paid order is. A summary is written only over a lower rank, so an order never
+ * moves backwards (order-fulfilment D4): delivered and cancelled share the top rank and are
+ * terminal. `expired` has no rank, so nothing summarises over it. The parcel migration's SQL
+ * repeats these numbers; change both together.
+ */
+export const ORDER_STATUS_RANK: Partial<Record<OrderStatus, number>> = {
+  [ORDER_STATUS.PENDING_PAYMENT]: 0,
+  [ORDER_STATUS.FAILED]: 0,
+  [ORDER_STATUS.CONFIRMED]: 1,
+  [ORDER_STATUS.PROCESSING]: 2,
+  [ORDER_STATUS.PACKED]: 3,
+  [ORDER_STATUS.SHIPPED]: 4,
+  [ORDER_STATUS.DELIVERED]: 5,
+  [ORDER_STATUS.CANCELLED]: 5,
+};
+
+/** The statuses a summary to `to` may overwrite: every ranked one strictly below it. */
+export function statusesBelow(to: OrderStatus): OrderStatus[] {
+  const target = ORDER_STATUS_RANK[to];
+  if (target === undefined) return [];
+  return (Object.entries(ORDER_STATUS_RANK) as [OrderStatus, number][])
+    .filter(([, rank]) => rank < target)
+    .map(([status]) => status);
+}
+
+/**
+ * The operator's hand moves on the order's own status. Superseded by the derived summary
+ * (order-fulfilment D4) and deleted with its two routes in units 2 and 3, per the TRD's contract
+ * table; until then a parcel move re-derives the status after any hand move.
  */
 export const ORDER_TRANSITIONS: Partial<Record<OrderStatus, readonly OrderStatus[]>> = {
   [ORDER_STATUS.CONFIRMED]: [ORDER_STATUS.PROCESSING],
@@ -79,6 +107,22 @@ export const PAYMENT_STATUS = {
 } as const;
 
 export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];
+
+/** Parcels still with the shop — nothing a courier has collected (order-fulfilment D4). */
+export const PARCEL_WITH_SHOP: readonly ShipmentStatus[] = [
+  SHIPMENT_STATUS.PACKING,
+  SHIPMENT_STATUS.READY_FOR_PICKUP,
+  SHIPMENT_STATUS.PICKUP_BOOKED,
+];
+
+/** A parcel that still counts as sold. */
+export const LIVE_PARCEL_WHERE = { status: { not: SHIPMENT_STATUS.CANCELLED } } as const;
+
+/** Paid and not wholly cancelled: a cancelled order was paid but is not business (D4). */
+export const PAID_ORDER_WHERE = {
+  paymentStatus: PAYMENT_STATUS.PAID,
+  status: { not: ORDER_STATUS.CANCELLED },
+} as const;
 
 /**
  * An abandoned checkout is kept in full and shown to nobody (checkout-abandonment

@@ -221,13 +221,15 @@ export class AdminOrderRepository {
       prisma.order.count({ where: { status: ORDER_STATUS.PACKED } }),
       prisma.order.count({ where: { status: ORDER_STATUS.SHIPPED } }),
       prisma.order.count({ where: { status: ORDER_STATUS.DELIVERED } }),
+      // Revenue leaves out wholly cancelled orders (order-fulfilment D4).
       prisma.order.findMany({
-        where: VISIBLE_ORDER_WHERE,
+        where: { ...VISIBLE_ORDER_WHERE, NOT: { status: ORDER_STATUS.CANCELLED } },
         select: { grandTotal: true },
       }),
       prisma.order.findMany({
         where: {
           ...VISIBLE_ORDER_WHERE,
+          NOT: { status: ORDER_STATUS.CANCELLED },
           createdAt: {
             gte: startOfMonth,
           },

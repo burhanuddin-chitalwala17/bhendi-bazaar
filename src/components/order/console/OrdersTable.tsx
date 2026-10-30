@@ -84,7 +84,13 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
     {
       key: "status",
       label: "Status",
-      render: (order) => (
+      render: (order) =>
+        // Every parcel was cancelled: the summary is final, so there is nothing to choose.
+        order.status === ORDER_STATUS.CANCELLED ? (
+          <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+            Cancelled
+          </span>
+        ) : (
         <Select
           value={order.status}
           onChange={(e) => updateStatus({ orderId: order.id, status: e.target.value })}
@@ -101,7 +107,7 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
             <option key={status} value={status}>{titleCase(status)}</option>
           ))}
         </Select>
-      ),
+        ),
     },
     {
       key: "paymentStatus",

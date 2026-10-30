@@ -11,6 +11,7 @@ import {
   ORDER_TRANSITIONS,
   VISIBLE_ORDER_WHERE,
   PAYMENT_STATUS,
+  statusesBelow,
   type OrderStatus,
 } from "@server/checkout/order.types";
 import type { ShipmentItem } from "@server/checkout/order.types";
@@ -148,7 +149,8 @@ export class OrderRepository {
     return prisma.order.count({
       where: {
         paymentStatus: PAYMENT_STATUS.PAID,
-        ...VISIBLE_ORDER_WHERE,
+        // Not expired, and not wholly cancelled: neither is business (order-fulfilment D4).
+        status: { notIn: [ORDER_STATUS.EXPIRED, ORDER_STATUS.CANCELLED] },
         items: { some: { product: { orgId } } },
       },
     });
@@ -391,26 +393,28 @@ export class OrderRepository {
     return result.count === 1;
   }
 
-  /** The order with its raw shipment rows, as booking needs them (no wire mapping). */
-  async findForFulfilment(orderId: string) {
-    return prisma.order.findUnique({
-      relationLoadStrategy: "join",
-      where: { id: orderId },
-      include: { shipments: true },
-    });
+  /**
+   * Take the order's row lock for a parcel move (order-fulfilment D2). Order first, then shipment,
+   * promotion, stock and ledger — the order `expireAndRestock` already takes them in.
+   */
+  async lockForParcelMove(
+    orderId: string,
+    tx: Pick<typeof prisma, "$queryRaw">,
+  ): Promise<{ paymentStatus: string | null } | null> {
+    const [row] = await tx.$queryRaw<Array<{ paymentStatus: string | null }>>`
+      SELECT "paymentStatus" FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+    return row ?? null;
   }
 
-  async recordFulfilmentStatus(orderId: string, status: string): Promise<void> {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status, updatedAt: new Date() },
-    });
-  }
-
-  async markDelivered(orderId: string): Promise<void> {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: ORDER_STATUS.DELIVERED },
+  /**
+   * Write the status its parcels summarise to (order-fulfilment D4). Paid orders only, and only
+   * over a lower `ORDER_STATUS_RANK`, so an order never moves backwards: a hand-delivered order
+   * stays delivered whatever a late courier event says, and an expired one is never touched.
+   */
+  async syncSummary(orderId: string, status: OrderStatus, tx: OrderDb): Promise<void> {
+    await tx.order.updateMany({
+      where: { id: orderId, paymentStatus: PAYMENT_STATUS.PAID, status: { in: statusesBelow(status) } },
+      data: { status },
     });
   }
 

@@ -15,6 +15,7 @@ const STATUS_OPTIONS = [
   { value: ORDER_STATUS.PACKED, label: "Packed" },
   { value: ORDER_STATUS.SHIPPED, label: "Shipped" },
   { value: ORDER_STATUS.DELIVERED, label: "Delivered" },
+  { value: ORDER_STATUS.CANCELLED, label: "Cancelled" },
 ];
 
 export function OrgOrdersFilters() {

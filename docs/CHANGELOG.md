@@ -10,6 +10,64 @@
 
 ## Entries
 
+## 2026-10-30 — order-fulfilment unit 1: one parcel vocabulary [MIGRATION]
+
+- **Two new parcel states** (R1, R2; D1; Q2): `ready_for_pickup` and `pickup_booked` sit between
+  `packing` and `picked_up`; `packing → picked_up` is gone, and cancel is allowed from the first three.
+  `CANCELLABLE_FROM` (buyer and shop from `packing`, admin from all three) and `PARCEL_ACTOR` are
+  declared in `server/shipping/domain/shipping.types.ts`.
+- **One guarded move** (A5; D2): `moveParcel` (`server/checkout/fulfilment.service.ts`) runs one
+  transaction: lock the order row (`orderRepository.lockForParcelMove`), call shipping's `applyStatus`
+  (now on the caller's `tx`, with `recordTransition` as `updateMany {id, status: from}`), then write
+  the order's summary. A person's stale move gets ux.md's "This parcel is already …" `ConflictError`;
+  a courier's is ignored. The webhook goes through it. `applyProviderStatus` became `readCourierStatus`.
+  A parcel of an unpaid order cannot be cancelled (`UNPAID_CANCEL_MESSAGE`), so expiry cannot
+  restock it twice. A parcel still holding an off-list status is refused with a named message
+  (`offListMessage`) and logged, never a 500.
+- **Until U3, a `pickup_booked` parcel moves forward only through the courier webhook**: there is
+  no "Mark picked up" yet.
+- **Born `packing`; placeholder gone** (D3; Q3): deleted `fulfillOrder`, `mock.booking.ts`,
+  `markBooked`, `markBookingFailed`, `recordBooking*`, `findForFulfilment`, `recordFulfilmentStatus`,
+  and the never-written `PARTIALLY_FULFILLED`/`FULFILLMENT_FAILED`. The admin tracking form no longer
+  jumps to "Picked up": it walks the parcel to `pickup_booked` through `moveParcel` (Q4) until U3
+  replaces it. The seed writes canonical statuses.
+- **Order status derived** (D4; Q5): `summariseParcels` (`server/checkout/parcel-summary.ts`) and
+  `orderRepository.syncSummary` (paid orders only, and only over a lower `ORDER_STATUS_RANK`, so an
+  order never moves backwards; delivered and cancelled are terminal) replace `markDelivered` and
+  `allShipmentsDelivered`. Adds `ORDER_STATUS.CANCELLED`. Paid counts, the storefront proof count
+  and revenue leave out cancelled orders, and "Parcels to send" counts ready and booked parcels.
+  The D4 deletions of the hand-move routes wait for U2/U3 (Q36, new).
+- **Timeline** (D5): `ParcelEvent`, one row per move, with actor, reason and courier wording.
+- **[MIGRATION] `20261031100100_parcel_vocabulary`** drops nothing. It creates `ParcelEvent`. Every
+  parcel outside the vocabulary (not a fixed list) is mapped: parcels of an order delivered or shipped
+  by hand walk forward to `delivered`/`in_transit`, those with an AWB and a courier webhook event go
+  to `picked_up`, and the rest to `packing`. Each parcel gets a "Recorded when the timeline began" row.
+  Paid orders are then re-derived, only ever upward by rank, so no order loses ground. Proved in a
+  rolled-back transaction on fixture rows: pending + hand-delivered, pending + hand-shipped,
+  pending + processing, confirmed with AWB, failed, old `shipped`/`processing`, and unpaid.
+- **Review** (two fresh-context passes): fixed the migration lowering hand-advanced orders, the
+  runtime summary un-delivering an order, a fixed off-list list, cancelling an unpaid order's
+  parcel, a tracking AWB saved on a cancelled parcel (now 409), and missing "Cancelled" labels on the
+  admin orders table (read-only, no select) and the shop's order filter.
+- **Mutations** (each made a test fail, then restored): M1 `recordTransition` made unconditional →
+  the lock-free race test failed. M2 order lock removed → A5's double "delivered" moved twice.
+  M3 `packing → picked_up` put back → vocabulary test failed. M4 `syncSummary` paid filter
+  removed → the unpaid-order test failed. M5 cancelled parcels counted as live → two summary tests
+  failed. M6 `PAID_ORDER_WHERE` without the cancelled filter → the paid-count test failed.
+  M7 `syncSummary` back to "any other status" → the late-courier test un-delivered the order.
+  M8 unpaid-cancel guard removed → the unpaid test cancelled the parcel. M9 off-list guard removed →
+  that test's parcel was moved past an unknown state. Migration (fixture script): M10 walk-forward
+  removed → hand-delivered/shipped parcels stayed `packing`. M11 rank backstop removed → a
+  `processing` order dropped to `confirmed`. M10+M11 → delivered and shipped orders became `confirmed`.
+- **Tests:** `tests/unit/parcel-vocabulary.test.ts` (new), `tests/integration/parcel-move.test.ts`
+  (new, spec A5); `shipment-lifecycle`, `shipment-effects` and `parcel-reversal` moved onto the new
+  path. On a recreated `bhendi_bazaar_ci` (all migrations deployed): `tsc`, `vitest run tests/unit`
+  (2270 passed; 2 failures in product-form U1's uncommitted files: `crop-dialog`, `vocabulary`
+  "seller"), `vitest run tests/integration` (47 files, 411 passed; 7 `join-equivalence` skipped,
+  needs a populated catalogue), `lint:boundary`, `docs:check`.
+- **Legacy order statuses:** a paid order left at `partially_fulfilled` or `fulfillment_failed` (written by the deleted `fulfillOrder`) becomes `confirmed`, so its parcels can move it on; unpaid ones are untouched. Checked on fixture rows in a throwaway database built to the state before this migration.
+
+
 ## 2026-10-30 — org-profile unit 1: a shop starts with three fields
 
 - **[CONTRACT]** `POST /api/orgs` parses the new `openShopSchema` (`src/lib/validation/schemas/org.schema.ts`):

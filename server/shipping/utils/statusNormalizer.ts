@@ -119,6 +119,8 @@ export const MAPPED_PROVIDERS = Object.keys(STATUS_MAPPINGS);
 export function getStatusLabel(status: ShipmentStatus): string {
   const labels: Record<ShipmentStatus, string> = {
     packing: "Packing",
+    ready_for_pickup: "Ready for Pickup",
+    pickup_booked: "Pickup Booked",
     picked_up: "Picked Up",
     in_transit: "In Transit",
     out_for_delivery: "Out for Delivery",

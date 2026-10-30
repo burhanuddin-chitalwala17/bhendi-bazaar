@@ -7,10 +7,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { shippingOrchestrator } from "@server/shipping";
-import { applyProviderStatus } from "@server/shipping/shipment-status.service";
+import { readCourierStatus } from "@server/shipping/shipment-status.service";
 import { trackingService } from "@server/shipping/tracking.service";
-import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
-import { orderService } from "@server/checkout/order.service";
+import { PARCEL_ACTOR } from "@server/shipping/domain/shipping.types";
+import { moveParcel } from "@server/checkout/fulfilment.service";
 import { shiprocketWebhookSchema } from "@/lib/validation/schemas/webhook.schema";
 
 export async function POST(request: NextRequest) {
@@ -54,23 +54,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // One writer owns the column (shipment-lifecycle D12): it maps the courier's wording, refuses
-    // a move the transition table does not allow — a retried or late webhook naming a state we
-    // have passed is the common case, not a fault — and keeps the raw wording either way.
-    const outcome = await applyProviderStatus(
+    // One guarded move (order-fulfilment D2): mapped from the courier's wording, refused by the
+    // transition table when stale, and the order's status re-derived in the same transaction (D4).
+    const reading = await readCourierStatus(
       shipment.id,
       provider.code,
       webhookEvent.status.providerStatus ?? webhookEvent.status.status,
     );
-
-    // Derived, never written beside the parcels (D10): an order is delivered when every parcel is.
-    if (
-      outcome.kind === "moved" &&
-      outcome.to === SHIPMENT_STATUS.DELIVERED &&
-      (await trackingService.allShipmentsDelivered(shipment.orderId))
-    ) {
-      await orderService.markDelivered(shipment.orderId);
-    }
+    const outcome =
+      reading.kind === "mapped"
+        ? await moveParcel(shipment.id, reading.status, { actor: PARCEL_ACTOR.COURIER, raw: reading.raw })
+        : reading;
 
     // Log webhook event
     await trackingService.logWebhookReceived({

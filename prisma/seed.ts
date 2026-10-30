@@ -29,6 +29,7 @@ import {
   seedBanners,
 } from "./seed/index";
 import type { SeedProduct } from "./seed/types";
+import { PARCEL_ACTOR } from "../server/shipping/domain/shipping.types";
 import { assertSeedTargetIsAllowed } from "./seed-guard";
 import { handleCandidates } from "../server/catalog/org.handle";
 import { toJsonColumn } from "../server/shared/json";
@@ -125,6 +126,7 @@ async function main() {
   await prisma.promotion.deleteMany();
   await prisma.orgCommissionRule.deleteMany();
   await prisma.shippingEvent.deleteMany(); // before shipments
+  await prisma.parcelEvent.deleteMany(); // before shipments
   await prisma.shipmentItem.deleteMany(); // before shipments and order items
   await prisma.shipment.deleteMany(); // before orders and org addresses
   await prisma.shippingRateCache.deleteMany();
@@ -456,6 +458,10 @@ async function main() {
         createdAt: shipmentData.createdAt,
       },
     });
+    // Its timeline starts where it stands, as the migration starts every existing parcel's (D5).
+    await prisma.parcelEvent.create({
+      data: { shipmentId: shipment.id, toStatus: shipment.status, actor: PARCEL_ACTOR.SYSTEM, createdAt: shipmentData.createdAt },
+    });
     console.log(
       `  ✓ ${shipment.code} - ${shipment.status} (${shipment.fromCity})`
     );
@@ -578,8 +584,8 @@ async function main() {
       seedOrders.filter((o) => o.userId === null).length
     } guest orders)`
   );
-  console.log(`   • ${seedShipments.length} shipments (${seedShipments.filter((s) => s.status === "pending").length
-    } pending tracking)`);
+  console.log(`   • ${seedShipments.length} shipments (${seedShipments.filter((s) => s.status === "packing").length
+    } to pack)`);
   console.log(
     `   • ${seedReviews.length} reviews (${
       seedReviews.filter((r) => r.isVerified).length

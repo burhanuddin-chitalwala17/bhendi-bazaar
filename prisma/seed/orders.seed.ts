@@ -173,7 +173,7 @@ export const seedOrders: SeedOrder[] = [
     shippingTotal: 6000,
     discount: 0,
     grandTotal: 262000,
-    status: "processing",
+    status: "confirmed",
     address: {
       id: "addr-3-1",
       label: "Home",
@@ -220,7 +220,7 @@ export const seedOrders: SeedOrder[] = [
     shippingTotal: 7000,
     discount: 0,
     grandTotal: 380000,
-    status: "processing",
+    status: "confirmed",
     address: {
       id: "guest-addr-2",
       label: "Office",
