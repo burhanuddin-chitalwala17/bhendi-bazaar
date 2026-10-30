@@ -10,6 +10,14 @@
 
 ## Entries
 
+## 2026-10-31 — family-merge: members kept in the order the shop picked them
+
+- The family save named two look-alike members in the database's sort order, which differs by
+  collation: CI's Postgres (`en_US.UTF-8`) sorts "black" before "Black", local `C` the reverse, so
+  `family-merge.test.ts` failed only in CI. Members now keep the order of the shop's selection.
+- **Reproduced** on a local database created with `en_US.UTF-8`: the old code failed the test, the
+  fix passes. **Suites run there:** the whole suite in UTC (2503), `tsc`, `lint:boundary`.
+
 ## 2026-10-29 — inventory-sync: the five-minute order check costs little when nothing changes
 
 - A marketplace reports every order still waiting on every check (Flipkart's waiting shipments,
