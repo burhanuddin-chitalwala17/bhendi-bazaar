@@ -10,6 +10,22 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B12 (code part): product page loads sooner, pool size is a setting, a load smoke
+
+- **The product page renders without waiting for similar products**, which now stream in their own
+  Suspense boundary.
+- **The first gallery image is preloaded** (`preload`, Next 16), since it is the page's LCP.
+- **The lightbox's code loads on the tap that opens it** (`next/dynamic`), not with the page.
+- **`DATABASE_POOL_MAX`** sets connections per instance; unset keeps today's 10. **Your part:** switch
+  `DATABASE_URL` to the pooled string (Prisma Postgres pooler or Accelerate, already provisioned), then
+  set this to 1–3.
+- **Load smoke:** `perf/k6-smoke.js` and a manual *Load smoke* workflow (pinned actions,
+  `contents: read`) walk home → category → product → cart at a chosen peak, reads only; fails on >1%
+  errors or p95 over 1.5 s. Not run here (no k6 and no target); run it against the preview.
+- **Not done here:** dropping `libphonenumber` from the client bundle and lazy-loading crop and video
+  need a bundle measurement first, which wants a proper bundle analysis rather than a guess.
+- **Checked:** the journeys (which open a product page and add to cart) pass, 12 of 12.
+
 ## 2026-10-31 — GTM B5: fixes from the review — sessions end with their password
 
 - **An attacker's session no longer survives the claim.** A session now carries an HMAC fingerprint of

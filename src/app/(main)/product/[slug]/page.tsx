@@ -75,7 +75,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
     if (error instanceof NotFoundError) notFound();
     throw error;
   }
-  const similar = await productsDAL.getSimilarProducts(slug, 4);
   return (
     // pb-16 clears the docked Add-to-cart bar, which is fixed and so out of flow.
     <div className="space-y-6 pb-16 sm:space-y-8 md:pb-0">
@@ -89,9 +88,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <Suspense fallback={<LoadingSkeleton />}>
         <Reviews product={product} />
       </Suspense>
+      {/* Streamed: the product renders without waiting for its neighbours (B12). */}
       <Suspense fallback={<LoadingSkeleton />}>
-        <SimilarProducts products={similar} />
+        <SimilarFor slug={slug} />
       </Suspense>
     </div>
   );
+}
+
+async function SimilarFor({ slug }: { slug: string }) {
+  return <SimilarProducts products={await productsDAL.getSimilarProducts(slug, 4)} />;
 }

@@ -14,7 +14,9 @@ const pool =
   globalForPrisma.pool ??
   new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: process.env.NODE_ENV === "production" ? 10 : 3,
+    // Lower it (1-3) once DATABASE_URL is the pooled string, so many instances cannot exhaust the
+    // database's connections (GTM B12); unset keeps today's numbers.
+    max: Number(process.env.DATABASE_POOL_MAX) || (process.env.NODE_ENV === "production" ? 10 : 3),
     idleTimeoutMillis: 10_000,
     // Fail fast instead of hanging when the pool is saturated.
     connectionTimeoutMillis: 10_000,
