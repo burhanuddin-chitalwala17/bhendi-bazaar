@@ -8,8 +8,12 @@
  * anonymous write would be visible on an org's product page at once.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { credentialFingerprint } from "@/lib/credential-fingerprint";
 
-const session = { value: null as { user: { id: string } } | null };
+// The fingerprint a session for an account with no password carries (B5).
+const NO_PASSWORD = credentialFingerprint(null);
+
+const session = { value: null as { credential?: string; user: { id: string } } | null };
 const service = {
   create: vi.fn(),
   edit: vi.fn(),
@@ -17,6 +21,10 @@ const service = {
   getPage: vi.fn(),
 };
 
+// An active account with no password, as the session fixtures below claim to be.
+vi.mock("@server/identity/account.service", () => ({
+  accountService: { findAdminStanding: async () => ({ isBlocked: false, passwordHash: null, platformRole: "USER" }) },
+}));
 vi.mock("next-auth", () => ({ getServerSession: async () => session.value }));
 vi.mock("@/lib/auth-config", () => ({ authOptions: {} }));
 vi.mock("@server/catalog/review.service", () => ({ reviewService: service }));
@@ -55,7 +63,7 @@ describe("POST /api/products/[id]/reviews", () => {
   });
 
   it("writes as the session's user, never as an id from the body", async () => {
-    session.value = { user: { id: "buyer-1" } };
+    session.value = { credential: NO_PASSWORD, user: { id: "buyer-1" } };
     service.create.mockResolvedValue({ id: "rev-1" });
     const response = await productRoute.POST(
       post({ rating: 5, userId: "someone-else" }),
@@ -69,7 +77,7 @@ describe("POST /api/products/[id]/reviews", () => {
   });
 
   it("refuses a body that is not a review", async () => {
-    session.value = { user: { id: "buyer-1" } };
+    session.value = { credential: NO_PASSWORD, user: { id: "buyer-1" } };
     const response = await productRoute.POST(post({ rating: 9 }), params("p1"));
     expect(response.status).toBe(400);
     expect(service.create).not.toHaveBeenCalled();
@@ -120,7 +128,7 @@ describe("PATCH and DELETE /api/reviews/[id]", () => {
   });
 
   it("passes the session's user to the edit, so ownership is decided server-side", async () => {
-    session.value = { user: { id: "buyer-1" } };
+    session.value = { credential: NO_PASSWORD, user: { id: "buyer-1" } };
     const response = await reviewRoute.PATCH(patch({ rating: 2 }), params("rev-1"));
     expect(response.status).toBe(200);
     expect(service.edit).toHaveBeenCalledWith("rev-1", "buyer-1", {
@@ -130,7 +138,7 @@ describe("PATCH and DELETE /api/reviews/[id]", () => {
   });
 
   it("passes the session's user to the delete", async () => {
-    session.value = { user: { id: "buyer-1" } };
+    session.value = { credential: NO_PASSWORD, user: { id: "buyer-1" } };
     const response = await reviewRoute.DELETE(
       new Request("http://localhost/api/reviews/rev-1", { method: "DELETE" }) as never,
       params("rev-1"),

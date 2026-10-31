@@ -20,7 +20,7 @@ import { emailService } from "@server/notifications/email.service";
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await optionalActiveSession({ onBlocked: "guest" });
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const accountEmail = session?.user?.email ?? null;
 
     const limited = await withRateLimit(

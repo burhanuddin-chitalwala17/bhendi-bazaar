@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     // Signed in or not — a per-buyer limit is enforced only where there is a buyer
     // to count, so the preview has to know which case this is.
-    const session = await optionalActiveSession();
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
     const quote = await promotionService.quote(lines, {

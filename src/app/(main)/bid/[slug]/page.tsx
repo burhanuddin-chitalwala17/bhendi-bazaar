@@ -10,14 +10,13 @@
  * clock travels with the page, and the client counts down against the difference rather
  * than trusting the device (spec R17).
  */
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { cache } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getServerSession } from "next-auth";
 import { Gavel } from "lucide-react";
-import { authOptions } from "@/lib/auth-config";
 import { biddingService } from "@server/bidding/bidding.service";
 import { NotFoundError } from "@server/shared/domain-error";
 import { appUrl } from "@server/shared/app-url";
@@ -87,7 +86,7 @@ export default async function BiddingPage({
   const { slug } = await params;
   const [event, session] = await Promise.all([
     loadEvent(slug),
-    getServerSession(authOptions),
+    optionalActiveSession({ onBlocked: "allow" }),
   ]);
   // A slug that never existed is genuinely missing. A finished event is not.
   if (!event) notFound();

@@ -5,6 +5,7 @@ import { prisma } from "@server/shared/prisma";
 import { accountService } from "@server/identity/account.service";
 import { bhendiPrismaAdapter } from "./auth-adapter";
 import { compare } from "bcryptjs";
+import { credentialFingerprint } from "./credential-fingerprint";
 
 export const authOptions: NextAuthOptions = {
   adapter: bhendiPrismaAdapter(prisma),
@@ -95,6 +96,8 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await accountService.findSessionClaims(user.id);
         token.platformRole = dbUser?.platformRole ?? "USER";
         token.isEmailVerified = dbUser?.isEmailVerified ?? false;
+        // Stamped only here, at sign-in: `update` must not refresh it, or a held token could renew itself.
+        token.credential = credentialFingerprint(dbUser?.passwordHash);
       } else if (trigger === "update") {
         // The user just verified their email (the banner calls session.update() on the
         // verification-success redirect). Re-read the one field that can flip mid-session.
@@ -118,6 +121,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub;
         session.user.platformRole = token.platformRole ?? "USER";
         session.user.isEmailVerified = token.isEmailVerified ?? false;
+        session.credential = token.credential;
       }
       return session;
     },

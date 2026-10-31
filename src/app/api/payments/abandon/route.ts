@@ -15,7 +15,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 export async function POST(request: NextRequest) {
   try {
     const body = abandonPaymentSchema.parse(await request.json());
-    const session = await optionalActiveSession();
+    const session = await optionalActiveSession({ onBlocked: "allow" });
 
     const result = await paymentService.releaseIfUnpaid(body.localOrderId, {
       userId: session?.user?.id ?? null,

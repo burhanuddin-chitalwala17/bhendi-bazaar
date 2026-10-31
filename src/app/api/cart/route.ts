@@ -75,10 +75,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error("[API] DELETE /api/cart failed:", error);
-    return NextResponse.json(
-      { error: "Failed to clear cart" },
-      { status: 500 },
-    );
+    return toErrorResponse(error, "Could not clear the cart");
   }
 }

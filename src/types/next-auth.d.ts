@@ -21,6 +21,8 @@ declare module "next-auth" {
       // every page load; refreshed via session.update() after the user verifies.
       isEmailVerified: boolean;
     };
+    /** Fingerprint of the password this session was issued under; a changed or cleared one ends it (B5). */
+    credential?: string;
   }
 }
 
@@ -29,5 +31,6 @@ declare module "next-auth/jwt" {
     id: string;
     platformRole: PlatformRole;
     isEmailVerified: boolean;
+    credential?: string;
   }
 }

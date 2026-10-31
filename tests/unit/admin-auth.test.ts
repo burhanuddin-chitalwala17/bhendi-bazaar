@@ -2,6 +2,10 @@
 // writes `AdminLog.adminId` trusts it as a foreign key, so this is the place the
 // claim has to be turned back into a fact.
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { credentialFingerprint } from "@/lib/credential-fingerprint";
+
+// The fingerprint a session for an account with no password carries (B5).
+const NO_PASSWORD = credentialFingerprint(null);
 
 const getServerSession = vi.fn();
 const findUnique = vi.fn();
@@ -9,13 +13,13 @@ const findUnique = vi.fn();
 vi.mock("next-auth", () => ({ getServerSession: () => getServerSession() }));
 vi.mock("@/lib/auth-config", () => ({ authOptions: {} }));
 vi.mock("@server/shared/prisma", () => ({
-  prisma: { user: { findUnique: (args: unknown) => findUnique(args) } },
+  prisma: { credential: NO_PASSWORD, user: { findUnique: (args: unknown) => findUnique(args) } },
 }));
 
 const { requirePlatformAdmin, requireSession } = await import("@/lib/admin-auth");
 
 const signedInAs = (id: string | null, platformRole: "USER" | "ADMIN" = "ADMIN") =>
-  getServerSession.mockResolvedValue(id ? { user: { id, platformRole } } : null);
+  getServerSession.mockResolvedValue(id ? { credential: NO_PASSWORD, user: { id, platformRole } } : null);
 
 beforeEach(() => {
   getServerSession.mockReset();

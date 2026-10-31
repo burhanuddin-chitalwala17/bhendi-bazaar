@@ -10,6 +10,37 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B5: fixes from the review — sessions end with their password
+
+- **An attacker's session no longer survives the claim.** A session now carries an HMAC fingerprint of
+  the password it was issued under (keyed by `NEXTAUTH_SECRET`; never the hash). `requireSession` and
+  `optionalActiveSession` compare it on the read they already make: a changed or cleared password ends
+  every older session, so the pre-hijack row is closed without a schema change. **Side effects:**
+  everyone signs in once more after this deploys (older sessions carry no fingerprint, and the attacker's
+  is one of them), and changing your password signs you out everywhere, this device included. The
+  fingerprint is stamped only at sign-in, never on `session.update()`, which a held token could call.
+- **The pages and data reads use the same check** (`orders`, `order`, `wishlist`, `bid`, and the orders,
+  profile, reviews and wishlist data access), so a revoked session cannot read the victim's orders
+  either. Only the root layout reads the session directly, for the header's name and avatar.
+- **Correction to the entry below: forgot-password did not work after a claim.** It sent nothing to an
+  account with no password. It now sends the link to any verified address, so a Google-only account,
+  or one whose unverified password was cleared, can set a password from its own inbox.
+- **Correction: a suspended person could not use the contact form.** The form sends no email when
+  signed in, and the route read them as a guest, so it answered 400. It now keeps the session for
+  contact (`onBlocked: "allow"`), and for releasing a hold and quoting a promotion, which only reduce or
+  read.
+- **Correction: two cart routes answered 500, not 403,** for a suspended account; they now answer through
+  `toErrorResponse`.
+- **`SHIPROCKET_WEBHOOK_TOKEN`** is in the required list (so `/api/health?deep=1` reports it missing) and
+  in both example env files. **Deploy after setting it**, or tracking webhooks are refused meanwhile.
+- **To check in Shiprocket before setting the webhook (unverified here):** the header is `x-api-key`,
+  and reportedly the dashboard refuses a webhook URL containing "shiprocket"; if so, the route needs
+  renaming before the token can be configured. Your call.
+- **Mutation-tested:** the fingerprint check removed, and forgot-password back to refusing no-password
+  accounts: each red, each restored.
+- **Tests:** `blocked-session.test.ts` (10), `google-prehijack.test.ts` (5); the session fixtures in
+  `admin-auth`, `contact-email` and `review-routes` now carry the fingerprint a real session would.
+
 ## 2026-10-31 — GTM B10: structured data, one title template, Google reads the head
 
 - **Product markup** (`Product` + `Offer`) on every product page: the price is what the buyer pays (the

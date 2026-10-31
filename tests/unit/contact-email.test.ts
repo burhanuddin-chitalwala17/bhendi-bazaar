@@ -5,10 +5,18 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { credentialFingerprint } from "@/lib/credential-fingerprint";
+
+// The fingerprint a session for an account with no password carries (B5).
+const NO_PASSWORD = credentialFingerprint(null);
 
 const getServerSession = vi.fn();
 const sendEmail = vi.fn();
 
+// An active account with no password, as the session fixtures below claim to be.
+vi.mock("@server/identity/account.service", () => ({
+  accountService: { findAdminStanding: async () => ({ isBlocked: false, passwordHash: null, platformRole: "USER" }) },
+}));
 vi.mock("next-auth", () => ({ getServerSession: () => getServerSession() }));
 vi.mock("@/lib/auth-config", () => ({ authOptions: {} }));
 vi.mock("@server/notifications/email.service", () => ({
@@ -39,6 +47,7 @@ beforeEach(() => {
 describe("POST /api/contact", () => {
   it("emails a signed-in sender's message with the session's address, ignoring the body's", async () => {
     getServerSession.mockResolvedValue({
+      credential: NO_PASSWORD,
       user: { id: "u-1", name: "Aisha", email: "aisha@example.com" },
     });
 
@@ -55,7 +64,7 @@ describe("POST /api/contact", () => {
   });
 
   it("does not ask a signed-in sender for an email", async () => {
-    getServerSession.mockResolvedValue({ user: { id: "u-1", email: "aisha@example.com" } });
+    getServerSession.mockResolvedValue({ credential: NO_PASSWORD, user: { id: "u-1", email: "aisha@example.com" } });
     expect((await post(valid)).status).toBe(200);
   });
 

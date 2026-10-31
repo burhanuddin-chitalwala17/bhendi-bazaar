@@ -47,6 +47,25 @@ describe.skipIf(!isDisposableDb)("Google sign-in over an unverified password acc
     expect(after?.emailVerified).not.toBeNull();
   });
 
+  it("ends the attacker's session, which was issued under the cleared password", async () => {
+    const { prisma } = await load();
+    const { credentialFingerprint } = await import("@/lib/credential-fingerprint");
+    const attackerSession = credentialFingerprint("$2a$10$attackerchosenhash");
+    const now = await prisma.user.findUnique({ where: { email: EMAIL }, select: { passwordHash: true } });
+    expect(credentialFingerprint(now?.passwordHash)).not.toBe(attackerSession);
+  });
+
+  it("lets the owner set a password through forgot-password afterwards", async () => {
+    const { prisma } = await load();
+    const { passwordService } = await import("@server/identity/password.service");
+    const user = await prisma.user.findUnique({ where: { email: EMAIL }, select: { id: true } });
+    await prisma.verificationToken.deleteMany({ where: { identifier: `password-reset:${user?.id}` } });
+    // The email itself may fail here (no provider key); the reset token is what proves it was allowed.
+    await passwordService.requestPasswordReset(EMAIL).catch(() => undefined);
+    const tokens = await prisma.verificationToken.count({ where: { identifier: `password-reset:${user?.id}` } });
+    expect(tokens).toBe(1);
+  });
+
   it("does not undo a verification that landed first (the write is conditional)", async () => {
     const { prisma } = await load();
     const { accountService } = await import("@server/identity/account.service");

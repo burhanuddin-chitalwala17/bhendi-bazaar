@@ -1,6 +1,7 @@
 // src/app/api/cart/sync/route.ts
 
 import { optionalActiveSession } from "@/lib/admin-auth";
+import { toErrorResponse } from "@/lib/api-error-response";
 import { NextRequest, NextResponse } from "next/server";
 import { cartService } from "@server/cart/cart.service";
 import { updateCartSchema, validateRequest } from "@/lib/validation";
@@ -41,6 +42,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(merged, { status: 200 });
   } catch (error) {
     console.error("[API] POST /api/cart/sync failed:", error);
-    return NextResponse.json({ error: "Failed to sync cart" }, { status: 500 });
+    return toErrorResponse(error, "Could not sync the cart");
   }
 }

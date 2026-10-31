@@ -1,10 +1,9 @@
 // src/data-access-layer/profile.dal.ts
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { cache } from "react";
-import { getServerSession } from "next-auth";
 import { unstable_rethrow } from "next/navigation";
 
-import { authOptions } from "@/lib/auth-config";
 import { profileService } from "@server/identity/profile.service";
 import type { ProfileData } from "@/domain/profile";
 
@@ -20,7 +19,7 @@ export const profileDAL = {
    */
   mine: cache(async (): Promise<ProfileData | null> => {
     try {
-      const session = await getServerSession(authOptions);
+      const session = await optionalActiveSession({ onBlocked: "allow" });
       if (!session?.user?.id) return null;
       return await profileService.getProfile(session.user.id);
     } catch (error) {

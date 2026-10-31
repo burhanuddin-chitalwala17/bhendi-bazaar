@@ -204,7 +204,7 @@ export class ProfileRepository {
   async findSessionClaims(userId: string) {
     return await prisma.user.findUnique({
       where: { id: userId },
-      select: { platformRole: true, isEmailVerified: true },
+      select: { platformRole: true, isEmailVerified: true, passwordHash: true },
     });
   }
 
@@ -225,7 +225,7 @@ export class ProfileRepository {
   async findAdminStanding(userId: string) {
     return await prisma.user.findUnique({
       where: { id: userId },
-      select: { platformRole: true, isBlocked: true },
+      select: { platformRole: true, isBlocked: true, passwordHash: true },
     });
   }
 
@@ -244,10 +244,8 @@ export class ProfileRepository {
   }
 
   /**
-   * Google has vouched for an address whose password account was never verified. Whoever set that
-   * password never proved they own the address, and may not be the person now signing in, so the
-   * password goes with the verification (pre-hijack, docs/GTM-READINESS.md B5). The owner sets a
-   * new one through forgot-password. Conditional, so a verification click in between is not undone.
+   * Google vouched for an address whose password nobody verified: the password goes with the claim
+   * (pre-hijack, GTM B5). Conditional, so a verification click in between is not undone.
    */
   async claimUnverifiedForOAuth(userId: string): Promise<{ passwordCleared: boolean }> {
     const { count } = await prisma.user.updateMany({
@@ -319,7 +317,7 @@ export class ProfileRepository {
   async findPasswordResetCandidate(email: string) {
     return await prisma.user.findUnique({
       where: { email },
-      select: { id: true, passwordHash: true, name: true },
+      select: { id: true, passwordHash: true, name: true, isEmailVerified: true },
     });
   }
 

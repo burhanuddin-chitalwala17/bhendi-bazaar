@@ -1,7 +1,6 @@
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { cache } from "react";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
 import { reviewService } from "@server/catalog/review.service";
 import type { ReviewPageDto } from "@server/catalog/review.types";
 
@@ -16,13 +15,13 @@ import type { ReviewPageDto } from "@server/catalog/review.types";
 export const reviewsDAL = {
   /** The first page, with `isMine` resolved against whoever is signed in (R9). */
   firstPage: cache(async (productId: string): Promise<ReviewPageDto> => {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     return reviewService.getPage(productId, 1, session?.user?.id ?? null);
   }),
 
   /** Whether there is anyone to attribute a new review to (R7, R12). */
   viewerId: cache(async (): Promise<string | null> => {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     return session?.user?.id ?? null;
   }),
 };

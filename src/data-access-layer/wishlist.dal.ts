@@ -1,8 +1,7 @@
 // src/data-access-layer/wishlist.dal.ts
 
-import { getServerSession } from "next-auth";
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { unstable_rethrow } from "next/navigation";
-import { authOptions } from "@/lib/auth-config";
 import { wishlistService } from "@server/wishlist/wishlist.service";
 import type { WishlistProduct } from "@server/wishlist/wishlist.types";
 
@@ -22,7 +21,7 @@ export type { WishlistProduct };
 export const wishlistDAL = {
   getSavedProductIds: async (): Promise<string[]> => {
     try {
-      const session = await getServerSession(authOptions);
+      const session = await optionalActiveSession({ onBlocked: "allow" });
       if (!session?.user?.id) return [];
       return await wishlistService.getSavedProductIds(session.user.id);
     } catch (error) {
@@ -39,7 +38,7 @@ export const wishlistDAL = {
 
   getWishlist: async (): Promise<WishlistProduct[]> => {
     try {
-      const session = await getServerSession(authOptions);
+      const session = await optionalActiveSession({ onBlocked: "allow" });
       if (!session?.user?.id) return [];
       return await wishlistService.getWishlist(session.user.id);
     } catch (error) {
