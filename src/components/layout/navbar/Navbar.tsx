@@ -40,7 +40,8 @@ export function Navbar() {
             alt={APP_NAME}
             width={160}
             height={160}
-            preload
+            // Fetched early but never ahead of the page's own LCP image, which preloads.
+            fetchPriority="high"
             className="h-8 w-auto sm:h-16"
           />
         </Link>

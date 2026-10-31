@@ -18,7 +18,7 @@ const EXTS = [".ts", ".tsx"];
  * product "Seller Central", its "seller account", and Amazon's own wording that it "asks sellers"
  * to re-approve; and the listing reads' field names: Amazon's `seller-sku` report column, Flipkart's
  * `/sellers` API root and its `sellerId` field, and Amazon's order item field `SellerSKU` (inventory-sync D4); and
- * schema.org's `Offer.seller` property, which Google's product markup requires by that name (GTM B10). Removed from a line before it is scanned, so the retired word in our own prose
+ * schema.org's `Offer.seller` property, which schema.org names so (GTM B10). Removed from a line before it is scanned, so the retired word in our own prose
  * beside them is still caught. Our own word for a shop stays "org" or "shop".
  */
 /** Only where the channel code lives; anywhere else the retired word is caught as before. */

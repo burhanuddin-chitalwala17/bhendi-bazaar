@@ -37,27 +37,36 @@ describe("productJsonLd", () => {
   const origin = "https://www.bhendi-bazaar.com";
 
   it("offers the price the buyer pays: the offer price when one applies", () => {
-    expect(productJsonLd(origin, product()).offers).toMatchObject({ price: "1299.00", priceCurrency: "INR" });
-    expect(productJsonLd(origin, product({ salePrice: 99_900 })).offers).toMatchObject({ price: "999.00" });
+    expect(productJsonLd(origin, product())!.offers).toMatchObject({ price: "1299.00", priceCurrency: "INR" });
+    expect(productJsonLd(origin, product({ salePrice: 99_900 }))!.offers).toMatchObject({ price: "999.00" });
+  });
+
+  it("never offers a price the page would not show: a zero or inverted offer reads as the list price", () => {
+    expect(productJsonLd(origin, product({ salePrice: 0 }))!.offers).toMatchObject({ price: "1299.00" });
+    expect(productJsonLd(origin, product({ salePrice: 150_000 }))!.offers).toMatchObject({ price: "1299.00" });
+  });
+
+  it("is left out when the only picture is our logo", () => {
+    expect(productJsonLd(origin, product({ media: [], thumbnail: "/brand/bhendi-bazaar.png" }))).toBeNull();
   });
 
   it("is out of stock when there is none, or when the item is up for bidding", () => {
-    expect(productJsonLd(origin, product()).offers).toMatchObject({ availability: "https://schema.org/InStock" });
-    expect(productJsonLd(origin, product({ stock: 0 })).offers).toMatchObject({ availability: "https://schema.org/OutOfStock" });
-    expect(productJsonLd(origin, product({ biddingSlug: "b" })).offers).toMatchObject({ availability: "https://schema.org/OutOfStock" });
+    expect(productJsonLd(origin, product())!.offers).toMatchObject({ availability: "https://schema.org/InStock" });
+    expect(productJsonLd(origin, product({ stock: 0 }))!.offers).toMatchObject({ availability: "https://schema.org/OutOfStock" });
+    expect(productJsonLd(origin, product({ biddingSlug: "b" }))!.offers).toMatchObject({ availability: "https://schema.org/OutOfStock" });
   });
 
   it("names the seller and links absolute images", () => {
-    const ld = productJsonLd(origin, product());
+    const ld = productJsonLd(origin, product())!;
     expect(ld.url).toBe(`${origin}/product/light-blue-rida`);
-    expect(ld.image).toEqual(["https://img.example/a.jpg"]);
+    expect(ld.image).toEqual(["https://img.example/a.jpg", "https://x/brand/x.png".replace("https://x", origin)]);
     expect(ld.offers).toMatchObject({ seller: { name: "Fixture Shop" } });
   });
 });
 
 describe("serializeJsonLd", () => {
   it("cannot be closed by what it carries", () => {
-    const out = serializeJsonLd(productJsonLd("https://x", product({ name: "</script><script>alert(1)</script>" })));
+    const out = serializeJsonLd(productJsonLd("https://x", product({ name: "</script><script>alert(1)</script>" }))!);
     expect(out).not.toContain("</script>");
     expect(JSON.parse(out).name).toBe("</script><script>alert(1)</script>");
   });

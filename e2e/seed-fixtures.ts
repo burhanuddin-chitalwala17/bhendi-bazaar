@@ -24,7 +24,7 @@ async function seedFixtures() {
     price: E2E_PRODUCT.pricePaise,
     categoryId: fixtures.categoryId,
     orgId: fixtures.orgId,
-    thumbnail: "/brand/bhendi-bazaar.png",
+    thumbnail: "/brand/og-image.jpeg",
     sku: E2E_PRODUCT.sku,
     archivedAt: null,
   };

@@ -10,6 +10,38 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B10: fixes from the review
+
+- **The markup's price follows the page's rule.** It used `salePrice ?? price`; a promotion larger than
+  the item resolves to 0, which the page (through `effectivePrice`) shows as the list price while the
+  markup said "0.00". It now uses `effectivePrice`, so markup and page cannot disagree (ADR-0018).
+- **No product markup without a product photo.** A product whose only picture is our logo emitted the
+  logo as its image; Google requires the product. The markup is now left out for it.
+- **`Organization.alternateName`** "Bhendi-Bazaar.com", against the neighbourhood of the same name.
+- **Admin titles** no longer read "… | Admin — Bhendi Bazaar"; the navbar logo uses
+  `fetchPriority="high"` instead of preloading against the page's own LCP image.
+- **Wording:** the vocabulary allowlist reason now says schema.org names the property (Google does not
+  require it); the journey no longer claims to guard `htmlLimitedBots`, which the unit test of its
+  pattern does.
+- **Follow-ups, not done:** `ProductGroup` markup for families (ADR-0043) needs a family id and
+  `variesBy` in the DTO; `sku`/`brand` are not in the storefront DTO.
+
+## 2026-10-31 — GTM B3: a nightly encrypted backup, and a drill that proves it restores
+
+- **`.github/workflows/db-backup.yml`**, nightly at 01:47 IST and by hand: `pg_dump` (custom format, client
+  17) over the direct connection, piped straight into `age` encryption to a public key, so no plain dump
+  ever touches disk and the private key never touches CI; exact row counts per table beside it; both
+  uploaded to `db/<year>/<month>/` in a bucket of our own. Under 1 KB, or no counts, fails.
+- **`scripts/backup/db-restore-drill.sh`** decrypts, restores into a local scratch database, recounts
+  every table and fails on any difference; it refuses a non-local target.
+- **Rehearsed here** against the local database: 62 tables, restored with every count matching; a
+  tampered count, the wrong key and a non-local target each failed as they should.
+- **Fails red until configured** (OPERATIONS.md "Backups": key, bucket with Bucket Lock, write-only
+  token, six secrets). A green job that backs up nothing is what this replaces.
+- **Your part:** the setup steps; Prisma Starter for the snapshot layer; the first drill.
+- **Tests:** `deploy-safety.test.ts` (21): the job is scheduled, cannot be made advisory, encrypts to a
+  public key and never names the private one.
+
 ## 2026-10-31 — GTM B12 (code part): product page loads sooner, pool size is a setting, a load smoke
 
 - **The product page renders without waiting for similar products**, which now stream in their own

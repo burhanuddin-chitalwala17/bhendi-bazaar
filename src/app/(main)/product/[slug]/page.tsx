@@ -78,7 +78,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     // pb-16 clears the docked Add-to-cart bar, which is fixed and so out of flow.
     <div className="space-y-6 pb-16 sm:space-y-8 md:pb-0">
-      <JsonLd data={productJsonLd(appUrl(), product)} />
+      {(() => {
+        const ld = productJsonLd(appUrl(), product);
+        return ld ? <JsonLd data={ld} /> : null;
+      })()}
       <Suspense fallback={<ProductPageSkeleton />}>
         <div className="grid gap-4 sm:gap-8 lg:grid-cols-2">
           <ProductGallery {...product} />

@@ -51,7 +51,8 @@ test("sign-in offers email and password", async ({ page }) => {
   await expect(page.getByLabel(/password/i).first()).toBeVisible();
 });
 
-test("a product page tells search what it costs, in the head for Google", async ({ request }) => {
+// htmlLimitedBots itself is proved by the unit test of its pattern; this checks what Google is served.
+test("a product page tells search what it costs", async ({ request }) => {
   const response = await request.get(`/product/${E2E_PRODUCT.slug}`, {
     headers: { "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
   });
