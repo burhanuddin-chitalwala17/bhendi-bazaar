@@ -38,6 +38,8 @@ interface ProductAddContainerProps {
   copyOptions?: ProductCopyOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
   uploadEndpoints?: UploadEndpoints;
+  /** The shop has turned on at least one channel besides its store, so readiness has something to say. */
+  sellsElsewhere?: boolean;
 }
 
 export function ProductAddContainer({
@@ -50,6 +52,7 @@ export function ProductAddContainer({
   copySource,
   copyOptions = [],
   uploadEndpoints,
+  sellsElsewhere = false,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -83,6 +86,7 @@ export function ProductAddContainer({
         isSubmitting={isLoading}
         readOnly={false}
         uploadEndpoints={uploadEndpoints}
+        sellsElsewhere={sellsElsewhere}
         copyFrom={
           copyOptions.length > 0 && (
             <div className="space-y-2 rounded-card border border-border bg-card p-3">

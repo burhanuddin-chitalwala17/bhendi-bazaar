@@ -21,6 +21,7 @@ import type { useServerForm } from "@/hooks/core/useServerForm";
 import { CategoryPicker } from "./CategoryPicker";
 import { CategoryChangeSheet } from "./CategoryChangeSheet";
 import { useCategoryChange } from "./useCategoryChange";
+import { keepAsked } from "./category-change";
 import { BuyerPreview } from "./BuyerPreview";
 import { ProductFactFields } from "./ProductFactFields";
 import { ProductFamilyField } from "./ProductFamilyField";
@@ -57,6 +58,8 @@ interface ProductStepsFormProps {
   uploadEndpoints?: Parameters<typeof ProductMediaManager>[0]["endpoints"];
   /** "Start from a product you already sell", rendered at the top of Photos and video (Q15). */
   copyFrom?: ReactNode;
+  /** False for a shop selling nowhere else: no hint is asked for and none shows (R5). */
+  sellsElsewhere: boolean;
   /** The product just put on sale; set, the success screen replaces the steps (Q16). */
   created: ProductDetails | null;
   onStartAnother: () => void;
@@ -70,9 +73,15 @@ const STEP_INTRO: Partial<Record<ProductStepKey, string>> = {
 };
 
 /** Problems from the unsaved values and from the last save, one line each (Review, R3). */
-function useProblems(form: Form, errors: FieldErrors<ProductFormInput>, active: boolean): ProductProblem[] {
+function useProblems(
+  form: Form,
+  errors: FieldErrors<ProductFormInput>,
+  active: boolean,
+  productType: ProductTypeRecord | null,
+): ProductProblem[] {
   // Parsed only while Review shows: a full parse per keystroke is felt on a low-end phone.
-  const values = active ? form.getValues() : null;
+  // Parsed as the save parses it: an answer the chosen type does not ask is no problem (D5).
+  const values = active ? keepAsked(form.getValues(), productType) : null;
   return useMemo(() => {
     if (!values) return [];
     const parsed = productFormSchema.safeParse(values);
@@ -109,6 +118,7 @@ export function ProductStepsForm({
   onLocationAdded,
   uploadEndpoints,
   copyFrom,
+  sellsElsewhere,
   created,
   onStartAnother,
 }: ProductStepsFormProps) {
@@ -124,13 +134,13 @@ export function ProductStepsForm({
   const [moreOpen, setMoreOpen] = useState<ReadonlySet<ProductStepKey>>(() => new Set());
   const counts = errorCountsByStep(errors);
   const errorTotal = Object.values(counts).reduce((sum, n) => sum + n, 0);
-  const problems = useProblems(form, errors, steps.isReview);
   const orgId = watch("orgId") || "";
   const categoryId = watch("categoryId") || "";
   const typeKey = useMemo(() => resolveProductType(categoryId, categories), [categoryId, categories]);
   const productType = useMemo(() => productTypes.find((type) => type.key === typeKey) ?? null, [productTypes, typeKey]);
+  const problems = useProblems(form, errors, steps.isReview, productType);
   // Readiness hints (D4): advice from the unsaved values, re-checked as the shop moves between steps.
-  const readiness = useReadinessHints(orgId, typeKey, steps.current, form.getValues);
+  const readiness = useReadinessHints(sellsElsewhere ? orgId : "", productType, steps.current, form.getValues);
   const hints = hintsFrom(readiness.verdicts, productType);
   // A category of another type names the answers it would leave behind first (D5, R6).
   const categoryChange = useCategoryChange(categories, productTypes, form.getValues, (id) =>

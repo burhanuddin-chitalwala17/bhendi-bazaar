@@ -22,8 +22,9 @@ vi.mock("@/components/product/product-media-manager", () => ({
     </button>
   ),
 }));
+const readiness = vi.fn(async () => []);
 vi.mock("@/components/product/listingApiClient", () => ({
-  listingApiClient: { readiness: async () => [], listValues: async () => ({}), createFamily: vi.fn() },
+  listingApiClient: { readiness: (...args: unknown[]) => readiness(...(args as [])), listValues: async () => ({}), createFamily: vi.fn() },
 }));
 
 const { ProductForm } = await import("@/components/shared/forms/product");
@@ -42,7 +43,7 @@ const abaya: ProductTypeRecord = {
 const ring: ProductTypeRecord = {
   key: "jewellery",
   label: "Jewellery",
-  facts: [FACT.COLOUR, FACT.PLATING],
+  facts: [FACT.COLOUR, FACT.PLATING, FACT.PACK_QUANTITY],
   measures: [{ key: MEASURE.DIAMETER, label: "Inner diameter", unit: "mm", required: true }],
   variantAxis: [],
   kinds: [{ key: "ring", label: "Ring" }],
@@ -77,6 +78,7 @@ function renderForm(onSubmit = vi.fn(async () => ({ id: "p-1", slug: "abaya", na
       onSubmit={onSubmit as never}
       onCancel={vi.fn()}
       uploadEndpoints={{ presign: "/p", confirm: "/c" } as never}
+      sellsElsewhere
     />,
   );
   return onSubmit;
@@ -97,6 +99,20 @@ async function fillAbayaDetails() {
   fireEvent.change(screen.getByLabelText("Length (in)"), { target: { value: "54" } });
 }
 
+/** Everything else a save needs, ending on Review. */
+async function fillTheRest(name: string) {
+  fireEvent.click(chip("Photos and video"));
+  fireEvent.click(screen.getByRole("button", { name: "stub: add a cover photo" }));
+  fireEvent.click(chip("What it is"));
+  fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: name } });
+  fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: "Plain and well made." } });
+  fireEvent.click(chip("Price & stock"));
+  fireEvent.change(screen.getByLabelText(/^Price \(₹\)/), { target: { value: "999" } });
+  fireEvent.change(screen.getByLabelText(/^Packed weight/), { target: { value: "0.1" } });
+  fireEvent.click(chip("Review"));
+  expect(stepTitle()).toBe("Review");
+}
+
 const sheetTitle = () => screen.queryByText("Change to Ring?");
 
 describe("what a category change loses (D5)", () => {
@@ -111,7 +127,12 @@ describe("what a category change loses (D5)", () => {
 
   it("names a kind the new type cannot hold, even for a category with no type", () => {
     expect(answersLost({ kind: "rida" }, abaya, ring)).toEqual(["Kind"]);
-    expect(answersLost({ kind: "rida", facts: { material: "crepe" } }, abaya, null)).toEqual(["Kind"]);
+  });
+
+  it("a category with no type asks nothing, so every answer is named and none is saved (D5)", () => {
+    const values = { facts: { colour: "black", material: "crepe" }, measurements: { length: 54 }, kind: "rida" };
+    expect(answersLost(values, abaya, null)).toEqual(["Colour", "Fabric", "Length", "Kind"]);
+    expect(keepAsked(values, null)).toEqual({ facts: {}, measurements: {}, kind: null });
   });
 
   it("the save keeps only what the chosen type asks", () => {
@@ -215,8 +236,70 @@ describe("the category-change sheet (spec R6)", () => {
     const sent = (onSubmit.mock.calls[0] as unknown[])[0] as { categoryId: string; facts: object; measurements: object };
     expect(sent.categoryId).toBe("cat-ring");
     expect(sent.facts).toMatchObject({ colour: "black" });
-    expect(Object.keys(sent.facts).sort()).toEqual(["colour", "plating"]);
+    expect(Object.keys(sent.facts).sort()).toEqual(["colour", "packQuantity", "plating"]);
     // Abaya's Fabric, Sleeve length and Length stayed in the form but are not sent.
     expect(sent.measurements).toEqual({ diameter: 17 });
+  });
+
+  it("switching to a category with no type names every answer, and the save sends none of them (D5)", async () => {
+    const onSubmit = renderForm();
+    await fillAbayaDetails();
+    await pick("Gift card");
+    expect(await screen.findByText("Colour, Fabric, Sleeve length, Length won't apply to a gift card.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Change to Gift card" }));
+    await fillTheRest("Gift voucher");
+    fireEvent.click(screen.getByRole("button", { name: "Put on sale" }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    const sent = (onSubmit.mock.calls[0] as unknown[])[0] as { facts: object; measurements: object };
+    expect(sent.facts).toEqual({});
+    expect(sent.measurements).toEqual({});
+  });
+
+  it("asks readiness with no kind left over from another type", async () => {
+    renderForm();
+    await pick("Abaya");
+    fireEvent.click(chip("Details"));
+    fireEvent.change(screen.getByLabelText("Kind"), { target: { value: "rida" } });
+    await pick("Ring");
+    fireEvent.click(await screen.findByRole("button", { name: "Change to Ring" }));
+    await waitFor(() =>
+      expect(readiness).toHaveBeenLastCalledWith("org-1", expect.objectContaining({ categoryId: "cat-ring", kind: null }), expect.anything()),
+    );
+  });
+});
+
+describe("a blank number box is not an answer", () => {
+  it("a blank measurement saves", async () => {
+    const onSubmit = renderForm();
+    await fillAbayaDetails();
+    fireEvent.change(screen.getByLabelText("Length (in)"), { target: { value: "" } });
+    await fillTheRest("Crepe Abaya");
+    fireEvent.click(screen.getByRole("button", { name: "Put on sale" }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    const sent = (onSubmit.mock.calls[0] as unknown[])[0] as { measurements: Record<string, unknown> };
+    expect(sent.measurements.length ?? null).toBeNull();
+  });
+
+  it("a blank Length left behind by Abaya → Ring never blocks the save", async () => {
+    const onSubmit = renderForm();
+    await fillAbayaDetails();
+    fireEvent.change(screen.getByLabelText("Length (in)"), { target: { value: "" } });
+    await pick("Ring");
+    fireEvent.click(await screen.findByRole("button", { name: "Change to Ring" }));
+    await fillTheRest("Silver Ring");
+    fireEvent.click(screen.getByRole("button", { name: "Put on sale" }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+  });
+
+  it("a cleared number fact saves", async () => {
+    const onSubmit = renderForm();
+    await pick("Ring");
+    fireEvent.click(chip("Details"));
+    fireEvent.change(screen.getByLabelText("Pack of"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("Pack of"), { target: { value: "" } });
+    await fillTheRest("Silver Ring");
+    fireEvent.click(screen.getByRole("button", { name: "Put on sale" }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
   });
 });

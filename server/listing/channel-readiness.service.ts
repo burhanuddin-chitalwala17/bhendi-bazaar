@@ -50,6 +50,14 @@ export interface UnsavedReadinessInput {
   facts?: Record<string, string | number | boolean | null | undefined>;
 }
 
+async function verdictsOn(channels: Channel[], subject: ReadinessSubject): Promise<ChannelVerdict[]> {
+  if (channels.length === 0 || !subject.productType) return [];
+  const type = await productTypeRepository.byKey(subject.productType);
+  if (!type) return [];
+  const registers = (await registersForTypes(channels, [type])).get(type.key)!;
+  return readinessByChannel(subjectOf(subject), registers);
+}
+
 export const channelReadinessService = {
   /**
    * How every channel this shop sells on would receive this product.
@@ -59,14 +67,7 @@ export const channelReadinessService = {
    * rather than an error (spec A6).
    */
   async forProduct(orgId: string, subject: ReadinessSubject): Promise<ChannelVerdict[]> {
-    const channels = enabledChannels(await orgChannelRepository.forOrg(orgId));
-    if (channels.length === 0 || !subject.productType) return [];
-
-    const type = await productTypeRepository.byKey(subject.productType);
-    if (!type) return [];
-
-    const registers = (await registersForTypes(channels, [type])).get(type.key)!;
-    return readinessByChannel(subjectOf(subject), registers);
+    return verdictsOn(enabledChannels(await orgChannelRepository.forOrg(orgId)), subject);
   },
 
   /**
@@ -77,6 +78,9 @@ export const channelReadinessService = {
    */
   async forUnsaved(orgId: string, input: UnsavedReadinessInput): Promise<ChannelVerdict[]> {
     if (!input.categoryId) return [];
+    // A shop selling nowhere else has nothing to be told; checked before the fill's reads.
+    const channels = enabledChannels(await orgChannelRepository.forOrg(orgId));
+    if (channels.length === 0) return [];
     const filled = await fillListing({
       categoryId: input.categoryId,
       orgId,
@@ -84,7 +88,7 @@ export const channelReadinessService = {
       brandId: input.brandId ?? null,
       facts: input.facts as Answers<FactKey> | undefined,
     });
-    return this.forProduct(orgId, { productType: filled.productType, kind: input.kind ?? null, facts: filled.facts });
+    return verdictsOn(channels, { productType: filled.productType, kind: input.kind ?? null, facts: filled.facts });
   },
 
   /**

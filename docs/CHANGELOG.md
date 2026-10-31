@@ -10,6 +10,36 @@
 
 ## Entries
 
+## 2026-10-31 — product-form: a blank number box no longer blocks a save; review fixes for units 2 and 3
+
+- **Blank number = not answered:** measurement and number-fact boxes use `setValueAs` (blank → null), not
+  `valueAsNumber` (blank → NaN, refused as "Invalid input"). `useServerForm` gains `prepare`, run before
+  validation; the product form passes `keepAsked`, so an answer the chosen type does not ask (a blank
+  Length after Abaya → Ring) can no longer block "Put on sale". Review's problem list parses the same way.
+- **No-type category drops answers (D5):** `keepAsked` sends no facts, measurements or kind for a category
+  with no type, and `answersLost` names them all in the sheet. Answers are dropped only for a category
+  changed in this form: an edit that keeps its category sends every stored answer back. `fillListing`'s
+  no-type branch now keeps a marketplace answer's mark, as the typed branch does (Q31).
+- **`useServerForm` reads `schema` and `prepare` at validation time** (through a ref), so a schema built
+  from props (offer, contact, category forms) is never stale.
+- **Readiness (R5):** the new-product page passes `sellsElsewhere`; a shop with no other channel never
+  asks for hints, so never sees "Checking…". `forUnsaved` reads channels first and returns early.
+  `useReadinessHints` drops a kind the current type cannot hold. Malformed JSON to
+  `POST /api/org/[orgId]/products/readiness` is a 400 in the envelope, not a 500.
+- **Tests:** `product-form-category-change.test.tsx` (blank measurement saves; blank Length after Abaya →
+  Ring saves; cleared number fact saves; no-type sheet and save; no leftover kind sent),
+  `product-form-readiness.test.tsx` (no "Checking…" for a shop selling nowhere else),
+  `product-readiness-preview.test.ts` (bad JSON → 400), `product-edit-keeps-facts.test.tsx` (edit a
+  no-type product's name only → every fact, measurement and marketplace mark kept),
+  `use-server-form-schema.test.tsx` (schema changed after mount is used). Mutations, each restored:
+  edit dropping on an unchanged category (1 failed); no-type fill without `keepMarketplace` (1 failed);
+  schema frozen at mount (1 failed); measurement back to
+  `valueAsNumber` (2 failed); number fact back to `valueAsNumber` (3 failed); `prepare` skipped before
+  validation (2 failed); `keepAsked` keeping all with no type (2 failed); `answersLost` naming nothing
+  with no type (2 failed); `sellsElsewhere` ignored (1 failed); leftover kind passed (1 failed);
+  bad JSON uncaught (1 failed).
+- **Docs:** product-form trd.md D5 states the no-type case, the drop-before-validation and the unchanged-category edit; ARCHITECTURE.md test-file count.
+
 ## 2026-10-31 — product-form unit 3: a category change names what it leaves behind
 
 - **Category-change sheet** (R6; A4; D5; Q9): on What it is, picking a category whose product type does

@@ -79,6 +79,8 @@ interface ProductFormProps {
   uploadEndpoints?: UploadEndpoints;
   /** Create only: the "Copy from" control, shown at the top of Photos and video (product-form Q15). */
   copyFrom?: React.ReactNode;
+  /** Create only: the shop sells on another channel, so readiness hints are asked for (R5). */
+  sellsElsewhere?: boolean;
 }
 
 export function ProductForm({
@@ -97,6 +99,7 @@ export function ProductForm({
   factOrigins,
   families = [],
   copyFrom,
+  sellsElsewhere = false,
 }: ProductFormProps) {
   const isEdit = !!product;
   // A new product is five steps (product-form U1); edit keeps the long form until its overview (U4).
@@ -152,11 +155,15 @@ export function ProductForm({
   // field-attributed server errors land on their fields with no code here.
   const form = useServerForm<ProductFormInput>({
     schema: productFormSchema,
-    // Answers for a category the shop moved away from stay in the form until here (D5).
-    submit: (data) => {
+    // Answers for a category the shop moved away from stay in the form until here (D5), and are
+    // dropped before validation, so a field no longer on screen can never block the save. An edit
+    // that keeps its category drops nothing: its stored answers are not this form's to discard.
+    prepare: (data) => {
+      if (isEdit && data.categoryId === product?.category?.id) return data;
       const key = resolveProductType(data.categoryId, categories ?? []);
-      return onSubmit(keepAsked(data, productTypes.find((type) => type.key === key) ?? null));
+      return keepAsked(data, productTypes.find((type) => type.key === key) ?? null);
     },
+    submit: onSubmit,
     // Deferred: clearSaved is declared below. Without this the saved draft
     // prefills the next "new product" with the one just created.
     onSuccess: (result) => {
@@ -279,6 +286,7 @@ export function ProductForm({
         onLocationAdded={addLocation}
         uploadEndpoints={uploadEndpoints}
         copyFrom={copyFrom}
+        sellsElsewhere={sellsElsewhere}
         created={created}
         onStartAnother={() => {
           // Same route, so nothing remounts: the next product starts blank by hand.

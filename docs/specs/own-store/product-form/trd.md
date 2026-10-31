@@ -40,7 +40,9 @@ gets the same form through thin admin handlers over the same catalog service.
   leaving a step and on Review; empty renders nothing; nothing of it reaches the submit path.
 - **D5 — Category change names what is lost (R6; Q9).** A pure function lists answered facts the
   new type does not ask; a confirmation offers "Keep {old}". Answers stay in form state until
-  submit, which drops facts the current type does not ask; `ProductFactFields.tsx` stops clearing.
+  submit, which drops facts the current type does not ask (all of them for a category with no type)
+  before validating, so a field off screen never blocks a save — only when the category changed in
+  this form, never on an edit that keeps it; `ProductFactFields.tsx` stops clearing.
 - **D6 — Version compare-and-set (R9; Q11, Q35).** `Product.version` is bumped by every person
   save (form, team, sheet), not by marketplace fills or archive. The edit body carries
   `seenVersion`; `updateProduct` (`server/catalog/product.repository.ts`) opens its transaction

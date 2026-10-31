@@ -29,11 +29,11 @@ describe.skipIf(!isDisposableDb)("readiness preview (local db)", () => {
   let categoryId: string;
   let familyId: string;
 
-  async function ask(body: unknown, asOrg = orgId) {
+  async function ask(body: unknown, asOrg = orgId, raw?: string) {
     const response = await POST(
       new NextRequest(`https://example.invalid/api/org/${asOrg}/products/readiness`, {
         method: "POST",
-        body: JSON.stringify(body),
+        body: raw ?? JSON.stringify(body),
       }),
       { params: Promise.resolve({ orgId: asOrg }) },
     );
@@ -144,5 +144,11 @@ describe.skipIf(!isDisposableDb)("readiness preview (local db)", () => {
     const { status, body } = await ask({ categoryId, facts: "fabric" });
     expect(status).toBe(400);
     expect(body.error).toBeDefined();
+  });
+
+  it("answers malformed JSON with a 400 in the envelope, not a 500", async () => {
+    const { status, body } = await ask(undefined, orgId, "{not json");
+    expect(status).toBe(400);
+    expect(body.error).toBe("The request body is not valid JSON");
   });
 });

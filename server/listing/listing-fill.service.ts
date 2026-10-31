@@ -94,14 +94,17 @@ export async function fillListing(input: ListingFillInput): Promise<ListingFillR
 
   if (!type) {
     // No questions to ask, so nothing to fill. Anything the caller sent is still kept as its
-    // own answer rather than discarded — a shop's data is not ours to drop.
+    // own answer rather than discarded — a shop's data is not ours to drop — and a marketplace's
+    // answer keeps its mark, as it does for a typed product (Q31).
     return {
       productType,
-      facts: fillFacts<FactKey>(input.facts ?? {}, [], Object.keys(input.facts ?? {}) as FactKey[]),
-      measurements: fillFacts<MeasureKey>(
-        input.measurements ?? {},
-        [],
-        Object.keys(input.measurements ?? {}) as MeasureKey[],
+      facts: keepMarketplace<FactKey>(
+        fillFacts<FactKey>(input.facts ?? {}, [], Object.keys(input.facts ?? {}) as FactKey[]),
+        input.stored?.facts as Partial<Record<FactKey, FilledAnswer>> | undefined,
+      ),
+      measurements: keepMarketplace<MeasureKey>(
+        fillFacts<MeasureKey>(input.measurements ?? {}, [], Object.keys(input.measurements ?? {}) as MeasureKey[]),
+        input.stored?.measurements as Partial<Record<MeasureKey, FilledAnswer>> | undefined,
       ),
       unanswered: [],
     };

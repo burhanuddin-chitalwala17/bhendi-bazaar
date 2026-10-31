@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm, type DefaultValues, type FieldErrors, type FieldValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -24,6 +24,11 @@ interface Options<T extends FieldValues> {
   onInvalid?: (errors: FieldErrors<T>) => void;
   /** False when the form shows its own failure inline, so the message is not said twice. */
   toastErrors?: boolean;
+  /**
+   * Narrows the values before they are validated and submitted, so a field no longer on screen
+   * (an answer for a category the shop moved away from) can never block the save.
+   */
+  prepare?: (values: T) => T;
 }
 
 /**
@@ -45,13 +50,22 @@ export function useServerForm<T extends FieldValues>({
   fallbackMessage = "Could not save. Please try again.",
   onInvalid,
   toastErrors = true,
+  prepare,
 }: Options<T>) {
-  const form = useForm<T>({
+  // Read through refs: the resolver is fixed at mount, but a caller's schema (and `prepare`) may
+  // depend on props, so each validation uses the latest render's.
+  const latest = useRef({ schema, prepare });
+  useEffect(() => {
+    latest.current = { schema, prepare };
+  });
+  const [resolver] = useState(() => (values: T, ...rest: unknown[]) => {
+    const { schema: current, prepare: narrow } = latest.current;
     // Cast contained here: zod v4's ZodType and the resolver's expected input/output
     // variance disagree at the type level only. Runtime behaviour is correct.
-    resolver: zodResolver(schema as never) as never,
-    defaultValues,
+    const validate = zodResolver(current as never) as (...args: unknown[]) => unknown;
+    return validate(narrow ? narrow(values) : values, ...rest);
   });
+  const form = useForm<T>({ resolver: resolver as never, defaultValues });
 
   // Errors with no field to sit on — a conflict on something not in the form, a
   // permission failure, an internal fault. Without this they would vanish.

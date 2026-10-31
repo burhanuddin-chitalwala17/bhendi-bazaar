@@ -35,6 +35,9 @@ interface ProductFactFieldsProps {
   withFamily?: boolean;
 }
 
+/** A blank number box is "not answered", never NaN — valueAsNumber's NaN failed the schema and blocked the save. */
+const blankIsUnanswered = (value: unknown) => (value === "" || value == null ? null : Number(value));
+
 /**
  * The questions this product's type asks
  * ([listing-vocabulary](../../../../../docs/specs/listing-vocabulary/)).
@@ -189,7 +192,7 @@ export function ProductFactFields({
                 step="0.1"
                 inputMode="decimal"
                 disabled={readOnly}
-                {...register(`measurements.${measure.key}` as never, { valueAsNumber: true })}
+                {...register(`measurements.${measure.key}` as never, { setValueAs: blankIsUnanswered })}
                 error={
                   (errors.measurements as Record<string, { message?: string }> | undefined)?.[
                     measure.key
@@ -264,7 +267,7 @@ function FactField({
         disabled={readOnly}
         error={error}
         hint={hint}
-        {...register(name as never, { valueAsNumber: true })}
+        {...register(name as never, { setValueAs: blankIsUnanswered })}
       />
     );
   }

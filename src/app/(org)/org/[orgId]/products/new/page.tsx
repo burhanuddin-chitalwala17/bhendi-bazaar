@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { adminCategoriesDAL } from "@/data-access-layer/admin/categories.dal";
 import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.dal";
 import { productFamilyService } from "@server/listing/product-family.service";
+import { orgChannelService } from "@server/listing/org-channel.service";
 import { ProductAddContainer } from "@/components/product/console/productAdd";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
@@ -24,7 +25,7 @@ export default async function OrgNewProductPage({
   // Independent reads, fetched together. One org, not a list: in this portal there
   // is nothing to choose between, and offering the choice would be offering a product
   // owned by somebody else — read that org by id rather than loading every platform org.
-  const [categoriesResult, org, allLocations, copyOptions, copySource, productTypes] =
+  const [categoriesResult, org, allLocations, copyOptions, copySource, productTypes, channels] =
     await Promise.all([
       adminCategoriesDAL.getCategories(),
       orgsDAL.getOrgSummary(orgId),
@@ -32,6 +33,7 @@ export default async function OrgNewProductPage({
       adminProductsDAL.getCopyOptions(orgId),
       copyFromId ? adminProductsDAL.getCopySource(copyFromId, orgId) : null,
       adminProductTypesDAL.getProductTypes(),
+      orgChannelService.list(orgId),
     ]);
 
   // The org's families, for the picker. A product belongs to none by default, which is the
@@ -77,6 +79,8 @@ export default async function OrgNewProductPage({
       locations={locations}
       copySource={copySource}
       copyOptions={copyOptions}
+      // A shop selling nowhere else sees no readiness line at all, not even "Checking…" (R5).
+      sellsElsewhere={channels.some((channel) => channel.enabled)}
       uploadEndpoints={orgUploadEndpoints(orgId)}
     />
   );

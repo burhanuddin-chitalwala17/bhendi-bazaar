@@ -62,7 +62,7 @@ const org = { id: "org-1", name: "Noor Attar House", code: "NOOR", handle: "noor
 const stepTitle = () => screen.getByTestId("step-title").textContent;
 const chip = (label: string) => screen.getByRole("button", { name: new RegExp(`^${label.replace("&", "\\&")}`) });
 
-function renderForm(onSubmit = vi.fn(async () => ({ id: "p-1", slug: "kurta", name: "Velvet Kurta" }))) {
+function renderForm(onSubmit = vi.fn(async () => ({ id: "p-1", slug: "kurta", name: "Velvet Kurta" })), sellsElsewhere = true) {
   render(
     <ProductForm
       categories={[{ id: "cat-kurta", name: "Kurta", productType: "kurta" }]}
@@ -72,6 +72,7 @@ function renderForm(onSubmit = vi.fn(async () => ({ id: "p-1", slug: "kurta", na
       onSubmit={onSubmit as never}
       onCancel={vi.fn()}
       uploadEndpoints={{ presign: "/p", confirm: "/c" } as never}
+      sellsElsewhere={sellsElsewhere}
     />,
   );
   return onSubmit;
@@ -149,16 +150,17 @@ describe("readiness hints while filling (spec R5)", () => {
     expect(screen.queryByText("Checking…")).toBeNull();
   });
 
-  it("a shop selling nowhere else sees nothing (spec R5)", async () => {
-    readiness.mockResolvedValue([]);
-    renderForm();
+  it("a shop selling nowhere else sees nothing, not even 'Checking…' (spec R5)", async () => {
+    readiness.mockImplementation(() => new Promise(() => {}));
+    renderForm(undefined, false);
     await pickKurta();
     fireEvent.click(chip("Details"));
-    await waitFor(() => expect(readiness).toHaveBeenCalled());
     fireEvent.click(chip("Review"));
-    await waitFor(() => expect(screen.queryByText("Checking…")).toBeNull());
+    expect(stepTitle()).toBe("Review");
+    expect(screen.queryByText("Checking…")).toBeNull();
     expect(screen.queryByText(/also asks?/)).toBeNull();
     expect(screen.queryByText(/^Ready for/)).toBeNull();
+    expect(readiness).not.toHaveBeenCalled();
   });
 
   it("asks nothing before a category with a type is chosen", async () => {
