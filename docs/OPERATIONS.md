@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-10-20
+- **Verified:** 2026-10-31
 - **Covers:** `src/lib/rate-limit/**`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -445,7 +445,7 @@ That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not
 | `WORKER_HOST` | The reserved public IP |
 | `WORKER_SSH_USER` | `ubuntu` on that image |
 | `WORKER_SSH_KEY` | A private key whose public half is in the machine's `authorized_keys`. Generate one for the pipeline alone; never reuse a personal key |
-| `WORKER_ENV_<NAME>` | **One secret per worker variable**, named for it: `WORKER_ENV_DATABASE_URL` (the **direct** string of the production database), `WORKER_ENV_CREDENTIAL_KEYS`, and so on for every name in `.env.worker.example`. The deploy writes `NAME=value` for each (`infra/worker/compose-env.sh`), so changing a value is editing one secret |
+| `WORKER_ENV_<NAME>` | **One secret per worker variable**, named for it: `WORKER_ENV_DATABASE_URL` (the **direct** string of the production database), `WORKER_ENV_CREDENTIAL_KEYS`, and so on for every name in `.env.worker.example`. The deploy writes `NAME=value` for each (`infra/worker/compose-env.sh`), so changing a value is editing one secret. **The workflow names each secret it passes**, never `toJSON(secrets)`, so a secret for a new variable is read only once its line is added to the step's `env:` in `ci.yml` (and `WORKER_STAGING_ENV_` in `staging-worker.yml`); `tests/unit/deploy-safety.test.ts` holds that for `.env.worker.example` |
 | `WORKER_ENV_FILE` | Optional, the old whole-file form. Still read as the base; an individual `WORKER_ENV_<NAME>` replaces its line. Move values out of it one at a time, then delete it |
 | `GHCR_PULL_USER` / `GHCR_PULL_TOKEN` | A GitHub user and a personal access token with `read:packages`, so the machine can pull the private image |
 
@@ -455,7 +455,7 @@ you clicked — not the branch's latest commit — and leaves the domain where i
 `develop` code onto dev with current variables, push, or re-run the workflow from the Actions tab.
 A new or changed environment variable also reaches only deployments created after it was saved.
 
-**Deploy.** A push to `main` builds the image, then over SSH writes the env file, copies
+**Deploy.** A push to `main` waits for the web `deploy` job, whose build applies migrations, then builds the image, then over SSH writes the env file, copies
 `compose.yml`, pulls the commit's image and restarts the stack. The heartbeat on the admin dashboard
 goes green within five minutes. A rollback is re-running the job on an older commit. Until
 `WORKER_HOST` exists the job builds and pushes and skips the machine.
@@ -542,7 +542,9 @@ The code reads only `DATABASE_URL` from the connection-string set — `KV_REST_A
 
 ## Deploy
 
-Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
+Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand. **Functions run in `bom1` (Mumbai)**, beside the database (`vercel.json` `regions`); Vercel's default is `iad1`, which puts every query a round trip across the world. Confirm with `curl -sI <origin> | grep -i x-vercel-id`, which should read `bom1::bom1`.
+
+**CI is hardened** (`tests/unit/deploy-safety.test.ts`): workflows are `contents: read` unless a job asks for more, every action is pinned to a commit SHA (Dependabot, `.github/dependabot.yml`, proposes bumps), and the Vercel CLI is pinned to a version.
 
 **The reconcile cron runs once a day, and that is the plan's limit, not a judgement.** Hobby permits one cron invocation per day, so `vercel.json`'s `30 3 * * *` is as often as it can run. Nothing depends on it: since [checkout-abandonment](specs/checkout-abandonment/) a buyer who closes the payment window releases their own reservation immediately, and a checkout blocked by a stale hold releases it and retries. The cron only catches the buyer whose browser never asked. If the project ever moves to Pro, tightening the schedule is a one-line edit and needs no code change.
 

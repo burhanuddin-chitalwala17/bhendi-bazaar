@@ -10,6 +10,28 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B2 and B8: functions in Mumbai, CI sees only the secrets it names
+
+- **B2.** `vercel.json` sets `regions: ["bom1"]`. Functions ran in `iad1` (Washington DC) against a
+  Mumbai database, about 200 ms per sequential query. Confirm on the next deploy with the
+  `x-vercel-id` header (`bom1::bom1`).
+- **B8.** No workflow passes `toJSON(secrets)` any more: the worker deploy and the staging worker name
+  each `WORKER_ENV_*` / `WORKER_STAGING_ENV_*` secret they pass (every variable the worker reads), and
+  `infra/worker/compose-env.sh` reads them from the environment, skipping unset (empty) ones. The
+  staging step sees production's `DATABASE_URL` only, for its same-database refusal. **Owner check:** a
+  `WORKER_ENV_*` secret for a variable not listed in the step is no longer passed.
+- **B8.** `deploy-worker` needs `deploy`, so the worker starts only after the web build has migrated
+  the schema. Workflows default to `permissions: contents: read`. Every action is pinned to a commit
+  SHA (same major, latest patch), the Vercel CLI to `58.4.4`, and `.github/dependabot.yml` proposes
+  npm and action bumps weekly.
+- **Not done here: B1 (Next.js ≥16.4.1).** The session that made this change could not reach the npm
+  registry, so the lockfile could not be regenerated; it is still the first blocker.
+- **Mutation-tested:** `toJSON(secrets)` restored, one action unpinned, `vercel@latest`, `deploy-worker`
+  needing only `test`, `permissions` removed, one worker secret dropped, `regions` removed, and empty
+  secrets written: each turned its `deploy-safety.test.ts` case red, each restored.
+- **Tests:** `deploy-safety.test.ts` (11), run under a stand-in for vitest because `node_modules` could
+  not be installed; the real suite has not run on this change.
+
 ## 2026-10-31 — GTM readiness review recorded
 
 - `docs/GTM-READINESS.md`: the whole-codebase production and GTM review (latency, SEO, security,
