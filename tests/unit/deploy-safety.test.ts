@@ -150,11 +150,35 @@ describe("database backup", () => {
     expect(backup).not.toMatch(/BACKUP_AGE_IDENTITY/);
   });
 
+  it("the drill restores only onto this machine, judged by the parsed host", () => {
+    const drill = (url: string) =>
+      spawnSync("bash", [join(ROOT, "scripts/backup/db-restore-drill.sh"), "a", "b"], {
+        env: { PATH: process.env.PATH ?? "", NODE_ENV: "test", BACKUP_AGE_IDENTITY: "x", DRILL_DATABASE_URL: url },
+        encoding: "utf8",
+      });
+    for (const url of [
+      "postgresql://u:p@db.prisma.io:5432/postgres?application_name=localhost",
+      "postgresql://localhost:p@db.prisma.io/x",
+      "postgresql://u:p@localhost.attacker.example/x",
+    ]) {
+      const run = drill(url);
+      expect(run.status).not.toBe(0);
+      expect(run.stdout + run.stderr).toMatch(/not this machine\. Refusing to restore/);
+    }
+  });
+
+  it("dumps and counts from one snapshot, and encrypts the counts too", () => {
+    const script = readFileSync(join(ROOT, "scripts/backup/db-backup.sh"), "utf8");
+    expect(script).toMatch(/pg_dump --snapshot="\$snapshot"/);
+    expect(script).toMatch(/REPEATABLE READ READ ONLY; SELECT pg_export_snapshot\(\)/);
+    expect(script).toMatch(/\| age --encrypt -r "\$BACKUP_AGE_RECIPIENT" -o "\$counts\.partial"/);
+  });
+
   it("refuses to call an empty run a backup", () => {
     const script = readFileSync(join(ROOT, "scripts/backup/db-backup.sh"), "utf8");
     expect(script).toMatch(/: "\$\{BACKUP_DATABASE_URL:\?/);
     expect(script).toMatch(/refusing to call that a backup/);
-    expect(script).toMatch(/pg_dump [^|]*\| age --encrypt/);
+    expect(script).toMatch(/pg_dump [^|]*\|\s*age --encrypt/);
   });
 });
 

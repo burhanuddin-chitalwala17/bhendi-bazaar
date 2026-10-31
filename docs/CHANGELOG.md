@@ -10,6 +10,26 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B3: fixes from the review — counts from the dump's own snapshot
+
+- **The drill would have failed against a live database.** The counts were taken in a second session
+  after `pg_dump`, so any write in between (the worker, the queue's maintenance, an abandoned checkout)
+  made them disagree with the dump, and a drill that is usually off teaches everyone to ignore it. The
+  backup now opens one read-only repeatable-read transaction, exports its snapshot, runs
+  `pg_dump --snapshot` on it and counts inside it. **Rehearsed:** 4,000 inserts running during the
+  backup; the snapshot counted 650 and the restore matched it exactly.
+- **Every schema is counted**, the job queue's 12 `pgboss` tables included (75 tables, was 62).
+- **The drill's local-only guard read the URL as text**, so `?application_name=localhost` passed it. It
+  now checks the parsed host, and refuses a database that already has tables.
+- **The counts are encrypted too**; files are written as `.partial` and renamed only on success; the
+  temporary directory is removed; the database password goes through `PG*` variables, never argv;
+  the aws CLI asks for checksums only where R2 needs them.
+- **Corrections to OPERATIONS:** R2 has no write-only token (Read & Write, with Bucket Lock stopping
+  deletion); the drill needs client tools 17+; schedules run only from `main`.
+- **Note:** the B3 entry below landed in the B10-fixes commit, not B3's own; harmless once both merge.
+- **Mutation-tested:** the host check reverted to a substring match (`*localhost*`) turns the guard test
+  red.
+
 ## 2026-10-31 — GTM B12: fixes from the review — corrections to the entry below
 
 - **Correction: the lightbox still loaded with the product page.** The reviews section imported it

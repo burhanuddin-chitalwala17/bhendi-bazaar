@@ -579,25 +579,31 @@ console) and a nightly encrypted dump in an R2 bucket we control (`.github/workf
 2. In Cloudflare: a bucket for backups only (not the image bucket). Add a **Bucket Lock** rule for
    `db/` (retain 35 days), so nothing, including a stolen credential, can delete a recent backup, and a
    lifecycle rule that deletes `db/` objects after 90 days.
-3. An R2 API token for that bucket alone, **Object Write** only: CI can add backups and can never read
-   or delete them.
+3. An R2 API token scoped to that bucket alone, **Object Read & Write** (R2 has no write-only
+   permission). CI could read or try to delete with it: the Bucket Lock is what stops deletion, and both
+   files are encrypted, so reading them gives nothing.
 4. GitHub repository secrets: `BACKUP_DATABASE_URL` (the **direct** string, as `MIGRATE_DATABASE_URL`),
    `BACKUP_AGE_RECIPIENT` (the `age1…` public key line from step 1), `BACKUP_R2_ENDPOINT`,
    `BACKUP_R2_BUCKET`, `BACKUP_R2_ACCESS_KEY_ID`, `BACKUP_R2_SECRET_ACCESS_KEY`.
-5. Actions → *Database backup* → Run workflow, and check `db/<year>/<month>/` holds a `.dump.age` and a
-   `.counts.tsv`.
+5. Once this is on `main` (schedules and the Run button only work from the default branch): Actions →
+   *Database backup* → Run workflow, and check `db/<year>/<month>/` holds a `.dump.age` and a
+   `.counts.tsv.age`. If the repository is ever made public, GitHub pauses schedules after 60 days with
+   no commits; watch for that.
 
 Until step 4 is done the nightly run fails red on purpose.
 
 **Restore drill, quarterly and after any change to the backup:** with a read-capable token, download the
-newest pair, start an empty local Postgres (`docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432
+newest pair. You need PostgreSQL **client tools 17 or newer** (`pg_restore --version`), since the dump is
+made by pg_dump 17. Start an empty local Postgres (`docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432
 postgres:17`, then `createdb -h localhost -U postgres bb_drill`), and run
 
 ```bash
-BACKUP_AGE_IDENTITY="$(cat backup-key.txt)" DRILL_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bb_drill bash scripts/backup/db-restore-drill.sh <file>.dump.age <file>.counts.tsv
+BACKUP_AGE_IDENTITY="$(cat backup-key.txt)" DRILL_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bb_drill bash scripts/backup/db-restore-drill.sh <file>.dump.age <file>.counts.tsv.age
 ```
 
-It restores, recounts every table and fails on any difference. It refuses a non-local target. Record the
+It restores, recounts every table in every schema (the job queue's included) and fails on any
+difference; the counts were taken from the dump's own snapshot, so writes during the backup cannot
+cause one. It refuses a target whose host is not this machine, and one that already has tables. Record the
 date in the CHANGELOG; a drill older than 90 days is a GTM-READINESS section 9 failure.
 
 **A real restore** is the same `age --decrypt | pg_restore` into a new database, then pointing
