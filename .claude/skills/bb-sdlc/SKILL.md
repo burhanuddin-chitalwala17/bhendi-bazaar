@@ -248,7 +248,7 @@ Adds an immutable decision record. Format and rules: [docs/adr/README.md](../../
 
 5. **Run `npm run docs:index`.** The index is generated from each ADR's header; a typed row fails `docs:check`.
 6. **To reverse a past decision:** write a new ADR, then edit **only** the old one's `Status` line to `Superseded by ADR-NNNN` and add a pointer. Never edit a past Context, Decision, or Alternatives.
-7. **If the decision sets a standing convention**, add a one-line pointer to the *Documentation & Process Conventions* index in the root `CLAUDE.md`. A rule that lives only in an ADR will not be followed — ADRs are not loaded into a session; `CLAUDE.md` is.
+7. **If the decision sets a standing convention**, add a one-line pointer to the conventions index, `docs/CONVENTIONS.md` (the root `CLAUDE.md` points every session at it). A rule that lives only in an ADR will not be followed — ADRs are not loaded into a session.
 
 ---
 

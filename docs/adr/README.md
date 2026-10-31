@@ -31,7 +31,7 @@ An ADR costs attention, and a folder of ceremony records makes the real ones har
 ## How to add one
 1. Create `NNNN-<slug>.md`; the new number is the highest existing + 1.
 2. Run `npm run docs:index` — the index below is generated from each file's header, and `docs:check` fails while it is stale.
-3. If it sets a standing convention, add a pointer line to `CLAUDE.md`'s conventions index.
+3. If it sets a standing convention, add a pointer line to the conventions index, [CONVENTIONS.md](../CONVENTIONS.md), which the root `CLAUDE.md` points every session at.
 4. Never edit a past ADR's Context, Decision, or Alternatives.
 
 `/bb-sdlc adr-new <title>` walks this.

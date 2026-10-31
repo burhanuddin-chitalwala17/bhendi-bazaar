@@ -13,7 +13,9 @@ Docs are split by **volatility**, not by topic ([ADR-0001](adr/0001-monorepo-doc
 
 | Document | Holds | Changes when |
 |---|---|---|
-| [../CLAUDE.md](../CLAUDE.md) | Rules, invariants, conventions index | A rule changes (rarely) |
+| [../CLAUDE.md](../CLAUDE.md) | Rules and invariants, loaded into every session | A rule changes (rarely) |
+| [CONVENTIONS.md](CONVENTIONS.md) | The index of standing conventions, one pointer line per ADR | A convention is added |
+| [changelog/](changelog/) | Changelog entries older than the current month, one file per month | A month closes |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | What exists **now**, at HLD level | Structure changes — updated *after*, never before |
 | [adr/](adr/) | Why each decision was made | Never. A new ADR supersedes an old one |
 | [CONTRACTS.md](CONTRACTS.md) | Shapes crossing the client/server boundary | A DTO changes → PR flagged `[CONTRACT]` |
