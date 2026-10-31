@@ -1,22 +1,24 @@
-/**
- * Whether this deployment can reach its database, asked at most once per window however often a
- * monitor pings (docs/GTM-READINESS.md B7). Every statement is billed on Prisma Postgres, and a
- * health check must not become the load it is meant to notice.
- */
+// At most one database probe per window per instance, so a monitor never becomes the load (GTM B7).
+import { withDeadline } from "@server/shared/deadline";
+
 const WINDOW_MS = 30_000;
+const QUERY_DEADLINE_MS = 5_000;
 
-let last: { at: number; ok: boolean } | null = null;
+let last: { at: number; ok: Promise<boolean> } | null = null;
 
-export async function databaseReachable(now = Date.now()): Promise<boolean> {
+export function databaseReachable(now = Date.now()): Promise<boolean> {
+  // The pending probe is cached too, so pings during a slow one share it instead of piling on.
   if (last && now - last.at < WINDOW_MS) return last.ok;
-  let ok = false;
-  try {
-    const { prisma } = await import("@server/shared/prisma");
-    await prisma.$queryRaw`SELECT 1`;
-    ok = true;
-  } catch (error) {
-    console.error("[health] database unreachable:", error);
-  }
+  const ok = (async () => {
+    try {
+      const { prisma } = await import("@server/shared/prisma");
+      await withDeadline(prisma.$queryRaw`SELECT 1`, QUERY_DEADLINE_MS, "Health query");
+      return true;
+    } catch (error) {
+      console.error("[health] database unreachable:", error);
+      return false;
+    }
+  })();
   last = { at: now, ok };
   return ok;
 }

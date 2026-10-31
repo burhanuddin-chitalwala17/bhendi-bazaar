@@ -10,6 +10,28 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B7: fixes from the review
+
+- **Fixed a regression from the B7 entry: video sources failed on a 60 s deadline.** A 200 MB source
+  needs about 28 Mbit/s to arrive in a minute, so a large but legal upload would have failed every retry
+  and stayed PROCESSING. `putObject` now scales its deadline with the bytes it sends (floor 256 KB/s, at
+  least 60 s), and the video job reads its source on `OUTBOUND_TIMEOUT_MS.bulk` (15 min).
+- **The startup check reaches someone.** `/api/health?deep=1` answers 503 with `config: "incomplete"`
+  when a required variable is missing, so the uptime monitor alerts; the names stay in the server log,
+  never in the public response.
+- **The health query has a 5 s deadline**, and a probe in progress is shared, so pings during a slow
+  database add no queries.
+- **The deadline guard is stricter:** comments are stripped first, a call needs `AbortSignal.timeout` or
+  `.any` (not just the word "signal"), and `worker/` is scanned too.
+- **The commit is read through `server/shared/deployment.ts`** (`APP_COMMIT`, falling back to Vercel's),
+  not a host variable in a route (ADR-0037 D1), and only on the deep probe.
+- **Not done, needs your decision:** root `CLAUDE.md` is at its 200-line limit, so "every outbound call
+  has a deadline" and "routes read the session through `optionalActiveSession`" have no index line there;
+  they live in `src/app/api/CLAUDE.md` and the guard tests. Trimming an index line would make room.
+- **Mutation-tested:** config not checked, missing names leaked into the response, the video job back on
+  the image deadline, a flat transfer deadline, and a "signal" only in a comment: each red, each restored.
+- **Tests:** `observability.test.ts` (13).
+
 ## 2026-10-31 — GTM B5 (account and webhook part): pre-hijack, suspended accounts, a signed carrier webhook
 
 - **Pre-hijacked accounts closed.** Google sign-in onto a password account nobody verified now removes

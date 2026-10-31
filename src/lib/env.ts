@@ -1,11 +1,5 @@
-/**
- * The environment variables the app cannot start without.
- *
- * Checked once at server start by `src/instrumentation.ts`, which logs what is missing as an
- * error. It logs rather than throws for now: a deployment missing one would otherwise stop
- * serving entirely, and whether every name below is set in production has not been confirmed
- * (docs/GTM-READINESS.md B7). Once it has, `register()` should throw instead.
- */
+// Required at runtime. Checked at start (src/instrumentation.ts, logs) and by /api/health?deep=1
+// (503); logs rather than throws until production's set is confirmed (docs/GTM-READINESS.md B7).
 
 const requiredEnvVars = [
   "DATABASE_URL",
@@ -37,6 +31,7 @@ export function missingEnv(env: Record<string, string | undefined> = process.env
   return requiredEnvVars.filter((key) => !env[key]);
 }
 
+/** The future hard check, for when a missing variable should stop the server starting. */
 export function validateEnv() {
   const missing = missingEnv();
 

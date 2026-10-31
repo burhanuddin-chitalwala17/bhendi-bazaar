@@ -4,7 +4,7 @@ export async function register() {
   const { missingEnv } = await import("@/lib/env");
   const missing = missingEnv();
   if (missing.length > 0) {
-    // An error, not a warning: it is what the log drain and error tracking alert on (B7).
+    // Logged here with the names; /api/health?deep=1 answers 503 "config incomplete" for the monitor.
     console.error(`[startup] Missing required environment variables: ${missing.join(", ")}`);
   }
 }

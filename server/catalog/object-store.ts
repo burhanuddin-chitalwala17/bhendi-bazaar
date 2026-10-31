@@ -13,7 +13,7 @@
 
 import { AwsClient } from "aws4fetch";
 import { DomainError } from "@server/shared/domain-error";
-import { OUTBOUND_TIMEOUT_MS } from "@server/shared/deadline";
+import { OUTBOUND_TIMEOUT_MS, transferTimeoutFor } from "@server/shared/deadline";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -85,7 +85,7 @@ export async function putObject(
 ): Promise<string> {
   const response = await client().client.fetch(objectUrl(pathname), {
     method: "PUT",
-    signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.transfer),
+    signal: AbortSignal.timeout(transferTimeoutFor(body.byteLength)),
     body: new Uint8Array(body),
     headers: {
       "content-type": contentType,
@@ -125,10 +125,13 @@ export async function headObject(
 }
 
 /** The bytes at a pathname — for reading dimensions the browser could not send, never for serving. */
-export async function getObject(pathname: string): Promise<Buffer> {
+export async function getObject(
+  pathname: string,
+  { timeoutMs = OUTBOUND_TIMEOUT_MS.transfer }: { timeoutMs?: number } = {}
+): Promise<Buffer> {
   const response = await client().client.fetch(objectUrl(pathname), {
     method: "GET",
-    signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.transfer),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) {
     throw new Error(`Could not read ${pathname}: ${response.status}`);
