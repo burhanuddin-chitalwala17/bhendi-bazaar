@@ -30,6 +30,7 @@ const EXTERNALLY_CALLED: Record<string, string> = {
   "/api/auth/[...nextauth]": "next-auth's own handler, reached by its client.",
   "/feeds/google.xml": "Google Merchant Center fetches it on the schedule its data source sets.",
   "/feeds/meta.xml": "Meta Commerce Manager fetches it on the schedule its data feed sets.",
+  "/api/health": "The uptime monitor (UptimeRobot) probes it; ?deep=1 also checks the database.",
   "/api/channels/[channel]/callback": "Amazon and Flipkart redirect the shop here after consent; the signed state authenticates it (channel-connectors D4).",
 };
 

@@ -10,6 +10,25 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B7 (code part): a health probe, a startup env check, a deadline on every outbound call
+
+- **`GET /api/health`** for an uptime monitor: plain answers without the database; `?deep=1` checks it,
+  at most once per 30 s per instance (`server/shared/health.ts`), and answers 503 when it cannot reach
+  it. `no-store`; carries the deployed commit. Declared in `EXTERNALLY_CALLED`.
+- **`src/instrumentation.ts`** checks `src/lib/env.ts` at server start and logs what is missing as an
+  error. It logs rather than throws until production's variables are confirmed. The list now matches
+  OPERATIONS.md's required rows (adds `RAZORPAY_WEBHOOK_SECRET`, `APP_ENV`, `NEXT_PUBLIC_APP_URL`,
+  `CREDENTIAL_KEYS`, `RESEND_API_KEY`, `EMAIL_FROM`) and drops `KV_REST_API_*`, which nothing reads until B6.
+- **Every outbound call in `server/` has a deadline** (`server/shared/deadline.ts`): R2 PUT/GET 60 s,
+  HEAD/DELETE 15 s; Razorpay create-order and payments lookup 15 s; Shiprocket login 15 s. Resend's SDK
+  takes no signal, so the wait is bounded (`withDeadline`). The new guard found one the review missed:
+  Shiprocket's connection test, now on the carrier's own 30 s.
+- **Not done here (needs your accounts):** Sentry (DSN), the UptimeRobot monitor (OPERATIONS.md says
+  where to point it), and alerts on the worker heartbeat and `jobs_failed`, which need a destination.
+- **Mutation-tested:** a Razorpay timeout removed, the email deadline removed, the plain probe querying
+  the database, no cache window, deep never 503, and the startup hook unwired: each red, each restored.
+- **Tests:** `observability.test.ts` (9).
+
 ## 2026-10-31 — GTM B9: a double tap is one request, and screens say what is happening
 
 - **In-flight lock.** `useMutation` and `useServerForm` join a call already in flight, so a double tap

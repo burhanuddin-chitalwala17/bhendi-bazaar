@@ -50,6 +50,7 @@ npm run dev                 # http://localhost:3000
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
+| `VERCEL_GIT_COMMIT_SHA` / `NEXT_RUNTIME` | ➖ | Set by the platform, never by us. The commit is shown by `/api/health`; the runtime tells `src/instrumentation.ts` to check the environment only in Node, not in middleware |
 | `PROD_ADMIN_EMAIL` / `PROD_ADMIN_PASSWORD` | ○ | Read by `prisma/seed/prod.ts`, the one-off bootstrap that grants platform ADMIN where an environment has none. Set them for that single run and unset them afterwards. Until 2026-09-23 that script hashed the literal `'STRONG_RANDOM_PASSWORD'`, so anyone who could read the repository knew the admin password — CLAUDE.md Invariant 7's "no credential literal lives in a seed", broken in the one script that may legitimately be pointed at production. It now refuses a placeholder value, refuses to run without both variables, and will **not** reset the password of an account that already exists |
 | `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
 | `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
@@ -59,7 +60,7 @@ npm run dev                 # http://localhost:3000
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 | `GOOGLE_VERIFICATION_TOKEN` | ○ | The content value of Google Search Console's HTML-meta verification tag. Rendered into the page `<head>` (`src/app/layout.tsx`) only when set; unset, no tag is emitted |
 
-`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. **Nothing calls `validateEnv()`**, so it documents rather than enforces — wire it from `instrumentation.ts` to make it real. It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
+`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list (every ✅ row above), kept in step with this table. `src/instrumentation.ts` checks it once per server start and logs `[startup] Missing required environment variables: …` as an error. It logs rather than refuses to start until every name is confirmed set in production; then `register()` should throw.
 
 ### Local development database
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
@@ -542,7 +543,9 @@ The code reads only `DATABASE_URL` from the connection-string set — `KV_REST_A
 
 ## Deploy
 
-Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand. **Functions run in `bom1` (Mumbai)**, beside the database (`vercel.json` `regions`); Vercel's default is `iad1`, which puts every query a round trip across the world. Confirm with `curl -sI <origin> | grep -i x-vercel-id`, which should read `bom1::bom1`.
+Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
+
+**Uptime probe: `/api/health`.** A plain GET answers from the function without touching the database, so it can be pinged freely. `?deep=1` also asks the database, at most once per 30 s, and answers **503** when it cannot reach it. Point an uptime monitor (UptimeRobot, 5-minute interval) at `https://www.bhendi-bazaar.com/api/health?deep=1` and alert on any non-200. The response carries the deployed commit. **Functions run in `bom1` (Mumbai)**, beside the database (`vercel.json` `regions`); Vercel's default is `iad1`, which puts every query a round trip across the world. Confirm with `curl -sI <origin> | grep -i x-vercel-id`, which should read `bom1::bom1`.
 
 **CI is hardened** (`tests/unit/deploy-safety.test.ts`): workflows are `contents: read` unless a job asks for more, every action is pinned to a commit SHA (Dependabot, `.github/dependabot.yml`, proposes bumps), the Vercel CLI is pinned to a version, and `node scripts/audit-prod.mjs` blocks the test job: a high or critical advisory in a production dependency stops the deploy until it is upgraded, or listed in `audit-allowlist.json` with a reason and an expiry. **`deploy` also needs `e2e`**: a production build of the same commit must pass the browser journeys first ([TESTING.md](TESTING.md)).
 
