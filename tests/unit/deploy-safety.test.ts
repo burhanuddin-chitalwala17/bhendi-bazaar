@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { check } from "../../scripts/audit-prod.mjs";
 
 const ROOT = resolve(__dirname, "../..");
 const WORKFLOWS = join(ROOT, ".github/workflows");
@@ -48,6 +49,14 @@ describe("workflows", () => {
 
   it("is read-only by default", () => {
     for (const { text } of workflows) expect(text).toMatch(/^permissions:\n\s+contents: read$/m);
+  });
+
+  it("deploys only after the browser journeys pass on the same commit", () => {
+    const job = ci.slice(ci.indexOf("\n  deploy:"), ci.indexOf("\n  deploy-worker:"));
+    expect(job).toMatch(/^\s+needs: \[[^\]]*(?:^|[\s,[])e2e(?=[\s,\]])[^\]]*\]/m);
+    const e2e = ci.slice(ci.indexOf("\n  e2e:"), ci.indexOf("\n  deploy:"));
+    expect(e2e).not.toMatch(/^\s{4}if:/m);
+    expect(e2e).toMatch(/run: npx playwright test\s*$/m);
   });
 
   it("starts the worker only after the web deploy has migrated the schema", () => {
@@ -93,7 +102,37 @@ describe("dependencies", () => {
   });
 
   it("blocks CI on a high or critical advisory in production dependencies", () => {
-    expect(code(ci).join("\n")).toMatch(/^\s+run: npm audit --omit=dev --audit-level=(high|moderate|low)\s*$/m);
+    const test = ci.slice(ci.indexOf("\n  test:"), ci.indexOf("\n  e2e:"));
+    const start = test.indexOf("- name: Audit production dependencies");
+    expect(start).toBeGreaterThan(-1);
+    const step = test.slice(start, test.indexOf("- name:", start + 1));
+    expect(step).toMatch(/^\s+run: node scripts\/audit-prod\.mjs\s*$/m);
+    expect(step).not.toMatch(/continue-on-error/);
+  });
+
+  describe("scripts/audit-prod.mjs", () => {
+    const advisory = (severity: string, id = "GHSA-aaaa-bbbb-cccc") => ({
+      pkg: { via: [{ severity, title: "t", source: 1, url: `https://github.com/advisories/${id}` }] },
+    });
+    const today = "2026-10-31";
+
+    it("refuses an unlisted high or critical advisory and lets a moderate one through", () => {
+      expect(check(advisory("high"), {}, today)).toHaveLength(1);
+      expect(check(advisory("critical"), {}, today)).toHaveLength(1);
+      expect(check(advisory("moderate"), {}, today)).toEqual([]);
+    });
+
+    it("accepts a listed one only with a reason and an unexpired date", () => {
+      const ok = { "GHSA-aaaa-bbbb-cccc": { reason: "no fix released", expires: "2026-11-30" } };
+      expect(check(advisory("high"), ok, today)).toEqual([]);
+      expect(check(advisory("high"), { "GHSA-aaaa-bbbb-cccc": { reason: "", expires: "2026-11-30" } }, today)).toHaveLength(1);
+      expect(check(advisory("high"), { "GHSA-aaaa-bbbb-cccc": { reason: "x", expires: "2026-10-01" } }, today)).toHaveLength(1);
+    });
+
+    it("refuses an entry that no longer matches anything, so the list only shrinks", () => {
+      const stale = { "GHSA-zzzz-zzzz-zzzz": { reason: "x", expires: "2026-11-30" } };
+      expect(check({}, stale, today)).toHaveLength(1);
+    });
   });
 });
 

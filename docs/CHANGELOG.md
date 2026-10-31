@@ -10,6 +10,29 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B8: browser journeys gate the deploy; B1 review fixes
+
+- **`e2e/`, Playwright 1.63.0**, phone and desktop against `next start` on a production build. Five
+  journeys: home with a nonce CSP and no `'unsafe-inline'`; unknown product and category answer 404;
+  category → product → add to cart → the cart shows it; an empty cart says so; sign-in offers email and
+  password. `e2e/seed-fixtures.ts` builds one product on the throwaway database through
+  `ensureFixtures` and refuses any other database.
+- **CI:** the PR-only `build` job is now `e2e`. It builds, starts and runs the journeys on **every**
+  event, and `deploy` needs it, so a push to `main` ships only after a browser has filled a cart on that
+  commit. A failed run uploads its report and traces (14 days).
+- **B1 review (M1):** the audit is `scripts/audit-prod.mjs`. A registry outage is retried once and
+  reported as an outage (exit 2), not a finding. An advisory with no fix can be listed in
+  `audit-allowlist.json` with a reason and an expiry; an entry past its date, or matching nothing, fails
+  (ADR-0056). The list is empty.
+- **B1 review (M2):** the guard now proves the audit step is in the `test` job with no `continue-on-error`.
+- **B1 review (L1, L2):** `DEPENDENCIES.md` carries the new versions and the reasons for the floors;
+  `ARCHITECTURE.md` re-dated.
+- **Not done here (yours):** branch protection on `main` requiring `test` and `e2e`. Without it a PR can merge with them red: the deploy then refuses, but `main` carries the break.
+- **Mutation-tested:** add-to-cart broken in the app (rebuilt) → the cart journey red on a real browser;
+  `deploy` without `e2e`; `e2e` made PR-only; `continue-on-error` on the audit; the allowlist's expiry
+  ignored; a stale entry kept; `high` no longer blocking. Each red, each restored.
+- **Tests:** `deploy-safety.test.ts` (18); `npx playwright test` 10 of 10, and 30 of 30 with each test run three times.
+
 ## 2026-10-31 — GTM B1: Next.js 16.4.3, and CI refuses a high advisory
 
 - **`next` 16.3.5 → 16.4.3** (and `eslint-config-next` with it, both pinned exactly): closes

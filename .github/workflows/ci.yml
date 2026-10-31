@@ -64,10 +64,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Blocking: a high or critical advisory in what ships stops the deploy (docs/GTM-READINESS.md B1).
-      # Dev-only tooling is excluded; it never reaches a server.
+      # Blocking: a high or critical advisory in what ships stops the deploy (docs/GTM-READINESS.md B1),
+      # unless audit-allowlist.json names it with a reason and an expiry. Dev-only tooling is excluded.
       - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: node scripts/audit-prod.mjs
 
       # The worker image carries ffmpeg (ADR-0039); the transcode test runs against the real
       # binary and refuses to skip here, so the job installs it rather than the test guessing.
@@ -99,10 +99,10 @@ jobs:
       - name: Run tests
         run: npm test -- --run
 
-  # PR-only: pushes get their build from `vercel build` in the deploy job, so
-  # building twice on the same commit would just burn minutes.
-  build:
-    if: github.event_name == 'pull_request'
+  # Builds the app, starts it, and walks the journeys a broken deploy breaks first (e2e/,
+  # docs/GTM-READINESS.md B8). On every event: `deploy` needs it, so nothing ships to customers
+  # until a real browser has browsed, opened a product and filled a cart on this commit.
+  e2e:
     runs-on: ubuntu-latest
     needs: test
 
@@ -131,9 +131,10 @@ jobs:
       # `vercel build` against the environment `vercel pull` fetched — so these
       # only have to be present and well-formed. Never real credentials: a
       # NEXT_PUBLIC_* value is inlined into the client bundle.
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      NEXTAUTH_URL: "http://localhost:3000"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3100"
+      NEXTAUTH_URL: "http://localhost:3100"
       NEXTAUTH_SECRET: "ci-build-placeholder-not-a-real-secret"
+      APP_ENV: "local"
 
     steps:
       - name: Checkout code
@@ -154,6 +155,22 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run the journeys
+        run: npx playwright test
+
+      - name: Keep the report and traces of a failed run
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   # Vercel Hobby only git-deploys commits authored by the account owner, so a
   # collaborator's push never shipped. Deploying through the CLI with an account
   # token makes authorship irrelevant. Git-triggered deploys are switched off in
@@ -161,7 +178,7 @@ jobs:
   deploy:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, e2e]
 
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
