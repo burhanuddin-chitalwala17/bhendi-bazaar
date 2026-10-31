@@ -25,6 +25,25 @@ export async function requireSession(): Promise<Session> {
   return session;
 }
 
+/**
+ * The session if there is one and its user may act, null for a guest. A blocked user is refused
+ * (403), or with `onBlocked: "guest"` read as a guest, for routes a suspended person must still
+ * reach: public reads, and contacting support to contest it. Every route handler reads its session
+ * through this or `requireSession`, never `getServerSession` directly (docs/GTM-READINESS.md B5).
+ */
+export async function optionalActiveSession(
+  { onBlocked = "refuse" }: { onBlocked?: "refuse" | "guest" } = {},
+): Promise<Session | null> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+  const standing = await accountService.findAdminStanding(session.user.id);
+  if (standing?.isBlocked) {
+    if (onBlocked === "guest") return null;
+    throw new ForbiddenError("Your account has been suspended");
+  }
+  return session;
+}
+
 
 /**
  * The session, having established that this person runs the platform.

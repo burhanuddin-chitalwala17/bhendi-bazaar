@@ -1,8 +1,7 @@
 // src/app/api/cart/route.ts
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { cartService } from "@server/cart/cart.service";
 import { validateRequest } from "@/lib/validation";
 import { updateCartSchema } from "@/lib/validation/schemas/cart.schemas";
@@ -20,7 +19,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
  */
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -58,7 +57,7 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

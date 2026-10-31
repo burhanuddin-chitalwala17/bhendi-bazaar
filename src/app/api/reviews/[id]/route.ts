@@ -11,10 +11,9 @@
  * `/api/admin/reviews/[id]` (R15, R17).
  */
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
 import { reviewService } from "@server/catalog/review.service";
 import { UnauthorizedError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -25,7 +24,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
     if (!session?.user?.id) {
       throw new UnauthorizedError("Sign in to edit your review");
     }
@@ -45,7 +44,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
     if (!session?.user?.id) {
       throw new UnauthorizedError("Sign in to delete your review");
     }

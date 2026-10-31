@@ -243,6 +243,20 @@ export class ProfileRepository {
     });
   }
 
+  /**
+   * Google has vouched for an address whose password account was never verified. Whoever set that
+   * password never proved they own the address, and may not be the person now signing in, so the
+   * password goes with the verification (pre-hijack, docs/GTM-READINESS.md B5). The owner sets a
+   * new one through forgot-password. Conditional, so a verification click in between is not undone.
+   */
+  async claimUnverifiedForOAuth(userId: string): Promise<{ passwordCleared: boolean }> {
+    const { count } = await prisma.user.updateMany({
+      where: { id: userId, isEmailVerified: false },
+      data: { isEmailVerified: true, emailVerified: new Date(), passwordHash: null },
+    });
+    return { passwordCleared: count > 0 };
+  }
+
   async createPasswordAccount(input: {
     name: string | undefined;
     email: string;

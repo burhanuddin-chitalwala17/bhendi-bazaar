@@ -38,6 +38,10 @@ export class AccountService {
     return profileRepository.markEmailVerified(userId);
   }
 
+  claimUnverifiedForOAuth(userId: string) {
+    return profileRepository.claimUnverifiedForOAuth(userId);
+  }
+
   createPasswordAccount(input: Parameters<typeof profileRepository.createPasswordAccount>[0]) {
     return profileRepository.createPasswordAccount(input);
   }

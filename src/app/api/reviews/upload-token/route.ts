@@ -14,10 +14,9 @@
  * authentication. Worth stating here because reviewing needs no purchase: the population
  * that can reach this route is every account, not every customer.
  */
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { DomainError, UnauthorizedError } from "@server/shared/domain-error";
 import { presignUpload } from "@server/catalog/object-store";
@@ -26,7 +25,7 @@ import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
     if (!session?.user?.id) {
       throw new UnauthorizedError("Sign in to add a photo to your review");
     }

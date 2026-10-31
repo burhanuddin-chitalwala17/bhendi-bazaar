@@ -12,13 +12,19 @@ import { trackingService } from "@server/shipping/tracking.service";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { orderService } from "@server/checkout/order.service";
 import { shiprocketWebhookSchema } from "@/lib/validation/schemas/webhook.schema";
+import { isShiprocketWebhookAuthentic } from "@server/shipping/webhook-auth";
 
 export async function POST(request: NextRequest) {
+  // Before the body is read: a request without the dashboard's token is a stranger's, and a
+  // forged "delivered" would release a payout. 401 rather than 2xx, so a misconfigured token
+  // shows in Shiprocket's delivery log instead of passing silently.
+  if (!isShiprocketWebhookAuthentic(request.headers.get("x-api-key"))) {
+    console.error("[shiprocket webhook] refused: missing or wrong x-api-key (SHIPROCKET_WEBHOOK_TOKEN)");
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    // Parsed before anything reads it (Invariant 4). The adapter behind this used `as` on the
-    // body and dereferenced `awb` and `shipment_status` off whatever arrived; with no signature
-    // check on this route yet, that made an unauthenticated stranger's JSON the input to a
-    // shipment transition.
+    // Parsed before anything reads it (Invariant 4).
     const payload = shiprocketWebhookSchema.parse(await request.json());
 
     console.log("Shiprocket webhook received:", payload);

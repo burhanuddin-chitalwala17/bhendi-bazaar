@@ -10,6 +10,32 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B5 (account and webhook part): pre-hijack, suspended accounts, a signed carrier webhook
+
+- **Pre-hijacked accounts closed.** Google sign-in onto a password account nobody verified now removes
+  that password in the same conditional write that marks the address verified
+  (`claimUnverifiedForOAuth`). Before, an attacker who registered the victim's email first kept a working
+  password after the victim linked Google. The owner sets a password through forgot-password.
+  **Not closed:** a session the attacker already holds stays valid until its JWT expires; revoking it
+  needs `tokenVersion` (90-day plan, Security depth).
+- **A suspended account is refused everywhere.** The 13 route handlers that read `getServerSession`
+  directly (cart, wishlist, reviews, addresses, bids, order create, promotion quote, abandon, contact)
+  now read through `optionalActiveSession`, which answers 403 for a blocked user and null for a guest.
+  Reading reviews and the contact form treat a suspended person as a guest instead, so they can still
+  read and contest it. A guard fails any route that calls `getServerSession` again.
+- **The Shiprocket tracking webhook needs its token.** `x-api-key` must match `SHIPROCKET_WEBHOOK_TOKEN`
+  (constant time), checked before the body is read; otherwise 401. **Owner action:** set a long random
+  token in Shiprocket's webhook settings and the same value in Vercel. Until then every tracking webhook
+  is refused, which is the point: a forged "delivered" releases a payout.
+- **Not here, because each needs a spec (payment state, schema, contract):** create-order overwriting
+  `gatewayOrderId`, an owner or guest-token check on create-order/confirm-free/abandon, the
+  `Idempotency-Key` on place-order, and dropping the order id from the lookup response.
+- **Mutation-tested:** the old `markEmailVerified` path, the claim made unconditional, the standing check
+  ignored, a route reading `getServerSession` again, the webhook failing open when unset, and the token
+  check removed: each red, each restored.
+- **Tests:** `google-prehijack.test.ts` (3, against the database), `blocked-session.test.ts` (5),
+  `shiprocket-webhook-auth.test.ts` (4).
+
 ## 2026-10-31 — GTM B9: fixes from the review
 
 - **Blocking, fixed: the `useMutation` lock dropped a different call.** A second `mutate(v2)` while

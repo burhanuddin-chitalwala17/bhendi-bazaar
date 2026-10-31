@@ -75,10 +75,11 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
 
-      // They signed up with a password and never clicked the verification link, but
-      // Google has now vouched for the same address.
+      // A password account nobody ever verified, now vouched for by Google. Whoever chose that
+      // password never proved they own the address, so it goes: otherwise an attacker who
+      // registered the victim's email first keeps a key to the account (pre-hijack, B5).
       if (!existingUser.isEmailVerified) {
-        await accountService.markEmailVerified(existingUser.id);
+        await accountService.claimUnverifiedForOAuth(existingUser.id);
       }
 
       return true;
