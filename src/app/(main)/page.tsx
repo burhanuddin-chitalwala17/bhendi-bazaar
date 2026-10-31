@@ -11,6 +11,10 @@ import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { productsDAL } from "@/data-access-layer/products.dal";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
 import { Suspense } from "react";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data";
+import { BRAND_PROFILES } from "@/lib/config";
+import { appUrl } from "@server/shared/app-url";
 
 export default async function HomePage() {
   // Four independent reads — fetched together, not in a four-step waterfall. The whole
@@ -25,6 +29,7 @@ export default async function HomePage() {
   ]);
   return (
     <div className="space-y-8 sm:space-y-10">
+      <JsonLd data={[organizationJsonLd(appUrl(), BRAND_PROFILES), websiteJsonLd(appUrl())]} />
       <h1 className="sr-only">
         {APP_NAME} — {APP_DESCRIPTION}
       </h1>

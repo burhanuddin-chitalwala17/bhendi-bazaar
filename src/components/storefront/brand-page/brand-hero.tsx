@@ -31,7 +31,7 @@ export function BrandHero({ page }: { page: BrandPage }) {
             // the picture caps at 48rem. It is the page's LCP, hence `priority`.
             sizes="(min-width: 768px) 48rem, 100vw"
             className="object-cover"
-            priority
+            preload
           />
         </div>
       )}

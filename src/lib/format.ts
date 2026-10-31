@@ -81,3 +81,14 @@ export function formatDateTime(value: string | Date): string {
 export function formatCount(value: number): string {
   return value.toLocaleString(LOCALE);
 }
+
+/**
+ * 49900 → "499.00", for machine-read prices (structured data, feeds). Built from the digits, never
+ * by dividing, so it cannot carry float dust (Invariant 3).
+ */
+export function paiseToDecimal(paise: number): string {
+  if (!Number.isInteger(paise)) throw new Error(`Paise must be an integer, got ${paise}`);
+  const sign = paise < 0 ? "-" : "";
+  const digits = String(Math.abs(paise)).padStart(3, "0");
+  return `${sign}${digits.slice(0, -2)}.${digits.slice(-2)}`;
+}

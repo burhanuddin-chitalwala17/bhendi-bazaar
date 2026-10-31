@@ -106,7 +106,7 @@ export default async function BiddingPage({
               fill
               sizes="(min-width: 768px) 50vw, 100vw"
               className="object-cover"
-              priority
+              preload
             />
             <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-2.5 py-1 text-3xs font-semibold uppercase tracking-label text-primary-foreground">
               <Gavel className="size-3" aria-hidden />

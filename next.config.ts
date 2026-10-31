@@ -2,8 +2,12 @@ import type { NextConfig } from "next";
 // Relative import: next.config loads before tsconfig path aliases exist.
 import { crawlersBlocked } from "./src/lib/crawl-block";
 import { STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
+import { HTML_LIMITED_BOT_UA_RE } from "next/dist/shared/lib/router/utils/html-bots";
 
 const nextConfig: NextConfig = {
+  // Next's own list plus Googlebot, so Google gets the canonical and title in <head> rather than
+  // streamed into <body> (docs/GTM-READINESS.md B10). Setting this replaces the default, hence the extension.
+  htmlLimitedBots: new RegExp(`${HTML_LIMITED_BOT_UA_RE.source}|Googlebot`, "i"),
   async headers() {
     // The per-request Content-Security-Policy is set in src/middleware.ts, which is where
     // the nonce is generated. These are the ones that never vary, applied here so they

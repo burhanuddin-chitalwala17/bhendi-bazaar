@@ -11,6 +11,8 @@ import type { Metadata } from "next";
 import { APP_NAME } from "@/lib/config";
 import { appUrl } from "@server/shared/app-url";
 import { NotFoundError } from "@server/shared/domain-error";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { productJsonLd } from "@/lib/structured-data";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -27,13 +29,16 @@ export async function generateMetadata({
   let product;
   try {
     product = await getProduct(slug);
-  } catch {
-    // A crawler asking for a dead slug gets the site card, not a build error.
-    return {};
+  } catch (error) {
+    // A dead slug is a 404 here too: metadata resolves first, and swallowing it was a soft 404.
+    if (error instanceof NotFoundError) notFound();
+    throw error;
   }
 
   const url = `${appUrl()}/product/${product.slug}`;
-  const title = `${product.name} — ${APP_NAME}`;
+  // The layout's template adds the brand; the social card states it in full.
+  const title = product.name;
+  const socialTitle = `${product.name} — ${APP_NAME}`;
   const description = product.description?.trim().slice(0, 200) || APP_NAME;
 
   return {
@@ -44,7 +49,7 @@ export async function generateMetadata({
       type: "website",
       url,
       siteName: APP_NAME,
-      title,
+      title: socialTitle,
       description,
       // No declared width/height: nothing stores the cover's pixel size, and a guessed
       // ratio is what makes a scraper crop the card wrong. The cover is a Blob raster —
@@ -53,7 +58,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: socialTitle,
       description,
       images: [product.thumbnail],
     },
@@ -74,6 +79,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     // pb-16 clears the docked Add-to-cart bar, which is fixed and so out of flow.
     <div className="space-y-6 pb-16 sm:space-y-8 md:pb-0">
+      <JsonLd data={productJsonLd(appUrl(), product)} />
       <Suspense fallback={<ProductPageSkeleton />}>
         <div className="grid gap-4 sm:gap-8 lg:grid-cols-2">
           <ProductGallery {...product} />

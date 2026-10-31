@@ -10,6 +10,28 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B10: structured data, one title template, Google reads the head
+
+- **Product markup** (`Product` + `Offer`) on every product page: the price is what the buyer pays (the
+  offer price when one applies, from the same resolver that charges, ADR-0018), written from paise by
+  `paiseToDecimal` without division (Invariant 3); out of stock when there is none or the item is up for
+  bidding; the selling org named. `BreadcrumbList` on category pages; `Organization` and `WebSite` with a
+  search action on `/s?q=` on the home page. Serialised with `<` escaped (`src/lib/structured-data.ts`).
+- **One title template** in the root layout (`%s — Bhendi Bazaar`); product and category pages give their
+  own name, social cards keep the full title.
+- **Googlebot gets metadata in `<head>`**: `htmlLimitedBots` is Next's own list plus Googlebot, so the
+  canonical and title are not streamed into `<body>`.
+- **Product soft 404 closed in metadata too:** `generateMetadata` calls `notFound()` instead of returning
+  the site card.
+- **`priority` → `preload`** on `next/image` (deprecated in 16).
+- **Waiting on you:** `BRAND_PROFILES` in `src/lib/config.ts` (official Amazon, Flipkart, Meesho,
+  Instagram and Google Business Profile URLs) for `sameAs`; and the return window, return shipping and
+  delivery cost and times for `MerchantReturnPolicy` / `OfferShippingDetails`, which are not in the code
+  as data. Ratings markup waits for a review floor (90-day plan).
+- **Allowlist edit (ADR-0056, a review finding):** `vocabulary.test.ts` exempts schema.org's `seller` property in `src/lib/structured-data.ts` only; Google requires that name, and our own prose there still says org.
+- **Tests:** `structured-data.test.ts` (9); a new journey asks for a product as Googlebot and checks the
+  canonical and title are in `<head>` and the markup's price and availability. Journeys 12 of 12.
+
 ## 2026-10-31 — GTM B7: fixes from the review
 
 - **Fixed a regression from the B7 entry: video sources failed on a 60 s deadline.** A 200 MB source

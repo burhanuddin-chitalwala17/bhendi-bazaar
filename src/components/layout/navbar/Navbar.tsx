@@ -40,7 +40,7 @@ export function Navbar() {
             alt={APP_NAME}
             width={160}
             height={160}
-            priority
+            preload
             className="h-8 w-auto sm:h-16"
           />
         </Link>

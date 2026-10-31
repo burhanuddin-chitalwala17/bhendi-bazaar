@@ -50,3 +50,20 @@ test("sign-in offers email and password", async ({ page }) => {
   await expect(page.getByLabel(/email/i).first()).toBeVisible();
   await expect(page.getByLabel(/password/i).first()).toBeVisible();
 });
+
+test("a product page tells search what it costs, in the head for Google", async ({ request }) => {
+  const response = await request.get(`/product/${E2E_PRODUCT.slug}`, {
+    headers: { "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
+  });
+  expect(response.status()).toBe(200);
+  const html = await response.text();
+  const head = html.slice(0, html.indexOf("</head>"));
+  expect(head).toContain(`rel="canonical"`);
+  expect(head).toMatch(new RegExp(`<title>${E2E_PRODUCT.name} — Bhendi Bazaar</title>`));
+
+  const block = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? "{}";
+  const ld = JSON.parse(block);
+  expect(ld["@type"]).toBe("Product");
+  expect(ld.offers.price).toBe("499.00");
+  expect(ld.offers.availability).toBe("https://schema.org/InStock");
+});
