@@ -1,0 +1,23 @@
+tests/integration/product-edit-keeps-facts.test.tsx
+  s_17ac7f5fca5021::t_8145008b0b7391 1-75,77-85
+tests/unit/use-server-form-schema.test.tsx
+  s_17ac7f5fca5021::t_ffe1c0e0553667 1-33
+src/components/shared/forms/product/ProductFactFields.tsx
+  s_17ac7f5fca5021::t_d7e91547cf8a80 38-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "7b57e64b5d80625a56151104be906fbfc5c08f3c",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
