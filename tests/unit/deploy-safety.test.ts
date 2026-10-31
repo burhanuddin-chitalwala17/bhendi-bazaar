@@ -75,6 +75,28 @@ describe("workflows", () => {
   });
 });
 
+describe("dependencies", () => {
+  const atLeast = (version: string, floor: [number, number, number]) => {
+    const parts = version.split("-")[0].split(".").map(Number);
+    for (let i = 0; i < 3; i++) if (parts[i] !== floor[i]) return parts[i] > floor[i];
+    return true;
+  };
+  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
+  const lock = JSON.parse(readFileSync(join(ROOT, "package-lock.json"), "utf8"));
+
+  // GHSA-2464-fhr4-w9xw (unauthenticated RCE via Image Optimization) and its siblings are fixed in 16.4.1.
+  it("locks next past the critical advisories, pinned exactly, with its lint config alongside", () => {
+    const locked = lock.packages["node_modules/next"].version;
+    expect(atLeast(locked, [16, 4, 1])).toBe(true);
+    expect(pkg.dependencies.next).toBe(locked);
+    expect(pkg.devDependencies["eslint-config-next"]).toBe(locked);
+  });
+
+  it("blocks CI on a high or critical advisory in production dependencies", () => {
+    expect(code(ci).join("\n")).toMatch(/^\s+run: npm audit --omit=dev --audit-level=(high|moderate|low)\s*$/m);
+  });
+});
+
 describe("vercel.json", () => {
   it("runs functions in Mumbai, beside the database", () => {
     const config = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8"));
@@ -85,7 +107,7 @@ describe("vercel.json", () => {
 describe("infra/worker/compose-env.sh", () => {
   const run = (env: Record<string, string>, prefix = "WORKER_ENV_") =>
     spawnSync("bash", [join(ROOT, "infra/worker/compose-env.sh"), prefix], {
-      env: { PATH: process.env.PATH ?? "", ...env },
+      env: { PATH: process.env.PATH ?? "", NODE_ENV: "test", ...env },
       encoding: "utf8",
     });
 

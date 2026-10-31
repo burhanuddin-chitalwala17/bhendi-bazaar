@@ -10,6 +10,27 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B1: Next.js 16.4.3, and CI refuses a high advisory
+
+- **`next` 16.3.5 → 16.4.3** (and `eslint-config-next` with it, both pinned exactly): closes
+  GHSA-2464-fhr4-w9xw (critical, unauthenticated RCE through Image Optimization), GHSA-673q-mjm6-r5xr
+  (critical) and GHSA-p3m5-59mp-jv5r (high). `sharp` ≥0.35.5.
+- **The other high advisories in production dependencies**, all in-range bumps with no major version
+  change: `zod` 4.2.1 → 4.6.7 (floor `^4.6.6`; GHSA-mrhx-c7xc-m3w5, memory exhaustion while validating,
+  and zod parses every request body), `prisma`/`@prisma/client`/`@prisma/adapter-pg` 7.10.0 → 7.10.1
+  (kept in step), and transitive `deepmerge-ts`, `mysql2`, `brace-expansion`, `source-map-js`.
+  `npm audit --omit=dev --audit-level=high` now reports 0; 9 moderate remain.
+- **CI:** that audit is a blocking step in the test job, after `npm ci`.
+- **No code change was needed.** The 16.4 upgrade guide lists nothing breaking for a 16.x app; ESLint 10
+  support is opt-in and ESLint stays on 9.
+- **Fixed from the B8 entries:** `deploy-safety.test.ts` failed `tsc` (the spawned env lacked `NODE_ENV`),
+  and `ARCHITECTURE.md`'s test-file count was one short. Both were missed because that session could not
+  install dependencies.
+- **Mutation-tested:** lockfile `next` back to 16.3.5, `^16.4.3`, `eslint-config-next` lagging, the
+  audit step removed, and its level raised to `critical`: each red, each restored.
+- **Suites run here, against a local Postgres 16 with full git history:** `tsc --noEmit`, `lint:boundary`,
+  the whole suite, and `next build` (16.4.3, Turbopack).
+
 ## 2026-10-31 — GTM B8: fixes from the review
 
 - `.env.worker.example` is now the worker's complete list (28 names, the 13 that shared server code

@@ -64,6 +64,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Blocking: a high or critical advisory in what ships stops the deploy (docs/GTM-READINESS.md B1).
+      # Dev-only tooling is excluded; it never reaches a server.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       # The worker image carries ffmpeg (ADR-0039); the transcode test runs against the real
       # binary and refuses to skip here, so the job installs it rather than the test guessing.
       - name: Install ffmpeg for the transcode test
