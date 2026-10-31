@@ -12,6 +12,52 @@
 
 ## Entries
 
+## 2026-11-01 — org-profile unit 3: Shop details, the private part [CONTRACT]
+
+- **Name, mobile, email, link** (R5; A3; D7; Q15, Q16, Q23, Q25): the shop name becomes editable on Shop details,
+  confirmed in a `FormDialog` sheet ("Buyers will see {new} on your shop and every product. Your link stays
+  {link}.", "Change name" / "Keep old name"). "Only Bhendi Bazaar sees this — to reach you about orders and
+  payouts" holds the mobile (shared phone field, any country) and the email for order updates, each saving alone.
+  The link row reuses `HandleChangeDialog`. `PATCH /api/org/[orgId]/shop/contact` (`withOrg`) parses
+  `shopContactSchema`; `shopDetailsService.saveContact` refuses staff with "Only the shop owner can change this."
+  (the handle route now says the same), writes only the fields sent, and is a compare-and-set on `Org.updatedAt`
+  (`orgRepository.updateContactIfUnchanged`). Order and payout emails and the brand page read `Org` directly,
+  so the new name and email apply at once (A3).
+- **Old address told** (Q16, Q25): an email change enqueues `org.email-changed` in the same transaction (spec in
+  `server/shared/jobs/`, so catalog never imports notifications) and is audited `ORG_EMAIL_CHANGED` after commit
+  (ADR-0021); a mobile change is audited `ORG_PHONE_CHANGED` (from/to) the same way. The handler (`server/notifications/notifications.jobs.ts`, registered in `worker/main.ts`) sends
+  "Your shop's email was changed" with a Resend idempotency key derived from the job id, so a redelivered job is
+  one email, with `SUPPORT_INBOX` as Reply-To since the notice invites a reply. `SendEmailOptions` gains
+  `idempotencyKey`. INTEGRATIONS.md records Resend's key window. The worker now sends email: `.env.worker.example`
+  and OPERATIONS.md gain `RESEND_API_KEY`, `EMAIL_FROM` and `NEXT_PUBLIC_APP_URL` — **set their
+  `WORKER_ENV_<NAME>` secrets before deploying**, or every notice job fails and parks.
+- **Tax card** (R6): "Tax and bank details · We'll ask before your first payout. Nothing to do now."
+- **ux states built:** Shop details private part — Success toasts ("Saved. We'll call this number about orders.",
+  and "Saved. New orders will come to this email.", added to ux.md), Retryable, Terminal (field messages: "Use at
+  least 3 letters.", the shared phone message), Refused (owner-only; "That link is taken. Try {suggestion}." —
+  the handle change now suggests the first free numbered variant), Stale, Slow. Name sheet — First use, Loading
+  ("Changing…"), Success ("Name changed."), Retryable ("Couldn't change it. Try again." with "Try again"),
+  Terminal (stays on the field; the sheet opens only for a valid, different name), Refused (with "Close"), Stale
+  (a 409 shows the server's copy with "Load latest", which reloads the page as the section banners do), Slow
+  ("Still changing…"); bottom sheet below `md:`, dialog from `md:` (the primitive's switch, as the TRD says).
+- **Never disabled:** the handle dialog's two buttons lost `disabled` (ADR-0053); a second tap while saving
+  sends nothing, as on every Shop details save.
+- **[CONTRACT]** `shopContactSchema`; `ShopDetailsDto` gains `phone`, `email`, `contactUpdatedAt`; job
+  `org.email-changed`; handle refusal copy. CONTRACTS.md updated. Decisions Q5, Q15, Q16, Q23, Q25 implemented.
+- **Mutations** (each made a test fail, then restored): M1 owner check made never-true → the staff-refusal unit
+  and integration tests failed. M2 `shopContactSchema` non-strict → the forbidden-field test failed. M3
+  `updatedAt` removed from the contact compare-and-set → two integration tests (stale, stale email) failed. M4
+  enqueue skipped → the one-job integration test failed. M5 idempotency key dropped → the once-per-job test
+  failed. M6 `contactColumns` spreading the whole input → the only-fields-sent test failed (first version used
+  `toHaveBeenCalledWith`, which ignores an undefined key; tightened to `toStrictEqual`). M7 the name form
+  writing straight away instead of opening the sheet → four sheet tests failed. M8 handle refusal back to the
+  old copy → three storefront-service tests failed.
+- **Tests:** `tests/unit/shop-contact.test.tsx` (schema, service, private part, name sheet, job),
+  `tests/integration/shop-contact.test.ts` (A3, Q21, Q23, Q25), `storefront-service` (suggestion),
+  `email-templates` (new template), `shop-details` (fixtures). Ran `tsc`, `vitest run tests/unit`,
+  `vitest run tests/integration/shop-contact.test.ts tests/integration/shop-details.test.ts` (local disposable
+  DB), `lint:boundary`, `docs:check`.
+
 ## 2026-11-01 — Docs cost less to load: the changelog splits by month, the conventions index leaves CLAUDE.md
 
 - **Changelog:** entries before this month move to `docs/changelog/2026-08.md` and `2026-09.md`, unchanged and still

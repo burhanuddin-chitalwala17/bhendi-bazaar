@@ -5,6 +5,16 @@ import type { Org } from "@prisma/client";
 import { OrgRole, Prisma } from "@prisma/client";
 import type { CreateOrgInput } from "@server/catalog/org.types";
 import { FROM_ACTIVE_ORG } from "@server/catalog/product.visibility";
+import { enqueue } from "@server/shared/jobs";
+import { orgEmailChangedSpec } from "@server/shared/jobs/org-email-changed.job";
+
+/** What Shop details may write on the org (org-profile D7): nothing else is reachable from it. */
+export type OrgContactData = { name?: string; phone?: string; email?: string };
+
+export type ContactWrite =
+  | { outcome: "saved"; previousEmail: string | null; phoneChange: { from: string | null } | null }
+  | { outcome: "stale"; updatedAt: Date }
+  | { outcome: "missing" };
 
 /** The client or transaction a read may run on. */
 export type OrgDb = Pick<typeof prisma, "org">;
@@ -301,6 +311,45 @@ export class OrgRepository {
         commissionRules: { select: { rateBps: true }, orderBy: { rateBps: "asc" }, take: 1 },
       },
     });
+  }
+
+  /**
+   * Name, mobile and email, only if nobody changed the org since `expectedUpdatedAt` (org-profile D7,
+   * Q21). An email change queues the notice to the old address in the same transaction (Q25), so
+   * neither exists without the other. `previousEmail` and `phoneChange` are set only when that value moved (a phone may move from none).
+   */
+  async updateContactIfUnchanged(orgId: string, expectedUpdatedAt: Date, data: OrgContactData): Promise<ContactWrite> {
+    return await prisma.$transaction(async (tx) => {
+      const current = await tx.org.findUnique({ where: { id: orgId }, select: { name: true, email: true, phone: true } });
+      if (!current) return { outcome: "missing" as const };
+      const { count } = await tx.org.updateMany({ where: { id: orgId, updatedAt: expectedUpdatedAt }, data });
+      if (count === 0) {
+        const now = await tx.org.findUnique({ where: { id: orgId }, select: { updatedAt: true } });
+        return now ? { outcome: "stale" as const, updatedAt: now.updatedAt } : { outcome: "missing" as const };
+      }
+      const phoneChange = data.phone !== undefined && data.phone !== current.phone ? { from: current.phone } : null;
+      if (data.email === undefined || data.email === current.email) {
+        return { outcome: "saved" as const, previousEmail: null, phoneChange };
+      }
+      await enqueue(tx, orgEmailChangedSpec, { orgId, shopName: data.name ?? current.name, oldEmail: current.email });
+      return { outcome: "saved" as const, previousEmail: current.email, phoneChange };
+    });
+  }
+
+  /**
+   * The first of `candidates` no org has and none is holding (org-profile ux Refused): a suggestion
+   * only, so the change itself still lets the unique constraint decide.
+   */
+  async firstFreeHandle(candidates: string[], cutoff: Date): Promise<string | null> {
+    const [owned, held] = await Promise.all([
+      prisma.org.findMany({ where: { handle: { in: candidates } }, select: { handle: true } }),
+      prisma.orgHandleHistory.findMany({
+        where: { handle: { in: candidates }, retiredAt: { gt: cutoff } },
+        select: { handle: true },
+      }),
+    ]);
+    const taken = new Set([...owned, ...held].map((row) => row.handle));
+    return candidates.find((candidate) => !taken.has(candidate)) ?? null;
   }
 
   /** Name and email for a payout notification — nothing else. */

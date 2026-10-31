@@ -78,7 +78,7 @@ const SHOP_DETAILS_SELECT = {
   promiseNote: true,
   deliveryPolicy: true,
   returnsPolicy: true,
-  org: { select: { handle: true, name: true } },
+  org: { select: { handle: true, name: true, phone: true, email: true, updatedAt: true } },
 } as const satisfies Prisma.OrgProfileSelect;
 
 export class OrgProfileRepository {

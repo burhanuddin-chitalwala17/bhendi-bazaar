@@ -15,6 +15,7 @@ import {
   RETURNS_PRESETS,
   SHOP_DETAILS_SECTION,
 } from "@server/catalog/shop-details.types";
+import { openShopSchema } from "@/lib/validation/schemas/org.schema";
 
 /**
  * One Shop details save (org-profile D3, Q17, Q21): a section and only its own fields, plus the
@@ -91,3 +92,21 @@ export type PlaceSectionInput = z.infer<typeof placeSectionSchema>;
 export type PersonSectionInput = z.infer<typeof personSectionSchema>;
 export type SocialSectionInput = z.infer<typeof socialSectionSchema>;
 export type PromiseSectionInput = z.infer<typeof promiseSectionSchema>;
+
+/**
+ * Name, mobile and email on Shop details (org-profile D7): the same rules a shop opened with, each
+ * optional so one row saves alone, plus the org's version. Strict, so code, GST, the handle or
+ * anything server-owned is refused (Invariant 4).
+ */
+export const shopContactSchema = z
+  .strictObject({
+    name: openShopSchema.shape.name.optional(),
+    phone: openShopSchema.shape.phone.optional(),
+    email: openShopSchema.shape.email.optional(),
+    ...version,
+  })
+  .refine((body) => body.name !== undefined || body.phone !== undefined || body.email !== undefined, {
+    message: "Nothing to save.",
+  });
+export type ShopContactInput = z.infer<typeof shopContactSchema>;
+export type ShopContactFormInput = z.input<typeof shopContactSchema>;

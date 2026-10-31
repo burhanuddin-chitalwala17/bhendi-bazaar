@@ -20,6 +20,7 @@ import {
 } from "./shop-details-sections";
 import { OPTIONAL_ROWS, SHOP_DETAILS_COPY } from "./shop-details-copy";
 import { ShopPreview } from "./shop-preview";
+import { ShopLinkRow, ShopNameRow, ShopPrivatePart, type ContactProps } from "./shop-private-part";
 
 /** ux First use: none of the three essentials yet. Name is always there, so logo and line decide. */
 const essentialsDone = (d: ShopDetailsDto) => Boolean(d.logoUrl) && Boolean(d.tagline);
@@ -29,18 +30,30 @@ const anyOptional = (d: ShopDetailsDto) =>
   Object.values(d.social).some(Boolean);
 
 /**
- * "Buyers see this" (org-profile U2, D2): essentials first, each optional row collapsed and saying
+ * Shop details (org-profile D2): "Buyers see this" with essentials first, each optional row collapsed and saying
  * what it adds, every section saving alone. Holds the page's version, so each save carries the
  * latest one (Q21), and the draft the `lg:` preview draws (D10).
  */
-export function ShopDetailsEditor({ orgId, initial }: { orgId: string; initial: ShopDetailsDto }) {
+export function ShopDetailsEditor({
+  orgId,
+  initial,
+  oldAddressWorksUntil,
+}: {
+  orgId: string;
+  initial: ShopDetailsDto;
+  /** ISO, from `storefrontService.previewChange`: the server's own hold window for the link row. */
+  oldAddressWorksUntil: string;
+}) {
   const router = useRouter();
   const [details, setDetails] = useState(initial);
   const [draft, setDraft] = useState<Partial<ShopDetailsDto>>({});
   const version = useRef(initial.updatedAt);
+  // The org's own version: name, mobile and email live on Org, not the profile (D7).
+  const contactVersion = useRef(initial.contactUpdatedAt);
 
   const onSaved = useCallback((next: ShopDetailsDto) => {
     version.current = next.updatedAt;
+    contactVersion.current = next.contactUpdatedAt;
     setDetails(next);
   }, []);
   const onDraft = useCallback((part: Partial<ShopDetailsDto>) => setDraft((d) => ({ ...d, ...part })), []);
@@ -48,6 +61,7 @@ export function ShopDetailsEditor({ orgId, initial }: { orgId: string; initial: 
   const onLoadLatest = useCallback(() => router.refresh(), [router]);
 
   const props: SectionProps = { orgId, details, version: () => version.current, onSaved, onLoadLatest, onDraft };
+  const contact: ContactProps = { orgId, details, contactVersion: () => contactVersion.current, onSaved, onLoadLatest };
   const lead = !anyEssential(details)
     ? SHOP_DETAILS_COPY.firstUse
     : essentialsDone(details) && !anyOptional(details)
@@ -75,8 +89,10 @@ export function ShopDetailsEditor({ orgId, initial }: { orgId: string; initial: 
           <CardHeader>
             <CardTitle>{SHOP_DETAILS_COPY.essentialsHeader}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            <ShopNameRow {...contact} />
             <EssentialsSection {...props} />
+            <ShopLinkRow orgId={orgId} handle={details.handle} oldAddressWorksUntil={oldAddressWorksUntil} />
           </CardContent>
         </Card>
 
@@ -98,6 +114,8 @@ export function ShopDetailsEditor({ orgId, initial }: { orgId: string; initial: 
             <PromiseSection {...props} />
           </OptionalRow>
         </section>
+
+        <ShopPrivatePart {...contact} />
       </div>
 
       <aside className="hidden lg:sticky lg:top-6 lg:col-span-2 lg:block">

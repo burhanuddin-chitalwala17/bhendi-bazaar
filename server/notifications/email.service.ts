@@ -28,6 +28,7 @@ import {
   type ContactMessageEmailView,
 } from "./templates/contactMessageEmail";
 import { SUPPORT_INBOX } from "./templates/layout";
+import { getOrgEmailChangedEmailTemplate, type OrgEmailChangedView } from "./templates/orgEmailChangedEmail";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 class EmailService {
@@ -52,13 +53,16 @@ class EmailService {
     }
 
     try {
-      const { data, error } = await this.resend.emails.send({
-        from: process.env.EMAIL_FROM || "Bhendi Bazaar <onboarding@resend.dev>",
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        ...(options.replyTo ? { replyTo: options.replyTo } : {}),
-      });
+      const { data, error } = await this.resend.emails.send(
+        {
+          from: process.env.EMAIL_FROM || "Bhendi Bazaar <onboarding@resend.dev>",
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          ...(options.replyTo ? { replyTo: options.replyTo } : {}),
+        },
+        options.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
+      );
 
       if (error) {
         console.error("❌ Resend API error:", error);
@@ -227,6 +231,21 @@ class EmailService {
       replyTo: view.replyEmail,
       subject: `Contact us: ${view.subject}`,
       html: getContactMessageEmailTemplate(view),
+    });
+  }
+
+  /**
+   * Tell the address a shop just left that it was changed (org-profile Q16, Q25). Keyed on the job,
+   * so a redelivered job is one email, not two (ADR-0038 D4).
+   */
+  async sendOrgEmailChanged(oldEmail: string, view: OrgEmailChangedView, jobId: string): Promise<void> {
+    await this.sendEmail({
+      to: oldEmail,
+      subject: "Your shop's email was changed - Bhendi Bazaar",
+      html: getOrgEmailChangedEmailTemplate(view),
+      // The notice invites a reply; EMAIL_FROM is a no-reply sender.
+      replyTo: SUPPORT_INBOX,
+      idempotencyKey: `org-email-changed/${jobId}`,
     });
   }
 }

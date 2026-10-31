@@ -90,6 +90,19 @@ function normaliseBanner(input: BannerInput): OrgBannerInput {
   };
 }
 
+/** How many numbered variants a taken link is checked against for a suggestion. */
+const LINK_SUGGESTIONS = 5;
+
+/** ux Refused: "That link is taken. Try {suggestion}." — the suggestion only when one is free. */
+async function linkTaken(handle: string): Promise<ConflictError> {
+  const candidates: string[] = [];
+  const each = handleCandidates(handle);
+  each.next(); // the taken one itself
+  while (candidates.length < LINK_SUGGESTIONS) candidates.push(each.next().value as string);
+  const free = await orgRepository.firstFreeHandle(candidates, holdCutoff());
+  return new ConflictError(free ? `That link is taken. Try ${free}.` : "That link is taken.", { field: "handle" });
+}
+
 export const storefrontService = {
   /**
    * The brand page of the shop at this handle, or null (brand-page D1).
@@ -193,19 +206,13 @@ export const storefrontService = {
     }
     if (await orgRepository.isHandleHeldByAnother(next, orgId, holdCutoff())) {
       // Held, not free: another shop left it recently and can still take it back.
-      throw new ConflictError("That address is not available.", {
-        field: "handle",
-      });
+      throw await linkTaken(next);
     }
 
     try {
       return await orgRepository.changeHandle(orgId, settings.handle, next);
     } catch (error) {
-      if (isUniqueViolation(error, "handle")) {
-        throw new ConflictError("That address is not available.", {
-          field: "handle",
-        });
-      }
+      if (isUniqueViolation(error, "handle")) throw await linkTaken(next);
       throw error;
     }
   },

@@ -1,7 +1,7 @@
 # UX — own-store/org-profile
 
 - **Status:** Signed off
-- **Verified:** 2026-10-31
+- **Verified:** 2026-11-01
 - **Prototype:** `seller-portal-prototype.html`, section "Shop details" (shared with seller-onboarding; to be published as a private artifact)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [seller-onboarding ux](../seller-onboarding/ux.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
@@ -79,7 +79,7 @@ Each starts one step before the screen.
 | Retryable error | In sheet | "Couldn't change it. Try again." | Try again |
 | Terminal error | Back to field | "Use at least 3 letters." | Fix |
 | Refused | Staff | "Only the shop owner can change this." | Close |
-| Stale | n/a | — | — |
+| Stale | Another member saved name, mobile or email meanwhile (added in unit 3 review: the sheet shares the org's version) | "Someone changed this 2 min ago. Load their version?" | Load latest |
 | Long content | Names wrap | — | — |
 | Many items | n/a | — | — |
 | Slow | "Still changing…" | — | — |
@@ -98,7 +98,9 @@ Each starts one step before the screen.
 - Tax card: "Tax and bank details · We'll ask before your first payout. Nothing to do now."
 - Buttons: "Save" · "See as a buyer" · "Change name" · "Keep old name" · "Try again".
 - Toasts: "Saved. Buyers see this on your shop page now." · "Saved. We'll call this number about
-  orders." · "Name changed." · email to old address: "Your shop's email was changed".
+  orders." · "Saved. New orders will come to this email." (added building U3: an email save had no
+  line of its own) · "Name changed." · email to old address: "Your shop's email was changed".
+- Name sheet title (added building U3; the sheet needs one): "Change your shop's name".
 
 ## Sign-off
 Signed off by the owner, 2026-10-30, from the prototype file (approved as drawn).

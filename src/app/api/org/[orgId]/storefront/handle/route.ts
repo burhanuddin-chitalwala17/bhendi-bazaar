@@ -14,10 +14,11 @@ import { withOrg } from "@/lib/org-auth";
 import { storefrontService } from "@server/catalog/storefront.service";
 import { handleChangeSchema } from "@/lib/validation/schemas/storefront.schema";
 import { ForbiddenError } from "@server/shared/domain-error";
+import { SHOP_OWNER_ONLY } from "@server/catalog/shop-details.types";
 
 export const PATCH = withOrg(async (request, scope) => {
   if (scope.role !== OrgRole.OWNER) {
-    throw new ForbiddenError("Only an owner can change this shop's address.");
+    throw new ForbiddenError(SHOP_OWNER_ONLY);
   }
   const { handle } = handleChangeSchema.parse(await request.json());
   return NextResponse.json(

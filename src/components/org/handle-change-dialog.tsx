@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 
@@ -75,6 +75,21 @@ export function HandleChangeDialog({
 
   const next = watch("handle");
 
+  // The button stays tappable (ADR-0053); a second tap while one change is in flight sends nothing.
+  const busy = useRef(false);
+  const submitOnce = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      await onSubmit(event);
+    } catch {
+      // Shown by useServerForm on the field or above the buttons; what was typed stays.
+    } finally {
+      busy.current = false;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -91,7 +106,7 @@ export function HandleChangeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={submitOnce} className="space-y-4">
           <FormInput
             label="New address"
             placeholder="naaz-collection"
@@ -135,11 +150,11 @@ export function HandleChangeDialog({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={isSubmitting}
             >
               Keep {currentHandle}
             </Button>
-            <Button type="submit" disabled={isSubmitting || !next}>
+            {/* Never disabled (ADR-0053): an empty address submits and the field says why. */}
+            <Button type="submit" aria-busy={isSubmitting}>
               {isSubmitting ? "Changing…" : "Change the address"}
             </Button>
           </DialogFooter>

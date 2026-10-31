@@ -9,6 +9,7 @@ import {
 import { getVerificationEmailTemplate } from "@server/notifications/templates/verificationEmail";
 import { getOutbidEmailTemplate } from "@server/notifications/templates/outbidEmail";
 import { getContactMessageEmailTemplate } from "@server/notifications/templates/contactMessageEmail";
+import { getOrgEmailChangedEmailTemplate } from "@server/notifications/templates/orgEmailChangedEmail";
 import { esc, renderEmail } from "@server/notifications/templates/layout";
 
 const order: OrderEmailView = {
@@ -66,6 +67,7 @@ const emails = {
       senderName: "Aisha",
       signedIn: true,
     }),
+  orgEmailChanged: () => getOrgEmailChangedEmailTemplate({ shopName: "Noor <Attar> House" }),
 };
 
 describe("every transactional email renders through the one shell", () => {

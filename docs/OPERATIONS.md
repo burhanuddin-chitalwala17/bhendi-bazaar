@@ -1,6 +1,6 @@
 # OPERATIONS.md — setup, env, deploy, runbook
 
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **Covers:** `src/lib/rate-limit/**`, `src/instrumentation.ts`, `src/lib/env.ts`, `prisma/seed-guard.ts`, `vercel.json`, `.github/workflows/**`, `next.config.ts`
 
 ## Prerequisites
@@ -364,13 +364,17 @@ This makes **rate quoting** live. Shipment booking currently uses a mock impleme
 The job queue is a set of tables in the application's own Postgres, in the `pgboss` schema, and
 the worker is a second process that runs them ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [worker-foundation](specs/worker-foundation/)).
 
-**What runs here.** Five job types, registered in `worker/main.ts` and owned by the domain each
-belongs to: a no-op `ping`, the media sweep, video transcoding, photo enhancement, and the payment
-reconciliation that used to be a Vercel cron. The video and enhancement ones decide what the
-machine needs. Transcoding wants ffmpeg, which the image carries as an OS package.
-Enhancement wants the same three `IMAGE_*` variables the web app has, because the web app only
-checks a tool is available and then queues it — set them in one place and not the other and every
-run fails on the half that is missing. Both are in `.env.worker.example`.
+**What runs here.** The job types registered in `worker/main.ts`, each owned by the domain it
+belongs to: a no-op `ping`, the media sweep, video transcoding, photo enhancement, the payment
+reconciliation that used to be a Vercel cron, the daily channels check, and the notice a shop's
+old email address gets when the address changes (`org.email-changed`). Video, enhancement and
+email decide what the machine needs. Transcoding wants ffmpeg, which the image carries as an OS
+package. Enhancement wants the same three `IMAGE_*` variables the web app has, because the web app
+only checks a tool is available and then queues it — set them in one place and not the other and
+every run fails on the half that is missing. The email notice wants `RESEND_API_KEY`, `EMAIL_FROM`
+and `NEXT_PUBLIC_APP_URL`, the site's own values: without them every email change queues a job
+that fails five times and parks, and the old address is never told. All are in
+`.env.worker.example`; each needs its `WORKER_ENV_<NAME>` secret (below) before the deploy.
 
 - **Locally:** `npm run worker` beside `npm run dev`, same `DATABASE_URL`. It logs the job types it
   knows and writes a heartbeat row the admin dashboard reads. Send it a no-op with a `ping` job from

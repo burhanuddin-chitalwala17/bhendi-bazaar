@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-29
+- **Verified:** 2026-11-01
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -47,6 +47,7 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **`onboarding@resend.dev` sends without domain verification**, which is what makes local development work with no DNS setup. It cannot be used in production.
 - **A production sending domain needs SPF, DKIM, and DMARC records.** Without them mail is accepted by Resend and then filtered by the recipient — so a "successful" send is not a delivered email. This is the most common cause of "the confirmation email didn't arrive".
 - **Sending is a network call that can be slow.** ⚠️ Awaiting it inside a request handler makes response latency depend on it; where that latency differs between two code paths, it becomes observable. Prefer dispatching outside the response path.
+- **A send takes an `Idempotency-Key`** (the SDK's second argument, `{ idempotencyKey }`): Resend sends once per key, which is what makes a send from an at-least-once job safe to retry. Keys are remembered for 24 hours, per Resend's documentation; a job redelivered later than that would send again.
 
 ## Vercel (platform)
 

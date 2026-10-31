@@ -1,9 +1,14 @@
 # notifications — domain rules
 
-- **Verified:** 2026-09-21
+- **Verified:** 2026-11-01
 - **Covers:** `server/notifications/**`
 
-Transactional email. One provider (Resend, in `email.service.ts`), one shell, six templates.
+Transactional email. One provider (Resend, in `email.service.ts`), one shell, seven templates.
+
+**A send from a job is keyed on the job.** `notifications.jobs.ts` holds the worker's handlers (today
+`org.email-changed`, org-profile Q25); each passes an `idempotencyKey` derived from the job id, so a
+redelivered job is one email (ADR-0038 D4). The job's spec lives in `server/shared/jobs/`, so the
+domain that enqueues it never imports this one.
 
 `contactMessageEmail.ts` is the one addressed to the store, not a buyer: Contact us delivers
 a message to `SUPPORT_INBOX` with the sender as Reply-To and stores nothing, so its route

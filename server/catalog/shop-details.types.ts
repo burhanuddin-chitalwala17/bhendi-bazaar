@@ -38,11 +38,19 @@ export const ABOUT_MAX = 4000;
 export const ABOUT_COUNTER_FROM = 3600;
 export const PROMISE_NOTE_MAX = 280;
 
+/** ux Refused: name, mobile, email and link are the owner's to change (Q23). */
+export const SHOP_OWNER_ONLY = "Only the shop owner can change this.";
+
 export interface ShopDetailsDto {
   handle: string;
   name: string;
   /** The version this page read; every save carries it back (Q21). */
   updatedAt: string;
+  /** Only Bhendi Bazaar sees these (D7, Q8). Null for a shop opened before the mobile was asked. */
+  phone: string | null;
+  email: string;
+  /** The org's own version, which a name, mobile or email save carries back (D7, Q21). */
+  contactUpdatedAt: string;
   tagline: string | null;
   logoUrl: string | null;
   /** `aboutOf` — what buyers read now, and what the box opens with. */
@@ -79,3 +87,11 @@ export type ShopDetailsSave = Version &
     | { section: typeof SHOP_DETAILS_SECTION.SOCIAL; social?: Record<string, string> | null }
     | { section: typeof SHOP_DETAILS_SECTION.PROMISE; returnsPreset: ReturnsPreset; promiseNote?: string | null }
   );
+
+/** A name, mobile or email save as the service takes it; any of the three, only what changed (D7). */
+export interface ShopContactSave {
+  name?: string;
+  phone?: string;
+  email?: string;
+  expectedUpdatedAt: string;
+}

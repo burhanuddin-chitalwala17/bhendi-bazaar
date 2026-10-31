@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const findStorefrontSettings = vi.fn();
 const isHandleHeldByAnother = vi.fn();
 const changeHandle = vi.fn();
+const firstFreeHandle = vi.fn();
 const getProductBySlug = vi.fn();
 const bannerCreate = vi.fn();
 
@@ -17,6 +18,7 @@ vi.mock("@server/catalog/org.repository", () => ({
   orgRepository: {
     isHandleHeldByAnother: (...a: unknown[]) => isHandleHeldByAnother(...a),
     changeHandle: (...a: unknown[]) => changeHandle(...a),
+    firstFreeHandle: (...a: unknown[]) => firstFreeHandle(...a),
   },
 }));
 // The settings moved to the profile table (PR-151); the service reads them there.
@@ -51,6 +53,7 @@ beforeEach(() => {
   isHandleHeldByAnother.mockResolvedValue(false);
   changeHandle.mockResolvedValue({ id: "org-1", handle: "naaz-couture" });
   getProductBySlug.mockResolvedValue(null);
+  firstFreeHandle.mockResolvedValue(null);
 });
 
 describe("changing a handle", () => {
@@ -96,7 +99,7 @@ describe("changing a handle", () => {
   it("refuses one another shop is still holding", async () => {
     isHandleHeldByAnother.mockResolvedValue(true);
     await expect(storefrontService.changeHandle("org-1", "free-looking")).rejects.toThrow(
-      /not available/i
+      "That link is taken."
     );
     expect(changeHandle).not.toHaveBeenCalled();
   });
@@ -110,7 +113,21 @@ describe("changing a handle", () => {
     });
     changeHandle.mockRejectedValue(violation);
     await expect(storefrontService.changeHandle("org-1", "taken-now")).rejects.toThrow(
-      /not available/i
+      "That link is taken."
+    );
+  });
+
+  it("suggests the first free numbered link, in the ux words (org-profile ux Refused)", async () => {
+    isHandleHeldByAnother.mockResolvedValue(true);
+    firstFreeHandle.mockResolvedValue("noor-attar-3");
+    await expect(storefrontService.changeHandle("org-1", "noor-attar")).rejects.toMatchObject({
+      status: 409,
+      field: "handle",
+      message: "That link is taken. Try noor-attar-3.",
+    });
+    expect(firstFreeHandle).toHaveBeenCalledWith(
+      ["noor-attar-2", "noor-attar-3", "noor-attar-4", "noor-attar-5", "noor-attar-6"],
+      expect.any(Date),
     );
   });
 });

@@ -1,6 +1,6 @@
 # CONTRACTS.md — client ↔ server DTO contracts
 
-- **Verified:** 2026-10-31
+- **Verified:** 2026-11-01
 - **Covers:** `src/lib/validation/schemas/*.ts`, `src/app/api/*/`, `src/lib/api-error-response.ts`
 - **Scope:** shapes that cross the browser/server boundary via `src/app/api/**` route handlers.
 
@@ -158,6 +158,14 @@ Since org-profile unit 2, **`PATCH /api/org/[orgId]/shop/details`** (`withOrg`, 
 shop saves About); `story` is always null; `deliveryPolicy`/`returnsPolicy` are replaced by
 `returns: { preset, note } | null`. `Storefront` (`storefront.dal.ts`) loses `deliveryPolicy`/`returnsPolicy`.
 `storefrontSettingsSchema` is narrowed, strictly, to `heroUrl`, `accent`, `pillars`, `hiddenSections`.
+
+Since org-profile unit 3, **`PATCH /api/org/[orgId]/shop/contact`** (`withOrg`, owner only; staff get `403`
+"Only the shop owner can change this.") parses **`shopContactSchema`** (`shop-details.schema.ts`): any of `name`,
+`phone`, `email` (the `openShopSchema` rules) plus `expectedUpdatedAt`, the org's own version; strict, at least one
+field. It answers `ShopDetailsDto`, which gains `phone`, `email` and `contactUpdatedAt`. A stale version is `409`
+with the same copy. An email change enqueues **`org.email-changed`** (`server/shared/jobs/org-email-changed.job.ts`:
+`orgId`, `shopName`, `oldEmail`) in the same transaction. A refused handle change now reads "That link is taken."
+plus "Try {suggestion}." when a numbered variant is free.
 
 ### Listing vocabulary
 

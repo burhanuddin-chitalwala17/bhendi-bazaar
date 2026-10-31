@@ -74,11 +74,6 @@ export function EssentialsSection(props: SectionProps) {
   return (
     <SectionForm id="essentials" {...sectionChrome(form, props)}>
       <div className="space-y-1">
-        <p className="text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground">{FIELDS.name.label}</p>
-        <p className="break-words font-medium">{details.name}</p>
-        <p className="text-xs text-muted-foreground"><SeenBy>{FIELDS.name.hint}</SeenBy></p>
-      </div>
-      <div className="space-y-1">
         <ImageUpload
           label={FIELDS.logo.label}
           value={logoUrl ? [logoUrl] : []}

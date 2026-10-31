@@ -46,7 +46,11 @@ const blank: ShopDetailsDto = {
   promiseNote: null,
   oldDeliveryPolicy: null,
   oldReturnsPolicy: null,
+  phone: "+919876543210",
+  email: "noor@example.com",
+  contactUpdatedAt: VERSION,
 };
+const UNTIL = "2027-04-30T00:00:00.000Z";
 
 describe("shopDetailsSectionSchema (Invariant 4, D3)", () => {
   it("accepts each section with only its own fields", () => {
@@ -147,14 +151,16 @@ describe("Shop details, buyer part", () => {
   });
 
   it("says who sees every field, so 'will buyers see this?' is answered on screen (spec A2)", () => {
-    const { container } = render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+    const { container } = render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
     expect(screen.getByText(SHOP_DETAILS_COPY.buyersPart)).toBeInTheDocument();
     for (const field of [FIELDS.name, FIELDS.logo, FIELDS.tagline, FIELDS.about, FIELDS.location, FIELDS.ownerName, FIELDS.ownerRole, FIELDS.ownerQuote, FIELDS.ownerPhoto, FIELDS.returnsPreset, FIELDS.promiseNote]) {
       expect(screen.getAllByText(field.hint).length, field.label).toBeGreaterThan(0);
       expect(field.hint, field.label).toMatch(/Buyers (see|read)|your shop page/);
     }
-    // Every text control on the page carries a hint naming who sees it.
-    const controls = container.querySelectorAll("input:not([type=file]):not([type=hidden]), textarea, select");
+    // Every text control in the buyer part carries a hint naming who sees it; the private part is U3's test.
+    const controls = [...container.querySelectorAll("input:not([type=file]):not([type=hidden]), textarea, select")].filter(
+      (control) => !control.closest("#private-part"),
+    );
     for (const control of controls) {
       const describedBy = control.getAttribute("aria-describedby") ?? "";
       const hint = describedBy.split(" ").map((id) => document.getElementById(id)?.textContent ?? "").join(" ");
@@ -163,7 +169,7 @@ describe("Shop details, buyer part", () => {
   });
 
   it("starts a new shop on the three essentials, with every optional row saying what it adds (ux First use, Partial)", () => {
-    render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
     expect(screen.getByText(SHOP_DETAILS_COPY.firstUse)).toBeInTheDocument();
     expect(screen.getByText(SHOP_DETAILS_COPY.essentialsHeader)).toBeInTheDocument();
     expect(screen.getByText("· adds the 'About' section")).toBeInTheDocument();
@@ -172,13 +178,13 @@ describe("Shop details, buyer part", () => {
   });
 
   it("shows the Empty line once the essentials are done and nothing optional is", () => {
-    render(<ShopDetailsEditor orgId="org_1" initial={{ ...blank, logoUrl: "https://img/x.webp", tagline: "Attar" }} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={{ ...blank, logoUrl: "https://img/x.webp", tagline: "Attar" }} />);
     expect(screen.getByText(SHOP_DETAILS_COPY.empty)).toBeInTheDocument();
   });
 
   it("saves a section with every optional field blank (spec A6)", async () => {
     saveSection.mockResolvedValue({ ...blank, updatedAt: "2026-10-31T10:05:00.000Z" });
-    render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
     const place = document.getElementById("place") as HTMLFormElement;
     await act(async () => {
       fireEvent.submit(place);
@@ -190,7 +196,7 @@ describe("Shop details, buyer part", () => {
 
   it("carries the newest version to the next save, so a second section after a first is not stale (Q21)", async () => {
     saveSection.mockResolvedValue({ ...blank, updatedAt: "2026-10-31T10:05:00.000Z" });
-    render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
     await act(async () => {
       fireEvent.submit(document.getElementById("place") as HTMLFormElement);
     });
@@ -204,7 +210,7 @@ describe("Shop details, buyer part", () => {
 
   it("shows the stale banner and loads the latest on a conflict, keeping what was typed (ux Stale)", async () => {
     saveSection.mockRejectedValue(new ApiError("Someone changed this 2 min ago. Load their version?", 409));
-    render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
     const input = screen.getByLabelText(FIELDS.location.label);
     fireEvent.change(input, { target: { value: "Crawford Market" } });
     await act(async () => {
@@ -218,7 +224,7 @@ describe("Shop details, buyer part", () => {
 
   it("shows the retry banner when the save never arrived, keeping what was typed (ux Retryable error)", async () => {
     saveSection.mockRejectedValue(new TypeError("Failed to fetch"));
-    render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
     const input = screen.getByLabelText(FIELDS.location.label);
     fireEvent.change(input, { target: { value: "Crawford Market" } });
     await act(async () => {
@@ -233,6 +239,7 @@ describe("Shop details, buyer part", () => {
     render(
       <ShopDetailsEditor
         orgId="org_1"
+        oldAddressWorksUntil={UNTIL}
         initial={{ ...blank, about: "Who we are.\n\nHow it began.", aboutJoined: true }}
       />,
     );
@@ -241,12 +248,12 @@ describe("Shop details, buyer part", () => {
   });
 
   it("counts from 3,600 letters (ux Long content)", () => {
-    render(<ShopDetailsEditor orgId="org_1" initial={{ ...blank, about: "a".repeat(3812) }} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={{ ...blank, about: "a".repeat(3812) }} />);
     expect(screen.getByText("3,812 / 4,000")).toBeInTheDocument();
   });
 
   it("shows the old free text read-only and copies it into the note (Q19)", () => {
-    render(<ShopDetailsEditor orgId="org_1" initial={{ ...blank, oldReturnsPolicy: "Returns within 7 days." }} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={{ ...blank, oldReturnsPolicy: "Returns within 7 days." }} />);
     expect(screen.getByText("Returns within 7 days.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: SHOP_DETAILS_COPY.copyIntoNote }));
     expect(screen.getByLabelText(FIELDS.promiseNote.label)).toHaveValue("Returns within 7 days.");
@@ -256,7 +263,7 @@ describe("Shop details, buyer part", () => {
     vi.useFakeTimers();
     try {
       saveSection.mockReturnValue(new Promise(() => {}));
-      render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+      render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
       const form = document.getElementById("place") as HTMLFormElement;
       const button = within(form).getByRole("button", { name: SHOP_DETAILS_COPY.save });
       await act(async () => {
@@ -281,7 +288,7 @@ describe("Shop details, buyer part", () => {
 describe("a refusal with no banner of its own is still shown (ADR-0013)", () => {
   it("shows a refused save's message on the section, keeping what was typed", async () => {
     saveSection.mockReset().mockRejectedValue(new ApiError("You do not have permission to do that", 403));
-    render(<ShopDetailsEditor orgId="org_1" initial={blank} />);
+    render(<ShopDetailsEditor orgId="org_1" oldAddressWorksUntil={UNTIL} initial={blank} />);
     await act(async () => {
       fireEvent.submit(document.getElementById("place") as HTMLFormElement);
     });

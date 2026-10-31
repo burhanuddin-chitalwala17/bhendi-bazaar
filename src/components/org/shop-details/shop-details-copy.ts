@@ -18,6 +18,25 @@ export const SHOP_DETAILS_COPY = {
   retry: "Couldn't save. What you typed is still here.",
   joinedNote: "We joined your introduction and longer story. Check it and save.",
   copyIntoNote: "Copy into note",
+  privatePart: "Only Bhendi Bazaar sees this — to reach you about orders and payouts",
+  phoneSaved: "Saved. We'll call this number about orders.",
+  emailSaved: "Saved. New orders will come to this email.",
+  taxTitle: "Tax and bank details",
+  taxBody: "We'll ask before your first payout. Nothing to do now.",
+} as const;
+
+/** The name change sheet, exactly as ux.md signs it off (Q15). */
+export const NAME_SHEET_COPY = {
+  title: "Change your shop's name",
+  confirm: (next: string, link: string) => `Buyers will see ${next} on your shop and every product. Your link stays ${link}.`,
+  change: "Change name",
+  keep: "Keep old name",
+  changing: "Changing…",
+  stillChanging: "Still changing…",
+  changed: "Name changed.",
+  retry: "Couldn't change it. Try again.",
+  tryAgain: "Try again",
+  close: "Close",
 } as const;
 
 /** Each optional row and the line it adds (ux Copy deck). */
@@ -31,7 +50,7 @@ export const OPTIONAL_ROWS = {
 
 /** Labels, hints naming where each field shows, and placeholders from a real kind of shop (R2, Q12, Q13). */
 export const FIELDS = {
-  name: { label: "Shop name", hint: "Buyers see this on your shop and every product." },
+  name: { label: "Shop name", hint: "Buyers see this on your shop and every product.", placeholder: "Noor Attar House" },
   logo: { label: "Logo", hint: "Shows at the top of your shop page and on WhatsApp shares." },
   tagline: {
     label: "One line about your shop",
@@ -64,6 +83,13 @@ export const FIELDS = {
     placeholder: "Dispatched within two days from Bhendi Bazaar.",
   },
   oldText: "What you wrote before — buyers no longer see it",
+  phone: {
+    label: "Your mobile number",
+    hint: "We'll call or message you about orders and pickups. Buyers never see it.",
+    placeholder: "98765 43210",
+  },
+  email: { label: "Email for order updates", hint: "We send new orders here.", placeholder: "noorattar@gmail.com" },
+  link: { label: "Your shop link", hint: "Changing it breaks links you've already shared." },
 } as const;
 
 /** "3,812 / 4,000". */

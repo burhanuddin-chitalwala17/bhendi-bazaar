@@ -1,13 +1,17 @@
-import { Prisma } from "@prisma/client";
+import { OrgRole, Prisma } from "@prisma/client";
 
+import { orgRepository, type OrgContactData } from "@server/catalog/org.repository";
 import { orgProfileRepository, type ShopDetailsSectionData } from "@server/catalog/org-profile.repository";
 import { aboutOf } from "@server/catalog/storefront.types";
 import {
   SHOP_DETAILS_SECTION,
+  SHOP_OWNER_ONLY,
+  type ShopContactSave,
   type ShopDetailsDto,
   type ShopDetailsSave,
 } from "@server/catalog/shop-details.types";
-import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+import { ConflictError, ForbiddenError, NotFoundError } from "@server/shared/domain-error";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
 
 /** Empty strings from a form mean "cleared". */
 const orNull = (value: string | null | undefined) => value?.trim() || null;
@@ -54,6 +58,15 @@ function columnsFor(input: ShopDetailsSave, now: Date): ShopDetailsSectionData {
   }
 }
 
+/** Only the fields sent: a mobile save never rewrites the name, nor a name save the email (D7). */
+function contactColumns(input: ShopContactSave): OrgContactData {
+  return {
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.phone !== undefined ? { phone: input.phone } : {}),
+    ...(input.email !== undefined ? { email: input.email } : {}),
+  };
+}
+
 function socialOf(value: unknown): Record<string, string> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
   return Object.fromEntries(
@@ -70,6 +83,9 @@ export const shopDetailsService = {
       handle: row.org.handle,
       name: row.org.name,
       updatedAt: row.updatedAt.toISOString(),
+      phone: row.org.phone,
+      email: row.org.email,
+      contactUpdatedAt: row.org.updatedAt.toISOString(),
       tagline: row.tagline,
       logoUrl: row.logoUrl,
       about,
@@ -99,6 +115,42 @@ export const shopDetailsService = {
       const current = await orgProfileRepository.findUpdatedAt(orgId);
       if (!current) throw new NotFoundError("Organisation not found");
       throw new ConflictError(staleMessage(current, now));
+    }
+    return await this.get(orgId);
+  },
+
+  /**
+   * Name, mobile or email (D7): the owner's alone (Q23), conditional on the org's version (Q21). An
+   * email change queues the old-address notice in the same write; an email or mobile change is
+   * audited after it (Q16, Q25, ADR-0021), so a failed trail never undoes the change.
+   */
+  async saveContact(
+    orgId: string,
+    actor: { userId: string; role: OrgRole },
+    input: ShopContactSave,
+  ): Promise<ShopDetailsDto> {
+    if (actor.role !== OrgRole.OWNER) throw new ForbiddenError(SHOP_OWNER_ONLY);
+    const data = contactColumns(input);
+    const result = await orgRepository.updateContactIfUnchanged(orgId, new Date(input.expectedUpdatedAt), data);
+    if (result.outcome === "missing") throw new NotFoundError("Organisation not found");
+    if (result.outcome === "stale") throw new ConflictError(staleMessage(result.updatedAt));
+    if (result.previousEmail !== null) {
+      await recordAdminAction({
+        adminId: actor.userId,
+        action: "ORG_EMAIL_CHANGED",
+        resource: "Org",
+        resourceId: orgId,
+        metadata: { from: result.previousEmail, to: data.email },
+      });
+    }
+    if (result.phoneChange !== null) {
+      await recordAdminAction({
+        adminId: actor.userId,
+        action: "ORG_PHONE_CHANGED",
+        resource: "Org",
+        resourceId: orgId,
+        metadata: { from: result.phoneChange.from, to: data.phone },
+      });
     }
     return await this.get(orgId);
   },
