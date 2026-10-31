@@ -100,5 +100,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
 }
 
 async function SimilarFor({ slug }: { slug: string }) {
-  return <SimilarProducts products={await productsDAL.getSimilarProducts(slug, 4)} />;
+  // A side section: if it cannot load, it is left out rather than replacing the product with an error.
+  const products = await productsDAL.getSimilarProducts(slug, 4).catch((error: unknown) => {
+    console.error("[product] similar products unavailable:", error);
+    return [];
+  });
+  return <SimilarProducts products={products} />;
 }

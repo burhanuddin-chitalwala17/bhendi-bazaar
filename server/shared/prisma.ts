@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
+import { poolMax } from "@server/shared/pool-size";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 // The pool is cached alongside the client, not just the client. Caching only the
@@ -14,9 +15,8 @@ const pool =
   globalForPrisma.pool ??
   new Pool({
     connectionString: process.env.DATABASE_URL,
-    // Lower it (1-3) once DATABASE_URL is the pooled string, so many instances cannot exhaust the
-    // database's connections (GTM B12); unset keeps today's numbers.
-    max: Number(process.env.DATABASE_POOL_MAX) || (process.env.NODE_ENV === "production" ? 10 : 3),
+    // Lower it (3-5) once DATABASE_URL is the pooled string (GTM B12); unset keeps today's numbers.
+    max: poolMax(process.env.DATABASE_POOL_MAX, process.env.NODE_ENV === "production" ? 10 : 3),
     idleTimeoutMillis: 10_000,
     // Fail fast instead of hanging when the pool is saturated.
     connectionTimeoutMillis: 10_000,

@@ -26,6 +26,7 @@ export const options = {
     "http_req_duration{page:product}": ["p(95)<1500"],
     "http_req_duration{page:category}": ["p(95)<1500"],
     "http_req_duration{page:home}": ["p(95)<1500"],
+    "http_req_duration{page:cart}": ["p(95)<1500"],
   },
 };
 

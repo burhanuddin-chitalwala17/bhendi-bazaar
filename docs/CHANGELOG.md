@@ -10,6 +10,24 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B12: fixes from the review — corrections to the entry below
+
+- **Correction: the lightbox still loaded with the product page.** The reviews section imported it
+  normally, and the gallery rendered it closed, which fetches it after hydration anyway. Both now use
+  `LazyImageLightbox`, which mounts (and fetches) it only while open. Checked on a production build: no
+  script the product page loads contains it.
+- **Correction: "set `DATABASE_POOL_MAX` to 1–3" was unsafe.** A transaction holding one connection can
+  need a second; at 1 the integration suite fails 41 tests, at 2 the concurrent-transaction tests time
+  out. The value is now parsed (`server/shared/pool-size.ts`): a whole number of at least 3, anything else
+  refused with an error and the default used. Advice: 3–5, web only, never the worker.
+- **Similar products failing no longer replaces the product page** with the error screen (the 200 had
+  already been sent); the section is left out and the error logged.
+- **The first gallery image uses `fetchPriority="high"`** rather than `preload`, as B12 and Next's docs
+  advise. Whether the first paint should fetch a 200vw image is ADR-0027's question, not changed here.
+- **Load smoke:** a cart threshold; the checkout keeps no credentials; k6 analytics off.
+- **Tests:** `pool-size.test.ts` (3), `lazy-lightbox.test.tsx` (2). Full suite 2589 passing; journeys 12
+  of 12.
+
 ## 2026-10-31 — GTM B10: fixes from the review
 
 - **The markup's price follows the page's rule.** It used `salePrice ?? price`; a promotion larger than

@@ -5,14 +5,9 @@ import type { Product } from "@/domain/product";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Film, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import dynamic from "next/dynamic";
+import { LazyImageLightbox } from "@/components/shared/LazyImageLightbox";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
 import { GALLERY_SLIDE_SIZES, VideoPlayer } from "@/components/product/video-player";
-
-// Opened on a tap, so its code waits for one instead of riding in the first load (B12).
-const ImageLightbox = dynamic(() => import("@/components/shared/image-lightbox").then((m) => m.ImageLightbox), {
-  ssr: false,
-});
 import {
   MAX_ZOOM_SCALE,
   youtubePosterUrl,
@@ -284,9 +279,9 @@ export function ProductGallery(product: Product) {
                       }
                       fill
                       className="object-cover select-none"
-                      // The first slide is the page's LCP: fetched first, not merely eagerly (B12).
-                      preload={index === 0}
-                      loading={index === 0 ? undefined : "lazy"}
+                      // The first slide is the page's LCP: asked for first (B12).
+                      fetchPriority={index === 0 ? "high" : undefined}
+                      loading={index === 0 ? "eager" : "lazy"}
                       // The active slide pinches and hover-zooms, so its slot is larger
                       // than its box (ADR-0027). Only the active one: the off-screen
                       // slides are not being inspected.
@@ -425,7 +420,7 @@ export function ProductGallery(product: Product) {
 
       {/* The lightbox stays an image viewer: it is handed the photographs only, and its
           index is translated in and out, so it never learns about media kinds. */}
-      <ImageLightbox
+      <LazyImageLightbox
         images={photographs.map((item) => item.ref)}
         alt={product.name}
         open={isLightboxOpen}
