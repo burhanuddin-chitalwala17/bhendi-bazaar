@@ -136,6 +136,28 @@ describe("dependencies", () => {
   });
 });
 
+describe("database backup", () => {
+  const backup = readFileSync(join(WORKFLOWS, "db-backup.yml"), "utf8");
+
+  it("runs every night and can fail", () => {
+    expect(backup).toMatch(/^\s+- cron: "\d+ \d+ \* \* \*"/m);
+    expect(backup).not.toMatch(/continue-on-error/);
+    expect(backup).toMatch(/run: bash scripts\/backup\/db-backup\.sh\s*$/m);
+  });
+
+  it("encrypts to a public key and never holds the private one", () => {
+    expect(backup).toContain("BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}");
+    expect(backup).not.toMatch(/BACKUP_AGE_IDENTITY/);
+  });
+
+  it("refuses to call an empty run a backup", () => {
+    const script = readFileSync(join(ROOT, "scripts/backup/db-backup.sh"), "utf8");
+    expect(script).toMatch(/: "\$\{BACKUP_DATABASE_URL:\?/);
+    expect(script).toMatch(/refusing to call that a backup/);
+    expect(script).toMatch(/pg_dump [^|]*\| age --encrypt/);
+  });
+});
+
 describe("vercel.json", () => {
   it("runs functions in Mumbai, beside the database", () => {
     const config = JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8"));

@@ -566,6 +566,43 @@ Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 - Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/shiprocket`. Local webhook testing needs a tunnel.
 - Use a pooled connection string (pgbouncer / Neon) in production: `server/shared/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
 
+## Backups
+
+**Targets:** lose at most a day (RPO 24 h), be back within four hours (RTO 4 h). Two layers, because
+either alone has a failure the other covers: Prisma's own snapshots (Starter plan, restore in its
+console) and a nightly encrypted dump in an R2 bucket we control (`.github/workflows/db-backup.yml`,
+`scripts/backup/db-backup.sh`), which survives losing the Prisma account.
+
+**One-time setup (owner):**
+1. On your own machine: `age-keygen -o backup-key.txt`. Put the whole file in the password manager and
+   an offline copy. It is the only way to read a backup; it never goes into GitHub.
+2. In Cloudflare: a bucket for backups only (not the image bucket). Add a **Bucket Lock** rule for
+   `db/` (retain 35 days), so nothing, including a stolen credential, can delete a recent backup, and a
+   lifecycle rule that deletes `db/` objects after 90 days.
+3. An R2 API token for that bucket alone, **Object Write** only: CI can add backups and can never read
+   or delete them.
+4. GitHub repository secrets: `BACKUP_DATABASE_URL` (the **direct** string, as `MIGRATE_DATABASE_URL`),
+   `BACKUP_AGE_RECIPIENT` (the `age1…` public key line from step 1), `BACKUP_R2_ENDPOINT`,
+   `BACKUP_R2_BUCKET`, `BACKUP_R2_ACCESS_KEY_ID`, `BACKUP_R2_SECRET_ACCESS_KEY`.
+5. Actions → *Database backup* → Run workflow, and check `db/<year>/<month>/` holds a `.dump.age` and a
+   `.counts.tsv`.
+
+Until step 4 is done the nightly run fails red on purpose.
+
+**Restore drill, quarterly and after any change to the backup:** with a read-capable token, download the
+newest pair, start an empty local Postgres (`docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432
+postgres:17`, then `createdb -h localhost -U postgres bb_drill`), and run
+
+```bash
+BACKUP_AGE_IDENTITY="$(cat backup-key.txt)" DRILL_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bb_drill bash scripts/backup/db-restore-drill.sh <file>.dump.age <file>.counts.tsv
+```
+
+It restores, recounts every table and fails on any difference. It refuses a non-local target. Record the
+date in the CHANGELOG; a drill older than 90 days is a GTM-READINESS section 9 failure.
+
+**A real restore** is the same `age --decrypt | pg_restore` into a new database, then pointing
+`DATABASE_URL` at it, after the drill steps have proved the file.
+
 ## Recovering a failed migration
 
 A migration that raises leaves the deploy dead in a specific way, and the second symptom is
