@@ -32,6 +32,11 @@ test("browse a category, open the product, add it to the cart", async ({ page })
   await page.goto("/cart");
   await expect(page.getByText(E2E_PRODUCT.name).first()).toBeVisible();
   await expect(page.getByText(/your cart is quiet/i)).toHaveCount(0);
+
+  // Checkout snapshots the cart once; it must wait for the saved cart, not snapshot nothing.
+  await page.goto("/checkout");
+  await expect(page.getByText(E2E_PRODUCT.name).first()).toBeVisible();
+  await expect(page.getByText(/no items to checkout/i)).toHaveCount(0);
 });
 
 test("an empty cart says so", async ({ page }) => {

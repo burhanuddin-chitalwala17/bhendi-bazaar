@@ -10,6 +10,12 @@ type CartStoreState = Cart & {
   /** Drop the lines an order bought, by (product, size, colour) — nothing else. */
   removeLines: (lines: Array<Pick<CartItem, "productId" | "size" | "color">>) => void;
   setItems: (items: CartItem[]) => void;
+  /**
+   * The saved cart has been read from this device. False through the server render and the
+   * first client render, so both show the same empty cart and React does not mismatch; the
+   * saved lines arrive one render later (docs/GTM-READINESS.md B9).
+   */
+  hasHydrated: boolean;
 };
 
 // Missing and empty variants are the same line, as on the server (server/cart/cart.merge.ts).
@@ -91,6 +97,7 @@ export const useCartStore = create<CartStoreState>()(
         total: 0,
       },
       updatedAt: new Date(),
+      hasHydrated: false,
 
       addItem: (itemInput) => {
         set((state) => {
@@ -183,6 +190,8 @@ export const useCartStore = create<CartStoreState>()(
     {
       name: "bhendi-bazaar-cart",
       storage: createJSONStorage(() => localStorage),
+      // Read by CartHydration after mount, never during the first render.
+      skipHydration: true,
 
       partialize: (state) => ({
         items: state.items,
@@ -190,6 +199,8 @@ export const useCartStore = create<CartStoreState>()(
       }),
 
       onRehydrateStorage: () => (state) => {
+        // Deferred: the store is being defined when this callback is created.
+        queueMicrotask(() => useCartStore.setState({ hasHydrated: true }));
         if (!state) return;
 
         // Validate and filter corrupted items

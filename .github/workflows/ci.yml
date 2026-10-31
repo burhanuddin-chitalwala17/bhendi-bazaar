@@ -102,9 +102,13 @@ jobs:
   # Builds the app, starts it, and walks the journeys a broken deploy breaks first (e2e/,
   # docs/GTM-READINESS.md B8). On every event: `deploy` needs it, so nothing ships to customers
   # until a real browser has browsed, opened a product and filled a cart on this commit.
+  # It runs against a build made here, not the Vercel build that ships: a break only in the Vercel
+  # environment (a missing variable, the real image host) is not caught. Smoke on the preview
+  # URL is the follow-up, once a protection-bypass secret exists.
   e2e:
     runs-on: ubuntu-latest
     needs: test
+    timeout-minutes: 20
 
     # `next build` prerenders robots.txt and the sitemap, which reach appUrl()
     # and the catalogue — an unreachable connection string turns a compile check
@@ -155,14 +159,28 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Cache the browser
+        id: browser-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Install the browser
+        if: steps.browser-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install the browser's system libraries
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Run the journeys
         run: npx playwright test
 
-      - name: Keep the report and traces of a failed run
-        if: failure()
+      # Kept on success too: a test that failed once and passed on retry is flaky, and its trace
+      # is the only evidence.
+      - name: Keep the report and traces
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report

@@ -2,12 +2,12 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Package } from "lucide-react";
-import { useCartStore } from "@/store/cartStore";
 import { useMultiShippingRates } from "@/hooks/shipping/useMultiShippingRates";
 import { useCheckoutPayment } from "./hooks/useCheckoutPayment";
 import { CheckoutSummary } from "./components/checkout-summary";
 import { CouponField } from "./components/CouponField";
 import { useCheckoutOffers } from "./hooks/useCheckoutOffers";
+import { useCheckoutSnapshot } from "./hooks/useCheckoutSnapshot";
 import { MultiShippingSection } from "./components/MultiShippingSection";
 import { CheckoutActions } from "./components/CheckoutActions";
 import { EmptyState } from "../../components/shared/states/EmptyState";
@@ -30,7 +30,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   const { user } = useAuth();
   const { open: openAuthSheet } = useAuthSheet();
 
-  const [checkoutItems, setCheckoutItems] = useState<CartItem[]>([]);
+  const { items: checkoutItems, ready: snapshotReady } = useCheckoutSnapshot(buyNowProduct);
 
   const {
     groups: shippingGroups,
@@ -163,18 +163,9 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
     }
   };
 
-  // A snapshot, taken once: the sign-in cart merge updates the store, never this
-  // checkout's items (seamless-sign-in D11, R15).
-  useEffect(() => {
-    const loadItems = async () => {
-      if (buyNowProduct) {
-        setCheckoutItems([buyNowProduct]);
-      } else {
-        setCheckoutItems(useCartStore.getState().items);
-      }
-    };
-    loadItems();
-  }, [buyNowProduct]);
+  if (!snapshotReady) {
+    return <p className="text-sm text-muted-foreground">Loading your basket…</p>;
+  }
 
   if (checkoutItems.length === 0) {
     return (

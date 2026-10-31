@@ -51,19 +51,17 @@ export function ProductActions({
         size="lg"
         className="flex-1 rounded-full text-2xs font-semibold uppercase tracking-label sm:text-xs sm:tracking-eyebrow"
         variant="outline"
-        disabled={isAddingToCart || isOutOfStock}
+        pending={isAddingToCart}
+        aria-disabled={isOutOfStock || undefined}
         onClick={onAddToCart}
       >
-        {isOutOfStock
-          ? "Out of Stock"
-          : isAddingToCart
-            ? "Adding..."
-            : "Add to cart"}
+        {isOutOfStock ? "Out of Stock" : isAddingToCart ? "Adding..." : "Add to cart"}
       </Button>
       <Button
         size="lg"
         className="flex-1 rounded-full text-2xs font-semibold uppercase tracking-label sm:text-xs sm:tracking-eyebrow"
-        disabled={isBuyingNow || isOutOfStock}
+        pending={isBuyingNow}
+        aria-disabled={isOutOfStock || undefined}
         onClick={onBuyNow}
       >
         {isOutOfStock ? "Unavailable" : isBuyingNow ? "Loading..." : "Buy Now"}

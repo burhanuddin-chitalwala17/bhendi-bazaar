@@ -10,6 +10,40 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B9: a double tap is one request, and screens say what is happening
+
+- **In-flight lock.** `useMutation` and `useServerForm` join a call already in flight, so a double tap
+  or a held Enter sends once and both callers get the one answer. Every form and click on these hooks
+  gets it at once.
+- **`Button pending`**: a spinner, `aria-busy`, clicks ignored, never `disabled`. `aria-disabled` now
+  dims like `disabled`. Add to cart and Buy now use it; out of stock stays clickable and says why.
+  A ratchet holds the 65 remaining `disabled={…pending}` gates; the count only falls.
+- **`apiRequest`** times out at 30 s and maps a timeout or a dead network to a sentence, as an
+  `ApiError`; a caller's own cancellation passes through untouched.
+- **The cart is read after mount** (`skipHydration`), so the server render and the first client render
+  agree. Found while doing it: **checkout snapshotted the cart in a child effect, which runs before the
+  provider's rehydrate**, so a hard load of `/checkout` could show "No items to checkout" to a full
+  cart. The snapshot is now `useCheckoutSnapshot`, which waits for `hasHydrated`; the sign-in merge waits
+  too, so it never merges an empty basket. The cart page shows "Loading your cart…" until then.
+- **Error and loading screens:** root `error.tsx` and `global-error.tsx` (`PageError`: what happened,
+  try again, home); `loading.tsx` for checkout, orders, an order and the profile, none of which calls
+  `notFound()` (honest-status).
+- **Caught by the browser journeys, not the unit tests:** the first `Button pending` attached a click
+  handler to every button, which a server component cannot pass; every page 500'd. Fixed before commit.
+- **GTM B8 review fixes:** `audit-prod.mjs` compares its entry point as a real-path URL, so a path with a
+  space no longer skips the gate and exits 0 (reproduced); it names the registry's own error and waits
+  10 s before retrying. The e2e job caches the browser, has a 20-minute timeout, and keeps the report on
+  success too, so a test that passed on retry leaves a trace. The Playwright port comes from
+  `NEXT_PUBLIC_APP_URL`. The fixture product is reset to its whole shape every run. **Recorded
+  deviation:** the journeys run against a build made in CI, not the Vercel preview that ships; a
+  break only in Vercel's environment is not caught yet (needs a deployment-protection bypass secret).
+- **Mutation-tested:** each lock removed, the lock never released, no timeout, the offline mapping
+  removed, `pending` setting `disabled`, eager hydration, a new `disabled={isLoading}` gate, and the
+  snapshot taken without waiting: each red, each restored. The e2e checkout step did **not** go red
+  for the snapshot bug (the page streams in after the provider has rehydrated), which is why the
+  hook has its own test.
+- **Tests:** `double-submit.test.tsx` (14); journeys 10 of 10, now including the cart reaching checkout.
+
 ## 2026-10-31 — GTM B8: browser journeys gate the deploy; B1 review fixes
 
 - **`e2e/`, Playwright 1.63.0**, phone and desktop against `next start` on a production build. Five

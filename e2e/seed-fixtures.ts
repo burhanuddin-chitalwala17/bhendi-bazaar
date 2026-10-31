@@ -17,19 +17,21 @@ async function seedFixtures() {
   const fixtures = await ensureFixtures();
   const { prisma } = await import("@server/shared/prisma");
 
+  // The whole fixed shape on both branches, so a reused dev database cannot drift it.
+  const shape = {
+    name: E2E_PRODUCT.name,
+    description: "Created by e2e/seed-fixtures.ts.",
+    price: E2E_PRODUCT.pricePaise,
+    categoryId: fixtures.categoryId,
+    orgId: fixtures.orgId,
+    thumbnail: "/brand/bhendi-bazaar.png",
+    sku: E2E_PRODUCT.sku,
+    archivedAt: null,
+  };
   const product = await prisma.product.upsert({
     where: { slug: E2E_PRODUCT.slug },
-    update: { archivedAt: null, price: E2E_PRODUCT.pricePaise },
-    create: {
-      slug: E2E_PRODUCT.slug,
-      name: E2E_PRODUCT.name,
-      description: "Created by e2e/global-setup.ts.",
-      price: E2E_PRODUCT.pricePaise,
-      categoryId: fixtures.categoryId,
-      orgId: fixtures.orgId,
-      thumbnail: "/brand/bhendi-bazaar.png",
-      sku: E2E_PRODUCT.sku,
-    },
+    update: shape,
+    create: { slug: E2E_PRODUCT.slug, ...shape },
     select: { id: true },
   });
 

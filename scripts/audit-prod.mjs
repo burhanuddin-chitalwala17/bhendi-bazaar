@@ -6,8 +6,9 @@
 // names its GHSA id with a reason and an unexpired date (ADR-0056: a ratchet, never a bypass).
 // A registry failure is retried once, then fails as a registry failure, never as a finding.
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const BLOCKING = new Set(["high", "critical"]);
 const ROOT = resolve(import.meta.dirname, "..");
@@ -23,14 +24,16 @@ function audit() {
 
 function report() {
   for (let attempt = 1; attempt <= 2; attempt++) {
+    if (attempt > 1) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10_000);
     let parsed;
     try {
       parsed = JSON.parse(audit());
     } catch {
-      parsed = { error: { summary: "npm audit printed no JSON" } };
+      parsed = { error: { summary: "npm audit printed no JSON (no lockfile, or npm itself failed)" } };
     }
     if (!parsed.error && parsed.vulnerabilities) return parsed;
-    console.error(`npm audit could not reach the advisory service (attempt ${attempt}): ${parsed.error?.summary ?? "no report"}`);
+    const why = parsed.message || parsed.error?.summary || parsed.error?.detail || "no report";
+    console.error(`npm audit gave no report (attempt ${attempt}): ${why}`);
   }
   console.error("::error::The advisory service did not answer twice. This is not a finding; re-run the job.");
   process.exit(2);
@@ -68,7 +71,10 @@ export function check(vulnerabilities, allowlist, today = new Date().toISOString
   return problems;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Compared as URLs of the real path: a raw string comparison misses a path with a space or a
+// symlink, skips this block and exits 0, which is a gate failing open.
+const isEntry = process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+if (isEntry) {
   const allowlist = JSON.parse(readFileSync(resolve(ROOT, "audit-allowlist.json"), "utf8")).advisories;
   const problems = check(report().vulnerabilities, allowlist);
   if (problems.length) {

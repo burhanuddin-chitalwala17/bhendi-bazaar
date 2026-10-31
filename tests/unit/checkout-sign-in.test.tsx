@@ -81,6 +81,8 @@ beforeEach(() => {
   });
   vi.stubGlobal("fetch", fetchMock);
   useCartStore.getState().setItems([item("A"), item("B")]);
+  // The saved cart has been read, as it has by the time a shopper reaches checkout.
+  useCartStore.setState({ hasHydrated: true });
 });
 
 describe("signing in at checkout", () => {
