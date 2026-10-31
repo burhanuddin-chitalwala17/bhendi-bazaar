@@ -83,7 +83,9 @@ export const channelFamilyService = {
   /** The listings a page or a save names, checked: this shop's, one connection, none left off (Q23). */
   async rows(orgId: string, listingIds: readonly string[]): Promise<FamilyRow[]> {
     const ids = [...new Set(listingIds)];
-    const rows = await channelListingRepository.forFamily(ids, orgId);
+    // In the order the shop listed them, never the database's sort, which varies by its collation.
+    const found = new Map((await channelListingRepository.forFamily(ids, orgId)).map((r) => [r.id, r]));
+    const rows = ids.flatMap((id) => found.get(id) ?? []);
     if (rows.length !== ids.length || rows.length === 0) throw new NotFoundError("Listing");
     if (new Set(rows.map((r) => r.connectionId)).size > 1) {
       throw new DomainError("Pick listings from one marketplace for a family.", { status: 400, field: "listingIds" });

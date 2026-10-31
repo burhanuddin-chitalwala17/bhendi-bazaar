@@ -533,6 +533,22 @@
   `isManuallyEdited` failed the Q12 test; dropping the `deletedAt` filter failed both
   soft-delete tests. Restored.
 - Suites: tsc, unit, integration, `lint:boundary`, `docs:check`.
+## 2026-10-31 — GTM readiness review recorded
+
+- `docs/GTM-READINESS.md`: the whole-codebase production and GTM review (latency, SEO, security,
+  infra, compliance, engineering practice). It holds scores against the 2026-10-29 baseline, the
+  verified blockers (Next.js RCE advisory, functions running in `iad1`, no database backup, gateway-order
+  overwrite), a week-by-week roadmap, owner actions and costs, and re-runnable progress checks. Listed in
+  `docs/README.md`. Docs only; no code changed.
+
+## 2026-10-31 — family-merge: members kept in the order the shop picked them
+
+- The family save named two look-alike members in the database's sort order, which differs by
+  collation: CI's Postgres (`en_US.UTF-8`) sorts "black" before "Black", local `C` the reverse, so
+  `family-merge.test.ts` failed only in CI. Members now keep the order of the shop's selection.
+- **Reproduced** on a local database created with `en_US.UTF-8`: the old code failed the test, the
+  fix passes. **Suites run there:** the whole suite in UTC (2503), `tsc`, `lint:boundary`.
+
 ## 2026-10-29 — inventory-sync: the five-minute order check costs little when nothing changes
 
 - A marketplace reports every order still waiting on every check (Flipkart's waiting shipments,
