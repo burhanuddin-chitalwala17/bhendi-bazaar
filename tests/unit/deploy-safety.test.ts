@@ -43,6 +43,7 @@ describe("workflows", () => {
 
   it("pins the Vercel CLI", () => {
     expect(ci).toMatch(/npm install --global vercel@\d+\.\d+\.\d+\s*$/m);
+    expect(ci).not.toMatch(/vercel@(latest|\^|~)|npx vercel(?!@\d)/);
   });
 
   it("is read-only by default", () => {
@@ -51,7 +52,7 @@ describe("workflows", () => {
 
   it("starts the worker only after the web deploy has migrated the schema", () => {
     const job = ci.slice(ci.indexOf("\n  deploy-worker:"));
-    expect(job).toMatch(/^\s+needs: \[[^\]]*\bdeploy\b[^\]]*\]/m);
+    expect(job).toMatch(/^\s+needs: \[[^\]]*(?:^|[\s,[])deploy(?=[\s,\]])[^\]]*\]/m);
   });
 
   it("names every variable in .env.worker.example for both workers", () => {
@@ -59,11 +60,18 @@ describe("workflows", () => {
       .split("\n")
       .map((l) => l.match(/^\s*([A-Z][A-Z0-9_]*)=/)?.[1])
       .filter((n): n is string => Boolean(n));
-    expect(names.length).toBeGreaterThan(5);
+    expect(names.length).toBeGreaterThan(20);
     for (const n of names) {
       expect(ci).toContain(`WORKER_ENV_${n}: \${{ secrets.WORKER_ENV_${n} }}`);
       expect(staging).toContain(`WORKER_STAGING_ENV_${n}: \${{ secrets.WORKER_STAGING_ENV_${n} }}`);
     }
+    // And nothing beyond it, so the example stays the one list.
+    const passed = (text: string, prefix: string) =>
+      [...text.matchAll(new RegExp(`^\\s+${prefix}([A-Z0-9_]+): \\$\\{\\{ secrets\\.`, "gm"))]
+        .map((m) => m[1])
+        .filter((n) => n !== "FILE");
+    expect(passed(ci, "WORKER_ENV_").sort()).toEqual([...names].sort());
+    expect(passed(staging, "WORKER_STAGING_ENV_").sort()).toEqual([...names].sort());
   });
 });
 
@@ -92,6 +100,11 @@ describe("infra/worker/compose-env.sh", () => {
     });
     expect(out.status).toBe(0);
     expect(out.stdout.trim().split("\n").sort()).toEqual(["APP_ENV=production", "CREDENTIAL_KEYS=k=1", "DATABASE_URL=new"]);
+  });
+
+  it("leaves the base file whole when a value carries regex characters", () => {
+    const out = run({ BASE_ENV_FILE: "APP_ENV=production", WORKER_ENV_KEY: "line one\nmatch(this" });
+    expect(out.stdout).toContain("APP_ENV=production");
   });
 
   it("keeps the staging prefix apart from production", () => {

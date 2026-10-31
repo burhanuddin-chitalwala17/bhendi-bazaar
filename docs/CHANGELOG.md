@@ -10,6 +10,20 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B8: fixes from the review
+
+- `.env.worker.example` is now the worker's complete list (28 names, the 13 that shared server code
+  reads added), and `deploy-safety.test.ts` holds both workflows to exactly that list, not a subset.
+- The `needs: deploy` check no longer passes on `deploy-preview`; the Vercel pin check also refuses
+  `vercel@latest` or an unpinned `npx vercel` anywhere in `ci.yml`.
+- `compose-env.sh` no longer empties the base file when a multi-line value carries `(` or `[`
+  (continuation lines were used as grep patterns; predates B8). It also no longer exits 1 when only
+  the base file is set, which could stop the staging step under `set -e` (fixed in the entry below).
+- **Not changed:** Dependabot targets the default branch; whether it should target `develop` is the owner's call.
+- **Mutation-tested:** `needs: [test, deploy-preview]`, an extra `npx vercel`, `RESEND_API_KEY` dropped
+  from `ci.yml`, an unlisted staging secret, and the continuation-line guard removed: each red, each restored.
+- **Tests:** `deploy-safety.test.ts` (12), again under a vitest stand-in; the real suite has not run.
+
 ## 2026-10-31 — GTM B2 and B8: functions in Mumbai, CI sees only the secrets it names
 
 - **B2.** `vercel.json` sets `regions: ["bom1"]`. Functions ran in `iad1` (Washington DC) against a

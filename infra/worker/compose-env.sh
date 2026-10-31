@@ -24,7 +24,8 @@ done < <(compgen -e | grep -E "^${prefix}[A-Za-z0-9_]+$" | sort || true)
 
 filtered="$base"
 while IFS= read -r line; do
-  [ -z "$line" ] && continue
+  # A continuation line of a multi-line value names no variable; as a pattern it could empty the base.
+  [[ "$line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
   name="${line%%=*}"
   filtered=$(printf '%s\n' "$filtered" | grep -v -E "^[[:space:]]*${name}[[:space:]]*=" || true)
 done <<< "$overrides"
