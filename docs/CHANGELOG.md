@@ -10,6 +10,34 @@
 
 ## Entries
 
+## 2026-10-31 — GTM B9: fixes from the review
+
+- **Blocking, fixed: the `useMutation` lock dropped a different call.** A second `mutate(v2)` while
+  `mutate(v1)` was in flight got v1's promise: on the channel-types editor, the marketplace facts card and
+  the reviews table (per-row actions, not gated), the second row was never sent and still reported
+  success. The lock now joins only a call with the same variables; a different one is sent.
+- **Blocking, fixed: a 30 s timeout under a 50 MB upload.** Image uploads, the profile picture and both
+  bulk-import steps pass `TRANSFER_TIMEOUT_MS` (5 min). A write that times out now says it may still go
+  through and to refresh before retrying, instead of inviting a second order or a duplicate upload. A
+  reply that stalls while its body is read is a timeout too.
+- **"Try again" refetches.** The error screens take Next 16's `retry`, not `reset`, which re-rendered the
+  same failed server payload. A storefront page now fails inside its own shell (`(main)/error.tsx`); the
+  root screen has a phone gutter; `PageError` uses `PageShell` for its width.
+- **The cart cannot be overwritten before it is read.** persist saves on every set; its storage now
+  ignores writes until rehydrated, so an effect in a child of the provider can never save an empty cart
+  over the real one.
+- **Checkout is keyed on its buy-now item**, so moving between two buy-now links snapshots the new one.
+  An unknown or withdrawn buy-now item says "That item is no longer available" instead of the generic
+  error screen.
+- **`pending` is documented as button-only** (with `asChild`, a link navigates before it can stop it).
+- **Ratchet:** the regex now also counts `busy`, `frozen`, `isUpdating`, `isDeleting`, `isToggling`,
+  `isRemoving` and `isCreating`; the honest count is **96** (the earlier 65 missed those).
+- **Correction to the entry below:** the empty-checkout race did not exist before that entry; it arrived
+  with `skipHydration` in the same change and was fixed there.
+- **Mutation-tested:** one lock for every variable, the write timeout worded as a read, the body timeout
+  unmapped, and writes allowed before the read: each red, each restored.
+- **Tests:** `double-submit.test.tsx` (19).
+
 ## 2026-10-31 — GTM B7 (code part): a health probe, a startup env check, a deadline on every outbound call
 
 - **`GET /api/health`** for an uptime monitor: plain answers without the database; `?deep=1` checks it,

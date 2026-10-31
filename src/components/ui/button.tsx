@@ -54,7 +54,8 @@ function Button({
     /**
      * Work this button started is in flight: shows a spinner and ignores further clicks, but
      * stays enabled and focusable, so the reason is readable and nothing looks dead
-     * (docs/GTM-READINESS.md B9). Prefer this to `disabled`.
+     * (docs/GTM-READINESS.md B9). Prefer this to `disabled`. Buttons only: with `asChild` the
+     * child's own click (a link's navigation) runs before ours can stop it.
      */
     pending?: boolean;
   }) {

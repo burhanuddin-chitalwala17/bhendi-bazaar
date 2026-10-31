@@ -189,8 +189,16 @@ export const useCartStore = create<CartStoreState>()(
     }),
     {
       name: "bhendi-bazaar-cart",
-      storage: createJSONStorage(() => localStorage),
-      // Read by CartHydration after mount, never during the first render.
+      // Writes wait for the read: persist saves on every set, and a set before rehydrate (an
+      // effect in a child of CartSyncProvider) would overwrite the saved cart with an empty one.
+      storage: createJSONStorage(() => ({
+        getItem: (name) => localStorage.getItem(name),
+        setItem: (name, value) => {
+          if (useCartStore.persist.hasHydrated()) localStorage.setItem(name, value);
+        },
+        removeItem: (name) => localStorage.removeItem(name),
+      })),
+      // Read by CartSyncProvider (src/app/providers.tsx) after mount, never during the first render.
       skipHydration: true,
 
       partialize: (state) => ({

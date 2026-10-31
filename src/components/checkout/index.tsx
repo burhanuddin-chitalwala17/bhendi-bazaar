@@ -164,7 +164,7 @@ export function CheckoutContainer({ buyNowProduct }: CheckoutContainerProps) {
   };
 
   if (!snapshotReady) {
-    return <p className="text-sm text-muted-foreground">Loading your basket…</p>;
+    return <p className="text-sm text-muted-foreground">Loading your cart…</p>;
   }
 
   if (checkoutItems.length === 0) {

@@ -34,9 +34,10 @@ export function useMutation<TData = unknown, TVariables = void>(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<TData | null>(null);
-  // A second call while one is in flight joins it rather than sending again: a double tap is
-  // one request (docs/GTM-READINESS.md B9). A ref, not state, so it holds within one tick.
-  const inFlight = useRef<Promise<TData> | null>(null);
+  // A second call with the same variables while the first is in flight joins it: a double tap is
+  // one request (docs/GTM-READINESS.md B9). Different variables are a different request (another
+  // row, another choice) and are sent. A ref, not state, so it holds within one tick.
+  const inFlight = useRef(new Map<string, Promise<TData>>());
 
   const run = useCallback(
     async (variables: TVariables): Promise<TData> => {
@@ -78,11 +79,13 @@ export function useMutation<TData = unknown, TVariables = void>(
 
   const mutate = useCallback(
     (variables: TVariables): Promise<TData> => {
-      if (inFlight.current) return inFlight.current;
+      const key = keyOf(variables);
+      const joined = key === null ? undefined : inFlight.current.get(key);
+      if (joined) return joined;
       const pending = run(variables).finally(() => {
-        inFlight.current = null;
+        if (key !== null) inFlight.current.delete(key);
       });
-      inFlight.current = pending;
+      if (key !== null) inFlight.current.set(key, pending);
       return pending;
     },
     [run]
@@ -101,4 +104,13 @@ export function useMutation<TData = unknown, TVariables = void>(
     data,
     reset,
   };
+}
+
+/** Same variables, same key. Variables that cannot be serialised are never joined. */
+function keyOf(variables: unknown): string | null {
+  try {
+    return JSON.stringify(variables) ?? "undefined";
+  } catch {
+    return null;
+  }
 }

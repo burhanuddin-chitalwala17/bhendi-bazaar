@@ -9,7 +9,7 @@ import { join, resolve } from "node:path";
 import { z } from "zod";
 import { useMutation } from "@/hooks/core/useMutation";
 import { useServerForm } from "@/hooks/core/useServerForm";
-import { apiRequest, OFFLINE_MESSAGE, TIMEOUT_MESSAGE } from "@/lib/api-client";
+import { apiRequest, OFFLINE_MESSAGE, TIMEOUT_MESSAGE, TIMEOUT_UNSURE_MESSAGE } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 
@@ -42,6 +42,18 @@ describe("useMutation", () => {
     await act(async () => answer.resolve("done"));
     await expect(first).resolves.toBe("done");
     await expect(second).resolves.toBe("done");
+  });
+
+  it("sends a call with different variables: another row is another request", async () => {
+    const answer = deferred<string>();
+    const fn = vi.fn((_row: string) => answer.promise);
+    const { result } = renderHook(() => useMutation(fn, { showToast: false }));
+    act(() => {
+      void result.current.mutate("row-a");
+      void result.current.mutate("row-b");
+    });
+    expect(fn.mock.calls.map(([row]) => row)).toEqual(["row-a", "row-b"]);
+    await act(async () => answer.resolve("ok"));
   });
 
   it("sends again once the first has settled", async () => {
@@ -92,6 +104,29 @@ describe("apiRequest", () => {
       ),
     );
     const error = await apiRequest("/api/x", { timeoutMs: 10 }).catch((e) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.message).toBe(TIMEOUT_MESSAGE);
+  });
+
+  it("does not invite a blind retry of a write that may still land", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init: RequestInit) =>
+        new Promise((_, reject) => init.signal?.addEventListener("abort", () => reject(init.signal?.reason))),
+      ),
+    );
+    const error = await apiRequest("/api/x", { method: "POST", body: {}, timeoutMs: 10 }).catch((e) => e);
+    expect(error.message).toBe(TIMEOUT_UNSURE_MESSAGE);
+  });
+
+  it("counts a reply that stalls halfway as a timeout", async () => {
+    const stalled = {
+      ok: true,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: () => Promise.reject(new DOMException("t", "TimeoutError")),
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(stalled));
+    const error = await apiRequest("/api/x").catch((e) => e);
     expect(error).toBeInstanceOf(ApiError);
     expect(error.message).toBe(TIMEOUT_MESSAGE);
   });
@@ -157,6 +192,25 @@ describe("cart store", () => {
     });
     expect(useCartStore.getState().hasHydrated).toBe(true);
   });
+
+  it("never writes over the saved cart before it has been read", async () => {
+    const saved = JSON.stringify({ state: { items: [], updatedAt: "2026-01-01T00:00:00.000Z", marker: 1 }, version: 0 });
+    localStorage.setItem("bhendi-bazaar-cart", saved);
+    vi.resetModules();
+    const { useCartStore } = await import("@/store/cartStore");
+    useCartStore.getState().setItems([]);
+    expect(localStorage.getItem("bhendi-bazaar-cart")).toBe(saved);
+  });
+});
+
+describe("error screens", () => {
+  it("Try again refetches through retry", async () => {
+    const { default: StorefrontError } = await import("@/app/(main)/error");
+    const retry = vi.fn();
+    render(<StorefrontError error={new Error("x")} retry={retry} />);
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }));
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("useCheckoutSnapshot", () => {
@@ -197,7 +251,7 @@ describe("useCheckoutSnapshot", () => {
  * replacement is `pending`. Existing gates are counted here and the count only falls (ADR-0056):
  * lower it when you convert one.
  */
-const DISABLED_WHILE_BUSY_CEILING = 65;
+const DISABLED_WHILE_BUSY_CEILING = 96;
 
 describe("disabled-while-busy ratchet", () => {
   const SRC = resolve(__dirname, "../../src");
@@ -207,7 +261,8 @@ describe("disabled-while-busy ratchet", () => {
       return statSync(p).isDirectory() ? walk(p) : p.endsWith(".tsx") ? [p] : [];
     });
   const files = walk(SRC);
-  const BUSY = /disabled=\{[^}]*(pending|Pending|isLoading|isSubmitting|loading|Loading|isAdding|isBuying|saving|Saving|submitting|Submitting)/g;
+  const BUSY =
+    /disabled=\{[^}]*(pending|Pending|isLoading|isSubmitting|loading|Loading|isAdding|isBuying|saving|Saving|submitting|Submitting|busy|Busy|frozen|isUpdating|isDeleting|isToggling|isRemoving|isCreating)/g;
   const count = files.reduce((n, f) => n + (readFileSync(f, "utf8").match(BUSY)?.length ?? 0), 0);
 
   it("scans the components at all", () => {

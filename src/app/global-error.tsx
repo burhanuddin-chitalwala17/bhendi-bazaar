@@ -1,14 +1,14 @@
 "use client";
 
 import "./globals.css";
-import { PageError } from "@/components/shared/PageError";
+import { PageError, digestOf } from "@/components/shared/PageError";
 
 // Replaces the root layout when the layout itself fails, so it brings its own document.
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ error, retry }: { error: unknown; retry: () => void }) {
   return (
     <html lang="en">
       <body className="bg-background px-4 text-foreground">
-        <PageError reset={reset} digest={error.digest} />
+        <PageError retry={retry} digest={digestOf(error)} />
       </body>
     </html>
   );

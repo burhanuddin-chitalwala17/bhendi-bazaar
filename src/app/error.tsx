@@ -1,8 +1,13 @@
 "use client";
 
-import { PageError } from "@/components/shared/PageError";
+import { PageError, digestOf } from "@/components/shared/PageError";
 
-// Inside the root layout, so the header and footer stay (docs/GTM-READINESS.md B9).
-export default function RootError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  return <PageError reset={reset} digest={error.digest} />;
+// The last resort above every layout group; a storefront page fails inside its own shell
+// ((main)/error.tsx). `retry` refetches, so a server error is actually tried again.
+export default function RootError({ error, retry }: { error: unknown; retry: () => void }) {
+  return (
+    <div className="px-4">
+      <PageError retry={retry} digest={digestOf(error)} />
+    </div>
+  );
 }

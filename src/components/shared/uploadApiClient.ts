@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api-client";
+import { apiRequest, TRANSFER_TIMEOUT_MS } from "@/lib/api-client";
 
 /**
  * Uploads that pass through our server, which normalises the image before storing it
@@ -15,14 +15,22 @@ export const uploadApiClient = {
     const body = new FormData();
     files.forEach((file) => body.append("files", file));
     Object.entries(extra).forEach(([name, value]) => body.append(name, value));
-    const { urls } = await apiRequest<{ urls: string[] }>(`${endpoint}?type=${type}`, { method: "POST", body });
+    const { urls } = await apiRequest<{ urls: string[] }>(`${endpoint}?type=${type}`, {
+      method: "POST",
+      body,
+      timeoutMs: TRANSFER_TIMEOUT_MS,
+    });
     return urls;
   },
 
   async uploadProfilePicture(file: File): Promise<string> {
     const body = new FormData();
     body.append("file", file);
-    const { url } = await apiRequest<{ url: string }>("/api/profile/upload-picture", { method: "POST", body });
+    const { url } = await apiRequest<{ url: string }>("/api/profile/upload-picture", {
+      method: "POST",
+      body,
+      timeoutMs: TRANSFER_TIMEOUT_MS,
+    });
     return url;
   },
 };
