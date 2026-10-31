@@ -102,6 +102,10 @@
   listing answers. `listingApiClient.readiness`, `useReadinessHints` (`useAsyncData`, aborts the
   stale check) and `readiness-hints.ts` (verdict → words) sit beside the form. `CONTRACTS.md`
   Channels section updated: readiness of a *saved* product still never crosses the boundary.
+- **Readiness types split out:** `LISTING_READINESS`, `LISTING_PROBLEM`, `ListingProblem` and
+  `ListingReadinessReport` move to `server/listing/channel-readiness.types.ts` (re-exported from
+  `channel-readiness.ts`), so the client form words a verdict without pulling `@prisma/client`'s
+  `ChannelMapFit` into the browser bundle.
 - **Tests:** `tests/unit/product-form-readiness.test.tsx` (A3, R5, ux Review Partial/Loading, A8
   with a failing and a hanging check); `tests/integration/product-readiness-preview.test.ts`
   (A3 through the route on a real schema, family fill, nothing written, a shop with no channel, a
