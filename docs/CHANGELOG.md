@@ -10,6 +10,14 @@
 
 ## Entries
 
+## 2026-10-31 — GTM readiness review recorded
+
+- `docs/GTM-READINESS.md`: the whole-codebase production and GTM review (latency, SEO, security,
+  infra, compliance, engineering practice). It holds scores against the 2026-10-29 baseline, the
+  verified blockers (Next.js RCE advisory, functions running in `iad1`, no database backup, gateway-order
+  overwrite), a week-by-week roadmap, owner actions and costs, and re-runnable progress checks. Listed in
+  `docs/README.md`. Docs only; no code changed.
+
 ## 2026-10-31 — family-merge: members kept in the order the shop picked them
 
 - The family save named two look-alike members in the database's sort order, which differs by
