@@ -1,0 +1,31 @@
+docs/CHANGELOG.md
+  s_17ac7f5fca5021::t_eca9da876467ac 21-24
+  s_17ac7f5fca5021::t_d8edcd3ec96090 15-20,25
+docs/TESTING.md
+  s_17ac7f5fca5021::t_d8edcd3ec96090 49
+docs/ARCHITECTURE.md
+  s_17ac7f5fca5021::t_d8edcd3ec96090 77
+src/components/layout/PortalSidebar.tsx
+  s_17ac7f5fca5021::t_eca9da876467ac 200
+  s_17ac7f5fca5021::t_4d3ea87a6afdc5 169-170,214,226
+  s_17ac7f5fca5021::t_fde91940a9bed7 107
+  s_17ac7f5fca5021::t_7364f1f55a56c2 126-127
+tests/unit/portal-sidebar-sticky.test.tsx
+  s_17ac7f5fca5021::t_5fe483f6de820c 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "734211fa996bb765a79bd695b08fe53c54d99341",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
