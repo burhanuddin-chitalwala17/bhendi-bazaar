@@ -12,6 +12,12 @@
 
 ## Entries
 
+## 2026-11-01 — order-fulfilment Q38 re-signed: admin refund copy
+
+- The owner re-signed the refund copy changed at build (unit 6): the confirm sheet's "to the way the buyer paid" with
+  "Not now", "Try again" on the gateway-refused row, and the 409 refusal in our own words. Q38 in
+  `docs/specs/own-store/order-fulfilment/decisions.md` records it. No behaviour change.
+
 ## 2026-11-01 — storefront-themes unit 4: deals and badges [MIGRATION] [CONTRACT]
 
 - **Deals section (D10; R7, A6; Q12, Q13, Q20, Q36, Q41):** new `server/promotions/storefront-offers.ts` decides which of a
