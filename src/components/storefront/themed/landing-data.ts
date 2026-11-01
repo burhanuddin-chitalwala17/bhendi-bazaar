@@ -26,7 +26,7 @@ export function themedPageData(page: StorefrontPage, now: Date = new Date()): Th
     dealProducts: page.dealProducts,
     collections: picked || collectionsHidden
       ? page.collections
-      : page.categories.map((category) => ({ slug: category.slug, name: category.name, photoUrl: null })),
+      : page.categories.map((category) => ({ slug: category.slug, name: category.name, photoUrl: category.heroImage || null })),
     proof: page.proof,
     since: page.since,
     dispatchDays: page.dispatchDays,

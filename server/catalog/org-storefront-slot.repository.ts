@@ -25,7 +25,7 @@ export const orgStorefrontSlotRepository = {
         kind: true,
         position: true,
         asset: { select: { ref: true } },
-        category: { select: { id: true, slug: true, name: true } },
+        category: { select: { id: true, slug: true, name: true, heroImage: true } },
       },
     });
   },

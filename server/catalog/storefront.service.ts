@@ -201,7 +201,7 @@ export const storefrontService = {
       collections: shown(SECTION.COLLECTIONS)
         ? slots
             .filter((s) => s.kind === StorefrontSlotKind.COLLECTION && s.category)
-            .map((s) => ({ slug: s.category!.slug, name: s.category!.name, photoUrl: s.asset?.ref ?? null }))
+            .map((s) => ({ slug: s.category!.slug, name: s.category!.name, photoUrl: s.asset?.ref ?? (s.category!.heroImage || null) }))
         : [],
       claims: readClaims(profile.claims, productType).map((c) => ({ label: CLAIM_LABEL[c.key], detail: c.detail })),
       openingHours: shown(SECTION.VISIT) ? readOpeningHours(profile.openingHours) : null,

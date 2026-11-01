@@ -12,6 +12,14 @@
 
 ## Entries
 
+## 2026-11-01 — themed shop pages show the platform's category photos
+
+- "Shop by category" on a themed shop drew a letter on every tile: a shop that picked no collections fell back to its
+  categories with no photo at all, and a picked collection without its own photo had none either. Both now show the
+  category's platform image (`Category.heroImage`) before the letter pattern; the shop's own photo still wins. The
+  editor still shows only the shop's own pick (`server/catalog/storefront.service.ts`, `landing-data.ts`, and the
+  slot repository's select). `tests/unit/storefront-editor.test.tsx` fails on the old fallback.
+
 ## 2026-11-01 — the sort control shows the pick at once
 
 - On a shop page, "Price: low to high" looked ignored: the control read its value from the URL, which changes only when
