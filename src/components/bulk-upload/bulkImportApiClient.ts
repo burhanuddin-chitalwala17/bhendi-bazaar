@@ -1,6 +1,7 @@
 import { apiDownload, apiRequest } from "@/lib/api-client";
 import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
 import type { BulkCategoryRow } from "@server/catalog/bulk/bulk-category.service";
+import type { SheetAge } from "@server/catalog/bulk/sheet-copy";
 
 interface BulkReport<TRow> {
   ok: boolean;
@@ -11,6 +12,9 @@ interface BulkReport<TRow> {
 export interface ProductBulkReport extends BulkReport<BulkProductRow> {
   orgCode: string | null;
   summary: { rows: number; images: number };
+  /** How many rows make a product and how many replace one by SKU (R8). */
+  plan: { creates: number; updates: number };
+  sheet: SheetAge;
 }
 
 export interface CategoryBulkReport extends BulkReport<BulkCategoryRow> {

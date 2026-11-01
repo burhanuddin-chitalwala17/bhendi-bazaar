@@ -70,7 +70,7 @@ export async function validateProductRows(
     errors.push({
       row: 0,
       field: "sheet",
-      message: `At most ${BULK_MAX_ROWS} rows per upload — this sheet has ${rows.length}.`,
+      message: `Your sheet has ${rows.length} rows. Upload ${BULK_MAX_ROWS} or fewer at a time — split it into two sheets.`,
     });
     return errors;
   }
@@ -93,28 +93,28 @@ export async function validateProductRows(
       // claiming one is refused rather than silently restoring it (ADR-0029, product-archive Q1).
       await adminProductsRepository.listSkusTaken(orgId, skus.map((s) => s.sku))
     : [];
-  const takenBy = new Map(taken.map((p) => [p.sku as string, p.name]));
   const archivedSkus = new Set(
     taken.filter((p) => p.archivedAt).map((p) => p.sku as string)
   );
   // A row updating a product may keep its running sale price, however deep (the form's rule).
   const liveIdBySku = new Map(taken.filter((p) => !p.archivedAt).map((p) => [p.sku as string, p.id]));
-  const seenInSheet = new Map<string, number>();
+  const seenInSheet = new Map<string, SheetRowRef>();
 
-  for (const { row, rowNumber } of rows) {
+  for (const { row, rowNumber, tab } of rows) {
+    const rowErrors: RowError[] = [];
     const category = matchCategory.match(row.categorySlug);
     if (!category) {
-      errors.push({
+      rowErrors.push({
         row: rowNumber,
         field: "category",
         message: notInListMessage("Category", row.categorySlug, matchCategory.closest(row.categorySlug)),
       });
     }
-    errors.push(...resolveRowVocabulary(row, rowNumber, category?.id, vocabulary).errors);
+    rowErrors.push(...resolveRowVocabulary(row, rowNumber, category?.id, vocabulary).errors);
 
     for (const locationName of Object.keys(row.stock)) {
       if (!locationByName.has(locationName.trim().toLowerCase())) {
-        errors.push({
+        rowErrors.push({
           row: rowNumber,
           field: `stock:${locationName}`,
           message: `"${locationName}" is not one of this organisation's pickup locations. Create it on the Locations page first.`,
@@ -127,28 +127,28 @@ export async function validateProductRows(
       // one" (bulk-sheet). The one exception stays an error: an archived product still holds
       // its SKU, and an import must never silently restore it (ADR-0029, product-archive Q1).
       if (archivedSkus.has(row.sku)) {
-        errors.push({
+        rowErrors.push({
           row: rowNumber,
           field: "sku",
-          message: `SKU "${row.sku}" is still held by "${takenBy.get(row.sku)}", which is archived. Restore that product to edit it, or use a different code.`,
+          message: `SKU ${row.sku} belongs to an archived product. Restore it, or use another code.`,
         });
       }
-      const firstRow = seenInSheet.get(row.sku);
-      if (firstRow !== undefined) {
-        errors.push({
+      const first = seenInSheet.get(row.sku);
+      if (first !== undefined) {
+        rowErrors.push({
           row: rowNumber,
           field: "sku",
-          message: `SKU "${row.sku}" is already used by row ${firstRow} of this sheet.`,
+          message: `SKU ${row.sku} is used twice — rows ${twoRows(first, { rowNumber, tab })}`,
         });
       } else {
-        seenInSheet.set(row.sku, rowNumber);
+        seenInSheet.set(row.sku, { rowNumber, tab });
       }
     }
 
     for (const reference of row.images) {
       const match = matchImage(reference, provided);
       if ("kind" in match) {
-        errors.push({
+        rowErrors.push({
           row: rowNumber,
           field: "images",
           message: imageMatchMessage(reference, match),
@@ -163,18 +163,33 @@ export async function validateProductRows(
         salePricePaise: rupeesToPaise(row.salePrice),
         ceilingBps: terms.maxDiscountBps,
       });
-      if (breach) errors.push({ row: rowNumber, field: "salePrice", message: breach });
+      if (breach) rowErrors.push({ row: rowNumber, field: "salePrice", message: breach });
     }
     if (row.cover && !row.images.includes(row.cover)) {
-      errors.push({
+      rowErrors.push({
         row: rowNumber,
         field: "cover",
         message: `Cover "${row.cover}" is not one of the row's images.`,
       });
     }
+    // Two tabs share row numbers, so every problem carries the tab it is on.
+    errors.push(...onTab(rowErrors, tab));
   }
 
   return errors;
+}
+
+type SheetRowRef = Pick<RowWithNumber<unknown>, "rowNumber" | "tab">;
+
+/** "5 and 9", or "5 (Abaya) and 5 (Attar)" when the two rows are on different tabs. */
+function twoRows(first: SheetRowRef, second: SheetRowRef): string {
+  if (first.tab === second.tab) return `${first.rowNumber} and ${second.rowNumber}`;
+  const named = (ref: SheetRowRef) => (ref.tab ? `${ref.rowNumber} (${ref.tab})` : `${ref.rowNumber}`);
+  return `${named(first)} and ${named(second)}`;
+}
+
+export function onTab(errors: readonly RowError[], tab: string | undefined): RowError[] {
+  return tab ? errors.map((error) => ({ ...error, tab })) : [...errors];
 }
 
 /**

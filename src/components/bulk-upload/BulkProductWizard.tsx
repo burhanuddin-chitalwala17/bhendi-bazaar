@@ -11,6 +11,7 @@
  * docks above the tab bar (ADR-0015/0016).
  */
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import type { SheetChoicesDTO } from "@server/catalog/bulk/bulk-sheet.service";
 import { Button } from "@/components/ui/button";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
@@ -18,6 +19,9 @@ import { imagesOnly, sanitizePath } from "./files";
 import { bulkImportApiClient } from "./bulkImportApiClient";
 import { useBulkImport } from "./useBulkImport";
 import { GetTheSheet } from "./GetTheSheet";
+import { CheckReport } from "./CheckReport";
+import { CHECK_COPY } from "./check-copy";
+import { SHEET_AGE_COPY } from "@server/catalog/bulk/sheet-copy";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
@@ -39,11 +43,33 @@ function Steps({ current }: { current: number }) {
 
 export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: SheetChoicesDTO }) {
   const [stage, setStage] = useState<Stage>("get");
-  const { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run } = useBulkImport(
+  const { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run, reset } = useBulkImport(
     (sheet, filenames) => bulkImportApiClient.validateProducts(orgId, sheet, filenames),
   );
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  // A stale sheet is accepted once the shop says to go on with it (own-store Q10); a new check asks again.
+  const [continued, setContinued] = useState(false);
   const sheetInputRef = useRef<HTMLInputElement>(null);
+  const checkSheet = () => {
+    // Never disabled (owner rule): a tap while busy says what is happening instead.
+    if (step === "checking" || step === "uploading" || step === "creating") {
+      toast(step === "checking" ? CHECK_COPY.reading : `Uploading photos ${progress.done}/${progress.total}… keep this page open`);
+      return;
+    }
+    setContinued(false);
+    return check();
+  };
+  // A refused or stale report belongs to the file it read; a new file or a fresh download clears it.
+  const startOver = () => {
+    reset();
+    setContinued(false);
+  };
+  const getFreshSheet = () => {
+    startOver();
+    setStage("get");
+  };
+  const sheetAge = step === "report" ? report?.sheet : undefined;
+  const waitingOnAge = !!sheetAge && (!!sheetAge.refusedColumn || (sheetAge.stale && !continued));
 
   const createAll = async () => {
     if (!report?.ok || !report.orgCode) return;
@@ -128,10 +154,7 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
       <div className="space-y-3 rounded-xl border border-border bg-card p-4">
         {/* Both numbers, because they are not the same event: a wrong create leaves a
             product to archive, and a wrong update has overwritten something. */}
-        <p className="text-lg font-semibold">
-          ✅ {created} products created
-          {updated > 0 ? `, ${updated} updated` : ""}
-        </p>
+        <p className="text-lg font-semibold">{CHECK_COPY.done(created + updated, created, updated)}</p>
         <Button asChild>
           <a href={`/org/${orgId}/products`}>View products</a>
         </Button>
@@ -145,7 +168,7 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
       <section className="space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="space-y-1">
           <p className="text-sm font-medium">Your filled sheet (.xlsx or .csv)</p>
-          <Button variant="link" size="sm" className="px-0" onClick={() => setStage("get")}>
+          <Button variant="link" size="sm" className="px-0" onClick={getFreshSheet}>
             Download a fresh sheet
           </Button>
         </div>
@@ -154,7 +177,10 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
           type="file"
           accept=".xlsx,.csv"
           className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:text-primary-foreground"
-          onChange={(e) => setSheet(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            setSheet(e.target.files?.[0] ?? null);
+            startOver();
+          }}
         />
 
         <div className="space-y-1 pt-2">
@@ -197,47 +223,14 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
         )}
       </section>
 
-      {step === "report" && report && !report.ok && (
-        <section className="space-y-2 rounded-xl border border-destructive/40 bg-card p-4">
-          <p className="text-sm font-semibold text-destructive">
-            {report.errors.length} problem
-            {report.errors.length === 1 ? "" : "s"} — nothing was created
-          </p>
-          <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
-            {report.errors.map((error, i) => (
-              <li key={i}>
-                <span className="font-medium">
-                  {error.row === 0 ? "Sheet" : `Row ${error.row}`} ·{" "}
-                  {error.field}:
-                </span>{" "}
-                {error.message}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {step === "report" && report?.ok && (
-        <section className="space-y-2 rounded-xl border border-border bg-card p-4">
-          <p className="text-sm font-semibold">
-            ✓ Sheet is clean — {report.rows.length} products,{" "}
-            {report.summary.images} images
-          </p>
-          <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
-            {report.rows.map(({ row }, index) => (
-              <li
-                key={index}
-                className="flex items-center justify-between gap-2"
-              >
-                <span className="truncate">{row.name}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {row.images.length} photo{row.images.length === 1 ? "" : "s"}
-                  {row.videoRef ? " + video" : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+      {step === "report" && report && (
+        <CheckReport
+          report={report}
+          continued={continued}
+          onContinue={() => setContinued(true)}
+          onFresh={getFreshSheet}
+          onPickFile={() => sheetInputRef.current?.click()}
+        />
       )}
 
       {(step === "uploading" || step === "creating") && (
@@ -249,19 +242,25 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
       )}
 
       <div className="fixed inset-x-0 bottom-tabbar z-30 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
-        {step === "report" && report?.ok ? (
+        {waitingOnAge && sheetAge?.refusedColumn ? (
+          <Button className="w-full md:w-auto" onClick={getFreshSheet}>
+            {SHEET_AGE_COPY.fresh}
+          </Button>
+        ) : waitingOnAge ? (
+          <Button className="w-full md:w-auto" onClick={() => setContinued(true)}>
+            {SHEET_AGE_COPY.continue}
+          </Button>
+        ) : step === "report" && report?.ok ? (
           <Button className="w-full md:w-auto" onClick={createAll}>
-            Create {report.rows.length} products
+            {CHECK_COPY.createAction(report.plan.creates, report.plan.updates)}
           </Button>
         ) : (
           <Button
             className="w-full md:w-auto"
-            onClick={check}
-            disabled={
-              step === "checking" || step === "uploading" || step === "creating"
-            }
+            onClick={checkSheet}
+            aria-busy={step === "checking"}
           >
-            {step === "checking" ? "Checking…" : "Check the sheet"}
+            {step === "checking" ? CHECK_COPY.reading : "Check the sheet"}
           </Button>
         )}
       </div>

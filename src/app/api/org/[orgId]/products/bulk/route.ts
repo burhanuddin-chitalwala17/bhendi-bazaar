@@ -37,11 +37,12 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     // Same checks as the dry run; every named image must have an uploaded URL.
     const filenames = rows.flatMap(({ row }) => Object.keys(row.imageUrls));
     const errors = await validateProductRows(scope.orgId, rows, filenames);
-    for (const { row, rowNumber } of rows) {
+    for (const { row, rowNumber, tab } of rows) {
       for (const filename of row.images) {
         if (!row.imageUrls[filename]) {
           errors.push({
             row: rowNumber,
+            ...(tab ? { tab } : {}),
             field: "images",
             message: `No uploaded URL for "${filename}".`,
           });

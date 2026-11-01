@@ -9,6 +9,10 @@ export interface RowError {
   row: number;
   field: string;
   message: string;
+  /** The tab the row is on — two tabs share row numbers (own-store/bulk-sheet U3). */
+  tab?: string;
+  /** The column's heading as the shop's file shows it, for the screen's column filter (D8). */
+  column?: string;
 }
 
 /** A product row after Zod — typed, but not yet checked against the database. */

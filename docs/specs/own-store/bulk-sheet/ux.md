@@ -1,7 +1,7 @@
 # UX — own-store/bulk-sheet
 
 - **Status:** Signed off
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **Prototype:** `product-listing-prototype.html` (shared with product-form; owner to publish as a private artifact and link here)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [src/components/CLAUDE.md](../../../../src/components/CLAUDE.md), [ADR-0050](../../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
@@ -77,7 +77,7 @@ with "I've filled it"; it needs no matrix of its own beyond the Get the sheet ro
 |---|---|---|---|
 | First use | Clean summary | "All 40 rows look good · 32 new, 8 updates" | "Create 32 · update 8" |
 | Empty | n/a — Upload's Empty row stops here first | — | — |
-| Loading | Checking rows | "Checking 40 rows…" | — |
+| Loading | Reading and checking are one round trip, so the count is not known until it ends | "Reading your sheet…" (Upload's line, kept) | — |
 | Partial | Some rows with problems (Q19) | "6 problems in 4 rows · nothing created yet" | "Download your sheet with problems marked" |
 | Success | Done | "40 products on sale · 32 new, 8 updated" | "View products" |
 | Retryable error | Create fails mid-way on network | "Couldn't finish. Nothing was changed — try again." | "Try again" |

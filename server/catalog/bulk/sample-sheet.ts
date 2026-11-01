@@ -11,6 +11,7 @@ import { indiaDate } from "@server/shared/india-time";
 
 import { SHEET_LIST, tabColumns, VIDEO_HELP, type SheetColumn } from "./sheet-columns";
 import { LISTS_TAB, type SheetTab } from "./sheet-tabs";
+import { sheetFingerprint, shortVersion, STAMP_KEY, type SheetPlan, type StampedTab } from "./sheet-stamp";
 import { NO, YES } from "./word-match";
 
 export interface SampleSheetContext {
@@ -26,6 +27,8 @@ export interface SampleSheetContext {
   families?: string[];
   /** The shop's live brands by name; none means no Brand column. */
   brands?: string[];
+  /** The ticks the sheet is made for, stamped so an upload is compared with today's sheet for them (D4). */
+  categoryIds?: string[];
 }
 
 /** Excel's own stop on a typed value outside a stopping list (ux.md, Refused). */
@@ -51,15 +54,33 @@ const EXAMPLE_FONT: Partial<ExcelJS.Font> = { italic: true, color: { argb: "FF80
 
 export async function buildProductSampleSheet(ctx: SampleSheetContext): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  writeInstructions(workbook.addWorksheet(INSTRUCTIONS_TAB), ctx);
+  const { fingerprint } = sheetPlan(ctx);
+  writeInstructions(workbook.addWorksheet(INSTRUCTIONS_TAB), ctx, shortVersion(fingerprint));
   const tabs = ctx.tabs.map((tab) => ({ tab, sheet: workbook.addWorksheet(tab.name) }));
   const lookups = workbook.addWorksheet(LISTS_TAB);
   lookups.state = "veryHidden";
   const lists = sheetLists(ctx);
   const ranges = writeLookups(lookups, lists);
+  writeStamp(lookups, lists.length + 1, ctx, fingerprint);
   for (const { tab, sheet } of tabs) writeTab(sheet, tab, ctx, ranges);
   writeListsGuide(workbook.getWorksheet(INSTRUCTIONS_TAB)!, lists);
   return Buffer.from(await workbook.xlsx.writeBuffer());
+}
+
+/** The columns and lists a sheet for these choices has, fingerprinted (D4) — what an upload is judged against. */
+export function sheetPlan(ctx: SampleSheetContext): SheetPlan {
+  const tabs: StampedTab[] = ctx.tabs.map((tab) => ({
+    name: tab.name,
+    columns: tabColumns(tab.type, ctx.locationNames, { brands: !!ctx.brands?.length }),
+  }));
+  return { fingerprint: sheetFingerprint(tabs, sheetLists(ctx)), tabs };
+}
+
+/** Down one column of the hidden Lists tab, after the lists: key, made-on, fingerprint, ticks. */
+function writeStamp(sheet: ExcelJS.Worksheet, column: number, ctx: SampleSheetContext, fingerprint: string) {
+  [STAMP_KEY, ctx.madeOn.toISOString(), fingerprint, (ctx.categoryIds ?? []).join(",")].forEach(
+    (value, index) => (sheet.getCell(index + 1, column).value = value),
+  );
 }
 
 function writeTab(
@@ -189,7 +210,7 @@ function exampleCell(column: SheetColumn, tab: SheetTab, ctx: SampleSheetContext
   }
 }
 
-function writeInstructions(sheet: ExcelJS.Worksheet, ctx: SampleSheetContext) {
+function writeInstructions(sheet: ExcelJS.Worksheet, ctx: SampleSheetContext, version: string) {
   const lines: Array<[string, Partial<ExcelJS.Font>?]> = [
     ["How to fill this sheet", { bold: true, size: 14 }],
     [`For ${ctx.orgName}. Tabs: ${ctx.tabs.map((tab) => tab.name).join(", ")}.`],
@@ -208,7 +229,7 @@ function writeInstructions(sheet: ExcelJS.Worksheet, ctx: SampleSheetContext) {
   }
   lines.push(
     [""],
-    [`Made ${indiaDate(ctx.madeOn)}. Download a fresh sheet each time — our lists change.`],
+    [`Made ${indiaDate(ctx.madeOn)} · version ${version}. Download a fresh sheet each time — our lists change.`],
   );
   for (const [text, font] of lines) {
     const row = sheet.addRow([text]);

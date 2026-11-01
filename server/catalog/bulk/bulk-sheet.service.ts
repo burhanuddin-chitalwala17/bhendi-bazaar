@@ -12,7 +12,10 @@ import { listingValueRepository } from "@server/listing/listing-value.repository
 import { productFamilyService } from "@server/listing/product-family.service";
 import { productTypeRepository } from "@server/listing/product-type.repository";
 
-import { buildProductSampleSheet } from "./sample-sheet";
+import { buildProductSampleSheet, sheetPlan, type SampleSheetContext } from "./sample-sheet";
+import type { RawSheet } from "./sheet";
+import type { SheetAge } from "./sheet-copy";
+import { judgeSheet } from "./sheet-stamp";
 import { categoryPaths, groupForTicking, planSheetTabs, type TickGroup } from "./sheet-tabs";
 
 export interface SheetChoicesDTO {
@@ -46,35 +49,50 @@ export const bulkSheetService = {
   },
 
   async buildSheet(orgId: string, tickedIds: string[]): Promise<Buffer> {
-    const [org, locationNames, categories, named, types, families, brands] = await Promise.all([
-      orgRepository.findById(orgId),
-      activeLocationNames(orgId),
-      categoryRepository.listTree(),
-      categoryRepository.list(),
-      productTypeRepository.list(),
-      productFamilyService.list(orgId),
-      brandService.list(orgId),
-    ]);
-    const paths = categoryPaths(named);
-    const tabs = planSheetTabs(tickedIds, categories, types);
-    // Only the lists these tabs ask about: there are a thousand values and a sheet needs a few.
-    const lists = [
-      ...new Set(
-        tabs.flatMap((tab) =>
-          (tab.type?.facts ?? []).map((fact) => FACT_DECLARATIONS[fact]?.list).filter((l): l is string => !!l),
-        ),
-      ),
-    ];
-    const values = await listingValueRepository.byLists(lists, orgId);
-    return buildProductSampleSheet({
-      orgName: org?.name ?? "your shop",
-      madeOn: new Date(),
-      locationNames,
-      tabs,
-      values,
-      categoryPaths: Object.fromEntries(named.map((category) => [category.slug, paths.get(category.id)!])),
-      families: families.map((family) => family.name),
-      brands: brands.map((brand) => brand.name),
-    });
+    return buildProductSampleSheet(await sheetContext(orgId, tickedIds));
+  },
+
+  /**
+   * An upload against the sheet the same ticks would make today (D4): silent, stale, or refused
+   * naming the column. Identical for every uploader (Q18).
+   */
+  async judgeUpload(orgId: string, raw: Pick<RawSheet, "csv" | "createdOn" | "stamp" | "tabs">): Promise<SheetAge> {
+    if (!raw.stamp) return judgeSheet(raw, null);
+    return judgeSheet(raw, sheetPlan(await sheetContext(orgId, raw.stamp.categoryIds)));
   },
 };
+
+/** Everything a sheet for these ticks is made from, read now (D1). */
+async function sheetContext(orgId: string, tickedIds: string[]): Promise<SampleSheetContext> {
+  const [org, locationNames, categories, named, types, families, brands] = await Promise.all([
+    orgRepository.findById(orgId),
+    activeLocationNames(orgId),
+    categoryRepository.listTree(),
+    categoryRepository.list(),
+    productTypeRepository.list(),
+    productFamilyService.list(orgId),
+    brandService.list(orgId),
+  ]);
+  const paths = categoryPaths(named);
+  const tabs = planSheetTabs(tickedIds, categories, types);
+  // Only the lists these tabs ask about: there are a thousand values and a sheet needs a few.
+  const lists = [
+    ...new Set(
+      tabs.flatMap((tab) =>
+        (tab.type?.facts ?? []).map((fact) => FACT_DECLARATIONS[fact]?.list).filter((l): l is string => !!l),
+      ),
+    ),
+  ];
+  const values = await listingValueRepository.byLists(lists, orgId);
+  return {
+    orgName: org?.name ?? "your shop",
+    madeOn: new Date(),
+    locationNames,
+    tabs,
+    values,
+    categoryPaths: Object.fromEntries(named.map((category) => [category.slug, paths.get(category.id)!])),
+    families: families.map((family) => family.name),
+    brands: brands.map((brand) => brand.name),
+    categoryIds: tickedIds,
+  };
+}

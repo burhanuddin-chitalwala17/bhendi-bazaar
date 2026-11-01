@@ -88,8 +88,25 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
     // cannot both be the same product.
     expect(errors.filter((error) => error.row === 2)).toEqual([]);
     expect(errors).toContainEqual(
-      expect.objectContaining({ row: 4, field: "sku", message: expect.stringContaining("row 3") })
+      expect.objectContaining({ row: 4, field: "sku", message: "SKU BULK-FRESH-1 is used twice — rows 3 and 4" })
     );
+
+    // own-store/bulk-sheet U3: two tabs share row numbers, so a repeat across them names both tabs,
+    // and every problem carries the tab it sits on.
+    const acrossTabs = await validateProductRows(
+      existing.orgId,
+      [
+        { rowNumber: 5, tab: "Abaya", row: row("BULK-FRESH-2") },
+        { rowNumber: 5, tab: "Attar", row: row("BULK-FRESH-2") },
+      ],
+      ["a.jpg"]
+    );
+    expect(acrossTabs).toContainEqual({
+      row: 5,
+      tab: "Attar",
+      field: "sku",
+      message: "SKU BULK-FRESH-2 is used twice — rows 5 (Abaya) and 5 (Attar)",
+    });
 
     // And the plan says which it is, so a person sees it before confirming.
     const { planProductRows } = await import("@server/catalog/bulk/bulk-product.service");
@@ -202,7 +219,7 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
     // The row is doomed by an **archived** product's SKU, not a live one: a live SKU is now
     // how a sheet says "update this", so it is no longer a conflict. An archived product still
     // holds its code (ADR-0029), so creating against it violates the unique pair — which is
-    // also why validation refuses such a row with a message naming the product.
+    // also why validation refuses such a row, asking for a restore or another code.
     const doomedSku = "BULK-TEST-DOOMED";
     await prisma.product.create({
       data: {

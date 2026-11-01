@@ -45,6 +45,12 @@ export function useBulkImport<TReport extends { ok: boolean }>(
     }
   };
 
+  /** A new file, or a fresh sheet on its way: the old file's report no longer speaks for anything. */
+  const reset = () => {
+    setReport(null);
+    setStep("pick");
+  };
+
   /** `create` uploads, calls `creating()`, creates, and answers how many were made and updated. */
   const run = async (create: (work: BulkImportWork) => Promise<{ created: number; updated?: number }>) => {
     setStep("uploading");
@@ -59,5 +65,5 @@ export function useBulkImport<TReport extends { ok: boolean }>(
     }
   };
 
-  return { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run };
+  return { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run, reset };
 }

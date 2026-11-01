@@ -12,6 +12,33 @@
 
 ## Entries
 
+## 2026-11-01 — own-store/bulk-sheet unit 3: the stamp, the old-sheet warning and refusal, problems by row, counts [CONTRACT]
+
+- **Stamp (D4; R4, A3; Q10, Q27):** the hidden `Lists` tab ends with a `__stamp` column — made-on date, a SHA-256
+  fingerprint of every tab's column keys and every list's words, the ticks — and Instructions reads "Made {date}
+  · version {first six}". `server/catalog/bulk/sheet-stamp.ts` judges an upload against the sheet the same ticks
+  make today: same fingerprint silent; different but every key known and every required column present, stale;
+  otherwise refused naming the column as the file heads it. An unstamped .xlsx is warned with its own creation
+  date (Q28); a .csv is read as before. `bulkSheetService.judgeUpload` is the one judge (Q18 for U5).
+- **Screen (D8; R7, R8):** the validate answer gains `plan` (creates, updates) and `sheet`; a refused sheet is not
+  read further. `CheckReport.tsx` shows "This sheet is from {date}…" with "Continue with this sheet" / "Download a
+  fresh sheet", "This sheet is too old to read: the '{column}' column has changed.", "{n} problems in {r} rows ·
+  nothing created yet" grouped by row and tab, 20 then "Show all", filterable by column, and "All {n} rows look
+  good · {a} new, {b} updates" with "Create {a} · update {b}"; done reads "{n} products on sale · {a} new, {b}
+  updated". "Check the sheet" is no longer disabled while busy; a tap says what is happening.
+- **Problems (U1's handoff):** every `RowError` carries `tab` and, on validate, `column` (`row-errors.ts`); a SKU
+  repeated reads "SKU {code} is used twice — rows {a} and {b}", naming tabs when they differ; an archived SKU reads
+  "SKU {code} belongs to an archived product. Restore it, or use another code."; over 300 rows reads "Your sheet
+  has {n} rows. Upload 300 or fewer at a time — split it into two sheets."
+- **Tests:** `tests/unit/bulk-sheet-stamp.test.ts`; `bulk-upload`, `bulk-sheet-download` integration extended.
+  Mutation-tested: fingerprint compare always equal (4 fail), unknown key not refused (1), missing required not
+  refused (1), optional column treated as required (1), unstamped .xlsx not warned (1), cross-tab rows unnamed (1),
+  row errors without their tab (1), the route's refusal branch dropped (1).
+- **Review fixes:** a new file or "Download a fresh sheet" clears the old report, so a refused sheet is no dead
+  end; the file's own problems count no row and offer "Pick another file"; a product-type problem is named by the
+  Category column; the check's loading line stays "Reading your sheet…" (ux.md updated: the count is not known
+  until the one round trip ends); the validate route's refusal is tested end to end.
+
 ## 2026-11-01 — product-form unit 6: the shop sees what the team changed [CONTRACT]
 
 - **Badge** (R12, A7; D13; Q14): "Edited by Bhendi Bazaar team · {date}" on the shop's product page

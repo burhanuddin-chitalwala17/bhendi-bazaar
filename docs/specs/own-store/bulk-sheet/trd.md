@@ -1,6 +1,6 @@
 # TRD — own-store/bulk-sheet
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1, U2 built 2026-11-01
+- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1, U2, U3 built 2026-11-01
 - **Domain:** catalog (bulk), with listing (vocabulary) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -155,6 +155,10 @@ Brand column appears only for a shop with brands; a row's brand is written as `b
 the sheet has that column, so an update from an older sheet keeps the product's brand. The
 reader keeps each cell's address and the file's creation date (`RawSheet.createdOn`); U3 shows the
 unstamped warning from it, with the rest of the validate answer's `sheet`.
+U3 judges in `server/catalog/bulk/sheet-stamp.ts` (pure) through `bulkSheetService.judgeUpload`, which
+U5's admin validate calls unchanged (Q18); the stamp also carries the ticked ids, so today's sheet is
+rebuilt for the same ticks. A sheet with no stamp date and no creation date is warned without a date.
+The marker download and "Fix the red cells…" line stay with U4.
 
 ## Open questions
 None. Q27–Q30 are Claude · reversible.
