@@ -1,0 +1,41 @@
+server/catalog/storefront-claims.ts
+  s_17ac7f5fca5021::t_e34f231d230d02 1-92
+src/components/org/look/section-copy.ts
+  s_17ac7f5fca5021::t_2dd49e88679b9e 1-6,8-33,35-54
+docs/CHANGELOG.md
+  s_17ac7f5fca5021::t_9885e2ac95315e 15-56
+tests/integration/storefront-editor.test.ts
+  s_17ac7f5fca5021::t_9e679078515c94 1-180
+docs/CONTRACTS.md
+  s_17ac7f5fca5021::t_e653643e762a61 203-215
+server/catalog/storefront-hours.ts
+  s_17ac7f5fca5021::t_aa178dc799b31a 1-47
+src/components/org/look/section-fields.tsx
+  s_17ac7f5fca5021::t_0a56529334adad 1-241
+src/components/org/look/useSectionSave.ts
+  s_17ac7f5fca5021::t_0a6259c65f97f1 1-39,41,46,48
+server/catalog/org-storefront-slot.repository.ts
+  s_17ac7f5fca5021::t_26593af06912be 1-54
+src/components/org/look/section-sheet.tsx
+  s_17ac7f5fca5021::t_c16ab21fa082bd 1-131,137-232
+tests/unit/storefront-editor.test.tsx
+  s_17ac7f5fca5021::t_bb0aa9da020083 1-220
+src/components/org/look/slot-photos.tsx
+  s_17ac7f5fca5021::t_3aa21e4956343f 1-2,4-31,35-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "0291bbf60da50d6a42386365e1d0e195a29abf9c",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
