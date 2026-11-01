@@ -22,6 +22,7 @@ import {
   LANDING_SHELF_LIMIT,
   readStorefrontLook,
   type PaletteKey,
+  type StorefrontLook,
   type ThemeKey,
 } from "@server/catalog/storefront-themes";
 import type { HeroBannerContent } from "@/components/home/hero-banner";
@@ -91,6 +92,25 @@ export interface ShopListing {
   themed: boolean;
 }
 
+/** A landing page's goods, priced here (ADR-0018), around the service's DTO. */
+async function storefrontPageFrom(dto: StorefrontPageDto | null): Promise<StorefrontPage | null> {
+  if (!dto) return null;
+  const [bestSold, newIn, categories, productCount, offers, dealProducts] = await Promise.all([
+    dto.bestSellingIds.length
+      ? productsDAL.getProducts({ orgId: dto.id, ids: dto.bestSellingIds })
+      : Promise.resolve([]),
+    productsDAL.getProducts({ orgId: dto.id, limit: LANDING_SHELF_LIMIT }),
+    storefrontDAL.categoriesFor(dto.id),
+    storefrontDAL.productCountFor(dto.id),
+    // Asked here, never by storefrontService: an offer is promotions' to word (D10).
+    promotionService.storefrontOffers(dto.id),
+    productsDAL.getProducts({ orgId: dto.id, offerOnly: true, ownOffersOnly: true, limit: LANDING_SHELF_LIMIT }),
+  ]);
+  const rank = new Map(dto.bestSellingIds.map((id, index) => [id, index]));
+  const bestSelling = [...bestSold].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+  return { ...dto, bestSelling, newIn, categories, productCount, offers, dealProducts };
+}
+
 export const storefrontDAL = {
   /**
    * The shop at this handle, or null.
@@ -123,23 +143,16 @@ export const storefrontDAL = {
    * a product that left sale since it sold simply drops out.
    */
   getStorefrontPage: cache(async (handle: string): Promise<StorefrontPage | null> => {
-    const dto = await storefrontService.storefrontPage(handle);
-    if (!dto) return null;
-    const [bestSold, newIn, categories, productCount, offers, dealProducts] = await Promise.all([
-      dto.bestSellingIds.length
-        ? productsDAL.getProducts({ orgId: dto.id, ids: dto.bestSellingIds })
-        : Promise.resolve([]),
-      productsDAL.getProducts({ orgId: dto.id, limit: LANDING_SHELF_LIMIT }),
-      storefrontDAL.categoriesFor(dto.id),
-      storefrontDAL.productCountFor(dto.id),
-      // Asked here, never by storefrontService: an offer is promotions' to word (D10).
-      promotionService.storefrontOffers(dto.id),
-      productsDAL.getProducts({ orgId: dto.id, offerOnly: true, ownOffersOnly: true, limit: LANDING_SHELF_LIMIT }),
-    ]);
-    const rank = new Map(dto.bestSellingIds.map((id, index) => [id, index]));
-    const bestSelling = [...bestSold].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
-    return { ...dto, bestSelling, newIn, categories, productCount, offers, dealProducts };
+    return await storefrontPageFrom(await storefrontService.storefrontPage(handle));
   }),
+
+  /**
+   * The landing page in a look its owner is trying (D12), published or not: the same reads a
+   * buyer's page makes, so the preview is the page, not a picture of it.
+   */
+  getStorefrontPreview: async (handle: string, look: StorefrontLook): Promise<StorefrontPage | null> => {
+    return await storefrontPageFrom(await storefrontService.storefrontPage(handle, look));
+  },
 
   /**
    * The shop's brand page, or null. Memoised for the same reason as `getByHandle`: the

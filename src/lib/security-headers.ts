@@ -72,7 +72,19 @@ function uploadHosts(): string[] {
   }
 }
 
-export function contentSecurityPolicy(nonce: string, isDev: boolean): string {
+/**
+ * The one page our own pages may frame: the look picker's live preview, drawn in same-origin
+ * iframes so each frame's width drives its breakpoints (storefront-themes D12, Q32). Everything
+ * else stays unframeable.
+ */
+export const SELF_FRAMED_SOURCE = "/org/:orgId/storefront/preview";
+const SELF_FRAMED_PATH = /^\/org\/[^/]+\/storefront\/preview\/?$/;
+export const isSelfFramedPath = (pathname: string) => SELF_FRAMED_PATH.test(pathname);
+
+/** Applied after the static set in `next.config.ts`, so on that path alone it wins over `DENY`. */
+export const SELF_FRAMED_HEADERS: Array<{ key: string; value: string }> = [{ key: "X-Frame-Options", value: "SAMEORIGIN" }];
+
+export function contentSecurityPolicy(nonce: string, isDev: boolean, selfFramed = false): string {
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
 
@@ -117,7 +129,8 @@ export function contentSecurityPolicy(nonce: string, isDev: boolean): string {
 
     // Clickjacking: nothing may frame this site. `X-Frame-Options` below says the same
     // thing to browsers that predate this directive.
-    "frame-ancestors": ["'none'"],
+    // The look preview alone may be framed, and only by us (`SELF_FRAMED_SOURCE`).
+    "frame-ancestors": [selfFramed ? "'self'" : "'none'"],
     "base-uri": ["'self'"], // an injected <base> retargets every relative URL on the page
     "object-src": ["'none'"],
     "worker-src": ["'self'", "blob:"],

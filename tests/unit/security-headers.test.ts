@@ -6,7 +6,14 @@
  * These assert the properties that make it worth having, not the exact string.
  */
 import { describe, it, expect } from "vitest";
-import { contentSecurityPolicy, STATIC_SECURITY_HEADERS } from "@/lib/security-headers";
+import { readFileSync } from "node:fs";
+import {
+  contentSecurityPolicy,
+  isSelfFramedPath,
+  SELF_FRAMED_HEADERS,
+  SELF_FRAMED_SOURCE,
+  STATIC_SECURITY_HEADERS,
+} from "@/lib/security-headers";
 import { youtubeEmbedUrl, youtubePosterUrl } from "@server/catalog/media";
 
 const NONCE = "0123456789abcdef0123456789abcdef";
@@ -147,5 +154,46 @@ describe("static security headers", () => {
     // Razorpay's card and UPI flows use it; `payment=()` fails as a payment method that
     // is silently unavailable rather than as an error anyone would trace back to here.
     expect(byKey.get("Permissions-Policy")).toContain("payment=(self");
+  });
+});
+
+describe("the look preview alone may be framed, and only by us (storefront-themes D12, Q32)", () => {
+  const PREVIEW = "/org/org_1/storefront/preview";
+  const NOT_FRAMED = [
+    "/org/org_1/storefront",
+    "/org/org_1/storefront/look",
+    "/org/org_1/storefront/preview/extra",
+    "/store/zaveri",
+    "/admin/org/org_1/storefront/preview",
+    "/checkout",
+  ];
+
+  it("names the preview path and nothing else", () => {
+    expect(isSelfFramedPath(PREVIEW)).toBe(true);
+    for (const path of NOT_FRAMED) expect(isSelfFramedPath(path), path).toBe(false);
+  });
+
+  it("the next.config source and the middleware's test agree on the same paths", () => {
+    const source = new RegExp(`^${SELF_FRAMED_SOURCE.replace(/:\w+/g, "[^/]+")}$`);
+    for (const path of [PREVIEW, ...NOT_FRAMED]) expect(source.test(path), path).toBe(isSelfFramedPath(path));
+  });
+
+  it("frames to self on that path, never to another origin", () => {
+    const framed = contentSecurityPolicy(NONCE, false, true);
+    expect(directive(framed, "frame-ancestors")).toBe("frame-ancestors 'self'");
+    expect(directive(contentSecurityPolicy(NONCE, false), "frame-ancestors")).toBe("frame-ancestors 'none'");
+    expect(new Map(SELF_FRAMED_HEADERS.map((h) => [h.key, h.value])).get("X-Frame-Options")).toBe("SAMEORIGIN");
+  });
+
+  it("next.config applies the SAMEORIGIN override after DENY, so it wins only there", () => {
+    const config = readFileSync("next.config.ts", "utf8");
+    const all = config.indexOf('{ source: "/:path*", headers }');
+    const framed = config.indexOf("{ source: SELF_FRAMED_SOURCE, headers: SELF_FRAMED_HEADERS }");
+    expect(all).toBeGreaterThan(-1);
+    expect(framed).toBeGreaterThan(all);
+  });
+
+  it("the middleware asks the path, not a constant", () => {
+    expect(readFileSync("src/middleware.ts", "utf8")).toContain("isSelfFramedPath(request.nextUrl.pathname)");
   });
 });

@@ -1,6 +1,6 @@
 # TRD — own-store/storefront-themes
 
-- **Status:** Accepted — units 1–4 implemented 2026-11-01
+- **Status:** Accepted — units 1–5 implemented 2026-11-01
 - **Domain:** catalog (storefront), promotions (one column, one read)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30
@@ -158,7 +158,7 @@ D13's fields; `PromotionFormInput` gains `showOnStorefront`.
 2. **U2** sections and compositions [MIGRATION] — nothing renders them yet. *Implemented 2026-11-01.*
 3. **U3** themed chrome, landing/shop split, redirects — only themed shops, and none exist yet. *Implemented 2026-11-01.* Review fixes: shop error and loading states, best selling on-sale only, dispatch skips cancelled orders.
 4. **U4** deals and badges [MIGRATION] [CONTRACT]. *Implemented 2026-11-01.* `storefront.dal.ts` reaches catalog and promotions only, within the free reach, so `file-cohesion` needed no entry. Review fixes: the deals strip counts only the shop's own offers (a platform offer adds nothing, R7, Q12); the badge's percent is floored so it never overstates (A3).
-5. **U5** picker, preview, publish, revert [CONTRACT] — **changes behaviour**: a shop can publish.
+5. **U5** picker, preview, publish, revert [CONTRACT] — **changes behaviour**: a shop can publish. *Implemented 2026-11-01.* The preview lives in its own route group, `(preview)`, so the portal's chrome never wraps it; "Suggested", "Tap any part to change it." and "Add a photo" ship with U6's editor and suggestion. First publish keeps the unthemed page for switch back (Q42).
 6. **U6** point-of-need editor and theme suggestion [MIGRATION] [CONTRACT] — after org-profile U2;
    ships to production with U5.
 

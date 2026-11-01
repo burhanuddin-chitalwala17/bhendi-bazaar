@@ -29,6 +29,7 @@ export const PALETTE = {
   COBALT: "cobalt",
 } as const;
 export type PaletteKey = (typeof PALETTE)[keyof typeof PALETTE];
+export const PALETTE_KEYS = Object.values(PALETTE) as [PaletteKey, ...PaletteKey[]];
 
 /** Fixed by design, never the device's (Q5); the scope sets `color-scheme` to match. */
 export const PALETTE_TONE = { LIGHT: "light", DARK: "dark" } as const;

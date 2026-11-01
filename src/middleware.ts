@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { contentSecurityPolicy } from "@/lib/security-headers";
+import { contentSecurityPolicy, isSelfFramedPath } from "@/lib/security-headers";
 import { CROSS_SITE_REFUSED, isCrossSiteMutation } from "@/lib/same-origin";
 import { forwardStorefrontShop } from "@/lib/storefront-chrome";
 
@@ -62,7 +62,11 @@ export const signInAtEdge = (pathname: string) =>
  */
 function withCsp(request: NextRequest, response: NextResponse): NextResponse {
   const nonce = crypto.randomUUID().replace(/-/g, "");
-  const policy = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
+  const policy = contentSecurityPolicy(
+    nonce,
+    process.env.NODE_ENV === "development",
+    isSelfFramedPath(request.nextUrl.pathname),
+  );
   const header = process.env.CSP_REPORT_ONLY === "1"
     ? "Content-Security-Policy-Report-Only"
     : "Content-Security-Policy";

@@ -190,6 +190,16 @@ shop's `promotionFormSchema`, `POST /api/org/[orgId]/promotions` and `PATCH …/
 (boolean, default false), stored as `Promotion.showOnStorefront` only for a shop's code; `PlatformPromotionFormInput`
 strips it.
 
+Since storefront-themes unit 5 a shop publishes its look through **`StorefrontLookInput`**
+(`storefrontLookSchema` in `src/lib/validation/schemas/storefront.schema.ts`, `PUT /api/org/[orgId]/storefront/look`):
+`{ theme, palette, lookVersion }`, strict, the palette one of its theme's three. **`StorefrontRevertInput`**
+(`storefrontRevertSchema`, `POST …/storefront/look/revert`) is `{ lookVersion }` alone: what it restores is the
+server's record. Both answer **`StorefrontLookState`** (`server/catalog/storefront-look.types.ts`): `orgId`, `handle`,
+`name`, `live: { theme, palette }` (both null before any theme), `lookVersion`, `publishedAt` (ISO or null) and
+`previous: { theme, palette, until } | null` while it is kept (30 days, Q4). A stale `lookVersion` is 409 with
+"{Name} published {theme} {n} min ago." (Q31); a switch back after the 30 days is 410 "Your previous look is no
+longer kept."; a member who is not the owner gets 403.
+
 Since order-fulfilment unit 2 a shop's orders read as **`ShopOrderView`** / **`ShopParcelView`**
 (`server/checkout/shop-parcel.types.ts`): only the shop's own parcels on paid orders, each with `status`,
 its lines and `parcelValue`, `position`/`ofCount` ("Parcel 1 of 2"), and the buyer as **`ShopBuyer`

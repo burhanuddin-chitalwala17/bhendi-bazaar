@@ -12,6 +12,48 @@
 
 ## Entries
 
+## 2026-11-01 — storefront-themes unit 5: picker, preview, publish, switch back [CONTRACT]
+
+- **Publish (D11; R4, A2, A9; Q4, Q31):** new `server/catalog/storefront-look.service.ts` publishes a theme and palette at
+  the look version the picker read: a compare-and-set in `orgProfileRepository.publishLookIfVersion` that bumps the
+  version, so of two members publishing at once one wins and the other gets 409 "{Name} published {theme} {n} min ago."
+  (with "See it" / "Publish mine anyway", which resends at the new version). Owner only ("Only the shop's owner can change
+  its look.", 403); audited after the write (`ORG_LOOK_PUBLISHED`, `ORG_LOOK_REVERTED`, ADR-0021). The look replaced is
+  kept 30 days; **switch back** restores it at the same compare-and-set and refuses after the 30 days. A shop's first
+  publish keeps its page from before any theme, which switch back restores as "your old page" (Q42, new).
+- **Routes:** `PUT /api/org/[orgId]/storefront/look`, `POST …/storefront/look/revert`, both `withOrg`, strict Zod schemas;
+  caller `orgStorefrontApiClient.ts`. No public route, so the rate-limit registry is unchanged.
+- **Preview (D12; Q32):** a new route group `src/app/(preview)` holds `/org/{orgId}/storefront/preview`, portal-guarded
+  (`requireOrgMember`), `noindex`, no portal chrome: the themed shell and sections for the requested keys, landing or shop
+  view, read by `storefrontDAL.getStorefrontPreview` (the service's `storefrontPage` takes the look to draw). An empty shop
+  previews labelled sample goods declared in `src/components/storefront/preview/sample-goods.ts`. Inside the frame a link
+  goes nowhere and a tapped section is posted to the parent, our origin only (the unit 6 editor listens). Framing: on
+  that path alone `frame-ancestors 'self'` (middleware) and `X-Frame-Options: SAMEORIGIN` (a second `next.config.ts` entry
+  after `DENY`); everywhere else unchanged.
+- **Picker (ux.md picker, preview & publish):** `/org/{orgId}/storefront/look`, reached from the portal's Shop page: four
+  cards, each a live scaled iframe of the shop's own page with the theme's pattern until it arrives ("Preview unavailable"
+  / "Try again" when it does not), palette dots, "Live now", "Switch back to {previous}". The full-screen preview is a
+  `TaskDialog` (ADR-0040 case 2) with palettes, Landing / Shop and "Publish this look"; from `lg:` a desktop frame sits
+  beside the phone. Publish and switch back confirm in a `FormDialog`, show "Publishing…" with a spinner after a second
+  and never disable; failure reads "Not published. Your shop still shows {current}." Success toasts "Your new look is
+  live." and offers "Share your shop". A member who is not the owner sees the refusal and "Back"; a failed read is the
+  page's error ("Couldn't load your themes. Check your internet.").
+- **Left to unit 6 (its Delivery line):** "Suggested for {category}", "Tap any part to change it." and the "Add a photo"
+  chip, which belong with the section editor and the theme suggestion.
+- **Contract:** new `StorefrontLookInput`, `StorefrontRevertInput`, `StorefrontLookState`; `docs/CONTRACTS.md` moves with it.
+- **Tests:** integration `storefront-look-publish.test.ts` (version 0 start; STAFF 403; publish live, version, 30 days,
+  audit; stale 409 with name and theme; resend wins; switch back and its audit; refused after 30 days); unit
+  `storefront-look-picker.test.tsx` (schemas, copy, cards, palettes, publish, conflict, failure, never disabled, switch
+  back, sample goods), `storefront-look-frame.test.tsx` (pattern, unavailable and retry, link stopped, origin-only post),
+  `security-headers.test.ts` (preview path only, config order, middleware asks the path).
+- **Mutations recorded:** repository CAS without `lookVersion` → 3 integration red; owner check dropped → 2 red; 30-day
+  expiry dropped → red; palette-of-theme refine → `true` → red; `frame-ancestors` always `'self'` → 2 red; framed path
+  widened to `/storefront` → 2 red; link `preventDefault` dropped → red; `postMessage` to `"*"` → red. All restored.
+- **Review fixes:** the error page's "Try again" calls Next 16.3's `retry` (re-fetches; `reset` only re-renders); the frame
+  guard also stops form submits (the themed header's search); an empty shop gets "Add a product" above the cards; a switch
+  back after the 30 days is **410** (not 409), shown with no resend and no "See it"; at `md:` the preview's controls sit
+  in a column beside the phone frame. Tests: submit stopped, resend carries the refreshed version, 410 offers no resend.
+
 ## 2026-11-01 — order-fulfilment Q38 re-signed: admin refund copy
 
 - The owner re-signed the refund copy changed at build (unit 6): the confirm sheet's "to the way the buyer paid" with

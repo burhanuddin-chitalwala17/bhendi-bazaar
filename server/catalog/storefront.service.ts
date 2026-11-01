@@ -30,7 +30,7 @@ import {
   type BrandPageDto,
   type StorefrontPageDto,
 } from "@server/catalog/storefront.types";
-import { LANDING_SHELF_LIMIT, readStorefrontLook } from "@server/catalog/storefront-themes";
+import { LANDING_SHELF_LIMIT, readStorefrontLook, type StorefrontLook } from "@server/catalog/storefront-themes";
 import { Prisma } from "@prisma/client";
 import type { HideableBrandPageSection } from "@server/catalog/brand-page-sections";
 import {
@@ -145,11 +145,13 @@ export const storefrontService = {
    * A themed shop's landing page (storefront-themes D9), or null when the shop has published no
    * look: an unthemed shop keeps today's pages (Q19). The brand page's face and proof, plus best
    * selling by units in paid orders over 90 days (Q34) and the derived dispatch time, both asked
-   * of checkout. Ids only: the DAL prices the goods (ADR-0018).
+   * of checkout. Ids only: the DAL prices the goods (ADR-0018). `preview` draws any shop in the
+   * look its owner is trying (D12), published or not.
    */
-  async storefrontPage(handle: string): Promise<StorefrontPageDto | null> {
+  async storefrontPage(handle: string, preview?: StorefrontLook): Promise<StorefrontPageDto | null> {
     const profile = await orgProfileRepository.findPublicByHandle(handle);
-    const look = profile ? readStorefrontLook(profile.themeKey, profile.paletteKey) : null;
+    // A preview draws the look the owner is trying, not the published one (D12).
+    const look = profile ? (preview ?? readStorefrontLook(profile.themeKey, profile.paletteKey)) : null;
     if (!profile || !look) return null;
     const orgId = profile.org.id;
     const [brand, bestSellingIds, dispatchDays] = await Promise.all([

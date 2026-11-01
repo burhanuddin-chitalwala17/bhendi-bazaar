@@ -3,6 +3,7 @@ import { z } from "zod";
 import { SLUG_PATTERN } from "@server/shared/slug";
 import { SOCIAL_NETWORK_KEYS, normaliseHandle } from "@server/catalog/social-networks";
 import { HIDEABLE_BRAND_PAGE_SECTIONS } from "@server/catalog/brand-page-sections";
+import { PALETTE_KEYS, THEME_KEYS, THEMES } from "@server/catalog/storefront-themes";
 
 /**
  * What an org may send about its own shop.
@@ -89,3 +90,23 @@ export const handleChangeSchema = z.object({
 });
 
 export type HandleChangeInput = z.infer<typeof handleChangeSchema>;
+
+/**
+ * Publish a look (storefront-themes D11): two keys into code and the version the editor saw. A
+ * palette must be one of its theme's three (own-store Q15); who and when are the server's.
+ */
+export const storefrontLookSchema = z
+  .object({
+    theme: z.enum(THEME_KEYS),
+    palette: z.enum(PALETTE_KEYS),
+    lookVersion: z.number().int().min(0),
+  })
+  .strict()
+  .refine((look) => THEMES[look.theme].palettes.some((p) => p.key === look.palette), {
+    path: ["palette"],
+    message: "That palette is not one of this theme's.",
+  });
+export type StorefrontLookPayload = z.infer<typeof storefrontLookSchema>;
+
+/** Switch back (Q4): only the version the editor saw; what it restores is the server's. */
+export const storefrontRevertSchema = z.object({ lookVersion: z.number().int().min(0) }).strict();

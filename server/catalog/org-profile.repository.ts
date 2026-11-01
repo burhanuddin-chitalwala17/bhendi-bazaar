@@ -63,6 +63,29 @@ export type ShopDetailsSectionData =
   | { social: Prisma.InputJsonValue | typeof Prisma.JsonNull }
   | { returnsPreset: ReturnsPreset; promiseNote: string | null };
 
+/** A look write (storefront-themes D11): the keys, who and when, and what Switch back restores. */
+export interface OrgLookWrite {
+  themeKey: string | null;
+  paletteKey: string | null;
+  lookPublishedAt: Date;
+  lookPublishedByUserId: string;
+  previousThemeKey: string | null;
+  previousPaletteKey: string | null;
+  previousLookUntil: Date | null;
+}
+
+const LOOK_SELECT = {
+  themeKey: true,
+  paletteKey: true,
+  lookVersion: true,
+  lookPublishedAt: true,
+  previousThemeKey: true,
+  previousPaletteKey: true,
+  previousLookUntil: true,
+  lookPublishedBy: { select: { name: true } },
+  org: { select: { id: true, handle: true, name: true } },
+} as const satisfies Prisma.OrgProfileSelect;
+
 const SHOP_DETAILS_SELECT = {
   updatedAt: true,
   tagline: true,
@@ -184,6 +207,23 @@ export class OrgProfileRepository {
   async findUpdatedAt(orgId: string): Promise<Date | null> {
     const row = await prisma.orgProfile.findUnique({ where: { orgId }, select: { updatedAt: true } });
     return row?.updatedAt ?? null;
+  }
+
+  /** The look as published, its version, who published it, and what Switch back restores. */
+  async findLook(orgId: string) {
+    return await prisma.orgProfile.findUnique({ where: { orgId }, select: LOOK_SELECT });
+  }
+
+  /**
+   * Publish a look only at the version the editor saw (Q31): a compare-and-set that bumps the
+   * version, so of two members publishing at once exactly one wins. False is a stale version.
+   */
+  async publishLookIfVersion(orgId: string, expectedVersion: number, data: OrgLookWrite): Promise<boolean> {
+    const { count } = await prisma.orgProfile.updateMany({
+      where: { orgId, lookVersion: expectedVersion },
+      data: { ...data, lookVersion: { increment: 1 } },
+    });
+    return count === 1;
   }
 
   /** Profiles with a logo or hero that predates the asset record — the media backfill's input. */

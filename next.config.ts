@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 // Relative import: next.config loads before tsconfig path aliases exist.
 import { crawlersBlocked } from "./src/lib/crawl-block";
-import { STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
+import { SELF_FRAMED_HEADERS, SELF_FRAMED_SOURCE, STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
 import { assertRateLimitConfigAtBuild } from "./src/lib/rate-limit/config";
 
 // A preview or production build that cannot enforce rate limits fails here, so the deploy
@@ -22,7 +22,8 @@ const nextConfig: NextConfig = {
       headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow" });
     }
 
-    return [{ source: "/:path*", headers }];
+    // Last, so its X-Frame-Options overrides DENY on the look preview alone (storefront-themes D12).
+    return [{ source: "/:path*", headers }, { source: SELF_FRAMED_SOURCE, headers: SELF_FRAMED_HEADERS }];
   },
   async redirects() {
     // Addresses Google still holds from before categories lived under /category/
