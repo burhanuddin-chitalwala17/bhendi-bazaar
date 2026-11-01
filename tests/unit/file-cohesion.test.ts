@@ -57,7 +57,7 @@ const RECORDED: Record<string, { domains: string[]; why: string }> = {
       "The money a parcel cancel gives back, as one seam (order-fulfilment D12–D14, D16): the offer " +
       "budget and coupon (promotions), the refund owed (payments) and the shop's fee (payouts). " +
       "Split, a second cancel path could run some give-backs and not others. Narrowed from a " +
-      "five-domain `parcel-moved.ts` at review; this entry awaits the owner's acceptance (decisions Q37).",
+      "five-domain `parcel-moved.ts` at review; the owner accepted this entry 2026-11-01 (decisions Q37).",
   },
   "server/payouts/ledger.service.ts": {
     domains: ["catalog", "checkout", "promotions"],

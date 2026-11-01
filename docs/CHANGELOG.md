@@ -12,6 +12,12 @@
 
 ## Entries
 
+## 2026-11-01 — order-fulfilment Q37 accepted: the cancel give-back seam
+
+- The owner accepted the `server/checkout/cancel-give-back.ts` entry in `tests/unit/file-cohesion.test.ts` (ADR-0056):
+  one seam reaching payments, payouts and promotions, so a cancel gives back all three or none. Q37 in
+  `docs/specs/own-store/order-fulfilment/decisions.md` records the acceptance. No behaviour change.
+
 ## 2026-11-01 — seller-onboarding unit 5: pickup address over the form, reviews on the product
 
 - **Pickup address sheet (R8, A4; D11; Q12, Q26):** `src/components/org/pickup-address-sheet.tsx` wraps the existing
