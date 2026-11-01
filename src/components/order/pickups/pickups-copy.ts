@@ -28,3 +28,76 @@ export function paidAgoLine(hours: number): string {
 
 /** Over 72 h the age is red (ux.md Stale). */
 export const OVERDUE_RED_HOURS = 72;
+
+/** The Ready and Booked tabs (ux.md "admin pickups"). */
+export const QUEUE_COPY = {
+  ready: "Ready",
+  booked: "Booked",
+  empty: "No parcels waiting. You'll get an email when a shop marks one ready.",
+  loadFailed: "Couldn't load pickups.",
+  noCourierUpdate: "No courier update since booking.",
+  allCities: "All cities",
+  previous: "Previous",
+  next: "Next",
+  /** "Showing 51–100 of 120" (ux.md "Many items": 50 per page). */
+  showing: (from: number, to: number, total: number) => `Showing ${from}–${to} of ${total}`,
+} as const;
+
+/** "Parcel 2 of 2" (ux.md Partial), from the code's "-SH2" suffix; nothing for a one-parcel order. */
+export function parcelOf(code: string, of: number): string | null {
+  const n = /-SH(\d+)$/.exec(code)?.[1];
+  return of > 1 && n ? `Parcel ${n} of ${of}` : null;
+}
+
+/** Amber past a day ready (ux.md Stale): "Waiting 26 h" and "Ready for 26 h — book today". */
+export const READY_AMBER_HOURS = 24;
+export const waitingFor = (hours: number) => `Waiting ${hours} h`;
+export const readyFor = (hours: number) => `Ready for ${hours} h — book today`;
+
+/** Red once the booked pickup day has passed. */
+export const pickupDue = (daysOverdue: number) =>
+  daysOverdue === 1 ? "Pickup was due yesterday" : `Pickup was due ${daysOverdue} days ago`;
+
+/** ux.md "admin book pickup". */
+export const BOOKING_COPY = {
+  open: "Book pickup",
+  title: "Book pickup",
+  hint: "Book this parcel on Shiprocket first, then copy the details here.",
+  openShiprocket: "Open Shiprocket",
+  save: "Save booking",
+  saving: "Saving…",
+  success: "Booked. Buyer and shop emailed.",
+  retry: "Couldn't save. Try again.",
+  refresh: "Refresh",
+  fields: {
+    pickupDate: "Pickup date",
+    estimatedDelivery: "Delivers by",
+    courierName: "Courier",
+    trackingNumber: "AWB number",
+    trackingUrl: "Tracking link",
+    labelUrl: "Label link",
+  },
+} as const;
+
+/** ux.md "admin change pickup date". */
+export const DATE_COPY = {
+  open: "Change pickup date",
+  title: "Change pickup date",
+  current: (day: string) => `Pickup was booked for ${day}. Change it on Shiprocket first.`,
+  alsoCheck: "Also check the delivery date.",
+  save: "Save date",
+  saving: "Saving…",
+  keep: "Keep date",
+  success: "Pickup moved. Shop and buyer emailed.",
+  retry: "Couldn't save. Try again.",
+  refresh: "Refresh",
+} as const;
+
+export const PICKED_UP_COPY = {
+  open: "Mark picked up",
+  marking: "Marking…",
+  success: "Marked picked up. The shop is emailed.",
+} as const;
+
+/** Shiprocket's own dashboard, where the admin books by hand (own-store Q18). */
+export const SHIPROCKET_URL = "https://app.shiprocket.in";

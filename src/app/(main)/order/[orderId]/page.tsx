@@ -20,9 +20,11 @@ export default async function OrderPage({ params }: OrderPageProps) {
     return <ErrorState message="Order not found" />;
   }
 
+  const timelines = await ordersDAL.timelinesFor(order);
+
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <OrderClient order={order} />
+      <OrderClient order={order} timelines={timelines} />
     </Suspense>
   );
 }

@@ -999,16 +999,22 @@ model Shipment {
   shippingProvider   ShippingProvider? @relation(fields: [shippingProviderId], references: [id])
 
   // ✅ Tracking (independent per shipment)
+  /// The AWB. Unique where present: a partial index in the migration (order-fulfilment D11).
   trackingNumber String?
   courierName    String? // "BlueDart Surface"
   trackingUrl    String?
+  /// Shiprocket's label link, pasted at booking (Q23). Served only through the shop's label route (D7, Q26).
+  labelUrl       String?
+  /// The day the courier collects, as the admin booked it (Q6). A calendar day, not a moment.
+  pickupDate     DateTime? @db.Date
 
   // ✅ Status (independent per shipment)
   /// One of SHIPMENT_STATUS (server/shipping/domain/shipping.types.ts). Written only by
   /// shipment-status.service.ts, which the transition table guards.
   status            String    @default("packing")
   shipmentStatus    String? // Provider-specific status
-  estimatedDelivery DateTime?
+  /// The day the buyer is told it arrives by (Q6). A calendar day, not a moment.
+  estimatedDelivery DateTime? @db.Date
   deliveredAt       DateTime?
   /// When this parcel's units were returned to stock. The idempotency marker for restocking:
   /// a courier repeating a terminal event must not credit the same units twice
@@ -1127,7 +1133,7 @@ model ParcelEvent {
   id         String   @id @default(cuid())
   shipmentId String
   shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  /// What happened — `move` today; booking, date and ETA changes join it later (D5).
+  /// One of PARCEL_EVENT_KIND (server/shipping/domain/shipping.types.ts): a move, or a date change (D5).
   kind       String   @default("move")
   fromStatus String?
   toStatus   String
@@ -1136,6 +1142,11 @@ model ParcelEvent {
   reason     String?
   /// The courier's own wording, when a courier caused it.
   courierWording String?
+  /// The dates a booking or a date change set (kind `move` into pickup_booked, or `pickup_moved`).
+  pickupDate        DateTime? @db.Date
+  estimatedDelivery DateTime? @db.Date
+  /// The staff member's name at the time, for "Already booked by {name}" (ux.md admin book pickup).
+  actorName  String?
   createdAt  DateTime @default(now())
 
   @@index([shipmentId, createdAt])
@@ -1155,10 +1166,12 @@ model Notice {
   recipient  String
   /// What the email says, captured at the time; parsed by kind before sending.
   data       Json
+  /// What makes a repeatable kind unique: the timeline row a date change wrote; "" for once-per-parcel kinds.
+  ref        String    @default("")
   sentAt     DateTime?
   createdAt  DateTime  @default(now())
 
-  @@unique([shipmentId, kind, audience])
+  @@unique([shipmentId, kind, audience, ref])
 }
 
 model ShippingEvent {

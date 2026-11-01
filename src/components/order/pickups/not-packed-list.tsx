@@ -25,7 +25,7 @@ export function NotPackedList({ rows, now }: { rows: NotPackedRow[]; now: number
     );
     const shop = (
       <>
-        <Link href={`/admin/orders/pickups?shop=${row.orgId}`} className="hover:underline">
+        <Link href={`/admin/orders/pickups?tab=not-packed&shop=${row.orgId}`} className="hover:underline">
           {row.shopName}
         </Link>
         {" · "}

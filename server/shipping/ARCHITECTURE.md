@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — shipping domain, current state
 
-- **Verified:** 2026-10-31
+- **Verified:** 2026-11-01
 - **Covers:** `server/shipping/**`. Product-wide architecture is [`/docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
 Describes what exists now. Update after a structural change, never before.
@@ -31,8 +31,9 @@ Status updates arrive independently, by webhook, and are normalised before they 
 | `repositories/provider.repository.ts` | Provider records. Credentials are encrypted at rest and read only by the connection path; every read that leaves the server is a projection without them. |
 | `repositories/event.repository.ts` | Shipping events, appended as status changes arrive. |
 | `repositories/shipment.repository.ts` | The one module that reaches the `Shipment` table ([ADR-0003](../../docs/adr/0003-one-repository-per-aggregate.md)). |
-| `shipment-status.service.ts` | The single writer of `Shipment.status`, through a transition table, on the caller's transaction: checkout's `fulfilment.service.ts` holds the order's lock and calls it. The write is conditional on the status it read, and each move appends a `ParcelEvent` (the timeline). A terminal event that returns goods asks catalog's stock commands to restock, once. |
-| `tracking.service.ts` | What the admin tracking form and the carrier webhooks read and record. The order's status is checkout's, derived from the parcels in the move's own transaction. |
+| `shipment-status.service.ts` | The single writer of `Shipment.status`, through a transition table, on the caller's transaction: checkout's `fulfilment.service.ts` holds the order's lock and calls it. The write is conditional on the status it read, and each move appends a `ParcelEvent` (the timeline). A booking's facts land with the move into `pickup_booked`; a later date change is a compare-and-set on the pickup date seen, with its own `pickup_moved` row (order-fulfilment D11). A terminal event that returns goods asks catalog's stock commands to restock, once. |
+| `label.ts` | The allowlist a pasted Shiprocket label link must match, and the 10 s fetch the shop's label route streams through, so the raw link never reaches the shop (order-fulfilment D7). |
+| `tracking.service.ts` | What the carrier webhooks read and record. The order's status is checkout's, derived from the parcels in the move's own transaction. |
 | `rate-quote.service.ts` | Signs each quoted rate with its origin, destination, billable weight and a 30-minute expiry; checkout charges only what a valid signature vouches for, for the parcel it allocated itself (Invariant 1). Stateless: no quote table, no carrier call inside the order transaction. |
 | `billable-weight.ts` | What a parcel is billed as: real weights summed, settled to grams, rounded up to the next kilogram, floor 1 kg ([product-weight-and-rates](../../docs/specs/product-weight-and-rates/)). |
 | `services/connection.types.ts` | The shapes the connection flow exchanges. |

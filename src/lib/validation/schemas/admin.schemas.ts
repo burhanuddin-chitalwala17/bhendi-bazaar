@@ -15,12 +15,6 @@ export const updateUserSchema = z.object({
   isBlocked: z.boolean().optional(),
 });
 
-/** Order status is a free string in the model; the closed set lives with the domain. */
-export const updateOrderStatusSchema = z.object({
-  status: z.string().trim().min(1).max(50).optional(),
-  notes: z.string().trim().max(2000).optional(),
-});
-
 /**
  * Moderation changes one thing: whether the platform has withdrawn a review (R15).
  *

@@ -19,6 +19,7 @@ import type {
   OrderStats,
 } from "@server/checkout/admin.order.types";
 import type { ShipmentStatus } from "@server/shipping/domain/shipping.types";
+import { calendarDay, isoDay } from "@server/shared/india-time";
 import { toShopBuyer, type ShopOrderView, type ShopParcelView } from "@server/checkout/shop-parcel.types";
 
 /**
@@ -193,6 +194,9 @@ export class AdminOrderRepository {
         courierName: shipment.courierName,
         trackingNumber: shipment.trackingNumber,
         trackingUrl: shipment.trackingUrl,
+        pickupDate: shipment.pickupDate ? isoDay(shipment.pickupDate) : null,
+        pickupDay: shipment.pickupDate ? calendarDay(shipment.pickupDate) : null,
+        estimatedDelivery: shipment.estimatedDelivery ? isoDay(shipment.estimatedDelivery) : null,
         items: toWireShipmentItems(shipment.items),
       })),
     };
@@ -321,6 +325,7 @@ const SHOP_ORDER_SELECT = {
       shippingCost: true,
       courierName: true,
       trackingNumber: true,
+      pickupDate: true,
       items: SHIPMENT_LINES_INCLUDE.items,
     },
   },
@@ -351,6 +356,7 @@ export function toShopOrderView(row: ShopOrderRow, only: Set<string> | null): Sh
       shippingCost: s.shippingCost,
       courierName: s.courierName,
       trackingNumber: s.trackingNumber,
+      pickupDay: s.pickupDate ? calendarDay(s.pickupDate) : null,
       position: i + 1,
       ofCount: row.shipments.length,
     };

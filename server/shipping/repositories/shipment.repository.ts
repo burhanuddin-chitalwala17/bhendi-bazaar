@@ -1,12 +1,23 @@
 import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@server/shared/prisma";
+import type { ParcelBooking } from "@server/shipping/domain/shipping.types";
 
 /** `prisma`, or the `tx` of the transaction a caller holds. */
 type ShipmentDb = Pick<typeof prisma, "shipment" | "shipmentItem">;
 type ParcelEventDb = Pick<typeof prisma, "parcelEvent">;
 
 /** Paid in (`paidAfter`, `paidBefore`]; one shop, or one parcel, when named. */
+/** The admin queue's filters (ux.md "admin pickups": by shop, by city) and one page of it. */
+export type QueueFilter = { orgId?: string; city?: string };
+export type QueuePage = QueueFilter & { skip: number; take: number };
+
+const queueWhere = (status: string, filter: QueueFilter) => ({
+  status,
+  ...(filter.orgId ? { orgId: filter.orgId } : {}),
+  ...(filter.city ? { fromCity: filter.city } : {}),
+});
+
 type PackingWindow = { paidBefore: Date; paidAfter: Date | null; orgId?: string; shipmentId?: string };
 
 function packingPaidBeforeWhere(
@@ -44,8 +55,96 @@ export class ShipmentRepository {
   async noticeContext(id: string, db: ShipmentDb = prisma) {
     return db.shipment.findUnique({
       where: { id },
-      select: { id: true, code: true, orgId: true, fromCity: true, order: { select: { id: true, code: true } } },
+      select: {
+        id: true, code: true, orgId: true, fromCity: true,
+        courierName: true, trackingNumber: true, trackingUrl: true, pickupDate: true, estimatedDelivery: true,
+        order: { select: { id: true, code: true } },
+      },
     });
+  }
+
+  /** The booking as it stands: what a refused booking or date change explains itself from. */
+  async bookingOf(id: string, db: ShipmentDb = prisma) {
+    return db.shipment.findUnique({
+      where: { id },
+      select: {
+        id: true, code: true, orgId: true, orderId: true, status: true,
+        courierName: true, trackingNumber: true, trackingUrl: true, labelUrl: true,
+        pickupDate: true, estimatedDelivery: true,
+      },
+    });
+  }
+
+  /** The parcel already holding this AWB, other than `exceptId` — named in the refusal (ux.md book pickup). */
+  async holderOfAwb(trackingNumber: string, exceptId: string, db: ShipmentDb = prisma) {
+    return db.shipment.findFirst({
+      where: { trackingNumber, NOT: { id: exceptId } },
+      select: { id: true, code: true },
+    });
+  }
+
+  /**
+   * Move the booked dates, compare-and-set on both dates as last read (order-fulfilment D11):
+   * a parcel collected, cancelled or re-dated meanwhile matches nothing, and `false` says so.
+   */
+  async movePickupDates(
+    id: string,
+    where: { status: string; seenPickupDate: Date; seenEstimatedDelivery: Date | null },
+    next: { pickupDate: Date; estimatedDelivery: Date },
+    tx: ShipmentDb,
+  ): Promise<boolean> {
+    const moved = await tx.shipment.updateMany({
+      where: { id, status: where.status, pickupDate: where.seenPickupDate, estimatedDelivery: where.seenEstimatedDelivery },
+      data: next,
+    });
+    return moved.count === 1;
+  }
+
+  /** The newest timeline row of `kind`, optionally into `toStatus`: who did it, when, and the dates it set. */
+  async lastEvent(id: string, kind: string, toStatus?: string, db: ParcelEventDb = prisma) {
+    return db.parcelEvent.findFirst({
+      where: { shipmentId: id, kind, ...(toStatus ? { toStatus } : {}) },
+      orderBy: { createdAt: "desc" },
+      select: { actorName: true, createdAt: true, pickupDate: true, estimatedDelivery: true },
+    });
+  }
+
+  /** Every timeline row of these parcels, oldest first (order-fulfilment D5, R7). */
+  async listEvents(shipmentIds: string[]) {
+    if (shipmentIds.length === 0) return [];
+    return prisma.parcelEvent.findMany({
+      where: { shipmentId: { in: shipmentIds } },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: {
+        shipmentId: true, kind: true, fromStatus: true, toStatus: true, actor: true, reason: true,
+        courierWording: true, pickupDate: true, estimatedDelivery: true, createdAt: true,
+      },
+    });
+  }
+
+  /**
+   * The admin's pickup queue for one state (ux.md "admin pickups"): oldest first — by when it
+   * became ready, or by its pickup date once booked. Capped; the shop's own address is the pickup address.
+   */
+  async listQueue(status: string, page: QueuePage, byPickupDate: boolean) {
+    return prisma.shipment.findMany({
+      where: queueWhere(status, page),
+      orderBy: byPickupDate ? [{ pickupDate: "asc" }, { updatedAt: "asc" }, { id: "asc" }] : [{ updatedAt: "asc" }, { id: "asc" }],
+      skip: page.skip,
+      take: page.take,
+      select: {
+        id: true, code: true, orgId: true, fromCity: true, fromPincode: true, status: true,
+        courierName: true, trackingNumber: true, trackingUrl: true, labelUrl: true,
+        pickupDate: true, estimatedDelivery: true,
+        org: { select: { name: true, phone: true } },
+        order: { select: { id: true, code: true, _count: { select: { shipments: true } } } },
+        parcelEvents: { where: { toStatus: status }, orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
+      },
+    });
+  }
+
+  async countInStatus(status: string, filter: QueueFilter = {}) {
+    return prisma.shipment.count({ where: queueWhere(status, filter) });
   }
 
   /** The last time this parcel moved into `status`, and who moved it — the timeline answers. */
@@ -104,13 +203,6 @@ export class ShipmentRepository {
     });
   }
 
-  async findWithOrder(id: string) {
-    return prisma.shipment.findUnique({
-      where: { id },
-      include: { order: true },
-    });
-  }
-
   async findByTrackingNumberWithOrder(trackingNumber: string) {
     return prisma.shipment.findFirst({
       where: { trackingNumber },
@@ -129,16 +221,6 @@ export class ShipmentRepository {
     await prisma.shipment.update({
       where: { id },
       data: { shipmentStatus: raw },
-    });
-  }
-
-  async updateTracking(
-    id: string,
-    data: { trackingNumber: string; courierName: string; trackingUrl?: string | null },
-  ) {
-    return prisma.shipment.update({
-      where: { id },
-      data: { ...data, updatedAt: new Date() },
     });
   }
 
@@ -171,7 +253,7 @@ export class ShipmentRepository {
   async recordTransition(
     id: string,
     from: string,
-    data: { status: string; shipmentStatus?: string; deliveredAt?: Date },
+    data: { status: string; shipmentStatus?: string; deliveredAt?: Date } & Partial<ParcelBooking>,
     tx: ShipmentDb,
   ): Promise<boolean> {
     const moved = await tx.shipment.updateMany({ where: { id, status: from }, data });
@@ -181,12 +263,13 @@ export class ShipmentRepository {
   /** One timeline row, in the transaction that moved the parcel (order-fulfilment D5). */
   async recordEvent(
     data: {
-      shipmentId: string; fromStatus: string | null; toStatus: string;
+      shipmentId: string; kind?: string; fromStatus: string | null; toStatus: string;
       actor: string; reason?: string | null; courierWording?: string | null;
+      pickupDate?: Date | null; estimatedDelivery?: Date | null; actorName?: string | null;
     },
     tx: ParcelEventDb,
-  ): Promise<void> {
-    await tx.parcelEvent.create({ data });
+  ): Promise<{ id: string }> {
+    return await tx.parcelEvent.create({ data, select: { id: true } });
   }
 
   /** The parcel's org, order and units: what payouts reverses when it fails (offers-hardening D1). */

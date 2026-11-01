@@ -19,6 +19,7 @@ import {
   alreadyMessage,
   offListMessage,
   type ParcelActor,
+  type ParcelBooking,
   type ShipmentStatus,
 } from "@server/shipping/domain/shipping.types";
 
@@ -37,6 +38,10 @@ export interface MoveOptions {
   refuse?: boolean;
   /** Only a paid order's parcel may move; any other answers not-found (order-fulfilment D6). */
   paidOnly?: boolean;
+  /** The staff member's name, kept on the timeline row for "Already booked by {name}" (D11). */
+  actorName?: string;
+  /** The hand booking, written with the move into `pickup_booked` (D11). */
+  booking?: ParcelBooking;
 }
 
 /**

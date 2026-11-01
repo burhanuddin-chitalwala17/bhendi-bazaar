@@ -1,6 +1,6 @@
 # TRD — own-store/order-fulfilment
 
-- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01
+- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01, U3 done 2026-11-01
 - **Domain:** cross-domain — checkout (orchestrates), shipping, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -60,7 +60,8 @@ Emails are rows sent by the worker; nudges come from one hourly sweep.
   `CourierConflict` row and answers 200; an exception answers 500. A differing courier ETD replaces the
   ETA and emails the buyer (Q6); the field name comes from a captured payload.
 - **D11 — Booking (R5, R6; A3).** `POST /api/admin/shipments/[id]/booking` moves the parcel to
-  `pickup_booked`. `PATCH` changes the dates, compare-and-set on the date the admin saw. `POST …/picked-up`
+  `pickup_booked`. `PATCH` changes the dates, compare-and-set on the date the admin saw; an unchanged save
+  is a no-op, and the buyer is emailed only when the delivery day moved. `POST …/picked-up`
   confirms pickup. The AWB has a partial unique index. Deleted: the tracking route and its form.
 - **D12 — Cancel (R10–R12, R15; A6–A8; Q31).** One command behind three routes; the shop must give a reason.
   Restock and reversal stay in shipping; `parcel-moved` does the rest. Unpaid orders are refused in the

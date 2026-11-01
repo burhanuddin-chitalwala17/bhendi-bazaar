@@ -8,6 +8,7 @@ import {
   type ShopParcelTab,
 } from "@server/checkout/shop-parcel.types";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
+import { parcelTimelines, type ParcelTimelineDto } from "@server/checkout/parcel-timeline";
 
 export type { ShopOrderView, ShopParcelView, ShopParcelTab } from "@server/checkout/shop-parcel.types";
 
@@ -33,6 +34,12 @@ class OrgOrdersDAL {
 
   getOrder = cache(async (orderId: string, orgId: string): Promise<ShopOrderView | null> => {
     return await adminOrderRepository.getShopOrder(orderId, orgId);
+  });
+
+  /** The timeline of each of this shop's parcels in the order (R7); read after `getOrder` scoped them. */
+  timelines = cache(async (orderId: string, orgId: string): Promise<Record<string, ParcelTimelineDto>> => {
+    const order = await this.getOrder(orderId, orgId);
+    return order ? await parcelTimelines(order.parcels) : {};
   });
 }
 

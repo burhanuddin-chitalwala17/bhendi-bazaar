@@ -139,7 +139,7 @@ Each starts one step before the screen, as the owner asked.
 | Refused | Not a platform admin | "This page is for Bhendi Bazaar staff only." | Go to home |
 | Stale: paid 36 h, not ready | "Not packed" tab, red | "Paid 37 h ago, not ready. Shop emailed twice." | Email shop / Cancel parcel |
 | Stale: ready > 24 h | Amber "Waiting 26 h" | "Ready for 26 h — book today" | Book pickup |
-| Stale: pickup date passed | Red "Pickup was due yesterday" | "No courier update since booking." | Mark picked up / Change date |
+| Stale: pickup date passed | Red "Pickup was due yesterday" (later: "Pickup was due {n} days ago", added at build) | "No courier update since booking." · toast on "Mark picked up": "Marked picked up. The shop is emailed." | Mark picked up / Change date |
 | Long content | Shop name and address wrap; pincode bold | — | — |
 | Many items | Oldest first; filter by shop, city; 50 per page | — | — |
 | Slow | Skeleton | — | — |
@@ -154,7 +154,7 @@ Each starts one step before the screen, as the owner asked.
 | Partial | Some fields filled | — | Save booking |
 | Success | Panel closes | "Booked. Buyer and shop emailed." | — |
 | Retryable error | Inline | "Couldn't save. Try again." | Save booking |
-| Terminal error | Field errors | "Enter the pickup date." · "Delivery date must be after the pickup date." · "Enter the AWB from Shiprocket." · "Tracking link must start with https://" | Fix field |
+| Terminal error | Field errors | "Enter the pickup date." · "Enter the delivery date." · "Delivery date must be after the pickup date." · "Enter the courier." · "Enter the AWB from Shiprocket." · "Tracking link must start with https://" · "Label link must be the link Shiprocket gives you." (added at build, unit 3) | Fix field |
 | Refused | AWB on another parcel; parcel cancelled meanwhile | "This AWB is already on BB-4790-SH1." · "The buyer cancelled this parcel. Cancel it on Shiprocket too." | — |
 | Stale | Booked by another admin | "Already booked by {name} at 4:12 pm." | Refresh |
 | Long content | Long tracking URL truncated with … | — | — |

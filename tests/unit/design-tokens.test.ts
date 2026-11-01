@@ -109,7 +109,6 @@ const SHAPE_LEGACY = new Set([
   "src/components/shared/product-card.tsx",
   "src/components/shared/states/LoadingSkeleton.tsx",
   "src/components/shared/stats-card.tsx",
-  "src/components/shipping/ShipmentTrackingForm.tsx",
   "src/components/shipping/providers-console/component/ConnectProviderModal.tsx",
   "src/components/ui/skeleton.tsx",
   "src/components/wishlist/wishlist-grid.tsx",

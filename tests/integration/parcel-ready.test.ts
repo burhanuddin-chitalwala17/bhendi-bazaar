@@ -5,7 +5,6 @@
  */
 import "dotenv/config";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { NextRequest } from "next/server";
 import { ensureFixtures, isDisposableDb } from "../helpers/test-db";
 import { JOBS_QUEUE, JOBS_SCHEMA } from "@server/shared/jobs/jobs.config";
 
@@ -201,31 +200,6 @@ describe.skipIf(!isDisposableDb)("the shop marks a parcel ready, and nudges foll
 
     await markParcelReady(old.parcels[0], orgId);
     expect((await listNotPacked({ orgId })).map((r) => r.shipmentId)).not.toContain(old.parcels[0]);
-  });
-
-  it("D6: the tracking form refuses a parcel the shop has not marked ready, and books a ready one", async () => {
-    const { PATCH } = await import("@/app/api/admin/shipments/[id]/tracking/route");
-    const patch = (id: string, awb: string) =>
-      PATCH(
-        new NextRequest(`http://localhost/api/admin/shipments/${id}/tracking`, {
-          method: "PATCH",
-          body: JSON.stringify({ trackingNumber: awb, courierName: "Delhivery" }),
-        }),
-        { params: Promise.resolve({ id }) },
-      );
-    const { orderId, parcels: [p] } = await anOrder([orgId], { paidHoursAgo: 1 });
-    // The order saying `packed` no longer lets a packing parcel through (pre-unit-2 path).
-    await prisma.order.update({ where: { id: orderId }, data: { status: ORDER_STATUS.PACKED } });
-
-    const refused = await patch(p, `AWB${Date.now()}`);
-    expect(refused.status).toBe(409);
-    expect(JSON.stringify(await refused.json())).toContain("The shop hasn't marked this parcel ready yet.");
-    expect(await statusOf(p)).toBe(S.PACKING);
-
-    await markParcelReady(p, orgId);
-    const booked = await patch(p, `AWB${Date.now()}`);
-    expect(booked.status).toBe(200);
-    expect(await statusOf(p)).toBe(S.PICKUP_BOOKED);
   });
 
   it("A10: the shop's order read carries the buyer's name, city and pincode — never phone or street", async () => {

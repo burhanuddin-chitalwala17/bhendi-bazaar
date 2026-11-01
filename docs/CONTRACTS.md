@@ -185,6 +185,25 @@ or an unpaid one, is `404`; a cancelled one is `409` "This parcel was cancelled 
 for a paid parcel 36 h+ unpacked; `404` once it left the list, `409` if already emailed. `PATCH
 /api/admin/shipments/[id]/tracking` now refuses a parcel the shop has not marked ready (`409`).
 
+Since order-fulfilment unit 3, **`POST /api/admin/shipments/[id]/booking`** (platform admin) parses
+**`bookingSchema`** (`src/lib/validation/schemas/booking.schema.ts`): `pickupDate` and `estimatedDelivery` as
+India days `"YYYY-MM-DD"` (delivery strictly after pickup), `courierName`, `trackingNumber` (the AWB),
+`trackingUrl` (https) and `labelUrl` (a Shiprocket label host, `server/shipping/label.ts`); all required. It moves
+a `ready_for_pickup` parcel to `pickup_booked` and answers `{ ok: true }`. Refusals are `409` with ux.md's copy: an
+AWB on another parcel ("This AWB is already on {code}.", `field: "trackingNumber"`), not ready, cancelled, or
+"Already booked by {name} at {time}.". **`PATCH` on the same path** parses **`pickupDateChangeSchema`**
+(`pickupDate` not before India's today, `estimatedDelivery`, and `seenPickupDate`, the date the panel opened with):
+compare-and-set; a stale date is `409` "Changed to {day} by {name} at {time}.". **`POST
+/api/admin/shipments/[id]/picked-up`** (no body) moves a booked parcel to `picked_up`. **`GET
+/api/org/[orgId]/shipments/[id]/label`** (`withOrg`) streams the parcel's label as an attachment only while it is
+`pickup_booked` and only to its own shop (otherwise `404`; an unreachable label host `502`). `ShopParcelView` gains
+`pickupDay` ("Sat 2 Nov"); `AdminShipmentView` gains `pickupDate`, `pickupDay`, `estimatedDelivery`. Every
+reader's timeline is **`ParcelTimelineDto`** (`server/checkout/parcel-timeline.ts`): `courierName`,
+`trackingNumber`, and `entries` of `{ kind, status, actor, reason, courierWording, pickupDate, estimatedDelivery,
+day, time, at }`, every date already India's. **Deleted** (Q36): `PATCH /api/admin/shipments/[id]/tracking` and
+its schema; **`PATCH /api/admin/orders/[id]`** (`updateOrderStatusSchema`) is deleted too — an order's status is
+only the summary of its parcels.
+
 ### Shop setup list
 
 Since seller-onboarding unit 3 **`OnboardingStatus`** (`server/catalog/org-onboarding.types.ts`) is

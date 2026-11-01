@@ -30,7 +30,7 @@ export const ORDER_STATUS = {
   DELIVERED: "delivered",
   /** Every parcel was cancelled after payment. Not `expired`, which is an unpaid checkout. */
   CANCELLED: "cancelled",
-  /** Hand statuses, written only by `ORDER_TRANSITIONS` until units 2 and 3 delete it (Q36). */
+  /** Hand statuses from before order-fulfilment; nothing writes them since unit 3 (Q36), old rows keep them. */
   PROCESSING: "processing",
   PACKED: "packed",
   /** A payment attempt failed. Not terminal: the buyer may still retry. */
@@ -66,24 +66,6 @@ export function statusesBelow(to: OrderStatus): OrderStatus[] {
     .filter(([, rank]) => rank < target)
     .map(([status]) => status);
 }
-
-/**
- * The operator's hand moves on the order's own status. Superseded by the derived summary
- * (order-fulfilment D4) and deleted with its two routes in units 2 and 3, per the TRD's contract
- * table; until then a parcel move re-derives the status after any hand move.
- */
-export const ORDER_TRANSITIONS: Partial<Record<OrderStatus, readonly OrderStatus[]>> = {
-  [ORDER_STATUS.CONFIRMED]: [ORDER_STATUS.PROCESSING],
-  [ORDER_STATUS.PROCESSING]: [ORDER_STATUS.PACKED],
-  [ORDER_STATUS.PACKED]: [ORDER_STATUS.SHIPPED],
-  [ORDER_STATUS.SHIPPED]: [ORDER_STATUS.DELIVERED],
-  [ORDER_STATUS.DELIVERED]: [],
-};
-
-/** The statuses `ORDER_TRANSITIONS` can reach — what an operator may ask for at all. */
-export const OPERATOR_SETTABLE_STATUSES: readonly OrderStatus[] = [
-  ...new Set(Object.values(ORDER_TRANSITIONS).flat()),
-];
 
 /**
  * Every value `Order.paymentStatus` may hold.

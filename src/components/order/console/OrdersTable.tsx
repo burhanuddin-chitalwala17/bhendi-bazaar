@@ -3,22 +3,11 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { DataTable, Column } from "@/components/shared/data-table";
-import { useMutation } from "@/hooks/core/useMutation";
-import { adminOrderApiClient } from "@/components/order/console/adminOrderApiClient";
 import type { AdminOrderRow } from "@server/checkout/admin.order.types";
 import { cn } from "@/lib/utils";
 import { formatShortDate, titleCase } from "@/lib/format";
 import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
-import { Select } from "@/components/ui/select";
 import { Money } from "@/components/shared/Money";
-
-/** The statuses an admin may set by hand — the fulfilment ones, not the payment lifecycle. */
-const SETTABLE = [
-  ORDER_STATUS.PROCESSING,
-  ORDER_STATUS.PACKED,
-  ORDER_STATUS.SHIPPED,
-  ORDER_STATUS.DELIVERED,
-] as const;
 
 interface Props {
   orders: AdminOrderRow[];
@@ -29,11 +18,11 @@ interface Props {
 }
 
 /**
- * The rows, and the one interactive thing on them: moving an order's fulfilment status.
+ * The rows. The status is read-only: it summarises the parcels (order-fulfilment D4, Q30), which
+ * move from the pickup queue and the order's own screen.
  *
  * Paging and sorting navigate rather than refetch — the page above is a server component
- * ([ADR-0034]) and the URL is where the query lives. `router.refresh()` after a mutation re-runs
- * that read, so there is no client cache to invalidate.
+ * ([ADR-0034]) and the URL is where the query lives.
  */
 export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props) {
   const router = useRouter();
@@ -48,12 +37,6 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
     }
     router.push(`${pathname}?${next.toString()}`);
   };
-
-  const { mutate: updateStatus, isLoading: isUpdating } = useMutation(
-    ({ orderId, status }: { orderId: string; status: string }) =>
-      adminOrderApiClient.updateOrderStatus(orderId, { status }),
-    { successMessage: "Order status updated!", onSuccess: () => router.refresh() },
-  );
 
   const columns: Column<AdminOrderRow>[] = [
     {
@@ -84,30 +67,17 @@ export function OrdersTable({ orders, page, pageSize, totalPages, total }: Props
     {
       key: "status",
       label: "Status",
-      render: (order) =>
-        // Every parcel was cancelled: the summary is final, so there is nothing to choose.
-        order.status === ORDER_STATUS.CANCELLED ? (
-          <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
-            Cancelled
-          </span>
-        ) : (
-        <Select
-          value={order.status}
-          onChange={(e) => updateStatus({ orderId: order.id, status: e.target.value })}
-          disabled={isUpdating}
+      render: (order) => (
+        <span
           className={cn(
-            "rounded-full px-3 py-1 text-sm font-medium",
-            order.status === ORDER_STATUS.PROCESSING && "bg-warning/15 text-warning",
-            order.status === ORDER_STATUS.PACKED && "bg-info/15 text-info",
+            "rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground",
             order.status === ORDER_STATUS.SHIPPED && "bg-accent/40 text-accent-foreground",
             order.status === ORDER_STATUS.DELIVERED && "bg-success/15 text-success",
           )}
         >
-          {SETTABLE.map((status) => (
-            <option key={status} value={status}>{titleCase(status)}</option>
-          ))}
-        </Select>
-        ),
+          {titleCase(order.status)}
+        </span>
+      ),
     },
     {
       key: "paymentStatus",

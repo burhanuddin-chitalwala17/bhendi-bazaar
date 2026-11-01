@@ -1,15 +1,13 @@
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, MapPin, Package, Pencil, Truck, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, Package, Truck, XCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ShipmentTrackingForm } from "@/components/shipping/ShipmentTrackingForm";
 import { formatCurrency } from "@/lib/format";
 import type { AdminShipmentView } from "@server/checkout/admin.order.types";
+import type { ParcelTimelineDto } from "@server/checkout/parcel-timeline";
 import { Money } from "@/components/shared/Money";
+import { PickupActions } from "@/components/order/pickups/pickup-actions";
+import { ParcelTimeline } from "@/components/order/timeline/parcel-timeline";
+import { TIMELINE_READER } from "@/components/order/timeline/timeline-copy";
 import {
   SHIPMENT_STATUS,
   SHIPMENT_STATUS_EFFECTS,
@@ -18,16 +16,17 @@ import {
 } from "@server/shipping/domain/shipping.types";
 
 /**
- * The parcels on an order, and the one control this screen has: entering or correcting an AWB.
- *
- * A client leaf under a server page ([ADR-0034]) — the whole screen used to be a client
- * component so that one toggle could work. `router.refresh()` re-runs the page's own read
- * instead of refetching the order over the wire.
+ * The parcels on an order: each one's booking, its timeline, and what the admin can do at its
+ * stage (order-fulfilment D11) — book, re-date, mark picked up. A server component; the actions
+ * are leaves ([ADR-0034]). The tracking form it held went with unit 3.
  */
-export function ShipmentsPanel({ shipments }: { shipments: AdminShipmentView[] }) {
-  const router = useRouter();
-  const [editing, setEditing] = useState<string | null>(null);
-
+export function ShipmentsPanel({
+  shipments,
+  timelines,
+}: {
+  shipments: AdminShipmentView[];
+  timelines: Record<string, ParcelTimelineDto>;
+}) {
   return (
     <div className="space-y-6">
       <h2 className="flex items-center gap-2 text-xl font-semibold">
@@ -42,8 +41,6 @@ export function ShipmentsPanel({ shipments }: { shipments: AdminShipmentView[] }
       )}
 
       {shipments.map((shipment) => {
-        const showTracking = shipment.trackingNumber && editing !== shipment.id;
-
         return (
           <section
             key={shipment.id}
@@ -93,78 +90,25 @@ export function ShipmentsPanel({ shipments }: { shipments: AdminShipmentView[] }
               </div>
             </div>
 
-            {showTracking ? (
-              <div className="space-y-2 rounded-card border border-primary/30 bg-primary/10 p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h4 className="text-sm font-medium text-primary">Tracking</h4>
-                  <Button
-                    variant="ghost"
-                    onClick={() => setEditing(shipment.id)}
-                    className="flex items-center gap-1 px-2 py-1 text-xs text-primary hover:bg-primary/15"
-                  >
-                    <Pencil className="size-3" />
-                    Edit
-                  </Button>
-                </div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">AWB number</span>
-                    <span className="font-mono font-medium">{shipment.trackingNumber}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Courier</span>
-                    <span className="font-medium">{shipment.courierName || "—"}</span>
-                  </div>
-                  {shipment.trackingUrl && (
-                    <a
-                      href={shipment.trackingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block pt-2 text-sm text-primary underline"
-                    >
-                      Track shipment →
-                    </a>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="border-t pt-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h4 className="flex items-center gap-2 text-sm font-medium text-warning">
-                    <Clock className="size-4" />
-                    {shipment.trackingNumber
-                      ? "Update tracking"
-                      : "Tracking required — add the AWB once the courier has it"}
-                  </h4>
-                  {shipment.trackingNumber && (
-                    <Button
-                      variant="ghost"
-                      onClick={() => setEditing(null)}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </div>
-                <ShipmentTrackingForm
-                  shipmentId={shipment.id}
-                  shipmentCode={shipment.code}
-                  courierName={shipment.courierName ?? undefined}
-                  existingTracking={
-                    shipment.trackingNumber
-                      ? {
-                          trackingNumber: shipment.trackingNumber,
-                          trackingUrl: shipment.trackingUrl ?? "",
-                        }
-                      : undefined
-                  }
-                  onSuccess={() => {
-                    setEditing(null);
-                    router.refresh();
-                  }}
-                />
+            {shipment.trackingNumber && (
+              <div className="space-y-1 rounded-card border border-primary/30 bg-primary/10 p-4 text-sm">
+                {shipment.pickupDay && <p className="font-medium">Pickup {shipment.pickupDay}</p>}
+                <p className="break-words">
+                  {shipment.courierName ?? "—"} · <span className="font-mono">{shipment.trackingNumber}</span>
+                </p>
+                {shipment.trackingUrl && (
+                  <a href={shipment.trackingUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-primary underline">
+                    Track shipment →
+                  </a>
+                )}
               </div>
             )}
+
+            <PickupActions parcel={{ ...shipment, shipmentId: shipment.id }} />
+
+            <div className="border-t pt-4">
+              <ParcelTimeline timeline={timelines[shipment.id]} reader={TIMELINE_READER.ADMIN} />
+            </div>
           </section>
         );
       })}

@@ -38,6 +38,8 @@ export interface ShopParcelView {
   shippingCost: number;
   courierName: string | null;
   trackingNumber: string | null;
+  /** The booked pickup day, "Sat 2 Nov" (ux.md "Success: booked"). */
+  pickupDay: string | null;
   /** "Parcel 1 of 2": its place among this shop's parcels in the order. */
   position: number;
   ofCount: number;

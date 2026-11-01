@@ -46,6 +46,10 @@ export const SHOP_PARCEL_COPY = {
   confirmBody: "Once marked ready, it can't be cancelled here.",
   confirmYes: "Yes, it's ready",
   showAll: (n: number) => `Show all ${n} items`,
+  /** ux.md "Success: booked". */
+  booked: (day: string, courier: string | null, awb: string | null) =>
+    [`Pickup booked for ${day}`, courier, awb ? `AWB ${awb}` : null].filter(Boolean).join(" · "),
+  downloadLabel: "Download label",
   allOrders: "← All orders",
 } as const;
 

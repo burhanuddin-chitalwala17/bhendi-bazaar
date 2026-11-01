@@ -6,17 +6,6 @@ import { shippingEventRepository } from "@server/shipping/repositories/event.rep
 
 /** Tracking details and carrier webhooks. `Shipment.status` itself is shipment-status.service's. */
 export const trackingService = {
-  findShipmentWithOrder(shipmentId: string) {
-    return shipmentRepository.findWithOrder(shipmentId);
-  },
-
-  updateTracking(
-    shipmentId: string,
-    tracking: { trackingNumber: string; courierName: string; trackingUrl?: string },
-  ) {
-    return shipmentRepository.updateTracking(shipmentId, tracking);
-  },
-
   findShipmentByTrackingNumber(trackingNumber: string) {
     return shipmentRepository.findByTrackingNumberWithOrder(trackingNumber);
   },

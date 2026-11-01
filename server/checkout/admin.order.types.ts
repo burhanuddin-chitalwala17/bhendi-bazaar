@@ -17,6 +17,10 @@ export interface AdminShipmentView {
   courierName: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
+  /** The booking's days (order-fulfilment D11): "YYYY-MM-DD" for the date fields, "Sat 2 Nov" to read. */
+  pickupDate: string | null;
+  pickupDay: string | null;
+  estimatedDelivery: string | null;
   items: ShipmentItem[];
 }
 
@@ -91,11 +95,6 @@ export interface OrderListResult {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-export interface UpdateOrderStatusInput {
-  status?: string;
-  notes?: string;
 }
 
 export interface OrderStats {

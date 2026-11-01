@@ -1,17 +1,20 @@
 import type { Prisma } from "@prisma/client";
 
 import {
+  PARCEL_ACTOR,
+  PARCEL_EVENT_KIND,
   SHIPMENT_STATUS,
   SHIPMENT_STATUS_EFFECTS,
   alreadyMessage,
   canTransition,
   isShipmentStatus,
   type ParcelActor,
+  type ParcelBooking,
   type ShipmentStatus,
 } from "@server/shipping/domain/shipping.types";
 import { ConflictError } from "@server/shared/domain-error";
 import { normalizeShipmentStatus } from "@server/shipping/utils/statusNormalizer";
-import { shipmentRepository } from "@server/shipping/repositories/shipment.repository";
+import { shipmentRepository, type QueueFilter, type QueuePage } from "@server/shipping/repositories/shipment.repository";
 import { stockService } from "@server/catalog/stock.service";
 
 /**
@@ -64,7 +67,7 @@ async function restock(shipmentId: string, tx: Prisma.TransactionClient): Promis
 export async function applyStatus(
   shipmentId: string,
   to: ShipmentStatus,
-  by: { actor: ParcelActor; reason?: string; raw?: string },
+  by: { actor: ParcelActor; reason?: string; raw?: string; actorName?: string; booking?: ParcelBooking },
   tx: Prisma.TransactionClient,
 ): Promise<TransitionOutcome> {
   const shipment = await shipmentRepository.findStatus(shipmentId, tx);
@@ -87,6 +90,8 @@ export async function applyStatus(
       // adding a mapping, and the only record of what they actually said.
       ...(by.raw ? { shipmentStatus: by.raw } : {}),
       ...(to === SHIPMENT_STATUS.DELIVERED ? { deliveredAt: new Date() } : {}),
+      // A booking's facts land with the move into `pickup_booked`, so neither exists without the other.
+      ...(by.booking ?? {}),
     },
     tx,
   );
@@ -96,7 +101,12 @@ export async function applyStatus(
   }
 
   await shipmentRepository.recordEvent(
-    { shipmentId, fromStatus: from, toStatus: to, actor: by.actor, reason: by.reason ?? null, courierWording: by.raw ?? null },
+    {
+      shipmentId, fromStatus: from, toStatus: to, actor: by.actor, reason: by.reason ?? null, courierWording: by.raw ?? null,
+      actorName: by.actorName ?? null,
+      pickupDate: by.booking?.pickupDate ?? null,
+      estimatedDelivery: by.booking?.estimatedDelivery ?? null,
+    },
     tx,
   );
 
@@ -153,6 +163,76 @@ export async function countParcelsAwaitingPacking(window: { paidStatus: string; 
 /** Parcels ready since at least `readyBefore` and still unbooked, with no `noticeKind` notice. */
 export async function parcelsReadySince(readyBefore: Date, noticeKind: string, limit: number) {
   return await shipmentRepository.listReadyBefore(SHIPMENT_STATUS.READY_FOR_PICKUP, readyBefore, noticeKind, limit);
+}
+
+/** The booking as it stands, on the caller's transaction when given. */
+export async function bookingOf(shipmentId: string, tx?: Prisma.TransactionClient) {
+  return await shipmentRepository.bookingOf(shipmentId, tx);
+}
+
+/** The parcel already carrying this AWB, if another one does. */
+export async function parcelHoldingAwb(trackingNumber: string, exceptId: string, tx?: Prisma.TransactionClient) {
+  return await shipmentRepository.holderOfAwb(trackingNumber, exceptId, tx);
+}
+
+/**
+ * Change a booked parcel's dates (order-fulfilment D11): compare-and-set on the pickup date the
+ * admin saw, then one `pickup_moved` timeline row. Answers the row's id, or null when the parcel
+ * was collected, cancelled or re-dated meanwhile — the caller reads why.
+ */
+export async function movePickupDates(
+  shipmentId: string,
+  seenPickupDate: Date,
+  next: { pickupDate: Date; estimatedDelivery: Date },
+  by: { actorName: string },
+  tx: Prisma.TransactionClient,
+): Promise<{ kind: "moved"; eventId: string; etaChanged: boolean } | { kind: "unchanged" } | null> {
+  const before = await shipmentRepository.bookingOf(shipmentId, tx);
+  if (!before?.pickupDate || before.status !== SHIPMENT_STATUS.PICKUP_BOOKED || !sameDay(before.pickupDate, seenPickupDate)) return null;
+  const etaChanged = !sameDay(before.estimatedDelivery, next.estimatedDelivery);
+  if (!etaChanged && sameDay(before.pickupDate, next.pickupDate)) return { kind: "unchanged" };
+  // The read only names what changed; the compare-and-set on both dates read is what decides.
+  const moved = await shipmentRepository.movePickupDates(
+    shipmentId,
+    { status: SHIPMENT_STATUS.PICKUP_BOOKED, seenPickupDate, seenEstimatedDelivery: before.estimatedDelivery },
+    next,
+    tx,
+  );
+  if (!moved) return null;
+  const event = await shipmentRepository.recordEvent(
+    {
+      shipmentId, kind: PARCEL_EVENT_KIND.PICKUP_MOVED,
+      fromStatus: SHIPMENT_STATUS.PICKUP_BOOKED, toStatus: SHIPMENT_STATUS.PICKUP_BOOKED,
+      actor: PARCEL_ACTOR.ADMIN, actorName: by.actorName, ...next,
+    },
+    tx,
+  );
+  return { kind: "moved", eventId: event.id, etaChanged };
+}
+
+const sameDay = (a: Date | null, b: Date) => a !== null && a.getTime() === b.getTime();
+
+/** Who last booked or re-dated this parcel, and when — the stale refusals' "by {name} at {time}". */
+export async function lastBookingChange(shipmentId: string) {
+  const [moved, booked] = await Promise.all([
+    shipmentRepository.lastEvent(shipmentId, PARCEL_EVENT_KIND.PICKUP_MOVED),
+    shipmentRepository.lastEvent(shipmentId, PARCEL_EVENT_KIND.MOVE, SHIPMENT_STATUS.PICKUP_BOOKED),
+  ]);
+  return { moved, booked };
+}
+
+/** Every timeline row of these parcels, oldest first (order-fulfilment D5). */
+export async function parcelEventsOf(shipmentIds: string[]) {
+  return await shipmentRepository.listEvents(shipmentIds);
+}
+
+/** The pickup queue's rows in one state, oldest first (ux.md "admin pickups"). */
+export async function parcelsInQueue(status: ShipmentStatus, page: QueuePage) {
+  return await shipmentRepository.listQueue(status, page, status === SHIPMENT_STATUS.PICKUP_BOOKED);
+}
+
+export async function countParcelsIn(status: ShipmentStatus, filter: QueueFilter = {}) {
+  return await shipmentRepository.countInStatus(status, filter);
 }
 
 /** Every parcel status of an order, on the caller's transaction — the input to its summary. */

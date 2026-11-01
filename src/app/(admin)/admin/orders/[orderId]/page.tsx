@@ -4,8 +4,8 @@
  * Was a client page that fetched the order through `GET /api/admin/orders/[id]`, typed the
  * answer as the storefront's `Order`, and then reached past the mismatch with eleven `as any`
  * casts — including reading a `Json` column as a typed object with no parse behind it. The read
- * is now `adminOrdersDAL.detail`, whose shape is declared, and the one interactive part (the
- * tracking form and its edit toggle) is a leaf.
+ * is now `adminOrdersDAL.detail`, whose shape is declared, and the interactive parts (book, re-date,
+ * mark picked up — order-fulfilment D11) are leaves.
  */
 import { notFound } from "next/navigation";
 
@@ -25,6 +25,7 @@ export default async function AdminOrderDetailsPage({
   const order = await adminOrdersDAL.detail(orderId);
 
   if (!order) notFound();
+  const timelines = await adminOrdersDAL.timelines(orderId);
 
   return (
     <div className="space-y-6">
@@ -53,7 +54,7 @@ export default async function AdminOrderDetailsPage({
           <OrderDetailAside order={order} />
         </div>
         <div className="lg:col-span-2">
-          <ShipmentsPanel shipments={order.shipments} />
+          <ShipmentsPanel shipments={order.shipments} timelines={timelines} />
         </div>
       </div>
     </div>

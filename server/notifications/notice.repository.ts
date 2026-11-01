@@ -6,7 +6,7 @@ type NoticeDb = Pick<typeof prisma, "notice">;
 /** The Notice table's one repository (Invariant 5, order-fulfilment D8). */
 export class NoticeRepository {
   /**
-   * Insert the notice unless (parcel, kind, audience) already has one. Answers the row only when
+   * Insert the notice unless (parcel, kind, audience, ref) already has one. Answers the row only when
    * this call wrote it, which is what lets the caller enqueue a send for a new notice and nothing else.
    */
   async insertOnce(data: Prisma.NoticeCreateManyInput, tx: NoticeDb): Promise<{ id: string } | null> {

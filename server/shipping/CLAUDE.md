@@ -1,6 +1,6 @@
 # CLAUDE.md — shipping domain
 
-- **Verified:** 2026-10-31
+- **Verified:** 2026-11-01
 - **Covers:** `server/shipping/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC, the seven Project Invariants, and the conventions index. This file covers what applies only to the **shipping** domain.
@@ -39,7 +39,8 @@ Shipping owns everything between "a customer has an address" and "a parcel is mo
 | `services/orchestrator.service.ts` | Fans a rate request across providers and applies a selection strategy. |
 | `repositories/` | Provider records, shipping events, and shipments (`shipment.repository.ts`). |
 | `shipment-status.service.ts` | The single writer of `Shipment.status`. |
-| `tracking.service.ts` | What the tracking route and the carrier webhooks read and record; order state goes to checkout's service. |
+| `tracking.service.ts` | What the carrier webhooks read and record; order state goes to checkout's service. The admin's hand booking replaced the tracking route (order-fulfilment D11). |
+| `label.ts` | The label-link allowlist and fetch behind the shop's label route (order-fulfilment D7). |
 | `utils/` | Status normalisation, weight calculation, validators. Secrets at rest use `server/shared/crypto.ts`. |
 | `adr/` | Decisions internal to this domain. |
 

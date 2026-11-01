@@ -40,6 +40,7 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **Status vocabulary is theirs and is finer-grained than ours**, and they can add to it. Normalised on entry ([shipping ADR-0003](../server/shipping/adr/0003-normalise-carrier-status-on-entry.md)).
 - **Webhooks carry no signature by default.** ⚠️ *Unverified* — confirm current options in their dashboard before relying on this. If no signature is available, a shared-secret header or a hard-to-guess path is the fallback, and the handler must still fail loudly on an unmatched payload.
 - **Rate lookups are slow and rate-limited**, which is why quotes are cached (`ShippingRateCache`).
+- **A label link is an S3 object on Shiprocket's bucket** (`kr-shipmultichannel-mum.s3.ap-south-1.amazonaws.com`), or a `shiprocket.in` page. ⚠️ *Unverified* — taken from community examples, not their docs; `server/shipping/label.ts` holds the allowlist the booking form checks against (order-fulfilment D7). Confirm on the first real booking and widen the list there.
 - **Booking and rate quoting are separate calls.** A rate quote is not a reservation — the price can change between quoting and booking, which is the source of [shipping-fulfilment](specs/shipping-fulfilment/) Q2.
 
 ## Resend (email)

@@ -12,6 +12,55 @@
 
 ## Entries
 
+## 2026-11-01 — order-fulfilment unit 3: booking, label, date change, India-time timeline [CONTRACT] [MIGRATION]
+
+- **Booking** (R5, R6, A3; D11; Q4, Q23): `POST /api/admin/shipments/[id]/booking` → `bookPickup`
+  (`server/checkout/fulfilment-booking.ts`), one `moveParcel` into `pickup_booked` that carries pickup date, ETA,
+  courier, AWB, tracking and label links (`applyStatus` writes them with the status). The partial unique index on the
+  AWB decides a clash, even two admins at once; the holder is then named ("This AWB is already on {code}." on the AWB
+  field). Refusals: not ready, "The buyer cancelled this parcel. Cancel it on Shiprocket too.", "Already booked by
+  {name} at {time}." (the admin's name is kept on the timeline row). `parcel-moved.ts` writes the buyer's "Your order
+  ships {day}" (dates, tracking link; buyer email from `buyer-contact.ts`) and the shop's "Pickup booked for {day}"
+  (links to the parcel page, never the label, Q26). The order confirmation's "Estimated Delivery: N/A" now reads
+  "We'll email the delivery date once your parcel is booked."
+- **Date change and picked up** (R5): `PATCH` on the same path → `changePickupDates`, compare-and-set on the date the
+  panel opened with (and the ETA as read); one `pickup_moved` timeline row and a shop email per change, the buyer's
+  only when the delivery day moved (`Notice.ref` = the row, so a second change emails again). Saving the dates as
+  booked writes and sends nothing. The form is keyed by the booked dates, so a second change from the same row
+  sends the new date as seen. Days are real calendar days ("2026-02-30" is a field error). "Changed to {day} by {name} at {time}." when someone moved it first. `POST
+  …/picked-up` → `markPickedUp` (Q4), emailing the shop "{code} picked up".
+- **Label** (R6; D7, Q26): `GET /api/org/[orgId]/shipments/[id]/label` streams the stored link for the parcel's own
+  shop only while booked; https, a Shiprocket host allowlist checked at booking too (`server/shipping/label.ts`,
+  INTEGRATIONS.md, unverified), no redirects, 10 s. The shop card shows "Pickup booked for {day} · {courier} · AWB
+  {awb}" and "Download label".
+- **Timeline** (R7, A14; D5): `ParcelTimelineDto` from `parcelTimelines` (`server/checkout/parcel-timeline.ts`), dates
+  in India time (`indiaTime`, `calendarDay` in `server/shared/india-time.ts`; `@db.Date` days read as themselves).
+  One `ParcelTimeline` component (`src/components/order/timeline/`) words it per reader from ux.md's table, on the
+  shop parcel page, the buyer's order page ("Arrives by {day}", "Track parcel", "Arriving in {n} parcels") and the
+  admin order console. The buyer's cancelled line gains its refund state with unit 5.
+- **Admin pickups** (ux.md "admin pickups"): tabs Ready (default) · Booked · Not packed, with counts; Ready oldest
+  first, amber "Waiting {n} h · Ready for {n} h — book today" past 24 h; Booked by pickup day, red "Pickup was due
+  yesterday · No courier update since booking."; 50 per page ("Showing 51–100 of 120", Previous / Next), filtered
+  by shop or city from the row; "Book pickup", "Change pickup date", "Mark picked up" there and on
+  the order console. Book and re-date use `FormDialog` (bottom sheet on phone, dialog from `md:`) with
+  `useServerForm` and native date inputs, rather than the TRD's side sheet and `ResponsivePicker` — no new
+  `MAY_USE_SHEET` entry. Copy added to ux.md where it had none: "Enter the delivery date.", "Enter the courier.",
+  "Label link must be the link Shiprocket gives you.", "Pickup was due {n} days ago", the picked-up toast.
+- **Deleted** (Q30, Q36): the tracking route, `ShipmentTrackingForm` and its client and schema;
+  `PATCH /api/admin/orders/[id]`, `adminOrderApiClient`, `updateOrderStatus`, `updateOrderStatusSchema`,
+  `orderRepository.transition`/`setNotes`, `ORDER_TRANSITIONS`, `OPERATOR_SETTABLE_STATUSES`. The orders table shows
+  the status read-only.
+- **[MIGRATION] `20261101100200_parcel_booking`** drops one index (`Notice_shipmentId_kind_audience_key`, replaced by
+  one that adds `ref`; no data goes): adds `Shipment.pickupDate`, `labelUrl`; `estimatedDelivery` becomes `DATE`
+  (nothing wrote it before); blank AWBs become null, a duplicate AWB stops the deploy, then a partial unique index;
+  `ParcelEvent.pickupDate`, `estimatedDelivery`, `actorName`; `Notice.ref`.
+- **Mutations** (each made a test fail, then restored): M1 the AWB-clash catch removed (two cases fail); M2 the
+  seen-date condition dropped from `movePickupDates`; M3 the org check dropped from `labelLinkFor`; M4 the label host
+  check made always-true; M5 "delivery after pickup" made `>=`; M6 the booked-only check dropped from `labelLinkFor`;
+  M7 the form's key removed (second change sends the first date); M8 the no-op skip removed (server and client); M9
+  the buyer notice sent on a pickup-only move.
+  Tests: `tests/integration/parcel-booking.test.ts`, `tests/unit/parcel-booking.test.tsx`.
+
 ## 2026-11-01 — product-form unit 4: edit overview, drafts, leave sheet, version and conflict rebase [CONTRACT] [MIGRATION]
 
 - **Edit overview** (R7; D1): editing opens at five section cards (Photos and video, What it is,

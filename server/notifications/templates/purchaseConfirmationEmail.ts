@@ -228,7 +228,7 @@ function renderOrderSummary(order: OrderEmailView): string {
                     ? `
                 <div class="info-item">
                   <div class="info-label">Estimated Delivery</div>
-                  <div class="info-value">${delivery ? formatDate(new Date(delivery)) : "N/A"}</div>
+                  <div class="info-value">${delivery ? formatDate(new Date(delivery)) : BOOKED_LATER}</div>
                 </div>
                 `
                     : ""
@@ -236,6 +236,9 @@ function renderOrderSummary(order: OrderEmailView): string {
               </div>
             </div>`;
 }
+
+/** Before booking there is no date to give (order-fulfilment A3, ux.md Emails "Order paid"). */
+const BOOKED_LATER = "We'll email the delivery date once your parcel is booked.";
 
 function renderAddress(address: OrderEmailView["address"]): string {
   return `

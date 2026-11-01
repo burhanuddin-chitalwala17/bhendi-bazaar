@@ -8,7 +8,6 @@
 import { prisma, toJsonColumn } from "@server/shared/prisma";
 import {
   ORDER_STATUS,
-  ORDER_TRANSITIONS,
   VISIBLE_ORDER_WHERE,
   PAYMENT_STATUS,
   statusesBelow,
@@ -408,6 +407,11 @@ export class OrderRepository {
     return row ?? null;
   }
 
+  /** Where the buyer is written to: the address snapshot's email, else the account's (buyer-contact.ts). */
+  async contactOf(orderId: string, tx: OrderDb = prisma) {
+    return await tx.order.findUnique({ where: { id: orderId }, select: { address: true, userId: true } });
+  }
+
   /**
    * Write the status its parcels summarise to (order-fulfilment D4). Paid orders only, and only
    * over a lower `ORDER_STATUS_RANK`, so an order never moves backwards: a hand-delivered order
@@ -418,30 +422,6 @@ export class OrderRepository {
       where: { id: orderId, paymentStatus: PAYMENT_STATUS.PAID, status: { in: statusesBelow(status) } },
       data: { status },
     });
-  }
-
-  /**
-   * An operator's fulfilment move, conditional on the order standing where the table says it
-   * must (`ORDER_TRANSITIONS`). One statement, so two operators racing resolve at the database;
-   * the loser is told where the order actually is. Payment states are not reachable from here.
-   */
-  async transition(orderId: string, to: OrderStatus, tx: OrderDb = prisma): Promise<void> {
-    const from = (Object.keys(ORDER_TRANSITIONS) as OrderStatus[]).filter((status) =>
-      ORDER_TRANSITIONS[status]?.includes(to),
-    );
-    const moved = from.length
-      ? await tx.order.updateMany({ where: { id: orderId, status: { in: from } }, data: { status: to } })
-      : { count: 0 };
-    if (moved.count === 1) return;
-
-    // Refused — read only to say why, never to decide.
-    const current = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
-    if (!current) throw new NotFoundError("Order not found");
-    throw new ConflictError(`An order cannot move from ${current.status} to ${to}.`, { field: "status" });
-  }
-
-  async setNotes(orderId: string, notes: string): Promise<void> {
-    await prisma.order.update({ where: { id: orderId }, data: { notes } });
   }
 
   /** The order row itself, inside the order transaction. Totals arrive computed; none come from a request. */

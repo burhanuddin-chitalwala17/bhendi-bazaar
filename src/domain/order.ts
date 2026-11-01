@@ -54,7 +54,9 @@ export interface Shipment {
   trackingNumber?: string;
   trackingUrl?: string;
   status: string;
+  /** A calendar day (order-fulfilment Q6): read with `calendarDay`, never in a time zone. */
   estimatedDelivery?: Date;
+  pickupDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

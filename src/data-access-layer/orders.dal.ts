@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth-config";
 import { orderService } from "@server/checkout/order.service";
 import { Order, Shipment } from "@/domain/order";
 import { OrderAddress } from "@/domain/order";
+import { parcelTimelines, type ParcelTimelineDto } from "@server/checkout/parcel-timeline";
 
 /** One row → the client-facing shape, shared by both reads below. */
 function toOrder(row: Awaited<ReturnType<typeof orderService.getOrderById>>): Order {
@@ -68,5 +69,12 @@ export const ordersDAL = {
       console.error("Failed to fetch order:", error);
       return null;
     }
+  },
+
+  /** Each parcel's timeline (order-fulfilment R7), for an order the caller has already read. */
+  timelinesFor: async (order: Order): Promise<Record<string, ParcelTimelineDto>> => {
+    return await parcelTimelines(
+      order.shipments.map((s) => ({ id: s.id, courierName: s.courierName ?? null, trackingNumber: s.trackingNumber ?? null })),
+    );
   },
 };

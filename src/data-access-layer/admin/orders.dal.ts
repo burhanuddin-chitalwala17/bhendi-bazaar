@@ -2,6 +2,7 @@
 
 import { cache } from "react";
 import { adminOrderService } from "@server/checkout/admin.order.service";
+import { parcelTimelines, type ParcelTimelineDto } from "@server/checkout/parcel-timeline";
 import type {
   AdminOrderDetail,
   OrderListFilters,
@@ -20,6 +21,12 @@ class OrdersDAL {
 
   detail = cache(async (id: string): Promise<AdminOrderDetail | null> => {
     return adminOrderService.getOrderById(id);
+  });
+
+  /** Each parcel's timeline (order-fulfilment R7), from the same events the shop and buyer read. */
+  timelines = cache(async (id: string): Promise<Record<string, ParcelTimelineDto>> => {
+    const order = await this.detail(id);
+    return order ? await parcelTimelines(order.shipments) : {};
   });
 }
 

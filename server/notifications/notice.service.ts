@@ -26,7 +26,8 @@ class NoticeService {
   async write(input: ParcelNoticeInput, tx: Prisma.TransactionClient): Promise<boolean> {
     const audience = NOTICE_AUDIENCE_OF[input.kind];
     const org = await adminOrgService.findEmailContact(input.orgId);
-    const recipient = audience === NOTICE_AUDIENCE.ADMIN ? ADMIN_NOTICE_INBOX : org?.email;
+    const recipient =
+      audience === NOTICE_AUDIENCE.ADMIN ? ADMIN_NOTICE_INBOX : audience === NOTICE_AUDIENCE.BUYER ? input.buyerEmail : org?.email;
     if (!recipient) {
       console.error(`[notice] no address for ${input.kind} on parcel ${input.parcelCode}; not written`);
       return false;
@@ -40,9 +41,10 @@ class NoticeService {
       city: input.city,
       since: input.since.toISOString(),
       at: new Date().toISOString(),
+      ...Object.fromEntries(Object.entries(input.booking ?? {}).filter(([, v]) => v)),
     };
     const row = await noticeRepository.insertOnce(
-      { shipmentId: input.shipmentId, kind: input.kind, audience, recipient, data },
+      { shipmentId: input.shipmentId, kind: input.kind, audience, recipient, data, ref: input.ref ?? "" },
       tx,
     );
     if (!row) return false;

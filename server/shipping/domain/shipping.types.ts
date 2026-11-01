@@ -147,6 +147,24 @@ export const PARCEL_ACTOR = {
 
 export type ParcelActor = (typeof PARCEL_ACTOR)[keyof typeof PARCEL_ACTOR];
 
+/** What a timeline row records (order-fulfilment D5): a move, or a booked date changed in place. */
+export const PARCEL_EVENT_KIND = {
+  MOVE: "move",
+  PICKUP_MOVED: "pickup_moved",
+} as const;
+
+export type ParcelEventKind = (typeof PARCEL_EVENT_KIND)[keyof typeof PARCEL_EVENT_KIND];
+
+/** What the admin enters when booking by hand (spec R5, Q23). Dates are India calendar days. */
+export interface ParcelBooking {
+  pickupDate: Date;
+  estimatedDelivery: Date;
+  courierName: string;
+  trackingNumber: string;
+  trackingUrl: string;
+  labelUrl: string;
+}
+
 /**
  * Where each person may cancel from (order-fulfilment Q9): buyer and shop until the parcel is
  * marked ready, the admin until it is collected. Each list sits inside the transition table.
