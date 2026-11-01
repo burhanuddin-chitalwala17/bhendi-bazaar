@@ -12,6 +12,16 @@
 
 ## Entries
 
+## 2026-11-01 — Dependency updates: Dependabot #68–#73, two of them fixed
+
+- **Taken as raised:** GitHub Actions (8, still pinned to commit SHAs), `pg` + `@types/pg` 8.23,
+  `cn` 0.5, `@radix-ui/react-dialog` 1.3.
+- **#72 fixed:** it moved `react` to 19.3.1 and left `react-dom` at 19.2.1; React refuses mismatched
+  versions, so both are now pinned exactly at 19.3.1.
+- **#71 fixed:** `@vitejs/plugin-react` 6 needs Vite 8 (the suite would not start on Vite 7); Vite moves
+  to 8, which Vitest 4 supports.
+- **Checked:** tsc, the full suite, the production build and the Playwright journeys, all green.
+
 ## 2026-11-01 — inventory-sync Q26, review: one shop's token or a moved cursor cannot spoil the run
 
 - **Found in review** of the batched order check, fixed before merge:
