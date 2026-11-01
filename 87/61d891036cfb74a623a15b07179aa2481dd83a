@@ -1,0 +1,31 @@
+src/components/layout/page-help.tsx
+  s_17ac7f5fca5021::t_802f1898e02b81 1-12,14-41
+src/components/layout/hint-cards.tsx
+  s_17ac7f5fca5021::t_af410e6bd06291 1-43
+tests/unit/portal-hints.test.ts
+  s_17ac7f5fca5021::t_a1e1dff5087dfe 1-2,5-35,37-79
+src/components/org/home/setup-step-hint.tsx
+  s_17ac7f5fca5021::t_1477d9f142abdd 1-8,10-59
+tests/unit/hint-sheet.test.tsx
+  s_17ac7f5fca5021::t_7ba1d76aacb56f 1-29,32-95
+src/components/shared/overlays/handoff-sheet.tsx
+  s_17ac7f5fca5021::t_08c883d58ab761 1-33,35-61,66-72
+src/components/layout/portal-hints.ts
+  s_17ac7f5fca5021::t_7bb723042a3d9f 1-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "8761d891036cfb74a623a15b07179aa2481dd83a",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
