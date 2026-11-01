@@ -50,6 +50,47 @@
 - **Tests:** `order-check-budget.test.ts` (3, against the database): one shop and six cost the same, at
   most three statements; one shop failing leaves the others recorded and its cursor unmoved.
   `stock-sync.test.ts` (21) unchanged apart from watching the batched cursor write.
+## 2026-11-01 — Worker drains a burst at once; stock sync writes only what differs
+
+- **The worker drains a burst.** Production showed stock sync's 43 sends running four every five
+  minutes: pg-boss waits out its poll after each fetch unless woken, and jobs enqueued in one
+  transaction send one wake. The worker now runs one fetch loop per slot (`startWorkLoops`,
+  `server/shared/jobs/jobs.work.ts`), each fetching again at once after it ran a job; an empty fetch
+  waits as before, so an idle worker costs one extra fetch per slot at most.
+- **Turning stock sync on writes only where the marketplace differs.** A listing's first send reads
+  its count there (it already did, for FBA); when it already matches ours it is recorded as sent with
+  no write. The section's line reads "Checking your Amazon counts… n of 43 done; only the ones that
+  differ are sent."
+- **Mutation-tested:** the self-wake removed → `jobs-drain.test.ts` red (2 of 12 ran, as production);
+  the matching skip removed → the turn-on test red. Each restored.
+- **Tests:** `jobs-drain.test.ts` (new, a real queue), `stock-sync.test.ts` (21).
+- **Deploy:** the worker must be redeployed for the drain to take effect.
+
+## 2026-11-01 — themed shop pages show the platform's category photos
+
+- "Shop by category" on a themed shop drew a letter on every tile: a shop that picked no collections fell back to its
+  categories with no photo at all, and a picked collection without its own photo had none either. Both now show the
+  category's platform image (`Category.heroImage`) before the letter pattern; the shop's own photo still wins. The
+  editor still shows only the shop's own pick (`server/catalog/storefront.service.ts`, `landing-data.ts`, and the
+  slot repository's select). `tests/unit/storefront-editor.test.tsx` fails on the old fallback.
+
+## 2026-11-01 — the sort control shows the pick at once
+
+- On a shop page, "Price: low to high" looked ignored: the control read its value from the URL, which changes only when
+  the sorted page arrives, so it snapped back to the old sort meanwhile. `src/components/shared/product-sort-select.tsx`
+  now holds the pick (dimmed, `aria-busy`) until the URL catches up, and drops it if the URL moves another way (Back).
+  `tests/unit/product-sort-select.test.tsx` fails on the old control.
+
+## 2026-11-01 — the shop portal's sidebar sticks again
+
+- From `md:` the shop sidebar scrolled away with the page. Its bottom anchor reset all four edges with `md:inset-auto`,
+  and `cn` (tailwind-merge) treats that as overriding `md:top-0`, so it dropped it: `sticky` with no `top` does nothing.
+  `src/components/layout/PortalSidebar.tsx` now resets only the edges the phone sheet set (`md:inset-x-auto
+  md:bottom-auto`). `tests/unit/portal-sidebar-sticky.test.tsx` fails on the old classes.
+- The list scrolls inside the sidebar at every width (the md icon rail no longer overflows the screen on a short
+  window), and `overscroll-contain` keeps the page still when the list reaches its end. The rail's drawn hover label
+  would be clipped by that scroll, so the rail shows the browser's own tooltip (`title`); the label stays the link's
+  accessible name.
 
 ## 2026-11-01 — storefront fonts: the build refuses a named fallback list
 

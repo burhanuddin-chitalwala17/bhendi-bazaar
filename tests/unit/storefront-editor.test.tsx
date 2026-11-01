@@ -130,15 +130,19 @@ describe("the preview draws what only its owner needs (ux.md preview: Empty; Q43
     expect(container.querySelector(`[data-section="${SECTION.STORY}"]`)).toBeNull();
   });
 
-  it("a cover from before the editor still fills the hero; categories fill unpicked collections (Q11)", () => {
+  it("a cover from before the editor still fills the hero; categories, with the platform's photo, fill unpicked collections (Q11)", () => {
     const page = {
       handle: "noor", name: "N", logoUrl: null, heroUrl: "/cover.webp", heroPhotos: [], heroLine: null, tagline: null,
-      collections: [], categories: [{ slug: "attar", name: "Attar" }], themedHiddenSections: [], claims: [],
+      collections: [], categories: [{ slug: "attar", name: "Attar", heroImage: "/attar.webp" }, { slug: "oud", name: "Oud", heroImage: "" }],
+      themedHiddenSections: [], claims: [],
       openingHours: null,
     } as unknown as StorefrontPage;
     const data = themedPageData(page);
     expect(data.heroPhotos).toEqual(["/cover.webp"]);
-    expect(data.collections).toEqual([{ slug: "attar", name: "Attar", photoUrl: null }]);
+    expect(data.collections).toEqual([
+      { slug: "attar", name: "Attar", photoUrl: "/attar.webp" },
+      { slug: "oud", name: "Oud", photoUrl: null },
+    ]);
     const hidden = themedPageData({ ...page, themedHiddenSections: [SECTION.COLLECTIONS] } as StorefrontPage);
     expect(hidden.collections).toEqual([]);
   });

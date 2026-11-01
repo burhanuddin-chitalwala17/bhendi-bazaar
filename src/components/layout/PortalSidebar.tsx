@@ -104,7 +104,7 @@ export function PortalSidebar({
           "fixed z-50 flex shrink-0 flex-col border-border bg-card transition-transform md:sticky md:top-0 md:h-screen md:translate-x-0 md:translate-y-0 md:border-r",
           bottom
             ? cn(
-                "inset-x-0 bottom-0 max-h-overlay rounded-t-card border-t pb-safe md:inset-auto md:max-h-none md:w-16 md:rounded-none md:border-t-0 md:pb-0 lg:w-64",
+                "inset-x-0 bottom-0 max-h-overlay rounded-t-card border-t pb-safe md:inset-x-auto md:bottom-auto md:max-h-none md:w-16 md:rounded-none md:border-t-0 md:pb-0 lg:w-64",
                 open ? "translate-y-0" : "translate-y-full",
               )
             : cn("inset-y-0 left-0 w-64 border-r", open ? "translate-x-0" : "-translate-x-full"),
@@ -123,7 +123,8 @@ export function PortalSidebar({
 
         <div className={cn(bottom && "md:hidden lg:block")}>{header}</div>
 
-        <nav className={cn("flex-1 overflow-y-auto p-4", bottom ? "space-y-4 md:overflow-visible md:px-2 lg:overflow-y-auto lg:px-4" : "space-y-1")}>
+        {/* Scrolls inside the sticky aside; overscroll-contain stops the page scrolling once the list ends. */}
+        <nav className={cn("min-h-0 flex-1 overflow-y-auto overscroll-contain p-4", bottom ? "space-y-4 md:px-2 lg:px-4" : "space-y-1")}>
           {sections.map((section, index) => (
             <div key={section.label ?? index} className="space-y-1">
               {section.label && (
@@ -165,7 +166,8 @@ function isHrefActive(item: PortalNavItem, pathname: string): boolean {
 
 /**
  * One row. In the rail (org portal at md) the label is visually hidden but still the link's
- * name, and shows beside the icon on hover and focus, so the icon is never the only cue.
+ * name, and the browser's own tooltip shows it on hover: a drawn label would be clipped by the
+ * rail, which scrolls.
  */
 function PortalNavLink({
   item,
@@ -192,18 +194,10 @@ function PortalNavLink({
           {count}
         </span>
       ) : null}
-      {rail && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-field border border-border bg-card px-2 py-1 text-sm text-foreground shadow-overlay md:group-hover:block md:group-focus-visible:block lg:!hidden"
-        >
-          {title}
-        </span>
-      )}
     </>
   );
   const rowClass = cn(
-    "group relative flex min-h-11 w-full items-center gap-3 rounded-field px-4 py-2 transition-colors",
+    "relative flex min-h-11 w-full items-center gap-3 rounded-field px-4 py-2 transition-colors",
     rail && "md:justify-center md:px-0 lg:justify-start lg:px-4",
     tone,
   );
@@ -217,6 +211,7 @@ function PortalNavLink({
           onNavigate();
           onSelect?.();
         }}
+        title={rail ? title : undefined}
         className={cn(rowClass, "h-auto justify-start whitespace-normal font-normal")}
       >
         {body}
@@ -228,6 +223,7 @@ function PortalNavLink({
       prefetch={false}
       href={href}
       aria-current={active ? "page" : undefined}
+      title={rail ? title : undefined}
       onClick={() => {
         onNavigate();
         onSelect?.();

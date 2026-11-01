@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Select } from "@/components/ui/select";
@@ -26,12 +27,19 @@ export function ProductSortSelect({ basePath }: { basePath: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const current = (params.get("sort") ?? "newest") as ProductSort;
+  // The URL changes only when the new page arrives; without this the control snaps back to the
+  // old sort meanwhile and the pick looks ignored. A pick holds only while the URL it was made on
+  // stands, so Back or a link shows the URL's sort again.
+  const [picked, setPicked] = useState<{ on: ProductSort; value: ProductSort } | null>(null);
+  const pending = picked !== null && picked.on === current && picked.value !== current;
+  const shown = pending ? picked.value : current;
 
   return (
     <Select
-      value={current}
+      value={shown}
       aria-label="Sort products"
-      className="h-9 w-auto py-0 text-sm"
+      aria-busy={pending}
+      className={`h-9 w-auto py-0 text-sm transition-opacity ${pending ? "opacity-60" : ""}`}
       onChange={(event) => {
         const next = event.target.value as ProductSort;
         const query = new URLSearchParams(params.toString());
@@ -39,6 +47,7 @@ export function ProductSortSelect({ basePath }: { basePath: string }) {
         // plain URL and a shared link does not carry a choice nobody made.
         if (next === "newest") query.delete("sort");
         else query.set("sort", next);
+        setPicked({ on: current, value: next });
         router.push(`${basePath}${query.size ? `?${query}` : ""}`);
       }}
     >
