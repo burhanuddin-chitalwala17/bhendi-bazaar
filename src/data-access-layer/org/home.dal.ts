@@ -9,6 +9,7 @@ import { enhancementService } from "@server/content/enhancement.service";
 import { biddingService } from "@server/bidding/bidding.service";
 import { isAcceptingBids } from "@server/bidding/bidding-window";
 import { appUrl } from "@server/shared/app-url";
+import { productTeamService } from "@server/catalog/product-team.service";
 
 /** One line's read: a failure costs that line and shows its own retry, never the page (D7). */
 export type HomeRead<T> = { ok: true; value: T } | { ok: false };
@@ -29,6 +30,8 @@ export interface HomeAttentionDto {
   channel: HomeRead<ChannelAttentionDTO | null>;
   photos: HomeRead<number>;
   auction: HomeRead<HomeAuction | null>;
+  /** Products the team changed, until the shop next saves each (product-form Q23). */
+  teamEdits: HomeRead<{ count: number; productId: string | null }>;
 }
 
 export interface HomeData {
@@ -72,7 +75,7 @@ async function endingAuction(orgId: string, now: Date): Promise<HomeAuction | nu
 export const homeDAL = {
   async forOrg(orgId: string, now: Date = new Date()): Promise<HomeData> {
     const ctx: WidgetContext = { audience: "org", orgId };
-    const [shop, setup, parcels, reviews, channel, photos, auction, paidOrders] = await Promise.all([
+    const [shop, setup, parcels, reviews, channel, photos, auction, teamEdits, paidOrders] = await Promise.all([
       settle("shop", async () => {
         const details = await shopDetailsService.get(orgId);
         const path = `/store/${details.handle}`;
@@ -84,12 +87,13 @@ export const homeDAL = {
       settle("channel", async () => (await channelConnectionService.overview(orgId)).attention[0] ?? null),
       settle("photos", () => enhancementService.countAwaitingDecision(orgId)),
       settle("auction", () => endingAuction(orgId, now)),
+      settle("team edits", () => productTeamService.teamEditedSummary(orgId)),
       settle("paid orders", () => widgetData(WIDGET.PAID_ORDERS, ctx)),
     ]);
     return {
       shop,
       setup,
-      attention: { parcels: valueOf(parcels), reviews, channel, photos, auction },
+      attention: { parcels: valueOf(parcels), reviews, channel, photos, auction, teamEdits },
       hasPaidOrder: paidOrders.ok ? { ok: true, value: paidOrders.value.value > 0 } : paidOrders,
       widgets: {
         ...(parcels.ok ? { [WIDGET.PARCELS]: parcels.value } : {}),

@@ -1,7 +1,7 @@
 # Spec — own-store/product-form
 
 - **Summary:** A shop lists or changes a product on its phone in five short steps, sees what each place it sells on will still ask while it fills, and can let the Bhendi Bazaar team fix a product for it, every change on record
-- **Status:** Accepted
+- **Status:** Implemented — 2026-11-01, units 1–6
 - **Domain:** catalog, with listing (readiness) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30

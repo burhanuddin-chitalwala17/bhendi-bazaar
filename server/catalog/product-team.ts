@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * What a Bhendi Bazaar team save changed, in the order the shop should read it (product-form D11,
  * Q13, Q21): money first, then stock, then the rest. Pure, so the audit entry and its tests read one
@@ -92,4 +94,43 @@ export function teamChanges(before: TeamSnapshot | null, after: TeamSnapshot): F
 /** Parsed stored answers (ADR-0051: parsed, never cast) read as their values. */
 export function answersOf(parsed: Partial<Record<string, { value: Value }>>): Record<string, Value> {
   return Object.fromEntries(Object.entries(parsed).map(([key, entry]) => [key, entry?.value ?? null]));
+}
+
+/**
+ * One team save as the shop reads it (product-form D13, Q14): when, why, and what changed, money
+ * first. No admin identity, by construction: the shop is told "Bhendi Bazaar team", never who.
+ */
+export interface ProductTeamEditDto {
+  id: string;
+  at: Date;
+  created: boolean;
+  reason: string;
+  changes: FieldChange[];
+}
+
+const value = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+const teamMetadata = z.object({
+  orgId: z.string(),
+  reason: z.string(),
+  changes: z.array(z.object({ field: z.string(), at: z.string().optional(), before: value, after: value })),
+});
+
+interface StoredEntry {
+  id: string;
+  action: string;
+  metadata: unknown;
+  createdAt: Date;
+}
+
+/**
+ * Stored entries read as the shop's history, parsed never cast (Invariant 4): an entry of another
+ * shop, or one whose shape does not parse, is left out rather than failing the page.
+ */
+export function toTeamEdits(entries: StoredEntry[], orgId: string): ProductTeamEditDto[] {
+  return entries.flatMap((entry) => {
+    const parsed = teamMetadata.safeParse(entry.metadata);
+    if (!parsed.success || parsed.data.orgId !== orgId) return [];
+    const { reason, changes } = parsed.data;
+    return [{ id: entry.id, at: entry.createdAt, created: entry.action === PRODUCT_TEAM_ACTION.CREATED, reason, changes }];
+  });
 }

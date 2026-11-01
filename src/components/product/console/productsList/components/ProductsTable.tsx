@@ -10,6 +10,7 @@ import { StockBadge } from "@/components/shared/badges/StatusBadge";
 import { ProductFlag, isNewArrival } from "@/types/product";
 import { ProductForTable } from "../../types";
 import { ProductRowMenu } from "./ProductRowMenu";
+import { TeamEditBadge } from "@/components/product/team/team-edit-badge";
 import { Pagination } from "@/types/shared";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
 
@@ -72,6 +73,7 @@ export function ProductsTable({
                 </span>
               )}
             </div>
+            {product.teamEditedAt && <TeamEditBadge at={product.teamEditedAt} />}
             <p className="text-sm text-muted-foreground">
               {product.category.name}
             </p>

@@ -36,6 +36,7 @@ const product = (id: string, wishlistCount: number): ProductForTable => ({
   wishlistCount,
   // On sale — this file is about the wishlist filter, not the shelf (ADR-0029).
   archivedAt: null,
+  teamEditedAt: null,
   createdAt: new Date("2026-01-01"),
   category: { id: "cat-1", name: "Veg" },
   org: { id: "org-1", name: "Org One", code: "ORG1" },

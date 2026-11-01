@@ -106,6 +106,8 @@ const PRODUCT_LIST_SELECT = {
     // on the org-facing shape (ADR-0029). The buyer-facing DTO never carries it —
     // a buyer is never handed an archived product at all.
     archivedAt: true,
+    // The team's mark on a list row, until the shop next saves (product-form D13).
+    teamEditedAt: true,
     category: {
         select: { id: true, name: true },
     },
@@ -671,6 +673,19 @@ export class AdminProductsRepository {
             },
         });
         return row?._count ?? null;
+    }
+
+    /**
+     * Products carrying the team's mark (product-form D13, Q23); the id too when there is just one.
+     * Available only: a product the shop archived since is one it has already acted on.
+     */
+    async teamEditedSummary(orgId: string): Promise<{ count: number; productId: string | null }> {
+        const where = { orgId, teamEditedAt: { not: null }, ...AVAILABLE } satisfies Prisma.ProductWhereInput;
+        const [count, first] = await Promise.all([
+            prisma.product.count({ where }),
+            prisma.product.findFirst({ where, select: { id: true } }),
+        ]);
+        return { count, productId: count === 1 ? (first?.id ?? null) : null };
     }
 
     /**

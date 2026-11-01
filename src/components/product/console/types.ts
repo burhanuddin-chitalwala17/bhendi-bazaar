@@ -46,6 +46,8 @@ export interface ProductForTable {
   wishlistCount: number;
   /** Set when the org archived the product (ADR-0029); null while it is available. */
   archivedAt: Date | null;
+  /** Set by a Bhendi Bazaar team save until the shop next saves (product-form D13). */
+  teamEditedAt: Date | null;
   createdAt: Date;
   category: { id: string; name: string };
   org: { id: string; name: string; code: string };

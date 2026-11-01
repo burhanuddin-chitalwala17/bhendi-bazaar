@@ -1,5 +1,6 @@
 import { CARD_STATE } from "@server/channels/channel-connection.types";
 import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
+import { TEAM_HISTORY_ANCHOR } from "@/components/product/team/team-edit-copy";
 import { HOME_COPY, LINE_COPY } from "./home-copy";
 
 export type AttentionLine =
@@ -40,6 +41,14 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
   else if (a.auction.value) {
     const minutes = Math.ceil((new Date(a.auction.value.endsAt).getTime() - now.getTime()) / 60_000);
     lines.push({ key: "auction", ok: true, text: LINE_COPY.auction(minutes), href: `${base}/bidding` });
+  }
+
+  // Last: the team's fixes are worth a look, never urgent (product-form Q23).
+  if (!a.teamEdits.ok) lines.push(failed("teamEdits"));
+  else if (a.teamEdits.value.count > 0) {
+    const { count, productId } = a.teamEdits.value;
+    const href = productId ? `${base}/products/${productId}#${TEAM_HISTORY_ANCHOR}` : `${base}/products`;
+    lines.push({ key: "teamEdits", ok: true, text: LINE_COPY.teamEdits(count), href });
   }
 
   return lines;

@@ -12,6 +12,33 @@
 
 ## Entries
 
+## 2026-11-01 — product-form unit 6: the shop sees what the team changed [CONTRACT]
+
+- **Badge** (R12, A7; D13; Q14): "Edited by Bhendi Bazaar team · {date}" on the shop's product page
+  (with "See what changed") and its list row while `teamEditedAt` is set; the shop's next save clears
+  it (U4's column), the history stays.
+- **History** (D13): a server read on `/org/[orgId]/products/[id]` of the product's
+  `PRODUCT_TEAM_*` audit entries, newest first, one line each — "Bhendi Bazaar team · 30 Oct, 4:12 pm
+  · Price ₹2,499 → ₹2,299 · 'reason'"; a team create reads "Added this product". Empty renders nothing;
+  loading shimmers; a failed read says "Couldn't load the history." with "Try again"; newest five, then
+  "Show all changes"; a long line clamps behind "More". Copy in
+  `src/components/product/team/team-edit-copy.ts`.
+- **Home line** (Q23): "Our team changed {n} product(s)" in Needs you now, opening the one product's
+  history or the products list; counts available products only (an archived one the shop has acted on).
+- **[CONTRACT]** `ProductTeamEditDto` (no admin identity); `ProductForTable.teamEditedAt`;
+  `HomeAttentionDto.teamEdits`. The audit read `listResourceActions` selects no admin columns.
+- **Tests:** `tests/unit/product-form-team-history.test.tsx` (line, badge, stock/opaque wording, create,
+  no identity, malformed and other-org entries left out, Empty, Show all, More, retry, Home line);
+  `tests/integration/product-team-history.test.ts` (A7 history money first without the admin; another
+  shop reads nothing; archive entries are not history; Home count, clear on shop save, archived not
+  counted). Mutations, each restored: DTO spreading the stored entry (2 failed); org check dropped
+  (2 failed); `safeParse` turned into `parse` (1 failed); count without `teamEditedAt` (1 failed);
+  count without `AVAILABLE` (1 failed); history without the five-line cut (1 failed). The action filter
+  in `listActionsForResource` survives its mutation: the metadata parse also leaves archive entries out,
+  so it is held twice. `product-visibility` census for `product.repository.ts` 25 → 27 (the summary's
+  count and first, both filtered).
+- Q14, Q23 → implemented (unit 6). Spec and TRD → Implemented.
+
 ## 2026-11-01 — own-store/bulk-sheet unit 2: dropdowns of words on a Lists tab, word matching [CONTRACT]
 
 - **Dropdowns (D3; R2, A2; Q6, Q7):** every list column — category as a path ("Women › Abayas"), kind, family,

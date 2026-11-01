@@ -63,6 +63,7 @@ class ProductsDAL {
         thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,
         wishlistCount: saves.get(product.id) ?? 0,
         archivedAt: product.archivedAt,
+        teamEditedAt: product.teamEditedAt,
         createdAt: product.createdAt,
         category: product.category,
         org: product.org,

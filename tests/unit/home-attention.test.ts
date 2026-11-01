@@ -15,6 +15,7 @@ const quiet = (): HomeAttentionDto => ({
   channel: { ok: true, value: null },
   photos: { ok: true, value: 0 },
   auction: { ok: true, value: null },
+  teamEdits: { ok: true, value: { count: 0, productId: null } },
 });
 
 describe("needs you now", () => {
@@ -44,6 +45,7 @@ describe("needs you now", () => {
         channel: { ok: true, value: { channel: "amazon" as never, label: "Amazon", state: CARD_STATE.NEEDS_RECONNECT, reapproveBy: null } },
         photos: { ok: true, value: 3 },
         auction: { ok: true, value: { productName: "Shawl", endsAt: new Date(now.getTime() + 2 * 3_600_000).toISOString() } },
+        teamEdits: { ok: true, value: { count: 0, productId: null } },
       },
       now,
     );

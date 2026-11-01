@@ -41,6 +41,7 @@ export const LINE_COPY = {
   reconnect: (label: string) => `${label} needs you to reconnect`,
   renew: (label: string) => `${label} needs you to renew access`,
   photos: (n: number) => `${plural(n, "photo", "photos")} can be improved`,
+  teamEdits: (n: number) => `Our team changed ${plural(n, "product", "products")}`,
   auction: (minutesLeft: number) =>
     minutesLeft < 60 ? `Auction ends in ${Math.max(1, minutesLeft)} min` : `Auction ends in ${Math.round(minutesLeft / 60)} h`,
 } as const;

@@ -38,8 +38,17 @@ export class AdminLogRepository {
   }
 
   /**
-   * Get paginated logs with filters
+   * One resource's entries of the given actions, newest first, without who wrote them: for a reader
+   * the acting admin is never shown to (product-form D13).
    */
+  async listActionsForResource(resource: string, resourceId: string, actions: readonly string[]) {
+    return await prisma.adminLog.findMany({
+      where: { resource, resourceId, action: { in: [...actions] } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, action: true, metadata: true, createdAt: true },
+    });
+  }
+
   /** One resource's trail, newest first — an entry's change history (org-payouts D9). */
   async listForResource(resource: string, resourceId: string) {
     return await prisma.adminLog.findMany({

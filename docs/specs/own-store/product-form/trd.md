@@ -1,6 +1,6 @@
 # TRD — own-store/product-form
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q20–Q22 decided by the owner)
+- **Status:** Implemented — 2026-11-01, units 1–6 (accepted 2026-10-30; UX signed off 2026-10-30; Q20–Q22 decided by the owner)
 - **Domain:** catalog, with listing (readiness) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30

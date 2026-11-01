@@ -50,6 +50,11 @@ export async function recordAdminActionIn(
   await adminLogRepository.createLog(entry, db);
 }
 
+/** A resource's entries of these actions, newest first, carrying no admin identity. */
+export async function listResourceActions(resource: string, resourceId: string, actions: readonly string[]) {
+  return await adminLogRepository.listActionsForResource(resource, resourceId, actions);
+}
+
 export class AdminLogService {
   /**
    * Get paginated logs with filters

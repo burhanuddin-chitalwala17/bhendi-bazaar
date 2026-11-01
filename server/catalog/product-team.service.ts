@@ -6,11 +6,14 @@ import {
   PRODUCT_TEAM_ACTION,
   answersOf,
   teamChanges,
+  toTeamEdits,
+  type ProductTeamEditDto,
   type TeamSnapshot,
 } from "@server/catalog/product-team";
+import { adminProductsRepository } from "@server/catalog/product.repository";
 import { parseStoredFacts, parseStoredMeasurements } from "@server/listing/listing-facts";
 import { promotionService } from "@server/promotions/promotion.service";
-import { recordAdminAction } from "@server/shared/audit/audit.service";
+import { listResourceActions, recordAdminAction } from "@server/shared/audit/audit.service";
 import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 
 type TeamInput = Omit<ProductFormInput, "orgId" | "reason"> & { reason: string };
@@ -47,6 +50,17 @@ export class ProductTeamService {
   async restore(id: string, adminId: string) {
     const current = await productsService.getProductById({ id });
     return await productsService.restoreProduct(id, { orgId: current.org.id, userId: adminId });
+  }
+
+  /** The shop's history of the team's saves on one of its products, newest first (D13). */
+  async history(productId: string, orgId: string): Promise<ProductTeamEditDto[]> {
+    const entries = await listResourceActions("Product", productId, Object.values(PRODUCT_TEAM_ACTION));
+    return toTeamEdits(entries, orgId);
+  }
+
+  /** Home's line (Q23): how many of the shop's products carry the team's mark, and which when one. */
+  async teamEditedSummary(orgId: string) {
+    return await adminProductsRepository.teamEditedSummary(orgId);
   }
 
   /** After the save has committed, and never failing it (ADR-0021): the trail reports, it does not decide. */
