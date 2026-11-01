@@ -1,0 +1,40 @@
+src/components/shared/forms/product/useLeaveGuard.ts
+  s_17ac7f5fca5021::t_65d0f4547d5e7e 1-58,68-84,92-103
+  s_17ac7f5fca5021::t_bb5aadf3bca901 85-91
+src/components/shared/forms/product/edit-overview.ts
+  s_17ac7f5fca5021::t_d924dab7cc9dae 2-37,40,42-45,47,54-70,73,75,77-118,121-125
+src/components/shared/forms/product/DraftNotice.tsx
+  s_17ac7f5fca5021::t_38f6bec09e762b 1-36
+tests/unit/product-form-edit.test.tsx
+  s_17ac7f5fca5021::t_98e3d80c76af6b 1-63,65-143,145-195,197-303
+tests/integration/product-edit-version.test.ts
+  s_17ac7f5fca5021::t_c9ed0dac0f9be7 1-108
+src/components/shared/forms/product/product-defaults.ts
+  s_17ac7f5fca5021::t_29d1e86d338a2d 1-61,63
+server/catalog/product-edit.ts
+  s_17ac7f5fca5021::t_3e06b87b5690b4 1-43
+src/components/shared/forms/product/useEditRebase.ts
+  s_17ac7f5fca5021::t_2626e70aa2fb93 1-7,9-15,17-70,74-81,85-97
+src/hooks/forms/useFormPersist.ts
+  s_17ac7f5fca5021::t_79d5983ba6597a 3-4,6-49,56-61,70-84,86,88-93,98-114,116,136-141,153-157,159-167,170-171
+src/components/shared/forms/product/ProductEditOverview.tsx
+  s_17ac7f5fca5021::t_888d2d51bec03a 1-12,14,16-17,21-63,65-71,73-100,102,104-126,128-129,131-155,157-213,215-243
+src/components/shared/forms/product/LeaveSheet.tsx
+  s_17ac7f5fca5021::t_8ab0b6557f80df 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "e12a3ff759e5a1086e1242cd85a684a46c68873b",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
