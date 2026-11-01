@@ -46,6 +46,14 @@ const DEAD_PERMALINK =
 export const isDeadPermalink = (pathname: string) => DEAD_PERMALINK.test(pathname);
 
 /**
+ * Whether a signed-out visitor is sent to the sign-in page. `/org/new` is the one portal path
+ * that is not: it asks in place with the sign-in sheet and returns there (onboarding D4).
+ * It holds no data and its page still runs `requireSession` before showing the form.
+ */
+export const signInAtEdge = (pathname: string) =>
+  (pathname.startsWith("/admin") || pathname.startsWith("/org")) && pathname !== "/org/new";
+
+/**
  * A fresh nonce per response, carried both ways: on the *request* so Next stamps it onto
  * the inline scripts it renders, and on the response so the browser enforces it. Reusing
  * one across responses would make it guessable and therefore no better than
@@ -82,8 +90,7 @@ export async function middleware(request: NextRequest) {
   const proceed = () =>
     withCsp(request, NextResponse.next({ request: { headers: request.headers } }));
 
-  const guarded = pathname.startsWith("/admin") || pathname.startsWith("/org");
-  if (!guarded) return proceed();
+  if (!signInAtEdge(pathname)) return proceed();
 
   try {
     const token = await signedIn(request);

@@ -12,6 +12,26 @@
 
 ## Entries
 
+## 2026-11-01 — seller-onboarding unit 2: the create screen shows the link it makes
+
+- **Create screen (D4; R1, A1; Q21, Q27):** `/org/new` previews "Your link: {host}/store/{handle}" as the name is typed,
+  using the server's own `handleCandidates` in the browser (so a reserved word skips to `-2` exactly as the insert does);
+  a long handle is cut in the middle. The host comes from `appUrl()`, never a constant. Words live in
+  `src/components/org/open-shop-copy.ts`. Body and route unchanged (`POST /api/orgs`, `ACCOUNT`, org-profile U1's schema).
+- **States (ux Create your shop):** a spinner on "Opening your shop…" (still tappable, still one shop); "Still opening…
+  don't close this page." after 3 s; a dropped connection or a 5xx shows "Couldn't open your shop. Check your internet and try again." with "Try again"
+  (never the server's generic message), a refusal shows its
+  message without one; field messages unchanged. From `md:` the form sits in a centred 28rem card (ux Phone / tablet / desktop).
+- **Signed out (ux Refused):** the page says "Sign in to open your shop." and opens the sign-in sheet, which refreshes the
+  page in place. `src/middleware.ts` gains `signInAtEdge`, which lets exactly `/org/new` past the sign-in redirect; the
+  page still calls `requireSession`, and a blocked account is still refused.
+- **Gates:** `open-shop.test.tsx` (preview, reserved word, long link, slow, retry, 5xx copy, terminal error), new
+  `open-shop-page.test.tsx` (signed-out prompt, signed-in form on the app's origin, blocked refused, edge exemption).
+- **Mutations recorded:** every failure made retryable → terminal-error test red; preview built by a local slugify instead
+  of `handleCandidates` → reserved-word test red; edge exemption widened to a `/org/new` prefix → edge test red; the page
+  swallowing every session error → blocked-account test red; slow timer at 30 s → slow test red. All restored.
+- Decisions Q21, Q27 → implemented (unit 2). Suites: `tsc`, `vitest tests/unit`, `lint:boundary`, `docs:check`.
+
 ## 2026-11-01 — org-profile unit 5: copy sweep, the org code hidden from the shop
 
 - **Code hidden** (R8; D9): the shop switcher and the `/org` "Choose a shop" list show the shop's name and the
