@@ -12,6 +12,22 @@
 
 ## Entries
 
+## 2026-11-01 — Worker drains a burst at once; stock sync writes only what differs
+
+- **The worker drains a burst.** Production showed stock sync's 43 sends running four every five
+  minutes: pg-boss waits out its poll after each fetch unless woken, and jobs enqueued in one
+  transaction send one wake. The worker now runs one fetch loop per slot (`startWorkLoops`,
+  `server/shared/jobs/jobs.work.ts`), each fetching again at once after it ran a job; an empty fetch
+  waits as before, so an idle worker costs one extra fetch per slot at most.
+- **Turning stock sync on writes only where the marketplace differs.** A listing's first send reads
+  its count there (it already did, for FBA); when it already matches ours it is recorded as sent with
+  no write. The section's line reads "Checking your Amazon counts… n of 43 done; only the ones that
+  differ are sent."
+- **Mutation-tested:** the self-wake removed → `jobs-drain.test.ts` red (2 of 12 ran, as production);
+  the matching skip removed → the turn-on test red. Each restored.
+- **Tests:** `jobs-drain.test.ts` (new, a real queue), `stock-sync.test.ts` (21).
+- **Deploy:** the worker must be redeployed for the drain to take effect.
+
 ## 2026-11-01 — themed shop pages show the platform's category photos
 
 - "Shop by category" on a themed shop drew a letter on every tile: a shop that picked no collections fell back to its

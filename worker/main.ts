@@ -14,9 +14,7 @@ import { resolveJob, registeredJobTypes } from "@server/shared/jobs/jobs.registr
 import { heartbeatRepository } from "@server/shared/jobs/heartbeat.repository";
 import {
   HEARTBEAT_INTERVAL_SECONDS,
-  JOBS_GROUP_CONCURRENCY,
   JOBS_INTERVALS,
-  JOBS_LOCAL_CONCURRENCY,
   JOBS_NOTIFY_HEARTBEAT_MS,
   JOBS_POOL_MAX,
   JOBS_QUEUE,
@@ -24,6 +22,7 @@ import {
   JOBS_SWITCHES,
 } from "@server/shared/jobs/jobs.config";
 import { registeredSchedules, startSchedules } from "@server/shared/jobs/jobs.schedule";
+import { startWorkLoops } from "@server/shared/jobs/jobs.work";
 // Job registrations. Each domain adds its `*.jobs.ts` here and nowhere else.
 import "@server/shared/jobs/ping.job";
 import "@server/catalog/media.jobs";
@@ -60,22 +59,10 @@ async function main() {
 
   await boss.start();
 
-  await boss.work(
-    JOBS_QUEUE,
-    {
-      localConcurrency: JOBS_LOCAL_CONCURRENCY,
-      groupConcurrency: JOBS_GROUP_CONCURRENCY,
-      pollingIntervalSeconds: JOBS_INTERVALS.pollingIntervalSeconds,
-      notifyPollingIntervalSeconds: JOBS_INTERVALS.notifyPollingIntervalSeconds,
-    },
-    // pg-boss hands a batch; batchSize is 1, so this is one job, but the type is honest.
-    async (jobs) => {
-      for (const job of jobs) {
-        const { definition, payload } = resolveJob(job.data);
-        await definition.handler({ jobId: job.id, payload });
-      }
-    },
-  );
+  await startWorkLoops(boss, JOBS_QUEUE, async (job) => {
+    const { definition, payload } = resolveJob(job.data);
+    await definition.handler({ jobId: job.id, payload });
+  });
 
   const beat = async () => {
     try {

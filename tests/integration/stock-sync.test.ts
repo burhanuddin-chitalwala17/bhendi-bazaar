@@ -180,6 +180,7 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
 
   it("sends 0 for an archived product (Q6)", async () => {
     const id = await product("ARCH", 4);
+    fake.state.theirs.set(`SS-${stamp}-ARCH`, 4);
     await prisma.product.update({ where: { id }, data: { archivedAt: new Date() } });
     await stock.push(id);
     expect(fake.state.sent.at(-1)?.counts).toEqual([{ externalId: "DEFAULT", quantity: 0 }]);
@@ -366,5 +367,16 @@ describe.skipIf(!isDisposableDb)("stock sync (local db)", () => {
     expect(preview.toZero).toBe(1);
     expect(preview.rows[0]).toMatchObject({ title: "Stock ZERO", theirs: 1, ours: 0, toZero: true });
     expect(preview.rows.find((r) => r.title === "Stock SAME")).toMatchObject({ changes: false, toZero: false });
+  });
+
+  it("on turning on, writes only to listings whose count there differs from ours", async () => {
+    const same = await product("TURN-SAME", 1);
+    fake.state.theirs.set(`SS-${stamp}-TURN-SAME`, 1);
+    const differs = await product("TURN-DIFF", 2);
+    fake.state.theirs.set(`SS-${stamp}-TURN-DIFF`, 1);
+    await stock.push(same);
+    await stock.push(differs);
+    expect(fake.state.sent).toEqual([{ sku: `SS-${stamp}-TURN-DIFF`, counts: [{ externalId: "DEFAULT", quantity: 2 }] }]);
+    expect((await stock.section(orgId, "amazon")).sending).toBeNull();
   });
 });

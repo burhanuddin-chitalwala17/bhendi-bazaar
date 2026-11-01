@@ -93,6 +93,11 @@ export const channelStockService = {
                 await channelListingRepository.recordStockSent(l.id, { heldByMarketplace: true }, now, tx);
                 continue;
               }
+              // Already showing our count: record it as sent, with no write to the marketplace.
+              if (sameCounts(theirs.counts, counts)) {
+                await channelListingRepository.recordStockSent(l.id, { counts }, now, tx);
+                continue;
+              }
             }
             if (sameCounts(last.counts, counts)) continue;
             await provider.setStock(token, l.connection.externalAccountId, ref(l), counts);

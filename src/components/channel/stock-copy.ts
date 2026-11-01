@@ -22,7 +22,7 @@ export const STOCK = {
   seeAll: "See all",
   newLocation: (l: string, name: string, pincode: string | null) => `New ${l} location: ${name}${pincode ? ` ${pincode}` : ""}. Match it to send its stock.`,
   matchIt: "Match it",
-  sending: (l: string, sent: number, total: number) => `Sending stock to ${l}… ${sent} of ${total}`,
+  sending: (l: string, sent: number, total: number) => `Checking your ${l} counts… ${sent} of ${total} done; only the ones that differ are sent.`,
   refused: (l: string, n: number) => `${l} turned down ${n} ${n === 1 ? "listing" : "listings"}; their count there stays as it is until the next change.`,
   notAllowed: (l: string) => `${l} doesn't let us send stock yet. Its own count stays as it is.`,
   busy: (l: string) => `Couldn't reach ${l}. We'll keep trying; nothing is lost.`,
