@@ -1,17 +1,10 @@
-// Onboarding's rules (docs/specs/seller-profile/, PR 3): which of the three steps counts as
-// done, what the store says it is missing and in what words, that the marketplace channels
-// answer "unknown" rather than inventing a rule, and when the card may collapse. Pure — the
-// facts are handed in, so no database is involved.
+// The setup list's rules (own-store seller-onboarding R3, A1, A6; D5; Q2, Q3, Q19): five steps in
+// the owner's order, each ticked by a fact the shop already has, and hidden only by the shop.
+// Pure — the facts are handed in, so no database is involved.
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
 import {
-  CHANNEL,
-  CHANNELS,
   ONBOARDING_STEP,
   ONBOARDING_STEPS,
-  READINESS_STATE,
-  STORE_MISSING,
   deriveOnboarding,
   type OnboardingFacts,
   type OnboardingStatus,
@@ -19,131 +12,83 @@ import {
 } from "@server/catalog/org-onboarding.types";
 
 const facts = (overrides: Partial<OnboardingFacts> = {}): OnboardingFacts => ({
-  hasDescription: false,
-  brandCount: 0,
-  hasDefaults: false,
-  locationCount: 0,
   productsOnSale: 0,
+  pickupReady: false,
+  hasLogo: false,
+  hasTagline: false,
+  shared: false,
+  hidden: false,
   ...overrides,
 });
 
 const everything = (): OnboardingFacts =>
-  facts({ hasDescription: true, brandCount: 1, hasDefaults: true, locationCount: 1, productsOnSale: 1 });
+  facts({ productsOnSale: 1, pickupReady: true, hasLogo: true, hasTagline: true, shared: true });
 
 const stepDone = (status: OnboardingStatus, key: OnboardingStep) =>
   status.steps.find((step) => step.key === key)?.done;
 
-const store = (status: OnboardingStatus) =>
-  status.readiness.find((entry) => entry.channel === CHANNEL.STORE)!;
-
-describe("the three steps", () => {
-  it("come in order: open, describe, sell", () => {
+describe("the five steps (Q2, Q19)", () => {
+  it("run open, product, pickup address, logo and line, share", () => {
     expect(deriveOnboarding(facts()).steps.map((step) => step.key)).toEqual([
       ONBOARDING_STEP.OPEN,
-      ONBOARDING_STEP.DESCRIBE,
-      ONBOARDING_STEP.SELL,
+      ONBOARDING_STEP.PRODUCT,
+      ONBOARDING_STEP.ADDRESS,
+      ONBOARDING_STEP.LOOK,
+      ONBOARDING_STEP.SHARE,
     ]);
-    expect(ONBOARDING_STEPS).toHaveLength(3);
+    expect(ONBOARDING_STEPS).toHaveLength(5);
   });
 
-  it("open is done for a bare org — the org existing is the step", () => {
-    expect(stepDone(deriveOnboarding(facts()), ONBOARDING_STEP.OPEN)).toBe(true);
-  });
-
-  it("describe is done once the profile has a description", () => {
-    expect(stepDone(deriveOnboarding(facts()), ONBOARDING_STEP.DESCRIBE)).toBe(false);
-    expect(stepDone(deriveOnboarding(facts({ hasDescription: true })), ONBOARDING_STEP.DESCRIBE)).toBe(true);
-  });
-
-  it("sell is done with a brand, or with any default — not with neither", () => {
-    expect(stepDone(deriveOnboarding(facts()), ONBOARDING_STEP.SELL)).toBe(false);
-    expect(stepDone(deriveOnboarding(facts({ brandCount: 1 })), ONBOARDING_STEP.SELL)).toBe(true);
-    expect(stepDone(deriveOnboarding(facts({ hasDefaults: true })), ONBOARDING_STEP.SELL)).toBe(true);
-  });
-
-  it("a step's done state does not depend on the store's readiness", () => {
-    const status = deriveOnboarding(facts({ hasDescription: true, brandCount: 1 }));
-    expect(status.steps.every((step) => step.done)).toBe(true);
-    expect(store(status).state).toBe(READINESS_STATE.NOT_READY);
+  it("a new shop starts at 1 of 5 done, the next step the first product (A1)", () => {
+    const status = deriveOnboarding(facts());
+    expect(stepDone(status, ONBOARDING_STEP.OPEN)).toBe(true);
+    expect(status.doneCount).toBe(1);
+    expect(status.next).toBe(ONBOARDING_STEP.PRODUCT);
+    expect(status.complete).toBe(false);
   });
 });
 
-describe("the store's readiness", () => {
-  it("names both things to do, location first, when the org has neither", () => {
-    const entry = store(deriveOnboarding(facts()));
-    expect(entry.state).toBe(READINESS_STATE.NOT_READY);
-    expect(entry.missing).toEqual([STORE_MISSING.LOCATION, STORE_MISSING.PRODUCT]);
+describe("each step ticks from its own fact (Q3, A6)", () => {
+  it("product: a product on sale", () => {
+    expect(stepDone(deriveOnboarding(facts()), ONBOARDING_STEP.PRODUCT)).toBe(false);
+    expect(stepDone(deriveOnboarding(facts({ productsOnSale: 1 })), ONBOARDING_STEP.PRODUCT)).toBe(true);
   });
 
-  it("names only what is still missing", () => {
-    expect(store(deriveOnboarding(facts({ locationCount: 1 }))).missing).toEqual([STORE_MISSING.PRODUCT]);
-    expect(store(deriveOnboarding(facts({ productsOnSale: 3 }))).missing).toEqual([STORE_MISSING.LOCATION]);
+  it("pickup address: an active location with a street and a contact", () => {
+    expect(stepDone(deriveOnboarding(facts()), ONBOARDING_STEP.ADDRESS)).toBe(false);
+    expect(stepDone(deriveOnboarding(facts({ pickupReady: true })), ONBOARDING_STEP.ADDRESS)).toBe(true);
   });
 
-  it("is ready, with nothing missing, once there is a pickup location and a product on sale", () => {
-    const entry = store(deriveOnboarding(facts({ locationCount: 1, productsOnSale: 1 })));
-    expect(entry.state).toBe(READINESS_STATE.READY);
-    expect(entry.missing).toEqual([]);
+  it("logo and line: both, never one alone", () => {
+    expect(stepDone(deriveOnboarding(facts({ hasLogo: true })), ONBOARDING_STEP.LOOK)).toBe(false);
+    expect(stepDone(deriveOnboarding(facts({ hasTagline: true })), ONBOARDING_STEP.LOOK)).toBe(false);
+    expect(stepDone(deriveOnboarding(facts({ hasLogo: true, hasTagline: true })), ONBOARDING_STEP.LOOK)).toBe(true);
   });
 
-  it("words what is missing as a thing to do, never as a requirement (spec R5)", () => {
-    for (const wording of Object.values(STORE_MISSING)) {
-      expect(wording).not.toMatch(/required/i);
-    }
-  });
-});
-
-describe("the other channels", () => {
-  it("every channel is listed exactly once, in display order", () => {
-    expect(deriveOnboarding(facts()).readiness.map((entry) => entry.channel)).toEqual([...CHANNELS]);
-    // Pinned, because the order is what a shop reads down and the set is what every adapter,
-    // mapping and readiness answer keys on (channel-registry D1).
-    expect(CHANNELS).toEqual([
-      CHANNEL.STORE,
-      CHANNEL.GOOGLE,
-      CHANNEL.META,
-      CHANNEL.AMAZON,
-      CHANNEL.FLIPKART,
-      CHANNEL.MEESHO,
-    ]);
+  it("share: the first recorded tap", () => {
+    expect(stepDone(deriveOnboarding(facts()), ONBOARDING_STEP.SHARE)).toBe(false);
+    expect(stepDone(deriveOnboarding(facts({ shared: true })), ONBOARDING_STEP.SHARE)).toBe(true);
   });
 
-  it("report unknown with an empty missing list, whatever the facts — no rule exists for them yet", () => {
-    for (const status of [deriveOnboarding(facts()), deriveOnboarding(everything())]) {
-      const others = status.readiness.filter((entry) => entry.channel !== CHANNEL.STORE);
-      expect(others).toHaveLength(CHANNELS.length - 1);
-      for (const entry of others) {
-        expect(entry.state).toBe(READINESS_STATE.UNKNOWN);
-        expect(entry.missing).toEqual([]);
-      }
-    }
+  it("counts what is done, and the next step is the first one not done, in order", () => {
+    const status = deriveOnboarding(facts({ pickupReady: true, shared: true }));
+    expect(status.doneCount).toBe(3);
+    expect(status.next).toBe(ONBOARDING_STEP.PRODUCT);
+  });
+
+  it("is complete with every fact, and then has no next step", () => {
+    const status = deriveOnboarding(everything());
+    expect(status.doneCount).toBe(5);
+    expect(status.complete).toBe(true);
+    expect(status.next).toBeNull();
   });
 });
 
-describe("complete", () => {
-  it("is true only when every step is done and the store is ready", () => {
-    expect(deriveOnboarding(everything()).complete).toBe(true);
-  });
-
-  it("is false while any step is not done, even with a ready store", () => {
-    expect(deriveOnboarding(everything()).complete).toBe(true);
-    expect(deriveOnboarding({ ...everything(), hasDescription: false }).complete).toBe(false);
-    expect(deriveOnboarding({ ...everything(), brandCount: 0, hasDefaults: false }).complete).toBe(false);
-  });
-
-  it("is false while the store is not ready, even with every step done", () => {
-    expect(deriveOnboarding({ ...everything(), locationCount: 0 }).complete).toBe(false);
-    expect(deriveOnboarding({ ...everything(), productsOnSale: 0 }).complete).toBe(false);
-  });
-});
-
-describe("the card's copy", () => {
-  // Spec R5: the word appears on no profile surface. The card shows readiness as things to do.
-  it('never says "required"', () => {
-    const source = readFileSync(
-      join(resolve(__dirname, "../.."), "src/components/org/onboarding-card.tsx"),
-      "utf8",
-    );
-    expect(source).not.toMatch(/required/i);
+describe("hidden (Q6, A6)", () => {
+  it("is the shop's own choice, and does not change what is done", () => {
+    expect(deriveOnboarding(facts()).hidden).toBe(false);
+    const hidden = deriveOnboarding(facts({ hidden: true, productsOnSale: 2 }));
+    expect(hidden.hidden).toBe(true);
+    expect(hidden.doneCount).toBe(2);
   });
 });

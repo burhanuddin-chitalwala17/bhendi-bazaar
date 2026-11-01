@@ -1,6 +1,6 @@
 import { EnhancementState, type EnhancementTool, type Prisma } from "@prisma/client";
 import { prisma } from "@server/shared/prisma";
-import { USAGE_STATES, type EnhancementRow, type TimeWindow } from "@server/content/enhancement.types";
+import { ENHANCEMENT_STATE, USAGE_STATES, type EnhancementRow, type TimeWindow } from "@server/content/enhancement.types";
 
 /** A Prisma client or the transaction client a caller is already inside. */
 export type EnhancementDb = Pick<typeof prisma, "enhancement">;
@@ -60,6 +60,10 @@ export class EnhancementRepository {
 
   async findForOrg(orgId: string, id: string): Promise<EnhancementRow | null> {
     return await prisma.enhancement.findFirst({ where: { id, orgId }, select: ENHANCEMENT_SELECT });
+  }
+
+  async countAwaitingDecision(orgId: string): Promise<number> {
+    return await prisma.enhancement.count({ where: { orgId, state: ENHANCEMENT_STATE.PROPOSED } });
   }
 
   /** For the worker, which is handed an id and no org. */

@@ -10,10 +10,12 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import {
   widgetsFor,
   fetchWidget,
   type WidgetContext,
+  type WidgetData,
   type WidgetDefinition,
 } from "@server/analytics/widgets";
 
@@ -31,6 +33,10 @@ interface DashboardWidgetsProps {
   ctx: WidgetContext;
   /** Prefix for widget links — "/admin" or "/org/{id}". */
   basePath: string;
+  /** The grid's columns; the org Home shows four from `lg:` (own-store onboarding ux.md). */
+  gridClassName?: string;
+  /** Figures the page already read, by widget key; those are not fetched again. */
+  prefetched?: Record<string, WidgetData>;
 }
 
 /**
@@ -41,14 +47,16 @@ interface DashboardWidgetsProps {
 export async function DashboardWidgets({
   ctx,
   basePath,
+  gridClassName = "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+  prefetched = {},
 }: DashboardWidgetsProps) {
   const widgets = widgetsFor(ctx.audience);
   const results = await Promise.allSettled(
-    widgets.map((widget) => fetchWidget(widget, ctx)),
+    widgets.map((widget) => prefetched[widget.key] ?? fetchWidget(widget, ctx)),
   );
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className={cn("grid gap-4", gridClassName)}>
       {widgets.map((widget, index) => {
         const result = results[index];
         if (result.status === "rejected") {

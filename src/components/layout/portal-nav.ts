@@ -90,7 +90,7 @@ export const PORTAL_NAV: readonly PortalNavEntry[] = [
   { key: "bidding", label: "Bidding", purpose: "Auctions for one-off pieces", icon: Gavel, target: { page: "bidding" }, group: PORTAL_GROUP.GROW },
   { key: "earnings", label: "Money you'll receive", purpose: "What you earned and when it's paid", icon: Wallet, target: { page: "earnings" }, group: PORTAL_GROUP.MONEY },
   { key: "details", label: "Shop details", purpose: "Name, contact, tax", icon: IdCard, target: { page: "shop/details" }, group: PORTAL_GROUP.SETTINGS },
-  // Home's setup list carries this id; bringing a hidden list back is onboarding unit 3.
+  // Home's setup list carries this id; when hidden it keeps a "Show" row there (onboarding U3).
   { key: "setup", label: "Setup list", purpose: "Your five first steps", icon: ListChecks, target: { page: "#setup-list" }, group: PORTAL_GROUP.SETTINGS },
   { key: "help", label: "Help", purpose: "Ask us anything", icon: LifeBuoy, target: { action: PORTAL_ACTION.CONTACT }, group: PORTAL_GROUP.SETTINGS },
   { key: "switch", label: "Switch shop", purpose: "Work on another shop", icon: Repeat, target: { href: "/org" }, group: PORTAL_GROUP.SETTINGS },

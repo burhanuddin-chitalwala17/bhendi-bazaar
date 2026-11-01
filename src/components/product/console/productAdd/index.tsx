@@ -40,6 +40,8 @@ interface ProductAddContainerProps {
   uploadEndpoints?: UploadEndpoints;
   /** The shop has turned on at least one channel besides its store, so readiness has something to say. */
   sellsElsewhere?: boolean;
+  /** Opened from Home's setup list: a saved product goes back there (own-store onboarding D8). */
+  returnTo?: string | null;
 }
 
 export function ProductAddContainer({
@@ -53,12 +55,19 @@ export function ProductAddContainer({
   copyOptions = [],
   uploadEndpoints,
   sellsElsewhere = false,
+  returnTo = null,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
 
   // The stepped form shows its own success screen (product-form Q16), so nothing navigates away.
   const { createProduct, isLoading } = useProducts({ stayAfterCreate: true });
+
+  const submit = async (data: Parameters<typeof createProduct>[0]) => {
+    const product = await createProduct(data);
+    if (product && returnTo) router.push(returnTo);
+    return product;
+  };
 
   const handleCancel = () => {
     router.push(productsBasePath);
@@ -81,7 +90,7 @@ export function ProductAddContainer({
         families={families}
         orgs={orgs}
         locations={locations}
-        onSubmit={createProduct}
+        onSubmit={submit}
         onCancel={handleCancel}
         isSubmitting={isLoading}
         readOnly={false}

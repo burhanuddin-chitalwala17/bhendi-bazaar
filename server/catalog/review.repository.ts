@@ -127,6 +127,14 @@ export class ReviewRepository {
     });
   }
 
+  /** Visible reviews on one org's on-sale products written since `since`, with the product each is on. */
+  async listRecentProductIdsForOrg(orgId: string, since: Date): Promise<Array<{ productId: string }>> {
+    return prisma.review.findMany({
+      where: { product: { orgId, ...AVAILABLE }, ...VISIBLE_REVIEW_WHERE, createdAt: { gte: since } },
+      select: { productId: true },
+    });
+  }
+
   /**
    * The newest visible reviews across one org's on-sale products, with the product each is
    * about (brand-page R1). Same predicate as the product page's list, so the two agree (A3a).

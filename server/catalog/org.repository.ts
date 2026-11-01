@@ -474,6 +474,28 @@ export class OrgRepository {
       where: { orgId },
     });
   }
+
+  async findSetupMarks(orgId: string) {
+    return await prisma.org.findUnique({
+      where: { id: orgId },
+      select: { setupHiddenAt: true, firstSharedAt: true },
+    });
+  }
+
+  // Raw, because Prisma bumps `updatedAt` on every write and `updatedAt` is the contact version
+  // Shop details saves against: hiding the list must not make that save stale (onboarding D6).
+  // Each is conditional, so a repeated tap writes nothing (Q23).
+  async hideSetup(orgId: string, at: Date): Promise<number> {
+    return await prisma.$executeRaw`UPDATE "Org" SET "setupHiddenAt" = ${at} WHERE id = ${orgId} AND "setupHiddenAt" IS NULL`;
+  }
+
+  async showSetup(orgId: string): Promise<number> {
+    return await prisma.$executeRaw`UPDATE "Org" SET "setupHiddenAt" = NULL WHERE id = ${orgId} AND "setupHiddenAt" IS NOT NULL`;
+  }
+
+  async markFirstShared(orgId: string, at: Date): Promise<number> {
+    return await prisma.$executeRaw`UPDATE "Org" SET "firstSharedAt" = ${at} WHERE id = ${orgId} AND "firstSharedAt" IS NULL`;
+  }
 }
 
 export const orgRepository = new OrgRepository();

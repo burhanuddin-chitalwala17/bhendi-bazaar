@@ -185,6 +185,18 @@ or an unpaid one, is `404`; a cancelled one is `409` "This parcel was cancelled 
 for a paid parcel 36 h+ unpacked; `404` once it left the list, `409` if already emailed. `PATCH
 /api/admin/shipments/[id]/tracking` now refuses a parcel the shop has not marked ready (`409`).
 
+### Shop setup list
+
+Since seller-onboarding unit 3 **`OnboardingStatus`** (`server/catalog/org-onboarding.types.ts`) is
+`{ steps: { key, done }[], doneCount, next, complete, hidden }`: five steps (`ONBOARDING_STEP`,
+Q19's order), `next` the first not done or null. `readiness`, `READINESS_STATE`, `STORE_MISSING`
+and the re-exported channel set are gone (Q4); channel readiness lives in `server/listing/`. Read on
+the server only (Home), never sent by a route. Two routes, `withOrg`, no body, each answering
+`{ ok: true }` and idempotent: `POST`/`DELETE /api/org/[orgId]/setup/hidden` (hide, unhide) and
+`POST /api/org/[orgId]/setup/shared` (the first share). Caller: `src/components/org/home/setupApiClient.ts`.
+**`HomeAttentionDto`** (`src/data-access-layer/org/home.dal.ts`) is a server read for Home's lines,
+each `{ ok: true, value } | { ok: false }`; no wire shape.
+
 ### Listing vocabulary
 
 Since PR-243 `ProductFormInput` (`server/catalog/admin.product.types.ts`) accepts five more

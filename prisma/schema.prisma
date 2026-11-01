@@ -669,6 +669,11 @@ model Org {
   /// negative (promotions D13a).
   maxDiscountBps Int @default(5000)
 
+  /// Home's setup list (own-store onboarding D6, Q23): when the shop hid it, and when it first
+  /// tapped Share or Copy link. Written once each, outside `updatedAt` (the contact version).
+  setupHiddenAt DateTime?
+  firstSharedAt DateTime?
+
   joinedAt  DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -38,11 +38,14 @@ export function ShopDetailsEditor({
   orgId,
   initial,
   oldAddressWorksUntil,
+  returnTo = null,
 }: {
   orgId: string;
   initial: ShopDetailsDto;
   /** ISO, from `storefrontService.previewChange`: the server's own hold window for the link row. */
   oldAddressWorksUntil: string;
+  /** Opened from Home's setup list: once logo and line are both in, go back there (D8). */
+  returnTo?: string | null;
 }) {
   const router = useRouter();
   const [details, setDetails] = useState(initial);
@@ -55,7 +58,8 @@ export function ShopDetailsEditor({
     version.current = next.updatedAt;
     contactVersion.current = next.contactUpdatedAt;
     setDetails(next);
-  }, []);
+    if (returnTo && essentialsDone(next)) router.push(returnTo);
+  }, [returnTo, router]);
   const onDraft = useCallback((part: Partial<ShopDetailsDto>) => setDraft((d) => ({ ...d, ...part })), []);
   // The page keys this editor on the read's version, so a refresh with newer values remounts it.
   const onLoadLatest = useCallback(() => router.refresh(), [router]);

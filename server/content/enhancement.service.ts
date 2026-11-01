@@ -226,6 +226,11 @@ export const enhancementService = {
     return { enhancement: toDto(row), usage: { ...usage, used: usage.used + 1 } };
   },
 
+  /** Proposals waiting for the shop's accept or discard: Home's "photos can be improved" line (onboarding Q25). */
+  async countAwaitingDecision(orgId: string): Promise<number> {
+    return await enhancementRepository.countAwaitingDecision(orgId);
+  },
+
   async get(orgId: string, id: string): Promise<EnhancementDto> {
     const row = await enhancementRepository.findForOrg(orgId, id);
     if (!row) throw new NotFoundError("Enhancement not found");

@@ -1,7 +1,7 @@
 # UX — own-store/seller-onboarding
 
 - **Status:** Signed off
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **Prototype:** `seller-portal-prototype.html` (shared with org-profile; to be published as a private artifact)
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [org-profile ux](../org-profile/ux.md), [src/components/CLAUDE.md](../../../../src/components/CLAUDE.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
@@ -71,7 +71,7 @@ Each starts one step before the screen.
 | Refused | Not a member → "This shop isn't yours" page | "You're not part of this shop. Switch shop or ask its owner." | Switch shop |
 | Stale | Numbers older than 15 min | "Updated 20 min ago" | Refresh |
 | Long content | Shop name wraps two lines then "…" | — | — |
-| Many items | "Needs you now" shows 3, then "See all {n}" | "See all 14 orders to pack" | See all |
+| Many items | "Needs you now" shows 3, then "See all {n}" | "See all 5" (n counts lines, Q30) | See all |
 | Slow | Skeleton holds; list shows from cache first | — | — |
 | Phone / tablet / desktop | One column; `md:` list and needs-you side by side; `lg:` numbers 4-up | — | — |
 

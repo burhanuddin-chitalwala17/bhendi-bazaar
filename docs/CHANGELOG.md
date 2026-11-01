@@ -12,6 +12,37 @@
 
 ## Entries
 
+## 2026-11-01 — seller-onboarding unit 3: Home, the five-step setup list, return to Home [CONTRACT] [MIGRATION]
+
+- **Setup list (D5; R3, A1, A6; Q2, Q3, Q19):** `deriveOnboarding` takes products on sale, a pickup-ready
+  location (active, street, contact), logo and tagline, the first share and the hide mark; it returns five
+  steps in Q19's order, `doneCount`, `next`, `complete`, `hidden`. Channel readiness left the list (Q4).
+- **Two marks (D6; Q6, Q23):** `Org.setupHiddenAt`, `Org.firstSharedAt`, written by `orgRepository` with
+  conditional raw updates (a repeat writes nothing; `updatedAt`, the contact version, is untouched). Routes
+  `POST`/`DELETE /api/org/[orgId]/setup/hidden`, `POST …/setup/shared` (`withOrg`), called by `setupApiClient`.
+- **Home (D7; R2; Q5, Q14, Q22, Q24, Q25):** `/org/[orgId]` reads through `src/data-access-layer/org/home.dal.ts`,
+  one try/catch per line: shop name and link, "Needs you now" (orders to pack, new reviews in 7 days — the product
+  when all on one —, the first channel needing attention, photo proposals awaiting a decision, a live auction
+  ending within 24 h; zero hides, a failure keeps its own retry, three shown then "See all {n}"), the setup list
+  (hide with Undo toast, a hidden list keeps its "Show" row where More → Setup list lands, done collapses to
+  "Your shop is set up."), then the numbers (Q14's line before the first paid order, 4-up from `lg:`, "Updated
+  {n} min ago" + Refresh past 15 min). Skeleton while reading. `onboarding-card.tsx` deleted; the channel banner
+  moved to a Home line. New counts: `reviewService.newForOrg`, `enhancementService.countAwaitingDecision`.
+- **Return to Home (D8; R7):** `RETURN_TO` (`src/components/org/home/return-to.ts`) parses `from` against a closed
+  set; product create, a new pickup address and Shop details (once logo and line are both in) go to
+  `/org/[orgId]?done=<step>`, and Home toasts "Product added · {n} of 5 done" etc. Product form wired here (Q
+  "whichever lands second").
+- **[MIGRATION] `20261101130300_org_setup_marks`**: two nullable columns, no backfill; drops nothing.
+- **Review fixes:** Home passes the parcels and paid-orders figures it read to `DashboardWidgets` (`prefetched`),
+  so the grid does not query them twice; "See all {n}" counts lines (Q30), ux.md's example corrected.
+- **Gates:** `file-cohesion` RECORDED gains `home.dal.ts` (analytics, bidding, catalog, channels, content).
+  Tests: `tests/unit/org-onboarding.test.ts`, `tests/unit/return-to.test.ts`, `tests/unit/home-attention.test.ts`,
+  `tests/integration/seller-onboarding-home.test.ts`.
+- **Mutations** (each made a test fail, then restored): M1 hide's `IS NULL` condition removed; M2 first-share's
+  `IS NULL` removed; M3 unhide's `IS NOT NULL` removed; M4 the contact-name check dropped from pickup-ready;
+  M5 the visible-review filter dropped from the new-review count; M6 `parseReturnTo` accepting any string.
+- Decisions Q2, Q3, Q4, Q5, Q6, Q14, Q19, Q23, Q24, Q25 → implemented (unit 3).
+
 ## 2026-11-01 — storefront-themes unit 1: theme tokens, twelve palettes, fonts, the contrast gate
 
 - **Registry (D1; R1–R3, Q18):** new `server/catalog/storefront-themes.ts` declares the closed theme set (Edge, Darbar,

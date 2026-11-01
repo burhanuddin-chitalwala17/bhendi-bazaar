@@ -35,6 +35,16 @@ import type {
 import { REVIEWS_PAGE_SIZE } from "@server/catalog/review.types";
 import { DomainError, NotFoundError } from "@server/shared/domain-error";
 
+/** "New" on Home is the last week, not a per-person "seen" mark (own-store onboarding Q24). */
+const NEW_REVIEW_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export interface NewReviews {
+  count: number;
+  /** Set when every new review is on one product, so Home can open it (Q13). */
+  productId: string | null;
+}
+
 /** What a buyer may submit. Everything else about a review is the server's to decide. */
 export interface ReviewSubmission {
   rating: number;
@@ -157,6 +167,16 @@ export class ReviewService {
    */
   async ratingForOrg(orgId: string): Promise<OrgRating> {
     return summariseOrgRating(await reviewRepository.publishedRatingRowsForOrg(orgId));
+  }
+
+  /**
+   * Home's "new reviews" line (own-store onboarding Q13, Q24): visible reviews from the last 7 days,
+   * and the product when they are all on one, so the line can open that product.
+   */
+  async newForOrg(orgId: string, now: Date = new Date()): Promise<NewReviews> {
+    const rows = await reviewRepository.listRecentProductIdsForOrg(orgId, new Date(now.getTime() - NEW_REVIEW_DAYS * DAY_MS));
+    const products = new Set(rows.map((row) => row.productId));
+    return { count: rows.length, productId: products.size === 1 ? [...products][0] : null };
   }
 
   /**

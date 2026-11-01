@@ -9,7 +9,7 @@ import type { FactKey } from "./listing-facts";
  * The three bands (D7). They are **advice, never permission** (D13): nothing here refuses a
  * publish, and the names say what we expect the channel to think rather than what we will do.
  *
- * Distinct from `READINESS_STATE` in `org-onboarding.types.ts`, which answers about the *shop* —
+ * Distinct from the setup list in `org-onboarding.types.ts`, which answers about the *shop* —
  * different questions with different answers, and one set stretched over both fits neither.
  */
 export const LISTING_READINESS = {

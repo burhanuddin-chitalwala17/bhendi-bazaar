@@ -9,16 +9,18 @@ import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { adminProductsDAL } from "@/data-access-layer/admin/products.dal";
 import { orgAddressService } from "@server/catalog/org.address.service";
 import type { AdminCategory } from "@/domain/admin";
+import { returnHref } from "@/components/org/home/return-to";
+import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
 
 export default async function OrgNewProductPage({
   params,
   searchParams,
 }: {
   params: Promise<{ orgId: string }>;
-  searchParams: Promise<{ copyFrom?: string | string[] }>;
+  searchParams: Promise<{ copyFrom?: string | string[]; from?: string | string[] }>;
 }) {
   const { orgId } = await params;
-  const { copyFrom } = await searchParams;
+  const { copyFrom, from } = await searchParams;
   // A repeated param arrives as an array; only a single id is a request to copy.
   const copyFromId = typeof copyFrom === "string" ? copyFrom : undefined;
 
@@ -82,6 +84,7 @@ export default async function OrgNewProductPage({
       // A shop selling nowhere else sees no readiness line at all, not even "Checking…" (R5).
       sellsElsewhere={channels.some((channel) => channel.enabled)}
       uploadEndpoints={orgUploadEndpoints(orgId)}
+      returnTo={returnHref(orgId, from, ONBOARDING_STEP.PRODUCT)}
     />
   );
 }

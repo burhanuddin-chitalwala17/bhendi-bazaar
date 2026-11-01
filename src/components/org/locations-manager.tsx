@@ -21,13 +21,15 @@ import { formatPhone } from "@server/shared/phone";
 interface LocationsManagerProps {
   orgId: string;
   locations: OrgLocation[];
+  /** Opened from Home's setup list: a new address goes back there (own-store onboarding D8). */
+  returnTo?: string | null;
 }
 
 /**
  * Pickup-location CRUD for the org portal (stock-locations R1/R2/R8). The list is
  * server-rendered by the page; this component only opens the form and refreshes.
  */
-export function LocationsManager({ orgId, locations }: LocationsManagerProps) {
+export function LocationsManager({ orgId, locations, returnTo = null }: LocationsManagerProps) {
   const router = useRouter();
   const [editing, setEditing] = useState<OrgLocation | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -150,7 +152,8 @@ export function LocationsManager({ orgId, locations }: LocationsManagerProps) {
             location={editing}
             onDone={() => {
               setIsOpen(false);
-              router.refresh();
+              if (returnTo && !editing) router.push(returnTo);
+              else router.refresh();
             }}
             onCancel={() => setIsOpen(false)}
           />
