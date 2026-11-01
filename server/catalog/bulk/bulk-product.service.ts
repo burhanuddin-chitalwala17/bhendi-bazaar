@@ -14,6 +14,8 @@ import {
   resolveRowVocabulary,
   type VocabularyContext,
 } from "./bulk-vocabulary";
+import { categoryMatcher } from "./sheet-tabs";
+import { normaliseWord, notInListMessage } from "./word-match";
 import { orgAddressRepository } from "@server/catalog/org.address.repository";
 import { slugify } from "@server/shared/slug";
 import { isUniqueViolation } from "@server/shared/constraint";
@@ -73,12 +75,15 @@ export async function validateProductRows(
     return errors;
   }
 
-  const [categories, locations, terms] = await Promise.all([
+  const [categories, tree, locations, terms] = await Promise.all([
     categoryRepository.list(),
+    categoryRepository.listTree(),
     orgAddressRepository.listByOrg(orgId),
     commercialTermsService.find(orgId),
   ]);
-  const categorySlugs = new Set(categories.map((c) => c.slug));
+  const matchCategory = categoryMatcher(categories);
+  // Every word the dropdowns offered is checked here too, whatever the sheet let through (R5).
+  const vocabulary = await loadVocabulary(rows.map(({ row }) => row), tree, orgId);
   const locationByName = new Map(locations.map((l) => [l.name.trim().toLowerCase(), l]));
   const provided = providedPaths.map((path) => path.trim());
 
@@ -97,13 +102,15 @@ export async function validateProductRows(
   const seenInSheet = new Map<string, number>();
 
   for (const { row, rowNumber } of rows) {
-    if (!categorySlugs.has(row.categorySlug)) {
+    const category = matchCategory.match(row.categorySlug);
+    if (!category) {
       errors.push({
         row: rowNumber,
         field: "category",
-        message: `Category "${row.categorySlug}" does not exist — see the sample sheet for the current list.`,
+        message: notInListMessage("Category", row.categorySlug, matchCategory.closest(row.categorySlug)),
       });
     }
+    errors.push(...resolveRowVocabulary(row, rowNumber, category?.id, vocabulary).errors);
 
     for (const locationName of Object.keys(row.stock)) {
       if (!locationByName.has(locationName.trim().toLowerCase())) {
@@ -215,6 +222,8 @@ function vocabularyFor(
   return {
     productType: resolved.productType,
     kind: resolved.kind,
+    // No Brand column (an old sheet, a CSV) leaves an updated product's brand as it was.
+    ...(row.brandName !== undefined ? { brandId: resolved.brandId } : {}),
     facts: resolved.facts as Prisma.InputJsonValue,
     measurements: resolved.measurements as Prisma.InputJsonValue,
   };
@@ -234,17 +243,18 @@ async function resolveFamilies(
   const wanted = new Map<string, string>();
   for (const { row } of rows) {
     const name = row.familyName?.trim();
-    if (name) wanted.set(name.toLowerCase(), row.categorySlug);
+    if (name) wanted.set(normaliseWord(name), row.categorySlug);
   }
   if (wanted.size === 0) return new Map();
 
   const existing = await productFamilyService.list(orgId, true);
-  const byName = new Map(existing.map((family) => [family.name.trim().toLowerCase(), family.id]));
+  // Matched as every listed word is (D6), so "Emerald  abaya" joins "Emerald Abaya" rather than splitting it.
+  const byName = new Map(existing.map((family) => [normaliseWord(family.name), family.id]));
 
   for (const [lowered, categorySlug] of wanted) {
     if (byName.has(lowered)) continue;
     const original = rows.find(
-      ({ row }) => row.familyName?.trim().toLowerCase() === lowered,
+      ({ row }) => row.familyName && normaliseWord(row.familyName) === lowered,
     )?.row.familyName;
     const created = await productFamilyService.create(orgId, {
       name: original?.trim() ?? lowered,
@@ -288,8 +298,12 @@ export async function createProducts(
 ): Promise<{ created: number; updated: number }> {
   const locations = await orgAddressRepository.listByOrg(orgId);
   const locationByName = new Map(locations.map((l) => [l.name.trim().toLowerCase(), l.id]));
-  const tree = await categoryRepository.listTree();
-  const categoryBySlug = new Map(tree.map((c) => [c.slug, c.id]));
+  const [tree, categories] = await Promise.all([categoryRepository.listTree(), categoryRepository.list()]);
+  // Each row's category cell, a path or a slug, to its id — matched as validation matched it (D6).
+  const matchCategory = categoryMatcher(categories);
+  const categoryBySlug = new Map(
+    rows.map(({ row }) => [row.categorySlug, matchCategory.match(row.categorySlug)?.id ?? ""]),
+  );
   // Which rows replace a product and which make one. Read before the slugs, because an
   // updating row keeps the slug it already has rather than taking a new one.
   const plan = await planProductRows(orgId, rows);
@@ -343,7 +357,7 @@ export async function createProducts(
       sku: row.sku ?? null,
       weight: row.weight,
       ...vocabularyFor(row, index, rows, categoryBySlug, vocabulary),
-      familyId: row.familyName ? (familyIds.get(row.familyName.toLowerCase()) ?? null) : null,
+      familyId: row.familyName ? (familyIds.get(normaliseWord(row.familyName)) ?? null) : null,
     });
 
     row.images.forEach((filename, position) => {

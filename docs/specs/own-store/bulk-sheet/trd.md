@@ -1,6 +1,6 @@
 # TRD — own-store/bulk-sheet
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1 built 2026-11-01
+- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1, U2 built 2026-11-01
 - **Domain:** catalog (bulk), with listing (vocabulary) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -149,6 +149,12 @@ U1 took D5's key-row read of the type tabs (example and Problems skipped) becaus
 without it; U2 keeps the rest of D5 (cell addresses, the unstamped warning) and D3's Lists tab.
 U1 hands U3: rows carry `tab` and are keyed by index, and create receives each row's `rowNumber`/`tab`;
 U3 puts `tab` into every `RowError` and message (a duplicate SKU on two tabs now reads "rows 5 and 5").
+U2 put the pure matching in `server/catalog/bulk/word-match.ts` (and the category path matcher in
+`sheet-tabs.ts`) so it is unit-testable without the database; `bulk-vocabulary.ts` applies it. A
+Brand column appears only for a shop with brands; a row's brand is written as `brandId` only when
+the sheet has that column, so an update from an older sheet keeps the product's brand. The
+reader keeps each cell's address and the file's creation date (`RawSheet.createdOn`); U3 shows the
+unstamped warning from it, with the rest of the validate answer's `sheet`.
 
 ## Open questions
 None. Q27–Q30 are Claude · reversible.

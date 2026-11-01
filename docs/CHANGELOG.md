@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-01 — own-store/bulk-sheet unit 2: dropdowns of words on a Lists tab, word matching [CONTRACT]
+
+- **Dropdowns (D3; R2, A2; Q6, Q7):** every list column — category as a path ("Women › Abayas"), kind, family,
+  brand, each answer, yes/no — reads its words from a `veryHidden` `Lists` tab by range (was: an `Answers` tab
+  for facts only, categories as slugs inline). Category and kind lists are per tab. Family warns on a new name;
+  every other list stops with "Pick from the list in this column." List help lines and an Instructions "Lists
+  guide" serve phone apps that ignore dropdowns. A Brand column appears when the shop has brands.
+- **Matching (D6; R5; Q8):** `server/catalog/bulk/word-match.ts` matches a typed word to a label or key ignoring
+  case, spaces and punctuation (a word two values share matches neither) and names the closest by edit distance.
+  A category matches a full path or a slug, never a bare name (`categoryMatcher` in `sheet-tabs.ts`). The dry
+  run now checks category, kind, brand, every answer and yes/no — a miss reads "{Column} '{value}' isn't in the
+  list — pick from the dropdown. Did you mean '{closest}'?" and creates nothing. An answer outside its list is a
+  problem, no longer kept as `unlisted` (was categories D8's keep-and-flag); a yes/no that is neither is no
+  longer read as no. Families match by the same rule. A bare name two categories share matches neither, even
+  where it is one's slug. A row's brand is written as `brandId` only when the sheet has a Brand column — a blank
+  cell clears it, no column (an old sheet, a CSV) leaves an updated product's brand as it was.
+- **Reading (D5):** each row keeps its cells' addresses; `RawSheet.createdOn` holds an .xlsx's creation date for
+  U3's unstamped warning (Q28). Create payload: `categorySlug` is the cell as typed; optional `brandName`.
+- **Tests:** `tests/unit/bulk-sheet-lists.test.ts`; `bulk-vocabulary`, `bulk-upload`, `bulk-sheet-download`
+  integration extended. Mutation-tested: unlisted answer kept (4 fail), yes/no defaulted to no (1), category by
+  slug only (1), ambiguous word last-wins (1), closest without a threshold (1), family stops (1), brand miss
+  silent (2), kind by key only (1), punctuation kept (3), dry run skips the vocabulary (1), addresses dropped (1), brand
+  written without a Brand column (1).
+
 ## 2026-11-01 — product-form unit 5: the team adds and fixes a shop's product, with a reason, on record [CONTRACT] [MIGRATION]
 
 - **Admin edit and add for a shop** (R10; D12; Q12): `/admin/products/[id]` gains "Edit for shop" and

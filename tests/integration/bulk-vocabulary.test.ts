@@ -78,25 +78,34 @@ describe.skipIf(!isDisposableDb)("bulk vocabulary (local db)", () => {
       expect(resolved.facts.colour?.value).toBe("navy-blue");
     });
 
-    // A shop's data is not ours to discard for not fitting a list written afterwards, and the
-    // leftovers say which answers the list is missing (categories D8).
-    it("keeps an answer matching nothing, flagged rather than dropped", async () => {
-      const { resolved, errors } = await resolve(row({ factLabels: { colour: "Peacock Teal" } }));
-      expect(resolved.facts.colour).toEqual({
-        value: "Peacock Teal",
-        origin: "product",
-        unlisted: true,
-      });
+    // own-store/bulk-sheet Q8: the sheet offered the list, so a word outside it is a slip, named
+    // with the closest listed value — never kept as a guess (was: kept, flagged unlisted).
+    it("R5 — refuses an answer outside its list, naming the closest", async () => {
+      const { resolved, errors } = await resolve(row({ factLabels: { colour: "Marooon" } }));
+      expect(resolved.facts.colour).toBeUndefined();
+      expect(errors).toEqual([
+        { row: 2, field: "colour", message: "Colour 'Marooon' isn't in the list — pick from the dropdown. Did you mean 'Maroon'?" },
+      ]);
+    });
+
+    it("R5 — matches a pasted answer whatever its punctuation", async () => {
+      const { resolved, errors } = await resolve(row({ factLabels: { colour: "navy_blue." } }));
       expect(errors).toEqual([]);
+      expect(resolved.facts.colour?.value).toBe("navy-blue");
+    });
+
+    it("R5 — names no closest value when nothing is near", async () => {
+      const { errors } = await resolve(row({ factLabels: { colour: "Zzzzzzzz" } }));
+      expect(errors[0]?.message).toBe("Colour 'Zzzzzzzz' isn't in the list — pick from the dropdown");
     });
 
     it("sees a shop's own added answer", async () => {
       await prisma.listingValue.create({
         data: { orgId, list: "colour", key: `${stamp}-own`, label: "Shop Special" },
       });
-      const { resolved } = await resolve(row({ factLabels: { colour: "Shop Special" } }));
+      const { resolved, errors } = await resolve(row({ factLabels: { colour: "Shop Special" } }));
       expect(resolved.facts.colour?.value).toBe(`${stamp}-own`);
-      expect(resolved.facts.colour?.unlisted).toBeUndefined();
+      expect(errors).toEqual([]);
     });
   });
 
@@ -140,6 +149,31 @@ describe.skipIf(!isDisposableDb)("bulk vocabulary (local db)", () => {
       expect((await resolve(row({ kind: "rida" }))).resolved.kind).toBe("rida");
       const { errors } = await resolve(row({ kind: "trouser" }));
       expect(errors[0]?.field).toBe("kind");
+    });
+
+    // The dropdown shows the kind's label; the product stores its key (R2, D6).
+    it("R2 — reads a kind by the label the dropdown shows", async () => {
+      const type = (await prisma.productType.findUnique({ where: { key: "islamic-wear" } }))!;
+      const first = (type.kinds as Array<{ key: string; label: string }>)[0];
+      const { resolved, errors } = await resolve(row({ kind: ` ${first.label.toUpperCase()} ` }));
+      expect(errors).toEqual([]);
+      expect(resolved.kind).toBe(first.key);
+    });
+  });
+
+  describe("brand by name (R2)", () => {
+    it("matches the shop's brand however typed, and refuses another", async () => {
+      const brand = await prisma.brand.create({ data: { orgId, name: `${stamp} Noor Studio` } });
+      try {
+        const { resolved, errors } = await resolve(row({ brandName: `${stamp.toUpperCase()} noor-studio` }));
+        expect(errors).toEqual([]);
+        expect(resolved.brandId).toBe(brand.id);
+        const missed = await resolve(row({ brandName: "Elsewhere Brand" }));
+        expect(missed.errors[0]).toMatchObject({ field: "brand" });
+        expect(missed.resolved.brandId).toBeNull();
+      } finally {
+        await prisma.brand.delete({ where: { id: brand.id } });
+      }
     });
   });
 

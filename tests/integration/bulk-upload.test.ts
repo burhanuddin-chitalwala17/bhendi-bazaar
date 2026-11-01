@@ -148,6 +148,45 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
     );
   });
 
+  // own-store/bulk-sheet R5: the dry run checks every word the dropdowns offered, so a pasted
+  // value is caught before anything is created (Q19), and a path reads as its category.
+  it("R5 — reads a category by its path and refuses a slip, naming the closest", async () => {
+    const { prisma } = await import("@server/shared/prisma");
+    const { validateProductRows, createProducts } = await import("@server/catalog/bulk/bulk-product.service");
+    const fixtures = await ensureFixtures();
+    const category = await prisma.category.findUniqueOrThrow({ where: { id: fixtures.categoryId } });
+    const parent = category.parentId
+      ? await prisma.category.findUniqueOrThrow({ where: { id: category.parentId } })
+      : null;
+    const path = parent ? `${parent.name} › ${category.name}` : category.name;
+    const row = (categorySlug: string, factLabels: Record<string, string> = {}) => ({
+      name: `${TEST_PREFIX}path`, description: "d", price: 10, categorySlug, weight: 1,
+      factLabels, measurements: {}, tags: [], images: ["a.jpg"], stock: {},
+    });
+
+    expect(await validateProductRows(fixtures.orgId, [{ rowNumber: 5, row: row(path.toUpperCase()) }], ["a.jpg"])).toEqual([]);
+
+    const slip = `${path}x`;
+    const errors = await validateProductRows(fixtures.orgId, [{ rowNumber: 5, row: row(slip) }], ["a.jpg"]);
+    expect(errors).toContainEqual({
+      row: 5,
+      field: "category",
+      message: `Category '${slip}' isn't in the list — pick from the dropdown. Did you mean '${path}'?`,
+    });
+
+    // Every listed word is checked in the dry run, not only at create.
+    const facts = await validateProductRows(fixtures.orgId, [{ rowNumber: 6, row: row(path, { colour: "Zzzzzzzz" }) }], ["a.jpg"]);
+    expect(facts).toContainEqual(expect.objectContaining({ row: 6, field: "colour" }));
+
+    // A path-named row creates under that category.
+    const { created } = await createProducts(fixtures.orgId, [
+      { rowNumber: 5, row: { ...row(path), imageUrls: { "a.jpg": BLOB } } },
+    ]);
+    expect(created).toBe(1);
+    const made = await prisma.product.findFirstOrThrow({ where: { name: `${TEST_PREFIX}path` } });
+    expect(made.categoryId).toBe(category.id);
+  });
+
   it("creation is all-or-nothing: one doomed row creates zero products (R3)", async () => {
     const { prisma } = await import("@server/shared/prisma");
     const { createProducts } = await import("@server/catalog/bulk/bulk-product.service");
@@ -308,6 +347,65 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
 
     expect(await prisma.productMedia.count({ where: { productId: created.id } })).toBe(1);
     expect(await prisma.productStock.count({ where: { productId: created.id } })).toBe(1);
+  });
+
+  it("an update without a Brand column keeps the product's brand; a blank Brand cell clears it", async () => {
+    const { prisma } = await import("@server/shared/prisma");
+    const { createProducts } = await import("@server/catalog/bulk/bulk-product.service");
+    const fixtures = await ensureFixtures();
+    const location = await prisma.orgAddress.findUniqueOrThrow({
+      where: { id: fixtures.orgAddressId },
+      select: { name: true, orgId: true },
+    });
+    const sku = `${TEST_PREFIX}keep-brand`;
+    const brand = await prisma.brand.create({ data: { orgId: location.orgId, name: `${TEST_PREFIX}${Date.now()}` } });
+    const product = await prisma.product.create({
+      data: {
+        name: `${TEST_PREFIX}branded`,
+        slug: `${TEST_PREFIX}branded-${Date.now()}`,
+        description: "d",
+        price: 1000,
+        currency: "INR",
+        categoryId: fixtures.categoryId,
+        thumbnail: "https://example.invalid/b.webp",
+        weight: 1,
+        sku,
+        orgId: location.orgId,
+        brandId: brand.id,
+      },
+      select: { id: true },
+    });
+    const row = (brandName?: string) => ({
+      rowNumber: 2,
+      row: {
+        name: `${TEST_PREFIX}branded`,
+        description: "d",
+        price: 10,
+        categorySlug: fixtures.categorySlug,
+        sku,
+        weight: 1,
+        factLabels: {},
+        measurements: {},
+        tags: [],
+        images: ["a.jpg"],
+        stock: {},
+        imageUrls: { "a.jpg": BLOB },
+        ...(brandName !== undefined ? { brandName } : {}),
+      },
+    });
+    const brandOf = async () =>
+      (await prisma.product.findUniqueOrThrow({ where: { id: product.id }, select: { brandId: true } })).brandId;
+
+    try {
+      await createProducts(location.orgId, [row()]);
+      expect(await brandOf()).toBe(brand.id);
+      await createProducts(location.orgId, [row("")]);
+      expect(await brandOf()).toBeNull();
+    } finally {
+      await prisma.productMedia.deleteMany({ where: { productId: product.id } });
+      await prisma.product.delete({ where: { id: product.id } });
+      await prisma.brand.delete({ where: { id: brand.id } });
+    }
   });
 
   it("a clean sheet creates products with media, stock and paise prices", async () => {

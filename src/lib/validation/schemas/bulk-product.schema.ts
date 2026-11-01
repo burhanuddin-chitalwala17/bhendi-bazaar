@@ -57,6 +57,7 @@ const rowShape = z.object({
   productType: z.string().trim().max(40).optional(),
   kind: z.string().trim().max(40).optional(),
   familyName: z.string().trim().max(120).optional(),
+  brandName: z.string().trim().max(120).optional(),
   // 0 is how an updating row ends a sale (bulk-catalog-upload R15).
   salePrice: z.number().nonnegative("Sale price cannot be negative").optional(),
   factLabels: z.record(z.string(), z.string()),
@@ -77,7 +78,9 @@ const rowShape = z.object({
  * Parse one raw sheet row. Returns the typed row or the row's errors — never both.
  */
 export function parseBulkProductRow(
-  raw: RawSheetRow
+  raw: RawSheetRow,
+  /** The sheet's column keys: a Brand column left blank clears the brand; no Brand column leaves it. */
+  headers: readonly string[] = [],
 ): { row: BulkProductRow } | { errors: RowError[] } {
   const errors: RowError[] = [];
   const cells = raw.cells;
@@ -137,13 +140,15 @@ export function parseBulkProductRow(
     name: cells["name"] ?? "",
     description: cells["description"] ?? "",
     price: numberCell(cells["price"]),
-    categorySlug: (cells["category"] ?? "").toLowerCase(),
+    // A path or a slug, as typed; the service matches it to a category (own-store/bulk-sheet D6).
+    categorySlug: (cells["category"] ?? "").trim(),
     sku: (cells["sku"] ?? "").trim() || undefined,
     weight: numberCell(cells["weight"]),
     tags: list(cells["tags"]),
     productType: (cells["producttype"] ?? "").trim() || undefined,
     kind: (cells["kind"] ?? "").trim() || undefined,
     familyName: (cells["family"] ?? "").trim() || undefined,
+    brandName: cells["brand"]?.trim() ?? (headers.includes("brand") ? "" : undefined),
     salePrice: numberCell(cells["saleprice"]),
     factLabels,
     measurements,

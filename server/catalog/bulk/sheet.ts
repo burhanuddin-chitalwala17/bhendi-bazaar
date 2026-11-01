@@ -17,11 +17,15 @@ export interface RawSheetRow {
   /** The tab the row is on; two tabs share row numbers, so a row is named by both. */
   tab?: string;
   cells: Record<string, string>;
+  /** Where each cell sits, "D5", by the same key — what marks a problem in the shop's own file (D5, D7). */
+  addresses?: Record<string, string>;
 }
 
 export interface RawSheet {
   headers: string[];
   rows: RawSheetRow[];
+  /** The .xlsx's own creation date, which dates a sheet carrying no stamp (Q28); null for a .csv. */
+  createdOn: Date | null;
 }
 
 /** exceljs cell values can be rich objects; a sheet cell is a string to us. */
@@ -54,8 +58,9 @@ export async function parseSheet(buffer: Buffer, filename: string): Promise<RawS
     );
   }
 
+  const createdOn = isCsv ? null : (workbook.created ?? null);
   const tabs = workbook.worksheets.filter(isKeyedTab);
-  if (tabs.length > 0) return readKeyedTabs(tabs);
+  if (tabs.length > 0) return { ...readKeyedTabs(tabs), createdOn };
 
   // Instructions is never product rows, even when no tab is recognised as keyed.
   const worksheet = workbook.worksheets.find((sheet) => sheet.name !== INSTRUCTIONS_TAB);
@@ -74,14 +79,18 @@ export async function parseSheet(buffer: Buffer, filename: string): Promise<RawS
   worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
     if (rowNumber === 1) return;
     const cells: Record<string, string> = {};
+    const addresses: Record<string, string> = {};
     row.eachCell({ includeEmpty: false }, (cell, col) => {
       const header = headers[col];
-      if (header) cells[header] = cellText(cell.value);
+      if (header) {
+        cells[header] = cellText(cell.value);
+        addresses[header] = cell.address;
+      }
     });
-    if (Object.values(cells).some((v) => v !== "")) rows.push({ rowNumber, cells });
+    if (Object.values(cells).some((v) => v !== "")) rows.push({ rowNumber, cells, addresses });
   });
 
-  return { headers: headers.filter(Boolean), rows };
+  return { headers: headers.filter(Boolean), rows, createdOn };
 }
 
 /**
@@ -103,7 +112,7 @@ const KEYED_TAB_MARKS = ["name", "price"];
  * Every type tab, read by its key row so a renamed heading breaks nothing (Q5). The help line
  * is skipped, as is the example while its marker stays (A5), and Problems is never read.
  */
-function readKeyedTabs(tabs: ExcelJS.Worksheet[]): RawSheet {
+function readKeyedTabs(tabs: ExcelJS.Worksheet[]): Omit<RawSheet, "createdOn"> {
   const headers = new Set<string>();
   const rows: RawSheetRow[] = [];
   for (const sheet of tabs) {
@@ -118,10 +127,13 @@ function readKeyedTabs(tabs: ExcelJS.Worksheet[]): RawSheet {
       if (rowNumber < EXAMPLE_ROW) return;
       if (cellText(row.getCell(firstColumn).value) === EXAMPLE_MARKER) return;
       const cells: Record<string, string> = {};
+      const addresses: Record<string, string> = {};
       row.eachCell({ includeEmpty: false }, (cell, col) => {
-        if (keys[col]) cells[keys[col]] = cellText(cell.value);
+        if (!keys[col]) return;
+        cells[keys[col]] = cellText(cell.value);
+        addresses[keys[col]] = cell.address;
       });
-      if (Object.values(cells).some((v) => v !== "")) rows.push({ rowNumber, tab: sheet.name, cells });
+      if (Object.values(cells).some((v) => v !== "")) rows.push({ rowNumber, tab: sheet.name, cells, addresses });
     });
   }
   if (rows.length === 0) {

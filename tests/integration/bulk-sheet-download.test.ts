@@ -62,4 +62,34 @@ describe.skipIf(!isDisposableDb)("bulk sheet download (local db)", () => {
     if ("errors" in parsed) throw new Error(JSON.stringify(parsed.errors));
     expect(await validateProductRows(orgId, [{ rowNumber: 5, row: parsed.row }], ["a.jpg"])).toEqual([]);
   });
+
+  // own-store/bulk-sheet U2: the words a dropdown offers are words the upload reads (R2, R5).
+  it("R2 — a row filled from the dropdowns' own words validates clean", async () => {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load((await bulkSheetService.buildSheet(orgId, [categoryId])) as unknown as ArrayBuffer);
+    const tab = workbook.getWorksheet(typeLabel)!;
+    const keys = (tab.getRow(2).values as unknown[]).map((v) => String(v ?? ""));
+    const category = tab.getCell(4, keys.indexOf("category")).value;
+    // The path a person reads, not the slug (the fixture category is a root, so its path is its name).
+    const named = await prisma.category.findUniqueOrThrow({ where: { id: categoryId } });
+    expect(category).toBe(named.parentId ? expect.stringContaining(named.name) : named.name);
+    expect(category).not.toBe(categorySlug);
+    // The example row holds a word from each list; copied down, they are what a seller picks.
+    keys.forEach((key, column) => {
+      const validation = tab.getCell(5, column).dataValidation;
+      if (column > 1 && validation?.type === "list" && key !== "family") {
+        tab.getCell(5, column).value = tab.getCell(4, column).value;
+      }
+    });
+    tab.getCell(5, keys.indexOf("name")).value = "Rida from the lists";
+    tab.getCell(5, keys.indexOf("description")).value = "d";
+    tab.getCell(5, keys.indexOf("price")).value = 999;
+    tab.getCell(5, keys.indexOf("weight")).value = 0.5;
+    tab.getCell(5, keys.indexOf("images")).value = "a.jpg";
+    const sheet = await parseSheet(Buffer.from(await workbook.xlsx.writeBuffer()), "sheet.xlsx");
+    const parsed = parseBulkProductRow(sheet.rows[0]);
+    if ("errors" in parsed) throw new Error(JSON.stringify(parsed.errors));
+    expect(parsed.row.categorySlug).toBe(String(category));
+    expect(await validateProductRows(orgId, [{ rowNumber: 5, row: parsed.row }], ["a.jpg"])).toEqual([]);
+  });
 });

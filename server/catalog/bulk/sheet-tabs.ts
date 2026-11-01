@@ -1,6 +1,8 @@
 import { resolveProductType } from "@server/listing/product-type";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
+import { normaliseWord, wordMatcher, type WordMatcher } from "./word-match";
+
 /** One tab of the downloaded workbook: a type, and the ticked categories its rows go under. */
 export interface SheetTab {
   name: string;
@@ -17,6 +19,9 @@ export interface TickableCategory {
 }
 
 export const OTHER_TAB = "Other";
+/** The hidden tab every dropdown reads its words from (D3). */
+export const LISTS_TAB = "Lists";
+export const PATH_SEPARATOR = " › ";
 
 /** Excel refuses a sheet name over 31 characters or holding any of these. */
 function tabName(label: string): string {
@@ -47,7 +52,7 @@ export function planSheetTabs(
   }
 
   // Two labels can clean to one name, and Excel refuses a workbook with a repeated sheet name.
-  const used = new Set<string>([OTHER_TAB, "Instructions", "Answers"]);
+  const used = new Set<string>([OTHER_TAB, "Instructions", LISTS_TAB]);
   const unique = (name: string) => {
     let candidate = name;
     for (let n = 2; used.has(candidate); n += 1) candidate = `${name.slice(0, 28)} ${n}`;
@@ -74,28 +79,54 @@ export interface TickGroup {
   categories: TickChoice[];
 }
 
+/** Each category's path, "Women › Abayas" — the words a person reads, and unique where names are not (Q6). */
+export function categoryPaths(
+  categories: readonly { id: string; parentId: string | null; name: string }[],
+): Map<string, string> {
+  const byId = new Map(categories.map((category) => [category.id, category]));
+  const paths = new Map<string, string>();
+  for (const category of categories) {
+    const names: string[] = [];
+    const seen = new Set<string>();
+    for (let at: (typeof categories)[number] | undefined = category; at && !seen.has(at.id); at = at.parentId ? byId.get(at.parentId) : undefined) {
+      seen.add(at.id);
+      names.unshift(at.name);
+    }
+    paths.set(category.id, names.join(PATH_SEPARATOR));
+  }
+  return paths;
+}
+
+/** A category cell → its category, by full path or slug, never a bare name (D6). */
+export function categoryMatcher<C extends { id: string; parentId: string | null; name: string; slug: string }>(
+  categories: readonly C[],
+): WordMatcher<C> {
+  const paths = categoryPaths(categories);
+  // A name two categories share is listed for both, so it matches neither — even where it is one's slug.
+  const counts = new Map<string, number>();
+  for (const { name } of categories) counts.set(normaliseWord(name), (counts.get(normaliseWord(name)) ?? 0) + 1);
+  return wordMatcher(
+    categories.map((category) => {
+      const path = paths.get(category.id)!;
+      const shared = (counts.get(normaliseWord(category.name)) ?? 0) > 1;
+      return { value: category, label: path, words: shared ? [path, category.slug, category.name] : [path, category.slug] };
+    }),
+  );
+}
+
 /** Every category under the tab it would make, for the ticks grouped by type (R1, Q2). */
 export function groupForTicking(
   categories: readonly (TickableCategory & { name: string })[],
   types: readonly ProductTypeRecord[],
 ): TickGroup[] {
-  const byId = new Map(categories.map((category) => [category.id, category]));
-  const pathOf = (category: TickableCategory & { name: string }) => {
-    const names: string[] = [];
-    const seen = new Set<string>();
-    for (let at: typeof category | undefined = category; at && !seen.has(at.id); at = at.parentId ? byId.get(at.parentId) : undefined) {
-      seen.add(at.id);
-      names.unshift(at.name);
-    }
-    return names.join(" › ");
-  };
+  const paths = categoryPaths(categories);
   const tabs = planSheetTabs(categories.map((c) => c.id), categories, types);
   const bySlug = new Map(categories.map((category) => [category.slug, category]));
   return tabs.map((tab) => ({
     label: tab.name,
     categories: tab.categorySlugs
       .map((slug) => bySlug.get(slug)!)
-      .map((category) => ({ id: category.id, path: pathOf(category) }))
+      .map((category) => ({ id: category.id, path: paths.get(category.id)! }))
       .sort((a, b) => a.path.localeCompare(b.path)),
   }));
 }

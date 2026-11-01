@@ -38,7 +38,7 @@ describe("parseBulkProductRow", () => {
     expect("row" in parsed).toBe(true);
     if (!("row" in parsed)) return;
     expect(parsed.row.name).toBe("Emerald Silk Abaya");
-    expect(parsed.row.categorySlug).toBe("abayas");
+    expect(parsed.row.categorySlug).toBe("Abayas"); // as typed; matched to a category in the service (D6)
     // `sizes` and `colors` are gone: the sheet asks the questions the product's type declares.
     // The answers come through as the **labels** the dropdown offered — resolving a label to
     // the key a product stores needs the database, so it happens in the service.
@@ -65,6 +65,14 @@ describe("parseBulkProductRow", () => {
     const negative = parseBulkProductRow(raw({ ...validCells, saleprice: "-5" }, 4));
     if (!("errors" in negative)) throw new Error("expected errors");
     expect(negative.errors).toContainEqual(expect.objectContaining({ row: 4, field: "salePrice" }));
+  });
+
+  it("tells a blank Brand cell (clear it) from no Brand column (leave it)", () => {
+    const blank = parseBulkProductRow(raw(validCells), ["name", "brand"]);
+    const absent = parseBulkProductRow(raw(validCells), ["name"]);
+    if (!("row" in blank) || !("row" in absent)) throw new Error("expected rows");
+    expect(blank.row.brandName).toBe("");
+    expect(absent.row.brandName).toBeUndefined();
   });
 
   it("rejects a bad video URL as a row error naming the field", () => {

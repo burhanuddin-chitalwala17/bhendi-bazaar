@@ -1,4 +1,4 @@
-import { FACT_DECLARATIONS } from "@server/listing/listing-facts";
+import { ANSWER, FACT_DECLARATIONS } from "@server/listing/listing-facts";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
@@ -20,6 +20,18 @@ export interface SheetColumn {
   list?: string;
 }
 
+/** The lists the sheet itself adds to the vocabulary's; none shares a name with a fact's list. */
+export const SHEET_LIST = {
+  CATEGORY: "category",
+  KIND: "kind",
+  FAMILY: "family",
+  BRAND: "brand",
+  YES_NO: "yesno",
+} as const;
+
+/** The help line of every dropdown column (ux.md, phone apps that ignore dropdowns). */
+export const LIST_HELP = "Pick from the list. On a phone app without lists, copy a value from the Lists guide on Instructions.";
+
 /** The columns every tab has, in order. `name` is first, so the example's marker reads as its name. */
 export const SPINE_COLUMNS = [
   "name",
@@ -29,6 +41,7 @@ export const SPINE_COLUMNS = [
   "salePrice",
   "category",
   "family",
+  "brand",
   "sku",
   "weight",
   "tags",
@@ -43,7 +56,7 @@ export const VIDEO_HELP = "YouTube link only. Add a video file from the product 
 
 const SPINE: Record<SpineKey, Omit<SheetColumn, "key">> = {
   name: { heading: "Product name", required: true, help: "2 or more characters." },
-  kind: { heading: "Kind", required: false, help: "Which kind within this type, e.g. abaya or rida." },
+  kind: { heading: "Kind", required: false, help: LIST_HELP, list: SHEET_LIST.KIND },
   description: { heading: "Description", required: true, help: "What a buyer should know." },
   price: { heading: "Price (₹)", required: true, help: "Rupees, e.g. 2499 or 499.50." },
   salePrice: {
@@ -51,12 +64,14 @@ const SPINE: Record<SpineKey, Omit<SheetColumn, "key">> = {
     required: false,
     help: "Optional, below the price. On an update, empty keeps the current sale and 0 ends it.",
   },
-  category: { heading: "Category", required: true, help: "Pick from the list — the categories you ticked." },
+  category: { heading: "Category", required: true, help: LIST_HELP, list: SHEET_LIST.CATEGORY },
   family: {
     heading: "Family",
     required: false,
     help: "Optional: one name for the same thing in several colours. A new name is created once.",
+    list: SHEET_LIST.FAMILY,
   },
+  brand: { heading: "Brand", required: false, help: LIST_HELP, list: SHEET_LIST.BRAND },
   sku: {
     heading: "SKU",
     required: false,
@@ -89,11 +104,15 @@ export function factColumns(type: ProductTypeRecord | null): SheetColumn[] {
     return [{
       key: fact,
       heading: type?.factLabels[fact] ?? declaration.label,
-      help: declaration.list ? "Pick from the list." : "Optional.",
+      help: listOf(declaration) ? LIST_HELP : "Optional.",
       required: false,
-      list: declaration.list,
+      list: listOf(declaration),
     }];
   });
+}
+
+function listOf(declaration: (typeof FACT_DECLARATIONS)[keyof typeof FACT_DECLARATIONS]): string | undefined {
+  return declaration.answer === ANSWER.BOOLEAN ? SHEET_LIST.YES_NO : declaration.list;
 }
 
 export function measureColumns(type: ProductTypeRecord | null): SheetColumn[] {
@@ -115,12 +134,18 @@ export function stockColumns(locationNames: readonly string[]): SheetColumn[] {
   }));
 }
 
-/** Every column of one tab, in the order it shows them. A type with no kinds asks no kind. */
+/**
+ * Every column of one tab, in the order it shows them. A type with no kinds asks no kind, and a
+ * shop with no brand gets no Brand column: an empty dropdown is a question with no answer.
+ */
 export function tabColumns(
   type: ProductTypeRecord | null,
   locationNames: readonly string[],
+  options: { brands?: boolean } = {},
 ): SheetColumn[] {
-  const spine = SPINE_COLUMNS.filter((key) => key !== "kind" || (type?.kinds.length ?? 0) > 0);
+  const spine = SPINE_COLUMNS.filter(
+    (key) => (key !== "kind" || (type?.kinds.length ?? 0) > 0) && (key !== "brand" || options.brands),
+  );
   return [
     ...spine.map((key) => ({ key, ...SPINE[key] })),
     ...factColumns(type),

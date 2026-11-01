@@ -1,10 +1,12 @@
-import { FACT_DECLARATIONS, ORIGIN, type FactKey } from "@server/listing/listing-facts";
+import { brandService } from "@server/catalog/brand.service";
+import { ANSWER, FACT_DECLARATIONS, ORIGIN, type FactKey } from "@server/listing/listing-facts";
 import { listingValueRepository } from "@server/listing/listing-value.repository";
 import { resolveProductType } from "@server/listing/product-type";
 import { productTypeRepository } from "@server/listing/product-type.repository";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 import type { BulkProductRow, RowError } from "./bulk.types";
+import { notInListMessage, wordMatcher, YES_NO, type WordMatcher } from "./word-match";
 
 /**
  * Turning what a sheet said into what a product stores
@@ -17,16 +19,21 @@ import type { BulkProductRow, RowError } from "./bulk.types";
  *
  * Nothing here refuses a row for an unanswered fact. A product with facts missing saves, sells
  * on this storefront, and is told what is missing — that is the whole vocabulary's rule, and a
- * bulk upload is not the place to break it.
+ * bulk upload is not the place to break it. An answer outside its list is refused, naming the
+ * closest listed one (own-store/bulk-sheet Q8): the sheet offered the list, so a miss is a slip.
  */
 
 export interface VocabularyContext {
   /** Every live type, by key. */
   types: Map<string, ProductTypeRecord>;
-  /** The permitted answers, by list, lower-cased label to stored key. */
-  valueKeys: Map<string, Map<string, string>>;
+  /** The permitted answers, by list: a label or key, however typed, to the stored key (D6). */
+  valueKeys: Map<string, WordMatcher<string>>;
+  /** The shop's live brands, by name, to their id. */
+  brands: WordMatcher<string>;
   categories: readonly { id: string; parentId?: string | null; productType?: unknown }[];
 }
+
+const yesNo = wordMatcher(YES_NO);
 
 /** Everything the rows between them could possibly need, in two queries rather than per row. */
 export async function loadVocabulary(
@@ -45,27 +52,30 @@ export async function loadVocabulary(
       if (list) lists.add(list);
     }
   }
-  const values = await listingValueRepository.byLists([...lists], orgId);
+  const [values, brands] = await Promise.all([
+    listingValueRepository.byLists([...lists], orgId),
+    rows.some((row) => row.brandName) ? brandService.list(orgId) : Promise.resolve([]),
+  ]);
 
-  const valueKeys = new Map<string, Map<string, string>>();
+  const valueKeys = new Map<string, WordMatcher<string>>();
   for (const [list, options] of Object.entries(values)) {
-    const byLabel = new Map<string, string>();
-    for (const option of options) {
-      byLabel.set(option.label.trim().toLowerCase(), option.key);
-      // A key typed directly is accepted too: a sheet round-tripped through an export carries
-      // keys, and refusing one would punish the person who did the tidier thing.
-      byLabel.set(option.key.trim().toLowerCase(), option.key);
-    }
-    valueKeys.set(list, byLabel);
+    // A key typed directly is accepted too: a sheet round-tripped through an export carries
+    // keys, and refusing one would punish the person who did the tidier thing.
+    valueKeys.set(
+      list,
+      wordMatcher(options.map((option) => ({ value: option.key, label: option.label, words: [option.label, option.key] }))),
+    );
   }
+  const brandMatcher = wordMatcher(brands.map((brand) => ({ value: brand.id, label: brand.name, words: [brand.name] })));
 
-  return { types, valueKeys, categories };
+  return { types, valueKeys, brands: brandMatcher, categories };
 }
 
 export interface ResolvedRow {
   productType: string | null;
   kind: string | null;
-  facts: Record<string, { value: string | number | boolean; origin: string; unlisted?: boolean }>;
+  brandId: string | null;
+  facts: Record<string, { value: string | number | boolean; origin: string }>;
   measurements: Record<string, { value: number; origin: string }>;
 }
 
@@ -117,14 +127,24 @@ export function resolveRowVocabulary(
         field: "kind",
         message: "This category has no product type, so it holds no kinds",
       });
-    } else if (!type.kinds.some((candidate) => candidate.key === row.kind)) {
+    } else {
+      const kinds = wordMatcher(type.kinds.map((k) => ({ value: k.key, label: k.label, words: [k.label, k.key] })));
+      kind = kinds.match(row.kind) ?? null;
+      if (!kind) {
+        errors.push({ row: rowNumber, field: "kind", message: notInListMessage("Kind", row.kind, kinds.closest(row.kind)) });
+      }
+    }
+  }
+
+  let brandId: string | null = null;
+  if (row.brandName) {
+    brandId = context.brands.match(row.brandName) ?? null;
+    if (!brandId) {
       errors.push({
         row: rowNumber,
-        field: "kind",
-        message: `"${row.kind}" is not a kind of ${type.label}`,
+        field: "brand",
+        message: notInListMessage("Brand", row.brandName, context.brands.closest(row.brandName)),
       });
-    } else {
-      kind = row.kind;
     }
   }
 
@@ -135,29 +155,35 @@ export function resolveRowVocabulary(
     // A fact the row's type does not ask is dropped rather than stored: it would be an answer
     // to a question this product was never asked.
     if (type && !type.facts.includes(fact as FactKey)) continue;
+    const heading = type?.factLabels[fact as FactKey] ?? declaration.label;
 
-    if (declaration.answer === "number") {
+    if (declaration.answer === ANSWER.NUMBER) {
       const n = Number(label.replace(/,/g, ""));
       if (Number.isFinite(n)) facts[fact] = { value: n, origin: ORIGIN.PRODUCT };
       else errors.push({ row: rowNumber, field: fact, message: `"${label}" is not a number` });
       continue;
     }
-    if (declaration.answer === "boolean") {
-      facts[fact] = { value: /^(yes|true|y|1)$/i.test(label.trim()), origin: ORIGIN.PRODUCT };
+    if (declaration.answer === ANSWER.BOOLEAN) {
+      // Anything but a yes or a no was a slip, and reading it as "no" would publish a guess.
+      const answer = yesNo.match(label);
+      if (answer === undefined) {
+        errors.push({ row: rowNumber, field: fact, message: notInListMessage(heading, label, yesNo.closest(label)) });
+      } else {
+        facts[fact] = { value: answer, origin: ORIGIN.PRODUCT };
+      }
       continue;
     }
-    if (declaration.answer === "text" || !declaration.list) {
+    if (declaration.answer === ANSWER.TEXT || !declaration.list) {
       facts[fact] = { value: label, origin: ORIGIN.PRODUCT };
       continue;
     }
 
-    const key = context.valueKeys.get(declaration.list)?.get(label.trim().toLowerCase());
-    // An answer matching no permitted value is kept as free text and flagged, never discarded
-    // (categories D8): a shop's data is not ours to drop for not fitting a list written
-    // afterwards, and the leftovers say which answers the list is missing.
-    facts[fact] = key
-      ? { value: key, origin: ORIGIN.PRODUCT }
-      : { value: label, origin: ORIGIN.PRODUCT, unlisted: true };
+    const values = context.valueKeys.get(declaration.list);
+    const key = values?.match(label);
+    // The sheet offered this list, so an answer outside it is a slip to fix, not data to keep
+    // flagged (own-store/bulk-sheet Q8; was categories D8's keep-and-flag). Nothing is saved meanwhile.
+    if (key) facts[fact] = { value: key, origin: ORIGIN.PRODUCT };
+    else errors.push({ row: rowNumber, field: fact, message: notInListMessage(heading, label, values?.closest(label)) });
   }
 
   const measurements: ResolvedRow["measurements"] = {};
@@ -166,5 +192,5 @@ export function resolveRowVocabulary(
     measurements[measure] = { value, origin: ORIGIN.PRODUCT };
   }
 
-  return { resolved: { productType: typeKey, kind, facts, measurements }, errors };
+  return { resolved: { productType: typeKey, kind, brandId, facts, measurements }, errors };
 }

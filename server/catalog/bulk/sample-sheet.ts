@@ -9,8 +9,9 @@ import ExcelJS from "exceljs";
 
 import { indiaDate } from "@server/shared/india-time";
 
-import { tabColumns, VIDEO_HELP, type SheetColumn } from "./sheet-columns";
-import type { SheetTab } from "./sheet-tabs";
+import { SHEET_LIST, tabColumns, VIDEO_HELP, type SheetColumn } from "./sheet-columns";
+import { LISTS_TAB, type SheetTab } from "./sheet-tabs";
+import { NO, YES } from "./word-match";
 
 export interface SampleSheetContext {
   orgName: string;
@@ -19,7 +20,18 @@ export interface SampleSheetContext {
   tabs: SheetTab[];
   /** The permitted answers, by list, for whatever the tabs' types ask about. */
   values: Record<string, Array<{ key: string; label: string }>>;
+  /** Category slug → "Women › Abayas", what the category dropdown shows (Q6). A slug without one shows itself. */
+  categoryPaths?: Record<string, string>;
+  /** The shop's families by name; the dropdown suggests them and allows a new one (Q7). */
+  families?: string[];
+  /** The shop's live brands by name; none means no Brand column. */
+  brands?: string[];
 }
+
+/** Excel's own stop on a typed value outside a stopping list (ux.md, Refused). */
+export const LIST_STOP = "Pick from the list in this column.";
+/** A new family is legitimate, so Excel only warns (Q7). */
+export const FAMILY_WARNING = "Not in the list — a new family is created with this name.";
 
 /** The example row's first data cell; the upload skips a row while it still says this (Q9). */
 export const EXAMPLE_MARKER = "EXAMPLE — this row is skipped";
@@ -27,14 +39,13 @@ export const EXAMPLE_MARKER = "EXAMPLE — this row is skipped";
 export const PROBLEMS_HEADING = "Problems";
 export const PROBLEMS_KEY = "problems";
 export const INSTRUCTIONS_TAB = "Instructions";
+export const LISTS_GUIDE = "Lists guide";
 export const HEADING_ROW = 1;
 export const KEY_ROW = 2;
 export const HELP_ROW = 3;
 export const EXAMPLE_ROW = 4;
 
 const LAST_ROW = 500;
-/** Excel refuses an inline list much past this, so a longer one is referenced from a hidden tab. */
-const MAX_INLINE_DROPDOWN = 255;
 const REQUIRED_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF6B26B" } };
 const EXAMPLE_FONT: Partial<ExcelJS.Font> = { italic: true, color: { argb: "FF808080" } };
 
@@ -42,10 +53,12 @@ export async function buildProductSampleSheet(ctx: SampleSheetContext): Promise<
   const workbook = new ExcelJS.Workbook();
   writeInstructions(workbook.addWorksheet(INSTRUCTIONS_TAB), ctx);
   const tabs = ctx.tabs.map((tab) => ({ tab, sheet: workbook.addWorksheet(tab.name) }));
-  const lookups = workbook.addWorksheet("Answers");
+  const lookups = workbook.addWorksheet(LISTS_TAB);
   lookups.state = "veryHidden";
-  const ranges = writeLookups(lookups, ctx);
+  const lists = sheetLists(ctx);
+  const ranges = writeLookups(lookups, lists);
   for (const { tab, sheet } of tabs) writeTab(sheet, tab, ctx, ranges);
+  writeListsGuide(workbook.getWorksheet(INSTRUCTIONS_TAB)!, lists);
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
@@ -55,7 +68,7 @@ function writeTab(
   ctx: SampleSheetContext,
   ranges: Record<string, string>,
 ) {
-  const columns = tabColumns(tab.type, ctx.locationNames);
+  const columns = tabColumns(tab.type, ctx.locationNames, { brands: !!ctx.brands?.length });
   sheet.getRow(HEADING_ROW).values = [PROBLEMS_HEADING, ...columns.map((c) => c.heading)];
   sheet.getRow(KEY_ROW).values = [PROBLEMS_KEY, ...columns.map((c) => c.key)];
   sheet.getRow(KEY_ROW).hidden = true;
@@ -75,65 +88,102 @@ function writeTab(
   sheet.views = [{ state: "frozen", xSplit: 1, ySplit: HELP_ROW }];
 
   columns.forEach((column, index) => {
-    const formula = dropdownFor(column, tab, ctx.values, ranges);
+    const formula = column.list ? ranges[listName(column.list, tab)] : undefined;
     if (!formula) return;
+    // Family takes a new name, so Excel warns; every other list is the platform's, so it stops (Q7).
+    const family = column.list === SHEET_LIST.FAMILY;
+    const validation: ExcelJS.DataValidation = {
+      type: "list",
+      allowBlank: true,
+      formulae: [formula],
+      showErrorMessage: true,
+      errorStyle: family ? "warning" : "stop",
+      error: family ? FAMILY_WARNING : LIST_STOP,
+    };
     for (let row = EXAMPLE_ROW + 1; row <= LAST_ROW; row += 1) {
-      sheet.getCell(row, index + 2).dataValidation = { type: "list", allowBlank: true, formulae: [formula] };
+      sheet.getCell(row, index + 2).dataValidation = validation;
     }
   });
 }
 
-/** Category offers this tab's ticked categories (D1); a fact offers its list. Blank is always allowed. */
-function dropdownFor(
-  column: SheetColumn,
-  tab: SheetTab,
-  values: SampleSheetContext["values"],
-  ranges: Record<string, string>,
-): string | undefined {
-  if (column.key === "category") return inlineList(tab.categorySlugs) ?? ranges[`category:${tab.name}`];
-  if (!column.list || !values[column.list]?.length) return undefined;
-  return ranges[column.list];
+/** Category and kind differ per tab — each tab offers only its own (D1); every other list is shared. */
+function listName(list: string, tab: SheetTab): string {
+  return list === SHEET_LIST.CATEGORY || list === SHEET_LIST.KIND ? `${list}:${tab.name}` : list;
 }
 
-function inlineList(options: string[]): string | undefined {
-  const formula = `"${options.join(",")}"`;
-  return options.length && formula.length <= MAX_INLINE_DROPDOWN ? formula : undefined;
-}
+/** A tab's categories as the dropdown shows them: paths, in order (Q6). */
+const tabPaths = (ctx: SampleSheetContext, tab: SheetTab) =>
+  tab.categorySlugs.map((slug) => ctx.categoryPaths?.[slug] ?? slug).sort((a, b) => a.localeCompare(b));
 
-/** Each list down one column of the hidden tab, so a dropdown can point at a range. */
-function writeLookups(sheet: ExcelJS.Worksheet, ctx: SampleSheetContext): Record<string, string> {
-  const ranges: Record<string, string> = {};
-  let column = 1;
-  const write = (name: string, labels: string[]) => {
-    sheet.getCell(1, column).value = name;
-    labels.forEach((label, index) => (sheet.getCell(index + 2, column).value = label));
-    const letter = sheet.getColumn(column).letter;
-    ranges[name] = `Answers!$${letter}$2:$${letter}$${labels.length + 1}`;
-    column += 1;
-  };
-  for (const [list, options] of Object.entries(ctx.values)) {
-    if (options.length) write(list, options.map((option) => option.label));
-  }
+/** Every list the tabs draw on, in words (D3): named for the hidden tab, titled for the guide. */
+function sheetLists(ctx: SampleSheetContext): Array<{ name: string; title: string; words: string[] }> {
+  const lists: Array<{ name: string; title: string; words: string[] }> = [];
   for (const tab of ctx.tabs) {
-    if (tab.categorySlugs.length && !inlineList(tab.categorySlugs)) write(`category:${tab.name}`, tab.categorySlugs);
+    const kinds = tab.type?.kinds.map((kind) => kind.label) ?? [];
+    lists.push({ name: listName(SHEET_LIST.CATEGORY, tab), title: `Category on ${tab.name}`, words: tabPaths(ctx, tab) });
+    lists.push({ name: listName(SHEET_LIST.KIND, tab), title: `Kind on ${tab.name}`, words: kinds });
   }
+  lists.push({ name: SHEET_LIST.FAMILY, title: "Family", words: ctx.families ?? [] });
+  lists.push({ name: SHEET_LIST.BRAND, title: "Brand", words: ctx.brands ?? [] });
+  lists.push({ name: SHEET_LIST.YES_NO, title: "Yes or no", words: [YES, NO] });
+  for (const [list, options] of Object.entries(ctx.values)) {
+    lists.push({ name: list, title: listTitle(list, ctx), words: options.map((option) => option.label) });
+  }
+  return lists.filter((list) => list.words.length > 0);
+}
+
+/** A fact list is titled by the word its column uses, "Fabric" rather than "material". */
+function listTitle(list: string, ctx: SampleSheetContext): string {
+  for (const tab of ctx.tabs) {
+    const column = tabColumns(tab.type, []).find((c) => c.list === list);
+    if (column) return column.heading;
+  }
+  return list;
+}
+
+/** Each list down one column of the hidden tab, so a dropdown points at a range and any word fits. */
+function writeLookups(
+  sheet: ExcelJS.Worksheet,
+  lists: ReturnType<typeof sheetLists>,
+): Record<string, string> {
+  const ranges: Record<string, string> = {};
+  lists.forEach((list, index) => {
+    const column = index + 1;
+    sheet.getCell(1, column).value = list.name;
+    list.words.forEach((word, row) => (sheet.getCell(row + 2, column).value = word));
+    const letter = sheet.getColumn(column).letter;
+    ranges[list.name] = `${LISTS_TAB}!$${letter}$2:$${letter}$${list.words.length + 1}`;
+  });
   return ranges;
+}
+
+/** The same lists, visible, for a phone app that shows no dropdowns (ux.md, Terminal error). */
+function writeListsGuide(sheet: ExcelJS.Worksheet, lists: ReturnType<typeof sheetLists>) {
+  sheet.addRow([""]);
+  sheet.addRow([LISTS_GUIDE]).font = { bold: true };
+  sheet.addRow(["Copy a value exactly as written here."]);
+  for (const list of lists) {
+    const row = sheet.addRow([`${list.title}: ${list.words.join(" · ")}`]);
+    row.alignment = { wrapText: true, vertical: "top" };
+  }
 }
 
 /** Deliberately not plausible, so an example that slips through collides with nothing real. */
 function exampleCell(column: SheetColumn, tab: SheetTab, ctx: SampleSheetContext): string | number {
   switch (column.key) {
     case "name": return EXAMPLE_MARKER;
-    case "kind": return tab.type?.kinds[0]?.key ?? "";
+    case "kind": return tab.type?.kinds[0]?.label ?? "";
     case "description": return "Replace this row with your own product.";
     case "price": return 2499;
-    case "category": return tab.categorySlugs[0] ?? "";
+    case "category": return tabPaths(ctx, tab)[0] ?? "";
+    case "brand": return ctx.brands?.[0] ?? "";
     case "sku": return "EXAMPLE-SKU-1";
     case "weight": return 0.6;
     case "tags": return "example;replace-me";
     case "images": return "example-product/front.jpg;example-product/back.jpg";
     default:
       if (column.key.startsWith("stock:")) return 12;
+      if (column.list === SHEET_LIST.YES_NO) return YES;
       if (column.list) return ctx.values[column.list]?.[0]?.label ?? "";
       return "";
   }

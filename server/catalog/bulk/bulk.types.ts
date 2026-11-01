@@ -17,6 +17,7 @@ export interface BulkProductRow {
   description: string;
   /** Rupees as the sheet said; converted to paise once, at create (Invariant 3). */
   price: number;
+  /** The category cell as typed: a path ("Women › Abayas") or a slug, matched in the service (D6). */
   categorySlug: string;
   sku?: string;
   weight: number;
@@ -38,6 +39,8 @@ export interface BulkProductRow {
   kind?: string;
   /** A family by name; one that does not exist yet is created once and reused by later rows. */
   familyName?: string;
+  /** One of the shop's brands by name, matched as any listed word is (D6); "" is a blank Brand cell, absent is no Brand column. */
+  brandName?: string;
   salePrice?: number;
   factLabels: Record<string, string>;
   measurements: Record<string, number>;

@@ -120,7 +120,13 @@ describe("A1 — Instructions first, then a tab per type", () => {
     const { workbook } = await workbookFor(["abayas", "attar"]);
     const tab = workbook.getWorksheet("Attar")!;
     const category = rowValues(tab, 2).indexOf("category") + 1;
-    expect(tab.getCell(5, category).dataValidation?.formulae).toEqual(['"attar"']);
+    const [range] = tab.getCell(5, category).dataValidation!.formulae as string[];
+    const [, letter, from, to] = /^Lists!\$([A-Z]+)\$(\d+):\$[A-Z]+\$(\d+)$/.exec(range)!;
+    const lists = workbook.getWorksheet("Lists")!;
+    const offered = [];
+    for (let row = Number(from); row <= Number(to); row += 1) offered.push(lists.getCell(`${letter}${row}`).value);
+    // A tab with no category paths given shows its slugs; bulk-sheet-lists covers the paths.
+    expect(offered).toEqual(["attar"]);
   });
 });
 

@@ -40,7 +40,7 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     const rows: RowWithNumber<BulkProductRow>[] = [];
     const errors: RowError[] = [];
     for (const rawRow of raw.rows) {
-      const parsed = parseBulkProductRow(rawRow);
+      const parsed = parseBulkProductRow(rawRow, raw.headers);
       if ("errors" in parsed) errors.push(...parsed.errors);
       else rows.push({ rowNumber: rawRow.rowNumber, tab: rawRow.tab, row: parsed.row });
     }

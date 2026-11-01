@@ -80,7 +80,7 @@ describe("the workbook a seller actually opens", () => {
   });
 
   it("hides the lookup sheet, which is machinery rather than something to fill in", async () => {
-    expect((await build()).getWorksheet("Answers")!.state).toBe("veryHidden");
+    expect((await build()).getWorksheet("Lists")!.state).toBe("veryHidden");
   });
 
   it("builds a usable sheet for an org with no types at all", async () => {
