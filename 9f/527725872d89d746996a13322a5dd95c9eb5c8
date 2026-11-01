@@ -1,0 +1,323 @@
+tests/unit/shop-details.test.tsx
+  s_17ac7f5fca5021::t_9f00ec1edf5ba3 2,4,54-58,192-206,210,213-214,216-223,311-312,314,319,323,336-337,339
+  s_17ac7f5fca5021::t_9086680e40a40e 157,224-241,243-247,249-252
+src/components/org/shop-details/section-card.tsx
+  s_17ac7f5fca5021::t_be6ec847d015ac 9,21,38,40
+docs/specs/marketplace-integration/marketplace-publish/spec.md
+  s_0972fb7ac9c18b::t_689b67f44599f8 1-3,5-71
+  s_0972fb7ac9c18b::t_226a05383764d0 4
+tests/unit/product-visibility.test.ts
+  s_0972fb7ac9c18b::t_fa207d899bed5d 31-32
+src/components/org/shop-details/shop-details-sections.tsx
+  s_17ac7f5fca5021::t_be6ec847d015ac 59,104,143,173,223,253,308-309
+src/components/channel/listing-field.tsx
+  s_0972fb7ac9c18b::t_07430956e5bf97 1-45,47-66
+  s_0972fb7ac9c18b::t_c12a31cf0a919d 46
+server/channels/providers/marketplace-provider.ts
+  s_0972fb7ac9c18b::t_24a047f5e2f1ce 5,72-86
+  s_0972fb7ac9c18b::t_58e7e61fceb791 4,67-71
+server/catalog/product.service.ts
+  s_0972fb7ac9c18b::t_fa207d899bed5d 175-179
+server/channels/providers/amazon/amazon.publish.ts
+  s_0972fb7ac9c18b::t_8e733332002d7d 1,40
+  s_0972fb7ac9c18b::t_58e7e61fceb791 6-29,294
+server/channels/channels.jobs.ts
+  s_0972fb7ac9c18b::t_74485954092a7f 17-18,62-64,124-141
+  s_0972fb7ac9c18b::t_004061d7b48c45 16,31-34
+server/catalog/product.repository.ts
+  s_0972fb7ac9c18b::t_a792bfd4b340fc 89-100,151-153,570,819
+src/components/channel/listing-issues-banner.tsx
+  s_0972fb7ac9c18b::t_c97ef16f1ff9b0 1-37
+src/app/(org)/org/[orgId]/channels/[channel]/publish/page.tsx
+  s_0972fb7ac9c18b::t_2f6d2f1d72c7c2 1-33
+server/channels/platform-listing.repository.ts
+  s_0972fb7ac9c18b::t_2d3d92bdbe5921 211-228
+  s_0972fb7ac9c18b::t_919cdd41415319 2-121,126-139,144-151,154-155,166-210,229-233
+  s_0972fb7ac9c18b::t_1f141014054b05 122-125,140-143,156-165
+  s_0972fb7ac9c18b::t_f28c719e5f446f 1,152-153
+src/components/org/shop-details/useShopDetailsSection.ts
+  s_17ac7f5fca5021::t_8b37fe85075fda 3,11,17-19,22,29-30,38,44,46-49,52-53,58,62,64,66,69-80
+  s_17ac7f5fca5021::t_d401a28a2e8b21 55-56,65
+src/app/(marketing)/sell/page.tsx
+  s_2dbcc0a0b98e3b::t_bdb51c3cbf185f 1-15
+src/components/shared/forms/product/product-defaults.ts
+  s_0972fb7ac9c18b::t_8e733332002d7d 61
+  s_0972fb7ac9c18b::t_a792bfd4b340fc 62-63
+src/components/channel/put-on-marketplace.tsx
+  s_0972fb7ac9c18b::t_dbf891dcd78081 1-110
+src/app/(org)/org/[orgId]/channels/[channel]/listings/page.tsx
+  s_0972fb7ac9c18b::t_6666428464506c 13-14,52,57,97-104
+src/components/product/console/types.ts
+  s_0972fb7ac9c18b::t_a792bfd4b340fc 68-71
+server/channels/listing-create.service.ts
+  s_0972fb7ac9c18b::t_84c2e826ef95a0 1-19,21-110,127-190,192-202,204,206-208,210-213,217-224,226-227,232-239,241-243,246-254,257-261
+  s_0972fb7ac9c18b::t_ded1ed78ae5a12 111-126
+  s_0972fb7ac9c18b::t_41ccca63eab93f 191,203,205,209,214-216,225,228-231,240,244-245,255-256
+  s_0972fb7ac9c18b::t_3c9c6a41464f56 20
+src/app/(org)/org/[orgId]/products/[id]/listings/[channel]/new/page.tsx
+  s_0972fb7ac9c18b::t_ded1ed78ae5a12 1-27
+src/app/api/org/[orgId]/products/[id]/listings/[channel]/route.ts
+  s_0972fb7ac9c18b::t_f8dafbd609dbf2 1-3,5-8,10-11,13-21,27
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 4,9,12,22-26
+prisma/schema.prisma
+  s_0972fb7ac9c18b::t_d6b57d49c1a54b 365-371,2189-2190,2342,2422-2423,2430-2488
+server/channels/listing-publish.service.ts
+  s_0972fb7ac9c18b::t_2d3d92bdbe5921 253
+  s_0972fb7ac9c18b::t_61046f0a3e9a27 1-9,11-87,116-163,166-179,184-185,226-229,232-240,242-247,252,254,256,259-262,267-269,274-275,277,281-283
+  s_0972fb7ac9c18b::t_f2aebf43ab6125 10,88-115,164-165,180-183,186-225,230-231,241,248-251,255,257-258,263-266,270-273,276,278-280
+tests/unit/product-form-steps.test.tsx
+  s_0972fb7ac9c18b::t_120b67d8698678 63
+src/app/(org)/org/[orgId]/products/[id]/listings/[channel]/page.tsx
+  s_0972fb7ac9c18b::t_9f261ad42e72ae 32-34
+  s_0972fb7ac9c18b::t_7cad713471c41c 12,36
+  s_0972fb7ac9c18b::t_c97ef16f1ff9b0 1-11,13-30,35,37-45
+  s_0972fb7ac9c18b::t_5fb3a3f4d40607 31
+server/catalog/admin.product.service.ts
+  s_0972fb7ac9c18b::t_8e733332002d7d 362
+server/channels/listing-plan.ts
+  s_0972fb7ac9c18b::t_c1f1752280d9db 1-127
+server/channels/providers/publish.ts
+  s_0972fb7ac9c18b::t_0c0c3fe67e4caa 1-72
+server/channels/providers/amazon/amazon.provider.ts
+  s_0972fb7ac9c18b::t_24a047f5e2f1ce 11,73-77
+  s_0972fb7ac9c18b::t_58e7e61fceb791 71-72
+prisma/migrations/20261102000100_platform_listings/migration.sql
+  s_0972fb7ac9c18b::t_d6b57d49c1a54b 1-53
+src/components/shared/forms/product/KeyFeaturesField.tsx
+  s_0972fb7ac9c18b::t_09d7ab65e2323d 1-56
+docs/specs/marketplace-integration/channel-listings/trd.md
+  s_0972fb7ac9c18b::t_226a05383764d0 3
+  s_0972fb7ac9c18b::t_9d4aaf33716119 1-2,4-92
+src/data-access-layer/platform-listing.dal.ts
+  s_0972fb7ac9c18b::t_ded1ed78ae5a12 8,50-59
+  s_0972fb7ac9c18b::t_c97ef16f1ff9b0 1-6,10-29,60-62
+  s_0972fb7ac9c18b::t_2f6d2f1d72c7c2 7,9,30-49
+src/app/api/org/[orgId]/channels/[channel]/families/[familyId]/route.ts
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 1-12
+src/components/org/shop-details/useSaveBar.ts
+  s_17ac7f5fca5021::t_fc82967edb0b3d 1-75,79,82-83,85,90-101,110-139
+  s_17ac7f5fca5021::t_9086680e40a40e 109
+  s_17ac7f5fca5021::t_d401a28a2e8b21 76-78,80-81,84,86-89,102-108
+tests/unit/listing-plan.test.ts
+  s_0972fb7ac9c18b::t_240d447bf73d27 1-68
+src/components/org/shop-details/useShopNameChange.ts
+  s_17ac7f5fca5021::t_d401a28a2e8b21 54
+  s_17ac7f5fca5021::t_f0b01876c40ab7 12,27,44,50,95-105
+docs/specs/own-store/org-profile/trd.md
+  s_17ac7f5fca5021::t_b6c25851672210 6,40-41,103-104,109-110
+server/channels/channel-listing.repository.ts
+  s_0972fb7ac9c18b::t_fa207d899bed5d 409-416,432-440
+  s_0972fb7ac9c18b::t_3cbfe9158749ae 6
+  s_0972fb7ac9c18b::t_56ddb00b201294 417-431
+server/channels/listing-publish.job.ts
+  s_0972fb7ac9c18b::t_bff5ae4be1cefe 1-30
+docs/ARCHITECTURE.md
+  s_0972fb7ac9c18b::t_80126be1c7a33a 61
+  s_0972fb7ac9c18b::t_40c8cb4cb3c1f5 16,18,77
+docs/CONTRACTS.md
+  s_0972fb7ac9c18b::t_0dad5a8456310f 521-551
+src/components/org/shop-details/shop-details-copy.ts
+  s_17ac7f5fca5021::t_f33bb3d3983533 13-14
+  s_17ac7f5fca5021::t_d401a28a2e8b21 15-16
+src/lib/validation/schemas/product.schema.ts
+  s_0972fb7ac9c18b::t_8e733332002d7d 127-128
+  s_0972fb7ac9c18b::t_a792bfd4b340fc 125-126,129-137,198
+tests/unit/shop-contact.test.tsx
+  s_17ac7f5fca5021::t_9086680e40a40e 252-258
+  s_17ac7f5fca5021::t_9f00ec1edf5ba3 193,195,198,205,207
+docs/specs/marketplace-integration/channel-listings/ux.md
+  s_0972fb7ac9c18b::t_d57009bf0e86de 1-2,4,6-81
+  s_0972fb7ac9c18b::t_4d05e381c4833e 3,82
+  s_17ac7f5fca5021::t_2e31e14e7f28e4 5
+docs/CHANGELOG.md
+  s_17ac7f5fca5021::t_b6c25851672210 59-66,70-72
+  s_2dbcc0a0b98e3b::t_bb05410c7d7561 56-57
+  s_17ac7f5fca5021::t_2e31e14e7f28e4 67-69
+  s_0972fb7ac9c18b::t_0dad5a8456310f 15-37,46-48
+  s_2dbcc0a0b98e3b::t_9ad21f86718b1b 49-55,58
+  ai_agent 38-45
+tests/integration/channel-listings.test.ts
+  s_0972fb7ac9c18b::t_f4856a83a7eb44 1-127
+src/components/channel/listingsApiClient.ts
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 2-4,12-31
+  s_0972fb7ac9c18b::t_010a191d949dab 1,5-11,32-33
+docs/specs/own-store/org-profile/spec.md
+  s_17ac7f5fca5021::t_b6c25851672210 7,56-58
+tests/unit/product-listing-payload.test.ts
+  s_0972fb7ac9c18b::t_120b67d8698678 108
+src/data-access-layer/admin/products.dal.ts
+  s_0972fb7ac9c18b::t_a792bfd4b340fc 109-111
+src/components/channel/useListingForm.ts
+  s_0972fb7ac9c18b::t_12e6f524ea9fda 1-39,41-57,60,62
+  s_0972fb7ac9c18b::t_8e733332002d7d 40
+  s_0972fb7ac9c18b::t_e8251059e47de8 58-59,61
+server/channels/listing-create.ts
+  s_0972fb7ac9c18b::t_be48d08ff8a394 1-75
+tests/integration/marketplace-publish.test.ts
+  s_0972fb7ac9c18b::t_451e99678fcf7e 280-281
+  s_0972fb7ac9c18b::t_6df50ca2ca9aad 21-22,44-48,117,132-145,147-173,236-244,291-304
+  s_0972fb7ac9c18b::t_656b3bf171e22d 1-20,23-43,49-116,118-125,127-131,146,174-189,191-200,202-230,232-235,245-279,282-290,305-306
+  s_0972fb7ac9c18b::t_be698a9a5bdec1 126,190,201,231
+src/components/shared/forms/product/ProductSections.tsx
+  s_0972fb7ac9c18b::t_9a2cee38493c32 25,152,194-203,226-232
+src/app/api/org/[orgId]/channels/[channel]/publish/route.ts
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 1-14
+src/components/channel/usePagesSearch.ts
+  s_0972fb7ac9c18b::t_ded1ed78ae5a12 1-9,11
+  s_0972fb7ac9c18b::t_dbf891dcd78081 10
+server/channels/providers/flipkart/flipkart.publish.ts
+  s_0972fb7ac9c18b::t_8e733332002d7d 1,29
+  s_0972fb7ac9c18b::t_24a047f5e2f1ce 2-5,24-28,30-86
+  s_0972fb7ac9c18b::t_58e7e61fceb791 6-23
+docs/specs/marketplace-integration/marketplace-publish/trd.md
+  ai_agent 37-40
+  s_0972fb7ac9c18b::t_bbb40d76a411a8 1-2,4-36,41-43,48-100
+  s_0972fb7ac9c18b::t_226a05383764d0 3,44-47
+docs/specs/marketplace-integration/decisions.md
+  s_0972fb7ac9c18b::t_27c3ce41a6a20b 40
+server/catalog/product.read.repository.ts
+  s_0972fb7ac9c18b::t_9acfbcd227eaea 154
+  s_0972fb7ac9c18b::t_fa207d899bed5d 145-153,155-166
+server/channels/providers/flipkart/flipkart.provider.ts
+  s_0972fb7ac9c18b::t_24a047f5e2f1ce 1,66-71
+  s_0972fb7ac9c18b::t_58e7e61fceb791 64-65
+src/components/channel/listing-locked.tsx
+  s_0972fb7ac9c18b::t_30a4cb893e0321 1-63
+server/channels/channel-connection.repository.ts
+  s_0972fb7ac9c18b::t_f28c719e5f446f 117-120
+docs/specs/marketplace-integration/channel-listings/spec.md
+  s_0972fb7ac9c18b::t_5765908f076f6c 1-3,5-69
+  s_0972fb7ac9c18b::t_226a05383764d0 4
+server/catalog/admin.product.types.ts
+  s_0972fb7ac9c18b::t_a792bfd4b340fc 55,57-58
+  s_0972fb7ac9c18b::t_8e733332002d7d 56
+tests/unit/vocabulary.test.ts
+  s_0972fb7ac9c18b::t_2a9d4ad4d5edf0 25
+  s_0972fb7ac9c18b::t_5fb3a3f4d40607 18,27
+src/components/org/sell/sell-copy.ts
+  s_2dbcc0a0b98e3b::t_04b2f73e25020d 9,12,16,22,24,29-31,33-35,39-40,43,45,47-51,55-61,65,67-71,75,77-81,84,86-87,89-92,99-101,107,110,113-119,128-129,132-133,136-137
+  s_2dbcc0a0b98e3b::t_3e9b1c63119403 1-8,10-11,13-15,17-21,23,25-28,32,36-38,41-42,44,46,52-54,62-64,66,72-74,76,82-83,85,88,93-98,102-106,108-109,111-112,120-127,130-131,134-135,138-141
+src/components/org/sell/sell-page.tsx
+  s_2dbcc0a0b98e3b::t_c685ab3dba3871 2-3,5,7,9-16,18-19,29-32,38-42,63-67,69-71,73,87-91,93-96,98,107-109,111-114,116-121,129,148-156,158-164,166-179,181-183,185-196,198-199,219,228-229,231-236,254-259,279-281
+  s_2dbcc0a0b98e3b::t_9d69bd326baeb2 1,4,6,8,17,20-28,33-37,43-62,68,72,74-86,92,97,99-106,110,115,122-128,130-147,157,165,180,184,197,200-218,220-227,230,237-253,260-278
+docs/INTEGRATIONS.md
+  s_0972fb7ac9c18b::t_0dad5a8456310f 343-370
+docs/specs/marketplace-integration/channel-listings/decisions.md
+  s_0972fb7ac9c18b::t_1dd3564de79332 1-14,33-37
+  s_0972fb7ac9c18b::t_87acfa808388b3 31-32
+  s_0972fb7ac9c18b::t_226a05383764d0 15-30
+src/components/channel/listing-editor.tsx
+  s_0972fb7ac9c18b::t_8f655a2eb65de4 62,183
+  s_0972fb7ac9c18b::t_640764c9239637 1-16,18-42,44-61,63-182,184-261
+  s_0972fb7ac9c18b::t_3030651093c75a 17
+  s_0972fb7ac9c18b::t_7ff430931efec0 43
+server/channels/platform-listing.types.ts
+  s_0972fb7ac9c18b::t_954bd5b2d5fe44 141-178
+  s_0972fb7ac9c18b::t_6fc77eed852804 1-130,133-140
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 131-132
+src/components/shared/forms/product/product-steps.ts
+  s_0972fb7ac9c18b::t_0be99e28b98d38 35-37,48,112-114
+src/lib/validation/schemas/platform-listing.schema.ts
+  s_0972fb7ac9c18b::t_8e733332002d7d 24-29
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 32-52
+  s_0972fb7ac9c18b::t_f8dafbd609dbf2 1-23,30-31
+src/components/channel/listing-photos-field.tsx
+  s_0972fb7ac9c18b::t_c12a31cf0a919d 57
+  s_0972fb7ac9c18b::t_840a42bef72e18 1-56,58-91
+src/components/org/shop-details/shop-private-part.tsx
+  s_17ac7f5fca5021::t_f0b01876c40ab7 15,31,41,121,126,149,173
+src/components/channel/product-marketplaces.tsx
+  s_0972fb7ac9c18b::t_9f261ad42e72ae 5-7,19-29,35-38,51-58,60-69,93-94
+src/components/channel/listing-draft-banner.tsx
+  s_0972fb7ac9c18b::t_7cad713471c41c 1-40,42-49
+  s_0972fb7ac9c18b::t_a15f34323b80a3 41
+docs/specs/marketplace-integration/marketplace-publish/decisions.md
+  s_0972fb7ac9c18b::t_47eb268a788a53 1-13,35-39
+  s_0972fb7ac9c18b::t_b34abcca2804d3 23
+  s_0972fb7ac9c18b::t_226a05383764d0 14-22,24-32
+  s_0972fb7ac9c18b::t_d76a9257582a6a 33-34
+docs/specs/marketplace-integration/marketplace-publish/ux.md
+  s_0972fb7ac9c18b::t_bc3b6de2697556 1-2,4,6-93
+  s_0972fb7ac9c18b::t_4d05e381c4833e 3,94
+  s_17ac7f5fca5021::t_2e31e14e7f28e4 5
+src/components/channel/platform-listing-copy.ts
+  s_0972fb7ac9c18b::t_eff636f6c68008 161
+  s_0972fb7ac9c18b::t_7ff430931efec0 28
+  s_0972fb7ac9c18b::t_154d6fbcef2dad 1,3-27,29-36,39-65,68-89,91-160
+  s_0972fb7ac9c18b::t_5fb3a3f4d40607 2,37-38
+  s_0972fb7ac9c18b::t_8e733332002d7d 66-67
+  s_0972fb7ac9c18b::t_a15f34323b80a3 90
+tests/unit/listing-publish-providers.test.ts
+  s_0972fb7ac9c18b::t_b66b3cb5d6a2de 1-110,112-114
+  s_0972fb7ac9c18b::t_3497a253b775e9 111
+src/components/channel/review-publish.tsx
+  s_0972fb7ac9c18b::t_8e733332002d7d 84-85
+  s_0972fb7ac9c18b::t_cedbb390494c5e 14,43
+  s_0972fb7ac9c18b::t_0df0674c78552d 1-13,15-42,44-83,86-143
+server/channels/platform-listing.service.ts
+  s_0972fb7ac9c18b::t_f28c719e5f446f 243-244
+  s_0972fb7ac9c18b::t_c5e9b3b4099072 1-17,19-33,35-88,94-116,120-189,191-229,237-242,245-248
+  s_0972fb7ac9c18b::t_41ccca63eab93f 18,117-119
+  s_0972fb7ac9c18b::t_74485954092a7f 230-236
+  s_0972fb7ac9c18b::t_004061d7b48c45 89-93
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 34,190
+docs/specs/README.md
+  s_0972fb7ac9c18b::t_226a05383764d0 99,103
+docs/BACKLOG.md
+  s_0972fb7ac9c18b::t_226a05383764d0 224-226,232-234
+docs/specs/own-store/org-profile/decisions.md
+  s_17ac7f5fca5021::t_b6c25851672210 3,30,43
+src/components/org/shop-details/shop-details-editor.tsx
+  s_17ac7f5fca5021::t_6ad8564a450033 127
+  s_17ac7f5fca5021::t_f33bb3d3983533 23-24,36-37,68,79,134
+server/channels/CLAUDE.md
+  ai_agent 28
+  s_0972fb7ac9c18b::t_80126be1c7a33a 3,13,19,29,57-60
+  s_0972fb7ac9c18b::t_8fa3faead53791 22
+src/app/(org)/org/[orgId]/products/[id]/page.tsx
+  s_0972fb7ac9c18b::t_9f261ad42e72ae 9,31,39,53
+src/components/org/shop-details/save-bar.tsx
+  s_17ac7f5fca5021::t_f33bb3d3983533 1-40
+docs/specs/own-store/org-profile/ux.md
+  s_17ac7f5fca5021::t_b6c25851672210 4,61,101
+  s_17ac7f5fca5021::t_d401a28a2e8b21 62-63
+server/channels/providers/listing-read.ts
+  s_0972fb7ac9c18b::t_8e733332002d7d 97-101
+src/app/api/org/[orgId]/products/[id]/listings/[channel]/pages/route.ts
+  s_0972fb7ac9c18b::t_eeba7a91d81a2d 1-12
+src/components/channel/listing-status-line.tsx
+  s_0972fb7ac9c18b::t_c97ef16f1ff9b0 1-6,10-25,27-29
+  s_0972fb7ac9c18b::t_7ff430931efec0 7-9,26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "9f527725872d89d746996a13322a5dd95c9eb5c8",
+  "prompts": {},
+  "sessions": {
+    "s_0972fb7ac9c18b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b207c4d3-00e8-4920-8f78-06b802e3d21a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    },
+    "s_2dbcc0a0b98e3b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fda1200c-ac6e-464f-8b51-a5c249acf548",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
