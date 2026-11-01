@@ -21,6 +21,7 @@ import { productsDAL } from "@/data-access-layer/products.dal";
 import type { Category } from "@/domain/category";
 import type { Product } from "@/domain/product";
 import { holdCutoff } from "@server/catalog/org.handle";
+import type { OrgRating } from "@server/catalog/review-rating";
 
 /** One shop, as a visitor sees it. */
 export interface Storefront {
@@ -97,6 +98,16 @@ export const storefrontDAL = {
     ]);
     return { ...dto, categories, newest };
   }),
+
+  /**
+   * Enough of the brand page to say which sections show, for the shop's own status line: the
+   * section facts and the categories, not the priced goods (the newest section always shows).
+   */
+  brandPageForStanding: async (handle: string, rating: OrgRating): Promise<BrandPage | null> => {
+    const dto = await storefrontService.brandPageSectionFacts(handle, rating);
+    if (!dto) return null;
+    return { ...dto, categories: await storefrontDAL.categoriesFor(dto.id), newest: [] };
+  },
 
   /**
    * Where a retired handle should send a visitor, or null once its hold has lapsed.

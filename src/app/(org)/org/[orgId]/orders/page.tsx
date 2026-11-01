@@ -68,7 +68,7 @@ export default async function OrgOrdersPage({
 
   return (
     <div className="space-y-6">
-      <SectionHeader as="h1" title="Orders" description="Orders with a parcel that ships from your organisation" />
+      <SectionHeader as="h1" title="Orders" description="Orders with a parcel that ships from your shop" />
       {tabs("store")}
       <OrgOrdersFilters />
       <OrgOrdersTable orders={orders} pagination={pagination} orgId={orgId} />

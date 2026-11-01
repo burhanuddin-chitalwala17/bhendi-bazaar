@@ -69,7 +69,7 @@ export function AddPromotionDialog({
       imageAlt: "",
       isActive: true,
     },
-    successMessage: "Promotion added — it is live on your shop now.",
+    successMessage: "Banner added — it is live on your shop now.",
     submit: (data) => orgStorefrontApiClient.addBanner(orgId, { ...data, imageUrl: imageUrl || null }),
     onSuccess: () => {
       reset();
@@ -84,13 +84,13 @@ export function AddPromotionDialog({
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus />
-          Add promotion
+          Add banner
         </Button>
       </DialogTrigger>
 
       <DialogContent className="max-h-overlay overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add a promotion</DialogTitle>
+          <DialogTitle>Add a banner</DialogTitle>
           <DialogDescription>
             It goes live on your shop as soon as you add it.
           </DialogDescription>
@@ -144,13 +144,20 @@ export function AddPromotionDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isSubmitting}
+              onClick={() => {
+                if (!isSubmitting) setOpen(false);
+              }}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding…" : "Add promotion"}
+            <Button
+              type="submit"
+              onClick={(event) => {
+                // Never disabled (ADR-0053): a second tap while adding is ignored, not refused.
+                if (isSubmitting) event.preventDefault();
+              }}
+            >
+              {isSubmitting ? "Adding…" : "Add banner"}
             </Button>
           </DialogFooter>
         </form>

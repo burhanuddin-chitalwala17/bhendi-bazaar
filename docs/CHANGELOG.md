@@ -12,6 +12,35 @@
 
 ## Entries
 
+## 2026-11-01 — seller-onboarding unit 1: a phone tab bar, one grouped navigation, a Shop tab, plain names
+
+- **Navigation (D1, D2; Q9, Q10, Q28):** `src/components/layout/portal-nav.ts` declares the shop portal's list once — five
+  groups (Sell, Your shop, Grow, Money, Settings), a purpose line per item, four tabs. A phone gets a bottom bar (Home ·
+  Orders · Products · Shop · More); More opens the existing `PortalSidebar` drawer, now bottom-anchored and grouped; the
+  hamburger goes. `md:` shows an icon rail (label on hover and focus, and always the link's name), `lg:` the full grouped
+  sidebar. Help opens the Contact sheet; Setup list points at Home's list (unit 3 builds it). The admin's flat list is
+  unchanged. The portal's `<main>` clears the tab bar on a phone.
+- **Shop tab (D3; Q8):** new `/org/[orgId]/shop` — link card (Share, Copy link, See as a buyer) and four rows (Shop
+  details, Shop page, Pickup addresses, Reviews), each with a one-line status, read by `shop-hub.dal.ts`; a row whose read
+  fails shows "Couldn't load. Try again." and the others still render. Row skeletons while it loads.
+- **Renames (D14; Q7):** Dashboard→Home, Storefront→Shop page, Locations→Pickup addresses, Earnings→Money you'll receive,
+  Library→Photos, What you sell→Brands and defaults; the banner card "Promotions"→"Banners" (its dialog and toasts too);
+  the suspended page→"Your shop is paused" with Contact us; seller copy says "shop", never "organisation"; the header's
+  "Storefront" link→"See as a buyer". No URL changed. The banner card's arrows, delete and its add dialog are no longer
+  disabled: a tap while a change is saving toasts "Saving the last change…", and an arrow with nowhere to go is not drawn.
+- **Gates:** new `portal-nav.test.ts` (every `(org)` page belongs to exactly one item, four tabs plus More, a purpose per
+  item, Q22 placement; spec A3, R5, R6), `portal-copy.test.ts` (no "organisation" in seller copy, "Banners", nothing
+  disabled on these screens; spec A7), `shop-hub.test.ts` (rows fail alone). `PortalSidebar.tsx` leaves `SHAPE_LEGACY`.
+- **Review fixes:** the rail's hover label is no longer clipped (the nav scrolls only at `lg:`); the Shop page row reads
+  only the section facts (`storefrontService.brandPageSectionFacts`, `storefrontDAL.brandPageForStanding`) — no proof,
+  no goods — sharing one rating read with the Reviews row, and a shop with no public page says "not open to buyers yet".
+- **Mutations recorded:** banner title back to "Promotions" → copy test red; "organisation" restored on `/org` → red;
+  `disabled={busy}` on a banner arrow → red; Bidding removed from `PORTAL_NAV` → nav test red (2); active entry taken as
+  the first match instead of the longest → red (Shop hub lit on Shop details); hub reviews read unguarded → shop-hub red;
+  inactive addresses counted → red (2). All restored.
+- Decisions Q7–Q10, Q28 → implemented (unit 1). Suites: `tsc`, `vitest tests/unit`, `lint:boundary`, `docs:check`. Integration:
+  `org-banner-roundtrip`, `shop-details`, `seller-profile`.
+
 ## 2026-11-01 — org-profile unit 3: Shop details, the private part [CONTRACT]
 
 - **Name, mobile, email, link** (R5; A3; D7; Q15, Q16, Q23, Q25): the shop name becomes editable on Shop details,

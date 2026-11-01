@@ -35,7 +35,7 @@ interface StepCopy {
 const STEP_COPY: Record<OnboardingStep, StepCopy> = {
   [ONBOARDING_STEP.OPEN]: {
     title: "Open your shop",
-    hint: "Done the moment your organisation exists.",
+    hint: "Done the moment your shop exists.",
     href: null,
   },
   [ONBOARDING_STEP.DESCRIBE]: {

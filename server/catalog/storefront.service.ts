@@ -20,9 +20,11 @@ import { reviewService } from "@server/catalog/review.service";
 import { orderService } from "@server/checkout/order.service";
 import {
   BUYERS_SAY_COUNT,
+  PROOF_FLOORS,
   buyersSayFrom,
   proofFrom,
 } from "@server/catalog/brand-page-proof";
+import type { OrgRating } from "@server/catalog/review-rating";
 import { toBrandPageDto, type BrandPageDto } from "@server/catalog/storefront.types";
 import { Prisma } from "@prisma/client";
 import type { BrandPillar, HideableBrandPageSection } from "@server/catalog/brand-page-sections";
@@ -133,6 +135,23 @@ export const storefrontService = {
       }),
       buyersSay: buyersSayFrom(recent, rating.count),
     });
+  },
+
+  /**
+   * The brand page's section facts for the shop's own status line, given the rating its caller
+   * already read: no proof strip and no goods, which decide no section's standing.
+   */
+  async brandPageSectionFacts(handle: string, rating: OrgRating): Promise<BrandPageDto | null> {
+    const profile = await orgProfileRepository.findPublicByHandle(handle);
+    if (!profile) return null;
+    const orgId = profile.org.id;
+    const [brands, recent] = await Promise.all([
+      brandService.list(orgId),
+      rating.count >= PROOF_FLOORS.minReviewsForRating
+        ? reviewService.recentForOrg(orgId, BUYERS_SAY_COUNT)
+        : Promise.resolve([]),
+    ]);
+    return toBrandPageDto(profile, brands, { proof: null, buyersSay: buyersSayFrom(recent, rating.count) });
   },
 
   /** This org's storefront as it stands, for its own editor. */

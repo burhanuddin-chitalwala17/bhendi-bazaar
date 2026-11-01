@@ -32,7 +32,7 @@ export default async function OrgEarningsPage({
 
   return (
     <div className="space-y-5">
-      <SectionHeader as="h1" title="Earnings" description="What you have earned, and what is due." />
+      <SectionHeader as="h1" title="Money you'll receive" description="What you earned and when it's paid" />
 
       {/* Leads with the figure they came for. */}
       <Card className="p-5">

@@ -51,7 +51,7 @@ export default async function OrgProductsPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <SectionHeader as="h1" title="Products" description="Your organisation's catalogue" />
+        <SectionHeader as="h1" title="Products" description="Add and edit what you sell" />
         <div className="flex gap-2">
           <Button asChild variant="outline">
             <Link href={`/org/${orgId}/products/bulk`} prefetch={false}>

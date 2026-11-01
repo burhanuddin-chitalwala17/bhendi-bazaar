@@ -7,6 +7,8 @@ import { orgMemberRepository } from "@server/catalog/org.member.repository";
 import { requireSession } from "@/lib/admin-auth";
 import { PortalHeader } from "@/components/layout/PortalHeader";
 import { PageShell } from "@/components/shared/page-shell";
+import { ContactLauncher } from "@/components/support/contact-launcher";
+import { PORTAL_COPY } from "@/components/layout/portal-copy";
 
 export default async function OrgLayout({
   children,
@@ -38,12 +40,11 @@ export default async function OrgLayout({
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
             <Ban className="h-8 w-8 text-destructive" />
           </div>
-          <h1 className="text-2xl font-bold">Organisation Suspended</h1>
-          <p className="text-muted-foreground">
-            This organisation has been suspended by the platform. Your products
-            and storefront are not visible to customers. Contact support for
-            more information.
-          </p>
+          <h1 className="text-2xl font-bold">{PORTAL_COPY.pausedTitle}</h1>
+          <p className="text-muted-foreground">{PORTAL_COPY.pausedBody}</p>
+          <ContactLauncher className="min-h-11 border border-border px-4">
+            {PORTAL_COPY.contactUs}
+          </ContactLauncher>
         </PageShell>
       </div>
     );
@@ -51,15 +52,16 @@ export default async function OrgLayout({
 
   return (
     <div className="flex min-h-screen">
-      <OrgSidebar orgId={orgId} orgs={orgs} />
+      <OrgSidebar orgId={orgId} orgs={orgs} signedIn={Boolean(session.user.email)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <PortalHeader
           name={session.user.name}
           email={session.user.email}
-          label="Org Portal"
+          label={PORTAL_COPY.headerLabel}
           storefrontHref={handle ? `/store/${handle}` : undefined}
         />
-        <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>
+        {/* Phone: clear the fixed tab bar, so the last row of every page stays tappable. */}
+        <main className="min-w-0 flex-1 p-4 pb-tabbar md:p-8">{children}</main>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = {
-  title: "Library",
+  title: "Photos",
   robots: { index: false, follow: false },
 };
 
@@ -60,7 +60,7 @@ export default async function OrgLibraryPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <SectionHeader as="h1" title="Library" description="Every photo and video your shop has, where each is used, and what can go." />
+        <SectionHeader as="h1" title="Photos" description="Every photo and video your shop has, where each is used, and what can go." />
         {org && <MediaLibraryUpload orgId={scope.orgId} orgCode={org.code} />}
       </div>
 

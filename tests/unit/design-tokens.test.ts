@@ -71,7 +71,6 @@ const SHAPE_LEGACY = new Set([
   "src/components/home/hero-banner.tsx",
   "src/components/home/offers-strip.tsx",
   "src/components/layout/PortalHeader.tsx",
-  "src/components/layout/PortalSidebar.tsx",
   "src/components/layout/navbar/NavbarSearch.tsx",
   "src/components/layout/navbar/ProfileMenu.tsx",
   "src/components/order/order-lookup.tsx",

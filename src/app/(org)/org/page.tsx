@@ -25,11 +25,11 @@ export default async function OrgIndexPage() {
       {orgs.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8">
           <h1 className="text-2xl font-bold">
-            You are not part of an organisation
+            You are not part of a shop yet
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Selling on Bhendi Bazaar happens through an organisation. Ask an
-            owner to add you to theirs, or create your own.
+            Selling on Bhendi Bazaar happens through a shop. Ask a shop
+            owner to add you to theirs, or open your own.
           </p>
           <div className="mt-8 flex gap-3">
             <Link
@@ -37,7 +37,7 @@ export default async function OrgIndexPage() {
               href="/org/new"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              Create an organisation
+              Open your shop
             </Link>
             <Link
               prefetch={false}
@@ -50,7 +50,7 @@ export default async function OrgIndexPage() {
         </div>
       ) : (
         <div>
-          <SectionHeader as="h1" title="Choose an organisation" description="You act for more than one. Pick the one you want to work on." />
+          <SectionHeader as="h1" title="Choose a shop" description="You work for more than one. Pick the one you want to work on." />
 
           <ul className="mt-8 flex flex-col gap-3">
             {orgs.map((org) => (
@@ -79,7 +79,7 @@ export default async function OrgIndexPage() {
             href="/org/new"
             className="mt-6 inline-block text-sm text-primary hover:underline"
           >
-            + Create another organisation
+            + Open another shop
           </Link>
         </div>
       )}

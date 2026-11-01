@@ -7,7 +7,7 @@ import { ListingDefaultsForm } from "@/components/org/listing-defaults-form";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = {
-  title: "What you sell",
+  title: "Brands and defaults",
   robots: { index: false, follow: false },
 };
 
@@ -27,7 +27,7 @@ export default async function OrgListingContextPage({
 
   return (
     <div className="space-y-8">
-      <SectionHeader as="h1" title="What you sell" description="The brands you carry and the facts every product starts from. Nothing here is needed to sell today; each fact you save is one you stop typing per product." />
+      <SectionHeader as="h1" title="Brands and defaults" description="The brands you carry and the facts every product starts from. Nothing here is needed to sell today; each fact you save is one you stop typing per product." />
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Brands</h2>
         <BrandsManager orgId={scope.orgId} brands={brands} />

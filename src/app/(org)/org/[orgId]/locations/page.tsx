@@ -4,7 +4,7 @@ import { LocationsManager } from "@/components/org/locations-manager";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata = {
-  title: "Locations",
+  title: "Pickup addresses",
   robots: { index: false, follow: false },
 };
 
@@ -19,7 +19,7 @@ export default async function OrgLocationsPage({
 
   return (
     <div className="space-y-6">
-      <SectionHeader as="h1" title="Pickup locations" description="The shops and warehouses your parcels leave from" />
+      <SectionHeader as="h1" title="Pickup addresses" description="Where couriers collect from" />
       <LocationsManager orgId={scope.orgId} locations={locations} />
     </div>
   );

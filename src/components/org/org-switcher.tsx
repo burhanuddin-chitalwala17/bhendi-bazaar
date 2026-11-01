@@ -46,13 +46,13 @@ export function OrgSwitcher({
       >
         <span className="min-w-0">
           <span className="block text-2xs uppercase tracking-eyebrow text-muted-foreground">
-            Organisation
+            Shop
           </span>
           <span
             className="block truncate text-lg font-semibold text-foreground"
             title={current?.name}
           >
-            {current?.name ?? "Organisation"}
+            {current?.name ?? "Shop"}
           </span>
         </span>
         <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground/70" />
@@ -87,7 +87,7 @@ export function OrgSwitcher({
             className="mt-1 flex items-center gap-2 rounded-md border-t border-border/60 px-3 py-2 text-sm text-primary hover:bg-muted/60"
           >
             <Plus className="h-4 w-4" />
-            Create another organisation
+            Open another shop
           </Link>
         </div>
       )}

@@ -1,50 +1,71 @@
 "use client";
 
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { PortalSidebar, type PortalNavGroup, type PortalNavItem } from "@/components/layout/PortalSidebar";
+import { OrgTabBar } from "@/components/layout/org-tab-bar";
 import {
-  Gavel,
-  IdCard,
-  LayoutDashboard,
-  MapPin,
-  Package,
-  ShoppingCart,
-  Star,
-  Store,
-  Tag,
-  Wallet,
-  Tags,
-  Images,
-  Plug,
-} from "lucide-react";
-import { PortalSidebar } from "@/components/layout/PortalSidebar";
+  PORTAL_ACTION,
+  PORTAL_GROUP_LABEL,
+  PORTAL_GROUPS,
+  PORTAL_NAV,
+  activePortalEntry,
+  portalHref,
+  type PortalNavEntry,
+} from "@/components/layout/portal-nav";
+import { ContactSheet } from "@/components/support/contact-sheet";
 import { OrgSwitcher, type SwitcherOrg } from "@/components/org/org-switcher";
 
+/**
+ * The shop portal's navigation: the phone tab bar, and the grouped list that is More on a
+ * phone and the sidebar from md (own-store onboarding D1, D2). Both read `PORTAL_NAV`.
+ */
 export function OrgSidebar({
   orgId,
   orgs,
+  signedIn,
 }: {
   orgId: string;
   orgs: SwitcherOrg[];
+  signedIn: boolean;
 }) {
-  const base = `/org/${orgId}`;
+  const pathname = usePathname();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const activeKey = activePortalEntry(orgId, pathname)?.key;
+
+  const toItem = (entry: PortalNavEntry): PortalNavItem => ({
+    title: entry.label,
+    purpose: entry.purpose,
+    icon: entry.icon,
+    href: portalHref(entry, orgId) ?? undefined,
+    active: entry.key === activeKey,
+    onSelect:
+      "action" in entry.target && entry.target.action === PORTAL_ACTION.CONTACT
+        ? () => setHelpOpen(true)
+        : undefined,
+  });
+
+  // Tabs with no group (Home, Shop) lead the list, so the sidebar alone still reaches them.
+  const groups: PortalNavGroup[] = [
+    { items: PORTAL_NAV.filter((entry) => !entry.group).map(toItem) },
+    ...PORTAL_GROUPS.map((group) => ({
+      label: PORTAL_GROUP_LABEL[group],
+      items: PORTAL_NAV.filter((entry) => entry.group === group).map(toItem),
+    })),
+  ];
 
   return (
-    <PortalSidebar
-      header={<OrgSwitcher orgs={orgs} currentOrgId={orgId} />}
-      items={[
-        { title: "Dashboard", href: base, icon: LayoutDashboard, exact: true },
-        { title: "Shop details", href: `${base}/shop/details`, icon: IdCard },
-        { title: "Storefront", href: `${base}/storefront`, icon: Store },
-        { title: "Products", href: `${base}/products`, icon: Package },
-        { title: "Channels", href: `${base}/channels`, icon: Plug },
-        { title: "What you sell", href: `${base}/listing`, icon: Tags },
-        { title: "Library", href: `${base}/library`, icon: Images },
-        { title: "Orders", href: `${base}/orders`, icon: ShoppingCart },
-        { title: "Offers", href: `${base}/promotions`, icon: Tag },
-        { title: "Bidding", href: `${base}/bidding`, icon: Gavel },
-        { title: "Earnings", href: `${base}/earnings`, icon: Wallet },
-        { title: "Locations", href: `${base}/locations`, icon: MapPin },
-        { title: "Reviews", href: `${base}/reviews`, icon: Star },
-      ]}
-    />
+    <>
+      <PortalSidebar
+        header={<OrgSwitcher orgs={orgs} currentOrgId={orgId} />}
+        groups={groups}
+        anchor="bottom"
+        open={moreOpen}
+        onOpenChange={setMoreOpen}
+      />
+      <OrgTabBar orgId={orgId} moreOpen={moreOpen} onMore={() => setMoreOpen(true)} />
+      <ContactSheet open={helpOpen} onOpenChange={setHelpOpen} signedIn={signedIn} />
+    </>
   );
 }

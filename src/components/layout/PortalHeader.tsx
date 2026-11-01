@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SignOutButton } from "./SignOutButton";
+import { PORTAL_COPY } from "./portal-copy";
 
 /**
  * Who is signed in, and the exits — shared by the org portal and the platform
@@ -23,8 +24,7 @@ export function PortalHeader({
 }) {
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 md:px-6">
-      {/* Hidden below md: the drawer hamburger occupies the top-left, and the label
-          plus a full email cannot fit a phone-width row anyway. */}
+      {/* Hidden below md: the label plus a full email cannot fit a phone-width row. */}
       <span className="hidden text-2xs font-medium uppercase tracking-eyebrow text-muted-foreground md:inline">
         {label}
       </span>
@@ -51,7 +51,7 @@ export function PortalHeader({
               rel="noopener noreferrer"
               className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              Storefront
+              {PORTAL_COPY.seeAsBuyer}
             </Link>
           )}
           <SignOutButton />

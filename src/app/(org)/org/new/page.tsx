@@ -3,7 +3,7 @@ import { OpenShopForm } from "@/components/org/open-shop-form";
 
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 export const metadata = {
-  title: "Create an organisation",
+  title: "Open your shop",
   robots: { index: false, follow: false },
 };
 
@@ -17,8 +17,8 @@ export default async function NewOrgPage() {
   return (
     <PageShell width="narrow" className="px-6 py-12">
       <PageHeader
-        title="Create an organisation"
-        description="Selling happens through an organisation. You will be its first owner."
+        title="Open your shop"
+        description="Two things now; the rest when you need it."
       />
       <OpenShopForm accountEmail={session.user.email} />
     </PageShell>

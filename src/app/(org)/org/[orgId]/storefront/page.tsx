@@ -36,7 +36,7 @@ export default async function OrgStorefrontPage({
   return (
     <PageShell width="form">
       <PageHeader
-        title="Storefront"
+        title="Shop page"
         description="Your own page on Bhendi Bazaar, and the link you share."
       />
       <StorefrontBannersManager

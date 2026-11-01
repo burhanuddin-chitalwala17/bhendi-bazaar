@@ -131,7 +131,7 @@ export default async function OrgOrderDetailPage({
       )}
 
       <p className="text-xs text-muted-foreground">
-        You see only the parcels that ship from your organisation. The
+        You see only the parcels that ship from your shop. The
         buyer&apos;s full order may contain more.
       </p>
     </div>

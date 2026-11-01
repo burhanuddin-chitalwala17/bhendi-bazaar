@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ export function StorefrontBannersManager({
   );
   const deleteBanner = useMutation(
     (bannerId: string) => orgStorefrontApiClient.deleteBanner(orgId, bannerId),
-    { ...refresh, successMessage: "Promotion deleted." },
+    { ...refresh, successMessage: "Banner deleted." },
   );
   const reorderBanners = useMutation(
     (ids: string[]) => orgStorefrontApiClient.reorderBanners(orgId, ids),
@@ -66,11 +67,24 @@ export function StorefrontBannersManager({
   const busy = toggleBanner.isLoading || deleteBanner.isLoading || reorderBanners.isLoading;
 
   // `useMutation` toasts a failure and rethrows; the catches keep it from going unhandled.
-  const toggle = (banner: ManagedBanner) => void toggleBanner.mutate(banner).catch(() => {});
+  // Never disabled (ADR-0053): a tap while another change is saving says so instead.
+  const stillSaving = () => {
+    if (busy) toast("Saving the last change…");
+    return busy;
+  };
 
-  const remove = (banner: ManagedBanner) => void deleteBanner.mutate(banner.id).catch(() => {});
+  const toggle = (banner: ManagedBanner) => {
+    if (stillSaving()) return;
+    void toggleBanner.mutate(banner).catch(() => {});
+  };
+
+  const remove = (banner: ManagedBanner) => {
+    if (stillSaving()) return;
+    void deleteBanner.mutate(banner.id).catch(() => {});
+  };
 
   const move = (index: number, direction: -1 | 1) => {
+    if (stillSaving()) return;
     const next = [...banners];
     const target = index + direction;
     if (target < 0 || target >= next.length) return;
@@ -81,7 +95,7 @@ export function StorefrontBannersManager({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Promotions</CardTitle>
+        <CardTitle>Banners</CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-2xs text-muted-foreground">
@@ -117,24 +131,27 @@ export function StorefrontBannersManager({
                   {banner.isActive ? "Live" : "Down"}
                 </StatusBadge>
                 <div className="flex shrink-0 items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Move ${bannerLabel(banner.title)} up`}
-                    disabled={busy || index === 0}
-                    onClick={() => move(index, -1)}
-                  >
-                    <ArrowUp />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={`Move ${bannerLabel(banner.title)} down`}
-                    disabled={busy || index === banners.length - 1}
-                    onClick={() => move(index, 1)}
-                  >
-                    <ArrowDown />
-                  </Button>
+                  {/* An arrow with nowhere to go is not drawn, rather than drawn and silent. */}
+                  {index > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Move ${bannerLabel(banner.title)} up`}
+                      onClick={() => move(index, -1)}
+                    >
+                      <ArrowUp />
+                    </Button>
+                  )}
+                  {index < banners.length - 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Move ${bannerLabel(banner.title)} down`}
+                      onClick={() => move(index, 1)}
+                    >
+                      <ArrowDown />
+                    </Button>
+                  )}
                   <Checkbox
                     label={banner.isActive ? "Live" : "Down"}
                     checked={banner.isActive}
@@ -145,7 +162,6 @@ export function StorefrontBannersManager({
                     size="icon"
                     aria-label={`Delete ${bannerLabel(banner.title)}`}
                     className="text-destructive"
-                    disabled={busy}
                     onClick={() => remove(banner)}
                   >
                     <Trash2 />

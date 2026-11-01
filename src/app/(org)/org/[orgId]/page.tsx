@@ -55,7 +55,7 @@ export default async function OrgDashboard({
 
   return (
     <div className="space-y-6">
-      <SectionHeader as="h1" title="Dashboard" description="An overview of your organisation" />
+      <SectionHeader as="h1" title="Home" description="What needs you today" />
 
       <ChannelAttentionBanner orgId={scope.orgId} attention={attention} />
 
