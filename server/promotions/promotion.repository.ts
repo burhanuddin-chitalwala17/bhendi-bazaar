@@ -150,12 +150,60 @@ export class PromotionRepository {
       orderBy: { promotionId: "asc" },
     });
     for (const row of charged) {
-      const amount = row._sum?.budgetChargedPaise ?? 0;
-      await tx.$executeRaw`
-        UPDATE "Promotion"
-        SET "platformSpentPaise" = GREATEST("platformSpentPaise" - ${amount}, 0)
-        WHERE id = ${row.promotionId}`;
+      // The order-level release row is the record (order-fulfilment D13): its key refuses a second.
+      await this.releaseBudget({ promotionId: row.promotionId, orderId, shipmentId: null, amountPaise: row._sum?.budgetChargedPaise ?? 0 }, tx);
     }
+  }
+
+  /**
+   * Give `amountPaise` back to an offer's budget once (order-fulfilment D13, Q10): the release row
+   * is inserted first, and only a row that was new gives anything back. Its unique key — per parcel
+   * and offer, or per order and offer for an expiry — is what makes a repeat cancel release nothing.
+   */
+  async releaseBudget(
+    release: { promotionId: string; orderId: string; shipmentId: string | null; amountPaise: number },
+    tx: PromotionTx,
+  ): Promise<boolean> {
+    if (release.amountPaise <= 0) return false;
+    const written = await tx.promotionBudgetRelease.createMany({ data: [release], skipDuplicates: true });
+    if (written.count !== 1) return false;
+    await tx.$executeRaw`
+      UPDATE "Promotion"
+      SET "platformSpentPaise" = GREATEST("platformSpentPaise" - ${release.amountPaise}, 0)
+      WHERE id = ${release.promotionId}`;
+    return true;
+  }
+
+  /** What each offer charged this order's budget, per shop it landed on (Q33's input). */
+  async budgetChargesForOrder(orderId: string, tx: PromotionTx) {
+    return await tx.orderDiscount.findMany({
+      where: { orderId, budgetChargedPaise: { gt: 0 } },
+      orderBy: [{ promotionId: "asc" }, { orgId: "asc" }],
+      select: { promotionId: true, orgId: true, budgetChargedPaise: true },
+    });
+  }
+
+  /**
+   * Lock the offers this order used, before a cancel moves stock (order-fulfilment D2): checkout
+   * and expiry take Promotion before stock, so a cancel releasing budget after its restock must
+   * already hold these rows, or the two orders of locking could deadlock.
+   */
+  async lockForOrder(orderId: string, tx: PromotionTx): Promise<void> {
+    await tx.$queryRaw`
+      SELECT p.id FROM "Promotion" p
+      WHERE p.id IN (SELECT d."promotionId" FROM "OrderDiscount" d WHERE d."orderId" = ${orderId})
+      ORDER BY p.id FOR UPDATE`;
+  }
+
+  /** The coupon codes this order used, as the buyer typed them (ux.md "Your {code} coupon can be used again."). */
+  async couponCodesForOrder(orderId: string, db: Db = prisma): Promise<string[]> {
+    const rows = await db.orderDiscount.findMany({
+      where: { orderId, codeSnapshot: { not: null } },
+      select: { codeSnapshot: true },
+      distinct: ["promotionId"],
+      orderBy: { promotionId: "asc" },
+    });
+    return rows.flatMap((r) => (r.codeSnapshot ? [r.codeSnapshot] : []));
   }
 
   // ── Offer maintenance ─────────────────────────────────────────────────────

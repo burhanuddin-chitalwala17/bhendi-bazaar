@@ -17,6 +17,8 @@ import {
   type LedgerLineInput,
 } from "@server/payouts/commission";
 import { ledgerRepository, type PayoutDb } from "@server/payouts/ledger.repository";
+import { fulfilmentSettingsRepository } from "@server/payouts/fulfilment-settings.repository";
+import type { Prisma } from "@prisma/client";
 import type { CommercialTermsInput } from "@/lib/validation/schemas/commercial-terms.schema";
 import { prisma } from "@server/shared/prisma";
 import { orderService } from "@server/checkout/order.service";
@@ -184,6 +186,30 @@ export class LedgerService {
       db
     );
     return 1;
+  }
+
+  /**
+   * Charge the shop the cancellation fee as it stands now, once per parcel (order-fulfilment D14,
+   * R12a). The amount is copied onto the entry, so a later edit to the setting rewrites nothing; a
+   * fee of ₹0 writes nothing. Lands as a negative entry that carries forward (Q27). Answers the fee
+   * charged by this call, paise.
+   */
+  async chargeCancellationFee(
+    parcel: { orgId: string; orderId: string; shipmentId: string; parcelCode: string },
+    tx: Prisma.TransactionClient
+  ): Promise<number> {
+    const feePaise = (await fulfilmentSettingsRepository.read(tx))?.cancellationFeePaise ?? 0;
+    if (feePaise <= 0) return 0;
+    const written = await ledgerRepository.createCancellationFee(
+      { ...parcel, feePaise, note: `Cancellation fee · ${parcel.parcelCode}` },
+      tx
+    );
+    return written ? feePaise : 0;
+  }
+
+  /** The fee each parcel's cancel charged its shop, paise, for the shop's cancelled cards. */
+  async cancellationFeesFor(shipmentIds: string[]): Promise<Record<string, number>> {
+    return Object.fromEntries(await ledgerRepository.cancellationFeesForParcels(shipmentIds));
   }
 
   /**

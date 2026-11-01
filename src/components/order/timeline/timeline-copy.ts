@@ -7,6 +7,7 @@ import {
   type ShipmentStatus,
 } from "@server/shipping/domain/shipping.types";
 import type { ParcelTimelineDto, ParcelTimelineEntry } from "@server/checkout/parcel-timeline";
+import { PARCEL_REFUND, type ParcelRefund } from "@server/checkout/parcel-cancel.types";
 
 /** Who reads the timeline: one component, three wordings (order-fulfilment ux.md "Timeline wording"). */
 export const TIMELINE_READER = {
@@ -16,7 +17,7 @@ export const TIMELINE_READER = {
 } as const;
 export type TimelineReader = (typeof TIMELINE_READER)[keyof typeof TIMELINE_READER];
 
-type Ctx = { entry: ParcelTimelineEntry; courier: string; awb: string; ageHours: number };
+type Ctx = { entry: ParcelTimelineEntry; courier: string; awb: string; ageHours: number; refund: ParcelRefund };
 type Line = (ctx: Ctx) => string;
 
 const label = (s: ShipmentStatus) => SHIPMENT_STATUS_LABELS[s] ?? s;
@@ -33,6 +34,12 @@ const ADMIN_CANCELLED_BY: Partial<Record<ParcelActor, string>> = {
   [PARCEL_ACTOR.BUYER]: "the buyer",
   [PARCEL_ACTOR.ADMIN]: "us",
   [PARCEL_ACTOR.COURIER]: "the courier",
+};
+
+const BUYER_CANCELLED: Record<ParcelRefund, string> = {
+  [PARCEL_REFUND.NONE]: "Cancelled",
+  [PARCEL_REFUND.OWED]: "Cancelled · refund on its way",
+  [PARCEL_REFUND.STARTED]: "Cancelled · refund started",
 };
 
 const PROBLEM_SHOP = "Problem in transit — we'll contact you";
@@ -65,8 +72,7 @@ const MOVE_LINES: Record<TimelineReader, Record<ShipmentStatus, Line>> = {
     [SHIPMENT_STATUS.OUT_FOR_DELIVERY]: () => "Out for delivery today",
     [SHIPMENT_STATUS.DELIVERY_FAILED]: () => "Delivery attempt missed — the courier will try again",
     [SHIPMENT_STATUS.DELIVERED]: ({ entry }) => `Delivered ${entry.day}`,
-    // The refund's state joins this line with the refund record (unit 5).
-    [SHIPMENT_STATUS.CANCELLED]: () => "Cancelled",
+    [SHIPMENT_STATUS.CANCELLED]: ({ refund }) => BUYER_CANCELLED[refund],
     [SHIPMENT_STATUS.RTO_IN_TRANSIT]: () => PROBLEM_BUYER,
     [SHIPMENT_STATUS.RTO_DELIVERED]: () => PROBLEM_BUYER,
     [SHIPMENT_STATUS.LOST]: () => PROBLEM_BUYER,
@@ -121,6 +127,7 @@ export function timelineLine(reader: TimelineReader, entry: ParcelTimelineEntry,
     courier: timeline.courierName ?? "the courier",
     awb: timeline.trackingNumber ?? "",
     ageHours: entry.ageHours,
+    refund: timeline.refund ?? PARCEL_REFUND.NONE,
   };
   if (entry.kind === PARCEL_EVENT_KIND.PICKUP_MOVED) return MOVED_LINES[reader](ctx);
   if (entry.kind === PARCEL_EVENT_KIND.ETA_CHANGED) return ETA_LINES[reader]?.(ctx, timeline) ?? null;

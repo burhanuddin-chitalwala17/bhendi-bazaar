@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
-import { parcelNoticeContext } from "@server/shipping/shipment-status.service";
+import { parcelNoticeContext, parcelsWithLines } from "@server/shipping/shipment-status.service";
+import { giveBack, type GivenBack } from "@server/checkout/cancel-give-back";
 import { PARCEL_ACTOR, SHIPMENT_STATUS, type ParcelActor, type ShipmentStatus } from "@server/shipping/domain/shipping.types";
 import { noticeService } from "@server/notifications/notice.service";
 import { NOTICE_KIND, type NoticeKind, type ParcelNoticeInput } from "@server/notifications/notice.types";
@@ -33,21 +34,37 @@ function noticeOf(parcel: Parcel, kind: NoticeKind, since: Date, extra: Partial<
 /**
  * What a parcel move earns, run only by the move that won (order-fulfilment Approach), on its
  * transaction. Each effect carries its own unique key as a backstop, so a replay writes nothing.
- * Later units add the cancel give-backs here.
+ * `orderNowCancelled` is true only for the move whose summary took the order to cancelled (D13).
  */
 export async function onParcelMoved(
-  move: { shipmentId: string; to: ShipmentStatus; actor: ParcelActor; at: Date },
+  move: { shipmentId: string; to: ShipmentStatus; actor: ParcelActor; at: Date; orderNowCancelled?: boolean },
   tx: Prisma.TransactionClient,
-): Promise<void> {
+): Promise<GivenBack | null> {
+  if (move.to === SHIPMENT_STATUS.CANCELLED) {
+    const parcel = await parcelNoticeContext(move.shipmentId, tx);
+    if (!parcel) return null;
+    const given = await giveBack(
+      { id: parcel.id, code: parcel.code, orgId: parcel.orgId, orderId: parcel.order.id },
+      { byShop: move.actor === PARCEL_ACTOR.SHOP, orderNowCancelled: move.orderNowCancelled ?? false },
+      await parcelsWithLines(parcel.order.id, tx),
+      tx,
+    );
+    const cancel = { cancelledBy: move.actor, ...given };
+    const buyerEmail = await buyerEmailOf(parcel.order.id, tx);
+    await noticeService.write(noticeOf(parcel, NOTICE_KIND.CANCELLED_BUYER, move.at, { buyerEmail, cancel }), tx);
+    await noticeService.write(noticeOf(parcel, NOTICE_KIND.CANCELLED_SHOP, move.at, { cancel }), tx);
+    return given;
+  }
+
   // The shop's "ready" is the admin's cue to book (R4); an admin walking a parcel there is booking it already.
   const readied = move.to === SHIPMENT_STATUS.READY_FOR_PICKUP && move.actor === PARCEL_ACTOR.SHOP;
   const booked = move.to === SHIPMENT_STATUS.PICKUP_BOOKED;
   const pickedUp = move.to === SHIPMENT_STATUS.PICKED_UP;
   const delivered = move.to === SHIPMENT_STATUS.DELIVERED;
-  if (!readied && !booked && !pickedUp && !delivered) return;
+  if (!readied && !booked && !pickedUp && !delivered) return null;
 
   const parcel = await parcelNoticeContext(move.shipmentId, tx);
-  if (!parcel) return;
+  if (!parcel) return null;
   if (readied) await noticeService.write(noticeOf(parcel, NOTICE_KIND.READY, move.at), tx);
   if (pickedUp) await noticeService.write(noticeOf(parcel, NOTICE_KIND.PICKED_UP, move.at), tx);
   if (delivered) {
@@ -60,6 +77,7 @@ export async function onParcelMoved(
     await noticeService.write(noticeOf(parcel, NOTICE_KIND.BOOKED_BUYER, move.at, { buyerEmail }), tx);
     await noticeService.write(noticeOf(parcel, NOTICE_KIND.BOOKED_SHOP, move.at), tx);
   }
+  return null;
 }
 
 /**

@@ -269,6 +269,67 @@ export class LedgerRepository {
   }
 
   /**
+   * Charge a shop for cancelling a paid parcel (order-fulfilment D14): payable = −fee, the fee as
+   * it stood, copied. The one-fee-per-parcel partial index makes a repeat write nothing; answers
+   * whether this call wrote it.
+   */
+  async createCancellationFee(
+    input: { orgId: string; orderId: string; shipmentId: string; feePaise: number; note: string },
+    db: PayoutDb = prisma
+  ): Promise<boolean> {
+    const written = await db.orgLedgerEntry.createMany({
+      data: [{
+        orgId: input.orgId,
+        orderId: input.orderId,
+        shipmentId: input.shipmentId,
+        kind: "CANCELLATION_FEE",
+        state: "DRAFT",
+        grossItemsPaise: 0,
+        orgFundedDiscountPaise: 0,
+        platformFundedDiscountPaise: 0,
+        commissionBasePaise: 0,
+        commissionPaise: 0,
+        payablePaise: -input.feePaise,
+        note: input.note,
+      }],
+      skipDuplicates: true,
+    });
+    return written.count === 1;
+  }
+
+  /** The fee each of these parcels' cancels charged, paise; parcels with none are absent. */
+  async cancellationFeesForParcels(shipmentIds: string[], db: PayoutDb = prisma): Promise<Map<string, number>> {
+    if (shipmentIds.length === 0) return new Map();
+    const rows = await db.orgLedgerEntry.findMany({
+      where: { shipmentId: { in: shipmentIds }, kind: "CANCELLATION_FEE", deletedAt: null },
+      select: { shipmentId: true, payablePaise: true },
+    });
+    return new Map(rows.flatMap((r) => (r.shipmentId ? [[r.shipmentId, -r.payablePaise] as const] : [])));
+  }
+
+  /** Cancellation fees per shop since `since`, paise (ux.md "Zari Works · 4 cancelled · ₹200 fees"). */
+  async cancellationFeesByOrg(orgIds: string[], since: Date, db: PayoutDb = prisma): Promise<Map<string, number>> {
+    if (orgIds.length === 0) return new Map();
+    const rows = await db.orgLedgerEntry.groupBy({
+      by: ["orgId"],
+      where: { orgId: { in: orgIds }, kind: "CANCELLATION_FEE", deletedAt: null, createdAt: { gte: since } },
+      _sum: { payablePaise: true },
+      orderBy: { orgId: "asc" },
+    });
+    return new Map(rows.map((r) => [r.orgId, -(r._sum?.payablePaise ?? 0)]));
+  }
+
+  /**
+   * The org's unsettled negative entries outside `entryIds` (order-fulfilment D15, Q34): a
+   * settlement leaving any behind would pay the positives and strand the debt.
+   */
+  async unsettledNegativesOutside(orgId: string, entryIds: string[], db: PayoutDb = prisma) {
+    return await db.orgLedgerEntry.count({
+      where: { orgId, deletedAt: null, settlementId: null, payablePaise: { lt: 0 }, id: { notIn: entryIds } },
+    });
+  }
+
+  /**
    * Write an entry the order flow did not produce (spec R5).
    *
    * A bidding sale is the first caller: the money was collected off the platform, so

@@ -67,7 +67,11 @@ async function restock(shipmentId: string, tx: Prisma.TransactionClient): Promis
 export async function applyStatus(
   shipmentId: string,
   to: ShipmentStatus,
-  by: { actor: ParcelActor; reason?: string; raw?: string; actorName?: string; booking?: ParcelBooking },
+  by: {
+    actor: ParcelActor; reason?: string; raw?: string; actorName?: string; booking?: ParcelBooking;
+    /** The states this person may move it from (CANCELLABLE_FROM), narrower than the table; read under the order lock. */
+    onlyFrom?: readonly ShipmentStatus[];
+  },
   tx: Prisma.TransactionClient,
 ): Promise<TransitionOutcome> {
   const shipment = await shipmentRepository.findStatus(shipmentId, tx);
@@ -80,6 +84,7 @@ export async function applyStatus(
   const from = shipment.status;
   if (from === to) return { kind: "ignored", current: from, reason: "same-status" };
   if (!canTransition(from, to)) return { kind: "ignored", current: from, reason: "not-allowed" };
+  if (by.onlyFrom && !by.onlyFrom.includes(from)) return { kind: "ignored", current: from, reason: "not-allowed" };
 
   const moved = await shipmentRepository.recordTransition(
     shipmentId,
@@ -124,6 +129,18 @@ export async function applyStatus(
   }
 
   return { kind: "moved", from, to };
+}
+
+/** An order's parcels with their units, on the caller's transaction (order-fulfilment D13, D16). */
+export async function parcelsWithLines(orderId: string, tx: Prisma.TransactionClient) {
+  return await shipmentRepository.parcelsOfOrder(orderId, tx);
+}
+
+/** Each shop's own cancellations since `since`, most first (D14, ux.md "admin fee setting"). */
+export async function shopCancelCounts(since: Date, page: { skip: number; take: number }) {
+  return await shipmentRepository.cancelCountsByOrg({
+    actor: PARCEL_ACTOR.SHOP, cancelled: SHIPMENT_STATUS.CANCELLED, since, ...page,
+  });
 }
 
 /** Which order and shop a parcel belongs to — what the caller locks and scopes by. Never changes. */

@@ -28,6 +28,10 @@ export const NOTICE_KIND = {
   ETA_CHANGED_BUYER: "eta_changed_buyer",
   /** The courier delivered it (own-store Q9). */
   DELIVERED: "delivered",
+  /** The parcel was cancelled, by anyone: the buyer hears their refund is on its way (R10, ux.md Emails). */
+  CANCELLED_BUYER: "cancelled_buyer",
+  /** The parcel was cancelled: the shop is told not to send it, and the fee when it cancelled. */
+  CANCELLED_SHOP: "cancelled_shop",
 } as const;
 export type NoticeKind = (typeof NOTICE_KIND)[keyof typeof NOTICE_KIND];
 
@@ -52,6 +56,8 @@ export const NOTICE_AUDIENCE_OF: Record<NoticeKind, NoticeAudience> = {
   [NOTICE_KIND.PICKED_UP]: NOTICE_AUDIENCE.SHOP,
   [NOTICE_KIND.ETA_CHANGED_BUYER]: NOTICE_AUDIENCE.BUYER,
   [NOTICE_KIND.DELIVERED]: NOTICE_AUDIENCE.BUYER,
+  [NOTICE_KIND.CANCELLED_BUYER]: NOTICE_AUDIENCE.BUYER,
+  [NOTICE_KIND.CANCELLED_SHOP]: NOTICE_AUDIENCE.SHOP,
 };
 
 /**
@@ -76,6 +82,10 @@ export const parcelNoticeData = z.object({
   trackingUrl: z.string().optional(),
   pickupDate: z.string().optional(),
   estimatedDelivery: z.string().optional(),
+  /** A cancel, from unit 5: who did it (a PARCEL_ACTOR), the refund owed and the shop's fee, paise. */
+  cancelledBy: z.string().optional(),
+  refundPaise: z.number().int().optional(),
+  feePaise: z.number().int().optional(),
 });
 export type ParcelNoticeData = z.infer<typeof parcelNoticeData>;
 
@@ -93,6 +103,7 @@ export interface ParcelNoticeInput {
   buyerEmail?: string | null;
   /** For a kind that can repeat on one parcel: the timeline row that earned it. */
   ref?: string;
+  cancel?: { cancelledBy: string; refundPaise: number; feePaise: number };
   booking?: {
     courierName: string | null;
     trackingNumber: string | null;

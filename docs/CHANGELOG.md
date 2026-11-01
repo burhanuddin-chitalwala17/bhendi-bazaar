@@ -12,6 +12,51 @@
 
 ## Entries
 
+## 2026-11-01 — order-fulfilment unit 5: cancel, fee and its setting, cancellation count, refund owed on cancel [CONTRACT] [MIGRATION]
+
+- **One cancel, three doors** (R10, R11, R15, A7, A8; D12; Q9, Q13, Q28, Q31): `server/checkout/fulfilment-cancel.ts`
+  `cancelParcel` behind `POST /api/org/[orgId]/shipments/[id]/cancel` (shop, from `packing`, reason required),
+  `POST /api/admin/shipments/[id]/cancel` (admin, until `picked_up`) and `POST /api/orders/[orderId]/shipments/[id]/cancel`
+  (signed-in owner, from `packing`, reason optional, `ORDER` rate limit). Where each may cancel from is
+  `CANCELLABLE_FROM`, checked inside the locked move (`applyStatus` gains `onlyFrom`), so a cancel racing "ready"
+  or a pickup loses with ux.md's words. Unpaid orders stay refused; another shop's parcel, another buyer's or a
+  guest's order is 404.
+- **Every give-back once** (R12, R12a, A6; D13, D14, D16; Q10, Q11, Q20, Q33): restock and reversal stay in the move;
+  `parcel-moved.ts` calls one seam, `cancel-give-back.ts` (Q37), which releases the parcel's share of each offer's budget (`PromotionBudgetRelease`, cumulative floors
+  over the shop's parcels, `server/checkout/parcel-shares.ts`), gives the coupon back only when the summary has just
+  made the order cancelled, records the refund owed (lines less discount share plus shipping, capped at what was
+  captured; `server/payments/refund.*`), and on the shop's own cancel a `CANCELLATION_FEE` entry of −fee, copied. The
+  buyer and the shop are emailed ("Order BB-… cancelled", "Parcel BB-…-SH1 cancelled", the fee line only on the
+  shop's own). A cancel now locks the order's offers before its restock (D2); expiry writes an order-level release row.
+- **Carry-forward** (R12b; D15; Q27, Q34): `createSettlement` refuses a selection that leaves the shop's unsettled
+  negative entries behind, or totals ₹0 or less.
+- **Fee setting and count** (R12a, A12; D14; Q29): `/admin/settings/fulfilment` (admin nav "Settings") — "Shop
+  cancellation fee (₹)", compare-and-set on a version, audited (`CANCELLATION_FEE_CHANGED`); the count table lists
+  each shop's own cancellations in 30 days with its fees, 50 a page. `PUT /api/admin/settings/fulfilment`.
+- **Screens** (ux.md shop cancel sheet, admin cancel sheet, buyer cancel sheet, buyer order): one reason list
+  (`components/order/cancel/`); the shop's "Cancel parcel" on its card (a ready one explains, with Contact us), the
+  cancelled card's fee line; "Cancel parcel" on the pickups queue, the not-packed list and the order console (a
+  booked one's row keeps the amber "Cancelled. Now cancel AWB {awb} on Shiprocket." with Open Shiprocket); the
+  buyer's "Cancel order" / "Cancel these items" with the amount, the refund line, "Your {code} coupon can be used
+  again.", and the timeline's "Cancelled · refund on its way", plain "Cancelled" when nothing was owed. A ₹0 fee
+  drops the fee clause from the shop's sheet. No button is disabled.
+- **[MIGRATION]** `20261101163500_cancellation_fee_kind` (enum value alone, so the next can index it) and
+  `20261101163600_order_fulfilment_cancel`: `PromotionBudgetRelease`, `Refund` (+ `RefundState`), `FulfilmentSettings`
+  seeded at ₹50, the one-fee-per-parcel partial index. Additive.
+- **[CONTRACT]** `shopCancelSchema`, `buyerCancelSchema`, `fulfilmentFeeSchema`, the three cancel answers,
+  `FulfilmentSettingsView`, `ParcelTimelineDto.refundStarted`, the buyer `Shipment.org.name`, the settlement refusals.
+  `CONTRACTS.md` updated.
+- **Tests:** `tests/integration/parcel-cancel.test.ts` (A6 shop cancel and twice; buyer no fee; two-parcel coupon;
+  concurrent double cancel; the cancel/pickup race; R10 refusals; A8; scope; A12 with a stale save; D15);
+  `tests/unit/parcel-shares.test.ts` (shares, budget split and refund cap over 300 random splits each);
+  `tests/unit/parcel-cancel.test.tsx` (A7, the sheets' states, reason and fee inputs, cancel emails, buyer timeline).
+  `offer-budget.test.ts` asserts the expiry's release row and cleans it. Mutations, each restored: `onlyFrom` guard
+  removed (1 failed); fee on any actor's cancel (2 failed); coupon back on every cancel (1 failed); refund cap removed
+  (2 failed); settlement debt check removed (1 failed); settlement floor removed (1 failed); fee save without the
+  version (1 failed); buyer ownership check removed (1 failed); budget split across shops (1 failed).
+- **Gate edits:** `file-cohesion` `RECORDED` gains `server/checkout/cancel-give-back.ts` (payments, payouts,
+  promotions), narrowed at review from a five-domain `parcel-moved.ts`; it awaits the owner's acceptance (Q37); `rate-limit/registry.ts` gains the buyer's cancel.
+
 ## 2026-11-01 — own-store/bulk-sheet unit 3: the stamp, the old-sheet warning and refusal, problems by row, counts [CONTRACT]
 
 - **Stamp (D4; R4, A3; Q10, Q27):** the hidden `Lists` tab ends with a `__stamp` column — made-on date, a SHA-256

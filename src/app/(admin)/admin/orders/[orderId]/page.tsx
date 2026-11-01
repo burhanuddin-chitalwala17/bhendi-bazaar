@@ -54,7 +54,7 @@ export default async function AdminOrderDetailsPage({
           <OrderDetailAside order={order} />
         </div>
         <div className="lg:col-span-2">
-          <ShipmentsPanel shipments={order.shipments} timelines={timelines} />
+          <ShipmentsPanel shipments={order.shipments} timelines={timelines} paid={order.paymentStatus === PAYMENT_STATUS.PAID} />
         </div>
       </div>
     </div>

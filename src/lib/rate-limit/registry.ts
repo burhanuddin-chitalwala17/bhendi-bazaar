@@ -50,6 +50,8 @@ export const ROUTE_RATE_LIMITS = {
   "POST /api/contact": { policy: P.MESSAGE },
 
   "POST /api/orders/create-with-shipments": { policy: P.ORDER },
+  // A buyer's own money action (order-fulfilment D12): counted with placing an order.
+  "POST /api/orders/[orderId]/shipments/[id]/cancel": { policy: P.ORDER },
   "POST /api/orders/lookup": { policy: P.LOOKUP },
 
   "POST /api/orgs": { policy: P.ACCOUNT },

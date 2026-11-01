@@ -3,7 +3,8 @@ import { StatusBadge } from "@/components/shared/badges/StatusBadge";
 import { formatCurrency } from "@/lib/format";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import type { ShopParcelView } from "@server/checkout/shop-parcel.types";
-import { SHOP_PARCEL_COPY, SHOP_STATUS_LINE, parcelOfLine } from "./parcel-copy";
+import { SHOP_CANCEL_COPY, SHOP_PARCEL_COPY, SHOP_STATUS_LINE, parcelOfLine } from "./parcel-copy";
+import { CancelParcel } from "./cancel-parcel";
 import { ReadyForPickup } from "./ready-for-pickup";
 import { ParcelLines } from "./parcel-lines";
 import { Button } from "@/components/ui/button";
@@ -22,17 +23,26 @@ export function ShopParcelCard({
   firstOrder,
   docked,
   timeline,
+  feeNowPaise,
+  feePaise = 0,
 }: {
   orgId: string;
   parcel: ShopParcelView;
   firstOrder: boolean;
   docked: boolean;
   timeline?: ParcelTimelineDto;
+  /** The fee a cancel would charge now, for the sheet's first line (ux.md "Shop cancel sheet"). */
+  feeNowPaise: number;
+  /** What this parcel's cancel charged, for the cancelled card's fee line. */
+  feePaise?: number;
 }) {
   const packing = parcel.status === SHIPMENT_STATUS.PACKING;
   const justReady = parcel.status === SHIPMENT_STATUS.READY_FOR_PICKUP;
   // The label opens only through our route, and only until the courier collects (Q26).
   const booked = parcel.status === SHIPMENT_STATUS.PICKUP_BOOKED;
+  // Shown until the courier collects: while packing it cancels, once ready it explains why not (A7).
+  const cancellable = packing || justReady || booked;
+  const cancelled = parcel.status === SHIPMENT_STATUS.CANCELLED;
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
@@ -61,8 +71,10 @@ export function ShopParcelCard({
             </Button>
           </div>
         )}
+        {cancelled && feePaise > 0 && <p className="text-sm text-muted-foreground">{SHOP_CANCEL_COPY.feeLine(feePaise)}</p>}
         <ParcelLines items={parcel.items} />
         <ParcelTimeline timeline={timeline} reader={TIMELINE_READER.SHOP} />
+        {cancellable && <CancelParcel orgId={orgId} shipmentId={parcel.id} packing={packing} feeNowPaise={feeNowPaise} />}
         <div className="flex justify-between border-t pt-3 text-sm text-muted-foreground">
           <span>{parcel.courierName ? `${parcel.courierName}${parcel.trackingNumber ? ` · ${parcel.trackingNumber}` : ""}` : SHOP_STATUS_LINE[parcel.status]}</span>
           <span>{formatCurrency(parcel.parcelValue)}</span>

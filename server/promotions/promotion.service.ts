@@ -298,11 +298,44 @@ export class PromotionService {
 
   /** Give back the coupon uses and budget an expiring order was holding (D11, offers-hardening Q3). */
   async releaseForOrder(orderId: string, tx: PromotionTx): Promise<void> {
-    const promotionIds = await promotionRepository.codedDiscountsForOrder(orderId, tx);
-    for (const promotionId of promotionIds) {
+    await this.releaseCouponUses(orderId, tx);
+    await promotionRepository.releaseBudgetForOrder(orderId, tx);
+  }
+
+  /**
+   * Give back the coupon uses an order claimed. Expiry calls it, and a cancel only once every parcel
+   * of the order is cancelled (order-fulfilment D13, own-store Q5): a buyer who kept part used it.
+   */
+  async releaseCouponUses(orderId: string, tx: PromotionTx): Promise<void> {
+    for (const promotionId of await promotionRepository.codedDiscountsForOrder(orderId, tx)) {
       await promotionRepository.releaseUse(promotionId, tx);
     }
-    await promotionRepository.releaseBudgetForOrder(orderId, tx);
+  }
+
+  /** One parcel's share of each offer's budget, back once per parcel and offer (D13, Q10). */
+  async releaseParcelBudget(
+    parcel: { orderId: string; shipmentId: string },
+    shares: Map<string, number>,
+    tx: PromotionTx,
+  ): Promise<void> {
+    for (const [promotionId, amountPaise] of shares) {
+      await promotionRepository.releaseBudget({ promotionId, orderId: parcel.orderId, shipmentId: parcel.shipmentId, amountPaise }, tx);
+    }
+  }
+
+  /** What each offer charged this order's budget, per shop (Q33's input), on the caller's transaction. */
+  async budgetChargesForOrder(orderId: string, tx: PromotionTx) {
+    return await promotionRepository.budgetChargesForOrder(orderId, tx);
+  }
+
+  /** Hold this order's offers before a cancel moves stock, keeping Promotion ahead of stock (D2). */
+  async lockForOrder(orderId: string, tx: PromotionTx): Promise<void> {
+    await promotionRepository.lockForOrder(orderId, tx);
+  }
+
+  /** The coupon codes an order used, for the buyer's "can be used again" line. */
+  async couponCodesForOrder(orderId: string): Promise<string[]> {
+    return await promotionRepository.couponCodesForOrder(orderId);
   }
 
   /** Is this offer usable right now? Shared by the admin surfaces. */

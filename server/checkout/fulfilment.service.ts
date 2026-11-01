@@ -4,7 +4,9 @@ import { ConflictError, NotFoundError } from "@server/shared/domain-error";
 import { orderRepository } from "@server/checkout/order.repository";
 import { summariseParcels } from "@server/checkout/parcel-summary";
 import { onParcelMoved } from "@server/checkout/parcel-moved";
-import { PAYMENT_STATUS } from "@server/checkout/order.types";
+import type { GivenBack } from "@server/checkout/cancel-give-back";
+import { ORDER_STATUS, PAYMENT_STATUS } from "@server/checkout/order.types";
+import { promotionService } from "@server/promotions/promotion.service";
 import { cancelledBeforeReadyMessage } from "@server/checkout/shop-parcel.types";
 import {
   applyStatus,
@@ -26,6 +28,9 @@ import {
 export const UNPAID_CANCEL_MESSAGE = "Only a paid parcel can be cancelled. An unpaid order expires on its own.";
 const PARCEL_NOT_FOUND = "Parcel not found";
 
+/** A move's outcome; a cancel that won also says what it gave back (D12). */
+export type MoveOutcome = TransitionOutcome & { given?: GivenBack };
+
 export interface MoveOptions {
   actor: ParcelActor;
   reason?: string;
@@ -42,6 +47,8 @@ export interface MoveOptions {
   actorName?: string;
   /** The hand booking, written with the move into `pickup_booked` (D11). */
   booking?: ParcelBooking;
+  /** The states this person may move it from (CANCELLABLE_FROM, Q9), checked under the order lock. */
+  onlyFrom?: readonly ShipmentStatus[];
 }
 
 /**
@@ -54,7 +61,7 @@ export async function moveParcel(
   shipmentId: string,
   to: ShipmentStatus,
   options: MoveOptions,
-): Promise<TransitionOutcome> {
+): Promise<MoveOutcome> {
   const refs = await parcelRefs(shipmentId);
   if (!refs) {
     if (options.refuse) throw new NotFoundError(PARCEL_NOT_FOUND);
@@ -69,13 +76,17 @@ export async function moveParcel(
     // An unpaid order only expires (Q9): cancelling its parcel here would restock it, and
     // `expireAndRestock` would restock the same units again.
     if (to === SHIPMENT_STATUS.CANCELLED && !paid) throw new ConflictError(UNPAID_CANCEL_MESSAGE);
+    // A cancel releases offer budget after its restock; checkout and expiry take Promotion before
+    // stock, so the cancel takes it first too (D2).
+    if (to === SHIPMENT_STATUS.CANCELLED) await promotionService.lockForOrder(orderId, tx);
     const moved = await applyStatus(shipmentId, to, options, tx);
     if (moved.kind !== "moved") return moved;
 
     const summary = summariseParcels(await parcelStatusesOf(orderId, tx));
-    if (summary) await orderRepository.syncSummary(orderId, summary, tx);
-    await onParcelMoved({ shipmentId, to, actor: options.actor, at: new Date() }, tx);
-    return moved;
+    const summaryMoved = summary ? await orderRepository.syncSummary(orderId, summary, tx) : false;
+    const orderNowCancelled = summaryMoved && summary === ORDER_STATUS.CANCELLED;
+    const given = await onParcelMoved({ shipmentId, to, actor: options.actor, at: new Date(), orderNowCancelled }, tx);
+    return given ? { ...moved, given } : moved;
   });
 
   if (outcome.kind === "off-list") throw new ConflictError(offListMessage(outcome.current));

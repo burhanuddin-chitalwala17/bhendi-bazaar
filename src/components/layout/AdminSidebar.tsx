@@ -19,6 +19,7 @@ import {
   Sparkles,
   Layers,
   Images,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -106,6 +107,11 @@ const navItems = [
     title: "Abandoned Carts",
     href: "/admin/carts",
     icon: ShoppingBag,
+  },
+  {
+    title: "Settings",
+    href: "/admin/settings/fulfilment",
+    icon: Settings,
   },
   {
     title: "Shipping Providers",

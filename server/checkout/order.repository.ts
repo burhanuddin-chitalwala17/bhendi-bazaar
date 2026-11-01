@@ -163,7 +163,8 @@ export class OrderRepository {
       relationLoadStrategy: "join",
       where: { id: orderId },
       include: {
-        shipments: { orderBy: { code: "asc" as const }, include: SHIPMENT_LINES_INCLUDE },
+        // The shop's name names a parcel on the buyer's cancel sheet (ux.md "Cancel the items from {shop}?").
+        shipments: { orderBy: { code: "asc" as const }, include: { ...SHIPMENT_LINES_INCLUDE, org: { select: { name: true } } } },
       },
     });
 
@@ -417,10 +418,25 @@ export class OrderRepository {
    * over a lower `ORDER_STATUS_RANK`, so an order never moves backwards: a hand-delivered order
    * stays delivered whatever a late courier event says, and an expired one is never touched.
    */
-  async syncSummary(orderId: string, status: OrderStatus, tx: OrderDb): Promise<void> {
-    await tx.order.updateMany({
+  async syncSummary(orderId: string, status: OrderStatus, tx: OrderDb): Promise<boolean> {
+    const moved = await tx.order.updateMany({
       where: { id: orderId, paymentStatus: PAYMENT_STATUS.PAID, status: { in: statusesBelow(status) } },
       data: { status },
+    });
+    return moved.count === 1;
+  }
+
+  /** What a parcel's refund is computed from (order-fulfilment D16): the captured total and the priced lines. */
+  async refundBasis(orderId: string, tx: OrderDb) {
+    return await tx.order.findUnique({
+      where: { id: orderId },
+      select: {
+        grandTotal: true,
+        items: {
+          orderBy: { id: "asc" },
+          select: { id: true, quantity: true, unitPrice: true, discountPaise: true, orgFundedPaise: true },
+        },
+      },
     });
   }
 

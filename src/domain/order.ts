@@ -57,6 +57,8 @@ export interface Shipment {
   /** A calendar day (order-fulfilment Q6): read with `calendarDay`, never in a time zone. */
   estimatedDelivery?: Date;
   pickupDate?: Date;
+  /** The shop it ships from, by name (ux.md buyer cancel sheet, Partial). */
+  org?: { name: string };
   createdAt: Date;
   updatedAt: Date;
 }

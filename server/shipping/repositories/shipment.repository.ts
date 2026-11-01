@@ -286,6 +286,39 @@ export class ShipmentRepository {
     return await tx.parcelEvent.create({ data, select: { id: true } });
   }
 
+  /** Every parcel of an order with its units, in code order: what a cancel splits shares over (D13, D16). */
+  async parcelsOfOrder(orderId: string, tx: ShipmentDb) {
+    return await tx.shipment.findMany({
+      where: { orderId },
+      orderBy: { code: "asc" },
+      select: {
+        id: true, code: true, orgId: true, shippingCost: true, trackingNumber: true,
+        items: { orderBy: { id: "asc" }, select: { orderItemId: true, quantity: true } },
+      },
+    });
+  }
+
+  /**
+   * Cancellations by `actor` into `cancelled` since `since`, per shop, most first (order-fulfilment
+   * D14: counts come from the timeline). One page, and the total number of shops on it.
+   */
+  async cancelCountsByOrg(
+    by: { actor: string; cancelled: string; since: Date; skip: number; take: number },
+  ): Promise<{ rows: { orgId: string; count: number }[]; total: number }> {
+    const rows = await prisma.$queryRaw<{ orgId: string; count: bigint }[]>`
+      SELECT s."orgId", count(DISTINCT e."shipmentId")::bigint AS count
+      FROM "ParcelEvent" e JOIN "Shipment" s ON s.id = e."shipmentId"
+      WHERE e."toStatus" = ${by.cancelled} AND e.actor = ${by.actor} AND e."createdAt" >= ${by.since}
+      GROUP BY s."orgId"
+      ORDER BY count DESC, s."orgId" ASC
+      OFFSET ${by.skip} LIMIT ${by.take}`;
+    const [{ total }] = await prisma.$queryRaw<{ total: bigint }[]>`
+      SELECT count(DISTINCT s."orgId")::bigint AS total
+      FROM "ParcelEvent" e JOIN "Shipment" s ON s.id = e."shipmentId"
+      WHERE e."toStatus" = ${by.cancelled} AND e.actor = ${by.actor} AND e."createdAt" >= ${by.since}`;
+    return { rows: rows.map((r) => ({ orgId: r.orgId, count: Number(r.count) })), total: Number(total) };
+  }
+
   /** The parcel's org, order and units: what payouts reverses when it fails (offers-hardening D1). */
   async reversalScope(id: string, tx: ShipmentDb) {
     return await tx.shipment.findUnique({

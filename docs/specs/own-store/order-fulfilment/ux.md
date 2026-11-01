@@ -54,7 +54,7 @@ Each starts one step before the screen, as the owner asked.
 | Admin cancel sheet | over pickups and order console | "Cancel parcel" | New picker sheet | R10 |
 | Admin change pickup date | small panel over pickups | "Change pickup date" | New | R5 |
 | Admin conflicts | `/admin/orders/pickups` tab "Conflicts" | Pickups tab with count | New list of unmatched courier updates | R8 |
-| Admin fee setting + cancellation count | `/admin/settings/fulfilment` | Admin nav "Settings" | New | R12a |
+| Admin fee setting + cancellation count | `/admin/settings/fulfilment` | Admin nav "Settings" | New; headed "Fulfilment settings", the table "Cancellations by shop, last 30 days" (added at build, unit 5) | R12a |
 | Admin not-packed flag | `/admin/orders/pickups` tab "Not packed" | Pickups tab with count | New, parcels paid 36 h+ and not ready | R3a |
 | Parcel timeline | inside the three above | — | One component, wording by audience; times in India time | R7 |
 
@@ -278,6 +278,7 @@ Each starts one step before the screen, as the owner asked.
 | Terminal error | n/a | — | — |
 | Refused: cancel after ready | Sheet | "This parcel is packed and waiting for the courier. To stop it, contact us." | Contact us |
 | Refused: unpaid order | No cancel shown; existing pay-or-expire copy | — | — |
+| Guest (not signed in) | Paid, not yet collected: "Contact us" in place of cancel (Q31, added at build, unit 5) | "Contact us" | Contact us |
 | Stale | ETA moved | "New delivery date: Thu 7 Nov" | — |
 | Long content | Names 2 lines | — | — |
 | Many items | First 3 lines per parcel, "+5 more" | — | — |

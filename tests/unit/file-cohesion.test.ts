@@ -51,6 +51,14 @@ const RECORDED: Record<string, { domains: string[]; why: string }> = {
       "took that file from eight domains to two. Nothing here may throw: the gateway already " +
       "has the money.",
   },
+  "server/checkout/cancel-give-back.ts": {
+    domains: ["payments", "payouts", "promotions"],
+    why:
+      "The money a parcel cancel gives back, as one seam (order-fulfilment D12–D14, D16): the offer " +
+      "budget and coupon (promotions), the refund owed (payments) and the shop's fee (payouts). " +
+      "Split, a second cancel path could run some give-backs and not others. Narrowed from a " +
+      "five-domain `parcel-moved.ts` at review; this entry awaits the owner's acceptance (decisions Q37).",
+  },
   "server/payouts/ledger.service.ts": {
     domains: ["catalog", "checkout", "promotions"],
     why:

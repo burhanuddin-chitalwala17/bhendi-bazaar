@@ -1,6 +1,8 @@
 import { appUrl } from "@server/shared/app-url";
 import { calendarDay, indiaMoment } from "@server/shared/india-time";
 import { NOTICE_KIND, type NoticeKind, type ParcelNoticeData } from "../notice.types";
+import { PARCEL_ACTOR } from "@server/shipping/domain/shipping.types";
+import { formatPaise } from "../formatters";
 import { button, esc, paragraph, renderEmail } from "./layout";
 
 export interface RenderedNotice {
@@ -14,6 +16,13 @@ const adminLink = (d: ParcelNoticeData) => `${appUrl()}/admin/orders/${encodeURI
 const buyerLink = (d: ParcelNoticeData) => `${appUrl()}/order/${encodeURIComponent(d.orderId)}`;
 const day = (value: string | undefined) => (value ? calendarDay(value) : "");
 const courier = (d: ParcelNoticeData) => d.courierName || "The courier";
+
+/** "{Who} cancelled {items}." (ux.md Emails): the buyer's own cancel, the shop's, or ours. */
+function cancelledLine(d: ParcelNoticeData): string {
+  if (d.cancelledBy === PARCEL_ACTOR.BUYER) return `You cancelled your items from ${d.shopName}.`;
+  if (d.cancelledBy === PARCEL_ACTOR.SHOP) return `${d.shopName || "The shop"} cancelled your items.`;
+  return `We cancelled your items from ${d.shopName}.`;
+}
 
 /** "3 days" — the admin's own email goes out whenever they press it, so the age is counted. */
 function paidAgo(d: ParcelNoticeData): string {
@@ -115,6 +124,30 @@ export function renderParcelNotice(kind: NoticeKind, d: ParcelNoticeData): Rende
             ${button(shopLink(d), "Open the parcel")}`,
         }),
       };
+    case NOTICE_KIND.CANCELLED_BUYER: {
+      const refund = d.refundPaise ? ` Your refund of ${formatPaise(d.refundPaise)} is on its way.` : "";
+      return {
+        subject: `Order ${d.orderCode} cancelled`,
+        html: renderEmail({
+          title: `Order ${esc(d.orderCode)} cancelled`,
+          body: `
+            ${paragraph(`${esc(cancelledLine(d))}${esc(refund)}`)}
+            ${button(buyerLink(d), "View your order")}`,
+        }),
+      };
+    }
+    case NOTICE_KIND.CANCELLED_SHOP: {
+      const fee = d.cancelledBy === PARCEL_ACTOR.SHOP && d.feePaise ? ` ${formatPaise(d.feePaise)} cancellation fee taken from your earnings.` : "";
+      return {
+        subject: `Parcel ${d.parcelCode} cancelled`,
+        html: renderEmail({
+          title: `Parcel ${esc(d.parcelCode)} cancelled`,
+          body: `
+            ${paragraph(`Don't send this parcel. Its stock is back on sale.${esc(fee)}`)}
+            ${button(shopLink(d), "Open the parcel")}`,
+        }),
+      };
+    }
     case NOTICE_KIND.DELIVERED:
       return {
         subject: `Delivered: order ${d.orderCode}`,

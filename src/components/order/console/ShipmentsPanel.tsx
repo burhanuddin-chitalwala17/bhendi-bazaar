@@ -17,15 +17,18 @@ import {
 
 /**
  * The parcels on an order: each one's booking, its timeline, and what the admin can do at its
- * stage (order-fulfilment D11) — book, re-date, mark picked up. A server component; the actions
+ * stage (order-fulfilment D11, D12) — book, re-date, mark picked up, cancel. A server component; the actions
  * are leaves ([ADR-0034]). The tracking form it held went with unit 3.
  */
 export function ShipmentsPanel({
   shipments,
   timelines,
+  paid,
 }: {
   shipments: AdminShipmentView[];
   timelines: Record<string, ParcelTimelineDto>;
+  /** Only a paid order's parcel can be cancelled (Q9, A8); an unpaid one shows no cancel. */
+  paid: boolean;
 }) {
   return (
     <div className="space-y-6">
@@ -104,7 +107,7 @@ export function ShipmentsPanel({
               </div>
             )}
 
-            <PickupActions parcel={{ ...shipment, shipmentId: shipment.id }} />
+            {paid && <PickupActions parcel={{ ...shipment, shipmentId: shipment.id }} />}
 
             <div className="border-t pt-4">
               <ParcelTimeline timeline={timelines[shipment.id]} reader={TIMELINE_READER.ADMIN} />

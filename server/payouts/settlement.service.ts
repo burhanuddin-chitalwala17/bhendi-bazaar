@@ -29,6 +29,12 @@ export interface EntryEdit {
   note?: string;
 }
 
+/** Why a settlement is refused (order-fulfilment D15). */
+export const SETTLEMENT_REFUSALS = {
+  leavesDebt: "Include every negative entry for this shop — fees and reversals are taken from this payout.",
+  notAboveZero: "This payout would be ₹0 or less. The shop's fees and reversals carry forward until its earnings cover them.",
+} as const;
+
 export class SettlementService {
   /** An entry is fixed once the settlement holding it has been paid (D8). */
   private async assertEditable(entryId: string) {
@@ -135,6 +141,12 @@ export class SettlementService {
       }
 
       const amountPaise = entries.reduce((sum, entry) => sum + entry.payablePaise, 0);
+      // A fee or reversal carries forward against future earnings; no payout is ever at or below
+      // zero, and none may leave the shop's debt behind (order-fulfilment D15, Q27, Q34).
+      if (await ledgerRepository.unsettledNegativesOutside(input.orgId, input.entryIds, tx)) {
+        throw new DomainError(SETTLEMENT_REFUSALS.leavesDebt);
+      }
+      if (amountPaise <= 0) throw new DomainError(SETTLEMENT_REFUSALS.notAboveZero);
       const count = await ledgerRepository.countSettlements(input.orgId, tx);
 
       const settlement = await ledgerRepository.createSettlement(

@@ -899,8 +899,10 @@ model Order {
 
   /// One row per offer that touched this order, carrying who funded it (ADR-0019).
   /// `discount` above is their sum — a display total, never an input to settlement.
-  discounts     OrderDiscount[]
-  ledgerEntries OrgLedgerEntry[]
+  discounts      OrderDiscount[]
+  ledgerEntries  OrgLedgerEntry[]
+  refunds        Refund[]
+  budgetReleases PromotionBudgetRelease[]
 
   @@index([userId])
   @@index([code])
@@ -1036,6 +1038,8 @@ model Shipment {
   ledgerEntries  OrgLedgerEntry[]
   parcelEvents   ParcelEvent[]
   notices        Notice[]
+  refund         Refund?
+  budgetReleases PromotionBudgetRelease[]
 
   @@index([orderId])
   @@index([orgId])
@@ -1547,6 +1551,7 @@ model Promotion {
 
   targets        PromotionTarget[]
   orderDiscounts OrderDiscount[]
+  budgetReleases PromotionBudgetRelease[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1620,6 +1625,27 @@ model OrderDiscount {
   @@index([orgId])
 }
 
+/// One release of a platform offer's budget (order-fulfilment D13, Q10, Q33): a parcel's share on
+/// cancel, or the order's whole charge on expiry. Its unique keys are what make a repeat cancel or
+/// a later expiry give nothing back twice — (shipmentId, promotionId) here, and (orderId,
+/// promotionId) where shipmentId is null, a partial index in the migration.
+model PromotionBudgetRelease {
+  id          String    @id @default(cuid())
+  promotionId String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Restrict)
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  /// Null for an expiry's order-level release.
+  shipmentId  String?
+  shipment    Shipment? @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  amountPaise Int
+  createdAt   DateTime  @default(now())
+
+  @@unique([shipmentId, promotionId])
+  @@index([orderId])
+  @@index([promotionId])
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Payouts — what each org earned, what the platform kept, what is still owed
 // (docs/specs/org-payouts/, ADR-0019, ADR-0020)
@@ -1632,6 +1658,8 @@ enum LedgerEntryKind {
   SALE
   REVERSAL
   ADJUSTMENT
+  /// A shop cancelled a paid parcel (order-fulfilment D14): payable = −fee, one per parcel (partial unique).
+  CANCELLATION_FEE
 }
 
 /// What gates editing (payouts D6). DRAFT is editable; once its settlement is paid
@@ -1793,6 +1821,53 @@ model Settlement {
 
   @@index([orgId, status])
   @@index([code])
+}
+
+/// What a shop's cancellation costs it, editable without a deploy (order-fulfilment D14, Q20, Q29).
+/// One row, seeded at ₹50 by its migration; `version` is the compare-and-set a second admin's save
+/// is refused on. The fee charged is copied onto each ledger entry, so an edit never rewrites history.
+model FulfilmentSettings {
+  id                   String   @id @default("default")
+  cancellationFeePaise Int      @default(5000)
+  version              Int      @default(0)
+  /// Who saved it last, copied at the time ("Last changed by {name}, {date}"); the audit log holds the rest.
+  updatedByName        String?
+  updatedAt            DateTime @updatedAt
+}
+
+/// What a refund moves through (order-fulfilment D16, D17). U5 writes OWED; the button (U6) the rest.
+enum RefundState {
+  OWED
+  REQUESTED
+  STARTED
+  UNCONFIRMED
+  FAILED
+}
+
+/// The refund one parcel is owed (order-fulfilment D16, Q11, Q25), one per parcel. The amount is
+/// the server's — the parcel's lines less their discount share, plus its shipping — capped so an
+/// order's rows never pass what was captured. Money-bearing, so nothing cascades (ADR-0020), and
+/// `Order.paymentStatus` is never touched by it.
+model Refund {
+  id              String      @id @default(cuid())
+  orderId         String
+  order           Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  shipmentId      String      @unique
+  shipment        Shipment    @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  amountPaise     Int
+  /// The parcel state that made it owed: one of REFUND_CAUSE (server/payments/refund.types.ts).
+  cause           String
+  state           RefundState @default(OWED)
+  /// The gateway's refund id once started (U6), and its refusal when it refused.
+  gatewayRefundId String?
+  failureReason   String?
+  requestedAt     DateTime?
+  startedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([state, createdAt])
+  @@index([orderId])
 }
 
 /// The storefront's hero banners. Platform-owned shelf space: an org promoting its own

@@ -1,6 +1,6 @@
 # CLAUDE.md — payments domain
 
-- **Verified:** 2026-09-29
+- **Verified:** 2026-11-01
 - **Covers:** `server/payments/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC and the seven Project Invariants. This file covers **payments** only.
@@ -10,7 +10,7 @@ Payments owns the conversation with the gateway and the single fact that follows
 
 ## Boundaries
 
-**Owns:** `server/payments/**` — `payment.service.ts`, `payment.types.ts`, and `providers/razorpay/` as the gateway adapter.
+**Owns:** `server/payments/**` — `payment.service.ts`, `payment.types.ts`, and `providers/razorpay/` as the gateway adapter; and the `Refund` table — `refund.service.ts`, `refund.repository.ts`, `refund.types.ts` — the refund one parcel is owed ([order-fulfilment](../../docs/specs/own-store/order-fulfilment/) D16).
 
 **Does not own:** what the amount should be. That is computed by `checkout` from catalogue prices ([ADR-0002](../../docs/adr/0002-server-holds-pricing-authority.md)); payments reads the persisted order and charges that.
 
@@ -25,6 +25,7 @@ Payments owns the conversation with the gateway and the single fact that follows
 - **A reservation is released only after the gateway is asked, and never while a payment is in flight.** `releaseIfUnpaid` is the single routine; the browser, a blocked checkout and the worker's hourly sweep are triggers that decide nothing. `confirmPaid` refuses an expired order, so an early release turns a real payment into a manual refund ([checkout-abandonment](../../docs/specs/checkout-abandonment/)).
 - **Never accept `paymentStatus` from a request body**, at creation or update ([`/CLAUDE.md`](../../CLAUDE.md) Invariant 4).
 - **Throw `DomainError` for anything a user should see**, `NotFoundError` / `ConflictError` as appropriate. A bare `throw new Error(...)` is treated as an internal fault and reported generically — correct for a config or code failure, wrong for "insufficient stock" ([ADR-0013](../../docs/adr/0013-one-error-envelope-and-useserverform.md)).
+- **A refund owed is an entitlement, not a payment undone.** One `Refund` row per parcel (unique `shipmentId`), written on the cancel's transaction; checkout computes the amount and caps it at what was captured (Q11). Nothing here writes `paymentStatus`, and nothing cascades onto a refund ([ADR-0020](../../docs/adr/0020-money-bearing-records-never-cascade.md)). Starting one at the gateway is order-fulfilment unit 6.
 - **No `any` in this tree.**
 
 ## The adapter boundary

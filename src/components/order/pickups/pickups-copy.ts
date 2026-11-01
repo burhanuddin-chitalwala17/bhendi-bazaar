@@ -125,3 +125,16 @@ export const CONFLICT_COPY = {
   updates: (n: number) => `${n} updates`,
   dismissedBy: (name: string) => `Dismissed by ${name}`,
 } as const;
+
+/** ux.md "admin cancel sheet", exactly as signed off. */
+export const ADMIN_CANCEL_COPY = {
+  open: "Cancel parcel",
+  title: "Cancel parcel",
+  intro: "Why are you cancelling? The buyer gets a full refund. No fee for the shop.",
+  confirm: "Cancel parcel",
+  cancelling: "Cancelling…",
+  keep: "Keep parcel",
+  success: "Parcel cancelled. Buyer and shop emailed.",
+  successBooked: (awb: string) => `Cancelled. Now cancel AWB ${awb} on Shiprocket.`,
+  openShiprocket: "Open Shiprocket",
+} as const;

@@ -1,4 +1,5 @@
 import { SHIPMENT_STATUS, type ShipmentStatus } from "@server/shipping/domain/shipping.types";
+import { formatCurrency } from "@/lib/format";
 import { SHOP_PARCEL_TAB, type ShopParcelTab } from "@server/checkout/shop-parcel.types";
 
 /** Shop orders and shop parcel copy, exactly as order-fulfilment ux.md signs it off. */
@@ -93,3 +94,25 @@ const SHOP_STATUS_SHORT: Record<ShipmentStatus, string> = {
   [SHIPMENT_STATUS.DAMAGED]: "Done",
   [SHIPMENT_STATUS.CANCELLED]: "Cancelled",
 };
+
+/** ux.md "Shop cancel sheet", exactly as signed off. Money is whole rupees, as the shop reads it. */
+export const SHOP_CANCEL_COPY = {
+  open: "Cancel parcel",
+  title: "Cancel parcel",
+  intro: (feePaise: number) =>
+    feePaise > 0
+      ? `Why are you cancelling? The buyer gets a full refund and ${formatCurrency(feePaise)} is taken from your earnings.`
+      : "Why are you cancelling? The buyer gets a full refund.",
+  confirm: "Cancel parcel",
+  cancelling: "Cancelling…",
+  keep: "Keep parcel",
+  /** ux.md "Refused: cancel after ready" — tapped on a parcel the page already shows ready. */
+  afterReady: "This parcel is marked ready, so it can't be cancelled here. Contact us and we'll help.",
+  success: (feePaise: number) =>
+    `Parcel cancelled. Stock is back on sale and the buyer will be refunded.${feePaise > 0 ? ` ${feeLine(feePaise)}` : ""}`,
+  feeLine: (feePaise: number) => feeLine(feePaise),
+} as const;
+
+function feeLine(feePaise: number): string {
+  return `${formatCurrency(feePaise)} cancellation fee taken from your earnings.`;
+}

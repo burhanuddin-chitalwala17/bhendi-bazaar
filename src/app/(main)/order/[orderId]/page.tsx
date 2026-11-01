@@ -20,11 +20,13 @@ export default async function OrderPage({ params }: OrderPageProps) {
     return <ErrorState message="Order not found" />;
   }
 
-  const timelines = await ordersDAL.timelinesFor(order);
+  const [timelines, cancelView] = await Promise.all([ordersDAL.timelinesFor(order), ordersDAL.cancelViewFor(order)]);
+  // Only the signed-in owner cancels here; a guest's page is readable by id alone (Q31).
+  const viewerOwns = Boolean(session?.user?.id && order.userId === session.user.id);
 
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <OrderClient order={order} timelines={timelines} />
+      <OrderClient order={order} timelines={timelines} cancelView={cancelView} viewerOwns={viewerOwns} />
     </Suspense>
   );
 }

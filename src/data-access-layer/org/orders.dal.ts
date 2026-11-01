@@ -9,6 +9,7 @@ import {
 } from "@server/checkout/shop-parcel.types";
 import { SHIPMENT_STATUS } from "@server/shipping/domain/shipping.types";
 import { parcelTimelines, type ParcelTimelineDto } from "@server/checkout/parcel-timeline";
+import { shopCancelFees } from "@server/checkout/shop-cancel-fees";
 
 export type { ShopOrderView, ShopParcelView, ShopParcelTab } from "@server/checkout/shop-parcel.types";
 
@@ -40,6 +41,15 @@ class OrgOrdersDAL {
   timelines = cache(async (orderId: string, orgId: string): Promise<Record<string, ParcelTimelineDto>> => {
     const order = await this.getOrder(orderId, orgId);
     return order ? await parcelTimelines(order.parcels) : {};
+  });
+
+  /**
+   * What cancelling costs this shop (D14): the fee a cancel would charge now, and what each of its
+   * cancelled parcels in the order was charged.
+   */
+  cancelFees = cache(async (orderId: string, orgId: string): Promise<{ feePaise: number; charged: Record<string, number> }> => {
+    const order = await this.getOrder(orderId, orgId);
+    return await shopCancelFees((order?.parcels ?? []).map((p) => p.id));
   });
 }
 

@@ -213,6 +213,24 @@ a cancelled parcel, is recorded as a `CourierConflict` and also answered `200`; 
 courier retries (Q32). **`POST /api/admin/courier-conflicts/[id]/dismiss`** (platform admin, no body) dismisses that
 row and every other open row for its AWB; `404` for an unknown id.
 
+Since order-fulfilment unit 5 a paid parcel is cancelled by one of three routes, each answering the refusals in
+ux.md's words as `409` (`CANCEL_REFUSAL`, `server/checkout/parcel-cancel.types.ts`) and any parcel the caller may
+not see as `404`; an unpaid order's parcel is `409` (Q9). **`POST /api/org/[orgId]/shipments/[id]/cancel`**
+(`withOrg`) and **`POST /api/admin/shipments/[id]/cancel`** (platform admin) parse **`shopCancelSchema`**
+(`src/lib/validation/schemas/parcel-cancel.schema.ts`): `reason`, one of `SHOP_CANCEL_REASON` (required, "Pick a
+reason."), and `other`, up to 120 characters, required when the reason is `other` ("Tell us the reason in a few
+words."). The shop may cancel from `packing` and answers `{ feePaise }` (the fee charged); the admin until
+`picked_up` and answers `{ awb }` (null unless it was booked). **`POST /api/orders/[orderId]/shipments/[id]/cancel`**
+(signed-in owner only, `401` without a session, rate-limited under `ORDER`) parses **`buyerCancelSchema`**: optional
+`reason` from `BUYER_CANCEL_REASON` and `other`; it may cancel from `packing` and answers `{ refundPaise }`. No body
+field carries money: what is refunded, restocked or charged is the server's. **`PUT /api/admin/settings/fulfilment`**
+(platform admin) parses **`fulfilmentFeeSchema`**: `feeRupees`, a whole number 0–1,000 ("Enter an amount from ₹0 to
+₹1,000, in whole rupees."), and `seenVersion`; a stale version is `409` "Changed to ₹{fee} by {name} at {time}.
+Check before saving."; it answers the saved **`FulfilmentSettingsView`** `{ feeRupees, feePaise, version,
+updatedByName, updatedAt }`. `ParcelTimelineDto` gains optional `refundStarted`; the buyer's `Shipment` gains
+`org.name`. **`createSettlement`** now refuses (`400`) a selection that leaves any of the org's unsettled negative
+entries behind, or totals ₹0 or less (`SETTLEMENT_REFUSALS`, D15).
+
 ### Shop setup list
 
 Since seller-onboarding unit 3 **`OnboardingStatus`** (`server/catalog/org-onboarding.types.ts`) is

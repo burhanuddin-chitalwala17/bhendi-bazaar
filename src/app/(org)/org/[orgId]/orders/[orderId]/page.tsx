@@ -23,9 +23,10 @@ export default async function OrgOrderDetailPage({ params }: { params: Promise<{
   const order = await orgOrdersDAL.getOrder(orderId, orgId);
   if (!order) notFound();
 
-  const [{ total: shopOrders }, timelines] = await Promise.all([
+  const [{ total: shopOrders }, timelines, fees] = await Promise.all([
     orgOrdersDAL.list(orgId, "all", 1),
     orgOrdersDAL.timelines(orderId, orgId),
+    orgOrdersDAL.cancelFees(orderId, orgId),
   ]);
   const packing = order.parcels.filter((p) => p.status === SHIPMENT_STATUS.PACKING);
 
@@ -49,6 +50,8 @@ export default async function OrgOrderDetailPage({ params }: { params: Promise<{
           firstOrder={shopOrders <= 1}
           docked={packing.length === 1}
           timeline={timelines[parcel.id]}
+          feeNowPaise={fees.feePaise}
+          feePaise={fees.charged[parcel.id]}
         />
       ))}
 

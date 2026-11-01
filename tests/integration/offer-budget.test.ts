@@ -52,6 +52,8 @@ describe.skipIf(!isDisposableDb)("offers: a platform offer's loss confirmation a
     const inOrders = { orderId: { in: orderIds } };
     await prisma.shipmentItem.deleteMany({ where: { shipment: inOrders } });
     await prisma.shipment.deleteMany({ where: inOrders });
+    // An expiry records the budget it gave back (order-fulfilment D13); the row restricts its order.
+    await prisma.promotionBudgetRelease.deleteMany({ where: inOrders });
     await prisma.orderDiscount.deleteMany({ where: inOrders });
     await prisma.orderItem.deleteMany({ where: inOrders });
     await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
@@ -287,6 +289,9 @@ describe.skipIf(!isDisposableDb)("offers: a platform offer's loss confirmation a
 
       expect(await orderRepository.expireAndRestock(first.id)).toBe(true);
       expect(await spent(offer.id)).toBe(0);
+      // order-fulfilment D13: the expiry's give-back is recorded once, order-level, so nothing later releases it again.
+      expect(await prisma.promotionBudgetRelease.findMany({ where: { orderId: first.id }, select: { shipmentId: true, amountPaise: true } }))
+        .toEqual([{ shipmentId: null, amountPaise: 90_000 }]);
 
       await checkout(big, 3);
       // Still ₹100 left: the offer prices the page.

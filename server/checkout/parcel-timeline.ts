@@ -1,6 +1,7 @@
 import { calendarDay, indiaDay, indiaTime } from "@server/shared/india-time";
 import { parcelEventsOf } from "@server/shipping/shipment-status.service";
 import type { ParcelActor, ParcelEventKind, ShipmentStatus } from "@server/shipping/domain/shipping.types";
+import type { ParcelRefund } from "@server/checkout/parcel-cancel.types";
 
 /**
  * One row of a parcel's timeline, as every reader receives it (order-fulfilment D5, R7). The facts
@@ -27,6 +28,8 @@ export interface ParcelTimelineDto {
   courierName: string | null;
   trackingNumber: string | null;
   entries: ParcelTimelineEntry[];
+  /** The buyer's "Cancelled · refund {state}" (ux.md Timeline wording); absent means no refund is owed. */
+  refund?: ParcelRefund;
 }
 
 type EventRow = Awaited<ReturnType<typeof parcelEventsOf>>[number];

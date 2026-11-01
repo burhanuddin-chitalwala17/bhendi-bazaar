@@ -1,6 +1,6 @@
 # TRD — own-store/order-fulfilment
 
-- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01, U3 done 2026-11-01, U4 done 2026-11-01
+- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01, U3 done 2026-11-01, U4 done 2026-11-01, U5 done 2026-11-01
 - **Domain:** cross-domain — checkout (orchestrates), shipping, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -33,6 +33,8 @@ Emails are rows sent by the worker; nudges come from one hourly sweep.
 - **D2 — Conditional move under the order lock (Q28).** `recordTransition` becomes `updateMany {id, status:
   from}`, taking the caller's `tx`; count 0 re-reads only to raise `ConflictError` with the current state.
   Locks run Order (`FOR UPDATE`), Shipment, Promotion, stock, ledger, which keeps `expireAndRestock`'s order.
+  *Built (U5):* a cancel takes the order's Promotion rows before the move, since its restock precedes the
+  budget release and checkout takes Promotion before stock.
 - **D3 — Born `packing`; placeholder gone (Q3).** Deleted: `fulfillOrder`, `mock.booking.ts`, `markBooked`,
   `markBookingFailed`, `recordBooking*`. Migration: `pending`/`confirmed`/`failed` become `picked_up` with
   an AWB and a courier event, else `packing`.
@@ -69,20 +71,24 @@ Emails are rows sent by the worker; nudges come from one hourly sweep.
   confirms pickup. The AWB has a partial unique index. Deleted: the tracking route and its form.
 - **D12 — Cancel (R10–R12, R15; A6–A8; Q31).** One command behind three routes; the shop must give a reason.
   Restock and reversal stay in shipping; `parcel-moved` does the rest. Unpaid orders are refused in the
-  service. A refusal is a `DomainError` with ux.md's copy. Guests cancel via Contact us.
+  service. A refusal is a `DomainError` with ux.md's copy. Guests cancel via Contact us. *Built (U5):*
+  the buyer's route is `POST /api/orders/[orderId]/shipments/[id]/cancel`; `CANCELLABLE_FROM` is checked
+  inside the locked move; the money give-backs are one seam, `cancel-give-back.ts` (Q37).
 - **D13 — Budget, coupon (Q10, Q33).** `PromotionBudgetRelease`, unique (shipmentId, promotionId). Each
   parcel takes its platform-funded share of `budgetChargedPaise` by cumulative floors. Expiry writes an
-  order-level row. Coupon uses come back only when `syncSummary` moves the order to `cancelled`.
+  order-level row. *Built (U5):* the order-level key is a partial index; a share's weight is the parcel's
+  platform-funded paise across the shop's lines, since `OrderDiscount` is per offer and shop, not per line. Coupon uses come back only when `syncSummary` moves the order to `cancelled`.
 - **D14 — Fee (R12a; A12; Q20, Q29).** A `CANCELLATION_FEE` ledger entry, payable = −fee, copied at the
   time; one per parcel (partial unique). The amount sits in `FulfilmentSettings` (payouts), seeded at ₹50
-  by a migration. `PUT /api/admin/settings/fulfilment` takes ₹0–1,000, compare-and-set, audited. Counts
+  by a migration. *Built (U5):* the enum value has its own migration (Postgres cannot index a value in the
+  transaction that adds it); a ₹0 fee writes no entry. `PUT /api/admin/settings/fulfilment` takes ₹0–1,000, compare-and-set, audited. Counts
   come from `ParcelEvent`.
 - **D15 — Carry-forward (R12b; Q27, Q34).** `createSettlement` refuses a total ≤ 0, or one that omits the
   org's unsettled negative entries.
 - **D16 — Refund owed (R13; Q11, Q25).** `Refund` (payments, never cascaded), one per parcel: OWED,
   REQUESTED, STARTED, UNCONFIRMED, FAILED. Written on any `refundOwed` move. The amount is the lines less
   their discount share, plus `shippingCost`, capped at `grandTotal` less existing rows. `paymentStatus` is
-  never touched.
+  never touched. *Built (U5):* a ₹0 amount writes no row; the table holds U6's columns already.
 - **D17 — Refund button (R14; A9; Q12).** `POST /api/admin/refunds/[id]/start` moves OWED to REQUESTED
   conditionally, then calls Razorpay with `receipt` = row id. Its refund docs (read 2026-10-30) say
   "`receipt` is treated as an idempotency key" per payment; no `X-Refund-Idempotency` header is documented.

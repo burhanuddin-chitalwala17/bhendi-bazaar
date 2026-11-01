@@ -7,6 +7,8 @@ import { orderService } from "@server/checkout/order.service";
 import { Order, Shipment } from "@/domain/order";
 import { OrderAddress } from "@/domain/order";
 import { parcelTimelines, type ParcelTimelineDto } from "@server/checkout/parcel-timeline";
+import { buyerCancelView, type BuyerCancelView } from "@server/checkout/buyer-cancel-view";
+import { ORDER_STATUS } from "@server/checkout/order.types";
 
 /** One row → the client-facing shape, shared by both reads below. */
 function toOrder(row: Awaited<ReturnType<typeof orderService.getOrderById>>): Order {
@@ -69,6 +71,11 @@ export const ordersDAL = {
       console.error("Failed to fetch order:", error);
       return null;
     }
+  },
+
+  /** Refunds owed, what a cancel would give back, and the coupon line (order-fulfilment R10–R13). */
+  cancelViewFor: async (order: Order): Promise<BuyerCancelView> => {
+    return await buyerCancelView(order.id, order.status === ORDER_STATUS.CANCELLED);
   },
 
   /** Each parcel's timeline (order-fulfilment R7), for an order the caller has already read. */

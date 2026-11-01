@@ -5,6 +5,7 @@ import { NOTICE_KIND } from "@server/notifications/notice.types";
 import { formatPhone } from "@server/shared/phone";
 import { cn } from "@/lib/utils";
 import { EmailShopButton } from "./email-shop-button";
+import { AdminCancelParcel } from "./admin-cancel-parcel";
 import { OVERDUE_RED_HOURS, nudgeLine, paidAgoLine } from "./pickups-copy";
 
 /** ux.md "admin not-packed flag": cards on phone and tablet, a table at `lg:`. */
@@ -47,7 +48,10 @@ export function NotPackedList({ rows, now }: { rows: NotPackedRow[]; now: number
               <p className="break-words">{shop}</p>
               <p className="text-muted-foreground">{nudges}</p>
             </div>
-            <EmailShopButton shipmentId={row.shipmentId} />
+            <div className="flex flex-wrap gap-2">
+              <EmailShopButton shipmentId={row.shipmentId} />
+              <AdminCancelParcel shipmentId={row.shipmentId} />
+            </div>
           </li>
         ))}
       </ul>
@@ -69,7 +73,10 @@ export function NotPackedList({ rows, now }: { rows: NotPackedRow[]; now: number
               <td className="max-w-xs break-words py-2">{shop}</td>
               <td className="py-2 text-muted-foreground">{nudges}</td>
               <td className="py-2 text-right">
-                <EmailShopButton shipmentId={row.shipmentId} />
+                <div className="flex flex-wrap justify-end gap-2">
+                  <EmailShopButton shipmentId={row.shipmentId} />
+                  <AdminCancelParcel shipmentId={row.shipmentId} />
+                </div>
               </td>
             </tr>
           ))}

@@ -42,6 +42,7 @@ class NoticeService {
       since: input.since.toISOString(),
       at: new Date().toISOString(),
       ...Object.fromEntries(Object.entries(input.booking ?? {}).filter(([, v]) => v)),
+      ...(input.cancel ?? {}),
     };
     const row = await noticeRepository.insertOnce(
       { shipmentId: input.shipmentId, kind: input.kind, audience, recipient, data, ref: input.ref ?? "" },

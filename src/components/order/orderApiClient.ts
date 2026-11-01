@@ -2,6 +2,7 @@ import { apiRequest } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-error";
 import type { Order } from "@/domain/order";
 import type { DeliveryAddress } from "@/domain/profile";
+import type { BuyerCancelInput } from "@/lib/validation/schemas/parcel-cancel.schema";
 
 /** One shipping group as the create-order wire accepts it: lines are product + quantity, priced server-side. */
 export interface ShippingGroupPayload {
@@ -46,6 +47,11 @@ export const orderApiClient = {
         error.details,
       );
     }
+  },
+
+  /** The buyer cancels one parcel of their own order (order-fulfilment D12); the reason is optional. */
+  cancelParcel(orderId: string, shipmentId: string, body: BuyerCancelInput): Promise<{ refundPaise: number }> {
+    return apiRequest(`/api/orders/${orderId}/shipments/${shipmentId}/cancel`, { method: "POST", body });
   },
 
   /** The envelope's field details survive, so a validation failure names its field (ADR-0013). */
