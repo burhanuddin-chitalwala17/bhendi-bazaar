@@ -6,9 +6,8 @@
  * (checkout-abandonment D1/D2). A browser that never calls this changes nothing —
  * the sweep reaches the same conclusion later.
  */
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { paymentService } from "@server/payments/payment.service";
 import { abandonPaymentSchema } from "@/lib/validation/schemas/payment.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -16,7 +15,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 export async function POST(request: NextRequest) {
   try {
     const body = abandonPaymentSchema.parse(await request.json());
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
 
     const result = await paymentService.releaseIfUnpaid(body.localOrderId, {
       userId: session?.user?.id ?? null,

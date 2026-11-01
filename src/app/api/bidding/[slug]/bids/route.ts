@@ -14,9 +14,8 @@
  * (`src/lib/rate-limit/`, spec H8). What caps a bad-faith bidder here is the organisation's
  * maximum increase, which bounds how far one bid can move the price.
  */
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { biddingService } from "@server/bidding/bidding.service";
 import { placeBidSchema } from "@/lib/validation/schemas/bidding.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -30,7 +29,7 @@ export async function POST(
   try {
     const { slug } = await params;
     const body = placeBidSchema.parse(await request.json());
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
 
     const bidder: BidderIdentity = session?.user?.id
       ? { kind: "user", userId: session.user.id }

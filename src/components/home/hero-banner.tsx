@@ -61,7 +61,7 @@ export function HeroBanner({
             src={image.src}
             alt={image.alt}
             fill
-            priority={priority}
+            preload={priority}
             sizes="(min-width: 1024px) 72rem, 100vw"
             className="-z-10 object-cover"
           />

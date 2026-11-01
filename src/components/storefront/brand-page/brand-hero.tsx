@@ -28,10 +28,10 @@ export function BrandHero({ page }: { page: BrandPage }) {
             alt={`${page.name} cover`}
             fill
             // Honest about the slot (ADR-0026): the page is PageShell width="narrow", so
-            // the picture caps at 48rem. It is the page's LCP, hence `priority`.
+            // the picture caps at 48rem. It is the page's LCP, hence `preload`.
             sizes="(min-width: 768px) 48rem, 100vw"
             className="object-cover"
-            priority
+            preload
           />
         </div>
       )}

@@ -1,6 +1,6 @@
 # CLAUDE.md — the front end
 
-- **Verified:** 2026-10-29
+- **Verified:** 2026-10-31
 - **Covers:** `src/components/**`, `src/hooks/**`, `src/app/globals.css`
 
 > Read the root [`/CLAUDE.md`](../../CLAUDE.md) first. This file loads when a component is read, so its rules are in front of you while you write one. Each rule names the test that enforces it; a rule with no test says so.
@@ -27,6 +27,8 @@ Each layer reads only from the one above. A component that skips a layer is the 
 - **Props are DTOs.** Never `@prisma/client` or a repository, type-only included; shapes come from a domain's `*.types` or `src/domain/`. `tests/unit/module-boundaries.test.ts`
 - **`"use client"` is earned by interactivity** and goes on the smallest leaf. A page or layout never has it. `tests/unit/rendering-strategy.test.ts`
 - **A field and its error are bound together.** Every registered field shows its error. `tests/unit/form-error-display.test.ts`
+- **A double tap is one request.** `useMutation` joins a call already in flight *with the same variables* (another row is another request); `useServerForm` joins any second submit. A busy control is `Button pending` (buttons only, not `asChild`), never `disabled`, and the `disabled={…busy}` count only falls. `apiRequest` times out at 30 s, or `TRANSFER_TIMEOUT_MS` for files and bulk rows, and a write that timed out says it may still land. `tests/unit/double-submit.test.tsx`
+- **The cart is read after mount.** `hasHydrated` is false through the first render; anything that acts on the cart once (a checkout snapshot, the sign-in merge) waits for it, and nothing is saved before it is read. `tests/unit/double-submit.test.tsx`
 
 ## Appearance
 

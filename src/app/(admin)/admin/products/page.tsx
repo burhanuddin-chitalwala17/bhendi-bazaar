@@ -14,7 +14,7 @@ export const revalidate = 300;
 
 // ⚡ Generate metadata for SEO
 export const metadata: Metadata = {
-  title: "Products Management | Admin",
+  title: "Admin: products",
   description: "Manage your product catalog",
   robots: { index: false, follow: false }, // Don't index admin pages
 };

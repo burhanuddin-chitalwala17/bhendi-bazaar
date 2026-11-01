@@ -37,7 +37,8 @@ export const metadata: Metadata = {
   // Makes the root-relative brand paths below absolute, which is what a scraper needs —
   // without it Next resolves them against the deployment URL, not the custom domain.
   metadataBase: new URL(appUrl()),
-  title: APP_NAME,
+  // Pages give their own name; the template adds the brand once, everywhere (B10).
+  title: { default: APP_NAME, template: `%s — ${APP_NAME}` },
   description: APP_DESCRIPTION,
   icons: {
     // `type` says what the file is, not what we wish it were: these are the SVG, and

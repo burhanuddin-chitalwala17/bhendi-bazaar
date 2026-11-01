@@ -16,6 +16,7 @@ import {
   withTranscodeLock,
   type TranscodedFile,
 } from "@server/catalog/video-transcode";
+import { OUTBOUND_TIMEOUT_MS } from "@server/shared/deadline";
 
 
 /** A derived asset's `transform`, as this job writes it: which rendition, or the poster. */
@@ -55,7 +56,8 @@ export async function transcodeAsset(assetId: string, jobId: string): Promise<vo
   const dir = await mkdtemp(join(tmpdir(), "bb-transcode-"));
   try {
     const sourcePath = join(dir, `source${extname(objectKey) || ".bin"}`);
-    await writeFile(sourcePath, await getObject(objectKey));
+    // A source can be 200 MB (VIDEO_LIMITS); an image's 60 s would fail it the same way every retry.
+    await writeFile(sourcePath, await getObject(objectKey, { timeoutMs: OUTBOUND_TIMEOUT_MS.bulk }));
 
     let probe;
     try {

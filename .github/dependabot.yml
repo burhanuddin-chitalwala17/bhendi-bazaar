@@ -1,0 +1,19 @@
+# Security updates for npm and the pinned actions (docs/GTM-READINESS.md B1, B8). Weekly, grouped,
+# so a pinned SHA is bumped by a reviewed PR rather than drifting.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      next:
+        patterns: ["next", "eslint-config-next", "@next/*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

@@ -14,6 +14,7 @@ export function useCartSync() {
   const { data: session, status } = useSession();
   const setItems = useCartStore((state) => state.setItems);
   const items = useCartStore((state) => state.items);
+  const hasHydrated = useCartStore((state) => state.hasHydrated);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   
@@ -98,8 +99,10 @@ export function useCartSync() {
     }
   }, [session?.user?.id, items, syncCart]);
 
-  // Sync on login
+  // Sync on login, once this device's saved cart has been read: merging before that would send
+  // an empty basket and keep only the server's lines.
   useEffect(() => {
+    if (!hasHydrated) return;
     const wasUnauthenticated = prevStatusRef.current !== "authenticated";
     const isNowAuthenticated = status === "authenticated";
     
@@ -108,7 +111,7 @@ export function useCartSync() {
     }
     
     prevStatusRef.current = status;
-  }, [session?.user?.id, status, syncCart]);
+  }, [session?.user?.id, status, syncCart, hasHydrated]);
 
   // Background updates (debounced). updateCart is reached through a ref so the
   // effect fires only when the debounced value settles — with updateCart itself

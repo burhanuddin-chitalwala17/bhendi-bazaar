@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState, type BaseSyntheticEvent } from "react";
 import { useForm, type DefaultValues, type FieldValues, type Path } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -47,7 +47,7 @@ export function useServerForm<T extends FieldValues>({
   // permission failure, an internal fault. Without this they would vanish.
   const [formError, setFormError] = useState<string | null>(null);
 
-  const onSubmit = form.handleSubmit(async (data) => {
+  const handleSubmit = form.handleSubmit(async (data) => {
     setFormError(null);
     try {
       const result = await submit(data);
@@ -82,6 +82,24 @@ export function useServerForm<T extends FieldValues>({
     console.warn("[useServerForm] validation blocked submit:", validationErrors);
     setFormError("Please fix the highlighted fields and try again.");
   });
+
+  // A second submit while one is in flight joins it: a double tap or an Enter held down is one
+  // request, and the button stays enabled (docs/GTM-READINESS.md B9).
+  const inFlight = useRef<Promise<void> | null>(null);
+  const onSubmit = useCallback(
+    (event?: BaseSyntheticEvent) => {
+      if (inFlight.current) {
+        event?.preventDefault?.();
+        return inFlight.current;
+      }
+      const pending = handleSubmit(event).finally(() => {
+        inFlight.current = null;
+      });
+      inFlight.current = pending;
+      return pending;
+    },
+    [handleSubmit]
+  );
 
   const clearFormError = useCallback(() => setFormError(null), []);
 

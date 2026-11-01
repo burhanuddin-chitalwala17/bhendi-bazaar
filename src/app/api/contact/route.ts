@@ -1,7 +1,6 @@
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
 import { toErrorResponse } from "@/lib/api-error-response";
 import { getRateLimitIdentifier, withRateLimit } from "@/lib/rate-limit";
 import {
@@ -21,7 +20,7 @@ import { emailService } from "@server/notifications/email.service";
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const accountEmail = session?.user?.email ?? null;
 
     const limited = await withRateLimit(

@@ -13,6 +13,7 @@
 
 import { AwsClient } from "aws4fetch";
 import { DomainError } from "@server/shared/domain-error";
+import { OUTBOUND_TIMEOUT_MS, transferTimeoutFor } from "@server/shared/deadline";
 
 function required(name: string): string {
   const value = process.env[name];
@@ -84,6 +85,7 @@ export async function putObject(
 ): Promise<string> {
   const response = await client().client.fetch(objectUrl(pathname), {
     method: "PUT",
+    signal: AbortSignal.timeout(transferTimeoutFor(body.byteLength)),
     body: new Uint8Array(body),
     headers: {
       "content-type": contentType,
@@ -108,7 +110,10 @@ export async function putObject(
 export async function headObject(
   pathname: string
 ): Promise<{ contentLength: number; contentType: string } | null> {
-  const response = await client().client.fetch(objectUrl(pathname), { method: "HEAD" });
+  const response = await client().client.fetch(objectUrl(pathname), {
+    method: "HEAD",
+    signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.quick),
+  });
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`Could not inspect ${pathname}: ${response.status}`);
@@ -120,8 +125,14 @@ export async function headObject(
 }
 
 /** The bytes at a pathname — for reading dimensions the browser could not send, never for serving. */
-export async function getObject(pathname: string): Promise<Buffer> {
-  const response = await client().client.fetch(objectUrl(pathname), { method: "GET" });
+export async function getObject(
+  pathname: string,
+  { timeoutMs = OUTBOUND_TIMEOUT_MS.transfer }: { timeoutMs?: number } = {}
+): Promise<Buffer> {
+  const response = await client().client.fetch(objectUrl(pathname), {
+    method: "GET",
+    signal: AbortSignal.timeout(timeoutMs),
+  });
   if (!response.ok) {
     throw new Error(`Could not read ${pathname}: ${response.status}`);
   }
@@ -131,7 +142,10 @@ export async function getObject(pathname: string): Promise<Buffer> {
 export async function deleteObject(url: string): Promise<void> {
   const pathname = pathnameFor(url);
   if (!pathname) return;
-  const response = await client().client.fetch(objectUrl(pathname), { method: "DELETE" });
+  const response = await client().client.fetch(objectUrl(pathname), {
+    method: "DELETE",
+    signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.quick),
+  });
   // 404 is success for a delete: the intent is that it is gone.
   if (!response.ok && response.status !== 404) {
     throw new Error(`Could not delete ${pathname}: ${response.status}`);

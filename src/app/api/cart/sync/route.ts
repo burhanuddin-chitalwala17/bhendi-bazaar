@@ -1,8 +1,8 @@
 // src/app/api/cart/sync/route.ts
 
+import { optionalActiveSession } from "@/lib/admin-auth";
+import { toErrorResponse } from "@/lib/api-error-response";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { cartService } from "@server/cart/cart.service";
 import { updateCartSchema, validateRequest } from "@/lib/validation";
 import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
@@ -13,7 +13,7 @@ import { withRateLimit, getRateLimitIdentifier } from "@/lib/rate-limit";
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -42,6 +42,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(merged, { status: 200 });
   } catch (error) {
     console.error("[API] POST /api/cart/sync failed:", error);
-    return NextResponse.json({ error: "Failed to sync cart" }, { status: 500 });
+    return toErrorResponse(error, "Could not sync the cart");
   }
 }

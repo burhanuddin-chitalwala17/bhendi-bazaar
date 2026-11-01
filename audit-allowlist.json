@@ -1,0 +1,4 @@
+{
+  "$comment": "High/critical advisories in production dependencies that CI may ship with: GHSA id -> { reason, expires (YYYY-MM-DD) }. Empty is the goal. An entry is a review finding (ADR-0056); scripts/audit-prod.mjs refuses one without a reason, past its date, or matching nothing.",
+  "advisories": {}
+}

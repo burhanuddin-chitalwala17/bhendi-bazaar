@@ -4,6 +4,7 @@ import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { accountService } from "@server/identity/account.service";
 import { UnauthorizedError, ForbiddenError } from "@server/shared/domain-error";
+import { credentialFingerprint } from "@/lib/credential-fingerprint";
 
 /**
  * The signed-in session, or a thrown failure.
@@ -16,15 +17,43 @@ import { UnauthorizedError, ForbiddenError } from "@server/shared/domain-error";
 export async function requireSession(): Promise<Session> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) throw new UnauthorizedError();
-
-  const standing = await accountService.findAdminStanding(session.user.id);
-  if (standing?.isBlocked) {
-    throw new ForbiddenError("Your account has been suspended");
-  }
-
+  const verdict = await standingOf(session);
+  if (verdict === "stale") throw new UnauthorizedError("Your session has ended. Please sign in again.");
+  if (verdict === "blocked") throw new ForbiddenError("Your account has been suspended");
   return session;
 }
 
+type Verdict = "active" | "blocked" | "stale";
+
+/** One read: whether the account is suspended, and whether this session predates its password. */
+async function standingOf(session: Session): Promise<Verdict> {
+  const standing = await accountService.findAdminStanding(session.user.id);
+  if (!standing) return "stale";
+  // A changed or cleared password ends every session issued under the old one (pre-hijack, B5).
+  if (session.credential !== credentialFingerprint(standing.passwordHash)) return "stale";
+  return standing.isBlocked ? "blocked" : "active";
+}
+
+/**
+ * The session if its user may act, else null as a guest. A blocked user is refused (403); with
+ * `onBlocked: "guest"` read as a guest; with `"allow"` kept, for what a suspended person may still
+ * do (read their own orders, contact support, release a hold). A stale session is a guest in every
+ * mode. Route handlers read the session through this or `requireSession`, never directly (GTM B5).
+ */
+export async function optionalActiveSession(
+  { onBlocked = "refuse" }: { onBlocked?: "refuse" | "guest" | "allow" } = {},
+): Promise<Session | null> {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+  const verdict = await standingOf(session);
+  if (verdict === "stale") return null;
+  if (verdict === "blocked") {
+    if (onBlocked === "allow") return session;
+    if (onBlocked === "guest") return null;
+    throw new ForbiddenError("Your account has been suspended");
+  }
+  return session;
+}
 
 /**
  * The session, having established that this person runs the platform.

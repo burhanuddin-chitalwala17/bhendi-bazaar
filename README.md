@@ -521,7 +521,7 @@ npx prisma migrate deploy
 
 Update webhook URLs in:
 - **Razorpay**: Dashboard → Webhooks → `https://yourdomain.com/api/webhooks/razorpay`
-- **Shiprocket**: Settings → Webhooks → `https://yourdomain.com/api/webhooks/shipping/shiprocket`
+- **Shiprocket**: Settings → Webhooks → `https://yourdomain.com/api/webhooks/shipping/courier`
 
 7. **Set up domain** (Optional)
 

@@ -10,6 +10,364 @@
 
 ## Entries
 
+## 2026-11-01 — Shiprocket webhook moved to `/api/webhooks/shipping/courier`
+
+- **Shiprocket refuses a webhook URL containing "shiprocket", "kartrocket", "sr" or "kr"** (its webhook
+  settings page, checked 2026-11-01), so `/api/webhooks/shipping/shiprocket` could never be registered.
+  The route is now `/api/webhooks/shipping/courier`; the same-origin exemption, reachability entry, docs
+  and tests follow it, and a test holds the path free of the refused words.
+- **Confirmed in the dashboard:** the token is sent as `x-api-key`, as the B5 code expects.
+- **Owner note:** Shiprocket has one webhook URL per account; at the time of checking it pointed at another
+  integration. Replacing it with ours stops that integration's tracking updates.
+
+## 2026-10-31 — GTM B3: fixes from the review — counts from the dump's own snapshot
+
+- **The drill would have failed against a live database.** The counts were taken in a second session
+  after `pg_dump`, so any write in between (the worker, the queue's maintenance, an abandoned checkout)
+  made them disagree with the dump, and a drill that is usually off teaches everyone to ignore it. The
+  backup now opens one read-only repeatable-read transaction, exports its snapshot, runs
+  `pg_dump --snapshot` on it and counts inside it. **Rehearsed:** 4,000 inserts running during the
+  backup; the snapshot counted 650 and the restore matched it exactly.
+- **Every schema is counted**, the job queue's 12 `pgboss` tables included (75 tables, was 62).
+- **The drill's local-only guard read the URL as text**, so `?application_name=localhost` passed it. It
+  now checks the parsed host, and refuses a database that already has tables.
+- **The counts are encrypted too**; files are written as `.partial` and renamed only on success; the
+  temporary directory is removed; the database password goes through `PG*` variables, never argv;
+  the aws CLI asks for checksums only where R2 needs them.
+- **Corrections to OPERATIONS:** R2 has no write-only token (Read & Write, with Bucket Lock stopping
+  deletion); the drill needs client tools 17+; schedules run only from `main`.
+- **Note:** the B3 entry below landed in the B10-fixes commit, not B3's own; harmless once both merge.
+- **Mutation-tested:** the host check reverted to a substring match (`*localhost*`) turns the guard test
+  red.
+
+## 2026-10-31 — GTM B12: fixes from the review — corrections to the entry below
+
+- **Correction: the lightbox still loaded with the product page.** The reviews section imported it
+  normally, and the gallery rendered it closed, which fetches it after hydration anyway. Both now use
+  `LazyImageLightbox`, which mounts (and fetches) it only while open. Checked on a production build: no
+  script the product page loads contains it.
+- **Correction: "set `DATABASE_POOL_MAX` to 1–3" was unsafe.** A transaction holding one connection can
+  need a second; at 1 the integration suite fails 41 tests, at 2 the concurrent-transaction tests time
+  out. The value is now parsed (`server/shared/pool-size.ts`): a whole number of at least 3, anything else
+  refused with an error and the default used. Advice: 3–5, web only, never the worker.
+- **Similar products failing no longer replaces the product page** with the error screen (the 200 had
+  already been sent); the section is left out and the error logged.
+- **The first gallery image uses `fetchPriority="high"`** rather than `preload`, as B12 and Next's docs
+  advise. Whether the first paint should fetch a 200vw image is ADR-0027's question, not changed here.
+- **Load smoke:** a cart threshold; the checkout keeps no credentials; k6 analytics off.
+- **Tests:** `pool-size.test.ts` (3), `lazy-lightbox.test.tsx` (2). Full suite 2589 passing; journeys 12
+  of 12.
+
+## 2026-10-31 — GTM B10: fixes from the review
+
+- **The markup's price follows the page's rule.** It used `salePrice ?? price`; a promotion larger than
+  the item resolves to 0, which the page (through `effectivePrice`) shows as the list price while the
+  markup said "0.00". It now uses `effectivePrice`, so markup and page cannot disagree (ADR-0018).
+- **No product markup without a product photo.** A product whose only picture is our logo emitted the
+  logo as its image; Google requires the product. The markup is now left out for it.
+- **`Organization.alternateName`** "Bhendi-Bazaar.com", against the neighbourhood of the same name.
+- **Admin titles** no longer read "… | Admin — Bhendi Bazaar"; the navbar logo uses
+  `fetchPriority="high"` instead of preloading against the page's own LCP image.
+- **Wording:** the vocabulary allowlist reason now says schema.org names the property (Google does not
+  require it); the journey no longer claims to guard `htmlLimitedBots`, which the unit test of its
+  pattern does.
+- **Follow-ups, not done:** `ProductGroup` markup for families (ADR-0043) needs a family id and
+  `variesBy` in the DTO; `sku`/`brand` are not in the storefront DTO.
+
+## 2026-10-31 — GTM B3: a nightly encrypted backup, and a drill that proves it restores
+
+- **`.github/workflows/db-backup.yml`**, nightly at 01:47 IST and by hand: `pg_dump` (custom format, client
+  17) over the direct connection, piped straight into `age` encryption to a public key, so no plain dump
+  ever touches disk and the private key never touches CI; exact row counts per table beside it; both
+  uploaded to `db/<year>/<month>/` in a bucket of our own. Under 1 KB, or no counts, fails.
+- **`scripts/backup/db-restore-drill.sh`** decrypts, restores into a local scratch database, recounts
+  every table and fails on any difference; it refuses a non-local target.
+- **Rehearsed here** against the local database: 62 tables, restored with every count matching; a
+  tampered count, the wrong key and a non-local target each failed as they should.
+- **Fails red until configured** (OPERATIONS.md "Backups": key, bucket with Bucket Lock, write-only
+  token, six secrets). A green job that backs up nothing is what this replaces.
+- **Your part:** the setup steps; Prisma Starter for the snapshot layer; the first drill.
+- **Tests:** `deploy-safety.test.ts` (21): the job is scheduled, cannot be made advisory, encrypts to a
+  public key and never names the private one.
+
+## 2026-10-31 — GTM B12 (code part): product page loads sooner, pool size is a setting, a load smoke
+
+- **The product page renders without waiting for similar products**, which now stream in their own
+  Suspense boundary.
+- **The first gallery image is preloaded** (`preload`, Next 16), since it is the page's LCP.
+- **The lightbox's code loads on the tap that opens it** (`next/dynamic`), not with the page.
+- **`DATABASE_POOL_MAX`** sets connections per instance; unset keeps today's 10. **Your part:** switch
+  `DATABASE_URL` to the pooled string (Prisma Postgres pooler or Accelerate, already provisioned), then
+  set this to 1–3.
+- **Load smoke:** `perf/k6-smoke.js` and a manual *Load smoke* workflow (pinned actions,
+  `contents: read`) walk home → category → product → cart at a chosen peak, reads only; fails on >1%
+  errors or p95 over 1.5 s. Not run here (no k6 and no target); run it against the preview.
+- **Not done here:** dropping `libphonenumber` from the client bundle and lazy-loading crop and video
+  need a bundle measurement first, which wants a proper bundle analysis rather than a guess.
+- **Checked:** the journeys (which open a product page and add to cart) pass, 12 of 12.
+
+## 2026-10-31 — GTM B5: fixes from the review — sessions end with their password
+
+- **An attacker's session no longer survives the claim.** A session now carries an HMAC fingerprint of
+  the password it was issued under (keyed by `NEXTAUTH_SECRET`; never the hash). `requireSession` and
+  `optionalActiveSession` compare it on the read they already make: a changed or cleared password ends
+  every older session, so the pre-hijack row is closed without a schema change. **Side effects:**
+  everyone signs in once more after this deploys (older sessions carry no fingerprint, and the attacker's
+  is one of them), and changing your password signs you out everywhere, this device included. The
+  fingerprint is stamped only at sign-in, never on `session.update()`, which a held token could call.
+- **The pages and data reads use the same check** (`orders`, `order`, `wishlist`, `bid`, and the orders,
+  profile, reviews and wishlist data access), so a revoked session cannot read the victim's orders
+  either. Only the root layout reads the session directly, for the header's name and avatar.
+- **Correction to the entry below: forgot-password did not work after a claim.** It sent nothing to an
+  account with no password. It now sends the link to any verified address, so a Google-only account,
+  or one whose unverified password was cleared, can set a password from its own inbox.
+- **Correction: a suspended person could not use the contact form.** The form sends no email when
+  signed in, and the route read them as a guest, so it answered 400. It now keeps the session for
+  contact (`onBlocked: "allow"`), and for releasing a hold and quoting a promotion, which only reduce or
+  read.
+- **Correction: two cart routes answered 500, not 403,** for a suspended account; they now answer through
+  `toErrorResponse`.
+- **`SHIPROCKET_WEBHOOK_TOKEN`** is in the required list (so `/api/health?deep=1` reports it missing) and
+  in both example env files. **Deploy after setting it**, or tracking webhooks are refused meanwhile.
+- **To check in Shiprocket before setting the webhook (unverified here):** the header is `x-api-key`,
+  and reportedly the dashboard refuses a webhook URL containing "shiprocket"; if so, the route needs
+  renaming before the token can be configured. Your call.
+- **Mutation-tested:** the fingerprint check removed, and forgot-password back to refusing no-password
+  accounts: each red, each restored.
+- **Tests:** `blocked-session.test.ts` (10), `google-prehijack.test.ts` (5); the session fixtures in
+  `admin-auth`, `contact-email` and `review-routes` now carry the fingerprint a real session would.
+
+## 2026-10-31 — GTM B10: structured data, one title template, Google reads the head
+
+- **Product markup** (`Product` + `Offer`) on every product page: the price is what the buyer pays (the
+  offer price when one applies, from the same resolver that charges, ADR-0018), written from paise by
+  `paiseToDecimal` without division (Invariant 3); out of stock when there is none or the item is up for
+  bidding; the selling org named. `BreadcrumbList` on category pages; `Organization` and `WebSite` with a
+  search action on `/s?q=` on the home page. Serialised with `<` escaped (`src/lib/structured-data.ts`).
+- **One title template** in the root layout (`%s — Bhendi Bazaar`); product and category pages give their
+  own name, social cards keep the full title.
+- **Googlebot gets metadata in `<head>`**: `htmlLimitedBots` is Next's own list plus Googlebot, so the
+  canonical and title are not streamed into `<body>`.
+- **Product soft 404 closed in metadata too:** `generateMetadata` calls `notFound()` instead of returning
+  the site card.
+- **`priority` → `preload`** on `next/image` (deprecated in 16).
+- **Waiting on you:** `BRAND_PROFILES` in `src/lib/config.ts` (official Amazon, Flipkart, Meesho,
+  Instagram and Google Business Profile URLs) for `sameAs`; and the return window, return shipping and
+  delivery cost and times for `MerchantReturnPolicy` / `OfferShippingDetails`, which are not in the code
+  as data. Ratings markup waits for a review floor (90-day plan).
+- **Allowlist edit (ADR-0056, a review finding):** `vocabulary.test.ts` exempts schema.org's `seller` property in `src/lib/structured-data.ts` only; Google requires that name, and our own prose there still says org.
+- **Tests:** `structured-data.test.ts` (9); a new journey asks for a product as Googlebot and checks the
+  canonical and title are in `<head>` and the markup's price and availability. Journeys 12 of 12.
+
+## 2026-10-31 — GTM B7: fixes from the review
+
+- **Fixed a regression from the B7 entry: video sources failed on a 60 s deadline.** A 200 MB source
+  needs about 28 Mbit/s to arrive in a minute, so a large but legal upload would have failed every retry
+  and stayed PROCESSING. `putObject` now scales its deadline with the bytes it sends (floor 256 KB/s, at
+  least 60 s), and the video job reads its source on `OUTBOUND_TIMEOUT_MS.bulk` (15 min).
+- **The startup check reaches someone.** `/api/health?deep=1` answers 503 with `config: "incomplete"`
+  when a required variable is missing, so the uptime monitor alerts; the names stay in the server log,
+  never in the public response.
+- **The health query has a 5 s deadline**, and a probe in progress is shared, so pings during a slow
+  database add no queries.
+- **The deadline guard is stricter:** comments are stripped first, a call needs `AbortSignal.timeout` or
+  `.any` (not just the word "signal"), and `worker/` is scanned too.
+- **The commit is read through `server/shared/deployment.ts`** (`APP_COMMIT`, falling back to Vercel's),
+  not a host variable in a route (ADR-0037 D1), and only on the deep probe.
+- **Not done, needs your decision:** root `CLAUDE.md` is at its 200-line limit, so "every outbound call
+  has a deadline" and "routes read the session through `optionalActiveSession`" have no index line there;
+  they live in `src/app/api/CLAUDE.md` and the guard tests. Trimming an index line would make room.
+- **Mutation-tested:** config not checked, missing names leaked into the response, the video job back on
+  the image deadline, a flat transfer deadline, and a "signal" only in a comment: each red, each restored.
+- **Tests:** `observability.test.ts` (13).
+
+## 2026-10-31 — GTM B5 (account and webhook part): pre-hijack, suspended accounts, a signed carrier webhook
+
+- **Pre-hijacked accounts closed.** Google sign-in onto a password account nobody verified now removes
+  that password in the same conditional write that marks the address verified
+  (`claimUnverifiedForOAuth`). Before, an attacker who registered the victim's email first kept a working
+  password after the victim linked Google. The owner sets a password through forgot-password.
+  **Not closed:** a session the attacker already holds stays valid until its JWT expires; revoking it
+  needs `tokenVersion` (90-day plan, Security depth).
+- **A suspended account is refused everywhere.** The 13 route handlers that read `getServerSession`
+  directly (cart, wishlist, reviews, addresses, bids, order create, promotion quote, abandon, contact)
+  now read through `optionalActiveSession`, which answers 403 for a blocked user and null for a guest.
+  Reading reviews and the contact form treat a suspended person as a guest instead, so they can still
+  read and contest it. A guard fails any route that calls `getServerSession` again.
+- **The Shiprocket tracking webhook needs its token.** `x-api-key` must match `SHIPROCKET_WEBHOOK_TOKEN`
+  (constant time), checked before the body is read; otherwise 401. **Owner action:** set a long random
+  token in Shiprocket's webhook settings and the same value in Vercel. Until then every tracking webhook
+  is refused, which is the point: a forged "delivered" releases a payout.
+- **Not here, because each needs a spec (payment state, schema, contract):** create-order overwriting
+  `gatewayOrderId`, an owner or guest-token check on create-order/confirm-free/abandon, the
+  `Idempotency-Key` on place-order, and dropping the order id from the lookup response.
+- **Mutation-tested:** the old `markEmailVerified` path, the claim made unconditional, the standing check
+  ignored, a route reading `getServerSession` again, the webhook failing open when unset, and the token
+  check removed: each red, each restored.
+- **Tests:** `google-prehijack.test.ts` (3, against the database), `blocked-session.test.ts` (5),
+  `shiprocket-webhook-auth.test.ts` (4).
+
+## 2026-10-31 — GTM B9: fixes from the review
+
+- **Blocking, fixed: the `useMutation` lock dropped a different call.** A second `mutate(v2)` while
+  `mutate(v1)` was in flight got v1's promise: on the channel-types editor, the marketplace facts card and
+  the reviews table (per-row actions, not gated), the second row was never sent and still reported
+  success. The lock now joins only a call with the same variables; a different one is sent.
+- **Blocking, fixed: a 30 s timeout under a 50 MB upload.** Image uploads, the profile picture and both
+  bulk-import steps pass `TRANSFER_TIMEOUT_MS` (5 min). A write that times out now says it may still go
+  through and to refresh before retrying, instead of inviting a second order or a duplicate upload. A
+  reply that stalls while its body is read is a timeout too.
+- **"Try again" refetches.** The error screens take Next 16's `retry`, not `reset`, which re-rendered the
+  same failed server payload. A storefront page now fails inside its own shell (`(main)/error.tsx`); the
+  root screen has a phone gutter; `PageError` uses `PageShell` for its width.
+- **The cart cannot be overwritten before it is read.** persist saves on every set; its storage now
+  ignores writes until rehydrated, so an effect in a child of the provider can never save an empty cart
+  over the real one.
+- **Checkout is keyed on its buy-now item**, so moving between two buy-now links snapshots the new one.
+  An unknown or withdrawn buy-now item says "That item is no longer available" instead of the generic
+  error screen.
+- **`pending` is documented as button-only** (with `asChild`, a link navigates before it can stop it).
+- **Ratchet:** the regex now also counts `busy`, `frozen`, `isUpdating`, `isDeleting`, `isToggling`,
+  `isRemoving` and `isCreating`; the honest count is **96** (the earlier 65 missed those).
+- **Correction to the entry below:** the empty-checkout race did not exist before that entry; it arrived
+  with `skipHydration` in the same change and was fixed there.
+- **Mutation-tested:** one lock for every variable, the write timeout worded as a read, the body timeout
+  unmapped, and writes allowed before the read: each red, each restored.
+- **Tests:** `double-submit.test.tsx` (19).
+
+## 2026-10-31 — GTM B7 (code part): a health probe, a startup env check, a deadline on every outbound call
+
+- **`GET /api/health`** for an uptime monitor: plain answers without the database; `?deep=1` checks it,
+  at most once per 30 s per instance (`server/shared/health.ts`), and answers 503 when it cannot reach
+  it. `no-store`; carries the deployed commit. Declared in `EXTERNALLY_CALLED`.
+- **`src/instrumentation.ts`** checks `src/lib/env.ts` at server start and logs what is missing as an
+  error. It logs rather than throws until production's variables are confirmed. The list now matches
+  OPERATIONS.md's required rows (adds `RAZORPAY_WEBHOOK_SECRET`, `APP_ENV`, `NEXT_PUBLIC_APP_URL`,
+  `CREDENTIAL_KEYS`, `RESEND_API_KEY`, `EMAIL_FROM`) and drops `KV_REST_API_*`, which nothing reads until B6.
+- **Every outbound call in `server/` has a deadline** (`server/shared/deadline.ts`): R2 PUT/GET 60 s,
+  HEAD/DELETE 15 s; Razorpay create-order and payments lookup 15 s; Shiprocket login 15 s. Resend's SDK
+  takes no signal, so the wait is bounded (`withDeadline`). The new guard found one the review missed:
+  Shiprocket's connection test, now on the carrier's own 30 s.
+- **Not done here (needs your accounts):** Sentry (DSN), the UptimeRobot monitor (OPERATIONS.md says
+  where to point it), and alerts on the worker heartbeat and `jobs_failed`, which need a destination.
+- **Mutation-tested:** a Razorpay timeout removed, the email deadline removed, the plain probe querying
+  the database, no cache window, deep never 503, and the startup hook unwired: each red, each restored.
+- **Tests:** `observability.test.ts` (9).
+
+## 2026-10-31 — GTM B9: a double tap is one request, and screens say what is happening
+
+- **In-flight lock.** `useMutation` and `useServerForm` join a call already in flight, so a double tap
+  or a held Enter sends once and both callers get the one answer. Every form and click on these hooks
+  gets it at once.
+- **`Button pending`**: a spinner, `aria-busy`, clicks ignored, never `disabled`. `aria-disabled` now
+  dims like `disabled`. Add to cart and Buy now use it; out of stock stays clickable and says why.
+  A ratchet holds the 65 remaining `disabled={…pending}` gates; the count only falls.
+- **`apiRequest`** times out at 30 s and maps a timeout or a dead network to a sentence, as an
+  `ApiError`; a caller's own cancellation passes through untouched.
+- **The cart is read after mount** (`skipHydration`), so the server render and the first client render
+  agree. Found while doing it: **checkout snapshotted the cart in a child effect, which runs before the
+  provider's rehydrate**, so a hard load of `/checkout` could show "No items to checkout" to a full
+  cart. The snapshot is now `useCheckoutSnapshot`, which waits for `hasHydrated`; the sign-in merge waits
+  too, so it never merges an empty basket. The cart page shows "Loading your cart…" until then.
+- **Error and loading screens:** root `error.tsx` and `global-error.tsx` (`PageError`: what happened,
+  try again, home); `loading.tsx` for checkout, orders, an order and the profile, none of which calls
+  `notFound()` (honest-status).
+- **Caught by the browser journeys, not the unit tests:** the first `Button pending` attached a click
+  handler to every button, which a server component cannot pass; every page 500'd. Fixed before commit.
+- **GTM B8 review fixes:** `audit-prod.mjs` compares its entry point as a real-path URL, so a path with a
+  space no longer skips the gate and exits 0 (reproduced); it names the registry's own error and waits
+  10 s before retrying. The e2e job caches the browser, has a 20-minute timeout, and keeps the report on
+  success too, so a test that passed on retry leaves a trace. The Playwright port comes from
+  `NEXT_PUBLIC_APP_URL`. The fixture product is reset to its whole shape every run. **Recorded
+  deviation:** the journeys run against a build made in CI, not the Vercel preview that ships; a
+  break only in Vercel's environment is not caught yet (needs a deployment-protection bypass secret).
+- **Mutation-tested:** each lock removed, the lock never released, no timeout, the offline mapping
+  removed, `pending` setting `disabled`, eager hydration, a new `disabled={isLoading}` gate, and the
+  snapshot taken without waiting: each red, each restored. The e2e checkout step did **not** go red
+  for the snapshot bug (the page streams in after the provider has rehydrated), which is why the
+  hook has its own test.
+- **Tests:** `double-submit.test.tsx` (14); journeys 10 of 10, now including the cart reaching checkout.
+
+## 2026-10-31 — GTM B8: browser journeys gate the deploy; B1 review fixes
+
+- **`e2e/`, Playwright 1.63.0**, phone and desktop against `next start` on a production build. Five
+  journeys: home with a nonce CSP and no `'unsafe-inline'`; unknown product and category answer 404;
+  category → product → add to cart → the cart shows it; an empty cart says so; sign-in offers email and
+  password. `e2e/seed-fixtures.ts` builds one product on the throwaway database through
+  `ensureFixtures` and refuses any other database.
+- **CI:** the PR-only `build` job is now `e2e`. It builds, starts and runs the journeys on **every**
+  event, and `deploy` needs it, so a push to `main` ships only after a browser has filled a cart on that
+  commit. A failed run uploads its report and traces (14 days).
+- **B1 review (M1):** the audit is `scripts/audit-prod.mjs`. A registry outage is retried once and
+  reported as an outage (exit 2), not a finding. An advisory with no fix can be listed in
+  `audit-allowlist.json` with a reason and an expiry; an entry past its date, or matching nothing, fails
+  (ADR-0056). The list is empty.
+- **B1 review (M2):** the guard now proves the audit step is in the `test` job with no `continue-on-error`.
+- **B1 review (L1, L2):** `DEPENDENCIES.md` carries the new versions and the reasons for the floors;
+  `ARCHITECTURE.md` re-dated.
+- **Not done here (yours):** branch protection on `main` requiring `test` and `e2e`. Without it a PR can merge with them red: the deploy then refuses, but `main` carries the break.
+- **Mutation-tested:** add-to-cart broken in the app (rebuilt) → the cart journey red on a real browser;
+  `deploy` without `e2e`; `e2e` made PR-only; `continue-on-error` on the audit; the allowlist's expiry
+  ignored; a stale entry kept; `high` no longer blocking. Each red, each restored.
+- **Tests:** `deploy-safety.test.ts` (18); `npx playwright test` 10 of 10, and 30 of 30 with each test run three times.
+
+## 2026-10-31 — GTM B1: Next.js 16.4.3, and CI refuses a high advisory
+
+- **`next` 16.3.5 → 16.4.3** (and `eslint-config-next` with it, both pinned exactly): closes
+  GHSA-2464-fhr4-w9xw (critical, unauthenticated RCE through Image Optimization), GHSA-673q-mjm6-r5xr
+  (critical) and GHSA-p3m5-59mp-jv5r (high). `sharp` ≥0.35.5.
+- **The other high advisories in production dependencies**, all in-range bumps with no major version
+  change: `zod` 4.2.1 → 4.6.7 (floor `^4.6.6`; GHSA-mrhx-c7xc-m3w5, memory exhaustion while validating,
+  and zod parses every request body), `prisma`/`@prisma/client`/`@prisma/adapter-pg` 7.10.0 → 7.10.1
+  (kept in step), and transitive `deepmerge-ts`, `mysql2`, `brace-expansion`, `source-map-js`.
+  `npm audit --omit=dev --audit-level=high` now reports 0; 9 moderate remain.
+- **CI:** that audit is a blocking step in the test job, after `npm ci`.
+- **No code change was needed.** The 16.4 upgrade guide lists nothing breaking for a 16.x app; ESLint 10
+  support is opt-in and ESLint stays on 9.
+- **Fixed from the B8 entries:** `deploy-safety.test.ts` failed `tsc` (the spawned env lacked `NODE_ENV`),
+  and `ARCHITECTURE.md`'s test-file count was one short. Both were missed because that session could not
+  install dependencies.
+- **Mutation-tested:** lockfile `next` back to 16.3.5, `^16.4.3`, `eslint-config-next` lagging, the
+  audit step removed, and its level raised to `critical`: each red, each restored.
+- **Suites run here, against a local Postgres 16 with full git history:** `tsc --noEmit`, `lint:boundary`,
+  the whole suite, and `next build` (16.4.3, Turbopack).
+
+## 2026-10-31 — GTM B8: fixes from the review
+
+- `.env.worker.example` is now the worker's complete list (28 names, the 13 that shared server code
+  reads added), and `deploy-safety.test.ts` holds both workflows to exactly that list, not a subset.
+- The `needs: deploy` check no longer passes on `deploy-preview`; the Vercel pin check also refuses
+  `vercel@latest` or an unpinned `npx vercel` anywhere in `ci.yml`.
+- `compose-env.sh` no longer empties the base file when a multi-line value carries `(` or `[`
+  (continuation lines were used as grep patterns; predates B8). It also no longer exits 1 when only
+  the base file is set, which could stop the staging step under `set -e` (fixed in the entry below).
+- **Not changed:** Dependabot targets the default branch; whether it should target `develop` is the owner's call.
+- **Mutation-tested:** `needs: [test, deploy-preview]`, an extra `npx vercel`, `RESEND_API_KEY` dropped
+  from `ci.yml`, an unlisted staging secret, and the continuation-line guard removed: each red, each restored.
+- **Tests:** `deploy-safety.test.ts` (12), again under a vitest stand-in; the real suite has not run.
+
+## 2026-10-31 — GTM B2 and B8: functions in Mumbai, CI sees only the secrets it names
+
+- **B2.** `vercel.json` sets `regions: ["bom1"]`. Functions ran in `iad1` (Washington DC) against a
+  Mumbai database, about 200 ms per sequential query. Confirm on the next deploy with the
+  `x-vercel-id` header (`bom1::bom1`).
+- **B8.** No workflow passes `toJSON(secrets)` any more: the worker deploy and the staging worker name
+  each `WORKER_ENV_*` / `WORKER_STAGING_ENV_*` secret they pass (every variable the worker reads), and
+  `infra/worker/compose-env.sh` reads them from the environment, skipping unset (empty) ones. The
+  staging step sees production's `DATABASE_URL` only, for its same-database refusal. **Owner check:** a
+  `WORKER_ENV_*` secret for a variable not listed in the step is no longer passed.
+- **B8.** `deploy-worker` needs `deploy`, so the worker starts only after the web build has migrated
+  the schema. Workflows default to `permissions: contents: read`. Every action is pinned to a commit
+  SHA (same major, latest patch), the Vercel CLI to `58.4.4`, and `.github/dependabot.yml` proposes
+  npm and action bumps weekly.
+- **Not done here: B1 (Next.js ≥16.4.1).** The session that made this change could not reach the npm
+  registry, so the lockfile could not be regenerated; it is still the first blocker.
+- **Mutation-tested:** `toJSON(secrets)` restored, one action unpinned, `vercel@latest`, `deploy-worker`
+  needing only `test`, `permissions` removed, one worker secret dropped, `regions` removed, and empty
+  secrets written: each turned its `deploy-safety.test.ts` case red, each restored.
+- **Tests:** `deploy-safety.test.ts` (11), run under a stand-in for vitest because `node_modules` could
+  not be installed; the real suite has not run on this change.
+
 ## 2026-10-31 — GTM readiness review recorded
 
 - `docs/GTM-READINESS.md`: the whole-codebase production and GTM review (latency, SEO, security,

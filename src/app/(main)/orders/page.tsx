@@ -1,7 +1,6 @@
 // src/app/(main)/orders/page.tsx
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { ordersDAL } from "@/data-access-layer/orders.dal";
 import { OrdersClient } from "@/components/order/orders-client";
 import { OrderLookup } from "@/components/order/order-lookup";
@@ -15,7 +14,7 @@ import { OrderLookup } from "@/components/order/order-lookup";
  * component now.
  */
 export default async function OrdersPage() {
-  const session = await getServerSession(authOptions);
+  const session = await optionalActiveSession({ onBlocked: "allow" });
   if (!session?.user?.id) {
     // A guest has no history to list; the lookup-by-code form is their route in.
     return <OrderLookup />;

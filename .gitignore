@@ -53,3 +53,8 @@ next-env.d.ts
 /listing-node-templates/**/*.xls
 /listing-node-templates/**/*.xlsx
 /listing-node-templates/**/*.xlsm
+
+# Playwright (e2e/)
+/test-results/
+/playwright-report/
+/blob-report/

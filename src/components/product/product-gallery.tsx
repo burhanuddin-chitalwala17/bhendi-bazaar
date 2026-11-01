@@ -5,7 +5,7 @@ import type { Product } from "@/domain/product";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Film, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ImageLightbox } from "@/components/shared/image-lightbox";
+import { LazyImageLightbox } from "@/components/shared/LazyImageLightbox";
 import { YouTubeEmbed } from "@/components/product/youtube-embed";
 import { GALLERY_SLIDE_SIZES, VideoPlayer } from "@/components/product/video-player";
 import {
@@ -279,6 +279,8 @@ export function ProductGallery(product: Product) {
                       }
                       fill
                       className="object-cover select-none"
+                      // The first slide is the page's LCP: asked for first (B12).
+                      fetchPriority={index === 0 ? "high" : undefined}
                       loading={index === 0 ? "eager" : "lazy"}
                       // The active slide pinches and hover-zooms, so its slot is larger
                       // than its box (ADR-0027). Only the active one: the off-screen
@@ -418,7 +420,7 @@ export function ProductGallery(product: Product) {
 
       {/* The lightbox stays an image viewer: it is handed the photographs only, and its
           index is translated in and out, so it never learns about media kinds. */}
-      <ImageLightbox
+      <LazyImageLightbox
         images={photographs.map((item) => item.ref)}
         alt={product.name}
         open={isLightboxOpen}

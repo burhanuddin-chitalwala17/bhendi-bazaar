@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 
-import { ImageLightbox } from "@/components/shared/image-lightbox";
+import { LazyImageLightbox } from "@/components/shared/LazyImageLightbox";
 import { Button } from "@/components/ui/button";
 import type { ReviewMediaDto } from "@server/catalog/review.types";
 
@@ -91,7 +91,7 @@ export function ReviewMedia({
         ))}
       </ul>
 
-      <ImageLightbox
+      <LazyImageLightbox
         images={photos.map((photo) => photo.ref)}
         alt={`${authorName}'s review`}
         open={openedIndex !== null}

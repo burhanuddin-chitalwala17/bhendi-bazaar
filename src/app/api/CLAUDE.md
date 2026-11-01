@@ -1,6 +1,6 @@
 # CLAUDE.md — route handlers
 
-- **Verified:** 2026-10-29
+- **Verified:** 2026-11-01
 - **Covers:** `src/app/api/**`
 
 > Read the root [`/CLAUDE.md`](../../../CLAUDE.md) first. Its seven Invariants are hard blocks here more than anywhere: this is where an untrusted request becomes a write.
@@ -10,6 +10,7 @@ A route handler is the HTTP boundary and nothing else. It does four things, in t
 ## The four steps
 
 1. **Authorize by portal.** `/api/admin/**` calls `requirePlatformAdmin` (`src/lib/admin-auth.ts`). `/api/org/**` is defined through `withOrg` (`src/lib/org-auth.ts`), the only thing that can hand a handler an org scope. Neither tree borrows the other's authority. `tests/unit/portal-boundary.test.ts`
+   Every other route reads the session through `requireSession` or `optionalActiveSession`, which refuse a suspended account; never `getServerSession` directly. `tests/unit/blocked-session.test.ts`
 2. **Parse, never cast** (Invariant 4). Validate the body with a schema from `src/lib/validation/schemas/` via `validateRequest`, and never write `as T` on `request.json()`. Define the schema in that folder, not inline, so the form can use the same one through `useServerForm`. Whitelist fields symmetrically on create and update, and never accept a server-owned field. `tests/unit/request-body-parsing.test.ts`
 3. **Delegate to a service.** Call `server/<domain>/*.service`, never Prisma or a repository. Invariant 5: a table is reached through one repository. A handler that touches `prisma.*` gives the same row two shapes.
 4. **Answer in the envelope.** Errors go out through `toErrorResponse` (`src/lib/api-error-response.ts`). A message reaches the user only as a `DomainError` ([ADR-0013](../../../docs/adr/0013-one-error-envelope-and-useserverform.md)). Never build `{ error }` by hand.

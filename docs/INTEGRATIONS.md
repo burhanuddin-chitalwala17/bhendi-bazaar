@@ -1,6 +1,6 @@
 # INTEGRATIONS.md — external-service behaviour
 
-- **Verified:** 2026-10-29
+- **Verified:** 2026-10-31
 - **Covers:** `server/payments/providers/*/`, `server/shipping/providers/*/`, `server/notifications/**`, `server/catalog/object-store.ts`
 
 ## Purpose
@@ -38,7 +38,7 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **Auth is a bearer token with an expiry**, obtained by posting the API user's email and password. Their 240-hour validity is what `TOKEN_EXPIRY_HOURS` in `providers/shiprocket/shiprocket.config.ts` mirrors. It is not a long-lived API key, so the token must be cached, its expiry tracked, and re-authentication handled — a 401 mid-session is normal operation, not an error condition. This is why credentials rather than a key are stored ([shipping ADR-0002](../server/shipping/adr/0002-credentials-via-admin-not-env.md)).
 - **Rate requests are priced on weight** in kilograms, with origin and destination pincodes. Serviceability is per-pincode-pair, so a rate response can legitimately be empty rather than an error.
 - **Status vocabulary is theirs and is finer-grained than ours**, and they can add to it. Normalised on entry ([shipping ADR-0003](../server/shipping/adr/0003-normalise-carrier-status-on-entry.md)).
-- **Webhooks carry no signature by default.** ⚠️ *Unverified* — confirm current options in their dashboard before relying on this. If no signature is available, a shared-secret header or a hard-to-guess path is the fallback, and the handler must still fail loudly on an unmatched payload.
+- **Webhooks carry no signature; they carry a token.** The webhook settings (Settings → Additional Settings → Webhooks) take a URL, an auth token type (`x-api-key`) and a token, sent on every delivery in that header (confirmed in the dashboard, 2026-11-01). **The URL may not contain "shiprocket", "kartrocket", "sr" or "kr"**, which is why ours is `/api/webhooks/shipping/courier`. There is one webhook URL per account: pointing it at us replaces whatever was there. `server/shipping/webhook-auth.ts` compares it in constant time with `SHIPROCKET_WEBHOOK_TOKEN` and the route answers 401 without it, so a forged "delivered" cannot release a payout. A shared token is weaker than a body signature (it does not bind the payload), so keep it long, random and out of logs.
 - **Rate lookups are slow and rate-limited**, which is why quotes are cached (`ShippingRateCache`).
 - **Booking and rate quoting are separate calls.** A rate quote is not a reservation — the price can change between quoting and booking, which is the source of [shipping-fulfilment](specs/shipping-fulfilment/) Q2.
 

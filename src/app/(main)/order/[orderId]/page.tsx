@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { OrderClient } from "@/components/order/order-client";
 import { ErrorState } from "@/components/shared/states/ErrorState";
 import { LoadingSkeleton } from "@/components/shared/states/LoadingSkeleton";
@@ -14,7 +13,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const { orderId } = await params;
   // A signed-in viewer may only open their own order; the DAL turns a mismatch into
   // "not found" so a foreign order id reveals nothing (checkout/CLAUDE.md ownership rule).
-  const session = await getServerSession(authOptions);
+  const session = await optionalActiveSession({ onBlocked: "allow" });
   const order = await ordersDAL.getOrderById(orderId, session?.user?.id);
   if (!order) {
     return <ErrorState message="Order not found" />;

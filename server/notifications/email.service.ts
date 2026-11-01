@@ -29,6 +29,7 @@ import {
 } from "./templates/contactMessageEmail";
 import { SUPPORT_INBOX } from "./templates/layout";
 import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
+import { OUTBOUND_TIMEOUT_MS, withDeadline } from "@server/shared/deadline";
 
 class EmailService {
   private resend: Resend | null = null;
@@ -52,13 +53,18 @@ class EmailService {
     }
 
     try {
-      const { data, error } = await this.resend.emails.send({
-        from: process.env.EMAIL_FROM || "Bhendi Bazaar <onboarding@resend.dev>",
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        ...(options.replyTo ? { replyTo: options.replyTo } : {}),
-      });
+      // The SDK takes no AbortSignal, so the wait is bounded instead.
+      const { data, error } = await withDeadline(
+        this.resend.emails.send({
+          from: process.env.EMAIL_FROM || "Bhendi Bazaar <onboarding@resend.dev>",
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          ...(options.replyTo ? { replyTo: options.replyTo } : {}),
+        }),
+        OUTBOUND_TIMEOUT_MS.quick,
+        "Sending email"
+      );
 
       if (error) {
         console.error("❌ Resend API error:", error);

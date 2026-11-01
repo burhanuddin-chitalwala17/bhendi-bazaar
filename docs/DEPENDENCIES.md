@@ -1,6 +1,6 @@
 # DEPENDENCIES.md — dependency registry
 
-- **Verified:** 2026-09-28
+- **Verified:** 2026-10-31
 - **Covers:** `package.json`
 
 `package.json` says *what*. This file says *why*, *who uses it*, and *when it was last checked*.
@@ -18,18 +18,18 @@
 | Package | Pinned | Why | Used by | Verified |
 |---|---|---|---|---|
 | `pg-boss` | `^12.34.0` | The job queue, as tables in our own Postgres ([ADR-0038](adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md)). Reached only through `server/shared/jobs/`; its schema is applied by our migrations, never by the library. One-person project, which is one reason it sits behind a seam | `server/shared/jobs/`, `worker/` | 2026-09-26 |
-| `next` | `16.3.5` | Framework: App Router, RSC, route handlers. Pinned exactly, not caretted — a framework minor arriving on a lockfile refresh is not something to leave to chance | Everything | 2026-09-21 |
+| `next` | `16.4.3` | Framework: App Router, RSC, route handlers. Pinned exactly, not caretted — a framework minor arriving on a lockfile refresh is not something to leave to chance. **≥16.4.1 is required**: earlier 16.x is open to GHSA-2464-fhr4-w9xw (unauthenticated RCE through Image Optimization); `tests/unit/deploy-safety.test.ts` holds the floor | Everything | 2026-10-31 |
 | `react` / `react-dom` | `19.2.1` | UI runtime | Everything | 2026-08-03 |
-| `@prisma/client` / `prisma` | `^7.10.0` | Type-safe DB access; migrations. **The two must be bumped together** — `npm audit fix` once moved the CLI alone and every query died with `Cannot find module './query_compiler_fast_bg.js'` | `server/<domain>/*.repository.ts` | 2026-09-21 |
-| `@prisma/adapter-pg` + `pg` | `^7.10.0` / `^8.16.3` | Driver adapter — Prisma 7 reaches Postgres through `pg`. **Version-locked to `prisma`.** It also decides the *shape* of a constraint error: 7.10 reports a P2002's constraint by name where 7.1 reported its columns, which is why `server/shared/constraint.ts` reads both and `tests/unit/constraint-shapes.test.ts` pins them | `server/shared/prisma.ts` | 2026-09-21 |
+| `@prisma/client` / `prisma` | `^7.10.1` | Type-safe DB access; migrations. **The two must be bumped together** — `npm audit fix` once moved the CLI alone and every query died with `Cannot find module './query_compiler_fast_bg.js'` | `server/<domain>/*.repository.ts` | 2026-09-21 |
+| `@prisma/adapter-pg` + `pg` | `^7.10.1` / `^8.16.3` | Driver adapter — Prisma 7 reaches Postgres through `pg`. **Version-locked to `prisma`.** It also decides the *shape* of a constraint error: 7.10 reports a P2002's constraint by name where 7.1 reported its columns, which is why `server/shared/constraint.ts` reads both and `tests/unit/constraint-shapes.test.ts` pins them | `server/shared/prisma.ts` | 2026-10-31 |
 | `next-auth` | `^4.24.13` | Sessions, credentials + Google OAuth, JWT strategy | `src/lib/auth-config.ts` | 2026-08-03 |
 | `@auth/prisma-adapter` | `^2.11.1` | Persists NextAuth `Account` / `Session` / `VerificationToken` | `src/lib/auth-config.ts` | 2026-08-03 |
 | `bcryptjs` | `^3.0.3` | Password hashing. Cost 10 | `server/identity/password.service.ts` | 2026-08-03 |
-| `zod` | `^4.2.1` | Runtime validation at the HTTP boundary — the mechanism behind [Invariant 4](../CLAUDE.md) | `src/lib/validation/**` | 2026-08-03 |
+| `zod` | `^4.6.6` | Runtime validation at the HTTP boundary — the mechanism behind [Invariant 4](../CLAUDE.md). Floor is GHSA-mrhx-c7xc-m3w5 (memory exhaustion validating oversized collections), which matters because zod parses every request body | `src/lib/validation/**` | 2026-10-31 |
 | `zustand` | `^5.0.9` | Cart state with localStorage persistence. Chosen for size and minimal boilerplate | `src/store/cartStore.ts` | 2026-08-03 |
 | `@upstash/ratelimit` + `@upstash/redis` | `^2.0.7` / `^1.36.0` | Distributed rate limiting. Required because Vercel runs many instances, so in-memory counters do not hold. **Reads `KV_REST_API_*`, not `UPSTASH_REDIS_REST_*`** | `src/lib/rate-limit/index.ts` | 2026-08-03 |
 | `aws4fetch` | `^1.0.20` | Signs S3 requests to Cloudflare R2 — server-side PUT/DELETE and the presigned PUT a browser uploads with ([ADR-0028](adr/0028-images-live-in-cloudflare-r2.md)). Chosen over `@aws-sdk/client-s3` + `s3-request-presigner`: two packages and several MB, against one file, for two verbs | `server/catalog/object-store.ts` | 2026-09-17 |
-| `sharp` | `^0.35.4` | Downscale and re-encode uploads before they reach R2 ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)). Present as a Next transitive dependency before this; declared so the version we rely on is ours. **Note:** ships a platform binary, so nothing that calls it may leave the Node.js runtime — which now includes the **worker**, not only the upload routes | `server/catalog/image-upload.ts`, `server/catalog/media-asset.service.ts`, `server/catalog/media-backfill.ts`, and the seven tools in `server/content/tools/` | 2026-09-28 |
+| `sharp` | `^0.35.5` | Downscale and re-encode uploads before they reach R2 ([ADR-0026](adr/0026-images-are-delivered-through-the-optimizer.md)). Present as a Next transitive dependency before this; declared so the version we rely on is ours. **Note:** ships a platform binary, so nothing that calls it may leave the Node.js runtime — which now includes the **worker**, not only the upload routes | `server/catalog/image-upload.ts`, `server/catalog/media-asset.service.ts`, `server/catalog/media-backfill.ts`, and the seven tools in `server/content/tools/` | 2026-09-28 |
 | `exceljs` | `^4.4.0` | Reads and writes the bulk-upload sheets (.xlsx/.csv) and generates the per-org sample. Chosen over npm `xlsx`/SheetJS, whose free build is unmaintained with unfixed parser advisories — this parses user-supplied files | `server/catalog/bulk/**` | 2026-08-21 |
 | `libphonenumber-js` | `^1.13.13` | Validates, normalises to E.164 and formats phone numbers for every country. Imported as `/max`: `min` metadata validates most countries by length alone and accepts numbers the Indian rule refused ([international-phone](specs/international-phone/trd.md) D1) | `server/shared/phone.ts` only | 2026-09-11 |
 | `resend` | `^6.6.0` | Transactional email | `server/notifications/email.service.ts` | 2026-08-03 |
@@ -51,7 +51,8 @@
 | `happy-dom` | `^20.0.11` | DOM for component tests — lighter than jsdom |
 | `@testing-library/react` + `jest-dom` | — | Component testing and matchers |
 | `@vitejs/plugin-react` | `^5.1.2` | JSX transform for Vitest |
-| `eslint` + `eslint-config-next` | `^9` / `16.3.5` | Linting. Gate policy in [TESTING.md](TESTING.md) |
+| `eslint` + `eslint-config-next` | `^9` / `16.4.3` | Linting. Gate policy in [TESTING.md](TESTING.md). `eslint-config-next` moves with `next`, exactly |
+| `@playwright/test` | `1.63.0` | The browser journeys that gate a production deploy (`e2e/`, [GTM-READINESS](GTM-READINESS.md) B8). The de facto standard for Next.js; runs a real Chromium against a production build. Pinned exactly so the browser build CI installs matches the runner |
 | `tailwindcss` + `@tailwindcss/postcss` | `^4` | Styling (Tailwind v4 via the PostCSS plugin) |
 | `tw-animate-css` | `^1.4.0` | Animation utilities for shadcn |
 | `dotenv` | `^17.2.3` | Loads `.env` for `prisma.config.ts` and scripts |

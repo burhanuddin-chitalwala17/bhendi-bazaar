@@ -5,7 +5,7 @@ import { ProvidersContainer } from "@/components/shipping/providers-console";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 
 export const metadata: Metadata = {
-  title: "Shipping Providers | Admin",
+  title: "Admin: shipping providers",
   description: "Manage shipping providers",
 };
 

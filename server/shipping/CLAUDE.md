@@ -1,6 +1,6 @@
 # CLAUDE.md — shipping domain
 
-- **Verified:** 2026-10-20
+- **Verified:** 2026-10-31
 - **Covers:** `server/shipping/**`
 
 > **Read the project-wide rules first:** [`/CLAUDE.md`](../../CLAUDE.md) covers the SDLC, the seven Project Invariants, and the conventions index. This file covers what applies only to the **shipping** domain.
@@ -27,7 +27,7 @@ Shipping owns everything between "a customer has an address" and "a parcel is mo
 - **A rate reaches checkout only as a signed quote** (`rate-quote.service.ts`). The rates route signs it for an origin, destination and billable weight; checkout verifies it against the parcel it allocated. A rate figure in a request is never charged.
 - **Weight comes from the persisted shipment**, not recomputed at call time, so what is booked matches what was quoted and charged.
 - **Every external call has a timeout and a bounded, idempotent retry.** A retry that can produce a second parcel is worse than a failure. `server/shared/retry.ts` provides the mechanism; idempotency is the caller's responsibility.
-- **Webhooks are verified before they are trusted, and fail loudly.** Returning 2xx on a payload you could not match is forbidden — see the reasoning in [ADR-0005](../../docs/adr/0005-payment-state-server-only.md), which exists because a silently-succeeding webhook hid a broken payment path for months.
+- **Webhooks are verified before they are trusted, and fail loudly.** Shiprocket's is a shared token (`webhook-auth.ts`, `SHIPROCKET_WEBHOOK_TOKEN`), checked before the body is read; unset means refused. Returning 2xx on a payload you could not match is forbidden — see the reasoning in [ADR-0005](../../docs/adr/0005-payment-state-server-only.md), which exists because a silently-succeeding webhook hid a broken payment path for months.
 - **Carrier quirks go in [INTEGRATIONS.md](../../docs/INTEGRATIONS.md)**, not in comments here. They are operational knowledge that outlives any one call site.
 
 ## Structure
