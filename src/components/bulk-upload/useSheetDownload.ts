@@ -35,7 +35,7 @@ function writeLast(orgId: string, iso: string) {
 }
 
 /** The Get the sheet step's state: ticks, the download, and when this device last downloaded. */
-export function useSheetDownload(orgId: string, soldIds: string[], onDownloaded: () => void) {
+export function useSheetDownload(orgId: string, base: string, soldIds: string[], onDownloaded: () => void) {
   const [ticked, setTicked] = useState<Set<string>>(() => new Set(soldIds));
   const [status, setStatus] = useState<SheetDownloadStatus>("idle");
   const [slow, setSlow] = useState(false);
@@ -69,7 +69,7 @@ export function useSheetDownload(orgId: string, soldIds: string[], onDownloaded:
     setStatus("making");
     const timer = setTimeout(() => setSlow(true), SLOW_MS);
     try {
-      saveBlob(await bulkImportApiClient.downloadProductSheet(orgId, [...ticked]), "bulk-products-sheet.xlsx");
+      saveBlob(await bulkImportApiClient.downloadProductSheet(base, [...ticked]), "bulk-products-sheet.xlsx");
       const now = new Date().toISOString();
       writeLast(orgId, now);
       setLastDownloaded(now);

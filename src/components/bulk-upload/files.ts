@@ -55,3 +55,7 @@ export function saveBlob(blob: Blob, filename: string) {
   // Revoking at once can cancel the download on iOS Safari.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/** Where a bulk photo is stored: under the shop's own folder, the prefix both token routes sign (ADR-0028). */
+export const bulkPhotoPath = (orgCode: string, storedPath: string): string =>
+  `org/${orgCode.toLowerCase()}/bulk/${storedPath}`;

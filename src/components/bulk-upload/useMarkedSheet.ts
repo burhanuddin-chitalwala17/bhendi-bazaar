@@ -9,7 +9,7 @@ import { CHECK_COPY } from "./check-copy";
 import { saveBlob } from "./files";
 
 /** "Download your sheet with problems marked" (own-store/bulk-sheet R6): the same file, sent again. */
-export function useMarkedSheet(orgId: string, sheet: File | null, filenames: string[]) {
+export function useMarkedSheet(base: string, sheet: File | null, filenames: string[]) {
   const busy = useRef(false);
   return async () => {
     if (!sheet) return;
@@ -22,7 +22,7 @@ export function useMarkedSheet(orgId: string, sheet: File | null, filenames: str
     // Marking re-checks the whole sheet, which takes seconds on a phone: answer the tap at once.
     const id = toast.loading(CHECK_COPY.marking);
     try {
-      saveBlob(await bulkImportApiClient.downloadMarkedProducts(orgId, sheet, filenames), markedFileName(sheet.name));
+      saveBlob(await bulkImportApiClient.downloadMarkedProducts(base, sheet, filenames), markedFileName(sheet.name));
       toast.success(CHECK_COPY.fixAndReupload, { id });
     } catch (error) {
       toast.error(markFailure(error), { id });

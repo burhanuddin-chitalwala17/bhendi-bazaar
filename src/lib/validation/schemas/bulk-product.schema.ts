@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { isOwnObjectUrl } from "@server/catalog/object-store";
 import { rupeeAmount } from "./common.schemas";
+import { teamReasonField } from "./product.schema";
 import { parseYoutubeRef, MAX_MEDIA_PER_PRODUCT } from "@server/catalog/media";
 import { FACT_DECLARATIONS, MEASURES } from "@server/listing/listing-facts";
 import type { RawSheetRow } from "@server/catalog/bulk/sheet";
-import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
+import type { BulkProductCreateRow, BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
+import type { RowWithNumber } from "@server/catalog/bulk/bulk-product.service";
 import { DomainError } from "@server/shared/domain-error";
 
 /**
@@ -217,6 +219,24 @@ export const bulkProductCreateSchema = z.object({
 });
 
 export type BulkProductCreatePayload = z.infer<typeof bulkProductCreateSchema>;
+
+/**
+ * The team's create for a shop (own-store/bulk-sheet D11): the shop's payload, plus the reason the
+ * shop reads and the file's name for the record. The shop is the path's, never the body's.
+ */
+export const teamBulkProductCreateSchema = bulkProductCreateSchema.extend({
+  reason: teamReasonField,
+  fileName: z.string().trim().max(255).optional(),
+});
+
+/** The parsed rows as create reads them; index + 2 is the legacy one-header sheet's row. */
+export function createRowsOf(rows: BulkProductCreatePayload["rows"]): RowWithNumber<BulkProductCreateRow>[] {
+  return rows.map(({ rowNumber, tab, ...row }, index) => ({
+    rowNumber: rowNumber ?? index + 2,
+    tab,
+    row: row as BulkProductCreateRow,
+  }));
+}
 
 const uploadedNames = z.array(z.string().max(1024)).max(20000);
 

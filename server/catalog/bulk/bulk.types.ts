@@ -71,3 +71,8 @@ export interface BulkValidationSummary {
 }
 
 export const BULK_MAX_ROWS = 300;
+
+/** The audit action of the team's bulk upload for a shop (own-store/bulk-sheet Q17). Closed set. */
+export const BULK_TEAM_ACTION = {
+  UPLOADED: "PRODUCT_TEAM_BULK_UPLOADED",
+} as const;

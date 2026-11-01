@@ -4,7 +4,7 @@
  * selected" stops matching what the sheet can actually use.
  */
 import { describe, it, expect } from "vitest";
-import { imagesOnly, relativePath, sanitizePath } from "@/components/bulk-upload/files";
+import { bulkPhotoPath, imagesOnly, relativePath, sanitizePath } from "@/components/bulk-upload/files";
 
 const file = (name: string, type: string, path?: string): File => {
   const f = new File(["x"], name.split("/").pop() as string, { type });
@@ -54,5 +54,12 @@ describe("sanitizePath", () => {
 
   it("cannot climb out of its folder", () => {
     expect(sanitizePath("../../etc/passwd")).toBe("etc/passwd");
+  });
+});
+
+describe("bulkPhotoPath", () => {
+  it("files a bulk photo under the shop's own folder, the prefix both token routes sign", () => {
+    // Was `products/<code>/bulk/…`, which the token routes refuse: "Uploads must live under org/<code>/".
+    expect(bulkPhotoPath("NOOR-01", "abaya/front-1.webp")).toBe("org/noor-01/bulk/abaya/front-1.webp");
   });
 });

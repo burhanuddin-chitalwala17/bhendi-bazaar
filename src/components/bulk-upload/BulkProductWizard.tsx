@@ -15,17 +15,19 @@ import { toast } from "sonner";
 import type { SheetChoicesDTO } from "@server/catalog/bulk/bulk-sheet.service";
 import { Button } from "@/components/ui/button";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
-import { imagesOnly, sanitizePath } from "./files";
-import { bulkImportApiClient } from "./bulkImportApiClient";
+import { bulkPhotoPath, imagesOnly, sanitizePath } from "./files";
+import { bulkImportApiClient, productBulkBase } from "./bulkImportApiClient";
+import { TeamUploadBanner } from "./TeamUploadBanner";
 import { useBulkImport } from "./useBulkImport";
 import { useMarkedSheet } from "./useMarkedSheet";
 import { GetTheSheet } from "./GetTheSheet";
 import { CheckReport } from "./CheckReport";
 import { CHECK_COPY, rowsWithProblems } from "./check-copy";
-import { SHEET_AGE_COPY } from "@server/catalog/bulk/sheet-copy";
+import { SHEET_AGE_COPY, TEAM_BULK_COPY } from "@server/catalog/bulk/sheet-copy";
+import { teamReasonField } from "@/lib/validation/schemas/product.schema";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
-import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
+import { orgUploadEndpoints, teamUploadEndpoints } from "@/lib/image/upload-endpoints";
 
 const STEPS = ["Get the sheet", "Fill it", "Upload", "Check and create"] as const;
 type Stage = "get" | "fill" | "upload";
@@ -42,13 +44,26 @@ function Steps({ current }: { current: number }) {
   );
 }
 
-export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: SheetChoicesDTO }) {
+/** `team` is the Bhendi Bazaar team uploading for this shop, through the admin routes (own-store/bulk-sheet R9). */
+export function BulkProductWizard({
+  orgId,
+  choices,
+  team,
+}: {
+  orgId: string;
+  choices: SheetChoicesDTO;
+  team?: { shopName: string };
+}) {
+  const base = productBulkBase(orgId, !!team);
+  const endpoints = team ? teamUploadEndpoints(orgId) : orgUploadEndpoints(orgId);
   const [stage, setStage] = useState<Stage>("get");
   const { step, sheet, setSheet, images, setImages, report, created, updated, providedPaths, check, run, reset } = useBulkImport(
-    (sheet, filenames) => bulkImportApiClient.validateProducts(orgId, sheet, filenames),
+    (sheet, filenames) => bulkImportApiClient.validateProducts(base, sheet, filenames),
   );
   const [progress, setProgress] = useState({ done: 0, total: 0 });
-  const downloadMarked = useMarkedSheet(orgId, sheet, providedPaths);
+  const downloadMarked = useMarkedSheet(base, sheet, providedPaths);
+  const [reason, setReason] = useState("");
+  const [reasonError, setReasonError] = useState<string | null>(null);
   // A stale sheet is accepted once the shop says to go on with it (own-store Q10); a new check asks again.
   const [continued, setContinued] = useState(false);
   const sheetInputRef = useRef<HTMLInputElement>(null);
@@ -77,6 +92,12 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
 
   const createAll = async () => {
     if (!report?.ok || !report.orgCode) return;
+    // The reason is the server's rule, asked before any photo goes up (ux.md, Admin: Terminal error).
+    const why = team ? teamReasonField.safeParse(reason) : null;
+    if (why && !why.success) {
+      setReasonError(why.error.issues[0]?.message ?? null);
+      return;
+    }
     const orgCode = report.orgCode;
     const needed = [...new Set(report.rows.flatMap(({ row }) => row.images))];
     setProgress({ done: 0, total: needed.length });
@@ -100,9 +121,9 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
           // server's normalisation cannot reach them (ADR-0026).
           const downscaled = await downscaleImage(file);
           const { url } = await uploadDirect(
-            `products/${orgCode.toLowerCase()}/bulk/${storedPathFor(sanitizePath(path), downscaled)}`,
+            bulkPhotoPath(orgCode, storedPathFor(sanitizePath(path), downscaled)),
             downscaled,
-            orgUploadEndpoints(orgId),
+            endpoints,
           );
           urls.set(reference, url);
           done += 1;
@@ -120,15 +141,33 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
           row.images.map((name) => [name, urls.get(name)!]),
         ),
       }));
-      return bulkImportApiClient.createProducts(orgId, rows);
+      return bulkImportApiClient.createProducts(
+        base,
+        rows,
+        why?.success ? { reason: why.data, fileName: sheet?.name ?? "" } : undefined,
+      );
     });
   };
+
+  // Above every step, so the team never loses sight of whose shop this is (ux.md, Admin: First use).
+  const banner = team && (
+    <TeamUploadBanner
+      shopName={team.shopName}
+      reason={reason}
+      error={reasonError}
+      onReason={(value) => {
+        setReason(value);
+        setReasonError(null);
+      }}
+    />
+  );
 
   if (stage === "get") {
     return (
       <div className="space-y-4">
+        {banner}
         <Steps current={0} />
-        <GetTheSheet orgId={orgId} choices={choices} onDownloaded={() => setStage("fill")} />
+        <GetTheSheet orgId={orgId} base={base} choices={choices} onDownloaded={() => setStage("fill")} />
         <Button variant="link" className="px-0" onClick={() => setStage("upload")}>
           I already have a filled sheet
         </Button>
@@ -139,6 +178,7 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
   if (stage === "fill") {
     return (
       <div className="space-y-4">
+        {banner}
         <Steps current={1} />
         <section className="space-y-3 rounded-card border border-border bg-card p-4">
           <p className="text-sm">Fill the sheet on your laptop or phone, then come back.</p>
@@ -158,9 +198,15 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
       <div className="space-y-3 rounded-xl border border-border bg-card p-4">
         {/* Both numbers, because they are not the same event: a wrong create leaves a
             product to archive, and a wrong update has overwritten something. */}
-        <p className="text-lg font-semibold">{CHECK_COPY.done(created + updated, created, updated)}</p>
+        <p className="text-lg font-semibold">
+          {team ? TEAM_BULK_COPY.done(team.shopName, created, updated) : CHECK_COPY.done(created + updated, created, updated)}
+        </p>
         <Button asChild>
-          <a href={`/org/${orgId}/products`}>View products</a>
+          {team ? (
+            <a href={`/admin/orgs/${orgId}?tab=products`}>{TEAM_BULK_COPY.viewProducts(team.shopName)}</a>
+          ) : (
+            <a href={`/org/${orgId}/products`}>View products</a>
+          )}
         </Button>
       </div>
     );
@@ -168,6 +214,7 @@ export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: 
 
   return (
     <div className="space-y-4 pb-24">
+      {banner}
       <Steps current={step === "pick" || step === "checking" ? 2 : 3} />
       <section className="space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="space-y-1">

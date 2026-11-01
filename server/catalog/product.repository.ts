@@ -916,22 +916,29 @@ export class AdminProductsRepository {
     return await prisma.product.findMany({ select: { slug: true } });
   }
 
-  /** A bulk import's rows, all-or-nothing in one transaction. */
+  /**
+   * A bulk import's rows, all-or-nothing in one transaction. The uploader is the editor of every
+   * row, as a form save would make them (own-store/bulk-sheet D10): an update moves the version, so
+   * a form open on that product is refused on save and rebases.
+   */
   async importBulk(
     products: Prisma.ProductCreateManyInput[],
     updates: Prisma.ProductCreateManyInput[],
     media: Prisma.ProductMediaCreateManyInput[],
     stock: Prisma.ProductStockCreateManyInput[],
+    editor?: ProductEditor,
   ): Promise<void> {
+    const now = new Date();
+    const edited = editor ? { lastEditedById: editor.userId, lastEditedAt: now, teamEditedAt: editor.team ? now : null } : {};
     await prisma.$transaction(async (tx) => {
-      if (products.length) await tx.product.createMany({ data: products });
+      if (products.length) await tx.product.createMany({ data: products.map((row) => ({ ...row, ...edited })) });
 
       // An update is a full replace, the same semantics the admin form's edit has: the sheet
       // row is the product now. `slug` is absent from the data — it is the product's own, and
       // changing it would break every link to it.
       for (const row of updates) {
-        const { id, slug: _slug, ...data } = row;
-        await tx.product.update({ where: { id }, data });
+        const { id, slug: _slug, version: _version, ...data } = row;
+        await tx.product.update({ where: { id }, data: { ...data, ...edited, version: { increment: 1 } } });
       }
 
       // The gallery and the stock are replaced wholesale for an updated product, in the same

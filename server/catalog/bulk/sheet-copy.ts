@@ -29,3 +29,15 @@ export interface SheetAge {
   /** The heading of the first column that no longer reads: refused. */
   refusedColumn: string | null;
 }
+
+/** The team uploading for a shop (ux.md, Admin bulk for shop). */
+export const TEAM_BULK_COPY = {
+  banner: (shop: string) => `Uploading for ${shop}. The shop will see 'Edited by Bhendi Bazaar team'.`,
+  reasonLabel: "Why are you uploading for this shop?",
+  done: (shop: string, created: number, updated: number) =>
+    `Created ${created} and updated ${updated} for ${shop}. Recorded in the activity log.`,
+  viewProducts: (shop: string) => `View ${shop}'s products`,
+  noLocation: (shop: string) => `${shop} has no pickup address yet. Add one for them first.`,
+  deactivated: (shop: string) => `${shop} is deactivated. Reactivate it to add products.`,
+  openShop: "Open shop",
+} as const;

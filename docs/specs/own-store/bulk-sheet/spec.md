@@ -1,10 +1,10 @@
 # Spec — own-store/bulk-sheet
 
 - **Summary:** A shop lists many products from one Excel sheet that explains itself, offers every platform value as a dropdown, says when it is out of date, and comes back with the shop's own mistakes marked in place
-- **Status:** Accepted
+- **Status:** Accepted · U1–U5 built 2026-11-01; stays Accepted until A7 (timed with the owner's father) is recorded
 - **Domain:** catalog (bulk), with listing (vocabulary) and shared (audit)
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q10, Q11, Q17, Q24), [product-form](../product-form/) (sibling), [bulk-catalog-upload](../../bulk-catalog-upload/), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md.

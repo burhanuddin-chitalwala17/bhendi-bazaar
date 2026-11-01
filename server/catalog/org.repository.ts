@@ -219,6 +219,14 @@ export class OrgRepository {
     });
   }
 
+  /** Whether the shop can take new products: present, active and not blocked (own-store/bulk-sheet D11). */
+  async findStanding(id: string) {
+    return await prisma.org.findUnique({
+      where: { id },
+      select: { id: true, name: true, isActive: true, isBlocked: true },
+    });
+  }
+
   /**
    * Move an org to a new handle, in one transaction (ADR-0030 decision 4).
    *

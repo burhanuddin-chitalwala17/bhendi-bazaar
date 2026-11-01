@@ -45,6 +45,10 @@ export default async function AdminOrgDetailPage({
             <Button asChild size="sm">
               <Link href={`/admin/orgs/${org.id}/products/new`}>Add product for this shop</Link>
             </Button>
+            {/* The team uploads a shop's sheet in the shop's own steps (own-store/bulk-sheet R9). */}
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/orgs/${org.id}/products/bulk`}>Add many for this shop</Link>
+            </Button>
           </div>
         }
       />

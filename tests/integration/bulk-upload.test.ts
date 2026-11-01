@@ -315,7 +315,7 @@ describe.skipIf(!isDisposableDb)("bulk upload (local seeded db)", () => {
       },
     ]);
 
-    expect(result).toEqual({ created: 0, updated: 1 });
+    expect(result).toMatchObject({ created: 0, updated: 1, productIds: [before.id] });
     // No second product: an update replaces rather than adds.
     expect(await prisma.product.count()).toBe(countBefore);
 

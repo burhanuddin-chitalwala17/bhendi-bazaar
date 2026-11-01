@@ -16,15 +16,19 @@ const MANY_CATEGORIES = 60;
 /** Step 1 of the bulk wizard (own-store/bulk-sheet R1, ux.md "Get the sheet"). */
 export function GetTheSheet({
   orgId,
+  base,
   choices,
   onDownloaded,
 }: {
   orgId: string;
+  /** The shop's bulk routes, or the team's for it (`productBulkBase`). */
+  base: string;
   choices: SheetChoicesDTO;
   onDownloaded: () => void;
 }) {
   const { ticked, toggle, download, status, slow, refused, lastDownloaded } = useSheetDownload(
     orgId,
+    base,
     choices.soldIds,
     onDownloaded,
   );

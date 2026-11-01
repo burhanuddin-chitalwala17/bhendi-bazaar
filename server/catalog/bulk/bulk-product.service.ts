@@ -23,7 +23,7 @@ import { rupeesToPaise } from "@server/shared/money";
 import { ConflictError, DomainError } from "@server/shared/domain-error";
 import { matchImage, imageMatchMessage } from "@server/catalog/bulk/image-match";
 import { mediaAssetRepository } from "@server/catalog/media-asset.repository";
-import { adminProductsRepository } from "@server/catalog/product.repository";
+import { adminProductsRepository, type ProductEditor } from "@server/catalog/product.repository";
 import { commercialTermsService } from "@server/catalog/commercial-terms.service";
 import { promotionService } from "@server/promotions/promotion.service";
 import {
@@ -307,10 +307,30 @@ async function assignSlugs(
   });
 }
 
+/** What create re-checks before writing: validate's checks, and every named photo uploaded. */
+export async function validateCreateRows(
+  orgId: string,
+  rows: RowWithNumber<BulkProductCreateRow>[],
+): Promise<RowError[]> {
+  const filenames = rows.flatMap(({ row }) => Object.keys(row.imageUrls));
+  const errors = await validateProductRows(orgId, rows, filenames);
+  for (const { row, rowNumber, tab } of rows) {
+    for (const filename of row.images) {
+      if (!row.imageUrls[filename]) {
+        errors.push({ row: rowNumber, ...(tab ? { tab } : {}), field: "images", message: `No uploaded URL for "${filename}".` });
+      }
+    }
+  }
+  return errors;
+}
+
 export async function createProducts(
   orgId: string,
-  rows: RowWithNumber<BulkProductCreateRow>[]
-): Promise<{ created: number; updated: number }> {
+  rows: RowWithNumber<BulkProductCreateRow>[],
+  editor?: ProductEditor,
+  // Runs once the import has committed, before the sale prices — so a failure there cannot skip it.
+  onImported?: (result: { created: number; updated: number; productIds: string[] }) => Promise<void>,
+): Promise<{ created: number; updated: number; productIds: string[] }> {
   const locations = await orgAddressRepository.listByOrg(orgId);
   const locationByName = new Map(locations.map((l) => [l.name.trim().toLowerCase(), l.id]));
   const [tree, categories] = await Promise.all([categoryRepository.listTree(), categoryRepository.list()]);
@@ -413,7 +433,7 @@ export async function createProducts(
   for (const row of media) row.assetId = assetIds.get(row.ref) ?? null;
 
   try {
-    await adminProductsRepository.importBulk(products, updates, media, stock);
+    await adminProductsRepository.importBulk(products, updates, media, stock, editor);
   } catch (error) {
     if (isUniqueViolation(error, "sku")) {
       throw new ConflictError(
@@ -429,6 +449,8 @@ export async function createProducts(
     }
     throw error;
   }
+  const result = { created: products.length, updated: updates.length, productIds };
+  await onImported?.(result);
 
   // Written as the product form writes them, after the product (offers-hardening Q24) — so a
   // failure here leaves the products saved without their sale prices (TRD D12).
@@ -441,7 +463,7 @@ export async function createProducts(
     );
   }
 
-  return { created: products.length, updated: updates.length };
+  return result;
 }
 
 /**

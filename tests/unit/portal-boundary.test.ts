@@ -76,7 +76,8 @@ describe("portal boundaries", () => {
     expect(writers.length).toBeGreaterThanOrEqual(3);
     const offenders = writers.filter((f) => {
       const source = readFileSync(f, "utf8");
-      return !source.includes("productTeamService") || source.includes("admin.product.service");
+      // The bulk sheet's team service is the same rule for many rows: reason, one entry (own-store/bulk-sheet D11).
+      return !/\b(productTeamService|bulkTeamService)\b/.test(source) || source.includes("admin.product.service");
     });
     expect(offenders).toEqual([]);
     // The team adds for a shop, never for nobody: there is no shop-less create page.

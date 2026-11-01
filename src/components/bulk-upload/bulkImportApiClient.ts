@@ -29,31 +29,36 @@ function sheetForm(sheet: File, filenames: string[]): FormData {
   return form;
 }
 
+/** Where a shop's bulk routes live: the shop's own, or the team's for that shop (own-store/bulk-sheet D11). */
+export function productBulkBase(orgId: string, team: boolean): string {
+  return team ? `/api/admin/orgs/${orgId}/products/bulk` : `/api/org/${orgId}/products/bulk`;
+}
+
+type CreateRows = (BulkProductRow & { imageUrls: Record<string, string>; rowNumber: number; tab?: string })[];
+
 /** Bulk import's two requests per kind: a dry run that creates nothing, then the all-or-nothing create. */
 export const bulkImportApiClient = {
   /** The workbook for the ticked categories (own-store/bulk-sheet D1). */
-  downloadProductSheet(orgId: string, categoryIds: string[]) {
+  downloadProductSheet(base: string, categoryIds: string[]) {
     const query = new URLSearchParams({ categories: categoryIds.join(",") });
-    return apiDownload(`/api/org/${orgId}/products/bulk/sample?${query}`);
+    return apiDownload(`${base}/sample?${query}`);
   },
 
-  validateProducts(orgId: string, sheet: File, filenames: string[]) {
-    return apiRequest<ProductBulkReport>(`/api/org/${orgId}/products/bulk/validate`, {
+  validateProducts(base: string, sheet: File, filenames: string[]) {
+    return apiRequest<ProductBulkReport>(`${base}/validate`, {
       method: "POST",
       body: sheetForm(sheet, filenames),
     });
   },
 
   /** The shop's own file back with its problems marked; checked again on the server, never sent as errors (D7). */
-  downloadMarkedProducts(orgId: string, sheet: File, filenames: string[]) {
-    return apiDownload(`/api/org/${orgId}/products/bulk/marker`, { method: "POST", body: sheetForm(sheet, filenames) });
+  downloadMarkedProducts(base: string, sheet: File, filenames: string[]) {
+    return apiDownload(`${base}/marker`, { method: "POST", body: sheetForm(sheet, filenames) });
   },
 
-  createProducts(
-    orgId: string,
-    rows: (BulkProductRow & { imageUrls: Record<string, string>; rowNumber: number; tab?: string })[],
-  ) {
-    return apiRequest<{ created: number; updated: number }>(`/api/org/${orgId}/products/bulk`, { method: "POST", body: { rows } });
+  /** `team` is the team's reason and the file's name, required on the team's create (D11). */
+  createProducts(base: string, rows: CreateRows, team?: { reason: string; fileName: string }) {
+    return apiRequest<{ created: number; updated: number }>(base, { method: "POST", body: { rows, ...team } });
   },
 
   validateCategories(sheet: File, filenames: string[]) {

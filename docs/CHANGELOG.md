@@ -12,6 +12,28 @@
 
 ## Entries
 
+## 2026-11-01 — own-store/bulk-sheet unit 5: the team uploads a shop's sheet, recorded once [CONTRACT]
+
+- **Admin twins (D11; R9; Q17, Q18):** `GET /api/admin/orgs/:id/products/bulk/sample`, `POST …/validate`, `POST
+  …/marker` and `POST …/products/bulk` behind `requirePlatformAdmin`, scoped to the path's shop (404 otherwise); the
+  same build, check and marker as the shop's. Create needs `reason` (`teamReasonField`, "Say why — the shop will read
+  it.") and takes `fileName`; a deactivated or blocked shop is refused ("{Shop} is deactivated. Reactivate it to add
+  products."). After commit one `PRODUCT_TEAM_BULK_UPLOADED` entry on the shop (`resource: "Org"`) holds reason, file
+  name, counts and product ids; it is written through `createProducts`' `onImported`, before the sale prices, so a failed
+  markdown write still leaves it; a failed audit write never fails the import (ADR-0021). `server/catalog/bulk/bulk-team.service.ts`.
+- **Edits through the version (D10):** `importBulk` names the uploader as editor on every row, sets or clears
+  `teamEditedAt`, and moves an updated product's `version`, so an open form rebases. The shop's own create passes its
+  member; create's checks are one `validateCreateRows` both routes call.
+- **Status:** spec and TRD stay Accepted until A7 is timed with the owner's father.
+- **Screen:** `/admin/orgs/[orgId]/products/bulk`, reached by "Add many for this shop", is the shop's wizard with the
+  banner and reason above every step; the reason is checked before any photo goes up; done reads "Created {a} and
+  updated {b} for {Shop}. Recorded in the activity log." No location or a deactivated shop shows ux.md's line instead.
+- **Fix:** bulk photos are filed under `org/<code>/bulk/` (`bulkPhotoPath`); `products/<code>/bulk/` was refused by
+  both token routes since stored files moved under their owner.
+- **Tests:** `tests/unit/bulk-sheet-team.test.ts`, `tests/integration/bulk-sheet-team.test.ts`, `bulk-files.test.ts`.
+  Mutation-tested: dropping either half of the deactivated-or-blocked refusal, moving the audit after the sale prices, the team mark, the version move, the all-or-nothing return, the
+  required reason, and the old photo prefix each fail a test.
+
 ## 2026-11-01 — order-fulfilment unit 6: refund owed for lost, damaged and returned parcels; the refund button [CONTRACT]
 
 - **Refund owed for every cause** (R13, Q25; D16): a parcel moving into `lost`, `damaged` or `rto_delivered` now

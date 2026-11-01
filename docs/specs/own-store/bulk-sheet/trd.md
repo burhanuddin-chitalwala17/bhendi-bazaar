@@ -1,6 +1,6 @@
 # TRD — own-store/bulk-sheet
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1, U2, U3, U4 built 2026-11-01
+- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1–U5 built 2026-11-01; stays Accepted until A7 (timed with the owner's father) is recorded, then spec and TRD move to Implemented together
 - **Domain:** catalog (bulk), with listing (vocabulary) and shared (audit)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -169,6 +169,11 @@ a blank price reads "Price missing". Marking again clears only our own red (`FFF
 a deleted Problems column, or an old unkeyed .xlsx, gets Problems after its last column, never shifting
 the file. The marked download is the docked action; while it runs a tap says "Marking your sheet…", and
 a failure "Couldn't mark your sheet. Try again." (ux.md's Retryable error, for this action).
+U5 puts the team's create in `server/catalog/bulk/bulk-team.service.ts` and the shared create checks in
+`validateCreateRows`; `importBulk` takes the editor. The audit entry sits on the shop (`resource: "Org"`). Blocked
+shops are refused with the deactivated line too. The wizard takes a `team` prop and a route base
+(`productBulkBase`); "Add location" for the team waits on product-form Q37, so the Empty state links back to the
+shop. Side fix: bulk photos go under `org/<code>/bulk/`, the prefix the token routes sign.
 
 ## Open questions
 None. Q27–Q30 are Claude · reversible.
