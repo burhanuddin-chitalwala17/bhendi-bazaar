@@ -19,6 +19,7 @@ import { storefrontDAL } from "@/data-access-layer/storefront.dal";
 import { appUrl } from "@server/shared/app-url";
 import { ThemedSections } from "@/components/storefront/themed/themed-sections";
 import { themedPageData } from "@/components/storefront/themed/landing-data";
+import { storePreview } from "@/lib/store-preview";
 import { resolveStorefront } from "./resolve";
 import { notFound, redirect } from "next/navigation";
 
@@ -44,28 +45,19 @@ export async function generateMetadata({
   const shop = await storefrontDAL.getByHandle(handle);
   if (!shop) return {};
 
-  const description =
-    shop.tagline ??
-    shop.about?.slice(0, 160) ??
-    `Shop ${shop.name} on Bhendi Bazaar.`;
+  const preview = storePreview(shop);
   const url = `${appUrl()}/store/${shop.handle}`;
 
   return {
-    title: shop.name,
-    description,
+    title: preview.title,
+    description: preview.description,
     alternates: { canonical: url },
     openGraph: {
       type: "website",
-      title: shop.name,
-      description,
+      title: preview.title,
+      description: preview.description,
       url,
-      ...(shop.heroUrl || shop.logoUrl
-        ? {
-            images: [
-              { url: (shop.heroUrl ?? shop.logoUrl) as string, alt: shop.name },
-            ],
-          }
-        : {}),
+      ...(preview.image ? { images: [{ url: preview.image, alt: shop.name }] } : {}),
     },
   };
 }

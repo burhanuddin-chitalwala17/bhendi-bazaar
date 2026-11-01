@@ -6,21 +6,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RefreshButton } from "@/components/channel/refresh-button";
 import { cn } from "@/lib/utils";
 import { STEP_HINT } from "@/components/layout/portal-hints";
-import type { OnboardingStatus } from "@server/catalog/org-onboarding.types";
+import { ONBOARDING_STEP, type OnboardingStatus } from "@server/catalog/org-onboarding.types";
+import type { ShareShop } from "@/lib/store-preview";
+import { ShareShopSheet } from "@/components/org/share/share-shop-sheet";
+import type { ShareSetup } from "@/components/org/share/useShareShop";
 import type { HomeRead } from "@/data-access-layer/org/home.dal";
 import { HOME_COPY, STEP_TITLE } from "./home-copy";
 import { taskHref } from "./return-to";
 import { HideSetupButton, ShowSetupButton } from "./setup-list-actions";
 import { SetupStepHint } from "./setup-step-hint";
+import { stepRowClass } from "./step-row";
+
+/** Step 5 as the share sheet needs it, so its toast can say the new count. */
+export function shareSetupOf(status: OnboardingStatus): ShareSetup {
+  return {
+    shared: status.steps.some((step) => step.key === ONBOARDING_STEP.SHARE && step.done),
+    doneCount: status.doneCount,
+  };
+}
 
 /** The id More → "Setup list" lands on (portal-nav). */
 export const SETUP_LIST_ID = "setup-list";
 
 /**
  * Home's setup list (R3, A6): ticks from facts, never from a tap on the list; hidden per shop and
- * reachable again here; collapses to one line once all five are done. A step opens its hint (R4).
+ * reachable again here; collapses to one line once all five are done. A step opens its hint (R4);
+ * the share step opens the share sheet itself, with its hint on top (D13), so A2 never leaves Home.
  */
-export function SetupList({ orgId, setup, shopPath }: { orgId: string; setup: HomeRead<OnboardingStatus>; shopPath: string | null }) {
+export function SetupList({ orgId, setup, share }: { orgId: string; setup: HomeRead<OnboardingStatus>; share: ShareShop | null }) {
   if (!setup.ok) {
     return (
       <Card id={SETUP_LIST_ID} className="py-4">
@@ -41,9 +54,9 @@ export function SetupList({ orgId, setup, shopPath }: { orgId: string; setup: Ho
             <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
             {HOME_COPY.setUp}
           </p>
-          {shopPath && (
+          {share && (
             <Button asChild variant="outline" size="sm" className="min-h-11">
-              <Link href={shopPath} target="_blank">{HOME_COPY.seeYourShop}</Link>
+              <Link href={share.path} target="_blank">{HOME_COPY.seeYourShop}</Link>
             </Button>
           )}
         </CardContent>
@@ -87,9 +100,26 @@ export function SetupList({ orgId, setup, shopPath }: { orgId: string; setup: Ho
                 {href && <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
               </>
             );
+            const row = (
+              <Button
+                variant="ghost"
+                aria-current={isNext ? "step" : undefined}
+                className={stepRowClass(isNext)}
+              >
+                {body}
+              </Button>
+            );
             return (
               <li key={step.key}>
-                {href && hint ? (
+                {href && share && step.key === ONBOARDING_STEP.SHARE ? (
+                  <ShareShopSheet
+                    orgId={orgId}
+                    shop={share}
+                    setup={shareSetupOf(status)}
+                    description={hint?.cards.join(" ")}
+                    trigger={row}
+                  />
+                ) : href && hint ? (
                   <SetupStepHint title={STEP_TITLE[step.key]} hint={hint} href={href} isNext={isNext}>
                     {body}
                   </SetupStepHint>

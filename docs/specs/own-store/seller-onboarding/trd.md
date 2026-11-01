@@ -1,9 +1,9 @@
 # TRD — own-store/seller-onboarding
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; all decisions closed)
+- **Status:** Implemented — 2026-11-01 (units 1–6; accepted 2026-10-30, UX signed off 2026-10-30)
 - **Domain:** cross-domain — catalog (org, onboarding, locations, reviews), front end; reads analytics, channels, content, bidding
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [org-profile trd](../org-profile/trd.md), [own-store](../spec.md) (Q12–Q14), [org-onboarding](../../multi-vendor-marketplace/org-onboarding/), [org-portal-chrome](../../multi-vendor-marketplace/org-portal-chrome/), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0034](../../../adr/0034-render-on-the-server-by-default.md), [ADR-0036](../../../adr/0036-a-files-reasons-to-change-are-a-decision.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md), [ADR-0050](../../../adr/0050-three-form-factors-on-tailwinds-own-breakpoints.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md), [ADR-0063](../../../adr/0063-every-public-route-is-classified-for-rate-limiting-in-one-registry.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -74,7 +74,9 @@ routes. Renames are labels only: no URL changes, so no shared link breaks.
 - **D13 — Share (R10; A2).** A `ShareShopSheet` built on `src/hooks/core/useShare.ts`. The link comes
   from `appUrl()`; WhatsApp is a `wa.me` link with the copy-deck message. The first tap calls the
   shared route (`useMutation`; a failure is silent, the next tap retries). The preview is the store's
-  Open Graph metadata. Opened from Home, the hub, and after the first product (D8).
+  Open Graph metadata, built by the one `storePreview` the store page also uses (Q33). Opened from
+  Home, the hub, and after the first product (D8), from the toast's "Share" (Q32). The hero image
+  costs one public-profile read per Home and hub render (`storefrontDAL.getByHandle`, request-cached).
 - **D14 — Renames and refusals (R11; A7).** The banner card title becomes "Banners"
   (`storefront-banners-manager.tsx`), the suspended page becomes "Your shop is paused", and seller
   copy says "shop". A copy test scans the portal for banned words; org-profile U5 extends it.

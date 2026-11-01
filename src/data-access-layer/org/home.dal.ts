@@ -8,8 +8,9 @@ import type { ChannelAttentionDTO } from "@server/channels/channel-connection.ty
 import { enhancementService } from "@server/content/enhancement.service";
 import { biddingService } from "@server/bidding/bidding.service";
 import { isAcceptingBids } from "@server/bidding/bidding-window";
-import { appUrl } from "@server/shared/app-url";
 import { productTeamService } from "@server/catalog/product-team.service";
+import type { ShareShop } from "@/lib/store-preview";
+import { shareShopFor } from "./share-shop.dal";
 
 /** One line's read: a failure costs that line and shows its own retry, never the page (D7). */
 export type HomeRead<T> = { ok: true; value: T } | { ok: false };
@@ -35,7 +36,7 @@ export interface HomeAttentionDto {
 }
 
 export interface HomeData {
-  shop: HomeRead<{ name: string; path: string; url: string }>;
+  shop: HomeRead<ShareShop>;
   setup: HomeRead<OnboardingStatus>;
   attention: HomeAttentionDto;
   /** Q14: before the first paid order the numbers are one line, not a grid of zeros. */
@@ -76,11 +77,7 @@ export const homeDAL = {
   async forOrg(orgId: string, now: Date = new Date()): Promise<HomeData> {
     const ctx: WidgetContext = { audience: "org", orgId };
     const [shop, setup, parcels, reviews, channel, photos, auction, teamEdits, paidOrders] = await Promise.all([
-      settle("shop", async () => {
-        const details = await shopDetailsService.get(orgId);
-        const path = `/store/${details.handle}`;
-        return { name: details.name, path, url: `${appUrl()}${path}` };
-      }),
+      settle("shop", async () => shareShopFor(await shopDetailsService.get(orgId))),
       settle("setup", () => orgOnboardingService.status(orgId)),
       settle("parcels", () => widgetData(WIDGET.PARCELS, ctx)),
       settle("reviews", () => reviewService.newForOrg(orgId, now)),

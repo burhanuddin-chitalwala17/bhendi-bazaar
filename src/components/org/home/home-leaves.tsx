@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { HOME_COPY } from "./home-copy";
 
 /** Said once after a task opened from Home is saved (R7), then dropped from the URL so a refresh is quiet. */
-export function DoneToast({ message }: { message: string }) {
+export function DoneToast({ message, actionLabel, onAction }: { message: string; actionLabel?: string; onAction?: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   useEffect(() => {
-    toast.success(message);
+    toast.success(message, actionLabel && onAction ? { action: { label: actionLabel, onClick: onAction } } : undefined);
     router.replace(pathname, { scroll: false });
-  }, [message, pathname, router]);
+  }, [message, actionLabel, onAction, pathname, router]);
   return null;
 }
 

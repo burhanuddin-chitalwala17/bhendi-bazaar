@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { HANDOFF_WIDE, HandoffSheet } from "@/components/shared/overlays/handoff-sheet";
 import { HintCards } from "@/components/layout/hint-cards";
 import { HINT_COPY, type StepHint } from "@/components/layout/portal-hints";
-import { cn } from "@/lib/utils";
+import { stepRowClass } from "./step-row";
 
 /** A setup step that opens its hint on a tap (R4; A5); the last card's button starts the task. */
 export function SetupStepHint({
@@ -37,10 +37,7 @@ export function SetupStepHint({
         <Button
           variant="ghost"
           aria-current={isNext ? "step" : undefined}
-          className={cn(
-            "flex h-auto min-h-11 w-full items-center justify-start gap-3 whitespace-normal rounded-card px-2 text-left font-normal hover:bg-muted/60",
-            isNext && "bg-muted",
-          )}
+          className={stepRowClass(isNext)}
         >
           {children}
         </Button>

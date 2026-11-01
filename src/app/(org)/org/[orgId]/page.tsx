@@ -11,7 +11,10 @@ import { HOME_COPY, doneToast } from "@/components/org/home/home-copy";
 import { DoneToast, UpdatedLine } from "@/components/org/home/home-leaves";
 import { NeedsYouNow } from "@/components/org/home/needs-you-now";
 import { parseDoneStep } from "@/components/org/home/return-to";
-import { SetupList } from "@/components/org/home/setup-list";
+import { SetupList, shareSetupOf } from "@/components/org/home/setup-list";
+import { HomeShareLink } from "@/components/org/home/home-share";
+import { ShareShopSheet } from "@/components/org/share/share-shop-sheet";
+import { ONBOARDING_STEP } from "@server/catalog/org-onboarding.types";
 import { homeDAL } from "@/data-access-layer/org/home.dal";
 import { requireOrgMember } from "@/lib/org-auth";
 
@@ -45,36 +48,48 @@ async function HomeBody({ orgId, done }: { orgId: string; done: unknown }) {
   const setup = home.setup.ok ? home.setup.value : null;
   const doneStep = parseDoneStep(done);
   const shop = home.shop.ok ? home.shop.value : null;
+  const shareSetup = setup ? shareSetupOf(setup) : null;
+  // After the first product the toast offers Share as well (R10); Home's link carries the sheet.
+  const productToast = doneStep === ONBOARDING_STEP.PRODUCT && shop && setup ? doneToast(doneStep, setup.doneCount) : null;
 
   return (
     <div className="space-y-6">
-      {doneStep && setup && <DoneToast message={doneToast(doneStep, setup.doneCount)} />}
+      {doneStep && setup && !productToast && <DoneToast message={doneToast(doneStep, setup.doneCount)} />}
 
       <header className="space-y-1">
         <div className="flex items-start gap-1">
           <h1 className="line-clamp-2 min-w-0 font-heading text-2xl font-semibold text-foreground">{shop?.name ?? "Home"}</h1>
           <PageHelp help="home" />
         </div>
-        {shop && (
-          <Link href={shop.path} target="_blank" className="block truncate text-sm text-primary underline-offset-4 hover:underline">
-            {shop.url}
-          </Link>
-        )}
+        {shop && <HomeShareLink orgId={orgId} shop={shop} setup={shareSetup} productToast={productToast} />}
         {shop && setup && !setup.complete && <p className="text-sm text-muted-foreground">{HOME_COPY.welcome(shop.name)}</p>}
       </header>
 
       {setup?.complete && lines.length === 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-card p-4">
           <p className="text-sm font-medium text-foreground">{HOME_COPY.allCaughtUp}</p>
-          <Button asChild variant="outline" size="sm" className="min-h-11">
-            <Link href={`/org/${orgId}/shop`}>{HOME_COPY.shareShop}</Link>
-          </Button>
+          {shop ? (
+            <ShareShopSheet
+              orgId={orgId}
+              shop={shop}
+              setup={shareSetup}
+              trigger={
+                <Button type="button" variant="outline" size="sm" className="min-h-11">
+                  {HOME_COPY.shareShop}
+                </Button>
+              }
+            />
+          ) : (
+            <Button asChild variant="outline" size="sm" className="min-h-11">
+              <Link href={`/org/${orgId}/shop`}>{HOME_COPY.shareShop}</Link>
+            </Button>
+          )}
         </div>
       )}
 
       <div className="space-y-6 md:grid md:grid-cols-2 md:items-start md:gap-6 md:space-y-0">
         <NeedsYouNow lines={lines} />
-        <SetupList orgId={orgId} setup={home.setup} shopPath={shop?.path ?? null} />
+        <SetupList orgId={orgId} setup={home.setup} share={shop} />
       </div>
 
       <section className="space-y-3" aria-labelledby="your-numbers">

@@ -26,7 +26,13 @@ const status: OnboardingStatus = {
   hidden: false,
 } as OnboardingStatus;
 
-const renderList = () => render(<SetupList orgId="o1" setup={{ ok: true, value: status }} shopPath="/store/abc" />);
+const share = {
+  name: "ABC Traders",
+  path: "/store/abc",
+  url: "https://bb.test/store/abc",
+  preview: { title: "ABC Traders", description: "Attar since 1920", image: null },
+};
+const renderList = () => render(<SetupList orgId="o1" setup={{ ok: true, value: status }} share={share} />);
 // Read from the DOM, not the accessibility tree: an open modal hides every other dialog from it.
 const dialogs = () => Array.from(document.querySelectorAll("[role=dialog]"));
 

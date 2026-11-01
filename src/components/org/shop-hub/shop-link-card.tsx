@@ -1,26 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Copy, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
+import { Copy, ExternalLink, Share2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ShareButton } from "@/components/shared/ShareButton";
-import { useShare } from "@/hooks/core/useShare";
+import { ShareShopSheet } from "@/components/org/share/share-shop-sheet";
+import { SHARE_COPY } from "@/components/org/share/share-copy";
+import { COPY_STATE, useShareShop } from "@/components/org/share/useShareShop";
 import { SHOP_HUB_COPY, truncateMiddle } from "@/components/org/shop-hub/shop-hub-copy";
+import type { ShareShop } from "@/lib/store-preview";
 
-/** The Shop tab's link card (own-store onboarding D3): the link, Share, Copy link, See as a buyer. */
-export function ShopLinkCard({ url, path, shopName }: { url: string; path: string; shopName: string }) {
-  const { copyToClipboard } = useShare();
-  const [copyFailed, setCopyFailed] = useState(false);
-  const shown = url.replace(/^https?:\/\//, "");
-
-  const copy = async () => {
-    const ok = await copyToClipboard(url);
-    setCopyFailed(!ok);
-    if (ok) toast.success(SHOP_HUB_COPY.copied);
-  };
+/** The Shop tab's link card (own-store onboarding D3, D13): the link, Share, Copy link, See as a buyer. */
+export function ShopLinkCard({ orgId, shop }: { orgId: string; shop: ShareShop }) {
+  const { copyLink, copyState } = useShareShop(orgId, shop.url, null);
+  const shown = shop.url.replace(/^https?:\/\//, "");
 
   return (
     <section className="space-y-3 rounded-card border border-border bg-card p-4">
@@ -28,17 +21,27 @@ export function ShopLinkCard({ url, path, shopName }: { url: string; path: strin
       <p className="select-all break-all font-medium text-foreground" title={shown}>
         {truncateMiddle(shown, 44)}
       </p>
-      {copyFailed && <p className="text-sm text-muted-foreground">{SHOP_HUB_COPY.copyFailed}</p>}
+      {copyState === COPY_STATE.FAILED && <p className="text-sm text-muted-foreground">{SHARE_COPY.copyFailed}</p>}
       <div className="flex flex-wrap gap-2">
-        <ShareButton url={url} title={shopName} text={`Visit ${shopName} online:`} size="lg" variant="default" className="min-h-11" />
-        <Button type="button" variant="outline" size="lg" className="min-h-11" onClick={copy}>
+        <ShareShopSheet
+          orgId={orgId}
+          shop={shop}
+          setup={null}
+          trigger={
+            <Button type="button" size="lg" className="min-h-11">
+              <Share2 aria-hidden />
+              {SHARE_COPY.open}
+            </Button>
+          }
+        />
+        <Button type="button" variant="outline" size="lg" className="min-h-11" onClick={() => void copyLink()}>
           <Copy aria-hidden />
-          {SHOP_HUB_COPY.copyLink}
+          {SHARE_COPY.copyLink}
         </Button>
         <Button asChild variant="ghost" size="lg" className="min-h-11">
-          <Link prefetch={false} href={path} target="_blank" rel="noopener noreferrer">
+          <Link prefetch={false} href={shop.path} target="_blank" rel="noopener noreferrer">
             <ExternalLink aria-hidden />
-            {SHOP_HUB_COPY.seeAsBuyer}
+            {SHARE_COPY.seeAsBuyer}
           </Link>
         </Button>
       </div>

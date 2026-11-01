@@ -1,10 +1,10 @@
 # Spec — own-store/seller-onboarding
 
 - **Summary:** A shop created on a phone reaches its first shared store link from a task-based home, and finds every tool it needs without leaving the page it is on
-- **Status:** Accepted
+- **Status:** Implemented — 2026-11-01 (units 1–6)
 - **Domain:** cross-domain — catalog (org, onboarding facts, locations, reviews), analytics (home numbers), front end
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q12, Q13, Q14), [org-profile](../org-profile/) (the fields this flow asks), [seller-profile](../../seller-profile/) (R5, R7), [org-onboarding](../../multi-vendor-marketplace/org-onboarding/), [org-portal-chrome](../../multi-vendor-marketplace/org-portal-chrome/), [ADR-0016](../../../adr/0016-mobile-app-shell.md), [ADR-0040](../../../adr/0040-an-overlays-surface-is-chosen-by-what-it-holds.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).

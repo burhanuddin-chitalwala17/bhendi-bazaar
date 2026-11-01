@@ -29,7 +29,7 @@ const TASK: Record<OnboardingStep, ((orgId: string) => string) | null> = {
   [ONBOARDING_STEP.PRODUCT]: (orgId) => `/org/${orgId}/products/new?from=${RETURN_TO.HOME}`,
   [ONBOARDING_STEP.ADDRESS]: (orgId) => `/org/${orgId}/locations?from=${RETURN_TO.HOME}`,
   [ONBOARDING_STEP.LOOK]: (orgId) => `/org/${orgId}/shop/details?from=${RETURN_TO.HOME}`,
-  // The Shop tab holds the link and Share; the share sheet arrives with onboarding unit 6.
+  // Home opens the share sheet in place (D13); the Shop tab is the way when Home could not read the link.
   [ONBOARDING_STEP.SHARE]: (orgId) => `/org/${orgId}/shop`,
 };
 

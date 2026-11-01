@@ -89,7 +89,7 @@ export default async function ShopHubPage({ params }: { params: Promise<{ orgId:
   return (
     <PageShell width="wide">
       <PageHeader help="shop" title={SHOP_HUB_COPY.title} description={SHOP_HUB_COPY.help} />
-      {data.link && <ShopLinkCard url={data.link.url} path={data.link.path} shopName={data.name} />}
+      {data.share && <ShopLinkCard orgId={scope.orgId} shop={data.share} />}
       {allDone && <p className="text-sm font-medium text-foreground">{SHOP_HUB_COPY.allDone}</p>}
       <ul className="grid gap-3 lg:grid-cols-2">
         {rows.map((row) => (

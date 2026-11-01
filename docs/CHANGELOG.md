@@ -12,6 +12,30 @@
 
 ## Entries
 
+## 2026-11-01 — seller-onboarding unit 6: share the shop's link
+
+- **Share sheet (R10, A2; D13):** `src/components/org/share/share-shop-sheet.tsx`, on the hand-off sheet (bottom
+  sheet; popover from `lg:`), titled "Share your shop": the link (truncated mid), the card a chat will show, and
+  "Share on WhatsApp" (a `wa.me` link with "Visit {Shop name} online: {link}"), "Copy link", "See as a buyer". Copy
+  says "Link copied" and "Copied. Paste it in any chat."; a failed copy says "Long-press the link to copy it."
+- **First share recorded (Q3, Q32):** `useShareShop` calls `POST …/setup/shared` on the first WhatsApp tap or the first
+  copy that reached the clipboard; a failed record is silent and the next tap retries; a shop that has shared asks
+  nothing. On Home the toast says "Shared · {n} of 5 done" and the list refreshes; elsewhere it says "Shared".
+- **Openers:** Home's setup step 5 opens the sheet in place with its hint on top (it no longer leaves for the Shop
+  tab), Home's link gains "Share", "All caught up" opens it, and the toast after the first product carries "Share".
+  The Shop tab's link card opens the same sheet instead of the generic share dialog, and its copy counts too.
+- **One preview (Q33):** `src/lib/store-preview.ts` builds the store page's Open Graph title, description and image;
+  the store page's metadata and the sheet both read it (no change to the metadata). `share-shop.dal.ts` reads it for
+  Home and the Shop tab, falling back to the shop's own details when the public read fails.
+- **Status:** seller-onboarding spec and TRD → Implemented (units 1–6).
+- **Docs:** ARCHITECTURE.md test-file count.
+- **Tests:** `tests/unit/share-shop-sheet.test.tsx`, `tests/unit/shop-hub.test.ts`, `tests/unit/hint-sheet.test.tsx`.
+  Mutation-tested: dropping the already-shared guard, marking the share recorded before the server answers, sending
+  the message unencoded, recording a failed copy, sending step 5 back to the Shop tab, and letting a failed public
+  read cost the link each fail a test; so do trusting only the mount-time "shared" (a sheet kept mounted across the
+  refresh said "6 of 5 done") and dropping the product toast's "Share".
+- **Cost:** the preview's hero image is one request-cached public-profile read per Home and Shop-tab render (TRD D13).
+
 ## 2026-11-01 — storefront-themes unit 3: themed chrome, the landing/shop split, redirects [CONTRACT]
 
 - **Routes (D6; Q3, Q19, Q35; R13):** `src/app/(store)/store/layout.tsx` keeps only the wishlist; a new
