@@ -56,7 +56,7 @@ export default async function OrgProductsPage({
           <Button asChild variant="outline">
             <Link href={`/org/${orgId}/products/bulk`} prefetch={false}>
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Bulk upload</span>
+              <span className="hidden sm:inline">Add many at once</span>
             </Link>
           </Button>
           <Button asChild>

@@ -1,9 +1,9 @@
 # TRD — own-store/bulk-sheet
 
-- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner)
+- **Status:** Accepted — 2026-10-30 (UX signed off 2026-10-30; Q19 decided by the owner) · U1 built 2026-11-01
 - **Domain:** catalog (bulk), with listing (vocabulary) and shared (audit)
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **References:** [spec.md](spec.md), [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../decisions.md) (Q10, Q11, Q17, Q24), [product-form](../product-form/trd.md), [bulk-catalog-upload](../../bulk-catalog-upload/trd.md), [ADR-0003](../../../adr/0003-one-repository-per-aggregate.md), [ADR-0013](../../../adr/0013-one-error-envelope-and-useserverform.md), [ADR-0021](../../../adr/0021-audit-trail-never-fails-the-action.md), [ADR-0029](../../../adr/0029-a-product-leaves-sale-by-archiving-not-deletion.md), [ADR-0046](../../../adr/0046-a-new-model-is-checked-against-the-field-before-the-codebase.md), [ADR-0048](../../../adr/0048-a-component-renders-a-hook-holds-state-an-api-client-makes-the-call.md), [ADR-0052](../../../adr/0052-a-product-type-is-a-row-that-selects-from-facts-declared-in-code.md), [ADR-0055](../../../adr/0055-an-admin-surface-reads-through-projections-and-writes-through-the-aggregates-one-repository.md)
 
 > Technical approach and decisions. No code — references to existing code only.
@@ -145,6 +145,10 @@ Per [TESTING.md](../../../TESTING.md); each new guard is mutation-tested and rec
 | U5 Admin download and upload for a shop, audited | R9, A6; D10, D11 | no | yes |
 
 Every unit changes behaviour. U5 follows product-form U4 and U5.
+U1 took D5's key-row read of the type tabs (example and Problems skipped) because A5 cannot hold
+without it; U2 keeps the rest of D5 (cell addresses, the unstamped warning) and D3's Lists tab.
+U1 hands U3: rows carry `tab` and are keyed by index, and create receives each row's `rowNumber`/`tab`;
+U3 puts `tab` into every `RowError` and message (a duplicate SKU on two tabs now reads "rows 5 and 5").
 
 ## Open questions
 None. Q27–Q30 are Claude · reversible.

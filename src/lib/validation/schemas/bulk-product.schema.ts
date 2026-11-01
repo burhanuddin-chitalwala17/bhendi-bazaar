@@ -88,7 +88,7 @@ export function parseBulkProductRow(
   if (video) {
     const ref = parseYoutubeRef(video);
     if (ref) videoRef = ref;
-    else errors.push({ row: raw.rowNumber, field: "video", message: `Not a YouTube link: "${video}"` });
+    else errors.push({ row: raw.rowNumber, field: "video", message: `Not a YouTube link: "${video}" — add a video file from the product form after upload` });
   }
   // Video counts against the same gallery cap as photographs (media R14).
   if (videoRef && images.length >= MAX_MEDIA_PER_PRODUCT) {
@@ -192,6 +192,9 @@ export const bulkProductCreateSchema = z.object({
     .array(
       rowShape.extend({
         imageUrls: z.record(z.string(), blobUrl),
+        // Where the row sat in the shop's sheet — used to name it in a message, nothing else.
+        rowNumber: z.number().int().positive().optional(),
+        tab: z.string().max(31).optional(),
       })
     )
     .min(1, "Nothing to create")

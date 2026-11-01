@@ -21,3 +21,10 @@ export async function apiRequest<T = void>(url: string, init: ApiRequestInit = {
   if (!response.headers.get("content-type")?.includes("application/json")) return undefined as T;
   return (await response.json()) as T;
 }
+
+/** A file our API makes, as bytes — a download whose failure still arrives as an `ApiError`. */
+export async function apiDownload(url: string): Promise<Blob> {
+  const response = await fetch(url);
+  if (!response.ok) throw await readApiError(response);
+  return await response.blob();
+}

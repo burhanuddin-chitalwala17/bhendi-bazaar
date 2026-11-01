@@ -12,6 +12,31 @@
 
 ## Entries
 
+## 2026-11-01 — own-store/bulk-sheet unit 1: the download page, Instructions, a tab per type, the example row, Video help [CONTRACT]
+
+- **Get the sheet (D1, D12; R1; Q2, Q16, Q29):** `/org/[orgId]/products/bulk` is now four steps (Get the sheet ·
+  Fill it · Upload · Check and create). Step 1 ticks categories by path, grouped by the tab each makes
+  (`groupForTicking`), prefilled from the categories the shop sells in, searchable and collapsed past 60; read
+  through `src/data-access-layer/org/bulk-sheet.dal.ts` → `bulkSheetService.choices`. "Last downloaded" is kept
+  per shop in the device's storage, read safely. Nothing ticked is refused on tap, never disabled; no pickup
+  address shows "Add location". Entry renamed "Add many at once".
+- **The workbook (D1, D2; R3, R11, A1; Q3, Q5, Q9, Q25):** `GET …/products/bulk/sample` takes `?categories=`
+  (was `?types=`). `planSheetTabs` makes one tab per type the ticks resolve to, Other last; each tab's category
+  dropdown offers only its own. Instructions first (five steps, colour key, photo and video lines, made-on date).
+  Each tab: column A Problems, orange required headings, a hidden key row, a help line, one greyed example whose
+  name reads "EXAMPLE — this row is skipped"; headings and Problems frozen. The Types and How to fill tabs are gone.
+- **Reading it back (A5):** `parseSheet` reads every visible tab with the key row by key, past the help line,
+  skipping the example while its marker stays and never reading Problems; a sheet with only the example answers
+  "Your sheet has no products yet — the example row is skipped." A .csv or older .xlsx reads by heading, as before,
+  and never from Instructions. A tab is known by `name` and `price` on its key row, so deleting Problems breaks
+  nothing. Each row carries its `tab`; create and SKU plans key rows by index (tabs share row numbers), and the
+  create payload carries each row's sheet `rowNumber`/`tab` for messages. Problems do not yet name the tab (U3:
+  `RowError.tab`) and dropdowns still offer slugs (U2).
+- **A8:** a non-link Video cell reads "Not a YouTube link: "{value}" — add a video file from the product form after upload".
+- **Tests:** `tests/unit/bulk-sheet-tabs.test.ts`, `bulk-sheet-columns`/`bulk-sheet-build` rewritten for the tab
+  shape, `tests/integration/bulk-sheet-download.test.ts`. Mutation-tested: example skip removed (2 fail), Problems
+  read as data (2), help row read (3), empty refusal removed (1), type grouping removed (15), A8 suffix dropped (1),
+  keyed-tab check back to cell A2 (1).
 ## 2026-11-01 — order-fulfilment unit 3: booking, label, date change, India-time timeline [CONTRACT] [MIGRATION]
 
 - **Booking** (R5, R6, A3; D11; Q4, Q23): `POST /api/admin/shipments/[id]/booking` → `bookPickup`

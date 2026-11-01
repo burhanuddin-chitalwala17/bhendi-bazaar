@@ -42,7 +42,7 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     for (const rawRow of raw.rows) {
       const parsed = parseBulkProductRow(rawRow);
       if ("errors" in parsed) errors.push(...parsed.errors);
-      else rows.push({ rowNumber: rawRow.rowNumber, row: parsed.row });
+      else rows.push({ rowNumber: rawRow.rowNumber, tab: rawRow.tab, row: parsed.row });
     }
     errors.push(
       ...(await validateProductRows(scope.orgId, rows, filenames.map(String))),

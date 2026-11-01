@@ -1,27 +1,29 @@
-import { FACT_DECLARATIONS, type FactKey } from "@server/listing/listing-facts";
+import { FACT_DECLARATIONS } from "@server/listing/listing-facts";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
 /**
- * What columns a bulk sheet has, worked out from the types it is being generated for
- * ([product-form/bulk-sheet](../../../docs/specs/listing-vocabulary/)).
+ * The columns of one tab of the bulk sheet, worked out from that tab's type at download time
+ * ([own-store/bulk-sheet](../../../docs/specs/own-store/bulk-sheet/trd.md) D1, D2).
  *
- * **Nothing here is a fixed template.** The sheet is built at the moment it is downloaded, from
- * the types, categories, locations and permitted values that exist then — so adding a product
- * type or a colour changes the next sheet without anybody editing a file. A template generated
- * once would go stale the first time a type was added, and the drift would be invisible until a
- * org's upload was rejected for a column that no longer exists.
- *
- * The shape follows Amazon rather than Flipkart and Meesho: those publish one sheet per
- * category, so an org in twelve of them downloads twelve files. Amazon lets several types be
- * selected and returns one workbook, each row naming its own type. That is far cheaper here,
- * because our vocabulary is twenty-eight facts rather than Amazon's 390 columns.
+ * Nothing here is a fixed template: adding a type or a fact changes the next download with no
+ * file to edit. A column's `key` is what the upload reads (a hidden row), its `heading` is only
+ * for people, so a renamed heading breaks nothing (Q5).
  */
+export interface SheetColumn {
+  key: string;
+  heading: string;
+  /** The one line under the heading (R3). */
+  help: string;
+  /** An orange heading: the row is refused without it. */
+  required: boolean;
+  /** Which value list the dropdown draws on, when the column is a choice. */
+  list?: string;
+}
 
-/** Always present, whatever types the sheet spans. */
+/** The columns every tab has, in order. `name` is first, so the example's marker reads as its name. */
 export const SPINE_COLUMNS = [
-  "productType",
-  "kind",
   "name",
+  "kind",
   "description",
   "price",
   "salePrice",
@@ -35,119 +37,94 @@ export const SPINE_COLUMNS = [
   "video",
 ] as const;
 
-export interface SheetColumn {
-  header: string;
-  /** Which list the answers come from, when the column is a choice. */
-  list?: string;
-  /** What the notes sheet says about it. */
-  note: string;
-}
+type SpineKey = (typeof SPINE_COLUMNS)[number];
+
+export const VIDEO_HELP = "YouTube link only. Add a video file from the product form after upload.";
+
+const SPINE: Record<SpineKey, Omit<SheetColumn, "key">> = {
+  name: { heading: "Product name", required: true, help: "2 or more characters." },
+  kind: { heading: "Kind", required: false, help: "Which kind within this type, e.g. abaya or rida." },
+  description: { heading: "Description", required: true, help: "What a buyer should know." },
+  price: { heading: "Price (₹)", required: true, help: "Rupees, e.g. 2499 or 499.50." },
+  salePrice: {
+    heading: "Sale price (₹)",
+    required: false,
+    help: "Optional, below the price. On an update, empty keeps the current sale and 0 ends it.",
+  },
+  category: { heading: "Category", required: true, help: "Pick from the list — the categories you ticked." },
+  family: {
+    heading: "Family",
+    required: false,
+    help: "Optional: one name for the same thing in several colours. A new name is created once.",
+  },
+  sku: {
+    heading: "SKU",
+    required: false,
+    help: "Your own code. A row whose SKU matches a product updates it; a new or empty SKU creates one.",
+  },
+  weight: { heading: "Weight (kg)", required: true, help: "Kilograms, e.g. 0.6." },
+  tags: { heading: "Tags", required: false, help: "Separate several with ; (semicolon)." },
+  images: {
+    heading: "Photos",
+    required: true,
+    help: "Folder and file, ; separated, in gallery order: emerald-abaya/front.jpg",
+  },
+  cover: { heading: "Cover photo", required: false, help: "Optional: which photo is the cover, as written in Photos." },
+  video: { heading: "Video", required: false, help: VIDEO_HELP },
+};
 
 /**
- * A measurement column is named for its unit, because one measure takes different units in
- * different types: `length` is inches for a garment and centimetres for a mat. One `length`
- * column across both would mean two things, and the person filling it would have no way to tell
- * which — so they are separate columns and a row fills the one its type uses.
+ * A measurement column is keyed by its unit, because one measure takes different units in
+ * different types — `length` is inches for a garment and centimetres for a mat.
  */
 export function measureHeader(key: string, unit: string): string {
   return `${key} (${unit})`;
 }
 
-/** Every fact column the given types ask for, each named once however many types ask it. */
-export function factColumns(types: readonly ProductTypeRecord[]): SheetColumn[] {
-  const seen = new Map<FactKey, SheetColumn>();
-  for (const type of types) {
-    for (const fact of type.facts) {
-      if (seen.has(fact)) continue;
-      const declaration = FACT_DECLARATIONS[fact];
-      if (!declaration) continue;
-      // A type may use another word for a shared question — cloth is asked its Fabric — but the
-      // column is keyed by the fact, so one column serves every type that asks it. The notes
-      // carry the wording.
-      const asked = types.filter((candidate) => candidate.facts.includes(fact));
-      const labels = [...new Set(asked.map((t) => t.factLabels[fact] ?? declaration.label))];
-      seen.set(fact, {
-        header: fact,
-        list: declaration.list,
-        note: `${labels.join(" / ")} — for ${asked.map((t) => t.label).join(", ")}.`,
-      });
-    }
-  }
-  return [...seen.values()];
+/** The questions this type asks, each headed in the type's own word for it (cloth asks Fabric). */
+export function factColumns(type: ProductTypeRecord | null): SheetColumn[] {
+  return (type?.facts ?? []).flatMap((fact) => {
+    const declaration = FACT_DECLARATIONS[fact];
+    if (!declaration) return [];
+    return [{
+      key: fact,
+      heading: type?.factLabels[fact] ?? declaration.label,
+      help: declaration.list ? "Pick from the list." : "Optional.",
+      required: false,
+      list: declaration.list,
+    }];
+  });
 }
 
-/** Every measurement column, one per measure and unit, with which types require it. */
-export function measureColumns(types: readonly ProductTypeRecord[]): SheetColumn[] {
-  const seen = new Map<string, SheetColumn>();
-  for (const type of types) {
-    for (const measure of type.measures) {
-      const header = measureHeader(measure.key, measure.unit);
-      if (seen.has(header)) continue;
-      const asked = types.filter((candidate) =>
-        candidate.measures.some((m) => m.key === measure.key && m.unit === measure.unit),
-      );
-      const required = asked.filter((candidate) =>
-        candidate.measures.some((m) => m.key === measure.key && m.required),
-      );
-      seen.set(header, {
-        header,
-        note:
-          `${measure.label} in ${measure.unit} — for ${asked.map((t) => t.label).join(", ")}.` +
-          (required.length
-            ? ` Required by ${required.map((t) => t.label).join(", ")}.`
-            : " Optional."),
-      });
-    }
-  }
-  return [...seen.values()];
-}
-
-/** The stock columns: one per pickup location the org actually has. */
-export function stockColumns(locationNames: readonly string[]): SheetColumn[] {
-  return locationNames.map((name) => ({
-    header: `stock:${name}`,
-    note: "Quantity at this pickup location. Leave empty or 0 for none.",
+export function measureColumns(type: ProductTypeRecord | null): SheetColumn[] {
+  return (type?.measures ?? []).map((measure) => ({
+    key: measureHeader(measure.key, measure.unit),
+    heading: `${measure.label} (${measure.unit})`,
+    help: `${measure.label} in ${measure.unit}.${measure.required ? "" : " Optional."}`,
+    required: measure.required,
   }));
 }
 
-/** Every column, in the order the sheet shows them. */
-export function sheetColumns(
-  types: readonly ProductTypeRecord[],
+/** One stock column per pickup location the shop actually has. */
+export function stockColumns(locationNames: readonly string[]): SheetColumn[] {
+  return locationNames.map((name) => ({
+    key: `stock:${name}`,
+    heading: `Stock at ${name}`,
+    help: "How many are kept here. Empty or 0 for none.",
+    required: false,
+  }));
+}
+
+/** Every column of one tab, in the order it shows them. A type with no kinds asks no kind. */
+export function tabColumns(
+  type: ProductTypeRecord | null,
   locationNames: readonly string[],
 ): SheetColumn[] {
+  const spine = SPINE_COLUMNS.filter((key) => key !== "kind" || (type?.kinds.length ?? 0) > 0);
   return [
-    ...SPINE_COLUMNS.map((header) => ({ header, note: SPINE_NOTES[header] })),
-    ...factColumns(types),
-    ...measureColumns(types),
+    ...spine.map((key) => ({ key, ...SPINE[key] })),
+    ...factColumns(type),
+    ...measureColumns(type),
     ...stockColumns(locationNames),
   ];
 }
-
-const SPINE_NOTES: Record<(typeof SPINE_COLUMNS)[number], string> = {
-  productType:
-    "Which kind of thing this row is. It decides which of the later columns apply — leave the " +
-    "ones belonging to other types empty. Blank is allowed: the product saves and sells, and " +
-    "cannot be published to a marketplace.",
-  kind: "Which kind within that type — abaya, rida, attar. See the Types sheet.",
-  name: "Product name, 2+ characters.",
-  description: "Required.",
-  price: "Rupees, e.g. 2499 or 499.50.",
-  salePrice:
-    "Optional. Below the price; it is stored as an offer, not as a second price. On a row " +
-    "that updates a product, leave it empty to keep that product's current sale, or write " +
-    "the price itself (or 0) to end it.",
-  category: "One of your category slugs. It is also what decides the product type if left blank.",
-  family:
-    "Optional: the name of a family this belongs to, for the same thing in several colours. " +
-    "A family named here that does not exist yet is created once and reused by later rows.",
-  sku:
-    "Your own code, unique within your organisation. **A row whose SKU matches an existing " +
-    "product updates it; a row with a new or empty SKU creates one.**",
-  weight: "Kilograms, e.g. 0.6.",
-  tags: "Separate multiple values with ; (semicolon).",
-  images:
-    "Photos for this row, ; separated, in gallery order. First is the cover unless 'cover' " +
-    "says otherwise. Include the folder if you upload one: emerald-abaya/front.jpg.",
-  cover: "Optional: which of this row's images is the cover, written exactly as in images.",
-  video: "Optional: a YouTube link.",
-};

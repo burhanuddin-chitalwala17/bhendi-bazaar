@@ -37,9 +37,11 @@ const values = {
 async function build(types: ProductTypeRecord[] = [type({})]) {
   const buffer = await buildProductSampleSheet({
     orgName: "Test Org",
+    madeOn: new Date("2026-10-30T00:00:00Z"),
     locationNames: ["Shop"],
-    categorySlugs: ["formal-ridas"],
-    productTypes: types,
+    tabs: types.length
+      ? types.map((t) => ({ name: t.label, type: t, categorySlugs: ["formal-ridas"] }))
+      : [{ name: "Other", type: null, categorySlugs: ["formal-ridas"] }],
     values,
   });
   const workbook = new ExcelJS.Workbook();
@@ -47,44 +49,34 @@ async function build(types: ProductTypeRecord[] = [type({})]) {
   return workbook;
 }
 
+const keysOf = (sheet: ExcelJS.Worksheet) => (sheet.getRow(2).values as unknown[]).map((v) => String(v ?? ""));
+
 describe("the workbook a seller actually opens", () => {
-  it("puts the example rows directly under the header, not below the dropdown range", async () => {
-    const sheet = (await build()).getWorksheet("Products")!;
-    expect(sheet.getRow(2).getCell(1).value).toBe("islamic-wear");
-    expect(sheet.getRow(2).getCell(3).value).toBe("Example Product One");
-    expect(sheet.getRow(3).getCell(3).value).toBe("Example Product Two");
+  // Applying the dropdowns first materialises their rows, so a row added afterwards lands below
+  // five hundred blanks — which is exactly what happened once.
+  it("puts the example row directly under the help line, not below the dropdown range", async () => {
+    const sheet = (await build()).getWorksheet("Islamic wear")!;
+    expect(sheet.getRow(4).getCell(2).value).toBe("EXAMPLE — this row is skipped");
   });
 
-  it("names its columns in the header row", async () => {
-    const sheet = (await build()).getWorksheet("Products")!;
-    const headers = (sheet.getRow(1).values as unknown[]).filter(Boolean).map(String);
-    expect(headers).toContain("productType");
-    expect(headers).toContain("colour");
-    expect(headers).toContain("length (in)");
-    expect(headers).toContain("stock:Shop");
+  it("names its columns by key on the hidden row", async () => {
+    const keys = keysOf((await build()).getWorksheet("Islamic wear")!);
+    expect(keys).toContain("colour");
+    expect(keys).toContain("length (in)");
+    expect(keys).toContain("stock:Shop");
   });
 
   it("puts a dropdown on a choice column and none on a free one", async () => {
-    const sheet = (await build()).getWorksheet("Products")!;
-    const headers = (sheet.getRow(1).values as unknown[]).map((v) => String(v ?? ""));
-    const colour = headers.indexOf("colour");
-    const name = headers.indexOf("name");
-    expect(sheet.getRow(5).getCell(colour).dataValidation?.type).toBe("list");
-    expect(sheet.getRow(5).getCell(name).dataValidation).toBeUndefined();
+    const sheet = (await build()).getWorksheet("Islamic wear")!;
+    const keys = keysOf(sheet);
+    expect(sheet.getRow(5).getCell(keys.indexOf("colour")).dataValidation?.type).toBe("list");
+    expect(sheet.getRow(5).getCell(keys.indexOf("name")).dataValidation).toBeUndefined();
   });
 
   // Nothing in this vocabulary blocks saving, so a dropdown must not force a choice either.
   it("lets every dropdown be left blank", async () => {
-    const sheet = (await build()).getWorksheet("Products")!;
-    const headers = (sheet.getRow(1).values as unknown[]).map((v) => String(v ?? ""));
-    const colour = headers.indexOf("colour");
-    expect(sheet.getRow(5).getCell(colour).dataValidation?.allowBlank).toBe(true);
-  });
-
-  it("carries a Types sheet saying which columns belong to which type", async () => {
-    const sheet = (await build()).getWorksheet("Types")!;
-    expect(sheet.getRow(2).getCell(1).value).toBe("islamic-wear");
-    expect(String(sheet.getRow(2).getCell(3).value)).toContain("rida");
+    const sheet = (await build()).getWorksheet("Islamic wear")!;
+    expect(sheet.getRow(5).getCell(keysOf(sheet).indexOf("colour")).dataValidation?.allowBlank).toBe(true);
   });
 
   it("hides the lookup sheet, which is machinery rather than something to fill in", async () => {
@@ -92,11 +84,9 @@ describe("the workbook a seller actually opens", () => {
   });
 
   it("builds a usable sheet for an org with no types at all", async () => {
-    const workbook = await build([]);
-    const sheet = workbook.getWorksheet("Products")!;
-    const headers = (sheet.getRow(1).values as unknown[]).filter(Boolean).map(String);
-    expect(headers).toContain("name");
-    expect(headers).not.toContain("colour");
-    expect(workbook.getWorksheet("Types")!.getRow(2).getCell(2).value).toContain("No product types");
+    const keys = keysOf((await build([])).getWorksheet("Other")!);
+    expect(keys).toContain("name");
+    expect(keys).not.toContain("colour");
+    expect(keys).not.toContain("kind");
   });
 });

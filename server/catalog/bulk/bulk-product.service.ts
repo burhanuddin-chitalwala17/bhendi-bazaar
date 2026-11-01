@@ -33,6 +33,8 @@ import {
 
 export interface RowWithNumber<T> {
   rowNumber: number;
+  /** Two tabs share row numbers, so a row is identified by its index, never its number. */
+  tab?: string;
   row: T;
 }
 
@@ -50,7 +52,7 @@ export interface RowWithNumber<T> {
  */
 export interface BulkPlan {
   errors: RowError[];
-  /** Row number → the id of the product it will replace. Absent means it creates one. */
+  /** Row index (not number: tabs share numbers) → the product it will replace. Absent creates. */
   updates: Map<number, string>;
   creates: number;
 }
@@ -189,10 +191,10 @@ export async function planProductRows(
   const existing = await adminProductsRepository.listLiveSkus(orgId, skus);
   const bySku = new Map(existing.map((product) => [product.sku as string, product.id]));
 
-  for (const { row, rowNumber } of rows) {
+  rows.forEach(({ row }, index) => {
     const id = row.sku ? bySku.get(row.sku) : undefined;
-    if (id) updates.set(rowNumber, id);
-  }
+    if (id) updates.set(index, id);
+  });
   return { updates, creates: rows.length - updates.size };
 }
 
@@ -268,10 +270,10 @@ async function assignSlugs(
     // Archived included (ADR-0029): an import must not reuse a slug a restore will want back.
     (await adminProductsRepository.listAllSlugs()).map((p) => p.slug)
   );
-  return rows.map(({ row, rowNumber }) => {
+  return rows.map(({ row }, index) => {
     // An updating row's slug is never recomputed: it is frozen at creation, because changing
     // one 404s every link to the product.
-    if (updates.has(rowNumber)) return "";
+    if (updates.has(index)) return "";
     const base = slugify(row.name) || "item";
     let candidate = base;
     for (let n = 2; existing.has(candidate); n++) candidate = `${base}-${n}`;
@@ -316,11 +318,11 @@ export async function createProducts(
   const stock: { productId: string; orgAddressId: string; quantity: number }[] = [];
   const productIds: string[] = [];
 
-  rows.forEach(({ row, rowNumber }, index) => {
+  rows.forEach(({ row }, index) => {
     // An updating row writes to the product it names rather than a new one, and keeps that
     // product's slug: regenerating it would 404 every existing link (Invariant 4's reasoning
     // for freezing a slug at creation).
-    const existingId = plan.updates.get(rowNumber);
+    const existingId = plan.updates.get(index);
     const id = existingId ?? randomUUID();
     productIds[index] = id;
     const coverName = row.cover ?? row.images[0];
@@ -428,7 +430,7 @@ async function markdownsFor(
   const terms = await commercialTermsService.find(orgId);
   const markdowns: Parameters<typeof promotionService.setProductMarkdown>[0][] = [];
   for (const [index, { row, rowNumber }] of rows.entries()) {
-    const isUpdate = updates.has(rowNumber);
+    const isUpdate = updates.has(index);
     const productId = productIds[index];
     if (row.salePrice === undefined) continue;
     const price = rupeesToPaise(row.price);

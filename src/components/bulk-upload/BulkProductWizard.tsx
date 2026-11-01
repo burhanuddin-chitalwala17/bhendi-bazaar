@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * The bulk-upload wizard (bulk-catalog-upload R1–R3): sheet + images in, one
+ * The bulk-upload wizard, in four steps (own-store/bulk-sheet Q16): Get the sheet · Fill it ·
+ * Upload · Check and create. The last two are bulk-catalog-upload R1–R3: sheet + images in, one
  * validation report, then upload-and-create. Images go browser → object store directly
  * (D10); nothing is created until the sheet validated clean.
  *
@@ -10,16 +11,34 @@
  * docks above the tab bar (ADR-0015/0016).
  */
 import { useRef, useState } from "react";
+import type { SheetChoicesDTO } from "@server/catalog/bulk/bulk-sheet.service";
 import { Button } from "@/components/ui/button";
 import { matchingPaths } from "@server/catalog/bulk/image-match";
 import { imagesOnly, sanitizePath } from "./files";
 import { bulkImportApiClient } from "./bulkImportApiClient";
 import { useBulkImport } from "./useBulkImport";
+import { GetTheSheet } from "./GetTheSheet";
 import { downscaleImage, storedPathFor } from "@/lib/image/downscale";
 import { uploadDirect } from "@/lib/image/upload-direct";
 import { orgUploadEndpoints } from "@/lib/image/upload-endpoints";
 
-export function BulkProductWizard({ orgId }: { orgId: string }) {
+const STEPS = ["Get the sheet", "Fill it", "Upload", "Check and create"] as const;
+type Stage = "get" | "fill" | "upload";
+
+function Steps({ current }: { current: number }) {
+  return (
+    <ol className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+      {STEPS.map((label, index) => (
+        <li key={label} aria-current={index === current ? "step" : undefined} className={index === current ? "font-semibold text-foreground" : ""}>
+          {index + 1} · {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+export function BulkProductWizard({ orgId, choices }: { orgId: string; choices: SheetChoicesDTO }) {
+  const [stage, setStage] = useState<Stage>("get");
   const { step, setSheet, images, setImages, report, created, updated, providedPaths, check, run } = useBulkImport(
     (sheet, filenames) => bulkImportApiClient.validateProducts(orgId, sheet, filenames),
   );
@@ -63,8 +82,10 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       await Promise.all(Array.from({ length: 4 }, worker));
 
       creating();
-      const rows = report.rows.map(({ row }) => ({
+      const rows = report.rows.map(({ row, rowNumber, tab }) => ({
         ...row,
+        rowNumber,
+        tab,
         imageUrls: Object.fromEntries(
           row.images.map((name) => [name, urls.get(name)!]),
         ),
@@ -72,6 +93,35 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
       return bulkImportApiClient.createProducts(orgId, rows);
     });
   };
+
+  if (stage === "get") {
+    return (
+      <div className="space-y-4">
+        <Steps current={0} />
+        <GetTheSheet orgId={orgId} choices={choices} onDownloaded={() => setStage("fill")} />
+        <Button variant="link" className="px-0" onClick={() => setStage("upload")}>
+          I already have a filled sheet
+        </Button>
+      </div>
+    );
+  }
+
+  if (stage === "fill") {
+    return (
+      <div className="space-y-4">
+        <Steps current={1} />
+        <section className="space-y-3 rounded-card border border-border bg-card p-4">
+          <p className="text-sm">Fill the sheet on your laptop or phone, then come back.</p>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setStage("upload")}>I&apos;ve filled it</Button>
+            <Button variant="outline" onClick={() => setStage("get")}>
+              Download sheet
+            </Button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   if (step === "done") {
     return (
@@ -91,19 +141,13 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
 
   return (
     <div className="space-y-4 pb-24">
+      <Steps current={step === "pick" || step === "checking" ? 2 : 3} />
       <section className="space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="space-y-1">
-          <p className="text-sm font-medium">1 · The filled-in sheet</p>
-          <p className="text-xs text-muted-foreground">
-            .xlsx or .csv —{" "}
-            <a
-              className="underline"
-              href={`/api/org/${orgId}/products/bulk/sample`}
-            >
-              download the sample
-            </a>{" "}
-            made for your locations and categories.
-          </p>
+          <p className="text-sm font-medium">Your filled sheet (.xlsx or .csv)</p>
+          <Button variant="link" size="sm" className="px-0" onClick={() => setStage("get")}>
+            Download a fresh sheet
+          </Button>
         </div>
         <input
           ref={sheetInputRef}
@@ -114,11 +158,10 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
         />
 
         <div className="space-y-1 pt-2">
-          <p className="text-sm font-medium">2 · The product photos</p>
+          <p className="text-sm font-medium">Your photos — a folder keeps each product&apos;s photos apart</p>
           <p className="text-xs text-muted-foreground">
-            A folder keeps each product&apos;s photos apart, so two products can
-            both have a <code>front.jpg</code> — write the folder in the sheet
-            as <code>emerald-abaya/front.jpg</code>. A flat selection works too
+            Two products can both have a <code>front.jpg</code> — write the
+            folder in the sheet as <code>emerald-abaya/front.jpg</code>. A flat selection works too
             when every filename is different.
           </p>
         </div>
@@ -181,9 +224,9 @@ export function BulkProductWizard({ orgId }: { orgId: string }) {
             {report.summary.images} images
           </p>
           <ul className="max-h-overlay space-y-1 overflow-y-auto text-sm">
-            {report.rows.map(({ row, rowNumber }) => (
+            {report.rows.map(({ row }, index) => (
               <li
-                key={rowNumber}
+                key={index}
                 className="flex items-center justify-between gap-2"
               >
                 <span className="truncate">{row.name}</span>

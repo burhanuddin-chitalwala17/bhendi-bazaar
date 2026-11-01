@@ -25,8 +25,11 @@ export const POST = withOrg<{ orgId: string }>(async (request, scope) => {
     }
 
     const rows: RowWithNumber<BulkProductCreateRow>[] = parsed.data.rows.map(
-      (row, index) => ({
-        rowNumber: index + 2, // header is row 1, mirroring the sheet the user saw
+      ({ rowNumber, tab, ...row }, index) => ({
+        // The sheet's own row, so a late problem names the row the shop sees; index + 2 is
+        // the legacy one-header sheet.
+        rowNumber: rowNumber ?? index + 2,
+        tab,
         row: row as BulkProductCreateRow,
       }),
     );

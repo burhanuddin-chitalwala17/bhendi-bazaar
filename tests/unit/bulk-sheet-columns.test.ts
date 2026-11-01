@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  SPINE_COLUMNS,
   factColumns,
   measureColumns,
   measureHeader,
-  sheetColumns,
-  stockColumns,
+  tabColumns,
+  VIDEO_HELP,
 } from "@server/catalog/bulk/sheet-columns";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 
@@ -42,6 +41,8 @@ const garment = type({
   ],
 });
 
+const keys = (columns: { key: string }[]) => columns.map((column) => column.key);
+
 const mat = type({
   key: "prayer-mat",
   label: "Prayer mat",
@@ -52,23 +53,10 @@ const mat = type({
   ],
 });
 
-describe("the columns follow the types, not a template", () => {
-  it("asks only what the given types ask", () => {
-    const headers = factColumns([garment]).map((column) => column.header);
-    expect(headers).toEqual(["colour", "material", "sleeveLength"]);
-    expect(headers).not.toContain("shape");
-  });
-
-  it("grows when a type is added, without anything being edited", () => {
-    const before = factColumns([garment]).map((c) => c.header);
-    const after = factColumns([garment, mat]).map((c) => c.header);
-    expect(after).toContain("shape");
-    expect(after.length).toBeGreaterThan(before.length);
-  });
-
-  it("asks a shared fact once, however many types ask it", () => {
-    const headers = factColumns([garment, mat]).map((c) => c.header);
-    expect(headers.filter((header) => header === "colour")).toHaveLength(1);
+describe("the columns follow the type, not a template", () => {
+  it("asks only what the given type asks", () => {
+    expect(keys(factColumns(garment))).toEqual(["colour", "material", "sleeveLength"]);
+    expect(keys(factColumns(garment))).not.toContain("shape");
   });
 
   // A type the codebase has never heard of still produces its columns, which is what
@@ -79,87 +67,60 @@ describe("the columns follow the types, not a template", () => {
       label: "Footwear",
       facts: ["colour", "closure"],
       measures: [{ key: "length", label: "Length", unit: "mm", required: true }],
+      kinds: [{ key: "sandal", label: "Sandal" }],
     });
-    const headers = sheetColumns([shoes], []).map((c) => c.header);
-    expect(headers).toContain("closure");
-    expect(headers).toContain("length (mm)");
+    const columns = keys(tabColumns(shoes, []));
+    expect(columns).toContain("closure");
+    expect(columns).toContain("length (mm)");
+    expect(columns).toContain("kind");
   });
 
-  it("carries no fact columns at all when no type is given", () => {
-    expect(factColumns([])).toEqual([]);
-    expect(sheetColumns([], []).map((c) => c.header)).toEqual([...SPINE_COLUMNS]);
-  });
-});
-
-/**
- * One measure takes different units in different types — `length` is inches for a garment and
- * centimetres for a mat. A single `length` column across both would mean two things and the
- * person filling it would have no way to tell which.
- */
-describe("a measurement column names its unit", () => {
-  it("splits one measure into a column per unit", () => {
-    const headers = measureColumns([garment, mat]).map((c) => c.header);
-    expect(headers).toContain("length (in)");
-    expect(headers).toContain("length (cm)");
-    expect(headers).not.toContain("length");
-  });
-
-  it("keeps one column where the unit agrees", () => {
-    const other = type({ key: "x", measures: garment.measures });
-    const headers = measureColumns([garment, other]).map((c) => c.header);
-    expect(headers.filter((h) => h === "length (in)")).toHaveLength(1);
-  });
-
-  it("names the types a measurement belongs to, and which require it", () => {
-    const [length] = measureColumns([mat]);
-    expect(length.note).toContain("Prayer mat");
-    expect(length.note).toContain("Required by");
-  });
-
-  it("says optional where no type requires it", () => {
-    const width = measureColumns([mat]).find((c) => c.header === "width (cm)");
-    expect(width?.note).toContain("Optional");
-  });
-
-  it("builds its header from the measure and the unit", () => {
-    expect(measureHeader("capacity", "ml")).toBe("capacity (ml)");
-  });
-});
-
-describe("what the notes tell the person filling it", () => {
-  it("gives a shared fact the wording each type uses for it", () => {
-    const material = factColumns([garment, mat]).find((c) => c.header === "material");
-    expect(material?.note).toContain("Fabric");
-    expect(material?.note).toContain("Material");
-  });
-
-  it("names which types ask a fact", () => {
-    const sleeve = factColumns([garment, mat]).find((c) => c.header === "sleeveLength");
-    expect(sleeve?.note).toContain("Islamic wear");
-    expect(sleeve?.note).not.toContain("Prayer mat");
-  });
-
-  it("says that a matching SKU updates rather than creates", () => {
-    const sku = sheetColumns([], []).find((c) => c.header === "sku");
-    expect(sku?.note.toLowerCase()).toContain("updates it");
-  });
-
-  it("says a blank product type is allowed and what it costs", () => {
-    const column = sheetColumns([], []).find((c) => c.header === "productType");
-    expect(column?.note).toContain("Blank is allowed");
-    expect(column?.note).toContain("cannot be published");
-  });
-});
-
-describe("stock columns are the org's real locations", () => {
-  it("makes one per location", () => {
-    expect(stockColumns(["Shop", "Warehouse"]).map((c) => c.header)).toEqual([
-      "stock:Shop",
-      "stock:Warehouse",
+  it("carries no fact, measure or kind column for the Other tab", () => {
+    expect(keys(tabColumns(null, []))).toEqual([
+      "name", "description", "price", "salePrice", "category", "family", "sku",
+      "weight", "tags", "images", "cover", "video",
     ]);
   });
 
-  it("makes none when the org has no locations", () => {
-    expect(stockColumns([])).toEqual([]);
+  it("adds a stock column per pickup location, headed for people and keyed for the reader", () => {
+    const [stock] = tabColumns(null, ["Crawford"]).filter((c) => c.key.startsWith("stock:"));
+    expect(stock).toMatchObject({ key: "stock:Crawford", heading: "Stock at Crawford" });
+  });
+});
+
+describe("a measurement column names its unit", () => {
+  // `length` is inches for a garment and centimetres for a mat; the key carries the unit.
+  it("keys the column by measure and unit", () => {
+    expect(keys(measureColumns(garment))).toContain("length (in)");
+    expect(keys(measureColumns(mat))).toContain("length (cm)");
+    expect(measureHeader("capacity", "ml")).toBe("capacity (ml)");
+  });
+
+  it("marks a required measure required and says optional otherwise", () => {
+    const [length, width] = measureColumns(mat);
+    expect(length.required).toBe(true);
+    expect(width.required).toBe(false);
+    expect(width.help).toContain("Optional");
+  });
+});
+
+describe("what the headings and help line tell the person filling it", () => {
+  it("heads a shared fact in this type's own word for it", () => {
+    expect(factColumns(garment).find((c) => c.key === "material")?.heading).toBe("Fabric");
+    expect(factColumns(mat).find((c) => c.key === "material")?.heading).toBe("Material");
+  });
+
+  it("says that a matching SKU updates rather than creates", () => {
+    expect(tabColumns(null, []).find((c) => c.key === "sku")?.help).toContain("updates it");
+  });
+
+  it("marks the columns a row is refused without", () => {
+    const required = tabColumns(null, []).filter((c) => c.required).map((c) => c.key);
+    expect(required).toEqual(["name", "description", "price", "category", "weight", "images"]);
+  });
+
+  it("says the Video column takes a YouTube link only (R11, Q25)", () => {
+    expect(tabColumns(null, []).find((c) => c.key === "video")?.help).toBe(VIDEO_HELP);
+    expect(VIDEO_HELP).toBe("YouTube link only. Add a video file from the product form after upload.");
   });
 });

@@ -51,3 +51,8 @@ export function isoDay(value: Date): string {
 export function indiaToday(now: Date = new Date()): string {
   return now.toLocaleDateString("en-CA", { timeZone: ZONE });
 }
+
+/** "30 Oct 2026". */
+export function indiaDate(value: Date): string {
+  return value.toLocaleDateString(LOCALE, { day: "numeric", month: "short", year: "numeric", timeZone: ZONE });
+}
