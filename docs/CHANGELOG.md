@@ -12,6 +12,13 @@
 
 ## Entries
 
+## 2026-11-01 — the sort control shows the pick at once
+
+- On a shop page, "Price: low to high" looked ignored: the control read its value from the URL, which changes only when
+  the sorted page arrives, so it snapped back to the old sort meanwhile. `src/components/shared/product-sort-select.tsx`
+  now holds the pick (dimmed, `aria-busy`) until the URL catches up, and drops it if the URL moves another way (Back).
+  `tests/unit/product-sort-select.test.tsx` fails on the old control.
+
 ## 2026-11-01 — the shop portal's sidebar sticks again
 
 - From `md:` the shop sidebar scrolled away with the page. Its bottom anchor reset all four edges with `md:inset-auto`,
