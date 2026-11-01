@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { RefreshButton } from "@/components/channel/refresh-button";
 import { ShopLinkCard } from "@/components/org/shop-hub/shop-link-card";
+import { AddPickupAddressRow } from "@/components/org/shop-hub/add-pickup-address-row";
 import { SHOP_HUB_COPY } from "@/components/org/shop-hub/shop-hub-copy";
 import { brandPageShowing, brandPageStanding } from "@/components/storefront/brand-page/standing";
 import { shopHubDAL, type ShopHubData } from "@/data-access-layer/org/shop-hub.dal";
@@ -12,8 +13,12 @@ import { requireOrgMember } from "@/lib/org-auth";
 
 export const metadata = { title: "Shop", robots: { index: false, follow: false } };
 
+/** The hub's four rows, compared by constant. */
+const HUB_ROW = { DETAILS: "details", PAGE: "page", ADDRESSES: "addresses", REVIEWS: "reviews" } as const;
+type HubRowKey = (typeof HUB_ROW)[keyof typeof HUB_ROW];
+
 interface HubRow {
-  key: string;
+  key: HubRowKey;
   icon: LucideIcon;
   href: string;
   /** null when the row's read failed: it shows its own retry. */
@@ -27,21 +32,21 @@ function rowsFor(data: ShopHubData, orgId: string): HubRow[] {
   const page = data.page.ok && data.page.value ? brandPageShowing(brandPageStanding(data.page.value, orgId)) : null;
   return [
     {
-      key: "details",
+      key: HUB_ROW.DETAILS,
       icon: IdCard,
       href: `${base}/shop/details`,
       status: data.details.ok ? (missing === 0 ? SHOP_HUB_COPY.detailsDone : SHOP_HUB_COPY.detailsToAdd(missing)) : null,
       done: data.details.ok && missing === 0,
     },
     {
-      key: "page",
+      key: HUB_ROW.PAGE,
       icon: LayoutTemplate,
       href: `${base}/storefront`,
       status: page ? SHOP_HUB_COPY.pageShowing(page.showing, page.total) : data.page.ok ? SHOP_HUB_COPY.pageNotLive : null,
       done: page !== null && page.showing > 0,
     },
     {
-      key: "addresses",
+      key: HUB_ROW.ADDRESSES,
       icon: MapPin,
       href: `${base}/locations`,
       status: data.addresses.ok
@@ -52,7 +57,7 @@ function rowsFor(data: ShopHubData, orgId: string): HubRow[] {
       done: data.addresses.ok && data.addresses.value.active > 0,
     },
     {
-      key: "reviews",
+      key: HUB_ROW.REVIEWS,
       icon: Star,
       href: `${base}/reviews`,
       status: data.reviews.ok
@@ -66,11 +71,11 @@ function rowsFor(data: ShopHubData, orgId: string): HubRow[] {
   ];
 }
 
-const TITLES: Record<string, string> = {
-  details: SHOP_HUB_COPY.details,
-  page: SHOP_HUB_COPY.page,
-  addresses: SHOP_HUB_COPY.addresses,
-  reviews: SHOP_HUB_COPY.reviews,
+const TITLES: Record<HubRowKey, string> = {
+  [HUB_ROW.DETAILS]: SHOP_HUB_COPY.details,
+  [HUB_ROW.PAGE]: SHOP_HUB_COPY.page,
+  [HUB_ROW.ADDRESSES]: SHOP_HUB_COPY.addresses,
+  [HUB_ROW.REVIEWS]: SHOP_HUB_COPY.reviews,
 };
 
 /** The Shop tab (own-store onboarding D3, Q8): the link first, then everything about the shop. */
@@ -89,7 +94,12 @@ export default async function ShopHubPage({ params }: { params: Promise<{ orgId:
       <ul className="grid gap-3 lg:grid-cols-2">
         {rows.map((row) => (
           <li key={row.key}>
-            <HubRowView row={row} title={TITLES[row.key]} />
+            {/* No address at all: create it here, over the hub (D11). Paused ones keep the link to reactivate them. */}
+            {row.key === HUB_ROW.ADDRESSES && data.addresses.ok && data.addresses.value.total === 0 ? (
+              <AddPickupAddressRow orgId={scope.orgId} />
+            ) : (
+              <HubRowView row={row} title={TITLES[row.key]} />
+            )}
           </li>
         ))}
       </ul>

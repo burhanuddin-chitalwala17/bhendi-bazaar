@@ -1,12 +1,10 @@
 // components/shared/forms/product/ProductOrgShippingFields.tsx
 
-import { useState } from "react";
 import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form";
 import { FormSelect, FormInput } from "../FormField";
 import { MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LocationForm } from "@/components/org/location-form";
+import { PickupAddressSheet } from "@/components/org/pickup-address-sheet";
 import type { ProductFormInput } from "@/components/product/console/types";
 import type { OrgSummary } from "@/domain/org";
 import type { OrgLocation } from "@server/catalog/org.address.types";
@@ -41,7 +39,6 @@ export function ProductOrgShippingFields({
   readOnly = false,
 }: ProductOrgShippingFieldsProps) {
   const selectedOrgId = watch("orgId");
-  const [isAddingLocation, setIsAddingLocation] = useState(false);
   // One org offered means the caller already knows which — the portal — so nothing is asked.
   const fixedOrg = orgs?.length === 1 ? orgs[0] : null;
   const orgField = register("orgId", { required: "Organisation is required" });
@@ -56,6 +53,27 @@ export function ProductOrgShippingFields({
     { message?: string; root?: { message?: string } } | undefined;
   const rootMessage =
     stockLocationsError?.message ?? stockLocationsError?.root?.message;
+  // One sheet for every place an address is created (own-store onboarding Q26); the form stays underneath.
+  const addLocation = (label: string, variant: "outline" | "ghost", className?: string) =>
+    selectedOrgId && onLocationAdded && !readOnly ? (
+      <PickupAddressSheet
+        orgId={selectedOrgId}
+        trigger={
+          <Button type="button" size="sm" variant={variant} className={className}>
+            <Plus className="mr-1 size-4" /> {label}
+          </Button>
+        }
+        onAdded={(location: OrgLocation) =>
+          onLocationAdded({
+            id: location.id,
+            name: location.name,
+            city: location.city,
+            pincode: location.pincode,
+            isActive: location.isActive,
+          })
+        }
+      />
+    ) : null;
 
   return (
     <div className="bg-card rounded-lg border border-border p-6">
@@ -114,11 +132,7 @@ export function ProductOrgShippingFields({
                   ? "Where is this kept? Add your shop address once."
                   : "Choose the organisation to see where its stock can sit."}
               </span>
-              {selectedOrgId && onLocationAdded && !readOnly && (
-                <Button type="button" size="sm" variant="outline" onClick={() => setIsAddingLocation(true)}>
-                  <Plus className="mr-1 size-4" /> Add location
-                </Button>
-              )}
+              {addLocation("Add location", "outline")}
             </div>
           ) : (
             <div className="space-y-2">
@@ -161,38 +175,9 @@ export function ProductOrgShippingFields({
               ))}
             </div>
           )}
-          {locations.length > 0 && selectedOrgId && onLocationAdded && !readOnly && (
-            <Button type="button" size="sm" variant="ghost" className="mt-2" onClick={() => setIsAddingLocation(true)}>
-              <Plus className="mr-1 size-4" /> Add another location
-            </Button>
-          )}
+          {locations.length > 0 && addLocation("Add another location", "ghost", "mt-2")}
         </div>
       </div>
-
-      {selectedOrgId && onLocationAdded && (
-        <Dialog open={isAddingLocation} onOpenChange={setIsAddingLocation}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Add pickup location</DialogTitle>
-            </DialogHeader>
-            <LocationForm
-              orgId={selectedOrgId}
-              location={null}
-              onDone={(location: OrgLocation) => {
-                onLocationAdded({
-                  id: location.id,
-                  name: location.name,
-                  city: location.city,
-                  pincode: location.pincode,
-                  isActive: location.isActive,
-                });
-                setIsAddingLocation(false);
-              }}
-              onCancel={() => setIsAddingLocation(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

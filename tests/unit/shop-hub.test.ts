@@ -30,7 +30,7 @@ describe("shopHubDAL", () => {
     ratingForOrg.mockRejectedValue(new Error("db down"));
     const hub = await shopHubDAL.forOrg("o1");
     expect(hub.reviews).toEqual({ ok: false });
-    expect(hub.addresses).toEqual({ ok: true, value: { active: 1 } });
+    expect(hub.addresses).toEqual({ ok: true, value: { active: 1, total: 2 } });
     expect(hub.details).toEqual({ ok: true, value: { hasLogo: false, hasTagline: true } });
     expect(hub.link).toEqual({ path: "/store/abc-traders", url: "https://bb.test/store/abc-traders" });
   });
@@ -45,7 +45,7 @@ describe("shopHubDAL", () => {
 
   it("counts only active pickup addresses, so a switched-off one does not read as set up", async () => {
     listLocations.mockResolvedValue([{ isActive: false }]);
-    expect((await shopHubDAL.forOrg("o1")).addresses).toEqual({ ok: true, value: { active: 0 } });
+    expect((await shopHubDAL.forOrg("o1")).addresses).toEqual({ ok: true, value: { active: 0, total: 1 } });
   });
 
   it("reads the rating once for both the page and reviews rows", async () => {

@@ -64,10 +64,10 @@ routes. Renames are labels only: no URL changes, so no shared link breaks.
 - **D10 — A hand-off surface (Q12; ADR-0040 case 4).** A new a new hand-off sheet among the shared overlays:
   a bottom sheet on a phone; from `lg:` a popover (hint, share) or a 28rem side sheet (address).
   One `MAY_USE_SHEET` entry covers the hint, share and pickup-address flows.
-- **D11 — Pickup address over a form (R8; A4; Q12, Q26, Q29).** A `PickupAddressSheet` wraps the
+- **D11 — Pickup address over a form (R8; A4; Q12, Q26, Q29, Q31).** A `PickupAddressSheet` wraps the
   existing `location-form.tsx`, `orgLocationSchema` and `POST /api/org/[orgId]/locations`, and hands
   the new location back selected. The opener stays mounted, so typed values survive. A duplicate
-  name is a `ConflictError` (Q29). Openers: product form (wired by product-form, Q26), Shop hub, parcel.
+  name is a `ConflictError` (Q29). Openers: product form (wired by product-form, Q26) and Shop hub; no parcel opener (Q31).
 - **D12 — Reviews in context (R9; Q13).** The portal product page gains a Reviews section from the
   existing `reviewsDAL.firstPage`. The Home line goes to that product when the new reviews share one
   product, otherwise to Reviews.

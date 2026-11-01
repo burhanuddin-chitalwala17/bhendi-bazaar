@@ -132,7 +132,6 @@ describe("an overlay's surface is chosen, not inherited", () => {
     "src/components/bidding/CancelBiddingButton.tsx": "Ratchet: confirm dialog.",
     "src/components/bidding/CreateBiddingDialog.tsx": "Ratchet: search picker.",
     "src/components/bidding/MarkUnsoldDialog.tsx": "Ratchet: short form, wants FormDialog.",
-    "src/components/shared/forms/product/ProductOrgShippingFields.tsx": "Ratchet: location form inline.",
   };
 
   it("only the declared files reach for a dialog themselves", () => {

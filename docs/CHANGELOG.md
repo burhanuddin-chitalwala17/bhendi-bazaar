@@ -12,6 +12,32 @@
 
 ## Entries
 
+## 2026-11-01 — seller-onboarding unit 5: pickup address over the form, reviews on the product
+
+- **Pickup address sheet (R8, A4; D11; Q12, Q26):** `src/components/org/pickup-address-sheet.tsx` wraps the existing
+  `LocationForm` in the hand-off sheet (bottom sheet; 28rem side sheet from `lg:`) titled "Add pickup address". The
+  product form's "Add location" / "Add another location" now open it instead of a dialog (its prompt copy stays);
+  the saved address comes back as a stock row and the product form underneath keeps what was typed. The Shop hub's
+  "Pickup addresses · none yet" row opens it in place and refreshes. ux.md copy: "Save address", "Saving…",
+  "Still saving…" after 3 s, toast "Pickup address added", and "Couldn't save. Your form is safe." with "Try again"
+  for a network drop or server fault; field errors stay on their fields. The button is never disabled — a press
+  while saving sends nothing. `LocationForm` gains optional `messages` and `actions`; the locations page is unchanged.
+- **Duplicate name (Q29):** `orgAddressService` refuses an add, or a rename, onto a name the shop already has, any
+  case, as a `ConflictError` on `name`: "You already have '{name}'. Use another name." No index (Q29).
+- **Reviews in context (R9; D12; Q13):** the portal product page gains a read-only Reviews section from
+  `reviewsDAL.firstPage` (summary, newest first, "See all reviews" when there are more), with ux's empty line and its
+  own "Try again" on a failed read. Home's "new reviews" line links to it through the shared `PRODUCT_REVIEWS_ANCHOR`.
+- **No parcel opener (Q31):** D11's opener list drops the parcel: a parcel ships from the address that held its
+  stock, so it never lacks one. The Shop hub opens the sheet only for a shop with no address at all; a shop whose
+  addresses are all paused keeps the link to Pickup addresses, to switch one back on.
+- **Streaming:** the product page's Reviews section has its own `Suspense` and skeleton, so it never holds the page.
+- **Gates:** `overlay-surfaces` drops `ProductOrgShippingFields.tsx` from the dialog ratchet (it no longer uses one).
+- **Status:** spec and TRD stay Accepted; unit 6 remains.
+- **Tests:** `tests/unit/pickup-address-sheet.test.tsx`, `tests/unit/product-reviews-section.test.tsx`,
+  `tests/integration/pickup-address.test.ts`. Mutation-tested: dropping the duplicate-name check, its case-insensitive
+  match, or its own-row exclusion; letting a second press re-send; passing a server fault's message through; never
+  switching to "Still saving…"; and a section id that is not Home's anchor each fail a test.
+
 ## 2026-11-01 — seller-onboarding unit 4: hints the seller opens, and "?" on every portal page
 
 - **Hints (R4, A5; D9):** each setup step on Home is now a button that opens its hint — 1–3 cards, one at a time with

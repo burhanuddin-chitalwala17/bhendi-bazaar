@@ -69,6 +69,14 @@ export class OrgAddressRepository {
     return rows.map(toOrgLocation);
   }
 
+  /** This org's location already called `name`, any case (own-store onboarding Q29); `exceptId` is the one being renamed. */
+  async findNamed(orgId: string, name: string, exceptId?: string): Promise<{ id: string; name: string } | null> {
+    return prisma.orgAddress.findFirst({
+      where: { orgId, name: { equals: name.trim(), mode: "insensitive" }, ...(exceptId ? { id: { not: exceptId } } : {}) },
+      select: { id: true, name: true },
+    });
+  }
+
   /** Ownership is the query: another org's location is simply not found. */
   async findOwned(orgId: string, locationId: string): Promise<OrgLocation | null> {
     const row = await prisma.orgAddress.findFirst({

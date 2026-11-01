@@ -1,6 +1,6 @@
 import { orgAddressRepository } from "@server/catalog/org.address.repository";
 import type { OrgLocation, OrgLocationWrite } from "@server/catalog/org.address.types";
-import { DomainError, NotFoundError } from "@server/shared/domain-error";
+import { ConflictError, DomainError, NotFoundError } from "@server/shared/domain-error";
 
 /**
  * Pickup-location management for the org portal (stock-locations R1/R8). The caller
@@ -13,6 +13,7 @@ export class OrgAddressService {
   }
 
   async addLocation(orgId: string, input: OrgLocationWrite, userId?: string): Promise<OrgLocation> {
+    await this.refuseTakenName(orgId, input.name);
     return orgAddressRepository.add(orgId, input, userId);
   }
 
@@ -21,9 +22,19 @@ export class OrgAddressService {
     locationId: string,
     input: Partial<OrgLocationWrite>
   ): Promise<OrgLocation> {
+    if (input.name !== undefined) await this.refuseTakenName(orgId, input.name, locationId);
     const updated = await orgAddressRepository.update(orgId, locationId, input);
     if (!updated) throw new NotFoundError("Pickup location not found");
     return updated;
+  }
+
+  /**
+   * Two addresses one name apart are one a courier cannot tell apart (own-store onboarding Q29). No
+   * unique index: a race only yields two same-named addresses, and an index would rename old data.
+   */
+  private async refuseTakenName(orgId: string, name: string, exceptId?: string): Promise<void> {
+    const taken = await orgAddressRepository.findNamed(orgId, name, exceptId);
+    if (taken) throw new ConflictError(`You already have '${taken.name}'. Use another name.`, { field: "name" });
   }
 
   /**

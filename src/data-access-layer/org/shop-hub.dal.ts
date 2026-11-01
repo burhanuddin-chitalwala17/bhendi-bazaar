@@ -13,7 +13,8 @@ export interface ShopHubData {
   name: string;
   details: HubRead<{ hasLogo: boolean; hasTagline: boolean }>;
   page: HubRead<BrandPage | null>;
-  addresses: HubRead<{ active: number }>;
+  /** `total` counts paused ones too: a shop with only paused addresses still needs the way to them. */
+  addresses: HubRead<{ active: number; total: number }>;
   reviews: HubRead<{ count: number }>;
 }
 
@@ -47,9 +48,10 @@ export const shopHubDAL = {
       settle("page", async () =>
         handle ? storefrontDAL.brandPageForStanding(handle, await rating.catch(() => ({ average: null, count: 0 }))) : null,
       ),
-      settle("addresses", async () => ({
-        active: (await orgAddressService.listLocations(orgId)).filter((l) => l.isActive).length,
-      })),
+      settle("addresses", async () => {
+        const all = await orgAddressService.listLocations(orgId);
+        return { active: all.filter((l) => l.isActive).length, total: all.length };
+      }),
       settle("reviews", async () => ({ count: (await rating).count })),
     ]);
     return {

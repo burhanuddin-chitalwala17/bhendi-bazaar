@@ -11,6 +11,8 @@ import { TeamEditBadge } from "@/components/product/team/team-edit-badge";
 import { TeamHistory, TeamHistorySkeleton, type TeamHistoryRead } from "@/components/product/team/team-history";
 import { TEAM_HISTORY_ANCHOR } from "@/components/product/team/team-edit-copy";
 import { productTeamDAL } from "@/data-access-layer/org/product-team.dal";
+import { reviewsDAL } from "@/data-access-layer/reviews.dal";
+import { ProductReviewsSection, ProductReviewsSkeleton, type ProductReviewsRead } from "@/components/org/product-reviews-section";
 
 export default async function OrgProductViewPage({
   params,
@@ -51,6 +53,9 @@ export default async function OrgProductViewPage({
           <MarketplaceFactsCard key={card.listingId} orgId={orgId} productId={id} shopName={product.org.name} card={card} />
         ))}
         <ListingReadinessPanel verdicts={verdicts} />
+        <Suspense fallback={<ProductReviewsSkeleton />}>
+          <ProductReviewsData productId={id} orgId={orgId} />
+        </Suspense>
         <Suspense fallback={<TeamHistorySkeleton />}>
           <TeamHistoryData productId={id} orgId={orgId} />
         </Suspense>
@@ -69,4 +74,16 @@ async function TeamHistoryData({ productId, orgId }: { productId: string; orgId:
     read = { ok: false };
   }
   return <TeamHistory read={read} />;
+}
+
+/** Reviews read beside what they are about (own-store onboarding D12), and fail alone. */
+async function ProductReviewsData({ productId, orgId }: { productId: string; orgId: string }) {
+  let read: ProductReviewsRead;
+  try {
+    read = { ok: true, page: await reviewsDAL.firstPage(productId) };
+  } catch (error) {
+    console.error("[product] reviews read failed", { productId, error });
+    read = { ok: false };
+  }
+  return <ProductReviewsSection read={read} allReviewsHref={`/org/${orgId}/reviews`} />;
 }

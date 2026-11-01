@@ -38,7 +38,7 @@ Each starts one step before the screen.
 | Hint sheet | over Home or any page ("?") | setup step, "?" | R4, R5, A5 |
 | More sheet | over any page | tab More | R6, A3 |
 | Shop hub | `/org/[orgId]/shop` (new) | tab Shop | R8, R9, R10 |
-| Add pickup address sheet | over product form, parcel, Shop hub | "Add pickup address" | R8, A4 |
+| Add pickup address sheet | over product form, Shop hub (no parcel, Q31) | "Add pickup address" | R8, A4 |
 | Share sheet | over Home, Shop hub, after first product | "Share" | R10 |
 
 ## State matrix — Create your shop

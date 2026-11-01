@@ -51,7 +51,7 @@ than automatic tours, own-store Q12), store-live-then-share (Dukaan), plain word
 - R7 — A task started from Home or the setup list returns there when done, the step ticked and
   said so ("Pickup address added · 3 of 5 done").
 - R8 — Anything a form depends on is created over it: a pickup address from the product form's
-  stock field and from a parcel; the form keeps what was typed.
+  stock field (a parcel never lacks one, Q31); the form keeps what was typed.
 - R9 — Reviews are read where they matter: on the product in the portal and as a Home item when
   new; locations are reached from the stock field, the parcel and the Shop tab.
 - R10 — Sharing is a first-class step: the link, "Share on WhatsApp", "Copy link" and "See it as

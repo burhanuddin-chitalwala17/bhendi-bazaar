@@ -1,6 +1,7 @@
 import { CARD_STATE } from "@server/channels/channel-connection.types";
 import type { HomeAttentionDto } from "@/data-access-layer/org/home.dal";
 import { TEAM_HISTORY_ANCHOR } from "@/components/product/team/team-edit-copy";
+import { PRODUCT_REVIEWS_ANCHOR } from "@/components/org/product-reviews-section";
 import { HOME_COPY, LINE_COPY } from "./home-copy";
 
 export type AttentionLine =
@@ -23,7 +24,7 @@ export function attentionLines(orgId: string, a: HomeAttentionDto, now: Date): A
   else if (a.reviews.value.count > 0) {
     const { count, productId } = a.reviews.value;
     // All on one product: open it there (Q13); otherwise the Reviews page.
-    const href = productId ? `${base}/products/${productId}#reviews` : `${base}/reviews`;
+    const href = productId ? `${base}/products/${productId}#${PRODUCT_REVIEWS_ANCHOR}` : `${base}/reviews`;
     lines.push({ key: "reviews", ok: true, text: LINE_COPY.reviews(count), href });
   }
 
