@@ -10,6 +10,16 @@
 
 ## Entries
 
+## 2026-11-01 — Shiprocket webhook moved to `/api/webhooks/shipping/courier`
+
+- **Shiprocket refuses a webhook URL containing "shiprocket", "kartrocket", "sr" or "kr"** (its webhook
+  settings page, checked 2026-11-01), so `/api/webhooks/shipping/shiprocket` could never be registered.
+  The route is now `/api/webhooks/shipping/courier`; the same-origin exemption, reachability entry, docs
+  and tests follow it, and a test holds the path free of the refused words.
+- **Confirmed in the dashboard:** the token is sent as `x-api-key`, as the B5 code expects.
+- **Owner note:** Shiprocket has one webhook URL per account; at the time of checking it pointed at another
+  integration. Replacing it with ours stops that integration's tracking updates.
+
 ## 2026-10-31 — GTM B3: fixes from the review — counts from the dump's own snapshot
 
 - **The drill would have failed against a live database.** The counts were taken in a second session

@@ -11,13 +11,13 @@ vi.mock("@server/shipping/shipment-status.service", () => ({ applyProviderStatus
 vi.mock("@server/shipping/tracking.service", () => ({ trackingService: { configuredProvider } }));
 vi.mock("@server/checkout/order.service", () => ({ orderService: { markDelivered: vi.fn() } }));
 
-const { POST } = await import("@/app/api/webhooks/shipping/shiprocket/route");
+const { POST } = await import("@/app/api/webhooks/shipping/courier/route");
 const { isShiprocketWebhookAuthentic } = await import("@server/shipping/webhook-auth");
 
 const TOKEN = "a-long-random-token-from-the-dashboard";
 const post = (headers: Record<string, string> = {}) =>
   POST(
-    new NextRequest("http://localhost/api/webhooks/shipping/shiprocket", {
+    new NextRequest("http://localhost/api/webhooks/shipping/courier", {
       method: "POST",
       body: JSON.stringify({ awb: "123", shipment_status: "DELIVERED" }),
       headers: { "content-type": "application/json", ...headers },
@@ -34,7 +34,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("POST /api/webhooks/shipping/shiprocket", () => {
+describe("the webhook URL", () => {
+  // Shiprocket's webhook settings refuse these anywhere in the URL (its own note on that page).
+  it("contains none of the words Shiprocket refuses", () => {
+    const path = "/api/webhooks/shipping/courier";
+    for (const banned of ["shiprocket", "kartrocket", "sr", "kr"]) expect(path.toLowerCase()).not.toContain(banned);
+  });
+});
+
+describe("POST /api/webhooks/shipping/courier", () => {
   it("refuses a request with no token, before reading anything", async () => {
     expect((await post()).status).toBe(401);
     expect(configuredProvider).not.toHaveBeenCalled();

@@ -1,6 +1,9 @@
 /**
  * Shiprocket Webhook Handler
- * POST /api/webhooks/shipping/shiprocket
+ * POST /api/webhooks/shipping/courier
+ *
+ * Not named for the carrier: Shiprocket refuses a webhook URL containing "shiprocket", "kartrocket",
+ * "sr" or "kr" (its webhook settings page).
  *
  * Receives tracking updates from Shiprocket and updates order status.
  */
