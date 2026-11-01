@@ -1,0 +1,31 @@
+src/lib/validation/schemas/webhook.schema.ts
+  s_17ac7f5fca5021::t_d87e1e5cdea335 2-5,9-23,25,28
+tests/integration/courier-updates.test.ts
+  s_17ac7f5fca5021::t_15404c82bf2a60 1-259
+server/shipping/courier-token.ts
+  s_17ac7f5fca5021::t_31ddb248dc7719 1-15
+tests/unit/courier-token.test.ts
+  s_17ac7f5fca5021::t_a3e02e2375da68 1-83
+server/checkout/courier-update.ts
+  s_17ac7f5fca5021::t_6df6aea5238a32 1,3-4,6-10,12-20,22,24-34,36-37,39-43,45-50,52-53,55-58,60-77
+server/shipping/courier-conflict.service.ts
+  s_17ac7f5fca5021::t_591cc6b9327b1d 1-82
+server/shipping/repositories/courier-conflict.repository.ts
+  s_17ac7f5fca5021::t_76a89488d78b00 1-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "55bbd5fff87a683678a9613c5c859b3fbbcd473e",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
