@@ -5,7 +5,7 @@
  * floors (A7, Q15, Q34); claims are drawn apart from facts (Q21).
  */
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 vi.mock("@/components/support/contact-launcher", () => ({
   ContactLauncher: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
@@ -14,10 +14,11 @@ vi.mock("@/components/support/contact-launcher", () => ({
 import { ThemedSections } from "@/components/storefront/themed/themed-sections";
 import {
   bestSellingSlice,
+  dealsSlice,
   whyBuySlice,
   type ThemedPageData,
 } from "@/components/storefront/themed/page-data";
-import type { Product } from "@/domain/product";
+import { percentOff, type Product } from "@/domain/product";
 import { SECTION, THEME_KEYS } from "@server/catalog/storefront-themes";
 
 const product = (id: string, overrides: Partial<Product> = {}): Product =>
@@ -45,6 +46,8 @@ const bare = (overrides: Partial<ThemedPageData> = {}): ThemedPageData => ({
   productCount: 1,
   bestSelling: [],
   newIn: [product("1")],
+  offers: [],
+  dealProducts: [],
   collections: [],
   proof: null,
   since: 2024,
@@ -181,5 +184,71 @@ describe("the hero counts one product in the singular", () => {
     for (const c of containers) expect(within(c).queryAllByText(/\b1 products/)).toHaveLength(0);
     // Per element, not the page's joined text: adjacent nodes glue ("1 productShop all").
     expect(containers.some((c) => within(c).queryAllByText(/\b1 product\b/).length > 0)).toBe(true);
+  });
+});
+
+describe("deals and badges (R7, A3, A6; Q12, Q13, Q20, Q36)", () => {
+  const diwali = {
+    id: "o1",
+    title: "Diwali sale",
+    headline: "20% off · All Sarees",
+    ends: "Ends Tue 3 Nov",
+    code: null,
+    fewLeft: false,
+  };
+  const coupon = { ...diwali, id: "o2", title: "Big basket", headline: "₹100 off orders over ₹999", code: "NOOR-DIWALI100", fewLeft: true };
+  const reduced = product("9", { price: 100000, salePrice: 80000 });
+
+  it("a shop with no offer and nothing reduced shows no deals section (R7)", () => {
+    expect(dealsSlice(bare())).toBeNull();
+    for (const theme of THEME_KEYS) {
+      const { container, unmount } = render(<ThemedSections theme={theme} page={bare()} />);
+      expect(sectionsOn(container)).not.toContain(SECTION.DEALS);
+      unmount();
+    }
+  });
+
+  it.each(THEME_KEYS)("%s draws each offer's derived words, its end and Shop the deal (A6)", (theme) => {
+    const { container } = render(
+      <ThemedSections theme={theme} page={bare({ offers: [diwali, coupon], dealProducts: [reduced] })} />,
+    );
+    const deals = container.querySelector(`[data-section="${SECTION.DEALS}"]`) as HTMLElement;
+    expect(within(deals).getByText("20% off · All Sarees")).toBeTruthy();
+    expect(within(deals).getAllByText(/Ends Tue 3 Nov/)).toHaveLength(2);
+    for (const link of within(deals).getAllByRole("link", { name: "Shop the deal" })) {
+      expect(link.getAttribute("href")).toBe("/store/noor/shop?deals=1");
+    }
+    expect(within(deals).getByText("Piece 9")).toBeTruthy();
+  });
+
+  it("prints a ticked code with tap to copy, and Few left without a count (Q20, Q36)", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    render(<ThemedSections theme={THEME_KEYS[0]} page={bare({ offers: [diwali, coupon] })} />);
+    const button = screen.getByRole("button", { name: "Code NOOR-DIWALI100 · tap to copy" });
+    expect(screen.getAllByText(/Few left/)).toHaveLength(1);
+    fireEvent.click(button);
+    expect(writeText).toHaveBeenCalledWith("NOOR-DIWALI100");
+    expect(await screen.findByRole("button", { name: "Copied" })).toBeTruthy();
+  });
+
+  it("only goods reduced: the strip shows them with Shop the deal on the heading", () => {
+    const { container } = render(<ThemedSections theme={THEME_KEYS[1]} page={bare({ dealProducts: [reduced] })} />);
+    const deals = container.querySelector(`[data-section="${SECTION.DEALS}"]`) as HTMLElement;
+    expect(within(deals).getByRole("link", { name: "Shop the deal" }).getAttribute("href")).toBe("/store/noor/shop?deals=1");
+  });
+
+  it.each(THEME_KEYS)("%s badges a reduced card with the resolved price's own figure (A3)", (theme) => {
+    const page = bare({ newIn: [reduced, product("2"), product("3", { price: 100000, salePrice: 80000, stock: 0 })] });
+    const { container } = render(<ThemedSections theme={theme} page={page} />);
+    const shelf = container.querySelector(`[data-section="${SECTION.NEW_IN}"]`) as HTMLElement;
+    // One badge: the full-price card has none, and a sold-out card is not sold as a deal.
+    expect(within(shelf).getAllByText("20% off")).toHaveLength(1);
+  });
+
+  it("floors the badge's figure so it never claims more than the cart takes (A3)", () => {
+    expect(percentOff({ price: 100000, salePrice: 87500 })).toBe(12);
+    expect(percentOff({ price: 100000, salePrice: 80400 })).toBe(19);
+    expect(percentOff({ price: 100000, salePrice: 80000 })).toBe(20);
   });
 });

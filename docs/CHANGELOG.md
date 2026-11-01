@@ -12,6 +12,35 @@
 
 ## Entries
 
+## 2026-11-01 — storefront-themes unit 4: deals and badges [MIGRATION] [CONTRACT]
+
+- **Deals section (D10; R7, A6; Q12, Q13, Q20, Q36, Q41):** new `server/promotions/storefront-offers.ts` decides which of a
+  shop's offers show and words them from the offer ("20% off · All Sarees", "₹100 off orders over ₹999", "Ends Tue 3 Nov" /
+  "Ends today", by India's clock); running automatic offers and only the codes the shop ticked, soonest ending first, six at
+  most, "Few left" at ten or fewer uses with no count, a percentage no deeper than the shop's ceiling (as the engine clamps
+  it), and no card for a sale price (Q41, new). Read through `promotionService.storefrontOffers` over a new
+  `promotionRepository.listRunningForOrg`; `storefront.dal.ts` asks it, never `storefrontService`, and adds up to eight
+  priced goods on offer. New `ThemedDeals` (`src/components/storefront/themed/deals.tsx`) in its three variants — campaign,
+  banners, strip — with "Shop the deal" to `/shop?deals=1` and a client `CopyCode` leaf ("Code {CODE} · tap to copy" →
+  "Copied"); a shop with no offer and nothing reduced shows no section.
+- **Badges (A3):** every themed card shows "{n}% off" read off the resolved price and list price (new `percentOff` in
+  `src/domain/product.ts`, which the marketplace card now shares); none on a sold-out card.
+- **Show on my shop (Q20) [MIGRATION]:** `20261101170200_promotion_show_on_storefront` adds `Promotion.showOnStorefront`
+  (default false). The shop's offer form shows the tick for a coupon; the service stores it only for a shop's code.
+- **Contract:** `PromotionFormInput` gains `showOnStorefront`; `StorefrontPage` gains `offers` and `dealProducts`; new
+  `StorefrontOfferDto`. `docs/CONTRACTS.md` moves with it.
+- **Tests:** new `storefront-offers.test.ts` (what shows, the words, India day, ceiling), deals and badge cases in
+  `storefront-themed-sections.test.tsx` (every theme), `promotion-schema.test.ts` (default off, platform strips it),
+  integration `storefront-deals.test.ts` (another shop's and unticked offers absent; tick stored only on a code; badge equals
+  `promotionService.quote`; a stopped offer leaves card and badge).
+- **Review fixes:** the strip's goods count only the shop's own offers (new `ownOffersOnly` on `ProductFilter`, passed to
+  `offerCoverage` as `ownedBy`), so a platform offer gives no shop a deals section (R7, Q12; integration case added); the
+  badge's percent is floored, never rounded, so 12.5% reads "12% off" (A3; unit case added).
+- **Mutations recorded:** tick check dropped → red; exhausted filter dropped → red; few-left `<=` → `<` → red; ceiling clamp
+  dropped → red; sale-price filter dropped → red; midnight end not moved back → red; sort removed → red; deals slice always
+  shown → red; badge on sold-out → 4 red; schema default true → red; service ignoring trigger → integration red; repository
+  without the org filter → 2 integration red; `ownedBy` filter dropped → integration red; floor → round → unit red. All restored.
+
 ## 2026-11-01 — seller-onboarding unit 6: share the shop's link
 
 - **Share sheet (R10, A2; D13):** `src/components/org/share/share-shop-sheet.tsx`, on the hand-off sheet (bottom

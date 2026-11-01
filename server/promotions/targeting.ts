@@ -134,13 +134,16 @@ export interface OfferCoverage {
 export function offerCoverage(
   promotions: readonly EnginePromotion[],
   parents: CategoryParents,
-  orgCeilings: OrgCeilings
+  orgCeilings: OrgCeilings,
+  /** Count only this shop's own offers: its deals strip is the shop's, not the platform's (storefront-themes Q12). */
+  ownedBy?: string
 ): OfferCoverage {
   // A shop capped at 0% has its own offers clamped to nothing, so they put nothing on offer (D4).
   const automatic = promotions.filter(
     (promotion) =>
       promotion.trigger === "AUTOMATIC" &&
-      !(promotion.scope === "ORG" && orgCeilings.get(promotion.orgId ?? "") === 0)
+      !(promotion.scope === "ORG" && orgCeilings.get(promotion.orgId ?? "") === 0) &&
+      (ownedBy === undefined || (promotion.scope === "ORG" && promotion.orgId === ownedBy))
   );
 
   const productIds = new Set<string>();

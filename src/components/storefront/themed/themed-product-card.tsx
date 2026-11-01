@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { effectivePrice, hasOffer, type Product } from "@/domain/product";
+import { effectivePrice, hasOffer, percentOff, type Product } from "@/domain/product";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { CARD_STYLE, type CardStyle } from "@server/catalog/storefront-themes";
@@ -37,6 +37,7 @@ export function ThemedProductCard({
 }) {
   const price = effectivePrice(product);
   const reduced = hasOffer(product);
+  const off = percentOff(product);
   const soldOut = product.stock <= 0;
   const tall = cardStyle === CARD_STYLE.TALL;
 
@@ -56,6 +57,19 @@ export function ThemedProductCard({
           sizes={sizes}
           className={cn(ASPECT[cardStyle], "bg-muted")}
         />
+        {/* The badge is the resolved price's own figure, so it is what the cart charges (A3, A6). */}
+        {off > 0 && !soldOut && (
+          <span
+            className={cn(
+              "absolute left-2 top-2 rounded-field px-1.5 py-0.5 font-label text-tag uppercase tracking-tag",
+              cardStyle === CARD_STYLE.DENSE || cardStyle === CARD_STYLE.SQUARE
+                ? "bg-deal text-deal-foreground"
+                : "bg-photo-scrim text-on-photo",
+            )}
+          >
+            {off}% off
+          </span>
+        )}
         {soldOut && (
           <span className="absolute inset-x-0 bottom-0 bg-photo-scrim py-1 text-center font-label text-tag uppercase tracking-tag text-on-photo">
             Sold out

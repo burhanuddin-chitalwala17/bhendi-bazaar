@@ -17,6 +17,8 @@ export function themedPageData(page: StorefrontPage): ThemedPageData {
     productCount: page.productCount,
     bestSelling: page.bestSelling,
     newIn: page.newIn,
+    offers: page.offers,
+    dealProducts: page.dealProducts,
     collections: page.categories.map((category) => ({ slug: category.slug, name: category.name, photoUrl: null })),
     proof: page.proof,
     since: page.since,

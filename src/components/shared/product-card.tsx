@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Product } from "@/domain/product";
+import { percentOff, type Product } from "@/domain/product";
 import { Card } from "@/components/ui/card";
 import { PriceDisplay } from "./PriceDisplay";
 import { StockStatus } from "./StockStatus";
@@ -21,12 +21,7 @@ export const PRODUCT_TILE_SIZES =
   "(min-width: 1024px) 384px, (min-width: 768px) 50vw, 33vw";
 
 export function ProductCard(product: Product) {
-  const { price, salePrice } = product;
-  const hasOffer =
-    price > 0 && salePrice != null && salePrice > 0 && salePrice < price;
-  const discountPercent = hasOffer
-    ? Math.round(((price - salePrice) / price) * 100)
-    : 0;
+  const discountPercent = percentOff(product);
 
   return (
     // Prefetch off: the grid puts up to 12 of these in view at once, and with every

@@ -12,7 +12,7 @@ export const GRID: Record<2 | 3, { cols: string; sizes: string }> = {
   2: { cols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4", sizes: "(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw" },
   3: { cols: "grid-cols-3 md:grid-cols-4 lg:grid-cols-5", sizes: "(min-width: 1024px) 20vw, (min-width: 768px) 25vw, 33vw" },
 };
-const RAIL_ITEM: Record<2 | 3, { width: string; sizes: string }> = {
+export const RAIL_ITEM: Record<2 | 3, { width: string; sizes: string }> = {
   2: { width: "w-[42%] md:w-[28%] lg:w-[22%]", sizes: "(min-width: 1024px) 22vw, (min-width: 768px) 28vw, 42vw" },
   3: { width: "w-[30%] md:w-[22%] lg:w-[18%]", sizes: "(min-width: 1024px) 18vw, (min-width: 768px) 22vw, 30vw" },
 };

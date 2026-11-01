@@ -181,6 +181,15 @@ parcels, Q39), from `storefrontService.storefrontPage` — null until the shop p
 it to **`StorefrontPage`** with priced `bestSelling`, `newIn`, `categories` and `productCount`. `ShopListing` gains
 `themed`. Read-only: no route handler and no wire shape; `ProductFilter` gains server-resolved `ids`.
 
+Since storefront-themes unit 4 `StorefrontPage` gains **`offers: StorefrontOfferDto[]`** and **`dealProducts`** (priced
+goods on the shop's own offer, 8 at most; `ProductFilter` gains server-set `ownOffersOnly`, so a platform offer adds none). **`StorefrontOfferDto`** (`server/promotions/storefront-offers.ts`, from
+`promotionService.storefrontOffers`) is `{ id, title, headline, ends, code, fewLeft }`: the shop's running automatic
+offers and the codes it ticked, worded from the offer (Q13), soonest ending first; `code` only when ticked (Q20),
+`fewLeft` at ten or fewer uses with no count (Q36); a sale price is not a card (Q41). **`PromotionFormInput`** (the
+shop's `promotionFormSchema`, `POST /api/org/[orgId]/promotions` and `PATCH …/[id]`) gains **`showOnStorefront`**
+(boolean, default false), stored as `Promotion.showOnStorefront` only for a shop's code; `PlatformPromotionFormInput`
+strips it.
+
 Since order-fulfilment unit 2 a shop's orders read as **`ShopOrderView`** / **`ShopParcelView`**
 (`server/checkout/shop-parcel.types.ts`): only the shop's own parcels on paid orders, each with `status`,
 its lines and `parcelValue`, `position`/`ofCount` ("Parcel 1 of 2"), and the buyer as **`ShopBuyer`

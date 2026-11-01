@@ -9,6 +9,7 @@ import { prisma } from "@server/shared/prisma";
 import type { Prisma } from "@prisma/client";
 import type { EnginePromotion } from "@server/promotions/promotion.types";
 import type { CategoryParents } from "@server/promotions/targeting";
+import type { StorefrontOfferRow } from "@server/promotions/storefront-offers";
 
 /**
  * Anything that can run these queries — the client, or a transaction handle. Named
@@ -60,6 +61,28 @@ export class PromotionRepository {
       where: { isActive: true, startsAt: { lte: now }, endsAt: { gt: now } },
       select: PROMOTION_SELECT,
     });
+  }
+
+  /**
+   * One shop's running offers with what each covers named, for its deals section (storefront-themes
+   * D10). Which of them show is `storefrontOffers`' policy; this only scopes to the shop and the clock.
+   */
+  async listRunningForOrg(orgId: string, now: Date, db: Db = prisma): Promise<StorefrontOfferRow[]> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- swapped for named targets below
+    const { targets: _targets, ...fields } = PROMOTION_SELECT;
+    const rows = await db.promotion.findMany({
+      relationLoadStrategy: "join",
+      where: { scope: "ORG", orgId, isActive: true, startsAt: { lte: now }, endsAt: { gt: now } },
+      select: {
+        ...fields,
+        showOnStorefront: true,
+        targets: { select: { category: { select: { name: true } }, product: { select: { name: true } } } },
+      },
+    });
+    return rows.map((row) => ({
+      ...row,
+      targets: row.targets.map((t) => ({ categoryName: t.category?.name ?? null, productName: t.product?.name ?? null })),
+    }));
   }
 
   /**

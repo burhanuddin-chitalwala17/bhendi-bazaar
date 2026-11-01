@@ -33,6 +33,8 @@ import type { Product } from "@/domain/product";
 import { holdCutoff } from "@server/catalog/org.handle";
 import { chromeShopFor } from "@/lib/storefront-chrome";
 import type { OrgRating } from "@server/catalog/review-rating";
+import { promotionService } from "@server/promotions/promotion.service";
+import type { StorefrontOfferDto } from "@server/promotions/storefront-offers";
 
 /** One shop, as a visitor sees it. */
 export interface Storefront {
@@ -58,6 +60,10 @@ export interface StorefrontPage extends StorefrontPageDto {
   categories: Category[];
   /** Everything on sale, for "Shop all {n}". */
   productCount: number;
+  /** The shop's running offers, worded by promotions (D10; Q12, Q13, Q20). */
+  offers: StorefrontOfferDto[];
+  /** Goods the one resolver prices below list, for the deals strip (Q12, ADR-0018). */
+  dealProducts: Product[];
 }
 
 /**
@@ -119,17 +125,20 @@ export const storefrontDAL = {
   getStorefrontPage: cache(async (handle: string): Promise<StorefrontPage | null> => {
     const dto = await storefrontService.storefrontPage(handle);
     if (!dto) return null;
-    const [bestSold, newIn, categories, productCount] = await Promise.all([
+    const [bestSold, newIn, categories, productCount, offers, dealProducts] = await Promise.all([
       dto.bestSellingIds.length
         ? productsDAL.getProducts({ orgId: dto.id, ids: dto.bestSellingIds })
         : Promise.resolve([]),
       productsDAL.getProducts({ orgId: dto.id, limit: LANDING_SHELF_LIMIT }),
       storefrontDAL.categoriesFor(dto.id),
       storefrontDAL.productCountFor(dto.id),
+      // Asked here, never by storefrontService: an offer is promotions' to word (D10).
+      promotionService.storefrontOffers(dto.id),
+      productsDAL.getProducts({ orgId: dto.id, offerOnly: true, ownOffersOnly: true, limit: LANDING_SHELF_LIMIT }),
     ]);
     const rank = new Map(dto.bestSellingIds.map((id, index) => [id, index]));
     const bestSelling = [...bestSold].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
-    return { ...dto, bestSelling, newIn, categories, productCount };
+    return { ...dto, bestSelling, newIn, categories, productCount, offers, dealProducts };
   }),
 
   /**

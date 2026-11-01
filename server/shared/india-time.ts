@@ -37,6 +37,16 @@ export function calendarDay(value: Date | string): string {
   return `${parts.weekday} ${parts.day} ${parts.month}`;
 }
 
+/** "Sun 3 Nov", for a moment as India reads it: an offer's end (storefront-themes Q13). */
+export function indiaWeekday(value: Date): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat(LOCALE, { weekday: "short", day: "numeric", month: "short", timeZone: ZONE })
+      .formatToParts(value)
+      .map((p) => [p.type, p.value]),
+  );
+  return `${parts.weekday} ${parts.day} ${parts.month}`;
+}
+
 /** "2026-11-02" → that day at UTC midnight, the way a `@db.Date` column stores it. */
 export function fromIsoDay(day: string): Date {
   return new Date(`${day}T00:00:00.000Z`);

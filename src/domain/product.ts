@@ -78,6 +78,8 @@ export interface ProductFilter {
   minPrice?: number;
   maxPrice?: number;
   offerOnly?: boolean;
+  /** With `offerOnly` and `orgId`: only the shop's own offers count (storefront-themes R7, Q12). */
+  ownOffersOnly?: boolean;
   featuredOnly?: boolean;
   heroOnly?: boolean;
   limit?: number;
@@ -114,4 +116,15 @@ export function hasOffer(product: {
   salePrice?: number | null;
 }): boolean {
   return effectivePrice(product) < product.price;
+}
+
+/**
+ * The badge's figure: what the resolved price takes off the list price, as a whole percent
+ * (storefront-themes A3, A6). Read off the two prices, never off an offer, so a badge says only
+ * what the cart will charge; 0 when nothing is reduced.
+ */
+export function percentOff(product: { price: number; salePrice?: number | null }): number {
+  if (!hasOffer(product) || product.price <= 0) return 0;
+  // Floored, never rounded: 12.5% off reads "12%", so the badge never promises more than the cart takes.
+  return Math.floor(((product.price - effectivePrice(product)) / product.price) * 100);
 }

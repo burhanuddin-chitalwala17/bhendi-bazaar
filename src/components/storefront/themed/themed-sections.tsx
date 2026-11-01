@@ -11,10 +11,12 @@ import {
   type ThemeKey,
 } from "@server/catalog/storefront-themes";
 import { ThemedCollections } from "./collections";
+import { ThemedDeals } from "./deals";
 import { ThemedHero } from "./hero";
 import {
   bestSellingSlice,
   collectionsSlice,
+  dealsSlice,
   heroSlice,
   newInSlice,
   reviewsSlice,
@@ -52,8 +54,19 @@ const RENDER = {
     const slice = collectionsSlice(page);
     return slice && <ThemedCollections variant={variant} {...slice} />;
   },
-  // The deals section reads promotions' running offers, which arrive with unit 4 (D10).
-  [SECTION.DEALS]: () => null,
+  [SECTION.DEALS]: ({ variant }, { page, theme }) => {
+    const slice = dealsSlice(page);
+    return (
+      slice && (
+        <ThemedDeals
+          variant={variant}
+          {...slice}
+          cardStyle={COMPOSITIONS[theme].cardStyle}
+          columns={THEMES[theme].phoneColumns}
+        />
+      )
+    );
+  },
   [SECTION.BEST_SELLING]: ({ variant }, { page, theme }) => {
     const slice = bestSellingSlice(page);
     return slice && <Shelf title="Best selling" layout={variant} slice={slice} page={page} theme={theme} />;

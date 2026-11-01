@@ -79,6 +79,9 @@ export class AdminPromotionService {
       isActive: input.isActive,
       usageLimit: input.usageLimit ?? null,
       perUserLimit: input.perUserLimit ?? null,
+      // Only a shop's own code can be printed on its page (Q20); anything else stores false.
+      showOnStorefront:
+        owner.scope === "ORG" && input.trigger === "CODE" && "showOnStorefront" in input && input.showOnStorefront === true,
     };
   }
 

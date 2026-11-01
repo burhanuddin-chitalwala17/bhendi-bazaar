@@ -43,6 +43,8 @@ export interface ProductFilter {
   minPrice?: number;
   maxPrice?: number;
   offerOnly?: boolean;
+  /** With `offerOnly` and `orgId`: only the shop's own offers count (storefront-themes R7, Q12). */
+  ownOffersOnly?: boolean;
   featuredOnly?: boolean;
   heroOnly?: boolean;
   limit?: number;

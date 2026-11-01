@@ -1,6 +1,6 @@
 # TRD — own-store/storefront-themes
 
-- **Status:** Accepted — units 1–3 implemented 2026-11-01
+- **Status:** Accepted — units 1–4 implemented 2026-11-01
 - **Domain:** catalog (storefront), promotions (one column, one read)
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-10-30
@@ -127,7 +127,7 @@ Screens, states and copy as signed off in [ux.md](ux.md).
 | `route-reachability`, `portal-boundary` | Two look routes, caller `orgStorefrontApiClient.ts`, `withOrg`; preview page `requireOrgMember` |
 | Rate limits (ADR-0063) | **No new public route**: themed pages are pages; scroll and search reuse `GET /api/products` (exempt); look routes are under `/api/org`. `src/lib/rate-limit/registry.ts` gains no line |
 | `one-repository` | New slot table gets its own repository; `Promotion` column written only via `promotion.repository.ts` |
-| `file-cohesion` | `storefront.dal.ts` reaching promotions as a third domain is `RECORDED` with D10's reason |
+| `file-cohesion` | `storefront.dal.ts` reaches only catalog and promotions, within the free reach of two: no entry |
 | `security-headers`, `storefront-public-dto`, `image-delivery`, `form-factors`, `rendering-strategy` | Preview framing (D12); new DTO keys allowlisted |
 
 ## Data model
@@ -157,7 +157,7 @@ D13's fields; `PromotionFormInput` gains `showOnStorefront`.
 1. **U1** tokens, palettes, fonts, contrast gate — no visible change. *Implemented 2026-11-01.*
 2. **U2** sections and compositions [MIGRATION] — nothing renders them yet. *Implemented 2026-11-01.*
 3. **U3** themed chrome, landing/shop split, redirects — only themed shops, and none exist yet. *Implemented 2026-11-01.* Review fixes: shop error and loading states, best selling on-sale only, dispatch skips cancelled orders.
-4. **U4** deals and badges [MIGRATION] [CONTRACT].
+4. **U4** deals and badges [MIGRATION] [CONTRACT]. *Implemented 2026-11-01.* `storefront.dal.ts` reaches catalog and promotions only, within the free reach, so `file-cohesion` needed no entry. Review fixes: the deals strip counts only the shop's own offers (a platform offer adds nothing, R7, Q12); the badge's percent is floored so it never overstates (A3).
 5. **U5** picker, preview, publish, revert [CONTRACT] — **changes behaviour**: a shop can publish.
 6. **U6** point-of-need editor and theme suggestion [MIGRATION] [CONTRACT] — after org-profile U2;
    ships to production with U5.

@@ -16,6 +16,7 @@ import {
 import { normaliseCode, quoteDiscounts } from "@server/promotions/discount-engine";
 import { isExhausted, isLive, overBudget } from "@server/promotions/targeting";
 import { saleFloorBreach } from "@server/promotions/ceiling";
+import { storefrontOffers, type StorefrontOfferDto } from "@server/promotions/storefront-offers";
 import { DomainError, ConflictError } from "@server/shared/domain-error";
 import {
   commercialTermsService,
@@ -336,6 +337,18 @@ export class PromotionService {
   /** The coupon codes an order used, for the buyer's "can be used again" line. */
   async couponCodesForOrder(orderId: string): Promise<string[]> {
     return await promotionRepository.couponCodesForOrder(orderId);
+  }
+
+  /**
+   * The shop's running offers for its deals section (storefront-themes D10): automatic ones, and
+   * codes it ticked "Show on my shop" (Q20), worded from the offer itself (Q13).
+   */
+  async storefrontOffers(orgId: string, now = new Date()): Promise<StorefrontOfferDto[]> {
+    const [rows, terms] = await Promise.all([
+      promotionRepository.listRunningForOrg(orgId, now),
+      commercialTermsService.find(orgId),
+    ]);
+    return storefrontOffers(rows, { now, ceilingBps: terms?.maxDiscountBps ?? null });
   }
 
   /** Is this offer usable right now? Shared by the admin surfaces. */

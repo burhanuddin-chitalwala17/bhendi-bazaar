@@ -32,6 +32,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FormInput, FormSelect } from "@/components/shared/forms/FormField";
 import { Button } from "@/components/ui/button";
+import type { ZodType } from "zod";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
@@ -59,6 +60,8 @@ export interface OfferInitialValues {
   perUserLimit: number | null;
   /** Platform offers only (offers-hardening D5). */
   platformBudgetPaise?: number | null;
+  /** A shop's codes only (storefront-themes Q20). */
+  showOnStorefront?: boolean;
   categoryIds: string[];
   productIds: string[];
 }
@@ -87,6 +90,9 @@ interface OfferFormProps {
    */
   lossRule?: { lowestRateBps: number };
 }
+
+/** The platform form's fields plus the one a shop's adds (storefront-themes Q20). */
+type OfferFormValues = PlatformPromotionFormInput & { showOnStorefront?: boolean };
 
 /** A local date-time input's value, from a Date. */
 function toLocalInput(date: Date): string {
@@ -118,8 +124,8 @@ export function OfferForm({
   const inAMonth = new Date(now.getTime() + 30 * 86_400_000);
 
   // A shop's schema strips budget and confirmation, so the platform form is a superset.
-  const form = useServerForm<PlatformPromotionFormInput>({
-    schema: (lossRule ? platformPromotionSchema : promotionFormSchema) as typeof platformPromotionSchema,
+  const form = useServerForm<OfferFormValues>({
+    schema: (lossRule ? platformPromotionSchema : promotionFormSchema) as unknown as ZodType<OfferFormValues>,
     defaultValues: (initial
       ? {
           ...initial,
@@ -159,6 +165,7 @@ export function OfferForm({
           trigger: "AUTOMATIC",
           valueType: "PERCENT",
           isActive: true,
+          ...(lossRule ? {} : { showOnStorefront: false }),
           categoryIds: [],
           productIds: [],
           // Every offer is time-boxed (spec R4), so the window is prefilled rather
@@ -454,6 +461,15 @@ export function OfferForm({
               error={formState.errors.perUserLimit?.message}
             />
           </div>
+        )}
+
+        {isCoupon && !lossRule && (
+          <Checkbox
+            label="Show on my shop"
+            description="Prints this code in your shop's deals, where anyone can use it."
+            checked={watch("showOnStorefront") === true}
+            onChange={(event) => setValue("showOnStorefront", event.target.checked)}
+          />
         )}
 
         <div className="pt-1">

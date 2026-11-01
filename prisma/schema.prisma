@@ -1551,6 +1551,10 @@ model Promotion {
   /// click, not a date edit (spec R5).
   isActive Boolean  @default(true)
 
+  /// A CODE offer the shop ticked "Show on my shop" (storefront-themes Q20). Automatic offers
+  /// show on the shop's deals section regardless; a public code is used by strangers, so off by default.
+  showOnStorefront Boolean @default(false)
+
   /// Enforced with a conditional update inside the order transaction (promotions D11,
   /// ADR-0007). Read-then-write oversells a coupon exactly as it oversells stock.
   usageLimit   Int?

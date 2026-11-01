@@ -83,7 +83,7 @@ export type ProductWithRelations = Prisma.ProductGetPayload<{
  * and cover everything in its scope (promotions D3). A store-wide platform offer is
  * expressed as an empty filter rather than by enumerating the catalogue.
  */
-async function offerFilter() {
+async function offerFilter(ownedBy?: string) {
   // The request's shared price context, not a fresh query pair: `loadPriceContext`
   // is request-memoised, so this costs nothing here — and the filter now shares the
   // context's clock, so a listing cannot filter by one offer set and label prices
@@ -93,6 +93,7 @@ async function offerFilter() {
     promotions,
     categoryParents,
     orgCeilings,
+    ownedBy,
   );
   if (coversEverything) return {};
   const clauses = [
@@ -402,6 +403,7 @@ export class ProductsRepository {
       minPrice,
       maxPrice,
       offerOnly,
+      ownOffersOnly,
       featuredOnly,
       heroOnly,
       limit,
@@ -425,7 +427,7 @@ export class ProductsRepository {
           ...(search && { name: { contains: search, mode: "insensitive" } }),
           ...(minPrice && { price: { gte: minPrice } }),
           ...(maxPrice && { price: { lte: maxPrice } }),
-          ...(offerOnly ? await offerFilter() : {}),
+          ...(offerOnly ? await offerFilter(ownOffersOnly && orgId ? orgId : undefined) : {}),
           ...(featuredOnly && { flags: { has: "FEATURED" } }),
           ...(heroOnly && { flags: { has: ProductFlag.HERO } }),
         },

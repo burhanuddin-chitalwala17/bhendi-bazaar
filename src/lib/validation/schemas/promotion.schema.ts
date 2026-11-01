@@ -105,7 +105,13 @@ const offerRules = (d: OfferFields, ctx: z.RefinementCtx) => {
   }
 };
 
-export const promotionFormSchema = offerFields.superRefine(offerRules);
+/**
+ * A shop's form adds one choice: whether its code is printed on its own storefront (storefront-themes
+ * Q20). Off unless ticked, since a public code is used by strangers; a platform offer has no shop page.
+ */
+export const promotionFormSchema = offerFields
+  .extend({ showOnStorefront: z.boolean().default(false) })
+  .superRefine(offerRules);
 
 export type PromotionFormInput = z.infer<typeof promotionFormSchema>;
 

@@ -172,3 +172,18 @@ describe("targeting", () => {
     expect(parse({ categoryIds: ["c1"], productIds: ["p1"] }).success).toBe(true);
   });
 });
+
+describe("Show on my shop (storefront-themes Q20)", () => {
+  it("is off unless the shop ticks it", () => {
+    const result = parse({ trigger: "CODE", code: "NOOR-DIWALI" });
+    expect(result.success && result.data.showOnStorefront).toBe(false);
+    const ticked = parse({ trigger: "CODE", code: "NOOR-DIWALI", showOnStorefront: true });
+    expect(ticked.success && ticked.data.showOnStorefront).toBe(true);
+  });
+
+  it("is not a platform field: a platform offer has no shop page to print on", async () => {
+    const { platformPromotionSchema } = await import("@/lib/validation/schemas/promotion.schema");
+    const result = platformPromotionSchema.safeParse({ ...base, showOnStorefront: true });
+    expect(result.success && "showOnStorefront" in result.data).toBe(false);
+  });
+});

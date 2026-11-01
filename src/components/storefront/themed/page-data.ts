@@ -3,6 +3,7 @@ import type { ShopReviewDto } from "@server/catalog/review.types";
 import type { BrandOwner } from "@server/catalog/brand-page-sections";
 import { RETURNS_PRESET_LABEL, type ReturnsPreset } from "@server/catalog/shop-details.types";
 import type { BrandProof } from "@server/catalog/storefront.types";
+import type { StorefrontOfferDto } from "@server/promotions/storefront-offers";
 import { LANDING_SHELF_LIMIT, SECTION, type HideableSection } from "@server/catalog/storefront-themes";
 import { formatCount } from "@/lib/format";
 import { APP_NAME } from "@/lib/config";
@@ -24,6 +25,9 @@ export interface ThemedPageData {
   productCount: number;
   bestSelling: Product[];
   newIn: Product[];
+  /** The shop's running offers (Q12) and the goods priced below list (ADR-0018). */
+  offers: StorefrontOfferDto[];
+  dealProducts: Product[];
   collections: CollectionTile[];
   proof: BrandProof | null;
   since: number;
@@ -71,6 +75,12 @@ export interface ShelfSlice {
   handle: string;
   products: Product[];
   productCount: number;
+}
+
+export interface DealsSlice {
+  handle: string;
+  offers: StorefrontOfferDto[];
+  products: Product[];
 }
 
 export interface CollectionsSlice {
@@ -143,6 +153,12 @@ export const newInSlice = (page: ThemedPageData): ShelfSlice | null =>
         products: page.newIn.slice(0, LANDING_SHELF_LIMIT),
         productCount: page.productCount,
       }
+    : null;
+
+/** R7: a shop with no offer and nothing reduced shows no deals section. */
+export const dealsSlice = (page: ThemedPageData): DealsSlice | null =>
+  page.offers.length || page.dealProducts.length
+    ? { handle: page.handle, offers: page.offers, products: page.dealProducts.slice(0, LANDING_SHELF_LIMIT) }
     : null;
 
 /**
