@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* A themed storefront's palette is fixed light or dark (storefront-themes Q5), so a shared
+   component's `dark:` style must not fire inside one. */
+@custom-variant dark (&:is(.dark *):where(:not([data-palette], [data-palette] *)));
 
 @theme inline {
   --color-background: var(--background);
@@ -12,6 +14,10 @@
      payment ids that use it are identifiers, not display type. */
   --font-sans: var(--font-body-face);
   --font-heading: var(--font-heading-face);
+  /* A theme's display and label faces (storefront-themes D2, D5). Outside a theme they fall
+     back to the platform's heading and body faces. */
+  --font-display: var(--font-display-face, var(--font-heading-face));
+  --font-label: var(--font-label-face, var(--font-body-face));
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -38,6 +44,16 @@
   --color-scrim: var(--ink-100);
   --color-hero: var(--emerald-270);
   --color-hero-foreground: var(--green-970);
+  /* Text over a photograph sits on this ground, whatever the palette: the contrast gate
+     composites it over the lightest and darkest photo (storefront-themes D4). */
+  --color-photo-scrim: color-mix(in oklab, var(--ink-100) 85%, transparent);
+  --color-on-photo: var(--grey-1000);
+  --color-deal: var(--deal);
+  --color-deal-foreground: var(--deal-foreground);
+  --color-feature: var(--feature);
+  --color-feature-foreground: var(--feature-foreground);
+  /* Through a variable because Tailwind writes a shadow's value into the utility. */
+  --shadow-tile: var(--shadow-tile-value);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -57,10 +73,6 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  /* Semantic shape. The steps above are a scale; these say which step a surface takes,
-     so card corners can move without dragging every input and button with them. */
-  --radius-card: calc(var(--radius) + 4px);
-  --radius-field: calc(var(--radius) - 2px);
 }
 
 /* The axes colour already had, and type/rhythm/elevation did not. Every value below
@@ -107,6 +119,34 @@
   --shadow-overlay:
     0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-inset-field: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  /* Semantic shape. The radius steps are a scale; these say which step a surface takes, so
+     card corners can move without dragging every input and button with them. Here, not in
+     `@theme inline`, so a `[data-theme]` scope can repoint them (storefront-themes D2). */
+  --radius-card: calc(var(--radius) + 4px);
+  --radius-field: calc(var(--radius) - 2px);
+
+  /* Storefront type roles, repointed per theme. Every size is a `clamp()` with a rem floor
+     and a rem term, so browser zoom still scales it (never viewport-only). */
+  --text-headline: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
+  --text-headline--line-height: 1.1;
+  --text-title: clamp(1.25rem, 1.1rem + 0.8vw, 1.75rem);
+  --text-title--line-height: 1.2;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-tag: 0.75rem;
+  --text-tag--line-height: 1.3;
+  --text-price: 1rem;
+  --text-price--line-height: 1.3;
+  --tracking-headline: -0.01em;
+  --tracking-tag: 0.1em;
+
+  /* Storefront rhythm: a section's vertical air, the page gutter, the product grid's gap. */
+  --spacing-section: clamp(2rem, 1.5rem + 2.5vw, 4rem);
+  --spacing-gutter: clamp(1rem, 0.75rem + 1vw, 2rem);
+  --spacing-grid: clamp(0.75rem, 0.6rem + 0.6vw, 1.25rem);
+  --container-store: 72rem;
+  --ease-theme: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Primitive palette — every colour the system owns, named by family and lightness
@@ -180,11 +220,96 @@
   --grey-955: oklch(0.955 0 0);
   --grey-985: oklch(0.985 0 0);
   --grey-1000: oklch(1 0 0);
+  --grey-140: oklch(0.14 0 0);
+  --grey-970: oklch(0.97 0 0);
+  --grey-190: oklch(0.19 0 0);
+  --grey-720: oklch(0.72 0 0);
+  --grey-500: oklch(0.5 0 0);
+  --grey-780: oklch(0.78 0 0);
+  --grey-580: oklch(0.58 0 0);
+  --grey-965: oklch(0.965 0 0);
+  --grey-450: oklch(0.45 0 0);
+  --grey-620: oklch(0.62 0 0);
+
+  /* Storefront palettes (storefront-themes D3). */
+
+  --blue-500: oklch(0.5 0.18 255);
+
+  --blush-200: oklch(0.2 0.02 10);
+  --blush-450: oklch(0.45 0.04 10);
+  --blush-600: oklch(0.6 0.05 10);
+  --blush-920: oklch(0.92 0.035 10);
+  --blush-960: oklch(0.96 0.025 10);
+  --blush-980: oklch(0.98 0.012 10);
+
+  --bottle-380: oklch(0.38 0.08 160);
+
+  --cobalt-400: oklch(0.4 0.2 265);
+  --cobalt-480: oklch(0.48 0.2 265);
+  --cobalt-500: oklch(0.5 0.25 265);
+
+  --ivory-920: oklch(0.92 0.02 80);
+  --ivory-930: oklch(0.93 0.025 90);
+  --ivory-960: oklch(0.96 0.015 80);
+  --ivory-970: oklch(0.97 0.02 90);
+  --ivory-980: oklch(0.98 0.015 90);
+
+  --leaf-220: oklch(0.22 0.01 150);
+  --leaf-450: oklch(0.45 0.01 150);
+  --leaf-480: oklch(0.48 0.13 150);
+  --leaf-620: oklch(0.62 0.01 150);
+  --leaf-960: oklch(0.96 0.01 150);
+
+  --lilac-200: oklch(0.2 0.02 300);
+  --lilac-450: oklch(0.45 0.04 300);
+  --lilac-600: oklch(0.6 0.05 300);
+  --lilac-910: oklch(0.91 0.04 305);
+  --lilac-950: oklch(0.95 0.03 305);
+  --lilac-980: oklch(0.98 0.012 305);
+
+  --magenta-480: oklch(0.48 0.19 355);
+
+  --navy-300: oklch(0.3 0.08 265);
+
+  --ochre-750: oklch(0.75 0.14 75);
+
+  --peach-200: oklch(0.2 0.02 40);
+  --peach-450: oklch(0.45 0.04 45);
+  --peach-600: oklch(0.6 0.05 50);
+  --peach-910: oklch(0.91 0.045 55);
+  --peach-950: oklch(0.95 0.03 55);
+  --peach-980: oklch(0.98 0.012 55);
+
+  --red-520: oklch(0.52 0.2 27);
+  --red-650: oklch(0.65 0.22 27);
+  --red-700-soft: oklch(0.7 0.19 22);
+
+  --rose-450: oklch(0.45 0.15 30);
+
+  --green-500: oklch(0.5 0.14 145);
+  --amber-500: oklch(0.5 0.12 70);
+  --pink-520: oklch(0.52 0.2 15);
+
+  --slate-220: oklch(0.22 0.01 260);
+  --slate-250: oklch(0.25 0.005 260);
+  --slate-300: oklch(0.3 0.005 260);
+  --slate-330: oklch(0.33 0.005 260);
+  --slate-450: oklch(0.45 0.01 260);
+  --slate-620: oklch(0.62 0.01 260);
+  --slate-960: oklch(0.96 0.01 260);
+
+  --umber-200: oklch(0.2 0.02 60);
+  --umber-450: oklch(0.45 0.03 70);
+  --umber-620: oklch(0.62 0.04 80);
+
+  --yellow-880: oklch(0.88 0.17 95);
 }
 
 :root {
   --radius: 0.75rem;
   --tab-bar-h: 3.5rem;
+  --shadow-tile-value: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --motion-duration: 200ms;
   /* Daytime courtyard: warm parchment background, deep charcoal text */
   --background: var(--parchment-980);
   --foreground: var(--charcoal-220);
@@ -320,6 +445,484 @@
   --ring: var(--info);
 }
 
+/* Themes (storefront-themes D2, ADR-0064 D1). A theme repoints the role tokens above; a
+   palette (below) repoints colour. The face classes from
+   src/components/storefront/theme-fonts.ts sit on the same element, which is where these
+   `var(--font-…)` references resolve. The font-family is restated because the root's was
+   computed on `html`, before any scope existed. */
+[data-theme] {
+  font-family: var(--font-body-face);
+}
+
+[data-theme="edge"] {
+  --font-display-face: var(--font-space-grotesk);
+  --font-body-face: var(--font-space-grotesk);
+  --font-label-face: var(--font-geist-mono);
+  --text-headline: clamp(2.5rem, 1.6rem + 4.4vw, 6rem);
+  --text-headline--line-height: 1;
+  --text-title: clamp(1.75rem, 1.5rem + 1.2vw, 2.5rem);
+  --text-title--line-height: 1.1;
+  --text-body: 1rem;
+  --text-body--line-height: 1.4;
+  --text-tag: 0.75rem;
+  --text-price: 1rem;
+  --tracking-headline: -0.03em;
+  --tracking-tag: 0.1em;
+  --spacing-section: clamp(4rem, 2.4rem + 8vw, 9rem);
+  --spacing-gutter: clamp(1rem, 0.5rem + 4vw, 5.25rem);
+  --spacing-grid: clamp(0.75rem, 0.5rem + 1.2vw, 1.5rem);
+  --container-store: 89rem;
+  --radius-card: 1.5rem;
+  --radius-field: 9999px;
+  --shadow-tile-value: 0 0 #0000;
+  --motion-duration: 300ms;
+  --ease-theme: cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-theme="darbar"] {
+  --font-display-face: var(--font-jost);
+  --font-body-face: var(--font-jost);
+  --font-label-face: var(--font-cormorant-garamond);
+  --text-headline: clamp(1.75rem, 1.55rem + 1vw, 2.25rem);
+  --text-headline--line-height: 1.2;
+  --text-title: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  --text-title--line-height: 1.25;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-tag: 0.75rem;
+  --text-price: 1rem;
+  --tracking-headline: 0.28em;
+  --tracking-tag: 0.15em;
+  --spacing-section: clamp(2.5rem, 1.4rem + 5.5vw, 6rem);
+  --spacing-gutter: clamp(1.25rem, 1rem + 1.25vw, 2.5rem);
+  --spacing-grid: clamp(0.25rem, 0.2rem + 0.25vw, 0.5rem);
+  --container-store: 75rem;
+  --radius-card: 0;
+  --radius-field: 0;
+  --shadow-tile-value: 0 0 #0000;
+  --motion-duration: 500ms;
+  --ease-theme: cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+[data-theme="bloom"] {
+  --font-display-face: var(--font-body-face);
+  --font-label-face: var(--font-dm-mono);
+  --text-headline: clamp(2.5rem, 1.9rem + 3vw, 4.5rem);
+  --text-headline--line-height: 1.05;
+  --text-title: clamp(1.75rem, 1.65rem + 0.5vw, 2rem);
+  --text-title--line-height: 1.15;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.4;
+  --text-tag: 0.6875rem;
+  --text-price: 0.875rem;
+  --tracking-headline: -0.02em;
+  --tracking-tag: 0.18em;
+  --spacing-section: clamp(2rem, 1.3rem + 3.5vw, 5rem);
+  --spacing-gutter: clamp(1.25rem, 0.9rem + 1.75vw, 3rem);
+  --spacing-grid: clamp(0.75rem, 0.5rem + 1.2vw, 1.5rem);
+  --container-store: 78.75rem;
+  --radius-card: 0;
+  --radius-field: 0;
+  --shadow-tile-value: 0 0 #0000;
+  --motion-duration: 250ms;
+  --ease-theme: cubic-bezier(0, 0, 0.2, 1);
+}
+
+[data-theme="daily"] {
+  --font-display-face: var(--font-mulish);
+  --font-body-face: var(--font-mulish);
+  --font-label-face: var(--font-mulish);
+  --text-headline: clamp(1.25rem, 1.1rem + 0.75vw, 1.8rem);
+  --text-headline--line-height: 1.2;
+  --text-title: clamp(1rem, 0.9rem + 0.5vw, 1.375rem);
+  --text-title--line-height: 1.25;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.5;
+  --text-tag: 0.625rem;
+  --text-price: 1rem;
+  --tracking-headline: 0;
+  --tracking-tag: 0.02em;
+  --spacing-section: clamp(1rem, 0.6rem + 2vw, 2.5rem);
+  --spacing-gutter: clamp(0.75rem, 0.5rem + 1.2vw, 1.5rem);
+  --spacing-grid: clamp(0.5rem, 0.45rem + 0.25vw, 0.625rem);
+  --container-store: 80rem;
+  --radius-card: 0.875rem;
+  --radius-field: 9999px;
+  --shadow-tile-value: 0 1px 4px 0 rgb(0 0 0 / 0.12);
+  --motion-duration: 150ms;
+  --ease-theme: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reduced motion stops every theme's motion (storefront-themes D14, R12). */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme] {
+    --motion-duration: 0ms;
+  }
+}
+
+/* Palettes (storefront-themes D3, Q5; ADR-0064 D3). Each repoints every colour role a page
+   reads, status colours included, so the device's dark mode cannot leak into a palette that
+   is fixed light or dark by design. Contrast is gated by tests/unit/storefront-palettes.test.ts. */
+[data-palette="carbon"] {
+  color-scheme: dark;
+  --background: var(--grey-140);
+  --foreground: var(--grey-970);
+  --card: var(--grey-190);
+  --card-foreground: var(--grey-970);
+  --popover: var(--grey-190);
+  --popover-foreground: var(--grey-970);
+  --primary: var(--grey-970);
+  --primary-foreground: var(--grey-140);
+  --secondary: var(--grey-230);
+  --secondary-foreground: var(--grey-970);
+  --muted: var(--grey-230);
+  --muted-foreground: var(--grey-720);
+  --accent: var(--grey-230);
+  --accent-foreground: var(--grey-970);
+  --border: var(--grey-230);
+  --input: var(--grey-500);
+  --ring: var(--grey-970);
+  --deal: var(--red-650);
+  --deal-foreground: var(--grey-140);
+  --feature: var(--red-650);
+  --feature-foreground: var(--grey-140);
+  --destructive: var(--red-700-soft);
+  --success: var(--green-720);
+  --warning: var(--amber-780);
+  --info: var(--blue-720);
+  --favorite: var(--pink-700);
+}
+
+[data-palette="graphite"] {
+  color-scheme: dark;
+  --background: var(--slate-250);
+  --foreground: var(--grey-970);
+  --card: var(--slate-300);
+  --card-foreground: var(--grey-970);
+  --popover: var(--slate-300);
+  --popover-foreground: var(--grey-970);
+  --primary: var(--yellow-880);
+  --primary-foreground: var(--grey-190);
+  --secondary: var(--slate-330);
+  --secondary-foreground: var(--grey-970);
+  --muted: var(--slate-330);
+  --muted-foreground: var(--grey-780);
+  --accent: var(--slate-330);
+  --accent-foreground: var(--grey-970);
+  --border: var(--slate-330);
+  --input: var(--grey-580);
+  --ring: var(--yellow-880);
+  --deal: var(--yellow-880);
+  --deal-foreground: var(--grey-190);
+  --feature: var(--yellow-880);
+  --feature-foreground: var(--grey-190);
+  --destructive: var(--red-700-soft);
+  --success: var(--green-720);
+  --warning: var(--amber-780);
+  --info: var(--blue-720);
+  --favorite: var(--pink-700);
+}
+
+[data-palette="signal"] {
+  color-scheme: light;
+  --background: var(--grey-1000);
+  --foreground: var(--grey-190);
+  --card: var(--grey-965);
+  --card-foreground: var(--grey-190);
+  --popover: var(--grey-965);
+  --popover-foreground: var(--grey-190);
+  --primary: var(--grey-190);
+  --primary-foreground: var(--grey-1000);
+  --secondary: var(--grey-955);
+  --secondary-foreground: var(--grey-190);
+  --muted: var(--grey-955);
+  --muted-foreground: var(--grey-450);
+  --accent: var(--grey-955);
+  --accent-foreground: var(--grey-190);
+  --border: var(--grey-955);
+  --input: var(--grey-620);
+  --ring: var(--grey-190);
+  --deal: var(--cobalt-500);
+  --deal-foreground: var(--grey-1000);
+  --feature: var(--cobalt-500);
+  --feature-foreground: var(--grey-1000);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="emerald"] {
+  color-scheme: light;
+  --background: var(--ivory-970);
+  --foreground: var(--umber-200);
+  --card: var(--ivory-980);
+  --card-foreground: var(--umber-200);
+  --popover: var(--ivory-980);
+  --popover-foreground: var(--umber-200);
+  --primary: var(--bottle-380);
+  --primary-foreground: var(--ivory-970);
+  --secondary: var(--ivory-930);
+  --secondary-foreground: var(--umber-200);
+  --muted: var(--ivory-930);
+  --muted-foreground: var(--umber-450);
+  --accent: var(--ivory-930);
+  --accent-foreground: var(--umber-200);
+  --border: var(--ivory-930);
+  --input: var(--umber-620);
+  --ring: var(--bottle-380);
+  --deal: var(--rose-450);
+  --deal-foreground: var(--ivory-970);
+  --feature: var(--bottle-380);
+  --feature-foreground: var(--ivory-970);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="navy"] {
+  color-scheme: light;
+  --background: var(--ivory-970);
+  --foreground: var(--umber-200);
+  --card: var(--ivory-980);
+  --card-foreground: var(--umber-200);
+  --popover: var(--ivory-980);
+  --popover-foreground: var(--umber-200);
+  --primary: var(--navy-300);
+  --primary-foreground: var(--ivory-970);
+  --secondary: var(--ivory-930);
+  --secondary-foreground: var(--umber-200);
+  --muted: var(--ivory-930);
+  --muted-foreground: var(--umber-450);
+  --accent: var(--ivory-930);
+  --accent-foreground: var(--umber-200);
+  --border: var(--ivory-930);
+  --input: var(--umber-620);
+  --ring: var(--navy-300);
+  --deal: var(--rose-450);
+  --deal-foreground: var(--ivory-970);
+  --feature: var(--navy-300);
+  --feature-foreground: var(--ivory-970);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="kumkum"] {
+  color-scheme: light;
+  --background: var(--ivory-960);
+  --foreground: var(--umber-200);
+  --card: var(--ivory-980);
+  --card-foreground: var(--umber-200);
+  --popover: var(--ivory-980);
+  --popover-foreground: var(--umber-200);
+  --primary: var(--magenta-480);
+  --primary-foreground: var(--ivory-970);
+  --secondary: var(--ivory-920);
+  --secondary-foreground: var(--umber-200);
+  --muted: var(--ivory-920);
+  --muted-foreground: var(--umber-450);
+  --accent: var(--ivory-920);
+  --accent-foreground: var(--umber-200);
+  --border: var(--ivory-920);
+  --input: var(--umber-620);
+  --ring: var(--magenta-480);
+  --deal: var(--magenta-480);
+  --deal-foreground: var(--ivory-970);
+  --feature: var(--ochre-750);
+  --feature-foreground: var(--umber-200);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="blush"] {
+  color-scheme: light;
+  --background: var(--blush-960);
+  --foreground: var(--blush-200);
+  --card: var(--blush-980);
+  --card-foreground: var(--blush-200);
+  --popover: var(--blush-980);
+  --popover-foreground: var(--blush-200);
+  --primary: var(--blush-200);
+  --primary-foreground: var(--blush-980);
+  --secondary: var(--blush-920);
+  --secondary-foreground: var(--blush-200);
+  --muted: var(--blush-920);
+  --muted-foreground: var(--blush-450);
+  --accent: var(--blush-920);
+  --accent-foreground: var(--blush-200);
+  --border: var(--blush-920);
+  --input: var(--blush-600);
+  --ring: var(--blush-200);
+  --deal: var(--cobalt-480);
+  --deal-foreground: var(--blush-980);
+  --feature: var(--cobalt-480);
+  --feature-foreground: var(--blush-980);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="peach"] {
+  color-scheme: light;
+  --background: var(--peach-950);
+  --foreground: var(--peach-200);
+  --card: var(--peach-980);
+  --card-foreground: var(--peach-200);
+  --popover: var(--peach-980);
+  --popover-foreground: var(--peach-200);
+  --primary: var(--peach-200);
+  --primary-foreground: var(--peach-980);
+  --secondary: var(--peach-910);
+  --secondary-foreground: var(--peach-200);
+  --muted: var(--peach-910);
+  --muted-foreground: var(--peach-450);
+  --accent: var(--peach-910);
+  --accent-foreground: var(--peach-200);
+  --border: var(--peach-910);
+  --input: var(--peach-600);
+  --ring: var(--peach-200);
+  --deal: var(--red-520);
+  --deal-foreground: var(--peach-980);
+  --feature: var(--red-520);
+  --feature-foreground: var(--peach-980);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="lilac"] {
+  color-scheme: light;
+  --background: var(--lilac-950);
+  --foreground: var(--lilac-200);
+  --card: var(--lilac-980);
+  --card-foreground: var(--lilac-200);
+  --popover: var(--lilac-980);
+  --popover-foreground: var(--lilac-200);
+  --primary: var(--lilac-200);
+  --primary-foreground: var(--lilac-980);
+  --secondary: var(--lilac-910);
+  --secondary-foreground: var(--lilac-200);
+  --muted: var(--lilac-910);
+  --muted-foreground: var(--lilac-450);
+  --accent: var(--lilac-910);
+  --accent-foreground: var(--lilac-200);
+  --border: var(--lilac-910);
+  --input: var(--lilac-600);
+  --ring: var(--lilac-200);
+  --deal: var(--leaf-480);
+  --deal-foreground: var(--lilac-980);
+  --feature: var(--leaf-480);
+  --feature-foreground: var(--lilac-980);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="fresh"] {
+  color-scheme: light;
+  --background: var(--grey-1000);
+  --foreground: var(--leaf-220);
+  --card: var(--grey-1000);
+  --card-foreground: var(--leaf-220);
+  --popover: var(--grey-1000);
+  --popover-foreground: var(--leaf-220);
+  --primary: var(--leaf-480);
+  --primary-foreground: var(--grey-1000);
+  --secondary: var(--leaf-960);
+  --secondary-foreground: var(--leaf-220);
+  --muted: var(--leaf-960);
+  --muted-foreground: var(--leaf-450);
+  --accent: var(--leaf-960);
+  --accent-foreground: var(--leaf-220);
+  --border: var(--leaf-960);
+  --input: var(--leaf-620);
+  --ring: var(--leaf-480);
+  --deal: var(--yellow-880);
+  --deal-foreground: var(--leaf-220);
+  --feature: var(--leaf-480);
+  --feature-foreground: var(--grey-1000);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="bazaar"] {
+  color-scheme: light;
+  --background: var(--grey-1000);
+  --foreground: var(--slate-220);
+  --card: var(--grey-1000);
+  --card-foreground: var(--slate-220);
+  --popover: var(--grey-1000);
+  --popover-foreground: var(--slate-220);
+  --primary: var(--blue-500);
+  --primary-foreground: var(--grey-1000);
+  --secondary: var(--slate-960);
+  --secondary-foreground: var(--slate-220);
+  --muted: var(--slate-960);
+  --muted-foreground: var(--slate-450);
+  --accent: var(--slate-960);
+  --accent-foreground: var(--slate-220);
+  --border: var(--slate-960);
+  --input: var(--slate-620);
+  --ring: var(--blue-500);
+  --deal: var(--yellow-880);
+  --deal-foreground: var(--slate-220);
+  --feature: var(--blue-500);
+  --feature-foreground: var(--grey-1000);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
+[data-palette="cobalt"] {
+  color-scheme: light;
+  --background: var(--grey-1000);
+  --foreground: var(--slate-220);
+  --card: var(--grey-1000);
+  --card-foreground: var(--slate-220);
+  --popover: var(--grey-1000);
+  --popover-foreground: var(--slate-220);
+  --primary: var(--cobalt-400);
+  --primary-foreground: var(--grey-1000);
+  --secondary: var(--slate-960);
+  --secondary-foreground: var(--slate-220);
+  --muted: var(--slate-960);
+  --muted-foreground: var(--slate-450);
+  --accent: var(--slate-960);
+  --accent-foreground: var(--slate-220);
+  --border: var(--slate-960);
+  --input: var(--slate-620);
+  --ring: var(--cobalt-400);
+  --deal: var(--gold-800);
+  --deal-foreground: var(--slate-220);
+  --feature: var(--cobalt-400);
+  --feature-foreground: var(--grey-1000);
+  --destructive: var(--red-520);
+  --success: var(--green-500);
+  --warning: var(--amber-500);
+  --info: var(--blue-520);
+  --favorite: var(--pink-520);
+}
+
 /* The one height cap for anything fixed+centred (dialogs, hand-rolled modals), so the
    bottom action stays reachable. dvh, not vh: the iOS URL bar eats the difference. */
 @utility max-h-overlay {
@@ -346,6 +949,11 @@
 /* Sits a fixed element directly on top of the tab bar (sticky product CTA, toasts). */
 @utility bottom-tabbar {
   bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom));
+}
+
+/* A theme's transition length; zeroed under reduced motion. */
+@utility duration-theme {
+  transition-duration: var(--motion-duration);
 }
 
 /* Horizontal rails read as app carousels, not as scrollbars. */

@@ -21,11 +21,19 @@ const twMerge = extendTailwindMerge({
       // `--radius-card` / `--radius-field`
       rounded: [{ rounded: ["card", "field"] }],
       // `--tracking-label` and friends
-      tracking: [{ tracking: ["label", "eyebrow", "eyebrow-wide", "display"] }],
+      tracking: [{ tracking: ["label", "eyebrow", "eyebrow-wide", "display", "headline", "tag"] }],
       // elevation *roles*, not sizes
-      shadow: [{ shadow: ["raised", "lifted", "overlay", "inset-field"] }],
-      // the sub-`text-xs` scale
-      "font-size": [{ text: ["2xs", "3xs", "4xs"] }],
+      shadow: [{ shadow: ["raised", "lifted", "overlay", "inset-field", "tile"] }],
+      // the sub-`text-xs` scale, and the storefront type roles a theme repoints
+      "font-size": [{ text: ["2xs", "3xs", "4xs", "headline", "title", "body", "tag", "price"] }],
+      // storefront faces and theme colour roles (storefront-themes D2, D3)
+      "font-family": [{ font: ["display", "label"] }],
+      // `deal` and `feature` are fills only: as text on the page they fall below AA.
+      "text-color": [{ text: ["deal-foreground", "feature-foreground", "on-photo"] }],
+      "bg-color": [{ bg: ["deal", "feature", "photo-scrim"] }],
+      "max-w": [{ "max-w": ["store"] }],
+      "duration": [{ duration: ["theme"] }],
+      "ease": [{ ease: ["theme"] }],
       // `@utility max-h-overlay` — the one cap token. `none` is here because
       // tailwind-merge 3.4 omits it from its own `max-h` group, so `max-h-none` was
       // not recognised either and could not override anything.
@@ -33,6 +41,11 @@ const twMerge = extendTailwindMerge({
       // `@utility` sizing and spacing helpers for the phone app shell (ADR-0016)
       h: [{ h: ["tabbar"] }],
       "pb": [{ pb: ["safe", "tabbar"] }],
+      // storefront rhythm: section air, page gutter, grid gap
+      p: [{ p: ["section", "gutter", "grid"] }],
+      px: [{ px: ["section", "gutter", "grid"] }],
+      py: [{ py: ["section", "gutter", "grid"] }],
+      gap: [{ gap: ["section", "gutter", "grid"] }],
       bottom: [{ bottom: ["tabbar"] }],
     },
   },

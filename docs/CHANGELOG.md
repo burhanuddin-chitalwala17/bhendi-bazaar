@@ -12,6 +12,36 @@
 
 ## Entries
 
+## 2026-11-01 — storefront-themes unit 1: theme tokens, twelve palettes, fonts, the contrast gate
+
+- **Registry (D1; R1–R3, Q18):** new `server/catalog/storefront-themes.ts` declares the closed theme set (Edge, Darbar,
+  Bloom, Daily), three palettes each with a fixed tone, faces per role, phone columns, and `readStorefrontLook`, which
+  parses stored keys (unknown theme → unthemed; a palette from another theme → the theme's first). Nothing calls it yet.
+- **Tokens (D2):** `src/app/globals.css` gains storefront roles — `text-headline/-title/-body/-tag/-price` (each
+  size a `clamp()` with a rem floor), `tracking-headline/-tag`, `py-section`, `px-gutter`, `gap-grid`, `max-w-store`,
+  `shadow-tile`, `font-display`, `font-label`, `duration-theme`, `ease-theme` — and four `[data-theme]` scopes from
+  the spec's theme cards. `--radius-card`/`--radius-field` move out of `@theme inline` so a scope can repoint them
+  (values unchanged outside a theme). Reduced motion zeroes `--motion-duration`. All registered in `cn`.
+- **Palettes (D3; Q5):** twelve `[data-palette]` scopes over 60 new primitives (13 new families in `FAMILY`), each
+  repointing every colour role, status colours included, plus new `deal` and `feature` roles and `color-scheme`.
+  The `dark` variant now skips `[data-palette]` subtrees. `--color-photo-scrim` / `--color-on-photo` for hero text.
+- **Fonts (D5; Q7, Q30):** new `src/components/storefront/theme-fonts.ts` loads Space Grotesk, Geist Mono, Jost,
+  Cormorant Garamond, DM Mono and Mulish through `next/font/google`, `preload: false`, `display: swap`; Bloom reuses
+  the root's DM Sans. Not yet mounted (U3), so no page changes and CSP is untouched.
+- **Gates:** new `storefront-palettes.test.ts` (D4: every text role 4.5:1 and control edge 3:1 per palette, tone
+  agrees with ground, `dark:` inert, scrim text over white and black photos) and `storefront-themes-registry.test.ts`
+  (A1: themes differ pairwise in ≥3 non-colour roles; scope per key and key per scope; ≤2 families; fonts not
+  preloaded; key parsing). `cn-tokens` and `design-tokens` extended. The scrim test failed first at 70% (2.99:1 on
+  white); raised to 85%.
+- **Mutations recorded:** `--umber-450` lightened to L 0.6 → three Darbar palettes red; `dark` variant unguarded →
+  red; scrim back to 70% → red; lilac scope renamed → red; Mulish `preload: true` → red; Daily given Edge's values
+  for all but two roles → A1 red; Edge headline `6vw` → red; `cn` without `tile` → red; reduced-motion 1ms → red.
+  All restored.
+- **Review fixes:** the `dark` guard sits inside `:where()` so `dark:` utilities keep their old specificity; status
+  roles and `primary` on the page ground joined the gate, and the primitives that failed were darkened; `text-deal`
+  and `text-feature` are not registered — those roles are fills only.
+- `docs/ARCHITECTURE.md` test-file count 264 → 266. Decisions Q5, Q16, Q30 → implemented (unit 1); Q7 stays decided until U3 mounts the faces on storefront routes only. Suites:
+  `tsc`, `vitest tests/unit`, `lint:boundary`, `docs:check`.
 ## 2026-11-01 — order-fulfilment unit 2: ready, trimmed buyer details, nudges, 36 h flag [CONTRACT] [MIGRATION]
 
 - **Ready** (R3, A1; D6): `POST /api/org/[orgId]/shipments/[id]/ready` → `markParcelReady`

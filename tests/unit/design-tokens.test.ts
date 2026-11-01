@@ -217,6 +217,12 @@ describe("design decisions go through tokens", () => {
       "--radius-card", "--radius-field",
       "--container-page",
       "--font-heading",
+      // storefront-themes D2, D3
+      "--font-display", "--font-label", "--shadow-tile", "--container-store", "--ease-theme",
+      "--text-headline", "--text-title", "--text-body", "--text-tag", "--text-price",
+      "--tracking-headline", "--tracking-tag", "--spacing-section", "--spacing-gutter", "--spacing-grid",
+      "--color-deal", "--color-deal-foreground", "--color-feature", "--color-feature-foreground",
+      "--color-photo-scrim", "--color-on-photo",
     ]) {
       expect(CSS, `${token} is used by a utility but not defined`).toContain(token);
     }
@@ -262,7 +268,10 @@ describe("every font utility resolves to a real family", () => {
 // raw values in one palette block is what lets a theme pick from the palette instead of
 // inventing a near-duplicate (ADR-0049) — there were 52 values, several spelled out 5–7 times.
 describe("colour values live in the primitive palette", () => {
-  const FAMILY = "parchment|charcoal|emerald|green|gold|rose|maroon|red|amber|blue|pink|orange|violet|ink|grey";
+  const FAMILY =
+    "parchment|charcoal|emerald|green|gold|rose|maroon|red|amber|blue|pink|orange|violet|ink|grey|" +
+    // storefront palettes (storefront-themes D3)
+    "slate|yellow|cobalt|ivory|umber|bottle|navy|magenta|ochre|blush|peach|lilac|leaf";
   const paletteBlock = CSS.split("/* Primitive palette")[1]?.split("}")[0] ?? "";
   const outside = CSS.replace(paletteBlock, "");
   const primitives = [...paletteBlock.matchAll(new RegExp(`(--(?:${FAMILY})-\\d+(?:-soft)?):`, "g"))].map((m) => m[1]);

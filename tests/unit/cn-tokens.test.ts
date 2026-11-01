@@ -35,6 +35,28 @@ describe("cn resolves custom tokens", () => {
     ["pb-safe", "pb-0"],
     ["pb-tabbar", "pb-4"],
     ["bottom-tabbar", "bottom-0"],
+    // storefront-themes D2, D3
+    ["shadow-tile", "shadow-none"],
+    ["text-headline", "text-sm"],
+    ["text-title", "text-lg"],
+    ["text-body", "text-xs"],
+    ["text-tag", "text-base"],
+    ["text-price", "text-xl"],
+    ["tracking-headline", "tracking-normal"],
+    ["tracking-tag", "tracking-wide"],
+    ["font-display", "font-sans"],
+    ["font-label", "font-mono"],
+    ["text-deal-foreground", "text-foreground"],
+    ["text-on-photo", "text-primary"],
+    ["bg-deal", "bg-card"],
+    ["bg-feature", "bg-muted"],
+    ["bg-photo-scrim", "bg-transparent"],
+    ["max-w-store", "max-w-none"],
+    ["py-section", "py-0"],
+    ["px-gutter", "px-4"],
+    ["gap-grid", "gap-2"],
+    ["duration-theme", "duration-0"],
+    ["ease-theme", "ease-linear"],
   ])("%s is dropped when %s overrides it", (token, override) => {
     expect(classes(cn(token, override))).toEqual([override]);
   });
