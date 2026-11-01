@@ -151,9 +151,19 @@ export type ParcelActor = (typeof PARCEL_ACTOR)[keyof typeof PARCEL_ACTOR];
 export const PARCEL_EVENT_KIND = {
   MOVE: "move",
   PICKUP_MOVED: "pickup_moved",
+  /** The courier's delivery estimate replaced ours (order-fulfilment D10, Q6). */
+  ETA_CHANGED: "eta_changed",
 } as const;
 
 export type ParcelEventKind = (typeof PARCEL_EVENT_KIND)[keyof typeof PARCEL_EVENT_KIND];
+
+/** Why a courier update could not be applied, and so landed on the admin's conflict list (D10, R8). */
+export const COURIER_CONFLICT_KIND = {
+  UNKNOWN_AWB: "unknown_awb",
+  CANCELLED_PARCEL: "cancelled_parcel",
+} as const;
+
+export type CourierConflictKind = (typeof COURIER_CONFLICT_KIND)[keyof typeof COURIER_CONFLICT_KIND];
 
 /** What the admin enters when booking by hand (spec R5, Q23). Dates are India calendar days. */
 export interface ParcelBooking {

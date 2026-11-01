@@ -97,8 +97,25 @@ const MOVED_LINES: Record<TimelineReader, Line> = {
   [TIMELINE_READER.ADMIN]: ({ entry }) => `Pickup moved to ${entry.pickupDate ?? ""}`,
 };
 
-/** One row's line for one reader. */
-export function timelineLine(reader: TimelineReader, entry: ParcelTimelineEntry, timeline: ParcelTimelineDto): string {
+/** The ETA in force before `entry`: the newest earlier row that set one (booking, date change or courier). */
+function etaBefore(entry: ParcelTimelineEntry, timeline: ParcelTimelineDto): string {
+  const at = timeline.entries.indexOf(entry);
+  for (let i = at - 1; i >= 0; i--) {
+    const eta = timeline.entries[i].estimatedDelivery;
+    if (eta) return eta;
+  }
+  return "";
+}
+
+/** The courier's ETA replaced ours (D10, Q6). The shop has no line for it (ux.md "ETA changed": —). */
+const ETA_LINES: Record<TimelineReader, ((ctx: Ctx, timeline: ParcelTimelineDto) => string) | null> = {
+  [TIMELINE_READER.SHOP]: null,
+  [TIMELINE_READER.BUYER]: ({ entry }) => `New delivery date: ${entry.estimatedDelivery ?? ""}`,
+  [TIMELINE_READER.ADMIN]: ({ entry }, timeline) => `ETA ${etaBefore(entry, timeline)} → ${entry.estimatedDelivery ?? ""}`,
+};
+
+/** One row's line for one reader; null when this reader has no line for it. */
+export function timelineLine(reader: TimelineReader, entry: ParcelTimelineEntry, timeline: ParcelTimelineDto): string | null {
   const ctx: Ctx = {
     entry,
     courier: timeline.courierName ?? "the courier",
@@ -106,5 +123,6 @@ export function timelineLine(reader: TimelineReader, entry: ParcelTimelineEntry,
     ageHours: entry.ageHours,
   };
   if (entry.kind === PARCEL_EVENT_KIND.PICKUP_MOVED) return MOVED_LINES[reader](ctx);
+  if (entry.kind === PARCEL_EVENT_KIND.ETA_CHANGED) return ETA_LINES[reader]?.(ctx, timeline) ?? null;
   return MOVE_LINES[reader][entry.status]?.(ctx) ?? label(entry.status);
 }

@@ -1,13 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { NOT_PACKED_COPY, QUEUE_COPY } from "@/components/order/pickups/pickups-copy";
+import { useSearchParams } from "next/navigation";
 
-/** ux.md "admin pickups" Retryable error: the whole queue failed to load. */
+import { Button } from "@/components/ui/button";
+import { CONFLICTS_TAB, CONFLICT_COPY, NOT_PACKED_COPY, QUEUE_COPY } from "@/components/order/pickups/pickups-copy";
+
+/** ux.md "admin pickups" and "admin conflicts" Retryable error: the tab failed to load. */
 export default function PickupsError({ reset }: { error: Error; reset: () => void }) {
+  const conflicts = useSearchParams().get("tab") === CONFLICTS_TAB;
   return (
     <div role="alert" className="flex flex-col gap-3 rounded-card border border-destructive bg-destructive/10 p-4 text-sm">
-      <p>{QUEUE_COPY.loadFailed}</p>
+      <p>{conflicts ? CONFLICT_COPY.loadFailed : QUEUE_COPY.loadFailed}</p>
       <Button variant="outline" className="min-h-10 self-start" onClick={reset}>
         {NOT_PACKED_COPY.tryAgain}
       </Button>

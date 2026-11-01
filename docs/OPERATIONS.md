@@ -29,6 +29,7 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ➖ | **Read by nothing.** Marked required here until 2026-09-23; no `process.env` reference exists. The checkout widget is handed the key id in the server's response (`server/payments/providers/razorpay/razorpay.repository.ts`), so setting it changes nothing and leaving it unset breaks nothing |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
+| `SHIPPING_WEBHOOK_TOKEN` | ✅ | The token typed beside the courier webhook URL in Shiprocket's dashboard, which it sends as `x-api-key` (order-fulfilment D9). Generate: `openssl rand -hex 32`. Without it every courier update is refused with 401 |
 | `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it. `NODE_ENV` is never set by us: Vercel and Next.js set it to `production` for every build, which is why `APP_ENV` is required there |
 | `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
 | `CRON_SECRET` | ➖ | **Read by nothing since PR-210.** Reconciliation moved onto the worker, which calls the domain directly and needs no bearer token; the route it guarded is gone. Safe to remove from the deployment |
@@ -255,7 +256,7 @@ Then, for the duration of that session:
 
 1. Set **both** `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL` to the tunnel origin. Leaving them on `localhost:3000` means OAuth callbacks and emailed links resolve to a host the outside world cannot reach.
 2. Add `<tunnel>/api/auth/callback/google` to the Google Cloud Console redirect URIs, or Google sign-in fails with a mismatch error that does not name the expected value.
-3. Point the gateway webhook at `<tunnel>/api/webhooks/razorpay` and the courier webhook at `<tunnel>/api/webhooks/shipping/shiprocket`.
+3. Point the gateway webhook at `<tunnel>/api/webhooks/razorpay` and the courier webhook at `<tunnel>/api/webhooks/shipping/tracking` with the `x-api-key` token.
 4. Restart the dev server — `NEXT_PUBLIC_*` values are inlined at build time, so a change is not picked up by a running server.
 
 Tunnel URLs are ephemeral on free tiers; each restart means repeating steps 1–3. Revert `.env` afterwards, or the next non-tunnelled run mails links to a dead host.
@@ -573,7 +574,7 @@ Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 - **Set every variable above in Vercel per environment.** `NEXTAUTH_URL` must be the deployed origin. The CI runner has no env of its own — `vercel pull` supplies the build's variables from the target Vercel environment, so a variable missing there is missing at build.
 - `vercel env pull` before running migrations locally against a deployed database.
 - **Migrations run in the build** ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)): `vercel.json`'s `buildCommand` is `npx prisma migrate deploy && next build`, so every Vercel build applies pending migrations to that environment's `DATABASE_URL` before compiling. A merge to `main` **is** a prod schema change; preview builds migrate whatever database the Preview environment points at — so if Preview has no database of its own, a push to `develop` migrates production. `migrate deploy` only applies pending migrations in order — never resets or drops. Manual `migrate deploy` remains only for local runs against a deployed database (`vercel env pull` first).
-- Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/shiprocket`. Local webhook testing needs a tunnel.
+- Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/tracking`, with `SHIPPING_WEBHOOK_TOKEN` as its token (Shiprocket refuses a URL naming it). Local webhook testing needs a tunnel.
 - Use a pooled connection string (pgbouncer / Neon) in production: `server/shared/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
 
 ## Recovering a failed migration

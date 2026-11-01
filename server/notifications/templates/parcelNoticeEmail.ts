@@ -95,6 +95,7 @@ export function renderParcelNotice(kind: NoticeKind, d: ParcelNoticeData): Rende
         }),
       };
     case NOTICE_KIND.PICKUP_MOVED_BUYER:
+    case NOTICE_KIND.ETA_CHANGED_BUYER:
       return {
         subject: `New delivery date: ${day(d.estimatedDelivery)}`,
         html: renderEmail({
@@ -112,6 +113,16 @@ export function renderParcelNotice(kind: NoticeKind, d: ParcelNoticeData): Rende
           body: `
             ${paragraph(`${esc(courier(d))} has your parcel. We'll tell you when it's delivered.`)}
             ${button(shopLink(d), "Open the parcel")}`,
+        }),
+      };
+    case NOTICE_KIND.DELIVERED:
+      return {
+        subject: `Delivered: order ${d.orderCode}`,
+        html: renderEmail({
+          title: "Delivered",
+          body: `
+            ${paragraph(`Your parcel from ${esc(d.shopName)} was delivered. Hope you love it.`)}
+            ${button(buyerLink(d), "View your order")}`,
         }),
       };
   }

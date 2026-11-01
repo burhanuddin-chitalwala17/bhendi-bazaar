@@ -24,6 +24,8 @@ const STATUS_MAPPINGS: Record<string, Record<string, ShipmentStatus>> = {
     "awaiting pickup": PACKING,
     "pickup scheduled": PACKING,
     "pickup complete": PICKED_UP,
+    // What Shiprocket's webhook sends once the courier has it (order-fulfilment R9).
+    "picked up": PICKED_UP,
     "pickup generated": PACKING,
     "in transit": IN_TRANSIT,
     "shipped": IN_TRANSIT,

@@ -1,0 +1,34 @@
+"use client";
+
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { CONFLICT_COPY } from "./pickups-copy";
+import { useDismissConflict } from "./useDismissConflict";
+
+/** Never disabled (R15): a press while dismissing does nothing. */
+export function DismissConflict({ conflictId }: { conflictId: string }) {
+  const { dismiss, dismissing } = useDismissConflict(conflictId);
+  return (
+    <Button size="sm" variant="outline" className="min-h-10" onClick={dismiss} aria-busy={dismissing}>
+      {dismissing && <Loader2 className="mr-2 size-4 animate-spin" />}
+      {dismissing ? CONFLICT_COPY.dismissing : CONFLICT_COPY.dismiss}
+    </Button>
+  );
+}
+
+/** The raw update, behind "Show details" (ux.md Long content). */
+export function ConflictDetails({ payload }: { payload: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="space-y-2">
+      <Button size="sm" variant="ghost" className="min-h-10 px-0" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        {open ? CONFLICT_COPY.hideDetails : CONFLICT_COPY.showDetails}
+      </Button>
+      {open && (
+        <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-card bg-muted p-3 text-xs">{payload}</pre>
+      )}
+    </div>
+  );
+}

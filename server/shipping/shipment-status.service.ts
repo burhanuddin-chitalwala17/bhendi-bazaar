@@ -210,6 +210,47 @@ export async function movePickupDates(
   return { kind: "moved", eventId: event.id, etaChanged };
 }
 
+/** States in which the parcel is still on its way to the buyer, so a new ETA means something (D10). */
+const TRAVELLING: ShipmentStatus[] = [
+  SHIPMENT_STATUS.PICKUP_BOOKED,
+  SHIPMENT_STATUS.PICKED_UP,
+  SHIPMENT_STATUS.IN_TRANSIT,
+  SHIPMENT_STATUS.OUT_FOR_DELIVERY,
+  SHIPMENT_STATUS.DELIVERY_FAILED,
+];
+
+/**
+ * The courier's delivery estimate replaces ours when it differs (order-fulfilment D10, Q6): one
+ * compare-and-set and one `eta_changed` timeline row. Answers the row's id, or null when the day is
+ * the same, the parcel no longer travels, or another update changed it first.
+ */
+export async function replaceEstimatedDelivery(
+  shipmentId: string,
+  estimatedDelivery: Date,
+  courierWording: string,
+  tx: Prisma.TransactionClient,
+): Promise<{ eventId: string } | null> {
+  const before = await shipmentRepository.bookingOf(shipmentId, tx);
+  if (!before || !TRAVELLING.includes(before.status as ShipmentStatus)) return null;
+  if (before.estimatedDelivery && sameDay(before.estimatedDelivery, estimatedDelivery)) return null;
+  const moved = await shipmentRepository.replaceEstimatedDelivery(
+    shipmentId,
+    { statuses: TRAVELLING, seen: before.estimatedDelivery },
+    estimatedDelivery,
+    tx,
+  );
+  if (!moved) return null;
+  const event = await shipmentRepository.recordEvent(
+    {
+      shipmentId, kind: PARCEL_EVENT_KIND.ETA_CHANGED,
+      fromStatus: before.status, toStatus: before.status,
+      actor: PARCEL_ACTOR.COURIER, courierWording, estimatedDelivery,
+    },
+    tx,
+  );
+  return { eventId: event.id };
+}
+
 const sameDay = (a: Date | null, b: Date) => a !== null && a.getTime() === b.getTime();
 
 /** Who last booked or re-dated this parcel, and when — the stale refusals' "by {name} at {time}". */

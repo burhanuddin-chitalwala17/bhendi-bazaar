@@ -879,7 +879,7 @@ model Order {
 
   // Payment (single for entire order)
   paymentMethod  String? // "razorpay"
-  paymentStatus  String? @default("pending") // pending, paid, failed
+  paymentStatus  String?   @default("pending") // pending, paid, failed
   paymentId      String? // the CONFIRMED gateway payment id — the idempotency key (payment-confirmation D2)
   /// When the money became real: stamped by `confirmPaid`, the clock the packing nudges run on (order-fulfilment D18).
   paidAt         DateTime?
@@ -1130,24 +1130,24 @@ model ShippingRateCache {
 /// One row per parcel move: the timeline all three readers see (order-fulfilment D5).
 /// Written only in the transaction that moved the parcel. Not money: it goes with its parcel.
 model ParcelEvent {
-  id         String   @id @default(cuid())
-  shipmentId String
-  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  id                String    @id @default(cuid())
+  shipmentId        String
+  shipment          Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   /// One of PARCEL_EVENT_KIND (server/shipping/domain/shipping.types.ts): a move, or a date change (D5).
-  kind       String   @default("move")
-  fromStatus String?
-  toStatus   String
+  kind              String    @default("move")
+  fromStatus        String?
+  toStatus          String
   /// One of PARCEL_ACTOR (server/shipping/domain/shipping.types.ts).
-  actor      String
-  reason     String?
+  actor             String
+  reason            String?
   /// The courier's own wording, when a courier caused it.
-  courierWording String?
+  courierWording    String?
   /// The dates a booking or a date change set (kind `move` into pickup_booked, or `pickup_moved`).
   pickupDate        DateTime? @db.Date
   estimatedDelivery DateTime? @db.Date
   /// The staff member's name at the time, for "Already booked by {name}" (ux.md admin book pickup).
-  actorName  String?
-  createdAt  DateTime @default(now())
+  actorName         String?
+  createdAt         DateTime  @default(now())
 
   @@index([shipmentId, createdAt])
 }
@@ -1172,6 +1172,30 @@ model Notice {
   createdAt  DateTime  @default(now())
 
   @@unique([shipmentId, kind, audience, ref])
+}
+
+/// A courier update we could not apply: an AWB no parcel carries, or a move on a cancelled parcel
+/// (order-fulfilment D10, R8). Recorded and answered 200, so it is seen rather than retried; the
+/// admin reads and dismisses it. No foreign key: an unknown AWB has no parcel to point at.
+model CourierConflict {
+  id              String    @id @default(cuid())
+  /// One of COURIER_CONFLICT_KIND (server/shipping/domain/shipping.types.ts).
+  kind            String
+  /// The carrier's code, e.g. "shiprocket".
+  provider        String
+  awb             String
+  /// The cancelled parcel, when there is one; its code is copied for the row's wording.
+  shipmentId      String?
+  parcelCode      String?
+  courierWording  String
+  /// The body as it arrived, behind "Show details".
+  payload         Json
+  dismissedAt     DateTime?
+  dismissedByName String?
+  createdAt       DateTime  @default(now())
+
+  @@index([dismissedAt, createdAt])
+  @@index([awb])
 }
 
 model ShippingEvent {
@@ -2377,8 +2401,8 @@ model ChannelLocation {
   orgAddressId String?
   orgAddress   OrgAddress? @relation(fields: [orgAddressId], references: [id], onDelete: SetNull)
   /// "Not used": nothing of ours stands behind it, so it is sent 0 (Q16).
-  notUsed   Boolean   @default(false)
-  matchedAt DateTime?
+  notUsed      Boolean     @default(false)
+  matchedAt    DateTime?
 
   firstSeenAt DateTime
   lastSeenAt  DateTime
@@ -2396,7 +2420,7 @@ model ChannelLocation {
 /// (inventory-sync D4, ADR-0044): the stock it took here, whether it was oversold, and its restock
 /// when cancelled before dispatch. Amounts as the marketplace reported them; never in payouts.
 model MarketplaceOrder {
-  id           String  @id @default(cuid())
+  id           String @id @default(cuid())
   connectionId String
   orgId        String
   channel      String
@@ -2405,22 +2429,22 @@ model MarketplaceOrder {
   lineId  String
   sku     String
 
-  listingId    String?
-  productId    String?
+  listingId          String?
+  productId          String?
   /// The marketplace location it ships from, and the shop's location it was taken from.
   locationExternalId String?
   orgAddressId       String?
   /// The shop's location was not certain (an unmatched marketplace location): flagged for the owner (Q18).
-  locationGuessed Boolean @default(false)
+  locationGuessed    Boolean @default(false)
   /// Sold before stock sync was on: recorded, stock not taken (inventory-sync Q24).
-  beforeSync      Boolean @default(false)
+  beforeSync         Boolean @default(false)
 
-  quantity   Int
+  quantity    Int
   /// What was taken from our stock; less than `quantity` is an oversell (Q7).
-  taken      Int     @default(0)
-  oversold   Boolean @default(false)
+  taken       Int       @default(0)
+  oversold    Boolean   @default(false)
   amountPaise Int?
-  state      String
+  state       String
   restockedAt DateTime?
 
   orderedAt DateTime

@@ -12,6 +12,37 @@
 
 ## Entries
 
+## 2026-11-01 — order-fulfilment unit 4: signed courier updates, conflicts, delivery emails [CONTRACT] [MIGRATION]
+
+- **Signed webhook** (R8, A4; D9, Q7): the courier webhook moved to `POST /api/webhooks/shipping/tracking` (the old
+  `/shiprocket` path is deleted; community reports say Shiprocket refuses a URL naming it). It requires `x-api-key`
+  equal to the new `SHIPPING_WEBHOOK_TOKEN`, compared over SHA-256 digests with `timingSafeEqual`
+  (`server/shipping/courier-token.ts`) before the body is read; missing, wrong or unset is 401. A failure applying an
+  update is now 500 so Shiprocket retries (Q32), not 200. Same-origin exemption, rate-limit registry and
+  route-reachability follow the new path. **Ops:** set the token in every deployment and register the new URL with it.
+- **Courier updates** (R9, A5; D10): `server/checkout/courier-update.ts` moves the parcel through `moveParcel` (a
+  repeated "Delivered" moves once, under the order lock). Shiprocket's "PICKED UP" was unmapped and now maps to
+  `picked_up`. The buyer is emailed "Delivered: order {code}" once per parcel (`NOTICE_KIND.DELIVERED`). A differing
+  `etd` (Shiprocket's sample field, its India day) replaces the ETA by compare-and-set while the parcel travels, writes
+  an `eta_changed` timeline row ("New delivery date: {eta}" for the buyer, "ETA {old} → {eta}" for the admin, no shop
+  line, as ux.md has it) and emails the buyer "New delivery date: {eta}" once per change.
+- **Conflicts** (R8, A13; D10, Q32): an AWB no parcel carries, or a courier move on a cancelled parcel (decided from
+  the locked move's outcome; the courier echoing our cancel is not one), is a `CourierConflict` row, answered 200.
+  Admin pickups gains a "Conflicts" tab with the open count: open first, a cancelled parcel's row in red, one row per
+  AWB with "{n} updates", "Show details" for the raw body, "Find parcel" / "Open Shiprocket", "Dismiss" (dismisses
+  the AWB's open rows; "Dismissed." toast; resolved rows greyed "Dismissed by {name}"), 50 more per "Load more",
+  "Couldn't load conflicts." on error. `POST /api/admin/courier-conflicts/[id]/dismiss`. "Hide details" added to ux.md.
+- **[MIGRATION] `20261101150100_courier_conflicts`**: the `CourierConflict` table and two indexes. Additive.
+- **[CONTRACT]** CONTRACTS.md: the webhook's path, token and answers; the dismiss route.
+- **Mutations** (each made a test fail, then restored): M1 the unset-secret check dropped; M2 any token accepted; M3
+  the route's token check removed; M4 the failure answer made 200; M5 the cancelled-parcel conflict removed; M6 the
+  courier's cancel echo made a conflict; M7 an unknown AWB dropped unrecorded; M8 the same-day ETA skip removed; M9
+  the delivered email removed.
+- **Review fixes:** the Conflicts tab counts distinct open AWBs, as the list folds them; "Find parcel" opens Ready (an
+  unknown AWB is most often a parcel booked on Shiprocket but never here); a numeric AWB must be a safe integer, so a
+  rounded one is refused with 400 rather than filed as a false conflict. M10: the count reverted to raw rows fails A13.
+  Tests: `tests/integration/courier-updates.test.ts`, `tests/unit/courier-token.test.ts`.
+
 ## 2026-11-01 — own-store/bulk-sheet unit 1: the download page, Instructions, a tab per type, the example row, Video help [CONTRACT]
 
 - **Get the sheet (D1, D12; R1; Q2, Q16, Q29):** `/org/[orgId]/products/bulk` is now four steps (Get the sheet ·

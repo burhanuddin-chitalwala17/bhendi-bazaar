@@ -1,6 +1,6 @@
 # TRD — own-store/order-fulfilment
 
-- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01, U3 done 2026-11-01
+- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01, U3 done 2026-11-01, U4 done 2026-11-01
 - **Domain:** cross-domain — checkout (orchestrates), shipping, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -55,10 +55,14 @@ Emails are rows sent by the worker; nudges come from one hourly sweep.
   (community sources, not its docs); U4 confirms it in the dashboard and records it in INTEGRATIONS.md.
   `timingSafeEqual` over SHA-256 digests against `SHIPPING_WEBHOOK_TOKEN`, before parsing; unset or wrong
   answers 401. If URLs naming "shiprocket" are refused (unconfirmed), the route becomes
-  `/api/webhooks/shipping/tracking`.
+  `/api/webhooks/shipping/tracking`. *Built (U4):* `x-api-key`, confirmed by integrators' guides though not
+  Shiprocket's docs; the route moved to `/api/webhooks/shipping/tracking`, since community reports say the dashboard
+  refuses the name. Both recorded in INTEGRATIONS.md, to confirm when the URL is registered.
 - **D10 — Conflicts (R8; A13; Q32).** An unknown AWB, or an update for a cancelled parcel, writes a
   `CourierConflict` row and answers 200; an exception answers 500. A differing courier ETD replaces the
-  ETA and emails the buyer (Q6); the field name comes from a captured payload.
+  ETA and emails the buyer (Q6); the field name comes from a captured payload. *Built (U4):* `etd`, from
+  Shiprocket's published sample (no capture yet), its India day; an unreadable one is ignored. A courier echoing
+  our cancel is not a conflict. Shiprocket's "PICKED UP" was unmapped and is now `picked_up`.
 - **D11 — Booking (R5, R6; A3).** `POST /api/admin/shipments/[id]/booking` moves the parcel to
   `pickup_booked`. `PATCH` changes the dates, compare-and-set on the date the admin saw; an unchanged save
   is a no-op, and the buyer is emailed only when the delivery day moved. `POST …/picked-up`

@@ -43,12 +43,17 @@ export async function onParcelMoved(
   const readied = move.to === SHIPMENT_STATUS.READY_FOR_PICKUP && move.actor === PARCEL_ACTOR.SHOP;
   const booked = move.to === SHIPMENT_STATUS.PICKUP_BOOKED;
   const pickedUp = move.to === SHIPMENT_STATUS.PICKED_UP;
-  if (!readied && !booked && !pickedUp) return;
+  const delivered = move.to === SHIPMENT_STATUS.DELIVERED;
+  if (!readied && !booked && !pickedUp && !delivered) return;
 
   const parcel = await parcelNoticeContext(move.shipmentId, tx);
   if (!parcel) return;
   if (readied) await noticeService.write(noticeOf(parcel, NOTICE_KIND.READY, move.at), tx);
   if (pickedUp) await noticeService.write(noticeOf(parcel, NOTICE_KIND.PICKED_UP, move.at), tx);
+  if (delivered) {
+    const buyerEmail = await buyerEmailOf(parcel.order.id, tx);
+    await noticeService.write(noticeOf(parcel, NOTICE_KIND.DELIVERED, move.at, { buyerEmail }), tx);
+  }
   if (booked) {
     // R6: the buyer hears the dates and the tracking link; the shop the date and where the label is.
     const buyerEmail = await buyerEmailOf(parcel.order.id, tx);
@@ -72,6 +77,20 @@ export async function onPickupMoved(
   const buyerEmail = await buyerEmailOf(parcel.order.id, tx);
   await noticeService.write(
     noticeOf(parcel, NOTICE_KIND.PICKUP_MOVED_BUYER, change.at, { ref: change.eventId, buyerEmail }),
+    tx,
+  );
+}
+
+/** The courier's ETA replaced ours (D10, Q6): the buyer is emailed once per change, keyed by its timeline row. */
+export async function onEtaChanged(
+  change: { shipmentId: string; eventId: string; at: Date },
+  tx: Prisma.TransactionClient,
+): Promise<void> {
+  const parcel = await parcelNoticeContext(change.shipmentId, tx);
+  if (!parcel) return;
+  const buyerEmail = await buyerEmailOf(parcel.order.id, tx);
+  await noticeService.write(
+    noticeOf(parcel, NOTICE_KIND.ETA_CHANGED_BUYER, change.at, { ref: change.eventId, buyerEmail }),
     tx,
   );
 }

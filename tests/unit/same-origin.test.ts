@@ -133,7 +133,7 @@ describe("the configured app origin counts as ours", () => {
 describe("callers outside this origin that are meant to post here", () => {
   it.each([
     "/api/webhooks/razorpay",
-    "/api/webhooks/shipping/shiprocket",
+    "/api/webhooks/shipping/tracking",
     "/api/auth/callback/credentials",
     "/api/auth/signout",
   ])("%s without an Origin is allowed", (path) => {

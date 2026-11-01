@@ -101,3 +101,27 @@ export const PICKED_UP_COPY = {
 
 /** Shiprocket's own dashboard, where the admin books by hand (own-store Q18). */
 export const SHIPROCKET_URL = "https://app.shiprocket.in";
+
+/** The pickups page's Conflicts tab, as its URL names it; the error banner words itself by it. */
+export const CONFLICTS_TAB = "conflicts";
+
+/** ux.md "admin conflicts": courier updates we could not apply (R8). */
+export const CONFLICT_COPY = {
+  tab: "Conflicts",
+  empty: "No unmatched courier updates.",
+  loadFailed: "Couldn't load conflicts.",
+  dismiss: "Dismiss",
+  dismissing: "Dismissing…",
+  dismissed: "Dismissed.",
+  findParcel: "Find parcel",
+  openShiprocket: "Open Shiprocket",
+  showDetails: "Show details",
+  /** The toggle's other face (added at build, unit 4). */
+  hideDetails: "Hide details",
+  loadMore: "Load more",
+  unknownAwb: (awb: string, time: string) => `Update for unknown AWB ${awb} from Shiprocket at ${time}.`,
+  cancelledParcel: (code: string, wording: string) =>
+    `Update for cancelled parcel ${code}: courier says "${wording}". Cancel it on Shiprocket.`,
+  updates: (n: number) => `${n} updates`,
+  dismissedBy: (name: string) => `Dismissed by ${name}`,
+} as const;

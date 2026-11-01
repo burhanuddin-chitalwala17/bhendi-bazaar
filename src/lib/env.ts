@@ -17,6 +17,8 @@ const requiredEnvVars = [
   "GOOGLE_CLIENT_SECRET",
   "RAZORPAY_KEY_ID",
   "RAZORPAY_KEY_SECRET",
+  // Without it every courier update is refused with 401 (order-fulfilment D9).
+  "SHIPPING_WEBHOOK_TOKEN",
   // Object storage (ADR-0028). Replaced BLOB_READ_WRITE_TOKEN, which nothing reads any
   // more — the Blob store, its package and its migration script are all gone.
   "R2_ENDPOINT",

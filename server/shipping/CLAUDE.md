@@ -27,7 +27,7 @@ Shipping owns everything between "a customer has an address" and "a parcel is mo
 - **A rate reaches checkout only as a signed quote** (`rate-quote.service.ts`). The rates route signs it for an origin, destination and billable weight; checkout verifies it against the parcel it allocated. A rate figure in a request is never charged.
 - **Weight comes from the persisted shipment**, not recomputed at call time, so what is booked matches what was quoted and charged.
 - **Every external call has a timeout and a bounded, idempotent retry.** A retry that can produce a second parcel is worse than a failure. `server/shared/retry.ts` provides the mechanism; idempotency is the caller's responsibility.
-- **Webhooks are verified before they are trusted, and fail loudly.** Returning 2xx on a payload you could not match is forbidden — see the reasoning in [ADR-0005](../../docs/adr/0005-payment-state-server-only.md), which exists because a silently-succeeding webhook hid a broken payment path for months.
+- **Webhooks are verified before they are trusted, and fail loudly.** The courier's token is checked by `courier-token.ts` before the body is read (order-fulfilment D9). An update we cannot apply — an unknown AWB, a move on a cancelled parcel — is a `CourierConflict` row the admin sees; that row is the loud part, so it is answered 2xx (Q32). Returning 2xx on a payload you neither applied nor recorded is forbidden — see the reasoning in [ADR-0005](../../docs/adr/0005-payment-state-server-only.md), which exists because a silently-succeeding webhook hid a broken payment path for months.
 - **Carrier quirks go in [INTEGRATIONS.md](../../docs/INTEGRATIONS.md)**, not in comments here. They are operational knowledge that outlives any one call site.
 
 ## Structure
@@ -40,6 +40,8 @@ Shipping owns everything between "a customer has an address" and "a parcel is mo
 | `repositories/` | Provider records, shipping events, and shipments (`shipment.repository.ts`). |
 | `shipment-status.service.ts` | The single writer of `Shipment.status`. |
 | `tracking.service.ts` | What the carrier webhooks read and record; order state goes to checkout's service. The admin's hand booking replaced the tracking route (order-fulfilment D11). |
+| `courier-token.ts` | The constant-time check of the courier webhook's `x-api-key` token (order-fulfilment D9). |
+| `courier-conflict.service.ts` | Courier updates that could not apply, recorded, listed by AWB and dismissed (D10). Its table's one repository is `repositories/courier-conflict.repository.ts`. |
 | `label.ts` | The label-link allowlist and fetch behind the shop's label route (order-fulfilment D7). |
 | `utils/` | Status normalisation, weight calculation, validators. Secrets at rest use `server/shared/crypto.ts`. |
 | `adr/` | Decisions internal to this domain. |

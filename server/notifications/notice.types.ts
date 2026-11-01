@@ -24,6 +24,10 @@ export const NOTICE_KIND = {
   PICKUP_MOVED_BUYER: "pickup_moved_buyer",
   /** The courier has the parcel (own-store Q9). */
   PICKED_UP: "picked_up",
+  /** The courier's estimate replaced ours; once per change, keyed by its timeline row (D10, Q6). */
+  ETA_CHANGED_BUYER: "eta_changed_buyer",
+  /** The courier delivered it (own-store Q9). */
+  DELIVERED: "delivered",
 } as const;
 export type NoticeKind = (typeof NOTICE_KIND)[keyof typeof NOTICE_KIND];
 
@@ -46,6 +50,8 @@ export const NOTICE_AUDIENCE_OF: Record<NoticeKind, NoticeAudience> = {
   [NOTICE_KIND.PICKUP_MOVED_SHOP]: NOTICE_AUDIENCE.SHOP,
   [NOTICE_KIND.PICKUP_MOVED_BUYER]: NOTICE_AUDIENCE.BUYER,
   [NOTICE_KIND.PICKED_UP]: NOTICE_AUDIENCE.SHOP,
+  [NOTICE_KIND.ETA_CHANGED_BUYER]: NOTICE_AUDIENCE.BUYER,
+  [NOTICE_KIND.DELIVERED]: NOTICE_AUDIENCE.BUYER,
 };
 
 /**

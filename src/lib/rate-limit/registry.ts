@@ -80,10 +80,10 @@ export const ROUTE_RATE_LIMITS = {
   "POST /api/webhooks/razorpay": {
     exempt: "Razorpay's signed webhook; a refused retry is a payment never recorded.",
   },
-  "POST /api/webhooks/shipping/shiprocket": {
+  "POST /api/webhooks/shipping/tracking": {
     exempt:
       "Shiprocket sends every shipment's updates from its own few addresses, so a per-address " +
-      "budget drops real updates. It is unauthenticated today; the fix is a shared secret (BACKLOG watch list), not a limit.",
+      "budget drops real updates. A shared token authenticates it (order-fulfilment D9), not a limit.",
   },
 
   "POST /api/wishlist": { policy: P.CART },

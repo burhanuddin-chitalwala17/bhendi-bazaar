@@ -100,6 +100,20 @@ export class ShipmentRepository {
     return moved.count === 1;
   }
 
+  /** The courier's ETD replaces ours: compare-and-set on the date read, only in a state that still travels (D10). */
+  async replaceEstimatedDelivery(
+    id: string,
+    where: { statuses: string[]; seen: Date | null },
+    estimatedDelivery: Date,
+    tx: ShipmentDb,
+  ): Promise<boolean> {
+    const moved = await tx.shipment.updateMany({
+      where: { id, status: { in: where.statuses }, estimatedDelivery: where.seen },
+      data: { estimatedDelivery },
+    });
+    return moved.count === 1;
+  }
+
   /** The newest timeline row of `kind`, optionally into `toStatus`: who did it, when, and the dates it set. */
   async lastEvent(id: string, kind: string, toStatus?: string, db: ParcelEventDb = prisma) {
     return db.parcelEvent.findFirst({

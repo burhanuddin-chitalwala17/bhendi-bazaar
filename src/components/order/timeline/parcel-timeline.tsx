@@ -13,12 +13,16 @@ export function ParcelTimeline({
   reader: TimelineReader;
 }) {
   if (!timeline || timeline.entries.length === 0) return null;
-  const entries = [...timeline.entries].reverse();
+  const entries = [...timeline.entries]
+    .reverse()
+    .map((entry) => ({ entry, line: timelineLine(reader, entry, timeline) }))
+    .filter((row): row is { entry: typeof row.entry; line: string } => row.line !== null);
+  if (entries.length === 0) return null;
   return (
     <ol className="space-y-2 border-l pl-4 text-sm" aria-label="Parcel timeline">
-      {entries.map((entry) => (
+      {entries.map(({ entry, line }) => (
         <li key={`${entry.at}-${entry.kind}-${entry.status}`}>
-          <p className="break-words">{timelineLine(reader, entry, timeline)}</p>
+          <p className="break-words">{line}</p>
           <p className="text-xs text-muted-foreground">
             {entry.day}, {entry.time}
           </p>

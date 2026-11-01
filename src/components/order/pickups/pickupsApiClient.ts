@@ -15,4 +15,7 @@ export const pickupsApiClient = {
   markPickedUp(shipmentId: string): Promise<{ ok: true }> {
     return apiRequest(`/api/admin/shipments/${shipmentId}/picked-up`, { method: "POST" });
   },
+  dismissConflict(conflictId: string): Promise<{ ok: true }> {
+    return apiRequest(`/api/admin/courier-conflicts/${conflictId}/dismiss`, { method: "POST" });
+  },
 };

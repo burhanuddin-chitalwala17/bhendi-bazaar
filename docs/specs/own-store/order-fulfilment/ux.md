@@ -224,7 +224,7 @@ Each starts one step before the screen, as the owner asked.
 | Refused | Not a platform admin | "This page is for Bhendi Bazaar staff only." | Go to home |
 | Stale: unknown AWB | Row | "Update for unknown AWB {awb} from Shiprocket at {time}." | Find parcel / Dismiss |
 | Stale: cancelled parcel moving | Red row | "Update for cancelled parcel {code}: courier says \"Picked up\". Cancel it on Shiprocket." | Open Shiprocket / Dismiss |
-| Long content | Courier wording wraps; raw payload behind "Show details" | — | Show details |
+| Long content | Courier wording wraps; raw payload behind "Show details" ("Hide details" to close, added at build, unit 4) | — | Show details |
 | Many items | Newest first; 50 per page; same AWB grouped with a count | "3 updates" | Load more |
 | Slow | Skeleton | — | — |
 | Phone / tablet / desktop | Cards; `lg:` table | — | — |
