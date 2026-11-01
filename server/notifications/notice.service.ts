@@ -43,6 +43,7 @@ class NoticeService {
       at: new Date().toISOString(),
       ...Object.fromEntries(Object.entries(input.booking ?? {}).filter(([, v]) => v)),
       ...(input.cancel ?? {}),
+      ...(input.refund ?? {}),
     };
     const row = await noticeRepository.insertOnce(
       { shipmentId: input.shipmentId, kind: input.kind, audience, recipient, data, ref: input.ref ?? "" },

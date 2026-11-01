@@ -1,6 +1,6 @@
 # TRD — own-store/order-fulfilment
 
-- **Status:** Accepted — 2026-10-30 (UX signed off; owner asked to build). Building: U1 done 2026-10-30, U2 done 2026-11-01, U3 done 2026-11-01, U4 done 2026-11-01, U5 done 2026-11-01
+- **Status:** Implemented — 2026-11-01 (accepted 2026-10-30, UX signed off). Built: U1 done 2026-10-30, U2 done 2026-11-01, U3 done 2026-11-01, U4 done 2026-11-01, U5 done 2026-11-01, U6 done 2026-11-01
 - **Domain:** cross-domain — checkout (orchestrates), shipping, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
 - **Verified:** 2026-11-01
@@ -88,13 +88,16 @@ Emails are rows sent by the worker; nudges come from one hourly sweep.
 - **D16 — Refund owed (R13; Q11, Q25).** `Refund` (payments, never cascaded), one per parcel: OWED,
   REQUESTED, STARTED, UNCONFIRMED, FAILED. Written on any `refundOwed` move. The amount is the lines less
   their discount share, plus `shippingCost`, capped at `grandTotal` less existing rows. `paymentStatus` is
-  never touched. *Built (U5):* a ₹0 amount writes no row; the table holds U6's columns already.
+  never touched. *Built (U5):* a ₹0 amount writes no row; the table holds U6's columns already. *Built (U6):*
+  `lost`, `damaged` and `rto_delivered` write it through the same `oweRefund` in `cancel-give-back.ts`.
 - **D17 — Refund button (R14; A9; Q12).** `POST /api/admin/refunds/[id]/start` moves OWED to REQUESTED
   conditionally, then calls Razorpay with `receipt` = row id. Its refund docs (read 2026-10-30) say
   "`receipt` is treated as an idempotency key" per payment; no `X-Refund-Idempotency` header is documented.
   Success → STARTED with the gateway id, and the buyer is emailed; a refusal → FAILED with the reason.
   A 10 s timeout, or REQUESTED older than 2 min, shows UNCONFIRMED; a retry first lists the payment's
-  refunds and adopts the one with that receipt.
+  refunds and adopts the one with that receipt. *Built (U6):* a 5xx is UNCONFIRMED too; a failed lookup stays
+  UNCONFIRMED; FAILED may be retried; the answer is recorded only against the claim that asked (`requestedAt`).
+  Who pressed is an audit entry (`REFUND_START`), read only to word "Already started by {name}".
 - **D18 — Nudges (R3a, R4; A11; Q24).** An hourly `fulfilment.sweep` (the 4th of 4 schedules,
   already in the idle budget) writes the 12 h and 24 h shop notices and the 24 h-unbooked admin
   notice. They are timed from a new `Order.paidAt` (stamped by `confirmPaid`) and the ready event,

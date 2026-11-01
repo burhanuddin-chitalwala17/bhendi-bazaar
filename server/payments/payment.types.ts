@@ -73,6 +73,15 @@ export type GatewayPaymentState =
   | { kind: "in-flight" }
   | { kind: "none" };
 
+/**
+ * What the gateway said to a refund request (order-fulfilment D17), reduced to what the refund row
+ * records. `unknown` is a timeout, a dropped connection or a gateway fault: it may have refunded.
+ */
+export type GatewayRefundResult =
+  | { kind: "started"; gatewayRefundId: string }
+  | { kind: "refused"; reason: string }
+  | { kind: "unknown" };
+
 /** What `releaseIfUnpaid` decided, for the caller to log or report. */
 export type ReleaseOutcome =
   | "released"

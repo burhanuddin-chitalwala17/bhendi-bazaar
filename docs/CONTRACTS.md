@@ -231,6 +231,14 @@ updatedByName, updatedAt }`. `ParcelTimelineDto` gains optional `refundStarted`;
 `org.name`. **`createSettlement`** now refuses (`400`) a selection that leaves any of the org's unsettled negative
 entries behind, or totals ₹0 or less (`SETTLEMENT_REFUSALS`, D15).
 
+Since order-fulfilment unit 6 **`POST /api/admin/refunds/[id]/start`** (platform admin, no body) starts a refund
+owed at Razorpay for the row's own amount (D17). It answers **`RefundStartOutcome`** (`server/payments/refund.types.ts`):
+`{ kind: "started", gatewayRefundId, amountPaise }`, `{ kind: "unconfirmed" }` (no answer within 10 s, or a lookup
+that failed; the row is `UNCONFIRMED`) or `{ kind: "refused", reason }` (Razorpay's own words; the row is `FAILED`).
+A row already started, or being started by another press, is `409` "Already started by {name}."; an order with no captured
+payment, or a server without Razorpay keys, is `409` in our words with the row untouched (Q38); an unknown id is
+`404`. The admin's list reads **`RefundRow`** (`server/checkout/refund-queue.ts`) on the server; it crosses no route.
+
 ### Shop setup list
 
 Since seller-onboarding unit 3 **`OnboardingStatus`** (`server/catalog/org-onboarding.types.ts`) is

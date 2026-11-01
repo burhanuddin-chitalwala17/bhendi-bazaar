@@ -17,6 +17,8 @@ export interface PortalNavItem {
   exact?: boolean;
   /** One line under the title (own-store onboarding R5). */
   purpose?: string;
+  /** Work waiting there, shown beside the title; nothing is shown for zero or absent. */
+  count?: number;
   /** Set by a caller that decides "current" itself, rather than by href matching. */
   active?: boolean;
   onSelect?: () => void;
@@ -176,7 +178,7 @@ function PortalNavLink({
   active: boolean;
   onNavigate: () => void;
 }) {
-  const { title, href, icon: Icon, purpose, onSelect } = item;
+  const { title, href, icon: Icon, purpose, onSelect, count } = item;
   const tone = active ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-muted/60";
   const body = (
     <>
@@ -185,6 +187,11 @@ function PortalNavLink({
         <span className="block">{title}</span>
         {purpose && <span className="block text-xs font-normal text-muted-foreground">{purpose}</span>}
       </span>
+      {count ? (
+        <span className={cn("ml-auto rounded-full bg-primary/10 px-2 text-xs font-medium tabular-nums text-primary", rail && "md:hidden lg:inline")}>
+          {count}
+        </span>
+      ) : null}
       {rail && (
         <span
           aria-hidden

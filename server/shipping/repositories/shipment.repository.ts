@@ -63,6 +63,19 @@ export class ShipmentRepository {
     });
   }
 
+  /** What the admin's refund list names a parcel by: its code, its order's code, and who cancelled it. */
+  async refundContexts(ids: string[], cancelled: string) {
+    if (ids.length === 0) return [];
+    return prisma.shipment.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true, code: true,
+        order: { select: { code: true } },
+        parcelEvents: { where: { toStatus: cancelled }, orderBy: { createdAt: "desc" }, take: 1, select: { actor: true } },
+      },
+    });
+  }
+
   /** The booking as it stands: what a refused booking or date change explains itself from. */
   async bookingOf(id: string, db: ShipmentDb = prisma) {
     return db.shipment.findUnique({

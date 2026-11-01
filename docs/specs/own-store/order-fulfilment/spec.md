@@ -1,10 +1,10 @@
 # Spec — own-store/order-fulfilment
 
 - **Summary:** A paid parcel reaches the buyer through one hand-booked pickup, with the shop, the buyer and the admin reading the same timeline, and a parcel cancelled before it is ready gives everything back
-- **Status:** Accepted
+- **Status:** Implemented — 2026-11-01 (units 1–6)
 - **Domain:** cross-domain — shipping, checkout, payments, promotions, payouts, notifications
 - **Phase:** 12 — The shop's own store
-- **Verified:** 2026-10-30
+- **Verified:** 2026-11-01
 - **References:** [decisions.md](decisions.md), [ux.md](ux.md), [own-store](../spec.md) (Q5, Q8, Q9, Q18, Q19), [offers-hardening](../offers-hardening/) (Q10, Q13, unit 1), [shipment-lifecycle](../../shipment-lifecycle/), [shipping-fulfilment](../../shipping-fulfilment/), [ADR-0005](../../../adr/0005-payment-state-server-only.md), [ADR-0007](../../../adr/0007-conditional-stock-decrement.md), [ADR-0020](../../../adr/0020-money-bearing-records-never-cascade.md), [ADR-0038](../../../adr/0038-background-work-runs-on-an-owned-worker-against-a-postgres-job-queue.md), [ADR-0053](../../../adr/0053-readiness-advises-and-never-gates.md)
 
 > Requirements and product approach only. Technical approach lives in trd.md (written after UX sign-off).

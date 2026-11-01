@@ -12,6 +12,38 @@
 
 ## Entries
 
+## 2026-11-01 — order-fulfilment unit 6: refund owed for lost, damaged and returned parcels; the refund button [CONTRACT]
+
+- **Refund owed for every cause** (R13, Q25; D16): a parcel moving into `lost`, `damaged` or `rto_delivered` now
+  writes its one `Refund` row by the cancel's rule and cap — `oweRefund` in `server/checkout/cancel-give-back.ts`,
+  called from `parcel-moved.ts`. A repeated courier update writes nothing (unique `shipmentId`).
+- **The refund button** (R14, A9; D17; Q12): `server/checkout/refund-start.ts` `startRefund` behind
+  `POST /api/admin/refunds/[id]/start`. Payments claims the row conditionally (OWED, UNCONFIRMED, FAILED, or
+  REQUESTED older than 2 min → REQUESTED), then asks Razorpay once with `receipt` = the row id and a 10 s timeout
+  (`createRefund`, `findRefundByReceipt` in the Razorpay adapter). A row ever sent before is first looked up by its
+  receipt and the found refund adopted; a failed lookup stays UNCONFIRMED rather than asking blind. Success →
+  STARTED with the gateway id and the buyer's "Refund of ₹{x} started" notice on the same transaction; a 4xx →
+  FAILED with Razorpay's reason; a timeout or 5xx → UNCONFIRMED. The answer is recorded only against the claim that
+  asked, so a late answer cannot overwrite a retry. Who pressed is audited (`REFUND_START`), and names the refusal.
+- **Screens** (ux.md "admin refunds"): `/admin/orders/refunds` (admin nav "Refunds"): not started first, oldest
+  first, then started; "₹1,240 owed · {parcel} · cancelled by shop / lost / damaged / returned"; "Owed for {n} days"
+  amber past 2; "Started 3 Nov · rfnd_…"; the confirm sheet; Unconfirmed and Failed rows with Open in Razorpay and
+  Try again; 50 a page; cards, a table at `lg:`. The buyer's order shows "Refund of ₹{x} started …" on a lost,
+  damaged or returned parcel once started. No button is disabled.
+- **Review fixes:** a 200 carrying a refund Razorpay already marked failed is refused, not started; an order with
+  no captured payment, or a server without Razorpay keys, is a `409` in our words before the row is claimed (Q38);
+  the admin nav "Refunds" shows the not-started count (`PortalNavItem.count`); the build-time copy changes are Q38,
+  pending the owner's re-sign.
+- **[CONTRACT]** `RefundStartOutcome`, the start route, `RefundRow`. `CONTRACTS.md` updated. No migration: unit 5's
+  `Refund` table holds every column.
+- **Tests:** `tests/integration/refund-start.test.ts` (Q25 lost, damaged, returned; R14 list and start with one
+  email and the buyer's line; A9 timeout then adopt; failed lookup; two presses at once; refusal then retry; stale
+  request; a late answer after a retry; 404); `tests/unit/refund-gateway.test.ts` (receipt and amount; timeout and
+  dropped connection unknown; 5xx unknown; 4xx reason; receipt lookup skips failed refunds; failed lookup throws).
+  Mutations, each restored: claim accepting STARTED (1 failed); receipt lookup skipped (3 failed); Q25 causes not
+  owed (1 failed); 5xx read as a refusal (1 failed); stale window ignored (2 failed); settle not tied to its claim
+  (1 failed).
+
 ## 2026-11-01 — own-store/bulk-sheet unit 4: problems marked in the shop's own file [CONTRACT]
 
 - **Marker (D7; R6, A4; Q11, Q12, Q30):** `POST /api/org/:orgId/products/bulk/marker` takes the same file again,

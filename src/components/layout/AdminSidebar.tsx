@@ -20,6 +20,7 @@ import {
   Layers,
   Images,
   Settings,
+  Undo2,
 } from "lucide-react";
 
 const navItems = [
@@ -37,6 +38,11 @@ const navItems = [
     title: "Pickups",
     href: "/admin/orders/pickups",
     icon: Truck,
+  },
+  {
+    title: "Refunds",
+    href: "/admin/orders/refunds",
+    icon: Undo2,
   },
   {
     title: "Products",
@@ -120,7 +126,8 @@ const navItems = [
   },
 ];
 
-export function AdminSidebar() {
+/** Counts the server read for the nav (order-fulfilment ux.md: "Refunds" with a count). */
+export function AdminSidebar({ refundsNotStarted = 0 }: { refundsNotStarted?: number }) {
   return (
     <PortalSidebar
       header={
@@ -132,6 +139,7 @@ export function AdminSidebar() {
       items={navItems.map((item) => ({
         ...item,
         exact: item.href === "/admin",
+        count: item.href === "/admin/orders/refunds" ? refundsNotStarted : undefined,
       }))}
     />
   );

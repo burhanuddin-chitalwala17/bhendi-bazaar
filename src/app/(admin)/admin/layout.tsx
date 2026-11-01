@@ -4,6 +4,7 @@ import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { PortalHeader } from "@/components/layout/PortalHeader";
 import { requirePlatformAdmin } from "@/lib/admin-auth";
 import { isDomainError } from "@server/shared/domain-error";
+import { refundsDAL } from "@/data-access-layer/admin/refunds.dal";
 
 /**
  * Everything beneath `/admin` is gated here, not in the middleware.
@@ -34,7 +35,7 @@ export default async function AdminLayout({
 
   return (
     <div className="portal flex min-h-screen bg-background">
-      <AdminSidebar />
+      <AdminSidebar refundsNotStarted={(await refundsDAL.counts()).notStarted} />
       <div className="flex min-w-0 flex-1 flex-col">
         <PortalHeader
           name={session.user.name}

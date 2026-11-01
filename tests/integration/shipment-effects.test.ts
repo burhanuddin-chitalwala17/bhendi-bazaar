@@ -34,6 +34,8 @@ describe.skipIf(!isDisposableDb)("a status change moves stock and money", () => 
       // Ledger first: a reversal holds its parcel (Restrict, offers-hardening D1).
       await prisma.orgLedgerEntryLine.deleteMany({ where: { entry: { orderId: { in: madeOrderIds } } } });
       await prisma.orgLedgerEntry.deleteMany({ where: { orderId: { in: madeOrderIds } } });
+      // A lost, damaged or returned parcel now owes a refund (order-fulfilment Q25), which holds its parcel.
+      await prisma.refund.deleteMany({ where: { orderId: { in: madeOrderIds } } });
       await prisma.parcelEvent.deleteMany({ where: { shipment: { orderId: { in: madeOrderIds } } } });
       await prisma.shipmentItem.deleteMany({ where: { shipment: { orderId: { in: madeOrderIds } } } });
       await prisma.shipment.deleteMany({ where: { orderId: { in: madeOrderIds } } });

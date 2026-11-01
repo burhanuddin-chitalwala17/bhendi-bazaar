@@ -32,6 +32,8 @@ export const NOTICE_KIND = {
   CANCELLED_BUYER: "cancelled_buyer",
   /** The parcel was cancelled: the shop is told not to send it, and the fee when it cancelled. */
   CANCELLED_SHOP: "cancelled_shop",
+  /** The admin started the parcel's refund at the gateway (R14, ux.md Emails "Refund started"). */
+  REFUND_STARTED_BUYER: "refund_started_buyer",
 } as const;
 export type NoticeKind = (typeof NOTICE_KIND)[keyof typeof NOTICE_KIND];
 
@@ -58,6 +60,7 @@ export const NOTICE_AUDIENCE_OF: Record<NoticeKind, NoticeAudience> = {
   [NOTICE_KIND.DELIVERED]: NOTICE_AUDIENCE.BUYER,
   [NOTICE_KIND.CANCELLED_BUYER]: NOTICE_AUDIENCE.BUYER,
   [NOTICE_KIND.CANCELLED_SHOP]: NOTICE_AUDIENCE.SHOP,
+  [NOTICE_KIND.REFUND_STARTED_BUYER]: NOTICE_AUDIENCE.BUYER,
 };
 
 /**
@@ -104,6 +107,8 @@ export interface ParcelNoticeInput {
   /** For a kind that can repeat on one parcel: the timeline row that earned it. */
   ref?: string;
   cancel?: { cancelledBy: string; refundPaise: number; feePaise: number };
+  /** A refund started at the gateway (unit 6): its amount, paise. */
+  refund?: { refundPaise: number };
   booking?: {
     courierName: string | null;
     trackingNumber: string | null;

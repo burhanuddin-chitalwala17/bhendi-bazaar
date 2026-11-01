@@ -31,6 +31,7 @@ the webhook read `localOrderId`, and every webhook silently no-op'd while return
 - **Test vs live keys are distinguishable by prefix** (`rzp_test_` / `rzp_live_`). Worth asserting in a startup check: a test key in production fails silently in the sense that nothing errors, it just never takes money.
 - **The dashboard's webhook delivery log** records every attempt and our response. It is the first place to look when a confirmation did not arrive — before reading our own logs.
 - Test card `4111 1111 1111 1111` works in test mode.
+- **Refunds take a `receipt`, which Razorpay's refund docs (read 2026-10-30) say "is treated as an idempotency key" per payment;** no idempotency header is documented. A refund call that times out may still have refunded, so we never retry blind: `GET /payments/{id}/refunds` is read first and the refund carrying our receipt is adopted (order-fulfilment D17). A refund can come back `failed`, which moved no money. **Unverified against live keys** — confirm the receipt dedupe on the first real refund.
 
 ## Shiprocket (courier)
 

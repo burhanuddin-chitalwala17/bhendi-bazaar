@@ -154,6 +154,16 @@ export async function parcelNoticeContext(shipmentId: string, tx: Prisma.Transac
   return await shipmentRepository.noticeContext(shipmentId, tx);
 }
 
+/** Each parcel's code, its order's code, and who cancelled it if anyone did (the admin's refund list). */
+export async function parcelRefundContexts(
+  ids: string[],
+): Promise<Map<string, { parcelCode: string; orderCode: string; cancelledBy: ParcelActor | null }>> {
+  const rows = await shipmentRepository.refundContexts(ids, SHIPMENT_STATUS.CANCELLED);
+  return new Map(
+    rows.map((r) => [r.id, { parcelCode: r.code, orderCode: r.order.code, cancelledBy: (r.parcelEvents[0]?.actor ?? null) as ParcelActor | null }]),
+  );
+}
+
 /** Who last moved the parcel into `status`, and when; null if it never was. */
 export async function lastMoveInto(shipmentId: string, status: ShipmentStatus) {
   return await shipmentRepository.lastMoveInto(shipmentId, status);

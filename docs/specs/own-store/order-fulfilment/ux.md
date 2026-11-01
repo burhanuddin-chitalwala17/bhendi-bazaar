@@ -170,7 +170,7 @@ Each starts one step before the screen, as the owner asked.
 | Partial | Some started, some owed; cause shown (cancelled, lost, damaged, returned — Q25) | Owed first, then "Started 3 Nov · rfnd_…" | Refund ₹{x} |
 | Success | Row to Started | "Refund of ₹1,240 started. Buyer emailed." | — |
 | Retryable error: no answer | Inline on row; row marked "Unconfirmed" | "We couldn't confirm the refund. Check Razorpay before trying again." | Open in Razorpay / Try again |
-| Terminal error | Gateway refuses (e.g. payment already refunded there) | "Razorpay says: {reason}. Check the payment in Razorpay before trying again." | Open in Razorpay |
+| Terminal error | Gateway refuses (e.g. payment already refunded there) | "Razorpay says: {reason}. Check the payment in Razorpay before trying again." | Open in Razorpay / Try again (added at build, unit 6: the copy invites a retry, and no row may be stuck) |
 | Refused | Already started by another admin | "Already started by {name}." | — |
 | Stale | Owed over 2 days amber | "Owed for 3 days" | Refund |
 | Long content | Reason wraps | — | — |
@@ -326,7 +326,7 @@ Each starts one step before the screen, as the owner asked.
 | Shop toasts | "Marked ready. We'll book the pickup." · "Parcel cancelled." |
 | Admin buttons | "Book pickup" · "Save booking" · "Mark picked up" · "Change pickup date" · "Cancel parcel" · "Refund ₹{x}" |
 | Admin fields | "Pickup date" · "Delivers by" · "Courier" · "AWB number" · "Tracking link" · "Label link" |
-| Admin refund sheet | "Refund ₹1,240 to the buyer's {UPI / card}? This can't be undone." · "Refund ₹1,240" |
+| Admin refund sheet | "Refund ₹1,240 to the way the buyer paid? This can't be undone." · "Refund ₹1,240" · "Not now" (changed at build, unit 6: the payment method is not stored; was "the buyer's {UPI / card}") |
 | Buyer buttons | "Track parcel" · "Cancel order" / "Cancel these items" · "Yes, cancel" · "Keep order" |
 | Unknown courier update (admin) | "Update for unknown AWB {awb} from Shiprocket at {time}." · "Update for cancelled parcel {code}: courier says \"{wording}\". Cancel it on Shiprocket." |
 | Admin cancel | "Why are you cancelling? The buyer gets a full refund. No fee for the shop." · "Cancelled. Now cancel AWB {awb} on Shiprocket." |

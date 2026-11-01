@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { parcelNoticeContext, parcelsWithLines } from "@server/shipping/shipment-status.service";
-import { giveBack, type GivenBack } from "@server/checkout/cancel-give-back";
+import { giveBack, isRefundCause, oweRefund, type GivenBack } from "@server/checkout/cancel-give-back";
 import { PARCEL_ACTOR, SHIPMENT_STATUS, type ParcelActor, type ShipmentStatus } from "@server/shipping/domain/shipping.types";
 import { noticeService } from "@server/notifications/notice.service";
 import { NOTICE_KIND, type NoticeKind, type ParcelNoticeInput } from "@server/notifications/notice.types";
@@ -56,6 +56,14 @@ export async function onParcelMoved(
     return given;
   }
 
+  // Q25: lost, damaged and returned parcels are owed their refund by the same rule as a cancel.
+  if (isRefundCause(move.to)) {
+    const parcel = await parcelNoticeContext(move.shipmentId, tx);
+    if (!parcel) return null;
+    const refundPaise = await oweRefund({ id: parcel.id, orderId: parcel.order.id }, move.to, await parcelsWithLines(parcel.order.id, tx), tx);
+    return { refundPaise, feePaise: 0 };
+  }
+
   // The shop's "ready" is the admin's cue to book (R4); an admin walking a parcel there is booking it already.
   const readied = move.to === SHIPMENT_STATUS.READY_FOR_PICKUP && move.actor === PARCEL_ACTOR.SHOP;
   const booked = move.to === SHIPMENT_STATUS.PICKUP_BOOKED;
@@ -109,6 +117,20 @@ export async function onEtaChanged(
   const buyerEmail = await buyerEmailOf(parcel.order.id, tx);
   await noticeService.write(
     noticeOf(parcel, NOTICE_KIND.ETA_CHANGED_BUYER, change.at, { ref: change.eventId, buyerEmail }),
+    tx,
+  );
+}
+
+/** The admin started this parcel's refund (R14): the buyer is emailed once, on the same transaction. */
+export async function onRefundStarted(
+  started: { shipmentId: string; amountPaise: number; at: Date },
+  tx: Prisma.TransactionClient,
+): Promise<void> {
+  const parcel = await parcelNoticeContext(started.shipmentId, tx);
+  if (!parcel) return;
+  const buyerEmail = await buyerEmailOf(parcel.order.id, tx);
+  await noticeService.write(
+    noticeOf(parcel, NOTICE_KIND.REFUND_STARTED_BUYER, started.at, { buyerEmail, refund: { refundPaise: started.amountPaise } }),
     tx,
   );
 }

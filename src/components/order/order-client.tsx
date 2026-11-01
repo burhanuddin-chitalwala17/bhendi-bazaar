@@ -48,7 +48,7 @@ interface CancelContext {
   view: BuyerCancelView;
 }
 
-/** The refund line under a cancelled parcel (ux.md "Success: cancelled"). */
+/** The refund line under a parcel that is owed one (ux.md "Success: cancelled"). */
 function refundLine(refund: BuyerCancelView["refunds"][string] | undefined): string | null {
   if (!refund) return null;
   if (refund.started && refund.startedDay) return BUYER_CANCEL_COPY.refundStarted(refund.amountPaise, refund.startedDay);
@@ -59,7 +59,9 @@ function refundLine(refund: BuyerCancelView["refunds"][string] | undefined): str
 function ShipmentCard({ shipment, timeline, cancel }: { shipment: Shipment; timeline?: ParcelTimelineDto; cancel: CancelContext }) {
   const eta = shipment.estimatedDelivery && ARRIVING.includes(shipment.status) ? calendarDay(new Date(shipment.estimatedDelivery)) : null;
   const refund = cancel.view.refunds[shipment.id];
-  const refundText = shipment.status === SHIPMENT_STATUS.CANCELLED ? refundLine(refund) : null;
+  // A lost, damaged or returned parcel's refund shows once started (R14, Q25); until then its timeline says we'll be in touch.
+  const refundText =
+    shipment.status === SHIPMENT_STATUS.CANCELLED ? refundLine(refund) : refund?.started ? refundLine(refund) : null;
   // A8: an unpaid order shows no cancel anywhere; it expires as today.
   const canAct = cancel.paid && BEFORE_PICKUP.includes(shipment.status);
   // A cancel that owed ₹0 writes no refund row, so its timeline says plain "Cancelled".

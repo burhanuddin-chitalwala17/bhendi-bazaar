@@ -136,6 +136,18 @@ export function renderParcelNotice(kind: NoticeKind, d: ParcelNoticeData): Rende
         }),
       };
     }
+    case NOTICE_KIND.REFUND_STARTED_BUYER: {
+      const amount = formatPaise(d.refundPaise ?? 0);
+      return {
+        subject: `Refund of ${amount} started`,
+        html: renderEmail({
+          title: `Refund of ${esc(amount)} started`,
+          body: `
+            ${paragraph("It reaches your account in 5–7 working days.")}
+            ${button(buyerLink(d), "View your order")}`,
+        }),
+      };
+    }
     case NOTICE_KIND.CANCELLED_SHOP: {
       const fee = d.cancelledBy === PARCEL_ACTOR.SHOP && d.feePaise ? ` ${formatPaise(d.feePaise)} cancellation fee taken from your earnings.` : "";
       return {

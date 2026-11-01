@@ -440,6 +440,19 @@ export class OrderRepository {
     });
   }
 
+  /** The gateway payment a refund goes back through (order-fulfilment D17). */
+  async gatewayPaymentOf(orderId: string): Promise<string | null> {
+    const row = await prisma.order.findUnique({ where: { id: orderId }, select: { paymentId: true } });
+    return row?.paymentId ?? null;
+  }
+
+  /** Each order's gateway payment, for the admin's "Open in Razorpay". */
+  async gatewayPaymentsOf(orderIds: string[]): Promise<Map<string, string | null>> {
+    if (orderIds.length === 0) return new Map();
+    const rows = await prisma.order.findMany({ where: { id: { in: orderIds } }, select: { id: true, paymentId: true } });
+    return new Map(rows.map((r) => [r.id, r.paymentId]));
+  }
+
   /** The order row itself, inside the order transaction. Totals arrive computed; none come from a request. */
   async createInTransaction(data: Prisma.OrderUncheckedCreateInput, tx: OrderDb) {
     return await tx.order.create({ data });
