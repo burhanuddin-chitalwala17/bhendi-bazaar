@@ -1,7 +1,7 @@
 # TESTING.md — test strategy
 
-- **Verified:** 2026-10-29
-- **Covers:** `tests/*/`, `.github/workflows/ci.yml`, `vitest.config.ts`
+- **Verified:** 2026-11-01
+- **Covers:** `tests/*/`, `e2e/`, `.github/workflows/ci.yml`, `vitest.config.ts`, `playwright.config.ts`
 
 ## Stack
 
@@ -46,8 +46,8 @@ Mirror the source path: `server/checkout/order.service.ts` → `tests/unit/order
 ```
 tests/
 ├── setup.ts            # referenced by vitest.config.ts
-├── unit/               # 168 files: pure logic, plus every source-scanning guard
-├── integration/        # 32 files: crosses module boundaries, needs a disposable database
+├── unit/               # 248 files: pure logic, plus every source-scanning guard
+├── integration/        # 71 files: crosses module boundaries, needs a disposable database
 └── helpers/            # test-db.ts — the one predicate deciding whether a database is disposable
 ```
 
@@ -169,7 +169,13 @@ npm test              # watch mode
 npm run test:run      # single run, CI-style
 npm run test:ui       # Vitest UI
 npx vitest run --coverage
+npm run build && npx playwright test   # browser journeys (needs the local throwaway DB)
 ```
+
+**Browser journeys (`e2e/`).** Playwright, phone and desktop, against `next start` on a production
+build. `e2e/seed-fixtures.ts` builds one product in the fixture category on the throwaway database
+and refuses any other. Files are `*.e2e.ts`, never `*.spec.ts`, so Vitest does not collect them.
+A journey asserts what a person sees, never a timing: wait for the confirmation the UI shows.
 
 ## CI gates
 
@@ -186,6 +192,9 @@ npx vitest run --coverage
    scope grows as trees are cleared and never shrinks. The repo-wide `npm run lint` stays
    advisory.
 4. **Repo-wide lint does NOT block yet.** ⚠️ The step still carries `continue-on-error: true`. Almost all the errors are `no-explicit-any`: 81 as of 2026-09-20, **37** on 2026-09-28 (35 of them that rule) now that `src/app/api/**` is at zero — which was the priority, since that is where CLAUDE.md calls `any` a defect. What is left is in admin pages, hooks and the shipping provider layer. Clear those in scoped PRs, then delete the flag; the rule is only real once the flag is gone.
+
+5. **Dependencies block.** ✅ `node scripts/audit-prod.mjs`: a high or critical advisory in a production dependency fails the test job unless `audit-allowlist.json` names it with a reason and an expiry. A registry outage is retried once and reported as an outage, not a finding.
+6. **Browser journeys block the deploy.** ✅ The `e2e` job builds, starts and runs `npx playwright test` on every event, and `deploy` needs it. A failed run uploads its report and traces.
 
 Warnings stay non-blocking throughout (101 in total on 2026-09-28: 93 `no-unused-vars`, 5 `exhaustive-deps`).
 

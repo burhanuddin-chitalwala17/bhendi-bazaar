@@ -133,7 +133,7 @@ describe("a deployed environment that cannot enforce is refused (spec R2, A3)", 
   });
 
   it("the boot check refuses a deployed environment and only reports the rest of the list", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const warn = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.stubEnv("APP_ENV", "production");
     expect(() => checkBootEnvironment({})).toThrow(/Rate limiting cannot be enforced/);
     expect(() => checkBootEnvironment({ ...FULL })).not.toThrow();

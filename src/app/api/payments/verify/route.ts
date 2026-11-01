@@ -5,17 +5,16 @@
  * order, and performs the paid transition — the same routine the webhook calls, so
  * whichever arrives first wins and the other becomes a no-op.
  */
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { limitRequest } from "@/lib/rate-limit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { paymentService } from "@server/payments/payment.service";
 import { verifyPaymentSchema } from "@/lib/validation/schemas/payment.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const limited = await limitRequest(request, "POST /api/payments/verify", { userId: session?.user?.id });
     if (limited) return limited;
     const body = verifyPaymentSchema.parse(await request.json());

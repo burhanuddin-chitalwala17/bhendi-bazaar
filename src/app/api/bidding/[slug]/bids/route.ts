@@ -13,10 +13,9 @@
  * Limited under the `bid` policy, per account or address (rate-limiting Q8). The
  * organisation's maximum increase still bounds how far one bid can move the price.
  */
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { limitRequest } from "@/lib/rate-limit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { biddingService } from "@server/bidding/bidding.service";
 import { placeBidSchema } from "@/lib/validation/schemas/bidding.schema";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -29,7 +28,7 @@ export async function POST(
 ) {
   try {
     const { slug } = await params;
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
     const limited = await limitRequest(request, "POST /api/bidding/[slug]/bids", { userId: session?.user?.id });
     if (limited) return limited;
     const body = placeBidSchema.parse(await request.json());

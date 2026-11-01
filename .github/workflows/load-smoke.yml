@@ -1,0 +1,50 @@
+name: Load smoke
+
+# The browse path at 3x expected peak (docs/GTM-READINESS.md B12). By hand only, against the preview
+# by default: every request is a billed database read, and production is not a test bed.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Site to load
+        required: true
+        default: https://dev.bhendi-bazaar.com
+      peak_vus:
+        description: Concurrent shoppers at the peak (3x the expected peak)
+        required: true
+        default: "30"
+      category_slug:
+        description: A category that exists there
+        required: true
+        default: abayas
+      product_slug:
+        description: A product that exists there
+        required: true
+        default: light-blue-rida
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@43b9fc21641a76002687994433dd586f56e791b1 # v1.2.2
+
+      - name: Run the smoke
+        uses: grafana/run-k6-action@4082a08c7e40cf6d65863911077dfb60ae0a4f04 # v1.5.0
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          PEAK_VUS: ${{ inputs.peak_vus }}
+          CATEGORY_SLUG: ${{ inputs.category_slug }}
+          PRODUCT_SLUG: ${{ inputs.product_slug }}
+        with:
+          path: perf/k6-smoke.js
+          disable-analytics: true

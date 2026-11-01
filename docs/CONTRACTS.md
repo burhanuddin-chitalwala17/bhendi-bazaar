@@ -245,9 +245,9 @@ day, time, at }`, every date already India's. **Deleted** (Q36): `PATCH /api/adm
 its schema; **`PATCH /api/admin/orders/[id]`** (`updateOrderStatusSchema`) is deleted too — an order's status is
 only the summary of its parcels.
 
-Since order-fulfilment unit 4 the courier webhook is **`POST /api/webhooks/shipping/tracking`** (was
-`/api/webhooks/shipping/shiprocket`, deleted). It requires the header **`x-api-key`** equal to
-`SHIPPING_WEBHOOK_TOKEN`, compared in constant time before the body is read; missing, wrong or unconfigured is
+Since order-fulfilment unit 4 the courier webhook is **`POST /api/webhooks/shipping/courier`** (was
+`/api/webhooks/shipping/shiprocket`, deleted; Shiprocket refuses a URL naming it). It requires the header **`x-api-key`** equal to
+`SHIPROCKET_WEBHOOK_TOKEN`, compared in constant time before the body is read; missing, wrong or unconfigured is
 `401`. The body is parsed by `shiprocketWebhookSchema` (`awb`, `shipment_status`, optional `etd`, read as an India
 day); unparseable is `400`. An applied, ignored or unmapped update is `200`; an AWB no parcel carries, or a move on
 a cancelled parcel, is recorded as a `CourierConflict` and also answered `200`; a failure applying it is `500`, so the

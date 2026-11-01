@@ -4,17 +4,16 @@
  * No gateway is involved, so the only verifiable fact is the persisted total being
  * zero — which the server checks itself. A non-zero order is refused.
  */
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { limitRequest } from "@/lib/rate-limit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { paymentService } from "@server/payments/payment.service";
 import { confirmFreeOrderSchema } from "@/lib/validation/schemas/payment.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const limited = await limitRequest(request, "POST /api/payments/confirm-free", { userId: session?.user?.id });
     if (limited) return limited;
     const body = confirmFreeOrderSchema.parse(await request.json());

@@ -1,8 +1,7 @@
 // src/data-access-layer/orders.dal.ts
 
-import { getServerSession } from "next-auth";
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { unstable_rethrow } from "next/navigation";
-import { authOptions } from "@/lib/auth-config";
 import { orderService } from "@server/checkout/order.service";
 import { Order, Shipment } from "@/domain/order";
 import { OrderAddress } from "@/domain/order";
@@ -42,7 +41,7 @@ export const ordersDAL = {
    */
   listForViewer: async (): Promise<Order[]> => {
     try {
-      const session = await getServerSession(authOptions);
+      const session = await optionalActiveSession({ onBlocked: "allow" });
       if (!session?.user?.id) return [];
       const rows = await orderService.getOrdersByUserId(session.user.id);
       return rows.map((row) => toOrder(row as Parameters<typeof toOrder>[0]));

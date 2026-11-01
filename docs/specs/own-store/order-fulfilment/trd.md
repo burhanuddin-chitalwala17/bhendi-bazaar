@@ -59,7 +59,9 @@ Emails are rows sent by the worker; nudges come from one hourly sweep.
   answers 401. If URLs naming "shiprocket" are refused (unconfirmed), the route becomes
   `/api/webhooks/shipping/tracking`. *Built (U4):* `x-api-key`, confirmed by integrators' guides though not
   Shiprocket's docs; the route moved to `/api/webhooks/shipping/tracking`, since community reports say the dashboard
-  refuses the name. Both recorded in INTEGRATIONS.md, to confirm when the URL is registered.
+  refuses the name. Both recorded in INTEGRATIONS.md, to confirm when the URL is registered. *Merged with main
+  (2026-11-01):* main had moved the same route to `/api/webhooks/shipping/courier` under `SHIPROCKET_WEBHOOK_TOKEN`;
+  this handler now serves that path and reads that variable, so one URL and one token exist.
 - **D10 — Conflicts (R8; A13; Q32).** An unknown AWB, or an update for a cancelled parcel, writes a
   `CourierConflict` row and answers 200; an exception answers 500. A differing courier ETD replaces the
   ETA and emails the buyer (Q6); the field name comes from a captured payload. *Built (U4):* `etd`, from

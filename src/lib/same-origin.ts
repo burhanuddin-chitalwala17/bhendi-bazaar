@@ -21,7 +21,7 @@ export const MUTATING_METHODS: ReadonlySet<string> = new Set(["POST", "PUT", "PA
  */
 export const ORIGIN_CHECK_EXEMPT = [
   "/api/webhooks/razorpay",
-  "/api/webhooks/shipping/tracking",
+  "/api/webhooks/shipping/courier",
   "/api/auth/",
 ] as const;
 

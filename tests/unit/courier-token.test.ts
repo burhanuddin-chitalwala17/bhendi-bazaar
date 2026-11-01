@@ -9,13 +9,13 @@ const receive = vi.fn();
 vi.mock("@server/checkout/courier-update", () => ({ receiveCourierUpdate: (...a: unknown[]) => receive(...a) }));
 
 import { isCourierTokenValid } from "@server/shipping/courier-token";
-import { POST } from "@/app/api/webhooks/shipping/tracking/route";
+import { POST } from "@/app/api/webhooks/shipping/courier/route";
 import { shiprocketWebhookSchema } from "@/lib/validation/schemas/webhook.schema";
 
 const TOKEN = "s3cret-token";
 const call = (body: string, token?: string) =>
   POST(
-    new NextRequest("http://localhost/api/webhooks/shipping/tracking", {
+    new NextRequest("http://localhost/api/webhooks/shipping/courier", {
       method: "POST",
       headers: { "content-type": "application/json", ...(token === undefined ? {} : { "x-api-key": token }) },
       body,
@@ -34,10 +34,18 @@ describe("A4: the courier token", () => {
   });
 });
 
+describe("the webhook URL", () => {
+  // Shiprocket's webhook settings refuse these anywhere in the URL (its own note on that page).
+  it("contains none of the words Shiprocket refuses", () => {
+    const path = "/api/webhooks/shipping/courier";
+    for (const banned of ["shiprocket", "kartrocket", "sr", "kr"]) expect(path.toLowerCase()).not.toContain(banned);
+  });
+});
+
 describe("A4, Q32: the tracking webhook", () => {
   beforeEach(() => {
     receive.mockReset();
-    vi.stubEnv("SHIPPING_WEBHOOK_TOKEN", TOKEN);
+    vi.stubEnv("SHIPROCKET_WEBHOOK_TOKEN", TOKEN);
   });
   afterEach(() => vi.unstubAllEnvs());
 
@@ -49,7 +57,7 @@ describe("A4, Q32: the tracking webhook", () => {
   });
 
   it("refuses everything while the secret is unset", async () => {
-    vi.stubEnv("SHIPPING_WEBHOOK_TOKEN", "");
+    vi.stubEnv("SHIPROCKET_WEBHOOK_TOKEN", "");
     expect((await call(JSON.stringify({ awb: "A1", shipment_status: "DELIVERED" }), "")).status).toBe(401);
     expect(receive).not.toHaveBeenCalled();
   });

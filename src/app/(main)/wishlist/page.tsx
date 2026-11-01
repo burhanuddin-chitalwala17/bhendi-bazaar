@@ -1,7 +1,6 @@
-import { getServerSession } from "next-auth";
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { Heart } from "lucide-react";
 
-import { authOptions } from "@/lib/auth-config";
 import { wishlistDAL } from "@/data-access-layer/wishlist.dal";
 import { PageHeader, PageShell } from "@/components/shared/page-shell";
 import { WishlistGrid } from "@/components/wishlist/wishlist-grid";
@@ -19,7 +18,7 @@ export const metadata = {
  * in from the sheet refreshes this page in place (seamless-sign-in D9).
  */
 export default async function WishlistPage() {
-  const session = await getServerSession(authOptions);
+  const session = await optionalActiveSession({ onBlocked: "allow" });
   if (!session?.user?.id) {
     return (
       <PageShell width="wide">

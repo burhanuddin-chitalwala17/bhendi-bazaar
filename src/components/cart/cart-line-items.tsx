@@ -7,6 +7,7 @@ import { CartItem } from "./CartItem";
 
 export function CartLineItems() {
   const items = useCartStore((state) => state.items);
+  const hasHydrated = useCartStore((state) => state.hasHydrated);
   // One check for the whole cart — the endpoint takes the full array, so per-row
   // fetches were N round trips for one answer. Keyed on the product-id set: a
   // quantity change doesn't move stock, so it doesn't re-ask.
@@ -33,6 +34,11 @@ export function CartLineItems() {
   );
   // Loading until the first answer or failure, not only while a request is in flight.
   const isLoadingStock = loading || (stockByProduct === null && error === null);
+
+  // Until the saved cart is read, "empty" would be a claim about nothing.
+  if (!hasHydrated) {
+    return <p className="text-sm text-muted-foreground">Loading your cart…</p>;
+  }
 
   if (!items.length) {
     return (

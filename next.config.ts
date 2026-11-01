@@ -3,12 +3,16 @@ import type { NextConfig } from "next";
 import { crawlersBlocked } from "./src/lib/crawl-block";
 import { SELF_FRAMED_HEADERS, SELF_FRAMED_SOURCE, STATIC_SECURITY_HEADERS } from "./src/lib/security-headers";
 import { assertRateLimitConfigAtBuild } from "./src/lib/rate-limit/config";
+import { HTML_LIMITED_BOT_UA_RE } from "next/dist/shared/lib/router/utils/html-bots";
 
 // A preview or production build that cannot enforce rate limits fails here, so the deploy
 // never goes live (rate-limiting D2, spec A3).
 assertRateLimitConfigAtBuild();
 
 const nextConfig: NextConfig = {
+  // Next's own list plus Googlebot, so Google gets the canonical and title in <head> rather than
+  // streamed into <body> (docs/GTM-READINESS.md B10). Setting this replaces the default, hence the extension.
+  htmlLimitedBots: new RegExp(`${HTML_LIMITED_BOT_UA_RE.source}|Googlebot`, "i"),
   async headers() {
     // The per-request Content-Security-Policy is set in src/middleware.ts, which is where
     // the nonce is generated. These are the ones that never vary, applied here so they

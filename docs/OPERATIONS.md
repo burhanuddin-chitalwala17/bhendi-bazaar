@@ -29,7 +29,7 @@ npm run dev                 # http://localhost:3000
 | `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | ✅ | Payment gateway. `rzp_test_*` for development |
 | `NEXT_PUBLIC_RAZORPAY_KEY_ID` | ➖ | **Read by nothing.** Marked required here until 2026-09-23; no `process.env` reference exists. The checkout widget is handed the key id in the server's response (`server/payments/providers/razorpay/razorpay.repository.ts`), so setting it changes nothing and leaving it unset breaks nothing |
 | `RAZORPAY_WEBHOOK_SECRET` | ✅ | Verifies webhook signatures. Without it the webhook fails closed |
-| `SHIPPING_WEBHOOK_TOKEN` | ✅ | The token typed beside the courier webhook URL in Shiprocket's dashboard, which it sends as `x-api-key` (order-fulfilment D9). Generate: `openssl rand -hex 32`. Without it every courier update is refused with 401 |
+| `SHIPROCKET_WEBHOOK_TOKEN` | ✅ | The security token set in Shiprocket's webhook settings, which Shiprocket sends as `x-api-key`. The tracking webhook refuses (401) any request without it, and refuses everything while it is unset |
 | `APP_ENV` | ✅ | The environment, named by us: `local`, `preview` or `production` ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not-an-architectural-input.md) D2). **Set it in Vercel for both Preview and Production** — a production build without it refuses to guess, and the admin dashboard's worker card shows "status unavailable" until it is set (it took the whole dashboard down once, PR-158). Defaults to `local` only outside a production build. The worker keys its heartbeat on it. `NODE_ENV` is never set by us: Vercel and Next.js set it to `production` for every build, which is why `APP_ENV` is required there |
 | `WORKER_VERSION` | ○ | What the worker reports as its version in its heartbeat — the image tag once it is deployed, `dev` locally |
 | `CRON_SECRET` | ➖ | **Read by nothing since PR-210.** Reconciliation moved onto the worker, which calls the domain directly and needs no bearer token; the route it guarded is gone. Safe to remove from the deployment |
@@ -52,6 +52,9 @@ npm run dev                 # http://localhost:3000
 | `RESEND_API_KEY` / `EMAIL_FROM` | ✅ | Transactional email |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | ○ | Only if connecting Shiprocket by env rather than through the admin UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | The app's public origin. **Every outbound link is built from it** — verification, password reset, order tracking (`server/shared/app-url.ts`, `appUrl()`). Unset and email sends throw rather than mailing `undefined/...` |
+| `DATABASE_POOL_MAX` | ○ | Connections each server instance may hold (`server/shared/prisma.ts`). Unset keeps 10 in production. Set 3–5 once `DATABASE_URL` is the **pooled** string, so many instances cannot exhaust the database's connections. Never below 3 (refused, with an error in the log): a transaction holding one connection can need a second, and two checkouts at once would wait out the pool. Web only; leave it unset for the worker, whose four concurrent jobs need the default |
+| `APP_COMMIT` | ○ | The deployed commit, for `/api/health?deep=1`. Unset on Vercel, which supplies its own (`server/shared/deployment.ts` falls back to it); set it on any other host |
+| `VERCEL_GIT_COMMIT_SHA` / `NEXT_RUNTIME` | ➖ | Set by the platform, never by us. Read only through `server/shared/deployment.ts` and by `src/instrumentation.ts`, which checks the environment in Node, not in middleware |
 | `PROD_ADMIN_EMAIL` / `PROD_ADMIN_PASSWORD` | ○ | Read by `prisma/seed/prod.ts`, the one-off bootstrap that grants platform ADMIN where an environment has none. Set them for that single run and unset them afterwards. Until 2026-09-23 that script hashed the literal `'STRONG_RANDOM_PASSWORD'`, so anyone who could read the repository knew the admin password — CLAUDE.md Invariant 7's "no credential literal lives in a seed", broken in the one script that may legitimately be pointed at production. It now refuses a placeholder value, refuses to run without both variables, and will **not** reset the password of an account that already exists |
 | `SEED_ALLOW_DESTRUCTIVE` | ○ | Set to `1` to let `prisma/seed.ts` wipe and reseed. **Never set in a deployment environment** |
 | `SEED_ALLOWED_DATABASE_URL` | ○ | The exact development connection string. Required to seed any non-localhost database — see below. **Never set in a deployment environment** |
@@ -61,7 +64,7 @@ npm run dev                 # http://localhost:3000
 | `BLOCK_CRAWLERS` | ○ | Pre-launch only. `1` turns every compliant crawler away: robots.txt disallows all, the sitemap goes empty, and every response carries `X-Robots-Tag: noindex, nofollow` (`src/lib/crawl-block.ts`). **Delete at launch** — while set, the 410 purge of the old WordPress index is paused, and the site cannot be indexed |
 | `GOOGLE_VERIFICATION_TOKEN` | ○ | The content value of Google Search Console's HTML-meta verification tag. Rendered into the page `<head>` (`src/app/layout.tsx`) only when set; unset, no tag is emitted |
 
-`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. `src/instrumentation.ts` runs it at boot: `APP_ENV` and the rate-limit variables are **refused** (the instance will not start), the rest of the list is **reported** as a warning, not refused, until each is checked against every Vercel environment (rate-limiting Q11). It still omits `ENCRYPTION_KEY` and `RAZORPAY_WEBHOOK_SECRET`, both of which this table marks required.
+`.env.example` and `.env.production.example` are the committed shape of this table — copy one and fill it in. They carry sample values only, and `.gitignore` admits just those two out of `.env*`. `src/lib/env.ts` holds the required-variable list, and is kept in step with this table. `src/instrumentation.ts` runs it at boot: `APP_ENV` and the rate-limit variables are **refused** (the instance will not start); the rest of the list is **logged** as `[startup] Missing required environment variables: …`, not refused, until each is checked against every Vercel environment (rate-limiting Q11), and `/api/health?deep=1` answers 503 while any is missing. It still omits `ENCRYPTION_KEY`, which this table marks required.
 
 ### Local development database
 Development runs against a local Postgres, never a metered cloud one — a hot-reload session against Prisma Postgres is what exhausted the workspace's operation quota in August 2026 (CHANGELOG PR-70). One-time setup:
@@ -256,7 +259,7 @@ Then, for the duration of that session:
 
 1. Set **both** `NEXTAUTH_URL` and `NEXT_PUBLIC_APP_URL` to the tunnel origin. Leaving them on `localhost:3000` means OAuth callbacks and emailed links resolve to a host the outside world cannot reach.
 2. Add `<tunnel>/api/auth/callback/google` to the Google Cloud Console redirect URIs, or Google sign-in fails with a mismatch error that does not name the expected value.
-3. Point the gateway webhook at `<tunnel>/api/webhooks/razorpay` and the courier webhook at `<tunnel>/api/webhooks/shipping/tracking` with the `x-api-key` token.
+3. Point the gateway webhook at `<tunnel>/api/webhooks/razorpay` and the courier webhook at `<tunnel>/api/webhooks/shipping/courier` with the `x-api-key` token.
 4. Restart the dev server — `NEXT_PUBLIC_*` values are inlined at build time, so a change is not picked up by a running server.
 
 Tunnel URLs are ephemeral on free tiers; each restart means repeating steps 1–3. Revert `.env` afterwards, or the next non-tunnelled run mails links to a dead host.
@@ -468,7 +471,7 @@ That is a deployment fact ([ADR-0037](adr/0037-the-host-is-a-deployment-fact-not
 | `WORKER_HOST` | The reserved public IP |
 | `WORKER_SSH_USER` | `ubuntu` on that image |
 | `WORKER_SSH_KEY` | A private key whose public half is in the machine's `authorized_keys`. Generate one for the pipeline alone; never reuse a personal key |
-| `WORKER_ENV_<NAME>` | **One secret per worker variable**, named for it: `WORKER_ENV_DATABASE_URL` (the **direct** string of the production database), `WORKER_ENV_CREDENTIAL_KEYS`, and so on for every name in `.env.worker.example`. The deploy writes `NAME=value` for each (`infra/worker/compose-env.sh`), so changing a value is editing one secret |
+| `WORKER_ENV_<NAME>` | **One secret per worker variable**, named for it: `WORKER_ENV_DATABASE_URL` (the **direct** string of the production database), `WORKER_ENV_CREDENTIAL_KEYS`, and so on for every name in `.env.worker.example`. The deploy writes `NAME=value` for each (`infra/worker/compose-env.sh`), so changing a value is editing one secret. **The workflow names each secret it passes**, never `toJSON(secrets)`, so a secret for a new variable is read only once its line is added to the step's `env:` in `ci.yml` (and `WORKER_STAGING_ENV_` in `staging-worker.yml`); `.env.worker.example` is the complete list and `tests/unit/deploy-safety.test.ts` holds both workflows to exactly it |
 | `WORKER_ENV_FILE` | Optional, the old whole-file form. Still read as the base; an individual `WORKER_ENV_<NAME>` replaces its line. Move values out of it one at a time, then delete it |
 | `GHCR_PULL_USER` / `GHCR_PULL_TOKEN` | A GitHub user and a personal access token with `read:packages`, so the machine can pull the private image |
 
@@ -478,7 +481,7 @@ you clicked — not the branch's latest commit — and leaves the domain where i
 `develop` code onto dev with current variables, push, or re-run the workflow from the Actions tab.
 A new or changed environment variable also reaches only deployments created after it was saved.
 
-**Deploy.** A push to `main` builds the image, then over SSH writes the env file, copies
+**Deploy.** A push to `main` waits for the web `deploy` job, whose build applies migrations, then builds the image, then over SSH writes the env file, copies
 `compose.yml`, pulls the commit's image and restarts the stack. The heartbeat on the admin dashboard
 goes green within five minutes. A rollback is re-running the job on an older commit. Until
 `WORKER_HOST` exists the job builds and pushes and skips the machine.
@@ -567,6 +570,14 @@ The code reads only `DATABASE_URL` from the connection-string set, plus the rate
 
 Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 
+**Functions run in `bom1` (Mumbai)**, beside the database (`vercel.json` `regions`); Vercel's default is `iad1`, which puts every query a round trip across the world. Confirm with `curl -sI <origin> | grep -i x-vercel-id`, which should read `bom1::bom1`.
+
+**Uptime probe: `/api/health`.** A plain GET answers from the function without touching the database, so it can be pinged freely. `?deep=1` also asks the database (at most once per 30 s, 5 s deadline) and checks the required variables, and answers **503** when either fails; which variables are missing goes to the server log, not the public response. Point an uptime monitor (UptimeRobot, 5-minute interval) at `https://www.bhendi-bazaar.com/api/health?deep=1` and alert on any non-200. The deep response carries the deployed commit.
+
+**Load smoke before launch and before each sale.** Actions → *Load smoke* runs `perf/k6-smoke.js` (home → category → product → cart, reads only) at the peak you give it, against the preview by default. Give it 3× the concurrent shoppers you expect; it fails if more than 1% of requests fail or a page's p95 passes 1.5 s. Every request is a billed database read, so do not point it at production casually.
+
+**CI is hardened** (`tests/unit/deploy-safety.test.ts`): workflows are `contents: read` unless a job asks for more, every action is pinned to a commit SHA (Dependabot, `.github/dependabot.yml`, proposes bumps), the Vercel CLI is pinned to a version, and `node scripts/audit-prod.mjs` blocks the test job: a high or critical advisory in a production dependency stops the deploy until it is upgraded, or listed in `audit-allowlist.json` with a reason and an expiry. **`deploy` also needs `e2e`**: a production build of the same commit must pass the browser journeys first ([TESTING.md](TESTING.md)).
+
 **The reconcile cron runs once a day, and that is the plan's limit, not a judgement.** Hobby permits one cron invocation per day, so `vercel.json`'s `30 3 * * *` is as often as it can run. Nothing depends on it: since [checkout-abandonment](specs/checkout-abandonment/) a buyer who closes the payment window releases their own reservation immediately, and a checkout blocked by a stale hold releases it and retries. The cron only catches the buyer whose browser never asked. If the project ever moves to Pro, tightening the schedule is a one-line edit and needs no code change.
 
 **Deployments come from GitHub Actions, not from Vercel's Git integration.** Hobby only git-deploys commits authored by the Vercel account owner, so a collaborator's push silently never shipped. `vercel.json` sets `git.deploymentEnabled: false`, and `.github/workflows/ci.yml`'s `deploy` job runs `vercel pull` / `vercel build` / `vercel deploy --prebuilt` with an account token — authorship stops mattering. `main` deploys with `--prod`; `develop` deploys a preview. The job needs `test` to pass first, and needs three repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (the latter two are in `.vercel/project.json`).
@@ -574,8 +585,51 @@ Vercel, project `bhendi-bazaar`. All routes are server-rendered on demand.
 - **Set every variable above in Vercel per environment.** `NEXTAUTH_URL` must be the deployed origin. The CI runner has no env of its own — `vercel pull` supplies the build's variables from the target Vercel environment, so a variable missing there is missing at build.
 - `vercel env pull` before running migrations locally against a deployed database.
 - **Migrations run in the build** ([ADR-0014](adr/0014-deploys-run-their-own-migrations.md)): `vercel.json`'s `buildCommand` is `npx prisma migrate deploy && next build`, so every Vercel build applies pending migrations to that environment's `DATABASE_URL` before compiling. A merge to `main` **is** a prod schema change; preview builds migrate whatever database the Preview environment points at — so if Preview has no database of its own, a push to `develop` migrates production. `migrate deploy` only applies pending migrations in order — never resets or drops. Manual `migrate deploy` remains only for local runs against a deployed database (`vercel env pull` first).
-- Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/tracking`, with `SHIPPING_WEBHOOK_TOKEN` as its token (Shiprocket refuses a URL naming it). Local webhook testing needs a tunnel.
+- Register the Razorpay webhook at `<origin>/api/webhooks/razorpay` and the Shiprocket webhook at `<origin>/api/webhooks/shipping/courier`, with `SHIPROCKET_WEBHOOK_TOKEN` as its token. Local webhook testing needs a tunnel.
 - Use a pooled connection string (pgbouncer / Neon) in production: `server/shared/prisma.ts` creates a `pg` Pool per module evaluation with default sizing, so many warm instances can exhaust `max_connections`.
+
+## Backups
+
+**Targets:** lose at most a day (RPO 24 h), be back within four hours (RTO 4 h). Two layers, because
+either alone has a failure the other covers: Prisma's own snapshots (Starter plan, restore in its
+console) and a nightly encrypted dump in an R2 bucket we control (`.github/workflows/db-backup.yml`,
+`scripts/backup/db-backup.sh`), which survives losing the Prisma account.
+
+**One-time setup (owner):**
+1. On your own machine: `age-keygen -o backup-key.txt`. Put the whole file in the password manager and
+   an offline copy. It is the only way to read a backup; it never goes into GitHub.
+2. In Cloudflare: a bucket for backups only (not the image bucket). Add a **Bucket Lock** rule for
+   `db/` (retain 35 days), so nothing, including a stolen credential, can delete a recent backup, and a
+   lifecycle rule that deletes `db/` objects after 90 days.
+3. An R2 API token scoped to that bucket alone, **Object Read & Write** (R2 has no write-only
+   permission). CI could read or try to delete with it: the Bucket Lock is what stops deletion, and both
+   files are encrypted, so reading them gives nothing.
+4. GitHub repository secrets: `BACKUP_DATABASE_URL` (the **direct** string, as `MIGRATE_DATABASE_URL`),
+   `BACKUP_AGE_RECIPIENT` (the `age1…` public key line from step 1), `BACKUP_R2_ENDPOINT`,
+   `BACKUP_R2_BUCKET`, `BACKUP_R2_ACCESS_KEY_ID`, `BACKUP_R2_SECRET_ACCESS_KEY`.
+5. Once this is on `main` (schedules and the Run button only work from the default branch): Actions →
+   *Database backup* → Run workflow, and check `db/<year>/<month>/` holds a `.dump.age` and a
+   `.counts.tsv.age`. If the repository is ever made public, GitHub pauses schedules after 60 days with
+   no commits; watch for that.
+
+Until step 4 is done the nightly run fails red on purpose.
+
+**Restore drill, quarterly and after any change to the backup:** with a read-capable token, download the
+newest pair. You need PostgreSQL **client tools 17 or newer** (`pg_restore --version`), since the dump is
+made by pg_dump 17. Start an empty local Postgres (`docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432
+postgres:17`, then `createdb -h localhost -U postgres bb_drill`), and run
+
+```bash
+BACKUP_AGE_IDENTITY="$(cat backup-key.txt)" DRILL_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bb_drill bash scripts/backup/db-restore-drill.sh <file>.dump.age <file>.counts.tsv.age
+```
+
+It restores, recounts every table in every schema (the job queue's included) and fails on any
+difference; the counts were taken from the dump's own snapshot, so writes during the backup cannot
+cause one. It refuses a target whose host is not this machine, and one that already has tables. Record the
+date in the CHANGELOG; a drill older than 90 days is a GTM-READINESS section 9 failure.
+
+**A real restore** is the same `age --decrypt | pg_restore` into a new database, then pointing
+`DATABASE_URL` at it, after the drill steps have proved the file.
 
 ## Recovering a failed migration
 

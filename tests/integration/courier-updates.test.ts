@@ -27,7 +27,7 @@ describe.skipIf(!isDisposableDb)("courier updates: signed, once, and conflicts k
   let prisma: typeof import("@server/shared/prisma").prisma;
   let F: typeof import("@server/checkout/fulfilment.service");
   let B: typeof import("@server/checkout/fulfilment-booking");
-  let POST: typeof import("@/app/api/webhooks/shipping/tracking/route").POST;
+  let POST: typeof import("@/app/api/webhooks/shipping/courier/route").POST;
   let DISMISS: typeof import("@/app/api/admin/courier-conflicts/[id]/dismiss/route").POST;
   let listCourierConflicts: typeof import("@server/shipping/courier-conflict.service").listCourierConflicts;
   let countOpenCourierConflicts: typeof import("@server/shipping/courier-conflict.service").countOpenCourierConflicts;
@@ -43,11 +43,11 @@ describe.skipIf(!isDisposableDb)("courier updates: signed, once, and conflicts k
   const awbs: string[] = [];
 
   beforeAll(async () => {
-    vi.stubEnv("SHIPPING_WEBHOOK_TOKEN", TOKEN);
+    vi.stubEnv("SHIPROCKET_WEBHOOK_TOKEN", TOKEN);
     ({ prisma } = await import("@server/shared/prisma"));
     F = await import("@server/checkout/fulfilment.service");
     B = await import("@server/checkout/fulfilment-booking");
-    ({ POST } = await import("@/app/api/webhooks/shipping/tracking/route"));
+    ({ POST } = await import("@/app/api/webhooks/shipping/courier/route"));
     ({ POST: DISMISS } = await import("@/app/api/admin/courier-conflicts/[id]/dismiss/route"));
     ({ listCourierConflicts, countOpenCourierConflicts } = await import("@server/shipping/courier-conflict.service"));
     ({ SHIPMENT_STATUS: S, PARCEL_ACTOR: A, PARCEL_EVENT_KIND: EK, COURIER_CONFLICT_KIND: CK } = await import(
@@ -122,7 +122,7 @@ describe.skipIf(!isDisposableDb)("courier updates: signed, once, and conflicts k
 
   const send = (body: unknown, token: string | null = TOKEN) =>
     POST(
-      new NextRequest("http://localhost/api/webhooks/shipping/tracking", {
+      new NextRequest("http://localhost/api/webhooks/shipping/courier", {
         method: "POST",
         headers: { "content-type": "application/json", ...(token === null ? {} : { "x-api-key": token }) },
         body: JSON.stringify(body),

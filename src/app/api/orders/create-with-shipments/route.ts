@@ -10,9 +10,8 @@
  * 4. Return order (payment will be processed on client)
  */
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { orderService } from "@server/checkout/order.service";
 import { paymentService } from "@server/payments/payment.service";
 import { OutOfStockError } from "@server/shared/domain-error";
@@ -22,7 +21,9 @@ import { validateRequest } from "@/lib/validation";
 import { createOrderWithShipmentsSchema } from "@/lib/validation/schemas/order.schemas";
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  // Outside the handler's try, so a suspended account answers 403 here rather than 500.
+  const session = await optionalActiveSession().catch((error: unknown) => error as Error);
+  if (session instanceof Error) return toErrorResponse(session, "Could not read your session");
   const userId = session?.user?.id;
 
   const limited = await limitRequest(request, "POST /api/orders/create-with-shipments", { userId });

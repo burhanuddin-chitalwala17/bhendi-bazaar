@@ -1,6 +1,6 @@
 /**
- * POST /api/webhooks/shipping/tracking — Shiprocket's tracking updates (order-fulfilment D9, D10).
- * Not under a "shiprocket" path: its dashboard refuses a webhook URL naming it (INTEGRATIONS.md).
+ * POST /api/webhooks/shipping/courier — Shiprocket's tracking updates (order-fulfilment D9, D10).
+ * Not named for the carrier: its dashboard refuses a URL containing "shiprocket", "kartrocket", "sr" or "kr".
  */
 import { NextRequest, NextResponse } from "next/server";
 

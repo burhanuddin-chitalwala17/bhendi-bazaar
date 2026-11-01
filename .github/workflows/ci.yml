@@ -12,6 +12,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Read-only unless a job asks for more (deploy-worker writes packages).
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -47,18 +51,23 @@ jobs:
       # `Verified:` date predates the last structural change to the code it covers,
       # which a depth-1 checkout cannot answer.
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      # Blocking: a high or critical advisory in what ships stops the deploy (docs/GTM-READINESS.md B1),
+      # unless audit-allowlist.json names it with a reason and an expiry. Dev-only tooling is excluded.
+      - name: Audit production dependencies
+        run: node scripts/audit-prod.mjs
 
       # The worker image carries ffmpeg (ADR-0039); the transcode test runs against the real
       # binary and refuses to skip here, so the job installs it rather than the test guessing.
@@ -90,12 +99,16 @@ jobs:
       - name: Run tests
         run: npm test -- --run
 
-  # PR-only: pushes get their build from `vercel build` in the deploy job, so
-  # building twice on the same commit would just burn minutes.
-  build:
-    if: github.event_name == 'pull_request'
+  # Builds the app, starts it, and walks the journeys a broken deploy breaks first (e2e/,
+  # docs/GTM-READINESS.md B8). On every event: `deploy` needs it, so nothing ships to customers
+  # until a real browser has browsed, opened a product and filled a cart on this commit.
+  # It runs against a build made here, not the Vercel build that ships: a break only in the Vercel
+  # environment (a missing variable, the real image host) is not caught. Smoke on the preview
+  # URL is the follow-up, once a protection-bypass secret exists.
+  e2e:
     runs-on: ubuntu-latest
     needs: test
+    timeout-minutes: 20
 
     # `next build` prerenders robots.txt and the sitemap, which reach appUrl()
     # and the catalogue — an unreachable connection string turns a compile check
@@ -122,16 +135,17 @@ jobs:
       # `vercel build` against the environment `vercel pull` fetched — so these
       # only have to be present and well-formed. Never real credentials: a
       # NEXT_PUBLIC_* value is inlined into the client bundle.
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-      NEXTAUTH_URL: "http://localhost:3000"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3100"
+      NEXTAUTH_URL: "http://localhost:3100"
       NEXTAUTH_SECRET: "ci-build-placeholder-not-a-real-secret"
+      APP_ENV: "local"
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20.x'
           cache: 'npm'
@@ -145,6 +159,36 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Cache the browser
+        id: browser-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install the browser
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install the browser's system libraries
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run the journeys
+        run: npx playwright test
+
+      # Kept on success too: a test that failed once and passed on retry is flaky, and its trace
+      # is the only evidence.
+      - name: Keep the report and traces
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   # Vercel Hobby only git-deploys commits authored by the account owner, so a
   # collaborator's push never shipped. Deploying through the CLI with an account
   # token makes authorship irrelevant. Git-triggered deploys are switched off in
@@ -152,7 +196,7 @@ jobs:
   deploy:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, e2e]
 
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -161,10 +205,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20.x'
 
@@ -180,7 +224,7 @@ jobs:
           fi
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@58.4.4
 
       # Builds on Vercel, not here. The tempting alternative — `vercel pull` +
       # `vercel build` + `deploy --prebuilt`, to spend GitHub's minutes instead
@@ -225,10 +269,12 @@ jobs:
   # over SSH with a key that lives in this repository's secrets; the env file the worker reads
   # is written from secrets on each deploy and never lives in git or in the image: one secret per
   # variable, `WORKER_ENV_<NAME>`, over the optional base `WORKER_ENV_FILE` (infra/worker/compose-env.sh).
+  # After `deploy`, whose build runs `prisma migrate deploy`: a worker started first would run
+  # new code against the old schema (docs/GTM-READINESS.md B8).
   deploy-worker:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, deploy]
     permissions:
       contents: read
       packages: write
@@ -238,23 +284,23 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up QEMU for the arm64 build
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Log in to the container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push the worker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: infra/worker/Dockerfile
@@ -276,7 +322,36 @@ jobs:
           WORKER_SSH_USER: ${{ secrets.WORKER_SSH_USER }}
           WORKER_SSH_KEY: ${{ secrets.WORKER_SSH_KEY }}
           BASE_ENV_FILE: ${{ secrets.WORKER_ENV_FILE }}
-          SECRETS_JSON: ${{ toJSON(secrets) }}
+          # Named, never `toJSON(secrets)`: this step must not see the Vercel token or anything else.
+          # Every variable the worker reads is listed; a new one is added here too.
+          WORKER_ENV_DATABASE_URL: ${{ secrets.WORKER_ENV_DATABASE_URL }}
+          WORKER_ENV_APP_ENV: ${{ secrets.WORKER_ENV_APP_ENV }}
+          WORKER_ENV_R2_ENDPOINT: ${{ secrets.WORKER_ENV_R2_ENDPOINT }}
+          WORKER_ENV_R2_BUCKET: ${{ secrets.WORKER_ENV_R2_BUCKET }}
+          WORKER_ENV_R2_ACCESS_KEY_ID: ${{ secrets.WORKER_ENV_R2_ACCESS_KEY_ID }}
+          WORKER_ENV_R2_SECRET_ACCESS_KEY: ${{ secrets.WORKER_ENV_R2_SECRET_ACCESS_KEY }}
+          WORKER_ENV_R2_PUBLIC_BASE_URL: ${{ secrets.WORKER_ENV_R2_PUBLIC_BASE_URL }}
+          WORKER_ENV_IMAGE_SEGMENT_PROVIDER: ${{ secrets.WORKER_ENV_IMAGE_SEGMENT_PROVIDER }}
+          WORKER_ENV_IMAGE_MODEL_API_KEY: ${{ secrets.WORKER_ENV_IMAGE_MODEL_API_KEY }}
+          WORKER_ENV_IMAGE_MODEL_ENDPOINT: ${{ secrets.WORKER_ENV_IMAGE_MODEL_ENDPOINT }}
+          WORKER_ENV_CREDENTIAL_KEYS: ${{ secrets.WORKER_ENV_CREDENTIAL_KEYS }}
+          WORKER_ENV_AMAZON_APP_ID: ${{ secrets.WORKER_ENV_AMAZON_APP_ID }}
+          WORKER_ENV_AMAZON_APP_SECRET: ${{ secrets.WORKER_ENV_AMAZON_APP_SECRET }}
+          WORKER_ENV_FLIPKART_APP_ID: ${{ secrets.WORKER_ENV_FLIPKART_APP_ID }}
+          WORKER_ENV_FLIPKART_APP_SECRET: ${{ secrets.WORKER_ENV_FLIPKART_APP_SECRET }}
+          WORKER_ENV_AMAZON_SOLUTION_ID: ${{ secrets.WORKER_ENV_AMAZON_SOLUTION_ID }}
+          WORKER_ENV_CHANNELS_CONNECT: ${{ secrets.WORKER_ENV_CHANNELS_CONNECT }}
+          WORKER_ENV_EMAIL_FROM: ${{ secrets.WORKER_ENV_EMAIL_FROM }}
+          WORKER_ENV_ENCRYPTION_KEY: ${{ secrets.WORKER_ENV_ENCRYPTION_KEY }}
+          WORKER_ENV_NEXTAUTH_SECRET: ${{ secrets.WORKER_ENV_NEXTAUTH_SECRET }}
+          WORKER_ENV_NEXTAUTH_URL: ${{ secrets.WORKER_ENV_NEXTAUTH_URL }}
+          WORKER_ENV_NEXT_PUBLIC_APP_URL: ${{ secrets.WORKER_ENV_NEXT_PUBLIC_APP_URL }}
+          WORKER_ENV_ORG_HANDLE_HOLD_DAYS: ${{ secrets.WORKER_ENV_ORG_HANDLE_HOLD_DAYS }}
+          WORKER_ENV_PRISMA_LOG_QUERIES: ${{ secrets.WORKER_ENV_PRISMA_LOG_QUERIES }}
+          WORKER_ENV_RAZORPAY_KEY_ID: ${{ secrets.WORKER_ENV_RAZORPAY_KEY_ID }}
+          WORKER_ENV_RAZORPAY_KEY_SECRET: ${{ secrets.WORKER_ENV_RAZORPAY_KEY_SECRET }}
+          WORKER_ENV_RAZORPAY_WEBHOOK_SECRET: ${{ secrets.WORKER_ENV_RAZORPAY_WEBHOOK_SECRET }}
+          WORKER_ENV_RESEND_API_KEY: ${{ secrets.WORKER_ENV_RESEND_API_KEY }}
           GHCR_PULL_USER: ${{ secrets.GHCR_PULL_USER }}
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
         run: |

@@ -1,6 +1,5 @@
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { wishlistService } from "@server/wishlist/wishlist.service";
 import { validateRequest, validateQueryParams } from "@/lib/validation";
 import { wishlistItemSchema } from "@/lib/validation/schemas/wishlist.schema";
@@ -22,7 +21,7 @@ import { toErrorResponse } from "@/lib/api-error-response";
 /** POST /api/wishlist — save a product. Saving one already saved is a no-op. */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Sign in to add to wishlist" },
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Sign in to manage your wishlist" },

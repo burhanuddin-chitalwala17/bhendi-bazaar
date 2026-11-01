@@ -16,6 +16,7 @@ import type {
   PaymentVerificationResult,
   WebhookVerificationResult,
 } from "@server/payments/payment.types";
+import { OUTBOUND_TIMEOUT_MS } from "@server/shared/deadline";
 
 // Razorpay API configuration
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
@@ -71,6 +72,7 @@ export class RazorpayRepository {
 
       const response = await fetch(`${this.apiUrl}/orders`, {
         method: "POST",
+        signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.quick),
         headers: {
           Authorization: `Basic ${auth}`,
           "Content-Type": "application/json",
@@ -204,6 +206,7 @@ export class RazorpayRepository {
 
     const response = await fetch(`${this.apiUrl}/orders/${gatewayOrderId}/payments`, {
       headers: { Authorization: `Basic ${auth}` },
+      signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.quick),
     });
     if (!response.ok) {
       throw new Error(`Razorpay payments lookup failed with ${response.status}`);

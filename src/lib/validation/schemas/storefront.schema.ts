@@ -104,12 +104,12 @@ export const storefrontSettingsSchema = z.strictObject({
   collections: z
     .array(z.strictObject({ categoryId: z.string().min(1), photoUrl: z.string().url().or(z.literal("")).nullish() }))
     .max(COLLECTIONS_MAX, `Up to ${COLLECTIONS_MAX} collections.`)
-    .refine(distinct((c) => c.categoryId), "Each category once.")
+    .refine(distinct((c: { categoryId: string }) => c.categoryId), "Each category once.")
     .nullish(),
   claims: z
     .array(z.strictObject({ key: z.enum(CLAIM_KEYS), detail: limitedText(CLAIM_DETAIL_MAX) }))
     .max(MAX_CLAIMS, CLAIMS_REFUSED)
-    .refine(distinct((c) => c.key), "Each claim once.")
+    .refine(distinct((c: { key: string }) => c.key), "Each claim once.")
     .nullish(),
   openingHours: openingHoursSchema.nullish(),
   storefrontHiddenSections: z.array(z.enum(HIDEABLE_SECTIONS)).nullish(),

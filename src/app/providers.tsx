@@ -3,10 +3,16 @@
 
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
+import { useEffect } from "react";
 import { useCartSync } from "@/hooks/cart/useCartSync";
+import { useCartStore } from "@/store/cartStore";
 import { Session } from "next-auth";
 import { AuthSheetProvider } from "@/context/AuthSheetContext";
 function CartSyncProvider({ children }: { children: React.ReactNode }) {
+  // After mount, so the first client render matches the server's empty cart (cartStore skipHydration).
+  useEffect(() => {
+    void useCartStore.persist.rehydrate();
+  }, []);
   useCartSync(); // ← Initialize cart sync globally
   return <>{children}</>;
 }

@@ -1,4 +1,4 @@
-import { apiDownload, apiRequest } from "@/lib/api-client";
+import { apiDownload, apiRequest, TRANSFER_TIMEOUT_MS } from "@/lib/api-client";
 import type { BulkProductRow, RowError } from "@server/catalog/bulk/bulk.types";
 import type { BulkCategoryRow } from "@server/catalog/bulk/bulk-category.service";
 import type { SheetAge } from "@server/catalog/bulk/sheet-copy";
@@ -48,6 +48,7 @@ export const bulkImportApiClient = {
     return apiRequest<ProductBulkReport>(`${base}/validate`, {
       method: "POST",
       body: sheetForm(sheet, filenames),
+      timeoutMs: TRANSFER_TIMEOUT_MS,
     });
   },
 
@@ -58,17 +59,26 @@ export const bulkImportApiClient = {
 
   /** `team` is the team's reason and the file's name, required on the team's create (D11). */
   createProducts(base: string, rows: CreateRows, team?: { reason: string; fileName: string }) {
-    return apiRequest<{ created: number; updated: number }>(base, { method: "POST", body: { rows, ...team } });
+    return apiRequest<{ created: number; updated: number }>(base, {
+      method: "POST",
+      body: { rows, ...team },
+      timeoutMs: TRANSFER_TIMEOUT_MS,
+    });
   },
 
   validateCategories(sheet: File, filenames: string[]) {
     return apiRequest<CategoryBulkReport>("/api/admin/categories/bulk/validate", {
       method: "POST",
       body: sheetForm(sheet, filenames),
+      timeoutMs: TRANSFER_TIMEOUT_MS,
     });
   },
 
   createCategories(rows: (BulkCategoryRow & { imageUrl: string })[]) {
-    return apiRequest<{ created: number }>("/api/admin/categories/bulk", { method: "POST", body: { rows } });
+    return apiRequest<{ created: number }>("/api/admin/categories/bulk", {
+      method: "POST",
+      body: { rows },
+      timeoutMs: TRANSFER_TIMEOUT_MS,
+    });
   },
 };

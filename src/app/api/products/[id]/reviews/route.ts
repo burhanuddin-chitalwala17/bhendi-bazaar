@@ -8,10 +8,9 @@
  * reviews are in the HTML rather than behind a spinner (trd.md D13).
  */
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/lib/auth-config";
 import { reviewService } from "@server/catalog/review.service";
 import { UnauthorizedError } from "@server/shared/domain-error";
 import { toErrorResponse } from "@/lib/api-error-response";
@@ -30,7 +29,7 @@ export async function GET(
     const { page } = reviewPageQuerySchema.parse(
       Object.fromEntries(new URL(request.url).searchParams),
     );
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "guest" });
     const result = await reviewService.getPage(
       id,
       page,
@@ -47,7 +46,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession();
     // The sign-in panel opens before the form is shown, but that is a courtesy. This is
     // the gate, and it does not care what the client believed (R7).
     if (!session?.user?.id) {

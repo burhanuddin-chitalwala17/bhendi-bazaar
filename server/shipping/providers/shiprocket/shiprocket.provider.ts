@@ -317,6 +317,7 @@ export class ShiprocketProvider extends BaseShippingProvider {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        signal: AbortSignal.timeout(SHIPROCKET_CONFIG.TIMEOUT_MS),
       }
     );
 

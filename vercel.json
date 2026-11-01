@@ -1,5 +1,8 @@
 {
   "buildCommand": "npx prisma migrate deploy && next build",
+  "regions": [
+    "bom1"
+  ],
   "git": {
     "deploymentEnabled": false
   }

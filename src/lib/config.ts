@@ -85,3 +85,10 @@ export const BANNER_IMAGE = {
   /** How far from that shape a file may be before it is refused. */
   ratioTolerance: 0.25,
 } as const;
+
+/**
+ * The brand's official profiles elsewhere (Amazon, Flipkart, Meesho, Instagram, Google Business
+ * Profile), for the Organization markup's `sameAs` (docs/GTM-READINESS.md B10). Empty until the
+ * owner supplies the exact URLs; a guessed one would tell Google the wrong thing about who we are.
+ */
+export const BRAND_PROFILES: readonly string[] = [];

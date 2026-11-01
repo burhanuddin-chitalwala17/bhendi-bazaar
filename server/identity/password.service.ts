@@ -71,9 +71,11 @@ export class PasswordService {
         return { success: true };
       }
 
-      // Check if user has a password (might be OAuth user)
-      if (!user.passwordHash) {
-        return { success: true }; // Don't reveal OAuth users
+      // No password and an address nobody proved: nothing to reset, and nothing revealed. A verified
+      // account with no password (Google-only, or one whose unverified password was cleared at a
+      // Google claim) may set one: the link goes to the inbox that proved the address.
+      if (!user.passwordHash && !user.isEmailVerified) {
+        return { success: true };
       }
 
       // Generate reset token

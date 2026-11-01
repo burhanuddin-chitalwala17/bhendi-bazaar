@@ -7,6 +7,7 @@
 
 import type { IShippingProvider } from "@server/shipping/domain";
 import { DomainError } from "@server/shared/domain-error";
+import { OUTBOUND_TIMEOUT_MS } from "@server/shared/deadline";
 
 export interface ProviderAuthResult {
   token: string;
@@ -51,6 +52,7 @@ async function authenticateShiprocket(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS.quick),
     }
   );
 

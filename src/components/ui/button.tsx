@@ -1,11 +1,12 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-field text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[error]:animate-pulse data-[error]:ring-2 data-[error]:ring-destructive/40 data-[error]:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-field text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[error]:animate-pulse data-[error]:ring-2 data-[error]:ring-destructive/40 data-[error]:border-destructive",
   {
     variants: {
       variant: {
@@ -36,15 +37,27 @@ const buttonVariants = cva(
   },
 );
 
+const ignoreClick = (event: React.MouseEvent) => event.preventDefault();
+
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
+  pending = false,
+  onClick,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
+    /**
+     * Work this button started is in flight: shows a spinner and ignores further clicks, but
+     * stays enabled and focusable, so the reason is readable and nothing looks dead
+     * (docs/GTM-READINESS.md B9). Prefer this to `disabled`. Buttons only: with `asChild` the
+     * child's own click (a link's navigation) runs before ours can stop it.
+     */
+    pending?: boolean;
   }) {
   const Comp = asChild ? Slot : "button";
 
@@ -53,9 +66,23 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      data-pending={pending || undefined}
+      aria-busy={pending || undefined}
+      className={cn(buttonVariants({ variant, size, className }), pending && "cursor-progress")}
+      // Only a pending button gets a handler of ours: a server component renders this primitive
+      // too, and cannot pass a function. `pending` is client state, so that never meets one.
+      onClick={pending ? ignoreClick : onClick}
       {...props}
-    />
+    >
+      {pending && !asChild ? (
+        <>
+          <Loader2 className="animate-spin" aria-hidden />
+          {children}
+        </>
+      ) : (
+        children
+      )}
+    </Comp>
   );
 }
 

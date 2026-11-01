@@ -11,6 +11,8 @@ import { categoriesDAL } from "@/data-access-layer/categories.dal";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/config";
 import { appUrl } from "@server/shared/app-url";
 import { NotFoundError } from "@server/shared/domain-error";
+import { JsonLd } from "@/components/shared/JsonLd";
+import { breadcrumbJsonLd } from "@/lib/structured-data";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -30,7 +32,8 @@ export async function generateMetadata({
   const category = await getCategory(slug);
 
   const url = `${appUrl()}/category/${category.slug}`;
-  const title = `${category.name} — ${APP_NAME}`;
+  const title = category.name;
+  const socialTitle = `${category.name} — ${APP_NAME}`;
   const description = category.description?.trim().slice(0, 200) || APP_DESCRIPTION;
 
   return {
@@ -41,7 +44,7 @@ export async function generateMetadata({
       type: "website",
       url,
       siteName: APP_NAME,
-      title,
+      title: socialTitle,
       description,
       ...(category.heroImage ? { images: [{ url: category.heroImage, alt: category.name }] } : {}),
     },
@@ -63,6 +66,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <div className="space-y-4">
+      <JsonLd
+        data={breadcrumbJsonLd(appUrl(), [
+          { name: "Home", path: "/" },
+          ...[...ancestors, category].map((c) => ({ name: c.name, path: `/category/${c.slug}` })),
+        ])}
+      />
       <CategoryBreadcrumb ancestors={ancestors} current={category} />
       <CategoryHero category={category} />
       <CategoryLanes categories={lanes} />

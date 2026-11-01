@@ -1,6 +1,7 @@
 /**
- * Runs once before a server instance takes requests. A deployed environment that cannot
- * enforce rate limits is refused here as well as at build (rate-limiting D2).
+ * Next's startup hook: runs once per server instance, before the first request. A deployed
+ * environment that cannot enforce rate limits is refused here as well as at build
+ * (rate-limiting D2); the rest of the required list is logged (docs/GTM-READINESS.md B7).
  */
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 

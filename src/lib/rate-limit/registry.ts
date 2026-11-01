@@ -61,6 +61,10 @@ export const ROUTE_RATE_LIMITS = {
   "POST /api/payments/create-order": { policy: P.PAYMENT },
   "POST /api/payments/verify": { policy: P.PAYMENT },
 
+  "GET /api/health": {
+    exempt: "The uptime monitor's probe; a limit would page us for our own budget. The deep check's database read is cached 30 s.",
+  },
+
   "GET /api/products": { exempt: PUBLIC_READ },
   "GET /api/products/[id]/reviews": { exempt: PUBLIC_READ },
   "POST /api/products/[id]/reviews": { policy: P.ACCOUNT },
@@ -82,7 +86,7 @@ export const ROUTE_RATE_LIMITS = {
   "POST /api/webhooks/razorpay": {
     exempt: "Razorpay's signed webhook; a refused retry is a payment never recorded.",
   },
-  "POST /api/webhooks/shipping/tracking": {
+  "POST /api/webhooks/shipping/courier": {
     exempt:
       "Shiprocket sends every shipment's updates from its own few addresses, so a per-address " +
       "budget drops real updates. A shared token authenticates it (order-fulfilment D9), not a limit.",

@@ -8,10 +8,9 @@
  * it is displayed (A9).
  */
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { limitRequest } from "@/lib/rate-limit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { z } from "zod";
 import { previewParcels } from "@server/checkout/parcel-preview.service";
 import { quantitySchema } from "@/lib/validation/schemas/common.schemas";
@@ -35,7 +34,7 @@ const allocateSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const limited = await limitRequest(request, "POST /api/checkout/allocate", { userId: session?.user?.id });
     if (limited) return limited;
     const body = allocateSchema.parse(await request.json());

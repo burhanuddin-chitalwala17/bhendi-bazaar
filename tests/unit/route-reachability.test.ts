@@ -25,11 +25,12 @@ const ROOT = resolve(__dirname, "../..");
 /** Routes whose caller is not in this repository. Each says who calls it. */
 const EXTERNALLY_CALLED: Record<string, string> = {
   "/api/webhooks/razorpay": "Razorpay posts here; the signature is what authenticates it.",
-  "/api/webhooks/shipping/tracking": "Shiprocket posts tracking updates here.",
+  "/api/webhooks/shipping/courier": "Shiprocket posts tracking updates here (its settings refuse a URL naming it).",
   "/api/auth/verify-email": "The link in the verification email.",
   "/api/auth/[...nextauth]": "next-auth's own handler, reached by its client.",
   "/feeds/google.xml": "Google Merchant Center fetches it on the schedule its data source sets.",
   "/feeds/meta.xml": "Meta Commerce Manager fetches it on the schedule its data feed sets.",
+  "/api/health": "The uptime monitor (UptimeRobot) probes it; ?deep=1 also checks the database.",
   "/api/channels/[channel]/callback": "Amazon and Flipkart redirect the shop here after consent; the signed state authenticates it (channel-connectors D4).",
 };
 

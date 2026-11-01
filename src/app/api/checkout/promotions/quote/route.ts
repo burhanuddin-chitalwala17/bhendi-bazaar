@@ -9,6 +9,7 @@
  * is the same reason a discount amount is never accepted inbound (Invariant 1).
  */
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { limitRequest } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -20,8 +21,6 @@ import {
   couponCodeSchema,
 } from "@/lib/validation/schemas/common.schemas";
 import { toErrorResponse } from "@/lib/api-error-response";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 
 const quoteSchema = z.object({
   items: z
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
     const body = quoteSchema.parse(await request.json());
     // Signed in or not — a per-buyer limit is enforced only where there is a buyer
     // to count, so the preview has to know which case this is.
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
     // Only a quote carrying a code can guess one; re-pricing a basket is not counted (Q5).

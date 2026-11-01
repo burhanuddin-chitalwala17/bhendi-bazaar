@@ -17,7 +17,7 @@ Describes what exists now. Update after a structural change, never before.
         selected rate ──▶ checkout, as a signed quote (an input to pricing, never a write)
 ```
 
-Status updates arrive independently, by webhook, and are normalised before they touch the database.
+Status updates arrive independently, by webhook, and are normalised before they touch the database. A webhook is trusted only with the carrier's token (`webhook-auth.ts`); without it the route answers 401 before reading the body.
 
 ## Pieces
 

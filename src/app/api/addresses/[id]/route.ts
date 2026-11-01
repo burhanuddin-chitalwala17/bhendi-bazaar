@@ -7,9 +7,8 @@
  */
 
 import { limitRequest } from "@/lib/rate-limit";
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import { addressService } from "@server/identity/address.service";
 import { validateRequest } from "@/lib/validation";
 import { updateAddressSchema } from "@/lib/validation/schemas/address.schema";
@@ -23,7 +22,9 @@ type RouteParams = { params: Promise<{ id: string }> };
  * Update an existing address
  */
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  // Outside the handler's try, so a suspended account answers 403 here rather than 500.
+  const session = await optionalActiveSession().catch((error: unknown) => error as Error);
+  if (session instanceof Error) return toErrorResponse(session, "Could not read your session");
 
   if (!session?.user || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -64,7 +65,9 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
  * Delete an address
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  // Outside the handler's try, so a suspended account answers 403 here rather than 500.
+  const session = await optionalActiveSession().catch((error: unknown) => error as Error);
+  if (session instanceof Error) return toErrorResponse(session, "Could not read your session");
 
   if (!session?.user || !session.user.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -6,10 +6,9 @@
  * Uses all enabled shipping providers and returns rates from each.
  */
 
+import { optionalActiveSession } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { limitRequest } from "@/lib/rate-limit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-config";
 import {
   initializeShippingModule,
   shippingOrchestrator,
@@ -29,7 +28,7 @@ const getRatesSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await optionalActiveSession({ onBlocked: "allow" });
     const limited = await limitRequest(request, "POST /api/shipping/rates", { userId: session?.user?.id });
     if (limited) return limited;
     // ✅ Defensive check: ensure shipping is initialized
