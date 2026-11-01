@@ -2,9 +2,10 @@
 
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { resolveShotList } from "@server/catalog/shot-list";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Film } from "lucide-react";
+import { toast } from "sonner";
 import { useServerForm } from "@/hooks/core/useServerForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,24 +21,30 @@ import {
   ProductOrgShippingFields,
   type LocationOption,
 } from "./ProductOrgShippingFields";
-import { FormActions } from "../../button-groups/FormActions";
 import type {
   ProductFormInput,
   ProductDetails,
 } from "@/components/product/console/types";
-import { useFormPersist } from "@/hooks/forms/useFormPersist";
+import { dirtyValues, useFormPersist } from "@/hooks/forms/useFormPersist";
 import { ProductStepsForm } from "./ProductStepsForm";
 import { useProductSteps } from "./useProductSteps";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import { resolveProductType } from "@server/listing/product-type";
 import { keepAsked } from "./category-change";
-import { paiseToRupees } from "@/lib/format";
 import {
   youtubePosterUrl,
   type ProductMediaInput,
 } from "@server/catalog/media";
 import type { OrgSummary } from "@/domain/org";
 import type { ProductCopySource } from "@server/catalog/admin.product.types";
+import { productDefaults } from "./product-defaults";
+import { ProductEditOverview } from "./ProductEditOverview";
+import { DraftNotice } from "./DraftNotice";
+import { LeaveSheet } from "./LeaveSheet";
+import { useLeaveGuard } from "./useLeaveGuard";
+import { useEditRebase } from "./useEditRebase";
+import { DRAFT_MAX_AGE_MS, seenVersionOf } from "./edit-overview";
+import { formFieldsIn, leaveBody, stepsOf } from "./product-steps";
 interface ProductFormProps {
   product?: ProductDetails;
   /** Create only: another of the org's products whose descriptive fields seed this one. */
@@ -79,7 +86,7 @@ interface ProductFormProps {
   uploadEndpoints?: UploadEndpoints;
   /** Create only: the "Copy from" control, shown at the top of Photos and video (product-form Q15). */
   copyFrom?: React.ReactNode;
-  /** Create only: the shop sells on another channel, so readiness hints are asked for (R5). */
+  /** The shop sells on another channel, so readiness hints are asked for (R5). */
   sellsElsewhere?: boolean;
 }
 
@@ -91,7 +98,6 @@ export function ProductForm({
   locations: offeredLocations = [],
   onSubmit,
   onCancel,
-  isSubmitting,
   readOnly = false,
   uploadEndpoints,
   productTypes = [],
@@ -102,8 +108,9 @@ export function ProductForm({
   sellsElsewhere = false,
 }: ProductFormProps) {
   const isEdit = !!product;
-  // A new product is five steps (product-form U1); edit keeps the long form until its overview (U4).
+  // A new product is five steps (product-form U1); an edit is an overview of the same sections (U4).
   const stepped = !isEdit && !readOnly;
+  const overview = isEdit && !readOnly;
   const steps = useProductSteps();
   const [created, setCreated] = useState<ProductDetails | null>(null);
 
@@ -127,7 +134,8 @@ export function ProductForm({
   const copy = isEdit ? null : (copySource ?? null);
   // A restored draft would overwrite the copied fields on mount, so a copy is not
   // draft-persisted — and must not clear a blank-form draft the org left behind.
-  const persistDraft = !isEdit && !copy;
+  // An edit keeps a draft too, per product (D9); read-only keeps nothing.
+  const persistDraft = !readOnly && (isEdit || !copy);
 
   // One row per offered location, prefilled from the product's existing rows. A
   // location the product never stocked shows 0; zero rows are dropped on write.
@@ -143,13 +151,10 @@ export function ProductForm({
   const addLocation = (location: LocationOption) =>
     setLocations((current) => (current.some((l) => l.id === location.id) ? current : [...current, location]));
 
-  // `seenQuantity` travels with each existing row: the server writes only where it still holds,
-  // so a sale that lands while this form is open is a refusal to reload from, not an overwrite.
-  const defaultStockRows = locations.map((location) => ({
-    orgAddressId: location.id,
-    quantity: stockByLocation.get(location.id) ?? 0,
-    seenQuantity: stockByLocation.get(location.id),
-  }));
+  const locationIdList = locations.map((location) => location.id);
+  const defaultsOf = (latest: ProductDetails | undefined) => productDefaults(latest, copy, orgs, locationIdList);
+  // The version the next save claims it saw: the product's, or a restored draft's (D6, D9).
+  const versionRef = useRef(product?.version ?? 0);
 
   // Client validation and server error routing both come from this one call:
   // field-attributed server errors land on their fields with no code here.
@@ -163,58 +168,36 @@ export function ProductForm({
       const key = resolveProductType(data.categoryId, categories ?? []);
       return keepAsked(data, productTypes.find((type) => type.key === key) ?? null);
     },
-    submit: onSubmit,
+    // An edit names the version it was opened at; a refusal for a product that moved on is rebased (D8).
+    submit: async (data) => {
+      if (!isEdit) return onSubmit(data);
+      try {
+        return await onSubmit({ ...data, seenVersion: versionRef.current });
+      } catch (error) {
+        rebaser.refused(error, data, Object.keys(dirtyValues(form.formState.dirtyFields as Record<string, unknown>, data as unknown as Record<string, unknown>)));
+        throw error;
+      }
+    },
     // Deferred: clearSaved is declared below. Without this the saved draft
     // prefills the next "new product" with the one just created.
     onSuccess: (result) => {
       if (persistDraft) clearSaved();
       if (stepped && result) setCreated(result as ProductDetails);
+      if (overview) {
+        rebaser.saved(result);
+        toast.success("Saved. Live on your store now.");
+      }
     },
     // The stepped create opens the step holding the first problem (ProductStepsForm), not a banner (D2).
-    onInvalid: stepped ? () => {} : undefined,
-    fallbackMessage: stepped ? "Couldn't save. Your work is still here." : undefined,
-    // The stepped form shows the failure inline with "Try again"; a toast would say it twice.
-    toastErrors: !stepped,
-    defaultValues: {
-      name: product?.name || "",
-      description: product?.description || copy?.description || "",
-      // Stored paise → rupee inputs; the service converts back on submit.
-      price: product ? paiseToRupees(product.price) : 0,
-      salePrice:
-        product?.salePrice != null
-          ? paiseToRupees(product.salePrice)
-          : undefined,
-      currency: product?.currency || "INR",
-      categoryId: product?.category?.id || copy?.categoryId || "",
-      // In the org portal there is one org to choose from, so it is chosen (nothing to pick).
-      orgId: product?.org?.id || (orgs?.length === 1 ? orgs[0].id : ""),
-      tags: product?.tags || copy?.tags || [],
-      flags: product?.flags || copy?.flags || [],
-      kind: product?.kind ?? null,
-      familyId: product?.familyId ?? null,
-      // A stored answer carries the level that supplied it; the form edits the value and shows
-      // the origin beside it (inherited-facts R3, R4).
-      facts: Object.fromEntries(
-        Object.entries(product?.facts ?? {}).map(([fact, stored]) => [fact, stored.value]),
-      ),
-      measurements: Object.fromEntries(
-        Object.entries(product?.measurements ?? {}).map(([key, stored]) => [key, stored.value]),
-      ),
-      // No cover is pre-selected on create (D17a). On edit the saved flag comes back
-      // with the rows, so an existing product keeps the cover its org chose.
-      media:
-        product?.media?.map((item) => ({
-          kind: item.kind,
-          ref: item.ref,
-          description: item.description ?? undefined,
-          isThumbnail: item.isThumbnail,
-          slot: item.slot ?? null,
-        })) || [],
-      weight: product?.weight || 0,
-      stockLocations: defaultStockRows,
-      sku: product?.sku || "",
-      lowStockThreshold: product?.lowStockThreshold || 10,
-    },
+    onInvalid: stepped || overview ? () => {} : undefined,
+    fallbackMessage: stepped
+      ? "Couldn't save. Your work is still here."
+      : overview
+        ? "Couldn't save. Your changes are still here."
+        : undefined,
+    // The stepped form and the overview show the failure inline with "Try again"; a toast would say it twice.
+    toastErrors: !stepped && !overview,
+    defaultValues: defaultsOf(product),
   });
   const {
     register,
@@ -224,17 +207,65 @@ export function ProductForm({
     setValue,
     getValues,
     control,
-    formState: { errors },
+    formState: { errors, isDirty, dirtyFields },
   } = form;
+  const rebaser = useEditRebase(form, product, defaultsOf, versionRef);
 
   // form persist
   // Location rows are never draft-persisted: a draft saved while the org had no
   // locations restores an empty array over the fresh rows, and the hidden
   // orgAddressId can then fail validation invisibly (the submit "does nothing").
-  const { clearSaved } = useFormPersist("product-creation-form-draft", form, {
+  // Stock is never kept either on edit: a typed quantity from days ago would undo the sales since.
+  const draft = useFormPersist(product ? `product-edit-draft:${product.id}` : "product-creation-form-draft", form, {
     excludeFields: ["stockLocations"],
     enabled: persistDraft,
+    maxAgeMs: DRAFT_MAX_AGE_MS,
+    onlyWhenDirty: true,
+    // An edit keeps only what was typed: a whole-form draft would undo another editor's save (D9).
+    dirtyOnly: isEdit,
+    meta: () => (isEdit ? { seenVersion: versionRef.current } : undefined),
   });
+  const { clearSaved } = draft;
+  // A restored edit draft is compared at the version it was typed against, so a save over a
+  // product that moved on since is refused and rebased, not written over it (D9).
+  const takeDraftVersion = (meta: unknown) => {
+    const seen = seenVersionOf(meta);
+    if (isEdit && seen !== null) versionRef.current = seen;
+  };
+  useEffect(() => {
+    if (draft.found && !draft.found.stale) takeDraftVersion(draft.found.meta);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, when the draft is found
+  }, [draft.found?.savedAt]);
+  const discardDraft = () => {
+    clearSaved();
+    form.reset(defaultsOf(product));
+    syncStockRows();
+    versionRef.current = product?.version ?? 0;
+  };
+  const draftNotice = persistDraft ? (
+    <DraftNotice
+      found={draft.found}
+      onDiscard={discardDraft}
+      onUse={() => {
+        draft.restore();
+        takeDraftVersion(draft.found?.meta);
+      }}
+    />
+  ) : null;
+
+  // "Leave without saving?" on every way off a form holding changes (R8, D10).
+  const guard = useLeaveGuard(!readOnly && isDirty && !created);
+  const leaveSheet = (
+    <LeaveSheet
+      open={guard.pending}
+      body={leaveBody(stepsOf(formFieldsIn(Object.keys(dirtyFields))))}
+      onStay={guard.stay}
+      onLeave={() => {
+        if (persistDraft) clearSaved();
+        guard.leave();
+      }}
+    />
+  );
 
   // Cancelling a create abandons it: the next "new product" starts blank.
   // Reset first — it fires watch — then clear, which cancels that queued save.
@@ -271,8 +302,34 @@ export function ProductForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(syncStockRows, [locationIds]);
 
+  if (overview) {
+    return (
+      <>
+        <ProductEditOverview
+          form={form}
+          product={product}
+          categories={categories ?? []}
+          productTypes={productTypes}
+          listingValues={listingValues}
+          origins={origins}
+          families={families}
+          orgs={orgs}
+          locations={locations}
+          onLocationAdded={addLocation}
+          uploadEndpoints={uploadEndpoints}
+          sellsElsewhere={sellsElsewhere}
+          draft={draftNotice}
+          conflict={rebaser.notice}
+          kept={rebaser.kept}
+        />
+        {leaveSheet}
+      </>
+    );
+  }
+
   if (stepped) {
     return (
+      <>
       <ProductStepsForm
         form={form}
         steps={steps}
@@ -296,7 +353,10 @@ export function ProductForm({
           steps.reset();
           setCreated(null);
         }}
+        draft={draftNotice}
       />
+      {leaveSheet}
+      </>
     );
   }
 
@@ -457,24 +517,12 @@ export function ProductForm({
         </div>
       )}
 
-      {readOnly ? (
-        <div className="flex justify-end gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
-            Close
-          </Button>
-        </div>
-      ) : (
-        <FormActions
-          onCancel={handleCancel}
-          submitLabel={isEdit ? "Update Product" : "Create Product"}
-          isSubmitting={isSubmitting}
-        />
-      )}
+      {/* Create is the steps and edit the overview, so what is left here is the read-only view. */}
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={handleCancel}>
+          Close
+        </Button>
+      </div>
     </form>
   );
 }

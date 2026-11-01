@@ -147,6 +147,14 @@ export const productFormSchema = z
 
 export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
 
+/**
+ * An edit: the product as above plus the version the form was opened at (product-form D6). The save
+ * is a compare-and-set on it, so it is the client's claim of what it loaded, never a value written.
+ */
+export const productEditSchema = productFormSchema.safeExtend({
+  seenVersion: z.number().int().min(0),
+});
+
 /** Field names the product form owns, so server details can be routed to them. */
 export const PRODUCT_FORM_FIELDS = [
   "name", "description", "price", "salePrice", "currency",

@@ -16,6 +16,7 @@ import { ConflictError } from "@server/shared/domain-error";
 import { uniqueViolationFields } from "@server/shared/constraint";
 import { enqueue } from "@server/shared/jobs/jobs.enqueue";
 import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
+import { STOCK_FIELD } from "@server/catalog/product-edit";
 
 /** `prisma`, or the `tx` of a `$transaction` — enough of either to move stock. */
 export type ProductStockDb = Pick<typeof prisma, "productStock" | "$queryRawUnsafe">;
@@ -243,7 +244,7 @@ export class StockRepository {
         row.quantity > 0
           ? await tx.productStock.updateMany({ where, data: { quantity: row.quantity } })
           : await tx.productStock.deleteMany({ where });
-      if (written.count === 0) throw new ConflictError(STOCK_CHANGED_MESSAGE, { field: "stock" });
+      if (written.count === 0) throw new ConflictError(STOCK_CHANGED_MESSAGE, { field: STOCK_FIELD });
     }
 
     const fresh = rows.filter((row) => row.seenQuantity === undefined && row.quantity > 0);
@@ -254,7 +255,7 @@ export class StockRepository {
         });
       } catch (error) {
         // A row appeared at a location the editor saw as empty — the same staleness, found by the key.
-        if (uniqueViolationFields(error)) throw new ConflictError(STOCK_CHANGED_MESSAGE, { field: "stock" });
+        if (uniqueViolationFields(error)) throw new ConflictError(STOCK_CHANGED_MESSAGE, { field: STOCK_FIELD });
         throw error;
       }
     }

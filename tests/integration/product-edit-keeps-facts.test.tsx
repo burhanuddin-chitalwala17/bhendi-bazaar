@@ -30,7 +30,7 @@ describe.skipIf(!isDisposableDb)("editing a no-type product (local db)", () => {
     const { productsService } = await import("@server/catalog/admin.product.service");
     const { adminProductsDAL } = await import("@/data-access-layer/admin/products.dal");
     const { ProductForm } = await import("@/components/shared/forms/product");
-    const { orgId, orgAddressId, categoryId } = await ensureFixtures();
+    const { orgId, orgAddressId, categoryId, userId } = await ensureFixtures();
 
     const stamp = `pek-${Date.now().toString(36)}`;
     const facts = {
@@ -59,7 +59,7 @@ describe.skipIf(!isDisposableDb)("editing a no-type product (local db)", () => {
 
     const product = await adminProductsDAL.getProductById(id);
     const onSubmit = vi.fn(async (data: ProductFormInput) => {
-      await productsService.updateProduct(id, data);
+      await productsService.updateProduct(id, { ...data, seenVersion: data.seenVersion! }, { userId, team: false });
       return product;
     });
     render(
@@ -72,8 +72,9 @@ describe.skipIf(!isDisposableDb)("editing a no-type product (local db)", () => {
         onCancel={vi.fn()}
       />,
     );
-    fireEvent.change(screen.getByLabelText(/^Product Name/), { target: { value: `Renamed ${stamp}` } });
-    fireEvent.submit(screen.getByRole("button", { name: "Update Product" }).closest("form")!);
+    fireEvent.click(screen.getByRole("button", { name: /^What it is/ }));
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: `Renamed ${stamp}` } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     await onSubmit.mock.results[0].value;
 

@@ -122,6 +122,10 @@ class ProductsDAL {
       // Dead photos are dropped rather than shown: they cannot render, and saving the
       // edit form is then what clears them from the row — the re-upload remedy.
       media: renderableMedia((product.media ?? []).map(toProductMediaDto)),
+      version: product.version,
+      lastEditedAt: product.lastEditedAt,
+      lastEditedBy: product.lastEditedBy?.name ?? null,
+      teamEditedAt: product.teamEditedAt,
       thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,
       org: {
         id: product.org.id,

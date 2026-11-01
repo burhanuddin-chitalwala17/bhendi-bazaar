@@ -11,6 +11,8 @@ interface UseProductsOptions {
   onSuccess?: () => void;
   /** The stepped create shows its own success screen, so a create neither toasts nor leaves (product-form Q16). */
   stayAfterCreate?: boolean;
+  /** The edit overview toasts, refreshes and stays itself (product-form R7, D8). */
+  stayAfterUpdate?: boolean;
 }
 
 export function useProducts(options?: UseProductsOptions) {
@@ -69,6 +71,7 @@ export function useProducts(options?: UseProductsOptions) {
     setIsLoading(true);
     try {
       const product = await productsApiClient.updateProduct(id as string, data);
+      if (options?.stayAfterUpdate) return product;
       const successMsg = "Product updated successfully!";
       setSuccessMessage(successMsg);
       toast.success(successMsg);

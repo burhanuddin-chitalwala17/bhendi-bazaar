@@ -203,7 +203,8 @@ describe.skipIf(!isDisposableDb)("offers: a shop's discount ceiling", () => {
         orgId: fixtures.orgId, categoryId: dto.category.id, weight: dto.weight,
         media: [{ kind: "IMAGE", ref: "https://placehold.co/600x600", isThumbnail: true }],
         stockLocations: [{ orgAddressId: fixtures.orgAddressId, quantity: 1, seenQuantity: 1 }],
-      });
+        seenVersion: dto.version,
+      }, { userId: fixtures.userId, team: false });
       return dto;
     }
 

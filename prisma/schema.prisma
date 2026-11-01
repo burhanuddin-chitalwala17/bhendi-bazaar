@@ -361,6 +361,17 @@ model Product {
   archivedAt      DateTime?
   channelListings ChannelListing[]
 
+  /// Bumped by every person's save and compared on the next one, so a save from a stale form is
+  /// refused rather than undoing someone else's (product-form D6, Q35). Not `updatedAt`: that moves
+  /// on marketplace fills and archive, which nobody typed.
+  version        Int       @default(0)
+  /// Who saved last and when, to word that refusal (D7). Restrict: a user is deactivated, never deleted.
+  lastEditedById String?
+  lastEditedBy   User?     @relation("ProductLastEditedBy", fields: [lastEditedById], references: [id], onDelete: Restrict)
+  lastEditedAt   DateTime?
+  /// Set by a Bhendi Bazaar team save, cleared by the shop's next save (D7, Q14).
+  teamEditedAt   DateTime?
+
   // A SKU is the org's own identifier; two orgs may legitimately use the same one.
   // It stays taken while the product is archived — a restore must find its own code
   // still free, so uniqueness cannot be conditional on `archivedAt`.
@@ -606,6 +617,7 @@ model User {
   biddingEventsSettled BiddingEvent[]      @relation("BiddingSettledBy")
   channelsConnected    ChannelConnection[] @relation("ChannelConnectedBy")
   channelsDisconnected ChannelConnection[] @relation("ChannelDisconnectedBy")
+  productsLastEdited   Product[]           @relation("ProductLastEditedBy")
 
   @@index([platformRole])
   @@index([isBlocked])

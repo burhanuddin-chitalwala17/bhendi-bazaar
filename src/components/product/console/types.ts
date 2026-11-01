@@ -85,6 +85,13 @@ export interface ProductDetails {
     quantity: number;
   }>;
   createdAt: Date;
+  /** What an edit sends back as `seenVersion`; a save from an older one is refused (product-form D6). */
+  version: number;
+  /** Who saved last and when (D7); the name only, never an id. */
+  lastEditedAt: Date | null;
+  lastEditedBy: string | null;
+  /** Set while the Bhendi Bazaar team's save is the latest (D7, Q14). */
+  teamEditedAt: Date | null;
 }
 
 export interface ProductStats {

@@ -89,3 +89,52 @@ export function firstStepWithError(errors: FieldErrors): ProductStepKey | null {
 export function thingsToFix(count: number): string {
   return `${count} ${count === 1 ? "thing" : "things"} to fix`;
 }
+
+/** Each field as the shop reads it, for "your changes to …" (product-form D8, D10). Typed like FIELD_STEP. */
+export const FIELD_LABEL: Record<FormField, string> = {
+  media: "Photos and video",
+  name: "Name",
+  description: "Description",
+  categoryId: "Category",
+  tags: "Tags",
+  flags: "Flags",
+  familyId: "Family",
+  price: "Price",
+  salePrice: "Sale price",
+  currency: "Currency",
+  orgId: "Shop",
+  stockLocations: "Stock",
+  weight: "Packed weight",
+  sku: "SKU",
+  lowStockThreshold: "Low-stock alert",
+  kind: "Kind",
+  brandId: "Brand",
+  facts: "Details",
+  measurements: "Measurements",
+  sizes: "Sizes",
+  colors: "Colours",
+};
+
+/** The form's own fields among some top-level keys, in schema order (a dirty map, a set of re-applied fields). */
+export function formFieldsIn(keys: Iterable<string>): FormField[] {
+  const present = new Set(keys);
+  return PRODUCT_FORM_FIELDS.filter((field) => present.has(field));
+}
+
+/** The steps holding these fields, in step order, each once. */
+export function stepsOf(fields: readonly FormField[]): Exclude<ProductStepKey, "review">[] {
+  const held = new Set(fields.map((field) => FIELD_STEP[field]));
+  return PRODUCT_STEPS.map((step) => step.key).filter((key): key is Exclude<ProductStepKey, "review"> => held.has(key as never));
+}
+
+/** "Price & stock", "Price & stock and Details", "Photos and video, Price & stock and Details". */
+export function joinWords(words: readonly string[]): string {
+  if (words.length <= 1) return words[0] ?? "";
+  return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
+/** The leave sheet's body (ux copy deck): which sections hold the changes that would be lost. */
+export function leaveBody(steps: readonly ProductStepKey[]): string {
+  const labels = steps.map((key) => PRODUCT_STEPS.find((step) => step.key === key)?.label ?? key);
+  return `Your changes to ${labels.length ? joinWords(labels) : "this product"} will be lost.`;
+}

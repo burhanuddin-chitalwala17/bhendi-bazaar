@@ -1,35 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Info, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import type { FieldErrors } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { FormController, FormInput, FormTextarea } from "../FormField";
-import { ProductMediaManager } from "@/components/product/product-media-manager";
+import type { ProductMediaManager } from "@/components/product/product-media-manager";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
-import { resolveShotList } from "@server/catalog/shot-list";
-import { resolveProductType } from "@server/listing/product-type";
 import type { ProductMediaInput } from "@server/catalog/media";
 import type { ProductTypeRecord } from "@server/listing/product-type.types";
 import type { OrgSummary } from "@/domain/org";
 import type { ProductDetails, ProductFormInput } from "@/components/product/console/types";
 import { productFormSchema } from "@/lib/validation/schemas/product.schema";
 import type { useServerForm } from "@/hooks/core/useServerForm";
-import { CategoryPicker } from "./CategoryPicker";
-import { CategoryChangeSheet } from "./CategoryChangeSheet";
-import { useCategoryChange } from "./useCategoryChange";
 import { keepAsked } from "./category-change";
 import { BuyerPreview } from "./BuyerPreview";
-import { ProductFactFields } from "./ProductFactFields";
-import { ProductFamilyField } from "./ProductFamilyField";
-import { ProductFlagsFields } from "./ProductFlagsFields";
-import { ProductOrgShippingFields, type LocationOption } from "./ProductOrgShippingFields";
+import type { LocationOption } from "./ProductOrgShippingFields";
 import type { useProductSteps } from "./useProductSteps";
-import { useReadinessHints } from "./useReadinessHints";
-import { alsoAsks, hintsFrom, willAlsoAsk, type ChannelHint } from "./readiness-hints";
+import { ProductSections, ReviewReadiness } from "./ProductSections";
+import { useProductSections } from "./useProductSections";
 import {
   FIELD_STEP,
   MORE_OPTIONS_FIELDS,
@@ -63,6 +52,8 @@ interface ProductStepsFormProps {
   /** The product just put on sale; set, the success screen replaces the steps (Q16). */
   created: ProductDetails | null;
   onStartAnother: () => void;
+  /** The kept-draft line (D9), above the steps. */
+  draft?: ReactNode;
 }
 
 const isMoreOptionsField = (path: string) => (MORE_OPTIONS_FIELDS as readonly string[]).includes(path.split(".")[0]);
@@ -121,43 +112,25 @@ export function ProductStepsForm({
   sellsElsewhere,
   created,
   onStartAnother,
+  draft,
 }: ProductStepsFormProps) {
   const {
-    register,
-    control,
     watch,
-    setValue,
     formError,
     clearFormError,
     formState: { errors, isSubmitting },
   } = form;
-  const [moreOpen, setMoreOpen] = useState<ReadonlySet<ProductStepKey>>(() => new Set());
   const counts = errorCountsByStep(errors);
   const errorTotal = Object.values(counts).reduce((sum, n) => sum + n, 0);
-  const orgId = watch("orgId") || "";
-  const categoryId = watch("categoryId") || "";
-  const typeKey = useMemo(() => resolveProductType(categoryId, categories), [categoryId, categories]);
-  const productType = useMemo(() => productTypes.find((type) => type.key === typeKey) ?? null, [productTypes, typeKey]);
-  const problems = useProblems(form, errors, steps.isReview, productType);
-  // Readiness hints (D4): advice from the unsaved values, re-checked as the shop moves between steps.
-  const readiness = useReadinessHints(sellsElsewhere ? orgId : "", productType, steps.current, form.getValues);
-  const hints = hintsFrom(readiness.verdicts, productType);
-  // A category of another type names the answers it would leave behind first (D5, R6).
-  const categoryChange = useCategoryChange(categories, productTypes, form.getValues, (id) =>
-    setValue("categoryId", id, { shouldDirty: true, shouldValidate: !!errors.categoryId }),
+  // Readiness hints (D4) and the category-change sheet (D5), shared with the edit overview.
+  const { productType, readiness, hints, categoryChange } = useProductSections(
+    form,
+    categories,
+    productTypes,
+    sellsElsewhere,
+    steps.current,
   );
-
-  // A field under "More options" with an error opens it, or the refusal would sit out of sight.
-  const moreHasError = (step: ProductStepKey) =>
-    MORE_OPTIONS_FIELDS.some((field) => FIELD_STEP[field] === step && !!errors[field]);
-  const isMoreOpen = (step: ProductStepKey) => moreOpen.has(step) || moreHasError(step);
-  const toggleMore = (step: ProductStepKey) =>
-    setMoreOpen((current) => {
-      const next = new Set(current);
-      if (next.has(step)) next.delete(step);
-      else next.add(step);
-      return next;
-    });
+  const problems = useProblems(form, errors, steps.isReview, productType);
 
   // A ref, not isSubmitting: two taps inside one render would both read the old state.
   const saving = useRef(false);
@@ -213,6 +186,7 @@ export function ProductStepsForm({
       className="space-y-4"
       noValidate
     >
+      {draft}
       <div className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-xs text-muted-foreground">
@@ -259,152 +233,22 @@ export function ProductStepsForm({
           </div>
 
           {/* Every step stays mounted, so an upload or the crop sheet survives "Next" (ux "Slow"). */}
-          <section hidden={current !== "photos"} className="space-y-4">
-              {copyFrom}
-              {uploadEndpoints ? (
-                <FormController
-                  name="media"
-                  control={control}
-                  render={({ field }) => (
-                    <ProductMediaManager
-                      value={field.value as ProductMediaInput[]}
-                      onChange={field.onChange}
-                      endpoints={uploadEndpoints}
-                      shotList={resolveShotList(watch("categoryId"), categories)}
-                      orgId={orgId || undefined}
-                      identifier={watch("name")}
-                      orgCode={orgs?.find((org) => org.id === orgId)?.code}
-                    />
-                  )}
-                />
-              ) : null}
-              {errors.media && (
-                <p role="alert" className="text-sm text-destructive">
-                  {errors.media.message ?? errors.media.root?.message}
-                </p>
-              )}
-          </section>
-
-          <section hidden={current !== "what"} className="space-y-4">
-              <FormController
-                name="categoryId"
-                control={control}
-                render={({ field, id }) => (
-                  <CategoryPicker
-                    id={`${id}-picker`}
-                    value={(field.value as string) ?? ""}
-                    onChange={categoryChange.request}
-                    categories={categories}
-                    error={errors.categoryId?.message}
-                  />
-                )}
-              />
-              <FormInput
-                label="Name"
-                required
-                placeholder="e.g., Velvet Embroidered Kurta"
-                {...register("name")}
-                error={errors.name?.message}
-              />
-              <FormTextarea
-                label="Description"
-                required
-                rows={4}
-                placeholder="What it is, what it is made of, how it fits"
-                {...register("description")}
-                error={errors.description?.message}
-              />
-              <MoreOptions open={isMoreOpen("what")} onToggle={() => toggleMore("what")}>
-                <TagsField form={form} />
-                <ProductFlagsFields control={control} />
-                <ProductFamilyField
-                  register={register}
-                  setValue={setValue}
-                  errors={errors}
-                  orgId={orgId}
-                  categoryId={categoryId}
-                  families={families}
-                />
-              </MoreOptions>
-              <CategoryChangeSheet
-                pending={categoryChange.pending}
-                onKeep={categoryChange.keep}
-                onChange={categoryChange.confirm}
-              />
-          </section>
-
-          <section hidden={current !== "price"} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormInput
-                  label="Price (₹)"
-                  required
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  placeholder="0"
-                  {...register("price", { valueAsNumber: true })}
-                  error={errors.price?.message}
-                />
-                <FormInput
-                  label="Sale price (₹)"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  placeholder="Optional"
-                  {...register("salePrice", { valueAsNumber: true })}
-                  error={errors.salePrice?.message}
-                  hint="Leave empty if it is not on sale."
-                />
-              </div>
-              <ProductOrgShippingFields
-                register={register}
-                errors={errors}
-                watch={watch}
-                orgs={orgs}
-                locations={locations}
-                onLocationAdded={onLocationAdded}
-              />
-              <FormInput
-                label="Packed weight (kg)"
-                required
-                type="number"
-                inputMode="decimal"
-                step="0.001"
-                placeholder="0.6"
-                {...register("weight", { valueAsNumber: true })}
-                error={errors.weight?.message}
-                hint="With its packing. 0.6 means 600 g."
-              />
-              <MoreOptions open={isMoreOpen("price")} onToggle={() => toggleMore("price")}>
-                <FormInput label="SKU (your own code)" placeholder="e.g., VEK-001" {...register("sku")} error={errors.sku?.message} />
-                <FormInput
-                  label="Tell me when stock is below"
-                  type="number"
-                  inputMode="numeric"
-                  placeholder="10"
-                  {...register("lowStockThreshold", { valueAsNumber: true })}
-                  error={errors.lowStockThreshold?.message}
-                />
-              </MoreOptions>
-          </section>
-
-          <section hidden={current !== "details"} className="space-y-4">
-            <AlsoAsks hints={hints} />
-            <ProductFactFields
-              control={control}
-              register={register}
-              errors={errors}
-              setValue={setValue}
-              families={families}
-              orgId={orgId}
-              categoryId={watch("categoryId") || ""}
-              categories={categories}
-              productTypes={productTypes}
-              initialValues={listingValues}
-              origins={origins}
-              withFamily={false}
-            />
-          </section>
+          <ProductSections
+            form={form}
+            current={current}
+            categories={categories}
+            productTypes={productTypes}
+            listingValues={listingValues}
+            origins={origins}
+            families={families}
+            orgs={orgs}
+            locations={locations}
+            onLocationAdded={onLocationAdded}
+            uploadEndpoints={uploadEndpoints}
+            copyFrom={copyFrom}
+            categoryChange={categoryChange}
+            hints={hints}
+          />
 
           <section hidden={current !== "review"} className="space-y-4">
               <div className="lg:hidden">{preview}</div>
@@ -492,123 +336,6 @@ export function ProductStepsForm({
   );
 }
 
-/** "{Channel} also asks: {fact}" in the step that holds those facts (R5, Q8). Silent when nothing is asked. */
-function AlsoAsks({ hints }: { hints: ChannelHint[] }) {
-  const asking = hints.filter((hint) => hint.asks.length > 0);
-  if (asking.length === 0) return null;
-  return (
-    <ul aria-label="What other places ask" className="space-y-1 rounded-card border border-border bg-muted/40 p-3 text-sm">
-      {asking.map((hint) => (
-        <li key={hint.channel} className="flex items-start gap-2">
-          <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-          <span>{alsoAsks(hint)}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/**
- * Review's readiness lines (R3, R5; ux Review Partial and Loading). A shop selling nowhere else sees
- * nothing. Each ask opens Details; none of it holds up "Put on sale" (ADR-0053).
- */
-function ReviewReadiness({
-  hints,
-  checking,
-  storeReady,
-  onOpenDetails,
-}: {
-  hints: ChannelHint[];
-  checking: boolean;
-  storeReady: boolean;
-  onOpenDetails: () => void;
-}) {
-  if (checking && hints.length === 0) {
-    return <p className="animate-pulse text-sm text-muted-foreground">Checking…</p>;
-  }
-  if (hints.length === 0) return null;
-  return (
-    <div aria-label="Where it will sell" className={cn("space-y-2 rounded-card border border-border p-3 text-sm", checking && "animate-pulse")}>
-      {checking && <p className="text-muted-foreground">Checking…</p>}
-      {storeReady && (
-        <p className="flex items-center gap-2 text-success">
-          <Check aria-hidden className="size-4 shrink-0" />
-          Ready for your store
-        </p>
-      )}
-      <ul className="space-y-2">
-        {hints.map((hint) =>
-          hint.asks.length > 0 ? (
-            <li key={hint.channel} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <span>{willAlsoAsk(hint)}</span>
-              <Button type="button" variant="outline" size="sm" onClick={onOpenDetails}>
-                Add {hint.asks[0].toLowerCase()}
-              </Button>
-            </li>
-          ) : hint.ready ? (
-            <li key={hint.channel} className="flex items-center gap-2 text-muted-foreground">
-              <Check aria-hidden className="size-4 shrink-0" />
-              Ready for {hint.label}
-            </li>
-          ) : null,
-        )}
-      </ul>
-    </div>
-  );
-}
-
-/** A closed disclosure for the seldom-used fields of a step (R2, Q7). */
-function MoreOptions({ open, onToggle, children }: { open: boolean; onToggle: () => void; children: ReactNode }) {
-  return (
-    <div className="rounded-card border border-border">
-      <Button
-        type="button"
-        variant="ghost"
-        aria-expanded={open}
-        className="h-auto w-full justify-between whitespace-normal px-4 py-3"
-        onClick={onToggle}
-      >
-        More options
-        <ChevronDown aria-hidden className={cn("transition-transform", open && "rotate-180")} />
-      </Button>
-      {open && <div className="space-y-4 border-t border-border p-4">{children}</div>}
-    </div>
-  );
-}
-
-/** Tags as one line of comma-separated words; the text is kept as typed, the list is what saves. */
-function TagsField({ form }: { form: Form }) {
-  const {
-    setValue,
-    getValues,
-    formState: { errors },
-  } = form;
-  const [text, setText] = useState(() => (getValues("tags") ?? []).join(", "));
-  return (
-    <FormController
-      name="tags"
-      control={form.control}
-      label="Tags"
-      hint="Words buyers might search for, separated by commas."
-      error={errors.tags?.message}
-      render={({ id }) => (
-        <Input
-          id={id}
-          value={text}
-          placeholder="attar, velvet, festive"
-          onChange={(event) => {
-            setText(event.target.value);
-            setValue(
-              "tags",
-              event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean),
-              { shouldDirty: true },
-            );
-          }}
-        />
-      )}
-    />
-  );
-}
 
 /** "On sale now" and what a shop adding many does next (Q16). */
 function SuccessScreen({ product, onStartAnother }: { product: ProductDetails; onStartAnother: () => void }) {

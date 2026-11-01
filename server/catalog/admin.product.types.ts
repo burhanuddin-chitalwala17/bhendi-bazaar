@@ -64,6 +64,11 @@ export interface ProductFormInput {
   brandId?: string | null;
   facts?: Record<string, string | number | boolean | null | undefined>;
   measurements?: Record<string, number | null | undefined>;
+  /**
+   * Edit only: the version the form opened at. The edit route requires it and the save compares
+   * on it (product-form D6); a create ignores it.
+   */
+  seenVersion?: number;
 }
 /**
  * What the repository writes: the form's input, plus what the server resolved on save.

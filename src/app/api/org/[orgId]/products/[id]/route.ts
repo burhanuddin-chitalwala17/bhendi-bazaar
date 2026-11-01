@@ -6,7 +6,7 @@
 import { NextResponse } from "next/server";
 import { withOrg } from "@/lib/org-auth";
 import { productsService } from "@server/catalog/admin.product.service";
-import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { productEditSchema } from "@/lib/validation/schemas/product.schema";
 import { NotFoundError } from "@server/shared/domain-error";
 
 /**
@@ -25,12 +25,13 @@ export const PATCH = withOrg<{ orgId: string; id: string }>(
   async (request, scope, params) => {
     await assertOwnedByOrg(params.id, scope.orgId);
 
-    const body = productFormSchema.parse({
+    const body = productEditSchema.parse({
       ...(await request.json()),
       orgId: scope.orgId,
     });
 
-    const product = await productsService.updateProduct(params.id, body);
+    // The member saving is named on the product, and a shop save clears the team's mark (D7).
+    const product = await productsService.updateProduct(params.id, body, { userId: scope.userId, team: false });
     return NextResponse.json(product);
   },
 );

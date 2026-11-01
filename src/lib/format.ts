@@ -61,6 +61,11 @@ export function formatShortDate(value: string | Date): string {
   return new Date(value).toLocaleDateString(LOCALE, { timeZone: TIME_ZONE });
 }
 
+/** A time of day: "4:12 pm". */
+export function formatTime(value: string | Date): string {
+  return new Date(value).toLocaleTimeString(LOCALE, { hour: "numeric", minute: "2-digit", timeZone: TIME_ZONE });
+}
+
 /** A moment: "8/10/2026, 1:47:00 am". */
 export function formatDateTime(value: string | Date): string {
   return new Date(value).toLocaleString(LOCALE, { timeZone: TIME_ZONE });

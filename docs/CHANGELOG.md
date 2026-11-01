@@ -12,6 +12,48 @@
 
 ## Entries
 
+## 2026-11-01 — product-form unit 4: edit overview, drafts, leave sheet, version and conflict rebase [CONTRACT] [MIGRATION]
+
+- **Edit overview** (R7; D1): editing opens at five section cards (Photos and video, What it is,
+  Price & stock, Details, Review), each a one-line summary, its error count and, on Details, "{Channel} will
+  ask: {fact}". A card opens that section alone (full screen on a phone, beside the cards from `md:`,
+  buyer preview at `lg:`); one "Save changes" saves the product, "Saving…" while it does, never
+  disabled, a second tap ignored. Toast "Saved. Live on your store now." and back at the overview. The
+  sections are U1's `ProductSections`, so create and edit cannot drift. The editable long form is gone;
+  the read-only view stays.
+- **Version compare-and-set** (R9, A6; D6, D7; Q11, Q35) **[MIGRATION]**
+  `20261101140400_product_edit_version`: `Product.version` (default 0), `lastEditedById` (Restrict),
+  `lastEditedAt`, `teamEditedAt`; additive, no backfill. `updateProduct` opens its transaction with a
+  guarded `updateMany` on (id, org, version) that bumps it and names the editor; count 0 is a
+  `ConflictError` on path `seenVersion` before stock, media or fields move. The wording
+  (`server/catalog/product-edit.ts`): "Bhendi Bazaar team changed this product 2 min ago. We loaded the
+  latest and kept your changes — check and save." — the team, never an admin's name.
+- **Rebase** (D8): on that 409, or the stock 409, `useEditRebase` refreshes the page's props, resets to
+  the latest product and lays the seller's changed fields back over it, marked "Your change kept:
+  Price". After a sale the stored stock wins: "2 sold while you were editing. Stock is now 8."
+- **Drafts and the leave sheet** (R8, A5; D9, D10; Q10): `useFormPersist` stores a saved-at time and a
+  `seenVersion`, writes only once something changed, and offers a draft older than 7 days ("We kept what
+  you typed on 22 Oct. Use it?" · "Use it" / "Start fresh") instead of restoring it; a recent one comes
+  back with "We kept what you typed at 4:12 pm." · "Discard". Edit drafts are per product and keep
+  their version, so a stale one is refused and rebased; stock is never drafted. A copy-from start is
+  never restored. `useLeaveGuard` opens "Leave without saving?" · "Your changes to {sections} will be
+  lost." · "Keep editing" / "Leave" on close, same-origin links and the back gesture, create and edit.
+- **[CONTRACT]** `productEditSchema` (`productFormSchema` + required `seenVersion`) on
+  `PATCH /api/org/[orgId]/products/[id]`; the org `ProductDetails` gains `version`, `lastEditedAt`,
+  `lastEditedBy` (name) and `teamEditedAt`. `CONTRACTS.md` Products section updated.
+- **Tests:** `tests/unit/product-form-edit.test.tsx` (R7 cards and one open section; A8 no `disabled`
+  over every section; A5 leave sheet on back and none when clean; draft restore with its own
+  `seenVersion`, stale "Use it?"; A6 refusal reopens the latest with the price re-applied and marked
+  and saves at the new version; stale stock; conflict wording). `tests/integration/product-edit-version.test.ts`
+  (A6 on a real schema: a second save from version 0 writes no field and no stock, names the member;
+  a team save marks and the shop's next clears). `offer-ceiling` and `product-edit-keeps-facts` follow
+  the new signature and the overview. Mutations, each restored: the `version` clause dropped from the
+  guarded update (2 failed); the count-0 check never firing (2 failed).
+- **Gate edits:** `product-visibility` CENSUS for `product.repository.ts` 24 → 25 reads: `versionConflict`
+  sees archived products on purpose (it only words a refused save of the product being edited).
+  `src/lib/format.ts` gains `formatTime` ("4:12 pm") for the draft line, so the locale gate holds.
+- Q10, Q11 → implemented (unit 4); Q35 → decided (form save implemented in unit 4; team and sheet saves bump version later).
+
 ## 2026-11-01 — seller-onboarding unit 3: Home, the five-step setup list, return to Home [CONTRACT] [MIGRATION]
 
 - **Setup list (D5; R3, A1, A6; Q2, Q3, Q19):** `deriveOnboarding` takes products on sale, a pickup-ready

@@ -9,6 +9,7 @@ import { adminProductTypesDAL } from "@/data-access-layer/admin/product-types.da
 import { productFamilyService } from "@server/listing/product-family.service";
 import type { AdminCategory } from "@/domain/admin";
 import { orgAddressService } from "@server/catalog/org.address.service";
+import { orgChannelService } from "@server/listing/org-channel.service";
 
 import { PageShell } from "@/components/shared/page-shell";
 export default async function OrgEditProductPage({
@@ -34,10 +35,11 @@ export default async function OrgEditProductPage({
   // The question sets, and the answers for the category this product is already in — so the
   // form opens with filled dropdowns rather than empty ones. Changing the category fetches the
   // rest ([ADR-0034]).
-  const [productTypes, listingValues, familyRows] = await Promise.all([
+  const [productTypes, listingValues, familyRows, channels] = await Promise.all([
     adminProductTypesDAL.getProductTypes(),
     adminProductTypesDAL.getValuesForCategory(product.category?.id ?? null, categories, orgId),
     productFamilyService.list(orgId),
+    orgChannelService.list(orgId),
   ]);
   const families = familyRows.map((family) => ({ id: family.id, name: family.name }));
 
@@ -69,6 +71,7 @@ export default async function OrgEditProductPage({
           orgs={orgs}
           locations={locations}
           uploadEndpoints={orgUploadEndpoints(orgId)}
+          sellsElsewhere={channels.some((channel) => channel.enabled)}
         />
       </Suspense>
     </PageShell>

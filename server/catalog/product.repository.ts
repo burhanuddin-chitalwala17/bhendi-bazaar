@@ -25,6 +25,7 @@ import { pushStockSpec } from "@server/shared/jobs/push-stock.job";
 import { recordAdminActionIn } from "@server/shared/audit/audit.service";
 import { coverOf, type MediaKind, type ProductMediaInput } from "@server/catalog/media";
 import { mediaAssetRepository, type MediaDb } from "@server/catalog/media-asset.repository";
+import { VERSION_FIELD, versionConflictMessage } from "@server/catalog/product-edit";
 
 /**
  * Pure, exported for tests: media rows for a Prisma nested create, in submitted order, plus the `thumbnail` the
@@ -78,6 +79,13 @@ export function mediaWrite(media: ProductMediaInput[]) {
   };
 }
 
+/** The person saving: the version moves and they are named on the product (product-form D6, D7). */
+export interface ProductEditor {
+    userId: string;
+    /** A Bhendi Bazaar team save, which marks the product until the shop next saves it. */
+    team: boolean;
+}
+
 // ✅ Efficient select - only fetch needed fields
 const PRODUCT_LIST_SELECT = {
     id: true,
@@ -127,6 +135,11 @@ const PRODUCT_DETAILS_SELECT = {
     facts: true,
     measurements: true,
     media: MEDIA_SELECT,
+    // Who saved last, so the form can say so and refuse a save over it (product-form D6, D7).
+    version: true,
+    lastEditedAt: true,
+    teamEditedAt: true,
+    lastEditedBy: { select: { name: true } },
     stockLocations: {
         select: {
             orgAddressId: true,
@@ -717,7 +730,7 @@ export class AdminProductsRepository {
         };
     }
 
-    async updateProduct(id: string, data: ProductPersistInput) {
+    async updateProduct(id: string, data: ProductPersistInput & { seenVersion: number }, editor: ProductEditor) {
         // Fields are enumerated, not spread: `data` originates from a request body,
         // so spreading it would let any writable column through. `slug` is absent
         // deliberately — it is generated once at creation and then frozen, because
@@ -733,6 +746,19 @@ export class AdminProductsRepository {
         let product;
         try {
             product = await prisma.$transaction(async (tx) => {
+            // The version compare-and-set comes first, so a stale form moves no stock, media or field
+            // (product-form D6). A shop save clears the team's mark; a team save sets it (D7).
+            const now = new Date();
+            const claimed = await tx.product.updateMany({
+                where: { id, orgId: data.orgId, version: data.seenVersion },
+                data: {
+                    version: { increment: 1 },
+                    lastEditedById: editor.userId,
+                    lastEditedAt: now,
+                    teamEditedAt: editor.team ? now : null,
+                },
+            });
+            if (claimed.count === 0) throw await this.versionConflict(tx, id, data.orgId, editor.userId);
             await stockRepository.adjust(id, data.stockLocations, tx);
             await tx.productMedia.deleteMany({ where: { productId: id } });
             const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
@@ -775,6 +801,19 @@ export class AdminProductsRepository {
         return product;
     }
 
+
+  /** Why a save from a seen version was refused: who saved since, and when (product-form D7). */
+  private async versionConflict(tx: Prisma.TransactionClient, id: string, orgId: string, viewerId: string) {
+    const current = await tx.product.findFirst({
+      where: { id, orgId },
+      select: { lastEditedById: true, lastEditedAt: true, teamEditedAt: true, lastEditedBy: { select: { name: true } } },
+    });
+    if (!current) return new NotFoundError("Product not found");
+    return new ConflictError(
+      versionConflictMessage({ ...current, lastEditedByName: current.lastEditedBy?.name ?? null }, viewerId),
+      { field: VERSION_FIELD },
+    );
+  }
 
   /** The categories this org has products on sale in — what its listing defaults are keyed by. */
   async listCategoriesSoldBy(orgId: string): Promise<Array<{ id: string; name: string }>> {

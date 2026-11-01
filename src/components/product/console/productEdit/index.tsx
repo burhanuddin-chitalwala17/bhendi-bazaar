@@ -31,6 +31,8 @@ interface ProductEditContainerProps {
   locations: LocationOption[];
   /** The presign route for image uploads; the org portal passes its member-guarded one. */
   uploadEndpoints?: UploadEndpoints;
+  /** The shop sells on another channel, so the Details card carries what it would ask (R5, R7). */
+  sellsElsewhere?: boolean;
 }
 
 export function ProductEditContainer({
@@ -42,10 +44,11 @@ export function ProductEditContainer({
   orgs,
   locations,
   uploadEndpoints,
+  sellsElsewhere = false,
 }: ProductEditContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
-  const { updateProduct, isLoading, error, successMessage } = useProducts();
+  const { updateProduct, isLoading, error, successMessage } = useProducts({ stayAfterUpdate: true });
 
   const handleCancel = () => {
     router.push(productsBasePath);
@@ -85,6 +88,7 @@ export function ProductEditContainer({
         isSubmitting={isLoading}
         readOnly={false}
         uploadEndpoints={uploadEndpoints}
+        sellsElsewhere={sellsElsewhere}
       />
     </div>
   );

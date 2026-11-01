@@ -1,7 +1,7 @@
 // server/services/admin/productService.ts
 
 import type { Prisma } from "@prisma/client";
-import { adminProductsRepository } from "@server/catalog/product.repository";
+import { adminProductsRepository, type ProductEditor } from "@server/catalog/product.repository";
 import { resolveShotList, unknownSlots } from "@server/catalog/shot-list";
 import { fillListing } from "@server/listing/listing-fill.service";
 import { holdsKind, resolveProductType } from "@server/listing/product-type";
@@ -238,7 +238,8 @@ export class ProductsService {
     return adminProductsRepository.listCopyOptions(orgId);
   }
 
-  async updateProduct(id: string, data: ProductFormInput) {
+  /** A person's save, refused when the product moved on since `seenVersion` was read (product-form D6). */
+  async updateProduct(id: string, data: ProductFormInput & { seenVersion: number }, editor: ProductEditor) {
     await this.checkLocations(data);
     await this.checkSlots(data);
     await this.checkKind(data);
@@ -247,7 +248,7 @@ export class ProductsService {
     const stored = before ? { facts: before.facts as never, measurements: before.measurements as never } : undefined;
     const priced = { ...this.moneyToPaise(data), ...(await this.fill(data, stored)) };
     await this.checkMarkdown(priced, id);
-    const product = await adminProductsRepository.updateProduct(id, priced);
+    const product = await adminProductsRepository.updateProduct(id, { ...priced, seenVersion: data.seenVersion }, editor);
     if (!product) {
       throw new NotFoundError("Product not found");
     }
