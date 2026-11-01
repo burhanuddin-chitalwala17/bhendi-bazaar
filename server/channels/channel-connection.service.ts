@@ -323,10 +323,6 @@ export const channelConnectionService = {
   },
 
   /**
-   * A valid access token for one connection, renewed first if it is about to lapse (D8). Inside
-   * the domain only: later subfeatures call marketplace verbs through here, never with a token.
-   */
-  /**
    * A still-valid access token from a row already read, or null when it must be renewed, which only
    * `accessToken` does, under its lock. Lets a batch read many connections' tokens in one query.
    */
@@ -336,6 +332,10 @@ export const channelConnectionService = {
     return decryptSecret(row.accessToken);
   },
 
+  /**
+   * A valid access token for one connection, renewed first if it is about to lapse (D8). Inside
+   * the domain only: later subfeatures call marketplace verbs through here, never with a token.
+   */
   async accessToken(connectionId: string, now = new Date()): Promise<string> {
     return await prisma.$transaction(
       async (tx) => {

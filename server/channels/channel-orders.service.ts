@@ -22,7 +22,7 @@ import { ORDERS_CHECK_GAP_MS } from "./stock-checks.job";
  */
 const CURSOR_REFRESH_MS = 60 * 60_000;
 /** Marketplace reads in flight at once: each shop has its own rate limit, so this only spares the worker. */
-const READ_CONCURRENCY = 4;
+export const READ_CONCURRENCY = 4;
 
 type Outcome = { lines: number; taken: number; oversold: number; restocked: number };
 type Read = { row: OrdersCheckRow & { channel: MarketplaceChannel }; lines: MarketplaceOrderLine[]; cursor: string };
@@ -40,7 +40,7 @@ async function inBatches<T>(items: readonly T[], limit: number, work: (item: T) 
 }
 
 export const channelOrdersService = {
-  /** One connection's check, as the batch runs it (tests, and any one-off). */
+  /** One connection's check, as the batch runs it: a marketplace failure is logged, not thrown. */
   async check(connectionId: string): Promise<Outcome> {
     const row = await channelConnectionRepository.forOrders(connectionId);
     return row ? ((await this.checkMany([row])).get(connectionId) ?? empty()) : empty();
@@ -59,18 +59,19 @@ export const channelOrdersService = {
 
     const reads: Read[] = [];
     await inBatches(live, READ_CONCURRENCY, async (row) => {
-      // The claim already holds the token; only an expiring one goes through the locked renewal.
-      const cached = channelConnectionService.unexpiredAccessToken(row);
-      const token = async () => cached ?? (await channelConnectionService.accessToken(row.id));
+      // The claim already holds the token, judged again on every call; only an expiring one takes the
+      // locked renewal, and a renewed one serves the rest of this shop's read.
+      let renewed: string | null = null;
+      const token = async () =>
+        renewed ?? channelConnectionService.unexpiredAccessToken(row) ?? (renewed = await channelConnectionService.accessToken(row.id));
       try {
         const page = await providerFor(row.channel).readOrders(token, row.externalAccountId, row.ordersCursor);
         reads.push({ row, lines: page.lines, cursor: page.cursor });
       } catch (error) {
-        // One shop's failure is that shop's: its cursor stays, so its next check reads the same span.
-        // A refused credential will not come right on a retry; the section says reconnect.
-        if (!(error instanceof MarketplaceAuthError)) {
-          console.error(`[channels] order check for ${row.id} failed: ${error instanceof Error ? error.name : "error"}`);
-        }
+        // One shop's failure is that shop's, an unreadable stored token included: its cursor stays,
+        // so its next check reads the same span.
+        const why = error instanceof MarketplaceAuthError ? "access refused" : error instanceof Error ? error.name : "error";
+        console.error(`[channels] order check for ${row.id} failed: ${why}`);
       }
     });
 
@@ -79,7 +80,7 @@ export const channelOrdersService = {
     const known = await marketplaceOrderRepository.knownForMany(
       new Map(reads.map((r) => [r.row.id, [...new Set(r.lines.map((l) => l.orderId))]])),
     );
-    const cursors: { id: string; cursor: string }[] = [];
+    const cursors: { id: string; cursor: string; from: string | null }[] = [];
     for (const read of reads) {
       const mine = known.filter((k) => k.connectionId === read.row.id);
       const changed = read.lines.filter((line) => {
@@ -94,7 +95,7 @@ export const channelOrdersService = {
       }
       // A cursor moves when something came in, or hourly, so a quiet check writes nothing.
       const stale = !read.row.ordersCursor || Date.parse(read.cursor) - Date.parse(read.row.ordersCursor) > CURSOR_REFRESH_MS;
-      if (read.cursor !== read.row.ordersCursor && (changed.length > 0 || stale)) cursors.push({ id: read.row.id, cursor: read.cursor });
+      if (read.cursor !== read.row.ordersCursor && (changed.length > 0 || stale)) cursors.push({ id: read.row.id, cursor: read.cursor, from: read.row.ordersCursor });
     }
     if (cursors.length > 0) await channelConnectionRepository.setOrdersCursors(cursors);
     return outcomes;

@@ -49,7 +49,7 @@ sync on for that marketplace, after seeing what will change.
   connections. A busy marketplace throws and the queue retries; nothing is lost because the retry
   reads the count again.
 - **D4 — Sales come in by a scheduled check.** `channels.check-orders` every ten minutes (Q26, batched: a quiet run is two statements however many shops) per
-  connection with sync on (parent Q30), a job that enqueues its next run only while one has sync on
+  connection with sync on (Q26, superseding parent Q30's interval), a job that enqueues its next run only while one has sync on
   (Q23): Amazon's Orders API v0 from a stored cursor (Q21); Flipkart `shipments/filter`, waiting,
   cancelled and dispatched. A sale from before sync was on is recorded without taking stock (Q24). A quiet
   check costs a handful of operations: due connections are claimed in one statement, lines already

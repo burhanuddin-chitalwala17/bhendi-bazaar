@@ -287,13 +287,17 @@ export const channelConnectionRepository = {
         "ordersCursor", "accessToken", "accessTokenExpiresAt"`;
   },
 
-  /** Every moved cursor of a run, in one statement (inventory-sync Q26). */
-  async setOrdersCursors(updates: ReadonlyArray<{ id: string; cursor: string }>): Promise<void> {
+  /**
+   * Every moved cursor of a run, in one statement (inventory-sync Q26). Compare-and-set on the cursor
+   * the run read, and only while sync is on: sync turned off or on mid-run keeps the cursor it wrote.
+   */
+  async setOrdersCursors(updates: ReadonlyArray<{ id: string; cursor: string; from: string | null }>): Promise<void> {
     if (updates.length === 0) return;
-    const values = Prisma.join(updates.map((u) => Prisma.sql`(${u.id}, ${u.cursor})`));
+    const values = Prisma.join(updates.map((u) => Prisma.sql`(${u.id}::text, ${u.cursor}::text, ${u.from}::text)`));
     await prisma.$executeRaw`
       UPDATE "ChannelConnection" AS c SET "ordersCursor" = v.cursor
-      FROM (VALUES ${values}) AS v(id, cursor) WHERE c."id" = v.id`;
+      FROM (VALUES ${values}) AS v(id, cursor, prior)
+      WHERE c."id" = v.id AND c."ordersCursor" IS NOT DISTINCT FROM v.prior AND c."stockSync" = ${STOCK_SYNC.ON}`;
   },
 
   /** What one order check needs of its connection, in one read (inventory-sync D4). */
@@ -316,11 +320,6 @@ export const channelConnectionRepository = {
   async syncedConnections(): Promise<string[]> {
     const rows = await prisma.channelConnection.findMany({ where: { state: CONNECTION_STATE.CONNECTED, stockSync: STOCK_SYNC.ON }, select: { id: true } });
     return rows.map((r) => r.id);
-  },
-
-  /** Where the next order check starts (inventory-sync D4). */
-  async setOrdersCursor(id: string, cursor: string): Promise<void> {
-    await prisma.channelConnection.updateMany({ where: { id }, data: { ordersCursor: cursor } });
   },
 
   async touchStock(db: Pick<typeof prisma, "channelConnection">, id: string, field: "stockSentAt" | "stockCheckedAt", now: Date): Promise<void> {

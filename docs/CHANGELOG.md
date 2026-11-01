@@ -12,6 +12,21 @@
 
 ## Entries
 
+## 2026-11-01 — inventory-sync Q26, review: one shop's token or a moved cursor cannot spoil the run
+
+- **Found in review** of the batched order check, fixed before merge:
+  - a shop whose stored token cannot be read is now that shop's failure, logged, not the whole run's;
+    the token is read when the marketplace asks for it, and renewed once at most per shop per run;
+  - an access refusal is logged as one, not swallowed;
+  - the batched cursor write is a compare-and-set against the cursor the run claimed, so a cursor
+    reset while the run was reading (sync turned off and on) is never overwritten, and a quiet run
+    writes nothing;
+  - unused single-shop reads and writes removed.
+- **Tests:** `tests/integration/order-check-budget.test.ts` now measures more shops than are read at
+  once, drives the token path on every shop, and proves an unreadable token and a moved cursor.
+  Mutations recorded: reading the token before the guarded read (2 red), dropping the cursor
+  compare-and-set (1 red).
+
 ## 2026-11-01 — inventory-sync Q26: the marketplace order check costs the same for one shop or thousands
 
 - **Why:** each syncing shop cost about six database statements every five minutes (read its
