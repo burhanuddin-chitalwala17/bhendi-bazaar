@@ -7,6 +7,7 @@ import { useAsyncData } from "@/hooks/core/useAsyncData";
 import { listingApiClient } from "@/components/product/listingApiClient";
 import type { ProductFormInput } from "@/components/product/console/types";
 import type { ProductStepKey } from "./product-steps";
+import { useListingPrefix } from "./useListingPrefix";
 
 /**
  * What the places this shop sells on would still ask, from the unsaved values (product-form D4).
@@ -21,12 +22,13 @@ export function useReadinessHints(
   step: ProductStepKey,
   getValues: UseFormGetValues<ProductFormInput>,
 ) {
+  const prefix = useListingPrefix(orgId);
   const { data, loading } = useAsyncData(
     async (signal) => {
       const values = getValues();
       if (!type || !values.categoryId) return [];
       return listingApiClient.readiness(
-        orgId,
+        prefix,
         {
           categoryId: values.categoryId,
           // A kind left over from another type would be judged against this one (D5).

@@ -1,7 +1,7 @@
 // components/admin/productsContainer/hooks/useProducts.ts
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ProductsApiClient } from "./productsApiClient";
 import type { ProductFormInput } from "./types";
@@ -24,7 +24,9 @@ export function useProducts(options?: UseProductsOptions) {
   // Present under /org/[orgId]/..., absent under /admin/... — which is what selects the
   // API tree and where a successful write returns to.
   const orgId = typeof params.orgId === "string" ? params.orgId : undefined;
-  const productsApiClient = new ProductsApiClient(orgId);
+  // Under /admin the team acts for a shop through its own routes (product-form D12).
+  const team = !!usePathname()?.startsWith("/admin/");
+  const productsApiClient = new ProductsApiClient(orgId, team);
   const productsBasePath = useProductsBasePath();
 
   /**
@@ -119,6 +121,20 @@ export function useProducts(options?: UseProductsOptions) {
     }
   };
 
+  /** The team restores an archived shop product, then reloads the edit page into the form. */
+  const restoreForShop = async (id: string) => {
+    setIsLoading(true);
+    try {
+      await productsApiClient.restoreForShop(id);
+      toast.success("Product restored");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not restore the product");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   /** Archive a product, or restore it, without touching what it was part of. */
   const setProductArchived = async (id: string, archived: boolean) => {
     setIsLoading(true);
@@ -148,6 +164,7 @@ export function useProducts(options?: UseProductsOptions) {
     createProduct,
     deleteProduct,
     setProductArchived,
+    restoreForShop,
     updateProduct,
     // State
     isLoading,

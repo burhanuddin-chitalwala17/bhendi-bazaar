@@ -92,6 +92,8 @@ export interface ProductDetails {
   lastEditedBy: string | null;
   /** Set while the Bhendi Bazaar team's save is the latest (D7, Q14). */
   teamEditedAt: Date | null;
+  /** Set while archived; the team's edit page offers "Restore" instead of the form (product-form D12). */
+  archivedAt?: Date | null;
 }
 
 export interface ProductStats {

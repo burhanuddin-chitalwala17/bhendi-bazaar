@@ -6,6 +6,7 @@ import type { FieldErrors, UseFormRegister, UseFormSetValue } from "react-hook-f
 import { FormInput, FormSelect } from "../FormField";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api-error";
+import { useListingPrefix } from "./useListingPrefix";
 import { listingApiClient } from "@/components/product/listingApiClient";
 import type { ProductFormInput } from "@/components/product/console/types";
 
@@ -51,6 +52,7 @@ export function ProductFamilyField({
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const prefix = useListingPrefix(orgId);
 
   async function onCreate() {
     // Never disabled (product-form A8, ADR-0053): a second tap while creating is ignored, a short name is told why.
@@ -67,7 +69,7 @@ export function ProductFamilyField({
     }
     setBusy(true);
     try {
-      const family = await listingApiClient.createFamily(orgId, { name, categoryId });
+      const family = await listingApiClient.createFamily(prefix, { name, categoryId });
       setOptions((current) => [...current, { id: family.id, name: family.name }]);
       setValue("familyId", family.id, { shouldDirty: true });
       setCreating(false);

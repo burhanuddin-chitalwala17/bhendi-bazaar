@@ -75,7 +75,7 @@ const listingAnswerFields = {
  * resolver, so the rules a user sees inline are the rules the server enforces.
  * `slug` is absent deliberately — it is server-generated and frozen.
  */
-export const productFormSchema = z
+const productFields = z
   .object({
     // Field copy is product-form ux.md's copy deck: the shop reads it beside the field.
     name: z.string().trim().min(2, "Name needs 2 or more letters").max(255),
@@ -137,13 +137,16 @@ export const productFormSchema = z
      * set it could claim a shop typed something it inherited.
      */
     ...listingAnswerFields,
-  })
-  // A cross-field rule neither side could enforce alone, attributed to the field a
-  // user would correct.
-  .refine((d) => d.salePrice === undefined || d.salePrice < d.price, {
-    message: "Sale price must be below the price",
-    path: ["salePrice"],
   });
+
+// A cross-field rule neither side could enforce alone, attributed to the field a
+// user would correct.
+const salePriceBelowPrice: [(d: { salePrice?: number; price: number }) => boolean, { message: string; path: string[] }] = [
+  (d) => d.salePrice === undefined || d.salePrice < d.price,
+  { message: "Sale price must be below the price", path: ["salePrice"] },
+];
+
+export const productFormSchema = productFields.refine(...salePriceBelowPrice);
 
 export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
 
@@ -154,6 +157,26 @@ export type ProductFormSchemaInput = z.infer<typeof productFormSchema>;
 export const productEditSchema = productFormSchema.safeExtend({
   seenVersion: z.number().int().min(0),
 });
+
+/**
+ * Why the Bhendi Bazaar team is changing a shop's product, which the shop reads (product-form D11,
+ * Q22). Required on every team save; the shop's own saves never carry it.
+ */
+export const TEAM_REASON_REQUIRED = "Say why — the shop will read it.";
+export const teamReasonField = z
+  .string({ error: TEAM_REASON_REQUIRED })
+  .trim()
+  .min(3, TEAM_REASON_REQUIRED)
+  .max(200, "Keep the reason to 200 characters");
+
+/** A team create: the product as the shop's form sends it, plus the reason. */
+export const teamProductFormSchema = productFormSchema.safeExtend({ reason: teamReasonField });
+
+/** A team edit: the shop's edit, plus the reason. */
+export const teamProductEditSchema = productFields
+  .omit({ orgId: true }) // the product's own org; the body never names one
+  .extend({ seenVersion: z.number().int().min(0), reason: teamReasonField })
+  .refine(...salePriceBelowPrice);
 
 /** Field names the product form owns, so server details can be routed to them. */
 export const PRODUCT_FORM_FIELDS = [

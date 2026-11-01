@@ -5,6 +5,7 @@
 import type { UploadEndpoints } from "@/lib/image/upload-endpoints";
 import { useRouter } from "next/navigation";
 import { Copy } from "lucide-react";
+import { toast } from "sonner";
 import { ProductForm } from "@/components/shared/forms/product";
 import { useProducts } from "../useProducts";
 import { useProductsBasePath } from "@/components/product/console/useProductsBasePath";
@@ -42,6 +43,8 @@ interface ProductAddContainerProps {
   sellsElsewhere?: boolean;
   /** Opened from Home's setup list: a saved product goes back there (own-store onboarding D8). */
   returnTo?: string | null;
+  /** The Bhendi Bazaar team adding for this shop (product-form R10). */
+  team?: { shopName: string };
 }
 
 export function ProductAddContainer({
@@ -56,6 +59,7 @@ export function ProductAddContainer({
   uploadEndpoints,
   sellsElsewhere = false,
   returnTo = null,
+  team,
 }: ProductAddContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
@@ -65,7 +69,11 @@ export function ProductAddContainer({
 
   const submit = async (data: Parameters<typeof createProduct>[0]) => {
     const product = await createProduct(data);
-    if (product && returnTo) router.push(returnTo);
+    if (product && team) {
+      // The team's next step is the product it made, not the shop's success screen (ux.md, Admin).
+      toast.success(`Saved. ${team.shopName} will see what changed.`);
+      router.push(`/admin/products/${product.id}`);
+    } else if (product && returnTo) router.push(returnTo);
     return product;
   };
 
@@ -78,7 +86,7 @@ export function ProductAddContainer({
     <div className="space-y-6">
       <PageHeader
         back={{ href: productsBasePath, label: "Back to products" }}
-        title="Add product"
+        title={team ? "Add product for this shop" : "Add product"}
       />
 
       <ProductForm
@@ -96,6 +104,7 @@ export function ProductAddContainer({
         readOnly={false}
         uploadEndpoints={uploadEndpoints}
         sellsElsewhere={sellsElsewhere}
+        team={team}
         copyFrom={
           copyOptions.length > 0 && (
             <div className="space-y-2 rounded-card border border-border bg-card p-3">

@@ -1256,6 +1256,8 @@ model AdminLog {
   @@index([createdAt])
   @@index([resource])
   @@index([action])
+  // A product's team edits, newest first (product-form D13).
+  @@index([resource, resourceId])
 }
 
 /// What a person may do inside one org. Declared here rather than as a TypeScript

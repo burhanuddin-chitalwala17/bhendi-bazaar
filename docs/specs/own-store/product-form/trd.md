@@ -96,7 +96,7 @@ Screens, states and copy are [ux.md](ux.md)'s. Rules: [src/components/CLAUDE.md]
 - **Surfaces:** `ResponsivePicker` for category and "Add"; `FormDialog` for the two confirmations.
 
 ## Gates touched
-`route-reachability`/`portal-boundary`: one org and nine admin routes. `rate-limit-registry`:
+`route-reachability`/`portal-boundary`: one org and eight admin routes (U5: create, edit, restore and five shop-scoped twins); `portal-boundary` now holds every admin product write to the team service. `rate-limit-registry`:
 none, all under `/api/org` or `/api/admin` (ADR-0063). `one-repository`: new columns written only
 in `product.repository.ts`. No `RECORDED` or `MAY_USE_SHEET` entry.
 

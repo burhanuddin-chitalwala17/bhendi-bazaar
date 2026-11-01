@@ -179,13 +179,14 @@ export class ProductsService {
     return product;
   }
 
-  async createProduct(data: ProductFormInput) {
+  /** `editor` names who made it; a team create is marked as the team's (product-form D11). */
+  async createProduct(data: ProductFormInput, editor?: ProductEditor) {
     await this.checkLocations(data);
     await this.checkSlots(data);
     await this.checkKind(data);
     const priced = { ...this.moneyToPaise(data), ...(await this.fill(data)) };
     await this.checkMarkdown(priced);
-    const product = await adminProductsRepository.createProduct(priced);
+    const product = await adminProductsRepository.createProduct(priced, editor);
     await this.syncMarkdown(product.id, priced);
     return product;
   }

@@ -1,6 +1,6 @@
 # Decisions — own-store/product-form
 
-- **Verified:** 2026-10-31
+- **Verified:** 2026-11-01
 
 > Replace a Q in place until it is implemented (end its why with "was: …"); supersede only implemented ones (ADR-0062).
 > Owner decides money, policy, irreversible data, external commitments, taste.
@@ -21,8 +21,8 @@
 | Q9 | What does a category change do to answers? | A sheet lists answers that don't apply to the new type: "Keep {old}" or "Change to {new}". Answers stay in memory until save, so switching back restores them; only kept answers are saved | Claude · reversible | 2026-10-30 | Hazard "silent swap"; nothing typed is lost by a mis-tap | implemented (unit 3) |
 | Q10 | Is a draft kept on edit too? | Yes, on the device, per product; a restored draft says "We kept your unsaved changes from {time}" with "Discard". A copy-from start is never draft-restored | Claude · reversible | 2026-10-30 | Hazards "lost work" and "draft over copy"; no server draft (own-store Q16) | implemented (unit 4) |
 | Q11 | What if the product changed since the form opened? | Save refused: "{who} changed this product {when}." The latest loads with the seller's changed fields re-applied and marked; they save again | Claude · reversible | 2026-10-30 | Hazard "two editors"; mirrors stock's compare-and-set (ADR-0007) without losing typed work | implemented (unit 4) |
-| Q12 | Where does the admin start? | `/admin/products/[id]` gains "Edit for shop"; the admin's shop page gains "Add product for this shop". Both open the same stepped form under admin routes | Claude · reversible | 2026-10-30 | Same form, so the team sees exactly what the shop sees | decided |
-| Q13 | What does the audit entry hold? | Admin, shop, product, reason, time, and each changed field's before and after; one entry per save | Claude · reversible | 2026-10-30 | own-store Q17; ADR-0021 (a failed record never fails the save) | decided |
+| Q12 | Where does the admin start? | `/admin/products/[id]` gains "Edit for shop"; the admin's shop page gains "Add product for this shop". Both open the same stepped form under admin routes | Claude · reversible | 2026-10-30 | Same form, so the team sees exactly what the shop sees | implemented (unit 5) |
+| Q13 | What does the audit entry hold? | Admin, shop, product, reason, time, and each changed field's before and after; one entry per save | Claude · reversible | 2026-10-30 | own-store Q17; ADR-0021 (a failed record never fails the save) | implemented (unit 5) |
 | Q14 | Where does "Edited by Bhendi Bazaar team" show? | On the shop's product page and list row until the shop next saves that product, plus a permanent history line "Bhendi Bazaar team changed price ₹2,499 → ₹2,299 · reason" | Claude · reversible | 2026-10-30 | Visible until acknowledged by use; history keeps the trail | decided |
 | Q15 | Where does "Copy from" sit? | Top of Photos: "Start from a product you already sell" | Claude · reversible | 2026-10-30 | Copying is the fastest listing; it must be seen before typing starts | implemented (unit 1) |
 | Q16 | What follows "Put on sale"? | A success screen: "On sale now", "Share on WhatsApp", "Add another", "Copy this one", "View product" | Claude · reversible | 2026-10-30 | Next step for a seller adding many; sharing is the store's point | implemented (unit 1) |
@@ -30,8 +30,8 @@
 | Q18 | How is A1's time measured this round? | A timed walkthrough with the owner's father on his phone, recorded in the acceptance report | Claude · reversible | 2026-10-30 | In-app timing is a new capability (Q28) | decided |
 | Q19 | Phone, tablet, desktop? | Phone: one step per screen, sticky bottom bar. `md:` steps as a left rail. `lg:` the form and a live buyer preview side by side | Claude · reversible | 2026-10-30 | ADR-0050; the preview earns its space only on desktop | decided |
 | Q20 | Do photos come first? | **Recommend yes**: Photos → What it is → Price & stock → Details → Review | Owner | 2026-10-30 | Phone sellers start from the camera (Amazon, Meesho apps); the photo also prompts the name | implemented (unit 1) |
-| Q21 | May the team change a shop's price, sale price and stock? | **Recommend yes**, with money changes listed first in the shop's notice and history | Owner | 2026-10-30 | Money policy; low-tech shops ask for exactly these fixes | decided |
-| Q22 | Must the admin give a reason for each change? | **Recommend yes**: one line, required, shown to the shop | Owner | 2026-10-30 | Policy; a reason turns "they changed my product" into "they fixed what I asked" | decided |
+| Q21 | May the team change a shop's price, sale price and stock? | **Recommend yes**, with money changes listed first in the shop's notice and history | Owner | 2026-10-30 | Money policy; low-tech shops ask for exactly these fixes | implemented (unit 5) |
+| Q22 | Must the admin give a reason for each change? | **Recommend yes**: one line, required, shown to the shop | Owner | 2026-10-30 | Policy; a reason turns "they changed my product" into "they fixed what I asked" | implemented (unit 5) |
 | Q23 | Is the shop emailed when the team edits? | No email: the notice, history, and a home task "Our team changed 3 products · See what changed" | Claude · reversible | 2026-10-30 | One email per fix is noise; a task is seen at the next open; an email can be added later without loss | decided |
 | Q30 | What does the first step hold, now video uploads exist? | "Photos and video": photos, a phone video uploaded as picked (MP4/MOV/WebM, ≤90 s, ≤200 MB — `server/catalog/video.ts`), a YouTube link, ≤10 items; the cover stays a photo the seller taps; a video is always an extra. Behaviour is the existing gallery editor's (`product-media-manager.tsx`), only re-housed | Claude · reversible | 2026-10-30 | The code already does this; the step must not regress it (spec R14–R16) | implemented (unit 1) |
 | Q31 | Does the readiness hint mention video? | No. Video is optional (product-video R11) and no channel rule in `server/listing/` asks for one; the Photos and video step shows only the existing "At least one photograph is required. Video is optional." | Claude · reversible | 2026-10-30 | A hint for something nothing asks would read as a requirement; add one when a channel mapping asks | implemented (unit 2) |
@@ -48,3 +48,4 @@
 - Q28 — Time-to-list captured in the app per product: new instrumentation. BACKLOG.
 - Q33 — Show a failed video's reason (e.g. "This video is 120 seconds long; a product video is at most 90 seconds") on its row, not only in the library: needs the asset's failure reason on the gallery read. BACKLOG.
 - Q29 — Undo an admin edit from history: a new action; history shows the before values meanwhile. BACKLOG.
+- Q37 — The admin "Add location" action on a shop with no pickup address (ux.md Admin: Empty): no admin surface writes a shop's addresses today, and one is a new write path beyond this unit. Meanwhile the empty state links back to the shop. BACKLOG.

@@ -126,6 +126,7 @@ class ProductsDAL {
       lastEditedAt: product.lastEditedAt,
       lastEditedBy: product.lastEditedBy?.name ?? null,
       teamEditedAt: product.teamEditedAt,
+      archivedAt: product.archivedAt,
       thumbnail: isRenderableImageUrl(product.thumbnail) ? product.thumbnail : LOGO.ICON,
       org: {
         id: product.org.id,

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import Link from "next/link";
 import { Ban } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageShell, PageHeader } from "@/components/shared/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { orgsDAL } from "@/data-access-layer/admin/orgs.dal";
@@ -39,6 +41,10 @@ export default async function AdminOrgDetailPage({
               </Badge>
             )}
             <OrgBlockToggle orgId={org.id} isBlocked={org.isBlocked} />
+            {/* The team lists a product for a shop in the shop's own steps (product-form R10, Q12). */}
+            <Button asChild size="sm">
+              <Link href={`/admin/orgs/${org.id}/products/new`}>Add product for this shop</Link>
+            </Button>
           </div>
         }
       />

@@ -305,7 +305,7 @@ export class AdminProductsRepository {
     /**
      * Create new product
      */
-    async createProduct(data: ProductPersistInput) {
+    async createProduct(data: ProductPersistInput, editor?: ProductEditor) {
         // The slug is derived from the name, never taken from input, and settled by
         // the unique constraint rather than a prior availability query — checking
         // first is a race the database already arbitrates.
@@ -313,7 +313,7 @@ export class AdminProductsRepository {
         for (let attempt = 0; ; attempt++) {
             const slug = candidates.next().value as string;
             try {
-                return await this.insertProduct(slug, data);
+                return await this.insertProduct(slug, data, editor);
             } catch (error) {
                 if (isUniqueViolation(error, "slug") && attempt < 25) continue;
                 if (isUniqueViolation(error, "sku")) {
@@ -324,8 +324,8 @@ export class AdminProductsRepository {
         }
     }
 
-    private async insertProduct(slug: string, data: ProductPersistInput) {
-        return await prisma.$transaction(async (tx) => await this.insertProductIn(tx, slug, data, null));
+    private async insertProduct(slug: string, data: ProductPersistInput, editor?: ProductEditor) {
+        return await prisma.$transaction(async (tx) => await this.insertProductIn(tx, slug, data, null, editor));
     }
 
     /**
@@ -525,8 +525,15 @@ export class AdminProductsRepository {
         });
     }
 
-    private async insertProductIn(tx: Prisma.TransactionClient, slug: string, data: ProductPersistInput, archivedAt: Date | null) {
+    private async insertProductIn(
+        tx: Prisma.TransactionClient,
+        slug: string,
+        data: ProductPersistInput,
+        archivedAt: Date | null,
+        editor?: ProductEditor,
+    ) {
         const media = mediaWrite(data.media);
+        const now = new Date();
         {
         const mediaRows = await withAssetIds(media.rows, data.orgId, tx);
         const product = await tx.product.create({
@@ -554,6 +561,8 @@ export class AdminProductsRepository {
                 facts: data.facts as never,
                 measurements: data.measurements as never,
                 archivedAt,
+                // A team create marks the product as the team's from its first save (product-form D11).
+                ...(editor ? { lastEditedById: editor.userId, lastEditedAt: now, teamEditedAt: editor.team ? now : null } : {}),
             },
             include: {
                 category: {

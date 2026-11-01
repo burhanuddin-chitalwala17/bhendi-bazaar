@@ -43,7 +43,8 @@ interface ProductStepsFormProps {
   families: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   locations: LocationOption[];
-  onLocationAdded: (location: LocationOption) => void;
+  /** Absent for the team: adding a shop's address is the shop's own screen. */
+  onLocationAdded?: (location: LocationOption) => void;
   uploadEndpoints?: Parameters<typeof ProductMediaManager>[0]["endpoints"];
   /** "Start from a product you already sell", rendered at the top of Photos and video (Q15). */
   copyFrom?: ReactNode;
@@ -52,8 +53,10 @@ interface ProductStepsFormProps {
   /** The product just put on sale; set, the success screen replaces the steps (Q16). */
   created: ProductDetails | null;
   onStartAnother: () => void;
-  /** The kept-draft line (D9), above the steps. */
+  /** The kept-draft line (D9), or the team's banner, above the steps. */
   draft?: ReactNode;
+  /** The save's words; the team's reads "Put on sale for shop" (ux.md copy deck, Admin). */
+  saveLabel?: string;
 }
 
 const isMoreOptionsField = (path: string) => (MORE_OPTIONS_FIELDS as readonly string[]).includes(path.split(".")[0]);
@@ -113,6 +116,7 @@ export function ProductStepsForm({
   created,
   onStartAnother,
   draft,
+  saveLabel = "Put on sale",
 }: ProductStepsFormProps) {
   const {
     watch,
@@ -323,7 +327,7 @@ export function ProductStepsForm({
           {steps.isReview ? (
             <Button type="button" size="lg" className="flex-1" aria-busy={isSubmitting} onClick={() => void putOnSale()}>
               {isSubmitting && <Loader2 className="animate-spin" />}
-              {isSubmitting ? "Putting on sale…" : "Put on sale"}
+              {isSubmitting ? "Putting on sale…" : saveLabel}
             </Button>
           ) : (
             <Button type="button" size="lg" className="flex-1" onClick={steps.next}>

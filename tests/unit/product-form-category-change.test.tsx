@@ -23,7 +23,8 @@ vi.mock("@/components/product/product-media-manager", () => ({
   ),
 }));
 const readiness = vi.fn(async () => []);
-vi.mock("@/components/product/listingApiClient", () => ({
+vi.mock("@/components/product/listingApiClient", async (importActual) => ({
+  ...(await importActual<typeof import("@/components/product/listingApiClient")>()),
   listingApiClient: { readiness: (...args: unknown[]) => readiness(...(args as [])), listValues: async () => ({}), createFamily: vi.fn() },
 }));
 
@@ -264,7 +265,7 @@ describe("the category-change sheet (spec R6)", () => {
     await pick("Ring");
     fireEvent.click(await screen.findByRole("button", { name: "Change to Ring" }));
     await waitFor(() =>
-      expect(readiness).toHaveBeenLastCalledWith("org-1", expect.objectContaining({ categoryId: "cat-ring", kind: null }), expect.anything()),
+      expect(readiness).toHaveBeenLastCalledWith("/api/org/org-1", expect.objectContaining({ categoryId: "cat-ring", kind: null }), expect.anything()),
     );
   });
 });

@@ -37,7 +37,7 @@ export interface ProductSectionsProps {
   families: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   locations: LocationOption[];
-  onLocationAdded: (location: LocationOption) => void;
+  onLocationAdded?: (location: LocationOption) => void;
   uploadEndpoints?: Parameters<typeof ProductMediaManager>[0]["endpoints"];
   /** Edit: the saved rows, so a video keeps its poster and state in the gallery editor. */
   savedMedia?: ProductMediaDto[];

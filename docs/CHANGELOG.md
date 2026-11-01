@@ -12,6 +12,56 @@
 
 ## Entries
 
+## 2026-11-01 — product-form unit 5: the team adds and fixes a shop's product, with a reason, on record [CONTRACT] [MIGRATION]
+
+- **Admin edit and add for a shop** (R10; D12; Q12): `/admin/products/[id]` gains "Edit for shop" and
+  the shop's admin page "Add product for this shop"; both open the shop's own form
+  (`/admin/products/[id]/edit`, `/admin/orgs/[orgId]/products/new`) with the banner "Editing for {Shop}.
+  The shop will see 'Edited by Bhendi Bazaar team'." and "Why are you changing this?". The save reads
+  "Save for shop" / "Put on sale for shop"; success toasts "Saved. {Shop} will see what changed." (a
+  create goes to the product). An archived product shows "This product is archived. Restore it to
+  edit." with "Restore"; a shop with no pickup address shows "{Shop} has no pickup address yet. Add one
+  for them first." The team keeps no device draft (one device serves many shops) and adds no location.
+- **Team saves** (R11, A7; D11; Q13, Q21, Q22): `server/catalog/product-team.service.ts` calls the same
+  `productsService` create and edit with the admin as editor (`teamEditedAt` set, the version bumped,
+  the conflict rebase unchanged), the org always the product's or the path's. Then one
+  `recordAdminAction` entry — `PRODUCT_TEAM_CREATED` / `PRODUCT_TEAM_UPDATED`, metadata `{ orgId,
+  reason, changes }`, each change `{ field, at?, before, after }` with money first, then stock, then the
+  rest (`server/catalog/product-team.ts`, paise). A failed record never fails the save (ADR-0021).
+- **Routes** (D12), all `requirePlatformAdmin`: `POST /api/admin/orgs/[id]/products`,
+  `PATCH /api/admin/products/[id]`, `POST /api/admin/products/[id]/restore`, and the shop-scoped
+  twins the form calls — `products/readiness`, `listing-values`, `families`, `upload/token`,
+  `upload/confirm` under `/api/admin/orgs/[id]/`. The listing client takes a prefix
+  (`listingApiPrefix`), so the form's reads follow its portal.
+- **[MIGRATION]** `20261101152500_admin_log_resource_index`: `AdminLog` index on (resource,
+  resourceId) for U6's history read. Additive.
+- **[CONTRACT]** `teamProductFormSchema` / `teamProductEditSchema` = the shop's schemas + required
+  `reason` (3–200, trimmed; "Say why — the shop will read it."); `ProductDetails` gains read-only
+  `archivedAt`. `CONTRACTS.md` Products section updated.
+- **Tests:** `tests/unit/product-team.test.ts` (money-first diff, keyed facts, create against nothing,
+  reason required); `tests/unit/product-form-team.test.tsx` (banner, "Save for shop", no `disabled`,
+  empty reason sends nothing, reason and `seenVersion` sent, no draft);
+  `tests/integration/product-team-edit.test.ts` (A7 one entry with reason and price first, the mark;
+  body org ignored; saves when the audit fails; archived refused then restored; team create).
+  Mutations, each restored: archived check removed (1 failed); body org allowed over the product's
+  (1 failed); audit written without the never-throw wrapper (1 failed); create without the team editor
+  (1 failed); money moved after the rest (2 failed); reason min 0 (3 failed); schema without the reason
+  on the client (2 failed); team draft kept (1 failed); an admin product route writing through
+  `admin.product.service` directly (portal-boundary, 1 failed).
+- **Gate edits:** `portal-boundary` "the admin tree no longer mutates products" becomes "every admin
+  product write is a team save" (the TRD's D12 supersedes it; `(admin)/admin/products/new` still must
+  not exist). `product-form-readiness` and `product-form-category-change` mocks keep the real
+  `listingApiPrefix` and assert the `/api/org/org-1` prefix.
+- Q12, Q13, Q21, Q22 → implemented (unit 5).
+- **Review fixes:** the after-snapshot and diff run inside the audit's never-throw guard, so a read
+  failing after the commit cannot 500 a saved product (ADR-0021); stored facts and measurements are
+  read through `parseStoredFacts`/`parseStoredMeasurements` (ADR-0051); stock changes are keyed
+  `name (orgAddressId)` so two same-named locations stay apart; `teamProductEditSchema` drops `orgId`
+  instead of the route faking one (the sale-price rule shared via one tuple); the team badge's ux.md
+  line now reads `· {date}`, as built; a stepped team create without a reason is tested.
+- **Parked Q37:** the ux "Empty" row's "Add location" needs an admin address write path the TRD's D12
+  does not list; the empty state links back to the shop meanwhile.
+
 ## 2026-11-01 — order-fulfilment unit 4: signed courier updates, conflicts, delivery emails [CONTRACT] [MIGRATION]
 
 - **Signed webhook** (R8, A4; D9, Q7): the courier webhook moved to `POST /api/webhooks/shipping/tracking` (the old

@@ -29,7 +29,7 @@ interface ProductEditOverviewProps {
   families: Array<{ id: string; name: string }>;
   orgs?: OrgSummary[];
   locations: LocationOption[];
-  onLocationAdded: (location: LocationOption) => void;
+  onLocationAdded?: (location: LocationOption) => void;
   uploadEndpoints?: ProductSectionsProps["uploadEndpoints"];
   sellsElsewhere: boolean;
   /** The kept-draft line (D9), above the cards. */
@@ -38,6 +38,8 @@ interface ProductEditOverviewProps {
   conflict: string | null;
   /** Fields re-applied over the latest product after a refusal, marked on their cards (R9). */
   kept: ReadonlySet<string>;
+  /** The save's words; the team's reads "Save for shop" (ux.md copy deck, Admin). */
+  saveLabel?: string;
 }
 
 /**
@@ -60,6 +62,7 @@ export function ProductEditOverview({
   draft,
   conflict,
   kept,
+  saveLabel = "Save changes",
 }: ProductEditOverviewProps) {
   const [open, setOpen] = useState<ProductStepKey | null>(null);
   const {
@@ -235,7 +238,7 @@ export function ProductEditOverview({
       <div className="sticky bottom-0 z-30 -mx-4 border-t border-border bg-background px-4 pb-safe pt-3 md:mx-0 md:px-0">
         <Button type="button" size="lg" className="w-full md:w-auto" aria-busy={isSubmitting} onClick={() => void save()}>
           {isSubmitting && <Loader2 className="animate-spin" />}
-          {isSubmitting ? "Saving…" : "Save changes"}
+          {isSubmitting ? "Saving…" : saveLabel}
         </Button>
       </div>
     </form>

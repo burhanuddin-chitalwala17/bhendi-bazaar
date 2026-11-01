@@ -25,7 +25,8 @@ vi.mock("@/components/product/product-media-manager", () => ({
   ),
 }));
 const readiness = vi.fn();
-vi.mock("@/components/product/listingApiClient", () => ({
+vi.mock("@/components/product/listingApiClient", async (importActual) => ({
+  ...(await importActual<typeof import("@/components/product/listingApiClient")>()),
   listingApiClient: {
     readiness: (...args: unknown[]) => readiness(...args),
     listValues: async () => ({}),
@@ -110,7 +111,7 @@ describe("readiness hints while filling (spec R5)", () => {
     expect(await screen.findByText("Amazon also asks: Fabric")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
     // Asked with the unsaved category, for the shop the form belongs to (D4).
-    expect(readiness).toHaveBeenCalledWith("org-1", expect.objectContaining({ categoryId: "cat-kurta" }), expect.anything());
+    expect(readiness).toHaveBeenCalledWith("/api/org/org-1", expect.objectContaining({ categoryId: "cat-kurta" }), expect.anything());
   });
 
   it("re-checks on leaving a step, so a typed answer clears the hint (Q8)", async () => {

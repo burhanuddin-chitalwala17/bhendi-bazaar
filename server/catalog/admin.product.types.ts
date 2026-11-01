@@ -69,6 +69,8 @@ export interface ProductFormInput {
    * on it (product-form D6); a create ignores it.
    */
   seenVersion?: number;
+  /** Team saves only: why the Bhendi Bazaar team changed it, shown to the shop (product-form D11). */
+  reason?: string;
 }
 /**
  * What the repository writes: the form's input, plus what the server resolved on save.

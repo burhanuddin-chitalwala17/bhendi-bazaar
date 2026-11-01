@@ -1,0 +1,93 @@
+import { productsService } from "@server/catalog/admin.product.service";
+import { orgRepository } from "@server/catalog/org.repository";
+import type { ProductFormInput } from "@server/catalog/admin.product.types";
+import {
+  ARCHIVED_REFUSAL,
+  PRODUCT_TEAM_ACTION,
+  answersOf,
+  teamChanges,
+  type TeamSnapshot,
+} from "@server/catalog/product-team";
+import { parseStoredFacts, parseStoredMeasurements } from "@server/listing/listing-facts";
+import { promotionService } from "@server/promotions/promotion.service";
+import { recordAdminAction } from "@server/shared/audit/audit.service";
+import { ConflictError, NotFoundError } from "@server/shared/domain-error";
+
+type TeamInput = Omit<ProductFormInput, "orgId" | "reason"> & { reason: string };
+type ProductRecord = Awaited<ReturnType<typeof productsService.getProductById>>;
+
+/**
+ * The Bhendi Bazaar team adding or fixing a shop's product (product-form D11, D12; own-store Q17).
+ * The same catalog commands the shop's form calls, with the admin as the editor (ADR-0055), and
+ * then one audit entry with the reason and each field's before and after. The org is always the
+ * product's or the path's, never the body's.
+ */
+export class ProductTeamService {
+  async create(orgId: string, input: TeamInput, adminId: string) {
+    if (!(await orgRepository.findSummary(orgId))) throw new NotFoundError("Shop not found");
+    const { reason, ...data } = input;
+    const product = await productsService.createProduct({ ...data, orgId }, { userId: adminId, team: true });
+    await this.record(adminId, PRODUCT_TEAM_ACTION.CREATED, product.id, orgId, reason, null);
+    return product;
+  }
+
+  async update(id: string, input: TeamInput & { seenVersion: number }, adminId: string) {
+    const current = await productsService.getProductById({ id });
+    // Checked before the save as the shop's own form would see it: archived sells nowhere (ADR-0029).
+    if (current.archivedAt) throw new ConflictError(ARCHIVED_REFUSAL);
+    const before = await this.snapshot(current);
+    const { reason, ...data } = input;
+    const orgId = current.org.id;
+    const product = await productsService.updateProduct(id, { ...data, orgId }, { userId: adminId, team: true });
+    await this.record(adminId, PRODUCT_TEAM_ACTION.UPDATED, id, orgId, reason, before);
+    return product;
+  }
+
+  /** Back on sale for its shop; the archive trail records it as every restore is (ADR-0029). */
+  async restore(id: string, adminId: string) {
+    const current = await productsService.getProductById({ id });
+    return await productsService.restoreProduct(id, { orgId: current.org.id, userId: adminId });
+  }
+
+  /** After the save has committed, and never failing it (ADR-0021): the trail reports, it does not decide. */
+  private async record(
+    adminId: string,
+    action: (typeof PRODUCT_TEAM_ACTION)[keyof typeof PRODUCT_TEAM_ACTION],
+    productId: string,
+    orgId: string,
+    reason: string,
+    before: TeamSnapshot | null,
+  ) {
+    try {
+      const after = await this.snapshot(await productsService.getProductById({ id: productId }));
+      const changes = teamChanges(before, after);
+      await recordAdminAction({ adminId, action, resource: "Product", resourceId: productId, metadata: { orgId, reason, changes } });
+    } catch (error) {
+      console.error("[product-team] audit entry not recorded", { productId, action, error });
+    }
+  }
+
+  private async snapshot(product: ProductRecord): Promise<TeamSnapshot> {
+    return {
+      price: product.price,
+      salePrice: await promotionService.productMarkdownPaise(product.id),
+      stock: Object.fromEntries(product.stockLocations.map((row) => [`${row.orgAddress.name} (${row.orgAddressId})`, row.quantity])),
+      name: product.name,
+      description: product.description,
+      category: product.category.name,
+      sku: product.sku,
+      weight: product.weight,
+      lowStockThreshold: product.lowStockThreshold,
+      tags: product.tags,
+      flags: product.flags,
+      kind: product.kind,
+      familyId: product.familyId,
+      brandId: product.brandId,
+      facts: answersOf(parseStoredFacts(product.facts)),
+      measurements: answersOf(parseStoredMeasurements(product.measurements)),
+      media: product.media.map((item) => item.ref),
+    };
+  }
+}
+
+export const productTeamService = new ProductTeamService();

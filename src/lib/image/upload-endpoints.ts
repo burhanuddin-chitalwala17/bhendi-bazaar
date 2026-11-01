@@ -13,6 +13,11 @@ export function orgUploadEndpoints(orgId: string): UploadEndpoints {
   return { token: `/api/org/${orgId}/upload/token`, confirm: `/api/org/${orgId}/upload/confirm` };
 }
 
+/** The team uploading a shop's product media: the asset is the shop's, signed by the team's route (product-form D12). */
+export function teamUploadEndpoints(orgId: string): UploadEndpoints {
+  return { token: `/api/admin/orgs/${orgId}/upload/token`, confirm: `/api/admin/orgs/${orgId}/upload/confirm` };
+}
+
 export const ADMIN_UPLOAD_ENDPOINTS: UploadEndpoints = {
   token: "/api/admin/upload/token",
   confirm: "/api/admin/upload/confirm",

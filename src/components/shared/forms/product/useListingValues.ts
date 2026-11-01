@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { listingApiClient } from "@/components/product/listingApiClient";
+import { useListingPrefix } from "./useListingPrefix";
 
 export type ValueOption = { key: string; label: string; orgId: string | null };
 export type ValuesByList = Record<string, ValueOption[]>;
@@ -19,12 +20,13 @@ export function useListingValues(orgId: string, lists: readonly string[], initia
   const [values, setValues] = useState<ValuesByList>(initial);
   const [loading, setLoading] = useState(false);
   const asked = useRef(new Set(Object.keys(initial)));
+  const prefix = useListingPrefix(orgId);
 
   const load = useCallback(
     async (wanted: string[]) => {
       setLoading(true);
       try {
-        const fetched = await listingApiClient.listValues(orgId, wanted);
+        const fetched = await listingApiClient.listValues(prefix, wanted);
         setValues((current) => ({ ...current, ...fetched }));
       } catch {
         // A failed load leaves those lists empty rather than the form broken: the questions
@@ -33,7 +35,7 @@ export function useListingValues(orgId: string, lists: readonly string[], initia
         setLoading(false);
       }
     },
-    [orgId],
+    [prefix],
   );
 
   const key = lists.join(",");

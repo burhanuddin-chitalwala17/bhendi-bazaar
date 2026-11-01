@@ -33,6 +33,10 @@ interface ProductEditContainerProps {
   uploadEndpoints?: UploadEndpoints;
   /** The shop sells on another channel, so the Details card carries what it would ask (R5, R7). */
   sellsElsewhere?: boolean;
+  /** The Bhendi Bazaar team editing for this shop (product-form R10). */
+  team?: { shopName: string };
+  /** Where "Back" goes; the team returns to the product, the shop to its list. */
+  backHref?: string;
 }
 
 export function ProductEditContainer({
@@ -45,19 +49,22 @@ export function ProductEditContainer({
   locations,
   uploadEndpoints,
   sellsElsewhere = false,
+  team,
+  backHref,
 }: ProductEditContainerProps) {
   const router = useRouter();
   const productsBasePath = useProductsBasePath();
   const { updateProduct, isLoading, error, successMessage } = useProducts({ stayAfterUpdate: true });
 
+  const back = backHref ?? productsBasePath;
   const handleCancel = () => {
-    router.push(productsBasePath);
+    router.push(back);
   };
 
   return (
     <div className="space-y-8">
       <PageHeader
-        back={{ href: productsBasePath, label: "Back to products" }}
+        back={{ href: back, label: team ? "Back to product" : "Back to products" }}
         title={`Edit Product: ${product.name}`}
       />
 
@@ -89,6 +96,7 @@ export function ProductEditContainer({
         readOnly={false}
         uploadEndpoints={uploadEndpoints}
         sellsElsewhere={sellsElsewhere}
+        team={team}
       />
     </div>
   );

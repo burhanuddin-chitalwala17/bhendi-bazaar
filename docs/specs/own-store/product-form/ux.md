@@ -130,7 +130,7 @@ Copy is the code's: `product-media-manager.tsx`, `gallery-rows.tsx`, `src/lib/im
 | Empty | Shop has no locations | "{Shop} has no pickup address yet. Add one for them first." | "Add location" |
 | Loading | As the shop's form | — | — |
 | Partial | As the shop's form | — | — |
-| Success | Toast; product page shows "Edited by Bhendi Bazaar team · you" | "Saved. {Shop} will see what changed." | "Back to product" |
+| Success | Toast; product page shows "Edited by Bhendi Bazaar team · {date}" | "Saved. {Shop} will see what changed." | "Back to product" |
 | Retryable error | Network | "Couldn't save. Try again." | "Try again" |
 | Terminal error | Reason empty on save (Q22) | Under reason: "Say why — the shop will read it." | Type a reason |
 | Refused | Product archived | "This product is archived. Restore it to edit." | "Restore" |

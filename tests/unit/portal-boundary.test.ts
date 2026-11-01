@@ -65,8 +65,21 @@ describe("portal boundaries", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("the admin tree no longer mutates products — that moved to the owning org's portal", () => {
-    expect(existsSync("src/app/api/admin/products")).toBe(false);
+  // The team may add and fix a shop's product (product-form D11, D12), but only on record: every
+  // admin product write goes through the team service, which takes a reason and writes the audit
+  // entry. A handler that called the catalog service directly would be an unrecorded edit.
+  it("every admin product write is a team save, never a direct catalog write", () => {
+    const writers = [
+      ...files("src/app/api/admin/products", "route.ts"),
+      ...files("src/app/api/admin/orgs/[id]/products", "route.ts").filter((f) => !f.includes("readiness")),
+    ];
+    expect(writers.length).toBeGreaterThanOrEqual(3);
+    const offenders = writers.filter((f) => {
+      const source = readFileSync(f, "utf8");
+      return !source.includes("productTeamService") || source.includes("admin.product.service");
+    });
+    expect(offenders).toEqual([]);
+    // The team adds for a shop, never for nobody: there is no shop-less create page.
     expect(existsSync("src/app/(admin)/admin/products/new")).toBe(false);
   });
 });

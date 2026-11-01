@@ -28,7 +28,8 @@ import type {
 import { dirtyValues, useFormPersist } from "@/hooks/forms/useFormPersist";
 import { ProductStepsForm } from "./ProductStepsForm";
 import { useProductSteps } from "./useProductSteps";
-import { productFormSchema } from "@/lib/validation/schemas/product.schema";
+import { productFormSchema, teamProductFormSchema } from "@/lib/validation/schemas/product.schema";
+import { TeamBanner } from "./TeamBanner";
 import { resolveProductType } from "@server/listing/product-type";
 import { keepAsked } from "./category-change";
 import {
@@ -88,6 +89,8 @@ interface ProductFormProps {
   copyFrom?: React.ReactNode;
   /** The shop sells on another channel, so readiness hints are asked for (R5). */
   sellsElsewhere?: boolean;
+  /** The Bhendi Bazaar team acting for this shop: a banner, a required reason, its own words (R10, D11). */
+  team?: { shopName: string };
 }
 
 export function ProductForm({
@@ -106,6 +109,7 @@ export function ProductForm({
   families = [],
   copyFrom,
   sellsElsewhere = false,
+  team,
 }: ProductFormProps) {
   const isEdit = !!product;
   // A new product is five steps (product-form U1); an edit is an overview of the same sections (U4).
@@ -135,7 +139,8 @@ export function ProductForm({
   // A restored draft would overwrite the copied fields on mount, so a copy is not
   // draft-persisted — and must not clear a blank-form draft the org left behind.
   // An edit keeps a draft too, per product (D9); read-only keeps nothing.
-  const persistDraft = !readOnly && (isEdit || !copy);
+  // Nor is the team's: one device adds for many shops, and a draft would carry one shop's work to the next.
+  const persistDraft = !readOnly && !team && (isEdit || !copy);
 
   // One row per offered location, prefilled from the product's existing rows. A
   // location the product never stocked shows 0; zero rows are dropped on write.
@@ -152,14 +157,19 @@ export function ProductForm({
     setLocations((current) => (current.some((l) => l.id === location.id) ? current : [...current, location]));
 
   const locationIdList = locations.map((location) => location.id);
-  const defaultsOf = (latest: ProductDetails | undefined) => productDefaults(latest, copy, orgs, locationIdList);
+  const defaultsOf = (latest: ProductDetails | undefined) => ({
+    ...productDefaults(latest, copy, orgs, locationIdList),
+    // A reason is one save's, never carried into the next (Q22).
+    ...(team ? { reason: "" } : {}),
+  });
   // The version the next save claims it saw: the product's, or a restored draft's (D6, D9).
   const versionRef = useRef(product?.version ?? 0);
 
   // Client validation and server error routing both come from this one call:
   // field-attributed server errors land on their fields with no code here.
   const form = useServerForm<ProductFormInput>({
-    schema: productFormSchema,
+    // The team's save requires a reason the shop will read (Q22); the shop's never asks for one.
+    schema: team ? teamProductFormSchema : productFormSchema,
     // Answers for a category the shop moved away from stay in the form until here (D5), and are
     // dropped before validation, so a field no longer on screen can never block the save. An edit
     // that keeps its category drops nothing: its stored answers are not this form's to discard.
@@ -185,12 +195,14 @@ export function ProductForm({
       if (stepped && result) setCreated(result as ProductDetails);
       if (overview) {
         rebaser.saved(result);
-        toast.success("Saved. Live on your store now.");
+        toast.success(team ? `Saved. ${team.shopName} will see what changed.` : "Saved. Live on your store now.");
       }
     },
     // The stepped create opens the step holding the first problem (ProductStepsForm), not a banner (D2).
     onInvalid: stepped || overview ? () => {} : undefined,
-    fallbackMessage: stepped
+    fallbackMessage: team
+      ? "Couldn't save. Try again."
+      : stepped
       ? "Couldn't save. Your work is still here."
       : overview
         ? "Couldn't save. Your changes are still here."
@@ -242,7 +254,9 @@ export function ProductForm({
     syncStockRows();
     versionRef.current = product?.version ?? 0;
   };
-  const draftNotice = persistDraft ? (
+  const draftNotice = team ? (
+    <TeamBanner shopName={team.shopName} register={register} errors={errors} />
+  ) : persistDraft ? (
     <DraftNotice
       found={draft.found}
       onDiscard={discardDraft}
@@ -315,12 +329,13 @@ export function ProductForm({
           families={families}
           orgs={orgs}
           locations={locations}
-          onLocationAdded={addLocation}
+          onLocationAdded={team ? undefined : addLocation}
           uploadEndpoints={uploadEndpoints}
           sellsElsewhere={sellsElsewhere}
           draft={draftNotice}
           conflict={rebaser.notice}
           kept={rebaser.kept}
+          saveLabel={team ? "Save for shop" : undefined}
         />
         {leaveSheet}
       </>
@@ -340,9 +355,10 @@ export function ProductForm({
         families={families}
         orgs={orgs}
         locations={locations}
-        onLocationAdded={addLocation}
+        onLocationAdded={team ? undefined : addLocation}
         uploadEndpoints={uploadEndpoints}
         copyFrom={copyFrom}
+        saveLabel={team ? "Put on sale for shop" : undefined}
         sellsElsewhere={sellsElsewhere}
         created={created}
         onStartAnother={() => {

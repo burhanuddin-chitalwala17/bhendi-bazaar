@@ -4,17 +4,27 @@ import type { ProductFormInput, ProductDetails } from "./types";
 export class ProductsApiClient {
   /**
    * Which tree this client talks to. An org id means the org portal, whose handlers
-   * scope every query to that org; without one it is the platform-admin route. Both
-   * exist while the portals are being separated.
+   * scope every query to that org; `team` is the Bhendi Bazaar team acting for that
+   * shop through the admin routes (product-form D12).
    */
-  constructor(private readonly orgId?: string) {}
+  constructor(
+    private readonly orgId?: string,
+    private readonly team = false,
+  ) {}
 
   private get baseUrl() {
-    return this.orgId ? `/api/org/${this.orgId}/products` : "/api/admin/products";
+    return this.orgId && !this.team ? `/api/org/${this.orgId}/products` : "/api/admin/products";
   }
 
   createProduct(data: ProductFormInput): Promise<ProductDetails | null> {
-    return apiRequest(this.baseUrl, { method: "POST", body: data });
+    // The team adds a product under the shop's path, so the shop is never the body's to name.
+    const url = this.team ? `/api/admin/orgs/${this.orgId}/products` : this.baseUrl;
+    return apiRequest(url, { method: "POST", body: data });
+  }
+
+  /** The team restores an archived shop product so it can be edited (product-form D12). */
+  restoreForShop(id: string): Promise<void> {
+    return apiRequest(`${this.baseUrl}/${id}/restore`, { method: "POST" });
   }
 
   /**
