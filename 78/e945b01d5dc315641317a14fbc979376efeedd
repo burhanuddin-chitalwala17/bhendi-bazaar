@@ -1,0 +1,25 @@
+server/catalog/storefront-look.types.ts
+  s_17ac7f5fca5021::t_81bbd6b66a4787 1-57
+server/catalog/storefront-look.service.ts
+  s_17ac7f5fca5021::t_889f932436197d 1-8,10-20,22-78,80-113,115-121,124-126
+tests/integration/storefront-look-publish.test.ts
+  s_17ac7f5fca5021::t_8a13df6f63f109 1-104,106-116
+tests/unit/storefront-look-picker.test.tsx
+  s_17ac7f5fca5021::t_b08508b6af0585 1-6,8-20,22-28,30-45,47,53-101,103-115,117-125,127,129-148,150-216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "78e945b01d5dc315641317a14fbc979376efeedd",
+  "prompts": {},
+  "sessions": {
+    "s_17ac7f5fca5021": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c5c3bbaf-ee1e-48db-9b93-921b517e7dc6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "burhanuddin-chitalwala17 <burhanuddinchital25151@gmail.com>"
+    }
+  }
+}
